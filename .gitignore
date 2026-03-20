@@ -1,4 +1,9 @@
 node_modules/
+
+# Secrets and local env (never commit)
 .env
+.env.*
+!.env.example
+
 data/*.sqlite
 data/sessions.db
