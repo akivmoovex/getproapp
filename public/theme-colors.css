@@ -1,0 +1,97 @@
+/**
+ * GetPro — colour configuration (single place to edit the palette)
+ *
+ * Sage + terracotta scheme, aligned with Workfolio Directory–style marketing UIs.
+ * @see https://workfolio.com/directory/
+ */
+
+:root {
+  /* ——— Base neutrals ——— */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --text: #00100d;
+  --muted: #404040;
+  --muted-soft: #737373;
+  --border: #f5f5f5;
+  --border-strong: #e5e5e5;
+  --topbar-bg: #f5f5f5;
+
+  /* ——— Brand: sage / teal ——— */
+  --wf-primary: #60a291;
+  --wf-primary-dark: #3c665a;
+  --wf-primary-mid: #548d7e;
+  --wf-mint-light: #e3f2ed;
+  --wf-mint-mid: #b4ded2;
+
+  /* ——— Brand: terracotta ——— */
+  --wf-secondary: #b26a5e;
+  --wf-secondary-hover: #995a53;
+  --wf-secondary-deep: #603834;
+
+  /* ——— Accents ——— */
+  --wf-accent-soft: #f9d3d2;
+  --wf-gold: #f0c987;
+  --wf-footer-link-hover: #d7f4ea;
+
+  /* ——— Semantic aliases (legacy / templates) ——— */
+  --link: var(--wf-primary);
+  --pro-orange: var(--wf-secondary);
+  --pro-orange-hover: var(--wf-secondary-hover);
+  --pro-dark: var(--wf-secondary-deep);
+
+  /* ——— RGB components for rgba(...) ——— */
+  --wf-primary-rgb: 96, 162, 145;
+  --wf-secondary-rgb: 178, 106, 94;
+  --shadow-rgb: 0, 16, 13;
+  --wf-gold-rgb: 240, 201, 135;
+
+  /* ——— Shadows & focus (colour-derived) ——— */
+  --shadow: 0 1px 3px rgba(var(--shadow-rgb), 0.06);
+  --focus-ring: rgba(var(--wf-primary-rgb), 0.35);
+  --primary-border-hover: rgba(var(--wf-primary-rgb), 0.45);
+  --primary-soft-bg: rgba(var(--wf-primary-rgb), 0.12);
+  --secondary-fill-ghost: rgba(var(--wf-secondary-rgb), 0.06);
+  --card-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --cta-card-shadow: 0 8px 32px rgba(var(--shadow-rgb), 0.06);
+  --footer-btn-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+
+  /* ——— Hero chip / gradients ——— */
+  --hero-kicker-shade: rgba(163, 163, 163, 0.28);
+  --hero-kicker-fade: rgba(255, 255, 255, 0.92);
+  --hero-kicker-bg: linear-gradient(180deg, var(--hero-kicker-shade) -40%, var(--hero-kicker-fade) 90%);
+  --cta-gradient: linear-gradient(
+    90deg,
+    var(--wf-secondary) 38%,
+    rgba(var(--wf-gold-rgb), 0.65) 112%
+  );
+  --cta-gradient-hover: linear-gradient(
+    90deg,
+    var(--wf-secondary-hover) 38%,
+    rgba(var(--wf-gold-rgb), 0.55) 112%
+  );
+  --article-thumb-gradient: linear-gradient(135deg, var(--wf-mint-light), var(--wf-mint-mid));
+
+  /* ——— Footer bands ——— */
+  --footer-cta-gradient: radial-gradient(
+    ellipse 100% 120% at 50% 0%,
+    var(--wf-primary) 0%,
+    var(--wf-primary-dark) 78%
+  );
+  --footer-main-gradient: radial-gradient(
+    ellipse 90% 100% at 50% 0%,
+    var(--wf-secondary-hover) 0%,
+    var(--wf-secondary-deep) 75%
+  );
+  --footer-on-dark: rgba(255, 255, 255, 0.88);
+  --footer-on-dark-muted: rgba(255, 255, 255, 0.75);
+  --footer-on-dark-faint: rgba(255, 255, 255, 0.65);
+  --footer-on-dark-border: rgba(255, 255, 255, 0.15);
+  --footer-cta-lead: rgba(255, 255, 255, 0.92);
+
+  /* ——— Forms / errors ——— */
+  --flash-error-border: rgba(200, 60, 60, 0.35);
+  --flash-error-bg: rgba(200, 60, 60, 0.08);
+  --flash-error-text: #8b1a1a;
+}
