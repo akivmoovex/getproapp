@@ -1066,7 +1066,45 @@ textarea {
   margin: 0;
 }
 
-/* Floating menu (hamburger ↔ X) */
+/* Home: logo top-left, menu top-right (over hero) */
+.home-page .wf-home-topbar-brand {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top, 0px));
+  left: max(14px, env(safe-area-inset-left, 0px));
+  z-index: 304;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--color-white);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65), 0 2px 12px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+.home-page .wf-home-topbar-brand:hover {
+  color: var(--color-white);
+  text-decoration: none;
+  opacity: 0.95;
+}
+
+.home-page .wf-home-topbar-brand .logo {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.home-page .wf-home-topbar-title {
+  line-height: 1.2;
+}
+
+/* Floating menu (hamburger ↔ X) — home: right corner */
+.home-page .wf-menu-toggle {
+  left: auto;
+  right: max(14px, env(safe-area-inset-right, 0px));
+  top: max(14px, env(safe-area-inset-top, 0px));
+}
+
 .wf-menu-toggle {
   position: fixed;
   top: 14px;
@@ -1195,6 +1233,11 @@ textarea {
   flex-direction: column;
 }
 
+/* Home: hero flush to top; logo + menu float over image */
+.home-page .wf-home-main {
+  padding-top: 0;
+}
+
 .wf-home-sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -1259,6 +1302,8 @@ textarea {
 .pro-home-hero {
   display: flex;
   flex-direction: column;
+  margin: 0;
+  padding: 0;
 }
 
 .pro-home-hero-visual {
