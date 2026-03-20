@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>GetPro · Trusted professional directory | getproapp.org</title>
+    <meta
+      name="description"
+      content="GetPro connects you with professionals. Search the directory, browse categories, and contact businesses directly."
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260320b" />
+  </head>
+  <body class="home-page">
+    <%- include('partials/site_header') %>
+
+    <section class="pro-hero">
+      <div class="container">
+        <p class="pro-hero-kicker"><span>GetPro</span> · recommended professionals</p>
+        <h1 class="pro-hero-title">Trusted professionals with directory oversight you can rely on</h1>
+        <p class="pro-hero-lead">
+          Search by name or trade, explore leading categories, and reach businesses through verified one-page profiles.
+        </p>
+        <form class="pro-search" action="/directory" method="get" role="search" aria-label="Search professionals">
+          <input type="search" name="q" placeholder="Search for a professional…" autocomplete="off" />
+          <button type="submit">Search</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="pro-section">
+      <div class="container">
+        <div class="pro-section-head">
+          <h2 class="pro-section-title"><a href="/directory">Leading categories</a></h2>
+          <a class="pro-link-all" href="/directory">All categories →</a>
+        </div>
+        <div class="pro-cat-grid">
+          <% categories.forEach(function(cat) { %>
+            <a href="/category/<%= cat.slug %>"><%= cat.name %></a>
+          <% }) %>
+          <% if (categories.length === 0) { %>
+            <p class="muted" style="grid-column: 1 / -1;">No categories yet. Add them in the admin panel.</p>
+          <% } %>
+        </div>
+      </div>
+    </section>
+
+    <section class="pro-section" id="about">
+      <div class="container">
+        <div class="pro-section-head">
+          <h2 class="pro-section-title"><a href="#about">How we do it</a></h2>
+        </div>
+        <div class="pro-pillars">
+          <div class="pro-pillar">
+            <h3>Curated listings</h3>
+            <ul>
+              <li>Businesses are organized by category for faster discovery.</li>
+              <li>Each profile stays focused: services, contact, and a simple lead form.</li>
+            </ul>
+          </div>
+          <div class="pro-pillar">
+            <h3>Clear information</h3>
+            <ul>
+              <li>Headlines and descriptions help you compare professionals quickly.</li>
+              <li>Direct phone and email when the business chooses to publish them.</li>
+            </ul>
+          </div>
+          <div class="pro-pillar">
+            <h3>Support through the platform</h3>
+            <ul>
+              <li>Request contact without hunting for forms across random sites.</li>
+              <li>Reach our team during business hours if you need help navigating the directory.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pro-section" id="pricing">
+      <div class="container">
+        <div class="pro-section-head">
+          <h2 class="pro-section-title">Sample pricing awareness</h2>
+          <span class="muted" style="font-size:14px;">Illustrative ranges — always confirm with the professional.</span>
+        </div>
+        <div class="pro-price-row">
+          <div class="pro-price-card">
+            <h4>Standard service visit</h4>
+            <p class="desc">Typical on-site assessment or small repair visit.</p>
+            <div class="amt">from local rates</div>
+          </div>
+          <div class="pro-price-card">
+            <h4>Planned installation</h4>
+            <p class="desc">Larger jobs depend on materials and access — get a written quote.</p>
+            <div class="amt">quote per job</div>
+          </div>
+          <div class="pro-price-card">
+            <h4>Emergency call-out</h4>
+            <p class="desc">After-hours premiums may apply; ask upfront.</p>
+            <div class="amt">varies</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pro-section">
+      <div class="container">
+        <div class="pro-section-head">
+          <h2 class="pro-section-title">Recent feedback</h2>
+          <a class="pro-link-all" href="/directory">Browse listings →</a>
+        </div>
+        <div class="pro-reviews">
+          <div class="pro-review">
+            <div class="pro-stars">★★★★★</div>
+            <div class="pro-review-meta">Dana · last week</div>
+            <q>Found a specialist in minutes and booked straight from the profile. Clear and fast.</q>
+          </div>
+          <div class="pro-review">
+            <div class="pro-stars">★★★★★</div>
+            <div class="pro-review-meta">Yossi · March 2026</div>
+            <q>The lead form worked on mobile. The business called back the same day.</q>
+          </div>
+          <div class="pro-review">
+            <div class="pro-stars">★★★★★</div>
+            <div class="pro-review-meta">Michal · March 2026</div>
+            <q>Nice to have categories laid out like the big pro directories — but lightweight.</q>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pro-section" id="services">
+      <div class="container">
+        <div class="pro-section-head">
+          <h2 class="pro-section-title">Popular jobs &amp; topics</h2>
+          <a class="pro-link-all" href="/directory">View professionals →</a>
+        </div>
+        <div class="pro-articles">
+          <article class="pro-article">
+            <div class="pro-article-thumb" aria-hidden="true"></div>
+            <div class="pro-article-body">
+              <h4><a href="/directory">Before you book a renovation</a></h4>
+              <p>What to clarify with a contractor: scope, timeline, and payment milestones.</p>
+              <a class="pro-readmore" href="/directory">Read more →</a>
+            </div>
+          </article>
+          <article class="pro-article">
+            <div class="pro-article-thumb" aria-hidden="true"></div>
+            <div class="pro-article-body">
+              <h4><a href="/directory">HVAC checks homeowners skip</a></h4>
+              <p>Simple maintenance questions to ask before peak season demand.</p>
+              <a class="pro-readmore" href="/directory">Read more →</a>
+            </div>
+          </article>
+          <article class="pro-article">
+            <div class="pro-article-thumb" aria-hidden="true"></div>
+            <div class="pro-article-body">
+              <h4><a href="/directory">Electrical safety at home</a></h4>
+              <p>When to call a licensed professional instead of DIY troubleshooting.</p>
+              <a class="pro-readmore" href="/directory">Read more →</a>
+            </div>
+          </article>
+          <article class="pro-article">
+            <div class="pro-article-thumb" aria-hidden="true"></div>
+            <div class="pro-article-body">
+              <h4><a href="/directory">Plumbing emergencies</a></h4>
+              <p>Shutoffs, damage control, and how to describe the issue when you call.</p>
+              <a class="pro-readmore" href="/directory">Read more →</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="pro-section" id="guide">
+      <div class="container">
+        <div class="pro-section-head">
+          <h2 class="pro-section-title">Pro guide</h2>
+          <a class="pro-link-all" href="/directory">All topics →</a>
+        </div>
+        <div class="pro-articles">
+          <article class="pro-article">
+            <div class="pro-article-thumb" aria-hidden="true"></div>
+            <div class="pro-article-body">
+              <h4><a href="/directory">Choosing the right category</a></h4>
+              <p>How we group trades so customers land on the right specialists.</p>
+              <a class="pro-readmore" href="/directory">Read more →</a>
+            </div>
+          </article>
+          <article class="pro-article">
+            <div class="pro-article-thumb" aria-hidden="true"></div>
+            <div class="pro-article-body">
+              <h4><a href="/directory">What belongs on your one-page site</a></h4>
+              <p>Headline, proof points, and a single strong call to action.</p>
+              <a class="pro-readmore" href="/directory">Read more →</a>
+            </div>
+          </article>
+          <article class="pro-article">
+            <div class="pro-article-thumb" aria-hidden="true"></div>
+            <div class="pro-article-body">
+              <h4><a href="/directory">Responding to leads quickly</a></h4>
+              <p>Templates and timing that improve conversion from directory inquiries.</p>
+              <a class="pro-readmore" href="/directory">Read more →</a>
+            </div>
+          </article>
+          <article class="pro-article">
+            <div class="pro-article-thumb" aria-hidden="true"></div>
+            <div class="pro-article-body">
+              <h4><a href="/directory">Photo and brand basics</a></h4>
+              <p>Keep your profile credible with consistent naming and contact details.</p>
+              <a class="pro-readmore" href="/directory">Read more →</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="pro-section" id="qa">
+      <div class="container">
+        <div class="pro-section-head">
+          <h2 class="pro-section-title">Questions &amp; answers</h2>
+          <a class="pro-link-all" href="/directory">More →</a>
+        </div>
+        <div class="pro-qa-list">
+          <div class="pro-qa-item">
+            <p class="pro-qa-q"><a href="/directory">How do I contact a business?</a></p>
+            <p class="pro-qa-a">Open the listing and use the phone, email, or lead form shown on their page.</p>
+            <div class="pro-qa-meta">Updated · <%= new Date().getFullYear() %></div>
+          </div>
+          <div class="pro-qa-item">
+            <p class="pro-qa-q"><a href="/admin/login">How can my company appear here?</a></p>
+            <p class="pro-qa-a">Professionals sign in to the partner area to create a category and subdomain profile.</p>
+            <div class="pro-qa-meta">For businesses</div>
+          </div>
+          <div class="pro-qa-item">
+            <p class="pro-qa-q"><a href="/directory">Is search available?</a></p>
+            <p class="pro-qa-a">Yes — use the search bar above or browse categories to narrow results.</p>
+            <div class="pro-qa-meta">Directory</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pro-section">
+      <div class="container">
+        <div class="card cta-card" style="text-align:center;max-width:640px;margin:0 auto;">
+          <h2 class="section-title" style="margin-top:0;">Your next professional is a search away</h2>
+          <p class="subtitle" style="margin-bottom:18px;">Browse the directory or list your business on GetPro.</p>
+          <div class="hero-actions" style="justify-content:center;">
+            <a class="btn btn-primary" href="/directory">Open directory</a>
+            <a class="btn" href="/admin/login">Partner login</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%- include('partials/site_footer') %>
+
+    <script src="/scripts.js"></script>
+  </body>
+</html>

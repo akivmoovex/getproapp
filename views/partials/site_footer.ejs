@@ -1,0 +1,47 @@
+<footer class="pro-footer" id="footer-terms">
+  <div class="container">
+    <div class="pro-footer-grid">
+      <div class="pro-footer-col">
+        <strong>GetPro</strong>
+        <p style="margin:0;line-height:1.55;color:rgba(255,255,255,0.75);">
+          Find vetted professionals and browse one-page business profiles in our directory.
+        </p>
+      </div>
+      <div class="pro-footer-col">
+        <strong>Directory</strong>
+        <ul>
+          <li><a href="/directory">All listings</a></li>
+          <li><a href="/admin/login">List your business</a></li>
+        </ul>
+      </div>
+      <div class="pro-footer-col">
+        <strong>Contact</strong>
+        <ul>
+          <% if (getproPhone) { %>
+            <li><a href="tel:<%= getproPhone %>"><%= getproPhone %></a></li>
+          <% } %>
+          <% if (getproEmail) { %>
+            <li><a href="mailto:<%= getproEmail %>"><%= getproEmail %></a></li>
+          <% } %>
+          <% if (getproAddress) { %>
+            <li><%= getproAddress %></li>
+          <% } %>
+          <% if (!getproPhone && !getproEmail && !getproAddress) { %>
+            <li style="color:rgba(255,255,255,0.55);">Configure contact details via environment variables.</li>
+          <% } %>
+        </ul>
+      </div>
+      <div class="pro-footer-col">
+        <strong>Quality &amp; oversight</strong>
+        <ul>
+          <li><a href="/directory">Browse by category</a></li>
+          <li><a href="/admin/login">Partner login</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="pro-footer-bottom">
+      <span>© <%= new Date().getFullYear() %> GetPro · getproapp.org</span>
+      <span><a href="#footer-terms">Terms of use</a> · <a href="#">Accessibility</a> · <a href="/directory">Site map</a></span>
+    </div>
+  </div>
+</footer>

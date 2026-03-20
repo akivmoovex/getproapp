@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Leads | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="container" style="padding: 22px 0;">
+      <div class="nav" style="padding-top:0;">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div style="font-weight:900;">Leads</div>
+        </div>
+        <div class="nav-links">
+          <a class="btn" href="/admin/dashboard">Dashboard</a>
+          <a class="btn" href="/admin/categories">Categories</a>
+          <a class="btn" href="/admin/companies">Companies</a>
+        </div>
+      </div>
+
+      <div class="section-title">Lead Requests</div>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <form method="get" action="/admin/leads" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="min-width: 260px;flex: 1;">
+            <label for="company_id">Filter by company</label>
+            <select id="company_id" name="company_id">
+              <option value="">All companies</option>
+              <% companies.forEach(function(c) { %>
+                <option value="<%= c.id %>" <%= selectedCompanyId && Number(selectedCompanyId) === c.id ? 'selected' : '' %>>
+                  <%= c.name %> (@<%= c.subdomain %>)
+                </option>
+              <% }) %>
+            </select>
+          </div>
+          <button class="btn btn-primary" type="submit">Apply</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Message</th>
+              <th>Status</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% leads.forEach(function(l) { %>
+              <tr>
+                <td>
+                  <div style="font-weight:900;"><%= l.company_name %></div>
+                  <div class="muted" style="font-size:12px;">@<%= l.company_subdomain %></div>
+                </td>
+                <td><%= l.name %></td>
+                <td><%= l.phone %></td>
+                <td><%= l.email %></td>
+                <td><%= l.message %></td>
+                <td class="muted"><%= l.status %></td>
+                <td class="muted"><%= l.created_at %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+

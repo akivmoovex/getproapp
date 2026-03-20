@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dashboard | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="container" style="padding: 22px 0;">
+      <div class="nav" style="padding-top:0;">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div style="display:flex;flex-direction:column;">
+            <div style="font-weight:900;">GetPro Admin</div>
+            <div class="muted" style="font-size:12px;">Manage directory & leads</div>
+          </div>
+        </div>
+        <div class="nav-links">
+          <a class="btn" href="/admin/categories">Categories</a>
+          <a class="btn" href="/admin/companies">Companies</a>
+          <a class="btn" href="/admin/leads">Leads</a>
+          <form method="post" action="/admin/logout">
+            <button class="btn" type="submit">Logout</button>
+          </form>
+        </div>
+      </div>
+
+      <div style="margin-top:22px;" class="grid-3">
+        <div class="card">
+          <div class="muted">Categories</div>
+          <div style="font-weight:900;font-size:26px;margin-top:6px;"><%= categoriesCount %></div>
+        </div>
+        <div class="card">
+          <div class="muted">Companies</div>
+          <div style="font-weight:900;font-size:26px;margin-top:6px;"><%= companiesCount %></div>
+        </div>
+        <div class="card">
+          <div class="muted">Leads</div>
+          <div style="font-weight:900;font-size:26px;margin-top:6px;"><%= leadsCount %></div>
+        </div>
+      </div>
+
+      <div class="section-title">Latest Leads</div>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Message</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% latestLeads.forEach(function(l) { %>
+              <tr>
+                <td>
+                  <div style="font-weight:800;"><%= l.company_name %></div>
+                  <div class="muted" style="font-size:12px;">@<%= l.company_subdomain %></div>
+                </td>
+                <td><%= l.name %></td>
+                <td><%= l.phone %></td>
+                <td><%= l.message %></td>
+                <td class="muted" style="font-size:12px;"><%= l.created_at %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+

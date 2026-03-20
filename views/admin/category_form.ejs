@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= category ? 'Edit' : 'New' %> Category | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="container" style="padding: 22px 0;">
+      <div class="nav" style="padding-top:0;">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div style="font-weight:900;"><%= category ? 'Edit Category' : 'New Category' %></div>
+        </div>
+        <div class="nav-links">
+          <a class="btn" href="/admin/categories">Back</a>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:14px;"></div>
+      <div class="card" style="max-width: 720px;">
+        <form
+          method="post"
+          action="<%= category ? '/admin/categories/' + category.id : '/admin/categories' %>"
+          class="form"
+        >
+          <div>
+            <label for="name">Category Name</label>
+            <input id="name" name="name" value="<%= category ? category.name : '' %>" required />
+          </div>
+          <div>
+            <label for="slug">Category Slug</label>
+            <input id="slug" name="slug" value="<%= category ? category.slug : '' %>" required />
+            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+              Example: `accounting`, `lawyers`, `electricians`.
+            </div>
+          </div>
+
+          <button class="btn btn-primary" type="submit">Save</button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
+

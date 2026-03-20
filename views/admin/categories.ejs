@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Categories | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="container" style="padding: 22px 0;">
+      <div class="nav" style="padding-top:0;">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div style="font-weight:900;">Categories</div>
+        </div>
+        <div class="nav-links">
+          <a class="btn" href="/admin/dashboard">Dashboard</a>
+          <a class="btn" href="/admin/companies">Companies</a>
+          <a class="btn btn-primary" href="/admin/categories/new">New Category</a>
+        </div>
+      </div>
+
+      <div class="section-title">All Categories</div>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Slug</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% categories.forEach(function(cat) { %>
+              <tr>
+                <td><%= cat.name %></td>
+                <td class="muted"><%= cat.slug %></td>
+                <td class="muted"><%= cat.created_at %></td>
+                <td>
+                  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <a class="btn" href="/admin/categories/<%= cat.id %>/edit">Edit</a>
+                    <form method="post" action="/admin/categories/<%= cat.id %>/delete" onsubmit="return confirm('Delete category? Companies will be uncategorized.');">
+                      <button class="btn" type="submit">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+

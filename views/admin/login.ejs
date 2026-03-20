@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Admin Login | GetPro</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="container" style="padding: 40px 0;">
+      <div class="card" style="max-width: 520px;margin: 0 auto;">
+        <div class="brand" style="justify-content:flex-start;margin-bottom:12px;">
+          <div class="logo" aria-hidden="true"></div>
+          <div style="font-weight:900;">GetPro Admin</div>
+        </div>
+
+        <div class="muted" style="line-height:1.6;margin-bottom:18px;">
+          Sign in to manage categories, company subdomains and lead requests.
+        </div>
+
+        <% if (error) { %>
+          <div class="flash"><%= error %></div>
+        <% } %>
+
+        <form method="post" action="/admin/login" class="form" style="margin-top:16px;">
+          <div>
+            <label for="username">Username</label>
+            <input id="username" name="username" autocomplete="username" required />
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required />
+          </div>
+          <button class="btn btn-primary" type="submit">Login</button>
+        </form>
+
+        <form method="post" action="/admin/logout" style="display:none;"></form>
+      </div>
+    </div>
+  </body>
+</html>
+

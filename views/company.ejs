@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= company.name %> | GetPro Directory</title>
+    <meta
+      name="description"
+      content="One-page company profile on GetPro. Get in touch and request services."
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260320b" />
+  </head>
+  <body>
+    <%- include('partials/site_header') %>
+
+    <div class="container" style="padding: 10px 0 30px;">
+      <div class="hero-grid">
+        <div>
+          <div class="pill-row">
+            <% if (category) { %>
+              <div class="pill"><%= category.name %></div>
+            <% } %>
+            <div class="pill">One-page website</div>
+          </div>
+
+          <h1 class="title" style="font-size:34px;margin-top:14px;"><%= company.headline || company.name %></h1>
+          <% if (company.about) { %>
+            <p class="subtitle" style="margin-top:0;"><%= company.about %></p>
+          <% } %>
+
+          <% if (company.services) { %>
+            <div class="section-title">Services</div>
+            <div class="list">
+              <% company.services.split("\n").filter(Boolean).forEach(function(s) { %>
+                <div class="card" style="padding:12px 14px;">
+                  <%= s %>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+
+          <div style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap;">
+            <% if (company.featured_cta_phone) { %>
+              <a class="btn btn-primary" href="tel:<%= company.featured_cta_phone %>"><%= company.featured_cta_label || "Call us" %></a>
+            <% } %>
+            <% if (company.email) { %>
+              <a class="btn" href="mailto:<%= company.email %>">Email</a>
+            <% } %>
+          </div>
+
+          <div class="section-title">Quick Lead Form</div>
+          <div class="card">
+            <form id="lead_form" class="form">
+              <input type="hidden" name="company_id" value="<%= company.id %>" />
+
+              <div>
+                <label for="lead_name">Full Name</label>
+                <input id="lead_name" name="name" required />
+              </div>
+              <div>
+                <label for="lead_phone">Phone</label>
+                <input id="lead_phone" name="phone" required />
+              </div>
+              <div>
+                <label for="lead_email">Email (optional)</label>
+                <input id="lead_email" name="email" type="email" />
+              </div>
+              <div>
+                <label for="lead_message">How can we help?</label>
+                <textarea id="lead_message" name="message" required></textarea>
+              </div>
+              <button class="btn btn-primary" type="submit">Request Contact</button>
+
+              <div id="lead_status" style="margin-top:10px;" class="muted"></div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:900;font-size:18px;margin-bottom:8px;">Contact Details</div>
+          <div class="list">
+            <div>
+              <div class="muted">Category</div>
+              <div style="font-weight:800;margin-top:6px;">
+                <%= category ? category.name : "Directory Listing" %>
+              </div>
+            </div>
+            <div>
+              <div class="muted">Phone</div>
+              <div style="font-weight:800;margin-top:6px;">
+                <% if (company.phone) { %>
+                  <a href="tel:<%= company.phone %>"><%= company.phone %></a>
+                <% } else { %>
+                  Not provided
+                <% } %>
+              </div>
+            </div>
+            <div>
+              <div class="muted">Email</div>
+              <div style="font-weight:800;margin-top:6px;">
+                <% if (company.email) { %>
+                  <a href="mailto:<%= company.email %>"><%= company.email %></a>
+                <% } else { %>
+                  Not provided
+                <% } %>
+              </div>
+            </div>
+            <% if (company.location) { %>
+              <div>
+                <div class="muted">Location</div>
+                <div style="font-weight:800;margin-top:6px;"><%= company.location %></div>
+              </div>
+            <% } %>
+          </div>
+
+          <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border);">
+            <div style="font-weight:900;margin-bottom:8px;">Need help fast?</div>
+            <div class="muted" style="line-height:1.6;">
+              GetPro support is available <strong>during business hours</strong> to help you use the directory and reach businesses.
+            </div>
+            <% if (getproPhone) { %>
+              <div style="margin-top:10px;font-weight:900;"><a href="tel:<%= getproPhone %>"><%= getproPhone %></a></div>
+            <% } %>
+            <% if (getproEmail) { %>
+              <div style="margin-top:8px;" class="muted">Email: <a href="mailto:<%= getproEmail %>"><%= getproEmail %></a></div>
+            <% } %>
+            <% if (getproAddress) { %>
+              <div style="margin-top:8px;" class="muted">Location: <%= getproAddress %></div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/site_footer') %>
+    <script src="/scripts.js"></script>
+  </body>
+</html>
+
