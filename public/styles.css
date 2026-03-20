@@ -1337,23 +1337,56 @@ textarea {
   position: relative;
   flex: 1 1 160px;
   min-width: 0;
-}
-
-.pro-ac-input {
-  width: 100%;
-  padding: 14px 16px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border-strong);
   background: var(--surface);
-  color: var(--text);
-  font-size: 15px;
   box-shadow: var(--card-shadow-sm);
 }
 
-.pro-ac-input:focus {
+.pro-ac:focus-within {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
   border-color: var(--wf-primary);
+}
+
+.pro-ac-input {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  box-shadow: none;
+}
+
+.pro-ac-input:focus {
+  outline: none;
+}
+
+.pro-ac-watermark {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  pointer-events: none;
+  font-size: 15px;
+  line-height: 1.25;
+  color: var(--muted);
+  opacity: 0.62;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.pro-ac-watermark--off {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .pro-ac-dropdown {
@@ -1430,7 +1463,8 @@ textarea {
   min-width: 0;
 }
 
-.pro-search--directory .pro-ac-input {
+.pro-search--directory .pro-ac-input,
+.pro-search--directory .pro-ac-watermark {
   font-size: 16px;
 }
 

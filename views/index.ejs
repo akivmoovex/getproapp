@@ -8,7 +8,7 @@
       name="description"
       content="GetPro connects you with professionals. Search the directory, browse categories, and contact businesses directly."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260320i" />
+    <link rel="stylesheet" href="/styles.css?v=20260320j" />
   </head>
   <body class="home-page wf-home-layout">
     <button
@@ -53,13 +53,13 @@
           <div class="pro-home-search-wrap">
             <form class="pro-home-dual-search" action="/directory" method="get" role="search" aria-label="Search by field and city">
               <div class="pro-home-search-fields">
-                <div class="pro-ac" data-ac-list="service">
+                <div class="pro-ac" data-ac-list="service" data-watermark-text="Electrician">
                   <label class="visually-hidden" for="home-search-q">Field</label>
                   <input
                     id="home-search-q"
                     class="pro-ac-input"
                     type="text"
-                    placeholder="Field: type 3+ letters, then pick"
+                    placeholder=""
                     autocomplete="off"
                     role="combobox"
                     aria-autocomplete="list"
@@ -70,13 +70,13 @@
                   <ul class="pro-ac-dropdown" id="home-search-q-dropdown" role="listbox" hidden></ul>
                   <p class="pro-ac-msg" hidden></p>
                 </div>
-                <div class="pro-ac" data-ac-list="city">
+                <div class="pro-ac" data-ac-list="city" data-watermark-text="Lusaka">
                   <label class="visually-hidden" for="home-search-city">City</label>
                   <input
                     id="home-search-city"
                     class="pro-ac-input"
                     type="text"
-                    placeholder="City: type 3+ letters, then pick"
+                    placeholder=""
                     autocomplete="off"
                     role="combobox"
                     aria-autocomplete="list"
@@ -348,7 +348,7 @@
 
     <%- include('partials/site_footer') %>
 
-    <script src="/scripts.js?v=20260320i"></script>
-    <script src="/autocomplete.js?v=20260320i"></script>
+    <script src="/scripts.js?v=20260320j"></script>
+    <script src="/autocomplete.js?v=20260320j"></script>
   </body>
 </html>

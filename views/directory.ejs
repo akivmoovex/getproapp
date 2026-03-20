@@ -4,20 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Directory | GetPro</title>
-    <link rel="stylesheet" href="/styles.css?v=20260320i" />
+    <link rel="stylesheet" href="/styles.css?v=20260320j" />
   </head>
   <body>
     <%- include('partials/site_header') %>
 
     <div class="container" style="padding: 20px 0 8px;">
       <form class="pro-search pro-search--directory" action="/directory" method="get" role="search" style="max-width:100%;margin-bottom:20px;">
-        <div class="pro-ac" data-ac-list="service">
+        <div class="pro-ac" data-ac-list="service" data-watermark-text="Electrician">
           <input
             id="dir-search-q"
             class="pro-ac-input"
             type="text"
             value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
-            placeholder="Field: type 3+ letters, then pick"
+            placeholder=""
             autocomplete="off"
             role="combobox"
             aria-autocomplete="list"
@@ -28,13 +28,13 @@
           <ul class="pro-ac-dropdown" id="dir-search-q-dropdown" role="listbox" hidden></ul>
           <p class="pro-ac-msg" hidden></p>
         </div>
-        <div class="pro-ac" data-ac-list="city">
+        <div class="pro-ac" data-ac-list="city" data-watermark-text="Lusaka">
           <input
             id="dir-search-city"
             class="pro-ac-input"
             type="text"
             value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>"
-            placeholder="City: type 3+ letters, then pick"
+            placeholder=""
             autocomplete="off"
             role="combobox"
             aria-autocomplete="list"
@@ -107,8 +107,8 @@
     </div>
 
     <%- include('partials/site_footer') %>
-    <script src="/scripts.js?v=20260320i"></script>
-    <script src="/autocomplete.js?v=20260320i"></script>
+    <script src="/scripts.js?v=20260320j"></script>
+    <script src="/autocomplete.js?v=20260320j"></script>
   </body>
 </html>
 

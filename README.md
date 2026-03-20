@@ -39,8 +39,12 @@ npm start
 Home and directory search use autocomplete lists in `public/data/search-lists.json` (professional services + Zambia places). Regenerate with:
 
 ```bash
-node scripts/build-search-lists.js
+npm run build-search-lists
 ```
+
+After editing that JSON, **restart the Node server** so directory search validation reloads the file.
+
+The animated “typing” hint in each field is controlled by `data-watermark-text` on the `.pro-ac` blocks in `views/index.ejs` and `views/directory.ejs` (demo words only; the real options are the full lists in `search-lists.json`).
 
 ## Environment
 
