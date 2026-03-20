@@ -1,55 +1,69 @@
 /**
- * GetProApp — Modern Violet Tech Palette
+ * Netraz — Modern Violet Tech Palette
  *
  * Philosophy:
  * - Violet is the brand signal (buttons, highlights)
  * - White & neutral backgrounds keep it clean and modern
  * - Dark text for readability and authority
- * - Optional cyan accent for micro-interactions
+ * - Optional cyan accent for micro-interactions (--accent-cyan)
  */
 
- :root {
+:root {
+  /* ——— Base (used across templates) ——— */
+  --color-white: #ffffff;
+  --color-black: #0d0d0d;
+
   /* ——— Neutrals ——— */
-  --bg: #F8F8FA; /* light main background */
-  --surface: #FFFFFF; /* card/panel surfaces */
-  --text-primary: #0D0D0D; /* main body text */
-  --text-muted: #5C5C6D; /* secondary text / subtitles */
-  --text-muted-soft: #7C7C8F; /* softer, optional */
-  --border: #E0E0E8; /* subtle dividers */
-  --border-strong: #CFCFE0; /* stronger structure if needed */
+  --bg: #f8f8fa;
+  --surface: #ffffff;
+  --text-primary: #0d0d0d;
+  --text-muted: #5c5c6d;
+  --text-muted-soft: #7c7c8f;
+  --border: #e0e0e8;
+  --border-strong: #cfcfe0;
   --topbar-bg: var(--bg);
 
+  /* App aliases (maps to Netraz tokens) */
+  --text: var(--text-primary);
+  --muted: var(--text-muted);
+  --muted-soft: var(--text-muted-soft);
+
   /* ——— Brand / Violet ——— */
-  --wf-primary: #7C3AED; /* main violet */
-  --wf-primary-dark: #5A1AB5; /* deeper violet for buttons, hover */
-  --wf-primary-light: #A78BFA; /* light violet / hover backgrounds */
-  --wf-primary-rgb: 124, 58, 237; /* for rgba tints */
+  --wf-primary: #7c3aed;
+  --wf-primary-dark: #5a1ab5;
+  --wf-primary-light: #a78bfa;
+  --wf-primary-rgb: 124, 58, 237;
 
   --wf-secondary: var(--wf-primary-dark);
-  --wf-secondary-hover: #45108F; /* hover states for secondary buttons */
-  --wf-secondary-deep: #2E0A64; /* deep violet accent for footers etc */
+  --wf-secondary-hover: #45108f;
+  --wf-secondary-deep: #2e0a64;
 
   --link: var(--wf-primary);
 
-  /* Optional micro-accent for interactions */
-  --accent-cyan: #22D3EE;
+  /* Legacy names (admin / older templates) */
+  --pro-orange: var(--wf-primary);
+  --pro-orange-hover: var(--wf-primary-dark);
+  --pro-dark: var(--wf-secondary-deep);
 
-  /* ——— UI Tints / Soft Backgrounds ——— */
+  --accent-cyan: #22d3ee;
+
+  /* ——— UI tints ——— */
   --primary-soft-bg: rgba(var(--wf-primary-rgb), 0.08);
   --primary-softer-bg: rgba(var(--wf-primary-rgb), 0.05);
   --focus-ring: rgba(var(--wf-primary-rgb), 0.32);
   --primary-border-hover: rgba(var(--wf-primary-rgb), 0.35);
+  --secondary-fill-ghost: var(--primary-softer-bg);
 
-  /* ——— Shadows / Depth ——— */
-  --shadow: 0 4px 12px rgba(0,0,0,0.08);
-  --card-shadow-sm: 0 2px 6px rgba(0,0,0,0.06);
-  --cta-card-shadow: 0 10px 30px rgba(0,0,0,0.08);
-  --footer-btn-shadow: 0 3px 14px rgba(0,0,0,0.18);
+  /* ——— Shadows ——— */
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --card-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.06);
+  --cta-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --footer-btn-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
 
-  /* ——— Buttons / CTAs ——— */
+  /* ——— Buttons ——— */
   --btn-primary-bg: var(--wf-primary);
   --btn-primary-hover: var(--wf-primary-dark);
-  --btn-primary-text: #FFFFFF;
+  --btn-primary-text: #ffffff;
 
   --btn-secondary-bg: transparent;
   --btn-secondary-border: var(--border-strong);
@@ -58,7 +72,7 @@
   --cta-gradient: var(--btn-primary-bg);
   --cta-gradient-hover: var(--btn-primary-hover);
 
-  /* ——— Hero / Highlights ——— */
+  /* ——— Hero / cards ——— */
   --hero-kicker-bg: var(--primary-softer-bg);
   --article-thumb-gradient: var(--primary-soft-bg);
 
@@ -66,15 +80,15 @@
   --footer-bg: var(--wf-primary-dark);
   --footer-cta-gradient: var(--footer-bg);
   --footer-main-gradient: var(--footer-bg);
-  --footer-on-dark: rgba(255,255,255,0.92);
-  --footer-on-dark-muted: rgba(255,255,255,0.72);
-  --footer-on-dark-faint: rgba(255,255,255,0.55);
-  --footer-on-dark-border: rgba(255,255,255,0.12);
-  --footer-cta-lead: rgba(255,255,255,0.88);
+  --footer-on-dark: rgba(255, 255, 255, 0.92);
+  --footer-on-dark-muted: rgba(255, 255, 255, 0.72);
+  --footer-on-dark-faint: rgba(255, 255, 255, 0.55);
+  --footer-on-dark-border: rgba(255, 255, 255, 0.12);
+  --footer-cta-lead: rgba(255, 255, 255, 0.88);
   --wf-footer-link-hover: var(--color-white);
 
-  /* ——— Forms / Errors ——— */
+  /* ——— Forms / errors ——— */
   --flash-error-border: rgba(180, 50, 50, 0.35);
   --flash-error-bg: rgba(180, 50, 50, 0.08);
-  --flash-error-text: #8B2525;
+  --flash-error-text: #8b2525;
 }

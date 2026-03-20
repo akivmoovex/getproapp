@@ -8,12 +8,29 @@
       name="description"
       content="GetPro connects you with professionals. Search the directory, browse categories, and contact businesses directly."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260320f" />
+    <link rel="stylesheet" href="/styles.css?v=20260320g" />
   </head>
   <body class="home-page wf-home-layout">
-    <div class="wf-home-shell">
-      <%- include('partials/home_sidebar') %>
+    <button
+      type="button"
+      class="wf-menu-toggle"
+      id="wf-menu-toggle"
+      aria-label="Open menu"
+      aria-expanded="false"
+      aria-controls="wf-home-sidebar"
+    >
+      <svg class="wf-menu-icon wf-menu-icon--hamburger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+      <svg class="wf-menu-icon wf-menu-icon--close" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true">
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
+      </svg>
+    </button>
+    <div class="wf-menu-backdrop" id="wf-menu-backdrop" hidden></div>
+    <%- include('partials/home_sidebar') %>
 
+    <div class="wf-home-shell">
       <div class="wf-home-main">
         <section class="pro-home-hero" aria-labelledby="pro-home-hero-heading">
           <div class="pro-home-hero-visual">
@@ -313,6 +330,6 @@
 
     <%- include('partials/site_footer') %>
 
-    <script src="/scripts.js"></script>
+    <script src="/scripts.js?v=20260320g"></script>
   </body>
 </html>
