@@ -34,7 +34,6 @@ function initHomeDrawerMenu() {
   const root = document.querySelector(".wf-home-layout");
   const sidebar = document.getElementById("wf-home-sidebar");
   const toggle = document.getElementById("wf-menu-toggle");
-  const closeBtn = document.getElementById("wf-menu-close");
   const backdrop = document.getElementById("wf-menu-backdrop");
   if (!root || !sidebar || !toggle || !backdrop) return;
 
@@ -58,7 +57,6 @@ function initHomeDrawerMenu() {
     if (root.classList.contains("wf-menu-drawer-open")) close();
     else open();
   });
-  closeBtn?.addEventListener("click", close);
   backdrop.addEventListener("click", close);
 
   sidebar.querySelectorAll("a").forEach((a) => {

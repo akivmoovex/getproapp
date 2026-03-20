@@ -1,7 +1,65 @@
-@import url("theme-colors.css");
-
-/* Layout / typography tokens (colours live in theme-colors.css) */
+/**
+ * Colours are inlined here (not @import) so the violet theme cannot be stuck behind
+ * a separately cached theme-colors.css file in the browser.
+ * Keep public/theme-colors.css in sync for reference / diff-friendly editing.
+ */
 :root {
+  --color-white: #ffffff;
+  --color-black: #0d0d0d;
+  --bg: #f8f8fa;
+  --surface: #ffffff;
+  --text-primary: #0d0d0d;
+  --text-muted: #5c5c6d;
+  --text-muted-soft: #7c7c8f;
+  --border: #e0e0e8;
+  --border-strong: #cfcfe0;
+  --topbar-bg: var(--bg);
+  --text: var(--text-primary);
+  --muted: var(--text-muted);
+  --muted-soft: var(--text-muted-soft);
+  --wf-primary: #7c3aed;
+  --wf-primary-dark: #5a1ab5;
+  --wf-primary-light: #a78bfa;
+  --wf-primary-rgb: 124, 58, 237;
+  --wf-secondary: var(--wf-primary-dark);
+  --wf-secondary-hover: #45108f;
+  --wf-secondary-deep: #2e0a64;
+  --link: var(--wf-primary);
+  --pro-orange: var(--wf-primary);
+  --pro-orange-hover: var(--wf-primary-dark);
+  --pro-dark: var(--wf-secondary-deep);
+  --accent-cyan: #22d3ee;
+  --primary-soft-bg: rgba(var(--wf-primary-rgb), 0.08);
+  --primary-softer-bg: rgba(var(--wf-primary-rgb), 0.05);
+  --focus-ring: rgba(var(--wf-primary-rgb), 0.32);
+  --primary-border-hover: rgba(var(--wf-primary-rgb), 0.35);
+  --secondary-fill-ghost: var(--primary-softer-bg);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --card-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.06);
+  --cta-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --footer-btn-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+  --btn-primary-bg: var(--wf-primary);
+  --btn-primary-hover: var(--wf-primary-dark);
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: transparent;
+  --btn-secondary-border: var(--border-strong);
+  --btn-secondary-hover: var(--primary-soft-bg);
+  --cta-gradient: var(--btn-primary-bg);
+  --cta-gradient-hover: var(--btn-primary-hover);
+  --hero-kicker-bg: var(--primary-softer-bg);
+  --article-thumb-gradient: var(--primary-soft-bg);
+  --footer-bg: var(--wf-primary-dark);
+  --footer-cta-gradient: var(--footer-bg);
+  --footer-main-gradient: var(--footer-bg);
+  --footer-on-dark: rgba(255, 255, 255, 0.92);
+  --footer-on-dark-muted: rgba(255, 255, 255, 0.72);
+  --footer-on-dark-faint: rgba(255, 255, 255, 0.55);
+  --footer-on-dark-border: rgba(255, 255, 255, 0.12);
+  --footer-cta-lead: rgba(255, 255, 255, 0.88);
+  --wf-footer-link-hover: var(--color-white);
+  --flash-error-border: rgba(180, 50, 50, 0.35);
+  --flash-error-bg: rgba(180, 50, 50, 0.08);
+  --flash-error-text: #8b2525;
   --radius: 12px;
   --radius-pill: 50px;
   --font-display: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
@@ -1097,14 +1155,6 @@ textarea {
   transform: translateX(0);
 }
 
-.wf-home-sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-
 .wf-home-sidebar-brand {
   display: flex;
   align-items: center;
@@ -1114,33 +1164,11 @@ textarea {
   font-weight: 800;
   font-size: 18px;
   letter-spacing: -0.02em;
-  min-width: 0;
 }
 
 .wf-home-sidebar-brand:hover {
   color: var(--wf-primary);
   text-decoration: none;
-}
-
-.wf-menu-close {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  border-radius: 10px;
-  background: var(--primary-softer-bg);
-  color: var(--wf-primary-dark);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.wf-menu-close:hover {
-  background: var(--primary-soft-bg);
-  color: var(--wf-primary);
 }
 
 .wf-home-sidebar-title {
