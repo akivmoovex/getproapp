@@ -186,15 +186,15 @@ a:hover {
   border-radius: var(--radius-pill);
   font-size: 15px;
   font-weight: 700;
-  border: 1px solid var(--wf-secondary);
+  border: 1px solid var(--wf-primary);
   background: var(--surface);
-  color: var(--wf-secondary);
+  color: var(--wf-primary-dark);
 }
 
 .btn-nav-outline:hover {
-  background: var(--secondary-fill-ghost);
-  color: var(--wf-secondary-deep);
-  border-color: var(--wf-secondary-deep);
+  background: var(--primary-softer-bg);
+  color: var(--wf-primary-dark);
+  border-color: var(--wf-primary-dark);
 }
 
 .btn-nav-primary {
@@ -203,13 +203,13 @@ a:hover {
   font-size: 15px;
   font-weight: 700;
   border: none;
-  background: var(--cta-gradient);
+  background: var(--btn-primary-bg);
   color: var(--color-white);
   box-shadow: var(--shadow);
 }
 
 .btn-nav-primary:hover {
-  background: var(--cta-gradient-hover);
+  background: var(--btn-primary-hover);
   color: var(--color-white);
 }
 
@@ -346,7 +346,7 @@ a:hover {
   padding: 14px 28px;
   border-radius: var(--radius-pill);
   border: none;
-  background: var(--cta-gradient);
+  background: var(--btn-primary-bg);
   color: var(--color-white);
   font-weight: 700;
   font-size: 16px;
@@ -355,7 +355,7 @@ a:hover {
 }
 
 .pro-search button:hover {
-  background: var(--cta-gradient-hover);
+  background: var(--btn-primary-hover);
 }
 
 /* ——— Section chrome ——— */
@@ -399,12 +399,12 @@ a:hover {
   font-weight: 600;
   font-size: 14px;
   white-space: nowrap;
-  color: var(--wf-secondary);
+  color: var(--wf-primary);
   text-decoration: none;
 }
 
 .pro-link-all:hover {
-  color: var(--wf-secondary-deep);
+  color: var(--wf-primary-dark);
   text-decoration: none;
 }
 
@@ -518,10 +518,11 @@ a:hover {
 }
 
 .pro-stars {
-  color: var(--wf-gold);
+  color: var(--wf-primary);
   font-weight: 800;
   font-size: 14px;
   margin-bottom: 8px;
+  letter-spacing: 0.04em;
 }
 
 .pro-review-meta {
@@ -637,7 +638,7 @@ a:hover {
   margin-top: 8px;
 }
 
-/* ——— Footer (Workfolio green CTA + terracotta link band) ——— */
+/* ——— Footer (single sage-dark band, CTA + links) ——— */
 .wf-footer {
   margin-top: 0;
 }
@@ -677,17 +678,17 @@ a:hover {
   border-radius: var(--radius-pill);
   font-size: 16px;
   font-weight: 700;
-  background: var(--wf-secondary-hover);
-  color: var(--color-white);
-  border: 1px solid var(--wf-secondary);
+  background: var(--color-white);
+  color: var(--wf-primary-dark);
+  border: 1px solid var(--color-white);
   text-decoration: none;
   box-shadow: var(--footer-btn-shadow);
 }
 
 .btn-footer-solid:hover {
-  background: var(--wf-secondary-deep);
-  border-color: var(--wf-secondary-deep);
-  color: var(--color-white);
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(255, 255, 255, 0.92);
+  color: var(--wf-primary-dark);
   text-decoration: none;
 }
 
@@ -696,6 +697,7 @@ a:hover {
   color: var(--footer-on-dark);
   padding: 48px 0 32px;
   font-size: 13px;
+  border-top: 1px solid var(--footer-on-dark-border);
 }
 
 .wf-footer-main .pro-footer-grid {
@@ -807,7 +809,7 @@ a:hover {
 }
 
 .btn-primary {
-  background: var(--cta-gradient);
+  background: var(--btn-primary-bg);
   border: none;
   color: var(--color-white);
   border-radius: var(--radius-pill);
@@ -816,7 +818,7 @@ a:hover {
 }
 
 .btn-primary:hover {
-  background: var(--cta-gradient-hover);
+  background: var(--btn-primary-hover);
   color: var(--color-white);
 }
 
@@ -824,15 +826,15 @@ a:hover {
   border-radius: var(--radius-pill);
   padding: 12px 24px;
   font-weight: 700;
-  border: 1px solid var(--wf-secondary);
+  border: 1px solid var(--wf-primary);
   background: var(--surface);
-  color: var(--wf-secondary);
+  color: var(--wf-primary-dark);
 }
 
 .btn-secondary-wf:hover {
-  background: var(--secondary-fill-ghost);
-  border-color: var(--wf-secondary-deep);
-  color: var(--wf-secondary-deep);
+  background: var(--primary-softer-bg);
+  border-color: var(--wf-primary-dark);
+  color: var(--wf-primary-dark);
 }
 
 .wf-cta-card {
