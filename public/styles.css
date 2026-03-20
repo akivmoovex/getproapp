@@ -1264,8 +1264,8 @@ textarea {
 .pro-home-hero-visual {
   position: relative;
   width: 100%;
-  min-height: min(52vw, 420px);
-  max-height: 520px;
+  min-height: min(62vw, 560px);
+  max-height: 680px;
   overflow: hidden;
   background: var(--wf-primary-dark);
 }
@@ -1273,9 +1273,9 @@ textarea {
 .pro-home-hero-photo {
   width: 100%;
   height: 100%;
-  min-height: 280px;
+  min-height: 320px;
   object-fit: cover;
-  object-position: center 35%;
+  object-position: 68% 35%;
   display: block;
 }
 
@@ -1291,27 +1291,35 @@ textarea {
   pointer-events: none;
 }
 
-.pro-home-hero-caption {
+.pro-home-hero-panel {
   position: absolute;
-  left: 0;
-  right: auto;
-  top: 0;
-  bottom: auto;
-  padding: clamp(20px, 4vw, 40px) clamp(18px, 4vw, 48px);
-  max-width: min(42ch, 92%);
+  left: clamp(16px, 3vw, 36px);
+  bottom: clamp(20px, 4vw, 44px);
+  z-index: 8;
+  width: min(920px, calc(100% - clamp(32px, 6vw, 72px)));
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(10px, 2vw, 16px);
+}
+
+.pro-home-hero-panel .pro-home-hero-caption {
+  position: static;
+  padding: 0;
+  max-width: min(40ch, 100%);
   pointer-events: none;
-  z-index: 6;
 }
 
 .pro-home-hero-tagline {
   margin: 0;
-  max-width: 22ch;
-  font-size: clamp(22px, 3.2vw, 34px);
+  max-width: none;
+  font-size: clamp(20px, 2.8vw, 30px);
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   color: var(--color-white);
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
 }
 
 .pro-home-search-wrap {
@@ -1321,14 +1329,8 @@ textarea {
 }
 
 .pro-home-search-wrap--hero {
-  position: absolute;
-  left: clamp(16px, 3vw, 36px);
-  bottom: clamp(20px, 4vw, 44px);
-  right: auto;
-  top: auto;
-  z-index: 8;
-  width: min(560px, calc(100% - clamp(32px, 6vw, 72px)));
-  max-width: 100%;
+  position: static;
+  width: 100%;
   margin: 0;
   padding: 16px 18px 18px;
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -1344,12 +1346,61 @@ textarea {
   line-height: 1.35;
 }
 
+.pro-home-search-wrap--hero .pro-home-dual-search {
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 10px;
+  max-width: none;
+}
+
+.pro-home-search-wrap--hero .pro-home-search-fields {
+  flex: 1 1 0;
+  min-width: 0;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
+.pro-home-search-wrap--hero .pro-ac {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.pro-home-search-wrap--hero .pro-home-search-submit {
+  flex: 0 0 auto;
+  align-self: stretch;
+  white-space: nowrap;
+}
+
+@media (max-width: 620px) {
+  .pro-home-search-wrap--hero .pro-home-dual-search {
+    flex-wrap: wrap;
+  }
+
+  .pro-home-search-wrap--hero .pro-home-search-fields {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+  }
+}
+
 @media (max-width: 520px) {
-  .pro-home-search-wrap--hero {
+  .pro-home-hero-panel {
     left: 12px;
     width: calc(100% - 24px);
     bottom: 16px;
+    gap: 10px;
+  }
+
+  .pro-home-search-wrap--hero {
     padding: 14px 14px 16px;
+  }
+
+  .pro-home-search-wrap--hero .pro-home-search-fields {
+    flex-wrap: wrap;
+  }
+
+  .pro-home-search-wrap--hero .pro-ac {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 140px;
   }
 }
 
