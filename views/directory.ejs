@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Directory | GetPro</title>
-    <link rel="stylesheet" href="/styles.css?v=20260320j" />
+    <link rel="stylesheet" href="/styles.css?v=20260320k" />
   </head>
   <body>
     <%- include('partials/site_header') %>
 
     <div class="container" style="padding: 20px 0 8px;">
       <form class="pro-search pro-search--directory" action="/directory" method="get" role="search" style="max-width:100%;margin-bottom:20px;">
-        <div class="pro-ac" data-ac-list="service" data-watermark-text="Electrician">
+        <div class="pro-ac" data-ac-list="service" data-watermark-text="Profession: Electrician">
           <input
             id="dir-search-q"
             class="pro-ac-input"
@@ -28,7 +28,7 @@
           <ul class="pro-ac-dropdown" id="dir-search-q-dropdown" role="listbox" hidden></ul>
           <p class="pro-ac-msg" hidden></p>
         </div>
-        <div class="pro-ac" data-ac-list="city" data-watermark-text="Lusaka">
+        <div class="pro-ac" data-ac-list="city" data-watermark-text="City: Lusaka">
           <input
             id="dir-search-city"
             class="pro-ac-input"
@@ -46,7 +46,7 @@
           <p class="pro-ac-msg" hidden></p>
         </div>
         <button type="submit" class="pro-search-dir-btn">
-          <span>Search professional</span>
+          <span>Search Professionals</span>
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
             <path d="m21 21-4.3-4.3" />
@@ -107,8 +107,8 @@
     </div>
 
     <%- include('partials/site_footer') %>
-    <script src="/scripts.js?v=20260320j"></script>
-    <script src="/autocomplete.js?v=20260320j"></script>
+    <script src="/scripts.js?v=20260320k"></script>
+    <script src="/autocomplete.js?v=20260320k"></script>
   </body>
 </html>
 

@@ -3,12 +3,11 @@
  * Values must match search-lists.json on submit.
  */
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260320j";
+  const LIST_URL = "/data/search-lists.json?v=20260320k";
 
   const TYPE_MS = 95;
   const PAUSE_END_MS = 1600;
   const PAUSE_RESTART_MS = 400;
-  const CITY_STAGGER_MS = 500;
 
   function norm(s) {
     return String(s || "")
@@ -254,11 +253,8 @@
 
   function resolveForm(form, lists) {
     const wraps = form.querySelectorAll(".pro-ac");
-    wraps.forEach((w, i) => {
-      const isCity = w.getAttribute("data-ac-list") === "city";
-      initAc(w, lists, {
-        startDelayMs: isCity ? CITY_STAGGER_MS : 0,
-      });
+    wraps.forEach((w) => {
+      initAc(w, lists, { startDelayMs: 0 });
     });
 
     form.addEventListener("submit", (e) => {

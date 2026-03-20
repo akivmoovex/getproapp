@@ -8,7 +8,7 @@
       name="description"
       content="GetPro connects you with professionals. Search the directory, browse categories, and contact businesses directly."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260320j" />
+    <link rel="stylesheet" href="/styles.css?v=20260320k" />
   </head>
   <body class="home-page wf-home-layout">
     <button
@@ -48,12 +48,11 @@
             <div class="pro-home-hero-caption">
               <p id="pro-home-hero-heading" class="pro-home-hero-tagline">Our recommended professionals</p>
             </div>
-          </div>
 
-          <div class="pro-home-search-wrap">
+            <div class="pro-home-search-wrap pro-home-search-wrap--hero">
             <form class="pro-home-dual-search" action="/directory" method="get" role="search" aria-label="Search by field and city">
               <div class="pro-home-search-fields">
-                <div class="pro-ac" data-ac-list="service" data-watermark-text="Electrician">
+                <div class="pro-ac" data-ac-list="service" data-watermark-text="Profession: Electrician">
                   <label class="visually-hidden" for="home-search-q">Field</label>
                   <input
                     id="home-search-q"
@@ -70,7 +69,7 @@
                   <ul class="pro-ac-dropdown" id="home-search-q-dropdown" role="listbox" hidden></ul>
                   <p class="pro-ac-msg" hidden></p>
                 </div>
-                <div class="pro-ac" data-ac-list="city" data-watermark-text="Lusaka">
+                <div class="pro-ac" data-ac-list="city" data-watermark-text="City: Lusaka">
                   <label class="visually-hidden" for="home-search-city">City</label>
                   <input
                     id="home-search-city"
@@ -89,13 +88,14 @@
                 </div>
               </div>
               <button class="pro-home-search-submit" type="submit">
-                <span class="pro-home-search-submit-text">Search professional</span>
+                <span class="pro-home-search-submit-text">Search Professionals</span>
                 <svg class="pro-home-search-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <circle cx="11" cy="11" r="7" />
                   <path d="m21 21-4.3-4.3" />
                 </svg>
               </button>
             </form>
+            </div>
           </div>
         </section>
 
@@ -348,7 +348,7 @@
 
     <%- include('partials/site_footer') %>
 
-    <script src="/scripts.js?v=20260320j"></script>
-    <script src="/autocomplete.js?v=20260320j"></script>
+    <script src="/scripts.js?v=20260320k"></script>
+    <script src="/autocomplete.js?v=20260320k"></script>
   </body>
 </html>

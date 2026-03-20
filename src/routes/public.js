@@ -2,13 +2,9 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 
-let searchListsCache;
 function loadSearchLists() {
-  if (!searchListsCache) {
-    const p = path.join(__dirname, "../../public/data/search-lists.json");
-    searchListsCache = JSON.parse(fs.readFileSync(p, "utf8"));
-  }
-  return searchListsCache;
+  const p = path.join(__dirname, "../../public/data/search-lists.json");
+  return JSON.parse(fs.readFileSync(p, "utf8"));
 }
 
 function isWhitelistedService(value) {

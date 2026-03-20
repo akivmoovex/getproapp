@@ -42,9 +42,9 @@ Home and directory search use autocomplete lists in `public/data/search-lists.js
 npm run build-search-lists
 ```
 
-After editing that JSON, **restart the Node server** so directory search validation reloads the file.
+The server reads `public/data/search-lists.json` **on every directory request** (no restart). After you change that file or run `npm run build-search-lists`, **hard refresh** the site or bump the `?v=` on `LIST_URL` in `public/autocomplete.js` so the browser loads the updated JSON for autocomplete.
 
-The animated “typing” hint in each field is controlled by `data-watermark-text` on the `.pro-ac` blocks in `views/index.ejs` and `views/directory.ejs` (demo words only; the real options are the full lists in `search-lists.json`).
+The animated “typing” hint is set with `data-watermark-text` on the `.pro-ac` blocks in `views/index.ejs` and `views/directory.ejs` (demo only; real options come from `search-lists.json`).
 
 ## Environment
 
