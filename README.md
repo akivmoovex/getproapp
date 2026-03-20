@@ -21,16 +21,25 @@ That error means the **native addon was built for another OS** (e.g. macOS/Windo
 
 ## Local development
 
+Create a `.env` file in the project root (this file is gitignored). Example:
+
 ```bash
-cp .env.example .env
-# set ADMIN_PASSWORD in .env
+# Required for first boot
+ADMIN_PASSWORD=your-secure-password
+
+# Recommended
+NODE_ENV=development
+SESSION_SECRET=use-a-long-random-string-in-production
+BASE_DOMAIN=
+
 npm install
 npm start
 ```
 
 ## Environment
 
-See `.env.example` for variables (admin, session, SQLite paths, domain).
+**Common variables:** `ADMIN_PASSWORD` (required), `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `SQLITE_PATH`, `SESSION_DIR`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, plus legacy `PRO_ONLINE_*` / `NETRA_*` if needed.
 
-Production: set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). Platform contact env vars: `GETPRO_EMAIL`, `GETPRO_ADDRESS` (legacy `PRO_ONLINE_*` / `NETRA_*` still work). If you used the old default database file, either rename `data/pronline.sqlite` to `data/getpro.sqlite` or set `SQLITE_PATH` to the old path.
-# getpro
+**Production:** set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). On hosts that don’t deploy `.env`, set the same keys in the panel’s environment variables.
+
+If you used the old default database file, either rename `data/pronline.sqlite` to `data/getpro.sqlite` or set `SQLITE_PATH` to the old path.
