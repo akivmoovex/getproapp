@@ -1,78 +1,92 @@
 /**
- * GetPro — simplified colour system (sage-led, minimal palette)
+ * getproapp — refined colour system (Sage + Steel)
  *
- * Few hues: one sage family + neutrals + error red only.
- * Edit hex values here; components use CSS variables only.
+ * Philosophy:
+ * - Sage = accent, not everywhere
+ * - Neutral gray = structure
+ * - Stronger contrast for modern, premium feel
  */
 
-:root {
-  /* ——— Neutrals (4 steps) ——— */
+ :root {
+  /* ——— Core Neutrals (modern, balanced) ——— */
   --color-white: #ffffff;
-  --color-black: #0d0f0e;
-  --bg: #f5f6f5;
+  --color-black: #0b0f0e;
+
+  --bg: #f3f4f6;
   --surface: #ffffff;
-  --text: #1a211f;
-  --muted: #5c6663;
-  --muted-soft: #6d7674;
-  --border: #e0e6e3;
-  /* Kept for compatibility; same as --border */
-  --border-strong: var(--border);
+
+  --text: #111827;
+  --muted: #6b7280;
+  --muted-soft: #7c848a;
+
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+
   --topbar-bg: var(--bg);
 
-  /* ——— Brand: sage only (2 steps + RGB for tints) ——— */
+  /* ——— Brand: Sage Accent (refined) ——— */
   --wf-primary: #5a9d8b;
-  --wf-primary-dark: #3a5c52;
+  --wf-primary-dark: #355f55;
   --wf-primary-rgb: 90, 157, 139;
 
-  /* ——— “Secondary” = darker sage (no second hue) ——— */
+  /* ——— Secondary (deeper sage for hierarchy) ——— */
   --wf-secondary: var(--wf-primary-dark);
-  --wf-secondary-hover: #314a42;
-  --wf-secondary-deep: #263a35;
+  --wf-secondary-hover: #2a4a43;
+  --wf-secondary-deep: #1f3833;
 
-  /* ——— Aliases (templates / legacy) ——— */
+  /* ——— Aliases (compatibility) ——— */
   --link: var(--wf-primary);
   --pro-orange: var(--wf-primary-dark);
   --pro-orange-hover: var(--wf-secondary-hover);
   --pro-dark: var(--wf-primary-dark);
 
-  /* ——— Tints (derived from primary, no extra hex) ——— */
-  --primary-soft-bg: rgba(var(--wf-primary-rgb), 0.1);
-  --primary-softer-bg: rgba(var(--wf-primary-rgb), 0.06);
-  --focus-ring: rgba(var(--wf-primary-rgb), 0.32);
-  --primary-border-hover: rgba(var(--wf-primary-rgb), 0.4);
+  /* ——— Subtle Tints (clean + modern) ——— */
+  --primary-soft-bg: rgba(var(--wf-primary-rgb), 0.08);
+  --primary-softer-bg: rgba(var(--wf-primary-rgb), 0.05);
 
-  /* ——— UI chrome ——— */
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --card-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.045);
-  --cta-card-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
-  --footer-btn-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  --focus-ring: rgba(var(--wf-primary-rgb), 0.28);
+  --primary-border-hover: rgba(var(--wf-primary-rgb), 0.35);
+
+  /* ——— UI Chrome (clean shadows) ——— */
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --card-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --cta-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --footer-btn-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
 
   --secondary-fill-ghost: var(--primary-softer-bg);
 
-  /* ——— Solid actions (no gradients) ——— */
+  /* ——— Buttons (stronger, clearer CTA) ——— */
   --btn-primary-bg: var(--wf-primary-dark);
   --btn-primary-hover: var(--wf-secondary-hover);
+
+  --btn-secondary-bg: transparent;
+  --btn-secondary-border: var(--border-strong);
+  --btn-secondary-hover: var(--primary-soft-bg);
+
+  /* ——— CTA (flat, no gradients) ——— */
   --cta-gradient: var(--btn-primary-bg);
   --cta-gradient-hover: var(--btn-primary-hover);
 
-  /* ——— Hero chip / placeholders (flat) ——— */
+  /* ——— Hero / UI accents ——— */
   --hero-kicker-bg: var(--primary-softer-bg);
-
   --article-thumb-gradient: var(--primary-soft-bg);
 
-  /* ——— Footer: single dark band (sage-charcoal) ——— */
-  --footer-bg: var(--wf-primary-dark);
+  /* ——— Footer (premium contrast layer) ——— */
+  --footer-bg: #111827;
+
   --footer-cta-gradient: var(--footer-bg);
   --footer-main-gradient: var(--footer-bg);
-  --footer-on-dark: rgba(255, 255, 255, 0.9);
+
+  --footer-on-dark: rgba(255, 255, 255, 0.92);
   --footer-on-dark-muted: rgba(255, 255, 255, 0.72);
-  --footer-on-dark-faint: rgba(255, 255, 255, 0.55);
+  --footer-on-dark-faint: rgba(255, 255, 255, 0.5);
   --footer-on-dark-border: rgba(255, 255, 255, 0.12);
+
   --footer-cta-lead: rgba(255, 255, 255, 0.88);
   --wf-footer-link-hover: var(--color-white);
 
-  /* ——— Forms / errors (only non-brand colour) ——— */
+  /* ——— Forms / Errors (only non-brand color) ——— */
   --flash-error-border: rgba(180, 50, 50, 0.35);
-  --flash-error-bg: rgba(180, 50, 50, 0.07);
+  --flash-error-bg: rgba(180, 50, 50, 0.08);
   --flash-error-text: #8b2525;
 }
