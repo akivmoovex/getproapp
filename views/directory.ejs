@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Directory | GetPro</title>
-    <link rel="stylesheet" href="/styles.css?v=20260320b" />
+    <link rel="stylesheet" href="/styles.css?v=20260320c" />
   </head>
   <body>
     <%- include('partials/site_header') %>
@@ -35,7 +35,7 @@
               <a
                 href="/directory?category=<%= cat.slug %>"
                 class="btn"
-                style="justify-content:flex-start;width:100%;<%= selectedCategory === cat.slug ? 'border-color:var(--pro-orange);background:rgba(232,90,27,0.08);' : '' %>"
+                style="justify-content:flex-start;width:100%;<%= selectedCategory === cat.slug ? 'border-color:var(--wf-primary);background:rgba(96,162,145,0.12);' : '' %>"
               >
                 <%= cat.name %>
               </a>
