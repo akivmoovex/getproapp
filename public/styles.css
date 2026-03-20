@@ -1333,9 +1333,14 @@ textarea {
   min-width: 0;
 }
 
-.pro-home-search-fields input {
+.pro-ac {
+  position: relative;
   flex: 1 1 160px;
   min-width: 0;
+}
+
+.pro-ac-input {
+  width: 100%;
   padding: 14px 16px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border-strong);
@@ -1345,10 +1350,47 @@ textarea {
   box-shadow: var(--card-shadow-sm);
 }
 
-.pro-home-search-fields input:focus {
+.pro-ac-input:focus {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
   border-color: var(--wf-primary);
+}
+
+.pro-ac-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 50;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  max-height: 240px;
+  overflow-y: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.pro-ac-option {
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.pro-ac-option:hover,
+.pro-ac-option.is-active {
+  background: var(--primary-softer-bg);
+  color: var(--wf-primary-dark);
+}
+
+.pro-ac-msg {
+  margin: 6px 0 0;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--flash-error-text);
 }
 
 .pro-home-search-submit {
@@ -1380,11 +1422,16 @@ textarea {
 .pro-search--directory {
   max-width: 100%;
   flex-wrap: wrap;
+  align-items: flex-start;
 }
 
-.pro-search--directory input[type="search"],
-.pro-search--directory input[type="text"] {
+.pro-search--directory .pro-ac {
   flex: 1 1 200px;
+  min-width: 0;
+}
+
+.pro-search--directory .pro-ac-input {
+  font-size: 16px;
 }
 
 .pro-search-dir-btn {

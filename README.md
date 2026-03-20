@@ -36,6 +36,12 @@ npm install
 npm start
 ```
 
+Home and directory search use autocomplete lists in `public/data/search-lists.json` (professional services + Zambia places). Regenerate with:
+
+```bash
+node scripts/build-search-lists.js
+```
+
 ## Environment
 
 **Common variables:** `ADMIN_PASSWORD` (required), `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `SQLITE_PATH`, `SESSION_DIR`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, plus legacy `PRO_ONLINE_*` / `NETRA_*` if needed.

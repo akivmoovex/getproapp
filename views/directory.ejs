@@ -4,15 +4,47 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Directory | GetPro</title>
-    <link rel="stylesheet" href="/styles.css?v=20260320h" />
+    <link rel="stylesheet" href="/styles.css?v=20260320i" />
   </head>
   <body>
     <%- include('partials/site_header') %>
 
     <div class="container" style="padding: 20px 0 8px;">
       <form class="pro-search pro-search--directory" action="/directory" method="get" role="search" style="max-width:100%;margin-bottom:20px;">
-        <input type="search" name="q" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Field: Electrician, Plumber…" />
-        <input type="search" name="city" value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>" placeholder="City: Lusaka, Kafue…" />
+        <div class="pro-ac" data-ac-list="service">
+          <input
+            id="dir-search-q"
+            class="pro-ac-input"
+            type="text"
+            value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+            placeholder="Field: type 3+ letters, then pick"
+            autocomplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded="false"
+            aria-controls="dir-search-q-dropdown"
+          />
+          <input type="hidden" class="pro-ac-hidden" name="q" id="dir-search-q-value" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" />
+          <ul class="pro-ac-dropdown" id="dir-search-q-dropdown" role="listbox" hidden></ul>
+          <p class="pro-ac-msg" hidden></p>
+        </div>
+        <div class="pro-ac" data-ac-list="city">
+          <input
+            id="dir-search-city"
+            class="pro-ac-input"
+            type="text"
+            value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>"
+            placeholder="City: type 3+ letters, then pick"
+            autocomplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded="false"
+            aria-controls="dir-search-city-dropdown"
+          />
+          <input type="hidden" class="pro-ac-hidden" name="city" id="dir-search-city-value" value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>" />
+          <ul class="pro-ac-dropdown" id="dir-search-city-dropdown" role="listbox" hidden></ul>
+          <p class="pro-ac-msg" hidden></p>
+        </div>
         <button type="submit" class="pro-search-dir-btn">
           <span>Search professional</span>
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -75,7 +107,8 @@
     </div>
 
     <%- include('partials/site_footer') %>
-    <script src="/scripts.js"></script>
+    <script src="/scripts.js?v=20260320i"></script>
+    <script src="/autocomplete.js?v=20260320i"></script>
   </body>
 </html>
 

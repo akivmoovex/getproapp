@@ -1,4 +1,27 @@
+const path = require("path");
+const fs = require("fs");
 const express = require("express");
+
+let searchListsCache;
+function loadSearchLists() {
+  if (!searchListsCache) {
+    const p = path.join(__dirname, "../../public/data/search-lists.json");
+    searchListsCache = JSON.parse(fs.readFileSync(p, "utf8"));
+  }
+  return searchListsCache;
+}
+
+function isWhitelistedService(value) {
+  if (!value) return true;
+  const v = String(value).trim().toLowerCase();
+  return loadSearchLists().services.some((s) => s.toLowerCase() === v);
+}
+
+function isWhitelistedCity(value) {
+  if (!value) return true;
+  const v = String(value).trim().toLowerCase();
+  return loadSearchLists().cities.some((c) => c.toLowerCase() === v);
+}
 
 function buildCompanyUrl({ baseDomain, subdomain }) {
   if (!baseDomain) return "#";
@@ -67,9 +90,11 @@ module.exports = function publicRoutes({ db }) {
 
     const selected = req.query.category ? String(req.query.category) : null;
     const searchRaw = req.query.q ? String(req.query.q).trim() : "";
-    const searchQ = searchRaw.replace(/[%_\\]/g, "");
     const cityRaw = req.query.city ? String(req.query.city).trim() : "";
-    const cityQ = cityRaw.replace(/[%_\\]/g, "");
+    const searchOk = !searchRaw || isWhitelistedService(searchRaw);
+    const cityOk = !cityRaw || isWhitelistedCity(cityRaw);
+    const searchQ = searchOk ? searchRaw.replace(/[%_\\]/g, "") : "";
+    const cityQ = cityOk ? cityRaw.replace(/[%_\\]/g, "") : "";
 
     let companies = [];
     if (selected) {
@@ -118,8 +143,8 @@ module.exports = function publicRoutes({ db }) {
     return res.render("directory", {
       categories,
       selectedCategory: selected,
-      searchQuery: searchRaw,
-      cityQuery: cityRaw,
+      searchQuery: searchOk ? searchRaw : "",
+      cityQuery: cityOk ? cityRaw : "",
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",
       buildCompanyUrl,
