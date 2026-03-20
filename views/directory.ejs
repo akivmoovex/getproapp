@@ -4,22 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Directory | GetPro</title>
-    <link rel="stylesheet" href="/styles.css?v=20260320e" />
+    <link rel="stylesheet" href="/styles.css?v=20260320f" />
   </head>
   <body>
     <%- include('partials/site_header') %>
 
     <div class="container" style="padding: 20px 0 8px;">
-      <form class="pro-search" action="/directory" method="get" role="search" style="max-width:100%;margin-bottom:20px;">
-        <input type="search" name="q" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Search professionals…" />
-        <button type="submit">Search</button>
+      <form class="pro-search pro-search--directory" action="/directory" method="get" role="search" style="max-width:100%;margin-bottom:20px;">
+        <input type="search" name="q" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Field: Electrician, Plumber…" />
+        <input type="search" name="city" value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>" placeholder="City: Lusaka, Kafue…" />
+        <button type="submit" class="pro-search-dir-btn">
+          <span>Search professional</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+        </button>
       </form>
       <div style="margin:0 0 18px;">
         <div class="section-title" style="margin-top:0;">
           <% if (selectedCategory) { %>
             Category: <%= selectedCategory %>
-          <% } else if (typeof searchQuery !== 'undefined' && searchQuery) { %>
-            Search: “<%= searchQuery %>”
+          <% } else if ((typeof searchQuery !== 'undefined' && searchQuery) || (typeof cityQuery !== 'undefined' && cityQuery)) { %>
+            Search
+            <% if (typeof searchQuery !== 'undefined' && searchQuery) { %>: “<%= searchQuery %>”<% } %>
+            <% if (typeof cityQuery !== 'undefined' && cityQuery) { %><% if (typeof searchQuery !== 'undefined' && searchQuery) { %> · <% } else { %>: <% } %>City: <%= cityQuery %><% } %>
           <% } else { %>
             Browse categories
           <% } %>

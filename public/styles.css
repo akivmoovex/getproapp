@@ -990,3 +990,342 @@ textarea {
 .home-page {
   background: var(--bg);
 }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ——— Home: left sidebar + main (pro.co.il–style IA) ——— */
+.wf-home-layout.home-page {
+  margin: 0;
+}
+
+.wf-home-shell {
+  display: flex;
+  align-items: stretch;
+  min-height: 100vh;
+}
+
+.wf-home-sidebar {
+  flex: 0 0 268px;
+  max-width: 100%;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 22px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wf-home-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.wf-home-sidebar-brand:hover {
+  color: var(--wf-primary);
+  text-decoration: none;
+}
+
+.wf-home-sidebar-title {
+  line-height: 1.2;
+}
+
+.wf-home-sidebar-tagline {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted-soft);
+  font-weight: 500;
+}
+
+.wf-home-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wf-home-sidebar-nav--secondary {
+  margin-top: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.wf-home-nav-btn {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 650;
+  text-align: left;
+  text-decoration: none;
+  color: var(--text);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.wf-home-nav-btn:hover {
+  border-color: var(--wf-primary);
+  color: var(--wf-primary-dark);
+  background: var(--primary-softer-bg);
+  text-decoration: none;
+}
+
+.wf-home-nav-btn--primary {
+  background: var(--btn-primary-bg);
+  color: var(--color-white);
+  border-color: var(--btn-primary-bg);
+}
+
+.wf-home-nav-btn--primary:hover {
+  background: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
+  color: var(--color-white);
+}
+
+.wf-home-nav-btn--ghost {
+  font-weight: 600;
+  border-color: transparent;
+  background: transparent;
+  padding-left: 10px;
+  color: var(--muted);
+}
+
+.wf-home-nav-btn--ghost:hover {
+  background: var(--primary-softer-bg);
+  border-color: transparent;
+}
+
+.wf-home-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hero image + overlay (full width of main column) */
+.pro-home-hero {
+  display: flex;
+  flex-direction: column;
+}
+
+.pro-home-hero-visual {
+  position: relative;
+  width: 100%;
+  min-height: min(52vw, 420px);
+  max-height: 520px;
+  overflow: hidden;
+  background: var(--wf-primary-dark);
+}
+
+.pro-home-hero-photo {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  object-fit: cover;
+  object-position: center 35%;
+  display: block;
+}
+
+.pro-home-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.25) 45%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  pointer-events: none;
+}
+
+.pro-home-hero-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: clamp(20px, 4vw, 40px) clamp(18px, 4vw, 48px);
+  pointer-events: none;
+}
+
+.pro-home-hero-tagline {
+  margin: 0;
+  max-width: 22ch;
+  font-size: clamp(22px, 3.2vw, 34px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--color-white);
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+}
+
+.pro-home-search-wrap {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 18px clamp(16px, 3vw, 32px) 22px;
+}
+
+.pro-home-dual-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 12px;
+  max-width: 920px;
+}
+
+.pro-home-search-fields {
+  flex: 1 1 280px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+}
+
+.pro-home-search-fields input {
+  flex: 1 1 160px;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  box-shadow: var(--card-shadow-sm);
+}
+
+.pro-home-search-fields input:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+  border-color: var(--wf-primary);
+}
+
+.pro-home-search-submit {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--btn-primary-bg);
+  color: var(--color-white);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.pro-home-search-submit:hover {
+  background: var(--btn-primary-hover);
+}
+
+.pro-home-search-icon {
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .wf-home-shell {
+    flex-direction: column;
+  }
+
+  .wf-home-sidebar {
+    flex: none;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px 16px;
+    padding: 16px;
+  }
+
+  .wf-home-sidebar-brand {
+    flex: 1 1 auto;
+    min-width: 140px;
+  }
+
+  .wf-home-sidebar-tagline {
+    flex: 1 1 100%;
+    margin: 0;
+    order: 3;
+  }
+
+  .wf-home-sidebar-nav {
+    flex: 1 1 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    order: 4;
+  }
+
+  .wf-home-sidebar-nav--secondary {
+    flex: 1 1 100%;
+    margin-top: 0;
+    padding-top: 12px;
+    order: 5;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .wf-home-nav-btn {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 120px;
+    text-align: center;
+  }
+
+  .wf-home-nav-btn--ghost {
+    flex: 1 1 45%;
+    min-width: 0;
+  }
+}
+
+/* Directory: dual field search row */
+.pro-search--directory {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.pro-search--directory input[type="search"],
+.pro-search--directory input[type="text"] {
+  flex: 1 1 200px;
+}
+
+.pro-search-dir-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: var(--btn-primary-bg);
+  color: var(--color-white);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.pro-search-dir-btn:hover {
+  background: var(--btn-primary-hover);
+}

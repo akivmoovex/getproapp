@@ -8,26 +8,61 @@
       name="description"
       content="GetPro connects you with professionals. Search the directory, browse categories, and contact businesses directly."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260320e" />
+    <link rel="stylesheet" href="/styles.css?v=20260320f" />
   </head>
-  <body class="home-page">
-    <%- include('partials/site_header') %>
+  <body class="home-page wf-home-layout">
+    <div class="wf-home-shell">
+      <%- include('partials/home_sidebar') %>
 
-    <section class="pro-hero">
-      <div class="container">
-        <div class="pro-hero-kicker-wrap">
-          <p class="pro-hero-kicker"><span>GetPro</span> · recommended professionals</p>
-        </div>
-        <h1 class="pro-hero-title">Your all-in-one directory for trusted professionals</h1>
-        <p class="pro-hero-lead">
-          A simple way to discover vetted listings — search by name or trade, browse categories, and contact businesses through one-page profiles.
-        </p>
-        <form class="pro-search" action="/directory" method="get" role="search" aria-label="Search professionals">
-          <input type="search" name="q" placeholder="Search for a professional…" autocomplete="off" />
-          <button type="submit">Search</button>
-        </form>
-      </div>
-    </section>
+      <div class="wf-home-main">
+        <section class="pro-home-hero" aria-labelledby="pro-home-hero-heading">
+          <div class="pro-home-hero-visual">
+            <!-- Service / trade professional — replace src with your own asset if preferred (pro.co.il–style hero). -->
+            <img
+              class="pro-home-hero-photo"
+              src="https://images.unsplash.com/photo-1621905251918-48416bd8575a?auto=format&amp;fit=crop&amp;w=1920&amp;q=80"
+              width="1920"
+              height="800"
+              alt="Professional providing a home service"
+              loading="eager"
+              decoding="async"
+            />
+            <div class="pro-home-hero-scrim" aria-hidden="true"></div>
+            <div class="pro-home-hero-caption">
+              <p id="pro-home-hero-heading" class="pro-home-hero-tagline">Our recommended professionals</p>
+            </div>
+          </div>
+
+          <div class="pro-home-search-wrap">
+            <form class="pro-home-dual-search" action="/directory" method="get" role="search" aria-label="Search by field and city">
+              <div class="pro-home-search-fields">
+                <label class="visually-hidden" for="home-search-q">Field</label>
+                <input
+                  id="home-search-q"
+                  type="search"
+                  name="q"
+                  placeholder="Field: Electrician, Plumber…"
+                  autocomplete="off"
+                />
+                <label class="visually-hidden" for="home-search-city">City</label>
+                <input
+                  id="home-search-city"
+                  type="search"
+                  name="city"
+                  placeholder="City: Lusaka, Kafue…"
+                  autocomplete="off"
+                />
+              </div>
+              <button class="pro-home-search-submit" type="submit">
+                <span class="pro-home-search-submit-text">Search professional</span>
+                <svg class="pro-home-search-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </button>
+            </form>
+          </div>
+        </section>
 
     <section class="wf-stats" aria-label="Highlights">
       <div class="container wf-stats-grid">
@@ -272,6 +307,9 @@
         </div>
       </div>
     </section>
+
+      </div>
+    </div>
 
     <%- include('partials/site_footer') %>
 

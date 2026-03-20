@@ -68,31 +68,49 @@ module.exports = function publicRoutes({ db }) {
     const selected = req.query.category ? String(req.query.category) : null;
     const searchRaw = req.query.q ? String(req.query.q).trim() : "";
     const searchQ = searchRaw.replace(/[%_\\]/g, "");
+    const cityRaw = req.query.city ? String(req.query.city).trim() : "";
+    const cityQ = cityRaw.replace(/[%_\\]/g, "");
 
     let companies = [];
     if (selected) {
-      companies = db
-        .prepare(
-          `
-          SELECT c.*
-          FROM companies c
-          INNER JOIN categories cat ON cat.id = c.category_id
-          WHERE cat.slug = ?
-          ORDER BY c.name ASC
-          `
-        )
-        .all(selected);
-    } else if (searchQ) {
+      let sql = `
+        SELECT c.*
+        FROM companies c
+        INNER JOIN categories cat ON cat.id = c.category_id
+        WHERE cat.slug = ?
+      `;
+      const params = [selected];
+      if (cityQ) {
+        sql += ` AND c.location LIKE ? COLLATE NOCASE`;
+        params.push(`%${cityQ}%`);
+      }
+      sql += ` ORDER BY c.name ASC`;
+      companies = db.prepare(sql).all(...params);
+    } else if (searchQ || cityQ) {
+      const parts = [];
+      const params = [];
+      if (searchQ) {
+        parts.push(
+          `(name LIKE ? COLLATE NOCASE OR headline LIKE ? COLLATE NOCASE OR about LIKE ? COLLATE NOCASE)`
+        );
+        const p = `%${searchQ}%`;
+        params.push(p, p, p);
+      }
+      if (cityQ) {
+        parts.push(`location LIKE ? COLLATE NOCASE`);
+        params.push(`%${cityQ}%`);
+      }
+      const where = parts.join(" AND ");
       companies = db
         .prepare(
           `
           SELECT * FROM companies
-          WHERE name LIKE ? COLLATE NOCASE OR headline LIKE ? COLLATE NOCASE OR about LIKE ? COLLATE NOCASE
+          WHERE ${where}
           ORDER BY name ASC
           LIMIT 48
           `
         )
-        .all(`%${searchQ}%`, `%${searchQ}%`, `%${searchQ}%`);
+        .all(...params);
     } else {
       companies = db.prepare("SELECT * FROM companies ORDER BY updated_at DESC LIMIT 24").all();
     }
@@ -101,6 +119,7 @@ module.exports = function publicRoutes({ db }) {
       categories,
       selectedCategory: selected,
       searchQuery: searchRaw,
+      cityQuery: cityRaw,
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",
       buildCompanyUrl,
