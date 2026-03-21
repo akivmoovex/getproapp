@@ -831,12 +831,12 @@ module.exports = function adminRoutes({ db }) {
       if (p && !isValidPhoneForTenant("zm", p)) {
         return res
           .status(400)
-          .send("Phone must be a valid Zambian number (10 digits starting with 0, or 3 digits for test).");
+          .send("Phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
       }
       if (fp && !isValidPhoneForTenant("zm", fp)) {
         return res
           .status(400)
-          .send("CTA phone must be a valid Zambian number (10 digits starting with 0, or 3 digits for test).");
+          .send("CTA phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
       }
     }
 
@@ -919,12 +919,12 @@ module.exports = function adminRoutes({ db }) {
       if (p && !isValidPhoneForTenant("zm", p)) {
         return res
           .status(400)
-          .send("Phone must be a valid Zambian number (10 digits starting with 0, or 3 digits for test).");
+          .send("Phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
       }
       if (fp && !isValidPhoneForTenant("zm", fp)) {
         return res
           .status(400)
-          .send("CTA phone must be a valid Zambian number (10 digits starting with 0, or 3 digits for test).");
+          .send("CTA phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
       }
     }
 

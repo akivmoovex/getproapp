@@ -17,43 +17,25 @@
     return (typeof window.__GETPRO_HOME__ === "string" && window.__GETPRO_HOME__) || "/";
   }
 
-  /** Zambia: 10 digits starting with 0 (local mobile); second digit 7 or 9. Three digits allowed for quick tests. */
+  /** Zambia: 0 followed by nine digits (10 digits total). */
   function isValidPhoneZm(raw) {
     const d = String(raw || "").replace(/\D/g, "");
-    if (d.length === 3) return true;
-    if (d.length !== 10) return false;
-    if (!d.startsWith("0")) return false;
-    return /^[79]/.test(d.charAt(1));
+    return d.length === 10 && /^0\d{9}$/.test(d);
   }
 
-  /** Israel: mobile without +972 — 9 digits starting 5, or 10 with leading 0 */
-  function isValidPhoneIl(raw) {
-    const d = String(raw || "").replace(/\D/g, "");
-    if (d.length === 9 && /^5[0-9]/.test(d)) return true;
-    if (d.length === 10 && d.startsWith("0") && d.charAt(1) === "5") return true;
-    return false;
-  }
-
+  /** Only Zambia enforces a phone pattern; other regions do not. */
   function isValidPhoneForTenant(raw) {
     const slug = tenantSlug();
-    if (!slug) {
-      const d = String(raw || "").replace(/\D/g, "");
-      return d.length >= 8;
-    }
     if (slug === "zm") return isValidPhoneZm(raw);
-    if (slug === "il") return isValidPhoneIl(raw);
-    const d = String(raw || "").replace(/\D/g, "");
-    return d.length >= 8;
+    return true;
   }
 
   function phoneErrorHint() {
     const slug = tenantSlug();
-    if (!slug) return "Enter a valid phone number.";
     if (slug === "zm") {
-      return "Enter a Zambian mobile with a leading 0 (10 digits, e.g. 0977123456). Use 3 digits only for quick tests.";
+      return "Enter a Zambian number: 0 followed by 9 digits (10 digits total, e.g. 0977123456).";
     }
-    if (slug === "il") return "Enter a valid Israeli mobile number (without +972).";
-    return "Invalid phone number.";
+    return "Enter a phone number.";
   }
 
   const wizardFrame = document.getElementById("join-wizard-frame");
@@ -329,6 +311,11 @@
       exitModalError.hidden = false;
       return;
     }
+    if (!phoneVal) {
+      exitModalError.textContent = "Enter a phone number.";
+      exitModalError.hidden = false;
+      return;
+    }
     if (!isValidPhoneForTenant(phoneVal)) {
       exitModalError.textContent = phoneErrorHint();
       exitModalError.hidden = false;
@@ -377,6 +364,11 @@
     const phoneVal = disabledCityPhone.value.trim();
     if (!isValidName(nameVal)) {
       disabledCityError.textContent = "Name must be at least 3 letters.";
+      disabledCityError.hidden = false;
+      return;
+    }
+    if (!phoneVal) {
+      disabledCityError.textContent = "Enter a phone number.";
       disabledCityError.hidden = false;
       return;
     }
@@ -495,6 +487,10 @@
 
     if (!isValidName(nameVal)) {
       showError(3, "Incorrect name.");
+      return;
+    }
+    if (!phoneVal) {
+      showError(3, "Enter a phone number.");
       return;
     }
     if (!isValidPhoneForTenant(phoneVal)) {

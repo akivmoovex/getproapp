@@ -93,7 +93,9 @@ npm install
 npm start
 ```
 
-**URLs:** The marketing site defaults to **`https://getproapp.org`** (apex). **Zambia** (ISO alpha-2 **`zm`**) uses **`https://zm.getproapp.org`**. **Israel** uses **`https://il.getproapp.org`**. The apex home shows a **Region** control (globe) to open those sites. Legacy paths **`/zm/…`** and **`/il/…`** redirect to **`zm.*`** and **`il.*`**. The old host **`zam.getproapp.org`** redirects to **`zm.getproapp.org`**. Configure **DNS** (and SSL) for `zm` and `il` (and wildcard `*.getproapp.org` if you use company subdomains).
+**URLs:** The marketing site defaults to **`https://getproapp.org`** (apex). **Zambia** (ISO alpha-2 **`zm`**) uses **`https://zm.getproapp.org`**. **Israel** uses **`https://il.getproapp.org`**. The apex home shows a **Region** control (globe) to open those sites — **unless** the visitor’s country is **Zambia** (see below). Legacy paths **`/zm/…`** and **`/il/…`** redirect to **`zm.*`** and **`il.*`**. The old host **`zam.getproapp.org`** redirects to **`zm.getproapp.org`**. Configure **DNS** (and SSL) for `zm` and `il` (and wildcard `*.getproapp.org` if you use company subdomains).
+
+**Apex + Zambia visitors:** If **`CF-IPCountry`** is **`ZM`** (Cloudflare passes this to the origin), the apex host serves the **Zambia** tenant home (same content as **`zm.{BASE_DOMAIN}`**), with links pointing at the regional host. For local testing without Cloudflare, set **`GETPRO_FORCE_CLIENT_COUNTRY=ZM`**. Other regions are unchanged; only **`zm`** enforces a national phone format (**0** + **9** digits).
 
 **Multi-tenant data:** Categories, companies, leads, and admin access are scoped by **`tenant_id`**. Super admin can **create, edit, and delete** regions (except **global**); a one-time boot migration may remove tenant rows that are not in the canonical slug list (see `docs/DATA_MODEL.md`).
 

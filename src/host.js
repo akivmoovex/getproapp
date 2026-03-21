@@ -44,4 +44,19 @@ function getSubdomain(req) {
   return sanitizeSubdomain(trimmed.split(".")[0]);
 }
 
-module.exports = { getSubdomain, resolveHostname };
+/**
+ * ISO 3166-1 alpha-2 country for the client. Cloudflare sets CF-IPCountry; optional GETPRO_FORCE_CLIENT_COUNTRY=ZM for tests.
+ */
+function getClientCountryCode(req) {
+  const env = String(process.env.GETPRO_FORCE_CLIENT_COUNTRY || "")
+    .trim()
+    .toUpperCase();
+  if (env.length === 2 && /^[A-Z]{2}$/.test(env)) return env;
+  const cf = String(req.get("cf-ipcountry") || "").trim().toUpperCase();
+  if (cf && cf !== "XX" && cf !== "T1") return cf;
+  const x = String(req.get("x-country-code") || "").trim().toUpperCase();
+  if (x.length >= 2) return x.slice(0, 2);
+  return "";
+}
+
+module.exports = { getSubdomain, resolveHostname, getClientCountryCode };

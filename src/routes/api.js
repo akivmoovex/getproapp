@@ -61,7 +61,7 @@ module.exports = function apiRoutes({ db }) {
 
     const tenantSlug = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(company.tenant_id);
     const phoneStr = String(phone || "").trim();
-    if (tenantSlug && phoneStr && !isValidPhoneForTenant(tenantSlug.slug, phoneStr)) {
+    if (tenantSlug && tenantSlug.slug === "zm" && phoneStr && !isValidPhoneForTenant("zm", phoneStr)) {
       return res.status(400).json({ error: "Invalid phone number for this region." });
     }
 
@@ -104,7 +104,7 @@ module.exports = function apiRoutes({ db }) {
     }
 
     const tenantSlugRow = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tenantId);
-    if (tenantSlugRow && !isValidPhoneForTenant(tenantSlugRow.slug, phone)) {
+    if (tenantSlugRow && tenantSlugRow.slug === "zm" && !isValidPhoneForTenant("zm", phone)) {
       return res.status(400).json({ error: "Invalid phone number for this region." });
     }
 
@@ -154,7 +154,7 @@ module.exports = function apiRoutes({ db }) {
       interestLabel = `City waitlist — ${cityName}`.slice(0, 120);
     }
     const tenantSlugCb = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tenantId);
-    if (tenantSlugCb && phone && !isValidPhoneForTenant(tenantSlugCb.slug, phone)) {
+    if (tenantSlugCb && tenantSlugCb.slug === "zm" && phone && !isValidPhoneForTenant("zm", phone)) {
       return res.status(400).json({ error: "Invalid phone number for this region." });
     }
     db.prepare(

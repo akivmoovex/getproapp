@@ -1,4 +1,4 @@
-const { resolveHostname } = require("./host");
+const { resolveHostname, getClientCountryCode } = require("./host");
 const { STAGES } = require("./tenantStages");
 
 /**
@@ -148,27 +148,16 @@ function attachTenant(slug, options = {}) {
   };
 }
 
-/** Zambian mobile in local format: leading 0, then 9 digits (10 total); mobile second digit 7 or 9. */
+/** Zambian national format: leading 0 plus nine digits (10 digits total). */
 function isValidZambiaPhoneLocal(raw) {
   const d = String(raw || "").replace(/\D/g, "");
-  if (d.length === 3) return true; // short test numbers
-  if (d.length !== 10) return false;
-  if (!d.startsWith("0")) return false;
-  return /^[79]/.test(d.charAt(1));
+  return d.length === 10 && /^0\d{9}$/.test(d);
 }
 
-function isValidIsraelPhoneLocal(raw) {
-  const d = String(raw || "").replace(/\D/g, "");
-  if (d.length === 9 && /^5[0-9]/.test(d)) return true;
-  if (d.length === 10 && d.startsWith("0") && /^05[0-9]/.test(d)) return true;
-  return false;
-}
-
+/** Only Zambia (`zm`) enforces a phone pattern; all other tenants accept any non-empty string the UI sends. */
 function isValidPhoneForTenant(tenantSlug, raw) {
   if (tenantSlug === "zm") return isValidZambiaPhoneLocal(raw);
-  if (tenantSlug === "il") return isValidIsraelPhoneLocal(raw);
-  const d = String(raw || "").replace(/\D/g, "");
-  return d.length >= 8;
+  return true;
 }
 
 function createAttachTenantByHost(db) {
@@ -187,28 +176,43 @@ function createAttachTenantByHost(db) {
 
     function setApexTenant() {
       const globalRow = db.prepare("SELECT stage FROM tenants WHERE slug = ?").get("global");
+      const zmRow = db.prepare("SELECT stage FROM tenants WHERE slug = ?").get("zm");
+      const country = getClientCountryCode(req);
+
       let slug = DEFAULT_TENANT_SLUG;
-      if (globalRow && globalRow.stage === STAGES.ENABLED) {
+      let zambiaGeoHome = false;
+
+      if (country === "ZM" && zmRow && zmRow.stage === STAGES.ENABLED) {
+        slug = "zm";
+        zambiaGeoHome = true;
+      } else if (globalRow && globalRow.stage === STAGES.ENABLED) {
         slug = "global";
+      } else if (!zmRow || zmRow.stage !== STAGES.ENABLED) {
+        const first = db
+          .prepare(
+            "SELECT slug FROM tenants WHERE stage = ? AND slug != 'global' ORDER BY id ASC LIMIT 1"
+          )
+          .get(STAGES.ENABLED);
+        if (first && first.slug) slug = first.slug;
       } else {
-        const zmRow = db.prepare("SELECT stage FROM tenants WHERE slug = ?").get("zm");
-        if (!zmRow || zmRow.stage !== STAGES.ENABLED) {
-          const first = db
-            .prepare(
-              "SELECT slug FROM tenants WHERE stage = ? AND slug != 'global' ORDER BY id ASC LIMIT 1"
-            )
-            .get(STAGES.ENABLED);
-          if (first && first.slug) slug = first.slug;
-        }
+        slug = "zm";
       }
+
       const t = getTenantRowMerged(slug, db);
       req.tenant = t;
       req.tenantSlug = t.slug;
-      req.tenantUrlPrefix = "";
-      req.isApexHost = true;
+
+      if (zambiaGeoHome) {
+        req.tenantUrlPrefix = base ? `${scheme}://zm.${base}` : "";
+        req.isApexHost = false;
+      } else {
+        req.tenantUrlPrefix = "";
+        req.isApexHost = true;
+      }
+
       res.locals.tenant = t;
-      res.locals.tenantUrlPrefix = "";
-      res.locals.isApexHost = true;
+      res.locals.tenantUrlPrefix = req.tenantUrlPrefix;
+      res.locals.isApexHost = req.isApexHost;
     }
 
     if (!base || isLocal) {
@@ -253,6 +257,5 @@ module.exports = {
   attachTenant,
   createAttachTenantByHost,
   isValidZambiaPhoneLocal,
-  isValidIsraelPhoneLocal,
   isValidPhoneForTenant,
 };
