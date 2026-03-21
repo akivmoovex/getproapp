@@ -1071,7 +1071,7 @@ textarea {
   position: fixed;
   top: max(14px, env(safe-area-inset-top, 0px));
   left: max(14px, env(safe-area-inset-left, 0px));
-  z-index: 304;
+  z-index: 10001;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -1098,40 +1098,44 @@ textarea {
   line-height: 1.2;
 }
 
-/* Home: Join us + hamburger — top-right */
+/* Home: Join us + hamburger — top-right (above hero + overlays) */
 .home-page .wf-home-topbar-actions {
   position: fixed;
   top: max(14px, env(safe-area-inset-top, 0px));
   right: max(14px, env(safe-area-inset-right, 0px));
-  z-index: 304;
+  z-index: 10001;
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
+  pointer-events: auto;
 }
 
 .home-page .wf-home-join-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   min-height: 48px;
-  padding: 0 16px;
+  padding: 0 18px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  background: rgba(12, 12, 18, 0.55);
-  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text) !important;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-decoration: none;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 
 .home-page .wf-home-join-btn:hover {
-  background: rgba(12, 12, 18, 0.9);
-  border-color: rgba(255, 255, 255, 0.55);
-  color: #fff;
+  background: var(--btn-primary-hover);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: var(--btn-primary-text) !important;
   text-decoration: none;
 }
 
@@ -1146,6 +1150,7 @@ textarea {
   top: auto;
   right: auto;
   left: auto;
+  flex-shrink: 0;
 }
 
 .wf-menu-toggle {
@@ -1925,11 +1930,12 @@ textarea {
   color: var(--flash-error-text);
 }
 
-.join-step-thanks .join-step-thanks-lead {
-  margin-top: 8px;
-  font-size: clamp(18px, 2.2vw, 22px);
-  font-weight: 600;
-  line-height: 1.45;
+.join-step-thanks-message {
+  margin: 0;
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
   color: var(--text);
 }
 

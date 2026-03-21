@@ -1,5 +1,5 @@
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260320p";
+  const LIST_URL = "/data/search-lists.json?v=20260321a";
 
   const hero = document.getElementById("join-hero");
   const wizard = document.getElementById("join-wizard");
@@ -216,6 +216,7 @@
         throw new Error(data.error || `Request failed (${resp.status})`);
       }
 
+      showStep(3);
       if (step3Form) step3Form.hidden = true;
       if (step3Thanks) step3Thanks.hidden = false;
     } catch (err) {
