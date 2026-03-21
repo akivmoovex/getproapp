@@ -2,6 +2,20 @@
 
 Node + Express directory app using SQLite via `better-sqlite3`.
 
+## Git / CI deployment (Hostinger Node.js, etc.)
+
+This app is **Express**: it starts with `node server.js` from the **repository root**. There is **no** framework bundle folder (no `dist/`, `.next`, or `out/` from a static export).
+
+| Panel field | What to use |
+|-------------|-------------|
+| **Root / App directory** | Repo root (often `.` or left blank) |
+| **Install** | `npm ci` or `npm install` |
+| **Build** | `npm run build` — in this repo that runs `build-search-lists` only. If your host runs install separately, a build-only step of `npm run build` is enough. |
+| **Output / Publish directory** | **Leave empty**, **none**, **`.`**, or the option your UI labels **null / no output** for backend-only apps. **Do not** set `dist`, `build`, `out`, or `.next` — those paths do not exist here and will break deploy. |
+| **Start** | `npm start` |
+
+Some UIs fail when **Output directory** points at a missing folder or when they expect a SPA build. For a **server-only** Node app, the fix is usually to **clear** that field or set output to **null / none / root** per the provider’s Express template — not a static export path.
+
 ## Hostinger: `zm.getproapp.org` / `il.getproapp.org` show “You’re all set to go”
 
 That page is **not** from this Node app. DNS is working, but the subdomain is still bound to a **default static vhost** (empty `public_html/zm`, etc.) instead of your **Node.js** process.

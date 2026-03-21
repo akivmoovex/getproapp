@@ -10,6 +10,7 @@
     "dev": "nodemon --watch \"server.js\" --exec \"node server.js\"",
     "seed": "node scripts/seed.js",
     "build-search-lists": "node scripts/build-search-lists.js",
+    "build": "npm run build-search-lists",
     "rebuild-sqlite": "npm rebuild better-sqlite3"
   },
   "keywords": [],
