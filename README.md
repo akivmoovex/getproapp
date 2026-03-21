@@ -18,7 +18,14 @@ That page is **not** from this Node app. DNS is working, but the subdomain is st
 
 **Required env (production):** `BASE_DOMAIN=getproapp.org` (no `https://`), `PUBLIC_SCHEME=https`, `NODE_ENV=production`. Issue **SSL** for `zm` and `il` hostnames.
 
-**Quick check:** set `DEBUG_HOST=1` in the panel, redeploy, open `https://zm.getproapp.org/api/debug/host`. You should see JSON with `"subdomain":"zm"`. If you still get the placeholder HTML, Node is not serving that host yet.
+**Quick check:** set `DEBUG_HOST=1` in the panel, redeploy, then open:
+
+- `https://zm.getproapp.org/healthz` — with `DEBUG_HOST=1`, JSON includes `resolvedHost` (expect `zm.getproapp.org`) and `baseDomain`; without it you only get `{ "ok": true }`.
+- `https://zm.getproapp.org/api/debug/host` — should show `"subdomain":"zm"` and matching `resolvedHost`.
+
+If you still get **Hostinger’s HTML** (not JSON), the request **never reaches Node** — fix the panel (same Node app for `zm` / `il`) or remove the extra “subdomain website” that only serves static files.
+
+If you get **JSON** but `resolvedHost` is wrong (e.g. `127.0.0.1` or an internal name), the reverse proxy is not forwarding the public hostname. This app defaults to **`trust proxy` (hop count 1)** so `X-Forwarded-Host` is honored when the proxy sets it. Do **not** set `TRUST_PROXY=0` behind Hostinger unless you know you need it.
 
 **Israel “coming soon” only:** set `ISRAEL_COMING_SOON=true` to show the static coming-soon page on `il.*` and block Israel-only API paths. Omit it (default) for the same directory/join experience as Zambia (separate `tenant_id` data).
 
@@ -74,6 +81,6 @@ The animated “typing” hint is set with `data-watermark-text` on the `.pro-ac
 
 **Common variables:** `ADMIN_PASSWORD` (required), `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `SQLITE_PATH`, `SESSION_DIR`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, plus legacy `PRO_ONLINE_*` / `NETRA_*` if needed.
 
-**Production:** set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). Optional: `DEBUG_HOST=1` temporarily for `/api/debug/host`; `ISRAEL_COMING_SOON=true` to lock Israel to coming-soon. On hosts that don’t deploy `.env`, set the same keys in the panel’s environment variables.
+**Production:** set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). Optional: `DEBUG_HOST=1` temporarily for `/healthz` and `/api/debug/host`; `ISRAEL_COMING_SOON=true` to lock Israel to coming-soon; `TRUST_PROXY=0` only if Node is exposed directly without a reverse proxy (Hostinger usually needs the default trust proxy). On hosts that don’t deploy `.env`, set the same keys in the panel’s environment variables.
 
 If you used the old default database file, either rename `data/pronline.sqlite` to `data/getpro.sqlite` or set `SQLITE_PATH` to the old path.

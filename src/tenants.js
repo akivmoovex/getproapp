@@ -1,3 +1,5 @@
+const { resolveHostname } = require("./host");
+
 /**
  * Host-based tenants: apex + zm.* = Zambia (ISO alpha-2), il.* = Israel.
  * Legacy zam.* redirects to zm.* (canonical Zambia host).
@@ -86,7 +88,7 @@ function attachTenantByHost(req, res, next) {
 
   const scheme = process.env.PUBLIC_SCHEME || "https";
   const base = (process.env.BASE_DOMAIN || "").toLowerCase().trim();
-  const host = (req.hostname || "").toLowerCase();
+  const host = resolveHostname(req);
 
   req.regionZmUrl = base ? `${scheme}://zm.${base}` : "";
   req.regionIlUrl = base ? `${scheme}://il.${base}` : "";
@@ -121,7 +123,7 @@ function attachTenantByHost(req, res, next) {
     return next();
   }
 
-  if (sub === "zm") {
+  if (sub === "zm" || (base && host === `zm.${base}`)) {
     const t = getTenantBySlug(DEFAULT_TENANT_SLUG);
     req.tenant = t;
     req.tenantSlug = t.slug;
@@ -133,7 +135,7 @@ function attachTenantByHost(req, res, next) {
     return next();
   }
 
-  if (sub === "il") {
+  if (sub === "il" || (base && host === `il.${base}`)) {
     const t = getTenantBySlug("il");
     req.tenant = t;
     req.tenantSlug = t.slug;

@@ -19,7 +19,7 @@ console.log(
 );
 
 const { ensureAdminUser } = require("./src/auth");
-const { getSubdomain } = require("./src/host");
+const { getSubdomain, resolveHostname } = require("./src/host");
 
 let db;
 try {
@@ -43,7 +43,13 @@ const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 const host = process.env.HOST || "0.0.0.0";
 
 app.disable("x-powered-by");
-if (process.env.NODE_ENV === "production") {
+// Behind Hostinger / nginx the real browser host is often in X-Forwarded-Host; trust proxy must be on.
+if (process.env.TRUST_PROXY === "0" || process.env.TRUST_PROXY === "false") {
+  app.set("trust proxy", false);
+} else if (process.env.TRUST_PROXY) {
+  const n = Number(process.env.TRUST_PROXY);
+  app.set("trust proxy", Number.isFinite(n) && n >= 0 ? n : 1);
+} else {
   app.set("trust proxy", 1);
 }
 app.use(helmet());
@@ -124,8 +130,19 @@ app.use((req, res, next) => {
 app.use("/api", apiRoutes({ db }));
 app.use("/admin", adminRoutes({ db }));
 
-// Healthcheck
-app.get("/healthz", (_req, res) => res.json({ ok: true }));
+// Healthcheck (with DEBUG_HOST=1, see also /api/debug/host)
+app.get("/healthz", (req, res) => {
+  if (process.env.DEBUG_HOST === "1") {
+    return res.json({
+      ok: true,
+      resolvedHost: resolveHostname(req),
+      xForwardedHost: req.headers["x-forwarded-host"] || null,
+      hostHeader: req.headers.host || null,
+      baseDomain: (process.env.BASE_DOMAIN || "").trim() || null,
+    });
+  }
+  return res.json({ ok: true });
+});
 
 // Company subdomains: only GET / serves a page; other paths 404
 app.use((req, res, next) => {

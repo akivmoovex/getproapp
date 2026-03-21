@@ -1,4 +1,5 @@
 const express = require("express");
+const { resolveHostname } = require("../host");
 const { israelComingSoonEnabled } = require("../israelComingSoon");
 
 function resolveTenantId(db, body) {
@@ -84,10 +85,13 @@ module.exports = function apiRoutes({ db }) {
   if (process.env.DEBUG_HOST === "1") {
     router.get("/debug/host", (req, res) => {
       res.json({
-        host: req.get("host"),
+        resolvedHost: resolveHostname(req),
+        hostHeader: req.get("host"),
+        xForwardedHost: req.headers["x-forwarded-host"] || null,
         hostname: req.hostname,
         subdomain: req.subdomain != null ? req.subdomain : null,
-        baseDomain: process.env.BASE_DOMAIN || null,
+        baseDomain: (process.env.BASE_DOMAIN || "").trim() || null,
+        trustProxy: req.app && req.app.get("trust proxy"),
       });
     });
   }
