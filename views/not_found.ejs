@@ -1,29 +1,29 @@
+<% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '/zm'; %>
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Not Found | GetPro</title>
-    <link rel="stylesheet" href="/styles.css?v=20260320k" />
+    <link rel="stylesheet" href="/styles.css?v=20260325a" />
   </head>
   <body>
-    <%- include('partials/site_header') %>
+    <%- include('partials/site_header', { tenantUrlPrefix: tp }) %>
     <div class="container" style="padding: 28px 0;">
       <div class="card">
         <div style="font-weight:900;font-size:20px;">Page not found</div>
         <div class="muted" style="margin-top:8px;line-height:1.6;">
-          <% if (subdomain) { %>
+          <% if (typeof subdomain !== 'undefined' && subdomain) { %>
             No company page exists for <span class="kbd"><%= subdomain %></span>.
-          <% } else if (slug) { %>
+          <% } else if (typeof slug !== 'undefined' && slug) { %>
             The <span class="kbd"><%= slug %></span> category does not exist.
           <% } %>
         </div>
         <div style="margin-top:14px;">
-          <a class="btn btn-primary" href="/">Go to homepage</a>
+          <a class="btn btn-primary" href="<%= tp %>/">Go to homepage</a>
         </div>
       </div>
     </div>
-    <%- include('partials/site_footer') %>
+    <%- include('partials/site_footer', { tenantUrlPrefix: tp }) %>
   </body>
 </html>
-

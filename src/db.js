@@ -79,14 +79,49 @@ db.exec(`
     phone TEXT NOT NULL DEFAULT '',
     name TEXT NOT NULL DEFAULT '',
     context TEXT NOT NULL DEFAULT '',
+    tenant_id INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS tenants (
+    id INTEGER PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
 
+db.exec(`
+  INSERT OR IGNORE INTO tenants (id, slug, name) VALUES
+    (1, 'zm', 'Zambia'),
+    (2, 'il', 'Israel');
+`);
+
 try {
-  const cols = db.prepare("PRAGMA table_info(callback_interests)").all();
-  if (!cols.some((c) => c.name === "name")) {
+  const colsCb = db.prepare("PRAGMA table_info(callback_interests)").all();
+  if (!colsCb.some((c) => c.name === "name")) {
     db.exec("ALTER TABLE callback_interests ADD COLUMN name TEXT NOT NULL DEFAULT ''");
+  }
+  if (!colsCb.some((c) => c.name === "tenant_id")) {
+    db.exec("ALTER TABLE callback_interests ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1");
+  }
+} catch (_) {
+  /* ignore */
+}
+
+try {
+  const colsCo = db.prepare("PRAGMA table_info(companies)").all();
+  if (!colsCo.some((c) => c.name === "tenant_id")) {
+    db.exec("ALTER TABLE companies ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1");
+  }
+} catch (_) {
+  /* ignore */
+}
+
+try {
+  const colsPs = db.prepare("PRAGMA table_info(professional_signups)").all();
+  if (!colsPs.some((c) => c.name === "tenant_id")) {
+    db.exec("ALTER TABLE professional_signups ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1");
   }
 } catch (_) {
   /* ignore */

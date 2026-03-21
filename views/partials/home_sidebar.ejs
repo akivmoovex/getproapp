@@ -1,3 +1,4 @@
+<% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '/zm'; %>
 <aside class="wf-home-sidebar" id="wf-home-sidebar" aria-label="Main navigation">
   <div class="wf-home-sidebar-top">
     <button type="button" class="wf-home-sidebar-close" id="wf-sidebar-close" aria-label="Close menu">
@@ -7,7 +8,7 @@
       </svg>
     </button>
   </div>
-  <a href="/join" class="wf-home-sidebar-brand wf-home-sidebar-brand--partner wf-home-sidebar-brand--first">
+  <a href="<%= tp %>/join" class="wf-home-sidebar-brand wf-home-sidebar-brand--partner wf-home-sidebar-brand--first">
     <div class="logo" aria-hidden="true"></div>
     <div class="wf-home-sidebar-brand-text">
       <span class="wf-home-sidebar-title">GetPro Partners</span>

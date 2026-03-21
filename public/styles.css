@@ -2271,3 +2271,45 @@ body.join-modal-open {
 .join-wizard-inner .join-pro-ac {
   width: 100%;
 }
+
+/* —— Multi-tenant themes (Zambia default, Israel) —— */
+.tenant-zm {
+  --tenant-accent: #198754;
+  --tenant-hero-tint: rgba(25, 135, 84, 0.14);
+  --tenant-chip-bg: rgba(25, 135, 84, 0.12);
+}
+
+.tenant-il {
+  --tenant-accent: #0066cc;
+  --tenant-hero-tint: rgba(0, 102, 204, 0.12);
+  --tenant-chip-bg: rgba(0, 102, 204, 0.1);
+}
+
+.home-page.tenant-zm .wf-hero,
+.join-page.tenant-zm .join-hero {
+  background: linear-gradient(180deg, var(--tenant-hero-tint) 0%, var(--bg) 100%);
+}
+
+.home-page.tenant-il .wf-hero,
+.join-page.tenant-il .join-hero {
+  background: linear-gradient(180deg, var(--tenant-hero-tint) 0%, var(--bg) 100%);
+}
+
+.tenant-il .wf-home-join {
+  border-color: rgba(0, 102, 204, 0.35);
+}
+
+.tenant-il .wf-home-join:hover {
+  border-color: var(--tenant-accent);
+  color: var(--tenant-accent);
+}
+
+.wf-home-tenant-flag {
+  font-size: 26px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  flex-shrink: 0;
+}

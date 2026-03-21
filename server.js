@@ -32,7 +32,8 @@ try {
   process.exit(1);
 }
 
-const publicRoutes = require("./src/routes/public");
+const { attachTenant, DEFAULT_TENANT_SLUG } = require("./src/tenants");
+const publicModule = require("./src/routes/public")({ db });
 const adminRoutes = require("./src/routes/admin");
 const apiRoutes = require("./src/routes/api");
 
@@ -104,8 +105,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// Public routes (marketing site + directory + per-company one-page websites)
-app.use("/", publicRoutes({ db }));
+// Subdomain company sites (no /{zm|il} prefix)
+app.get("/", (req, res, next) => {
+  if (req.subdomain) {
+    return publicModule.renderCompanyHome(req, res);
+  }
+  return res.redirect(302, `/${DEFAULT_TENANT_SLUG}`);
+});
+
+// Tenant-scoped marketing + directory (/zm, /il — Zambia default)
+app.use(`/${DEFAULT_TENANT_SLUG}`, attachTenant(DEFAULT_TENANT_SLUG), publicModule.router);
+app.use("/il", attachTenant("il"), publicModule.router);
 // API routes (lead capture)
 app.use("/api", apiRoutes({ db }));
 // Admin

@@ -1,5 +1,42 @@
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260324a";
+  const LIST_URL = "/data/search-lists.json?v=20260325a";
+
+  function tenantSlug() {
+    return (typeof window.__GETPRO_TENANT_SLUG__ === "string" && window.__GETPRO_TENANT_SLUG__) || "zm";
+  }
+
+  function homeUrl() {
+    return (typeof window.__GETPRO_HOME__ === "string" && window.__GETPRO_HOME__) || "/zm/";
+  }
+
+  /** Zambia: 9 digits, no country code, mobile starts with 7 or 9 */
+  function isValidPhoneZm(raw) {
+    const d = String(raw || "").replace(/\D/g, "");
+    return d.length === 9 && /^[79]/.test(d);
+  }
+
+  /** Israel: mobile without +972 — 9 digits starting 5, or 10 with leading 0 */
+  function isValidPhoneIl(raw) {
+    const d = String(raw || "").replace(/\D/g, "");
+    if (d.length === 9 && /^5[0-9]/.test(d)) return true;
+    if (d.length === 10 && d.startsWith("0") && d.charAt(1) === "5") return true;
+    return false;
+  }
+
+  function isValidPhoneForTenant(raw) {
+    const slug = tenantSlug();
+    if (slug === "zm") return isValidPhoneZm(raw);
+    if (slug === "il") return isValidPhoneIl(raw);
+    const d = String(raw || "").replace(/\D/g, "");
+    return d.length >= 8;
+  }
+
+  function phoneErrorHint() {
+    const slug = tenantSlug();
+    if (slug === "zm") return "Enter a valid Zambian mobile number (9 digits, no +260).";
+    if (slug === "il") return "Enter a valid Israeli mobile number (without +972).";
+    return "Invalid phone number.";
+  }
 
   const wizardFrame = document.getElementById("join-wizard-frame");
   const wizard = document.getElementById("join-wizard");
@@ -114,30 +151,6 @@
     });
   }
 
-  /** Brief demo: type sample letters so the dropdown shows matches (once per session per step). */
-  function maybeRunAcDemo(step) {
-    const key = step === 1 ? "joinDemoAc1" : "joinDemoAc2";
-    if (sessionStorage.getItem(key)) return;
-    const inp = step === 1 ? professionInput : cityInput;
-    if (!inp) return;
-    const demoVal = step === 1 ? "elec" : "lus";
-    window.setTimeout(() => {
-      if (inp.value.trim()) return;
-      sessionStorage.setItem(key, "1");
-      inp.value = demoVal;
-      inp.dispatchEvent(new Event("input", { bubbles: true }));
-      inp.focus();
-      window.setTimeout(() => {
-        if (inp.value === demoVal) {
-          inp.value = "";
-          inp.dispatchEvent(new Event("input", { bubbles: true }));
-          inp.blur();
-          restartJoinWatermarks();
-        }
-      }, 2800);
-    }, 900);
-  }
-
   function showStep(n) {
     currentStep = n;
     setProgress(n);
@@ -145,8 +158,6 @@
       const el = steps[k];
       if (el) el.hidden = Number(k) !== n;
     });
-    if (n === 1) maybeRunAcDemo(1);
-    if (n === 2) maybeRunAcDemo(2);
   }
 
   function showError(step, msg) {
@@ -207,11 +218,6 @@
     return t.length >= 3 && /^[a-zA-Z\s]+$/.test(t);
   }
 
-  function isValidPhone(s) {
-    const digits = String(s || "").replace(/\D/g, "");
-    return digits.length >= 8;
-  }
-
   topBrand?.addEventListener("click", (e) => {
     if (isRegistrationInProgress()) {
       e.preventDefault();
@@ -219,7 +225,10 @@
     }
   });
 
-  exitModalDismiss?.addEventListener("click", () => closeExitModal());
+  exitModalDismiss?.addEventListener("click", () => {
+    closeExitModal();
+    window.location.href = homeUrl();
+  });
 
   exitModalCall?.addEventListener("click", () => {
     showExitModalForm();
@@ -238,19 +247,21 @@
       exitModalError.hidden = false;
       return;
     }
-    if (!isValidPhone(phoneVal)) {
-      exitModalError.textContent = "Invalid phone number.";
+    if (!isValidPhoneForTenant(phoneVal)) {
+      exitModalError.textContent = phoneErrorHint();
       exitModalError.hidden = false;
       return;
     }
     exitModalError.hidden = true;
+    const digits = phoneVal.replace(/\D/g, "").slice(0, 20);
     try {
       await fetch("/api/callback-interest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          tenantSlug: tenantSlug(),
           name: nameVal,
-          phone: phoneVal.replace(/\D/g, "").slice(0, 20),
+          phone: digits,
           context: "join_exit_call_request",
         }),
       });
@@ -258,7 +269,7 @@
       /* still go home */
     }
     closeExitModal();
-    window.location.href = "/";
+    window.location.href = homeUrl();
   });
 
   exitModal?.addEventListener("click", (e) => {
@@ -286,7 +297,6 @@
     showStep(1);
     clearErrors();
     wizardFrame?.scrollIntoView({ behavior: "smooth", block: "start" });
-    /* Watermark typewriter: do not focus the field (focus stops the animation). Restart after paint. */
     window.requestAnimationFrame(() => {
       window.setTimeout(() => {
         restartJoinWatermarks();
@@ -339,8 +349,8 @@
       showError(3, "Incorrect name.");
       return;
     }
-    if (!isValidPhone(phoneVal)) {
-      showError(3, "Invalid phone number.");
+    if (!isValidPhoneForTenant(phoneVal)) {
+      showError(3, phoneErrorHint());
       return;
     }
 
@@ -349,6 +359,7 @@
     const cityVal = (cityHid && cityHid.value) || (cityInput && cityInput.value.trim()) || "";
 
     const payload = {
+      tenantSlug: tenantSlug(),
       profession: prof,
       city: cityVal,
       name: nameVal,

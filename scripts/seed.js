@@ -36,9 +36,9 @@ function main() {
     db.prepare(
       `
       INSERT INTO companies
-        (subdomain, name, category_id, headline, about, services, phone, email, location, featured_cta_label, featured_cta_phone)
+        (subdomain, name, category_id, headline, about, services, phone, email, location, featured_cta_label, featured_cta_phone, tenant_id)
       VALUES
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Call us', ?)
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Call us', ?, 1)
       `
     ).run(
       subdomain,

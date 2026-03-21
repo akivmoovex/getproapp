@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Directory | GetPro</title>
-    <link rel="stylesheet" href="/styles.css?v=20260320k" />
+    <link rel="stylesheet" href="/styles.css?v=20260325a" />
   </head>
-  <body>
-    <%- include('partials/site_header') %>
+  <body class="<%= tenant.themeClass %>">
+    <%- include('partials/site_header', { tenantUrlPrefix }) %>
 
     <div class="container" style="padding: 20px 0 8px;">
-      <form class="pro-search pro-search--directory" action="/directory" method="get" role="search" style="max-width:100%;margin-bottom:20px;">
-        <div class="pro-ac" data-ac-list="service" data-watermark-text="Profession: Electrician">
+      <form class="pro-search pro-search--directory" action="<%= tenantUrlPrefix %>/directory" method="get" role="search" style="max-width:100%;margin-bottom:20px;">
+        <div class="pro-ac" data-ac-list="service" data-watermark-text="Search: Electrician">
           <input
             id="dir-search-q"
             class="pro-ac-input"
@@ -28,7 +28,7 @@
           <ul class="pro-ac-dropdown" id="dir-search-q-dropdown" role="listbox" hidden></ul>
           <p class="pro-ac-msg" hidden></p>
         </div>
-        <div class="pro-ac" data-ac-list="city" data-watermark-text="City: Lusaka">
+        <div class="pro-ac" data-ac-list="city" data-watermark-text="Search: Lusaka">
           <input
             id="dir-search-city"
             class="pro-ac-input"
@@ -71,10 +71,10 @@
         <div class="card">
           <div style="font-weight:900;margin-bottom:12px;">Categories</div>
           <div class="list">
-            <a href="/directory" class="btn" style="justify-content:flex-start;width:100%;">All</a>
+            <a href="<%= tenantUrlPrefix %>/directory" class="btn" style="justify-content:flex-start;width:100%;">All</a>
             <% categories.forEach(function(cat) { %>
               <a
-                href="/directory?category=<%= cat.slug %>"
+                href="<%= tenantUrlPrefix %>/directory?category=<%= cat.slug %>"
                 class="btn"
                 style="justify-content:flex-start;width:100%;<%= selectedCategory === cat.slug ? 'border-color:var(--wf-primary);background:var(--primary-soft-bg);' : '' %>"
               >
@@ -106,9 +106,8 @@
       </div>
     </div>
 
-    <%- include('partials/site_footer') %>
-    <script src="/scripts.js?v=20260320k"></script>
-    <script src="/autocomplete.js?v=20260320p"></script>
+    <%- include('partials/site_footer', { tenantUrlPrefix }) %>
+    <script src="/scripts.js?v=20260325a"></script>
+    <script src="/autocomplete.js?v=20260325a"></script>
   </body>
 </html>
-

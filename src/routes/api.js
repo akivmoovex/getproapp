@@ -1,5 +1,14 @@
 const express = require("express");
 
+function resolveTenantId(db, body) {
+  const slug = String((body && body.tenantSlug) || "")
+    .trim()
+    .toLowerCase();
+  if (!slug) return 1;
+  const row = db.prepare("SELECT id FROM tenants WHERE slug = ?").get(slug);
+  return row ? row.id : 1;
+}
+
 module.exports = function apiRoutes({ db }) {
   const router = express.Router();
 
@@ -39,6 +48,7 @@ module.exports = function apiRoutes({ db }) {
     const name = String(body.name || "").trim().slice(0, 120);
     const phone = String(body.phone || "").trim().slice(0, 40);
     const vatOrPacra = String(body.vat_or_pacra || "").trim().slice(0, 200);
+    const tenantId = resolveTenantId(db, body);
 
     if (!profession || !city || !name || !phone) {
       return res.status(400).json({ error: "Profession, city, name, and phone are required." });
@@ -46,10 +56,10 @@ module.exports = function apiRoutes({ db }) {
 
     db.prepare(
       `
-      INSERT INTO professional_signups (profession, city, name, phone, vat_or_pacra)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO professional_signups (profession, city, name, phone, vat_or_pacra, tenant_id)
+      VALUES (?, ?, ?, ?, ?, ?)
       `
-    ).run(profession, city, name, phone, vatOrPacra);
+    ).run(profession, city, name, phone, vatOrPacra, tenantId);
 
     return res.json({ ok: true });
   });
@@ -59,15 +69,15 @@ module.exports = function apiRoutes({ db }) {
     const phone = String(body.phone || "").trim().slice(0, 40);
     const name = String(body.name || "").trim().slice(0, 120);
     const context = String(body.context || "").trim().slice(0, 120);
+    const tenantId = resolveTenantId(db, body);
     db.prepare(
       `
-      INSERT INTO callback_interests (phone, name, context)
-      VALUES (?, ?, ?)
+      INSERT INTO callback_interests (phone, name, context, tenant_id)
+      VALUES (?, ?, ?, ?)
       `
-    ).run(phone, name, context || "join_exit");
+    ).run(phone, name, context || "join_exit", tenantId);
     return res.json({ ok: true });
   });
 
   return router;
 };
-

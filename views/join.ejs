@@ -8,10 +8,10 @@
       name="description"
       content="Become a GetPro Partner — list your professional services, reach clients across Zambia, and grow your business with a clear profile and partner support."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260324a" />
+    <link rel="stylesheet" href="/styles.css?v=20260325a" />
   </head>
-  <body class="join-page">
-    <a href="/" class="join-top-brand" id="join-top-brand" aria-label="GetPro home">
+  <body class="join-page <%= tenant.themeClass %>">
+    <a href="<%= tenantUrlPrefix %>/" class="join-top-brand" id="join-top-brand" aria-label="GetPro home">
       <div class="logo" aria-hidden="true"></div>
       <span class="join-top-brand-title">GetPro</span>
     </a>
@@ -267,7 +267,7 @@
           </div>
         </div>
         <div class="join-modal-panel join-modal-panel--form" id="join-exit-modal-form" hidden>
-          <h2 class="join-modal-title" id="join-exit-modal-form-title">Your contact details</h2>
+          <h2 class="join-modal-title" id="join-exit-modal-form-title">Need help?</h2>
           <p class="join-modal-text">We’ll use this to call you back.</p>
           <div class="join-modal-fields">
             <label class="join-modal-label" for="join-exit-modal-name">Full name</label>
@@ -284,7 +284,11 @@
       </div>
     </div>
 
-    <script src="/autocomplete.js?v=20260324a"></script>
-    <script src="/join.js?v=20260324a"></script>
+    <script>
+      window.__GETPRO_TENANT_SLUG__ = "<%= tenant.slug %>";
+      window.__GETPRO_HOME__ = "<%= tenantUrlPrefix %>/";
+    </script>
+    <script src="/autocomplete.js?v=20260325a"></script>
+    <script src="/join.js?v=20260325a"></script>
   </body>
 </html>

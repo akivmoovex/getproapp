@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title><%= category.name %> | Directory | GetPro</title>
-    <link rel="stylesheet" href="/styles.css?v=20260320k" />
+    <link rel="stylesheet" href="/styles.css?v=20260325a" />
   </head>
-  <body>
-    <%- include('partials/site_header') %>
+  <body class="<%= tenant.themeClass %>">
+    <%- include('partials/site_header', { tenantUrlPrefix }) %>
 
     <div class="container">
       <div style="margin:18px 0;">
@@ -23,9 +23,9 @@
           <div class="list">
             <% categories.forEach(function(cat) { %>
               <a
-                href="/category/<%= cat.slug %>"
+                href="<%= tenantUrlPrefix %>/category/<%= cat.slug %>"
                 class="btn"
-                style="justify-content:flex-start;width:100%;<%= category.slug === cat.slug ? 'border-color:var(--pro-orange);background:rgba(232,90,27,0.08);' : '' %>"
+                style="justify-content:flex-start;width:100%;<%= category.slug === cat.slug ? 'border-color:var(--wf-primary);background:var(--primary-soft-bg);' : '' %>"
               >
                 <%= cat.name %>
               </a>
@@ -53,8 +53,7 @@
       </div>
     </div>
 
-    <%- include('partials/site_footer') %>
-    <script src="/scripts.js"></script>
+    <%- include('partials/site_footer', { tenantUrlPrefix }) %>
+    <script src="/scripts.js?v=20260325a"></script>
   </body>
 </html>
-

@@ -1,6 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const express = require("express");
+const { getTenantById } = require("../tenants");
 
 function loadSearchLists() {
   const p = path.join(__dirname, "../../public/data/search-lists.json");
@@ -38,51 +39,31 @@ function platformSupport() {
 module.exports = function publicRoutes({ db }) {
   const router = express.Router();
 
+  function tenantLocals(req) {
+    const t = req.tenant;
+    const prefix = req.tenantUrlPrefix || `/${t.slug}`;
+    return {
+      tenant: t,
+      tenantUrlPrefix: prefix,
+    };
+  }
+
   router.get("/", async (req, res) => {
-    const categories = db
-      .prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC")
-      .all();
+    const categories = db.prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC").all();
+    const { tenant, tenantUrlPrefix } = tenantLocals(req);
 
-    if (!req.subdomain) {
-      return res.render("index", {
-        categories,
-        baseDomain: process.env.BASE_DOMAIN || "",
-        ...platformSupport(),
-      });
-    }
-
-    const company = db
-      .prepare(
-        `
-        SELECT c.*, cat.id AS category_id, cat.slug AS category_slug, cat.name AS category_name
-        FROM companies c
-        LEFT JOIN categories cat ON cat.id = c.category_id
-        WHERE c.subdomain = ?
-        `
-      )
-      .get(req.subdomain);
-
-    if (!company) {
-      res.status(404);
-      return res.render("not_found", {
-        subdomain: req.subdomain,
-        ...platformSupport(),
-      });
-    }
-
-    return res.render("company", {
-      company,
-      category: company.category_id ? { slug: company.category_slug, name: company.category_name } : null,
+    return res.render("index", {
+      categories,
       baseDomain: process.env.BASE_DOMAIN || "",
-      companyUrl: buildCompanyUrl({ baseDomain: process.env.BASE_DOMAIN || "", subdomain: company.subdomain }),
+      tenant,
+      tenantUrlPrefix,
       ...platformSupport(),
     });
   });
 
   router.get("/directory", async (req, res) => {
-    const categories = db
-      .prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC")
-      .all();
+    const tenantId = req.tenant.id;
+    const categories = db.prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC").all();
 
     const selected = req.query.category ? String(req.query.category) : null;
     const searchRaw = req.query.q ? String(req.query.q).trim() : "";
@@ -98,9 +79,9 @@ module.exports = function publicRoutes({ db }) {
         SELECT c.*
         FROM companies c
         INNER JOIN categories cat ON cat.id = c.category_id
-        WHERE cat.slug = ?
+        WHERE cat.slug = ? AND c.tenant_id = ?
       `;
-      const params = [selected];
+      const params = [selected, tenantId];
       if (cityQ) {
         sql += ` AND c.location LIKE ? COLLATE NOCASE`;
         params.push(`%${cityQ}%`);
@@ -108,8 +89,8 @@ module.exports = function publicRoutes({ db }) {
       sql += ` ORDER BY c.name ASC`;
       companies = db.prepare(sql).all(...params);
     } else if (searchQ || cityQ) {
-      const parts = [];
-      const params = [];
+      const parts = [`tenant_id = ?`];
+      const params = [tenantId];
       if (searchQ) {
         parts.push(
           `(name LIKE ? COLLATE NOCASE OR headline LIKE ? COLLATE NOCASE OR about LIKE ? COLLATE NOCASE)`
@@ -133,8 +114,12 @@ module.exports = function publicRoutes({ db }) {
         )
         .all(...params);
     } else {
-      companies = db.prepare("SELECT * FROM companies ORDER BY updated_at DESC LIMIT 24").all();
+      companies = db
+        .prepare("SELECT * FROM companies WHERE tenant_id = ? ORDER BY updated_at DESC LIMIT 24")
+        .all(tenantId);
     }
+
+    const { tenant, tenantUrlPrefix } = tenantLocals(req);
 
     return res.render("directory", {
       categories,
@@ -144,18 +129,24 @@ module.exports = function publicRoutes({ db }) {
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",
       buildCompanyUrl,
+      tenant,
+      tenantUrlPrefix,
       ...platformSupport(),
     });
   });
 
   router.get("/category/:categorySlug", async (req, res) => {
+    const tenantId = req.tenant.id;
     const categorySlug = req.params.categorySlug;
     const category = db.prepare("SELECT * FROM categories WHERE slug = ?").get(categorySlug);
     if (!category) {
       res.status(404);
+      const { tenant, tenantUrlPrefix } = tenantLocals(req);
       return res.render("not_found", {
         slug: categorySlug,
         kind: "category",
+        tenant,
+        tenantUrlPrefix,
         ...platformSupport(),
       });
     }
@@ -165,15 +156,14 @@ module.exports = function publicRoutes({ db }) {
         `
         SELECT *
         FROM companies
-        WHERE category_id = ?
+        WHERE category_id = ? AND tenant_id = ?
         ORDER BY name ASC
         `
       )
-      .all(category.id);
+      .all(category.id, tenantId);
 
-    const categories = db
-      .prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC")
-      .all();
+    const categories = db.prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC").all();
+    const { tenant, tenantUrlPrefix } = tenantLocals(req);
 
     return res.render("category", {
       category,
@@ -181,16 +171,57 @@ module.exports = function publicRoutes({ db }) {
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",
       buildCompanyUrl,
+      tenant,
+      tenantUrlPrefix,
       ...platformSupport(),
     });
   });
 
-  router.get("/join", (_req, res) => {
+  router.get("/join", (req, res) => {
+    const { tenant, tenantUrlPrefix } = tenantLocals(req);
     return res.render("join", {
       baseDomain: process.env.BASE_DOMAIN || "",
+      tenant,
+      tenantUrlPrefix,
       ...platformSupport(),
     });
   });
 
-  return router;
+  function renderCompanyHome(req, res) {
+    const company = db
+      .prepare(
+        `
+        SELECT c.*, cat.id AS category_id, cat.slug AS category_slug, cat.name AS category_name
+        FROM companies c
+        LEFT JOIN categories cat ON cat.id = c.category_id
+        WHERE c.subdomain = ?
+        `
+      )
+      .get(req.subdomain);
+
+    if (!company) {
+      res.status(404);
+      return res.render("not_found", {
+        subdomain: req.subdomain,
+        tenant: getTenantById(1),
+        tenantUrlPrefix: "/zm",
+        ...platformSupport(),
+      });
+    }
+
+    const tenant = getTenantById(company.tenant_id) || getTenantById(1);
+    const tenantUrlPrefix = `/${tenant.slug}`;
+
+    return res.render("company", {
+      company,
+      category: company.category_id ? { slug: company.category_slug, name: company.category_name } : null,
+      baseDomain: process.env.BASE_DOMAIN || "",
+      companyUrl: buildCompanyUrl({ baseDomain: process.env.BASE_DOMAIN || "", subdomain: company.subdomain }),
+      tenant,
+      tenantUrlPrefix,
+      ...platformSupport(),
+    });
+  }
+
+  return { router, renderCompanyHome };
 };
