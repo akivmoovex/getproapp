@@ -75,7 +75,7 @@ function initRegionPicker() {
   const openBtn = document.getElementById("wf-region-open");
   const overlay = document.getElementById("wf-region-overlay");
   const sheet = document.getElementById("wf-region-sheet");
-  const closeBtn = document.getElementById("wf-region-close");
+  const closeBtn = document.getElementById("wf-region-close-x");
   if (!openBtn || !overlay || !sheet) return;
 
   const setOpen = (open) => {
