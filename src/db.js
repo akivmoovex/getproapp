@@ -428,6 +428,107 @@ try {
   console.error("[getpro] tenant demo/za defaults migration:", e.message);
 }
 
+/** One-time: sample companies for demo tenant (directory search + card UI tests). */
+try {
+  const TID = require("./tenantIds");
+  const demoTenantId = TID.TENANT_DEMO;
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("demo_seed_sample_companies_v1")) {
+    const elCat = db
+      .prepare("SELECT id FROM categories WHERE tenant_id = ? AND slug = 'electricians'")
+      .get(demoTenantId);
+    const plCat = db
+      .prepare("SELECT id FROM categories WHERE tenant_id = ? AND slug = 'plumbers'")
+      .get(demoTenantId);
+    const ins = db.prepare(`
+      INSERT INTO companies
+        (subdomain, name, category_id, headline, about, services, phone, email, location, featured_cta_label, featured_cta_phone, tenant_id, updated_at)
+      VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Call us', ?, ?, datetime('now'))
+    `);
+    const seeds = [
+      {
+        sub: "demo-lusaka-spark",
+        name: "Spark Electric Lusaka",
+        cat: elCat,
+        headline: "Licensed electricians for homes and businesses",
+        about:
+          "Full-service electrical installations, repairs, and safety inspections. Electrician services across Lusaka with same-week callouts.",
+        services: "Rewiring\nPanel upgrades\nEmergency Electrician callouts",
+        phone: "+260211000101",
+        email: "spark@demo.getproapp.invalid",
+        loc: "Lusaka, Zambia",
+        cta: "+260211000101",
+      },
+      {
+        sub: "demo-lusaka-voltpro",
+        name: "VoltPro Electrical",
+        cat: elCat,
+        headline: "Commercial & industrial Electrician work",
+        about:
+          "Retail fit-outs, warehouses, and backup power. Search Electrician Lusaka — we cover CBD and Woodlands.",
+        services: "Three-phase installs\nLighting design\nCompliance certificates",
+        phone: "+260211000102",
+        email: "voltpro@demo.getproapp.invalid",
+        loc: "Lusaka",
+        cta: "+260211000102",
+      },
+      {
+        sub: "demo-lusaka-flow",
+        name: "FlowRight Plumbing",
+        cat: plCat,
+        headline: "Emergency plumbers in Lusaka",
+        about: "Burst pipes, geysers, and bathroom refits. Fast response in Lusaka and nearby areas.",
+        services: "Leak detection\nDrain clearing\nBathroom installs",
+        phone: "+260211000103",
+        email: "flow@demo.getproapp.invalid",
+        loc: "Lusaka, Zambia",
+        cta: "+260211000103",
+      },
+      {
+        sub: "demo-kitwe-wire",
+        name: "Copperbelt Electric Co",
+        cat: elCat,
+        headline: "Electrician services in Kitwe",
+        about: "Industrial Electrician support — not in Lusaka; used to test city filters.",
+        services: "Motor control\nCabling\nMaintenance",
+        phone: "+260212000201",
+        email: "kitwe@demo.getproapp.invalid",
+        loc: "Kitwe, Zambia",
+        cta: "+260212000201",
+      },
+    ];
+    let added = 0;
+    for (const r of seeds) {
+      if (db.prepare("SELECT 1 FROM companies WHERE subdomain = ?").get(r.sub)) continue;
+      ins.run(
+        r.sub,
+        r.name,
+        r.cat ? r.cat.id : null,
+        r.headline,
+        r.about,
+        r.services,
+        r.phone,
+        r.email,
+        r.loc,
+        r.cta,
+        demoTenantId
+      );
+      added += 1;
+    }
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("demo_seed_sample_companies_v1");
+    if (added > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[getpro] Migration: seeded ${added} demo tenant sample compan(y/ies).`);
+    }
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] demo sample companies migration:", e.message);
+}
+
 /** One-time: delete super-admin–created tenants not in the canonical slug list (and their scoped data). */
 try {
   const { CANONICAL_TENANT_SLUGS_LIST } = require("./tenantIds");

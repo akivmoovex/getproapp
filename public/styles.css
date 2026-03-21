@@ -1844,6 +1844,14 @@ textarea {
   width: 100%;
   min-height: min(62vw, 560px);
   max-height: 680px;
+  overflow: visible;
+  background: var(--wf-primary-dark);
+}
+
+/* Clip only the photo — keeps autocomplete dropdowns from being cut off by overflow:hidden */
+.pro-home-hero-media {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
   background: var(--wf-primary-dark);
 }
@@ -1873,7 +1881,7 @@ textarea {
   position: absolute;
   left: clamp(16px, 3vw, 36px);
   bottom: clamp(20px, 4vw, 44px);
-  z-index: 8;
+  z-index: 20;
   width: min(920px, calc(100% - clamp(32px, 6vw, 72px)));
   max-width: 100%;
   display: flex;
@@ -1941,6 +1949,11 @@ textarea {
 .pro-home-search-wrap--hero .pro-ac {
   flex: 1 1 0;
   min-width: 0;
+}
+
+/* Dropdowns must stack above the white stats strip below the hero */
+.pro-home-search-wrap--hero .pro-ac-dropdown {
+  z-index: 200;
 }
 
 .pro-home-search-wrap--hero .pro-home-search-submit {
