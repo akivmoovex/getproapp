@@ -6,8 +6,8 @@
   const getStarted = document.getElementById("join-get-started");
   const stepNum = document.getElementById("join-step-num");
   const progressFill = document.getElementById("join-progress-fill");
-  const panels = document.getElementById("join-panels");
-  const thanks = document.getElementById("join-thanks");
+  const step3Form = document.getElementById("join-step-3-form");
+  const step3Thanks = document.getElementById("join-step-3-thanks");
 
   const steps = {
     1: document.getElementById("join-step-1"),
@@ -181,7 +181,7 @@
     const phoneVal = (phone.value || "").trim();
 
     if (!isValidName(nameVal)) {
-      showError(3, "Name must contain only letters and be at least 3 characters.");
+      showError(3, "Incorrect name.");
       return;
     }
     if (!isValidPhone(phoneVal)) {
@@ -216,14 +216,8 @@
         throw new Error(data.error || `Request failed (${resp.status})`);
       }
 
-      if (panels) panels.hidden = true;
-      if (thanks) {
-        thanks.hidden = false;
-        const prog = wizard.querySelector(".join-progress");
-        const track = wizard.querySelector(".join-progress-track");
-        if (prog) prog.hidden = true;
-        if (track) track.hidden = true;
-      }
+      if (step3Form) step3Form.hidden = true;
+      if (step3Thanks) step3Thanks.hidden = false;
     } catch (err) {
       showError(3, err.message || "Something went wrong. Please try again.");
     } finally {

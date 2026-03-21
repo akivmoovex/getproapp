@@ -146,26 +146,28 @@
           </div>
 
           <div class="join-step-panel" id="join-step-3" data-step="3" hidden>
-            <h2>Your contact details</h2>
-            <p class="join-step-hint">We’ll use this to reach you about your listing</p>
-            <div class="join-field">
-              <label for="join-name">Full name</label>
-              <input id="join-name" name="name" type="text" autocomplete="name" required />
+            <div id="join-step-3-form">
+              <h2>Your contact details</h2>
+              <p class="join-step-hint">We’ll use this to reach you about your listing</p>
+              <div class="join-field">
+                <label for="join-name">Full name</label>
+                <input id="join-name" name="name" type="text" autocomplete="name" required />
+              </div>
+              <div class="join-field">
+                <label for="join-phone">Phone number</label>
+                <input id="join-phone" name="phone" type="tel" autocomplete="tel" required />
+              </div>
+              <div class="join-wizard-actions">
+                <button type="button" class="btn btn-secondary-wf" id="join-back-3">Back</button>
+                <button type="button" class="btn btn-primary" id="join-submit">Submit</button>
+              </div>
+              <p class="join-wizard-error" id="join-error-3" hidden></p>
             </div>
-            <div class="join-field">
-              <label for="join-phone">Phone number</label>
-              <input id="join-phone" name="phone" type="tel" autocomplete="tel" required />
+            <div id="join-step-3-thanks" class="join-step-thanks" hidden>
+              <h2>Thank you</h2>
+              <p class="join-step-hint join-step-thanks-lead">Our team shall contact you shortly.</p>
             </div>
-            <div class="join-wizard-actions">
-              <button type="button" class="btn btn-secondary-wf" id="join-back-3">Back</button>
-              <button type="button" class="btn btn-primary" id="join-submit">Submit</button>
-            </div>
-            <p class="join-wizard-error" id="join-error-3" hidden></p>
           </div>
-        </div>
-
-        <div class="join-step-panel join-thanks" id="join-thanks" hidden>
-          <p class="join-thanks-message">Our team shall contact you shortly.</p>
         </div>
       </div>
     </section>
