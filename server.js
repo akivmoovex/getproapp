@@ -179,6 +179,18 @@ ensureAdminUser({ db })
     app.listen(port, host, () => {
       // eslint-disable-next-line no-console
       console.log(`GetPro listening on ${host}:${port}`);
+      const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
+      if (base) {
+        // eslint-disable-next-line no-console
+        console.log(
+          `[getpro] Subdomain routing: zm.${base} → Zambia (tenant zm), il.${base} → Israel (tenant il). Requires reverse proxy to forward Host unchanged.`
+        );
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[getpro] BASE_DOMAIN is unset — set BASE_DOMAIN=getproapp.org (no scheme) in production so zm.* / il.* resolve to tenants."
+        );
+      }
     });
   })
   .catch((err) => {

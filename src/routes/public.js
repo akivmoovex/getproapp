@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const { getTenantById, DEFAULT_TENANT_SLUG } = require("../tenants");
+const { israelComingSoonEnabled } = require("../israelComingSoon");
 
 function loadSearchLists() {
   const p = path.join(__dirname, "../../public/data/search-lists.json");
@@ -73,7 +74,7 @@ module.exports = function publicRoutes({ db }) {
   }
 
   router.use((req, res, next) => {
-    if (req.tenant && req.tenant.slug === "il") {
+    if (israelComingSoonEnabled() && req.tenant && req.tenant.slug === "il") {
       const scheme = process.env.PUBLIC_SCHEME || "https";
       const base = (process.env.BASE_DOMAIN || "").trim();
       const apexUrl = base ? `${scheme}://${base}` : "/";

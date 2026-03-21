@@ -2,6 +2,26 @@
 
 Node + Express directory app using SQLite via `better-sqlite3`.
 
+## Hostinger: `zm.getproapp.org` / `il.getproapp.org` show “You’re all set to go”
+
+That page is **not** from this Node app. DNS is working, but the subdomain is still bound to a **default static vhost** (empty `public_html/zm`, etc.) instead of your **Node.js** process.
+
+**Fix (conceptually the same on all panels):** In **hPanel**, open your **Node.js** application and add **`zm.getproapp.org`** and **`il.getproapp.org`** as **domains** that run **this same app** as the apex domain — not as separate “subdomain websites” with their own document root. Wording varies (“Domains”, “Application URL”, “Attach domain”). Until both hosts proxy to Node with the **`Host`** header preserved, you will keep seeing Hostinger’s placeholder.
+
+**After traffic hits Node**, the app maps hosts using `BASE_DOMAIN`:
+
+| Host | Tenant |
+|------|--------|
+| `getproapp.org`, `www.getproapp.org` | Zambia UI + region picker (links to `zm` / `il` URLs) |
+| `zm.getproapp.org` | Zambia (`tenant_id` 1) |
+| `il.getproapp.org` | Israel (`tenant_id` 2) |
+
+**Required env (production):** `BASE_DOMAIN=getproapp.org` (no `https://`), `PUBLIC_SCHEME=https`, `NODE_ENV=production`. Issue **SSL** for `zm` and `il` hostnames.
+
+**Quick check:** set `DEBUG_HOST=1` in the panel, redeploy, open `https://zm.getproapp.org/api/debug/host`. You should see JSON with `"subdomain":"zm"`. If you still get the placeholder HTML, Node is not serving that host yet.
+
+**Israel “coming soon” only:** set `ISRAEL_COMING_SOON=true` to show the static coming-soon page on `il.*` and block Israel-only API paths. Omit it (default) for the same directory/join experience as Zambia (separate `tenant_id` data).
+
 ## Hostinger / Linux: `invalid ELF header` on `better_sqlite3.node`
 
 That error means the **native addon was built for another OS** (e.g. macOS/Windows) and was deployed to **Linux**. Common causes:
@@ -54,6 +74,6 @@ The animated “typing” hint is set with `data-watermark-text` on the `.pro-ac
 
 **Common variables:** `ADMIN_PASSWORD` (required), `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `SQLITE_PATH`, `SESSION_DIR`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, plus legacy `PRO_ONLINE_*` / `NETRA_*` if needed.
 
-**Production:** set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). On hosts that don’t deploy `.env`, set the same keys in the panel’s environment variables.
+**Production:** set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). Optional: `DEBUG_HOST=1` temporarily for `/api/debug/host`; `ISRAEL_COMING_SOON=true` to lock Israel to coming-soon. On hosts that don’t deploy `.env`, set the same keys in the panel’s environment variables.
 
 If you used the old default database file, either rename `data/pronline.sqlite` to `data/getpro.sqlite` or set `SQLITE_PATH` to the old path.

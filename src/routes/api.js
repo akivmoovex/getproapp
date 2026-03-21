@@ -1,4 +1,5 @@
 const express = require("express");
+const { israelComingSoonEnabled } = require("../israelComingSoon");
 
 function resolveTenantId(db, body) {
   const slug = String((body && body.tenantSlug) || "")
@@ -32,7 +33,7 @@ module.exports = function apiRoutes({ db }) {
     if (!company) {
       return res.status(404).json({ error: "Company not found" });
     }
-    if (company.tenant_id === TENANT_IL_ID) {
+    if (israelComingSoonEnabled() && company.tenant_id === TENANT_IL_ID) {
       return res.status(403).json({ error: "This region is not accepting leads yet." });
     }
 
@@ -62,7 +63,7 @@ module.exports = function apiRoutes({ db }) {
     const vatOrPacra = String(body.vat_or_pacra || "").trim().slice(0, 200);
     const tenantId = resolveTenantId(db, body);
 
-    if (tenantId === TENANT_IL_ID) {
+    if (israelComingSoonEnabled() && tenantId === TENANT_IL_ID) {
       return res.status(403).json({ error: "Israel sign-ups are not open yet." });
     }
 
@@ -80,13 +81,24 @@ module.exports = function apiRoutes({ db }) {
     return res.json({ ok: true });
   });
 
+  if (process.env.DEBUG_HOST === "1") {
+    router.get("/debug/host", (req, res) => {
+      res.json({
+        host: req.get("host"),
+        hostname: req.hostname,
+        subdomain: req.subdomain != null ? req.subdomain : null,
+        baseDomain: process.env.BASE_DOMAIN || null,
+      });
+    });
+  }
+
   router.post("/callback-interest", (req, res) => {
     const body = req.body || {};
     const phone = String(body.phone || "").trim().slice(0, 40);
     const name = String(body.name || "").trim().slice(0, 120);
     const context = String(body.context || "").trim().slice(0, 120);
     const tenantId = resolveTenantId(db, body);
-    if (tenantId === TENANT_IL_ID) {
+    if (israelComingSoonEnabled() && tenantId === TENANT_IL_ID) {
       return res.status(403).json({ error: "Israel callbacks are not open yet." });
     }
     db.prepare(
