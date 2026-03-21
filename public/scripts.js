@@ -71,9 +71,45 @@ function initHomeDrawerMenu() {
   });
 }
 
+function initRegionPicker() {
+  const openBtn = document.getElementById("wf-region-open");
+  const overlay = document.getElementById("wf-region-overlay");
+  const sheet = document.getElementById("wf-region-sheet");
+  const closeBtn = document.getElementById("wf-region-close");
+  if (!openBtn || !overlay || !sheet) return;
+
+  const setOpen = (open) => {
+    openBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) {
+      sheet.removeAttribute("hidden");
+      overlay.removeAttribute("hidden");
+      overlay.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      closeBtn?.focus();
+    } else {
+      sheet.setAttribute("hidden", "");
+      overlay.setAttribute("hidden", "");
+      overlay.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      openBtn.focus();
+    }
+  };
+
+  openBtn.addEventListener("click", () => setOpen(true));
+  closeBtn?.addEventListener("click", () => setOpen(false));
+  overlay.addEventListener("click", () => setOpen(false));
+  sheet.querySelectorAll("a.wf-region-btn").forEach((a) => {
+    a.addEventListener("click", () => setOpen(false));
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !sheet.hasAttribute("hidden")) setOpen(false);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("lead_form");
   if (form) form.addEventListener("submit", submitLeadForm);
   initHomeDrawerMenu();
+  initRegionPicker();
 });
 

@@ -36,6 +36,23 @@ function platformSupport() {
   };
 }
 
+function tenantHomeHrefFromPrefix(prefix) {
+  if (!prefix) return "/";
+  const p = String(prefix);
+  if (p.startsWith("http")) return `${p.replace(/\/$/, "")}/`;
+  return `${p}/`;
+}
+
+/** Directory / join links from a company one-pager (subdomain) must target zam.* / il.* hosts. */
+function platformTenantPrefixForSlug(slug) {
+  const scheme = process.env.PUBLIC_SCHEME || "https";
+  const base = (process.env.BASE_DOMAIN || "").trim();
+  if (!base) return slug === DEFAULT_TENANT_SLUG ? "" : `/${slug}`;
+  if (slug === DEFAULT_TENANT_SLUG) return `${scheme}://zam.${base}`;
+  if (slug === "il") return `${scheme}://il.${base}`;
+  return `/${slug}`;
+}
+
 module.exports = function publicRoutes({ db }) {
   const router = express.Router();
 
@@ -48,7 +65,10 @@ module.exports = function publicRoutes({ db }) {
     return {
       tenant: t,
       tenantUrlPrefix: prefix,
-      tenantHomeHref: prefix ? `${prefix}/` : "/",
+      tenantHomeHref: tenantHomeHrefFromPrefix(prefix),
+      isApexHost: !!req.isApexHost,
+      regionZamUrl: req.regionZamUrl || "",
+      regionIlUrl: req.regionIlUrl || "",
     };
   }
 
@@ -124,8 +144,6 @@ module.exports = function publicRoutes({ db }) {
         .all(tenantId);
     }
 
-    const { tenant, tenantUrlPrefix, tenantHomeHref } = tenantLocals(req);
-
     return res.render("directory", {
       categories,
       selectedCategory: selected,
@@ -134,9 +152,7 @@ module.exports = function publicRoutes({ db }) {
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",
       buildCompanyUrl,
-      tenant,
-      tenantUrlPrefix,
-      tenantHomeHref,
+      ...tenantLocals(req),
       ...platformSupport(),
     });
   });
@@ -147,13 +163,10 @@ module.exports = function publicRoutes({ db }) {
     const category = db.prepare("SELECT * FROM categories WHERE slug = ?").get(categorySlug);
     if (!category) {
       res.status(404);
-      const { tenant, tenantUrlPrefix, tenantHomeHref } = tenantLocals(req);
       return res.render("not_found", {
         slug: categorySlug,
         kind: "category",
-        tenant,
-        tenantUrlPrefix,
-        tenantHomeHref,
+        ...tenantLocals(req),
         ...platformSupport(),
       });
     }
@@ -170,28 +183,21 @@ module.exports = function publicRoutes({ db }) {
       .all(category.id, tenantId);
 
     const categories = db.prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC").all();
-    const { tenant, tenantUrlPrefix, tenantHomeHref } = tenantLocals(req);
-
     return res.render("category", {
       category,
       categories,
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",
       buildCompanyUrl,
-      tenant,
-      tenantUrlPrefix,
-      tenantHomeHref,
+      ...tenantLocals(req),
       ...platformSupport(),
     });
   });
 
   router.get("/join", (req, res) => {
-    const { tenant, tenantUrlPrefix, tenantHomeHref } = tenantLocals(req);
     return res.render("join", {
       baseDomain: process.env.BASE_DOMAIN || "",
-      tenant,
-      tenantUrlPrefix,
-      tenantHomeHref,
+      ...tenantLocals(req),
       ...platformSupport(),
     });
   });
@@ -210,17 +216,20 @@ module.exports = function publicRoutes({ db }) {
 
     if (!company) {
       res.status(404);
+      const scheme = process.env.PUBLIC_SCHEME || "https";
+      const base = (process.env.BASE_DOMAIN || "").trim();
+      const tp = base ? `${scheme}://zam.${base}` : "";
       return res.render("not_found", {
         subdomain: req.subdomain,
         tenant: getTenantById(1),
-        tenantUrlPrefix: "",
-        tenantHomeHref: "/",
+        tenantUrlPrefix: tp,
+        tenantHomeHref: tenantHomeHrefFromPrefix(tp),
         ...platformSupport(),
       });
     }
 
     const tenant = getTenantById(company.tenant_id) || getTenantById(1);
-    const tenantUrlPrefix = tenant.slug === DEFAULT_TENANT_SLUG ? "" : `/${tenant.slug}`;
+    const tenantUrlPrefix = platformTenantPrefixForSlug(tenant.slug);
 
     return res.render("company", {
       company,
@@ -229,7 +238,7 @@ module.exports = function publicRoutes({ db }) {
       companyUrl: buildCompanyUrl({ baseDomain: process.env.BASE_DOMAIN || "", subdomain: company.subdomain }),
       tenant,
       tenantUrlPrefix,
-      tenantHomeHref: tenantUrlPrefix ? `${tenantUrlPrefix}/` : "/",
+      tenantHomeHref: tenantHomeHrefFromPrefix(tenantUrlPrefix),
       ...platformSupport(),
     });
   }

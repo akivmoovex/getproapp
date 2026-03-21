@@ -8,7 +8,7 @@
       name="description"
       content="GetPro connects you with professionals. Search the directory, browse categories, and contact businesses directly."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260325a" />
+    <link rel="stylesheet" href="/styles.css?v=20260326a" />
   </head>
   <body class="home-page wf-home-layout <%= tenant.themeClass %>">
     <a href="<%= tenantHomeHref %>" class="wf-home-topbar-brand" aria-label="GetPro home">
@@ -17,7 +17,34 @@
     </a>
     <div class="wf-home-topbar-actions">
       <a class="wf-home-join-btn" href="<%= tenantUrlPrefix %>/join">Join us</a>
-      <% if (tenant.slug === 'zm') { %>
+      <% if (typeof isApexHost !== 'undefined' && isApexHost) { %>
+      <button
+        type="button"
+        class="wf-home-region-trigger"
+        id="wf-region-open"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        aria-controls="wf-region-sheet"
+      >
+        <svg
+          class="wf-home-region-globe"
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+        <span class="wf-home-region-label">Region</span>
+      </button>
+      <% } else if (tenant.slug === 'zm') { %>
       <span class="wf-home-tenant-flag" title="Zambia" aria-hidden="true">🇿🇲</span>
       <% } else if (tenant.slug === 'il') { %>
       <span class="wf-home-tenant-flag" title="Israel" aria-hidden="true">🇮🇱</span>
@@ -40,6 +67,28 @@
       </button>
     </div>
     <div class="wf-menu-backdrop" id="wf-menu-backdrop" hidden></div>
+    <% if (typeof isApexHost !== 'undefined' && isApexHost) { %>
+    <div id="wf-region-overlay" class="wf-region-overlay" hidden aria-hidden="true"></div>
+    <div
+      id="wf-region-sheet"
+      class="wf-region-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="wf-region-title"
+      hidden
+    >
+      <h2 id="wf-region-title" class="wf-region-title">Choose region</h2>
+      <div class="wf-region-actions">
+        <a class="wf-region-btn wf-region-btn--zm" href="<%= regionZamUrl || tenantHomeHref %>">Zambia</a>
+        <% if (regionIlUrl) { %>
+        <a class="wf-region-btn wf-region-btn--il" dir="rtl" href="<%= regionIlUrl %>">ישראל</a>
+        <% } else { %>
+        <span class="wf-region-btn wf-region-btn--il wf-region-btn--disabled" dir="rtl" aria-disabled="true">ישראל</span>
+        <% } %>
+      </div>
+      <button type="button" class="wf-region-close" id="wf-region-close">Close</button>
+    </div>
+    <% } %>
     <%- include('partials/home_sidebar', { tenantUrlPrefix }) %>
 
     <div class="wf-home-shell">
@@ -362,7 +411,7 @@
 
     <%- include('partials/site_footer', { tenantUrlPrefix }) %>
 
-    <script src="/scripts.js?v=20260325a"></script>
+    <script src="/scripts.js?v=20260326a"></script>
     <script src="/autocomplete.js?v=20260325a"></script>
   </body>
 </html>

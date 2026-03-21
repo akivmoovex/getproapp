@@ -2307,9 +2307,134 @@ body.join-modal-open {
 .wf-home-tenant-flag {
   font-size: 26px;
   line-height: 1;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   user-select: none;
   flex-shrink: 0;
+}
+
+/* Apex: region globe — same vertical size as Join us */
+.home-page .wf-home-region-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.home-page .wf-home-region-trigger:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.home-page .wf-home-region-trigger:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.home-page .wf-home-region-trigger .wf-home-region-globe {
+  flex-shrink: 0;
+}
+
+.wf-home-layout.wf-menu-drawer-open .wf-home-region-trigger {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.wf-region-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  background: rgba(15, 18, 28, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.wf-region-sheet {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10003;
+  width: min(92vw, 380px);
+  padding: 1.25rem 1.35rem 1rem;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+.wf-region-title {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.wf-region-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wf-region-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.wf-region-btn:hover {
+  border-color: var(--wf-primary);
+  background: var(--primary-softer-bg);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.wf-region-btn--il {
+  font-size: 1.15rem;
+}
+
+.wf-region-btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.wf-region-close {
+  margin-top: 0.85rem;
+  width: 100%;
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wf-region-close:hover {
+  opacity: 0.9;
 }

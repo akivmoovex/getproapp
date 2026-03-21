@@ -36,7 +36,7 @@ npm install
 npm start
 ```
 
-**URLs:** Zambia (default) is served at the site root (`/`, `/join`, `/directory`). Israel is under `/il/…`. Old `/zm/…` links redirect to the same path without `/zm`.
+**URLs:** The marketing site defaults to **`https://getproapp.org`** (apex). **Zambia** listings and join flow live on **`https://zam.getproapp.org`**. **Israel** uses **`https://il.getproapp.org`**. The apex home shows a **Region** control (globe) to open those sites. Legacy paths **`/zm/…`** and **`/il/…`** redirect to the **`zam.*`** and **`il.*`** hosts. Configure **DNS** (and SSL) for `zam` and `il` as subdomains of `BASE_DOMAIN` (e.g. wildcard or explicit A/CNAME records).
 
 Home and directory search use autocomplete lists in `public/data/search-lists.json` (professional services + Zambia places). Regenerate with:
 

@@ -21,6 +21,9 @@ const TENANTS = {
 
 const DEFAULT_TENANT_SLUG = "zm";
 
+/** Subdomains that serve platform tenants (not company one-pagers). */
+const RESERVED_PLATFORM_SUBDOMAINS = new Set(["zam", "il"]);
+
 function getTenantBySlug(slug) {
   if (!slug) return null;
   const s = String(slug).toLowerCase().trim();
@@ -72,12 +75,87 @@ function isValidPhoneForTenant(tenantSlug, raw) {
   return d.length >= 8;
 }
 
+/**
+ * Sets req.tenant for apex + zam/il platform hosts. Skips company subdomains (next() without tenant).
+ */
+function attachTenantByHost(req, res, next) {
+  const sub = req.subdomain;
+  if (sub && !RESERVED_PLATFORM_SUBDOMAINS.has(sub)) {
+    return next();
+  }
+
+  const scheme = process.env.PUBLIC_SCHEME || "https";
+  const base = (process.env.BASE_DOMAIN || "").toLowerCase().trim();
+  const host = (req.hostname || "").toLowerCase();
+
+  req.regionZamUrl = base ? `${scheme}://zam.${base}` : "";
+  req.regionIlUrl = base ? `${scheme}://il.${base}` : "";
+  res.locals.regionZamUrl = req.regionZamUrl;
+  res.locals.regionIlUrl = req.regionIlUrl;
+
+  const isLocal =
+    !host || host === "localhost" || host === "127.0.0.1" || host.startsWith("localhost:");
+
+  if (!base || isLocal) {
+    const t = getTenantBySlug(DEFAULT_TENANT_SLUG);
+    req.tenant = t;
+    req.tenantSlug = t.slug;
+    req.tenantUrlPrefix = "";
+    req.isApexHost = true;
+    res.locals.tenant = t;
+    res.locals.tenantUrlPrefix = "";
+    res.locals.isApexHost = true;
+    return next();
+  }
+
+  const isApex = host === base || host === `www.${base}`;
+  if (isApex) {
+    const t = getTenantBySlug(DEFAULT_TENANT_SLUG);
+    req.tenant = t;
+    req.tenantSlug = t.slug;
+    req.tenantUrlPrefix = "";
+    req.isApexHost = true;
+    res.locals.tenant = t;
+    res.locals.tenantUrlPrefix = "";
+    res.locals.isApexHost = true;
+    return next();
+  }
+
+  if (sub === "zam") {
+    const t = getTenantBySlug(DEFAULT_TENANT_SLUG);
+    req.tenant = t;
+    req.tenantSlug = t.slug;
+    req.tenantUrlPrefix = "";
+    req.isApexHost = false;
+    res.locals.tenant = t;
+    res.locals.tenantUrlPrefix = "";
+    res.locals.isApexHost = false;
+    return next();
+  }
+
+  if (sub === "il") {
+    const t = getTenantBySlug("il");
+    req.tenant = t;
+    req.tenantSlug = t.slug;
+    req.tenantUrlPrefix = "";
+    req.isApexHost = false;
+    res.locals.tenant = t;
+    res.locals.tenantUrlPrefix = "";
+    res.locals.isApexHost = false;
+    return next();
+  }
+
+  return next();
+}
+
 module.exports = {
   TENANTS,
   DEFAULT_TENANT_SLUG,
+  RESERVED_PLATFORM_SUBDOMAINS,
   getTenantBySlug,
   getTenantById,
   attachTenant,
+  attachTenantByHost,
   isValidZambiaPhoneLocal,
   isValidIsraelPhoneLocal,
   isValidPhoneForTenant,

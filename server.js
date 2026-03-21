@@ -32,7 +32,7 @@ try {
   process.exit(1);
 }
 
-const { attachTenant, DEFAULT_TENANT_SLUG } = require("./src/tenants");
+const { attachTenantByHost, RESERVED_PLATFORM_SUBDOMAINS } = require("./src/tenants");
 const publicModule = require("./src/routes/public")({ db });
 const adminRoutes = require("./src/routes/admin");
 const apiRoutes = require("./src/routes/api");
@@ -112,30 +112,47 @@ app.use("/admin", adminRoutes({ db }));
 // Healthcheck
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
 
-// Company one-pagers on subdomain (e.g. demo.getproapp.org/)
+// Company subdomains: only GET / serves a page; other paths 404
+app.use((req, res, next) => {
+  const sub = req.subdomain;
+  if (sub && !RESERVED_PLATFORM_SUBDOMAINS.has(sub)) {
+    if (req.path !== "/" || req.method !== "GET") {
+      return res.status(404).type("text").send("Not found");
+    }
+  }
+  next();
+});
+
+// Company one-pagers (e.g. demo.getproapp.org/) — not zam/il platform hosts
 app.get("/", (req, res, next) => {
-  if (req.subdomain) {
+  if (req.subdomain && !RESERVED_PLATFORM_SUBDOMAINS.has(req.subdomain)) {
     return publicModule.renderCompanyHome(req, res);
   }
   next();
 });
 
-// Israel tenant
-app.use("/il", attachTenant("il"), publicModule.router);
-
-// Legacy /zm/* → canonical paths at site root (Zambia default)
-app.use("/zm", (req, res) => {
+// Legacy path URLs → tenant subdomains (Israel: il.getproapp.org, Zambia: zam.getproapp.org)
+function redirectPathToTenantHost(req, res, pathPrefix, hostLabel) {
+  const scheme = process.env.PUBLIC_SCHEME || "https";
+  const base = (process.env.BASE_DOMAIN || "").trim();
   const u = req.originalUrl;
   const q = u.indexOf("?");
   const pathPart = q === -1 ? u : u.slice(0, q);
   const queryPart = q === -1 ? "" : u.slice(q);
-  let rest = pathPart.slice("/zm".length) || "/";
+  let rest = pathPart.slice(pathPrefix.length) || "/";
   if (!rest.startsWith("/")) rest = `/${rest}`;
-  res.redirect(301, rest + queryPart);
-});
+  if (!base) {
+    return res.redirect(301, rest + queryPart);
+  }
+  res.redirect(301, `${scheme}://${hostLabel}.${base}${rest}${queryPart}`);
+}
 
-// Zambia (default tenant) at site root — getproapp.org/, /join, /directory, …
-app.use("/", attachTenant(DEFAULT_TENANT_SLUG, { urlPrefix: "" }), publicModule.router);
+app.use("/il", (req, res) => redirectPathToTenantHost(req, res, "/il", "il"));
+app.use("/zm", (req, res) => redirectPathToTenantHost(req, res, "/zm", "zam"));
+
+// Host-based tenants: apex + www → Zambia UI + region picker; zam.* / il.* → regional sites
+app.use(attachTenantByHost);
+app.use("/", publicModule.router);
 
 if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
   // eslint-disable-next-line no-console
