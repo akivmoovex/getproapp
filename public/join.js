@@ -1,13 +1,17 @@
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260321a";
+  const LIST_URL = "/data/search-lists.json?v=20260322a";
 
-  const hero = document.getElementById("join-hero");
+  const wizardFrame = document.getElementById("join-wizard-frame");
   const wizard = document.getElementById("join-wizard");
   const getStarted = document.getElementById("join-get-started");
+  const topBrand = document.getElementById("join-top-brand");
   const stepNum = document.getElementById("join-step-num");
   const progressFill = document.getElementById("join-progress-fill");
   const step3Form = document.getElementById("join-step-3-form");
   const step3Thanks = document.getElementById("join-step-3-thanks");
+  const exitModal = document.getElementById("join-exit-modal");
+  const exitModalDismiss = document.getElementById("join-exit-modal-dismiss");
+  const exitModalCall = document.getElementById("join-exit-modal-call");
 
   const steps = {
     1: document.getElementById("join-step-1"),
@@ -51,9 +55,6 @@
     return listsCache;
   }
 
-  /**
-   * Profession/city must be in list — same as home page. Blocks proceed if not chosen from list.
-   */
   function ensureAc(wrap, pool) {
     const input = wrap.querySelector(".pro-ac-input");
     const hidden = wrap.querySelector(".pro-ac-hidden");
@@ -118,25 +119,88 @@
     for (let i = 1; i <= 3; i++) showError(i, "");
   }
 
-  /** Name: letters (and spaces) only, at least 3 characters */
+  function isRegistrationInProgress() {
+    if (!wizardFrame || wizardFrame.hidden) return false;
+    if (step3Thanks && !step3Thanks.hidden) return false;
+    return true;
+  }
+
+  function openExitModal() {
+    if (!exitModal) return;
+    exitModal.hidden = false;
+    document.body.classList.add("join-modal-open");
+    exitModalDismiss?.focus();
+  }
+
+  function closeExitModal() {
+    if (!exitModal) return;
+    exitModal.hidden = true;
+    document.body.classList.remove("join-modal-open");
+  }
+
   function isValidName(s) {
     const t = String(s || "").trim();
     return t.length >= 3 && /^[a-zA-Z\s]+$/.test(t);
   }
 
-  /** Phone: digits only, at least 8 digits */
   function isValidPhone(s) {
     const digits = String(s || "").replace(/\D/g, "");
     return digits.length >= 8;
   }
 
+  topBrand?.addEventListener("click", (e) => {
+    if (isRegistrationInProgress()) {
+      e.preventDefault();
+      openExitModal();
+    }
+  });
+
+  exitModalDismiss?.addEventListener("click", () => closeExitModal());
+
+  exitModal?.addEventListener("click", (e) => {
+    if (e.target === exitModal) closeExitModal();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && exitModal && !exitModal.hidden) {
+      closeExitModal();
+    }
+  });
+
+  exitModalCall?.addEventListener("click", async () => {
+    const digits = phone ? String(phone.value || "").replace(/\D/g, "") : "";
+    try {
+      await fetch("/api/callback-interest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: digits.slice(0, 20),
+          context: "join_exit",
+        }),
+      });
+    } catch (_) {
+      /* still navigate */
+    }
+    closeExitModal();
+    window.location.href = "/";
+  });
+
+  function bindCancel(id) {
+    document.getElementById(id)?.addEventListener("click", () => {
+      if (isRegistrationInProgress()) openExitModal();
+    });
+  }
+  bindCancel("join-cancel-1");
+  bindCancel("join-cancel-3");
+
   getStarted.addEventListener("click", () => {
-    if (hero) hero.classList.add("join-hero--hidden");
+    if (getStarted) getStarted.hidden = true;
+    if (wizardFrame) wizardFrame.hidden = false;
     wizard.classList.remove("join-wizard--hidden");
     wizard.setAttribute("aria-hidden", "false");
     showStep(1);
     clearErrors();
-    wizard.scrollIntoView({ behavior: "smooth", block: "start" });
+    wizardFrame?.scrollIntoView({ behavior: "smooth", block: "start" });
     setTimeout(() => professionInput?.focus(), 350);
   });
 

@@ -3,7 +3,7 @@
  * Values must match search-lists.json on submit.
  */
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260320p";
+  const LIST_URL = "/data/search-lists.json?v=20260322a";
 
   const TYPE_MS = 95;
   const PAUSE_END_MS = 1600;
