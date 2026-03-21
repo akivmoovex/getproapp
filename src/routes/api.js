@@ -57,13 +57,14 @@ module.exports = function apiRoutes({ db }) {
   router.post("/callback-interest", (req, res) => {
     const body = req.body || {};
     const phone = String(body.phone || "").trim().slice(0, 40);
+    const name = String(body.name || "").trim().slice(0, 120);
     const context = String(body.context || "").trim().slice(0, 120);
     db.prepare(
       `
-      INSERT INTO callback_interests (phone, context)
-      VALUES (?, ?)
+      INSERT INTO callback_interests (phone, name, context)
+      VALUES (?, ?, ?)
       `
-    ).run(phone, context || "join_exit");
+    ).run(phone, name, context || "join_exit");
     return res.json({ ok: true });
   });
 

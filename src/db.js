@@ -77,10 +77,20 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS callback_interests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT NOT NULL DEFAULT '',
+    name TEXT NOT NULL DEFAULT '',
     context TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
+
+try {
+  const cols = db.prepare("PRAGMA table_info(callback_interests)").all();
+  if (!cols.some((c) => c.name === "name")) {
+    db.exec("ALTER TABLE callback_interests ADD COLUMN name TEXT NOT NULL DEFAULT ''");
+  }
+} catch (_) {
+  /* ignore */
+}
 
 function run(query, params = []) {
   return db.prepare(query).run(params);

@@ -3,7 +3,7 @@
  * Values must match search-lists.json on submit.
  */
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260322a";
+  const LIST_URL = "/data/search-lists.json?v=20260323a";
 
   const TYPE_MS = 95;
   const PAUSE_END_MS = 1600;
@@ -120,6 +120,10 @@
 
     input.addEventListener("blur", () => {
       if (!input.value.trim()) startLoop();
+    });
+
+    wrap.addEventListener("getpro-restart-watermark", () => {
+      if (!hidden.value) startLoop();
     });
 
     if (!hidden.value) {

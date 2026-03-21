@@ -2016,11 +2016,49 @@ textarea {
   color: var(--muted);
 }
 
+.join-modal-panel--form .join-modal-text {
+  margin-bottom: 16px;
+}
+
+.join-modal-fields {
+  margin-bottom: 8px;
+}
+
+.join-modal-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+  text-align: left;
+}
+
+.join-modal-input.join-plain-input {
+  margin-bottom: 14px;
+}
+
+.join-modal-error {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--flash-error-text);
+  text-align: center;
+}
+
 .join-modal-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   justify-content: center;
+}
+
+.join-modal-actions--split {
+  justify-content: space-between;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.join-modal-panel--form {
+  text-align: left;
 }
 
 body.join-modal-open {
@@ -2042,9 +2080,101 @@ body.join-modal-open {
   color: var(--text);
 }
 
+.join-wizard-inner--thanks {
+  padding-top: 8px;
+}
+
+.join-thanks-animation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.join-thanks-success-ring {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(
+    160deg,
+    rgba(var(--wf-primary-rgb), 0.2) 0%,
+    rgba(var(--wf-primary-rgb), 0.06) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: joinThanksPop 0.55s cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
+}
+
+.join-thanks-check {
+  width: 42px;
+  height: 42px;
+  color: var(--wf-primary);
+}
+
+.join-thanks-check-path {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: joinThanksDraw 0.55s ease forwards 0.18s;
+}
+
+.join-thanks-verify-scene {
+  position: relative;
+  width: 128px;
+  height: 96px;
+  margin: 0 auto;
+  color: var(--muted-soft);
+}
+
+.join-thanks-doc {
+  width: 52px;
+  height: 66px;
+  margin: 0 auto;
+  display: block;
+  opacity: 0.9;
+}
+
+.join-thanks-magnifier {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  right: 6px;
+  top: 14px;
+  color: var(--wf-primary);
+  animation: joinThanksMagnify 2.4s ease-in-out 0.65s infinite alternate;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.12));
+}
+
+@keyframes joinThanksPop {
+  from {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes joinThanksDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes joinThanksMagnify {
+  from {
+    transform: translate(0, 0) rotate(-6deg);
+  }
+  to {
+    transform: translate(-14px, 10px) rotate(10deg);
+  }
+}
+
 .join-wizard-frame .join-step-thanks {
   text-align: center;
-  padding: 12px 0 4px;
+  padding: 16px 0 8px;
 }
 
 #join-panels .join-step-panel {

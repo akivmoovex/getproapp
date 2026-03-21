@@ -1,8 +1,10 @@
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260322a";
+  const LIST_URL = "/data/search-lists.json?v=20260323a";
 
   const wizardFrame = document.getElementById("join-wizard-frame");
   const wizard = document.getElementById("join-wizard");
+  const wizardInner = document.getElementById("join-wizard-inner");
+  const progressWrap = document.getElementById("join-progress-wrap");
   const getStarted = document.getElementById("join-get-started");
   const topBrand = document.getElementById("join-top-brand");
   const stepNum = document.getElementById("join-step-num");
@@ -10,8 +12,15 @@
   const step3Form = document.getElementById("join-step-3-form");
   const step3Thanks = document.getElementById("join-step-3-thanks");
   const exitModal = document.getElementById("join-exit-modal");
+  const exitModalQ = document.getElementById("join-exit-modal-q");
+  const exitModalForm = document.getElementById("join-exit-modal-form");
   const exitModalDismiss = document.getElementById("join-exit-modal-dismiss");
   const exitModalCall = document.getElementById("join-exit-modal-call");
+  const exitModalBack = document.getElementById("join-exit-modal-back");
+  const exitModalSubmit = document.getElementById("join-exit-modal-submit");
+  const exitModalName = document.getElementById("join-exit-modal-name");
+  const exitModalPhone = document.getElementById("join-exit-modal-phone");
+  const exitModalError = document.getElementById("join-exit-modal-error");
 
   const steps = {
     1: document.getElementById("join-step-1"),
@@ -99,6 +108,36 @@
     if (progressFill) progressFill.style.width = `${(n / 3) * 100}%`;
   }
 
+  function restartJoinWatermarks() {
+    document.querySelectorAll("#join-panels .pro-ac").forEach((w) => {
+      w.dispatchEvent(new CustomEvent("getpro-restart-watermark"));
+    });
+  }
+
+  /** Brief demo: type sample letters so the dropdown shows matches (once per session per step). */
+  function maybeRunAcDemo(step) {
+    const key = step === 1 ? "joinDemoAc1" : "joinDemoAc2";
+    if (sessionStorage.getItem(key)) return;
+    const inp = step === 1 ? professionInput : cityInput;
+    if (!inp) return;
+    const demoVal = step === 1 ? "elec" : "lus";
+    window.setTimeout(() => {
+      if (inp.value.trim()) return;
+      sessionStorage.setItem(key, "1");
+      inp.value = demoVal;
+      inp.dispatchEvent(new Event("input", { bubbles: true }));
+      inp.focus();
+      window.setTimeout(() => {
+        if (inp.value === demoVal) {
+          inp.value = "";
+          inp.dispatchEvent(new Event("input", { bubbles: true }));
+          inp.blur();
+          restartJoinWatermarks();
+        }
+      }, 2800);
+    }, 900);
+  }
+
   function showStep(n) {
     currentStep = n;
     setProgress(n);
@@ -106,6 +145,8 @@
       const el = steps[k];
       if (el) el.hidden = Number(k) !== n;
     });
+    if (n === 1) maybeRunAcDemo(1);
+    if (n === 2) maybeRunAcDemo(2);
   }
 
   function showError(step, msg) {
@@ -125,8 +166,28 @@
     return true;
   }
 
+  function showExitModalQuestion() {
+    if (exitModalQ) exitModalQ.hidden = false;
+    if (exitModalForm) exitModalForm.hidden = true;
+    if (exitModalError) {
+      exitModalError.textContent = "";
+      exitModalError.hidden = true;
+    }
+  }
+
+  function showExitModalForm() {
+    if (exitModalQ) exitModalQ.hidden = true;
+    if (exitModalForm) exitModalForm.hidden = false;
+    if (exitModalError) {
+      exitModalError.textContent = "";
+      exitModalError.hidden = true;
+    }
+    exitModalName?.focus();
+  }
+
   function openExitModal() {
     if (!exitModal) return;
+    showExitModalQuestion();
     exitModal.hidden = false;
     document.body.classList.add("join-modal-open");
     exitModalDismiss?.focus();
@@ -136,6 +197,9 @@
     if (!exitModal) return;
     exitModal.hidden = true;
     document.body.classList.remove("join-modal-open");
+    showExitModalQuestion();
+    if (exitModalName) exitModalName.value = "";
+    if (exitModalPhone) exitModalPhone.value = "";
   }
 
   function isValidName(s) {
@@ -157,41 +221,62 @@
 
   exitModalDismiss?.addEventListener("click", () => closeExitModal());
 
-  exitModal?.addEventListener("click", (e) => {
-    if (e.target === exitModal) closeExitModal();
+  exitModalCall?.addEventListener("click", () => {
+    showExitModalForm();
   });
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && exitModal && !exitModal.hidden) {
-      closeExitModal();
+  exitModalBack?.addEventListener("click", () => {
+    showExitModalQuestion();
+  });
+
+  exitModalSubmit?.addEventListener("click", async () => {
+    if (!exitModalName || !exitModalPhone || !exitModalError) return;
+    const nameVal = exitModalName.value.trim();
+    const phoneVal = exitModalPhone.value.trim();
+    if (!isValidName(nameVal)) {
+      exitModalError.textContent = "Name must be at least 3 letters.";
+      exitModalError.hidden = false;
+      return;
     }
-  });
-
-  exitModalCall?.addEventListener("click", async () => {
-    const digits = phone ? String(phone.value || "").replace(/\D/g, "") : "";
+    if (!isValidPhone(phoneVal)) {
+      exitModalError.textContent = "Invalid phone number.";
+      exitModalError.hidden = false;
+      return;
+    }
+    exitModalError.hidden = true;
     try {
       await fetch("/api/callback-interest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: digits.slice(0, 20),
-          context: "join_exit",
+          name: nameVal,
+          phone: phoneVal.replace(/\D/g, "").slice(0, 20),
+          context: "join_exit_call_request",
         }),
       });
     } catch (_) {
-      /* still navigate */
+      /* still go home */
     }
     closeExitModal();
     window.location.href = "/";
   });
 
-  function bindCancel(id) {
-    document.getElementById(id)?.addEventListener("click", () => {
-      if (isRegistrationInProgress()) openExitModal();
-    });
-  }
-  bindCancel("join-cancel-1");
-  bindCancel("join-cancel-3");
+  exitModal?.addEventListener("click", (e) => {
+    if (e.target === exitModal) closeExitModal();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !exitModal || exitModal.hidden) return;
+    if (exitModalForm && !exitModalForm.hidden) {
+      showExitModalQuestion();
+      return;
+    }
+    closeExitModal();
+  });
+
+  document.getElementById("join-cancel-1")?.addEventListener("click", () => {
+    if (isRegistrationInProgress()) openExitModal();
+  });
 
   getStarted.addEventListener("click", () => {
     if (getStarted) getStarted.hidden = true;
@@ -200,8 +285,11 @@
     wizard.setAttribute("aria-hidden", "false");
     showStep(1);
     clearErrors();
+    window.setTimeout(() => {
+      restartJoinWatermarks();
+      professionInput?.focus();
+    }, 120);
     wizardFrame?.scrollIntoView({ behavior: "smooth", block: "start" });
-    setTimeout(() => professionInput?.focus(), 350);
   });
 
   document.getElementById("join-next-1")?.addEventListener("click", async () => {
@@ -283,6 +371,8 @@
       showStep(3);
       if (step3Form) step3Form.hidden = true;
       if (step3Thanks) step3Thanks.hidden = false;
+      if (progressWrap) progressWrap.hidden = true;
+      if (wizardInner) wizardInner.classList.add("join-wizard-inner--thanks");
     } catch (err) {
       showError(3, err.message || "Something went wrong. Please try again.");
     } finally {

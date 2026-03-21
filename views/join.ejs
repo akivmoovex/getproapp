@@ -8,7 +8,7 @@
       name="description"
       content="Become a GetPro Partner — list your professional services, reach clients across Zambia, and grow your business with a clear profile and partner support."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260322a" />
+    <link rel="stylesheet" href="/styles.css?v=20260323a" />
   </head>
   <body class="join-page">
     <a href="/" class="join-top-brand" id="join-top-brand" aria-label="GetPro home">
@@ -96,24 +96,26 @@
 
         <div class="join-wizard-frame" id="join-wizard-frame" hidden>
           <section class="join-wizard join-wizard--hidden" id="join-wizard" aria-hidden="true">
-            <div class="join-wizard-inner">
-              <div class="join-progress" role="status" aria-live="polite">
-                Step <span id="join-step-num">1</span> of 3
-              </div>
-              <div class="join-progress-track" aria-hidden="true">
-                <div class="join-progress-fill" id="join-progress-fill" style="width: 33.33%"></div>
+            <div class="join-wizard-inner" id="join-wizard-inner">
+              <div class="join-progress-wrap" id="join-progress-wrap">
+                <div class="join-progress" role="status" aria-live="polite">
+                  Step <span id="join-step-num">1</span> of 3
+                </div>
+                <div class="join-progress-track" aria-hidden="true">
+                  <div class="join-progress-fill" id="join-progress-fill" style="width: 33.33%"></div>
+                </div>
               </div>
 
               <div id="join-panels">
                 <div class="join-step-panel" id="join-step-1" data-step="1">
                   <h2>What is your profession?</h2>
-                  <p class="join-step-hint">Choose a service from the list (same as on the home page search).</p>
+                  <p class="join-step-hint">Type a few letters — matching suggestions appear below, like on the home page.</p>
                   <div class="join-field join-field--ac">
                     <label for="join-profession">Profession</label>
                     <div
                       class="pro-ac join-pro-ac"
                       data-ac-list="service"
-                      data-watermark-text="Profession: Electrician"
+                      data-watermark-text="Search: Electrician"
                     >
                       <input
                         id="join-profession"
@@ -132,21 +134,21 @@
                     </div>
                   </div>
                   <div class="join-wizard-actions join-wizard-actions--split">
-                    <button type="button" class="btn btn-secondary-wf" id="join-cancel-1">Cancel</button>
                     <button type="button" class="btn btn-primary" id="join-next-1">Continue</button>
+                    <button type="button" class="btn btn-secondary-wf" id="join-cancel-1">Cancel</button>
                   </div>
                   <p class="join-wizard-error" id="join-error-1" hidden></p>
                 </div>
 
                 <div class="join-step-panel" id="join-step-2" data-step="2" hidden>
                   <h2>Which city or town do you work in?</h2>
-                  <p class="join-step-hint">Choose where you mainly serve customers (same style as the home page city field).</p>
+                  <p class="join-step-hint">Type a few letters — city suggestions appear below, same as the home search.</p>
                   <div class="join-field join-field--ac">
                     <label for="join-city">City</label>
                     <div
                       class="pro-ac join-pro-ac"
                       data-ac-list="city"
-                      data-watermark-text="City: Lusaka"
+                      data-watermark-text="Search: Lusaka"
                     >
                       <input
                         id="join-city"
@@ -200,11 +202,8 @@
                       />
                     </div>
                     <div class="join-wizard-actions join-wizard-actions--split">
-                      <button type="button" class="btn btn-secondary-wf" id="join-cancel-3">Cancel</button>
-                      <div class="join-wizard-actions-right">
-                        <button type="button" class="btn btn-secondary-wf" id="join-back-3">Back</button>
-                        <button type="button" class="btn btn-primary" id="join-submit">Submit</button>
-                      </div>
+                      <button type="button" class="btn btn-primary" id="join-submit">Submit</button>
+                      <button type="button" class="btn btn-secondary-wf" id="join-back-3">Back</button>
                     </div>
                     <p class="join-wizard-error" id="join-error-3" hidden></p>
                   </div>
@@ -215,8 +214,25 @@
                     aria-live="polite"
                     hidden
                   >
+                    <div class="join-thanks-animation" aria-hidden="true">
+                      <div class="join-thanks-success-ring">
+                        <svg class="join-thanks-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <path class="join-thanks-check-path" d="M20 6 9 17l-5-5" />
+                        </svg>
+                      </div>
+                      <div class="join-thanks-verify-scene">
+                        <svg class="join-thanks-doc" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 80" fill="none" aria-hidden="true">
+                          <rect x="8" y="4" width="48" height="64" rx="4" stroke="currentColor" stroke-width="2" />
+                          <path d="M16 20h32M16 28h24M16 36h28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                        <svg class="join-thanks-magnifier" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                          <circle cx="20" cy="20" r="12" stroke="currentColor" stroke-width="2.5" />
+                          <path d="m30 30 10 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                        </svg>
+                      </div>
+                    </div>
                     <p class="join-step-thanks-message">
-                      Thank you, our team shall contact you soon.
+                      Thank you. Your details are being verified. Our team should contact you shortly.
                     </p>
                   </div>
                 </div>
@@ -236,16 +252,33 @@
       aria-labelledby="join-exit-modal-title"
     >
       <div class="join-modal">
-        <h2 class="join-modal-title" id="join-exit-modal-title">Want us to call you?</h2>
-        <p class="join-modal-text">Leave registration and we can still reach out if you’d like a call.</p>
-        <div class="join-modal-actions">
-          <button type="button" class="btn btn-secondary-wf" id="join-exit-modal-dismiss">Cancel</button>
-          <button type="button" class="btn btn-primary" id="join-exit-modal-call">Call Me</button>
+        <div class="join-modal-panel" id="join-exit-modal-q">
+          <h2 class="join-modal-title" id="join-exit-modal-title">Want us to call you?</h2>
+          <p class="join-modal-text">Leave registration and we can still reach out if you’d like a call.</p>
+          <div class="join-modal-actions join-modal-actions--split">
+            <button type="button" class="btn btn-primary" id="join-exit-modal-call">Call Me</button>
+            <button type="button" class="btn btn-secondary-wf" id="join-exit-modal-dismiss">Cancel</button>
+          </div>
+        </div>
+        <div class="join-modal-panel join-modal-panel--form" id="join-exit-modal-form" hidden>
+          <h2 class="join-modal-title" id="join-exit-modal-form-title">Your contact details</h2>
+          <p class="join-modal-text">We’ll use this to call you back.</p>
+          <div class="join-modal-fields">
+            <label class="join-modal-label" for="join-exit-modal-name">Full name</label>
+            <input class="join-plain-input join-modal-input" id="join-exit-modal-name" type="text" autocomplete="name" />
+            <label class="join-modal-label" for="join-exit-modal-phone">Phone number</label>
+            <input class="join-plain-input join-modal-input" id="join-exit-modal-phone" type="tel" autocomplete="tel" />
+          </div>
+          <p class="join-modal-error" id="join-exit-modal-error" hidden></p>
+          <div class="join-modal-actions join-modal-actions--split">
+            <button type="button" class="btn btn-primary" id="join-exit-modal-submit">Submit</button>
+            <button type="button" class="btn btn-secondary-wf" id="join-exit-modal-back">Back</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <script src="/autocomplete.js?v=20260322a"></script>
-    <script src="/join.js?v=20260322a"></script>
+    <script src="/autocomplete.js?v=20260323a"></script>
+    <script src="/join.js?v=20260323a"></script>
   </body>
 </html>
