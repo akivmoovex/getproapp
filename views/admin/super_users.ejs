@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>All admin users | GetPro Super</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body>
+    <div class="container" style="padding: 22px 0;">
+      <%- include('../partials/admin_nav', { navTitle: 'Super — all tenants', activeNav: 'super_users' }) %>
+
+      <p class="muted" style="margin-top:14px;font-size:13px;line-height:1.55;max-width:820px;">
+        Passwords are stored as <strong>bcrypt hashes</strong> only — they cannot be displayed. Use <strong>Edit</strong> to set a new password.
+        <% if (seedDemoNote) { %>
+          Seed accounts from <code>SEED_BUILTIN_USERS</code>: <code>tenantmanager</code> / <code>superadmin</code> (password <code>1234</code> if seeded).
+        <% } %>
+      </p>
+
+      <div class="section-title" style="margin-top:22px;">Global &amp; Zambia</div>
+      <p class="muted" style="margin-bottom:12px;font-size:13px;">Users tied to the <strong>global</strong> or <strong>zm</strong> tenant, plus <strong>super_admin</strong> accounts (all regions).</p>
+      <div class="card" style="margin-bottom:28px;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Tenant</th>
+              <th>Role</th>
+              <th>Password</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!gzSummary || gzSummary.length === 0) { %>
+              <tr><td colspan="5" class="muted">No users in this group yet.</td></tr>
+            <% } %>
+            <% (gzSummary || []).forEach(function(u) { %>
+              <tr>
+                <td style="font-weight:700;"><%= u.username %></td>
+                <td><%= u.tenant_id == null ? '— (super admin)' : (u.tenant_name || u.tenant_slug || '#' + u.tenant_id) %></td>
+                <td class="muted"><%= u.role %></td>
+                <td class="muted" style="font-size:12px;">Hashed (not shown)</td>
+                <td><%= u.enabled === 0 ? 'Disabled' : 'Enabled' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">All tenants — manage users</div>
+      <p class="muted" style="margin-bottom:12px;font-size:13px;">Create, edit, delete, enable/disable, or change passwords for any admin user.</p>
+      <div class="nav-links" style="margin-bottom:14px;">
+        <a class="btn btn-primary" href="/admin/super/users/new">New user</a>
+        <a class="btn" href="/admin/super">Back to tenants</a>
+      </div>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Tenant</th>
+              <th>Role</th>
+              <th>Password</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!allUsers || allUsers.length === 0) { %>
+              <tr><td colspan="6" class="muted">No admin users.</td></tr>
+            <% } %>
+            <% (allUsers || []).forEach(function(u) { %>
+              <tr>
+                <td style="font-weight:700;"><%= u.username %></td>
+                <td><%= u.tenant_id == null ? '—' : (u.tenant_name || u.tenant_slug || '#' + u.tenant_id) %></td>
+                <td class="muted"><%= u.role %></td>
+                <td class="muted" style="font-size:12px;">Hashed (not shown)</td>
+                <td><%= u.enabled === 0 ? 'Disabled' : 'Enabled' %></td>
+                <td><a class="btn" href="/admin/super/users/<%= u.id %>/edit">Edit</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

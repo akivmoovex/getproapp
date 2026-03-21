@@ -2376,6 +2376,12 @@ body.join-modal-open {
   --tenant-chip-bg: rgba(124, 58, 237, 0.08);
 }
 
+.tenant-demo {
+  --tenant-accent: #0d9488;
+  --tenant-hero-tint: rgba(13, 148, 136, 0.12);
+  --tenant-chip-bg: rgba(13, 148, 136, 0.1);
+}
+
 .home-page.tenant-zm .wf-hero,
 .join-page.tenant-zm .join-hero {
   background: linear-gradient(180deg, var(--tenant-hero-tint) 0%, var(--bg) 100%);

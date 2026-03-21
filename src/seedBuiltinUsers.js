@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const { ROLES } = require("./roles");
+const { TENANT_ZM } = require("./tenantIds");
 
 /**
  * Idempotent built-in demo accounts (weak passwords for local/demo only).
@@ -29,7 +30,7 @@ function seedBuiltinUsers(db) {
     }
   };
 
-  ensure("tenantmanager", "1234", ROLES.TENANT_MANAGER, 1);
+  ensure("tenantmanager", "1234", ROLES.TENANT_MANAGER, TENANT_ZM);
   ensure("superadmin", "1234", ROLES.SUPER_ADMIN, null);
 }
 

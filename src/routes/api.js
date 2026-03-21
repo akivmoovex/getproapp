@@ -1,10 +1,11 @@
 const express = require("express");
 const { resolveHostname } = require("../host");
 const { israelComingSoonEnabled } = require("../israelComingSoon");
+const { TENANT_IL } = require("../tenantIds");
 
 /**
  * Resolves tenant for join/callback APIs. Never defaults to Zambia — wrong defaults
- * caused all regions to store data under tenant_id 1.
+ * caused all regions to store data under the wrong tenant.
  * Prefer server-rendered `tenantId` (must match DB); optional `tenantSlug` must match that row.
  */
 function resolveTenantIdStrict(db, body) {
@@ -30,7 +31,7 @@ function resolveTenantIdStrict(db, body) {
   return { tenantId: row.id };
 }
 
-const TENANT_IL_ID = 2;
+const TENANT_IL_ID = TENANT_IL;
 
 module.exports = function apiRoutes({ db }) {
   const router = express.Router();

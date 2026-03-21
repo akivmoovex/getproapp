@@ -36,13 +36,15 @@ Using **“document root = `public_html`”** for the subdomain can align static
 
 | Host | Tenant |
 |------|--------|
-| `getproapp.org`, `www.getproapp.org` | Zambia UI + region picker |
-| `zm.getproapp.org` | Zambia (`tenant_id` 1) |
-| `il.getproapp.org` | Israel (`tenant_id` 2) |
-| `bw.getproapp.org` | Botswana (`tenant_id` 3) |
-| `zw.getproapp.org` | Zimbabwe (`tenant_id` 4) |
-| `za.getproapp.org` | South Africa (`tenant_id` 5) |
-| `na.getproapp.org` | Namibia (`tenant_id` 6) |
+| `getproapp.org`, `www.getproapp.org` | Apex UI (often **`global`** tenant when enabled) + region picker |
+| `global.getproapp.org` | Global (`tenant_id` **1**) — apex marketing when enabled |
+| `demo.getproapp.org` | Demo / staging (`tenant_id` **2**), `Disabled` by default |
+| `il.getproapp.org` | Israel (`tenant_id` **3**) |
+| `zm.getproapp.org` | Zambia (`tenant_id` **4**) |
+| `zw.getproapp.org` | Zimbabwe (`tenant_id` **5**) |
+| `bw.getproapp.org` | Botswana (`tenant_id` **6**) |
+| `za.getproapp.org` | South Africa (`tenant_id` **7**) |
+| `na.getproapp.org` | Namibia (`tenant_id` **8**) |
 
 **Required env (production):** `BASE_DOMAIN=getproapp.org` (no `https://`), `PUBLIC_SCHEME=https`, `NODE_ENV=production`. Issue **SSL** for `zm` and `il` hostnames.
 
@@ -106,7 +108,7 @@ npm start
 | `tenant_editor` | Same tenant: categories, companies, leads (read/write). |
 | `tenant_viewer` | Same tenant: **dashboard + leads only** (reports); cannot edit directory data. |
 
-**First boot user:** `ADMIN_USERNAME` (default `admin`) + **`ADMIN_PASSWORD`** (required). Role defaults to **`super_admin`** with `tenant_id` **null**. To seed a tenant-scoped user instead, set e.g. `ADMIN_ROLE=tenant_editor` and **`ADMIN_TENANT_ID=1`**.
+**First boot user:** `ADMIN_USERNAME` (default `admin`) + **`ADMIN_PASSWORD`** (required). Role defaults to **`super_admin`** with `tenant_id` **null**. To seed a tenant-scoped user instead, set e.g. `ADMIN_ROLE=tenant_editor` and **`ADMIN_TENANT_ID=4`** (Zambia).
 
 **Tenant stages** (`tenants.stage`): `PartnerCollection`, `Enabled`, `Disabled`. Only **`Enabled`** tenants appear in the public **region / country** UI and receive normal traffic on **`{slug}.BASE_DOMAIN`**. Other stages hide the country from the picker and the app responds with **503** on that platform host until enabled.
 
@@ -141,3 +143,7 @@ The animated “typing” hint is set with `data-watermark-text` on the `.pro-ac
 **Production:** set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). Optional: `DEBUG_HOST=1` temporarily for `/healthz` and `/api/debug/host`; `ISRAEL_COMING_SOON=true` to lock Israel to coming-soon; `TRUST_PROXY=0` only if Node is exposed directly without a reverse proxy (Hostinger usually needs the default trust proxy). On hosts that don’t deploy `.env`, set the same keys in the panel’s environment variables.
 
 Default SQLite path is **`data/getpro.sqlite`**. Point `SQLITE_PATH` at your file if you keep the database elsewhere.
+
+**Regional tenant lock (first boot):** A one-time migration sets every tenant except **`global`** and **`zm`** (Zambia) to **`Disabled`**. To skip that on a fresh database, set **`GETPRO_SKIP_TENANT_REGION_LOCK=1`** before the first run. After boot, you can still change stages in **Super admin**.
+
+**Super admin — all users:** Open **`/admin/super/users`** to list **Global & Zambia** accounts and **all** admin users across tenants, with create / edit / delete / enable / disable and password change. Passwords are never stored in plain text (only bcrypt hashes).

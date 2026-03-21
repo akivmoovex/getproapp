@@ -64,7 +64,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use((req, res, next) => {
-  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260329d";
+  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260320e";
   next();
 });
 
@@ -200,6 +200,8 @@ function redirectPathToTenantHost(req, res, pathPrefix, hostLabel) {
   res.redirect(301, `${scheme}://${hostLabel}.${base}${rest}${queryPart}`);
 }
 
+app.use("/global", (req, res) => redirectPathToTenantHost(req, res, "/global", "global"));
+app.use("/demo", (req, res) => redirectPathToTenantHost(req, res, "/demo", "demo"));
 app.use("/il", (req, res) => redirectPathToTenantHost(req, res, "/il", "il"));
 app.use("/zm", (req, res) => redirectPathToTenantHost(req, res, "/zm", "zm"));
 app.use("/bw", (req, res) => redirectPathToTenantHost(req, res, "/bw", "bw"));

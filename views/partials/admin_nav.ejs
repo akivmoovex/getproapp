@@ -18,6 +18,7 @@
   <div class="nav-links" style="flex-wrap:wrap;">
     <% if (isSuper) { %>
       <a class="btn <%= typeof activeNav !== 'undefined' && activeNav === 'super' ? 'btn-primary' : '' %>" href="/admin/super">Super</a>
+      <a class="btn <%= typeof activeNav !== 'undefined' && activeNav === 'super_users' ? 'btn-primary' : '' %>" href="/admin/super/users">All users</a>
     <% } %>
     <% if (scoped) { %>
       <a class="btn <%= typeof activeNav !== 'undefined' && activeNav === 'dashboard' ? 'btn-primary' : '' %>" href="/admin/dashboard">Dashboard</a>

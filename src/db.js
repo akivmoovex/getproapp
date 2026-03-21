@@ -80,7 +80,7 @@ db.exec(`
     phone TEXT NOT NULL DEFAULT '',
     name TEXT NOT NULL DEFAULT '',
     context TEXT NOT NULL DEFAULT '',
-    tenant_id INTEGER NOT NULL DEFAULT 1,
+    tenant_id INTEGER NOT NULL DEFAULT 4,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -94,31 +94,26 @@ db.exec(`
 
 db.exec(`
   INSERT OR IGNORE INTO tenants (id, slug, name) VALUES
-    (1, 'zm', 'Zambia'),
-    (2, 'il', 'Israel'),
-    (3, 'bw', 'Botswana'),
-    (4, 'zw', 'Zimbabwe'),
-    (5, 'za', 'South Africa'),
-    (6, 'na', 'Namibia');
+    (1, 'global', 'Global'),
+    (2, 'demo', 'Demo'),
+    (3, 'il', 'Israel'),
+    (4, 'zm', 'Zambia'),
+    (5, 'zw', 'Zimbabwe'),
+    (6, 'bw', 'Botswana'),
+    (7, 'za', 'South Africa'),
+    (8, 'na', 'Namibia');
 `);
 
-try {
-  const newIds = [3, 4, 5, 6];
-  const src = 1;
-  for (const tid of newIds) {
-    const n = db.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(tid).c;
-    if (n > 0) continue;
-    const rows = db.prepare("SELECT slug, name, sort FROM categories WHERE tenant_id = ? ORDER BY sort ASC").all(src);
-    const ins = db.prepare(
-      "INSERT INTO categories (tenant_id, slug, name, sort, created_at) VALUES (?, ?, ?, ?, datetime('now'))"
-    );
-    for (const r of rows) {
-      ins.run(tid, r.slug, r.name, r.sort);
-    }
+function seedCategoriesForTenant(db, destTenantId, srcTenantId) {
+  const n = db.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(destTenantId).c;
+  if (n > 0) return;
+  const rows = db.prepare("SELECT slug, name, sort FROM categories WHERE tenant_id = ? ORDER BY sort ASC").all(srcTenantId);
+  const ins = db.prepare(
+    "INSERT INTO categories (tenant_id, slug, name, sort, created_at) VALUES (?, ?, ?, ?, datetime('now'))"
+  );
+  for (const r of rows) {
+    ins.run(destTenantId, r.slug, r.name, r.sort);
   }
-} catch (e) {
-  // eslint-disable-next-line no-console
-  console.error("[getpro] regional tenant category seed:", e.message);
 }
 
 try {
@@ -135,7 +130,7 @@ try {
         UNIQUE(tenant_id, slug)
       );
       INSERT INTO categories_new (id, tenant_id, slug, name, sort, created_at)
-        SELECT id, 1, slug, name, sort, created_at FROM categories;
+        SELECT id, COALESCE((SELECT id FROM tenants WHERE slug = 'zm' LIMIT 1), 1), slug, name, sort, created_at FROM categories;
       DROP TABLE categories;
       ALTER TABLE categories_new RENAME TO categories;
       CREATE INDEX IF NOT EXISTS idx_categories_tenant_id ON categories(tenant_id);
@@ -214,6 +209,12 @@ try {
 }
 
 try {
+  db.prepare("UPDATE tenants SET stage = ? WHERE slug = 'demo'").run("Disabled");
+} catch (_) {
+  /* ignore */
+}
+
+try {
   const acols = db.prepare("PRAGMA table_info(admin_users)").all();
   if (!acols.some((c) => c.name === "role")) {
     db.exec(`
@@ -272,31 +273,148 @@ try {
   console.error("[getpro] callback_interests.interest_label migration:", e.message);
 }
 
-function seedCategoriesForTenant(db, destTenantId, srcTenantId) {
-  const n = db.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(destTenantId).c;
-  if (n > 0) return;
-  const rows = db.prepare("SELECT slug, name, sort FROM categories WHERE tenant_id = ? ORDER BY sort ASC").all(srcTenantId);
-  const ins = db.prepare(
-    "INSERT INTO categories (tenant_id, slug, name, sort, created_at) VALUES (?, ?, ?, ?, datetime('now'))"
-  );
-  for (const r of rows) {
-    ins.run(destTenantId, r.slug, r.name, r.sort);
-  }
-}
-
+/** One-time: remap legacy tenant ids to global=1, demo=2, il=3, zm=4, zw=5, bw=6, za=7, na=8. */
 try {
-  const g = db.prepare("SELECT id FROM tenants WHERE slug = 'global'").get();
-  if (!g) {
-    const maxRow = db.prepare("SELECT MAX(id) AS m FROM tenants").get();
-    const nextId = (maxRow && maxRow.m ? Number(maxRow.m) : 0) + 1;
-    db.prepare("INSERT INTO tenants (id, slug, name, stage) VALUES (?, 'global', 'Global', 'Enabled')").run(nextId);
-    seedCategoriesForTenant(db, nextId, 1);
-    // eslint-disable-next-line no-console
-    console.log("[getpro] Seeded global tenant (apex default when enabled).");
+  const TID = require("./tenantIds");
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("tenant_id_layout_v1")) {
+    const gm = db.prepare("SELECT id FROM tenants WHERE slug = 'global'").get();
+    const zm = db.prepare("SELECT id FROM tenants WHERE slug = 'zm'").get();
+    const dm = db.prepare("SELECT id FROM tenants WHERE slug = 'demo'").get();
+    const layoutOk =
+      gm && gm.id === TID.TENANT_GLOBAL &&
+      zm && zm.id === TID.TENANT_ZM &&
+      dm && dm.id === TID.TENANT_DEMO;
+
+    if (layoutOk) {
+      db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("tenant_id_layout_v1");
+    } else {
+      const SLUG_TO_ID = {
+        global: TID.TENANT_GLOBAL,
+        demo: TID.TENANT_DEMO,
+        il: TID.TENANT_IL,
+        zm: TID.TENANT_ZM,
+        zw: TID.TENANT_ZW,
+        bw: TID.TENANT_BW,
+        za: TID.TENANT_ZA,
+        na: TID.TENANT_NA,
+      };
+      const SLUG_ORDER = ["global", "demo", "il", "zm", "zw", "bw", "za", "na"];
+      const OFFSET = 1000000;
+      const fkTables = [
+        ["companies", "tenant_id"],
+        ["categories", "tenant_id"],
+        ["leads", "tenant_id"],
+        ["callback_interests", "tenant_id"],
+        ["professional_signups", "tenant_id"],
+      ];
+
+      const tx = db.transaction(() => {
+        if (!db.prepare("SELECT id FROM tenants WHERE slug = 'demo'").get()) {
+          const maxRow = db.prepare("SELECT MAX(id) AS m FROM tenants").get();
+          const nextId = (maxRow && maxRow.m ? Number(maxRow.m) : 0) + 1;
+          db.prepare("INSERT INTO tenants (id, slug, name, stage) VALUES (?, 'demo', 'Demo', ?)").run(
+            nextId,
+            "Disabled"
+          );
+        }
+
+        for (const [table, col] of fkTables) {
+          const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+          if (!cols.some((c) => c.name === col)) continue;
+          db.prepare(`UPDATE ${table} SET ${col} = ${col} + ? WHERE ${col} IS NOT NULL`).run(OFFSET);
+        }
+        const acols = db.prepare("PRAGMA table_info(admin_users)").all();
+        const adminHasTid = acols.some((c) => c.name === "tenant_id");
+        if (adminHasTid) {
+          db.prepare("UPDATE admin_users SET tenant_id = tenant_id + ? WHERE tenant_id IS NOT NULL").run(OFFSET);
+        }
+
+        db.prepare("UPDATE tenants SET id = id + ?").run(OFFSET);
+
+        const rows = db.prepare("SELECT id, slug FROM tenants").all();
+        const bySlug = Object.fromEntries(rows.map((r) => [r.slug, r.id]));
+
+        function rewriteFk(oldId, newId) {
+          for (const [table, col] of fkTables) {
+            const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+            if (!cols.some((c) => c.name === col)) continue;
+            db.prepare(`UPDATE ${table} SET ${col} = ? WHERE ${col} = ?`).run(newId, oldId);
+          }
+          if (adminHasTid) {
+            db.prepare("UPDATE admin_users SET tenant_id = ? WHERE tenant_id = ?").run(newId, oldId);
+          }
+        }
+
+        for (const slug of SLUG_ORDER) {
+          const wanted = SLUG_TO_ID[slug];
+          if (wanted === undefined) continue;
+          const oldShifted = bySlug[slug];
+          if (oldShifted == null || oldShifted === wanted) continue;
+          rewriteFk(oldShifted, wanted);
+          db.prepare("UPDATE tenants SET id = ? WHERE id = ?").run(wanted, oldShifted);
+          bySlug[slug] = wanted;
+        }
+      });
+
+      db.exec("PRAGMA foreign_keys = OFF");
+      tx();
+      db.exec("PRAGMA foreign_keys = ON");
+
+      db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("tenant_id_layout_v1");
+      // eslint-disable-next-line no-console
+      console.log("[getpro] Migration: tenant ids remapped to canonical layout (global=1 … zm=4 …).");
+    }
   }
 } catch (e) {
   // eslint-disable-next-line no-console
-  console.error("[getpro] global tenant seed:", e.message);
+  console.error("[getpro] tenant_id_layout migration:", e.message);
+}
+
+try {
+  const newIds = [3, 5, 6, 7, 8];
+  const src = 4;
+  for (const tid of newIds) {
+    const n = db.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(tid).c;
+    if (n > 0) continue;
+    const rows = db.prepare("SELECT slug, name, sort FROM categories WHERE tenant_id = ? ORDER BY sort ASC").all(src);
+    const ins = db.prepare(
+      "INSERT INTO categories (tenant_id, slug, name, sort, created_at) VALUES (?, ?, ?, ?, datetime('now'))"
+    );
+    for (const r of rows) {
+      ins.run(tid, r.slug, r.name, r.sort);
+    }
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] regional tenant category seed:", e.message);
+}
+
+try {
+  seedCategoriesForTenant(db, 1, 4);
+  seedCategoriesForTenant(db, 2, 4);
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] global/demo category seed:", e.message);
+}
+
+/** One-time: only Global + Zambia stay enabled; other regions disabled (re-enable via admin + optional env). */
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  const ran = db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("disable_tenants_except_global_zm_v1");
+  if (!ran && process.env.GETPRO_SKIP_TENANT_REGION_LOCK !== "1") {
+    db.prepare("UPDATE tenants SET stage = ? WHERE slug NOT IN ('global', 'zm')").run("Disabled");
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("disable_tenants_except_global_zm_v1");
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Migration: disabled all tenants except global and zm (set GETPRO_SKIP_TENANT_REGION_LOCK=1 before first boot to skip).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] tenant region lock migration:", e.message);
 }
 
 function run(query, params = []) {

@@ -2,19 +2,24 @@
 
 ## Tenants (regions)
 
-Rows live in **`tenants`** (`id`, `slug`, `name`, `stage`, …). Default seed IDs:
+Rows live in **`tenants`** (`id`, `slug`, `name`, `stage`, …). Canonical seed IDs (see `src/tenantIds.js`):
 
 | id | slug | name |
 |----|------|------|
-| 1 | zm | Zambia |
-| 2 | il | Israel |
-| 3 | bw | Botswana |
-| 4 | zw | Zimbabwe |
-| 5 | za | South Africa |
-| 6 | na | Namibia |
-| (auto) | global | Global |
+| 1 | global | Global |
+| 2 | demo | Demo |
+| 3 | il | Israel |
+| 4 | zm | Zambia |
+| 5 | zw | Zimbabwe |
+| 6 | bw | Botswana |
+| 7 | za | South Africa |
+| 8 | na | Namibia |
 
-The **`global`** tenant is created at boot if missing. It is used as the **apex** home (`getproapp.org` / `www`) when its stage is **`Enabled`**. It does **not** appear in the public region picker (only regional subdomains do).
+Existing databases created with the old id layout are **remapped once** on boot (`tenant_id_layout_v1` in `_getpro_migrations`).
+
+The **`global`** tenant is used as the **apex** home (`getproapp.org` / `www`) when its stage is **`Enabled`**. It does **not** appear in the public region picker (only regional subdomains do). **`demo`** is seeded as **`Disabled`** by default (staging / internal).
+
+On **first database boot**, a migration may set all tenants except **`global`** and **`zm`** to **`Disabled`** (see `GETPRO_SKIP_TENANT_REGION_LOCK` in the README). Re-enable regions from **Super admin** if needed.
 
 **Stage** (`PartnerCollection`, `Enabled`, `Disabled`) controls public visibility: only **`Enabled`** tenants appear in the region picker and receive traffic on `{slug}.{BASE_DOMAIN}` (except `global`, which is apex-only).
 

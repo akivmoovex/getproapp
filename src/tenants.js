@@ -4,41 +4,61 @@ const { STAGES } = require("./tenantStages");
 /**
  * Static display metadata (theme + flag). DB `tenants` row supplies id, name, stage.
  */
+const TID = require("./tenantIds");
+
 const TENANTS = {
-  zm: {
-    id: 1,
-    slug: "zm",
-    name: "Zambia",
-    defaultLocale: "en-ZM",
-    themeClass: "tenant-zm",
-    flagEmoji: "🇿🇲",
+  /** Apex marketing home (not shown in region picker). */
+  global: {
+    id: TID.TENANT_GLOBAL,
+    slug: "global",
+    name: "Global",
+    defaultLocale: "en",
+    themeClass: "tenant-global",
+    flagEmoji: "🌐",
+  },
+  /** Staging / internal demo tenant (subdomain `demo.*`; not a public region by default). */
+  demo: {
+    id: TID.TENANT_DEMO,
+    slug: "demo",
+    name: "Demo",
+    defaultLocale: "en",
+    themeClass: "tenant-demo",
+    flagEmoji: "🧪",
   },
   il: {
-    id: 2,
+    id: TID.TENANT_IL,
     slug: "il",
     name: "Israel",
     defaultLocale: "he-IL",
     themeClass: "tenant-il",
     flagEmoji: "🇮🇱",
   },
-  bw: {
-    id: 3,
-    slug: "bw",
-    name: "Botswana",
-    defaultLocale: "en-BW",
-    themeClass: "tenant-bw",
-    flagEmoji: "🇧🇼",
+  zm: {
+    id: TID.TENANT_ZM,
+    slug: "zm",
+    name: "Zambia",
+    defaultLocale: "en-ZM",
+    themeClass: "tenant-zm",
+    flagEmoji: "🇿🇲",
   },
   zw: {
-    id: 4,
+    id: TID.TENANT_ZW,
     slug: "zw",
     name: "Zimbabwe",
     defaultLocale: "en-ZW",
     themeClass: "tenant-zw",
     flagEmoji: "🇿🇼",
   },
+  bw: {
+    id: TID.TENANT_BW,
+    slug: "bw",
+    name: "Botswana",
+    defaultLocale: "en-BW",
+    themeClass: "tenant-bw",
+    flagEmoji: "🇧🇼",
+  },
   za: {
-    id: 5,
+    id: TID.TENANT_ZA,
     slug: "za",
     name: "South Africa",
     defaultLocale: "en-ZA",
@@ -46,25 +66,16 @@ const TENANTS = {
     flagEmoji: "🇿🇦",
   },
   na: {
-    id: 6,
+    id: TID.TENANT_NA,
     slug: "na",
     name: "Namibia",
     defaultLocale: "en-NA",
     themeClass: "tenant-na",
     flagEmoji: "🇳🇦",
   },
-  /** Apex marketing home (not shown in region picker). DB row may use a different id. */
-  global: {
-    id: 7,
-    slug: "global",
-    name: "Global",
-    defaultLocale: "en",
-    themeClass: "tenant-global",
-    flagEmoji: "🌐",
-  },
 };
 
-const PLATFORM_REGION_SLUGS = ["zm", "il", "bw", "zw", "za", "na", "global"];
+const PLATFORM_REGION_SLUGS = ["global", "demo", "zm", "il", "bw", "zw", "za", "na"];
 
 const DEFAULT_TENANT_SLUG = "zm";
 
