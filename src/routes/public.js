@@ -30,10 +30,8 @@ function buildCompanyUrl({ baseDomain, subdomain }) {
 function platformSupport() {
   return {
     getproPhone: process.env.CALL_CENTER_PHONE || "",
-    getproEmail:
-      process.env.GETPRO_EMAIL || process.env.PRO_ONLINE_EMAIL || process.env.NETRA_EMAIL || "",
-    getproAddress:
-      process.env.GETPRO_ADDRESS || process.env.PRO_ONLINE_ADDRESS || process.env.NETRA_ADDRESS || "",
+    getproEmail: process.env.GETPRO_EMAIL || "",
+    getproAddress: process.env.GETPRO_ADDRESS || "",
   };
 }
 

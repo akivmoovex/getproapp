@@ -1,5 +1,5 @@
 /**
- * Netraz violet palette — reference copy only.
- * The active `:root` tokens are inlined at the top of `styles.css` so the theme
- * is not blocked by a cached @import. Edit `styles.css` first, then mirror here if you use this file for diffs.
+ * GetPro brand palette — reference copy only.
+ * Active `:root` tokens live at the top of `styles.css` (single source of truth).
+ * Mirror here for diff-friendly reviews; bump `GETPRO_STYLES_V` / `stylesVersion` when changing tokens.
  */

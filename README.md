@@ -112,6 +112,14 @@ npm start
 
 **Super admin UI:** After login, open **`/admin/super`** to create tenants, change stages, and **set tenant scope** before using Categories / Companies / Users for that tenant.
 
+**Public admin entry:** The home menu links to **`/getpro-admin`**, which shows username, password, **Login**, and **Cancel** (same credentials as `/admin/login`). Company-marketing subdomains redirect to **`zm.{BASE_DOMAIN}/getpro-admin`**.
+
+**Data model:** See [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) for which **tenants** exist by default and which **tables** are scoped by `tenant_id`.
+
+**Built-in demo users** (password `1234`, created once if missing): `tenantmanager` (`tenant_manager`, Zambia) and `superadmin` (`super_admin`). Disable seeding in production with **`SEED_BUILTIN_USERS=0`**.
+
+**CSS cache bust:** Set **`GETPRO_STYLES_V`** (or rely on the default in code) so all templates use one `stylesVersion` for `/styles.css?v=…`.
+
 Home and directory search use autocomplete lists in `public/data/search-lists.json` (professional services + Zambia places). Regenerate with:
 
 ```bash
@@ -124,8 +132,8 @@ The animated “typing” hint is set with `data-watermark-text` on the `.pro-ac
 
 ## Environment
 
-**Common variables:** `ADMIN_PASSWORD` (required), `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `SQLITE_PATH`, `SESSION_DIR`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, plus legacy `PRO_ONLINE_*` / `NETRA_*` if needed.
+**Common variables:** `ADMIN_PASSWORD` (required), `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `SQLITE_PATH`, `SESSION_DIR`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, `GETPRO_STYLES_V`, `SEED_BUILTIN_USERS` (`0` to skip demo admin seeding).
 
 **Production:** set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). Optional: `DEBUG_HOST=1` temporarily for `/healthz` and `/api/debug/host`; `ISRAEL_COMING_SOON=true` to lock Israel to coming-soon; `TRUST_PROXY=0` only if Node is exposed directly without a reverse proxy (Hostinger usually needs the default trust proxy). On hosts that don’t deploy `.env`, set the same keys in the panel’s environment variables.
 
-If you used the old default database file, either rename `data/pronline.sqlite` to `data/getpro.sqlite` or set `SQLITE_PATH` to the old path.
+Default SQLite path is **`data/getpro.sqlite`**. Point `SQLITE_PATH` at your file if you keep the database elsewhere.

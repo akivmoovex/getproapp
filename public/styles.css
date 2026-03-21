@@ -1,7 +1,6 @@
 /**
- * Colours are inlined here (not @import) so the violet theme cannot be stuck behind
- * a separately cached theme-colors.css file in the browser.
- * Keep public/theme-colors.css in sync for reference / diff-friendly editing.
+ * GetPro design tokens (single source of truth). Inlined here (not @import) so updates
+ * are not stuck behind a cached theme-colors.css. Keep public/theme-colors.css in sync for diffs.
  */
 :root {
   --color-white: #ffffff;
@@ -89,6 +88,25 @@ a:hover {
   max-width: 1140px;
   margin: 0 auto;
   padding: 0 18px;
+}
+
+/* ——— Admin gate (GetPro admin login / getpro-admin) ——— */
+.admin-gate-page {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.admin-gate-card .form label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.admin-gate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 10px;
 }
 
 /* ——— Slim top bar (Workfolio-style light strip) ——— */
@@ -2491,6 +2509,20 @@ body.join-modal-open {
 .wf-region-strip--nav .wf-region-strip__pill.is-current {
   border-color: var(--tenant-accent, var(--wf-primary));
   background: var(--primary-softer-bg);
+}
+
+.join-top-admin-link {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.join-top-admin-link:hover {
+  color: var(--wf-primary);
+  text-decoration: none;
 }
 
 .join-topbar-row {

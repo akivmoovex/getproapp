@@ -1,0 +1,19 @@
+<% var _cancel = typeof cancelHref !== 'undefined' ? cancelHref : '/'; %>
+<% var _action = typeof formAction !== 'undefined' ? formAction : '/admin/login'; %>
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="flash"><%= error %></div>
+<% } %>
+<form method="post" action="<%= _action %>" class="form admin-gate-form">
+  <div>
+    <label for="admin_gate_username">Username</label>
+    <input id="admin_gate_username" name="username" autocomplete="username" required />
+  </div>
+  <div>
+    <label for="admin_gate_password">Password</label>
+    <input id="admin_gate_password" name="password" type="password" autocomplete="current-password" required />
+  </div>
+  <div class="admin-gate-actions">
+    <button class="btn btn-primary" type="submit">Login</button>
+    <a class="btn" href="<%= _cancel %>">Cancel</a>
+  </div>
+</form>

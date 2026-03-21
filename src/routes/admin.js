@@ -59,13 +59,13 @@ module.exports = function adminRoutes({ db }) {
 
   router.get("/login", (req, res) => {
     if (req.session && req.session.adminUser) return res.redirect("/admin/dashboard");
-    return res.render("admin/login", { error: null });
+    return res.render("admin/login", { error: null, cancelHref: "/getpro-admin" });
   });
 
   router.post("/login", async (req, res) => {
     const { username = "", password = "" } = req.body || {};
     const user = await authenticateAdmin({ db, username, password });
-    if (!user) return res.render("admin/login", { error: "Invalid username or password." });
+    if (!user) return res.render("admin/login", { error: "Invalid username or password.", cancelHref: "/getpro-admin" });
 
     req.session.adminUser = {
       id: user.id,

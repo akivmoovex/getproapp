@@ -8,7 +8,7 @@
       name="description"
       content="GetPro connects you with professionals. Search the directory, browse categories, and contact businesses directly."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260329b" />
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="home-page wf-home-layout <%= tenant.themeClass %>">
     <div class="wf-home-topbar-brandrow">
@@ -392,7 +392,7 @@
             <div class="pro-qa-meta">Updated · <%= new Date().getFullYear() %></div>
           </div>
           <div class="pro-qa-item">
-            <p class="pro-qa-q"><a href="/admin/login">How can my company appear here?</a></p>
+            <p class="pro-qa-q"><a href="<%= tenantUrlPrefix %>/join">How can my company appear here?</a></p>
             <p class="pro-qa-a">Professionals sign in to the partner area to create a category and subdomain profile.</p>
             <div class="pro-qa-meta">For businesses</div>
           </div>
@@ -412,7 +412,7 @@
           <p class="subtitle" style="margin-bottom:18px;">Browse the directory or list your business on GetPro.</p>
           <div class="hero-actions wf-cta-actions" style="justify-content:center;">
             <a class="btn btn-primary" href="<%= tenantUrlPrefix %>/directory">Open directory</a>
-            <a class="btn btn-secondary-wf" href="/admin/login">Partner login</a>
+            <a class="btn btn-secondary-wf" href="/getpro-admin">GetPro admin</a>
           </div>
         </div>
       </div>

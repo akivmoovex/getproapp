@@ -19,6 +19,7 @@ console.log(
 );
 
 const { ensureAdminUser } = require("./src/auth");
+const { seedBuiltinUsers } = require("./src/seedBuiltinUsers");
 const { getSubdomain, resolveHostname } = require("./src/host");
 
 let db;
@@ -61,6 +62,11 @@ app.use(morgan("dev"));
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+app.use((req, res, next) => {
+  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260329d";
+  next();
+});
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -216,6 +222,33 @@ app.use((req, res, next) => {
   next();
 });
 
+function tenantHomeHrefFromPrefix(prefix) {
+  if (prefix === "" || prefix == null) return "/";
+  const ps = String(prefix);
+  if (ps.startsWith("http")) return `${ps.replace(/\/$/, "")}/`;
+  return `${ps}/`;
+}
+
+/** Public entry to admin login (same form as `/admin/login`, with Cancel). */
+app.get("/getpro-admin", (req, res) => {
+  const scheme = process.env.PUBLIC_SCHEME || "https";
+  const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
+  if (req.subdomain && !req.isPlatformTenant) {
+    if (base) return res.redirect(302, `${scheme}://zm.${base}/getpro-admin`);
+    return res.redirect(302, "/getpro-admin");
+  }
+  if (!req.tenant) {
+    return res.status(500).type("text").send("Tenant not resolved");
+  }
+  const prefix = req.tenantUrlPrefix !== undefined && req.tenantUrlPrefix !== null ? req.tenantUrlPrefix : "";
+  return res.render("getpro_admin", {
+    error: null,
+    tenant: req.tenant,
+    tenantUrlPrefix: prefix,
+    tenantHomeHref: tenantHomeHrefFromPrefix(prefix),
+  });
+});
+
 // Only `Enabled` tenants are served publicly (subdomain + apex content)
 app.use((req, res, next) => {
   if (!req.tenant || !req.tenant.slug) return next();
@@ -235,6 +268,7 @@ if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
 
 ensureAdminUser({ db })
   .then(() => {
+    seedBuiltinUsers(db);
     app.listen(port, host, () => {
       // eslint-disable-next-line no-console
       console.log(`GetPro listening on ${host}:${port}`);
