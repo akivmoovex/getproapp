@@ -44,14 +44,13 @@ function tenantHomeHrefFromPrefix(prefix) {
   return `${p}/`;
 }
 
-/** Directory / join links from a company one-pager (subdomain) must target zm.* / il.* hosts. */
+/** Directory / join links from a company one-pager (subdomain) must target regional *.BASE hosts. */
 function platformTenantPrefixForSlug(slug) {
   const scheme = process.env.PUBLIC_SCHEME || "https";
   const base = (process.env.BASE_DOMAIN || "").trim();
   if (!base) return slug === DEFAULT_TENANT_SLUG ? "" : `/${slug}`;
   if (slug === DEFAULT_TENANT_SLUG) return `${scheme}://zm.${base}`;
-  if (slug === "il") return `${scheme}://il.${base}`;
-  return `/${slug}`;
+  return `${scheme}://${slug}.${base}`;
 }
 
 module.exports = function publicRoutes({ db }) {
@@ -70,6 +69,7 @@ module.exports = function publicRoutes({ db }) {
       isApexHost: !!req.isApexHost,
       regionZmUrl: req.regionZmUrl || "",
       regionIlUrl: req.regionIlUrl || "",
+      regionChoices: req.regionChoices || [],
     };
   }
 
@@ -104,7 +104,9 @@ module.exports = function publicRoutes({ db }) {
 
   router.get("/directory", async (req, res) => {
     const tenantId = req.tenant.id;
-    const categories = db.prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC").all();
+    const categories = db
+      .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
+      .all(tenantId);
 
     const selected = req.query.category ? String(req.query.category) : null;
     const searchRaw = req.query.q ? String(req.query.q).trim() : "";
@@ -244,6 +246,7 @@ module.exports = function publicRoutes({ db }) {
         tenant: getTenantById(1),
         tenantUrlPrefix: tp,
         tenantHomeHref: tenantHomeHrefFromPrefix(tp),
+        regionChoices: req.regionChoices || [],
         ...platformSupport(),
       });
     }
@@ -259,6 +262,7 @@ module.exports = function publicRoutes({ db }) {
       tenant,
       tenantUrlPrefix,
       tenantHomeHref: tenantHomeHrefFromPrefix(tenantUrlPrefix),
+      regionChoices: req.regionChoices || [],
       ...platformSupport(),
     });
   }

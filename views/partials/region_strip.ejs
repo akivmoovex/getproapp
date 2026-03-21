@@ -1,0 +1,13 @@
+<% var choices = typeof regionChoices !== 'undefined' && regionChoices ? regionChoices : []; %>
+<% var cur = typeof tenant !== 'undefined' && tenant ? tenant.slug : ''; %>
+<% var mod = typeof regionStripModifier !== 'undefined' ? regionStripModifier : ''; %>
+<% if (choices.length) { %>
+<nav class="wf-region-strip <%= mod %>" aria-label="Country regions">
+  <% choices.forEach(function (r) { %>
+    <a href="<%= r.href %>" class="wf-region-strip__pill <%= cur === r.slug ? 'is-current' : '' %>">
+      <span class="wf-region-strip__name"><%= r.name %></span>
+      <span class="wf-region-strip__flag" aria-hidden="true"><%= r.flag %></span>
+    </a>
+  <% }); %>
+</nav>
+<% } %>

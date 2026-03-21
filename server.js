@@ -181,6 +181,10 @@ function redirectPathToTenantHost(req, res, pathPrefix, hostLabel) {
 
 app.use("/il", (req, res) => redirectPathToTenantHost(req, res, "/il", "il"));
 app.use("/zm", (req, res) => redirectPathToTenantHost(req, res, "/zm", "zm"));
+app.use("/bw", (req, res) => redirectPathToTenantHost(req, res, "/bw", "bw"));
+app.use("/zw", (req, res) => redirectPathToTenantHost(req, res, "/zw", "zw"));
+app.use("/za", (req, res) => redirectPathToTenantHost(req, res, "/za", "za"));
+app.use("/na", (req, res) => redirectPathToTenantHost(req, res, "/na", "na"));
 
 // Host-based tenants: apex + www → Zambia UI + region picker; zm.* / il.* → regional sites
 app.use(attachTenantByHost);

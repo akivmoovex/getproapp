@@ -8,13 +8,16 @@
       name="description"
       content="Become a GetPro Partner — list your professional services, reach clients across Zambia, and grow your business with a clear profile and partner support."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260327a" />
+    <link rel="stylesheet" href="/styles.css?v=20260329a" />
   </head>
   <body class="join-page <%= tenant.themeClass %>">
-    <a href="<%= tenantHomeHref %>" class="join-top-brand" id="join-top-brand" aria-label="GetPro home">
-      <div class="logo" aria-hidden="true"></div>
-      <span class="join-top-brand-title">GetPro</span>
-    </a>
+    <div class="join-topbar-row">
+      <a href="<%= tenantHomeHref %>" class="join-top-brand" id="join-top-brand" aria-label="GetPro home">
+        <div class="logo" aria-hidden="true"></div>
+        <span class="join-top-brand-title">GetPro</span>
+      </a>
+      <%- include('partials/region_strip', { regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], tenant, regionStripModifier: 'wf-region-strip--join' }) %>
+    </div>
 
     <section class="join-hero" id="join-hero">
       <div class="container join-hero-inner">

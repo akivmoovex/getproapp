@@ -95,8 +95,31 @@ db.exec(`
 db.exec(`
   INSERT OR IGNORE INTO tenants (id, slug, name) VALUES
     (1, 'zm', 'Zambia'),
-    (2, 'il', 'Israel');
+    (2, 'il', 'Israel'),
+    (3, 'bw', 'Botswana'),
+    (4, 'zw', 'Zimbabwe'),
+    (5, 'za', 'South Africa'),
+    (6, 'na', 'Namibia');
 `);
+
+try {
+  const newIds = [3, 4, 5, 6];
+  const src = 1;
+  for (const tid of newIds) {
+    const n = db.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(tid).c;
+    if (n > 0) continue;
+    const rows = db.prepare("SELECT slug, name, sort FROM categories WHERE tenant_id = ? ORDER BY sort ASC").all(src);
+    const ins = db.prepare(
+      "INSERT INTO categories (tenant_id, slug, name, sort, created_at) VALUES (?, ?, ?, ?, datetime('now'))"
+    );
+    for (const r of rows) {
+      ins.run(tid, r.slug, r.name, r.sort);
+    }
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] regional tenant category seed:", e.message);
+}
 
 try {
   const catCols = db.prepare("PRAGMA table_info(categories)").all();

@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Directory | GetPro</title>
-    <link rel="stylesheet" href="/styles.css?v=20260325a" />
+    <link rel="stylesheet" href="/styles.css?v=20260329a" />
   </head>
   <body class="<%= tenant.themeClass %>">
-    <%- include('partials/site_header', { tenantUrlPrefix }) %>
+    <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
 
     <div class="container" style="padding: 20px 0 8px;">
       <form class="pro-search pro-search--directory" action="<%= tenantUrlPrefix %>/directory" method="get" role="search" style="max-width:100%;margin-bottom:20px;">

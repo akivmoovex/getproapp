@@ -36,9 +36,13 @@ Using **“document root = `public_html`”** for the subdomain can align static
 
 | Host | Tenant |
 |------|--------|
-| `getproapp.org`, `www.getproapp.org` | Zambia UI + region picker (links to `zm` / `il` URLs) |
+| `getproapp.org`, `www.getproapp.org` | Zambia UI + region picker |
 | `zm.getproapp.org` | Zambia (`tenant_id` 1) |
 | `il.getproapp.org` | Israel (`tenant_id` 2) |
+| `bw.getproapp.org` | Botswana (`tenant_id` 3) |
+| `zw.getproapp.org` | Zimbabwe (`tenant_id` 4) |
+| `za.getproapp.org` | South Africa (`tenant_id` 5) |
+| `na.getproapp.org` | Namibia (`tenant_id` 6) |
 
 **Required env (production):** `BASE_DOMAIN=getproapp.org` (no `https://`), `PUBLIC_SCHEME=https`, `NODE_ENV=production`. Issue **SSL** for `zm` and `il` hostnames.
 
@@ -89,7 +93,7 @@ npm start
 
 **URLs:** The marketing site defaults to **`https://getproapp.org`** (apex). **Zambia** (ISO alpha-2 **`zm`**) uses **`https://zm.getproapp.org`**. **Israel** uses **`https://il.getproapp.org`**. The apex home shows a **Region** control (globe) to open those sites. Legacy paths **`/zm/…`** and **`/il/…`** redirect to **`zm.*`** and **`il.*`**. The old host **`zam.getproapp.org`** redirects to **`zm.getproapp.org`**. Configure **DNS** (and SSL) for `zm` and `il` (and wildcard `*.getproapp.org` if you use company subdomains).
 
-**Multi-tenant data:** Categories, companies, leads, and admin access are scoped by **`tenant_id`** (Zambia `1`, Israel `2`). Each admin user has a **`tenant_id`**; the dashboard only shows data for that tenant. Set **`ADMIN_TENANT_ID`** (default `1`) when creating the first admin user. For an Israel-only admin, use **`ADMIN_TENANT_ID=2`** with a distinct **`ADMIN_USERNAME`**.
+**Multi-tenant data:** Categories, companies, leads, and admin access are scoped by **`tenant_id`** (Zambia `1`, Israel `2`, Botswana `3`, Zimbabwe `4`, South Africa `5`, Namibia `6`). New regional tenants get a **copy of Zambia’s categories** on first boot (no companies until you add them). Each admin user has a **`tenant_id`**; the dashboard only shows data for that tenant. Set **`ADMIN_TENANT_ID`** when creating the first admin user.
 
 Home and directory search use autocomplete lists in `public/data/search-lists.json` (professional services + Zambia places). Regenerate with:
 

@@ -8,10 +8,10 @@
       name="description"
       content="One-page company profile on GetPro. Get in touch and request services."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260325a" />
+    <link rel="stylesheet" href="/styles.css?v=20260329a" />
   </head>
   <body class="<%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
-    <%- include('partials/site_header', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>
+    <%- include('partials/site_header', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '', tenant: typeof tenant !== 'undefined' ? tenant : null, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
 
     <div class="container" style="padding: 10px 0 30px;">
       <div class="hero-grid">
