@@ -1,8 +1,8 @@
 const { resolveHostname } = require("./host");
+const { STAGES } = require("./tenantStages");
 
 /**
- * Host-based tenants: apex + regional subdomains (ISO-style ccTLD hints: zm, il, bw, …).
- * Legacy zam.* redirects to zm.* (canonical Zambia host).
+ * Static display metadata (theme + flag). DB `tenants` row supplies id, name, stage.
  */
 const TENANTS = {
   zm: {
@@ -55,26 +55,11 @@ const TENANTS = {
   },
 };
 
-/** Order shown in the top bar and region picker. */
 const PLATFORM_REGION_SLUGS = ["zm", "il", "bw", "zw", "za", "na"];
 
 const DEFAULT_TENANT_SLUG = "zm";
 
 const RESERVED_PLATFORM_SUBDOMAINS = new Set(PLATFORM_REGION_SLUGS);
-
-function buildRegionChoices(base, scheme) {
-  if (!base) return [];
-  return PLATFORM_REGION_SLUGS.map((slug) => {
-    const t = TENANTS[slug];
-    if (!t) return null;
-    return {
-      slug,
-      name: t.name,
-      flag: t.flagEmoji,
-      href: `${scheme}://${slug}.${base}`,
-    };
-  }).filter(Boolean);
-}
 
 function getTenantBySlug(slug) {
   if (!slug) return null;
@@ -86,6 +71,38 @@ function getTenantById(id) {
   const n = Number(id);
   if (!n) return null;
   return Object.values(TENANTS).find((t) => t.id === n) || null;
+}
+
+/** Merge DB row with static theme/flag when present. */
+function getTenantRowMerged(slug, db) {
+  const s = String(slug || "").toLowerCase().trim();
+  const row = db.prepare("SELECT id, slug, name FROM tenants WHERE slug = ?").get(s);
+  if (!row) return getTenantBySlug(s);
+  const meta = TENANTS[row.slug];
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name || meta?.name || row.slug,
+    defaultLocale: meta?.defaultLocale || "en",
+    themeClass: meta?.themeClass || `tenant-${row.slug}`,
+    flagEmoji: meta?.flagEmoji || "🌐",
+  };
+}
+
+function buildRegionChoicesFromDb(db, base, scheme) {
+  if (!base) return [];
+  const rows = db
+    .prepare("SELECT slug, name FROM tenants WHERE stage = ? ORDER BY id ASC")
+    .all(STAGES.ENABLED);
+  return rows.map((row) => {
+    const meta = TENANTS[row.slug];
+    return {
+      slug: row.slug,
+      name: row.name || meta?.name || row.slug,
+      flag: meta?.flagEmoji || "🌐",
+      href: `${scheme}://${row.slug}.${base}`,
+    };
+  });
 }
 
 function attachTenant(slug, options = {}) {
@@ -105,14 +122,12 @@ function attachTenant(slug, options = {}) {
   };
 }
 
-/** Zambia mobile without country code: 9 digits starting with 7 or 9 (no +260/260). */
 function isValidZambiaPhoneLocal(raw) {
   const d = String(raw || "").replace(/\D/g, "");
   if (d.length !== 9) return false;
   return /^[79]/.test(d);
 }
 
-/** Israel mobile without +972: 9 digits, usually starts with 5 for mobile. */
 function isValidIsraelPhoneLocal(raw) {
   const d = String(raw || "").replace(/\D/g, "");
   if (d.length === 9 && /^5[0-9]/.test(d)) return true;
@@ -127,69 +142,67 @@ function isValidPhoneForTenant(tenantSlug, raw) {
   return d.length >= 8;
 }
 
-/**
- * Sets req.tenant for apex + regional platform hosts. Skips company subdomains (next() without tenant).
- */
-function attachTenantByHost(req, res, next) {
-  const scheme = process.env.PUBLIC_SCHEME || "https";
-  const base = (process.env.BASE_DOMAIN || "").toLowerCase().trim();
-  const host = resolveHostname(req);
+function createAttachTenantByHost(db) {
+  return function attachTenantByHost(req, res, next) {
+    const scheme = process.env.PUBLIC_SCHEME || "https";
+    const base = (process.env.BASE_DOMAIN || "").toLowerCase().trim();
+    const host = resolveHostname(req);
 
-  req.regionChoices = buildRegionChoices(base, scheme);
-  res.locals.regionChoices = req.regionChoices;
-  req.regionZmUrl = base ? `${scheme}://zm.${base}` : "";
-  req.regionIlUrl = base ? `${scheme}://il.${base}` : "";
-  res.locals.regionZmUrl = req.regionZmUrl;
-  res.locals.regionIlUrl = req.regionIlUrl;
+    const sub = req.subdomain;
+    if (sub && !req.isPlatformTenant) {
+      return next();
+    }
 
-  const sub = req.subdomain;
-  if (sub && !RESERVED_PLATFORM_SUBDOMAINS.has(sub)) {
-    return next();
-  }
+    const isLocal =
+      !host || host === "localhost" || host === "127.0.0.1" || host.startsWith("localhost:");
 
-  const isLocal =
-    !host || host === "localhost" || host === "127.0.0.1" || host.startsWith("localhost:");
-
-  if (!base || isLocal) {
-    const t = getTenantBySlug(DEFAULT_TENANT_SLUG);
-    req.tenant = t;
-    req.tenantSlug = t.slug;
-    req.tenantUrlPrefix = "";
-    req.isApexHost = true;
-    res.locals.tenant = t;
-    res.locals.tenantUrlPrefix = "";
-    res.locals.isApexHost = true;
-    return next();
-  }
-
-  const isApex = host === base || host === `www.${base}`;
-  if (isApex) {
-    const t = getTenantBySlug(DEFAULT_TENANT_SLUG);
-    req.tenant = t;
-    req.tenantSlug = t.slug;
-    req.tenantUrlPrefix = "";
-    req.isApexHost = true;
-    res.locals.tenant = t;
-    res.locals.tenantUrlPrefix = "";
-    res.locals.isApexHost = true;
-    return next();
-  }
-
-  for (const slug of PLATFORM_REGION_SLUGS) {
-    if (sub === slug || host === `${slug}.${base}`) {
-      const t = getTenantBySlug(slug);
+    function setApexTenant() {
+      const zmRow = db.prepare("SELECT stage FROM tenants WHERE slug = ?").get("zm");
+      let slug = DEFAULT_TENANT_SLUG;
+      if (!zmRow || zmRow.stage !== STAGES.ENABLED) {
+        const first = db
+          .prepare("SELECT slug FROM tenants WHERE stage = ? ORDER BY id ASC LIMIT 1")
+          .get(STAGES.ENABLED);
+        if (first && first.slug) slug = first.slug;
+      }
+      const t = getTenantRowMerged(slug, db);
       req.tenant = t;
       req.tenantSlug = t.slug;
       req.tenantUrlPrefix = "";
-      req.isApexHost = false;
+      req.isApexHost = true;
       res.locals.tenant = t;
       res.locals.tenantUrlPrefix = "";
-      res.locals.isApexHost = false;
+      res.locals.isApexHost = true;
+    }
+
+    if (!base || isLocal) {
+      setApexTenant();
       return next();
     }
-  }
 
-  return next();
+    const isApex = host === base || host === `www.${base}`;
+    if (isApex) {
+      setApexTenant();
+      return next();
+    }
+
+    const rows = db.prepare("SELECT slug FROM tenants ORDER BY id").all();
+    for (const { slug } of rows) {
+      if (sub === slug || host === `${slug}.${base}`) {
+        const t = getTenantRowMerged(slug, db);
+        req.tenant = t;
+        req.tenantSlug = t.slug;
+        req.tenantUrlPrefix = "";
+        req.isApexHost = false;
+        res.locals.tenant = t;
+        res.locals.tenantUrlPrefix = "";
+        res.locals.isApexHost = false;
+        return next();
+      }
+    }
+
+    return next();
+  };
 }
 
 module.exports = {
@@ -197,11 +210,12 @@ module.exports = {
   PLATFORM_REGION_SLUGS,
   DEFAULT_TENANT_SLUG,
   RESERVED_PLATFORM_SUBDOMAINS,
-  buildRegionChoices,
   getTenantBySlug,
   getTenantById,
+  getTenantRowMerged,
+  buildRegionChoicesFromDb,
   attachTenant,
-  attachTenantByHost,
+  createAttachTenantByHost,
   isValidZambiaPhoneLocal,
   isValidIsraelPhoneLocal,
   isValidPhoneForTenant,

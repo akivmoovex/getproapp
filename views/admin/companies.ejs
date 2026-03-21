@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Companies | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=20260320k" />
+  </head>
+  <body>
+    <div class="container" style="padding: 22px 0;">
+      <%- include('../partials/admin_nav', { navTitle: 'Companies', activeNav: 'companies' }) %>
+
+      <div class="section-title" style="margin-top:22px;">All companies</div>
+      <div class="nav-links" style="margin-bottom:14px;">
+        <a class="btn btn-primary" href="/admin/companies/new">New company</a>
+      </div>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Subdomain</th>
+              <th>Category</th>
+              <th>Updated</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% companies.forEach(function(c) { %>
+              <tr>
+                <td style="font-weight:800;"><%= c.name %></td>
+                <td class="muted">
+                  <% if (baseDomain) { %>
+                    <span class="kbd"><%= c.subdomain %>.<%= baseDomain %></span>
+                  <% } else { %>
+                    @<%= c.subdomain %>
+                  <% } %>
+                </td>
+                <td><%= c.category_name || '—' %></td>
+                <td class="muted" style="font-size:12px;"><%= c.updated_at %></td>
+                <td><a class="btn" href="/admin/companies/<%= c.id %>/edit">Edit</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

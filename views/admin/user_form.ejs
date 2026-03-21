@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>New user | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=20260320k" />
+  </head>
+  <body>
+    <div class="container" style="padding: 22px 0;">
+      <%- include('../partials/admin_nav', { navTitle: 'New tenant user', activeNav: 'users' }) %>
+
+      <% if (error) { %>
+        <div class="flash" style="margin-top:16px;"><%= error %></div>
+      <% } %>
+
+      <div class="card" style="max-width:520px;margin-top:22px;">
+        <form method="post" action="/admin/users" class="form">
+          <div>
+            <label for="username">Username</label>
+            <input id="username" name="username" autocomplete="username" required />
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" />
+            <div class="muted" style="margin-top:6px;font-size:12px;">At least 8 characters.</div>
+          </div>
+          <div>
+            <label for="role">Role</label>
+            <select id="role" name="role">
+              <option value="tenant_manager">tenant_manager — create users, edit directory</option>
+              <option value="tenant_editor" selected>tenant_editor — edit directory data</option>
+              <option value="tenant_viewer">tenant_viewer — reports only (dashboard + leads)</option>
+            </select>
+          </div>
+          <div class="muted" style="font-size:12px;line-height:1.5;">
+            New users belong to tenant <strong>#<%= tenantId %></strong>. Super admin accounts are not created here.
+          </div>
+          <button class="btn btn-primary" type="submit">Create user</button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

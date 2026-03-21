@@ -8,16 +8,9 @@
   </head>
   <body>
     <div class="container" style="padding: 22px 0;">
-      <div class="nav" style="padding-top:0;">
-        <div class="brand">
-          <div class="logo" aria-hidden="true"></div>
-          <div style="font-weight:900;">Categories</div>
-        </div>
-        <div class="nav-links">
-          <a class="btn" href="/admin/dashboard">Dashboard</a>
-          <a class="btn" href="/admin/companies">Companies</a>
-          <a class="btn btn-primary" href="/admin/categories/new">New Category</a>
-        </div>
+      <%- include('../partials/admin_nav', { navTitle: 'Categories', activeNav: 'categories' }) %>
+      <div class="nav-links" style="margin-bottom:14px;">
+        <a class="btn btn-primary" href="/admin/categories/new">New category</a>
       </div>
 
       <div class="section-title">All Categories</div>

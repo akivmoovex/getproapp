@@ -8,17 +8,7 @@
   </head>
   <body>
     <div class="container" style="padding: 22px 0;">
-      <div class="nav" style="padding-top:0;">
-        <div class="brand">
-          <div class="logo" aria-hidden="true"></div>
-          <div style="font-weight:900;">Leads</div>
-        </div>
-        <div class="nav-links">
-          <a class="btn" href="/admin/dashboard">Dashboard</a>
-          <a class="btn" href="/admin/categories">Categories</a>
-          <a class="btn" href="/admin/companies">Companies</a>
-        </div>
-      </div>
+      <%- include('../partials/admin_nav', { navTitle: 'Lead reports', activeNav: 'leads' }) %>
 
       <div class="section-title">Lead Requests</div>
 

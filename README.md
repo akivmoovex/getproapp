@@ -93,7 +93,24 @@ npm start
 
 **URLs:** The marketing site defaults to **`https://getproapp.org`** (apex). **Zambia** (ISO alpha-2 **`zm`**) uses **`https://zm.getproapp.org`**. **Israel** uses **`https://il.getproapp.org`**. The apex home shows a **Region** control (globe) to open those sites. Legacy paths **`/zm/…`** and **`/il/…`** redirect to **`zm.*`** and **`il.*`**. The old host **`zam.getproapp.org`** redirects to **`zm.getproapp.org`**. Configure **DNS** (and SSL) for `zm` and `il` (and wildcard `*.getproapp.org` if you use company subdomains).
 
-**Multi-tenant data:** Categories, companies, leads, and admin access are scoped by **`tenant_id`** (Zambia `1`, Israel `2`, Botswana `3`, Zimbabwe `4`, South Africa `5`, Namibia `6`). New regional tenants get a **copy of Zambia’s categories** on first boot (no companies until you add them). Each admin user has a **`tenant_id`**; the dashboard only shows data for that tenant. Set **`ADMIN_TENANT_ID`** when creating the first admin user.
+**Multi-tenant data:** Categories, companies, leads, and admin access are scoped by **`tenant_id`**. New tenants created in **Super admin** (`/admin/super`) get a **copy of tenant 1’s categories** as a starting point (no companies until you add them).
+
+### Admin roles & tenant stages
+
+**Roles** (stored on `admin_users.role`):
+
+| Role | Access |
+|------|--------|
+| `super_admin` | Full tenant list, create tenants, set **stage**, scope to any tenant, manage users when scoped. |
+| `tenant_manager` | Same tenant: edit directory + **create** other tenant users (manager / editor / viewer). |
+| `tenant_editor` | Same tenant: categories, companies, leads (read/write). |
+| `tenant_viewer` | Same tenant: **dashboard + leads only** (reports); cannot edit directory data. |
+
+**First boot user:** `ADMIN_USERNAME` (default `admin`) + **`ADMIN_PASSWORD`** (required). Role defaults to **`super_admin`** with `tenant_id` **null**. To seed a tenant-scoped user instead, set e.g. `ADMIN_ROLE=tenant_editor` and **`ADMIN_TENANT_ID=1`**.
+
+**Tenant stages** (`tenants.stage`): `PartnerCollection`, `Enabled`, `Disabled`. Only **`Enabled`** tenants appear in the public **region / country** UI and receive normal traffic on **`{slug}.BASE_DOMAIN`**. Other stages hide the country from the picker and the app responds with **503** on that platform host until enabled.
+
+**Super admin UI:** After login, open **`/admin/super`** to create tenants, change stages, and **set tenant scope** before using Categories / Companies / Users for that tenant.
 
 Home and directory search use autocomplete lists in `public/data/search-lists.json` (professional services + Zambia places). Regenerate with:
 

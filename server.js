@@ -32,7 +32,11 @@ try {
   process.exit(1);
 }
 
-const { attachTenantByHost, RESERVED_PLATFORM_SUBDOMAINS } = require("./src/tenants");
+const {
+  createAttachTenantByHost,
+  buildRegionChoicesFromDb,
+} = require("./src/tenants");
+const { STAGES } = require("./src/tenantStages");
 const publicModule = require("./src/routes/public")({ db });
 const adminRoutes = require("./src/routes/admin");
 const apiRoutes = require("./src/routes/api");
@@ -111,6 +115,17 @@ app.use((req, res, next) => {
   next();
 });
 
+// Subdomain is a platform tenant (row in `tenants`) vs a company marketing subdomain
+app.use((req, res, next) => {
+  req.isPlatformTenant = false;
+  const sub = req.subdomain;
+  if (sub) {
+    const row = db.prepare("SELECT 1 FROM tenants WHERE slug = ?").get(sub);
+    req.isPlatformTenant = !!row;
+  }
+  next();
+});
+
 // Legacy host zam.{BASE} → zm.{BASE} (Zambia uses ISO alpha-2 subdomain)
 app.use((req, res, next) => {
   const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
@@ -147,7 +162,7 @@ app.get("/healthz", (req, res) => {
 // Company subdomains: only GET / serves a page; other paths 404
 app.use((req, res, next) => {
   const sub = req.subdomain;
-  if (sub && !RESERVED_PLATFORM_SUBDOMAINS.has(sub)) {
+  if (sub && !req.isPlatformTenant) {
     if (req.path !== "/" || req.method !== "GET") {
       return res.status(404).type("text").send("Not found");
     }
@@ -155,9 +170,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Company one-pagers (e.g. demo.getproapp.org/) — not zm/il platform hosts
+// Company one-pagers (e.g. demo.getproapp.org/) — not platform tenant hosts
 app.get("/", (req, res, next) => {
-  if (req.subdomain && !RESERVED_PLATFORM_SUBDOMAINS.has(req.subdomain)) {
+  if (req.subdomain && !req.isPlatformTenant) {
     return publicModule.renderCompanyHome(req, res);
   }
   next();
@@ -186,8 +201,31 @@ app.use("/zw", (req, res) => redirectPathToTenantHost(req, res, "/zw", "zw"));
 app.use("/za", (req, res) => redirectPathToTenantHost(req, res, "/za", "za"));
 app.use("/na", (req, res) => redirectPathToTenantHost(req, res, "/na", "na"));
 
-// Host-based tenants: apex + www → Zambia UI + region picker; zm.* / il.* → regional sites
-app.use(attachTenantByHost);
+// Host-based tenants: apex + regional subdomains
+app.use(createAttachTenantByHost(db));
+
+app.use((req, res, next) => {
+  const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
+  const scheme = process.env.PUBLIC_SCHEME || "https";
+  req.regionChoices = buildRegionChoicesFromDb(db, base, scheme);
+  res.locals.regionChoices = req.regionChoices;
+  req.regionZmUrl = base ? `${scheme}://zm.${base}` : "";
+  req.regionIlUrl = base ? `${scheme}://il.${base}` : "";
+  res.locals.regionZmUrl = req.regionZmUrl;
+  res.locals.regionIlUrl = req.regionIlUrl;
+  next();
+});
+
+// Only `Enabled` tenants are served publicly (subdomain + apex content)
+app.use((req, res, next) => {
+  if (!req.tenant || !req.tenant.slug) return next();
+  const row = db.prepare("SELECT stage FROM tenants WHERE id = ?").get(req.tenant.id);
+  if (!row || row.stage !== STAGES.ENABLED) {
+    return res.status(503).type("text").send("This region is not available.");
+  }
+  next();
+});
+
 app.use("/", publicModule.router);
 
 if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {

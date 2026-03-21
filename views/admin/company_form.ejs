@@ -8,14 +8,9 @@
   </head>
   <body>
     <div class="container" style="padding: 22px 0;">
-      <div class="nav" style="padding-top:0;">
-        <div class="brand">
-          <div class="logo" aria-hidden="true"></div>
-          <div style="font-weight:900;"><%= company ? 'Edit Company' : 'New Company' %></div>
-        </div>
-        <div class="nav-links">
-          <a class="btn" href="/admin/companies">Back</a>
-        </div>
+      <%- include('../partials/admin_nav', { navTitle: company ? 'Edit company' : 'New company', activeNav: 'companies' }) %>
+      <div class="nav-links" style="margin-bottom:10px;">
+        <a class="btn" href="/admin/companies">← All companies</a>
       </div>
 
       <div class="card" style="max-width: 900px; margin-top:16px;">

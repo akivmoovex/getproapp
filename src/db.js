@@ -202,6 +202,52 @@ try {
   /* ignore */
 }
 
+try {
+  const tcols = db.prepare("PRAGMA table_info(tenants)").all();
+  if (!tcols.some((c) => c.name === "stage")) {
+    db.exec("ALTER TABLE tenants ADD COLUMN stage TEXT NOT NULL DEFAULT 'Enabled'");
+    db.exec("UPDATE tenants SET stage = 'Enabled' WHERE stage IS NULL OR stage = ''");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] tenants.stage migration:", e.message);
+}
+
+try {
+  const acols = db.prepare("PRAGMA table_info(admin_users)").all();
+  if (!acols.some((c) => c.name === "role")) {
+    db.exec(`
+      CREATE TABLE admin_users_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'tenant_editor',
+        tenant_id INTEGER REFERENCES tenants(id),
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `);
+    const rows = db.prepare("SELECT * FROM admin_users").all();
+    const ins = db.prepare(
+      "INSERT INTO admin_users_new (id, username, password_hash, role, tenant_id, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+    );
+    for (const r of rows) {
+      ins.run(
+        r.id,
+        r.username,
+        r.password_hash,
+        "tenant_editor",
+        r.tenant_id,
+        r.created_at
+      );
+    }
+    db.exec("DROP TABLE admin_users");
+    db.exec("ALTER TABLE admin_users_new RENAME TO admin_users");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] admin_users role migration:", e.message);
+}
+
 function run(query, params = []) {
   return db.prepare(query).run(params);
 }
