@@ -43,18 +43,6 @@ function requireManageUsers(req, res, next) {
   return next();
 }
 
-function seedCategoriesFromTenant(db, destTenantId, srcTenantId) {
-  const n = db.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(destTenantId).c;
-  if (n > 0) return;
-  const rows = db.prepare("SELECT slug, name, sort FROM categories WHERE tenant_id = ? ORDER BY sort ASC").all(srcTenantId);
-  const ins = db.prepare(
-    "INSERT INTO categories (tenant_id, slug, name, sort, created_at) VALUES (?, ?, ?, ?, datetime('now'))"
-  );
-  for (const r of rows) {
-    ins.run(destTenantId, r.slug, r.name, r.sort);
-  }
-}
-
 module.exports = function adminRoutes({ db }) {
   const router = express.Router();
 
@@ -138,27 +126,6 @@ module.exports = function adminRoutes({ db }) {
       req.session.adminTenantScope = null;
     }
     req.session.save(() => res.redirect(req.body.redirect || "/admin/dashboard"));
-  });
-
-  router.post("/super/tenants", requireSuperAdmin, (req, res) => {
-    const slug = String(req.body.slug || "")
-      .trim()
-      .toLowerCase();
-    const name = String(req.body.name || "").trim();
-    const stage = normalizeStage(req.body.stage || STAGES.PARTNER_COLLECTION);
-    if (!slug || !/^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) {
-      return res.status(400).send("Invalid slug.");
-    }
-    if (!name) return res.status(400).send("Name is required.");
-    const maxRow = db.prepare("SELECT MAX(id) AS m FROM tenants").get();
-    const nextId = (maxRow && maxRow.m ? Number(maxRow.m) : 0) + 1;
-    try {
-      db.prepare("INSERT INTO tenants (id, slug, name, stage) VALUES (?, ?, ?, ?)").run(nextId, slug, name, stage);
-      seedCategoriesFromTenant(db, nextId, TENANT_ZM);
-      return res.redirect("/admin/super");
-    } catch (e) {
-      return res.status(400).send(`Could not create tenant: ${e.message}`);
-    }
   });
 
   router.post("/super/tenants/:id/stage", requireSuperAdmin, (req, res) => {

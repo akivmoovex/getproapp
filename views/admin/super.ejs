@@ -6,22 +6,23 @@
     <title>Super admin | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body>
-    <div class="container" style="padding: 22px 0;">
-      <%- include('../partials/admin_nav', { navTitle: 'Super admin — tenants', activeNav: 'super' }) %>
-
+  <body class="admin-app">
+    <%- include('../partials/admin_nav', { navTitle: 'Regions & stages', activeNav: 'super' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
       <% if (needTenant) { %>
-        <div class="flash" style="margin-top:16px;">Choose a tenant scope below (or create a tenant) before using directory tools or user management.</div>
+        <div class="flash" role="alert">Choose a tenant scope below before using directory tools or user management.</div>
       <% } %>
 
-      <div class="section-title" style="margin-top:22px;">All tenants</div>
-      <p class="muted" style="margin-bottom:12px;font-size:13px;line-height:1.55;">
-        Every row is one region (or <strong>global</strong> for the apex site). Callbacks and join sign-ups are stored with the matching <code>tenant_id</code> so each region’s admin only sees its own data.
+      <h1 class="section-title" style="margin-top:0;">All regions</h1>
+      <p class="admin-intro">
+        Fixed platform regions only. Callbacks and join sign-ups use <code>tenant_id</code> so each region’s admin only sees its own data.
       </p>
-      <div class="nav-links" style="margin-bottom:16px;">
-        <a class="btn btn-primary" href="/admin/super/users">All admin users (all tenants)</a>
+      <div class="admin-toolbar">
+        <a class="btn btn-primary" href="/admin/super/users">All admin users</a>
       </div>
       <div class="card" style="margin-bottom:28px;">
+        <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
@@ -40,31 +41,33 @@
                 <td><%= t.name %></td>
                 <td><%= t.stage %></td>
                 <td>
-                  <form method="post" action="/admin/super/tenants/<%= t.id %>/stage" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                  <form method="post" action="/admin/super/tenants/<%= t.id %>/stage" class="admin-inline-form">
                     <select name="stage" aria-label="Stage for <%= t.slug %>">
                       <option value="<%= stages.PARTNER_COLLECTION %>" <%= t.stage === stages.PARTNER_COLLECTION ? 'selected' : '' %>><%= stages.PARTNER_COLLECTION %></option>
                       <option value="<%= stages.ENABLED %>" <%= t.stage === stages.ENABLED ? 'selected' : '' %>><%= stages.ENABLED %></option>
                       <option value="<%= stages.DISABLED %>" <%= t.stage === stages.DISABLED ? 'selected' : '' %>><%= stages.DISABLED %></option>
                     </select>
-                    <button class="btn" type="submit">Update</button>
+                    <button class="btn btn-primary" type="submit">Update</button>
                   </form>
                 </td>
               </tr>
             <% }) %>
           </tbody>
         </table>
+        </div>
         <p class="muted" style="margin-top:14px;font-size:12px;line-height:1.5;">
           Only <strong>Enabled</strong> tenants appear in the public region list and receive traffic on their platform subdomain (except <strong>global</strong>, which is apex-only).
           <strong>Disabled</strong> and <strong>PartnerCollection</strong> hide the country from the picker and return 503 on the tenant host.
         </p>
       </div>
 
-      <div class="section-title" style="margin-top:22px;">Act as tenant</div>
+      <h2 class="section-title">Act as region</h2>
+      <p class="admin-intro">Scope the directory and leads tools to one region.</p>
       <div class="card" style="max-width:640px;">
         <form method="post" action="/admin/super/scope" class="form">
           <input type="hidden" name="redirect" value="/admin/dashboard" />
           <div>
-            <label for="tenant_id">Tenant scope (super admin)</label>
+            <label for="tenant_id">Tenant scope</label>
             <select id="tenant_id" name="tenant_id">
               <option value="">— None (stay on Super only) —</option>
               <% tenants.forEach(function(t) { %>
@@ -75,32 +78,12 @@
               While scoped, Categories, Companies, Leads, and Users apply to that tenant only.
             </div>
           </div>
-          <button class="btn btn-primary" type="submit">Apply scope</button>
+          <div class="admin-gate-actions">
+            <button class="btn btn-primary" type="submit">Apply scope</button>
+          </div>
         </form>
       </div>
-
-      <div class="section-title" style="margin-top:28px;">Create tenant</div>
-      <div class="card" style="max-width:640px;">
-        <form method="post" action="/admin/super/tenants" class="form">
-          <div>
-            <label for="name">Display name</label>
-            <input id="name" name="name" required placeholder="e.g. Israel" />
-          </div>
-          <div>
-            <label for="slug">Slug (subdomain)</label>
-            <input id="slug" name="slug" required placeholder="e.g. il" pattern="[a-z0-9][a-z0-9-]{0,62}" />
-          </div>
-          <div>
-            <label for="stage_new">Initial stage</label>
-            <select id="stage_new" name="stage">
-              <option value="<%= stages.PARTNER_COLLECTION %>"><%= stages.PARTNER_COLLECTION %></option>
-              <option value="<%= stages.ENABLED %>"><%= stages.ENABLED %></option>
-              <option value="<%= stages.DISABLED %>"><%= stages.DISABLED %></option>
-            </select>
-          </div>
-          <button class="btn btn-primary" type="submit">Create tenant</button>
-        </form>
       </div>
-    </div>
+    </main>
   </body>
 </html>

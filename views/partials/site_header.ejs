@@ -1,6 +1,5 @@
 <% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var tpHome = tp ? tp + '/' : '/'; %>
-<% var rc = typeof regionChoices !== 'undefined' ? regionChoices : []; %>
 <% var ten = typeof tenant !== 'undefined' ? tenant : null; %>
 <div class="wf-topbar">
   <div class="container wf-topbar-inner">
@@ -20,15 +19,11 @@
 <div class="wf-header-wrap">
   <div class="container">
     <div class="nav wf-nav">
-      <div class="brand brand--with-regions">
+      <div class="brand">
         <div class="brand-primary">
-          <a href="<%= tpHome %>">
-            <div class="logo" aria-hidden="true"></div>
-            <span>GetPro</span>
-          </a>
+          <%- include('partials/brand_lockup_getpro', { tenant: ten, brandLockupVariant: 'nav', brandLockupHref: tpHome }) %>
           <span class="brand-tagline">Trusted professionals · verified directory</span>
         </div>
-        <%- include('partials/region_strip', { regionChoices: rc, tenant: ten, regionStripModifier: 'wf-region-strip--nav' }) %>
       </div>
 
       <div class="nav-links wf-nav-actions">

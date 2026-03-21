@@ -7,15 +7,15 @@
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="admin-gate-page">
-    <div class="container" style="padding: 40px 0;">
-      <div class="card admin-gate-card" style="max-width: 520px; margin: 0 auto;">
-        <div class="brand" style="justify-content: flex-start; margin-bottom: 12px;">
+    <div class="container admin-gate-wrap">
+      <div class="card admin-gate-card">
+        <a href="<%= typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/' %>" class="admin-gate-brand">
           <div class="logo" aria-hidden="true"></div>
           <div>
-            <div style="font-weight: 900;">GetPro Admin</div>
-            <div class="muted" style="font-size: 13px; line-height: 1.5;">Sign in to manage directory data and leads.</div>
+            <div class="admin-gate-brand__title">GetPro Admin</div>
+            <div class="admin-gate-brand__subtitle">Sign in to manage directory data and leads.</div>
           </div>
-        </div>
+        </a>
         <%- include('partials/admin_gate_form', { formAction: '/admin/login', error: typeof error !== 'undefined' ? error : null, cancelHref: tenantHomeHref }) %>
       </div>
     </div>

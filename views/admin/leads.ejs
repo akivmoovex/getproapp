@@ -6,13 +6,14 @@
     <title>Leads | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body>
-    <div class="container" style="padding: 22px 0;">
-      <%- include('../partials/admin_nav', { navTitle: 'Lead reports', activeNav: 'leads' }) %>
-
-      <div class="section-title">Potential partners — “Call me” (Join)</div>
-      <p class="muted" style="margin-bottom:12px;font-size:13px;">People who chose <strong>Call me</strong> on the Join flow (exit modal) for <strong>this tenant only</strong>.</p>
+  <body class="admin-app">
+    <%- include('../partials/admin_nav', { navTitle: 'Lead reports', activeNav: 'leads' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+      <h1 class="section-title" style="margin-top:0;">Potential partners — “Call me”</h1>
+      <p class="admin-intro">Join exit modal — <strong>this region only</strong>.</p>
       <div class="card" style="margin-bottom: 28px;">
+        <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
@@ -38,11 +39,13 @@
             <% }) %>
           </tbody>
         </table>
+        </div>
       </div>
 
-      <div class="section-title">Join sign-ups (full wizard)</div>
-      <p class="muted" style="margin-bottom:12px;font-size:13px;">Completed partner applications from the Join page for this tenant.</p>
+      <h2 class="section-title">Join sign-ups (full wizard)</h2>
+      <p class="admin-intro">Completed partner applications from the Join page for this region.</p>
       <div class="card" style="margin-bottom: 28px;">
+        <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
@@ -70,10 +73,11 @@
             <% }) %>
           </tbody>
         </table>
+        </div>
       </div>
 
-      <div class="section-title">Company lead requests</div>
-      <p class="muted" style="margin-bottom:12px;font-size:13px;">Messages submitted from company profile pages.</p>
+      <h2 class="section-title">Company lead requests</h2>
+      <p class="admin-intro">Messages from company profile pages.</p>
 
       <div class="card" style="margin-bottom: 16px;">
         <form method="get" action="/admin/leads" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
@@ -93,6 +97,7 @@
       </div>
 
       <div class="card">
+        <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
@@ -125,7 +130,9 @@
             <% }) %>
           </tbody>
         </table>
+        </div>
       </div>
-    </div>
+      </div>
+    </main>
   </body>
 </html>

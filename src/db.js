@@ -417,6 +417,42 @@ try {
   console.error("[getpro] tenant region lock migration:", e.message);
 }
 
+/** One-time: delete super-admin–created tenants not in the canonical slug list (and their scoped data). */
+try {
+  const { CANONICAL_TENANT_SLUGS_LIST } = require("./tenantIds");
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("delete_non_canonical_tenants_v1")) {
+    const ph = CANONICAL_TENANT_SLUGS_LIST.map(() => "?").join(",");
+    const orphans = db
+      .prepare(`SELECT id FROM tenants WHERE slug NOT IN (${ph})`)
+      .all(...CANONICAL_TENANT_SLUGS_LIST);
+    if (orphans.length) {
+      db.exec("PRAGMA foreign_keys = OFF");
+      const tx = db.transaction(() => {
+        for (const { id: tid } of orphans) {
+          db.prepare("DELETE FROM leads WHERE tenant_id = ?").run(tid);
+          db.prepare("DELETE FROM companies WHERE tenant_id = ?").run(tid);
+          db.prepare("DELETE FROM categories WHERE tenant_id = ?").run(tid);
+          db.prepare("DELETE FROM callback_interests WHERE tenant_id = ?").run(tid);
+          db.prepare("DELETE FROM professional_signups WHERE tenant_id = ?").run(tid);
+          db.prepare("DELETE FROM admin_users WHERE tenant_id = ?").run(tid);
+          db.prepare("DELETE FROM tenants WHERE id = ?").run(tid);
+        }
+      });
+      tx();
+      db.exec("PRAGMA foreign_keys = ON");
+      // eslint-disable-next-line no-console
+      console.log(`[getpro] Migration: removed ${orphans.length} non-canonical tenant(s).`);
+    }
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("delete_non_canonical_tenants_v1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] delete non-canonical tenants migration:", e.message);
+}
+
 function run(query, params = []) {
   return db.prepare(query).run(params);
 }

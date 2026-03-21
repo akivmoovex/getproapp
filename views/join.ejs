@@ -12,11 +12,7 @@
   </head>
   <body class="join-page <%= tenant.themeClass %>">
     <div class="join-topbar-row">
-      <a href="<%= tenantHomeHref %>" class="join-top-brand" id="join-top-brand" aria-label="GetPro home">
-        <div class="logo" aria-hidden="true"></div>
-        <span class="join-top-brand-title">GetPro</span>
-      </a>
-      <%- include('partials/region_strip', { regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], tenant, regionStripModifier: 'wf-region-strip--join' }) %>
+      <%- include('partials/brand_lockup_getpro', { tenant, brandLockupVariant: 'join', brandLockupHref: tenantHomeHref }) %>
       <a class="join-top-admin-link" href="/getpro-admin">GetPro admin</a>
     </div>
 

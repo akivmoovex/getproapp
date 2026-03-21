@@ -6,27 +6,29 @@
     <title>Dashboard | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body>
-    <div class="container" style="padding: 22px 0;">
-      <%- include('../partials/admin_nav', { navTitle: 'Dashboard & overview', activeNav: 'dashboard' }) %>
-
-      <div style="margin-top:22px;" class="grid-3">
-        <div class="card">
+  <body class="admin-app">
+    <%- include('../partials/admin_nav', { navTitle: 'Dashboard & overview', activeNav: 'dashboard' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+      <h1 class="section-title" style="margin-top:0;">Overview</h1>
+      <div class="grid-3 admin-stat-grid">
+        <div class="card admin-stat-card">
           <div class="muted">Categories</div>
-          <div style="font-weight:900;font-size:26px;margin-top:6px;"><%= categoriesCount %></div>
+          <div class="admin-stat-card__value"><%= categoriesCount %></div>
         </div>
-        <div class="card">
+        <div class="card admin-stat-card">
           <div class="muted">Companies</div>
-          <div style="font-weight:900;font-size:26px;margin-top:6px;"><%= companiesCount %></div>
+          <div class="admin-stat-card__value"><%= companiesCount %></div>
         </div>
-        <div class="card">
+        <div class="card admin-stat-card">
           <div class="muted">Leads</div>
-          <div style="font-weight:900;font-size:26px;margin-top:6px;"><%= leadsCount %></div>
+          <div class="admin-stat-card__value"><%= leadsCount %></div>
         </div>
       </div>
 
-      <div class="section-title">Latest Leads</div>
+      <h2 class="section-title">Latest leads</h2>
       <div class="card">
+        <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
@@ -52,8 +54,10 @@
             <% }) %>
           </tbody>
         </table>
+        </div>
       </div>
-    </div>
+      </div>
+    </main>
   </body>
 </html>
 

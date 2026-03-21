@@ -12,11 +12,7 @@
   </head>
   <body class="home-page wf-home-layout <%= tenant.themeClass %>">
     <div class="wf-home-topbar-brandrow">
-      <a href="<%= tenantHomeHref %>" class="wf-home-topbar-brand" aria-label="GetPro home">
-        <div class="logo" aria-hidden="true"></div>
-        <span class="wf-home-topbar-title">GetPro</span>
-      </a>
-      <%- include('partials/region_strip', { regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], tenant, regionStripModifier: 'wf-region-strip--home' }) %>
+      <%- include('partials/brand_lockup_getpro', { tenant, brandLockupVariant: 'home', brandLockupHref: tenantHomeHref }) %>
     </div>
     <div class="wf-home-topbar-actions">
       <a class="wf-home-join-btn" href="<%= tenantUrlPrefix %>/join">Join us</a>

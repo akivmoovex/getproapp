@@ -6,15 +6,15 @@
     <title>Edit user | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body>
-    <div class="container" style="padding: 22px 0;">
-      <%- include('../partials/admin_nav', { navTitle: 'Edit tenant user', activeNav: 'users' }) %>
-
+  <body class="admin-app">
+    <%- include('../partials/admin_nav', { navTitle: 'Edit tenant user', activeNav: 'users' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
       <% if (error) { %>
-        <div class="flash" style="margin-top:16px;"><%= error %></div>
+        <div class="flash" role="alert"><%= error %></div>
       <% } %>
 
-      <div class="card" style="max-width:520px;margin-top:22px;">
+      <div class="card admin-form-card">
         <form method="post" action="/admin/users/<%= user.id %>" class="form">
           <div>
             <label for="username">Username</label>
@@ -51,6 +51,7 @@
         </form>
         <% } %>
       </div>
-    </div>
+      </div>
+    </main>
   </body>
 </html>

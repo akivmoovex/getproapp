@@ -95,7 +95,7 @@ npm start
 
 **URLs:** The marketing site defaults to **`https://getproapp.org`** (apex). **Zambia** (ISO alpha-2 **`zm`**) uses **`https://zm.getproapp.org`**. **Israel** uses **`https://il.getproapp.org`**. The apex home shows a **Region** control (globe) to open those sites. Legacy paths **`/zm/…`** and **`/il/…`** redirect to **`zm.*`** and **`il.*`**. The old host **`zam.getproapp.org`** redirects to **`zm.getproapp.org`**. Configure **DNS** (and SSL) for `zm` and `il` (and wildcard `*.getproapp.org` if you use company subdomains).
 
-**Multi-tenant data:** Categories, companies, leads, and admin access are scoped by **`tenant_id`**. New tenants created in **Super admin** (`/admin/super`) get a **copy of tenant 1’s categories** as a starting point (no companies until you add them).
+**Multi-tenant data:** Categories, companies, leads, and admin access are scoped by **`tenant_id`**. Regions are **fixed** in the database; Super admin **does not** create new tenants.
 
 ### Admin roles & tenant stages
 
@@ -103,7 +103,7 @@ npm start
 
 | Role | Access |
 |------|--------|
-| `super_admin` | Full tenant list, create tenants, set **stage**, scope to any tenant, manage users when scoped. |
+| `super_admin` | Full region list, set **stage**, scope to any region, manage users when scoped. |
 | `tenant_manager` | Same tenant: edit directory + **create** other tenant users (manager / editor / viewer). |
 | `tenant_editor` | Same tenant: categories, companies, leads (read/write). |
 | `tenant_viewer` | Same tenant: **dashboard + leads only** (reports); cannot edit directory data. |
@@ -112,7 +112,7 @@ npm start
 
 **Tenant stages** (`tenants.stage`): `PartnerCollection`, `Enabled`, `Disabled`. Only **`Enabled`** tenants appear in the public **region / country** UI and receive normal traffic on **`{slug}.BASE_DOMAIN`**. Other stages hide the country from the picker and the app responds with **503** on that platform host until enabled.
 
-**Super admin UI:** After login, open **`/admin/super`** to create tenants, change stages, and **set tenant scope** before using Categories / Companies / Users for that tenant.
+**Super admin UI:** After login, open **`/admin/super`** to change region **stages** and **set tenant scope** before using Categories / Companies / Users for that region. Platform regions are fixed (see data model); extra tenant rows from older versions are removed on boot.
 
 **Public admin entry:** The home menu links to **`/getpro-admin`**, which shows username, password, **Login**, and **Cancel** (same credentials as `/admin/login`). Company-marketing subdomains redirect to **`zm.{BASE_DOMAIN}/getpro-admin`**.
 

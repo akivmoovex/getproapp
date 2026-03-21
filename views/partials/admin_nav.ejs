@@ -7,32 +7,39 @@
   const scoped = !!nav.tenantScoped;
   const title = typeof navTitle !== 'undefined' ? navTitle : '';
 %>
-<div class="nav" style="padding-top:0;">
-  <div class="brand">
-    <div class="logo" aria-hidden="true"></div>
-    <div style="display:flex;flex-direction:column;">
-      <div style="font-weight:900;">GetPro Admin</div>
-      <% if (title) { %><div class="muted" style="font-size:12px;"><%= title %></div><% } %>
+<header class="admin-header" role="banner">
+  <div class="container admin-header__inner">
+    <div class="admin-header__top">
+      <a href="/admin/dashboard" class="admin-header__brand">
+        <div class="logo" aria-hidden="true"></div>
+        <span class="admin-header__brand-text">
+          <span class="admin-header__product">GetPro</span>
+          <span class="admin-header__badge">Admin</span>
+        </span>
+      </a>
+      <% if (title) { %>
+        <p class="admin-header__subtitle"><%= title %></p>
+      <% } %>
     </div>
-  </div>
-  <div class="nav-links" style="flex-wrap:wrap;">
-    <% if (isSuper) { %>
-      <a class="btn <%= typeof activeNav !== 'undefined' && activeNav === 'super' ? 'btn-primary' : '' %>" href="/admin/super">Super</a>
-      <a class="btn <%= typeof activeNav !== 'undefined' && activeNav === 'super_users' ? 'btn-primary' : '' %>" href="/admin/super/users">All users</a>
-    <% } %>
-    <% if (scoped) { %>
-      <a class="btn <%= typeof activeNav !== 'undefined' && activeNav === 'dashboard' ? 'btn-primary' : '' %>" href="/admin/dashboard">Dashboard</a>
-      <% if (canEdit && !isViewer) { %>
-        <a class="btn <%= typeof activeNav !== 'undefined' && activeNav === 'categories' ? 'btn-primary' : '' %>" href="/admin/categories">Categories</a>
-        <a class="btn <%= typeof activeNav !== 'undefined' && activeNav === 'companies' ? 'btn-primary' : '' %>" href="/admin/companies">Companies</a>
+    <nav class="admin-nav" aria-label="Admin navigation">
+      <% if (isSuper) { %>
+        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'super' ? 'admin-nav__link--active' : '' %>" href="/admin/super">Super</a>
+        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'super_users' ? 'admin-nav__link--active' : '' %>" href="/admin/super/users">All users</a>
       <% } %>
-      <a class="btn <%= typeof activeNav !== 'undefined' && activeNav === 'leads' ? 'btn-primary' : '' %>" href="/admin/leads">Leads</a>
-      <% if (canUsers && !isViewer) { %>
-        <a class="btn <%= typeof activeNav !== 'undefined' && activeNav === 'users' ? 'btn-primary' : '' %>" href="/admin/users">Users</a>
+      <% if (scoped) { %>
+        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'dashboard' ? 'admin-nav__link--active' : '' %>" href="/admin/dashboard">Dashboard</a>
+        <% if (canEdit && !isViewer) { %>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'categories' ? 'admin-nav__link--active' : '' %>" href="/admin/categories">Categories</a>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'companies' ? 'admin-nav__link--active' : '' %>" href="/admin/companies">Companies</a>
+        <% } %>
+        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'leads' ? 'admin-nav__link--active' : '' %>" href="/admin/leads">Leads</a>
+        <% if (canUsers && !isViewer) { %>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'users' ? 'admin-nav__link--active' : '' %>" href="/admin/users">Users</a>
+        <% } %>
       <% } %>
-    <% } %>
-    <form method="post" action="/admin/logout">
-      <button class="btn" type="submit">Logout</button>
-    </form>
+      <form method="post" action="/admin/logout" class="admin-nav__logout">
+        <button class="admin-nav__btn btn" type="submit">Logout</button>
+      </form>
+    </nav>
   </div>
-</div>
+</header>
