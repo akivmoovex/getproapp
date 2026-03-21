@@ -1,5 +1,5 @@
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260323a";
+  const LIST_URL = "/data/search-lists.json?v=20260324a";
 
   const wizardFrame = document.getElementById("join-wizard-frame");
   const wizard = document.getElementById("join-wizard");
@@ -285,11 +285,14 @@
     wizard.setAttribute("aria-hidden", "false");
     showStep(1);
     clearErrors();
-    window.setTimeout(() => {
-      restartJoinWatermarks();
-      professionInput?.focus();
-    }, 120);
     wizardFrame?.scrollIntoView({ behavior: "smooth", block: "start" });
+    /* Watermark typewriter: do not focus the field (focus stops the animation). Restart after paint. */
+    window.requestAnimationFrame(() => {
+      window.setTimeout(() => {
+        restartJoinWatermarks();
+      }, 380);
+    });
+    window.setTimeout(() => restartJoinWatermarks(), 900);
   });
 
   document.getElementById("join-next-1")?.addEventListener("click", async () => {

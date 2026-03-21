@@ -59,6 +59,9 @@ function initHomeDrawerMenu() {
   });
   backdrop.addEventListener("click", close);
 
+  const sidebarClose = document.getElementById("wf-sidebar-close");
+  sidebarClose?.addEventListener("click", close);
+
   sidebar.querySelectorAll("a").forEach((a) => {
     a.addEventListener("click", () => close());
   });

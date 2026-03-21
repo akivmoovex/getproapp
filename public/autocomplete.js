@@ -3,7 +3,7 @@
  * Values must match search-lists.json on submit.
  */
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260323a";
+  const LIST_URL = "/data/search-lists.json?v=20260324a";
 
   const TYPE_MS = 95;
   const PAUSE_END_MS = 1600;
@@ -323,7 +323,7 @@
         const joinPanels = document.getElementById("join-panels");
         if (joinPanels) {
           joinPanels.querySelectorAll(".pro-ac").forEach((w) => {
-            initAc(w, lists, { startDelayMs: 0 });
+            initAc(w, lists, { startDelayMs: 120 });
           });
         }
       })

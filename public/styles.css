@@ -1144,6 +1144,12 @@ textarea {
   outline-offset: 2px;
 }
 
+/* Hide Join us while drawer is open (covered by menu UX) */
+.wf-home-layout.wf-menu-drawer-open .wf-home-join-btn {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* Floating menu (hamburger ↔ X) — home: inside topbar actions */
 .home-page .wf-home-topbar-actions .wf-menu-toggle {
   position: relative;
@@ -1231,6 +1237,43 @@ textarea {
   display: none !important;
 }
 
+.wf-home-sidebar-top {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin: -4px -8px 4px 0;
+  flex-shrink: 0;
+}
+
+.wf-home-sidebar-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.wf-home-sidebar-close:hover {
+  background: var(--primary-softer-bg);
+  color: var(--wf-primary-dark);
+}
+
+.wf-home-sidebar-close:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.wf-home-sidebar-brand--first {
+  margin-top: 2px;
+}
+
 .wf-home-sidebar {
   position: fixed;
   top: 0;
@@ -1242,7 +1285,7 @@ textarea {
   background: var(--surface);
   border-left: 1px solid var(--border-strong);
   border-right: none;
-  padding: 16px 16px 28px;
+  padding: 12px 16px 28px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1770,21 +1813,38 @@ textarea {
 .join-tiles-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px;
+  gap: 20px;
 }
 
 .join-tile {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: 12px;
-  padding: 22px 20px;
+  border-radius: 14px;
+  padding: 22px 20px 20px;
   box-shadow: var(--card-shadow-sm);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1),
+    border-color 0.25s ease,
+    box-shadow 0.35s ease;
+  overflow: hidden;
 }
 
-.join-tile:hover {
-  border-color: var(--primary-border-hover);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+.join-tile:hover,
+.join-tile:focus-within {
+  transform: translateY(-6px) scale(1.03);
+  border-color: rgba(var(--wf-primary-rgb), 0.35);
+  box-shadow:
+    0 16px 40px rgba(46, 10, 100, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .join-tile:hover,
+  .join-tile:focus-within {
+    transform: none;
+  }
 }
 
 .join-tile-icon {
@@ -1813,6 +1873,33 @@ textarea {
   font-size: 14px;
   line-height: 1.55;
   color: var(--muted);
+}
+
+.join-tile-more {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted-soft);
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.35s ease, margin 0.35s ease;
+}
+
+.join-tile:hover .join-tile-more,
+.join-tile:focus-within .join-tile-more {
+  max-height: 120px;
+  opacity: 1;
+  margin-top: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .join-tile-more {
+    max-height: none;
+    opacity: 1;
+    margin-top: 10px;
+    transition: none;
+  }
 }
 
 .join-get-started {
