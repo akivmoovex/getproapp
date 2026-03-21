@@ -3,43 +3,83 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Categories | GetPro Admin</title>
+    <title>Professions | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="admin-app">
-    <%- include('../partials/admin_nav', { navTitle: 'Categories', activeNav: 'categories' }) %>
+    <%- include('../partials/admin_nav', { navTitle: 'Professions', activeNav: 'categories' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
-      <div class="admin-toolbar">
-        <a class="btn btn-primary" href="/admin/categories/new">New category</a>
+      <div class="admin-super-users__topbar">
+        <% if (!editMode) { %>
+        <a class="btn btn-primary" href="/admin/categories?edit=1<%= typeof filterSuffix !== 'undefined' ? filterSuffix : '' %>">Edit</a>
+        <% } else { %>
+        <a class="btn" href="/admin/categories<%= typeof filterSuffix !== 'undefined' && filterSuffix ? '?' + filterSuffix.slice(1) : '' %>">Done</a>
+        <% } %>
       </div>
 
-      <h1 class="section-title" style="margin-top:0;">Categories</h1>
+      <h1 class="section-title" style="margin-top:0;">Professions</h1>
+      <% var f = typeof filters !== 'undefined' ? filters : {}; %>
+      <form method="get" action="/admin/categories" class="admin-filter-form">
+        <% if (editMode) { %><input type="hidden" name="edit" value="1" /><% } %>
+        <div class="admin-filter-form__grid">
+          <div>
+            <label class="admin-filter-form__label" for="q_name">Name</label>
+            <input id="q_name" name="q_name" type="search" value="<%= f.q_name || '' %>" placeholder="Filter…" autocomplete="off" />
+          </div>
+          <div>
+            <label class="admin-filter-form__label" for="q_slug">Slug</label>
+            <input id="q_slug" name="q_slug" type="search" value="<%= f.q_slug || '' %>" placeholder="Filter…" autocomplete="off" />
+          </div>
+          <div>
+            <label class="admin-filter-form__label" for="q_created">Created</label>
+            <input id="q_created" name="q_created" type="search" value="<%= f.q_created || '' %>" placeholder="Filter…" autocomplete="off" />
+          </div>
+        </div>
+        <div class="admin-filter-form__actions">
+          <button class="btn btn-primary" type="submit">Apply filters</button>
+          <a class="btn" href="/admin/categories<%= editMode ? '?edit=1' : '' %>">Clear</a>
+        </div>
+      </form>
+
+      <% if (!editMode) { %>
+      <p class="admin-intro">View-only list. Choose <strong>Edit</strong> to add, change, or remove professions.</p>
+      <% } else { %>
+      <div class="admin-toolbar">
+        <a class="btn btn-primary" href="/admin/categories/new">New profession</a>
+      </div>
+      <% } %>
+
       <div class="card">
         <div class="table-wrap">
-        <table class="table">
+        <table class="table<%= editMode ? '' : ' table--readonly' %>">
           <thead>
             <tr>
               <th>Name</th>
               <th>Slug</th>
               <th>Created</th>
-              <th>Actions</th>
+              <% if (editMode) { %><th>Actions</th><% } %>
             </tr>
           </thead>
           <tbody>
-            <% categories.forEach(function(cat) { %>
+            <% if (!categories || categories.length === 0) { %>
+              <tr><td colspan="<%= editMode ? 4 : 3 %>" class="muted">No professions match these filters.</td></tr>
+            <% } %>
+            <% (categories || []).forEach(function(cat) { %>
               <tr>
                 <td><%= cat.name %></td>
                 <td class="muted"><%= cat.slug %></td>
                 <td class="muted"><%= cat.created_at %></td>
+                <% if (editMode) { %>
                 <td>
                   <div style="display:flex;gap:10px;flex-wrap:wrap;">
                     <a class="btn" href="/admin/categories/<%= cat.id %>/edit">Edit</a>
-                    <form method="post" action="/admin/categories/<%= cat.id %>/delete" onsubmit="return confirm('Delete category? Companies will be uncategorized.');">
+                    <form method="post" action="/admin/categories/<%= cat.id %>/delete" onsubmit="return confirm('Delete this profession? Companies will be uncategorized.');">
                       <button class="btn" type="submit">Delete</button>
                     </form>
                   </div>
                 </td>
+                <% } %>
               </tr>
             <% }) %>
           </tbody>
@@ -50,4 +90,3 @@
     </main>
   </body>
 </html>
-

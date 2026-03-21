@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title><%= category ? 'Edit' : 'New' %> Category | GetPro Admin</title>
+    <title><%= category ? 'Edit' : 'New' %> profession | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="admin-app">
-    <%- include('../partials/admin_nav', { navTitle: category ? 'Edit category' : 'New category', activeNav: 'categories' }) %>
+    <%- include('../partials/admin_nav', { navTitle: category ? 'Edit profession' : 'New profession', activeNav: 'categories' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
       <div class="admin-toolbar">
-        <a class="btn" href="/admin/categories">← All categories</a>
+        <a class="btn" href="/admin/categories?edit=1">← All professions</a>
       </div>
 
       <div class="card admin-form-card">
@@ -21,11 +21,11 @@
           class="form"
         >
           <div>
-            <label for="name">Category Name</label>
+            <label for="name">Profession name</label>
             <input id="name" name="name" value="<%= category ? category.name : '' %>" required />
           </div>
           <div>
-            <label for="slug">Category Slug</label>
+            <label for="slug">Profession slug</label>
             <input id="slug" name="slug" value="<%= category ? category.slug : '' %>" required />
             <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
               Example: `accounting`, `lawyers`, `electricians`.

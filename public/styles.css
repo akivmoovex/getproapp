@@ -359,6 +359,32 @@ a:hover {
   cursor: default;
 }
 
+.admin-filter-form {
+  margin-bottom: 20px;
+}
+
+.admin-filter-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.admin-filter-form__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--muted);
+}
+
+.admin-filter-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
 .admin-stat-card {
   border-left: 3px solid var(--wf-primary);
 }

@@ -10,11 +10,51 @@
     <%- include('../partials/admin_nav', { navTitle: 'Cities (join & search)', activeNav: 'cities' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
+      <div class="admin-super-users__topbar">
+        <% if (!editMode) { %>
+        <a class="btn btn-primary" href="/admin/cities?edit=1<%= typeof filterSuffix !== 'undefined' ? filterSuffix : '' %>">Edit</a>
+        <% } else { %>
+        <a class="btn" href="/admin/cities<%= typeof filterSuffix !== 'undefined' && filterSuffix ? '?' + filterSuffix.slice(1) : '' %>">Done</a>
+        <% } %>
+      </div>
+
       <h1 class="section-title" style="margin-top:0;">Cities</h1>
       <p class="admin-intro">
         Controls which cities appear in the Join flow and home/directory autocomplete for this region. <strong>Enabled</strong> allows normal sign-up; <strong>Big city</strong> is used for rotating placeholder hints on Join step 2. Disabled cities still appear in the list — applicants see a waitlist message.
       </p>
 
+      <% var f = typeof filters !== 'undefined' ? filters : {}; %>
+      <form method="get" action="/admin/cities" class="admin-filter-form">
+        <% if (editMode) { %><input type="hidden" name="edit" value="1" /><% } %>
+        <div class="admin-filter-form__grid">
+          <div>
+            <label class="admin-filter-form__label" for="q_name">City</label>
+            <input id="q_name" name="q_name" type="search" value="<%= f.q_name || '' %>" placeholder="Filter…" autocomplete="off" />
+          </div>
+          <div>
+            <label class="admin-filter-form__label" for="q_enabled">Enabled</label>
+            <select id="q_enabled" name="q_enabled">
+              <option value="" <%= !f.q_enabled ? 'selected' : '' %>>All</option>
+              <option value="yes" <%= f.q_enabled === 'yes' ? 'selected' : '' %>>Yes</option>
+              <option value="no" <%= f.q_enabled === 'no' ? 'selected' : '' %>>No</option>
+            </select>
+          </div>
+          <div>
+            <label class="admin-filter-form__label" for="q_big">Big city</label>
+            <select id="q_big" name="q_big">
+              <option value="" <%= !f.q_big ? 'selected' : '' %>>All</option>
+              <option value="yes" <%= f.q_big === 'yes' ? 'selected' : '' %>>Yes</option>
+              <option value="no" <%= f.q_big === 'no' ? 'selected' : '' %>>No</option>
+            </select>
+          </div>
+        </div>
+        <div class="admin-filter-form__actions">
+          <button class="btn btn-primary" type="submit">Apply filters</button>
+          <a class="btn" href="/admin/cities<%= editMode ? '?edit=1' : '' %>">Clear</a>
+        </div>
+      </form>
+
+      <% if (editMode) { %>
       <div class="card admin-form-card admin-form-card--wide" style="margin-bottom:24px;">
         <h2 class="section-title" style="margin-top:0;font-size:1.1rem;">Add city</h2>
         <form method="post" action="/admin/cities" class="form admin-inline-form">
@@ -33,44 +73,56 @@
           <button class="btn btn-primary" type="submit">Add</button>
         </form>
       </div>
+      <% } else { %>
+      <p class="admin-intro">View-only list. Choose <strong>Edit</strong> to add or change cities.</p>
+      <% } %>
 
       <div class="card">
         <div class="table-wrap">
-        <table class="table">
+        <table class="table<%= editMode ? '' : ' table--readonly' %>">
           <thead>
             <tr>
               <th>City</th>
               <th>Enabled</th>
               <th>Big city</th>
-              <th>Actions</th>
+              <% if (editMode) { %><th>Actions</th><% } %>
             </tr>
           </thead>
           <tbody>
             <% if (!cities || cities.length === 0) { %>
-              <tr><td colspan="4" class="muted">No cities yet — add one above.</td></tr>
+              <tr><td colspan="<%= editMode ? 4 : 3 %>" class="muted">No cities match these filters.</td></tr>
             <% } %>
             <% (cities || []).forEach(function(c) { %>
               <tr>
-                <td colspan="4" style="padding:14px 12px;">
-                  <form method="post" action="/admin/cities/<%= c.id %>" class="admin-inline-form" style="align-items:flex-end;">
-                    <div>
-                      <label class="visually-hidden" for="city-name-<%= c.id %>">City name</label>
-                      <input id="city-name-<%= c.id %>" name="name" value="<%= c.name %>" required style="min-width:180px;" />
-                    </div>
-                    <div class="form-check">
-                      <input id="city-en-<%= c.id %>" type="checkbox" name="enabled" value="1" <%= c.enabled ? 'checked' : '' %> />
-                      <label for="city-en-<%= c.id %>">Enabled</label>
-                    </div>
-                    <div class="form-check">
-                      <input id="city-big-<%= c.id %>" type="checkbox" name="big_city" value="1" <%= c.big_city ? 'checked' : '' %> />
-                      <label for="city-big-<%= c.id %>">Big city</label>
-                    </div>
-                    <button class="btn btn-primary" type="submit">Save</button>
-                  </form>
+                <% if (!editMode) { %>
+                <td><%= c.name %></td>
+                <td><%= c.enabled ? 'Yes' : 'No' %></td>
+                <td><%= c.big_city ? 'Yes' : 'No' %></td>
+                <% } else { %>
+                <td>
+                  <label class="visually-hidden" for="city-name-<%= c.id %>">City name</label>
+                  <input id="city-name-<%= c.id %>" name="name" form="city-up-<%= c.id %>" value="<%= c.name %>" required style="min-width:160px;" />
+                </td>
+                <td>
+                  <div class="form-check" style="margin:0;">
+                    <input id="city-en-<%= c.id %>" type="checkbox" name="enabled" form="city-up-<%= c.id %>" value="1" <%= c.enabled ? 'checked' : '' %> />
+                    <label for="city-en-<%= c.id %>">Yes</label>
+                  </div>
+                </td>
+                <td>
+                  <div class="form-check" style="margin:0;">
+                    <input id="city-big-<%= c.id %>" type="checkbox" name="big_city" form="city-up-<%= c.id %>" value="1" <%= c.big_city ? 'checked' : '' %> />
+                    <label for="city-big-<%= c.id %>">Yes</label>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn btn-primary" type="submit" form="city-up-<%= c.id %>">Save</button>
                   <form method="post" action="/admin/cities/<%= c.id %>/delete" style="display:inline;margin-left:8px;" onsubmit="return confirm('Remove this city from the list?');">
                     <button class="btn" type="submit">Delete</button>
                   </form>
+                  <form id="city-up-<%= c.id %>" method="post" action="/admin/cities/<%= c.id %>" hidden aria-hidden="true"></form>
                 </td>
+                <% } %>
               </tr>
             <% }) %>
           </tbody>

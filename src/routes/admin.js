@@ -33,6 +33,23 @@ function getCategoriesForSelect(db, tenantId) {
     .all(tenantId);
 }
 
+function parseEditMode(req) {
+  return (
+    req.query.edit === "1" || req.query.edit === "true" || req.query.mode === "edit"
+  );
+}
+
+/** Serialize current filters for links (drops edit/mode). */
+function filterSuffixFromQuery(req) {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(req.query || {})) {
+    if (k === "edit" || k === "mode") continue;
+    if (v !== undefined && v !== null && String(v) !== "") p.set(k, String(v));
+  }
+  const s = p.toString();
+  return s ? `&${s}` : "";
+}
+
 function requireManageUsers(req, res, next) {
   if (!req.session.adminUser) return res.redirect("/admin/login");
   if (!canManageTenantUsers(req.session.adminUser.role)) {
@@ -455,19 +472,39 @@ module.exports = function adminRoutes({ db }) {
   });
 
   router.get("/super/users", requireSuperAdmin, (req, res) => {
-    const gzSummary = superUsersListQuery(db, "global_zm");
-    const allUsers = superUsersListQuery(db, "all");
-    const { globalId, zmId } = getGlobalAndZmTenantIds(db);
-    const editMode =
-      req.query.edit === "1" ||
-      req.query.edit === "true" ||
-      req.query.mode === "edit";
+    let allUsers = superUsersListQuery(db, "all");
+    const username = String(req.query.u_username || "").trim().toLowerCase();
+    const tenant = String(req.query.u_tenant || "").trim().toLowerCase();
+    const role = String(req.query.u_role || "").trim().toLowerCase();
+    const status = String(req.query.u_status || "").trim().toLowerCase();
+    if (username) {
+      allUsers = allUsers.filter((u) => u.username.toLowerCase().includes(username));
+    }
+    if (tenant) {
+      allUsers = allUsers.filter((u) => {
+        const label =
+          u.tenant_id == null ? "super admin" : (u.tenant_name || u.tenant_slug || String(u.tenant_id));
+        return String(label).toLowerCase().includes(tenant);
+      });
+    }
+    if (role) {
+      allUsers = allUsers.filter((u) => (u.role || "").toLowerCase().includes(role));
+    }
+    if (status === "enabled") allUsers = allUsers.filter((u) => u.enabled !== 0);
+    if (status === "disabled") allUsers = allUsers.filter((u) => u.enabled === 0);
+
+    const editMode = parseEditMode(req);
+    const filterSuffix = filterSuffixFromQuery(req);
     return res.render("admin/super_users", {
-      gzSummary,
       allUsers,
-      globalId,
-      zmId,
       editMode,
+      filterSuffix,
+      userFilters: {
+        u_username: req.query.u_username || "",
+        u_tenant: req.query.u_tenant || "",
+        u_role: req.query.u_role || "",
+        u_status: req.query.u_status || "",
+      },
       seedDemoNote: process.env.SEED_BUILTIN_USERS !== "0",
     });
   });
@@ -645,10 +682,29 @@ module.exports = function adminRoutes({ db }) {
   router.get("/categories", requireDirectoryEditor, (req, res) => {
     const tid = getAdminTenantId(req);
     if (tid == null) return res.redirect("/admin/super");
-    const categories = db
+    let categories = db
       .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
       .all(tid);
-    return res.render("admin/categories", { categories });
+    const qn = String(req.query.q_name || "").trim().toLowerCase();
+    const qs = String(req.query.q_slug || "").trim().toLowerCase();
+    const qc = String(req.query.q_created || "").trim().toLowerCase();
+    if (qn) categories = categories.filter((c) => c.name.toLowerCase().includes(qn));
+    if (qs) categories = categories.filter((c) => (c.slug || "").toLowerCase().includes(qs));
+    if (qc) {
+      categories = categories.filter((c) => String(c.created_at || "").toLowerCase().includes(qc));
+    }
+    const editMode = parseEditMode(req);
+    const filterSuffix = filterSuffixFromQuery(req);
+    return res.render("admin/categories", {
+      categories,
+      editMode,
+      filterSuffix,
+      filters: {
+        q_name: req.query.q_name || "",
+        q_slug: req.query.q_slug || "",
+        q_created: req.query.q_created || "",
+      },
+    });
   });
 
   router.get("/categories/new", requireDirectoryEditor, (req, res) => {
@@ -668,7 +724,7 @@ module.exports = function adminRoutes({ db }) {
       const tid = getAdminTenantId(req);
       if (tid == null) return res.redirect("/admin/super");
       db.prepare("INSERT INTO categories (tenant_id, slug, name) VALUES (?, ?, ?)").run(tid, cleanSlug, cleanName);
-      return res.redirect("/admin/categories");
+      return res.redirect("/admin/categories?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not create category: ${e.message}`);
     }
@@ -697,7 +753,7 @@ module.exports = function adminRoutes({ db }) {
         .prepare("UPDATE categories SET slug = ?, name = ? WHERE id = ? AND tenant_id = ?")
         .run(cleanSlug, cleanName, req.params.id, tid);
       if (r.changes === 0) return res.status(404).send("Category not found");
-      return res.redirect("/admin/categories");
+      return res.redirect("/admin/categories?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not update category: ${e.message}`);
     }
@@ -714,7 +770,7 @@ module.exports = function adminRoutes({ db }) {
     });
     try {
       inTx();
-      return res.redirect("/admin/categories");
+      return res.redirect("/admin/categories?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not delete category: ${e.message}`);
     }
@@ -723,10 +779,29 @@ module.exports = function adminRoutes({ db }) {
   router.get("/cities", requireDirectoryEditor, (req, res) => {
     const tid = getAdminTenantId(req);
     if (tid == null) return res.redirect("/admin/super");
-    const cities = db
+    let cities = db
       .prepare("SELECT * FROM tenant_cities WHERE tenant_id = ? ORDER BY name COLLATE NOCASE ASC")
       .all(tid);
-    return res.render("admin/cities", { cities });
+    const qn = String(req.query.q_name || "").trim().toLowerCase();
+    const qen = String(req.query.q_enabled || "").trim().toLowerCase();
+    const qb = String(req.query.q_big || "").trim().toLowerCase();
+    if (qn) cities = cities.filter((c) => c.name.toLowerCase().includes(qn));
+    if (qen === "yes") cities = cities.filter((c) => c.enabled);
+    if (qen === "no") cities = cities.filter((c) => !c.enabled);
+    if (qb === "yes") cities = cities.filter((c) => c.big_city);
+    if (qb === "no") cities = cities.filter((c) => !c.big_city);
+    const editMode = parseEditMode(req);
+    const filterSuffix = filterSuffixFromQuery(req);
+    return res.render("admin/cities", {
+      cities,
+      editMode,
+      filterSuffix,
+      filters: {
+        q_name: req.query.q_name || "",
+        q_enabled: req.query.q_enabled || "",
+        q_big: req.query.q_big || "",
+      },
+    });
   });
 
   router.post("/cities", requireDirectoryEditor, requireNotViewer, (req, res) => {
@@ -743,7 +818,7 @@ module.exports = function adminRoutes({ db }) {
         enabled,
         bigCity
       );
-      return res.redirect("/admin/cities");
+      return res.redirect("/admin/cities?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not add city: ${e.message}`);
     }
@@ -760,20 +835,20 @@ module.exports = function adminRoutes({ db }) {
       .prepare("UPDATE tenant_cities SET name = ?, enabled = ?, big_city = ? WHERE id = ? AND tenant_id = ?")
       .run(cleanName, enabled, bigCity, req.params.id, tid);
     if (r.changes === 0) return res.status(404).send("City not found");
-    return res.redirect("/admin/cities");
+    return res.redirect("/admin/cities?edit=1");
   });
 
   router.post("/cities/:id/delete", requireDirectoryEditor, requireNotViewer, (req, res) => {
     const tid = getAdminTenantId(req);
     if (tid == null) return res.redirect("/admin/super");
     db.prepare("DELETE FROM tenant_cities WHERE id = ? AND tenant_id = ?").run(req.params.id, tid);
-    return res.redirect("/admin/cities");
+    return res.redirect("/admin/cities?edit=1");
   });
 
   router.get("/companies", requireDirectoryEditor, (req, res) => {
     const tid = getAdminTenantId(req);
     if (tid == null) return res.redirect("/admin/super");
-    const companies = db
+    let companies = db
       .prepare(
         `
         SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
@@ -784,7 +859,32 @@ module.exports = function adminRoutes({ db }) {
         `
       )
       .all(tid);
-    return res.render("admin/companies", { companies, baseDomain: process.env.BASE_DOMAIN || "" });
+    const qn = String(req.query.q_name || "").trim().toLowerCase();
+    const qs = String(req.query.q_subdomain || "").trim().toLowerCase();
+    const qc = String(req.query.q_category || "").trim().toLowerCase();
+    const qu = String(req.query.q_updated || "").trim().toLowerCase();
+    if (qn) companies = companies.filter((c) => c.name.toLowerCase().includes(qn));
+    if (qs) companies = companies.filter((c) => (c.subdomain || "").toLowerCase().includes(qs));
+    if (qc) {
+      companies = companies.filter((c) => (c.category_name || "").toLowerCase().includes(qc));
+    }
+    if (qu) {
+      companies = companies.filter((c) => String(c.updated_at || "").toLowerCase().includes(qu));
+    }
+    const editMode = parseEditMode(req);
+    const filterSuffix = filterSuffixFromQuery(req);
+    return res.render("admin/companies", {
+      companies,
+      baseDomain: process.env.BASE_DOMAIN || "",
+      editMode,
+      filterSuffix,
+      filters: {
+        q_name: req.query.q_name || "",
+        q_subdomain: req.query.q_subdomain || "",
+        q_category: req.query.q_category || "",
+        q_updated: req.query.q_updated || "",
+      },
+    });
   });
 
   router.get("/companies/new", requireDirectoryEditor, (req, res) => {
@@ -867,7 +967,7 @@ module.exports = function adminRoutes({ db }) {
         String(featured_cta_phone || "").trim(),
         tid
       );
-      return res.redirect("/admin/companies");
+      return res.redirect("/admin/companies?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not create company: ${e.message}`);
     }
@@ -968,7 +1068,7 @@ module.exports = function adminRoutes({ db }) {
         tid
       );
       if (r.changes === 0) return res.status(404).send("Company not found");
-      return res.redirect("/admin/companies");
+      return res.redirect("/admin/companies?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not update company: ${e.message}`);
     }
@@ -982,7 +1082,7 @@ module.exports = function adminRoutes({ db }) {
     try {
       db.prepare("DELETE FROM leads WHERE company_id = ? AND tenant_id = ?").run(companyId, tid);
       db.prepare("DELETE FROM companies WHERE id = ? AND tenant_id = ?").run(companyId, tid);
-      return res.redirect("/admin/companies");
+      return res.redirect("/admin/companies?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not delete company: ${e.message}`);
     }
