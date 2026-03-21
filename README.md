@@ -20,6 +20,16 @@ Some UIs fail when **Output directory** points at a missing folder or when they 
 
 That page is **not** from this Node app. DNS is working, but the subdomain is still bound to a **default static vhost** (empty `public_html/zm`, etc.) instead of your **Node.js** process.
 
+### Hostinger support: File Manager, `public_html/il`, and `index.html`
+
+Support often says: open **File Manager**, you’ll see **`public_html/il/`** (or `zm/`), upload site files, or set the subdomain’s **document root** to **use `public_html`** (same as the main site) so it isn’t pointed at `public_html/il/`.
+
+That guidance is for **classic static / PHP** sites (an `index.html` or `index.php` in that folder). **This GetPro app is different:** it is **Express (Node)**. It does **not** serve your real pages from `public_html/il/` and you should **not** try to “fix” subdomains by copying an `index.html` there unless you intentionally want a tiny static stub.
+
+**What you actually need:** requests to `zm.getproapp.org` and `il.getproapp.org` must hit the **same Node.js process** as `getproapp.org`. In **hPanel → Node.js** (your deployed app), add **`zm.getproapp.org`** and **`il.getproapp.org`** under **Domains** / **Application URL** (wording varies). If you instead only have a **separate “subdomain website”** that created `public_html/il` with no files, you’ll keep seeing the placeholder until that hostname is tied to **Node**, not to an empty static root.
+
+Using **“document root = `public_html`”** for the subdomain can align static routing with the main site, but **only** helps if your plan ultimately **proxies** that host to your Node app (many setups still need the Node app’s domain list as above). When in doubt, confirm with Hostinger that **`il` and `zm` hostnames are routed to your Node application**, not only to an Apache document root.
+
 **Fix (conceptually the same on all panels):** In **hPanel**, open your **Node.js** application and add **`zm.getproapp.org`** and **`il.getproapp.org`** as **domains** that run **this same app** as the apex domain — not as separate “subdomain websites” with their own document root. Wording varies (“Domains”, “Application URL”, “Attach domain”). Until both hosts proxy to Node with the **`Host`** header preserved, you will keep seeing Hostinger’s placeholder.
 
 **After traffic hits Node**, the app maps hosts using `BASE_DOMAIN`:
