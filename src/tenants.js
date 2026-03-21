@@ -1,5 +1,6 @@
 /**
- * Path-based tenants: /zm (Zambia, default), /il (Israel).
+ * Path-based tenants: Zambia at site root (/), Israel at /il.
+ * Legacy /zm/* URLs redirect to /* (canonical).
  */
 const TENANTS = {
   zm: {
@@ -32,7 +33,7 @@ function getTenantById(id) {
   return Object.values(TENANTS).find((t) => t.id === n) || null;
 }
 
-function attachTenant(slug) {
+function attachTenant(slug, options = {}) {
   return (req, res, next) => {
     const t = getTenantBySlug(slug);
     if (!t) {
@@ -41,9 +42,10 @@ function attachTenant(slug) {
     }
     req.tenant = t;
     req.tenantSlug = t.slug;
-    req.tenantUrlPrefix = `/${t.slug}`;
+    const prefix = options.urlPrefix !== undefined ? options.urlPrefix : `/${t.slug}`;
+    req.tenantUrlPrefix = prefix;
     res.locals.tenant = t;
-    res.locals.tenantUrlPrefix = `/${t.slug}`;
+    res.locals.tenantUrlPrefix = prefix;
     next();
   };
 }

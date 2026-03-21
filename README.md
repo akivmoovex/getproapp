@@ -36,6 +36,8 @@ npm install
 npm start
 ```
 
+**URLs:** Zambia (default) is served at the site root (`/`, `/join`, `/directory`). Israel is under `/il/…`. Old `/zm/…` links redirect to the same path without `/zm`.
+
 Home and directory search use autocomplete lists in `public/data/search-lists.json` (professional services + Zambia places). Regenerate with:
 
 ```bash

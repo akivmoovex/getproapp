@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="/styles.css?v=20260325a" />
   </head>
   <body class="<%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
-    <%- include('partials/site_header', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '/zm' }) %>
+    <%- include('partials/site_header', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>
 
     <div class="container" style="padding: 10px 0 30px;">
       <div class="hero-grid">
@@ -132,7 +132,7 @@
       </div>
     </div>
 
-    <%- include('partials/site_footer', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '/zm' }) %>
+    <%- include('partials/site_footer', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>
     <script src="/scripts.js"></script>
   </body>
 </html>

@@ -1,7 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const express = require("express");
-const { getTenantById } = require("../tenants");
+const { getTenantById, DEFAULT_TENANT_SLUG } = require("../tenants");
 
 function loadSearchLists() {
   const p = path.join(__dirname, "../../public/data/search-lists.json");
@@ -41,22 +41,27 @@ module.exports = function publicRoutes({ db }) {
 
   function tenantLocals(req) {
     const t = req.tenant;
-    const prefix = req.tenantUrlPrefix || `/${t.slug}`;
+    const prefix =
+      req.tenantUrlPrefix !== undefined && req.tenantUrlPrefix !== null
+        ? req.tenantUrlPrefix
+        : `/${t.slug}`;
     return {
       tenant: t,
       tenantUrlPrefix: prefix,
+      tenantHomeHref: prefix ? `${prefix}/` : "/",
     };
   }
 
   router.get("/", async (req, res) => {
     const categories = db.prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC").all();
-    const { tenant, tenantUrlPrefix } = tenantLocals(req);
+    const { tenant, tenantUrlPrefix, tenantHomeHref } = tenantLocals(req);
 
     return res.render("index", {
       categories,
       baseDomain: process.env.BASE_DOMAIN || "",
       tenant,
       tenantUrlPrefix,
+      tenantHomeHref,
       ...platformSupport(),
     });
   });
@@ -119,7 +124,7 @@ module.exports = function publicRoutes({ db }) {
         .all(tenantId);
     }
 
-    const { tenant, tenantUrlPrefix } = tenantLocals(req);
+    const { tenant, tenantUrlPrefix, tenantHomeHref } = tenantLocals(req);
 
     return res.render("directory", {
       categories,
@@ -131,6 +136,7 @@ module.exports = function publicRoutes({ db }) {
       buildCompanyUrl,
       tenant,
       tenantUrlPrefix,
+      tenantHomeHref,
       ...platformSupport(),
     });
   });
@@ -141,12 +147,13 @@ module.exports = function publicRoutes({ db }) {
     const category = db.prepare("SELECT * FROM categories WHERE slug = ?").get(categorySlug);
     if (!category) {
       res.status(404);
-      const { tenant, tenantUrlPrefix } = tenantLocals(req);
+      const { tenant, tenantUrlPrefix, tenantHomeHref } = tenantLocals(req);
       return res.render("not_found", {
         slug: categorySlug,
         kind: "category",
         tenant,
         tenantUrlPrefix,
+        tenantHomeHref,
         ...platformSupport(),
       });
     }
@@ -163,7 +170,7 @@ module.exports = function publicRoutes({ db }) {
       .all(category.id, tenantId);
 
     const categories = db.prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC").all();
-    const { tenant, tenantUrlPrefix } = tenantLocals(req);
+    const { tenant, tenantUrlPrefix, tenantHomeHref } = tenantLocals(req);
 
     return res.render("category", {
       category,
@@ -173,16 +180,18 @@ module.exports = function publicRoutes({ db }) {
       buildCompanyUrl,
       tenant,
       tenantUrlPrefix,
+      tenantHomeHref,
       ...platformSupport(),
     });
   });
 
   router.get("/join", (req, res) => {
-    const { tenant, tenantUrlPrefix } = tenantLocals(req);
+    const { tenant, tenantUrlPrefix, tenantHomeHref } = tenantLocals(req);
     return res.render("join", {
       baseDomain: process.env.BASE_DOMAIN || "",
       tenant,
       tenantUrlPrefix,
+      tenantHomeHref,
       ...platformSupport(),
     });
   });
@@ -204,13 +213,14 @@ module.exports = function publicRoutes({ db }) {
       return res.render("not_found", {
         subdomain: req.subdomain,
         tenant: getTenantById(1),
-        tenantUrlPrefix: "/zm",
+        tenantUrlPrefix: "",
+        tenantHomeHref: "/",
         ...platformSupport(),
       });
     }
 
     const tenant = getTenantById(company.tenant_id) || getTenantById(1);
-    const tenantUrlPrefix = `/${tenant.slug}`;
+    const tenantUrlPrefix = tenant.slug === DEFAULT_TENANT_SLUG ? "" : `/${tenant.slug}`;
 
     return res.render("company", {
       company,
@@ -219,6 +229,7 @@ module.exports = function publicRoutes({ db }) {
       companyUrl: buildCompanyUrl({ baseDomain: process.env.BASE_DOMAIN || "", subdomain: company.subdomain }),
       tenant,
       tenantUrlPrefix,
+      tenantHomeHref: tenantUrlPrefix ? `${tenantUrlPrefix}/` : "/",
       ...platformSupport(),
     });
   }

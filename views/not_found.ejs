@@ -1,4 +1,5 @@
-<% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '/zm'; %>
+<% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
+<% var tpHome = typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : (tp ? tp + '/' : '/'); %>
 <!doctype html>
 <html lang="en">
   <head>
@@ -20,7 +21,7 @@
           <% } %>
         </div>
         <div style="margin-top:14px;">
-          <a class="btn btn-primary" href="<%= tp %>/">Go to homepage</a>
+          <a class="btn btn-primary" href="<%= tpHome %>">Go to homepage</a>
         </div>
       </div>
     </div>

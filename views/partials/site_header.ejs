@@ -1,4 +1,5 @@
-<% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '/zm'; %>
+<% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
+<% var tpHome = tp ? tp + '/' : '/'; %>
 <div class="wf-topbar">
   <div class="container wf-topbar-inner">
     <span class="wf-topbar-tag">Professional directory</span>
@@ -17,7 +18,7 @@
   <div class="container">
     <div class="nav wf-nav">
       <div class="brand">
-        <a href="<%= tp %>/">
+        <a href="<%= tpHome %>">
           <div class="logo" aria-hidden="true"></div>
           <span>GetPro</span>
         </a>

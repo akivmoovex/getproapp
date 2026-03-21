@@ -6,7 +6,7 @@
   }
 
   function homeUrl() {
-    return (typeof window.__GETPRO_HOME__ === "string" && window.__GETPRO_HOME__) || "/zm/";
+    return (typeof window.__GETPRO_HOME__ === "string" && window.__GETPRO_HOME__) || "/";
   }
 
   /** Zambia: 9 digits, no country code, mobile starts with 7 or 9 */

@@ -105,24 +105,37 @@ app.use((req, res, next) => {
   next();
 });
 
-// Subdomain company sites (no /{zm|il} prefix)
-app.get("/", (req, res, next) => {
-  if (req.subdomain) {
-    return publicModule.renderCompanyHome(req, res);
-  }
-  return res.redirect(302, `/${DEFAULT_TENANT_SLUG}`);
-});
-
-// Tenant-scoped marketing + directory (/zm, /il — Zambia default)
-app.use(`/${DEFAULT_TENANT_SLUG}`, attachTenant(DEFAULT_TENANT_SLUG), publicModule.router);
-app.use("/il", attachTenant("il"), publicModule.router);
-// API routes (lead capture)
+// API and admin before tenant catch-alls so /api and /admin are not handled by public router
 app.use("/api", apiRoutes({ db }));
-// Admin
 app.use("/admin", adminRoutes({ db }));
 
 // Healthcheck
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
+
+// Company one-pagers on subdomain (e.g. demo.getproapp.org/)
+app.get("/", (req, res, next) => {
+  if (req.subdomain) {
+    return publicModule.renderCompanyHome(req, res);
+  }
+  next();
+});
+
+// Israel tenant
+app.use("/il", attachTenant("il"), publicModule.router);
+
+// Legacy /zm/* → canonical paths at site root (Zambia default)
+app.use("/zm", (req, res) => {
+  const u = req.originalUrl;
+  const q = u.indexOf("?");
+  const pathPart = q === -1 ? u : u.slice(0, q);
+  const queryPart = q === -1 ? "" : u.slice(q);
+  let rest = pathPart.slice("/zm".length) || "/";
+  if (!rest.startsWith("/")) rest = `/${rest}`;
+  res.redirect(301, rest + queryPart);
+});
+
+// Zambia (default tenant) at site root — getproapp.org/, /join, /directory, …
+app.use("/", attachTenant(DEFAULT_TENANT_SLUG, { urlPrefix: "" }), publicModule.router);
 
 if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
   // eslint-disable-next-line no-console

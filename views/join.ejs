@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="/styles.css?v=20260325a" />
   </head>
   <body class="join-page <%= tenant.themeClass %>">
-    <a href="<%= tenantUrlPrefix %>/" class="join-top-brand" id="join-top-brand" aria-label="GetPro home">
+    <a href="<%= tenantHomeHref %>" class="join-top-brand" id="join-top-brand" aria-label="GetPro home">
       <div class="logo" aria-hidden="true"></div>
       <span class="join-top-brand-title">GetPro</span>
     </a>
@@ -286,7 +286,7 @@
 
     <script>
       window.__GETPRO_TENANT_SLUG__ = "<%= tenant.slug %>";
-      window.__GETPRO_HOME__ = "<%= tenantUrlPrefix %>/";
+      window.__GETPRO_HOME__ = "<%= tenantHomeHref %>";
     </script>
     <script src="/autocomplete.js?v=20260325a"></script>
     <script src="/join.js?v=20260325a"></script>
