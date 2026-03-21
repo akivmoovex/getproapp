@@ -332,7 +332,7 @@ module.exports = function adminRoutes({ db }) {
         role,
         tenantId
       );
-      return res.redirect("/admin/super/users");
+      return res.redirect("/admin/super/users?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not create user: ${e.message}`);
     }
@@ -429,7 +429,7 @@ module.exports = function adminRoutes({ db }) {
     try {
       const r = db.prepare(sql).run(...params);
       if (r.changes === 0) return res.status(404).send("User not found.");
-      return res.redirect("/admin/super/users");
+      return res.redirect("/admin/super/users?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not update user: ${e.message}`);
     }
@@ -448,7 +448,7 @@ module.exports = function adminRoutes({ db }) {
     try {
       const r = db.prepare("DELETE FROM admin_users WHERE id = ?").run(id);
       if (r.changes === 0) return res.status(404).send("User not found.");
-      return res.redirect("/admin/super/users");
+      return res.redirect("/admin/super/users?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not delete user: ${e.message}`);
     }
@@ -458,11 +458,16 @@ module.exports = function adminRoutes({ db }) {
     const gzSummary = superUsersListQuery(db, "global_zm");
     const allUsers = superUsersListQuery(db, "all");
     const { globalId, zmId } = getGlobalAndZmTenantIds(db);
+    const editMode =
+      req.query.edit === "1" ||
+      req.query.edit === "true" ||
+      req.query.mode === "edit";
     return res.render("admin/super_users", {
       gzSummary,
       allUsers,
       globalId,
       zmId,
+      editMode,
       seedDemoNote: process.env.SEED_BUILTIN_USERS !== "0",
     });
   });

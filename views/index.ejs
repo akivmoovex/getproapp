@@ -16,7 +16,7 @@
     </div>
     <div class="wf-home-topbar-actions">
       <a class="wf-home-join-btn" href="<%= tenantUrlPrefix %>/join">Join us</a>
-      <% if (typeof isApexHost !== 'undefined' && isApexHost) { %>
+      <% if (typeof showRegionPickerUi !== 'undefined' && showRegionPickerUi) { %>
       <button
         type="button"
         class="wf-home-region-trigger"
@@ -62,7 +62,7 @@
       </button>
     </div>
     <div class="wf-menu-backdrop" id="wf-menu-backdrop" hidden></div>
-    <% if (typeof isApexHost !== 'undefined' && isApexHost) { %>
+    <% if (typeof showRegionPickerUi !== 'undefined' && showRegionPickerUi) { %>
     <div id="wf-region-overlay" class="wf-region-overlay" hidden aria-hidden="true"></div>
     <div
       id="wf-region-sheet"

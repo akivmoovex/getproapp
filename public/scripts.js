@@ -71,15 +71,16 @@ function initHomeDrawerMenu() {
   });
 }
 
-function initRegionPicker() {
+/** Region sheet controls shared by the globe button and global-tenant search gate. */
+function getRegionSheetControls() {
   const openBtn = document.getElementById("wf-region-open");
   const overlay = document.getElementById("wf-region-overlay");
   const sheet = document.getElementById("wf-region-sheet");
   const closeBtn = document.getElementById("wf-region-close-x");
-  if (!openBtn || !overlay || !sheet) return;
+  if (!overlay || !sheet) return null;
 
   const setOpen = (open) => {
-    openBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (openBtn) openBtn.setAttribute("aria-expanded", open ? "true" : "false");
     if (open) {
       sheet.removeAttribute("hidden");
       overlay.removeAttribute("hidden");
@@ -91,11 +92,20 @@ function initRegionPicker() {
       overlay.setAttribute("hidden", "");
       overlay.setAttribute("aria-hidden", "true");
       document.body.style.overflow = "";
-      openBtn.focus();
+      openBtn?.focus();
     }
   };
 
-  openBtn.addEventListener("click", () => setOpen(true));
+  return { openBtn, overlay, sheet, closeBtn, setOpen };
+}
+
+function initRegionPicker() {
+  const c = getRegionSheetControls();
+  if (!c) return;
+
+  const { openBtn, overlay, sheet, closeBtn, setOpen } = c;
+
+  openBtn?.addEventListener("click", () => setOpen(true));
   closeBtn?.addEventListener("click", () => setOpen(false));
   overlay.addEventListener("click", () => setOpen(false));
   sheet.querySelectorAll("a.wf-region-btn").forEach((a) => {
@@ -106,10 +116,34 @@ function initRegionPicker() {
   });
 }
 
+/** On global tenant home, search UI is not regional — open the region picker instead. */
+function initGlobalTenantSearchOpensRegion() {
+  const c = getRegionSheetControls();
+  if (!c) return;
+  const { setOpen } = c;
+  if (!document.body.classList.contains("tenant-global")) return;
+
+  const q = document.getElementById("home-search-q");
+  const city = document.getElementById("home-search-city");
+  const form = document.querySelector(".pro-home-dual-search");
+
+  const openSheet = () => setOpen(true);
+
+  [q, city].forEach((el) => {
+    if (!el) return;
+    el.addEventListener("focus", openSheet);
+    el.addEventListener("click", openSheet);
+  });
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    setOpen(true);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("lead_form");
   if (form) form.addEventListener("submit", submitLeadForm);
   initHomeDrawerMenu();
   initRegionPicker();
+  initGlobalTenantSearchOpensRegion();
 });
-

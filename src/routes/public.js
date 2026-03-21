@@ -62,11 +62,14 @@ module.exports = function publicRoutes({ db }) {
       req.tenantUrlPrefix !== undefined && req.tenantUrlPrefix !== null
         ? req.tenantUrlPrefix
         : `/${t.slug}`;
+    const showRegionPickerUi =
+      !!req.isApexHost || (t && t.slug === "global");
     return {
       tenant: t,
       tenantUrlPrefix: prefix,
       tenantHomeHref: tenantHomeHrefFromPrefix(prefix),
       isApexHost: !!req.isApexHost,
+      showRegionPickerUi,
       regionZmUrl: req.regionZmUrl || "",
       regionIlUrl: req.regionIlUrl || "",
       regionChoices: req.regionChoices || [],

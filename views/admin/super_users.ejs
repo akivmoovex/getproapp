@@ -10,8 +10,15 @@
     <%- include('../partials/admin_nav', { navTitle: 'All tenants — users', activeNav: 'super_users' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
+      <div class="admin-super-users__topbar">
+        <% if (!editMode) { %>
+        <a class="btn btn-primary" href="/admin/super/users?edit=1">Edit</a>
+        <% } else { %>
+        <a class="btn" href="/admin/super/users">Done</a>
+        <% } %>
+      </div>
       <p class="admin-intro" style="margin-bottom:18px;">
-        Passwords are stored as <strong>bcrypt hashes</strong> only — they cannot be displayed. Use <strong>Edit</strong> to set a new password.
+        Passwords are stored as <strong>bcrypt hashes</strong> only — they cannot be displayed.<% if (editMode) { %> Use <strong>Edit</strong> on a user to set a new password.<% } %>
         <% if (seedDemoNote) { %>
           Seed accounts from <code>SEED_BUILTIN_USERS</code>: <code>tenantmanager</code> / <code>superadmin</code> (password <code>1234</code> if seeded).
         <% } %>
@@ -21,7 +28,7 @@
       <p class="admin-intro">Users tied to <strong>global</strong> or <strong>zm</strong>, plus <strong>super_admin</strong> (all regions).</p>
       <div class="card" style="margin-bottom:28px;">
         <div class="table-wrap">
-        <table class="table">
+        <table class="table<%= editMode ? '' : ' table--readonly' %>">
           <thead>
             <tr>
               <th>Username</th>
@@ -50,13 +57,17 @@
       </div>
 
       <h2 class="section-title">All regions — manage users</h2>
+      <% if (editMode) { %>
       <p class="admin-intro">Create, edit, delete, enable/disable, or change passwords for any admin user.</p>
       <div class="admin-toolbar">
         <a class="btn btn-primary" href="/admin/super/users/new">New user</a>
       </div>
+      <% } else { %>
+      <p class="admin-intro">View-only list. Choose <strong>Edit</strong> above to add or change users.</p>
+      <% } %>
       <div class="card">
         <div class="table-wrap">
-        <table class="table">
+        <table class="table<%= editMode ? '' : ' table--readonly' %>">
           <thead>
             <tr>
               <th>Username</th>
@@ -64,12 +75,12 @@
               <th>Role</th>
               <th>Password</th>
               <th>Status</th>
-              <th>Actions</th>
+              <% if (editMode) { %><th>Actions</th><% } %>
             </tr>
           </thead>
           <tbody>
             <% if (!allUsers || allUsers.length === 0) { %>
-              <tr><td colspan="6" class="muted">No admin users.</td></tr>
+              <tr><td colspan="<%= editMode ? 6 : 5 %>" class="muted">No admin users.</td></tr>
             <% } %>
             <% (allUsers || []).forEach(function(u) { %>
               <tr>
@@ -78,7 +89,7 @@
                 <td class="muted"><%= u.role %></td>
                 <td class="muted" style="font-size:12px;">Hashed (not shown)</td>
                 <td><%= u.enabled === 0 ? 'Disabled' : 'Enabled' %></td>
-                <td><a class="btn" href="/admin/super/users/<%= u.id %>/edit">Edit</a></td>
+                <% if (editMode) { %><td><a class="btn" href="/admin/super/users/<%= u.id %>/edit">Edit</a></td><% } %>
               </tr>
             <% }) %>
           </tbody>

@@ -349,6 +349,16 @@ a:hover {
   margin: 0 0 20px;
 }
 
+.admin-super-users__topbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.table.table--readonly tbody tr {
+  cursor: default;
+}
+
 .admin-stat-card {
   border-left: 3px solid var(--wf-primary);
 }
