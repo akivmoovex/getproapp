@@ -72,6 +72,17 @@
   const exitModalPhone = document.getElementById("join-exit-modal-phone");
   const exitModalError = document.getElementById("join-exit-modal-error");
 
+  const disabledCityModal = document.getElementById("join-disabled-city-modal");
+  const disabledCityLabel = document.getElementById("join-disabled-city-label");
+  const disabledCityName = document.getElementById("join-disabled-city-name");
+  const disabledCityPhone = document.getElementById("join-disabled-city-phone");
+  const disabledCityError = document.getElementById("join-disabled-city-error");
+  const disabledCitySubmit = document.getElementById("join-disabled-city-submit");
+  const disabledCityDismiss = document.getElementById("join-disabled-city-dismiss");
+  const disabledCityPanel = document.getElementById("join-disabled-city-panel");
+  const disabledCityThanks = document.getElementById("join-disabled-city-thanks");
+  const disabledCityClose = document.getElementById("join-disabled-city-close");
+
   const steps = {
     1: document.getElementById("join-step-1"),
     2: document.getElementById("join-step-2"),
@@ -112,6 +123,59 @@
       listsCache = await r.json();
     }
     return listsCache;
+  }
+
+  function tenantCityRows() {
+    const tc = typeof window !== "undefined" && window.__GETPRO_TENANT_CITIES__;
+    return Array.isArray(tc) ? tc : [];
+  }
+
+  function cityPoolForStep2(lists) {
+    const rows = tenantCityRows();
+    if (rows.length) return rows.map((c) => c.name);
+    return lists.cities;
+  }
+
+  function isCityDisabledByName(cityCanonical) {
+    const rows = tenantCityRows();
+    if (!rows.length) return false;
+    const n = norm(cityCanonical);
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (norm(r.name) === n) {
+        return r.enabled === 0 || r.enabled === false;
+      }
+    }
+    return false;
+  }
+
+  function resetDisabledCityForm() {
+    if (disabledCityName) disabledCityName.value = "";
+    if (disabledCityPhone) disabledCityPhone.value = "";
+    if (disabledCityError) {
+      disabledCityError.textContent = "";
+      disabledCityError.hidden = true;
+    }
+  }
+
+  function openDisabledCityModal(cityName) {
+    if (!disabledCityModal || !disabledCityLabel) return;
+    disabledCityLabel.textContent = cityName;
+    resetDisabledCityForm();
+    if (disabledCityPanel) disabledCityPanel.hidden = false;
+    if (disabledCityThanks) disabledCityThanks.hidden = true;
+    disabledCityModal.hidden = false;
+    document.body.classList.add("join-modal-open");
+    disabledCityName?.focus();
+  }
+
+  function closeDisabledCityModal() {
+    if (!disabledCityModal) return;
+    disabledCityModal.hidden = true;
+    document.body.classList.remove("join-modal-open");
+    resetDisabledCityForm();
+    if (disabledCityPanel) disabledCityPanel.hidden = false;
+    if (disabledCityThanks) disabledCityThanks.hidden = true;
   }
 
   function ensureAc(wrap, pool) {
@@ -296,8 +360,62 @@
     if (e.target === exitModal) closeExitModal();
   });
 
+  disabledCityDismiss?.addEventListener("click", () => closeDisabledCityModal());
+  disabledCityClose?.addEventListener("click", () => closeDisabledCityModal());
+  disabledCityModal?.addEventListener("click", (e) => {
+    if (e.target === disabledCityModal) closeDisabledCityModal();
+  });
+
+  disabledCitySubmit?.addEventListener("click", async () => {
+    if (!disabledCityName || !disabledCityPhone || !disabledCityError) return;
+    const nameVal = disabledCityName.value.trim();
+    const phoneVal = disabledCityPhone.value.trim();
+    if (!isValidName(nameVal)) {
+      disabledCityError.textContent = "Name must be at least 3 letters.";
+      disabledCityError.hidden = false;
+      return;
+    }
+    if (!isValidPhoneForTenant(phoneVal)) {
+      disabledCityError.textContent = phoneErrorHint();
+      disabledCityError.hidden = false;
+      return;
+    }
+    if (!tenantIdNum()) {
+      disabledCityError.textContent = "Missing region on this page. Refresh and try again.";
+      disabledCityError.hidden = false;
+      return;
+    }
+    const cityName = String(disabledCityLabel?.textContent || "").trim();
+    const digits = phoneVal.replace(/\D/g, "").slice(0, 20);
+    try {
+      await fetch("/api/callback-interest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantId: tenantIdNum(),
+          tenantSlug: tenantSlug(),
+          name: nameVal,
+          phone: digits,
+          context: "disabled_city_waitlist",
+          cityName,
+        }),
+      });
+    } catch (_) {
+      /* still show thanks */
+    }
+    if (disabledCityPanel) disabledCityPanel.hidden = true;
+    if (disabledCityThanks) disabledCityThanks.hidden = false;
+    disabledCityClose?.focus();
+  });
+
   document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape" || !exitModal || exitModal.hidden) return;
+    if (e.key !== "Escape") return;
+    if (disabledCityModal && !disabledCityModal.hidden) {
+      e.preventDefault();
+      closeDisabledCityModal();
+      return;
+    }
+    if (!exitModal || exitModal.hidden) return;
     if (exitModalForm && !exitModalForm.hidden) {
       showExitModalQuestion();
       return;
@@ -348,8 +466,13 @@
       const lists = await getLists();
       const wrap = document.querySelector("#join-step-2 .pro-ac");
       if (!wrap) return;
-      const r = ensureAc(wrap, lists.cities);
+      const pool = cityPoolForStep2(lists);
+      const r = ensureAc(wrap, pool);
       if (!r.ok) return;
+      if (isCityDisabledByName(r.value)) {
+        openDisabledCityModal(r.value);
+        return;
+      }
       showStep(3);
       name?.focus();
     } catch (e) {

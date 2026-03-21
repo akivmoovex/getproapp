@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cities | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app">
+    <%- include('../partials/admin_nav', { navTitle: 'Cities (join & search)', activeNav: 'cities' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+      <h1 class="section-title" style="margin-top:0;">Cities</h1>
+      <p class="admin-intro">
+        Controls which cities appear in the Join flow and home/directory autocomplete for this region. <strong>Enabled</strong> allows normal sign-up; <strong>Big city</strong> is used for rotating placeholder hints on Join step 2. Disabled cities still appear in the list — applicants see a waitlist message.
+      </p>
+
+      <div class="card admin-form-card admin-form-card--wide" style="margin-bottom:24px;">
+        <h2 class="section-title" style="margin-top:0;font-size:1.1rem;">Add city</h2>
+        <form method="post" action="/admin/cities" class="form admin-inline-form">
+          <div>
+            <label for="new_city_name">Name</label>
+            <input id="new_city_name" name="name" required placeholder="e.g. Lusaka" style="min-width:200px;" />
+          </div>
+          <div class="form-check">
+            <input id="new_city_enabled" type="checkbox" name="enabled" value="1" checked />
+            <label for="new_city_enabled">Enabled</label>
+          </div>
+          <div class="form-check">
+            <input id="new_city_big" type="checkbox" name="big_city" value="1" />
+            <label for="new_city_big">Big city</label>
+          </div>
+          <button class="btn btn-primary" type="submit">Add</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>City</th>
+              <th>Enabled</th>
+              <th>Big city</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!cities || cities.length === 0) { %>
+              <tr><td colspan="4" class="muted">No cities yet — add one above.</td></tr>
+            <% } %>
+            <% (cities || []).forEach(function(c) { %>
+              <tr>
+                <td colspan="4" style="padding:14px 12px;">
+                  <form method="post" action="/admin/cities/<%= c.id %>" class="admin-inline-form" style="align-items:flex-end;">
+                    <div>
+                      <label class="visually-hidden" for="city-name-<%= c.id %>">City name</label>
+                      <input id="city-name-<%= c.id %>" name="name" value="<%= c.name %>" required style="min-width:180px;" />
+                    </div>
+                    <div class="form-check">
+                      <input id="city-en-<%= c.id %>" type="checkbox" name="enabled" value="1" <%= c.enabled ? 'checked' : '' %> />
+                      <label for="city-en-<%= c.id %>">Enabled</label>
+                    </div>
+                    <div class="form-check">
+                      <input id="city-big-<%= c.id %>" type="checkbox" name="big_city" value="1" <%= c.big_city ? 'checked' : '' %> />
+                      <label for="city-big-<%= c.id %>">Big city</label>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Save</button>
+                  </form>
+                  <form method="post" action="/admin/cities/<%= c.id %>/delete" style="display:inline;margin-left:8px;" onsubmit="return confirm('Remove this city from the list?');">
+                    <button class="btn" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        </div>
+      </div>
+      </div>
+    </main>
+  </body>
+</html>

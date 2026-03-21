@@ -3,6 +3,7 @@ const fs = require("fs");
 const express = require("express");
 const { getTenantById, DEFAULT_TENANT_SLUG } = require("../tenants");
 const { TENANT_ZM } = require("../tenantIds");
+const { getTenantCitiesForClient, getJoinCityWatermarkRotate } = require("../tenantCities");
 const { israelComingSoonEnabled } = require("../israelComingSoon");
 
 function loadSearchLists() {
@@ -216,8 +217,13 @@ module.exports = function publicRoutes({ db }) {
   });
 
   router.get("/join", (req, res) => {
+    const tenantId = req.tenant.id;
+    const joinTenantCities = getTenantCitiesForClient(db, tenantId);
+    const joinCityWatermarkRotate = getJoinCityWatermarkRotate(db, tenantId);
     return res.render("join", {
       baseDomain: process.env.BASE_DOMAIN || "",
+      joinTenantCities,
+      joinCityWatermarkRotate,
       ...tenantLocals(req),
       ...platformSupport(),
     });

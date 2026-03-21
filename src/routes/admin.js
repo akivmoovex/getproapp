@@ -87,7 +87,7 @@ module.exports = function adminRoutes({ db }) {
     if (!req.session.adminUser) return next();
     if (isTenantViewer(req.session.adminUser.role)) {
       const p = req.path;
-      if (p.startsWith("/categories") || p.startsWith("/companies")) {
+      if (p.startsWith("/categories") || p.startsWith("/companies") || p.startsWith("/cities")) {
         return res.redirect("/admin/leads");
       }
     }
@@ -604,6 +604,56 @@ module.exports = function adminRoutes({ db }) {
     } catch (e) {
       return res.status(400).send(`Could not delete category: ${e.message}`);
     }
+  });
+
+  router.get("/cities", requireDirectoryEditor, (req, res) => {
+    const tid = getAdminTenantId(req);
+    if (tid == null) return res.redirect("/admin/super");
+    const cities = db
+      .prepare("SELECT * FROM tenant_cities WHERE tenant_id = ? ORDER BY name COLLATE NOCASE ASC")
+      .all(tid);
+    return res.render("admin/cities", { cities });
+  });
+
+  router.post("/cities", requireDirectoryEditor, requireNotViewer, (req, res) => {
+    const name = String(req.body.name || "").trim();
+    if (!name) return res.status(400).send("City name is required.");
+    const enabled = req.body.enabled === "1" || req.body.enabled === "on" ? 1 : 0;
+    const bigCity = req.body.big_city === "1" || req.body.big_city === "on" ? 1 : 0;
+    const tid = getAdminTenantId(req);
+    if (tid == null) return res.redirect("/admin/super");
+    try {
+      db.prepare("INSERT INTO tenant_cities (tenant_id, name, enabled, big_city) VALUES (?, ?, ?, ?)").run(
+        tid,
+        name,
+        enabled,
+        bigCity
+      );
+      return res.redirect("/admin/cities");
+    } catch (e) {
+      return res.status(400).send(`Could not add city: ${e.message}`);
+    }
+  });
+
+  router.post("/cities/:id", requireDirectoryEditor, requireNotViewer, (req, res) => {
+    const cleanName = String(req.body.name || "").trim();
+    if (!cleanName) return res.status(400).send("City name is required.");
+    const enabled = req.body.enabled === "1" || req.body.enabled === "on" ? 1 : 0;
+    const bigCity = req.body.big_city === "1" || req.body.big_city === "on" ? 1 : 0;
+    const tid = getAdminTenantId(req);
+    if (tid == null) return res.redirect("/admin/super");
+    const r = db
+      .prepare("UPDATE tenant_cities SET name = ?, enabled = ?, big_city = ? WHERE id = ? AND tenant_id = ?")
+      .run(cleanName, enabled, bigCity, req.params.id, tid);
+    if (r.changes === 0) return res.status(404).send("City not found");
+    return res.redirect("/admin/cities");
+  });
+
+  router.post("/cities/:id/delete", requireDirectoryEditor, requireNotViewer, (req, res) => {
+    const tid = getAdminTenantId(req);
+    if (tid == null) return res.redirect("/admin/super");
+    db.prepare("DELETE FROM tenant_cities WHERE id = ? AND tenant_id = ?").run(req.params.id, tid);
+    return res.redirect("/admin/cities");
   });
 
   router.get("/companies", requireDirectoryEditor, (req, res) => {

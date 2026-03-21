@@ -441,8 +441,17 @@
         });
         const joinPanels = document.getElementById("join-panels");
         if (joinPanels) {
+          const tc =
+            typeof window !== "undefined" && window.__GETPRO_TENANT_CITIES__;
+          const listsForJoin = { ...lists };
+          if (tc && Array.isArray(tc) && tc.length > 0) {
+            listsForJoin.cities = tc
+              .map((c) => c.name)
+              .filter(Boolean)
+              .sort((a, b) => a.localeCompare(b, "en"));
+          }
           joinPanels.querySelectorAll(".pro-ac").forEach((w) => {
-            initAc(w, lists, { startDelayMs: 120 });
+            initAc(w, listsForJoin, { startDelayMs: 120 });
           });
         }
       })

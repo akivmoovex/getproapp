@@ -2422,6 +2422,15 @@ textarea {
   text-align: center;
 }
 
+.join-modal.join-modal--wide {
+  max-width: min(96vw, 440px);
+  text-align: left;
+}
+
+.join-modal.join-modal--wide .join-modal-title {
+  text-align: center;
+}
+
 .join-modal-title {
   margin: 0 0 10px;
   font-size: 20px;

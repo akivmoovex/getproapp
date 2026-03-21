@@ -82,7 +82,11 @@ module.exports = function apiRoutes({ db }) {
     const name = String(body.name || "").trim().slice(0, 120);
     const phone = String(body.phone || "").trim().slice(0, 40);
     const vatOrPacra = String(body.vat_or_pacra || "").trim().slice(0, 200);
-    const tenantId = resolveTenantId(db, body);
+    const resolved = resolveTenantIdStrict(db, body);
+    if (resolved.error) {
+      return res.status(400).json({ error: resolved.error });
+    }
+    const tenantId = resolved.tenantId;
 
     if (israelComingSoonEnabled() && tenantId === TENANT_IL_ID) {
       return res.status(403).json({ error: "Israel sign-ups are not open yet." });
@@ -120,7 +124,8 @@ module.exports = function apiRoutes({ db }) {
     const body = req.body || {};
     const phone = String(body.phone || "").trim().slice(0, 40);
     const name = String(body.name || "").trim().slice(0, 120);
-    const context = String(body.context || "").trim().slice(0, 120);
+    let context = String(body.context || "").trim().slice(0, 120);
+    const cityName = String(body.cityName || "").trim().slice(0, 120);
     const resolved = resolveTenantIdStrict(db, body);
     if (resolved.error) {
       return res.status(400).json({ error: resolved.error });
@@ -129,9 +134,13 @@ module.exports = function apiRoutes({ db }) {
     if (israelComingSoonEnabled() && tenantId === TENANT_IL_ID) {
       return res.status(403).json({ error: "Israel callbacks are not open yet." });
     }
-    const interestLabel = String(body.interest_label || body.label || "Potential Partner")
+    let interestLabel = String(body.interest_label || body.label || "Potential Partner")
       .trim()
       .slice(0, 120);
+    if (cityName) {
+      if (!context) context = "disabled_city_waitlist";
+      interestLabel = `City waitlist — ${cityName}`.slice(0, 120);
+    }
     db.prepare(
       `
       INSERT INTO callback_interests (phone, name, context, tenant_id, interest_label)

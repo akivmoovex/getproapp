@@ -31,6 +31,7 @@
         <% if (canEdit && !isViewer) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'categories' ? 'admin-nav__link--active' : '' %>" href="/admin/categories">Categories</a>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'companies' ? 'admin-nav__link--active' : '' %>" href="/admin/companies">Companies</a>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'cities' ? 'admin-nav__link--active' : '' %>" href="/admin/cities">Cities</a>
         <% } %>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'leads' ? 'admin-nav__link--active' : '' %>" href="/admin/leads">Leads</a>
         <% if (canUsers && !isViewer) { %>
