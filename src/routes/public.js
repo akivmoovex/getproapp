@@ -5,6 +5,13 @@ const { getTenantById, DEFAULT_TENANT_SLUG } = require("../tenants");
 const { TENANT_ZM } = require("../tenantIds");
 const { getTenantCitiesForClient, getJoinCityWatermarkRotate } = require("../tenantCities");
 const { israelComingSoonEnabled } = require("../israelComingSoon");
+const { attachReviewStatsToCompanies } = require("../reviewStats");
+const {
+  companyProfileHref,
+  parseGalleryJson,
+  absoluteCompanyProfileUrl,
+  formatReviewDateLabel,
+} = require("../companyProfile");
 
 function loadSearchLists() {
   const p = path.join(__dirname, "../../public/data/search-lists.json");
@@ -53,8 +60,95 @@ function platformTenantPrefixForSlug(slug) {
   return `${scheme}://${slug}.${base}`;
 }
 
+function directoryHrefFromTenantPrefix(prefix) {
+  if (!prefix) return "/directory";
+  if (prefix.startsWith("http")) return `${prefix.replace(/\/$/, "")}/directory`;
+  return `${String(prefix).replace(/\/$/, "")}/directory`;
+}
+
 module.exports = function publicRoutes({ db }) {
   const router = express.Router();
+
+  function loadCompanyProfileExtras(company) {
+    const cid = company.id;
+    const reviewsRaw = db
+      .prepare(
+        `
+        SELECT rating, body, author_name, created_at
+        FROM reviews
+        WHERE company_id = ?
+        ORDER BY datetime(created_at) DESC
+        LIMIT 60
+        `
+      )
+      .all(cid);
+
+    const reviews = reviewsRaw.map((r) => ({
+      ...r,
+      dateLabel: formatReviewDateLabel(r.created_at),
+    }));
+
+    const avgRow = db
+      .prepare(
+        `
+        SELECT ROUND(AVG(rating), 2) AS avg_rating, COUNT(*) AS n
+        FROM reviews WHERE company_id = ?
+        `
+      )
+      .get(cid);
+
+    const distRows = db
+      .prepare(
+        `
+        SELECT CAST(ROUND(rating) AS INTEGER) AS star, COUNT(*) AS n
+        FROM reviews WHERE company_id = ?
+        GROUP BY CAST(ROUND(rating) AS INTEGER)
+        `
+      )
+      .all(cid);
+
+    const star_distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const r of distRows) {
+      const k = Math.min(5, Math.max(1, Number(r.star)));
+      star_distribution[k] = (star_distribution[k] || 0) + Number(r.n);
+    }
+    const star_distribution_total = Object.values(star_distribution).reduce((a, b) => a + b, 0);
+
+    const galleryItems = parseGalleryJson(company.gallery_json);
+
+    return {
+      reviews,
+      avg_rating: avgRow && avgRow.n > 0 ? avgRow.avg_rating : null,
+      review_count: avgRow ? Number(avgRow.n) : 0,
+      star_distribution,
+      star_distribution_total,
+      galleryItems,
+    };
+  }
+
+  function renderCompanyPage(req, res, company) {
+    const tenant = getTenantById(company.tenant_id, db) || getTenantById(TENANT_ZM, db);
+    const tenantUrlPrefix = platformTenantPrefixForSlug(tenant.slug);
+    const extras = loadCompanyProfileExtras(company);
+    const profileUrl = req.tenant
+      ? companyProfileHref(req, company.id)
+      : absoluteCompanyProfileUrl(tenant.slug, company.id);
+
+    return res.render("company", {
+      company,
+      category: company.category_slug ? { slug: company.category_slug, name: company.category_name } : null,
+      ...extras,
+      baseDomain: process.env.BASE_DOMAIN || "",
+      companyUrl: buildCompanyUrl({ baseDomain: process.env.BASE_DOMAIN || "", subdomain: company.subdomain }),
+      profileUrl,
+      directoryHref: directoryHrefFromTenantPrefix(tenantUrlPrefix),
+      tenant,
+      tenantUrlPrefix,
+      tenantHomeHref: tenantHomeHrefFromPrefix(tenantUrlPrefix),
+      regionChoices: req.regionChoices || [],
+      ...platformSupport(),
+    });
+  }
 
   function tenantLocals(req) {
     const t = req.tenant;
@@ -165,6 +259,8 @@ module.exports = function publicRoutes({ db }) {
         .all(tenantId);
     }
 
+    companies = attachReviewStatsToCompanies(db, companies);
+
     return res.render("directory", {
       categories,
       selectedCategory: selected,
@@ -173,6 +269,7 @@ module.exports = function publicRoutes({ db }) {
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",
       buildCompanyUrl,
+      companyProfileHref: (cid) => companyProfileHref(req, cid),
       ...tenantLocals(req),
       ...platformSupport(),
     });
@@ -205,18 +302,55 @@ module.exports = function publicRoutes({ db }) {
       )
       .all(category.id, tenantId);
 
+    const companiesWithReviews = attachReviewStatsToCompanies(db, companies);
+
     const categories = db
       .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
       .all(tenantId);
     return res.render("category", {
       category,
       categories,
-      companies,
+      companies: companiesWithReviews,
       baseDomain: process.env.BASE_DOMAIN || "",
       buildCompanyUrl,
+      companyProfileHref: (cid) => companyProfileHref(req, cid),
       ...tenantLocals(req),
       ...platformSupport(),
     });
+  });
+
+  router.get("/company/:id", (req, res) => {
+    const tenantId = req.tenant.id;
+    const id = Number(req.params.id);
+    if (!id || id < 1) {
+      res.status(404);
+      return res.render("not_found", {
+        slug: String(req.params.id || ""),
+        kind: "company",
+        ...tenantLocals(req),
+        ...platformSupport(),
+      });
+    }
+    const company = db
+      .prepare(
+        `
+        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+        FROM companies c
+        LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+        WHERE c.id = ? AND c.tenant_id = ?
+        `
+      )
+      .get(id, tenantId);
+    if (!company) {
+      res.status(404);
+      return res.render("not_found", {
+        slug: String(id),
+        kind: "company",
+        ...tenantLocals(req),
+        ...platformSupport(),
+      });
+    }
+    return renderCompanyPage(req, res, company);
   });
 
   router.get("/join", (req, res) => {
@@ -236,7 +370,7 @@ module.exports = function publicRoutes({ db }) {
     const company = db
       .prepare(
         `
-        SELECT c.*, cat.id AS category_id, cat.slug AS category_slug, cat.name AS category_name
+        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
         FROM companies c
         LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
         WHERE c.subdomain = ?
@@ -259,20 +393,7 @@ module.exports = function publicRoutes({ db }) {
       });
     }
 
-    const tenant = getTenantById(company.tenant_id, db) || getTenantById(TENANT_ZM, db);
-    const tenantUrlPrefix = platformTenantPrefixForSlug(tenant.slug);
-
-    return res.render("company", {
-      company,
-      category: company.category_id ? { slug: company.category_slug, name: company.category_name } : null,
-      baseDomain: process.env.BASE_DOMAIN || "",
-      companyUrl: buildCompanyUrl({ baseDomain: process.env.BASE_DOMAIN || "", subdomain: company.subdomain }),
-      tenant,
-      tenantUrlPrefix,
-      tenantHomeHref: tenantHomeHrefFromPrefix(tenantUrlPrefix),
-      regionChoices: req.regionChoices || [],
-      ...platformSupport(),
-    });
+    return renderCompanyPage(req, res, company);
   }
 
   return { router, renderCompanyHome };

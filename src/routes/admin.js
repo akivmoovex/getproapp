@@ -13,6 +13,7 @@ const {
 const { canManageTenantUsers, normalizeRole, ROLES, canEditDirectoryData } = require("../roles");
 const { STAGES, normalizeStage } = require("../tenantStages");
 const { TENANT_ZM } = require("../tenantIds");
+const { parseGalleryAdminText } = require("../companyProfile");
 const { isValidPhoneForTenant } = require("../tenants");
 
 function getAdminTenantId(req) {
@@ -711,9 +712,10 @@ module.exports = function adminRoutes({ db }) {
   router.get("/categories", requireDirectoryEditor, (req, res) => {
     const tid = getAdminTenantId(req);
     if (tid == null) return res.redirect("/admin/super");
-    let categories = db
+    const allCategories = db
       .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
       .all(tid);
+    let categories = allCategories;
     const qn = String(req.query.q_name || "").trim().toLowerCase();
     const qs = String(req.query.q_slug || "").trim().toLowerCase();
     const qc = String(req.query.q_created || "").trim().toLowerCase();
@@ -722,10 +724,13 @@ module.exports = function adminRoutes({ db }) {
     if (qc) {
       categories = categories.filter((c) => String(c.created_at || "").toLowerCase().includes(qc));
     }
+    const hasActiveFilters = !!(qn || qs || qc);
     const editMode = parseEditMode(req);
     const filterSuffix = filterSuffixFromQuery(req);
     return res.render("admin/categories", {
       categories,
+      totalCategoryCount: allCategories.length,
+      hasActiveFilters,
       editMode,
       filterSuffix,
       filters: {
@@ -902,9 +907,11 @@ module.exports = function adminRoutes({ db }) {
     }
     const editMode = parseEditMode(req);
     const filterSuffix = filterSuffixFromQuery(req);
+    const tsCompanies = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
     return res.render("admin/companies", {
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",
+      adminTenantSlug: tsCompanies ? tsCompanies.slug : "",
       editMode,
       filterSuffix,
       filters: {
@@ -926,6 +933,7 @@ module.exports = function adminRoutes({ db }) {
       categories,
       baseDomain: process.env.BASE_DOMAIN || "getproapp.org",
       adminTenantSlug: ts ? ts.slug : "",
+      galleryAdminText: "",
     });
   });
 
@@ -942,6 +950,10 @@ module.exports = function adminRoutes({ db }) {
       location = "",
       featured_cta_label = "Call us",
       featured_cta_phone = "",
+      years_experience = "",
+      service_areas = "",
+      hours_text = "",
+      gallery_text = "",
     } = req.body || {};
 
     const cleanName = String(name).trim();
@@ -974,13 +986,22 @@ module.exports = function adminRoutes({ db }) {
       }
     }
 
+    const yoeRaw = String(years_experience || "").trim();
+    const yearsExp = yoeRaw === "" ? null : Number(yoeRaw);
+    if (yearsExp != null && (Number.isNaN(yearsExp) || yearsExp < 0 || yearsExp > 999)) {
+      return res.status(400).send("Years in business must be a number between 0 and 999.");
+    }
+    const galleryJson = JSON.stringify(parseGalleryAdminText(gallery_text));
+
     try {
       db.prepare(
         `
         INSERT INTO companies
-          (subdomain, name, category_id, headline, about, services, phone, email, location, featured_cta_label, featured_cta_phone, tenant_id, updated_at)
+          (subdomain, name, category_id, headline, about, services, phone, email, location, featured_cta_label, featured_cta_phone, tenant_id, updated_at,
+           years_experience, service_areas, hours_text, gallery_json)
         VALUES
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'),
+           ?, ?, ?, ?)
         `
       ).run(
         cleanSubdomain,
@@ -994,7 +1015,11 @@ module.exports = function adminRoutes({ db }) {
         String(location || "").trim(),
         String(featured_cta_label || "").trim() || "Call us",
         String(featured_cta_phone || "").trim(),
-        tid
+        tid,
+        yearsExp,
+        String(service_areas || "").trim(),
+        String(hours_text || "").trim(),
+        galleryJson
       );
       return res.redirect("/admin/companies?edit=1");
     } catch (e) {
@@ -1009,11 +1034,14 @@ module.exports = function adminRoutes({ db }) {
     if (!company) return res.status(404).send("Company not found");
     const categories = getCategoriesForSelect(db, tid);
     const tsEdit = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    const { parseGalleryJson, galleryToAdminText } = require("../companyProfile");
+    const galleryAdminText = galleryToAdminText(parseGalleryJson(company.gallery_json));
     return res.render("admin/company_form", {
       company,
       categories,
       baseDomain: process.env.BASE_DOMAIN || "getproapp.org",
       adminTenantSlug: tsEdit ? tsEdit.slug : "",
+      galleryAdminText,
     });
   });
 
@@ -1030,6 +1058,10 @@ module.exports = function adminRoutes({ db }) {
       location = "",
       featured_cta_label = "Call us",
       featured_cta_phone = "",
+      years_experience = "",
+      service_areas = "",
+      hours_text = "",
+      gallery_text = "",
     } = req.body || {};
 
     const cleanName = String(name).trim();
@@ -1062,6 +1094,13 @@ module.exports = function adminRoutes({ db }) {
       }
     }
 
+    const yoeRawUp = String(years_experience || "").trim();
+    const yearsExpUp = yoeRawUp === "" ? null : Number(yoeRawUp);
+    if (yearsExpUp != null && (Number.isNaN(yearsExpUp) || yearsExpUp < 0 || yearsExpUp > 999)) {
+      return res.status(400).send("Years in business must be a number between 0 and 999.");
+    }
+    const galleryJsonUp = JSON.stringify(parseGalleryAdminText(gallery_text));
+
     try {
       const r = db.prepare(
         `
@@ -1078,6 +1117,10 @@ module.exports = function adminRoutes({ db }) {
           location = ?,
           featured_cta_label = ?,
           featured_cta_phone = ?,
+          years_experience = ?,
+          service_areas = ?,
+          hours_text = ?,
+          gallery_json = ?,
           updated_at = datetime('now')
         WHERE id = ? AND tenant_id = ?
         `
@@ -1093,6 +1136,10 @@ module.exports = function adminRoutes({ db }) {
         String(location || "").trim(),
         String(featured_cta_label || "").trim() || "Call us",
         String(featured_cta_phone || "").trim(),
+        yearsExpUp,
+        String(service_areas || "").trim(),
+        String(hours_text || "").trim(),
+        galleryJsonUp,
         req.params.id,
         tid
       );

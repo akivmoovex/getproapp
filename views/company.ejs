@@ -3,137 +3,224 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title><%= company.name %> | GetPro Directory</title>
+    <title><%= company.name %> | <%= category ? category.name + ' · ' : '' %>GetPro</title>
     <meta
       name="description"
-      content="One-page company profile on GetPro. Get in touch and request services."
+      content="<%= (company.headline || company.name || '').replace(/"/g, '') %> · Verified directory listing on GetPro."
     />
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="<%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
     <%- include('partials/site_header', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '', tenant: typeof tenant !== 'undefined' ? tenant : null, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
 
-    <div class="container" style="padding: 10px 0 30px;">
-      <div class="hero-grid">
-        <div>
-          <div class="pill-row">
-            <% if (category) { %>
-              <div class="pill"><%= category.name %></div>
+    <main class="pro-company-profile" dir="ltr" lang="en">
+      <div class="container pro-company-profile__inner">
+        <nav class="pro-company-profile__breadcrumb" aria-label="Breadcrumb">
+          <a href="<%= typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/' %>">Home</a>
+          <span class="pro-company-profile__bc-sep" aria-hidden="true">/</span>
+          <a href="<%= typeof directoryHref !== 'undefined' ? directoryHref : '/directory' %>">Directory</a>
+          <% if (category && category.slug) { %>
+            <span class="pro-company-profile__bc-sep" aria-hidden="true">/</span>
+            <a href="<%= typeof tenantUrlPrefix !== 'undefined' && tenantUrlPrefix ? (tenantUrlPrefix.toString().replace(/\/$/, '') + '/directory?category=' + category.slug) : '/directory?category=' + category.slug %>"><%= category.name %></a>
+          <% } %>
+          <span class="pro-company-profile__bc-sep" aria-hidden="true">/</span>
+          <span class="pro-company-profile__bc-current"><%= company.name %></span>
+        </nav>
+
+        <header class="pro-company-profile__hero">
+          <div class="pro-company-profile__hero-main">
+            <div class="pro-company-profile__badges">
+              <% if (category) { %>
+                <span class="pro-company-profile__pill"><%= category.name %></span>
+              <% } %>
+              <span class="pro-company-profile__pill pro-company-profile__pill--muted">Directory profile</span>
+            </div>
+            <h1 class="pro-company-profile__title"><%= company.name %></h1>
+            <% if (company.headline) { %>
+              <p class="pro-company-profile__headline"><%= company.headline %></p>
             <% } %>
-            <div class="pill">One-page website</div>
+            <% var yoe = company.years_experience != null && company.years_experience !== '' ? Number(company.years_experience) : null; %>
+            <% if (yoe != null && !isNaN(yoe) && yoe > 0) { %>
+              <p class="pro-company-profile__meta-line"><strong><%= yoe %></strong> years in business</p>
+            <% } %>
           </div>
 
-          <h1 class="title" style="font-size:34px;margin-top:14px;"><%= company.headline || company.name %></h1>
-          <% if (company.about) { %>
-            <p class="subtitle" style="margin-top:0;"><%= company.about %></p>
+          <% var rc = typeof review_count !== 'undefined' ? Number(review_count) : 0; %>
+          <% var av = typeof avg_rating !== 'undefined' && avg_rating != null ? Number(avg_rating) : null; %>
+          <% if (rc > 0 && av != null && !isNaN(av)) { %>
+            <div class="pro-company-profile__score-card">
+              <div class="pro-company-profile__score-num"><%= av.toFixed(2) %></div>
+              <div class="pro-company-profile__score-star" aria-hidden="true">★</div>
+              <div class="pro-company-profile__score-count"><%= rc %> verified reviews</div>
+            </div>
           <% } %>
+        </header>
 
-          <% if (company.services) { %>
-            <div class="section-title">Services</div>
-            <div class="list">
-              <% company.services.split("\n").filter(Boolean).forEach(function(s) { %>
-                <div class="card" style="padding:12px 14px;">
-                  <%= s %>
+        <div class="pro-company-profile__grid">
+          <div class="pro-company-profile__primary">
+
+            <% if (rc > 0 && typeof star_distribution !== 'undefined' && typeof star_distribution_total !== 'undefined' && star_distribution_total > 0) { %>
+              <section class="pro-company-profile__section" aria-labelledby="dist-heading">
+                <h2 id="dist-heading" class="pro-company-profile__h2">Rating breakdown</h2>
+                <div class="pro-company-profile__dist">
+                  <% for (var star = 5; star >= 1; star--) { %>
+                    <% var cnt = star_distribution[star] || 0; %>
+                    <% var pct = Math.round((cnt / star_distribution_total) * 100); %>
+                    <div class="pro-company-profile__dist-row">
+                      <span class="pro-company-profile__dist-label"><%= star %>★</span>
+                      <div class="pro-company-profile__dist-bar" role="presentation">
+                        <span class="pro-company-profile__dist-fill" style="width:<%= pct %>%;"></span>
+                      </div>
+                      <span class="pro-company-profile__dist-pct"><%= pct %>%</span>
+                    </div>
+                  <% } %>
                 </div>
-              <% }) %>
-            </div>
-          <% } %>
+              </section>
+            <% } %>
 
-          <div style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap;">
+            <section class="pro-company-profile__section" aria-labelledby="reviews-heading">
+              <h2 id="reviews-heading" class="pro-company-profile__h2">Customer reviews</h2>
+              <% if (!reviews || !reviews.length) { %>
+                <p class="muted">No reviews yet — be the first to leave feedback after you work with this business.</p>
+              <% } else { %>
+                <ul class="pro-company-profile__reviews">
+                  <% reviews.forEach(function(r) { %>
+                    <li class="pro-company-profile__review">
+                      <div class="pro-company-profile__review-top">
+                        <span class="pro-company-profile__review-score"><%= Number(r.rating).toFixed(2) %> ★</span>
+                        <span class="pro-company-profile__review-author"><%= r.author_name || 'Customer' %></span>
+                        <span class="pro-company-profile__review-date"><%= r.dateLabel || '' %></span>
+                      </div>
+                      <blockquote class="pro-company-profile__review-body">“<%= r.body %>”</blockquote>
+                    </li>
+                  <% }); %>
+                </ul>
+              <% } %>
+            </section>
+
+            <% if (company.about && String(company.about).trim()) { %>
+              <section class="pro-company-profile__section" aria-labelledby="about-heading">
+                <h2 id="about-heading" class="pro-company-profile__h2">About</h2>
+                <div class="pro-company-profile__prose"><%= company.about %></div>
+              </section>
+            <% } %>
+
+            <% if (company.services && String(company.services).trim()) { %>
+              <section class="pro-company-profile__section" aria-labelledby="spec-heading">
+                <h2 id="spec-heading" class="pro-company-profile__h2">Specialisations &amp; services</h2>
+                <ul class="pro-company-profile__bullets">
+                  <% company.services.split('\n').filter(function(s){ return String(s).trim(); }).forEach(function(s) { %>
+                    <li><%= String(s).trim() %></li>
+                  <% }); %>
+                </ul>
+              </section>
+            <% } %>
+
+            <% if (typeof galleryItems !== 'undefined' && galleryItems && galleryItems.length) { %>
+              <section class="pro-company-profile__section" aria-labelledby="gallery-heading">
+                <h2 id="gallery-heading" class="pro-company-profile__h2">Recent work</h2>
+                <p class="muted pro-company-profile__gallery-intro">Photos supplied by the business.</p>
+                <div class="pro-company-profile__gallery">
+                  <% galleryItems.forEach(function(g) { %>
+                    <figure class="pro-company-profile__gallery-fig">
+                      <img src="<%= g.url %>" alt="<%= g.caption ? g.caption.replace(/"/g, '') : 'Work photo' %>" loading="lazy" width="960" height="640" />
+                      <% if (g.caption) { %>
+                        <figcaption><%= g.caption %></figcaption>
+                      <% } %>
+                    </figure>
+                  <% }); %>
+                </div>
+              </section>
+            <% } %>
+
+            <% if (company.service_areas && String(company.service_areas).trim()) { %>
+              <section class="pro-company-profile__section" aria-labelledby="areas-heading">
+                <h2 id="areas-heading" class="pro-company-profile__h2">Service areas</h2>
+                <div class="pro-company-profile__prose pro-company-profile__preline"><%= company.service_areas %></div>
+              </section>
+            <% } %>
+
+            <% if (company.hours_text && String(company.hours_text).trim()) { %>
+              <section class="pro-company-profile__section" aria-labelledby="hours-heading">
+                <h2 id="hours-heading" class="pro-company-profile__h2">Hours</h2>
+                <div class="pro-company-profile__prose pro-company-profile__preline"><%= company.hours_text %></div>
+              </section>
+            <% } %>
+
+            <section class="pro-company-profile__section" aria-labelledby="lead-heading">
+              <h2 id="lead-heading" class="pro-company-profile__h2">Request contact</h2>
+              <div class="card pro-company-profile__lead-card">
+                <form id="lead_form" class="form">
+                  <input type="hidden" name="company_id" value="<%= company.id %>" />
+
+                  <div>
+                    <label for="lead_name">Full name</label>
+                    <input id="lead_name" name="name" required autocomplete="name" />
+                  </div>
+                  <div>
+                    <label for="lead_phone">Phone</label>
+                    <input id="lead_phone" name="phone" required autocomplete="tel" />
+                  </div>
+                  <div>
+                    <label for="lead_email">Email (optional)</label>
+                    <input id="lead_email" name="email" type="email" autocomplete="email" />
+                  </div>
+                  <div>
+                    <label for="lead_message">How can we help?</label>
+                    <textarea id="lead_message" name="message" required></textarea>
+                  </div>
+                  <button class="btn btn-primary" type="submit">Send request</button>
+
+                  <div id="lead_status" style="margin-top:10px;" class="muted"></div>
+                </form>
+              </div>
+            </section>
+          </div>
+
+          <aside class="pro-company-profile__aside card">
+            <h2 class="pro-company-profile__aside-title">Contact</h2>
+            <ul class="pro-company-profile__contact-list">
+              <% if (company.phone) { %>
+                <li><span class="muted">Phone</span><br /><a href="tel:<%= company.phone %>"><%= company.phone %></a></li>
+              <% } %>
+              <% if (company.email) { %>
+                <li><span class="muted">Email</span><br /><a href="mailto:<%= company.email %>"><%= company.email %></a></li>
+              <% } %>
+              <% if (company.location) { %>
+                <li><span class="muted">Location</span><br /><%= company.location %></li>
+              <% } %>
+            </ul>
+
             <% if (company.featured_cta_phone) { %>
-              <a class="btn btn-primary" href="tel:<%= company.featured_cta_phone %>"><%= company.featured_cta_label || "Call us" %></a>
+              <a class="btn btn-primary pro-company-profile__cta" href="tel:<%= company.featured_cta_phone %>"><%= company.featured_cta_label || 'Call us' %></a>
             <% } %>
-            <% if (company.email) { %>
-              <a class="btn" href="mailto:<%= company.email %>">Email</a>
+
+            <% if (typeof profileUrl !== 'undefined' && profileUrl) { %>
+              <p class="muted pro-company-profile__mini-hint">Share this profile:</p>
+              <p class="pro-company-profile__mini-url"><%= profileUrl %></p>
             <% } %>
-          </div>
 
-          <div class="section-title">Quick Lead Form</div>
-          <div class="card">
-            <form id="lead_form" class="form">
-              <input type="hidden" name="company_id" value="<%= company.id %>" />
+            <% if (typeof companyUrl !== 'undefined' && companyUrl && companyUrl !== '#') { %>
+              <p class="muted pro-company-profile__mini-hint">Mini-site (one-page):</p>
+              <p><a href="<%= companyUrl %>" target="_blank" rel="noopener noreferrer"><%= company.subdomain %><% if (baseDomain) { %>.<%= baseDomain %><% } %></a></p>
+            <% } %>
 
-              <div>
-                <label for="lead_name">Full Name</label>
-                <input id="lead_name" name="name" required />
-              </div>
-              <div>
-                <label for="lead_phone">Phone</label>
-                <input id="lead_phone" name="phone" required />
-              </div>
-              <div>
-                <label for="lead_email">Email (optional)</label>
-                <input id="lead_email" name="email" type="email" />
-              </div>
-              <div>
-                <label for="lead_message">How can we help?</label>
-                <textarea id="lead_message" name="message" required></textarea>
-              </div>
-              <button class="btn btn-primary" type="submit">Request Contact</button>
-
-              <div id="lead_status" style="margin-top:10px;" class="muted"></div>
-            </form>
-          </div>
-        </div>
-
-        <div class="card">
-          <div style="font-weight:900;font-size:18px;margin-bottom:8px;">Contact Details</div>
-          <div class="list">
-            <div>
-              <div class="muted">Category</div>
-              <div style="font-weight:800;margin-top:6px;">
-                <%= category ? category.name : "Directory Listing" %>
-              </div>
+            <div class="pro-company-profile__support">
+              <div class="pro-company-profile__support-title">GetPro support</div>
+              <p class="muted" style="line-height:1.6;margin:0;">Questions about the directory? We’re here in business hours.</p>
+              <% if (getproPhone) { %>
+                <p style="margin:10px 0 0;font-weight:800;"><a href="tel:<%= getproPhone %>"><%= getproPhone %></a></p>
+              <% } %>
+              <% if (getproEmail) { %>
+                <p class="muted" style="margin:8px 0 0;"><a href="mailto:<%= getproEmail %>"><%= getproEmail %></a></p>
+              <% } %>
             </div>
-            <div>
-              <div class="muted">Phone</div>
-              <div style="font-weight:800;margin-top:6px;">
-                <% if (company.phone) { %>
-                  <a href="tel:<%= company.phone %>"><%= company.phone %></a>
-                <% } else { %>
-                  Not provided
-                <% } %>
-              </div>
-            </div>
-            <div>
-              <div class="muted">Email</div>
-              <div style="font-weight:800;margin-top:6px;">
-                <% if (company.email) { %>
-                  <a href="mailto:<%= company.email %>"><%= company.email %></a>
-                <% } else { %>
-                  Not provided
-                <% } %>
-              </div>
-            </div>
-            <% if (company.location) { %>
-              <div>
-                <div class="muted">Location</div>
-                <div style="font-weight:800;margin-top:6px;"><%= company.location %></div>
-              </div>
-            <% } %>
-          </div>
-
-          <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border);">
-            <div style="font-weight:900;margin-bottom:8px;">Need help fast?</div>
-            <div class="muted" style="line-height:1.6;">
-              GetPro support is available <strong>during business hours</strong> to help you use the directory and reach businesses.
-            </div>
-            <% if (getproPhone) { %>
-              <div style="margin-top:10px;font-weight:900;"><a href="tel:<%= getproPhone %>"><%= getproPhone %></a></div>
-            <% } %>
-            <% if (getproEmail) { %>
-              <div style="margin-top:8px;" class="muted">Email: <a href="mailto:<%= getproEmail %>"><%= getproEmail %></a></div>
-            <% } %>
-            <% if (getproAddress) { %>
-              <div style="margin-top:8px;" class="muted">Location: <%= getproAddress %></div>
-            <% } %>
-          </div>
+          </aside>
         </div>
       </div>
-    </div>
+    </main>
 
     <%- include('partials/site_footer', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>
-    <script src="/scripts.js"></script>
+    <script src="/scripts.js?v=<%= stylesVersion %>"></script>
   </body>
 </html>
-

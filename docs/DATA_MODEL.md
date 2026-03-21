@@ -32,12 +32,21 @@ Professions, companies, cities, leads, and tenant-scoped users in **`/admin/...`
 These tables hold **one row set per tenant** (filter with `WHERE tenant_id = ?`):
 
 - **`categories`** — directory categories per region  
-- **`companies`** — listings (and company marketing subdomains)  
+- **`companies`** — listings (and company marketing subdomains). Optional **directory profile** fields: `years_experience`, `service_areas`, `hours_text`, `gallery_json` (JSON array of `{ url, caption }` for “Recent work” on `/company/:id`).  
 - **`leads`** — contact requests (also tied to `company_id`)  
 - **`professional_signups`** — join / interest signups  
 - **`callback_interests`** — callback requests (e.g. Join **Call me**), with `interest_label` (e.g. `Potential Partner`)  
 - **`tenant_cities`** — per-region city names for Join autocomplete; `enabled` (normal sign-up vs waitlist popup), `big_city` (rotating watermark hints on Join step 2 when also enabled)  
 - **`admin_users`** — admin accounts; `tenant_id` is **NULL** only for `super_admin`
+
+## Reviews
+
+**`reviews`** rows belong to a **`companies`** row (`company_id`, `ON DELETE CASCADE`). Fields include **`rating`** (1–5), **`body`**, **`author_name`**, **`created_at`**.
+
+- **Directory cards** compute **all-time** `ROUND(AVG(rating), 2)` and **`COUNT(*)`** per company.
+- The **highlight** line is the **single highest-rated** review in the **last 90 days** (tie-break: most recent `created_at`). Label on the UI: “Top review · last 3 months”.
+
+Demo tenant sample reviews are seeded once (`reviews_seed_demo_v1` in `_getpro_migrations`). If an **Enabled** tenant has **no** `categories` rows, a one-time migration copies professions from **Zambia** (`repair_empty_categories_enabled_tenants_v1`).
 
 ## Global / shared tables
 

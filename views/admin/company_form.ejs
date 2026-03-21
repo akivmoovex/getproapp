@@ -80,6 +80,37 @@
             <input id="location" name="location" value="<%= company ? company.location : '' %>" />
           </div>
 
+          <div>
+            <label for="years_experience">Years in business</label>
+            <input
+              id="years_experience"
+              name="years_experience"
+              type="number"
+              min="0"
+              max="999"
+              placeholder="e.g. 8"
+              value="<%= company && company.years_experience != null && company.years_experience !== '' ? company.years_experience : '' %>"
+            />
+          </div>
+
+          <div>
+            <label for="service_areas">Service areas (regions &amp; cities)</label>
+            <textarea id="service_areas" name="service_areas" rows="4" placeholder="One area per line"><%= company ? company.service_areas : '' %></textarea>
+          </div>
+
+          <div>
+            <label for="hours_text">Hours / availability</label>
+            <textarea id="hours_text" name="hours_text" rows="4" placeholder="e.g. Mon–Fri 08:00–17:00"><%= company ? company.hours_text : '' %></textarea>
+          </div>
+
+          <div>
+            <label for="gallery_text">Recent work — image URLs</label>
+            <textarea id="gallery_text" name="gallery_text" rows="7" placeholder="https://example.com/job1.jpg|Kitchen rewire&#10;https://example.com/job2.jpg"><%= typeof galleryAdminText !== 'undefined' ? galleryAdminText : '' %></textarea>
+            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+              One URL per line. Optional caption after <span class="kbd">|</span>. Use HTTPS links to images you are allowed to display.
+            </div>
+          </div>
+
           <div class="hero-grid" style="grid-template-columns: 1fr 1fr;">
             <div>
               <label for="featured_cta_label">CTA Label</label>

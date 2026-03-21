@@ -63,7 +63,15 @@
           </thead>
           <tbody>
             <% if (!categories || categories.length === 0) { %>
-              <tr><td colspan="<%= editMode ? 4 : 3 %>" class="muted">No professions match these filters.</td></tr>
+              <tr><td colspan="<%= editMode ? 4 : 3 %>" class="muted">
+                <% if (typeof hasActiveFilters !== 'undefined' && hasActiveFilters) { %>
+                  No professions match these filters.
+                <% } else if (typeof totalCategoryCount !== 'undefined' && totalCategoryCount === 0) { %>
+                  No professions for this region in the database. Choose <strong>Edit</strong> to add some, or open <strong>Super admin</strong> → <em>Act as region</em> and pick a tenant that should already have professions (e.g. Demo or Zambia).
+                <% } else { %>
+                  No professions match these filters.
+                <% } %>
+              </td></tr>
             <% } %>
             <% (categories || []).forEach(function(cat) { %>
               <tr>

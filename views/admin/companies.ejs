@@ -62,13 +62,14 @@
               <th>Name</th>
               <th>Subdomain</th>
               <th>Profession</th>
+              <th>Directory profile</th>
               <th>Updated</th>
               <% if (editMode) { %><th>Actions</th><% } %>
             </tr>
           </thead>
           <tbody>
             <% if (!companies || companies.length === 0) { %>
-              <tr><td colspan="<%= editMode ? 5 : 4 %>" class="muted">No companies match these filters.</td></tr>
+              <tr><td colspan="<%= editMode ? 6 : 5 %>" class="muted">No companies match these filters.</td></tr>
             <% } %>
             <% (companies || []).forEach(function(c) { %>
               <tr>
@@ -81,6 +82,13 @@
                   <% } %>
                 </td>
                 <td><%= c.category_name || '—' %></td>
+                <td>
+                  <% if (baseDomain && typeof adminTenantSlug !== 'undefined' && adminTenantSlug) { %>
+                    <a href="https://<%= adminTenantSlug %>.<%= baseDomain %>/company/<%= c.id %>" target="_blank" rel="noopener noreferrer">Open</a>
+                  <% } else { %>
+                    <span class="muted" title="Set BASE_DOMAIN">—</span>
+                  <% } %>
+                </td>
                 <td class="muted" style="font-size:12px;"><%= c.updated_at %></td>
                 <% if (editMode) { %><td><a class="btn" href="/admin/companies/<%= c.id %>/edit">Edit</a></td><% } %>
               </tr>

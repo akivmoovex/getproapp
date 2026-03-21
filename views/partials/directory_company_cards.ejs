@@ -23,11 +23,11 @@
 %>
 <div class="pro-directory-results" dir="ltr" lang="en">
   <% (companies || []).forEach(function(c) { %>
-    <% var url = buildCompanyUrl({ baseDomain: baseDomain, subdomain: c.subdomain }); %>
+    <% var url = typeof companyProfileHref === 'function' ? companyProfileHref(c.id) : buildCompanyUrl({ baseDomain: baseDomain, subdomain: c.subdomain }); %>
     <% var initials = directoryInitials(c.name); %>
     <% var hue = directoryHue(c.subdomain); %>
     <article class="pro-directory-card">
-      <a class="pro-directory-card__link" href="<%= url %>" target="_blank" rel="noopener noreferrer">
+      <a class="pro-directory-card__link" href="<%= url %>">
         <div class="pro-directory-card__media" style="--avatar-hue: <%= hue %>;">
           <div class="pro-directory-card__avatar" aria-hidden="true"><span class="pro-directory-card__initials"><%= initials %></span></div>
         </div>
@@ -35,6 +35,26 @@
           <h3 class="pro-directory-card__title"><%= c.name %></h3>
           <% if (c.headline) { %>
             <p class="pro-directory-card__headline"><%= c.headline %></p>
+          <% } %>
+          <% var rc = Number(c.review_count) || 0; %>
+          <% var avg = c.avg_rating != null && c.avg_rating !== '' ? Number(c.avg_rating) : null; %>
+          <% if (rc > 0 && avg != null && !isNaN(avg)) { %>
+            <div class="pro-directory-card__rating-row">
+              <span class="pro-directory-card__rating-score" aria-label="Average rating <%= avg %> out of 5"><%= avg.toFixed(2) %></span>
+              <span class="pro-directory-card__rating-star" aria-hidden="true">★</span>
+              <span class="pro-directory-card__review-count"><%= rc %> <%= rc === 1 ? 'review' : 'reviews' %></span>
+            </div>
+            <% if (c.highlight_review_body && String(c.highlight_review_body).trim()) { %>
+              <figure class="pro-directory-card__highlight">
+                <blockquote class="pro-directory-card__highlight-quote">“<%= directoryExcerpt(c.highlight_review_body, 200) %>”</blockquote>
+                <figcaption class="pro-directory-card__highlight-cap">
+                  <% if (c.highlight_review_author && String(c.highlight_review_author).trim()) { %>
+                    <span class="pro-directory-card__highlight-author">— <%= c.highlight_review_author %></span>
+                  <% } %>
+                  <span class="pro-directory-card__highlight-badge">Top review · last 3 months</span>
+                </figcaption>
+              </figure>
+            <% } %>
           <% } %>
           <p class="pro-directory-card__meta">
             <% if (c.location) { %><span class="pro-directory-card__loc"><%= c.location %></span><span class="pro-directory-card__dot" aria-hidden="true"> · </span><% } %>

@@ -88,7 +88,7 @@
           <% if (companies.length === 0) { %>
             <div class="card pro-directory-empty muted">No professionals found.</div>
           <% } else { %>
-            <%- include('partials/directory_company_cards', { companies, baseDomain, buildCompanyUrl }) %>
+            <%- include('partials/directory_company_cards', { companies, baseDomain, buildCompanyUrl, companyProfileHref }) %>
           <% } %>
         </div>
       </div>
