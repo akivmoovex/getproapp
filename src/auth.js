@@ -13,7 +13,12 @@ async function ensureAdminUser({ db }) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  db.prepare("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)").run(username, passwordHash);
+  const tenantId = Number(process.env.ADMIN_TENANT_ID) || 1;
+  db.prepare("INSERT INTO admin_users (username, password_hash, tenant_id) VALUES (?, ?, ?)").run(
+    username,
+    passwordHash,
+    tenantId
+  );
   // eslint-disable-next-line no-console
   console.log(`Admin user created: ${username}`);
 }

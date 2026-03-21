@@ -14,6 +14,7 @@ fs.mkdirSync(path.dirname(sqlitePath), { recursive: true });
 const db = new Database(sqlitePath);
 
 db.pragma("journal_mode = WAL");
+db.pragma("foreign_keys = ON");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS admin_users (
@@ -96,6 +97,57 @@ db.exec(`
     (1, 'zm', 'Zambia'),
     (2, 'il', 'Israel');
 `);
+
+try {
+  const catCols = db.prepare("PRAGMA table_info(categories)").all();
+  if (!catCols.some((c) => c.name === "tenant_id")) {
+    db.exec(`
+      CREATE TABLE categories_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        slug TEXT NOT NULL,
+        name TEXT NOT NULL,
+        sort INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(tenant_id, slug)
+      );
+      INSERT INTO categories_new (id, tenant_id, slug, name, sort, created_at)
+        SELECT id, 1, slug, name, sort, created_at FROM categories;
+      DROP TABLE categories;
+      ALTER TABLE categories_new RENAME TO categories;
+      CREATE INDEX IF NOT EXISTS idx_categories_tenant_id ON categories(tenant_id);
+    `);
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] categories tenant migration:", e.message);
+}
+
+try {
+  const colsAd = db.prepare("PRAGMA table_info(admin_users)").all();
+  if (!colsAd.some((c) => c.name === "tenant_id")) {
+    db.exec("ALTER TABLE admin_users ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] admin_users tenant_id migration:", e.message);
+}
+
+try {
+  const colsLd = db.prepare("PRAGMA table_info(leads)").all();
+  if (!colsLd.some((c) => c.name === "tenant_id")) {
+    db.exec("ALTER TABLE leads ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1");
+    db.exec(`
+      UPDATE leads SET tenant_id = (
+        SELECT c.tenant_id FROM companies c WHERE c.id = leads.company_id
+      )
+    `);
+    db.exec("CREATE INDEX IF NOT EXISTS idx_leads_tenant_id ON leads(tenant_id)");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] leads tenant_id migration:", e.message);
+}
 
 try {
   const colsCb = db.prepare("PRAGMA table_info(callback_interests)").all();

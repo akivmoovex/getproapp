@@ -8,7 +8,7 @@
       name="description"
       content="GetPro connects you with professionals. Search the directory, browse categories, and contact businesses directly."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260326a" />
+    <link rel="stylesheet" href="/styles.css?v=20260327a" />
   </head>
   <body class="home-page wf-home-layout <%= tenant.themeClass %>">
     <a href="<%= tenantHomeHref %>" class="wf-home-topbar-brand" aria-label="GetPro home">
@@ -79,7 +79,7 @@
     >
       <h2 id="wf-region-title" class="wf-region-title">Choose region</h2>
       <div class="wf-region-actions">
-        <a class="wf-region-btn wf-region-btn--zm" href="<%= regionZamUrl || tenantHomeHref %>">Zambia</a>
+        <a class="wf-region-btn wf-region-btn--zm" href="<%= regionZmUrl || tenantHomeHref %>">Zambia</a>
         <% if (regionIlUrl) { %>
         <a class="wf-region-btn wf-region-btn--il" dir="rtl" href="<%= regionIlUrl %>">ישראל</a>
         <% } else { %>
@@ -411,7 +411,7 @@
 
     <%- include('partials/site_footer', { tenantUrlPrefix }) %>
 
-    <script src="/scripts.js?v=20260326a"></script>
-    <script src="/autocomplete.js?v=20260325a"></script>
+    <script src="/scripts.js?v=20260327a"></script>
+    <script src="/autocomplete.js?v=20260327a"></script>
   </body>
 </html>

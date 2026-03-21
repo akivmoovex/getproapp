@@ -1,5 +1,5 @@
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260325a";
+  const LIST_URL = "/data/search-lists.json?v=20260327a";
 
   function tenantSlug() {
     return (typeof window.__GETPRO_TENANT_SLUG__ === "string" && window.__GETPRO_TENANT_SLUG__) || "zm";

@@ -18,9 +18,9 @@ function main() {
   ];
 
   if (!categoriesCount) {
-    const insert = db.prepare("INSERT INTO categories (slug, name, sort) VALUES (?, ?, ?)");
+    const insert = db.prepare("INSERT INTO categories (tenant_id, slug, name, sort) VALUES (?, ?, ?, ?)");
     const tx = db.transaction(() => {
-      defaults.forEach((c, i) => insert.run(c.slug, c.name, i * 10));
+      defaults.forEach((c, i) => insert.run(1, c.slug, c.name, i * 10));
     });
     tx();
     // eslint-disable-next-line no-console
@@ -31,7 +31,7 @@ function main() {
   }
 
   if (!companiesCount) {
-    const accounting = db.prepare("SELECT id FROM categories WHERE slug = 'accounting'").get();
+    const accounting = db.prepare("SELECT id FROM categories WHERE slug = 'accounting' AND tenant_id = 1").get();
     const subdomain = process.env.DEMO_COMPANY_SUBDOMAIN || "demo";
     db.prepare(
       `

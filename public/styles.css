@@ -2438,3 +2438,81 @@ body.join-modal-open {
 .wf-region-close:hover {
   opacity: 0.9;
 }
+
+/* Israel — coming soon */
+.coming-soon-il {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(180deg, var(--tenant-hero-tint, rgba(0, 102, 204, 0.12)) 0%, var(--bg) 100%);
+}
+
+.coming-soon-il-inner {
+  max-width: 420px;
+  text-align: center;
+}
+
+.coming-soon-il-icon-wrap {
+  margin: 0 auto 20px;
+  width: 120px;
+  height: 120px;
+  color: var(--tenant-accent, #0066cc);
+}
+
+.coming-soon-il-crane {
+  width: 100%;
+  height: 100%;
+}
+
+.coming-soon-il-hook {
+  animation: comingSoonSwing 2.2s ease-in-out infinite;
+  transform-origin: 60px 18px;
+}
+
+.coming-soon-il-block {
+  animation: comingSoonBob 2.2s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+@keyframes comingSoonSwing {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes comingSoonBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.coming-soon-il-title {
+  margin: 0 0 10px;
+  font-size: 1.75rem;
+  font-weight: 900;
+}
+
+.coming-soon-il-lead {
+  margin: 0 0 8px;
+  line-height: 1.55;
+  font-size: 1.05rem;
+}
+
+.coming-soon-il-en {
+  margin: 0 0 20px;
+  font-size: 0.95rem;
+}
+
+.coming-soon-il-actions .btn {
+  min-height: 48px;
+}

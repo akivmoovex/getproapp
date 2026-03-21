@@ -105,6 +105,21 @@ app.use((req, res, next) => {
   next();
 });
 
+// Legacy host zam.{BASE} → zm.{BASE} (Zambia uses ISO alpha-2 subdomain)
+app.use((req, res, next) => {
+  const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
+  if (!base) return next();
+  const host = (req.get("host") || "").split(":")[0].toLowerCase();
+  if (host === `zam.${base}`) {
+    const proto =
+      (req.headers["x-forwarded-proto"] && String(req.headers["x-forwarded-proto"]).split(",")[0].trim()) ||
+      req.protocol ||
+      "https";
+    return res.redirect(301, `${proto}://zm.${base}${req.originalUrl}`);
+  }
+  next();
+});
+
 // API and admin before tenant catch-alls so /api and /admin are not handled by public router
 app.use("/api", apiRoutes({ db }));
 app.use("/admin", adminRoutes({ db }));
@@ -123,7 +138,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Company one-pagers (e.g. demo.getproapp.org/) — not zam/il platform hosts
+// Company one-pagers (e.g. demo.getproapp.org/) — not zm/il platform hosts
 app.get("/", (req, res, next) => {
   if (req.subdomain && !RESERVED_PLATFORM_SUBDOMAINS.has(req.subdomain)) {
     return publicModule.renderCompanyHome(req, res);
@@ -131,7 +146,7 @@ app.get("/", (req, res, next) => {
   next();
 });
 
-// Legacy path URLs → tenant subdomains (Israel: il.getproapp.org, Zambia: zam.getproapp.org)
+// Legacy path URLs → tenant subdomains (Israel: il.*, Zambia: zm.*)
 function redirectPathToTenantHost(req, res, pathPrefix, hostLabel) {
   const scheme = process.env.PUBLIC_SCHEME || "https";
   const base = (process.env.BASE_DOMAIN || "").trim();
@@ -148,9 +163,9 @@ function redirectPathToTenantHost(req, res, pathPrefix, hostLabel) {
 }
 
 app.use("/il", (req, res) => redirectPathToTenantHost(req, res, "/il", "il"));
-app.use("/zm", (req, res) => redirectPathToTenantHost(req, res, "/zm", "zam"));
+app.use("/zm", (req, res) => redirectPathToTenantHost(req, res, "/zm", "zm"));
 
-// Host-based tenants: apex + www → Zambia UI + region picker; zam.* / il.* → regional sites
+// Host-based tenants: apex + www → Zambia UI + region picker; zm.* / il.* → regional sites
 app.use(attachTenantByHost);
 app.use("/", publicModule.router);
 

@@ -43,12 +43,12 @@ function tenantHomeHrefFromPrefix(prefix) {
   return `${p}/`;
 }
 
-/** Directory / join links from a company one-pager (subdomain) must target zam.* / il.* hosts. */
+/** Directory / join links from a company one-pager (subdomain) must target zm.* / il.* hosts. */
 function platformTenantPrefixForSlug(slug) {
   const scheme = process.env.PUBLIC_SCHEME || "https";
   const base = (process.env.BASE_DOMAIN || "").trim();
   if (!base) return slug === DEFAULT_TENANT_SLUG ? "" : `/${slug}`;
-  if (slug === DEFAULT_TENANT_SLUG) return `${scheme}://zam.${base}`;
+  if (slug === DEFAULT_TENANT_SLUG) return `${scheme}://zm.${base}`;
   if (slug === "il") return `${scheme}://il.${base}`;
   return `/${slug}`;
 }
@@ -67,21 +67,36 @@ module.exports = function publicRoutes({ db }) {
       tenantUrlPrefix: prefix,
       tenantHomeHref: tenantHomeHrefFromPrefix(prefix),
       isApexHost: !!req.isApexHost,
-      regionZamUrl: req.regionZamUrl || "",
+      regionZmUrl: req.regionZmUrl || "",
       regionIlUrl: req.regionIlUrl || "",
     };
   }
 
+  router.use((req, res, next) => {
+    if (req.tenant && req.tenant.slug === "il") {
+      const scheme = process.env.PUBLIC_SCHEME || "https";
+      const base = (process.env.BASE_DOMAIN || "").trim();
+      const apexUrl = base ? `${scheme}://${base}` : "/";
+      return res.render("coming_soon_il", {
+        ...tenantLocals(req),
+        apexUrl,
+        apexHostLabel: base || "Home",
+        ...platformSupport(),
+      });
+    }
+    next();
+  });
+
   router.get("/", async (req, res) => {
-    const categories = db.prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC").all();
-    const { tenant, tenantUrlPrefix, tenantHomeHref } = tenantLocals(req);
+    const tenantId = req.tenant.id;
+    const categories = db
+      .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
+      .all(tenantId);
 
     return res.render("index", {
       categories,
       baseDomain: process.env.BASE_DOMAIN || "",
-      tenant,
-      tenantUrlPrefix,
-      tenantHomeHref,
+      ...tenantLocals(req),
       ...platformSupport(),
     });
   });
@@ -103,7 +118,7 @@ module.exports = function publicRoutes({ db }) {
       let sql = `
         SELECT c.*
         FROM companies c
-        INNER JOIN categories cat ON cat.id = c.category_id
+        INNER JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
         WHERE cat.slug = ? AND c.tenant_id = ?
       `;
       const params = [selected, tenantId];
@@ -160,7 +175,9 @@ module.exports = function publicRoutes({ db }) {
   router.get("/category/:categorySlug", async (req, res) => {
     const tenantId = req.tenant.id;
     const categorySlug = req.params.categorySlug;
-    const category = db.prepare("SELECT * FROM categories WHERE slug = ?").get(categorySlug);
+    const category = db
+      .prepare("SELECT * FROM categories WHERE slug = ? AND tenant_id = ?")
+      .get(categorySlug, tenantId);
     if (!category) {
       res.status(404);
       return res.render("not_found", {
@@ -182,7 +199,9 @@ module.exports = function publicRoutes({ db }) {
       )
       .all(category.id, tenantId);
 
-    const categories = db.prepare("SELECT * FROM categories ORDER BY sort ASC, name ASC").all();
+    const categories = db
+      .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
+      .all(tenantId);
     return res.render("category", {
       category,
       categories,
@@ -208,7 +227,7 @@ module.exports = function publicRoutes({ db }) {
         `
         SELECT c.*, cat.id AS category_id, cat.slug AS category_slug, cat.name AS category_name
         FROM companies c
-        LEFT JOIN categories cat ON cat.id = c.category_id
+        LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
         WHERE c.subdomain = ?
         `
       )
@@ -218,7 +237,7 @@ module.exports = function publicRoutes({ db }) {
       res.status(404);
       const scheme = process.env.PUBLIC_SCHEME || "https";
       const base = (process.env.BASE_DOMAIN || "").trim();
-      const tp = base ? `${scheme}://zam.${base}` : "";
+      const tp = base ? `${scheme}://zm.${base}` : "";
       return res.render("not_found", {
         subdomain: req.subdomain,
         tenant: getTenantById(1),

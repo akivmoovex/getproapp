@@ -1,6 +1,6 @@
 /**
- * Path-based tenants: Zambia at site root (/), Israel at /il.
- * Legacy /zm/* URLs redirect to /* (canonical).
+ * Host-based tenants: apex + zm.* = Zambia (ISO alpha-2), il.* = Israel.
+ * Legacy zam.* redirects to zm.* (canonical Zambia host).
  */
 const TENANTS = {
   zm: {
@@ -21,8 +21,8 @@ const TENANTS = {
 
 const DEFAULT_TENANT_SLUG = "zm";
 
-/** Subdomains that serve platform tenants (not company one-pagers). */
-const RESERVED_PLATFORM_SUBDOMAINS = new Set(["zam", "il"]);
+/** Subdomains that serve platform tenants (not company one-pagers). ISO-style: zm = Zambia. */
+const RESERVED_PLATFORM_SUBDOMAINS = new Set(["zm", "il"]);
 
 function getTenantBySlug(slug) {
   if (!slug) return null;
@@ -76,7 +76,7 @@ function isValidPhoneForTenant(tenantSlug, raw) {
 }
 
 /**
- * Sets req.tenant for apex + zam/il platform hosts. Skips company subdomains (next() without tenant).
+ * Sets req.tenant for apex + zm/il platform hosts. Skips company subdomains (next() without tenant).
  */
 function attachTenantByHost(req, res, next) {
   const sub = req.subdomain;
@@ -88,9 +88,9 @@ function attachTenantByHost(req, res, next) {
   const base = (process.env.BASE_DOMAIN || "").toLowerCase().trim();
   const host = (req.hostname || "").toLowerCase();
 
-  req.regionZamUrl = base ? `${scheme}://zam.${base}` : "";
+  req.regionZmUrl = base ? `${scheme}://zm.${base}` : "";
   req.regionIlUrl = base ? `${scheme}://il.${base}` : "";
-  res.locals.regionZamUrl = req.regionZamUrl;
+  res.locals.regionZmUrl = req.regionZmUrl;
   res.locals.regionIlUrl = req.regionIlUrl;
 
   const isLocal =
@@ -121,7 +121,7 @@ function attachTenantByHost(req, res, next) {
     return next();
   }
 
-  if (sub === "zam") {
+  if (sub === "zm") {
     const t = getTenantBySlug(DEFAULT_TENANT_SLUG);
     req.tenant = t;
     req.tenantSlug = t.slug;

@@ -9,6 +9,8 @@ function resolveTenantId(db, body) {
   return row ? row.id : 1;
 }
 
+const TENANT_IL_ID = 2;
+
 module.exports = function apiRoutes({ db }) {
   const router = express.Router();
 
@@ -26,17 +28,27 @@ module.exports = function apiRoutes({ db }) {
       return res.status(400).json({ error: "company_id is required" });
     }
 
-    const company = db.prepare("SELECT id FROM companies WHERE id = ?").get(companyIdNum);
+    const company = db.prepare("SELECT id, tenant_id FROM companies WHERE id = ?").get(companyIdNum);
     if (!company) {
       return res.status(404).json({ error: "Company not found" });
+    }
+    if (company.tenant_id === TENANT_IL_ID) {
+      return res.status(403).json({ error: "This region is not accepting leads yet." });
     }
 
     db.prepare(
       `
-      INSERT INTO leads (company_id, name, phone, email, message, status)
-      VALUES (?, ?, ?, ?, ?, 'new')
+      INSERT INTO leads (company_id, name, phone, email, message, status, tenant_id)
+      VALUES (?, ?, ?, ?, ?, 'new', ?)
       `
-    ).run(companyIdNum, String(name).slice(0, 120), String(phone).slice(0, 30), String(email).slice(0, 120), String(message).slice(0, 2000));
+    ).run(
+      companyIdNum,
+      String(name).slice(0, 120),
+      String(phone).slice(0, 30),
+      String(email).slice(0, 120),
+      String(message).slice(0, 2000),
+      company.tenant_id
+    );
 
     return res.json({ ok: true });
   });
@@ -49,6 +61,10 @@ module.exports = function apiRoutes({ db }) {
     const phone = String(body.phone || "").trim().slice(0, 40);
     const vatOrPacra = String(body.vat_or_pacra || "").trim().slice(0, 200);
     const tenantId = resolveTenantId(db, body);
+
+    if (tenantId === TENANT_IL_ID) {
+      return res.status(403).json({ error: "Israel sign-ups are not open yet." });
+    }
 
     if (!profession || !city || !name || !phone) {
       return res.status(400).json({ error: "Profession, city, name, and phone are required." });
@@ -70,6 +86,9 @@ module.exports = function apiRoutes({ db }) {
     const name = String(body.name || "").trim().slice(0, 120);
     const context = String(body.context || "").trim().slice(0, 120);
     const tenantId = resolveTenantId(db, body);
+    if (tenantId === TENANT_IL_ID) {
+      return res.status(403).json({ error: "Israel callbacks are not open yet." });
+    }
     db.prepare(
       `
       INSERT INTO callback_interests (phone, name, context, tenant_id)

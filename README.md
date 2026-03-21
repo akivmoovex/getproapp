@@ -36,7 +36,9 @@ npm install
 npm start
 ```
 
-**URLs:** The marketing site defaults to **`https://getproapp.org`** (apex). **Zambia** listings and join flow live on **`https://zam.getproapp.org`**. **Israel** uses **`https://il.getproapp.org`**. The apex home shows a **Region** control (globe) to open those sites. Legacy paths **`/zm/…`** and **`/il/…`** redirect to the **`zam.*`** and **`il.*`** hosts. Configure **DNS** (and SSL) for `zam` and `il` as subdomains of `BASE_DOMAIN` (e.g. wildcard or explicit A/CNAME records).
+**URLs:** The marketing site defaults to **`https://getproapp.org`** (apex). **Zambia** (ISO alpha-2 **`zm`**) uses **`https://zm.getproapp.org`**. **Israel** uses **`https://il.getproapp.org`**. The apex home shows a **Region** control (globe) to open those sites. Legacy paths **`/zm/…`** and **`/il/…`** redirect to **`zm.*`** and **`il.*`**. The old host **`zam.getproapp.org`** redirects to **`zm.getproapp.org`**. Configure **DNS** (and SSL) for `zm` and `il` (and wildcard `*.getproapp.org` if you use company subdomains).
+
+**Multi-tenant data:** Categories, companies, leads, and admin access are scoped by **`tenant_id`** (Zambia `1`, Israel `2`). Each admin user has a **`tenant_id`**; the dashboard only shows data for that tenant. Set **`ADMIN_TENANT_ID`** (default `1`) when creating the first admin user. For an Israel-only admin, use **`ADMIN_TENANT_ID=2`** with a distinct **`ADMIN_USERNAME`**.
 
 Home and directory search use autocomplete lists in `public/data/search-lists.json` (professional services + Zambia places). Regenerate with:
 
