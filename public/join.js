@@ -13,7 +13,6 @@
     1: document.getElementById("join-step-1"),
     2: document.getElementById("join-step-2"),
     3: document.getElementById("join-step-3"),
-    4: document.getElementById("join-step-4"),
   };
 
   const professionInput = document.getElementById("join-profession");
@@ -53,7 +52,7 @@
   }
 
   /**
-   * Same whitelist rules as directory search: pick from list or exact match.
+   * Profession/city must be in list — same as home page. Blocks proceed if not chosen from list.
    */
   function ensureAc(wrap, pool) {
     const input = wrap.querySelector(".pro-ac-input");
@@ -96,7 +95,7 @@
 
   function setProgress(n) {
     if (stepNum) stepNum.textContent = String(n);
-    if (progressFill) progressFill.style.width = `${Math.min(n, 4) * 25}%`;
+    if (progressFill) progressFill.style.width = `${(n / 3) * 100}%`;
   }
 
   function showStep(n) {
@@ -116,7 +115,19 @@
   }
 
   function clearErrors() {
-    for (let i = 1; i <= 4; i++) showError(i, "");
+    for (let i = 1; i <= 3; i++) showError(i, "");
+  }
+
+  /** Name: letters (and spaces) only, at least 3 characters */
+  function isValidName(s) {
+    const t = String(s || "").trim();
+    return t.length >= 3 && /^[a-zA-Z\s]+$/.test(t);
+  }
+
+  /** Phone: digits only, at least 8 digits */
+  function isValidPhone(s) {
+    const digits = String(s || "").replace(/\D/g, "");
+    return digits.length >= 8;
   }
 
   getStarted.addEventListener("click", () => {
@@ -163,27 +174,20 @@
 
   document.getElementById("join-back-3")?.addEventListener("click", () => showStep(2));
 
-  document.getElementById("join-next-3")?.addEventListener("click", () => {
-    showError(3, "");
-    const n = (name.value || "").trim();
-    const p = (phone.value || "").trim();
-    if (!n) {
-      showError(3, "Please enter your name.");
-      return;
-    }
-    if (!p) {
-      showError(3, "Please enter your phone number.");
-      return;
-    }
-    showStep(4);
-  });
-
-  document.getElementById("join-back-4")?.addEventListener("click", () => showStep(3));
-
   document.getElementById("join-submit")?.addEventListener("click", async () => {
-    showError(4, "");
-    const radio = document.querySelector('input[name="vat_pacra"]:checked');
-    const vatOrPacra = radio ? radio.value : "";
+    showError(3, "");
+
+    const nameVal = (name.value || "").trim();
+    const phoneVal = (phone.value || "").trim();
+
+    if (!isValidName(nameVal)) {
+      showError(3, "Name must contain only letters and be at least 3 characters.");
+      return;
+    }
+    if (!isValidPhone(phoneVal)) {
+      showError(3, "Invalid phone number.");
+      return;
+    }
 
     const prof =
       (professionHid && professionHid.value) || (professionInput && professionInput.value.trim()) || "";
@@ -192,9 +196,9 @@
     const payload = {
       profession: prof,
       city: cityVal,
-      name: (name.value || "").trim(),
-      phone: (phone.value || "").trim(),
-      vat_or_pacra: vatOrPacra,
+      name: nameVal,
+      phone: phoneVal.replace(/\D/g, "").slice(0, 20),
+      vat_or_pacra: "",
     };
 
     const submitBtn = document.getElementById("join-submit");
@@ -221,7 +225,7 @@
         if (track) track.hidden = true;
       }
     } catch (err) {
-      showError(4, err.message || "Something went wrong. Please try again.");
+      showError(3, err.message || "Something went wrong. Please try again.");
     } finally {
       if (submitBtn) submitBtn.disabled = false;
     }

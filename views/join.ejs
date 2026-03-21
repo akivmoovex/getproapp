@@ -11,8 +11,6 @@
     <link rel="stylesheet" href="/styles.css?v=20260320p" />
   </head>
   <body class="join-page">
-    <%- include('partials/site_header') %>
-
     <section class="join-hero" id="join-hero">
       <div class="container join-hero-inner">
         <h1>Become a GetPro Partner</h1>
@@ -96,10 +94,10 @@
     <section class="join-wizard join-wizard--hidden" id="join-wizard" aria-hidden="true">
       <div class="container join-wizard-inner">
         <div class="join-progress" role="status" aria-live="polite">
-          Step <span id="join-step-num">1</span> of 4
+          Step <span id="join-step-num">1</span> of 3
         </div>
         <div class="join-progress-track" aria-hidden="true">
-          <div class="join-progress-fill" id="join-progress-fill" style="width: 25%"></div>
+          <div class="join-progress-fill" id="join-progress-fill" style="width: 33.33%"></div>
         </div>
 
         <div id="join-panels">
@@ -160,45 +158,14 @@
             </div>
             <div class="join-wizard-actions">
               <button type="button" class="btn btn-secondary-wf" id="join-back-3">Back</button>
-              <button type="button" class="btn btn-primary" id="join-next-3">Continue</button>
-            </div>
-            <p class="join-wizard-error" id="join-error-3" hidden></p>
-          </div>
-
-          <div class="join-step-panel" id="join-step-4" data-step="4" hidden>
-            <h2>Tax &amp; registration</h2>
-            <p class="join-step-hint">Do you have a VAT number or PACRA registration?</p>
-            <fieldset class="join-fieldset">
-              <legend class="visually-hidden">VAT or PACRA</legend>
-              <div class="join-radio-list" id="join-vat-pacra-group">
-                <label>
-                  <input type="radio" name="vat_pacra" value="No / not yet" checked />
-                  No / not yet
-                </label>
-                <label>
-                  <input type="radio" name="vat_pacra" value="Yes — VAT number" />
-                  Yes — VAT number
-                </label>
-                <label>
-                  <input type="radio" name="vat_pacra" value="Yes — PACRA ID" />
-                  Yes — PACRA ID
-                </label>
-                <label>
-                  <input type="radio" name="vat_pacra" value="I have both VAT and PACRA" />
-                  I have both VAT and PACRA
-                </label>
-              </div>
-            </fieldset>
-            <div class="join-wizard-actions">
-              <button type="button" class="btn btn-secondary-wf" id="join-back-4">Back</button>
               <button type="button" class="btn btn-primary" id="join-submit">Submit</button>
             </div>
-            <p class="join-wizard-error" id="join-error-4" hidden></p>
+            <p class="join-wizard-error" id="join-error-3" hidden></p>
           </div>
         </div>
 
         <div class="join-step-panel join-thanks" id="join-thanks" hidden>
-          <p class="join-thanks-message">Your personalized business page is on its way!</p>
+          <p class="join-thanks-message">Our team shall contact you shortly.</p>
         </div>
       </div>
     </section>
