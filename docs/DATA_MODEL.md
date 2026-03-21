@@ -17,11 +17,11 @@ Rows live in **`tenants`** (`id`, `slug`, `name`, `stage`, …). Canonical seed 
 
 Existing databases created with the old id layout are **remapped once** on boot (`tenant_id_layout_v1` in `_getpro_migrations`). Rows whose `slug` is **not** in the canonical list (`global`, `demo`, `il`, `zm`, `zw`, `bw`, `za`, `na`) are **removed once** with their scoped data (`delete_non_canonical_tenants_v1`). After that, **Super admin** can **create, edit, or delete** additional regions from **`/admin/super`** (except **global**); new regions get categories copied from **Zambia** (`zm`) on create.
 
-The **`global`** tenant is used as the **apex** home (`getproapp.org` / `www`) when its stage is **`Enabled`**. It does **not** appear in the public region picker (only regional subdomains do). **`demo`** is seeded as **`Disabled`** by default (staging / internal).
+The **`global`** tenant is used as the **apex** home (`getproapp.org` / `www`) when its stage is **`Enabled`**. It does **not** appear in the public region picker (only regional subdomains do). **`demo`** is **`Enabled`** by default for **`demo.{BASE_DOMAIN}`** but is **not** listed in the region picker (direct URL / staging). **`za`** (South Africa) defaults to **`Disabled`**; enable from **Super admin** when launching that region.
 
-On **first database boot**, a migration may set all tenants except **`global`** and **`zm`** to **`Disabled`** (see `GETPRO_SKIP_TENANT_REGION_LOCK` in the README). Re-enable regions from **Super admin** if needed.
+On **first database boot**, a migration may set all tenants except **`global`** and **`zm`** to **`Disabled`** (see `GETPRO_SKIP_TENANT_REGION_LOCK` in the README). A separate one-time migration then **enables `demo`** and **disables `za`**. Re-enable other regions from **Super admin** if needed.
 
-**Stage** (`PartnerCollection`, `Enabled`, `Disabled`) controls public visibility: only **`Enabled`** tenants appear in the region picker and receive traffic on `{slug}.{BASE_DOMAIN}` (except `global`, which is apex-only).
+**Stage** (`PartnerCollection`, `Enabled`, `Disabled`) controls public visibility: **`Enabled`** tenants receive traffic on `{slug}.{BASE_DOMAIN}` when not otherwise excluded. The region picker lists **`Enabled`** tenants except **`global`** (apex-only) and **`demo`** (hidden from the list).
 
 ## Tables scoped by `tenant_id`
 

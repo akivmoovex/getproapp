@@ -38,12 +38,12 @@ Using **“document root = `public_html`”** for the subdomain can align static
 |------|--------|
 | `getproapp.org`, `www.getproapp.org` | Apex UI (often **`global`** tenant when enabled) + region picker |
 | `global.getproapp.org` | Global (`tenant_id` **1**) — apex marketing when enabled |
-| `demo.getproapp.org` | Demo / staging (`tenant_id` **2**), `Disabled` by default |
+| `demo.getproapp.org` | Demo / staging (`tenant_id` **2**), `Enabled` by default (not shown in region picker) |
 | `il.getproapp.org` | Israel (`tenant_id` **3**) |
 | `zm.getproapp.org` | Zambia (`tenant_id` **4**) |
 | `zw.getproapp.org` | Zimbabwe (`tenant_id` **5**) |
 | `bw.getproapp.org` | Botswana (`tenant_id` **6**) |
-| `za.getproapp.org` | South Africa (`tenant_id` **7**) |
+| `za.getproapp.org` | South Africa (`tenant_id` **7**), `Disabled` by default |
 | `na.getproapp.org` | Namibia (`tenant_id` **8**) |
 
 **Required env (production):** `BASE_DOMAIN=getproapp.org` (no `https://`), `PUBLIC_SCHEME=https`, `NODE_ENV=production`. Issue **SSL** for `zm` and `il` hostnames.
@@ -146,6 +146,6 @@ The animated “typing” hint is set with `data-watermark-text` on the `.pro-ac
 
 Default SQLite path is **`data/getpro.sqlite`**. Point `SQLITE_PATH` at your file if you keep the database elsewhere.
 
-**Regional tenant lock (first boot):** A one-time migration sets every tenant except **`global`** and **`zm`** (Zambia) to **`Disabled`**. To skip that on a fresh database, set **`GETPRO_SKIP_TENANT_REGION_LOCK=1`** before the first run. After boot, you can still change stages in **Super admin**.
+**Regional tenant lock (first boot):** A one-time migration sets every tenant except **`global`** and **`zm`** (Zambia) to **`Disabled`**. Another one-time migration then **enables `demo`** and **disables `za`** (South Africa). To skip the regional lock on a fresh database, set **`GETPRO_SKIP_TENANT_REGION_LOCK=1`** before the first run. After boot, you can still change stages in **Super admin**.
 
 **Super admin — all users:** Open **`/admin/super/users`** to list **Global & Zambia** accounts and **all** admin users across tenants, with create / edit / delete / enable / disable and password change. Passwords are never stored in plain text (only bcrypt hashes).

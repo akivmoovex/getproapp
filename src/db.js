@@ -209,12 +209,6 @@ try {
 }
 
 try {
-  db.prepare("UPDATE tenants SET stage = ? WHERE slug = 'demo'").run("Disabled");
-} catch (_) {
-  /* ignore */
-}
-
-try {
   const acols = db.prepare("PRAGMA table_info(admin_users)").all();
   if (!acols.some((c) => c.name === "role")) {
     db.exec(`
@@ -415,6 +409,23 @@ try {
 } catch (e) {
   // eslint-disable-next-line no-console
   console.error("[getpro] tenant region lock migration:", e.message);
+}
+
+/** One-time: demo enabled for demo.{BASE_DOMAIN} (not listed in region picker); South Africa disabled by default. */
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("tenant_demo_enabled_za_disabled_v1")) {
+    db.prepare("UPDATE tenants SET stage = ? WHERE slug = 'demo'").run("Enabled");
+    db.prepare("UPDATE tenants SET stage = ? WHERE slug = 'za'").run("Disabled");
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("tenant_demo_enabled_za_disabled_v1");
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Migration: demo tenant enabled, za disabled (defaults).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] tenant demo/za defaults migration:", e.message);
 }
 
 /** One-time: delete super-admin–created tenants not in the canonical slug list (and their scoped data). */

@@ -16,7 +16,7 @@ const TENANTS = {
     themeClass: "tenant-global",
     flagEmoji: "🌐",
   },
-  /** Staging / internal demo tenant (subdomain `demo.*`; not a public region by default). */
+  /** Staging / internal demo tenant (`demo.*`); enabled by default but omitted from the region picker. */
   demo: {
     id: TID.TENANT_DEMO,
     slug: "demo",
@@ -118,7 +118,13 @@ function getTenantRowMerged(slug, db) {
 function buildRegionChoicesFromDb(db, base, scheme) {
   if (!base) return [];
   const rows = db
-    .prepare("SELECT slug, name FROM tenants WHERE stage = ? AND slug != 'global' ORDER BY id ASC")
+    .prepare(
+      `
+      SELECT slug, name FROM tenants
+      WHERE stage = ? AND slug != 'global' AND slug != 'demo'
+      ORDER BY id ASC
+      `
+    )
     .all(STAGES.ENABLED);
   return rows.map((row) => {
     const meta = TENANTS[row.slug];
@@ -190,7 +196,11 @@ function createAttachTenantByHost(db) {
       } else if (!zmRow || zmRow.stage !== STAGES.ENABLED) {
         const first = db
           .prepare(
-            "SELECT slug FROM tenants WHERE stage = ? AND slug != 'global' ORDER BY id ASC LIMIT 1"
+            `
+            SELECT slug FROM tenants
+            WHERE stage = ? AND slug != 'global' AND slug != 'demo'
+            ORDER BY id ASC LIMIT 1
+            `
           )
           .get(STAGES.ENABLED);
         if (first && first.slug) slug = first.slug;
