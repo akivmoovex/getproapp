@@ -1,0 +1,51 @@
+<% 
+  function directoryInitials(name) {
+    var s = String(name || "").trim();
+    if (!s) return "?";
+    var parts = s.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return s.slice(0, 2).toUpperCase();
+  }
+  function directoryExcerpt(text, max) {
+    var n = max || 220;
+    var t = String(text || "").replace(/\s+/g, " ").trim();
+    if (t.length <= n) return t;
+    return t.slice(0, n - 1).trim() + "…";
+  }
+  function directoryHue(seed) {
+    var s = String(seed || "x");
+    var h = 0;
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+    return h;
+  }
+%>
+<div class="pro-directory-results" dir="ltr" lang="en">
+  <% (companies || []).forEach(function(c) { %>
+    <% var url = buildCompanyUrl({ baseDomain: baseDomain, subdomain: c.subdomain }); %>
+    <% var initials = directoryInitials(c.name); %>
+    <% var hue = directoryHue(c.subdomain); %>
+    <article class="pro-directory-card">
+      <a class="pro-directory-card__link" href="<%= url %>" target="_blank" rel="noopener noreferrer">
+        <div class="pro-directory-card__media" style="--avatar-hue: <%= hue %>;">
+          <div class="pro-directory-card__avatar" aria-hidden="true"><span class="pro-directory-card__initials"><%= initials %></span></div>
+        </div>
+        <div class="pro-directory-card__body">
+          <h3 class="pro-directory-card__title"><%= c.name %></h3>
+          <% if (c.headline) { %>
+            <p class="pro-directory-card__headline"><%= c.headline %></p>
+          <% } %>
+          <p class="pro-directory-card__meta">
+            <% if (c.location) { %><span class="pro-directory-card__loc"><%= c.location %></span><span class="pro-directory-card__dot" aria-hidden="true"> · </span><% } %>
+            <span class="pro-directory-card__host"><%= c.subdomain %><% if (baseDomain) { %>.<%= baseDomain %><% } %></span>
+          </p>
+          <% if (c.about && String(c.about).trim()) { %>
+            <p class="pro-directory-card__excerpt"><%= directoryExcerpt(c.about, 240) %></p>
+          <% } %>
+          <span class="pro-directory-card__cta">View profile</span>
+        </div>
+      </a>
+    </article>
+  <% }); %>
+</div>

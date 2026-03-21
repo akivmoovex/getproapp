@@ -67,7 +67,7 @@
         </div>
       </div>
 
-      <div class="hero-grid" style="grid-template-columns: 0.9fr 1.1fr;">
+      <div class="hero-grid pro-directory-layout">
         <div class="card">
           <div style="font-weight:900;margin-bottom:12px;">Categories</div>
           <div class="list">
@@ -85,29 +85,17 @@
         </div>
 
         <div>
-          <div class="list">
-            <% if (companies.length === 0) { %>
-              <div class="card">No companies found.</div>
-            <% } else { %>
-              <% companies.forEach(function(c) { %>
-                <a class="card" href="<%= buildCompanyUrl({ baseDomain: baseDomain, subdomain: c.subdomain }) %>" target="_blank" rel="noreferrer" style="display:block;">
-                  <div class="row-between" style="gap:8px;">
-                    <div style="font-weight:900;font-size:16px;"><%= c.name %></div>
-                    <div class="muted" style="font-size:12px;">@<%= c.subdomain %></div>
-                  </div>
-                  <% if (c.headline) { %>
-                    <div class="muted" style="margin-top:6px;line-height:1.5;"><%= c.headline %></div>
-                  <% } %>
-                </a>
-              <% }) %>
-            <% } %>
-          </div>
+          <% if (companies.length === 0) { %>
+            <div class="card pro-directory-empty muted">No professionals found.</div>
+          <% } else { %>
+            <%- include('partials/directory_company_cards', { companies, baseDomain, buildCompanyUrl }) %>
+          <% } %>
         </div>
       </div>
     </div>
 
     <%- include('partials/site_footer', { tenantUrlPrefix }) %>
-    <script src="/scripts.js?v=20260325a"></script>
-    <script src="/autocomplete.js?v=20260325a"></script>
+    <script src="/scripts.js?v=<%= stylesVersion %>"></script>
+    <script src="/autocomplete.js?v=<%= stylesVersion %>"></script>
   </body>
 </html>
