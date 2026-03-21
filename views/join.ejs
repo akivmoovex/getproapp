@@ -8,7 +8,7 @@
       name="description"
       content="Become a GetPro Partner — list your professional services, reach clients across Zambia, and grow your business with a clear profile and partner support."
     />
-    <link rel="stylesheet" href="/styles.css?v=20260320o" />
+    <link rel="stylesheet" href="/styles.css?v=20260320p" />
   </head>
   <body class="join-page">
     <%- include('partials/site_header') %>
@@ -108,7 +108,19 @@
             <p class="join-step-hint">e.g. Electrician, Plumber, Lawyer</p>
             <div class="join-field">
               <label for="join-profession">Profession</label>
-              <input id="join-profession" name="profession" type="text" autocomplete="organization-title" required />
+              <div class="pro-ac join-pro-ac" data-ac-list="service">
+                <input
+                  id="join-profession"
+                  class="pro-ac-input"
+                  type="text"
+                  autocomplete="off"
+                  placeholder=""
+                  required
+                />
+                <input type="hidden" class="pro-ac-hidden" id="join-profession-hid" value="" />
+                <ul class="pro-ac-dropdown" id="join-profession-dropdown" role="listbox" hidden></ul>
+                <p class="pro-ac-msg" hidden></p>
+              </div>
             </div>
             <div class="join-wizard-actions">
               <button type="button" class="btn btn-primary" id="join-next-1">Continue</button>
@@ -121,7 +133,12 @@
             <p class="join-step-hint">Main place you serve customers</p>
             <div class="join-field">
               <label for="join-city">City</label>
-              <input id="join-city" name="city" type="text" autocomplete="address-level2" required />
+              <div class="pro-ac join-pro-ac" data-ac-list="city">
+                <input id="join-city" class="pro-ac-input" type="text" autocomplete="off" placeholder="" required />
+                <input type="hidden" class="pro-ac-hidden" id="join-city-hid" value="" />
+                <ul class="pro-ac-dropdown" id="join-city-dropdown" role="listbox" hidden></ul>
+                <p class="pro-ac-msg" hidden></p>
+              </div>
             </div>
             <div class="join-wizard-actions">
               <button type="button" class="btn btn-secondary-wf" id="join-back-2">Back</button>
@@ -181,14 +198,12 @@
         </div>
 
         <div class="join-step-panel join-thanks" id="join-thanks" hidden>
-          <h2>Thank you.</h2>
-          <p>We shall contact you soon.</p>
+          <p class="join-thanks-message">Your personalized business page is on its way!</p>
         </div>
       </div>
     </section>
 
-    <%- include('partials/site_footer') %>
-
-    <script src="/join.js?v=20260320o"></script>
+    <script src="/autocomplete.js?v=20260320p"></script>
+    <script src="/join.js?v=20260320p"></script>
   </body>
 </html>

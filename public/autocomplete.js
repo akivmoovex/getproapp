@@ -3,7 +3,7 @@
  * Values must match search-lists.json on submit.
  */
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260320k";
+  const LIST_URL = "/data/search-lists.json?v=20260320p";
 
   const TYPE_MS = 95;
   const PAUSE_END_MS = 1600;
@@ -316,6 +316,12 @@
         document.querySelectorAll("form.pro-home-dual-search, form.pro-search--directory").forEach((f) => {
           resolveForm(f, lists);
         });
+        const joinPanels = document.getElementById("join-panels");
+        if (joinPanels) {
+          joinPanels.querySelectorAll(".pro-ac").forEach((w) => {
+            initAc(w, lists, { startDelayMs: 0 });
+          });
+        }
       })
       .catch(() => {
         // eslint-disable-next-line no-console
