@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= tenant ? 'Edit region' : 'New region' %> | Super admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app">
+    <%- include('../partials/admin_nav', { navTitle: tenant ? 'Edit region' : 'New region', activeNav: 'super' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+      <div class="admin-toolbar">
+        <a class="btn" href="/admin/super">← All regions</a>
+      </div>
+
+      <div class="card admin-form-card">
+        <form method="post" action="<%= tenant ? '/admin/super/tenants/' + tenant.id : '/admin/super/tenants' %>" class="form">
+          <div>
+            <label for="st_name">Display name</label>
+            <input id="st_name" name="name" required value="<%= tenant ? tenant.name : '' %>" placeholder="e.g. Zambia" />
+          </div>
+          <div>
+            <label for="st_slug">Short (subdomain)</label>
+            <input
+              id="st_slug"
+              name="slug"
+              required
+              value="<%= tenant ? tenant.slug : '' %>"
+              placeholder="e.g. zm"
+              pattern="[a-z0-9][a-z0-9-]{0,62}"
+              <%= tenant && tenant.slug === 'global' ? 'readonly' : '' %>
+            />
+            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+              Used as <span class="kbd">short.<%= typeof baseDomain !== 'undefined' && baseDomain ? baseDomain : 'yourdomain.org' %></span>. Lowercase letters, numbers, hyphens.
+            </div>
+          </div>
+          <div>
+            <label for="st_stage">Stage</label>
+            <select id="st_stage" name="stage">
+              <option value="<%= stages.PARTNER_COLLECTION %>" <%= tenant && tenant.stage === stages.PARTNER_COLLECTION ? 'selected' : '' %>><%= stages.PARTNER_COLLECTION %></option>
+              <option value="<%= stages.ENABLED %>" <%= tenant && tenant.stage === stages.ENABLED ? 'selected' : '' %>><%= stages.ENABLED %> (live)</option>
+              <option value="<%= stages.DISABLED %>" <%= tenant && tenant.stage === stages.DISABLED ? 'selected' : '' %>><%= stages.DISABLED %></option>
+            </select>
+            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+              Only <strong>Enabled</strong> regions appear in the public picker and accept traffic on their subdomain (except <strong>global</strong>, apex-only).
+            </div>
+          </div>
+          <div class="admin-gate-actions">
+            <button class="btn btn-primary" type="submit"><%= tenant ? 'Save' : 'Create' %></button>
+            <a class="btn" href="/admin/super">Cancel</a>
+          </div>
+        </form>
+      </div>
+      </div>
+    </main>
+  </body>
+</html>

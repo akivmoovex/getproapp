@@ -17,10 +17,13 @@
     return (typeof window.__GETPRO_HOME__ === "string" && window.__GETPRO_HOME__) || "/";
   }
 
-  /** Zambia: 9 digits, no country code, mobile starts with 7 or 9 */
+  /** Zambia: 10 digits starting with 0 (local mobile); second digit 7 or 9. Three digits allowed for quick tests. */
   function isValidPhoneZm(raw) {
     const d = String(raw || "").replace(/\D/g, "");
-    return d.length === 9 && /^[79]/.test(d);
+    if (d.length === 3) return true;
+    if (d.length !== 10) return false;
+    if (!d.startsWith("0")) return false;
+    return /^[79]/.test(d.charAt(1));
   }
 
   /** Israel: mobile without +972 — 9 digits starting 5, or 10 with leading 0 */
@@ -46,7 +49,9 @@
   function phoneErrorHint() {
     const slug = tenantSlug();
     if (!slug) return "Enter a valid phone number.";
-    if (slug === "zm") return "Enter a valid Zambian mobile number (9 digits, no +260).";
+    if (slug === "zm") {
+      return "Enter a Zambian mobile with a leading 0 (10 digits, e.g. 0977123456). Use 3 digits only for quick tests.";
+    }
     if (slug === "il") return "Enter a valid Israeli mobile number (without +972).";
     return "Invalid phone number.";
   }

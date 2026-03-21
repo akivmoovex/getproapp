@@ -15,7 +15,7 @@ Rows live in **`tenants`** (`id`, `slug`, `name`, `stage`, …). Canonical seed 
 | 7 | za | South Africa |
 | 8 | na | Namibia |
 
-Existing databases created with the old id layout are **remapped once** on boot (`tenant_id_layout_v1` in `_getpro_migrations`). Rows whose `slug` is **not** in the canonical list (`global`, `demo`, `il`, `zm`, `zw`, `bw`, `za`, `na`) are **removed once** with their scoped data (`delete_non_canonical_tenants_v1`). New regions are **not** created from the admin UI.
+Existing databases created with the old id layout are **remapped once** on boot (`tenant_id_layout_v1` in `_getpro_migrations`). Rows whose `slug` is **not** in the canonical list (`global`, `demo`, `il`, `zm`, `zw`, `bw`, `za`, `na`) are **removed once** with their scoped data (`delete_non_canonical_tenants_v1`). After that, **Super admin** can **create, edit, or delete** additional regions from **`/admin/super`** (except **global**); new regions get categories copied from **Zambia** (`zm`) on create.
 
 The **`global`** tenant is used as the **apex** home (`getproapp.org` / `www`) when its stage is **`Enabled`**. It does **not** appear in the public region picker (only regional subdomains do). **`demo`** is seeded as **`Disabled`** by default (staging / internal).
 

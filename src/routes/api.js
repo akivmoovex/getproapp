@@ -2,6 +2,7 @@ const express = require("express");
 const { resolveHostname } = require("../host");
 const { israelComingSoonEnabled } = require("../israelComingSoon");
 const { TENANT_IL } = require("../tenantIds");
+const { isValidPhoneForTenant } = require("../tenants");
 
 /**
  * Resolves tenant for join/callback APIs. Never defaults to Zambia — wrong defaults
@@ -58,6 +59,12 @@ module.exports = function apiRoutes({ db }) {
       return res.status(403).json({ error: "This region is not accepting leads yet." });
     }
 
+    const tenantSlug = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(company.tenant_id);
+    const phoneStr = String(phone || "").trim();
+    if (tenantSlug && phoneStr && !isValidPhoneForTenant(tenantSlug.slug, phoneStr)) {
+      return res.status(400).json({ error: "Invalid phone number for this region." });
+    }
+
     db.prepare(
       `
       INSERT INTO leads (company_id, name, phone, email, message, status, tenant_id)
@@ -94,6 +101,11 @@ module.exports = function apiRoutes({ db }) {
 
     if (!profession || !city || !name || !phone) {
       return res.status(400).json({ error: "Profession, city, name, and phone are required." });
+    }
+
+    const tenantSlugRow = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tenantId);
+    if (tenantSlugRow && !isValidPhoneForTenant(tenantSlugRow.slug, phone)) {
+      return res.status(400).json({ error: "Invalid phone number for this region." });
     }
 
     db.prepare(
@@ -140,6 +152,10 @@ module.exports = function apiRoutes({ db }) {
     if (cityName) {
       if (!context) context = "disabled_city_waitlist";
       interestLabel = `City waitlist — ${cityName}`.slice(0, 120);
+    }
+    const tenantSlugCb = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tenantId);
+    if (tenantSlugCb && phone && !isValidPhoneForTenant(tenantSlugCb.slug, phone)) {
+      return res.status(400).json({ error: "Invalid phone number for this region." });
     }
     db.prepare(
       `

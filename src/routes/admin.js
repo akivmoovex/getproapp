@@ -13,6 +13,7 @@ const {
 const { canManageTenantUsers, normalizeRole, ROLES, canEditDirectoryData } = require("../roles");
 const { STAGES, normalizeStage } = require("../tenantStages");
 const { TENANT_ZM } = require("../tenantIds");
+const { isValidPhoneForTenant } = require("../tenants");
 
 function getAdminTenantId(req) {
   const u = req.session && req.session.adminUser;
@@ -126,6 +127,114 @@ module.exports = function adminRoutes({ db }) {
       req.session.adminTenantScope = null;
     }
     req.session.save(() => res.redirect(req.body.redirect || "/admin/dashboard"));
+  });
+
+  function seedCategoriesFromTenant(dbConn, destTenantId, srcTenantId) {
+    const n = dbConn.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(destTenantId).c;
+    if (n > 0) return;
+    const rows = dbConn
+      .prepare("SELECT slug, name, sort FROM categories WHERE tenant_id = ? ORDER BY sort ASC")
+      .all(srcTenantId);
+    const ins = dbConn.prepare(
+      "INSERT INTO categories (tenant_id, slug, name, sort, created_at) VALUES (?, ?, ?, ?, datetime('now'))"
+    );
+    for (const r of rows) {
+      ins.run(destTenantId, r.slug, r.name, r.sort);
+    }
+  }
+
+  function deleteTenantScopedData(dbConn, tenantId) {
+    const tid = Number(tenantId);
+    dbConn.prepare("DELETE FROM leads WHERE tenant_id = ?").run(tid);
+    dbConn.prepare("DELETE FROM companies WHERE tenant_id = ?").run(tid);
+    dbConn.prepare("DELETE FROM categories WHERE tenant_id = ?").run(tid);
+    dbConn.prepare("DELETE FROM callback_interests WHERE tenant_id = ?").run(tid);
+    dbConn.prepare("DELETE FROM professional_signups WHERE tenant_id = ?").run(tid);
+    dbConn.prepare("DELETE FROM tenant_cities WHERE tenant_id = ?").run(tid);
+    dbConn.prepare("DELETE FROM admin_users WHERE tenant_id = ?").run(tid);
+    dbConn.prepare("DELETE FROM tenants WHERE id = ?").run(tid);
+  }
+
+  router.get("/super/tenants/new", requireSuperAdmin, (req, res) => {
+    return res.render("admin/super_tenant_form", {
+      tenant: null,
+      stages: STAGES,
+      error: null,
+      baseDomain: process.env.BASE_DOMAIN || "",
+    });
+  });
+
+  router.post("/super/tenants", requireSuperAdmin, (req, res) => {
+    const slug = String(req.body.slug || "")
+      .trim()
+      .toLowerCase();
+    const name = String(req.body.name || "").trim();
+    const stage = normalizeStage(req.body.stage || STAGES.PARTNER_COLLECTION);
+    if (!slug || !/^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) {
+      return res.status(400).send("Invalid short code (use letters, numbers, hyphens).");
+    }
+    if (!name) return res.status(400).send("Name is required.");
+    const reserved = new Set(["www", "admin", "api", "static", "mail", "app"]);
+    if (reserved.has(slug)) return res.status(400).send("This short code is reserved.");
+    const dup = db.prepare("SELECT id FROM tenants WHERE slug = ?").get(slug);
+    if (dup) return res.status(400).send("This short code is already in use.");
+    const maxRow = db.prepare("SELECT MAX(id) AS m FROM tenants").get();
+    const nextId = (maxRow && maxRow.m ? Number(maxRow.m) : 0) + 1;
+    try {
+      db.prepare("INSERT INTO tenants (id, slug, name, stage) VALUES (?, ?, ?, ?)").run(nextId, slug, name, stage);
+      seedCategoriesFromTenant(db, nextId, TENANT_ZM);
+      return res.redirect("/admin/super");
+    } catch (e) {
+      return res.status(400).send(`Could not create region: ${e.message}`);
+    }
+  });
+
+  router.get("/super/tenants/:id/edit", requireSuperAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const tenant = db.prepare("SELECT * FROM tenants WHERE id = ?").get(id);
+    if (!tenant) return res.status(404).send("Region not found");
+    return res.render("admin/super_tenant_form", {
+      tenant,
+      stages: STAGES,
+      error: null,
+      baseDomain: process.env.BASE_DOMAIN || "",
+    });
+  });
+
+  router.post("/super/tenants/:id", requireSuperAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).send("Invalid id.");
+    const name = String(req.body.name || "").trim();
+    const slug = String(req.body.slug || "")
+      .trim()
+      .toLowerCase();
+    const stage = normalizeStage(req.body.stage || STAGES.PARTNER_COLLECTION);
+    if (!name) return res.status(400).send("Name is required.");
+    if (!slug || !/^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) {
+      return res.status(400).send("Invalid short code.");
+    }
+    const dup = db.prepare("SELECT id FROM tenants WHERE slug = ? AND id != ?").get(slug, id);
+    if (dup) return res.status(400).send("This short code is already in use.");
+    const r = db.prepare("UPDATE tenants SET name = ?, slug = ?, stage = ? WHERE id = ?").run(name, slug, stage, id);
+    if (r.changes === 0) return res.status(404).send("Region not found");
+    return res.redirect("/admin/super");
+  });
+
+  router.post("/super/tenants/:id/delete", requireSuperAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id || id === 1) return res.status(400).send("Cannot delete this region.");
+    const row = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(id);
+    if (!row) return res.status(404).send("Region not found");
+    if (row.slug === "global") return res.status(400).send("Cannot delete the global region.");
+    try {
+      db.exec("PRAGMA foreign_keys = OFF");
+      const tx = db.transaction(() => deleteTenantScopedData(db, id));
+      tx();
+      db.exec("PRAGMA foreign_keys = ON");
+      return res.redirect("/admin/super");
+    } catch (e) {
+      return res.status(400).send(`Could not delete: ${e.message}`);
+    }
   });
 
   router.post("/super/tenants/:id/stage", requireSuperAdmin, (req, res) => {
@@ -677,10 +786,12 @@ module.exports = function adminRoutes({ db }) {
     const tid = getAdminTenantId(req);
     if (tid == null) return res.redirect("/admin/super");
     const categories = getCategoriesForSelect(db, tid);
+    const ts = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
     return res.render("admin/company_form", {
       company: null,
       categories,
       baseDomain: process.env.BASE_DOMAIN || "getproapp.org",
+      adminTenantSlug: ts ? ts.slug : "",
     });
   });
 
@@ -711,6 +822,22 @@ module.exports = function adminRoutes({ db }) {
     if (catId) {
       const okCat = db.prepare("SELECT id FROM categories WHERE id = ? AND tenant_id = ?").get(catId, tid);
       if (!okCat) return res.status(400).send("Invalid category for this tenant.");
+    }
+
+    const tenantSlugRow = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    if (tenantSlugRow && tenantSlugRow.slug === "zm") {
+      const p = String(phone || "").trim();
+      const fp = String(featured_cta_phone || "").trim();
+      if (p && !isValidPhoneForTenant("zm", p)) {
+        return res
+          .status(400)
+          .send("Phone must be a valid Zambian number (10 digits starting with 0, or 3 digits for test).");
+      }
+      if (fp && !isValidPhoneForTenant("zm", fp)) {
+        return res
+          .status(400)
+          .send("CTA phone must be a valid Zambian number (10 digits starting with 0, or 3 digits for test).");
+      }
     }
 
     try {
@@ -747,7 +874,13 @@ module.exports = function adminRoutes({ db }) {
     const company = db.prepare("SELECT * FROM companies WHERE id = ? AND tenant_id = ?").get(req.params.id, tid);
     if (!company) return res.status(404).send("Company not found");
     const categories = getCategoriesForSelect(db, tid);
-    return res.render("admin/company_form", { company, categories, baseDomain: process.env.BASE_DOMAIN || "getproapp.org" });
+    const tsEdit = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    return res.render("admin/company_form", {
+      company,
+      categories,
+      baseDomain: process.env.BASE_DOMAIN || "getproapp.org",
+      adminTenantSlug: tsEdit ? tsEdit.slug : "",
+    });
   });
 
   router.post("/companies/:id", requireDirectoryEditor, requireNotViewer, (req, res) => {
@@ -777,6 +910,22 @@ module.exports = function adminRoutes({ db }) {
     if (catId) {
       const okCat = db.prepare("SELECT id FROM categories WHERE id = ? AND tenant_id = ?").get(catId, tid);
       if (!okCat) return res.status(400).send("Invalid category for this tenant.");
+    }
+
+    const tenantSlugRowUp = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    if (tenantSlugRowUp && tenantSlugRowUp.slug === "zm") {
+      const p = String(phone || "").trim();
+      const fp = String(featured_cta_phone || "").trim();
+      if (p && !isValidPhoneForTenant("zm", p)) {
+        return res
+          .status(400)
+          .send("Phone must be a valid Zambian number (10 digits starting with 0, or 3 digits for test).");
+      }
+      if (fp && !isValidPhoneForTenant("zm", fp)) {
+        return res
+          .status(400)
+          .send("CTA phone must be a valid Zambian number (10 digits starting with 0, or 3 digits for test).");
+      }
     }
 
     try {

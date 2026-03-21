@@ -282,6 +282,38 @@ a:hover {
   border-radius: var(--radius-pill);
 }
 
+.admin-app .btn {
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.22s ease,
+    transform 0.18s ease,
+    filter 0.18s ease;
+}
+
+.admin-app .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(46, 10, 100, 0.12);
+}
+
+.admin-app .btn-primary:hover {
+  box-shadow: 0 8px 22px rgba(46, 10, 100, 0.22);
+}
+
+.admin-app .table tbody tr {
+  transition: background 0.16s ease;
+}
+
+.admin-app .table tbody tr:hover {
+  background: var(--primary-softer-bg);
+}
+
+.admin-app .table a.btn:hover,
+.admin-app .table button.btn:hover {
+  filter: brightness(1.02);
+}
+
 @media (max-width: 720px) {
   .admin-nav__logout {
     margin-left: 0;

@@ -202,7 +202,7 @@
                         class="join-plain-input"
                         type="tel"
                         autocomplete="tel"
-                        placeholder="Digits only, at least 8"
+                        placeholder="<%= tenant.slug === 'zm' ? 'e.g. 0977123456 (or 3 digits to test)' : 'Digits only, at least 8' %>"
                         required
                       />
                     </div>

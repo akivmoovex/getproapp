@@ -148,10 +148,13 @@ function attachTenant(slug, options = {}) {
   };
 }
 
+/** Zambian mobile in local format: leading 0, then 9 digits (10 total); mobile second digit 7 or 9. */
 function isValidZambiaPhoneLocal(raw) {
   const d = String(raw || "").replace(/\D/g, "");
-  if (d.length !== 9) return false;
-  return /^[79]/.test(d);
+  if (d.length === 3) return true; // short test numbers
+  if (d.length !== 10) return false;
+  if (!d.startsWith("0")) return false;
+  return /^[79]/.test(d.charAt(1));
 }
 
 function isValidIsraelPhoneLocal(raw) {
