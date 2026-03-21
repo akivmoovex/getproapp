@@ -6,8 +6,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon --watch \"server.js\" --exec \"node server.js\"",
+    "start": "node index.js",
+    "dev": "nodemon --watch \"server.js\" --watch \"index.js\" --exec \"node index.js\"",
     "seed": "node scripts/seed.js",
     "build-search-lists": "node scripts/build-search-lists.js",
     "build": "npm run build-search-lists",
