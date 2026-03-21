@@ -329,7 +329,7 @@ a:hover {
   width: 100%;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px 16px;
   margin-bottom: 12px;
@@ -338,6 +338,21 @@ a:hover {
   border: 1px solid var(--border-strong);
   background: var(--primary-softer-bg);
   font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-scope-banner__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-scope-banner__hint {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
   line-height: 1.45;
 }
 
@@ -1271,33 +1286,43 @@ a:hover {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 16px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
+  padding: 12px 22px;
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
   background: var(--surface);
   font-weight: 700;
+  font-size: 15px;
   color: var(--text);
   cursor: pointer;
   text-decoration: none;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.2s ease,
+    transform 0.18s ease,
+    filter 0.18s ease;
 }
 
 .btn:hover {
-  filter: brightness(0.98);
+  border-color: var(--primary-border-hover);
+  background: var(--primary-softer-bg);
   text-decoration: none;
+  filter: none;
 }
 
 .btn-primary {
   background: var(--btn-primary-bg);
   border: none;
-  color: var(--color-white);
-  border-radius: var(--radius-pill);
-  padding: 12px 24px;
-  font-weight: 700;
+  color: var(--btn-primary-text);
+  box-shadow: 0 2px 10px rgba(var(--wf-primary-rgb), 0.28);
 }
 
 .btn-primary:hover {
   background: var(--btn-primary-hover);
-  color: var(--color-white);
+  color: var(--btn-primary-text);
+  box-shadow: 0 4px 16px rgba(var(--wf-primary-rgb), 0.38);
 }
 
 .btn-secondary-wf {
@@ -2426,14 +2451,30 @@ textarea {
 }
 
 /* ——— Company directory profile (LTR, English) ——— */
+.pro-company-profile__shell {
+  background: linear-gradient(180deg, rgba(var(--wf-primary-rgb), 0.07) 0%, transparent 48%),
+    radial-gradient(1100px 420px at 12% -8%, rgba(var(--wf-primary-rgb), 0.14), transparent 58%),
+    var(--bg);
+  padding-bottom: 56px;
+}
+
 .pro-company-profile {
   text-align: left;
   direction: ltr;
-  padding: 8px 0 48px;
+  padding: 12px 0 0;
 }
 
 .pro-company-profile__inner {
   max-width: 1100px;
+}
+
+.pro-company-profile__hero-panel.card {
+  margin-bottom: 22px;
+  padding: 22px 22px 24px;
+  border-radius: 16px;
+  border-color: var(--border-strong);
+  box-shadow: var(--cta-card-shadow);
+  background: linear-gradient(145deg, var(--surface) 0%, rgba(var(--wf-primary-rgb), 0.05) 100%);
 }
 
 .pro-company-profile__breadcrumb {
@@ -2469,9 +2510,6 @@ textarea {
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 28px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid var(--border-strong);
 }
 
 .pro-company-profile__badges {

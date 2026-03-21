@@ -24,7 +24,12 @@
     </div>
     <% if (isSuper && scopeTenant) { %>
     <div class="admin-scope-banner" role="status">
-      <span>Directory data: <strong><%= scopeTenant.name %></strong> <span class="admin-scope-banner__slug">(<%= scopeTenant.slug %>)</span></span>
+      <div class="admin-scope-banner__text">
+        <span>Directory data: <strong><%= scopeTenant.name %></strong> <span class="admin-scope-banner__slug">(<%= scopeTenant.slug %>)</span></span>
+        <% if (typeof adminScopeIsSession !== 'undefined' && !adminScopeIsSession) { %>
+          <span class="admin-scope-banner__hint">Default region — switch in Super admin if you need another tenant.</span>
+        <% } %>
+      </div>
       <a class="admin-scope-banner__link" href="/admin/super#act-as-region">Change region</a>
     </div>
     <% } %>

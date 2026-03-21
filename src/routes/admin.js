@@ -22,7 +22,8 @@ function getAdminTenantId(req) {
   if (isSuperAdmin(u.role)) {
     const tid = req.session.adminTenantScope;
     if (tid != null && Number(tid) > 0) return Number(tid);
-    return null;
+    /** Super admin without an explicit “Act as region” still needs a tenant for Professions / Companies — default to Zambia. */
+    return TENANT_ZM;
   }
   const t = u.tenantId;
   return t != null && Number(t) > 0 ? Number(t) : TENANT_ZM;
@@ -55,9 +56,6 @@ function requireManageUsers(req, res, next) {
   if (!req.session.adminUser) return res.redirect("/admin/login");
   if (!canManageTenantUsers(req.session.adminUser.role)) {
     return res.status(403).type("text").send("User management requires tenant manager or super admin.");
-  }
-  if (isSuperAdmin(req.session.adminUser.role) && getAdminTenantId(req) == null) {
-    return res.redirect("/admin/super?need=tenant");
   }
   return next();
 }
@@ -139,11 +137,14 @@ module.exports = function adminRoutes({ db }) {
       canManageUsers: canManageTenantUsers(u.role),
       tenantScoped: tid != null,
     };
-    if (isSuperAdmin(u.role) && tid != null) {
+    if (isSuperAdmin(u.role)) {
       const tn = db.prepare("SELECT id, slug, name FROM tenants WHERE id = ?").get(tid);
       res.locals.adminScopeTenant = tn || null;
+      res.locals.adminScopeIsSession =
+        req.session.adminTenantScope != null && Number(req.session.adminTenantScope) > 0;
     } else {
       res.locals.adminScopeTenant = null;
+      res.locals.adminScopeIsSession = false;
     }
     return next();
   });
@@ -674,11 +675,7 @@ module.exports = function adminRoutes({ db }) {
 
   router.get("/dashboard", (req, res) => {
     const u = req.session.adminUser;
-    if (isSuperAdmin(u.role) && getAdminTenantId(req) == null) {
-      return res.redirect("/admin/super");
-    }
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
 
     const categoriesCount = db.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(tid).c;
     const companiesCount = db.prepare("SELECT COUNT(*) AS c FROM companies WHERE tenant_id = ?").get(tid).c;
@@ -711,7 +708,6 @@ module.exports = function adminRoutes({ db }) {
 
   router.get("/categories", requireDirectoryEditor, (req, res) => {
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     const allCategories = db
       .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
       .all(tid);
@@ -742,7 +738,6 @@ module.exports = function adminRoutes({ db }) {
   });
 
   router.get("/categories/new", requireDirectoryEditor, (req, res) => {
-    if (getAdminTenantId(req) == null) return res.redirect("/admin/super");
     return res.render("admin/category_form", { category: null });
   });
 
@@ -756,7 +751,6 @@ module.exports = function adminRoutes({ db }) {
 
     try {
       const tid = getAdminTenantId(req);
-      if (tid == null) return res.redirect("/admin/super");
       db.prepare("INSERT INTO categories (tenant_id, slug, name) VALUES (?, ?, ?)").run(tid, cleanSlug, cleanName);
       return res.redirect("/admin/categories?edit=1");
     } catch (e) {
@@ -766,7 +760,6 @@ module.exports = function adminRoutes({ db }) {
 
   router.get("/categories/:id/edit", requireDirectoryEditor, (req, res) => {
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     const category = db.prepare("SELECT * FROM categories WHERE id = ? AND tenant_id = ?").get(req.params.id, tid);
     if (!category) return res.status(404).send("Category not found");
     return res.render("admin/category_form", { category });
@@ -782,7 +775,6 @@ module.exports = function adminRoutes({ db }) {
 
     try {
       const tid = getAdminTenantId(req);
-      if (tid == null) return res.redirect("/admin/super");
       const r = db
         .prepare("UPDATE categories SET slug = ?, name = ? WHERE id = ? AND tenant_id = ?")
         .run(cleanSlug, cleanName, req.params.id, tid);
@@ -797,7 +789,6 @@ module.exports = function adminRoutes({ db }) {
     const catId = Number(req.params.id);
     if (!catId) return res.status(400).send("Invalid id");
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     const inTx = db.transaction(() => {
       db.prepare("UPDATE companies SET category_id = NULL WHERE category_id = ? AND tenant_id = ?").run(catId, tid);
       db.prepare("DELETE FROM categories WHERE id = ? AND tenant_id = ?").run(catId, tid);
@@ -812,7 +803,6 @@ module.exports = function adminRoutes({ db }) {
 
   router.get("/cities", requireDirectoryEditor, (req, res) => {
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     let cities = db
       .prepare("SELECT * FROM tenant_cities WHERE tenant_id = ? ORDER BY name COLLATE NOCASE ASC")
       .all(tid);
@@ -844,7 +834,6 @@ module.exports = function adminRoutes({ db }) {
     const enabled = req.body.enabled === "1" || req.body.enabled === "on" ? 1 : 0;
     const bigCity = req.body.big_city === "1" || req.body.big_city === "on" ? 1 : 0;
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     try {
       db.prepare("INSERT INTO tenant_cities (tenant_id, name, enabled, big_city) VALUES (?, ?, ?, ?)").run(
         tid,
@@ -864,7 +853,6 @@ module.exports = function adminRoutes({ db }) {
     const enabled = req.body.enabled === "1" || req.body.enabled === "on" ? 1 : 0;
     const bigCity = req.body.big_city === "1" || req.body.big_city === "on" ? 1 : 0;
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     const r = db
       .prepare("UPDATE tenant_cities SET name = ?, enabled = ?, big_city = ? WHERE id = ? AND tenant_id = ?")
       .run(cleanName, enabled, bigCity, req.params.id, tid);
@@ -874,14 +862,12 @@ module.exports = function adminRoutes({ db }) {
 
   router.post("/cities/:id/delete", requireDirectoryEditor, requireNotViewer, (req, res) => {
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     db.prepare("DELETE FROM tenant_cities WHERE id = ? AND tenant_id = ?").run(req.params.id, tid);
     return res.redirect("/admin/cities?edit=1");
   });
 
   router.get("/companies", requireDirectoryEditor, (req, res) => {
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     let companies = db
       .prepare(
         `
@@ -925,7 +911,6 @@ module.exports = function adminRoutes({ db }) {
 
   router.get("/companies/new", requireDirectoryEditor, (req, res) => {
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     const categories = getCategoriesForSelect(db, tid);
     const ts = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
     return res.render("admin/company_form", {
@@ -963,8 +948,6 @@ module.exports = function adminRoutes({ db }) {
 
     const catId = category_id ? Number(category_id) : null;
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
-
     if (catId) {
       const okCat = db.prepare("SELECT id FROM categories WHERE id = ? AND tenant_id = ?").get(catId, tid);
       if (!okCat) return res.status(400).send("Invalid category for this tenant.");
@@ -1029,7 +1012,6 @@ module.exports = function adminRoutes({ db }) {
 
   router.get("/companies/:id/edit", requireDirectoryEditor, (req, res) => {
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     const company = db.prepare("SELECT * FROM companies WHERE id = ? AND tenant_id = ?").get(req.params.id, tid);
     if (!company) return res.status(404).send("Company not found");
     const categories = getCategoriesForSelect(db, tid);
@@ -1071,8 +1053,6 @@ module.exports = function adminRoutes({ db }) {
 
     const catId = category_id ? Number(category_id) : null;
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
-
     if (catId) {
       const okCat = db.prepare("SELECT id FROM categories WHERE id = ? AND tenant_id = ?").get(catId, tid);
       if (!okCat) return res.status(400).send("Invalid category for this tenant.");
@@ -1154,7 +1134,6 @@ module.exports = function adminRoutes({ db }) {
     const companyId = Number(req.params.id);
     if (!companyId) return res.status(400).send("Invalid id");
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     try {
       db.prepare("DELETE FROM leads WHERE company_id = ? AND tenant_id = ?").run(companyId, tid);
       db.prepare("DELETE FROM companies WHERE id = ? AND tenant_id = ?").run(companyId, tid);
@@ -1166,7 +1145,6 @@ module.exports = function adminRoutes({ db }) {
 
   router.get("/leads", (req, res) => {
     const tid = getAdminTenantId(req);
-    if (tid == null) return res.redirect("/admin/super");
     const companyId = req.query.company_id ? Number(req.query.company_id) : null;
     const companies = db
       .prepare("SELECT id, name, subdomain FROM companies WHERE tenant_id = ? ORDER BY name ASC")

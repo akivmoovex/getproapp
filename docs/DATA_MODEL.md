@@ -25,7 +25,7 @@ On **first database boot**, a migration may set all tenants except **`global`** 
 
 ### Super admin and `tenant_id` in the admin UI
 
-Professions, companies, cities, leads, and tenant-scoped users in **`/admin/...`** are loaded for **one** tenant at a time: the session’s **tenant scope** (`adminTenantScope`). **`super_admin`** defaults to **`demo`** when it is `Enabled`, then **`global`**, then **`zm`** (see `GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG` in the README). Scoping to **`global`** shows that tenant’s rows only (often categories with **no** companies). To manage **demo** sample data, scope to **Demo** on **`/admin/super`** → *Act as region*, or log in again after deploy so the new default applies.
+Professions, companies, cities, leads, and tenant-scoped users in **`/admin/...`** are loaded for **one** tenant at a time: the session’s **tenant scope** (`adminTenantScope`). **`super_admin`** defaults to **`demo`** when it is `Enabled`, then **`global`**, then **`zm`** on login (see `GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG` in the README). If no scope is stored in the session, directory tools (**Professions**, **Companies**, **Cities**) still resolve to **Zambia (`zm`)** so lists are never empty solely due to missing scope. Use **`/admin/super`** → *Act as region* to pin another tenant. Scoping to **`global`** shows that tenant’s rows only (often fewer companies than regional tenants).
 
 ## Tables scoped by `tenant_id`
 
@@ -47,6 +47,8 @@ These tables hold **one row set per tenant** (filter with `WHERE tenant_id = ?`)
 - The **highlight** line is the **single highest-rated** review in the **last 90 days** (tie-break: most recent `created_at`). Label on the UI: “Top review · last 3 months”.
 
 Demo tenant sample reviews are seeded once (`reviews_seed_demo_v1` in `_getpro_migrations`). If an **Enabled** tenant has **no** `categories` rows, a one-time migration copies professions from **Zambia** (`repair_empty_categories_enabled_tenants_v1`).
+
+**`ensure_canonical_categories_all_tenants_v1`** (once): if **Zambia** has no professions, inserts a canonical list of slugs (electricians, plumbers, …), then runs `seedCategoriesForTenant` for tenants `1,2,3,5,6,7,8` so global, demo, and regional tenants that are still empty receive a copy from Zambia.
 
 ## Global / shared tables
 

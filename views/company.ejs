@@ -13,6 +13,7 @@
   <body class="<%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
     <%- include('partials/site_header', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '', tenant: typeof tenant !== 'undefined' ? tenant : null, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
 
+    <div class="pro-company-profile__shell">
     <main class="pro-company-profile" dir="ltr" lang="en">
       <div class="container pro-company-profile__inner">
         <nav class="pro-company-profile__breadcrumb" aria-label="Breadcrumb">
@@ -27,7 +28,7 @@
           <span class="pro-company-profile__bc-current"><%= company.name %></span>
         </nav>
 
-        <header class="pro-company-profile__hero">
+        <header class="pro-company-profile__hero pro-company-profile__hero-panel card">
           <div class="pro-company-profile__hero-main">
             <div class="pro-company-profile__badges">
               <% if (category) { %>
@@ -217,8 +218,9 @@
             </div>
           </aside>
         </div>
-      </div>
+        </div>
     </main>
+    </div>
 
     <%- include('partials/site_footer', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>
     <script src="/scripts.js?v=<%= stylesVersion %>"></script>
