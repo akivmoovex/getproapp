@@ -2,7 +2,15 @@
   const LIST_URL = "/data/search-lists.json?v=20260329e";
 
   function tenantSlug() {
-    return (typeof window.__GETPRO_TENANT_SLUG__ === "string" && window.__GETPRO_TENANT_SLUG__) || "zm";
+    if (typeof window.__GETPRO_TENANT_SLUG__ === "string" && window.__GETPRO_TENANT_SLUG__) {
+      return window.__GETPRO_TENANT_SLUG__;
+    }
+    return "";
+  }
+
+  function tenantIdNum() {
+    const n = Number(window.__GETPRO_TENANT_ID__);
+    return Number.isFinite(n) && n > 0 ? n : 0;
   }
 
   function homeUrl() {
@@ -25,6 +33,10 @@
 
   function isValidPhoneForTenant(raw) {
     const slug = tenantSlug();
+    if (!slug) {
+      const d = String(raw || "").replace(/\D/g, "");
+      return d.length >= 8;
+    }
     if (slug === "zm") return isValidPhoneZm(raw);
     if (slug === "il") return isValidPhoneIl(raw);
     const d = String(raw || "").replace(/\D/g, "");
@@ -33,6 +45,7 @@
 
   function phoneErrorHint() {
     const slug = tenantSlug();
+    if (!slug) return "Enter a valid phone number.";
     if (slug === "zm") return "Enter a valid Zambian mobile number (9 digits, no +260).";
     if (slug === "il") return "Enter a valid Israeli mobile number (without +972).";
     return "Invalid phone number.";
@@ -253,12 +266,18 @@
       return;
     }
     exitModalError.hidden = true;
+    if (!tenantIdNum()) {
+      exitModalError.textContent = "Missing region on this page. Refresh and try again.";
+      exitModalError.hidden = false;
+      return;
+    }
     const digits = phoneVal.replace(/\D/g, "").slice(0, 20);
     try {
       await fetch("/api/callback-interest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          tenantId: tenantIdNum(),
           tenantSlug: tenantSlug(),
           name: nameVal,
           phone: digits,
@@ -359,7 +378,13 @@
       (professionHid && professionHid.value) || (professionInput && professionInput.value.trim()) || "";
     const cityVal = (cityHid && cityHid.value) || (cityInput && cityInput.value.trim()) || "";
 
+    if (!tenantIdNum()) {
+      showError(3, "Missing region on this page. Refresh and try again.");
+      return;
+    }
+
     const payload = {
+      tenantId: tenantIdNum(),
       tenantSlug: tenantSlug(),
       profession: prof,
       city: cityVal,

@@ -10,63 +10,8 @@
     <div class="container" style="padding: 22px 0;">
       <%- include('../partials/admin_nav', { navTitle: 'Lead reports', activeNav: 'leads' }) %>
 
-      <div class="section-title">Company lead requests</div>
-      <p class="muted" style="margin-bottom:12px;font-size:13px;">Messages submitted from company profile pages.</p>
-
-      <div class="card" style="margin-bottom: 16px;">
-        <form method="get" action="/admin/leads" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
-          <div style="min-width: 260px;flex: 1;">
-            <label for="company_id">Filter by company</label>
-            <select id="company_id" name="company_id">
-              <option value="">All companies</option>
-              <% companies.forEach(function(c) { %>
-                <option value="<%= c.id %>" <%= selectedCompanyId && Number(selectedCompanyId) === c.id ? 'selected' : '' %>>
-                  <%= c.name %> (@<%= c.subdomain %>)
-                </option>
-              <% }) %>
-            </select>
-          </div>
-          <button class="btn btn-primary" type="submit">Apply</button>
-        </form>
-      </div>
-
-      <div class="card" style="margin-bottom: 28px;">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Company</th>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Email</th>
-              <th>Message</th>
-              <th>Status</th>
-              <th>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (!leads || leads.length === 0) { %>
-              <tr><td colspan="7" class="muted">No company leads yet.</td></tr>
-            <% } %>
-            <% (leads || []).forEach(function(l) { %>
-              <tr>
-                <td>
-                  <div style="font-weight:900;"><%= l.company_name %></div>
-                  <div class="muted" style="font-size:12px;">@<%= l.company_subdomain %></div>
-                </td>
-                <td><%= l.name %></td>
-                <td><%= l.phone %></td>
-                <td><%= l.email %></td>
-                <td><%= l.message %></td>
-                <td class="muted"><%= l.status %></td>
-                <td class="muted"><%= l.created_at %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-
       <div class="section-title">Potential partners — “Call me” (Join)</div>
-      <p class="muted" style="margin-bottom:12px;font-size:13px;">People who chose <strong>Call me</strong> on the Join flow (exit modal).</p>
+      <p class="muted" style="margin-bottom:12px;font-size:13px;">People who chose <strong>Call me</strong> on the Join flow (exit modal) for <strong>this tenant only</strong>.</p>
       <div class="card" style="margin-bottom: 28px;">
         <table class="table">
           <thead>
@@ -96,8 +41,8 @@
       </div>
 
       <div class="section-title">Join sign-ups (full wizard)</div>
-      <p class="muted" style="margin-bottom:12px;font-size:13px;">Completed partner applications from the Join page.</p>
-      <div class="card">
+      <p class="muted" style="margin-bottom:12px;font-size:13px;">Completed partner applications from the Join page for this tenant.</p>
+      <div class="card" style="margin-bottom: 28px;">
         <table class="table">
           <thead>
             <tr>
@@ -121,6 +66,61 @@
                 <td><%= s.phone %></td>
                 <td class="muted" style="font-size:12px;"><%= s.vat_or_pacra %></td>
                 <td class="muted" style="font-size:12px;"><%= s.created_at %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Company lead requests</div>
+      <p class="muted" style="margin-bottom:12px;font-size:13px;">Messages submitted from company profile pages.</p>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <form method="get" action="/admin/leads" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="min-width: 260px;flex: 1;">
+            <label for="company_id">Filter by company</label>
+            <select id="company_id" name="company_id">
+              <option value="">All companies</option>
+              <% companies.forEach(function(c) { %>
+                <option value="<%= c.id %>" <%= selectedCompanyId && Number(selectedCompanyId) === c.id ? 'selected' : '' %>>
+                  <%= c.name %> (@<%= c.subdomain %>)
+                </option>
+              <% }) %>
+            </select>
+          </div>
+          <button class="btn btn-primary" type="submit">Apply</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Message</th>
+              <th>Status</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!leads || leads.length === 0) { %>
+              <tr><td colspan="7" class="muted">No company leads yet.</td></tr>
+            <% } %>
+            <% (leads || []).forEach(function(l) { %>
+              <tr>
+                <td>
+                  <div style="font-weight:900;"><%= l.company_name %></div>
+                  <div class="muted" style="font-size:12px;">@<%= l.company_subdomain %></div>
+                </td>
+                <td><%= l.name %></td>
+                <td><%= l.phone %></td>
+                <td><%= l.email %></td>
+                <td><%= l.message %></td>
+                <td class="muted"><%= l.status %></td>
+                <td class="muted"><%= l.created_at %></td>
               </tr>
             <% }) %>
           </tbody>

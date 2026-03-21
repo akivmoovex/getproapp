@@ -2,13 +2,32 @@ const express = require("express");
 const { resolveHostname } = require("../host");
 const { israelComingSoonEnabled } = require("../israelComingSoon");
 
-function resolveTenantId(db, body) {
+/**
+ * Resolves tenant for join/callback APIs. Never defaults to Zambia — wrong defaults
+ * caused all regions to store data under tenant_id 1.
+ * Prefer server-rendered `tenantId` (must match DB); optional `tenantSlug` must match that row.
+ */
+function resolveTenantIdStrict(db, body) {
+  const rawId = body && body.tenantId != null ? Number(body.tenantId) : NaN;
+  if (Number.isFinite(rawId) && rawId > 0) {
+    const row = db.prepare("SELECT id, slug FROM tenants WHERE id = ?").get(rawId);
+    if (!row) return { error: "Invalid tenant id." };
+    const slugFromBody = String((body && body.tenantSlug) || "")
+      .trim()
+      .toLowerCase();
+    if (slugFromBody && row.slug !== slugFromBody) {
+      return { error: "Tenant id and slug do not match." };
+    }
+    return { tenantId: row.id };
+  }
+
   const slug = String((body && body.tenantSlug) || "")
     .trim()
     .toLowerCase();
-  if (!slug) return 1;
+  if (!slug) return { error: "tenantId or tenantSlug is required." };
   const row = db.prepare("SELECT id FROM tenants WHERE slug = ?").get(slug);
-  return row ? row.id : 1;
+  if (!row) return { error: "Unknown tenant slug." };
+  return { tenantId: row.id };
 }
 
 const TENANT_IL_ID = 2;
@@ -101,7 +120,11 @@ module.exports = function apiRoutes({ db }) {
     const phone = String(body.phone || "").trim().slice(0, 40);
     const name = String(body.name || "").trim().slice(0, 120);
     const context = String(body.context || "").trim().slice(0, 120);
-    const tenantId = resolveTenantId(db, body);
+    const resolved = resolveTenantIdStrict(db, body);
+    if (resolved.error) {
+      return res.status(400).json({ error: resolved.error });
+    }
+    const tenantId = resolved.tenantId;
     if (israelComingSoonEnabled() && tenantId === TENANT_IL_ID) {
       return res.status(403).json({ error: "Israel callbacks are not open yet." });
     }

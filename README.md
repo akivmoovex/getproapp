@@ -116,7 +116,9 @@ npm start
 
 **Data model:** See [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) for which **tenants** exist by default and which **tables** are scoped by `tenant_id`. The **`global`** tenant powers the **apex** home when enabled; super admins default to that tenant scope on login when it is `Enabled`.
 
-**Join “Call me”:** Saves `name`, `phone`, and `interest_label` (`Potential Partner`) into **`callback_interests`**; admin **Leads** lists these under potential partners.
+**All tenants (reference):** Open the Super admin screen (`/admin/super`) — the **All tenants** table at the top lists every `id`, `slug`, `name`, and `stage`. Join / callback APIs require a **`tenantId`** from the page (and `tenantSlug` must match) so data is never stored under the wrong region.
+
+**Join “Call me”:** Saves `name`, `phone`, and `interest_label` (`Potential Partner`) into **`callback_interests`** with the **`tenant_id`** of the Join page you’re on; admin **Leads** shows that tenant’s rows only.
 
 **Built-in demo users** (password `1234`, created once if missing): `tenantmanager` (`tenant_manager`, Zambia) and `superadmin` (`super_admin`). Disable seeding in production with **`SEED_BUILTIN_USERS=0`**.
 

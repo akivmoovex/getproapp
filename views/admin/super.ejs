@@ -14,6 +14,48 @@
         <div class="flash" style="margin-top:16px;">Choose a tenant scope below (or create a tenant) before using directory tools or user management.</div>
       <% } %>
 
+      <div class="section-title" style="margin-top:22px;">All tenants</div>
+      <p class="muted" style="margin-bottom:12px;font-size:13px;line-height:1.55;">
+        Every row is one region (or <strong>global</strong> for the apex site). Callbacks and join sign-ups are stored with the matching <code>tenant_id</code> so each region’s admin only sees its own data.
+      </p>
+      <div class="card" style="margin-bottom:28px;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Slug</th>
+              <th>Name</th>
+              <th>Stage</th>
+              <th>Set stage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% tenants.forEach(function(t) { %>
+              <tr>
+                <td><%= t.id %></td>
+                <td class="muted"><%= t.slug %></td>
+                <td><%= t.name %></td>
+                <td><%= t.stage %></td>
+                <td>
+                  <form method="post" action="/admin/super/tenants/<%= t.id %>/stage" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    <select name="stage" aria-label="Stage for <%= t.slug %>">
+                      <option value="<%= stages.PARTNER_COLLECTION %>" <%= t.stage === stages.PARTNER_COLLECTION ? 'selected' : '' %>><%= stages.PARTNER_COLLECTION %></option>
+                      <option value="<%= stages.ENABLED %>" <%= t.stage === stages.ENABLED ? 'selected' : '' %>><%= stages.ENABLED %></option>
+                      <option value="<%= stages.DISABLED %>" <%= t.stage === stages.DISABLED ? 'selected' : '' %>><%= stages.DISABLED %></option>
+                    </select>
+                    <button class="btn" type="submit">Update</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <p class="muted" style="margin-top:14px;font-size:12px;line-height:1.5;">
+          Only <strong>Enabled</strong> tenants appear in the public region list and receive traffic on their platform subdomain (except <strong>global</strong>, which is apex-only).
+          <strong>Disabled</strong> and <strong>PartnerCollection</strong> hide the country from the picker and return 503 on the tenant host.
+        </p>
+      </div>
+
       <div class="section-title" style="margin-top:22px;">Act as tenant</div>
       <div class="card" style="max-width:640px;">
         <form method="post" action="/admin/super/scope" class="form">
@@ -55,45 +97,6 @@
           </div>
           <button class="btn btn-primary" type="submit">Create tenant</button>
         </form>
-      </div>
-
-      <div class="section-title" style="margin-top:28px;">All tenants</div>
-      <div class="card">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Slug</th>
-              <th>Name</th>
-              <th>Stage</th>
-              <th>Set stage</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% tenants.forEach(function(t) { %>
-              <tr>
-                <td><%= t.id %></td>
-                <td class="muted"><%= t.slug %></td>
-                <td><%= t.name %></td>
-                <td><%= t.stage %></td>
-                <td>
-                  <form method="post" action="/admin/super/tenants/<%= t.id %>/stage" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                    <select name="stage" aria-label="Stage for <%= t.slug %>">
-                      <option value="<%= stages.PARTNER_COLLECTION %>" <%= t.stage === stages.PARTNER_COLLECTION ? 'selected' : '' %>><%= stages.PARTNER_COLLECTION %></option>
-                      <option value="<%= stages.ENABLED %>" <%= t.stage === stages.ENABLED ? 'selected' : '' %>><%= stages.ENABLED %></option>
-                      <option value="<%= stages.DISABLED %>" <%= t.stage === stages.DISABLED ? 'selected' : '' %>><%= stages.DISABLED %></option>
-                    </select>
-                    <button class="btn" type="submit">Update</button>
-                  </form>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-        <p class="muted" style="margin-top:14px;font-size:12px;line-height:1.5;">
-          Only <strong>Enabled</strong> tenants appear in the public region list and receive traffic on their platform subdomain.
-          <strong>Disabled</strong> and <strong>PartnerCollection</strong> hide the country from the picker and return 503 on the tenant host.
-        </p>
       </div>
     </div>
   </body>

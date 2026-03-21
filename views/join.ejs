@@ -290,9 +290,10 @@
 
     <script>
       window.__GETPRO_TENANT_SLUG__ = "<%= tenant.slug %>";
+      window.__GETPRO_TENANT_ID__ = <%= tenant.id %>;
       window.__GETPRO_HOME__ = "<%= tenantHomeHref %>";
     </script>
-    <script src="/autocomplete.js?v=20260327a"></script>
-    <script src="/join.js?v=20260327a"></script>
+    <script src="/autocomplete.js?v=<%= stylesVersion %>"></script>
+    <script src="/join.js?v=<%= stylesVersion %>"></script>
   </body>
 </html>
