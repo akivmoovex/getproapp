@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Join as a professional | GetPro</title>
+    <meta
+      name="description"
+      content="Register your interest to list your professional services on GetPro. We will contact you shortly."
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260320n" />
+  </head>
+  <body class="join-page">
+    <%- include('partials/site_header') %>
+
+    <section class="join-hero" id="join-hero">
+      <div class="container join-hero-inner">
+        <h1>Turn your profession into steady work</h1>
+        <p class="join-lead">
+          Tell us what you do and where you operate. GetPro helps people in Zambia find trusted professionals — join the directory and we’ll walk you through the next steps.
+        </p>
+        <ul class="join-bullets">
+          <li>Quick registration — a few details to get started</li>
+          <li>We review every application to keep quality high</li>
+          <li>Our team will contact you with onboarding next steps</li>
+        </ul>
+        <button type="button" class="btn btn-primary join-get-started" id="join-get-started">Get Started</button>
+      </div>
+    </section>
+
+    <section class="join-wizard join-wizard--hidden" id="join-wizard" aria-hidden="true">
+      <div class="container join-wizard-inner">
+        <div class="join-progress" role="status" aria-live="polite">
+          Step <span id="join-step-num">1</span> of 4
+        </div>
+        <div class="join-progress-track" aria-hidden="true">
+          <div class="join-progress-fill" id="join-progress-fill" style="width: 25%"></div>
+        </div>
+
+        <div id="join-panels">
+          <div class="join-step-panel" id="join-step-1" data-step="1">
+            <h2>What is your profession?</h2>
+            <p class="join-step-hint">e.g. Electrician, Plumber, Lawyer</p>
+            <div class="join-field">
+              <label for="join-profession">Profession</label>
+              <input id="join-profession" name="profession" type="text" autocomplete="organization-title" required />
+            </div>
+            <div class="join-wizard-actions">
+              <button type="button" class="btn btn-primary" id="join-next-1">Continue</button>
+            </div>
+            <p class="join-wizard-error" id="join-error-1" hidden></p>
+          </div>
+
+          <div class="join-step-panel" id="join-step-2" data-step="2" hidden>
+            <h2>Which city or town do you work in?</h2>
+            <p class="join-step-hint">Main place you serve customers</p>
+            <div class="join-field">
+              <label for="join-city">City</label>
+              <input id="join-city" name="city" type="text" autocomplete="address-level2" required />
+            </div>
+            <div class="join-wizard-actions">
+              <button type="button" class="btn btn-secondary-wf" id="join-back-2">Back</button>
+              <button type="button" class="btn btn-primary" id="join-next-2">Continue</button>
+            </div>
+            <p class="join-wizard-error" id="join-error-2" hidden></p>
+          </div>
+
+          <div class="join-step-panel" id="join-step-3" data-step="3" hidden>
+            <h2>Your contact details</h2>
+            <p class="join-step-hint">We’ll use this to reach you about your listing</p>
+            <div class="join-field">
+              <label for="join-name">Full name</label>
+              <input id="join-name" name="name" type="text" autocomplete="name" required />
+            </div>
+            <div class="join-field">
+              <label for="join-phone">Phone number</label>
+              <input id="join-phone" name="phone" type="tel" autocomplete="tel" required />
+            </div>
+            <div class="join-wizard-actions">
+              <button type="button" class="btn btn-secondary-wf" id="join-back-3">Back</button>
+              <button type="button" class="btn btn-primary" id="join-next-3">Continue</button>
+            </div>
+            <p class="join-wizard-error" id="join-error-3" hidden></p>
+          </div>
+
+          <div class="join-step-panel" id="join-step-4" data-step="4" hidden>
+            <h2>Tax &amp; registration</h2>
+            <p class="join-step-hint">Do you have a VAT number or PACRA registration?</p>
+            <fieldset class="join-fieldset">
+              <legend class="visually-hidden">VAT or PACRA</legend>
+              <div class="join-radio-list" id="join-vat-pacra-group">
+                <label>
+                  <input type="radio" name="vat_pacra" value="No / not yet" checked />
+                  No / not yet
+                </label>
+                <label>
+                  <input type="radio" name="vat_pacra" value="Yes — VAT number" />
+                  Yes — VAT number
+                </label>
+                <label>
+                  <input type="radio" name="vat_pacra" value="Yes — PACRA ID" />
+                  Yes — PACRA ID
+                </label>
+                <label>
+                  <input type="radio" name="vat_pacra" value="I have both VAT and PACRA" />
+                  I have both VAT and PACRA
+                </label>
+              </div>
+            </fieldset>
+            <div class="join-wizard-actions">
+              <button type="button" class="btn btn-secondary-wf" id="join-back-4">Back</button>
+              <button type="button" class="btn btn-primary" id="join-submit">Submit</button>
+            </div>
+            <p class="join-wizard-error" id="join-error-4" hidden></p>
+          </div>
+        </div>
+
+        <div class="join-step-panel join-thanks" id="join-thanks" hidden>
+          <h2>Thank you.</h2>
+          <p>We shall contact you soon.</p>
+        </div>
+      </div>
+    </section>
+
+    <%- include('partials/site_footer') %>
+
+    <script src="/join.js?v=20260320n"></script>
+  </body>
+</html>

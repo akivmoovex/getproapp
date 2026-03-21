@@ -185,5 +185,12 @@ module.exports = function publicRoutes({ db }) {
     });
   });
 
+  router.get("/join", (_req, res) => {
+    return res.render("join", {
+      baseDomain: process.env.BASE_DOMAIN || "",
+      ...platformSupport(),
+    });
+  });
+
   return router;
 };

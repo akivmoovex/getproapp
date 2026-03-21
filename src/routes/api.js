@@ -32,6 +32,28 @@ module.exports = function apiRoutes({ db }) {
     return res.json({ ok: true });
   });
 
+  router.post("/professional-signups", (req, res) => {
+    const body = req.body || {};
+    const profession = String(body.profession || "").trim().slice(0, 120);
+    const city = String(body.city || "").trim().slice(0, 120);
+    const name = String(body.name || "").trim().slice(0, 120);
+    const phone = String(body.phone || "").trim().slice(0, 40);
+    const vatOrPacra = String(body.vat_or_pacra || "").trim().slice(0, 200);
+
+    if (!profession || !city || !name || !phone) {
+      return res.status(400).json({ error: "Profession, city, name, and phone are required." });
+    }
+
+    db.prepare(
+      `
+      INSERT INTO professional_signups (profession, city, name, phone, vat_or_pacra)
+      VALUES (?, ?, ?, ?, ?)
+      `
+    ).run(profession, city, name, phone, vatOrPacra);
+
+    return res.json({ ok: true });
+  });
+
   return router;
 };
 

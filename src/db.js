@@ -63,6 +63,16 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_companies_category_id ON companies(category_id);
   CREATE INDEX IF NOT EXISTS idx_leads_company_id ON leads(company_id);
+
+  CREATE TABLE IF NOT EXISTS professional_signups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    profession TEXT NOT NULL DEFAULT '',
+    city TEXT NOT NULL DEFAULT '',
+    name TEXT NOT NULL DEFAULT '',
+    phone TEXT NOT NULL DEFAULT '',
+    vat_or_pacra TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 function run(query, params = []) {

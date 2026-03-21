@@ -1170,22 +1170,44 @@ textarea {
   display: none !important;
 }
 
+.wf-home-sidebar-join-row {
+  width: 100%;
+  margin: 0 0 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.wf-home-sidebar-join {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--wf-primary);
+  text-decoration: none;
+}
+
+.wf-home-sidebar-join:hover {
+  color: var(--wf-primary-dark);
+  text-decoration: underline;
+}
+
 .wf-home-sidebar {
   position: fixed;
   top: 0;
-  left: 0;
+  right: 0;
+  left: auto;
   bottom: 0;
   width: min(300px, 92vw);
   z-index: 301;
   background: var(--surface);
-  border-right: 1px solid var(--border-strong);
+  border-left: 1px solid var(--border-strong);
+  border-right: none;
   padding: 16px 16px 28px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transform: translateX(-102%);
+  transform: translateX(102%);
   transition: transform 0.28s ease;
-  box-shadow: 8px 0 32px rgba(46, 10, 100, 0.12);
+  box-shadow: -8px 0 32px rgba(46, 10, 100, 0.12);
   overflow-y: auto;
 }
 
@@ -1618,4 +1640,203 @@ textarea {
 
 .pro-search-dir-btn:hover {
   background: var(--btn-primary-hover);
+}
+
+/* ——— Join professionals (multi-step) ——— */
+.join-page {
+  background: var(--bg);
+}
+
+.join-hero {
+  padding: clamp(48px, 8vw, 96px) 0 clamp(40px, 6vw, 72px);
+  background: linear-gradient(180deg, var(--primary-softer-bg) 0%, var(--bg) 100%);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.join-hero-inner {
+  max-width: 720px;
+}
+
+.join-hero h1 {
+  margin: 0 0 16px;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.join-lead {
+  margin: 0 0 20px;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.join-bullets {
+  margin: 0 0 28px;
+  padding-left: 22px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.join-bullets li {
+  margin-bottom: 8px;
+}
+
+.join-get-started {
+  padding: 16px 32px;
+  font-size: 17px;
+}
+
+.join-wizard {
+  padding: clamp(32px, 5vw, 56px) 0 80px;
+}
+
+.join-wizard--hidden {
+  display: none;
+}
+
+.join-hero--hidden {
+  display: none;
+}
+
+.join-wizard-inner {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.join-progress {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wf-primary);
+  margin-bottom: 8px;
+}
+
+.join-progress-track {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--border-strong);
+  margin-bottom: 28px;
+  overflow: hidden;
+}
+
+.join-progress-fill {
+  height: 100%;
+  width: 25%;
+  background: var(--wf-primary);
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+
+.join-step-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 24px 22px 28px;
+  box-shadow: var(--card-shadow-sm);
+}
+
+.join-step-panel h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.join-step-hint {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.join-field {
+  margin-bottom: 16px;
+}
+
+.join-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.join-field input[type="text"],
+.join-field input[type="tel"] {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  font-size: 16px;
+}
+
+.join-field input:focus {
+  outline: 2px solid var(--focus-ring);
+  border-color: var(--wf-primary);
+}
+
+.join-fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.join-fieldset legend {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  color: var(--text);
+}
+
+.join-radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.join-radio-list label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.join-radio-list input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.join-wizard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.join-wizard-error {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--flash-error-text);
+}
+
+.join-thanks {
+  text-align: center;
+  padding: 32px 20px;
+}
+
+.join-thanks h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.join-thanks p {
+  margin: 0;
+  font-size: 17px;
+  color: var(--muted);
+  line-height: 1.5;
 }
