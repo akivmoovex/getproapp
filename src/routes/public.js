@@ -241,7 +241,7 @@ module.exports = function publicRoutes({ db }) {
       const tp = base ? `${scheme}://zm.${base}` : "";
       return res.render("not_found", {
         subdomain: req.subdomain,
-        tenant: getTenantById(1),
+        tenant: getTenantById(1, db),
         tenantUrlPrefix: tp,
         tenantHomeHref: tenantHomeHrefFromPrefix(tp),
         regionChoices: req.regionChoices || [],
@@ -249,7 +249,7 @@ module.exports = function publicRoutes({ db }) {
       });
     }
 
-    const tenant = getTenantById(company.tenant_id) || getTenantById(1);
+    const tenant = getTenantById(company.tenant_id, db) || getTenantById(1, db);
     const tenantUrlPrefix = platformTenantPrefixForSlug(tenant.slug);
 
     return res.render("company", {

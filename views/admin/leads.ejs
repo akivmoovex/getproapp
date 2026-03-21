@@ -10,7 +10,8 @@
     <div class="container" style="padding: 22px 0;">
       <%- include('../partials/admin_nav', { navTitle: 'Lead reports', activeNav: 'leads' }) %>
 
-      <div class="section-title">Lead Requests</div>
+      <div class="section-title">Company lead requests</div>
+      <p class="muted" style="margin-bottom:12px;font-size:13px;">Messages submitted from company profile pages.</p>
 
       <div class="card" style="margin-bottom: 16px;">
         <form method="get" action="/admin/leads" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
@@ -29,7 +30,7 @@
         </form>
       </div>
 
-      <div class="card">
+      <div class="card" style="margin-bottom: 28px;">
         <table class="table">
           <thead>
             <tr>
@@ -43,7 +44,10 @@
             </tr>
           </thead>
           <tbody>
-            <% leads.forEach(function(l) { %>
+            <% if (!leads || leads.length === 0) { %>
+              <tr><td colspan="7" class="muted">No company leads yet.</td></tr>
+            <% } %>
+            <% (leads || []).forEach(function(l) { %>
               <tr>
                 <td>
                   <div style="font-weight:900;"><%= l.company_name %></div>
@@ -60,7 +64,68 @@
           </tbody>
         </table>
       </div>
+
+      <div class="section-title">Potential partners — “Call me” (Join)</div>
+      <p class="muted" style="margin-bottom:12px;font-size:13px;">People who chose <strong>Call me</strong> on the Join flow (exit modal).</p>
+      <div class="card" style="margin-bottom: 28px;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Context</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!partnerCallbacks || partnerCallbacks.length === 0) { %>
+              <tr><td colspan="5" class="muted">No callback requests yet.</td></tr>
+            <% } %>
+            <% (partnerCallbacks || []).forEach(function(c) { %>
+              <tr>
+                <td><%= c.interest_label || 'Potential Partner' %></td>
+                <td><%= c.name %></td>
+                <td><%= c.phone %></td>
+                <td class="muted" style="font-size:12px;"><%= c.context %></td>
+                <td class="muted" style="font-size:12px;"><%= c.created_at %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Join sign-ups (full wizard)</div>
+      <p class="muted" style="margin-bottom:12px;font-size:13px;">Completed partner applications from the Join page.</p>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Profession</th>
+              <th>City</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>VAT / PACRA</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!partnerSignups || partnerSignups.length === 0) { %>
+              <tr><td colspan="6" class="muted">No join sign-ups yet.</td></tr>
+            <% } %>
+            <% (partnerSignups || []).forEach(function(s) { %>
+              <tr>
+                <td><%= s.profession %></td>
+                <td><%= s.city %></td>
+                <td><%= s.name %></td>
+                <td><%= s.phone %></td>
+                <td class="muted" style="font-size:12px;"><%= s.vat_or_pacra %></td>
+                <td class="muted" style="font-size:12px;"><%= s.created_at %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
     </div>
   </body>
 </html>
-

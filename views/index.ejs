@@ -126,6 +126,50 @@
               <div class="pro-home-search-wrap pro-home-search-wrap--hero">
             <form class="pro-home-dual-search" action="<%= tenantUrlPrefix %>/directory" method="get" role="search" aria-label="Search by field and city">
               <div class="pro-home-search-fields">
+                <% if (tenant.slug === 'global') { %>
+                <div
+                  class="pro-ac"
+                  data-ac-list="service"
+                  data-watermark-rotate="Search: Electrician|Search: Plumber|Search: Carpenter"
+                >
+                  <label class="visually-hidden" for="home-search-q">Field</label>
+                  <input
+                    id="home-search-q"
+                    class="pro-ac-input"
+                    type="text"
+                    placeholder=""
+                    autocomplete="off"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    aria-controls="home-search-q-dropdown"
+                  />
+                  <input type="hidden" class="pro-ac-hidden" name="q" id="home-search-q-value" value="" />
+                  <ul class="pro-ac-dropdown" id="home-search-q-dropdown" role="listbox" hidden></ul>
+                  <p class="pro-ac-msg" hidden></p>
+                </div>
+                <div
+                  class="pro-ac"
+                  data-ac-list="city"
+                  data-watermark-rotate="Search: Lusaka|Search: Johannesburg|Search: Harare"
+                >
+                  <label class="visually-hidden" for="home-search-city">City</label>
+                  <input
+                    id="home-search-city"
+                    class="pro-ac-input"
+                    type="text"
+                    placeholder=""
+                    autocomplete="off"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    aria-controls="home-search-city-dropdown"
+                  />
+                  <input type="hidden" class="pro-ac-hidden" name="city" id="home-search-city-value" value="" />
+                  <ul class="pro-ac-dropdown" id="home-search-city-dropdown" role="listbox" hidden></ul>
+                  <p class="pro-ac-msg" hidden></p>
+                </div>
+                <% } else { %>
                 <div class="pro-ac" data-ac-list="service" data-watermark-text="Search: Electrician">
                   <label class="visually-hidden" for="home-search-q">Field</label>
                   <input
@@ -160,6 +204,7 @@
                   <ul class="pro-ac-dropdown" id="home-search-city-dropdown" role="listbox" hidden></ul>
                   <p class="pro-ac-msg" hidden></p>
                 </div>
+                <% } %>
               </div>
               <button class="pro-home-search-submit" type="submit">
                 <span class="pro-home-search-submit-text">Search Professionals</span>
@@ -423,7 +468,7 @@
 
     <%- include('partials/site_footer', { tenantUrlPrefix }) %>
 
-    <script src="/scripts.js?v=20260329b"></script>
-    <script src="/autocomplete.js?v=20260329a"></script>
+    <script src="/scripts.js?v=<%= stylesVersion %>"></script>
+    <script src="/autocomplete.js?v=<%= stylesVersion %>"></script>
   </body>
 </html>

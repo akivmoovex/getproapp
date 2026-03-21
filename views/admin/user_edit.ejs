@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Edit user | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body>
+    <div class="container" style="padding: 22px 0;">
+      <%- include('../partials/admin_nav', { navTitle: 'Edit tenant user', activeNav: 'users' }) %>
+
+      <% if (error) { %>
+        <div class="flash" style="margin-top:16px;"><%= error %></div>
+      <% } %>
+
+      <div class="card" style="max-width:520px;margin-top:22px;">
+        <form method="post" action="/admin/users/<%= user.id %>" class="form">
+          <div>
+            <label for="username">Username</label>
+            <input id="username" name="username" value="<%= user.username %>" autocomplete="username" required />
+          </div>
+          <div>
+            <label for="password">New password (optional)</label>
+            <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" />
+            <div class="muted" style="margin-top:6px;font-size:12px;">Leave blank to keep the current password. Minimum 8 characters if set.</div>
+          </div>
+          <div>
+            <label for="role">Role</label>
+            <select id="role" name="role">
+              <option value="tenant_manager" <%= user.role === 'tenant_manager' ? 'selected' : '' %>>tenant_manager</option>
+              <option value="tenant_editor" <%= user.role === 'tenant_editor' ? 'selected' : '' %>>tenant_editor</option>
+              <option value="tenant_viewer" <%= user.role === 'tenant_viewer' ? 'selected' : '' %>>tenant_viewer</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-check">
+              <input type="checkbox" name="enabled" value="1" <%= user.enabled !== 0 ? 'checked' : '' %> />
+              Account enabled (can sign in)
+            </label>
+          </div>
+          <div class="admin-gate-actions">
+            <button class="btn btn-primary" type="submit">Save changes</button>
+            <a class="btn" href="/admin/users">Cancel</a>
+          </div>
+        </form>
+
+        <% if (typeof currentUserId !== 'undefined' && user.id !== currentUserId) { %>
+        <form method="post" action="/admin/users/<%= user.id %>/delete" style="margin-top:22px;" onsubmit="return confirm('Delete this user permanently?');">
+          <button class="btn" type="submit" style="border-color: var(--flash-error-border); color: var(--flash-error-text);">Delete user</button>
+        </form>
+        <% } %>
+      </div>
+    </div>
+  </body>
+</html>

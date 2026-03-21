@@ -248,6 +248,57 @@ try {
   console.error("[getpro] admin_users role migration:", e.message);
 }
 
+try {
+  const acols2 = db.prepare("PRAGMA table_info(admin_users)").all();
+  if (!acols2.some((c) => c.name === "enabled")) {
+    db.exec("ALTER TABLE admin_users ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1");
+    db.exec("UPDATE admin_users SET enabled = 1 WHERE enabled IS NULL");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] admin_users.enabled migration:", e.message);
+}
+
+try {
+  const cbCols = db.prepare("PRAGMA table_info(callback_interests)").all();
+  if (!cbCols.some((c) => c.name === "interest_label")) {
+    db.exec(
+      "ALTER TABLE callback_interests ADD COLUMN interest_label TEXT NOT NULL DEFAULT 'Potential Partner'"
+    );
+    db.exec("UPDATE callback_interests SET interest_label = 'Potential Partner' WHERE interest_label IS NULL OR interest_label = ''");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] callback_interests.interest_label migration:", e.message);
+}
+
+function seedCategoriesForTenant(db, destTenantId, srcTenantId) {
+  const n = db.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(destTenantId).c;
+  if (n > 0) return;
+  const rows = db.prepare("SELECT slug, name, sort FROM categories WHERE tenant_id = ? ORDER BY sort ASC").all(srcTenantId);
+  const ins = db.prepare(
+    "INSERT INTO categories (tenant_id, slug, name, sort, created_at) VALUES (?, ?, ?, ?, datetime('now'))"
+  );
+  for (const r of rows) {
+    ins.run(destTenantId, r.slug, r.name, r.sort);
+  }
+}
+
+try {
+  const g = db.prepare("SELECT id FROM tenants WHERE slug = 'global'").get();
+  if (!g) {
+    const maxRow = db.prepare("SELECT MAX(id) AS m FROM tenants").get();
+    const nextId = (maxRow && maxRow.m ? Number(maxRow.m) : 0) + 1;
+    db.prepare("INSERT INTO tenants (id, slug, name, stage) VALUES (?, 'global', 'Global', 'Enabled')").run(nextId);
+    seedCategoriesForTenant(db, nextId, 1);
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Seeded global tenant (apex default when enabled).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] global tenant seed:", e.message);
+}
+
 function run(query, params = []) {
   return db.prepare(query).run(params);
 }

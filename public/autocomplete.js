@@ -3,7 +3,7 @@
  * Values must match search-lists.json on submit.
  */
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260327a";
+  const LIST_URL = "/data/search-lists.json?v=20260329e";
 
   const TYPE_MS = 95;
   const PAUSE_END_MS = 1600;
@@ -133,6 +133,116 @@
     }
   }
 
+  /** Rotates through multiple watermark phrases after each full type cycle (e.g. global home). */
+  function initRotatingTypewriterWatermark(wrap, input, hidden, phrases, startDelayMs) {
+    if (!phrases || phrases.length === 0) return;
+    let phraseIndex = 0;
+    let text = String(phrases[0] || "").trim();
+    if (!text) return;
+
+    const span = document.createElement("span");
+    span.className = "pro-ac-watermark";
+    span.setAttribute("aria-hidden", "true");
+    wrap.insertBefore(span, input);
+
+    let idx = 0;
+    let timer = null;
+
+    function shouldAnimate() {
+      return !input.value.trim() && document.activeElement !== input;
+    }
+
+    function setVisible(show) {
+      span.classList.toggle("pro-ac-watermark--off", !show);
+    }
+
+    function clearTimer() {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    }
+
+    function schedule(fn, ms) {
+      clearTimer();
+      timer = setTimeout(fn, ms);
+    }
+
+    function step() {
+      if (!shouldAnimate()) {
+        setVisible(false);
+        span.textContent = "";
+        return;
+      }
+      setVisible(true);
+      idx += 1;
+      span.textContent = text.slice(0, idx);
+      if (idx < text.length) {
+        schedule(step, TYPE_MS);
+      } else {
+        schedule(() => {
+          idx = 0;
+          span.textContent = "";
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          text = String(phrases[phraseIndex] || "").trim();
+          if (!text) {
+            phraseIndex = 0;
+            text = String(phrases[0] || "").trim();
+          }
+          schedule(step, PAUSE_RESTART_MS);
+        }, PAUSE_END_MS);
+      }
+    }
+
+    function startLoop() {
+      if (hidden.value) {
+        setVisible(false);
+        return;
+      }
+      clearTimer();
+      idx = 0;
+      phraseIndex = 0;
+      text = String(phrases[0] || "").trim();
+      span.textContent = "";
+      schedule(() => {
+        if (!shouldAnimate()) return;
+        step();
+      }, startDelayMs);
+    }
+
+    function stopLoop() {
+      clearTimer();
+      span.textContent = "";
+      idx = 0;
+      phraseIndex = 0;
+      text = String(phrases[0] || "").trim();
+      setVisible(false);
+    }
+
+    input.addEventListener("focus", () => {
+      stopLoop();
+    });
+
+    input.addEventListener("input", () => {
+      if (input.value.trim()) stopLoop();
+      else if (document.activeElement !== input) startLoop();
+    });
+
+    input.addEventListener("blur", () => {
+      if (!input.value.trim()) startLoop();
+    });
+
+    wrap.addEventListener("getpro-restart-watermark", () => {
+      if (!hidden.value) startLoop();
+    });
+
+    if (!hidden.value) {
+      startLoop();
+    } else {
+      setVisible(false);
+    }
+  }
+
   function initAc(wrap, lists, watermarkOpts) {
     const kind = wrap.getAttribute("data-ac-list");
     const pool = lists[kind === "service" ? "services" : "cities"];
@@ -142,8 +252,17 @@
     const msg = wrap.querySelector(".pro-ac-msg");
     if (!input || !hidden || !dropdown) return;
 
+    const rotateRaw = wrap.getAttribute("data-watermark-rotate");
+    const rotatePhrases = rotateRaw
+      ? rotateRaw
+          .split("|")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : null;
     const phrase = wrap.getAttribute("data-watermark-text");
-    if (phrase) {
+    if (rotatePhrases && rotatePhrases.length > 0) {
+      initRotatingTypewriterWatermark(wrap, input, hidden, rotatePhrases, watermarkOpts.startDelayMs);
+    } else if (phrase) {
       initTypewriterWatermark(wrap, input, hidden, phrase, watermarkOpts.startDelayMs);
     }
 

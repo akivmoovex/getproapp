@@ -75,6 +75,11 @@ module.exports = function adminRoutes({ db }) {
     };
     req.session.adminTenantScope = null;
     if (isSuperAdmin(user.role)) {
+      const g = db.prepare("SELECT id FROM tenants WHERE slug = 'global' AND stage = ?").get(STAGES.ENABLED);
+      if (g && g.id) {
+        req.session.adminTenantScope = g.id;
+        return res.redirect("/admin/dashboard");
+      }
       return res.redirect("/admin/super");
     }
     return res.redirect("/admin/dashboard");
@@ -168,14 +173,16 @@ module.exports = function adminRoutes({ db }) {
   router.get("/users", requireManageUsers, (req, res) => {
     const tid = getAdminTenantId(req);
     const users = db
-      .prepare("SELECT id, username, role, created_at FROM admin_users WHERE tenant_id = ? ORDER BY username")
+      .prepare(
+        "SELECT id, username, role, enabled, created_at FROM admin_users WHERE tenant_id = ? ORDER BY username"
+      )
       .all(tid);
     return res.render("admin/users", { users, tenantId: tid });
   });
 
   router.get("/users/new", requireManageUsers, (req, res) => {
     const tid = getAdminTenantId(req);
-    return res.render("admin/user_form", { error: null, tenantId: tid });
+    return res.render("admin/user_form", { error: null, tenantId: tid, user: null });
   });
 
   router.post("/users", requireManageUsers, requireNotViewer, async (req, res) => {
@@ -198,7 +205,7 @@ module.exports = function adminRoutes({ db }) {
     }
     const hash = await bcrypt.hash(password, 12);
     try {
-      db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id) VALUES (?, ?, ?, ?)").run(
+      db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
         username,
         hash,
         role,
@@ -207,6 +214,91 @@ module.exports = function adminRoutes({ db }) {
       return res.redirect("/admin/users");
     } catch (e) {
       return res.status(400).send(`Could not create user: ${e.message}`);
+    }
+  });
+
+  function loadTenantAdminUser(req, id) {
+    const tid = getAdminTenantId(req);
+    const row = db.prepare("SELECT * FROM admin_users WHERE id = ? AND tenant_id = ?").get(id, tid);
+    return row;
+  }
+
+  router.get("/users/:id/edit", requireManageUsers, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).send("Invalid id.");
+    const row = loadTenantAdminUser(req, id);
+    if (!row) return res.status(404).send("User not found.");
+    if (row.role === ROLES.SUPER_ADMIN) return res.status(403).send("Cannot edit super admin here.");
+    const tid = getAdminTenantId(req);
+    return res.render("admin/user_edit", {
+      user: row,
+      error: null,
+      tenantId: tid,
+      currentUserId: req.session.adminUser.id,
+    });
+  });
+
+  router.post("/users/:id", requireManageUsers, requireNotViewer, async (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).send("Invalid id.");
+    const target = loadTenantAdminUser(req, id);
+    if (!target) return res.status(404).send("User not found.");
+    if (target.role === ROLES.SUPER_ADMIN) return res.status(403).send("Cannot edit super admin here.");
+
+    const username = String(req.body.username || "")
+      .trim()
+      .toLowerCase();
+    const password = String(req.body.password || "");
+    const role = normalizeRole(req.body.role);
+    const enabled = req.body.enabled === "1" || req.body.enabled === "on" ? 1 : 0;
+
+    if (!username) return res.status(400).send("Username required.");
+    if (
+      role === ROLES.SUPER_ADMIN ||
+      (role === ROLES.TENANT_MANAGER && !isSuperAdmin(req.session.adminUser.role))
+    ) {
+      return res.status(400).send("Invalid role for this action.");
+    }
+    if (![ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_VIEWER].includes(role)) {
+      return res.status(400).send("Invalid role.");
+    }
+    if (target.id === req.session.adminUser.id && enabled === 0) {
+      return res.status(400).send("You cannot disable your own account.");
+    }
+    if (password && password.length < 8) return res.status(400).send("Password must be at least 8 characters.");
+
+    let sql = "UPDATE admin_users SET username = ?, role = ?, enabled = ?";
+    const params = [username, role, enabled];
+    if (password) {
+      const hash = await bcrypt.hash(password, 12);
+      sql += ", password_hash = ?";
+      params.push(hash);
+    }
+    sql += " WHERE id = ? AND tenant_id = ?";
+    params.push(id, getAdminTenantId(req));
+
+    try {
+      const r = db.prepare(sql).run(...params);
+      if (r.changes === 0) return res.status(404).send("User not found.");
+      return res.redirect("/admin/users");
+    } catch (e) {
+      return res.status(400).send(`Could not update user: ${e.message}`);
+    }
+  });
+
+  router.post("/users/:id/delete", requireManageUsers, requireNotViewer, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).send("Invalid id.");
+    const target = loadTenantAdminUser(req, id);
+    if (!target) return res.status(404).send("User not found.");
+    if (target.role === ROLES.SUPER_ADMIN) return res.status(403).send("Cannot delete super admin here.");
+    if (target.id === req.session.adminUser.id) return res.status(400).send("Cannot delete your own account.");
+    try {
+      const r = db.prepare("DELETE FROM admin_users WHERE id = ? AND tenant_id = ?").run(id, getAdminTenantId(req));
+      if (r.changes === 0) return res.status(404).send("User not found.");
+      return res.redirect("/admin/users");
+    } catch (e) {
+      return res.status(400).send(`Could not delete user: ${e.message}`);
     }
   });
 
@@ -539,8 +631,34 @@ module.exports = function adminRoutes({ db }) {
         .all(tid);
     }
 
+    const partnerCallbacks = db
+      .prepare(
+        `
+        SELECT id, phone, name, context, interest_label, created_at
+        FROM callback_interests
+        WHERE tenant_id = ?
+        ORDER BY created_at DESC
+        LIMIT 200
+        `
+      )
+      .all(tid);
+
+    const partnerSignups = db
+      .prepare(
+        `
+        SELECT id, profession, city, name, phone, vat_or_pacra, created_at
+        FROM professional_signups
+        WHERE tenant_id = ?
+        ORDER BY created_at DESC
+        LIMIT 200
+        `
+      )
+      .all(tid);
+
     return res.render("admin/leads", {
       leads,
+      partnerCallbacks,
+      partnerSignups,
       companies,
       selectedCompanyId: companyId,
       role: req.session.adminUser.role,

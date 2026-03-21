@@ -53,9 +53,18 @@ const TENANTS = {
     themeClass: "tenant-na",
     flagEmoji: "🇳🇦",
   },
+  /** Apex marketing home (not shown in region picker). DB row may use a different id. */
+  global: {
+    id: 7,
+    slug: "global",
+    name: "Global",
+    defaultLocale: "en",
+    themeClass: "tenant-global",
+    flagEmoji: "🌐",
+  },
 };
 
-const PLATFORM_REGION_SLUGS = ["zm", "il", "bw", "zw", "za", "na"];
+const PLATFORM_REGION_SLUGS = ["zm", "il", "bw", "zw", "za", "na", "global"];
 
 const DEFAULT_TENANT_SLUG = "zm";
 
@@ -67,10 +76,16 @@ function getTenantBySlug(slug) {
   return TENANTS[s] || null;
 }
 
-function getTenantById(id) {
+function getTenantById(id, db) {
   const n = Number(id);
   if (!n) return null;
-  return Object.values(TENANTS).find((t) => t.id === n) || null;
+  const fromStatic = Object.values(TENANTS).find((t) => t.id === n);
+  if (fromStatic) return fromStatic;
+  if (db) {
+    const row = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(n);
+    if (row && row.slug) return getTenantRowMerged(row.slug, db);
+  }
+  return null;
 }
 
 /** Merge DB row with static theme/flag when present. */
@@ -92,7 +107,7 @@ function getTenantRowMerged(slug, db) {
 function buildRegionChoicesFromDb(db, base, scheme) {
   if (!base) return [];
   const rows = db
-    .prepare("SELECT slug, name FROM tenants WHERE stage = ? ORDER BY id ASC")
+    .prepare("SELECT slug, name FROM tenants WHERE stage = ? AND slug != 'global' ORDER BY id ASC")
     .all(STAGES.ENABLED);
   return rows.map((row) => {
     const meta = TENANTS[row.slug];
@@ -157,13 +172,20 @@ function createAttachTenantByHost(db) {
       !host || host === "localhost" || host === "127.0.0.1" || host.startsWith("localhost:");
 
     function setApexTenant() {
-      const zmRow = db.prepare("SELECT stage FROM tenants WHERE slug = ?").get("zm");
+      const globalRow = db.prepare("SELECT stage FROM tenants WHERE slug = ?").get("global");
       let slug = DEFAULT_TENANT_SLUG;
-      if (!zmRow || zmRow.stage !== STAGES.ENABLED) {
-        const first = db
-          .prepare("SELECT slug FROM tenants WHERE stage = ? ORDER BY id ASC LIMIT 1")
-          .get(STAGES.ENABLED);
-        if (first && first.slug) slug = first.slug;
+      if (globalRow && globalRow.stage === STAGES.ENABLED) {
+        slug = "global";
+      } else {
+        const zmRow = db.prepare("SELECT stage FROM tenants WHERE slug = ?").get("zm");
+        if (!zmRow || zmRow.stage !== STAGES.ENABLED) {
+          const first = db
+            .prepare(
+              "SELECT slug FROM tenants WHERE stage = ? AND slug != 'global' ORDER BY id ASC LIMIT 1"
+            )
+            .get(STAGES.ENABLED);
+          if (first && first.slug) slug = first.slug;
+        }
       }
       const t = getTenantRowMerged(slug, db);
       req.tenant = t;

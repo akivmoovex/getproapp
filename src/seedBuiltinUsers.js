@@ -15,7 +15,7 @@ function seedBuiltinUsers(db) {
     const exists = db.prepare("SELECT id FROM admin_users WHERE username = ?").get(u);
     if (exists) return;
     try {
-      db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id) VALUES (?, ?, ?, ?)").run(
+      db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
         u,
         hash(password),
         role,

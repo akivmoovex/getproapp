@@ -109,6 +109,19 @@ a:hover {
   margin-top: 10px;
 }
 
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.form-check input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
 /* ——— Slim top bar (Workfolio-style light strip) ——— */
 .wf-topbar {
   background: var(--topbar-bg);
@@ -2355,6 +2368,12 @@ body.join-modal-open {
   --tenant-accent: #1e3a8a;
   --tenant-hero-tint: rgba(30, 58, 138, 0.12);
   --tenant-chip-bg: rgba(30, 58, 138, 0.1);
+}
+
+.tenant-global {
+  --tenant-accent: #7c3aed;
+  --tenant-hero-tint: rgba(124, 58, 237, 0.1);
+  --tenant-chip-bg: rgba(124, 58, 237, 0.08);
 }
 
 .home-page.tenant-zm .wf-hero,

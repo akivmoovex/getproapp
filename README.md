@@ -114,7 +114,9 @@ npm start
 
 **Public admin entry:** The home menu links to **`/getpro-admin`**, which shows username, password, **Login**, and **Cancel** (same credentials as `/admin/login`). Company-marketing subdomains redirect to **`zm.{BASE_DOMAIN}/getpro-admin`**.
 
-**Data model:** See [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) for which **tenants** exist by default and which **tables** are scoped by `tenant_id`.
+**Data model:** See [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) for which **tenants** exist by default and which **tables** are scoped by `tenant_id`. The **`global`** tenant powers the **apex** home when enabled; super admins default to that tenant scope on login when it is `Enabled`.
+
+**Join “Call me”:** Saves `name`, `phone`, and `interest_label` (`Potential Partner`) into **`callback_interests`**; admin **Leads** lists these under potential partners.
 
 **Built-in demo users** (password `1234`, created once if missing): `tenantmanager` (`tenant_manager`, Zambia) and `superadmin` (`super_admin`). Disable seeding in production with **`SEED_BUILTIN_USERS=0`**.
 

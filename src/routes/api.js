@@ -105,12 +105,15 @@ module.exports = function apiRoutes({ db }) {
     if (israelComingSoonEnabled() && tenantId === TENANT_IL_ID) {
       return res.status(403).json({ error: "Israel callbacks are not open yet." });
     }
+    const interestLabel = String(body.interest_label || body.label || "Potential Partner")
+      .trim()
+      .slice(0, 120);
     db.prepare(
       `
-      INSERT INTO callback_interests (phone, name, context, tenant_id)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO callback_interests (phone, name, context, tenant_id, interest_label)
+      VALUES (?, ?, ?, ?, ?)
       `
-    ).run(phone, name, context || "join_exit", tenantId);
+    ).run(phone, name, context || "join_exit", tenantId, interestLabel || "Potential Partner");
     return res.json({ ok: true });
   });
 

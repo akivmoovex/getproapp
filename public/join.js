@@ -1,5 +1,5 @@
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260327a";
+  const LIST_URL = "/data/search-lists.json?v=20260329e";
 
   function tenantSlug() {
     return (typeof window.__GETPRO_TENANT_SLUG__ === "string" && window.__GETPRO_TENANT_SLUG__) || "zm";
@@ -263,6 +263,7 @@
           name: nameVal,
           phone: digits,
           context: "join_exit_call_request",
+          interest_label: "Potential Partner",
         }),
       });
     } catch (_) {

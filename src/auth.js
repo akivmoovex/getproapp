@@ -21,7 +21,7 @@ async function ensureAdminUser({ db }) {
       : ROLES.SUPER_ADMIN;
   const tenantId = role === ROLES.SUPER_ADMIN ? null : Number(process.env.ADMIN_TENANT_ID) || 1;
 
-  db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id) VALUES (?, ?, ?, ?)").run(
+  db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
     username,
     passwordHash,
     role,
@@ -65,6 +65,7 @@ function requireNotViewer(req, res, next) {
 async function authenticateAdmin({ db, username, password }) {
   const admin = db.prepare("SELECT * FROM admin_users WHERE username = ?").get(username.toLowerCase());
   if (!admin) return null;
+  if (Number(admin.enabled) === 0) return null;
   const ok = await bcrypt.compare(password, admin.password_hash);
   if (!ok) return null;
   return admin;

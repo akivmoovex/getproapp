@@ -71,6 +71,13 @@ for (const c of [...districts, ...extraPlaces]) {
     cities.push(t);
   }
 }
+for (const ec of ["Johannesburg", "Harare"]) {
+  const k = ec.toLowerCase();
+  if (!seen.has(k)) {
+    seen.add(k);
+    cities.push(ec);
+  }
+}
 cities.sort((a, b) => a.localeCompare(b, "en"));
 
 const out = {
