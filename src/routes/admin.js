@@ -82,9 +82,23 @@ module.exports = function adminRoutes({ db }) {
     };
     req.session.adminTenantScope = null;
     if (isSuperAdmin(user.role)) {
-      const g = db.prepare("SELECT id FROM tenants WHERE slug = 'global' AND stage = ?").get(STAGES.ENABLED);
-      if (g && g.id) {
-        req.session.adminTenantScope = g.id;
+      /** Default region for directory tools: env override → demo → global → zm. Global is apex-only and usually has no listings — demo holds sample data. */
+      const envSlug = (process.env.GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG || "").trim().toLowerCase();
+      let scopeRow = null;
+      if (envSlug) {
+        scopeRow = db.prepare("SELECT id FROM tenants WHERE slug = ? AND stage = ?").get(envSlug, STAGES.ENABLED);
+      }
+      if (!scopeRow) {
+        scopeRow = db.prepare("SELECT id FROM tenants WHERE slug = 'demo' AND stage = ?").get(STAGES.ENABLED);
+      }
+      if (!scopeRow) {
+        scopeRow = db.prepare("SELECT id FROM tenants WHERE slug = 'global' AND stage = ?").get(STAGES.ENABLED);
+      }
+      if (!scopeRow) {
+        scopeRow = db.prepare("SELECT id FROM tenants WHERE slug = 'zm' AND stage = ?").get(STAGES.ENABLED);
+      }
+      if (scopeRow && scopeRow.id) {
+        req.session.adminTenantScope = scopeRow.id;
         return res.redirect("/admin/dashboard");
       }
       return res.redirect("/admin/super");
@@ -124,6 +138,12 @@ module.exports = function adminRoutes({ db }) {
       canManageUsers: canManageTenantUsers(u.role),
       tenantScoped: tid != null,
     };
+    if (isSuperAdmin(u.role) && tid != null) {
+      const tn = db.prepare("SELECT id, slug, name FROM tenants WHERE id = ?").get(tid);
+      res.locals.adminScopeTenant = tn || null;
+    } else {
+      res.locals.adminScopeTenant = null;
+    }
     return next();
   });
 
@@ -131,7 +151,16 @@ module.exports = function adminRoutes({ db }) {
   router.get("/super", requireSuperAdmin, (req, res) => {
     const tenants = db.prepare("SELECT * FROM tenants ORDER BY id ASC").all();
     const need = req.query.need === "tenant";
-    return res.render("admin/super", { tenants, needTenant: need, stages: STAGES });
+    const selectedTenantId =
+      req.session.adminTenantScope != null && Number(req.session.adminTenantScope) > 0
+        ? Number(req.session.adminTenantScope)
+        : null;
+    return res.render("admin/super", {
+      tenants,
+      needTenant: need,
+      stages: STAGES,
+      selectedTenantId,
+    });
   });
 
   router.post("/super/scope", requireSuperAdmin, (req, res) => {

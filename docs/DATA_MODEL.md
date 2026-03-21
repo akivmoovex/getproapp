@@ -23,6 +23,10 @@ On **first database boot**, a migration may set all tenants except **`global`** 
 
 **Stage** (`PartnerCollection`, `Enabled`, `Disabled`) controls public visibility: **`Enabled`** tenants receive traffic on `{slug}.{BASE_DOMAIN}` when not otherwise excluded. The region picker lists **`Enabled`** tenants except **`global`** (apex-only) and **`demo`** (hidden from the list).
 
+### Super admin and `tenant_id` in the admin UI
+
+Professions, companies, cities, leads, and tenant-scoped users in **`/admin/...`** are loaded for **one** tenant at a time: the session’s **tenant scope** (`adminTenantScope`). **`super_admin`** defaults to **`demo`** when it is `Enabled`, then **`global`**, then **`zm`** (see `GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG` in the README). Scoping to **`global`** shows that tenant’s rows only (often categories with **no** companies). To manage **demo** sample data, scope to **Demo** on **`/admin/super`** → *Act as region*, or log in again after deploy so the new default applies.
+
 ## Tables scoped by `tenant_id`
 
 These tables hold **one row set per tenant** (filter with `WHERE tenant_id = ?`):

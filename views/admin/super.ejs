@@ -74,8 +74,8 @@
         </p>
       </div>
 
-      <h2 class="section-title">Act as region</h2>
-      <p class="admin-intro">Scope the directory and leads tools to one region.</p>
+      <h2 class="section-title" id="act-as-region">Act as region</h2>
+      <p class="admin-intro">Scope the directory and leads tools to one region. Sample listings and demo companies live under <strong>demo</strong>; production traffic is usually <strong>zm</strong> or another enabled region.</p>
       <div class="card" style="max-width:640px;">
         <form method="post" action="/admin/super/scope" class="form">
           <input type="hidden" name="redirect" value="/admin/dashboard" />
@@ -84,7 +84,7 @@
             <select id="tenant_id" name="tenant_id">
               <option value="">— None (stay on Super only) —</option>
               <% tenants.forEach(function(t) { %>
-                <option value="<%= t.id %>"><%= t.name %> (<%= t.slug %>, <%= t.stage %>)</option>
+                <option value="<%= t.id %>" <%= typeof selectedTenantId !== 'undefined' && selectedTenantId === t.id ? 'selected' : '' %>><%= t.name %> (<%= t.slug %>, <%= t.stage %>)</option>
               <% }) %>
             </select>
             <div class="muted" style="margin-top:8px;font-size:12px;line-height:1.5;">

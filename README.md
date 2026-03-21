@@ -115,7 +115,9 @@ npm start
 
 **Tenant stages** (`tenants.stage`): `PartnerCollection`, `Enabled`, `Disabled`. Only **`Enabled`** tenants appear in the public **region / country** UI and receive normal traffic on **`{slug}.BASE_DOMAIN`**. Other stages hide the country from the picker and the app responds with **503** on that platform host until enabled.
 
-**Super admin UI:** After login, open **`/admin/super`** to **add** a region (**New region**), **edit** or **delete** (non-global), change **stages** (enable/disable), and **set tenant scope** before using Categories / Companies / Users for that region.
+**Super admin UI:** After login, open **`/admin/super`** to **add** a region (**New region**), **edit** or **delete** (non-global), change **stages** (enable/disable), and **set tenant scope** before using Professions / Companies / Cities / Leads for that region.
+
+**Super admin default region:** On login, scope is **`demo`** first (sample listings), then **`global`**, then **`zm`**, so Professions and Companies show data without manual switching. Override with **`GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG`** (e.g. `zm` or `global`). The admin header shows **Directory data: …** with a link to change region. Existing sessions keep the old scope until you **log out and back in** or use **Act as region** on **`/admin/super`**.
 
 **Public admin entry:** The home menu links to **`/getpro-admin`**, which shows username, password, **Login**, and **Cancel** (same credentials as `/admin/login`). Company-marketing subdomains redirect to **`zm.{BASE_DOMAIN}/getpro-admin`**.
 
@@ -141,7 +143,7 @@ The animated “typing” hint is set with `data-watermark-text` on the `.pro-ac
 
 ## Environment
 
-**Common variables:** `ADMIN_PASSWORD` (required), `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `SQLITE_PATH`, `SESSION_DIR`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, `GETPRO_STYLES_V`, `SEED_BUILTIN_USERS` (`0` to skip demo admin seeding).
+**Common variables:** `ADMIN_PASSWORD` (required), `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `SQLITE_PATH`, `SESSION_DIR`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, `GETPRO_STYLES_V`, `SEED_BUILTIN_USERS` (`0` to skip demo admin seeding), **`GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG`** (optional: force super admin’s initial tenant scope, e.g. `zm` or `demo`).
 
 **Production:** set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). Optional: `DEBUG_HOST=1` temporarily for `/healthz` and `/api/debug/host`; `ISRAEL_COMING_SOON=true` to lock Israel to coming-soon; `TRUST_PROXY=0` only if Node is exposed directly without a reverse proxy (Hostinger usually needs the default trust proxy). On hosts that don’t deploy `.env`, set the same keys in the panel’s environment variables.
 

@@ -325,6 +325,37 @@ a:hover {
   }
 }
 
+.admin-scope-banner {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--primary-softer-bg);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-scope-banner__slug {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.admin-scope-banner__link {
+  font-weight: 700;
+  color: var(--wf-primary);
+  text-decoration: none;
+}
+
+.admin-scope-banner__link:hover {
+  text-decoration: underline;
+}
+
 .admin-main__pad {
   padding: 28px 18px 56px;
 }
