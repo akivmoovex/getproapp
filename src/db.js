@@ -1218,6 +1218,76 @@ try {
   console.error("[getpro] demo company logos migration:", e.message);
 }
 
+/** One-time: demo tenant admin users + sample CRM tasks (demo region only). */
+try {
+  const bcrypt = require("bcryptjs");
+  const { ROLES } = require("./roles");
+  const TID = require("./tenantIds");
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("demo_tenant_users_and_tasks_v1")) {
+    const demoTid = TID.TENANT_DEMO;
+    const hash = (p) => bcrypt.hashSync(p, 10);
+    const insUser = db.prepare(
+      "INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)"
+    );
+    const seedUsers = [
+      { username: "demo_manager", role: ROLES.TENANT_MANAGER },
+      { username: "demo_editor", role: ROLES.TENANT_EDITOR },
+      { username: "demo_agent", role: ROLES.TENANT_AGENT },
+    ];
+    for (const su of seedUsers) {
+      const u = su.username.toLowerCase();
+      if (!db.prepare("SELECT id FROM admin_users WHERE username = ?").get(u)) {
+        insUser.run(u, hash("demo1234"), su.role, demoTid);
+      }
+    }
+
+    const demoUserRow = db.prepare("SELECT id FROM admin_users WHERE tenant_id = ? ORDER BY id ASC LIMIT 1").get(demoTid);
+    const uid = demoUserRow ? Number(demoUserRow.id) : null;
+    const taskCount = db.prepare("SELECT COUNT(*) AS c FROM crm_tasks WHERE tenant_id = ?").get(demoTid).c;
+    if (uid && Number(taskCount) === 0) {
+      const insTask = db.prepare(
+        "INSERT INTO crm_tasks (tenant_id, title, description, status, owner_id, created_by_id, attachment_url) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      );
+      insTask.run(
+        demoTid,
+        "Follow up with sample lead",
+        "Demo task: call back from a directory inquiry.",
+        "new",
+        null,
+        uid,
+        ""
+      );
+      insTask.run(
+        demoTid,
+        "Onboard new company listing",
+        "Review profile text and photos for a demo tenant listing.",
+        "in_progress",
+        uid,
+        uid,
+        ""
+      );
+      insTask.run(
+        demoTid,
+        "Quarterly directory review",
+        "Spot-check professions and city filters for consistency.",
+        "completed",
+        uid,
+        uid,
+        ""
+      );
+    }
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("demo_tenant_users_and_tasks_v1");
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Migration: demo tenant seed users + CRM tasks (if empty).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] demo tenant users/tasks migration:", e.message);
+}
+
 function run(query, params = []) {
   return db.prepare(query).run(params);
 }

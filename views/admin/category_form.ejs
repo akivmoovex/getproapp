@@ -6,7 +6,7 @@
     <title><%= category ? 'Edit' : 'New' %> profession | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body class="admin-app">
+  <body class="admin-app<%- bodyEmbedClass %>">
     <%- include('../partials/admin_nav', { navTitle: category ? 'Edit profession' : 'New profession', activeNav: 'categories' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">

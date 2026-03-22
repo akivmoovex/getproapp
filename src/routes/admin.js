@@ -163,6 +163,13 @@ function requireManageUsers(req, res, next) {
 module.exports = function adminRoutes({ db }) {
   const router = express.Router();
 
+  router.use((req, res, next) => {
+    const em = req.query.embed === "1" || req.query.embed === "true";
+    res.locals.embed = em;
+    res.locals.bodyEmbedClass = em ? " admin-app--embed" : "";
+    next();
+  });
+
   router.get("/login", (req, res) => {
     if (req.session && req.session.adminUser) return res.redirect("/admin/dashboard");
     return res.render("admin/login", { error: null, cancelHref: "/getpro-admin" });
@@ -226,7 +233,6 @@ module.exports = function adminRoutes({ db }) {
   });
 
   router.use((req, res, next) => {
-    res.locals.embed = req.query.embed === "1" || req.query.embed === "true";
     if (!req.session.adminUser) {
       return next();
     }

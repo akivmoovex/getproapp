@@ -27,14 +27,7 @@
   });
 
   modal.addEventListener("click", function (e) {
-    if (e.target.closest(".admin-settings-modal__backdrop") || e.target.closest("[data-settings-modal-close]")) {
-      closeModal();
-    }
-  });
-
-  window.addEventListener("message", function (e) {
-    if (e.origin !== window.location.origin) return;
-    if (e.data && e.data.type === "admin-embed-close") closeModal();
+    if (e.target.closest(".admin-settings-modal__backdrop")) closeModal();
   });
 
   document.addEventListener("keydown", function (e) {

@@ -6,7 +6,7 @@
     <title><%= company.name %> · Mini-site | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body class="admin-app admin-workspace-page">
+  <body class="admin-app admin-workspace-page<%- bodyEmbedClass %>">
     <%- include('../partials/admin_nav', { navTitle: 'Mini-site editor', activeNav: 'companies' }) %>
     <main class="admin-main admin-workspace">
       <div class="container admin-workspace__shell-wrap">
