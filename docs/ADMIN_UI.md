@@ -6,7 +6,7 @@ This app uses **one stylesheet** (`public/styles.css`) for both the public site 
 
 The app opens **only** the path from `SQLITE_PATH` or the default **`data/getpro.sqlite`** (see `src/db.js`).
 
-If you see files like **`netraz.sqlite`**, **`pronline.sqlite`**, or other `*.sqlite` / `*.db` names in `data/`, they are **not** referenced by GetPro — usually leftover copies from other projects or manual exports. **Safe to delete** if you do not use them; keep a backup first if unsure.
+If you see files like **`netraz.sqlite`**, **`pronline.sqlite`**, or other extra `*.sqlite` / `*.db` names in `data/`, they are **not** referenced by GetPro unless `SQLITE_PATH` points at them. Remove the matching **`-wal`** and **`-shm`** files when deleting an unused database. Keep a backup first if unsure.
 
 ## Tokens (see `:root` in `styles.css`)
 
