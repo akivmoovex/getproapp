@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Settings | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app admin-settings-hub-page">
+    <%- include('../partials/admin_nav', { navTitle: 'Settings', activeNav: 'settings' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <h1 class="section-title" style="margin-top: 0">Settings</h1>
+        <p class="admin-intro muted" style="margin-bottom: 24px">
+          Open a tool below. Each opens in a panel over this page; use <strong>Close</strong> or click outside to dismiss.
+        </p>
+
+        <div class="admin-settings-hub__grid">
+          <% if (typeof canEditDirectory !== 'undefined' && canEditDirectory) { %>
+          <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/categories?embed=1">
+            <span class="admin-settings-hub__card-icon" aria-hidden="true">📋</span>
+            <span class="admin-settings-hub__card-title">Professions</span>
+            <span class="admin-settings-hub__card-desc muted">Categories &amp; professions for the directory</span>
+          </button>
+          <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/companies?embed=1">
+            <span class="admin-settings-hub__card-icon" aria-hidden="true">🏢</span>
+            <span class="admin-settings-hub__card-title">Companies</span>
+            <span class="admin-settings-hub__card-desc muted">Listings and mini-sites</span>
+          </button>
+          <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/cities?embed=1">
+            <span class="admin-settings-hub__card-icon" aria-hidden="true">📍</span>
+            <span class="admin-settings-hub__card-title">Cities</span>
+            <span class="admin-settings-hub__card-desc muted">City filters for the region</span>
+          </button>
+          <% } %>
+
+          <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/leads?embed=1">
+            <span class="admin-settings-hub__card-icon" aria-hidden="true">✉️</span>
+            <span class="admin-settings-hub__card-title">Leads</span>
+            <span class="admin-settings-hub__card-desc muted">Inquiries and partner signups</span>
+          </button>
+
+          <% if (typeof canManageUsers !== 'undefined' && canManageUsers) { %>
+          <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/users?embed=1">
+            <span class="admin-settings-hub__card-icon" aria-hidden="true">👤</span>
+            <span class="admin-settings-hub__card-title">Users</span>
+            <span class="admin-settings-hub__card-desc muted">Admin users for this region</span>
+          </button>
+          <% } %>
+
+          <% if (typeof canAccessTenantSettings !== 'undefined' && canAccessTenantSettings) { %>
+          <button
+            type="button"
+            class="admin-settings-hub__card admin-settings-hub__card--accent"
+            data-settings-embed-url="<%= isSuper ? '/admin/settings/tenants?embed=1' : ('/admin/settings/tenant/' + tenantIdForSettings + '?embed=1') %>"
+          >
+            <span class="admin-settings-hub__card-icon" aria-hidden="true">⚙️</span>
+            <span class="admin-settings-hub__card-title">Global settings</span>
+            <span class="admin-settings-hub__card-desc muted">Phones, email, WhatsApp for this region</span>
+          </button>
+          <% } %>
+        </div>
+      </div>
+    </main>
+
+    <div id="admin_settings_modal" class="admin-settings-modal" aria-hidden="true" hidden>
+      <div class="admin-settings-modal__backdrop" data-settings-modal-close tabindex="-1"></div>
+      <div class="admin-settings-modal__dialog" role="dialog" aria-modal="true" aria-label="Admin tool">
+        <button type="button" class="admin-settings-modal__close" data-settings-modal-close aria-label="Close">×</button>
+        <iframe id="admin_settings_iframe" class="admin-settings-modal__iframe" title="Embedded admin screen"></iframe>
+      </div>
+    </div>
+
+    <script src="/admin-settings-hub.js?v=<%= stylesVersion %>"></script>
+  </body>
+</html>

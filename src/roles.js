@@ -85,6 +85,18 @@ function canAccessTenantSettings(role) {
   return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER;
 }
 
+/** Settings hub (grid of directory / admin tools). Not for read-only viewers. */
+function canAccessSettingsHub(role) {
+  if (isTenantViewer(role)) return false;
+  const n = normalizeRole(role);
+  return (
+    n === ROLES.SUPER_ADMIN ||
+    n === ROLES.TENANT_MANAGER ||
+    n === ROLES.TENANT_EDITOR ||
+    n === ROLES.TENANT_AGENT
+  );
+}
+
 module.exports = {
   ROLES,
   ALL_ROLES,
@@ -98,4 +110,5 @@ module.exports = {
   canMutateCrm,
   canClaimCrmTasks,
   canAccessTenantSettings,
+  canAccessSettingsHub,
 };

@@ -6,10 +6,44 @@
   const canUsers = !!nav.canManageUsers;
   const canCrm = !!nav.canAccessCrm;
   const canSettings = !!nav.canAccessTenantSettings;
+  const canHub = !!nav.canAccessSettingsHub;
   const scoped = !!nav.tenantScoped;
   const title = typeof navTitle !== 'undefined' ? navTitle : '';
   const scopeTenant = typeof adminScopeTenant !== 'undefined' && adminScopeTenant ? adminScopeTenant : null;
+  const embed = typeof embed !== 'undefined' && embed;
 %>
+<% if (embed) { %>
+<div class="admin-embed-bar">
+  <div class="admin-embed-bar__inner">
+    <span class="admin-embed-bar__label">Embedded view</span>
+    <div class="admin-embed-bar__actions">
+      <button type="button" class="btn admin-embed-bar__btn" data-admin-embed-close>Close</button>
+      <button type="button" class="btn btn-primary admin-embed-bar__btn" data-admin-embed-open-full>Open in new tab</button>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  document.querySelectorAll("[data-admin-embed-close]").forEach(function (b) {
+    b.addEventListener("click", function (e) {
+      e.preventDefault();
+      try {
+        window.parent.postMessage({ type: "admin-embed-close" }, "*");
+      } catch (err) {}
+    });
+  });
+  document.querySelectorAll("[data-admin-embed-open-full]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      try {
+        var u = new URL(window.location.href);
+        u.searchParams.delete("embed");
+        window.open(u.toString(), "_blank", "noopener");
+      } catch (err) {}
+    });
+  });
+})();
+</script>
+<% } else { %>
 <header class="admin-header" role="banner">
   <div class="container admin-header__inner">
     <div class="admin-header__top">
@@ -42,19 +76,13 @@
       <% } %>
       <% if (scoped) { %>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'dashboard' ? 'admin-nav__link--active' : '' %>" href="/admin/dashboard">Dashboard</a>
-        <% if (canEdit && !isViewer) { %>
-          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'categories' ? 'admin-nav__link--active' : '' %>" href="/admin/categories">Professions</a>
-          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'companies' ? 'admin-nav__link--active' : '' %>" href="/admin/companies">Companies</a>
-          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'cities' ? 'admin-nav__link--active' : '' %>" href="/admin/cities">Cities</a>
+        <% if (isViewer) { %>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'leads' ? 'admin-nav__link--active' : '' %>" href="/admin/leads">Leads</a>
         <% } %>
-        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'leads' ? 'admin-nav__link--active' : '' %>" href="/admin/leads">Leads</a>
         <% if (canCrm) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'crm' ? 'admin-nav__link--active' : '' %>" href="/admin/crm">CRM</a>
         <% } %>
-        <% if (canUsers && !isViewer) { %>
-          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'users' ? 'admin-nav__link--active' : '' %>" href="/admin/users">Users</a>
-        <% } %>
-        <% if (canSettings) { %>
+        <% if (canHub) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'settings' ? 'admin-nav__link--active' : '' %>" href="/admin/settings">Settings</a>
         <% } %>
       <% } %>
@@ -64,3 +92,4 @@
     </nav>
   </div>
 </header>
+<% } %>

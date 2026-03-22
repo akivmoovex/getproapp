@@ -19,6 +19,7 @@ const {
   canMutateCrm,
   canClaimCrmTasks,
   canAccessTenantSettings,
+  canAccessSettingsHub,
 } = require("../roles");
 const { STAGES, normalizeStage } = require("../tenantStages");
 const { TENANT_ZM } = require("../tenantIds");
@@ -225,7 +226,10 @@ module.exports = function adminRoutes({ db }) {
   });
 
   router.use((req, res, next) => {
-    if (!req.session.adminUser) return next();
+    res.locals.embed = req.query.embed === "1" || req.query.embed === "true";
+    if (!req.session.adminUser) {
+      return next();
+    }
     const u = req.session.adminUser;
     const tid = getAdminTenantId(req);
     res.locals.adminNav = {
@@ -239,6 +243,7 @@ module.exports = function adminRoutes({ db }) {
       canMutateCrm: canMutateCrm(u.role),
       canClaimCrmTasks: canClaimCrmTasks(u.role),
       canAccessTenantSettings: canAccessTenantSettings(u.role),
+      canAccessSettingsHub: canAccessSettingsHub(u.role),
     };
     if (isSuperAdmin(u.role)) {
       const tn = db.prepare("SELECT id, slug, name FROM tenants WHERE id = ?").get(tid);
@@ -834,18 +839,31 @@ module.exports = function adminRoutes({ db }) {
   router.get("/settings", (req, res) => {
     const u = req.session.adminUser;
     if (!u) return res.redirect("/admin/login");
-    if (!canAccessTenantSettings(u.role)) {
+    if (!canAccessSettingsHub(u.role)) {
       return res.status(403).type("text").send("Access denied.");
     }
-    if (isSuperAdmin(u.role)) {
-      const tenants = db.prepare("SELECT * FROM tenants ORDER BY name COLLATE NOCASE ASC, id ASC").all();
-      return res.render("admin/tenant_settings_list", {
-        activeNav: "settings",
-        tenants,
-      });
-    }
     const tid = getAdminTenantId(req);
-    return res.redirect(`/admin/settings/tenant/${tid}`);
+    return res.render("admin/settings_hub", {
+      activeNav: "settings",
+      tenantIdForSettings: tid,
+      isSuper: isSuperAdmin(u.role),
+      canEditDirectory: canEditDirectoryData(u.role),
+      canManageUsers: canManageTenantUsers(u.role),
+      canAccessTenantSettings: canAccessTenantSettings(u.role),
+    });
+  });
+
+  router.get("/settings/tenants", (req, res) => {
+    const u = req.session.adminUser;
+    if (!u) return res.redirect("/admin/login");
+    if (!isSuperAdmin(u.role)) {
+      return res.status(403).type("text").send("Access denied.");
+    }
+    const tenants = db.prepare("SELECT * FROM tenants ORDER BY name COLLATE NOCASE ASC, id ASC").all();
+    return res.render("admin/tenant_settings_list", {
+      activeNav: "settings",
+      tenants,
+    });
   });
 
   router.get("/settings/tenant/:id", (req, res) => {
@@ -868,7 +886,7 @@ module.exports = function adminRoutes({ db }) {
       tenant,
       isSuper: isSuperAdmin(u.role),
       saved,
-      backHref: isSuperAdmin(u.role) ? "/admin/settings" : "/admin/dashboard",
+      backHref: "/admin/settings",
     });
   });
 

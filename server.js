@@ -64,7 +64,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use((req, res, next) => {
-  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260323d";
+  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260323e";
   res.locals.encodeURIComponent = encodeURIComponent;
   next();
 });
