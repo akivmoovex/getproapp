@@ -68,7 +68,7 @@ module.exports = function apiRoutes({ db }) {
     db.prepare(
       `
       INSERT INTO leads (company_id, name, phone, email, message, status, tenant_id)
-      VALUES (?, ?, ?, ?, ?, 'new', ?)
+      VALUES (?, ?, ?, ?, ?, 'open', ?)
       `
     ).run(
       companyIdNum,

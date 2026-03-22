@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Lead #<%= lead.id %> | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app">
+    <%- include('../partials/admin_nav', { navTitle: 'Lead detail', activeNav: 'leads' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <div class="admin-toolbar">
+          <a class="btn" href="/admin/leads">← All leads</a>
+        </div>
+
+        <h1 class="section-title" style="margin-top:0;">Lead #<%= lead.id %></h1>
+        <p class="muted" style="margin-top:-8px;">
+          <strong><%= lead.company_name %></strong>
+          <span class="kbd" style="margin-left:6px;">@<%= lead.company_subdomain %></span>
+        </p>
+
+        <div class="card admin-lead-detail" style="margin-bottom:20px;">
+          <h2 class="admin-lead-detail__h">Contact request</h2>
+          <table class="admin-workspace__table admin-lead-detail__meta">
+            <tbody>
+              <tr>
+                <th scope="row">Name</th>
+                <td><%= lead.name %></td>
+              </tr>
+              <tr>
+                <th scope="row">Phone</th>
+                <td><%= lead.phone %></td>
+              </tr>
+              <tr>
+                <th scope="row">Email</th>
+                <td><%= lead.email || '—' %></td>
+              </tr>
+              <tr>
+                <th scope="row">Message</th>
+                <td style="white-space:pre-wrap;"><%= lead.message %></td>
+              </tr>
+              <tr>
+                <th scope="row">Submitted</th>
+                <td class="muted"><%= lead.created_at %></td>
+              </tr>
+              <% if (lead.updated_at) { %>
+              <tr>
+                <th scope="row">Last updated</th>
+                <td class="muted"><%= lead.updated_at %></td>
+              </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card admin-form-card">
+          <h2 class="admin-lead-detail__h">Status &amp; notes</h2>
+          <p class="muted" style="font-size:13px;margin-top:0;">
+            Set the workflow status and add internal notes. Each note is stored with the time it was saved.
+          </p>
+
+          <form method="post" action="/admin/leads/<%= lead.id %>" class="form">
+            <div>
+              <label for="lead_status">Status</label>
+              <select id="lead_status" name="status" required>
+                <% var labels = { open: 'Open', in_progress: 'In progress', deferred: 'Deferred', closed: 'Closed' }; %>
+                <% (leadStatuses || []).forEach(function(st) { %>
+                  <option value="<%= st %>" <%= currentStatus === st ? 'selected' : '' %>><%= labels[st] || st %></option>
+                <% }); %>
+              </select>
+            </div>
+
+            <div>
+              <label for="lead_comment">New comment (optional)</label>
+              <textarea id="lead_comment" name="comment" rows="4" placeholder="Add a note for your team…"></textarea>
+            </div>
+
+            <div class="admin-gate-actions">
+              <button class="btn btn-primary" type="submit">Save status &amp; comment</button>
+            </div>
+          </form>
+        </div>
+
+        <% if (comments && comments.length) { %>
+        <div class="card" style="margin-top:20px;">
+          <h2 class="admin-lead-detail__h">Activity</h2>
+          <ul class="admin-lead-comments">
+            <% comments.forEach(function(c) { %>
+              <li class="admin-lead-comments__item">
+                <div class="admin-lead-comments__time"><%= c.created_at %></div>
+                <div class="admin-lead-comments__body"><%= c.body %></div>
+              </li>
+            <% }); %>
+          </ul>
+        </div>
+        <% } else { %>
+        <p class="muted" style="margin-top:16px;">No notes yet — add a comment above when you follow up.</p>
+        <% } %>
+      </div>
+    </main>
+  </body>
+</html>

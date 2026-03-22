@@ -1002,6 +1002,40 @@ try {
   console.error("[getpro] demo tenant_cities copy migration:", e.message);
 }
 
+/** Lead workflow: status values + threaded admin comments. */
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("leads_comments_and_status_v1")) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS lead_comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        lead_id INTEGER NOT NULL,
+        body TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY(lead_id) REFERENCES leads(id) ON DELETE CASCADE
+      );
+      CREATE INDEX IF NOT EXISTS idx_lead_comments_lead_id ON lead_comments(lead_id);
+    `);
+    const leadCols = db.prepare("PRAGMA table_info(leads)").all();
+    const leadNames = new Set(leadCols.map((c) => c.name));
+    if (!leadNames.has("updated_at")) {
+      db.exec(`ALTER TABLE leads ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))`);
+    }
+    db.prepare(
+      `UPDATE leads SET status = 'open' WHERE status IS NULL OR TRIM(status) = '' OR LOWER(status) = 'new'`
+    ).run();
+    db.prepare(
+      `UPDATE leads SET status = 'open' WHERE LOWER(status) NOT IN ('open','in_progress','deferred','closed')`
+    ).run();
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("leads_comments_and_status_v1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] leads comments migration:", e.message);
+}
+
 function run(query, params = []) {
   return db.prepare(query).run(params);
 }

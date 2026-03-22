@@ -108,11 +108,12 @@
               <th>Message</th>
               <th>Status</th>
               <th>Time</th>
+              <% if (typeof adminNav !== 'undefined' && adminNav.canEditDirectory) { %><th>Actions</th><% } %>
             </tr>
           </thead>
           <tbody>
             <% if (!leads || leads.length === 0) { %>
-              <tr><td colspan="7" class="muted">No company leads yet.</td></tr>
+              <tr><td colspan="<%= typeof adminNav !== 'undefined' && adminNav.canEditDirectory ? 8 : 7 %>" class="muted">No company leads yet.</td></tr>
             <% } %>
             <% (leads || []).forEach(function(l) { %>
               <tr>
@@ -124,8 +125,11 @@
                 <td><%= l.phone %></td>
                 <td><%= l.email %></td>
                 <td><%= l.message %></td>
-                <td class="muted"><%= l.status %></td>
+                <td><%= typeof leadStatusLabel === 'function' ? leadStatusLabel(l.status) : l.status %></td>
                 <td class="muted"><%= l.created_at %></td>
+                <% if (typeof adminNav !== 'undefined' && adminNav.canEditDirectory) { %>
+                  <td><a class="btn" href="/admin/leads/<%= l.id %>/edit">Edit</a></td>
+                <% } %>
               </tr>
             <% }) %>
           </tbody>

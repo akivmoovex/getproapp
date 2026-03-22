@@ -22,6 +22,7 @@ const {
   absoluteCompanyProfileUrl,
 } = require("../companyProfile");
 const { isValidPhoneForTenant } = require("../tenants");
+const { LEAD_STATUSES, normalizeLeadStatus, leadStatusLabel } = require("../leadStatuses");
 const { buildCompanyPageLocals, enrichCompanyWithCategory } = require("../companyPageRender");
 
 function getAdminTenantId(req) {
@@ -1482,7 +1483,64 @@ module.exports = function adminRoutes({ db }) {
       selectedCompanyId: companyId,
       role: req.session.adminUser.role,
       isViewer: isTenantViewer(req.session.adminUser.role),
+      leadStatusLabel,
     });
+  });
+
+  router.get("/leads/:id/edit", requireDirectoryEditor, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id");
+    const lead = db
+      .prepare(
+        `
+        SELECT l.*, c.name AS company_name, c.subdomain AS company_subdomain
+        FROM leads l
+        INNER JOIN companies c ON c.id = l.company_id
+        WHERE l.id = ? AND l.tenant_id = ? AND c.tenant_id = ?
+        `
+      )
+      .get(id, tid, tid);
+    if (!lead) return res.status(404).send("Lead not found");
+    const comments = db
+      .prepare(
+        `SELECT id, body, created_at FROM lead_comments WHERE lead_id = ? ORDER BY datetime(created_at) ASC, id ASC`
+      )
+      .all(id);
+    return res.render("admin/lead_edit", {
+      lead,
+      comments,
+      leadStatuses: LEAD_STATUSES,
+      currentStatus: normalizeLeadStatus(lead.status),
+      activeNav: "leads",
+    });
+  });
+
+  router.post("/leads/:id", requireDirectoryEditor, requireNotViewer, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id");
+    const row = db.prepare("SELECT id FROM leads WHERE id = ? AND tenant_id = ?").get(id, tid);
+    if (!row) return res.status(404).send("Lead not found");
+
+    const status = normalizeLeadStatus(req.body && req.body.status);
+    const comment = String((req.body && req.body.comment) || "").trim();
+
+    try {
+      db.transaction(() => {
+        db.prepare(`UPDATE leads SET status = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`).run(
+          status,
+          id,
+          tid
+        );
+        if (comment) {
+          db.prepare(`INSERT INTO lead_comments (lead_id, body) VALUES (?, ?)`).run(id, comment.slice(0, 4000));
+        }
+      })();
+    } catch (e) {
+      return res.status(400).send(e.message || "Could not save");
+    }
+    return res.redirect(`/admin/leads/${id}/edit`);
   });
 
   return router;
