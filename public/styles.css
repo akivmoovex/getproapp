@@ -1,115 +1,8 @@
 /**
- * GetPro design tokens (single source of truth). Inlined here (not @import) so updates
- * are not stuck behind a cached theme-colors.css. Keep public/theme-colors.css in sync for diffs.
+ * GetPro — application styles (components, layouts, pages).
+ * Design tokens: public/theme.css (Material Design 3). Single link in templates remains /styles.css (imports theme).
  */
-:root {
-  --color-white: #ffffff;
-  --color-black: #0d0d0d;
-  --bg: #f8f8fa;
-  --surface: #ffffff;
-  --text-primary: #0d0d0d;
-  --text-muted: #5c5c6d;
-  --text-muted-soft: #7c7c8f;
-  --border: #e0e0e8;
-  --border-strong: #cfcfe0;
-  --topbar-bg: var(--bg);
-  --text: var(--text-primary);
-  --muted: var(--text-muted);
-  --muted-soft: var(--text-muted-soft);
-  --wf-primary: #7c3aed;
-  --wf-primary-dark: #5a1ab5;
-  --wf-primary-light: #a78bfa;
-  --wf-primary-rgb: 124, 58, 237;
-  --wf-secondary: var(--wf-primary-dark);
-  --wf-secondary-hover: #45108f;
-  --wf-secondary-deep: #2e0a64;
-  --link: var(--wf-primary);
-  --pro-orange: var(--wf-primary);
-  --pro-orange-hover: var(--wf-primary-dark);
-  --pro-dark: var(--wf-secondary-deep);
-  --accent-cyan: #22d3ee;
-  --primary-soft-bg: rgba(var(--wf-primary-rgb), 0.08);
-  --primary-softer-bg: rgba(var(--wf-primary-rgb), 0.05);
-  --focus-ring: rgba(var(--wf-primary-rgb), 0.32);
-  --primary-border-hover: rgba(var(--wf-primary-rgb), 0.35);
-  --secondary-fill-ghost: var(--primary-softer-bg);
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --card-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.06);
-  --cta-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  --footer-btn-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
-  --btn-primary-bg: var(--wf-primary);
-  --btn-primary-hover: var(--wf-primary-dark);
-  --btn-primary-text: #ffffff;
-  --btn-secondary-bg: transparent;
-  --btn-secondary-border: var(--border-strong);
-  --btn-secondary-hover: var(--primary-soft-bg);
-  --cta-gradient: var(--btn-primary-bg);
-  --cta-gradient-hover: var(--btn-primary-hover);
-  --hero-kicker-bg: var(--primary-softer-bg);
-  --article-thumb-gradient: var(--primary-soft-bg);
-  --footer-bg: var(--wf-primary-dark);
-  --footer-cta-gradient: var(--footer-bg);
-  --footer-main-gradient: var(--footer-bg);
-  --footer-on-dark: rgba(255, 255, 255, 0.92);
-  --footer-on-dark-muted: rgba(255, 255, 255, 0.72);
-  --footer-on-dark-faint: rgba(255, 255, 255, 0.55);
-  --footer-on-dark-border: rgba(255, 255, 255, 0.12);
-  --footer-cta-lead: rgba(255, 255, 255, 0.88);
-  --wf-footer-link-hover: var(--color-white);
-  --flash-error-border: rgba(180, 50, 50, 0.35);
-  --flash-error-bg: rgba(180, 50, 50, 0.08);
-  --flash-error-text: #8b2525;
-  --radius: 12px;
-  --radius-pill: 50px;
-  --font-display: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
-
-  /* Admin console — shared grids, cards, tables, modals (see docs/ADMIN_UI.md) */
-  --admin-radius: 12px;
-  --admin-radius-lg: 14px;
-  --admin-radius-xl: 16px;
-  --admin-gap: 12px;
-  --admin-gap-section: 14px;
-  --admin-main-pad-y: 22px;
-  --admin-main-pad-x: 18px;
-  --admin-main-pad-bottom: 44px;
-  --admin-card-padding: 14px 16px;
-  --admin-table-cell-padding: 10px 12px;
-  --admin-container-max: 1140px;
-  --admin-modal-max-width: 960px;
-  --admin-modal-max-height-vh: 88vh;
-  --admin-modal-max-height-px: 820px;
-
-  /* Material Design 3 — spacing (4px base / 8dp grid), shape, elevation (see docs/MATERIAL_DESIGN_3.md) */
-  --md-sys-spacing-1: 4px;
-  --md-sys-spacing-2: 8px;
-  --md-sys-spacing-3: 12px;
-  --md-sys-spacing-4: 16px;
-  --md-sys-spacing-5: 24px;
-  --md-sys-spacing-6: 32px;
-  --md-sys-shape-corner-none: 0;
-  --md-sys-shape-corner-extra-small: 4px;
-  --md-sys-shape-corner-small: 8px;
-  --md-sys-shape-corner-medium: 12px;
-  --md-sys-shape-corner-large: 16px;
-  --md-sys-shape-corner-extra-large: 28px;
-  --md-sys-color-surface: var(--surface);
-  --md-sys-color-surface-container: var(--bg);
-  --md-sys-color-surface-container-low: color-mix(in srgb, var(--surface) 94%, var(--bg) 6%);
-  --md-sys-color-surface-container-high: color-mix(in srgb, var(--surface) 88%, var(--bg) 12%);
-  --md-sys-color-surface-container-highest: color-mix(in srgb, var(--surface) 82%, var(--bg) 18%);
-  --md-sys-color-surface-container-lowest: var(--surface);
-  --md-sys-color-outline-variant: color-mix(in srgb, var(--border-strong) 65%, var(--surface) 35%);
-  /* M3 elevation shadows (light, on-neutral background) */
-  --md-sys-elevation-level0: none;
-  --md-sys-elevation-level1: 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 3px 1px rgba(0, 0, 0, 0.06);
-  --md-sys-elevation-level2: 0 1px 2px rgba(0, 0, 0, 0.1), 0 2px 6px 2px rgba(0, 0, 0, 0.08);
-  --md-sys-elevation-level3: 0 4px 8px 3px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1);
-  --md-sys-elevation-level4: 0 6px 10px 4px rgba(0, 0, 0, 0.08), 0 2px 3px rgba(0, 0, 0, 0.1);
-  --md-sys-elevation-level5: 0 8px 12px 6px rgba(0, 0, 0, 0.1), 0 4px 4px rgba(0, 0, 0, 0.08);
-  --md-sys-motion-duration-short1: 150ms;
-  --md-sys-motion-duration-medium1: 250ms;
-  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
-}
+@import url("./theme.css");
 
 * {
   box-sizing: border-box;
@@ -117,10 +10,11 @@
 
 body {
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-family-body);
+  font-size: var(--typo-body-large-size);
+  line-height: var(--typo-body-large-line);
   background: var(--md-sys-color-surface-container);
-  color: var(--text);
-  line-height: 1.5;
+  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -3232,6 +3126,21 @@ a:hover {
 .btn-block {
   width: 100%;
   justify-content: center;
+}
+
+/* M3 text button (low emphasis) */
+.btn.btn--text {
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  box-shadow: none;
+  min-height: 48px;
+  padding-inline: var(--spacing-3);
+}
+
+.btn.btn--text:hover {
+  background: var(--primary-softer-bg);
+  filter: none;
 }
 
 .btn-secondary-wf {

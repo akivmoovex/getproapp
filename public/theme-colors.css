@@ -1,6 +1,5 @@
 /**
- * GetPro brand palette — reference copy only.
- * Active `:root` tokens live at the top of `styles.css` (single source of truth).
- * Material Design 3–aligned spacing, elevation, and surfaces: see `docs/MATERIAL_DESIGN_3.md`.
- * Mirror here for diff-friendly reviews; bump `GETPRO_STYLES_V` / `stylesVersion` when changing tokens.
+ * GetPro — reference palette (diffs only).
+ * Authoritative tokens: `public/theme.css` (imported by `public/styles.css`).
+ * Docs: `docs/DESIGN_SYSTEM.md`, `docs/MATERIAL_DESIGN_3.md`.
  */

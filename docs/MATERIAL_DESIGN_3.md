@@ -1,6 +1,6 @@
 # Material Design 3 alignment
 
-GetPro maps [Material Design 3](https://m3.material.io/) (M3) guidelines to a **single CSS token layer** in `public/styles.css` (`:root`), so desktop and mobile share one system. Brand purple (`--wf-primary`) remains the **primary** key color; M3 adds **spacing**, **shape**, **elevation**, and **surface** roles around it.
+GetPro maps [Material Design 3](https://m3.material.io/) (M3) guidelines to a **central token file** — **`public/theme.css`** — imported at the top of **`public/styles.css`**. Brand violet maps to **`--color-primary`** (legacy **`--wf-primary`** unchanged). See **`docs/DESIGN_SYSTEM.md`** for the full token list and component class contracts.
 
 ## What we implement
 
