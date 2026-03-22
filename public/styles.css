@@ -459,6 +459,37 @@ a:hover {
   max-width: 900px;
 }
 
+.admin-settings-tenant-table__name {
+  font-weight: 800;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.admin-settings-tenant-table__name:hover {
+  color: var(--wf-primary);
+  text-decoration: underline;
+}
+
+.admin-settings-tenant-table__row:hover {
+  background: color-mix(in srgb, var(--surface) 94%, var(--wf-primary) 6%);
+}
+
+.admin-settings-tenant-table__actions {
+  text-align: right;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.admin-settings-tenant-table .btn {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+.admin-settings-detail__meta {
+  margin: -8px 0 16px;
+  font-size: 14px;
+}
+
 /* ——— Company mini-site workspace (admin) ——— */
 .admin-workspace-page .admin-main {
   padding-top: 0;
@@ -874,17 +905,52 @@ a:hover {
 .admin-crm-kanban__col-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 14px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border-strong);
   background: var(--surface);
   border-radius: 14px 14px 0 0;
 }
 
+.admin-crm-kanban__col-toggle {
+  border: 0;
+  background: transparent;
+  padding: 6px;
+  margin: -4px 0 -4px -4px;
+  cursor: pointer;
+  border-radius: 8px;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.admin-crm-kanban__col-toggle:hover {
+  background: color-mix(in srgb, var(--wf-primary) 10%, var(--surface));
+}
+
+.admin-crm-kanban__col-toggle-icon {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.admin-crm-kanban__col--collapsed .admin-crm-kanban__col-toggle-icon {
+  transform: rotate(-135deg);
+}
+
+.admin-crm-kanban__col--collapsed .admin-crm-kanban__dropzone {
+  display: none;
+}
+
 .admin-crm-kanban__col-title {
+  flex: 1;
+  min-width: 0;
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -933,11 +999,31 @@ a:hover {
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
 }
 
-.admin-crm-card--draggable {
-  cursor: grab;
+.admin-crm-card--has-handle {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 6px;
+  padding: 10px 10px 12px;
 }
 
-.admin-crm-card--draggable:active {
+.admin-crm-card__handle {
+  flex-shrink: 0;
+  width: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  user-select: none;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: -2px;
+  align-self: flex-start;
+  padding-top: 2px;
+}
+
+.admin-crm-card__handle:active {
   cursor: grabbing;
 }
 
@@ -945,19 +1031,40 @@ a:hover {
   opacity: 0.55;
 }
 
-.admin-crm-card__title {
-  display: block;
+.admin-crm-card__body {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 8px;
+}
+
+.admin-crm-card__body:hover {
+  background: color-mix(in srgb, var(--wf-primary) 7%, transparent);
+}
+
+.admin-crm-card__body:focus {
+  outline: 2px solid var(--wf-primary);
+  outline-offset: 1px;
+}
+
+.admin-crm-card__title-text {
+  margin: 0 0 6px;
   font-size: 15px;
   font-weight: 800;
   line-height: 1.35;
   color: var(--text);
-  text-decoration: none;
-  margin: 0 0 6px;
 }
 
-.admin-crm-card__title:hover {
-  color: var(--wf-primary-dark);
-  text-decoration: underline;
+.admin-crm-card__attach {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .admin-crm-card__meta {
@@ -967,16 +1074,87 @@ a:hover {
 }
 
 .admin-crm-card__snippet {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 13px;
   line-height: 1.45;
 }
 
-.admin-crm-card__open {
-  width: 100%;
-  margin-top: 2px;
-  font-size: 14px;
-  min-height: 40px;
+.admin-crm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+    max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+
+.admin-crm-overlay[hidden] {
+  display: none !important;
+}
+
+.admin-crm-overlay--open {
+  display: flex !important;
+}
+
+.admin-crm-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.admin-crm-overlay__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 520px);
+  max-height: min(90vh, 760px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  border: 1px solid var(--border-strong);
+}
+
+.admin-crm-overlay__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--text);
+}
+
+.admin-crm-overlay__close:hover {
+  background: color-mix(in srgb, var(--wf-primary) 10%, var(--surface));
+}
+
+.admin-crm-overlay__body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 48px 18px 22px;
+}
+
+.admin-crm-overlay__task-title {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+  font-weight: 900;
+  padding-right: 36px;
 }
 
 @media (min-width: 1200px) {

@@ -1102,6 +1102,24 @@ try {
   console.error("[getpro] crm_task_comments migration:", e.message);
 }
 
+/** CRM: replace pending/waiting with blocked; optional attachment URL. */
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("crm_tasks_blocked_attachment_v1")) {
+    db.prepare("UPDATE crm_tasks SET status = 'blocked' WHERE status IN ('pending', 'waiting')").run();
+    const crmCols = new Set(db.prepare("PRAGMA table_info(crm_tasks)").all().map((c) => c.name));
+    if (!crmCols.has("attachment_url")) {
+      db.exec("ALTER TABLE crm_tasks ADD COLUMN attachment_url TEXT NOT NULL DEFAULT ''");
+    }
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("crm_tasks_blocked_attachment_v1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] crm_tasks blocked/attachment migration:", e.message);
+}
+
 /** Per-tenant call center / WhatsApp / support email (footers + mini-site). */
 try {
   const tenantColNames = () =>

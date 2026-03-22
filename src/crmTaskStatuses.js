@@ -2,19 +2,17 @@
 const CRM_TASK_STATUSES = Object.freeze([
   "new",
   "in_progress",
-  "pending",
+  "blocked",
   "completed",
   "deferred",
-  "waiting",
 ]);
 
 const LABELS = {
   new: "New",
   in_progress: "In Progress",
-  pending: "Pending",
+  blocked: "Blocked",
   completed: "Completed",
   deferred: "Deferred",
-  waiting: "Waiting",
 };
 
 function normalizeCrmTaskStatus(raw) {
@@ -22,6 +20,7 @@ function normalizeCrmTaskStatus(raw) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, "_");
+  if (s === "pending" || s === "waiting") return "blocked";
   if (CRM_TASK_STATUSES.includes(s)) return s;
   return "new";
 }

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= tenant ? tenant.name + ' — settings' : 'Settings' %> | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app">
+    <%- include('../partials/admin_nav', { navTitle: tenant ? tenant.name + ' — settings' : 'Settings', activeNav: 'settings' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <div class="admin-toolbar" style="margin-bottom: 8px">
+          <a class="btn" href="<%= backHref %>">← <%= isSuper ? 'All regions' : 'Back' %></a>
+        </div>
+
+        <% if (typeof saved !== 'undefined' && saved) { %>
+        <div class="flash" role="status">Settings saved.</div>
+        <% } %>
+
+        <h1 class="section-title" style="margin-top: 0"><%= tenant ? tenant.name : 'Region' %></h1>
+        <% if (tenant) { %>
+        <p class="muted admin-settings-detail__meta">
+          <span class="kbd"><%= tenant.slug %></span>
+          <span aria-hidden="true"> · </span>
+          <span>ID <%= tenant.id %></span>
+          <% if (isSuper) { %>
+          <span aria-hidden="true"> · </span>
+          <span>Stage <%= tenant.stage %></span>
+          <% } %>
+        </p>
+        <p class="admin-intro" style="margin-bottom: 20px">
+          Default numbers and email for this region’s directory and company mini-sites. Leave fields empty on save to use platform defaults (same behaviour as the Super admin region form).
+        </p>
+        <div class="card admin-form-card" style="max-width: 520px">
+          <form method="post" action="/admin/settings/tenant/<%= tenant.id %>" class="form">
+            <div>
+              <label for="ts_call">Customer listing phone</label>
+              <input
+                id="ts_call"
+                name="callcenter_phone"
+                type="text"
+                value="<%= tenant.callcenter_phone ? tenant.callcenter_phone : '' %>"
+                placeholder="+260211000101"
+                autocomplete="tel"
+              />
+            </div>
+            <div>
+              <label for="ts_sup">Support help line</label>
+              <input
+                id="ts_sup"
+                name="support_help_phone"
+                type="text"
+                value="<%= tenant.support_help_phone ? tenant.support_help_phone : '' %>"
+                placeholder="+260211000101"
+                autocomplete="tel"
+              />
+            </div>
+            <div>
+              <label for="ts_wa">WhatsApp phone</label>
+              <input
+                id="ts_wa"
+                name="whatsapp_phone"
+                type="text"
+                value="<%= tenant.whatsapp_phone ? tenant.whatsapp_phone : '' %>"
+                placeholder="+260211000102"
+                autocomplete="tel"
+              />
+            </div>
+            <div>
+              <label for="ts_em">Call center email</label>
+              <input
+                id="ts_em"
+                name="callcenter_email"
+                type="email"
+                value="<%= tenant.callcenter_email ? tenant.callcenter_email : '' %>"
+                placeholder="info@getproapp.org"
+                autocomplete="email"
+              />
+            </div>
+            <div class="admin-gate-actions">
+              <button class="btn btn-primary" type="submit">Save</button>
+            </div>
+          </form>
+        </div>
+        <% } %>
+      </div>
+    </main>
+  </body>
+</html>

@@ -4,28 +4,25 @@
 
   var draggingId = null;
 
-  function findCard(el) {
-    while (el && el !== document.body) {
-      if (el.classList && el.classList.contains("admin-crm-card")) return el;
-      el = el.parentNode;
-    }
-    return null;
-  }
-
-  function dropZoneFor(col) {
-    return col.querySelector("[data-crm-dropzone]");
-  }
-
-  document.querySelectorAll(".admin-crm-card--draggable").forEach(function (card) {
-    card.addEventListener("dragstart", function (e) {
+  document.querySelectorAll(".admin-crm-card__handle").forEach(function (handle) {
+    handle.addEventListener("dragstart", function (e) {
+      var card = handle.closest(".admin-crm-card");
+      if (!card) return;
       draggingId = card.getAttribute("data-task-id");
       card.classList.add("admin-crm-card--dragging");
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", draggingId || "");
     });
-    card.addEventListener("dragend", function () {
-      card.classList.remove("admin-crm-card--dragging");
+    handle.addEventListener("dragend", function () {
+      var card = handle.closest(".admin-crm-card");
+      if (card) card.classList.remove("admin-crm-card--dragging");
       draggingId = null;
+    });
+    handle.addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
+    handle.addEventListener("mousedown", function (e) {
+      e.stopPropagation();
     });
   });
 
@@ -70,6 +67,92 @@
         .catch(function (err) {
           window.alert(err.message || "Could not move task");
         });
+    });
+  });
+
+  var overlay = document.getElementById("crm_task_overlay");
+  var overlayBody = document.getElementById("crm_task_overlay_body");
+
+  function openOverlay(taskId) {
+    if (!overlay || !overlayBody) return;
+    overlayBody.innerHTML = '<p class="muted" style="padding:16px;">Loading…</p>';
+    overlay.removeAttribute("hidden");
+    overlay.setAttribute("aria-hidden", "false");
+    overlay.classList.add("admin-crm-overlay--open");
+    document.body.style.overflow = "hidden";
+    fetch("/admin/crm/tasks/" + encodeURIComponent(taskId) + "/panel", {
+      credentials: "same-origin",
+      headers: { Accept: "text/html" },
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("Not found");
+        return r.text();
+      })
+      .then(function (html) {
+        overlayBody.innerHTML = html;
+      })
+      .catch(function () {
+        overlayBody.innerHTML = '<p class="muted" style="padding:16px;">Could not load task.</p>';
+      });
+  }
+
+  function closeOverlay() {
+    if (!overlay) return;
+    overlay.setAttribute("hidden", "hidden");
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.classList.remove("admin-crm-overlay--open");
+    document.body.style.overflow = "";
+    if (overlayBody) overlayBody.innerHTML = "";
+    try {
+      var u = new URL(window.location.href);
+      u.searchParams.delete("openTask");
+      var q = u.searchParams.toString();
+      window.history.replaceState({}, "", u.pathname + (q ? "?" + q : "") + u.hash);
+    } catch (e) {}
+  }
+
+  document.querySelectorAll("[data-crm-close-overlay]").forEach(function (el) {
+    el.addEventListener("click", function (e) {
+      e.preventDefault();
+      closeOverlay();
+    });
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && overlay && !overlay.hasAttribute("hidden")) {
+      closeOverlay();
+    }
+  });
+
+  document.querySelectorAll("[data-crm-open-task]").forEach(function (el) {
+    function open() {
+      var id = el.getAttribute("data-crm-open-task");
+      if (id) openOverlay(id);
+    }
+    el.addEventListener("click", function (e) {
+      e.preventDefault();
+      open();
+    });
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        open();
+      }
+    });
+  });
+
+  try {
+    var p = new URLSearchParams(window.location.search);
+    var o = p.get("openTask");
+    if (o) openOverlay(o);
+  } catch (e) {}
+
+  document.querySelectorAll(".admin-crm-kanban__col-toggle").forEach(function (btn) {
+    var col = btn.closest(".admin-crm-kanban__col");
+    if (!col) return;
+    btn.addEventListener("click", function () {
+      var collapsed = col.classList.toggle("admin-crm-kanban__col--collapsed");
+      btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
     });
   });
 })();

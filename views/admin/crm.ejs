@@ -12,8 +12,8 @@
       <div class="container admin-main__pad">
         <h1 class="section-title admin-crm-page__title" style="margin-top:0;">CRM — board</h1>
         <p class="admin-intro muted">
-          Drag cards between columns to update status. Unassigned tasks in <strong>New</strong> move to another column to claim
-          them. Super admin can move any task and reassign on the task page.
+          Drag cards between columns to update status (use the <strong>⋮⋮</strong> handle). Click a card to view details.
+          Unassigned tasks in <strong>New</strong> move to another column to claim them. Super admin can move any task and reassign on the task panel.
         </p>
 
         <% if (canMutateCrm) { %>
@@ -29,6 +29,11 @@
                 <label for="crm_desc">Description</label>
                 <textarea id="crm_desc" name="description" rows="4" placeholder="Details…"></textarea>
               </div>
+              <div>
+                <label for="crm_attachment">Attachment link (optional)</label>
+                <input id="crm_attachment" name="attachment_url" type="url" maxlength="2000" placeholder="https://…" />
+                <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">Link to a file or document (https only).</div>
+              </div>
               <div class="admin-gate-actions">
                 <button class="btn btn-primary" type="submit">Create task</button>
               </div>
@@ -41,32 +46,47 @@
             <% var colTasks = (tasksByStatus && tasksByStatus[st]) ? tasksByStatus[st] : []; %>
             <section class="admin-crm-kanban__col" data-crm-status="<%= st %>">
               <header class="admin-crm-kanban__col-head">
+                <button type="button" class="admin-crm-kanban__col-toggle" aria-expanded="true" aria-controls="crm-col-<%= st %>" title="Collapse or expand column">
+                  <span class="admin-crm-kanban__col-toggle-icon" aria-hidden="true"></span>
+                </button>
                 <h2 class="admin-crm-kanban__col-title"><%= typeof crmTaskStatusLabel === 'function' ? crmTaskStatusLabel(st) : st %></h2>
                 <span class="admin-crm-kanban__col-count" aria-hidden="true"><%= colTasks.length %></span>
               </header>
               <div
                 class="admin-crm-kanban__dropzone"
+                id="crm-col-<%= st %>"
                 data-crm-dropzone="<%= st %>"
                 role="list"
               >
                 <% colTasks.forEach(function(t) { %>
                   <article
-                    class="admin-crm-card <%= t.canDrag ? 'admin-crm-card--draggable' : '' %>"
+                    class="admin-crm-card <%= t.canDrag ? 'admin-crm-card--has-handle' : '' %>"
                     role="listitem"
                     data-task-id="<%= t.id %>"
                     data-crm-status="<%= st %>"
-                    <% if (t.canDrag) { %>draggable="true"<% } %>
                   >
-                    <a class="admin-crm-card__title" href="/admin/crm/tasks/<%= t.id %>"><%= t.title %></a>
-                    <% if (t.owner_username) { %>
-                      <p class="admin-crm-card__meta muted"><%= t.owner_username %></p>
-                    <% } else { %>
-                      <p class="admin-crm-card__meta muted">Unassigned</p>
+                    <% if (t.canDrag) { %>
+                      <span
+                        class="admin-crm-card__handle"
+                        draggable="true"
+                        title="Drag to move"
+                        aria-label="Drag to move task"
+                      >⋮⋮</span>
                     <% } %>
-                    <% if (t.description) { %>
-                      <p class="admin-crm-card__snippet muted"><%= String(t.description).length > 100 ? String(t.description).slice(0, 100) + '…' : t.description %></p>
-                    <% } %>
-                    <a class="btn btn-primary admin-crm-card__open" href="/admin/crm/tasks/<%= t.id %>">Open</a>
+                    <div class="admin-crm-card__body" data-crm-open-task="<%= t.id %>" role="button" tabindex="0">
+                      <h3 class="admin-crm-card__title-text"><%= t.title %></h3>
+                      <% if (t.owner_username) { %>
+                        <p class="admin-crm-card__meta muted"><%= t.owner_username %></p>
+                      <% } else { %>
+                        <p class="admin-crm-card__meta muted">Unassigned</p>
+                      <% } %>
+                      <% if (t.description) { %>
+                        <p class="admin-crm-card__snippet muted"><%= String(t.description).length > 100 ? String(t.description).slice(0, 100) + '…' : t.description %></p>
+                      <% } %>
+                      <% if (t.attachment_url && String(t.attachment_url).trim()) { %>
+                        <p class="admin-crm-card__attach muted">📎 Link attached</p>
+                      <% } %>
+                    </div>
                   </article>
                 <% }); %>
                 <% if (!colTasks.length) { %>
@@ -78,6 +98,15 @@
         </div>
       </div>
     </main>
+
+    <div id="crm_task_overlay" class="admin-crm-overlay" aria-hidden="true" hidden>
+      <div class="admin-crm-overlay__backdrop" data-crm-close-overlay tabindex="-1"></div>
+      <div class="admin-crm-overlay__dialog" role="dialog" aria-modal="true">
+        <button type="button" class="admin-crm-overlay__close" data-crm-close-overlay aria-label="Close">×</button>
+        <div id="crm_task_overlay_body" class="admin-crm-overlay__body"></div>
+      </div>
+    </div>
+
     <script>
       window.__CRM_KANBAN__ = {
         statuses: <%- JSON.stringify(CRM_TASK_STATUSES || []) %>,

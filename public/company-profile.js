@@ -1,4 +1,6 @@
 (function () {
+  var AUTO_MS = 5000;
+
   function prefersReducedMotion() {
     try {
       return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -18,6 +20,8 @@
 
     const n = slides.length;
     let i = 0;
+    let autoPaused = false;
+    let autoTimer = null;
 
     function setDots() {
       if (!dotsRoot) return;
@@ -26,14 +30,55 @@
       });
     }
 
-    function go(delta) {
-      if (slides.length < 1) return;
-      i = (i + delta + slides.length) % slides.length;
+    function applyTransform() {
       const dur = prefersReducedMotion() ? "0ms" : "";
       track.style.transitionDuration = dur;
       track.style.transform = "translateX(" + -i * 100 + "%)";
       setDots();
     }
+
+    function go(delta) {
+      if (slides.length < 1) return;
+      i = (i + delta + slides.length) % slides.length;
+      applyTransform();
+    }
+
+    function goTo(idx) {
+      if (slides.length < 1) return;
+      i = ((idx % slides.length) + slides.length) % slides.length;
+      applyTransform();
+    }
+
+    function startAuto() {
+      if (prefersReducedMotion() || n < 2) return;
+      stopAuto();
+      autoTimer = window.setInterval(function () {
+        if (autoPaused) return;
+        go(1);
+      }, AUTO_MS);
+    }
+
+    function stopAuto() {
+      if (autoTimer) window.clearInterval(autoTimer);
+      autoTimer = null;
+    }
+
+    function pause() {
+      autoPaused = true;
+    }
+
+    function resume() {
+      autoPaused = false;
+    }
+
+    root.addEventListener("mouseenter", pause);
+    root.addEventListener("mouseleave", resume);
+    root.addEventListener("focusin", pause);
+    root.addEventListener("focusout", resume);
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) pause();
+      else resume();
+    });
 
     if (dotsRoot && n > 1) {
       slides.forEach(function (_, idx) {
@@ -42,9 +87,7 @@
         b.className = "pro-company-carousel__dot";
         b.setAttribute("aria-label", "Go to slide " + (idx + 1));
         b.addEventListener("click", function () {
-          i = idx;
-          track.style.transform = "translateX(" + -i * 100 + "%)";
-          setDots();
+          goTo(idx);
         });
         dotsRoot.appendChild(b);
       });
@@ -122,6 +165,8 @@
       else if (ptrDx < -50) go(1);
       ptrDx = 0;
     });
+
+    startAuto();
   }
 
   document.querySelectorAll("[data-company-carousel]").forEach(initCarousel);
@@ -139,108 +184,113 @@
       statusEl.style.color = ok ? "" : "var(--danger, #b91c1c)";
     }
 
-    btn.addEventListener("click", function () {
-      setStatus("");
-      const src = img.currentSrc || img.src;
-
-      function tryClipboardBlob(blob) {
-        if (!blob || !navigator.clipboard || typeof ClipboardItem === "undefined") {
-          return Promise.reject(new Error("clipboard"));
-        }
-        return navigator.clipboard.write([
-          new ClipboardItem(
-            Object.freeze({
-              [blob.type || "image/png"]: blob,
-            })
-          ),
-        ]);
-      }
-
-      function fallbackCopyText() {
-        const text = src || "";
-        if (text && navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard
-            .writeText(text)
-            .then(function () {
-              setStatus("Copied (image data as text).", true);
-            })
-            .catch(function () {
-              setStatus("Could not copy. Long-press the QR image to save.", false);
-            });
-        } else {
-          setStatus("Could not copy. Long-press the QR image to save.", false);
-        }
-      }
-
-      if (src && src.indexOf("data:") === 0) {
-        fetch(src)
-          .then(function (r) {
-            return r.blob();
-          })
-          .then(function (blob) {
-            return tryClipboardBlob(blob);
-          })
-          .then(function () {
-            setStatus("Copied to clipboard.", true);
-          })
-          .catch(function () {
-            if (img.complete && img.naturalWidth) {
-              try {
-                const c = document.createElement("canvas");
-                c.width = img.naturalWidth;
-                c.height = img.naturalHeight;
-                c.getContext("2d").drawImage(img, 0, 0);
-                c.toBlob(function (blob) {
-                  if (!blob) {
-                    fallbackCopyText();
-                    return;
-                  }
-                  tryClipboardBlob(blob)
-                    .then(function () {
-                      setStatus("Copied to clipboard.", true);
-                    })
-                    .catch(fallbackCopyText);
-                });
-              } catch (e) {
-                fallbackCopyText();
-              }
-            } else {
-              fallbackCopyText();
-            }
-          });
-        return;
-      }
-
-      if (img.complete && img.naturalWidth) {
-        try {
-          const c = document.createElement("canvas");
-          c.width = img.naturalWidth;
-          c.height = img.naturalHeight;
-          c.getContext("2d").drawImage(img, 0, 0);
-          c.toBlob(function (blob) {
-            if (!blob) {
-              fallbackCopyText();
+    function pngBlobFromImage(imageEl) {
+      return new Promise(function (resolve, reject) {
+        function draw() {
+          try {
+            const w = imageEl.naturalWidth || imageEl.width;
+            const h = imageEl.naturalHeight || imageEl.height;
+            if (!w || !h) {
+              reject(new Error("no-size"));
               return;
             }
-            tryClipboardBlob(blob)
-              .then(function () {
-                setStatus("Copied to clipboard.", true);
-              })
-              .catch(fallbackCopyText);
-          });
-        } catch (e) {
-          fallbackCopyText();
+            const c = document.createElement("canvas");
+            c.width = w;
+            c.height = h;
+            const ctx = c.getContext("2d");
+            ctx.drawImage(imageEl, 0, 0);
+            c.toBlob(function (blob) {
+              if (blob && blob.size) resolve(blob);
+              else reject(new Error("no-blob"));
+            }, "image/png");
+          } catch (e) {
+            reject(e);
+          }
         }
-      } else {
-        img.addEventListener(
-          "load",
-          function once() {
-            img.removeEventListener("load", once);
-            btn.click();
-          },
-          { once: true }
-        );
+        if (imageEl.complete && imageEl.naturalWidth) {
+          draw();
+        } else {
+          imageEl.addEventListener(
+            "load",
+            function once() {
+              imageEl.removeEventListener("load", once);
+              draw();
+            },
+            { once: true }
+          );
+        }
+      });
+    }
+
+    function writePngToClipboard(blob) {
+      if (!blob || !navigator.clipboard || typeof ClipboardItem === "undefined") {
+        return Promise.reject(new Error("no-clipboard"));
       }
+      if (!window.isSecureContext) {
+        return Promise.reject(new Error("insecure"));
+      }
+      const pngPromise = Promise.resolve(blob);
+      try {
+        return navigator.clipboard.write([
+          new ClipboardItem({
+            "image/png": pngPromise,
+          }),
+        ]);
+      } catch (e) {
+        try {
+          return navigator.clipboard.write([
+            new ClipboardItem({
+              "image/png": blob,
+            }),
+          ]);
+        } catch (e2) {
+          return Promise.reject(e2);
+        }
+      }
+    }
+
+    function downloadBlob(blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "qr-code.png";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(function () {
+        URL.revokeObjectURL(url);
+      }, 600);
+    }
+
+    btn.addEventListener("click", function () {
+      setStatus("");
+      btn.disabled = true;
+      pngBlobFromImage(img)
+        .then(function (blob) {
+          return writePngToClipboard(blob).then(
+            function () {
+              return { mode: "clip" };
+            },
+            function () {
+              downloadBlob(blob);
+              return { mode: "download" };
+            }
+          );
+        })
+        .then(function (result) {
+          if (result.mode === "download") {
+            setStatus("PNG download started — use this if your browser cannot copy images to the clipboard.", true);
+          } else {
+            setStatus("QR image copied — paste into email, chat, or documents.", true);
+          }
+        })
+        .catch(function () {
+          setStatus("Could not copy. Try long-press the QR image to save on mobile.", false);
+        })
+        .finally(function () {
+          btn.disabled = false;
+        });
     });
   }
 
