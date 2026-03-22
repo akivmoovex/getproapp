@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= company.name %> · Mini-site | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app admin-workspace-page">
+    <%- include('../partials/admin_nav', { navTitle: 'Mini-site editor', activeNav: 'companies' }) %>
+    <main class="admin-main admin-workspace">
+      <div class="admin-workspace__shell">
+        <div class="admin-workspace__toolbar" role="toolbar" aria-label="Mini-site actions">
+          <div class="admin-workspace__toolbar-left">
+            <button type="button" class="btn btn-primary admin-workspace__btn-edit" data-ws-edit style="display:none;">Edit</button>
+            <a class="btn" href="/admin/companies?edit=1">← Companies</a>
+            <button type="button" class="btn btn-primary admin-workspace__btn-preview" data-ws-preview style="display:none;">Preview</button>
+            <button type="button" class="btn admin-workspace__btn-close" data-ws-close style="display:none;">Close</button>
+            <button type="button" class="btn btn-primary admin-workspace__btn-publish" data-ws-publish style="display:none;">Publish</button>
+            <button type="button" class="btn admin-workspace__btn-back-edit" data-ws-back-edit style="display:none;">Back to edit</button>
+          </div>
+          <div class="admin-workspace__toolbar-meta muted" style="font-size:12px;">
+            <span class="kbd"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : company.subdomain %></span>
+          </div>
+        </div>
+
+        <div class="admin-workspace__stage">
+          <div class="admin-workspace__preview-wrap" data-ws-preview-wrap>
+            <iframe
+              class="admin-workspace__iframe"
+              title="Mini-site preview"
+              data-ws-iframe
+              src="<%= previewFramePath %>"
+            ></iframe>
+          </div>
+
+          <div class="admin-workspace__edit card admin-form-card" data-ws-edit-panel style="display:none;">
+            <h2 class="admin-workspace__edit-title">Edit mini-site content</h2>
+            <p class="muted" style="font-size:13px;margin-top:0;">
+              Use the table below, then <strong>Preview</strong> to see the mini-site layout with your unsaved changes.
+              <strong>Publish</strong> saves to the live mini-site (available after preview).
+            </p>
+
+            <div class="admin-workspace__table-wrap">
+              <table class="admin-workspace__table">
+                <tbody>
+                  <tr>
+                    <th scope="row">Company name</th>
+                    <td><input type="text" class="input-grow" data-f="name" required /></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Subdomain (URL path)</th>
+                    <td><input type="text" class="input-grow" data-f="subdomain" required /></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Profession</th>
+                    <td>
+                      <select data-f="category_id">
+                        <option value="">Uncategorized</option>
+                        <% categories.forEach(function(cat) { %>
+                          <option value="<%= cat.id %>"><%= cat.name %></option>
+                        <% }) %>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Logo URL</th>
+                    <td><input type="text" class="input-grow" data-f="logo_url" placeholder="https://…" /></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Headline</th>
+                    <td><input type="text" class="input-grow" data-f="headline" /></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">About</th>
+                    <td><textarea data-f="about" rows="4"></textarea></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Services (one per line)</th>
+                    <td><textarea data-f="services" rows="4"></textarea></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Phone</th>
+                    <td><input type="text" class="input-grow" data-f="phone" /></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Email</th>
+                    <td><input type="email" class="input-grow" data-f="email" /></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Location / address</th>
+                    <td><input type="text" class="input-grow" data-f="location" /></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Years in business</th>
+                    <td><input type="number" min="0" max="999" data-f="years_experience" /></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Service areas</th>
+                    <td><textarea data-f="service_areas" rows="3"></textarea></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Hours</th>
+                    <td><textarea data-f="hours_text" rows="3"></textarea></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">CTA label</th>
+                    <td><input type="text" class="input-grow" data-f="featured_cta_label" /></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">CTA phone</th>
+                    <td><input type="text" class="input-grow" data-f="featured_cta_phone" /></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Pictures (URLs)</th>
+                    <td>
+                      <textarea data-f="gallery_text" rows="6" placeholder="https://…|caption"></textarea>
+                      <div class="muted" style="font-size:11px;margin-top:4px;">One per line. Optional caption after |</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 class="admin-workspace__reviews-title">Reviews</h3>
+            <p class="muted" style="font-size:12px;">Edit existing reviews or add new rows. Empty body removes a review when published.</p>
+            <div class="admin-workspace__reviews" data-ws-reviews></div>
+            <button type="button" class="btn" data-ws-add-review>Add review</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <dialog class="admin-workspace__dialog" data-ws-dialog>
+      <div class="admin-workspace__dialog-inner card">
+        <p style="margin:0 0 16px;font-weight:700;">You’ve started editing this mini-site. Are you sure you want to leave?</p>
+        <p class="muted" style="font-size:13px;margin:0 0 16px;">Leave discards unsaved changes and returns to the saved preview. Cancel keeps you in edit mode.</p>
+        <div class="admin-workspace__dialog-actions">
+          <button type="button" class="btn" data-ws-dialog-cancel>Cancel</button>
+          <button type="button" class="btn btn-primary" data-ws-dialog-leave>Leave</button>
+        </div>
+      </div>
+    </dialog>
+
+    <div class="admin-workspace__overlay" data-ws-overlay hidden aria-hidden="true">
+      <div class="admin-workspace__overlay-inner" role="status" aria-live="polite">
+        <div class="admin-workspace__hourglass" aria-hidden="true">
+          <span class="admin-workspace__hourglass-inner">⏳</span>
+        </div>
+        <div class="admin-workspace__overlay-text">Publishing mini-site…</div>
+      </div>
+    </div>
+
+    <% 
+      var wsCompany = {
+        id: company.id,
+        name: company.name,
+        subdomain: company.subdomain,
+        category_id: company.category_id,
+        headline: company.headline,
+        about: company.about,
+        services: company.services,
+        phone: company.phone,
+        email: company.email,
+        location: company.location,
+        years_experience: company.years_experience,
+        service_areas: company.service_areas,
+        hours_text: company.hours_text,
+        featured_cta_label: company.featured_cta_label,
+        featured_cta_phone: company.featured_cta_phone,
+        logo_url: company.logo_url,
+      };
+      var __wsBoot = {
+        companyId: company.id,
+        company: wsCompany,
+        galleryAdminText: typeof galleryAdminText !== 'undefined' ? galleryAdminText : '',
+        reviews: reviews,
+        paths: {
+          previewFrame: previewFramePath,
+          previewDraft: '/admin/companies/' + company.id + '/preview-draft',
+          publish: '/admin/companies/' + company.id + '/publish',
+        },
+        adminTenantSlug: typeof adminTenantSlug !== 'undefined' ? adminTenantSlug : '',
+      };
+    %>
+    <script>
+      window.__WORKSPACE__ = <%- JSON.stringify(__wsBoot).replace(/</g, '\\u003c') %>;
+    </script>
+    <script src="/admin-company-workspace.js?v=<%= stylesVersion %>"></script>
+  </body>
+</html>

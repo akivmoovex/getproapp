@@ -34,7 +34,7 @@
               <% if (category) { %>
                 <span class="pro-company-profile__pill"><%= category.name %></span>
               <% } %>
-              <span class="pro-company-profile__pill pro-company-profile__pill--muted">Directory profile</span>
+              <span class="pro-company-profile__pill pro-company-profile__pill--muted">Mini-site</span>
             </div>
             <div class="pro-company-profile__title-row">
               <div class="pro-company-profile__title-block">
@@ -229,47 +229,19 @@
             <% } %>
 
             <% if (typeof companyUrl !== 'undefined' && companyUrl && companyUrl !== '#') { %>
-              <p class="muted pro-company-profile__mini-hint">Mini-site (this page)</p>
+              <p class="muted pro-company-profile__mini-hint">Mini-site URL</p>
               <p>
                 <a href="<%= companyUrl %>"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : companyUrl %></a>
               </p>
             <% } %>
 
-            <% if ((typeof qrDirectoryProfileDataUrl !== 'undefined' && qrDirectoryProfileDataUrl) || (typeof qrMiniSiteDataUrl !== 'undefined' && qrMiniSiteDataUrl)) { %>
+            <% if (typeof qrMiniSiteDataUrl !== 'undefined' && qrMiniSiteDataUrl) { %>
               <div class="pro-company-profile__qr-block">
-                <div class="pro-company-profile__qr-heading">QR codes</div>
-                <p class="muted" style="font-size:12px;line-height:1.5;margin:0 0 10px;">Scan to open on a phone.</p>
-                <% if (typeof qrUrlsMerged !== 'undefined' && qrUrlsMerged && qrDirectoryProfileDataUrl) { %>
-                  <div class="pro-company-profile__qr-single">
-                    <img src="<%= qrDirectoryProfileDataUrl %>" alt="QR code linking to this company page" width="168" height="168" class="pro-company-profile__qr-img" />
-                    <p class="muted pro-company-profile__qr-caption">Directory profile and mini-site use the same link in this view.</p>
-                  </div>
-                <% } else { %>
-                  <div class="pro-company-profile__qr-grid">
-                    <% if (typeof qrDirectoryProfileDataUrl !== 'undefined' && qrDirectoryProfileDataUrl) { %>
-                      <div class="pro-company-profile__qr-cell">
-                        <div class="muted pro-company-profile__qr-label">Directory profile</div>
-                        <img src="<%= qrDirectoryProfileDataUrl %>" alt="QR code for directory profile URL" width="168" height="168" class="pro-company-profile__qr-img" />
-                      </div>
-                    <% } %>
-                    <% if (typeof qrMiniSiteDataUrl !== 'undefined' && qrMiniSiteDataUrl) { %>
-                      <div class="pro-company-profile__qr-cell">
-                        <div class="muted pro-company-profile__qr-label">Mini-site</div>
-                        <img src="<%= qrMiniSiteDataUrl %>" alt="QR code for mini-site URL" width="168" height="168" class="pro-company-profile__qr-img" />
-                      </div>
-                    <% } %>
-                  </div>
-                <% } %>
-              </div>
-            <% } %>
-
-            <% if (typeof profileUrl !== 'undefined' && profileUrl) { %>
-              <% var _pu = String(profileUrl).trim(); var _puAbs = /^https?:\/\//i.test(_pu); %>
-              <div class="pro-company-profile__dir-link-block">
-                <p class="muted pro-company-profile__mini-hint">Directory profile (alternate layout)</p>
-                <p class="pro-company-profile__mini-url">
-                  <a href="<%= _pu %>" <%= _puAbs ? 'target="_blank" rel="noopener noreferrer"' : '' %>><%= _pu %></a>
-                </p>
+                <div class="pro-company-profile__qr-heading">Mini-site QR code</div>
+                <p class="muted" style="font-size:12px;line-height:1.5;margin:0 0 10px;">Scan to open this page on a phone.</p>
+                <div class="pro-company-profile__qr-single">
+                  <img src="<%= qrMiniSiteDataUrl %>" alt="QR code for this mini-site URL" width="168" height="168" class="pro-company-profile__qr-img" />
+                </div>
               </div>
             <% } %>
 

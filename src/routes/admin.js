@@ -22,6 +22,7 @@ const {
   absoluteCompanyProfileUrl,
 } = require("../companyProfile");
 const { isValidPhoneForTenant } = require("../tenants");
+const { buildCompanyPageLocals, enrichCompanyWithCategory } = require("../companyPageRender");
 
 function getAdminTenantId(req) {
   const u = req.session && req.session.adminUser;
@@ -57,6 +58,52 @@ function filterSuffixFromQuery(req) {
   }
   const s = p.toString();
   return s ? `&${s}` : "";
+}
+
+function mergeDraftCompanyForPreview(db, baseRow, draft) {
+  const d = draft || {};
+  const gallerySource =
+    d.gallery_text !== undefined ? String(d.gallery_text) : galleryToAdminText(parseGalleryJson(baseRow.gallery_json));
+
+  let category_id = baseRow.category_id;
+  if (d.category_id !== undefined) {
+    const s = String(d.category_id).trim();
+    category_id = s === "" ? null : Number(s);
+    if (category_id != null && Number.isNaN(category_id)) category_id = null;
+  }
+
+  let years_experience = baseRow.years_experience;
+  if (d.years_experience !== undefined) {
+    const y = String(d.years_experience).trim();
+    if (y === "") years_experience = null;
+    else {
+      const n = Number(y);
+      years_experience = Number.isNaN(n) ? null : n;
+    }
+  }
+
+  const merged = {
+    ...baseRow,
+    name: d.name !== undefined ? String(d.name).trim() : baseRow.name,
+    subdomain: d.subdomain !== undefined ? String(d.subdomain).trim().toLowerCase() : baseRow.subdomain,
+    category_id,
+    headline: d.headline !== undefined ? String(d.headline).trim() : baseRow.headline,
+    about: d.about !== undefined ? String(d.about).trim() : baseRow.about,
+    services: d.services !== undefined ? String(d.services).trim() : baseRow.services,
+    phone: d.phone !== undefined ? String(d.phone).trim() : baseRow.phone,
+    email: d.email !== undefined ? String(d.email).trim() : baseRow.email,
+    location: d.location !== undefined ? String(d.location).trim() : baseRow.location,
+    featured_cta_label:
+      d.featured_cta_label !== undefined ? String(d.featured_cta_label).trim() || "Call us" : baseRow.featured_cta_label,
+    featured_cta_phone:
+      d.featured_cta_phone !== undefined ? String(d.featured_cta_phone).trim() : baseRow.featured_cta_phone,
+    years_experience,
+    service_areas: d.service_areas !== undefined ? String(d.service_areas).trim() : baseRow.service_areas,
+    hours_text: d.hours_text !== undefined ? String(d.hours_text).trim() : baseRow.hours_text,
+    logo_url: d.logo_url !== undefined ? String(d.logo_url).trim() : baseRow.logo_url,
+    gallery_json: JSON.stringify(parseGalleryAdminText(gallerySource)),
+  };
+  return enrichCompanyWithCategory(db, merged);
 }
 
 function requireManageUsers(req, res, next) {
@@ -946,6 +993,261 @@ module.exports = function adminRoutes({ db }) {
     });
   });
 
+  function syncCompanyReviews(dbConn, companyId, reviewsPayload) {
+    const list = Array.isArray(reviewsPayload) ? reviewsPayload : [];
+    const existing = dbConn.prepare("SELECT id FROM reviews WHERE company_id = ?").all(companyId).map((x) => x.id);
+    const incomingIds = new Set(
+      list.map((r) => r && r.id).filter((id) => id != null && String(id) !== "").map((id) => Number(id))
+    );
+    for (const eid of existing) {
+      if (!incomingIds.has(eid)) {
+        dbConn.prepare("DELETE FROM reviews WHERE id = ? AND company_id = ?").run(eid, companyId);
+      }
+    }
+    const ins = dbConn.prepare(
+      `INSERT INTO reviews (company_id, rating, body, author_name, created_at) VALUES (?, ?, ?, ?, datetime('now'))`
+    );
+    const upd = dbConn.prepare(
+      `UPDATE reviews SET rating = ?, body = ?, author_name = ? WHERE id = ? AND company_id = ?`
+    );
+    for (const r of list) {
+      let rating = Number(r && r.rating);
+      if (!Number.isFinite(rating)) rating = 5;
+      rating = Math.min(5, Math.max(1, rating));
+      const body = String((r && r.body) || "").trim();
+      const author = String((r && r.author_name) || "").trim() || "Customer";
+      const rid = r && r.id != null && String(r.id) !== "" ? Number(r.id) : null;
+      if (rid && !body) {
+        dbConn.prepare("DELETE FROM reviews WHERE id = ? AND company_id = ?").run(rid, companyId);
+        continue;
+      }
+      if (!body && !rid) continue;
+      if (rid) {
+        upd.run(rating, body, author, rid, companyId);
+      } else {
+        ins.run(companyId, rating, body, author);
+      }
+    }
+  }
+
+  router.get("/companies/:id/workspace", requireDirectoryEditor, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const cid = Number(req.params.id);
+    if (!cid || cid < 1) return res.status(400).send("Invalid id");
+    const company = db
+      .prepare(
+        `
+        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+        FROM companies c
+        LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+        WHERE c.id = ? AND c.tenant_id = ?
+        `
+      )
+      .get(cid, tid);
+    if (!company) return res.status(404).send("Company not found");
+    const categories = getCategoriesForSelect(db, tid);
+    const tsEdit = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    const galleryAdminText = galleryToAdminText(parseGalleryJson(company.gallery_json));
+    const baseForUrls = (process.env.BASE_DOMAIN || "").trim() || "getproapp.org";
+    const tenantSlug = tsEdit ? String(tsEdit.slug) : "";
+    const miniSiteUrl = buildCompanyMiniSiteUrl(tenantSlug, company.subdomain, baseForUrls);
+    const miniSiteLabel = companyMiniSiteLabel(tenantSlug, company.subdomain, baseForUrls);
+    const directoryProfileUrl = absoluteCompanyProfileUrl(tenantSlug, company.id);
+    const reviews = db
+      .prepare(
+        `SELECT id, rating, body, author_name, created_at FROM reviews WHERE company_id = ? ORDER BY datetime(created_at) DESC`
+      )
+      .all(cid);
+    return res.render("admin/company_workspace", {
+      company,
+      categories,
+      galleryAdminText,
+      reviews,
+      baseDomain: baseForUrls,
+      adminTenantSlug: tenantSlug,
+      miniSiteUrl,
+      miniSiteLabel,
+      directoryProfileUrl,
+      previewFramePath: `/admin/companies/${cid}/preview-frame`,
+    });
+  });
+
+  router.get("/companies/:id/preview-frame", requireDirectoryEditor, async (req, res, next) => {
+    try {
+      const tid = getAdminTenantId(req);
+      const cid = Number(req.params.id);
+      if (!cid || cid < 1) return res.status(400).type("text").send("Invalid id");
+      const company = db
+        .prepare(
+          `
+          SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+          FROM companies c
+          LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+          WHERE c.id = ? AND c.tenant_id = ?
+          `
+        )
+        .get(cid, tid);
+      if (!company) return res.status(404).type("text").send("Not found");
+      const locals = await buildCompanyPageLocals(req, db, company);
+      return res.render("company", locals);
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.post("/companies/:id/preview-draft", requireDirectoryEditor, async (req, res, next) => {
+    try {
+      const tid = getAdminTenantId(req);
+      const cid = Number(req.params.id);
+      if (!cid || cid < 1) return res.status(400).json({ error: "Invalid id" });
+      const baseRow = db
+        .prepare(
+          `
+          SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+          FROM companies c
+          LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+          WHERE c.id = ? AND c.tenant_id = ?
+          `
+        )
+        .get(cid, tid);
+      if (!baseRow) return res.status(404).json({ error: "Company not found" });
+      const draft = req.body && req.body.company ? req.body.company : {};
+      const reviews = req.body && req.body.reviews ? req.body.reviews : [];
+      const merged = mergeDraftCompanyForPreview(db, baseRow, draft);
+      const locals = await buildCompanyPageLocals(req, db, merged, { reviewOverride: reviews });
+      return res.render("company", locals, (err, html) => {
+        if (err) return next(err);
+        return res.type("html").send(html);
+      });
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.post("/companies/:id/publish", requireDirectoryEditor, requireNotViewer, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const cid = Number(req.params.id);
+    if (!cid || cid < 1) return res.status(400).json({ error: "Invalid id" });
+    const row = db.prepare("SELECT * FROM companies WHERE id = ? AND tenant_id = ?").get(cid, tid);
+    if (!row) return res.status(404).json({ error: "Company not found" });
+
+    const d = (req.body && req.body.company) || {};
+    const reviewsPayload = (req.body && req.body.reviews) || [];
+
+    const cleanName = d.name != null ? String(d.name).trim() : row.name;
+    const cleanSubdomain = d.subdomain != null ? String(d.subdomain).trim().toLowerCase() : row.subdomain;
+    if (!cleanName) return res.status(400).json({ error: "Company name is required." });
+    if (!cleanSubdomain) return res.status(400).json({ error: "Company subdomain is required." });
+
+    let catId = row.category_id;
+    if (d.category_id !== undefined) {
+      const s = String(d.category_id).trim();
+      catId = s === "" ? null : Number(s);
+      if (catId != null && Number.isNaN(catId)) catId = null;
+    }
+    if (catId) {
+      const okCat = db.prepare("SELECT id FROM categories WHERE id = ? AND tenant_id = ?").get(catId, tid);
+      if (!okCat) return res.status(400).json({ error: "Invalid category for this tenant." });
+    }
+
+    const tenantSlugRowUp = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    const phoneVal = d.phone !== undefined ? String(d.phone).trim() : row.phone;
+    const fpVal = d.featured_cta_phone !== undefined ? String(d.featured_cta_phone).trim() : row.featured_cta_phone;
+    if (tenantSlugRowUp && tenantSlugRowUp.slug === "zm") {
+      if (phoneVal && !isValidPhoneForTenant("zm", phoneVal)) {
+        return res.status(400).json({ error: "Phone must be a Zambian number: 0 followed by 9 digits (10 digits total)." });
+      }
+      if (fpVal && !isValidPhoneForTenant("zm", fpVal)) {
+        return res.status(400).json({ error: "CTA phone must be a Zambian number: 0 followed by 9 digits (10 digits total)." });
+      }
+    }
+
+    let yearsExpUp = row.years_experience;
+    if (d.years_experience !== undefined) {
+      const yoeRawUp = String(d.years_experience).trim();
+      if (yoeRawUp === "") yearsExpUp = null;
+      else {
+        yearsExpUp = Number(yoeRawUp);
+        if (Number.isNaN(yearsExpUp) || yearsExpUp < 0 || yearsExpUp > 999) {
+          return res.status(400).json({ error: "Years in business must be a number between 0 and 999." });
+        }
+      }
+    }
+
+    const galleryJsonUp = JSON.stringify(
+      parseGalleryAdminText(d.gallery_text !== undefined ? String(d.gallery_text) : galleryToAdminText(parseGalleryJson(row.gallery_json)))
+    );
+
+    try {
+      db.transaction(() => {
+        db.prepare(
+          `
+          UPDATE companies
+          SET
+            subdomain = ?,
+            name = ?,
+            category_id = ?,
+            headline = ?,
+            about = ?,
+            services = ?,
+            phone = ?,
+            email = ?,
+            location = ?,
+            featured_cta_label = ?,
+            featured_cta_phone = ?,
+            years_experience = ?,
+            service_areas = ?,
+            hours_text = ?,
+            gallery_json = ?,
+            logo_url = ?,
+            updated_at = datetime('now')
+          WHERE id = ? AND tenant_id = ?
+          `
+        ).run(
+          cleanSubdomain,
+          cleanName,
+          catId,
+          d.headline !== undefined ? String(d.headline).trim() : row.headline,
+          d.about !== undefined ? String(d.about).trim() : row.about,
+          d.services !== undefined ? String(d.services).trim() : row.services,
+          phoneVal,
+          d.email !== undefined ? String(d.email).trim() : row.email,
+          d.location !== undefined ? String(d.location).trim() : row.location,
+          d.featured_cta_label !== undefined
+            ? String(d.featured_cta_label).trim() || "Call us"
+            : row.featured_cta_label,
+          fpVal,
+          yearsExpUp,
+          d.service_areas !== undefined ? String(d.service_areas).trim() : row.service_areas,
+          d.hours_text !== undefined ? String(d.hours_text).trim() : row.hours_text,
+          galleryJsonUp,
+          d.logo_url !== undefined ? String(d.logo_url).trim() : row.logo_url,
+          cid,
+          tid
+        );
+        syncCompanyReviews(db, cid, reviewsPayload);
+      })();
+
+      const saved = db
+        .prepare(
+          `
+          SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+          FROM companies c
+          LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+          WHERE c.id = ? AND c.tenant_id = ?
+          `
+        )
+        .get(cid, tid);
+      const reviewsOut = db
+        .prepare(`SELECT id, rating, body, author_name, created_at FROM reviews WHERE company_id = ? ORDER BY datetime(created_at) DESC`)
+        .all(cid);
+      const galleryAdminTextOut = galleryToAdminText(parseGalleryJson(saved.gallery_json));
+      return res.json({ ok: true, company: saved, reviews: reviewsOut, galleryAdminText: galleryAdminTextOut });
+    } catch (e) {
+      return res.status(400).json({ error: e.message || "Could not save" });
+    }
+  });
+
   router.post("/companies", requireDirectoryEditor, requireNotViewer, (req, res) => {
     const {
       name = "",
@@ -1037,28 +1339,7 @@ module.exports = function adminRoutes({ db }) {
   });
 
   router.get("/companies/:id/edit", requireDirectoryEditor, (req, res) => {
-    const tid = getAdminTenantId(req);
-    const company = db.prepare("SELECT * FROM companies WHERE id = ? AND tenant_id = ?").get(req.params.id, tid);
-    if (!company) return res.status(404).send("Company not found");
-    const categories = getCategoriesForSelect(db, tid);
-    const tsEdit = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
-    const galleryAdminText = galleryToAdminText(parseGalleryJson(company.gallery_json));
-    const baseForUrls = (process.env.BASE_DOMAIN || "").trim() || "getproapp.org";
-    const tenantSlug = tsEdit ? String(tsEdit.slug) : "";
-    const miniSiteUrl = buildCompanyMiniSiteUrl(tenantSlug, company.subdomain, baseForUrls);
-    const miniSiteLabel = companyMiniSiteLabel(tenantSlug, company.subdomain, baseForUrls);
-    const directoryProfileUrl = absoluteCompanyProfileUrl(tenantSlug, company.id);
-    return res.render("admin/company_form", {
-      company,
-      categories,
-      baseDomain: baseForUrls,
-      adminTenantSlug: tenantSlug,
-      galleryAdminText,
-      miniSiteUrl,
-      miniSiteLabel,
-      directoryProfileUrl,
-      miniSiteExampleLabel: "",
-    });
+    return res.redirect(`/admin/companies/${encodeURIComponent(req.params.id)}/workspace`);
   });
 
   router.post("/companies/:id", requireDirectoryEditor, requireNotViewer, (req, res) => {

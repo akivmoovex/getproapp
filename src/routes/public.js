@@ -1,20 +1,12 @@
 const path = require("path");
 const fs = require("fs");
 const express = require("express");
-const QRCode = require("qrcode");
 const { getTenantById, DEFAULT_TENANT_SLUG } = require("../tenants");
 const { TENANT_ZM } = require("../tenantIds");
 const { getTenantCitiesForClient, getJoinCityWatermarkRotate } = require("../tenantCities");
 const { israelComingSoonEnabled } = require("../israelComingSoon");
 const { attachReviewStatsToCompanies } = require("../reviewStats");
-const {
-  companyProfileHref,
-  parseGalleryJson,
-  absoluteCompanyProfileUrl,
-  formatReviewDateLabel,
-  buildCompanyMiniSiteUrl,
-  companyMiniSiteLabel,
-} = require("../companyProfile");
+const { buildCompanyPageLocals } = require("../companyPageRender");
 
 function loadSearchLists() {
   const p = path.join(__dirname, "../../public/data/search-lists.json");
@@ -63,22 +55,6 @@ function directoryHrefFromTenantPrefix(prefix) {
   return `${String(prefix).replace(/\/$/, "")}/directory`;
 }
 
-/** Turn a relative path or absolute URL into a shareable absolute URL. */
-function toAbsoluteUrl(req, href) {
-  const h = String(href || "").trim();
-  if (!h) return "";
-  if (h.startsWith("http://") || h.startsWith("https://")) return h;
-  const proto = String(req.headers["x-forwarded-proto"] || req.protocol || "http")
-    .split(",")[0]
-    .trim();
-  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "")
-    .split(",")[0]
-    .trim();
-  if (!host) return "";
-  const pathPart = h.startsWith("/") ? h : `/${h}`;
-  return `${proto}://${host}${pathPart}`;
-}
-
 /** Path segments that must not be treated as company mini-site slugs (first path segment). */
 const MINI_SITE_RESERVED_SEGMENTS = new Set([
   "directory",
@@ -105,134 +81,9 @@ const MINI_SITE_RESERVED_SEGMENTS = new Set([
 module.exports = function publicRoutes({ db }) {
   const router = express.Router();
 
-  function loadCompanyProfileExtras(company) {
-    const cid = company.id;
-    const reviewsRaw = db
-      .prepare(
-        `
-        SELECT rating, body, author_name, created_at
-        FROM reviews
-        WHERE company_id = ?
-        ORDER BY datetime(created_at) DESC
-        LIMIT 60
-        `
-      )
-      .all(cid);
-
-    const reviews = reviewsRaw.map((r) => ({
-      ...r,
-      dateLabel: formatReviewDateLabel(r.created_at),
-    }));
-
-    const avgRow = db
-      .prepare(
-        `
-        SELECT ROUND(AVG(rating), 2) AS avg_rating, COUNT(*) AS n
-        FROM reviews WHERE company_id = ?
-        `
-      )
-      .get(cid);
-
-    const distRows = db
-      .prepare(
-        `
-        SELECT CAST(ROUND(rating) AS INTEGER) AS star, COUNT(*) AS n
-        FROM reviews WHERE company_id = ?
-        GROUP BY CAST(ROUND(rating) AS INTEGER)
-        `
-      )
-      .all(cid);
-
-    const star_distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    for (const r of distRows) {
-      const k = Math.min(5, Math.max(1, Number(r.star)));
-      star_distribution[k] = (star_distribution[k] || 0) + Number(r.n);
-    }
-    const star_distribution_total = Object.values(star_distribution).reduce((a, b) => a + b, 0);
-
-    const galleryItems = parseGalleryJson(company.gallery_json);
-    const logoUrl = String(company.logo_url || "").trim();
-    const mediaCarouselItems = [];
-    if (logoUrl) {
-      mediaCarouselItems.push({ url: logoUrl, caption: "", kind: "logo" });
-    }
-    for (const g of galleryItems) {
-      mediaCarouselItems.push({
-        url: g.url,
-        caption: g.caption || "",
-        kind: "gallery",
-      });
-    }
-
-    return {
-      reviews,
-      avg_rating: avgRow && avgRow.n > 0 ? avgRow.avg_rating : null,
-      review_count: avgRow ? Number(avgRow.n) : 0,
-      star_distribution,
-      star_distribution_total,
-      galleryItems,
-      mediaCarouselItems,
-    };
-  }
-
   async function renderCompanyPage(req, res, company) {
-    const tenant = getTenantById(company.tenant_id, db) || getTenantById(TENANT_ZM, db);
-    const tenantUrlPrefix = platformTenantPrefixForSlug(tenant.slug);
-    const extras = loadCompanyProfileExtras(company);
-    const profileUrl = req.tenant
-      ? companyProfileHref(req, company.id)
-      : absoluteCompanyProfileUrl(tenant.slug, company.id);
-
-    const baseDomain = process.env.BASE_DOMAIN || "";
-    const companyUrl = buildCompanyMiniSiteUrl(tenant.slug, company.subdomain, baseDomain);
-    const miniSiteLabel = companyMiniSiteLabel(tenant.slug, company.subdomain, baseDomain);
-
-    const profileQrTarget = toAbsoluteUrl(req, absoluteCompanyProfileUrl(tenant.slug, company.id));
-    const miniQrTarget = companyUrl && companyUrl !== "#" ? toAbsoluteUrl(req, companyUrl) : "";
-
-    const qrOpts = { margin: 1, width: 168, errorCorrectionLevel: "M" };
-    let qrDirectoryProfileDataUrl = "";
-    let qrMiniSiteDataUrl = "";
-    let qrUrlsMerged = false;
-    try {
-      const norm = (u) => String(u || "").replace(/\/$/, "").toLowerCase();
-      const same = profileQrTarget && miniQrTarget && norm(profileQrTarget) === norm(miniQrTarget);
-      if (same && profileQrTarget) {
-        qrDirectoryProfileDataUrl = await QRCode.toDataURL(profileQrTarget, qrOpts);
-        qrUrlsMerged = true;
-      } else {
-        const jobs = [];
-        if (profileQrTarget) jobs.push(QRCode.toDataURL(profileQrTarget, qrOpts).then((d) => ({ k: "dir", d })));
-        if (miniQrTarget) jobs.push(QRCode.toDataURL(miniQrTarget, qrOpts).then((d) => ({ k: "mini", d })));
-        const results = await Promise.all(jobs);
-        for (const r of results) {
-          if (r.k === "dir") qrDirectoryProfileDataUrl = r.d;
-          if (r.k === "mini") qrMiniSiteDataUrl = r.d;
-        }
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("[getpro] QR generation failed:", e.message);
-    }
-
-    return res.render("company", {
-      company,
-      category: company.category_slug ? { slug: company.category_slug, name: company.category_name } : null,
-      ...extras,
-      baseDomain,
-      companyUrl,
-      miniSiteLabel,
-      profileUrl,
-      qrDirectoryProfileDataUrl,
-      qrMiniSiteDataUrl,
-      qrUrlsMerged,
-      directoryHref: directoryHrefFromTenantPrefix(tenantUrlPrefix),
-      tenant,
-      tenantUrlPrefix,
-      tenantHomeHref: tenantHomeHrefFromPrefix(tenantUrlPrefix),
-      regionChoices: req.regionChoices || [],
-      ...platformSupport(),
-    });
+    const locals = await buildCompanyPageLocals(req, db, company);
+    return res.render("company", locals);
   }
 
   function tenantLocals(req) {
