@@ -102,8 +102,13 @@
 
     <div id="crm_task_overlay" class="admin-crm-overlay" aria-hidden="true" hidden>
       <div class="admin-crm-overlay__backdrop" data-crm-close-overlay tabindex="-1"></div>
-      <div class="admin-crm-overlay__dialog" role="dialog" aria-modal="true">
-        <button type="button" class="admin-crm-overlay__close" data-crm-close-overlay aria-label="Close">×</button>
+      <div class="admin-crm-overlay__dialog" role="dialog" aria-modal="true" aria-label="Task details">
+        <!-- Dismiss strip: close is not absolutely positioned over task content (avoids overlap with hero titles/actions). -->
+        <div class="admin-crm-overlay__chrome">
+          <button type="button" class="admin-crm-overlay__close" data-crm-close-overlay aria-label="Close task details">
+            ×
+          </button>
+        </div>
         <div id="crm_task_overlay_body" class="admin-crm-overlay__body"></div>
       </div>
     </div>

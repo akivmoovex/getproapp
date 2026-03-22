@@ -11,7 +11,7 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
       <div class="admin-toolbar">
-        <a class="btn" href="/admin/companies?edit=1">← All companies</a>
+        <a class="btn" href="/admin/companies?edit=1<%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">← All companies</a>
       </div>
 
       <div class="card admin-form-card admin-form-card--wide">
@@ -39,6 +39,7 @@
           action="<%= company ? '/admin/companies/' + company.id : '/admin/companies' %>"
           class="form"
         >
+          <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
           <div>
             <label for="logo_url">Logo image URL</label>
             <input

@@ -67,8 +67,14 @@
 
     <div id="admin_settings_modal" class="admin-settings-modal" aria-hidden="true" hidden>
       <div class="admin-settings-modal__backdrop" data-settings-modal-close tabindex="-1"></div>
-      <div class="admin-settings-modal__dialog" role="dialog" aria-modal="true" aria-label="Admin tool">
-        <button type="button" class="admin-settings-modal__close" data-settings-modal-close aria-label="Close">×</button>
+      <!-- Header row keeps the close control out of the iframe document (no overlap with embedded toolbars). -->
+      <div class="admin-settings-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="admin_settings_modal_title">
+        <header class="admin-settings-modal__header">
+          <h2 id="admin_settings_modal_title" class="admin-settings-modal__headline">Admin tool</h2>
+          <button type="button" class="admin-settings-modal__close" data-settings-modal-close aria-label="Close dialog">
+            ×
+          </button>
+        </header>
         <iframe id="admin_settings_iframe" class="admin-settings-modal__iframe" title="Embedded admin screen"></iframe>
       </div>
     </div>

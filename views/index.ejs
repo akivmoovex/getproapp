@@ -72,8 +72,10 @@
       aria-labelledby="wf-region-title"
       hidden
     >
-      <button type="button" class="wf-region-close-x" id="wf-region-close-x" aria-label="Close">×</button>
-      <h2 id="wf-region-title" class="wf-region-title wf-region-title--picker">Choose region</h2>
+      <div class="wf-region-sheet__header">
+        <h2 id="wf-region-title" class="wf-region-title wf-region-title--picker">Choose region</h2>
+        <button type="button" class="wf-region-close-x" id="wf-region-close-x" aria-label="Close">×</button>
+      </div>
       <div class="wf-region-actions wf-region-actions--grid">
         <% if (typeof regionChoices !== 'undefined' && regionChoices && regionChoices.length) { %>
           <% regionChoices.forEach(function (r) { %>

@@ -10,9 +10,10 @@
     <%- include('../partials/admin_nav', { navTitle: 'Tenant users', activeNav: 'users' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
+      <% var _embed = typeof embed !== 'undefined' && embed; %>
       <h1 class="section-title" style="margin-top:0;">Admin users (this region)</h1>
       <div class="admin-toolbar">
-        <a class="btn btn-primary" href="/admin/users/new">New user</a>
+        <a class="btn btn-primary" href="/admin/users/new<%= _embed ? '?embed=1' : '' %>">New user</a>
       </div>
       <div class="card">
         <div class="table-wrap">
@@ -33,7 +34,7 @@
                 <td class="muted"><%= u.role %></td>
                 <td><%= u.enabled === 0 ? 'Disabled' : 'Enabled' %></td>
                 <td class="muted"><%- include('../partials/event_time', { at: u.created_at }) %></td>
-                <td><a class="btn" href="/admin/users/<%= u.id %>/edit">Edit</a></td>
+                <td><a class="btn" href="/admin/users/<%= u.id %>/edit<%= _embed ? '?embed=1' : '' %>">Edit</a></td>
               </tr>
             <% }) %>
           </tbody>

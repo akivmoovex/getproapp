@@ -70,6 +70,25 @@ function safeCrmRedirect(req, defaultPath) {
   return defaultPath;
 }
 
+/** True when the admin view is embedded (Settings hub iframe or super-admin inline panel). Preserved via hidden `embed` on POST. */
+function isEmbedRequest(req) {
+  const q = req.query && (req.query.embed === "1" || req.query.embed === "true");
+  const b = req.body && (req.body.embed === "1" || req.body.embed === "true");
+  return !!(q || b);
+}
+
+/**
+ * Append `embed=1` to redirects so iframe loads stay chrome-less (fixes “ghost” full admin header after POST).
+ * @param {import('express').Request} req
+ * @param {string} pathWithQuery
+ */
+function redirectWithEmbed(req, pathWithQuery) {
+  if (!isEmbedRequest(req)) return pathWithQuery;
+  if (/[?&]embed=1(?:&|$)/.test(pathWithQuery)) return pathWithQuery;
+  const sep = pathWithQuery.includes("?") ? "&" : "?";
+  return `${pathWithQuery}${sep}embed=1`;
+}
+
 function getAdminTenantId(req) {
   const u = req.session && req.session.adminUser;
   if (!u) return TENANT_ZM;
@@ -718,7 +737,7 @@ module.exports = function adminRoutes({ db }) {
         role,
         tid
       );
-      return res.redirect("/admin/users");
+      return res.redirect(redirectWithEmbed(req, "/admin/users"));
     } catch (e) {
       return res.status(400).send(`Could not create user: ${e.message}`);
     }
@@ -787,7 +806,7 @@ module.exports = function adminRoutes({ db }) {
     try {
       const r = db.prepare(sql).run(...params);
       if (r.changes === 0) return res.status(404).send("User not found.");
-      return res.redirect("/admin/users");
+      return res.redirect(redirectWithEmbed(req, "/admin/users"));
     } catch (e) {
       return res.status(400).send(`Could not update user: ${e.message}`);
     }
@@ -803,7 +822,7 @@ module.exports = function adminRoutes({ db }) {
     try {
       const r = db.prepare("DELETE FROM admin_users WHERE id = ? AND tenant_id = ?").run(id, getAdminTenantId(req));
       if (r.changes === 0) return res.status(404).send("User not found.");
-      return res.redirect("/admin/users");
+      return res.redirect(redirectWithEmbed(req, "/admin/users"));
     } catch (e) {
       return res.status(400).send(`Could not delete user: ${e.message}`);
     }
@@ -988,7 +1007,7 @@ module.exports = function adminRoutes({ db }) {
     } catch (e) {
       return res.status(400).send(e.message || "Could not save");
     }
-    return res.redirect(`/admin/settings/tenant/${id}?saved=1`);
+    return res.redirect(redirectWithEmbed(req, `/admin/settings/tenant/${id}?saved=1`));
   });
 
   router.get("/categories", requireDirectoryEditor, (req, res) => {
@@ -1037,7 +1056,7 @@ module.exports = function adminRoutes({ db }) {
     try {
       const tid = getAdminTenantId(req);
       db.prepare("INSERT INTO categories (tenant_id, slug, name) VALUES (?, ?, ?)").run(tid, cleanSlug, cleanName);
-      return res.redirect("/admin/categories?edit=1");
+      return res.redirect(redirectWithEmbed(req, "/admin/categories?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not create category: ${e.message}`);
     }
@@ -1064,7 +1083,7 @@ module.exports = function adminRoutes({ db }) {
         .prepare("UPDATE categories SET slug = ?, name = ? WHERE id = ? AND tenant_id = ?")
         .run(cleanSlug, cleanName, req.params.id, tid);
       if (r.changes === 0) return res.status(404).send("Category not found");
-      return res.redirect("/admin/categories?edit=1");
+      return res.redirect(redirectWithEmbed(req, "/admin/categories?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not update category: ${e.message}`);
     }
@@ -1080,7 +1099,7 @@ module.exports = function adminRoutes({ db }) {
     });
     try {
       inTx();
-      return res.redirect("/admin/categories?edit=1");
+      return res.redirect(redirectWithEmbed(req, "/admin/categories?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not delete category: ${e.message}`);
     }
@@ -1126,7 +1145,7 @@ module.exports = function adminRoutes({ db }) {
         enabled,
         bigCity
       );
-      return res.redirect("/admin/cities?edit=1");
+      return res.redirect(redirectWithEmbed(req, "/admin/cities?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not add city: ${e.message}`);
     }
@@ -1142,13 +1161,13 @@ module.exports = function adminRoutes({ db }) {
       .prepare("UPDATE tenant_cities SET name = ?, enabled = ?, big_city = ? WHERE id = ? AND tenant_id = ?")
       .run(cleanName, enabled, bigCity, req.params.id, tid);
     if (r.changes === 0) return res.status(404).send("City not found");
-    return res.redirect("/admin/cities?edit=1");
+    return res.redirect(redirectWithEmbed(req, "/admin/cities?edit=1"));
   });
 
   router.post("/cities/:id/delete", requireDirectoryEditor, requireNotViewer, (req, res) => {
     const tid = getAdminTenantId(req);
     db.prepare("DELETE FROM tenant_cities WHERE id = ? AND tenant_id = ?").run(req.params.id, tid);
-    return res.redirect("/admin/cities?edit=1");
+    return res.redirect(redirectWithEmbed(req, "/admin/cities?edit=1"));
   });
 
   router.get("/companies", requireDirectoryEditor, (req, res) => {
@@ -1517,14 +1536,14 @@ module.exports = function adminRoutes({ db }) {
         galleryJson,
         String(logo_url || "").trim()
       );
-      return res.redirect("/admin/companies?edit=1");
+      return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not create company: ${e.message}`);
     }
   });
 
   router.get("/companies/:id/edit", requireDirectoryEditor, (req, res) => {
-    return res.redirect(`/admin/companies/${encodeURIComponent(req.params.id)}/workspace`);
+    return res.redirect(redirectWithEmbed(req, `/admin/companies/${encodeURIComponent(req.params.id)}/workspace`));
   });
 
   router.post("/companies/:id", requireDirectoryEditor, requireNotViewer, (req, res) => {
@@ -1627,7 +1646,7 @@ module.exports = function adminRoutes({ db }) {
         tid
       );
       if (r.changes === 0) return res.status(404).send("Company not found");
-      return res.redirect("/admin/companies?edit=1");
+      return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not update company: ${e.message}`);
     }
@@ -1640,7 +1659,7 @@ module.exports = function adminRoutes({ db }) {
     try {
       db.prepare("DELETE FROM leads WHERE company_id = ? AND tenant_id = ?").run(companyId, tid);
       db.prepare("DELETE FROM companies WHERE id = ? AND tenant_id = ?").run(companyId, tid);
-      return res.redirect("/admin/companies?edit=1");
+      return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not delete company: ${e.message}`);
     }
@@ -1777,7 +1796,7 @@ module.exports = function adminRoutes({ db }) {
     } catch (e) {
       return res.status(400).send(e.message || "Could not save");
     }
-    return res.redirect(`/admin/leads/${id}/edit`);
+    return res.redirect(redirectWithEmbed(req, `/admin/leads/${id}/edit`));
   });
 
   function requireCrmAccess(req, res, next) {

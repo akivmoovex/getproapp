@@ -16,6 +16,7 @@
 
       <div class="card admin-form-card">
         <form method="post" action="/admin/users/<%= user.id %>" class="form">
+          <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
           <div>
             <label for="username">Username</label>
             <input id="username" name="username" value="<%= user.username %>" autocomplete="username" required />
@@ -42,12 +43,13 @@
           </div>
           <div class="admin-gate-actions">
             <button class="btn btn-primary" type="submit">Save changes</button>
-            <a class="btn" href="/admin/users">Cancel</a>
+            <a class="btn" href="/admin/users<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">Cancel</a>
           </div>
         </form>
 
         <% if (typeof currentUserId !== 'undefined' && user.id !== currentUserId) { %>
         <form method="post" action="/admin/users/<%= user.id %>/delete" style="margin-top:22px;" onsubmit="return confirm('Delete this user permanently?');">
+          <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
           <button class="btn" type="submit" style="border-color: var(--flash-error-border); color: var(--flash-error-text);">Delete user</button>
         </form>
         <% } %>

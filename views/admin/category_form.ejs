@@ -11,7 +11,7 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
       <div class="admin-toolbar">
-        <a class="btn" href="/admin/categories?edit=1">← All professions</a>
+        <a class="btn" href="/admin/categories?edit=1<%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">← All professions</a>
       </div>
 
       <div class="card admin-form-card">
@@ -20,6 +20,7 @@
           action="<%= category ? '/admin/categories/' + category.id : '/admin/categories' %>"
           class="form"
         >
+          <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
           <div>
             <label for="name">Profession name</label>
             <input id="name" name="name" value="<%= category ? category.name : '' %>" required />

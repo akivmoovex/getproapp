@@ -26,6 +26,6 @@ If you see files like **`netraz.sqlite`**, **`pronline.sqlite`**, or other extra
 - **Grids:** `.admin-settings-hub__grid`, `.admin-filter-form__grid` — use `repeat(auto-fill, minmax(...))` and `--admin-gap`.
 - **Cards:** `.admin-main .card` — shared border-radius and padding via tokens; CRM uses `.crm-task-section` for task-specific density.
 - **Tables:** `.table`, `.table-wrap`, `.admin-settings-tenant-table` — keep cell padding aligned with `--admin-table-cell-padding` where overridden.
-- **Popups:** `.admin-settings-modal__dialog` — size driven by `--admin-modal-*`; iframe fills remaining space below the close control.
+- **Popups:** `.admin-settings-modal__dialog` — size driven by `--admin-modal-*`; **header row** (`.admin-settings-modal__header`) holds title + close; iframe fills the area **below** (no overlapping ×). See [`MODALS.md`](./MODALS.md).
 
 When adding new admin screens, prefer these classes and variables instead of one-off `padding`/`max-width` values.

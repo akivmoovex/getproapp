@@ -58,7 +58,7 @@
       <p class="admin-intro">View-only list. Choose <strong>Edit</strong> to add, change, or remove professions.</p>
       <% } else { %>
       <div class="admin-toolbar">
-        <a class="btn btn-primary" href="/admin/categories/new">New profession</a>
+        <a class="btn btn-primary" href="/admin/categories/new<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">New profession</a>
       </div>
       <% } %>
 

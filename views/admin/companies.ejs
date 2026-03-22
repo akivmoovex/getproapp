@@ -10,11 +10,13 @@
     <%- include('../partials/admin_nav', { navTitle: 'Companies', activeNav: 'companies' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
+      <% var _fs = typeof filterSuffix !== 'undefined' ? filterSuffix : ''; %>
+      <% var _embed = typeof embed !== 'undefined' && embed; %>
       <div class="admin-super-users__topbar">
         <% if (!editMode) { %>
-        <a class="btn btn-primary" href="/admin/companies?edit=1<%= typeof filterSuffix !== 'undefined' ? filterSuffix : '' %>">Edit</a>
+        <a class="btn btn-primary" href="/admin/companies?edit=1<%= _fs %><%= _embed ? '&embed=1' : '' %>">Edit</a>
         <% } else { %>
-        <a class="btn" href="/admin/companies<%= typeof filterSuffix !== 'undefined' && filterSuffix ? '?' + filterSuffix.slice(1) : '' %>">Done</a>
+        <a class="btn" href="/admin/companies<%= _fs ? '?' + _fs.slice(1) + (_embed ? '&embed=1' : '') : (_embed ? '?embed=1' : '') %>">Done</a>
         <% } %>
       </div>
 
@@ -22,6 +24,7 @@
       <% var f = typeof filters !== 'undefined' ? filters : {}; %>
       <form method="get" action="/admin/companies" class="admin-filter-form">
         <% if (editMode) { %><input type="hidden" name="edit" value="1" /><% } %>
+        <% if (_embed) { %><input type="hidden" name="embed" value="1" /><% } %>
         <div class="admin-filter-form__grid">
           <div>
             <label class="admin-filter-form__label" for="q_name">Name</label>
@@ -42,13 +45,13 @@
         </div>
         <div class="admin-filter-form__actions">
           <button class="btn btn-primary" type="submit">Apply filters</button>
-          <a class="btn" href="/admin/companies<%= editMode ? '?edit=1' : '' %>">Clear</a>
+          <a class="btn" href="/admin/companies<%= editMode ? '?edit=1' : '' %><%= editMode && _embed ? '&embed=1' : (!editMode && _embed ? '?embed=1' : '') %>">Clear</a>
         </div>
       </form>
 
       <% if (editMode) { %>
       <div class="admin-toolbar">
-        <a class="btn btn-primary" href="/admin/companies/new">New company</a>
+        <a class="btn btn-primary" href="/admin/companies/new<%= _embed ? '?embed=1' : '' %>">New company</a>
       </div>
       <% } else { %>
       <p class="admin-intro">View-only list. Choose <strong>Edit</strong> to add or change companies.</p>
@@ -93,7 +96,7 @@
                   <% } %>
                 </td>
                 <td class="muted"><%- include('../partials/event_time', { at: c.updated_at }) %></td>
-                <% if (editMode) { %><td><a class="btn" href="/admin/companies/<%= c.id %>/workspace">Edit</a></td><% } %>
+                <% if (editMode) { %><td><a class="btn" href="/admin/companies/<%= c.id %>/workspace<%= _embed ? '?embed=1' : '' %>">Edit</a></td><% } %>
               </tr>
             <% }) %>
           </tbody>

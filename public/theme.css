@@ -136,6 +136,13 @@
   --admin-modal-max-width: 960px;
   --admin-modal-max-height-vh: 88vh;
   --admin-modal-max-height-px: 820px;
+  /* M3-ish modal chrome (8px grid): header strip + 48px minimum touch targets */
+  --modal-space-1: 8px;
+  --modal-space-2: 16px;
+  --modal-space-3: 24px;
+  --modal-header-min-height: 48px;
+  --modal-close-btn-size: 48px;
+  --modal-z-dialog: 10060;
 
   /* Material Design 3 — system tokens */
   --md-sys-spacing-1: var(--spacing-1);
