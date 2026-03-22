@@ -196,7 +196,7 @@
                   </div>
                   <div>
                     <label for="lead_email">Email (optional)</label>
-                    <input id="lead_email" name="email" type="email" autocomplete="email" />
+                    <input id="lead_email" name="email" type="text" inputmode="email" autocomplete="email" />
                   </div>
                   <div>
                     <label for="lead_message">How can we help?</label>
@@ -217,7 +217,8 @@
                 <li><span class="muted">Phone</span><br /><a href="tel:<%= company.phone %>"><%= company.phone %></a></li>
               <% } %>
               <% if (company.email) { %>
-                <li><span class="muted">Email</span><br /><a href="mailto:<%= company.email %>"><%= company.email %></a></li>
+                <% var _mail = String(company.email || '').trim(); %>
+                <li><span class="muted">Email</span><br /><a href="mailto:<%= encodeURIComponent(_mail) %>"><%= _mail %></a></li>
               <% } %>
               <% if (company.location) { %>
                 <li><span class="muted">Location</span><br /><%= company.location %></li>

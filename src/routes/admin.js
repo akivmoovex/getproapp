@@ -993,43 +993,6 @@ module.exports = function adminRoutes({ db }) {
     });
   });
 
-  function syncCompanyReviews(dbConn, companyId, reviewsPayload) {
-    const list = Array.isArray(reviewsPayload) ? reviewsPayload : [];
-    const existing = dbConn.prepare("SELECT id FROM reviews WHERE company_id = ?").all(companyId).map((x) => x.id);
-    const incomingIds = new Set(
-      list.map((r) => r && r.id).filter((id) => id != null && String(id) !== "").map((id) => Number(id))
-    );
-    for (const eid of existing) {
-      if (!incomingIds.has(eid)) {
-        dbConn.prepare("DELETE FROM reviews WHERE id = ? AND company_id = ?").run(eid, companyId);
-      }
-    }
-    const ins = dbConn.prepare(
-      `INSERT INTO reviews (company_id, rating, body, author_name, created_at) VALUES (?, ?, ?, ?, datetime('now'))`
-    );
-    const upd = dbConn.prepare(
-      `UPDATE reviews SET rating = ?, body = ?, author_name = ? WHERE id = ? AND company_id = ?`
-    );
-    for (const r of list) {
-      let rating = Number(r && r.rating);
-      if (!Number.isFinite(rating)) rating = 5;
-      rating = Math.min(5, Math.max(1, rating));
-      const body = String((r && r.body) || "").trim();
-      const author = String((r && r.author_name) || "").trim() || "Customer";
-      const rid = r && r.id != null && String(r.id) !== "" ? Number(r.id) : null;
-      if (rid && !body) {
-        dbConn.prepare("DELETE FROM reviews WHERE id = ? AND company_id = ?").run(rid, companyId);
-        continue;
-      }
-      if (!body && !rid) continue;
-      if (rid) {
-        upd.run(rating, body, author, rid, companyId);
-      } else {
-        ins.run(companyId, rating, body, author);
-      }
-    }
-  }
-
   router.get("/companies/:id/workspace", requireDirectoryEditor, (req, res) => {
     const tid = getAdminTenantId(req);
     const cid = Number(req.params.id);
@@ -1053,16 +1016,10 @@ module.exports = function adminRoutes({ db }) {
     const miniSiteUrl = buildCompanyMiniSiteUrl(tenantSlug, company.subdomain, baseForUrls);
     const miniSiteLabel = companyMiniSiteLabel(tenantSlug, company.subdomain, baseForUrls);
     const directoryProfileUrl = absoluteCompanyProfileUrl(tenantSlug, company.id);
-    const reviews = db
-      .prepare(
-        `SELECT id, rating, body, author_name, created_at FROM reviews WHERE company_id = ? ORDER BY datetime(created_at) DESC`
-      )
-      .all(cid);
     return res.render("admin/company_workspace", {
       company,
       categories,
       galleryAdminText,
-      reviews,
       baseDomain: baseForUrls,
       adminTenantSlug: tenantSlug,
       miniSiteUrl,
@@ -1112,9 +1069,8 @@ module.exports = function adminRoutes({ db }) {
         .get(cid, tid);
       if (!baseRow) return res.status(404).json({ error: "Company not found" });
       const draft = req.body && req.body.company ? req.body.company : {};
-      const reviews = req.body && req.body.reviews ? req.body.reviews : [];
       const merged = mergeDraftCompanyForPreview(db, baseRow, draft);
-      const locals = await buildCompanyPageLocals(req, db, merged, { reviewOverride: reviews });
+      const locals = await buildCompanyPageLocals(req, db, merged, {});
       return res.render("company", locals, (err, html) => {
         if (err) return next(err);
         return res.type("html").send(html);
@@ -1132,7 +1088,6 @@ module.exports = function adminRoutes({ db }) {
     if (!row) return res.status(404).json({ error: "Company not found" });
 
     const d = (req.body && req.body.company) || {};
-    const reviewsPayload = (req.body && req.body.reviews) || [];
 
     const cleanName = d.name != null ? String(d.name).trim() : row.name;
     const cleanSubdomain = d.subdomain != null ? String(d.subdomain).trim().toLowerCase() : row.subdomain;
@@ -1225,7 +1180,6 @@ module.exports = function adminRoutes({ db }) {
           cid,
           tid
         );
-        syncCompanyReviews(db, cid, reviewsPayload);
       })();
 
       const saved = db

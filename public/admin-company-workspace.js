@@ -6,7 +6,6 @@
   var savedState = {
     company: JSON.parse(JSON.stringify(W.company)),
     galleryAdminText: W.galleryAdminText || "",
-    reviews: JSON.parse(JSON.stringify(W.reviews || [])),
   };
   var draft = clone(savedState);
 
@@ -22,8 +21,6 @@
     dialog: document.querySelector("[data-ws-dialog]"),
     dialogCancel: document.querySelector("[data-ws-dialog-cancel]"),
     dialogLeave: document.querySelector("[data-ws-dialog-leave]"),
-    reviewsRoot: document.querySelector("[data-ws-reviews]"),
-    addReview: document.querySelector("[data-ws-add-review]"),
     overlay: document.querySelector("[data-ws-overlay]"),
   };
 
@@ -51,7 +48,6 @@
       var v = c[key];
       inp.value = v != null ? String(v) : "";
     });
-    renderReviewRows(st.reviews);
   }
 
   function collectFormState() {
@@ -75,92 +71,13 @@
     return {
       company: c,
       galleryAdminText: galleryText ? galleryText.value : "",
-      reviews: collectReviewsFromDom(),
     };
-  }
-
-  function collectReviewsFromDom() {
-    var out = [];
-    document.querySelectorAll("[data-ws-review-row]").forEach(function (row) {
-      var id = row.getAttribute("data-review-id");
-      var rating = row.querySelector("[data-review-rating]");
-      var author = row.querySelector("[data-review-author]");
-      var body = row.querySelector("[data-review-body]");
-      var o = {
-        rating: rating ? Number(rating.value) : 5,
-        author_name: author ? author.value : "",
-        body: body ? body.value : "",
-      };
-      if (id) o.id = Number(id);
-      out.push(o);
-    });
-    return out;
-  }
-
-  function renderReviewRows(reviews) {
-    if (!els.reviewsRoot) return;
-    els.reviewsRoot.innerHTML = "";
-    (reviews || []).forEach(function (r) {
-      var row = document.createElement("div");
-      row.className = "admin-workspace__review-row";
-      row.setAttribute("data-ws-review-row", "");
-      if (r.id) row.setAttribute("data-review-id", String(r.id));
-
-      var grid = document.createElement("div");
-      grid.className = "admin-workspace__review-grid";
-
-      var lblR = document.createElement("label");
-      lblR.appendChild(document.createTextNode("Rating "));
-      var inpR = document.createElement("input");
-      inpR.type = "number";
-      inpR.min = "1";
-      inpR.max = "5";
-      inpR.step = "0.01";
-      inpR.setAttribute("data-review-rating", "");
-      inpR.value = r.rating != null ? String(r.rating) : "5";
-      lblR.appendChild(inpR);
-      grid.appendChild(lblR);
-
-      var lblA = document.createElement("label");
-      lblA.appendChild(document.createTextNode("Author "));
-      var inpA = document.createElement("input");
-      inpA.type = "text";
-      inpA.setAttribute("data-review-author", "");
-      inpA.value = r.author_name || "";
-      lblA.appendChild(inpA);
-      grid.appendChild(lblA);
-
-      row.appendChild(grid);
-
-      var lblB = document.createElement("label");
-      lblB.className = "admin-workspace__review-body-label";
-      lblB.appendChild(document.createTextNode("Review "));
-      var ta = document.createElement("textarea");
-      ta.rows = 3;
-      ta.setAttribute("data-review-body", "");
-      ta.value = r.body || "";
-      lblB.appendChild(ta);
-      row.appendChild(lblB);
-
-      var rm = document.createElement("button");
-      rm.type = "button";
-      rm.className = "btn admin-workspace__review-remove";
-      rm.setAttribute("data-review-remove", "");
-      rm.textContent = "Remove";
-      rm.addEventListener("click", function () {
-        row.remove();
-      });
-      row.appendChild(rm);
-
-      els.reviewsRoot.appendChild(row);
-    });
   }
 
   function mergeDraftForApi(st) {
     var c = Object.assign({}, st.company);
     return {
       company: Object.assign({}, c, { gallery_text: st.galleryAdminText }),
-      reviews: st.reviews,
     };
   }
 
@@ -262,21 +179,6 @@
     });
   }
 
-  if (els.addReview) {
-    els.addReview.addEventListener("click", function () {
-      var cur = collectFormState();
-      cur.reviews.push({ rating: 5, author_name: "", body: "" });
-      draft = cur;
-      renderReviewRows(cur.reviews);
-      var rows = document.querySelectorAll("[data-ws-review-row]");
-      var last = rows[rows.length - 1];
-      if (last) {
-        var ta = last.querySelector("[data-review-body]");
-        if (ta) ta.focus();
-      }
-    });
-  }
-
   if (els.btnPublish) {
     els.btnPublish.addEventListener("click", function () {
       var payload = mergeDraftForApi(draft);
@@ -318,7 +220,6 @@
             logo_url: j.company.logo_url,
           };
           savedState.galleryAdminText = j.galleryAdminText || "";
-          savedState.reviews = j.reviews || [];
           draft = clone(savedState);
           if (els.overlay) {
             els.overlay.hidden = true;
