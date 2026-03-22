@@ -17,7 +17,10 @@ async function ensureAdminUser({ db }) {
   const passwordHash = await bcrypt.hash(password, 12);
   const envRole = normalizeRole(process.env.ADMIN_ROLE);
   const role =
-    envRole === ROLES.TENANT_MANAGER || envRole === ROLES.TENANT_EDITOR || envRole === ROLES.TENANT_VIEWER
+    envRole === ROLES.TENANT_MANAGER ||
+    envRole === ROLES.TENANT_EDITOR ||
+    envRole === ROLES.TENANT_AGENT ||
+    envRole === ROLES.TENANT_VIEWER
       ? envRole
       : ROLES.SUPER_ADMIN;
   const tenantId = role === ROLES.SUPER_ADMIN ? null : Number(process.env.ADMIN_TENANT_ID) || TENANT_ZM;

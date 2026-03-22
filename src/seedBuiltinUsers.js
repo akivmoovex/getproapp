@@ -31,6 +31,7 @@ function seedBuiltinUsers(db) {
   };
 
   ensure("tenantmanager", "1234", ROLES.TENANT_MANAGER, TENANT_ZM);
+  ensure("crmagent", "1234", ROLES.TENANT_AGENT, TENANT_ZM);
   ensure("superadmin", "1234", ROLES.SUPER_ADMIN, null);
 }
 

@@ -3,6 +3,7 @@ const ROLES = {
   SUPER_ADMIN: "super_admin",
   TENANT_MANAGER: "tenant_manager",
   TENANT_EDITOR: "tenant_editor",
+  TENANT_AGENT: "tenant_agent",
   TENANT_VIEWER: "tenant_viewer",
 };
 
@@ -44,6 +45,40 @@ function canAccessSuperConsole(role) {
   return normalizeRole(role) === ROLES.SUPER_ADMIN;
 }
 
+/** CRM: any logged-in tenant user (incl. viewer read-only). Super admin included. */
+function canAccessCrm(role) {
+  const n = normalizeRole(role);
+  return (
+    n === ROLES.SUPER_ADMIN ||
+    n === ROLES.TENANT_MANAGER ||
+    n === ROLES.TENANT_EDITOR ||
+    n === ROLES.TENANT_AGENT ||
+    n === ROLES.TENANT_VIEWER
+  );
+}
+
+/** CRM: claim tasks, change status (not read-only viewer). */
+function canMutateCrm(role) {
+  const n = normalizeRole(role);
+  return (
+    n === ROLES.SUPER_ADMIN ||
+    n === ROLES.TENANT_MANAGER ||
+    n === ROLES.TENANT_EDITOR ||
+    n === ROLES.TENANT_AGENT
+  );
+}
+
+/** Can see / claim pool of unassigned tasks (Admin = manager, Agent = editor/agent; not viewer). */
+function canClaimCrmTasks(role) {
+  const n = normalizeRole(role);
+  return (
+    n === ROLES.SUPER_ADMIN ||
+    n === ROLES.TENANT_MANAGER ||
+    n === ROLES.TENANT_EDITOR ||
+    n === ROLES.TENANT_AGENT
+  );
+}
+
 module.exports = {
   ROLES,
   ALL_ROLES,
@@ -53,4 +88,7 @@ module.exports = {
   canEditDirectoryData,
   canManageTenantUsers,
   canAccessSuperConsole,
+  canAccessCrm,
+  canMutateCrm,
+  canClaimCrmTasks,
 };

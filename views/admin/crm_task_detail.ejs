@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Task #<%= task.id %> | CRM | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app">
+    <%- include('../partials/admin_nav', { navTitle: 'CRM task', activeNav: 'crm' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <div class="admin-toolbar">
+          <a class="btn" href="/admin/crm?tab=available">← CRM</a>
+        </div>
+
+        <h1 class="section-title" style="margin-top:0;">Task #<%= task.id %></h1>
+        <p class="muted" style="margin-top:-6px;">
+          Status: <strong><%= typeof crmTaskStatusLabel === 'function' ? crmTaskStatusLabel(task.status) : task.status %></strong>
+          <% if (task.owner_username) { %> · Owner: <strong><%= task.owner_username %></strong><% } else { %> · <em>Unassigned</em><% } %>
+        </p>
+
+        <div class="card" style="margin-bottom:20px;">
+          <h2 class="section-title" style="margin-top:0;font-size:1.05rem;">Details</h2>
+          <p style="font-weight:800;font-size:1.1rem;margin:0 0 8px;"><%= task.title %></p>
+          <% if (task.description) { %>
+            <div style="white-space:pre-wrap;line-height:1.55;"><%= task.description %></div>
+          <% } else { %>
+            <p class="muted">No description.</p>
+          <% } %>
+          <p class="muted" style="font-size:12px;margin-top:12px;">
+            Created <%= task.created_at %><% if (task.creator_username) { %> by <%= task.creator_username %><% } %>
+            · Updated <%= task.updated_at %>
+          </p>
+        </div>
+
+        <% if (showClaim && canClaimCrmTasks) { %>
+          <div class="card admin-form-card" style="margin-bottom:20px;">
+            <p style="margin:0 0 12px;font-weight:700;">This task is unassigned.</p>
+            <form method="post" action="/admin/crm/tasks/<%= task.id %>/claim">
+              <button class="btn btn-primary" type="submit">Assign to me</button>
+            </form>
+          </div>
+        <% } %>
+
+        <% if (canEdit) { %>
+          <div class="card admin-form-card" style="margin-bottom:20px;">
+            <h2 class="section-title" style="margin-top:0;font-size:1.05rem;">Update status</h2>
+            <p class="muted" style="font-size:13px;">Only the owner can change status.</p>
+            <form method="post" action="/admin/crm/tasks/<%= task.id %>/status" class="form">
+              <div>
+                <label for="crm_status">Status</label>
+                <select id="crm_status" name="status" required>
+                  <% (CRM_TASK_STATUSES || []).forEach(function(st) { %>
+                    <option value="<%= st %>" <%= currentStatus === st ? 'selected' : '' %>><%= typeof crmTaskStatusLabel === 'function' ? crmTaskStatusLabel(st) : st %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="admin-gate-actions">
+                <button class="btn btn-primary" type="submit">Save status</button>
+              </div>
+            </form>
+          </div>
+        <% } else if (canMutateCrm && !isOwner && task.owner_id) { %>
+          <p class="muted">Only <strong><%= task.owner_username || 'the owner' %></strong> can change this task’s status.</p>
+        <% } %>
+
+        <div class="card">
+          <h2 class="section-title" style="margin-top:0;font-size:1.05rem;">History</h2>
+          <% if (!auditLogs || auditLogs.length === 0) { %>
+            <p class="muted">No audit entries yet.</p>
+          <% } else { %>
+            <ul class="admin-crm-audit">
+              <% auditLogs.forEach(function(a) { %>
+                <li class="admin-crm-audit__row">
+                  <div class="admin-crm-audit__meta">
+                    <span class="admin-crm-audit__time"><%= a.created_at %></span>
+                    <span class="admin-crm-audit__actor"><%= a.actor_username || '—' %></span>
+                    <span class="kbd"><%= a.action_type %></span>
+                  </div>
+                  <div class="admin-crm-audit__details"><%= a.details %></div>
+                </li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

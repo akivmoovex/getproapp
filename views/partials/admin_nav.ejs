@@ -4,6 +4,7 @@
   const isSuper = !!nav.isSuper;
   const canEdit = !!nav.canEditDirectory;
   const canUsers = !!nav.canManageUsers;
+  const canCrm = !!nav.canAccessCrm;
   const scoped = !!nav.tenantScoped;
   const title = typeof navTitle !== 'undefined' ? navTitle : '';
   const scopeTenant = typeof adminScopeTenant !== 'undefined' && adminScopeTenant ? adminScopeTenant : null;
@@ -46,6 +47,9 @@
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'cities' ? 'admin-nav__link--active' : '' %>" href="/admin/cities">Cities</a>
         <% } %>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'leads' ? 'admin-nav__link--active' : '' %>" href="/admin/leads">Leads</a>
+        <% if (canCrm) { %>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'crm' ? 'admin-nav__link--active' : '' %>" href="/admin/crm">CRM</a>
+        <% } %>
         <% if (canUsers && !isViewer) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'users' ? 'admin-nav__link--active' : '' %>" href="/admin/users">Users</a>
         <% } %>

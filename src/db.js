@@ -1036,6 +1036,47 @@ try {
   console.error("[getpro] leads comments migration:", e.message);
 }
 
+/** Multi-tenant CRM tasks + audit trail. */
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("crm_tasks_v1")) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS crm_tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        title TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'new',
+        owner_id INTEGER REFERENCES admin_users(id),
+        created_by_id INTEGER REFERENCES admin_users(id),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_crm_tasks_tenant ON crm_tasks(tenant_id);
+      CREATE INDEX IF NOT EXISTS idx_crm_tasks_owner ON crm_tasks(owner_id);
+      CREATE INDEX IF NOT EXISTS idx_crm_tasks_status ON crm_tasks(status);
+
+      CREATE TABLE IF NOT EXISTS crm_audit_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        task_id INTEGER NOT NULL REFERENCES crm_tasks(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES admin_users(id),
+        action_type TEXT NOT NULL,
+        details TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_crm_audit_task ON crm_audit_logs(task_id);
+      CREATE INDEX IF NOT EXISTS idx_crm_audit_tenant ON crm_audit_logs(tenant_id);
+    `);
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("crm_tasks_v1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] crm_tasks migration:", e.message);
+}
+
 function run(query, params = []) {
   return db.prepare(query).run(params);
 }

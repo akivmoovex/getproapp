@@ -30,6 +30,7 @@
             <select id="role" name="role">
               <option value="tenant_manager" <%= user.role === 'tenant_manager' ? 'selected' : '' %>>tenant_manager</option>
               <option value="tenant_editor" <%= user.role === 'tenant_editor' ? 'selected' : '' %>>tenant_editor</option>
+              <option value="tenant_agent" <%= user.role === 'tenant_agent' ? 'selected' : '' %>>tenant_agent</option>
               <option value="tenant_viewer" <%= user.role === 'tenant_viewer' ? 'selected' : '' %>>tenant_viewer</option>
             </select>
           </div>

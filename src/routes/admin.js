@@ -10,7 +10,15 @@ const {
   isSuperAdmin,
   isTenantViewer,
 } = require("../auth");
-const { canManageTenantUsers, normalizeRole, ROLES, canEditDirectoryData } = require("../roles");
+const {
+  canManageTenantUsers,
+  normalizeRole,
+  ROLES,
+  canEditDirectoryData,
+  canAccessCrm,
+  canMutateCrm,
+  canClaimCrmTasks,
+} = require("../roles");
 const { STAGES, normalizeStage } = require("../tenantStages");
 const { TENANT_ZM } = require("../tenantIds");
 const {
@@ -24,6 +32,8 @@ const {
 const { isValidPhoneForTenant } = require("../tenants");
 const { LEAD_STATUSES, normalizeLeadStatus, leadStatusLabel } = require("../leadStatuses");
 const { buildCompanyPageLocals, enrichCompanyWithCategory } = require("../companyPageRender");
+const { CRM_TASK_STATUSES, normalizeCrmTaskStatus, crmTaskStatusLabel } = require("../crmTaskStatuses");
+const { insertCrmAudit } = require("../crmAudit");
 
 function getAdminTenantId(req) {
   const u = req.session && req.session.adminUser;
@@ -191,6 +201,9 @@ module.exports = function adminRoutes({ db }) {
       canEditDirectory: canEditDirectoryData(u.role),
       canManageUsers: canManageTenantUsers(u.role),
       tenantScoped: tid != null,
+      canAccessCrm: canAccessCrm(u.role),
+      canMutateCrm: canMutateCrm(u.role),
+      canClaimCrmTasks: canClaimCrmTasks(u.role),
     };
     if (isSuperAdmin(u.role)) {
       const tn = db.prepare("SELECT id, slug, name FROM tenants WHERE id = ?").get(tid);
@@ -394,7 +407,7 @@ module.exports = function adminRoutes({ db }) {
     return res.render("admin/super_user_form", {
       error: null,
       tenants,
-      roles: [ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_VIEWER],
+      roles: [ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER],
     });
   });
 
@@ -423,7 +436,11 @@ module.exports = function adminRoutes({ db }) {
       if (!tr) return res.status(400).send("Invalid tenant.");
     }
 
-    if (![ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_VIEWER].includes(role)) {
+    if (
+      ![ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER].includes(
+        role
+      )
+    ) {
       return res.status(400).send("Invalid role.");
     }
 
@@ -466,7 +483,7 @@ module.exports = function adminRoutes({ db }) {
       user: row,
       error: null,
       tenants,
-      roles: [ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_VIEWER],
+      roles: [ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER],
       currentUserId: req.session.adminUser.id,
       currentTenantLabel,
     });
@@ -500,7 +517,11 @@ module.exports = function adminRoutes({ db }) {
       const tr = db.prepare("SELECT id FROM tenants WHERE id = ?").get(tenantId);
       if (!tr) return res.status(400).send("Invalid tenant.");
     }
-    if (![ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_VIEWER].includes(role)) {
+    if (
+      ![ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER].includes(
+        role
+      )
+    ) {
       return res.status(400).send("Invalid role.");
     }
     if (target.id === req.session.adminUser.id && enabled === 0) {
@@ -626,7 +647,7 @@ module.exports = function adminRoutes({ db }) {
     ) {
       return res.status(400).send("Invalid role for this action.");
     }
-    if (![ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_VIEWER].includes(role)) {
+    if (![ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER].includes(role)) {
       return res.status(400).send("Invalid role.");
     }
     const hash = await bcrypt.hash(password, 12);
@@ -685,7 +706,7 @@ module.exports = function adminRoutes({ db }) {
     ) {
       return res.status(400).send("Invalid role for this action.");
     }
-    if (![ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_VIEWER].includes(role)) {
+    if (![ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER].includes(role)) {
       return res.status(400).send("Invalid role.");
     }
     if (target.id === req.session.adminUser.id && enabled === 0) {
@@ -1541,6 +1562,202 @@ module.exports = function adminRoutes({ db }) {
       return res.status(400).send(e.message || "Could not save");
     }
     return res.redirect(`/admin/leads/${id}/edit`);
+  });
+
+  function requireCrmAccess(req, res, next) {
+    if (!req.session.adminUser) return res.redirect("/admin/login");
+    if (!canAccessCrm(req.session.adminUser.role)) {
+      return res.status(403).type("text").send("CRM is not available for your role.");
+    }
+    return next();
+  }
+
+  router.get("/crm", requireCrmAccess, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const uid = req.session.adminUser.id;
+    const tab = String(req.query.tab || "available").toLowerCase() === "mine" ? "mine" : "available";
+
+    const availableTasks = db
+      .prepare(
+        `
+        SELECT t.*, u.username AS owner_username
+        FROM crm_tasks t
+        LEFT JOIN admin_users u ON u.id = t.owner_id
+        WHERE t.tenant_id = ? AND t.owner_id IS NULL AND t.status = 'new'
+        ORDER BY datetime(t.created_at) DESC
+        `
+      )
+      .all(tid);
+
+    const myTasks = db
+      .prepare(
+        `
+        SELECT t.*, u.username AS owner_username
+        FROM crm_tasks t
+        LEFT JOIN admin_users u ON u.id = t.owner_id
+        WHERE t.tenant_id = ? AND t.owner_id = ? AND t.status != 'completed'
+        ORDER BY datetime(t.updated_at) DESC
+        `
+      )
+      .all(tid, uid);
+
+    return res.render("admin/crm", {
+      activeNav: "crm",
+      tab,
+      availableTasks,
+      myTasks,
+      crmTaskStatusLabel,
+      canMutateCrm: canMutateCrm(req.session.adminUser.role),
+      canClaimCrmTasks: canClaimCrmTasks(req.session.adminUser.role),
+    });
+  });
+
+  router.get("/crm/tasks/:id", requireCrmAccess, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const uid = req.session.adminUser.id;
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id");
+    const task = db
+      .prepare(
+        `
+        SELECT t.*, o.username AS owner_username, c.username AS creator_username
+        FROM crm_tasks t
+        LEFT JOIN admin_users o ON o.id = t.owner_id
+        LEFT JOIN admin_users c ON c.id = t.created_by_id
+        WHERE t.id = ? AND t.tenant_id = ?
+        `
+      )
+      .get(id, tid);
+    if (!task) return res.status(404).send("Task not found");
+
+    const isOwner = task.owner_id != null && Number(task.owner_id) === Number(uid);
+    const canEdit = canMutateCrm(req.session.adminUser.role) && isOwner;
+    const showClaim =
+      canClaimCrmTasks(req.session.adminUser.role) &&
+      task.owner_id == null &&
+      normalizeCrmTaskStatus(task.status) === "new";
+
+    const auditLogs = db
+      .prepare(
+        `
+        SELECT a.*, u.username AS actor_username
+        FROM crm_audit_logs a
+        LEFT JOIN admin_users u ON u.id = a.user_id
+        WHERE a.task_id = ? AND a.tenant_id = ?
+        ORDER BY datetime(a.created_at) DESC, a.id DESC
+        `
+      )
+      .all(id, tid);
+
+    return res.render("admin/crm_task_detail", {
+      activeNav: "crm",
+      task,
+      auditLogs,
+      crmTaskStatusLabel,
+      CRM_TASK_STATUSES,
+      currentStatus: normalizeCrmTaskStatus(task.status),
+      canEdit,
+      isOwner,
+      showClaim,
+      canMutateCrm: canMutateCrm(req.session.adminUser.role),
+    });
+  });
+
+  router.post("/crm/tasks", requireCrmAccess, (req, res) => {
+    if (!canMutateCrm(req.session.adminUser.role)) return res.status(403).type("text").send("Read-only access.");
+    const tid = getAdminTenantId(req);
+    const uid = req.session.adminUser.id;
+    const title = String((req.body && req.body.title) || "").trim().slice(0, 200);
+    const description = String((req.body && req.body.description) || "").trim().slice(0, 8000);
+    if (!title) return res.status(400).send("Title is required.");
+    let taskId;
+    try {
+      db.transaction(() => {
+        const r = db
+          .prepare(
+            `
+            INSERT INTO crm_tasks (tenant_id, title, description, status, owner_id, created_by_id)
+            VALUES (?, ?, ?, 'new', NULL, ?)
+            `
+          )
+          .run(tid, title, description, uid);
+        taskId = Number(r.lastInsertRowid);
+        insertCrmAudit(db, {
+          tenantId: tid,
+          taskId,
+          userId: uid,
+          actionType: "task_created",
+          details: JSON.stringify({ title }),
+        });
+      })();
+    } catch (e) {
+      return res.status(400).send(e.message || "Could not create task");
+    }
+    return res.redirect("/admin/crm?tab=available");
+  });
+
+  router.post("/crm/tasks/:id/claim", requireCrmAccess, (req, res) => {
+    if (!canClaimCrmTasks(req.session.adminUser.role)) {
+      return res.status(403).type("text").send("You cannot claim tasks.");
+    }
+    const tid = getAdminTenantId(req);
+    const uid = req.session.adminUser.id;
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id");
+    const task = db.prepare("SELECT * FROM crm_tasks WHERE id = ? AND tenant_id = ?").get(id, tid);
+    if (!task) return res.status(404).send("Not found");
+    if (task.owner_id != null) return res.status(400).send("Task already assigned.");
+    try {
+      db.transaction(() => {
+        db.prepare(
+          `
+          UPDATE crm_tasks SET owner_id = ?, status = 'in_progress', updated_at = datetime('now')
+          WHERE id = ? AND tenant_id = ?
+          `
+        ).run(uid, id, tid);
+        insertCrmAudit(db, {
+          tenantId: tid,
+          taskId: id,
+          userId: uid,
+          actionType: "assignment",
+          details: JSON.stringify({ owner_id: uid, action: "claim" }),
+        });
+      })();
+    } catch (e) {
+      return res.status(400).send(e.message || "Could not claim");
+    }
+    return res.redirect(`/admin/crm/tasks/${id}`);
+  });
+
+  router.post("/crm/tasks/:id/status", requireCrmAccess, (req, res) => {
+    if (!canMutateCrm(req.session.adminUser.role)) return res.status(403).type("text").send("Read-only access.");
+    const tid = getAdminTenantId(req);
+    const uid = req.session.adminUser.id;
+    const id = Number(req.params.id);
+    const status = normalizeCrmTaskStatus(req.body && req.body.status);
+    const task = db.prepare("SELECT * FROM crm_tasks WHERE id = ? AND tenant_id = ?").get(id, tid);
+    if (!task) return res.status(404).send("Not found");
+    if (task.owner_id == null || Number(task.owner_id) !== Number(uid)) {
+      return res.status(403).type("text").send("Only the task owner can change status.");
+    }
+    const prev = task.status;
+    try {
+      db.transaction(() => {
+        db.prepare(
+          `UPDATE crm_tasks SET status = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
+        ).run(status, id, tid);
+        insertCrmAudit(db, {
+          tenantId: tid,
+          taskId: id,
+          userId: uid,
+          actionType: "status_change",
+          details: JSON.stringify({ from: prev, to: status }),
+        });
+      })();
+    } catch (e) {
+      return res.status(400).send(e.message || "Could not update");
+    }
+    return res.redirect(`/admin/crm/tasks/${id}`);
   });
 
   return router;

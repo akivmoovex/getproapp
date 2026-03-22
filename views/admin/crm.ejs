@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CRM | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app">
+    <%- include('../partials/admin_nav', { navTitle: 'CRM tasks', activeNav: 'crm' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <h1 class="section-title" style="margin-top:0;">CRM — tasks</h1>
+        <p class="admin-intro muted">Tenant-scoped. Unassigned tasks are <strong>New</strong> in the pool; managers, editors, and agents can <strong>Assign to me</strong>. Viewers can browse read-only.</p>
+
+        <div class="admin-crm-tabs" role="tablist">
+          <a
+            class="admin-crm-tab <%= tab === 'available' ? 'admin-crm-tab--active' : '' %>"
+            role="tab"
+            aria-selected="<%= tab === 'available' ? 'true' : 'false' %>"
+            href="/admin/crm?tab=available"
+            >Available tasks</a
+          >
+          <a
+            class="admin-crm-tab <%= tab === 'mine' ? 'admin-crm-tab--active' : '' %>"
+            role="tab"
+            aria-selected="<%= tab === 'mine' ? 'true' : 'false' %>"
+            href="/admin/crm?tab=mine"
+            >My open tasks</a
+          >
+        </div>
+
+        <% if (tab === 'available') { %>
+          <% if (canMutateCrm) { %>
+          <div class="card admin-form-card" style="margin-bottom:20px;">
+            <h2 class="section-title" style="margin-top:0;font-size:1.1rem;">New task (unassigned)</h2>
+            <form method="post" action="/admin/crm/tasks" class="form">
+              <div>
+                <label for="crm_title">Title</label>
+                <input id="crm_title" name="title" required maxlength="200" placeholder="Short summary" />
+              </div>
+              <div>
+                <label for="crm_desc">Description</label>
+                <textarea id="crm_desc" name="description" rows="4" placeholder="Details…"></textarea>
+              </div>
+              <div class="admin-gate-actions">
+                <button class="btn btn-primary" type="submit">Create task</button>
+              </div>
+            </form>
+          </div>
+          <% } %>
+
+          <div class="card">
+            <h2 class="section-title" style="margin-top:0;font-size:1.1rem;">Available (unassigned)</h2>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (!availableTasks || availableTasks.length === 0) { %>
+                    <tr><td colspan="3" class="muted">No unassigned tasks.</td></tr>
+                  <% } %>
+                  <% (availableTasks || []).forEach(function(t) { %>
+                    <tr>
+                      <td style="font-weight:800;">
+                        <a href="/admin/crm/tasks/<%= t.id %>"><%= t.title %></a>
+                        <% if (t.description) { %><div class="muted" style="font-size:12px;font-weight:500;margin-top:4px;"><%= t.description.length > 120 ? t.description.slice(0, 120) + '…' : t.description %></div><% } %>
+                      </td>
+                      <td class="muted" style="font-size:12px;"><%= t.created_at %></td>
+                      <td>
+                        <a class="btn" href="/admin/crm/tasks/<%= t.id %>">Open</a>
+                        <% if (canClaimCrmTasks) { %>
+                          <form method="post" action="/admin/crm/tasks/<%= t.id %>/claim" style="display:inline;margin-left:6px;">
+                            <button class="btn btn-primary" type="submit">Assign to me</button>
+                          </form>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        <% } %>
+
+        <% if (tab === 'mine') { %>
+          <div class="card">
+            <h2 class="section-title" style="margin-top:0;font-size:1.1rem;">My open tasks</h2>
+            <p class="muted" style="font-size:13px;">Excludes <strong>Completed</strong>. Change status on the task detail page.</p>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (!myTasks || myTasks.length === 0) { %>
+                    <tr><td colspan="4" class="muted">No open tasks assigned to you.</td></tr>
+                  <% } %>
+                  <% (myTasks || []).forEach(function(t) { %>
+                    <tr>
+                      <td style="font-weight:800;"><a href="/admin/crm/tasks/<%= t.id %>"><%= t.title %></a></td>
+                      <td><%= typeof crmTaskStatusLabel === 'function' ? crmTaskStatusLabel(t.status) : t.status %></td>
+                      <td class="muted" style="font-size:12px;"><%= t.updated_at %></td>
+                      <td><a class="btn" href="/admin/crm/tasks/<%= t.id %>">Open</a></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </main>
+  </body>
+</html>
