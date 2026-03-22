@@ -3,6 +3,8 @@
  * Falls back to env (CALL_CENTER_PHONE, GETPRO_EMAIL), then platform defaults.
  */
 const DEFAULT_CALLCENTER_PHONE = "+260211000101";
+/** Shown under “GetPro support” on company pages (falls back to customer listing phone if unset). */
+const DEFAULT_SUPPORT_HELP_PHONE = "+260211000101";
 const DEFAULT_WHATSAPP_PHONE = "+260211000102";
 const DEFAULT_CALLCENTER_EMAIL = "info@getproapp.org";
 
@@ -28,6 +30,13 @@ function pickWhatsapp(dbVal) {
   return DEFAULT_WHATSAPP_PHONE;
 }
 
+/** Support helpline: dedicated column, else customer listing phone, else env/default. */
+function pickSupportPhone(dbSupport, dbCustomer, envVal) {
+  const s = String(dbSupport || "").trim();
+  if (s) return s;
+  return pickPhone(dbCustomer, envVal);
+}
+
 /** `tel:` href safe for mobile dialer (digits + optional leading +). */
 function telHref(phone) {
   const s = String(phone || "").trim();
@@ -49,24 +58,36 @@ function getTenantContactSupport(db, tenantId) {
   if (db && tenantId != null && Number(tenantId) > 0) {
     try {
       row = db
-        .prepare("SELECT callcenter_phone, whatsapp_phone, callcenter_email FROM tenants WHERE id = ?")
+        .prepare(
+          "SELECT callcenter_phone, support_help_phone, whatsapp_phone, callcenter_email FROM tenants WHERE id = ?"
+        )
         .get(Number(tenantId));
     } catch {
       row = null;
     }
   }
 
+  /** Customer default / listing line on company details + footers */
   const phone = pickPhone(row ? row.callcenter_phone : "", envPhone);
+  /** GetPro support helpline (company page support block) */
+  const supportPhone = pickSupportPhone(
+    row && row.support_help_phone != null ? row.support_help_phone : "",
+    row ? row.callcenter_phone : "",
+    envPhone
+  );
   const email = pickEmail(row ? row.callcenter_email : "", envEmail);
   const whatsapp = pickWhatsapp(row ? row.whatsapp_phone : "");
 
   const digits = whatsapp.replace(/\D/g, "");
   const getproWhatsappHref = digits ? `https://wa.me/${digits}` : "";
   const getproTelHref = telHref(phone);
+  const getproSupportTelHref = telHref(supportPhone);
 
   return {
     getproPhone: phone,
     getproTelHref,
+    getproSupportPhone: supportPhone,
+    getproSupportTelHref,
     getproEmail: email,
     getproWhatsapp: whatsapp,
     getproWhatsappHref,
@@ -76,6 +97,7 @@ function getTenantContactSupport(db, tenantId) {
 
 module.exports = {
   DEFAULT_CALLCENTER_PHONE,
+  DEFAULT_SUPPORT_HELP_PHONE,
   DEFAULT_WHATSAPP_PHONE,
   DEFAULT_CALLCENTER_EMAIL,
   telHref,

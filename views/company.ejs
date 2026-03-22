@@ -18,6 +18,8 @@
       <div class="container pro-company-profile__inner">
         <% var _gpPhone = typeof getproPhone !== 'undefined' ? String(getproPhone || '').trim() : ''; %>
         <% var _gpTel = typeof getproTelHref !== 'undefined' ? String(getproTelHref || '').trim() : ''; %>
+        <% var _supPhone = typeof getproSupportPhone !== 'undefined' ? String(getproSupportPhone || '').trim() : ''; %>
+        <% var _supTel = typeof getproSupportTelHref !== 'undefined' ? String(getproSupportTelHref || '').trim() : ''; %>
         <% var _gpWa = typeof getproWhatsappHref !== 'undefined' ? String(getproWhatsappHref || '').trim() : ''; %>
         <% var _gpWaLabel = typeof getproWhatsapp !== 'undefined' ? String(getproWhatsapp || '').trim() : ''; %>
         <nav class="pro-company-profile__breadcrumb" aria-label="Breadcrumb">
@@ -61,7 +63,7 @@
             <% if (_gpPhone && _gpTel) { %>
               <div class="pro-company-profile__hero-contact">
                 <div class="pro-company-profile__hero-contact-row">
-                  <span class="muted pro-company-profile__hero-contact-label">Call center</span>
+                  <span class="muted pro-company-profile__hero-contact-label">Customer number</span>
                   <a class="pro-company-profile__hero-contact-phone" href="<%= _gpTel %>"><%= _gpPhone %></a>
                 </div>
                 <% if (_gpWa) { %>
@@ -241,7 +243,7 @@
             <% var _showBizPhone = _bizPhone && _bizD !== _gpD; %>
             <ul class="pro-company-profile__contact-list">
               <% if (_gpPhone && _gpTel) { %>
-                <li><span class="muted">Call center</span><br /><a href="<%= _gpTel %>"><%= _gpPhone %></a></li>
+                <li><span class="muted">Customer number</span><br /><a href="<%= _gpTel %>"><%= _gpPhone %></a></li>
               <% } %>
               <% if (_gpWa) { %>
                 <li>
@@ -285,8 +287,8 @@
             <div class="pro-company-profile__support">
               <div class="pro-company-profile__support-title">GetPro support</div>
               <p class="muted" style="line-height:1.6;margin:0;">Questions about the directory? We’re here in business hours.</p>
-              <% if (_gpPhone && _gpTel) { %>
-                <a class="btn btn-primary pro-company-profile__support-call" href="<%= _gpTel %>">Call <%= _gpPhone %></a>
+              <% if (_supPhone && _supTel) { %>
+                <a class="btn btn-primary pro-company-profile__support-call" href="<%= _supTel %>" aria-label="Call GetPro support">Call Support</a>
               <% } %>
               <% if (getproEmail) { %>
                 <p class="muted" style="margin:10px 0 0;"><a href="mailto:<%= getproEmail %>"><%= getproEmail %></a></p>

@@ -1077,6 +1077,31 @@ try {
   console.error("[getpro] crm_tasks migration:", e.message);
 }
 
+/** CRM task comments (detail page). */
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("crm_task_comments_v1")) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS crm_task_comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        task_id INTEGER NOT NULL REFERENCES crm_tasks(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES admin_users(id),
+        body TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_crm_comments_task ON crm_task_comments(task_id);
+      CREATE INDEX IF NOT EXISTS idx_crm_comments_tenant ON crm_task_comments(tenant_id);
+    `);
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("crm_task_comments_v1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] crm_task_comments migration:", e.message);
+}
+
 /** Per-tenant call center / WhatsApp / support email (footers + mini-site). */
 try {
   const tenantColNames = () =>
@@ -1098,10 +1123,29 @@ try {
     db.exec(
       "ALTER TABLE tenants ADD COLUMN callcenter_email TEXT NOT NULL DEFAULT 'info@getproapp.org'"
     );
+    tc = tenantColNames();
+  }
+  if (!tc.has("support_help_phone")) {
+    db.exec(
+      "ALTER TABLE tenants ADD COLUMN support_help_phone TEXT NOT NULL DEFAULT '+260211000101'"
+    );
   }
 } catch (e) {
   // eslint-disable-next-line no-console
   console.error("[getpro] tenants contact columns migration:", e.message);
+}
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("tenant_support_help_phone_v1")) {
+    db.prepare("UPDATE tenants SET support_help_phone = callcenter_phone").run();
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("tenant_support_help_phone_v1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] tenant support_help_phone backfill migration:", e.message);
 }
 
 try {

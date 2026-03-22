@@ -47,7 +47,7 @@
             </div>
           </div>
           <div>
-            <label for="st_callcenter_phone">Call center phone</label>
+            <label for="st_callcenter_phone">Customer listing phone</label>
             <input
               id="st_callcenter_phone"
               name="callcenter_phone"
@@ -55,6 +55,22 @@
               value="<%= tenant && tenant.callcenter_phone ? tenant.callcenter_phone : '+260211000101' %>"
               placeholder="+260211000101"
             />
+            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+              Default number shown on company mini-sites (hero and Contact).
+            </div>
+          </div>
+          <div>
+            <label for="st_support_help_phone">Support help line</label>
+            <input
+              id="st_support_help_phone"
+              name="support_help_phone"
+              type="text"
+              value="<%= tenant && tenant.support_help_phone ? tenant.support_help_phone : '+260211000101' %>"
+              placeholder="+260211000101"
+            />
+            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+              GetPro support / directory help — shown in the “GetPro support” block on company pages (separate from the customer listing number).
+            </div>
           </div>
           <div>
             <label for="st_whatsapp_phone">WhatsApp phone</label>
@@ -76,7 +92,7 @@
               placeholder="info@getproapp.org"
             />
             <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
-              Shown in site footers and the “GetPro support” block on company mini-sites. Per-region overrides; env vars apply if a field is left empty on save.
+              Shown in site footers. Per-region overrides; env vars apply if a field is left empty on save.
             </div>
           </div>
           <div class="admin-gate-actions">
