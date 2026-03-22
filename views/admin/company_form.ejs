@@ -15,6 +15,25 @@
       </div>
 
       <div class="card admin-form-card admin-form-card--wide">
+        <% if (company && typeof miniSiteUrl !== 'undefined' && miniSiteUrl && miniSiteUrl !== '#') { %>
+        <div class="admin-mini-site-preview" style="margin-bottom:20px;padding:14px 16px;border-radius:12px;background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.08);">
+          <div style="font-weight:800;font-size:13px;margin-bottom:6px;">Public URLs</div>
+          <div class="muted" style="font-size:13px;line-height:1.5;">
+            <strong>Mini-site</strong> (what customers see on this page):
+            <a href="<%= miniSiteUrl %>" target="_blank" rel="noopener noreferrer"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : miniSiteUrl %></a>
+          </div>
+          <% if (typeof directoryProfileUrl !== 'undefined' && directoryProfileUrl && directoryProfileUrl !== '/company') { %>
+          <div class="muted" style="font-size:13px;line-height:1.5;margin-top:6px;">
+            <strong>Directory profile</strong> (same company, directory layout):
+            <a href="<%= directoryProfileUrl %>" target="_blank" rel="noopener noreferrer"><%= directoryProfileUrl.replace(/^https?:\/\//, '') %></a>
+          </div>
+          <% } %>
+        </div>
+        <% } else if (typeof miniSiteExampleLabel !== 'undefined' && miniSiteExampleLabel) { %>
+        <div class="muted" style="margin-bottom:20px;padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.04);font-size:13px;line-height:1.5;">
+          After you save, the mini-site will live at <span class="kbd"><%= miniSiteExampleLabel %></span> (replace <span class="kbd">your-company-slug</span> with the <strong>Subdomain</strong> you choose below).
+        </div>
+        <% } %>
         <form
           method="post"
           action="<%= company ? '/admin/companies/' + company.id : '/admin/companies' %>"
@@ -29,7 +48,7 @@
               <label for="subdomain">Subdomain</label>
               <input id="subdomain" name="subdomain" value="<%= company ? company.subdomain : '' %>" required />
               <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
-                Example: <span class="kbd">mybiz</span> (renders at <span class="kbd">mybiz.<%= baseDomain || 'getproapp.org' %></span>)
+                URL path on this region’s site, e.g. <span class="kbd"><%= typeof adminTenantSlug !== 'undefined' && adminTenantSlug ? adminTenantSlug + '.' : '' %><%= baseDomain || 'getproapp.org' %>/mybiz</span> — use <span class="kbd">mybiz</span> as the value here (letters, numbers, hyphens).
               </div>
             </div>
           </div>

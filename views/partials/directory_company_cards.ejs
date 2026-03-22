@@ -23,7 +23,7 @@
 %>
 <div class="pro-directory-results" dir="ltr" lang="en">
   <% (companies || []).forEach(function(c) { %>
-    <% var url = typeof companyProfileHref === 'function' ? companyProfileHref(c.id) : buildCompanyUrl({ baseDomain: baseDomain, subdomain: c.subdomain }); %>
+    <% var url = typeof companyMiniSiteHref === 'function' ? companyMiniSiteHref(c.subdomain) : ('/' + encodeURIComponent(String(c.subdomain || '').trim())); %>
     <% var initials = directoryInitials(c.name); %>
     <% var hue = directoryHue(c.subdomain); %>
     <article class="pro-directory-card">
@@ -58,7 +58,13 @@
           <% } %>
           <p class="pro-directory-card__meta">
             <% if (c.location) { %><span class="pro-directory-card__loc"><%= c.location %></span><span class="pro-directory-card__dot" aria-hidden="true"> · </span><% } %>
-            <span class="pro-directory-card__host"><%= c.subdomain %><% if (baseDomain) { %>.<%= baseDomain %><% } %></span>
+            <span class="pro-directory-card__host">
+              <% if (typeof tenant !== 'undefined' && tenant && baseDomain) { %>
+                <%= tenant.slug %>.<%= baseDomain %>/<%= c.subdomain %>
+              <% } else { %>
+                /<%= c.subdomain %>
+              <% } %>
+            </span>
           </p>
           <% if (c.about && String(c.about).trim()) { %>
             <p class="pro-directory-card__excerpt"><%= directoryExcerpt(c.about, 240) %></p>

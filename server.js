@@ -176,9 +176,24 @@ app.use((req, res, next) => {
   next();
 });
 
-// Company one-pagers (e.g. demo.getproapp.org/) — not platform tenant hosts
+// Legacy company hosts (e.g. demo-lusaka-spark.getproapp.org/) → regional path mini-site (demo.getproapp.org/demo-lusaka-spark)
 app.get("/", (req, res, next) => {
   if (req.subdomain && !req.isPlatformTenant) {
+    const company = db
+      .prepare("SELECT tenant_id, subdomain FROM companies WHERE subdomain = ?")
+      .get(req.subdomain);
+    if (!company) {
+      return res.status(404).type("text").send("Not found");
+    }
+    const t = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(company.tenant_id);
+    if (!t || !t.slug) {
+      return res.status(404).type("text").send("Not found");
+    }
+    const base = (process.env.BASE_DOMAIN || "").trim();
+    const scheme = process.env.PUBLIC_SCHEME || "https";
+    if (base) {
+      return res.redirect(301, `${scheme}://${t.slug}.${base}/${company.subdomain}`);
+    }
     return publicModule.renderCompanyHome(req, res);
   }
   next();

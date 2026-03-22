@@ -11,6 +11,8 @@ const {
   parseGalleryJson,
   absoluteCompanyProfileUrl,
   formatReviewDateLabel,
+  buildCompanyMiniSiteUrl,
+  companyMiniSiteLabel,
 } = require("../companyProfile");
 
 function loadSearchLists() {
@@ -28,12 +30,6 @@ function isWhitelistedCity(value) {
   if (!value) return true;
   const v = String(value).trim().toLowerCase();
   return loadSearchLists().cities.some((c) => c.toLowerCase() === v);
-}
-
-function buildCompanyUrl({ baseDomain, subdomain }) {
-  if (!baseDomain) return "#";
-  const scheme = process.env.PUBLIC_SCHEME || "https";
-  return `${scheme}://${subdomain}.${baseDomain}/`;
 }
 
 function platformSupport() {
@@ -65,6 +61,29 @@ function directoryHrefFromTenantPrefix(prefix) {
   if (prefix.startsWith("http")) return `${prefix.replace(/\/$/, "")}/directory`;
   return `${String(prefix).replace(/\/$/, "")}/directory`;
 }
+
+/** Path segments that must not be treated as company mini-site slugs (first path segment). */
+const MINI_SITE_RESERVED_SEGMENTS = new Set([
+  "directory",
+  "join",
+  "company",
+  "category",
+  "admin",
+  "api",
+  "healthz",
+  "favicon.ico",
+  "robots.txt",
+  "sitemap.xml",
+  "getpro-admin",
+  "global",
+  "demo",
+  "il",
+  "zm",
+  "zw",
+  "bw",
+  "za",
+  "na",
+]);
 
 module.exports = function publicRoutes({ db }) {
   const router = express.Router();
@@ -134,12 +153,14 @@ module.exports = function publicRoutes({ db }) {
       ? companyProfileHref(req, company.id)
       : absoluteCompanyProfileUrl(tenant.slug, company.id);
 
+    const baseDomain = process.env.BASE_DOMAIN || "";
     return res.render("company", {
       company,
       category: company.category_slug ? { slug: company.category_slug, name: company.category_name } : null,
       ...extras,
-      baseDomain: process.env.BASE_DOMAIN || "",
-      companyUrl: buildCompanyUrl({ baseDomain: process.env.BASE_DOMAIN || "", subdomain: company.subdomain }),
+      baseDomain,
+      companyUrl: buildCompanyMiniSiteUrl(tenant.slug, company.subdomain, baseDomain),
+      miniSiteLabel: companyMiniSiteLabel(tenant.slug, company.subdomain, baseDomain),
       profileUrl,
       directoryHref: directoryHrefFromTenantPrefix(tenantUrlPrefix),
       tenant,
@@ -268,8 +289,7 @@ module.exports = function publicRoutes({ db }) {
       cityQuery: cityOk ? cityRaw : "",
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",
-      buildCompanyUrl,
-      companyProfileHref: (cid) => companyProfileHref(req, cid),
+      companyMiniSiteHref: (sub) => `/${encodeURIComponent(String(sub || "").trim())}`,
       ...tenantLocals(req),
       ...platformSupport(),
     });
@@ -312,8 +332,7 @@ module.exports = function publicRoutes({ db }) {
       categories,
       companies: companiesWithReviews,
       baseDomain: process.env.BASE_DOMAIN || "",
-      buildCompanyUrl,
-      companyProfileHref: (cid) => companyProfileHref(req, cid),
+      companyMiniSiteHref: (sub) => `/${encodeURIComponent(String(sub || "").trim())}`,
       ...tenantLocals(req),
       ...platformSupport(),
     });
@@ -364,6 +383,38 @@ module.exports = function publicRoutes({ db }) {
       ...tenantLocals(req),
       ...platformSupport(),
     });
+  });
+
+  /**
+   * Company mini-site: /{subdomain} on the regional host (e.g. /demo-lusaka-spark on demo.getproapp.org).
+   * Registered after /directory, /join, /company/:id, etc.
+   */
+  router.get("/:miniSiteSlug", (req, res, next) => {
+    const seg = String(req.params.miniSiteSlug || "").trim().toLowerCase();
+    if (!seg || !/^[a-z0-9-]+$/.test(seg) || MINI_SITE_RESERVED_SEGMENTS.has(seg)) {
+      return next();
+    }
+    const tenantId = req.tenant.id;
+    const company = db
+      .prepare(
+        `
+        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+        FROM companies c
+        LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+        WHERE c.subdomain = ? AND c.tenant_id = ?
+        `
+      )
+      .get(seg, tenantId);
+    if (!company) {
+      res.status(404);
+      return res.render("not_found", {
+        slug: seg,
+        kind: "mini-site",
+        ...tenantLocals(req),
+        ...platformSupport(),
+      });
+    }
+    return renderCompanyPage(req, res, company);
   });
 
   function renderCompanyHome(req, res) {

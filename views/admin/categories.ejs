@@ -19,6 +19,13 @@
       </div>
 
       <h1 class="section-title" style="margin-top:0;">Professions</h1>
+      <p class="admin-intro" style="margin-top:6px;">
+        Each region has its own profession list in the database. Add or edit here only affects this region
+        <% if (typeof adminScopeTenant !== 'undefined' && adminScopeTenant) { %>
+          (<strong><%= adminScopeTenant.name %></strong>)
+        <% } %>
+        — not other tenants. Super admins: switch region under <a href="/admin/super#act-as-region">Super admin → Act as region</a>.
+      </p>
       <% var f = typeof filters !== 'undefined' ? filters : {}; %>
       <form method="get" action="/admin/categories" class="admin-filter-form">
         <% if (editMode) { %><input type="hidden" name="edit" value="1" /><% } %>

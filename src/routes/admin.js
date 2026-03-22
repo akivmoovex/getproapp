@@ -13,7 +13,14 @@ const {
 const { canManageTenantUsers, normalizeRole, ROLES, canEditDirectoryData } = require("../roles");
 const { STAGES, normalizeStage } = require("../tenantStages");
 const { TENANT_ZM } = require("../tenantIds");
-const { parseGalleryAdminText } = require("../companyProfile");
+const {
+  parseGalleryAdminText,
+  parseGalleryJson,
+  galleryToAdminText,
+  buildCompanyMiniSiteUrl,
+  companyMiniSiteLabel,
+  absoluteCompanyProfileUrl,
+} = require("../companyProfile");
 const { isValidPhoneForTenant } = require("../tenants");
 
 function getAdminTenantId(req) {
@@ -894,10 +901,21 @@ module.exports = function adminRoutes({ db }) {
     const editMode = parseEditMode(req);
     const filterSuffix = filterSuffixFromQuery(req);
     const tsCompanies = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    const baseDomain = (process.env.BASE_DOMAIN || "").trim();
+    const scheme = process.env.PUBLIC_SCHEME || "https";
+    const tenantSlug = tsCompanies && tsCompanies.slug ? String(tsCompanies.slug) : "";
+    const companiesWithUrls = companies.map((c) => {
+      const sub = String(c.subdomain || "").trim();
+      const miniSitePublicUrl =
+        baseDomain && tenantSlug && sub
+          ? `${scheme}://${tenantSlug}.${baseDomain}/${encodeURIComponent(sub)}`
+          : "";
+      return { ...c, miniSitePublicUrl };
+    });
     return res.render("admin/companies", {
-      companies,
-      baseDomain: process.env.BASE_DOMAIN || "",
-      adminTenantSlug: tsCompanies ? tsCompanies.slug : "",
+      companies: companiesWithUrls,
+      baseDomain,
+      adminTenantSlug: tenantSlug,
       editMode,
       filterSuffix,
       filters: {
@@ -913,12 +931,18 @@ module.exports = function adminRoutes({ db }) {
     const tid = getAdminTenantId(req);
     const categories = getCategoriesForSelect(db, tid);
     const ts = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    const baseForUrls = (process.env.BASE_DOMAIN || "").trim() || "getproapp.org";
+    const tenantSlug = ts ? String(ts.slug) : "";
     return res.render("admin/company_form", {
       company: null,
       categories,
-      baseDomain: process.env.BASE_DOMAIN || "getproapp.org",
-      adminTenantSlug: ts ? ts.slug : "",
+      baseDomain: baseForUrls,
+      adminTenantSlug: tenantSlug,
       galleryAdminText: "",
+      miniSiteUrl: "",
+      miniSiteLabel: "",
+      directoryProfileUrl: "",
+      miniSiteExampleLabel: tenantSlug ? companyMiniSiteLabel(tenantSlug, "your-company-slug", baseForUrls) : "",
     });
   });
 
@@ -1016,14 +1040,22 @@ module.exports = function adminRoutes({ db }) {
     if (!company) return res.status(404).send("Company not found");
     const categories = getCategoriesForSelect(db, tid);
     const tsEdit = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
-    const { parseGalleryJson, galleryToAdminText } = require("../companyProfile");
     const galleryAdminText = galleryToAdminText(parseGalleryJson(company.gallery_json));
+    const baseForUrls = (process.env.BASE_DOMAIN || "").trim() || "getproapp.org";
+    const tenantSlug = tsEdit ? String(tsEdit.slug) : "";
+    const miniSiteUrl = buildCompanyMiniSiteUrl(tenantSlug, company.subdomain, baseForUrls);
+    const miniSiteLabel = companyMiniSiteLabel(tenantSlug, company.subdomain, baseForUrls);
+    const directoryProfileUrl = absoluteCompanyProfileUrl(tenantSlug, company.id);
     return res.render("admin/company_form", {
       company,
       categories,
-      baseDomain: process.env.BASE_DOMAIN || "getproapp.org",
-      adminTenantSlug: tsEdit ? tsEdit.slug : "",
+      baseDomain: baseForUrls,
+      adminTenantSlug: tenantSlug,
       galleryAdminText,
+      miniSiteUrl,
+      miniSiteLabel,
+      directoryProfileUrl,
+      miniSiteExampleLabel: "",
     });
   });
 

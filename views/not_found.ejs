@@ -16,6 +16,8 @@
         <div class="muted" style="margin-top:8px;line-height:1.6;">
           <% if (typeof subdomain !== 'undefined' && subdomain) { %>
             No company page exists for <span class="kbd"><%= subdomain %></span>.
+          <% } else if (typeof kind !== 'undefined' && kind === 'mini-site' && typeof slug !== 'undefined' && slug) { %>
+            No company with mini-site path <span class="kbd">/<%= slug %></span> in this region.
           <% } else if (typeof kind !== 'undefined' && kind === 'company' && typeof slug !== 'undefined' && slug) { %>
             No company profile in this region for id <span class="kbd"><%= slug %></span>.
           <% } else if (typeof slug !== 'undefined' && slug) { %>

@@ -202,8 +202,10 @@
             <% } %>
 
             <% if (typeof companyUrl !== 'undefined' && companyUrl && companyUrl !== '#') { %>
-              <p class="muted pro-company-profile__mini-hint">Mini-site (one-page):</p>
-              <p><a href="<%= companyUrl %>" target="_blank" rel="noopener noreferrer"><%= company.subdomain %><% if (baseDomain) { %>.<%= baseDomain %><% } %></a></p>
+              <p class="muted pro-company-profile__mini-hint">Mini-site (this page)</p>
+              <p>
+                <a href="<%= companyUrl %>"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : companyUrl %></a>
+              </p>
             <% } %>
 
             <div class="pro-company-profile__support">

@@ -69,6 +69,30 @@ function formatReviewDateLabel(iso) {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
+/**
+ * Public mini-site URL: {tenant}.{BASE}/{subdomain} (e.g. demo.getproapp.org/demo-lusaka-spark).
+ * Without BASE_DOMAIN, returns a same-origin path /{subdomain} for local dev.
+ */
+function buildCompanyMiniSiteUrl(tenantSlug, subdomain, baseDomain) {
+  const sub = String(subdomain || "").trim();
+  const ts = String(tenantSlug || "").trim().toLowerCase();
+  if (!sub || !ts) return "#";
+  const base = String(baseDomain || "").trim();
+  const scheme = process.env.PUBLIC_SCHEME || "https";
+  if (!base) return `/${encodeURIComponent(sub)}`;
+  return `${scheme}://${ts}.${base}/${encodeURIComponent(sub)}`;
+}
+
+/** Human-readable host/path for labels (no scheme). */
+function companyMiniSiteLabel(tenantSlug, subdomain, baseDomain) {
+  const sub = String(subdomain || "").trim();
+  const ts = String(tenantSlug || "").trim().toLowerCase();
+  if (!sub || !ts) return "";
+  const base = String(baseDomain || "").trim();
+  if (!base) return `/${sub}`;
+  return `${ts}.${base}/${sub}`;
+}
+
 module.exports = {
   companyProfileHref,
   parseGalleryJson,
@@ -76,4 +100,6 @@ module.exports = {
   parseGalleryAdminText,
   absoluteCompanyProfileUrl,
   formatReviewDateLabel,
+  buildCompanyMiniSiteUrl,
+  companyMiniSiteLabel,
 };

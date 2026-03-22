@@ -31,7 +31,7 @@ Professions, companies, cities, leads, and tenant-scoped users in **`/admin/...`
 
 These tables hold **one row set per tenant** (filter with `WHERE tenant_id = ?`):
 
-- **`categories`** — directory categories per region  
+- **`categories`** — directory categories per region; each row has **`tenant_id`**. Slug is unique **per tenant** (`UNIQUE(tenant_id, slug)`), so the same slug (e.g. `electricians`) can exist independently for Zambia vs Demo with different `id`s. **Public** directory and category pages query `WHERE tenant_id = ?` for the current host’s tenant. **Admin** lists and mutates categories only for **`getAdminTenantId(req)`** (the scoped region for super admins, or the logged-in user’s tenant for `tenant_manager` / `tenant_editor`). **Who can add/edit/delete:** `super_admin`, `tenant_manager`, and `tenant_editor` (`requireDirectoryEditor` + `requireNotViewer` on POST); **`tenant_viewer`** is read-only.  
 - **`companies`** — listings (and company marketing subdomains). Optional **directory profile** fields: `years_experience`, `service_areas`, `hours_text`, `gallery_json` (JSON array of `{ url, caption }` for “Recent work” on `/company/:id`).  
 - **`leads`** — contact requests (also tied to `company_id`)  
 - **`professional_signups`** — join / interest signups  

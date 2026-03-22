@@ -60,7 +60,7 @@
           <thead>
             <tr>
               <th>Name</th>
-              <th>Subdomain</th>
+              <th>Mini-site</th>
               <th>Profession</th>
               <th>Directory profile</th>
               <th>Updated</th>
@@ -74,9 +74,12 @@
             <% (companies || []).forEach(function(c) { %>
               <tr>
                 <td style="font-weight:800;"><%= c.name %></td>
-                <td class="muted">
-                  <% if (baseDomain) { %>
-                    <span class="kbd"><%= c.subdomain %>.<%= baseDomain %></span>
+                <td class="muted" style="font-size:12px;">
+                  <% if (baseDomain && typeof adminTenantSlug !== 'undefined' && adminTenantSlug) { %>
+                    <span class="kbd"><%= adminTenantSlug %>.<%= baseDomain %>/<%= c.subdomain %></span>
+                    <% if (c.miniSitePublicUrl) { %>
+                      · <a href="<%= c.miniSitePublicUrl %>" target="_blank" rel="noopener noreferrer">Open</a>
+                    <% } %>
                   <% } else { %>
                     @<%= c.subdomain %>
                   <% } %>
