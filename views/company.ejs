@@ -16,6 +16,10 @@
     <div class="pro-company-profile__shell">
     <main class="pro-company-profile" dir="ltr" lang="en">
       <div class="container pro-company-profile__inner">
+        <% var _gpPhone = typeof getproPhone !== 'undefined' ? String(getproPhone || '').trim() : ''; %>
+        <% var _gpTel = typeof getproTelHref !== 'undefined' ? String(getproTelHref || '').trim() : ''; %>
+        <% var _gpWa = typeof getproWhatsappHref !== 'undefined' ? String(getproWhatsappHref || '').trim() : ''; %>
+        <% var _gpWaLabel = typeof getproWhatsapp !== 'undefined' ? String(getproWhatsapp || '').trim() : ''; %>
         <nav class="pro-company-profile__breadcrumb" aria-label="Breadcrumb">
           <a href="<%= typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/' %>">Home</a>
           <span class="pro-company-profile__bc-sep" aria-hidden="true">/</span>
@@ -53,6 +57,25 @@
             <% var yoe = company.years_experience != null && company.years_experience !== '' ? Number(company.years_experience) : null; %>
             <% if (yoe != null && !isNaN(yoe) && yoe > 0) { %>
               <p class="pro-company-profile__meta-line"><strong><%= yoe %></strong> years in business</p>
+            <% } %>
+            <% if (_gpPhone && _gpTel) { %>
+              <div class="pro-company-profile__hero-contact">
+                <div class="pro-company-profile__hero-contact-row">
+                  <span class="muted pro-company-profile__hero-contact-label">Call center</span>
+                  <a class="pro-company-profile__hero-contact-phone" href="<%= _gpTel %>"><%= _gpPhone %></a>
+                </div>
+                <% if (_gpWa) { %>
+                  <div class="pro-company-profile__hero-contact-row">
+                    <span class="muted pro-company-profile__hero-contact-label">WhatsApp</span>
+                    <a
+                      class="pro-company-profile__hero-contact-wa"
+                      href="<%= _gpWa %>"
+                      rel="noopener noreferrer"
+                      target="_blank"
+                      ><%= _gpWaLabel || 'Chat on WhatsApp' %></a>
+                  </div>
+                <% } %>
+              </div>
             <% } %>
           </div>
 
@@ -212,9 +235,22 @@
 
           <aside class="pro-company-profile__aside card">
             <h2 class="pro-company-profile__aside-title">Contact</h2>
+            <% var _bizPhone = company.phone ? String(company.phone).trim() : ''; %>
+            <% var _gpD = _gpPhone.replace(/\D/g, ''); %>
+            <% var _bizD = _bizPhone.replace(/\D/g, ''); %>
+            <% var _showBizPhone = _bizPhone && _bizD !== _gpD; %>
             <ul class="pro-company-profile__contact-list">
-              <% if (company.phone) { %>
-                <li><span class="muted">Phone</span><br /><a href="tel:<%= company.phone %>"><%= company.phone %></a></li>
+              <% if (_gpPhone && _gpTel) { %>
+                <li><span class="muted">Call center</span><br /><a href="<%= _gpTel %>"><%= _gpPhone %></a></li>
+              <% } %>
+              <% if (_gpWa) { %>
+                <li>
+                  <span class="muted">WhatsApp</span><br />
+                  <a href="<%= _gpWa %>" rel="noopener noreferrer" target="_blank"><%= _gpWaLabel || 'Open WhatsApp chat' %></a>
+                </li>
+              <% } %>
+              <% if (_showBizPhone) { %>
+                <li><span class="muted">Business phone</span><br /><a href="tel:<%= _bizPhone.replace(/[^\d+]/g, '') %>"><%= _bizPhone %></a></li>
               <% } %>
               <% if (company.email) { %>
                 <% var _mail = String(company.email || '').trim(); %>
@@ -249,21 +285,11 @@
             <div class="pro-company-profile__support">
               <div class="pro-company-profile__support-title">GetPro support</div>
               <p class="muted" style="line-height:1.6;margin:0;">Questions about the directory? We’re here in business hours.</p>
-              <% if (getproPhone) { %>
-                <p style="margin:10px 0 0;font-weight:800;"><a href="tel:<%= getproPhone %>"><%= getproPhone %></a></p>
+              <% if (_gpPhone && _gpTel) { %>
+                <a class="btn btn-primary pro-company-profile__support-call" href="<%= _gpTel %>">Call <%= _gpPhone %></a>
               <% } %>
               <% if (getproEmail) { %>
-                <p class="muted" style="margin:8px 0 0;"><a href="mailto:<%= getproEmail %>"><%= getproEmail %></a></p>
-              <% } %>
-              <% if (typeof getproWhatsapp !== 'undefined' && getproWhatsapp) { %>
-                <p class="muted" style="margin:8px 0 0;">
-                  WhatsApp
-                  <% if (typeof getproWhatsappHref !== 'undefined' && getproWhatsappHref) { %>
-                    <br /><a href="<%= getproWhatsappHref %>" rel="noopener noreferrer" target="_blank"><%= getproWhatsapp %></a>
-                  <% } else { %>
-                    <br /><%= getproWhatsapp %>
-                  <% } %>
-                </p>
+                <p class="muted" style="margin:10px 0 0;"><a href="mailto:<%= getproEmail %>"><%= getproEmail %></a></p>
               <% } %>
             </div>
           </aside>

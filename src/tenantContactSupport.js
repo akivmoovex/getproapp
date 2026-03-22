@@ -28,6 +28,14 @@ function pickWhatsapp(dbVal) {
   return DEFAULT_WHATSAPP_PHONE;
 }
 
+/** `tel:` href safe for mobile dialer (digits + optional leading +). */
+function telHref(phone) {
+  const s = String(phone || "").trim();
+  if (!s) return "";
+  const d = s.replace(/[^\d+]/g, "");
+  return d ? `tel:${d}` : "";
+}
+
 /**
  * @param {import("better-sqlite3").Database} db
  * @param {number|null|undefined} tenantId
@@ -54,9 +62,11 @@ function getTenantContactSupport(db, tenantId) {
 
   const digits = whatsapp.replace(/\D/g, "");
   const getproWhatsappHref = digits ? `https://wa.me/${digits}` : "";
+  const getproTelHref = telHref(phone);
 
   return {
     getproPhone: phone,
+    getproTelHref,
     getproEmail: email,
     getproWhatsapp: whatsapp,
     getproWhatsappHref,
@@ -68,5 +78,6 @@ module.exports = {
   DEFAULT_CALLCENTER_PHONE,
   DEFAULT_WHATSAPP_PHONE,
   DEFAULT_CALLCENTER_EMAIL,
+  telHref,
   getTenantContactSupport,
 };

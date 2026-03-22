@@ -3131,6 +3131,60 @@ textarea {
   color: var(--text);
 }
 
+.pro-company-profile__hero-contact {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--wf-primary) 22%, var(--border-strong));
+  background: color-mix(in srgb, var(--surface) 96%, rgba(var(--wf-primary-rgb), 0.12));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 22rem;
+}
+
+.pro-company-profile__hero-contact-row {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.pro-company-profile__hero-contact-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pro-company-profile__hero-contact-phone {
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.pro-company-profile__hero-contact-phone:hover {
+  color: var(--wf-primary-dark);
+  text-decoration: underline;
+}
+
+.pro-company-profile__hero-contact-wa {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--wf-primary-dark);
+  text-decoration: none;
+}
+
+.pro-company-profile__hero-contact-wa:hover {
+  text-decoration: underline;
+}
+
 .pro-company-profile__score-card {
   flex: 0 0 auto;
   min-width: 160px;
@@ -3552,6 +3606,15 @@ textarea {
   font-weight: 900;
   margin-bottom: 6px;
   font-size: 14px;
+}
+
+.pro-company-profile__support-call {
+  display: inline-flex;
+  margin-top: 12px;
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+  font-weight: 800;
 }
 
 /* ——— Join professionals (multi-step) ——— */
