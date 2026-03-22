@@ -153,7 +153,7 @@
                       <div class="muted admin-dashboard-table__sub"><%= l.phone %></div>
                     </td>
                     <td class="admin-dashboard-table__msg"><%= l.message %></td>
-                    <td class="muted admin-dashboard-table__time"><%= l.created_at %></td>
+                    <td class="muted admin-dashboard-table__time"><%- include('../partials/event_time', { at: l.created_at }) %></td>
                   </tr>
                   <% }); %>
                 </tbody>

@@ -33,8 +33,8 @@
                 <td><%= c.interest_label || 'Potential Partner' %></td>
                 <td><%= c.name %></td>
                 <td><%= c.phone %></td>
-                <td class="muted" style="font-size:12px;"><%= c.context %></td>
-                <td class="muted" style="font-size:12px;"><%= c.created_at %></td>
+                <td class="muted"><%= c.context %></td>
+                <td class="muted"><%- include('../partials/event_time', { at: c.created_at }) %></td>
               </tr>
             <% }) %>
           </tbody>
@@ -67,8 +67,8 @@
                 <td><%= s.city %></td>
                 <td><%= s.name %></td>
                 <td><%= s.phone %></td>
-                <td class="muted" style="font-size:12px;"><%= s.vat_or_pacra %></td>
-                <td class="muted" style="font-size:12px;"><%= s.created_at %></td>
+                <td class="muted"><%= s.vat_or_pacra %></td>
+                <td class="muted"><%- include('../partials/event_time', { at: s.created_at }) %></td>
               </tr>
             <% }) %>
           </tbody>
@@ -76,6 +76,7 @@
         </div>
       </div>
 
+      <% if (!embed) { %>
       <h2 class="section-title">Company lead requests</h2>
       <p class="admin-intro">Messages from company profile pages.</p>
 
@@ -119,14 +120,14 @@
               <tr>
                 <td>
                   <div style="font-weight:900;"><%= l.company_name %></div>
-                  <div class="muted" style="font-size:12px;">@<%= l.company_subdomain %></div>
+                  <div class="muted">@<%= l.company_subdomain %></div>
                 </td>
                 <td><%= l.name %></td>
                 <td><%= l.phone %></td>
                 <td><%= l.email %></td>
                 <td><%= l.message %></td>
                 <td><%= typeof leadStatusLabel === 'function' ? leadStatusLabel(l.status) : l.status %></td>
-                <td class="muted"><%= l.created_at %></td>
+                <td class="muted"><%- include('../partials/event_time', { at: l.created_at }) %></td>
                 <% if (typeof adminNav !== 'undefined' && adminNav.canEditDirectory) { %>
                   <td><a class="btn" href="/admin/leads/<%= l.id %>/edit">Edit</a></td>
                 <% } %>
@@ -136,6 +137,8 @@
         </table>
         </div>
       </div>
+      <% } %>
+
       </div>
     </main>
   </body>

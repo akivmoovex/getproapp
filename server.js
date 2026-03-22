@@ -38,6 +38,7 @@ const {
   buildRegionChoicesFromDb,
 } = require("./src/tenants");
 const { STAGES } = require("./src/tenantStages");
+const { eventTimeParts } = require("./src/eventTime");
 const publicModule = require("./src/routes/public")({ db });
 const adminRoutes = require("./src/routes/admin");
 const apiRoutes = require("./src/routes/api");
@@ -64,8 +65,9 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use((req, res, next) => {
-  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260326c";
+  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260326d";
   res.locals.encodeURIComponent = encodeURIComponent;
+  res.locals.eventTimeParts = eventTimeParts;
   next();
 });
 

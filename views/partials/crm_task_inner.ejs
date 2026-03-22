@@ -14,9 +14,12 @@
     </div>
     <h1 class="crm-task-hero__title"><%= task.title %></h1>
     <p class="crm-task-hero__meta muted">
-      <span><%= task.created_at %><% if (task.creator_username) { %> · <%= task.creator_username %><% } %></span>
+      <span>
+        <%- include('event_time', { at: task.created_at }) %>
+        <% if (task.creator_username) { %> · <%= task.creator_username %><% } %>
+      </span>
       <span aria-hidden="true"> · </span>
-      <span>Updated <%= task.updated_at %></span>
+      <span>Updated <%- include('event_time', { at: task.updated_at }) %></span>
     </p>
   </header>
 
@@ -80,7 +83,7 @@
               <li class="crm-task-comments__item">
                 <div class="crm-task-comments__meta muted">
                   <span><%= c.author_username || '—' %></span>
-                  <span><%= c.created_at %></span>
+                  <span><%- include('event_time', { at: c.created_at }) %></span>
                 </div>
                 <div class="crm-task-comments__body"><%= c.body %></div>
               </li>
@@ -111,7 +114,7 @@
             <% auditLogs.forEach(function(a) { %>
               <li class="crm-task-audit__row">
                 <div class="crm-task-audit__meta">
-                  <span class="crm-task-audit__time"><%= a.created_at %></span>
+                  <span class="crm-task-audit__time"><%- include('event_time', { at: a.created_at }) %></span>
                   <span><%= a.actor_username || '—' %></span>
                   <span class="crm-task-audit__badge"><%= a.action_type %></span>
                 </div>

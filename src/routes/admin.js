@@ -1648,28 +1648,34 @@ module.exports = function adminRoutes({ db }) {
 
   router.get("/leads", (req, res) => {
     const tid = getAdminTenantId(req);
-    const companyId = req.query.company_id ? Number(req.query.company_id) : null;
-    const companies = db
-      .prepare("SELECT id, name, subdomain FROM companies WHERE tenant_id = ? ORDER BY name ASC")
-      .all(tid);
+    const embed = res.locals.embed;
 
-    let leads;
-    if (companyId) {
-      leads = db
-        .prepare(
-          `
+    let leads = [];
+    let companies = [];
+    let selectedCompanyId = null;
+    if (!embed) {
+      const companyId = req.query.company_id ? Number(req.query.company_id) : null;
+      selectedCompanyId = companyId;
+      companies = db
+        .prepare("SELECT id, name, subdomain FROM companies WHERE tenant_id = ? ORDER BY name ASC")
+        .all(tid);
+
+      if (companyId) {
+        leads = db
+          .prepare(
+            `
           SELECT l.*, c.name AS company_name, c.subdomain AS company_subdomain
           FROM leads l
           INNER JOIN companies c ON c.id = l.company_id
           WHERE l.company_id = ? AND l.tenant_id = ? AND c.tenant_id = ?
           ORDER BY l.created_at DESC
           `
-        )
-        .all(companyId, tid, tid);
-    } else {
-      leads = db
-        .prepare(
-          `
+          )
+          .all(companyId, tid, tid);
+      } else {
+        leads = db
+          .prepare(
+            `
           SELECT l.*, c.name AS company_name, c.subdomain AS company_subdomain
           FROM leads l
           INNER JOIN companies c ON c.id = l.company_id
@@ -1677,8 +1683,9 @@ module.exports = function adminRoutes({ db }) {
           ORDER BY l.created_at DESC
           LIMIT 200
           `
-        )
-        .all(tid);
+          )
+          .all(tid);
+      }
     }
 
     const partnerCallbacks = db
@@ -1707,10 +1714,10 @@ module.exports = function adminRoutes({ db }) {
 
     return res.render("admin/leads", {
       leads,
+      companies,
+      selectedCompanyId,
       partnerCallbacks,
       partnerSignups,
-      companies,
-      selectedCompanyId: companyId,
       role: req.session.adminUser.role,
       isViewer: isTenantViewer(req.session.adminUser.role),
       leadStatusLabel,

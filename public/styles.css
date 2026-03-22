@@ -1432,8 +1432,8 @@ a:hover {
 }
 
 .admin-lead-comments__time {
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--muted);
   margin-bottom: 6px;
 }
@@ -2090,6 +2090,38 @@ a:hover {
   background: var(--md-sys-color-surface-container-low);
   border: 1px solid var(--md-sys-color-outline-variant);
   box-shadow: var(--md-sys-elevation-level0);
+}
+
+/* Relative event time (SSR) + exact time on info icon hover */
+.event-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  vertical-align: baseline;
+}
+
+.event-time__ago {
+  white-space: nowrap;
+}
+
+.event-time__info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  cursor: help;
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.event-time__info:hover,
+.event-time__info:focus-visible {
+  color: var(--text);
+}
+
+.event-time__icon {
+  display: block;
 }
 
 .crm-task-comments__meta {

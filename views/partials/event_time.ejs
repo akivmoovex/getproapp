@@ -1,0 +1,19 @@
+<% var _at = typeof at !== 'undefined' ? at : ''; %>
+<% var _parts = typeof eventTimeParts === 'function' ? eventTimeParts(_at) : { relative: _at || '—', exact: _at || '' }; %>
+<% var _extra = typeof eventTimeClass !== 'undefined' ? eventTimeClass : ''; %>
+<span class="event-time<%= _extra ? ' ' + _extra : '' %>">
+  <span class="event-time__ago"><%= _parts.relative %></span>
+  <span
+    class="event-time__info"
+    role="img"
+    aria-label="Exact time: <%= _parts.exact %>"
+    title="<%= _parts.exact %>"
+  >
+    <svg class="event-time__icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"
+      />
+    </svg>
+  </span>
+</span>

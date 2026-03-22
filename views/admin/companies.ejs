@@ -92,7 +92,7 @@
                     <span class="muted" title="Set BASE_DOMAIN">—</span>
                   <% } %>
                 </td>
-                <td class="muted" style="font-size:12px;"><%= c.updated_at %></td>
+                <td class="muted"><%- include('../partials/event_time', { at: c.updated_at }) %></td>
                 <% if (editMode) { %><td><a class="btn" href="/admin/companies/<%= c.id %>/workspace">Edit</a></td><% } %>
               </tr>
             <% }) %>

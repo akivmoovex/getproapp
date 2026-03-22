@@ -42,12 +42,12 @@
               </tr>
               <tr>
                 <th scope="row">Submitted</th>
-                <td class="muted"><%= lead.created_at %></td>
+                <td class="muted"><%- include('../partials/event_time', { at: lead.created_at }) %></td>
               </tr>
               <% if (lead.updated_at) { %>
               <tr>
                 <th scope="row">Last updated</th>
-                <td class="muted"><%= lead.updated_at %></td>
+                <td class="muted"><%- include('../partials/event_time', { at: lead.updated_at }) %></td>
               </tr>
               <% } %>
             </tbody>
@@ -88,7 +88,7 @@
           <ul class="admin-lead-comments">
             <% comments.forEach(function(c) { %>
               <li class="admin-lead-comments__item">
-                <div class="admin-lead-comments__time"><%= c.created_at %></div>
+                <div class="admin-lead-comments__time"><%- include('../partials/event_time', { at: c.created_at }) %></div>
                 <div class="admin-lead-comments__body"><%= c.body %></div>
               </li>
             <% }); %>

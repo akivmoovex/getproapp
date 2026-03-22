@@ -89,7 +89,7 @@
               <tr>
                 <td><%= cat.name %></td>
                 <td class="muted"><%= cat.slug %></td>
-                <td class="muted"><%= cat.created_at %></td>
+                <td class="muted"><%- include('../partials/event_time', { at: cat.created_at }) %></td>
                 <% if (editMode) { %>
                 <td>
                   <div style="display:flex;gap:10px;flex-wrap:wrap;">

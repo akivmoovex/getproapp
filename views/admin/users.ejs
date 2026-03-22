@@ -32,7 +32,7 @@
                 <td style="font-weight:700;"><%= u.username %></td>
                 <td class="muted"><%= u.role %></td>
                 <td><%= u.enabled === 0 ? 'Disabled' : 'Enabled' %></td>
-                <td class="muted" style="font-size:12px;"><%= u.created_at %></td>
+                <td class="muted"><%- include('../partials/event_time', { at: u.created_at }) %></td>
                 <td><a class="btn" href="/admin/users/<%= u.id %>/edit">Edit</a></td>
               </tr>
             <% }) %>
