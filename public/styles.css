@@ -738,39 +738,92 @@ a:hover {
 }
 
 /* Admin CRM */
+.admin-crm-page__title {
+  letter-spacing: -0.02em;
+}
+
+.admin-crm-page .admin-intro {
+  margin-bottom: 20px;
+}
+
+.admin-crm-page .admin-crm-panel.card {
+  border-color: var(--border-strong);
+}
+
 .admin-crm-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 18px;
-  border-bottom: 1px solid var(--border-strong);
-  padding-bottom: 4px;
+  gap: 6px;
+  margin-bottom: 22px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface) 92%, var(--border-strong));
 }
 
 .admin-crm-tab {
   display: inline-flex;
   align-items: center;
-  padding: 10px 16px;
-  border-radius: 10px 10px 0 0;
+  justify-content: center;
+  padding: 11px 18px;
+  border-radius: 10px;
   font-weight: 800;
   font-size: 14px;
   color: var(--muted);
   text-decoration: none;
   border: 1px solid transparent;
-  border-bottom: none;
-  margin-bottom: -1px;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .admin-crm-tab:hover {
   color: var(--text);
-  background: color-mix(in srgb, var(--surface) 88%, var(--border-strong));
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--wf-primary) 22%, var(--border-strong));
 }
 
 .admin-crm-tab--active {
-  color: var(--text);
-  background: var(--surface);
-  border-color: var(--border-strong);
-  border-bottom-color: var(--surface);
+  color: #fff;
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-bg);
+  box-shadow: 0 4px 14px rgba(var(--wf-primary-rgb), 0.28);
+}
+
+.admin-crm-tab--active:hover {
+  color: #fff;
+  background: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
+}
+
+.admin-crm-table thead th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-soft);
+  border-bottom-color: var(--border-strong);
+}
+
+.admin-crm-table td {
+  vertical-align: middle;
+}
+
+.admin-crm-table .btn {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .admin-crm-table td:last-child {
+    white-space: normal;
+  }
+
+  .admin-crm-table td:last-child form {
+    display: block;
+    margin-top: 8px !important;
+    margin-left: 0 !important;
+  }
 }
 
 .admin-crm-audit {
@@ -1772,6 +1825,19 @@ a:hover {
 
 .wf-cta-actions {
   gap: 12px;
+}
+
+.wf-cta-actions--single {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 0;
+}
+
+.wf-cta-actions--single .btn {
+  min-width: min(280px, 100%);
+  justify-content: center;
 }
 
 .hero-grid {

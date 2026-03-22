@@ -6,11 +6,11 @@
     <title>CRM | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body class="admin-app">
+  <body class="admin-app admin-crm-page">
     <%- include('../partials/admin_nav', { navTitle: 'CRM tasks', activeNav: 'crm' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
-        <h1 class="section-title" style="margin-top:0;">CRM — tasks</h1>
+        <h1 class="section-title admin-crm-page__title" style="margin-top:0;">CRM — tasks</h1>
         <p class="admin-intro muted">Tenant-scoped. Unassigned tasks are <strong>New</strong> in the pool; managers, editors, and agents can <strong>Assign to me</strong>. Viewers can browse read-only.</p>
 
         <div class="admin-crm-tabs" role="tablist">
@@ -32,7 +32,7 @@
 
         <% if (tab === 'available') { %>
           <% if (canMutateCrm) { %>
-          <div class="card admin-form-card" style="margin-bottom:20px;">
+          <div class="card admin-form-card admin-crm-panel" style="margin-bottom:20px;">
             <h2 class="section-title" style="margin-top:0;font-size:1.1rem;">New task (unassigned)</h2>
             <form method="post" action="/admin/crm/tasks" class="form">
               <div>
@@ -50,10 +50,10 @@
           </div>
           <% } %>
 
-          <div class="card">
+          <div class="card admin-crm-panel">
             <h2 class="section-title" style="margin-top:0;font-size:1.1rem;">Available (unassigned)</h2>
             <div class="table-wrap">
-              <table class="table">
+              <table class="table admin-crm-table">
                 <thead>
                   <tr>
                     <th>Title</th>
@@ -89,11 +89,11 @@
         <% } %>
 
         <% if (tab === 'mine') { %>
-          <div class="card">
+          <div class="card admin-crm-panel">
             <h2 class="section-title" style="margin-top:0;font-size:1.1rem;">My open tasks</h2>
             <p class="muted" style="font-size:13px;">Excludes <strong>Completed</strong>. Change status on the task detail page.</p>
             <div class="table-wrap">
-              <table class="table">
+              <table class="table admin-crm-table">
                 <thead>
                   <tr>
                     <th>Title</th>
