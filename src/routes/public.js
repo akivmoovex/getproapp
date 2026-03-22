@@ -1,6 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const express = require("express");
+const QRCode = require("qrcode");
 const { getTenantById, DEFAULT_TENANT_SLUG } = require("../tenants");
 const { TENANT_ZM } = require("../tenantIds");
 const { getTenantCitiesForClient, getJoinCityWatermarkRotate } = require("../tenantCities");
@@ -60,6 +61,22 @@ function directoryHrefFromTenantPrefix(prefix) {
   if (!prefix) return "/directory";
   if (prefix.startsWith("http")) return `${prefix.replace(/\/$/, "")}/directory`;
   return `${String(prefix).replace(/\/$/, "")}/directory`;
+}
+
+/** Turn a relative path or absolute URL into a shareable absolute URL. */
+function toAbsoluteUrl(req, href) {
+  const h = String(href || "").trim();
+  if (!h) return "";
+  if (h.startsWith("http://") || h.startsWith("https://")) return h;
+  const proto = String(req.headers["x-forwarded-proto"] || req.protocol || "http")
+    .split(",")[0]
+    .trim();
+  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "")
+    .split(",")[0]
+    .trim();
+  if (!host) return "";
+  const pathPart = h.startsWith("/") ? h : `/${h}`;
+  return `${proto}://${host}${pathPart}`;
 }
 
 /** Path segments that must not be treated as company mini-site slugs (first path segment). */
@@ -134,6 +151,18 @@ module.exports = function publicRoutes({ db }) {
     const star_distribution_total = Object.values(star_distribution).reduce((a, b) => a + b, 0);
 
     const galleryItems = parseGalleryJson(company.gallery_json);
+    const logoUrl = String(company.logo_url || "").trim();
+    const mediaCarouselItems = [];
+    if (logoUrl) {
+      mediaCarouselItems.push({ url: logoUrl, caption: "", kind: "logo" });
+    }
+    for (const g of galleryItems) {
+      mediaCarouselItems.push({
+        url: g.url,
+        caption: g.caption || "",
+        kind: "gallery",
+      });
+    }
 
     return {
       reviews,
@@ -142,10 +171,11 @@ module.exports = function publicRoutes({ db }) {
       star_distribution,
       star_distribution_total,
       galleryItems,
+      mediaCarouselItems,
     };
   }
 
-  function renderCompanyPage(req, res, company) {
+  async function renderCompanyPage(req, res, company) {
     const tenant = getTenantById(company.tenant_id, db) || getTenantById(TENANT_ZM, db);
     const tenantUrlPrefix = platformTenantPrefixForSlug(tenant.slug);
     const extras = loadCompanyProfileExtras(company);
@@ -154,14 +184,48 @@ module.exports = function publicRoutes({ db }) {
       : absoluteCompanyProfileUrl(tenant.slug, company.id);
 
     const baseDomain = process.env.BASE_DOMAIN || "";
+    const companyUrl = buildCompanyMiniSiteUrl(tenant.slug, company.subdomain, baseDomain);
+    const miniSiteLabel = companyMiniSiteLabel(tenant.slug, company.subdomain, baseDomain);
+
+    const profileQrTarget = toAbsoluteUrl(req, absoluteCompanyProfileUrl(tenant.slug, company.id));
+    const miniQrTarget = companyUrl && companyUrl !== "#" ? toAbsoluteUrl(req, companyUrl) : "";
+
+    const qrOpts = { margin: 1, width: 168, errorCorrectionLevel: "M" };
+    let qrDirectoryProfileDataUrl = "";
+    let qrMiniSiteDataUrl = "";
+    let qrUrlsMerged = false;
+    try {
+      const norm = (u) => String(u || "").replace(/\/$/, "").toLowerCase();
+      const same = profileQrTarget && miniQrTarget && norm(profileQrTarget) === norm(miniQrTarget);
+      if (same && profileQrTarget) {
+        qrDirectoryProfileDataUrl = await QRCode.toDataURL(profileQrTarget, qrOpts);
+        qrUrlsMerged = true;
+      } else {
+        const jobs = [];
+        if (profileQrTarget) jobs.push(QRCode.toDataURL(profileQrTarget, qrOpts).then((d) => ({ k: "dir", d })));
+        if (miniQrTarget) jobs.push(QRCode.toDataURL(miniQrTarget, qrOpts).then((d) => ({ k: "mini", d })));
+        const results = await Promise.all(jobs);
+        for (const r of results) {
+          if (r.k === "dir") qrDirectoryProfileDataUrl = r.d;
+          if (r.k === "mini") qrMiniSiteDataUrl = r.d;
+        }
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[getpro] QR generation failed:", e.message);
+    }
+
     return res.render("company", {
       company,
       category: company.category_slug ? { slug: company.category_slug, name: company.category_name } : null,
       ...extras,
       baseDomain,
-      companyUrl: buildCompanyMiniSiteUrl(tenant.slug, company.subdomain, baseDomain),
-      miniSiteLabel: companyMiniSiteLabel(tenant.slug, company.subdomain, baseDomain),
+      companyUrl,
+      miniSiteLabel,
       profileUrl,
+      qrDirectoryProfileDataUrl,
+      qrMiniSiteDataUrl,
+      qrUrlsMerged,
       directoryHref: directoryHrefFromTenantPrefix(tenantUrlPrefix),
       tenant,
       tenantUrlPrefix,
@@ -338,38 +402,42 @@ module.exports = function publicRoutes({ db }) {
     });
   });
 
-  router.get("/company/:id", (req, res) => {
-    const tenantId = req.tenant.id;
-    const id = Number(req.params.id);
-    if (!id || id < 1) {
-      res.status(404);
-      return res.render("not_found", {
-        slug: String(req.params.id || ""),
-        kind: "company",
-        ...tenantLocals(req),
-        ...platformSupport(),
-      });
-    }
-    const company = db
-      .prepare(
-        `
+  router.get("/company/:id", async (req, res, next) => {
+    try {
+      const tenantId = req.tenant.id;
+      const id = Number(req.params.id);
+      if (!id || id < 1) {
+        res.status(404);
+        return res.render("not_found", {
+          slug: String(req.params.id || ""),
+          kind: "company",
+          ...tenantLocals(req),
+          ...platformSupport(),
+        });
+      }
+      const company = db
+        .prepare(
+          `
         SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
         FROM companies c
         LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
         WHERE c.id = ? AND c.tenant_id = ?
         `
-      )
-      .get(id, tenantId);
-    if (!company) {
-      res.status(404);
-      return res.render("not_found", {
-        slug: String(id),
-        kind: "company",
-        ...tenantLocals(req),
-        ...platformSupport(),
-      });
+        )
+        .get(id, tenantId);
+      if (!company) {
+        res.status(404);
+        return res.render("not_found", {
+          slug: String(id),
+          kind: "company",
+          ...tenantLocals(req),
+          ...platformSupport(),
+        });
+      }
+      return await renderCompanyPage(req, res, company);
+    } catch (e) {
+      return next(e);
     }
-    return renderCompanyPage(req, res, company);
   });
 
   router.get("/join", (req, res) => {
@@ -389,35 +457,39 @@ module.exports = function publicRoutes({ db }) {
    * Company mini-site: /{subdomain} on the regional host (e.g. /demo-lusaka-spark on demo.getproapp.org).
    * Registered after /directory, /join, /company/:id, etc.
    */
-  router.get("/:miniSiteSlug", (req, res, next) => {
-    const seg = String(req.params.miniSiteSlug || "").trim().toLowerCase();
-    if (!seg || !/^[a-z0-9-]+$/.test(seg) || MINI_SITE_RESERVED_SEGMENTS.has(seg)) {
-      return next();
-    }
-    const tenantId = req.tenant.id;
-    const company = db
-      .prepare(
-        `
+  router.get("/:miniSiteSlug", async (req, res, next) => {
+    try {
+      const seg = String(req.params.miniSiteSlug || "").trim().toLowerCase();
+      if (!seg || !/^[a-z0-9-]+$/.test(seg) || MINI_SITE_RESERVED_SEGMENTS.has(seg)) {
+        return next();
+      }
+      const tenantId = req.tenant.id;
+      const company = db
+        .prepare(
+          `
         SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
         FROM companies c
         LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
         WHERE c.subdomain = ? AND c.tenant_id = ?
         `
-      )
-      .get(seg, tenantId);
-    if (!company) {
-      res.status(404);
-      return res.render("not_found", {
-        slug: seg,
-        kind: "mini-site",
-        ...tenantLocals(req),
-        ...platformSupport(),
-      });
+        )
+        .get(seg, tenantId);
+      if (!company) {
+        res.status(404);
+        return res.render("not_found", {
+          slug: seg,
+          kind: "mini-site",
+          ...tenantLocals(req),
+          ...platformSupport(),
+        });
+      }
+      return await renderCompanyPage(req, res, company);
+    } catch (e) {
+      return next(e);
     }
-    return renderCompanyPage(req, res, company);
   });
 
-  function renderCompanyHome(req, res) {
+  async function renderCompanyHome(req, res) {
     const company = db
       .prepare(
         `

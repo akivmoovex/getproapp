@@ -963,6 +963,7 @@ module.exports = function adminRoutes({ db }) {
       service_areas = "",
       hours_text = "",
       gallery_text = "",
+      logo_url = "",
     } = req.body || {};
 
     const cleanName = String(name).trim();
@@ -1005,10 +1006,10 @@ module.exports = function adminRoutes({ db }) {
         `
         INSERT INTO companies
           (subdomain, name, category_id, headline, about, services, phone, email, location, featured_cta_label, featured_cta_phone, tenant_id, updated_at,
-           years_experience, service_areas, hours_text, gallery_json)
+           years_experience, service_areas, hours_text, gallery_json, logo_url)
         VALUES
           (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'),
-           ?, ?, ?, ?)
+           ?, ?, ?, ?, ?)
         `
       ).run(
         cleanSubdomain,
@@ -1026,7 +1027,8 @@ module.exports = function adminRoutes({ db }) {
         yearsExp,
         String(service_areas || "").trim(),
         String(hours_text || "").trim(),
-        galleryJson
+        galleryJson,
+        String(logo_url || "").trim()
       );
       return res.redirect("/admin/companies?edit=1");
     } catch (e) {
@@ -1076,6 +1078,7 @@ module.exports = function adminRoutes({ db }) {
       service_areas = "",
       hours_text = "",
       gallery_text = "",
+      logo_url = "",
     } = req.body || {};
 
     const cleanName = String(name).trim();
@@ -1133,6 +1136,7 @@ module.exports = function adminRoutes({ db }) {
           service_areas = ?,
           hours_text = ?,
           gallery_json = ?,
+          logo_url = ?,
           updated_at = datetime('now')
         WHERE id = ? AND tenant_id = ?
         `
@@ -1152,6 +1156,7 @@ module.exports = function adminRoutes({ db }) {
         String(service_areas || "").trim(),
         String(hours_text || "").trim(),
         galleryJsonUp,
+        String(logo_url || "").trim(),
         req.params.id,
         tid
       );

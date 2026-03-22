@@ -64,7 +64,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use((req, res, next) => {
-  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260322a";
+  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260320b";
   next();
 });
 
@@ -194,7 +194,7 @@ app.get("/", (req, res, next) => {
     if (base) {
       return res.redirect(301, `${scheme}://${t.slug}.${base}/${company.subdomain}`);
     }
-    return publicModule.renderCompanyHome(req, res);
+    return publicModule.renderCompanyHome(req, res).catch(next);
   }
   next();
 });

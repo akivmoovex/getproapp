@@ -765,6 +765,22 @@ try {
   console.error("[getpro] companies profile columns migration:", e.message);
 }
 
+/** One-time: company logo URL for directory / mini-site header. */
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("companies_logo_url_v1")) {
+    const cols = db.prepare("PRAGMA table_info(companies)").all();
+    const names = new Set(cols.map((c) => c.name));
+    if (!names.has("logo_url")) db.exec(`ALTER TABLE companies ADD COLUMN logo_url TEXT NOT NULL DEFAULT ''`);
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("companies_logo_url_v1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] companies logo_url migration:", e.message);
+}
+
 /** One-time: rich demo profiles (gallery + hours) for demo tenant companies. */
 try {
   const TID = require("./tenantIds");

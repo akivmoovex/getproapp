@@ -27,6 +27,7 @@
     "express-session": "^1.19.0",
     "helmet": "^8.1.0",
     "morgan": "^1.10.1",
+    "qrcode": "^1.5.4",
     "slugify": "^1.6.8"
   },
   "devDependencies": {

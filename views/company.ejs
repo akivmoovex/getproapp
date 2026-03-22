@@ -36,10 +36,20 @@
               <% } %>
               <span class="pro-company-profile__pill pro-company-profile__pill--muted">Directory profile</span>
             </div>
-            <h1 class="pro-company-profile__title"><%= company.name %></h1>
-            <% if (company.headline) { %>
-              <p class="pro-company-profile__headline"><%= company.headline %></p>
-            <% } %>
+            <div class="pro-company-profile__title-row">
+              <div class="pro-company-profile__title-block">
+                <h1 class="pro-company-profile__title"><%= company.name %></h1>
+                <% if (company.headline) { %>
+                  <p class="pro-company-profile__headline"><%= company.headline %></p>
+                <% } %>
+              </div>
+              <% var logoU = company.logo_url && String(company.logo_url).trim(); %>
+              <% if (logoU) { %>
+                <div class="pro-company-profile__logo-wrap">
+                  <img class="pro-company-profile__logo" src="<%= logoU %>" alt="<%= company.name %> logo" loading="lazy" width="120" height="120" />
+                </div>
+              <% } %>
+            </div>
             <% var yoe = company.years_experience != null && company.years_experience !== '' ? Number(company.years_experience) : null; %>
             <% if (yoe != null && !isNaN(yoe) && yoe > 0) { %>
               <p class="pro-company-profile__meta-line"><strong><%= yoe %></strong> years in business</p>
@@ -117,19 +127,41 @@
               </section>
             <% } %>
 
-            <% if (typeof galleryItems !== 'undefined' && galleryItems && galleryItems.length) { %>
+            <% var mediaItems = typeof mediaCarouselItems !== 'undefined' && mediaCarouselItems && mediaCarouselItems.length ? mediaCarouselItems : []; %>
+            <% if (mediaItems.length) { %>
               <section class="pro-company-profile__section" aria-labelledby="gallery-heading">
-                <h2 id="gallery-heading" class="pro-company-profile__h2">Recent work</h2>
-                <p class="muted pro-company-profile__gallery-intro">Photos supplied by the business.</p>
-                <div class="pro-company-profile__gallery">
-                  <% galleryItems.forEach(function(g) { %>
-                    <figure class="pro-company-profile__gallery-fig">
-                      <img src="<%= g.url %>" alt="<%= g.caption ? g.caption.replace(/"/g, '') : 'Work photo' %>" loading="lazy" width="960" height="640" />
-                      <% if (g.caption) { %>
-                        <figcaption><%= g.caption %></figcaption>
-                      <% } %>
-                    </figure>
-                  <% }); %>
+                <h2 id="gallery-heading" class="pro-company-profile__h2">Photos</h2>
+                <p class="muted pro-company-profile__gallery-intro">Swipe or use the arrows (or keyboard ← → when focused).</p>
+                <div
+                  class="pro-company-carousel"
+                  data-company-carousel
+                  tabindex="0"
+                  role="region"
+                  aria-roledescription="carousel"
+                  aria-label="Company photos"
+                >
+                  <div class="pro-company-carousel__viewport" data-carousel-viewport>
+                    <div class="pro-company-carousel__track" data-carousel-track>
+                      <% mediaItems.forEach(function(g, gi) { %>
+                        <% var isLogo = g.kind === 'logo'; %>
+                        <figure class="pro-company-carousel__slide<%= isLogo ? ' pro-company-carousel__slide--logo' : '' %>" data-carousel-slide aria-label="Slide <%= gi + 1 %> of <%= mediaItems.length %>">
+                          <div class="pro-company-carousel__img-wrap">
+                            <img src="<%= g.url %>" alt="<%= isLogo ? (company.name + ' logo') : (g.caption ? g.caption.replace(/"/g, '') : 'Work photo') %>" loading="<%= gi === 0 ? 'eager' : 'lazy' %>" width="960" height="640" draggable="false" />
+                          </div>
+                          <% if (g.caption) { %>
+                            <figcaption class="pro-company-carousel__cap"><%= g.caption %></figcaption>
+                          <% } else if (isLogo) { %>
+                            <figcaption class="pro-company-carousel__cap">Company logo</figcaption>
+                          <% } %>
+                        </figure>
+                      <% }); %>
+                    </div>
+                  </div>
+                  <% if (mediaItems.length > 1) { %>
+                    <button type="button" class="pro-company-carousel__btn pro-company-carousel__btn--prev" data-carousel-prev aria-label="Previous photo">‹</button>
+                    <button type="button" class="pro-company-carousel__btn pro-company-carousel__btn--next" data-carousel-next aria-label="Next photo">›</button>
+                    <div class="pro-company-carousel__dots" data-carousel-dots aria-hidden="true"></div>
+                  <% } %>
                 </div>
               </section>
             <% } %>
@@ -196,16 +228,49 @@
               <a class="btn btn-primary pro-company-profile__cta" href="tel:<%= company.featured_cta_phone %>"><%= company.featured_cta_label || 'Call us' %></a>
             <% } %>
 
-            <% if (typeof profileUrl !== 'undefined' && profileUrl) { %>
-              <p class="muted pro-company-profile__mini-hint">Share this profile:</p>
-              <p class="pro-company-profile__mini-url"><%= profileUrl %></p>
-            <% } %>
-
             <% if (typeof companyUrl !== 'undefined' && companyUrl && companyUrl !== '#') { %>
               <p class="muted pro-company-profile__mini-hint">Mini-site (this page)</p>
               <p>
                 <a href="<%= companyUrl %>"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : companyUrl %></a>
               </p>
+            <% } %>
+
+            <% if ((typeof qrDirectoryProfileDataUrl !== 'undefined' && qrDirectoryProfileDataUrl) || (typeof qrMiniSiteDataUrl !== 'undefined' && qrMiniSiteDataUrl)) { %>
+              <div class="pro-company-profile__qr-block">
+                <div class="pro-company-profile__qr-heading">QR codes</div>
+                <p class="muted" style="font-size:12px;line-height:1.5;margin:0 0 10px;">Scan to open on a phone.</p>
+                <% if (typeof qrUrlsMerged !== 'undefined' && qrUrlsMerged && qrDirectoryProfileDataUrl) { %>
+                  <div class="pro-company-profile__qr-single">
+                    <img src="<%= qrDirectoryProfileDataUrl %>" alt="QR code linking to this company page" width="168" height="168" class="pro-company-profile__qr-img" />
+                    <p class="muted pro-company-profile__qr-caption">Directory profile and mini-site use the same link in this view.</p>
+                  </div>
+                <% } else { %>
+                  <div class="pro-company-profile__qr-grid">
+                    <% if (typeof qrDirectoryProfileDataUrl !== 'undefined' && qrDirectoryProfileDataUrl) { %>
+                      <div class="pro-company-profile__qr-cell">
+                        <div class="muted pro-company-profile__qr-label">Directory profile</div>
+                        <img src="<%= qrDirectoryProfileDataUrl %>" alt="QR code for directory profile URL" width="168" height="168" class="pro-company-profile__qr-img" />
+                      </div>
+                    <% } %>
+                    <% if (typeof qrMiniSiteDataUrl !== 'undefined' && qrMiniSiteDataUrl) { %>
+                      <div class="pro-company-profile__qr-cell">
+                        <div class="muted pro-company-profile__qr-label">Mini-site</div>
+                        <img src="<%= qrMiniSiteDataUrl %>" alt="QR code for mini-site URL" width="168" height="168" class="pro-company-profile__qr-img" />
+                      </div>
+                    <% } %>
+                  </div>
+                <% } %>
+              </div>
+            <% } %>
+
+            <% if (typeof profileUrl !== 'undefined' && profileUrl) { %>
+              <% var _pu = String(profileUrl).trim(); var _puAbs = /^https?:\/\//i.test(_pu); %>
+              <div class="pro-company-profile__dir-link-block">
+                <p class="muted pro-company-profile__mini-hint">Directory profile (alternate layout)</p>
+                <p class="pro-company-profile__mini-url">
+                  <a href="<%= _pu %>" <%= _puAbs ? 'target="_blank" rel="noopener noreferrer"' : '' %>><%= _pu %></a>
+                </p>
+              </div>
             <% } %>
 
             <div class="pro-company-profile__support">
@@ -226,5 +291,6 @@
 
     <%- include('partials/site_footer', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>
     <script src="/scripts.js?v=<%= stylesVersion %>"></script>
+    <script src="/company-profile.js?v=<%= stylesVersion %>"></script>
   </body>
 </html>

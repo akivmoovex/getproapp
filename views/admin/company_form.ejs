@@ -39,6 +39,21 @@
           action="<%= company ? '/admin/companies/' + company.id : '/admin/companies' %>"
           class="form"
         >
+          <div>
+            <label for="logo_url">Logo image URL</label>
+            <input
+              id="logo_url"
+              name="logo_url"
+              type="url"
+              inputmode="url"
+              placeholder="https://…"
+              value="<%= company && company.logo_url ? company.logo_url : '' %>"
+            />
+            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+              Shown in the company header next to the name. Use a square or wide logo over HTTPS.
+            </div>
+          </div>
+
           <div class="hero-grid" style="grid-template-columns: 1fr 1fr;">
             <div>
               <label for="name">Company Name</label>
