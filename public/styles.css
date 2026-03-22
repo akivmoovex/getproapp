@@ -90,6 +90,13 @@ a:hover {
   padding: 0 18px;
 }
 
+@media (max-width: 480px) {
+  .container {
+    padding-left: max(14px, env(safe-area-inset-left, 14px));
+    padding-right: max(14px, env(safe-area-inset-right, 14px));
+  }
+}
+
 /* ——— Admin gate (GetPro admin login / getpro-admin) ——— */
 .admin-gate-card .form label {
   font-weight: 600;
@@ -947,6 +954,53 @@ a:hover {
   .btn-nav-primary {
     padding: 9px 16px;
     font-size: 14px;
+  }
+}
+
+/* Minimal header: logo + single “List your business” (no top shortcut strip, no Directory/Browse/admin) */
+.wf-header-wrap--minimal .nav.wf-nav--minimal {
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.wf-nav-actions--minimal {
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.wf-nav-actions--minimal a {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--wf-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wf-nav-actions--minimal a:hover {
+  color: var(--wf-primary-dark);
+  text-decoration: underline;
+}
+
+@media (max-width: 560px) {
+  .wf-header-wrap--minimal .nav.wf-nav--minimal {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 0 14px;
+  }
+
+  .wf-nav-actions--minimal {
+    width: 100%;
+  }
+
+  .wf-nav-actions--minimal a {
+    display: block;
+    text-align: center;
+    padding: 10px 14px;
+    border-radius: var(--radius-pill);
+    border: 1px solid color-mix(in srgb, var(--wf-primary) 35%, var(--border-strong));
+    background: color-mix(in srgb, var(--wf-primary) 8%, var(--surface));
+    white-space: normal;
   }
 }
 
@@ -2458,6 +2512,46 @@ textarea {
   background: var(--btn-primary-hover);
 }
 
+/* Directory search: full-width stacked fields on small screens (avoid clipped inputs) */
+@media (max-width: 720px) {
+  form.pro-search.pro-search--directory {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  form.pro-search.pro-search--directory .pro-ac {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  form.pro-search.pro-search--directory .pro-ac-input {
+    font-size: 16px;
+    min-height: 48px;
+    box-sizing: border-box;
+  }
+
+  form.pro-search.pro-search--directory .pro-search-dir-btn {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 48px;
+  }
+}
+
+/* Directory two-column layout → single column on phones */
+@media (max-width: 768px) {
+  .hero-grid.pro-directory-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
 /* Directory / category: professional listing cards (LTR, photo left — pro.co.il–style) */
 .pro-directory-layout {
   grid-template-columns: minmax(220px, 0.88fr) minmax(0, 1.22fr);
@@ -3221,6 +3315,12 @@ textarea {
 
 .pro-company-profile__contact-list li {
   margin-bottom: 12px;
+}
+
+.pro-company-profile__contact-list a {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .pro-company-profile__cta {

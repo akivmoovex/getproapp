@@ -1,36 +1,17 @@
 <% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var tpHome = tp ? tp + '/' : '/'; %>
 <% var ten = typeof tenant !== 'undefined' ? tenant : null; %>
-<div class="wf-topbar">
-  <div class="container wf-topbar-inner">
-    <span class="wf-topbar-tag">Professional directory</span>
-    <ul class="wf-topbar-links" aria-label="Quick links">
-      <li><a href="<%= tp %>/join">List your business</a></li>
-      <li><a href="/getpro-admin">GetPro admin</a></li>
-      <li><a href="#pricing">Pricing guide</a></li>
-      <li><a href="#services">Services &amp; jobs</a></li>
-      <li><a href="#qa">Q&amp;A</a></li>
-      <li><a href="#guide">Pro guide</a></li>
-      <li><a href="#footer-terms">Terms</a></li>
-    </ul>
-  </div>
-</div>
-
-<div class="wf-header-wrap">
+<div class="wf-header-wrap wf-header-wrap--minimal">
   <div class="container">
-    <div class="nav wf-nav">
+    <div class="nav wf-nav wf-nav--minimal">
       <div class="brand">
         <div class="brand-primary">
           <%- include('brand_lockup_getpro', { tenant: ten, brandLockupVariant: 'nav', brandLockupHref: tpHome }) %>
           <span class="brand-tagline">Trusted professionals · verified directory</span>
         </div>
       </div>
-
-      <div class="nav-links wf-nav-actions">
-        <a href="<%= tp %>/directory">Directory</a>
-        <a href="<%= tp %>/join">For professionals</a>
-        <a class="btn btn-nav-outline" href="<%= tp %>/directory">Browse</a>
-        <a class="btn btn-nav-primary" href="/getpro-admin">GetPro admin</a>
+      <div class="nav-links wf-nav-actions wf-nav-actions--minimal">
+        <a href="<%= tp %>/join">List your business</a>
       </div>
     </div>
   </div>
