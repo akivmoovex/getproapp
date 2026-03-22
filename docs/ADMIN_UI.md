@@ -22,6 +22,7 @@ If you see files like **`netraz.sqlite`**, **`pronline.sqlite`**, or other extra
 
 ## Components
 
+- **Dashboard:** `.admin-dashboard__kpis`, `.admin-dashboard-panel`, `.admin-dash-bars` / `.admin-dash-status` — overview metrics, 7-day lead bars, status distribution (see `views/admin/dashboard.ejs`).
 - **Grids:** `.admin-settings-hub__grid`, `.admin-filter-form__grid` — use `repeat(auto-fill, minmax(...))` and `--admin-gap`.
 - **Cards:** `.admin-main .card` — shared border-radius and padding via tokens; CRM uses `.crm-task-section` for task-specific density.
 - **Tables:** `.table`, `.table-wrap`, `.admin-settings-tenant-table` — keep cell padding aligned with `--admin-table-cell-padding` where overridden.

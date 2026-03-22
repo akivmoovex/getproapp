@@ -813,9 +813,64 @@ module.exports = function adminRoutes({ db }) {
     const u = req.session.adminUser;
     const tid = getAdminTenantId(req);
 
-    const categoriesCount = db.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(tid).c;
-    const companiesCount = db.prepare("SELECT COUNT(*) AS c FROM companies WHERE tenant_id = ?").get(tid).c;
-    const leadsCount = db.prepare("SELECT COUNT(*) AS c FROM leads WHERE tenant_id = ?").get(tid).c;
+    const categoriesCount = Number(db.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(tid).c);
+    const companiesCount = Number(db.prepare("SELECT COUNT(*) AS c FROM companies WHERE tenant_id = ?").get(tid).c);
+    const leadsCount = Number(db.prepare("SELECT COUNT(*) AS c FROM leads WHERE tenant_id = ?").get(tid).c);
+
+    const leadStatusRaw = db
+      .prepare("SELECT status, COUNT(*) AS c FROM leads WHERE tenant_id = ? GROUP BY status")
+      .all(tid);
+    const leadMerged = {};
+    for (const row of leadStatusRaw) {
+      const st = normalizeLeadStatus(row.status);
+      leadMerged[st] = (leadMerged[st] || 0) + Number(row.c);
+    }
+    const leadsByStatus = LEAD_STATUSES.map((st) => ({
+      status: st,
+      label: leadStatusLabel(st),
+      count: leadMerged[st] || 0,
+    }));
+    const leadsStatusDen = Math.max(1, leadsByStatus.reduce((a, x) => a + x.count, 0));
+
+    const dayCounts = db
+      .prepare(
+        `SELECT date(created_at) AS d, COUNT(*) AS c FROM leads WHERE tenant_id = ? AND date(created_at) >= date('now', '-6 days') GROUP BY date(created_at)`
+      )
+      .all(tid);
+    const dayMap = Object.fromEntries(dayCounts.map((r) => [r.d, Number(r.c)]));
+    const leadsLast7Days = [];
+    let maxDay = 0;
+    for (let i = 6; i >= 0; i--) {
+      const dStr = db.prepare(`SELECT date('now', ?) AS d`).get(`-${i} days`).d;
+      const count = dayMap[dStr] || 0;
+      if (count > maxDay) maxDay = count;
+      const dt = new Date(`${dStr}T12:00:00`);
+      leadsLast7Days.push({
+        date: dStr,
+        count,
+        label: dt.toLocaleDateString("en", { weekday: "short" }),
+      });
+    }
+    const leadsLast7Max = Math.max(1, maxDay);
+
+    let crmSnapshot = null;
+    if (canAccessCrm(u.role)) {
+      const crmRaw = db
+        .prepare("SELECT status, COUNT(*) AS c FROM crm_tasks WHERE tenant_id = ? GROUP BY status")
+        .all(tid);
+      const crmMerged = {};
+      for (const row of crmRaw) {
+        const st = normalizeCrmTaskStatus(row.status);
+        crmMerged[st] = (crmMerged[st] || 0) + Number(row.c);
+      }
+      const crmByStatus = CRM_TASK_STATUSES.map((st) => ({
+        status: st,
+        label: crmTaskStatusLabel(st),
+        count: crmMerged[st] || 0,
+      }));
+      const crmTotal = crmByStatus.reduce((a, x) => a + x.count, 0);
+      crmSnapshot = { total: crmTotal, byStatus: crmByStatus, den: Math.max(1, crmTotal) };
+    }
 
     const latestLeads = db
       .prepare(
@@ -836,9 +891,15 @@ module.exports = function adminRoutes({ db }) {
       companiesCount,
       leadsCount,
       latestLeads,
+      leadsByStatus,
+      leadsStatusDen,
+      leadsLast7Days,
+      leadsLast7Max,
+      crmSnapshot,
       baseDomain: process.env.BASE_DOMAIN || "",
       role: u.role,
       isViewer: isTenantViewer(u.role),
+      canAccessCrm: canAccessCrm(u.role),
     });
   });
 

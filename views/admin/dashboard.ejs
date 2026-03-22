@@ -6,58 +6,162 @@
     <title>Dashboard | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body class="admin-app<%- bodyEmbedClass %>">
+  <body class="admin-app admin-dashboard-page<%- bodyEmbedClass %>">
     <%- include('../partials/admin_nav', { navTitle: 'Dashboard & overview', activeNav: 'dashboard' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
-      <h1 class="section-title" style="margin-top:0;">Overview</h1>
-      <div class="grid-3 admin-stat-grid">
-        <div class="card admin-stat-card">
-          <div class="muted">Professions</div>
-          <div class="admin-stat-card__value"><%= categoriesCount %></div>
-        </div>
-        <div class="card admin-stat-card">
-          <div class="muted">Companies</div>
-          <div class="admin-stat-card__value"><%= companiesCount %></div>
-        </div>
-        <div class="card admin-stat-card">
-          <div class="muted">Leads</div>
-          <div class="admin-stat-card__value"><%= leadsCount %></div>
-        </div>
-      </div>
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Dashboard</h1>
+            <% if (typeof adminScopeTenant !== 'undefined' && adminScopeTenant) { %>
+            <p class="admin-dashboard__subtitle muted">
+              Region: <strong><%= adminScopeTenant.name %></strong>
+              <span class="kbd"><%= adminScopeTenant.slug %></span>
+            </p>
+            <% } else { %>
+            <p class="admin-dashboard__subtitle muted">Directory and lead activity for your region.</p>
+            <% } %>
+          </div>
+        </header>
 
-      <h2 class="section-title">Latest leads</h2>
-      <div class="card">
-        <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Company</th>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Message</th>
-              <th>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% latestLeads.forEach(function(l) { %>
-              <tr>
-                <td>
-                  <div style="font-weight:800;"><%= l.company_name %></div>
-                  <div class="muted" style="font-size:12px;">@<%= l.company_subdomain %></div>
-                </td>
-                <td><%= l.name %></td>
-                <td><%= l.phone %></td>
-                <td><%= l.message %></td>
-                <td class="muted" style="font-size:12px;"><%= l.created_at %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
+        <section class="admin-dashboard__kpis" aria-label="Key metrics">
+          <article class="admin-dashboard-kpi">
+            <div class="admin-dashboard-kpi__icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+            </div>
+            <div class="admin-dashboard-kpi__body">
+              <span class="admin-dashboard-kpi__label">Professions</span>
+              <span class="admin-dashboard-kpi__value"><%= categoriesCount %></span>
+            </div>
+          </article>
+          <article class="admin-dashboard-kpi">
+            <div class="admin-dashboard-kpi__icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
+            </div>
+            <div class="admin-dashboard-kpi__body">
+              <span class="admin-dashboard-kpi__label">Companies</span>
+              <span class="admin-dashboard-kpi__value"><%= companiesCount %></span>
+            </div>
+          </article>
+          <article class="admin-dashboard-kpi admin-dashboard-kpi--accent">
+            <div class="admin-dashboard-kpi__icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div class="admin-dashboard-kpi__body">
+              <span class="admin-dashboard-kpi__label">Leads</span>
+              <span class="admin-dashboard-kpi__value"><%= leadsCount %></span>
+            </div>
+          </article>
+        </section>
+
+        <div class="admin-dashboard__charts">
+          <section class="card admin-dashboard-panel" aria-labelledby="dash-leads-chart-title">
+            <div class="admin-dashboard-panel__head">
+              <h2 id="dash-leads-chart-title" class="admin-dashboard-panel__title">Leads · last 7 days</h2>
+              <span class="admin-dashboard-panel__hint muted">New inquiries per day</span>
+            </div>
+            <div class="admin-dash-bars" role="img" aria-label="Leads per day for the last week">
+              <% (leadsLast7Days || []).forEach(function (d) { %>
+              <% var pct = leadsLast7Max ? Math.round((d.count / leadsLast7Max) * 100) : 0; %>
+              <div class="admin-dash-bars__col">
+                <span class="admin-dash-bars__value" aria-hidden="true"><%= d.count %></span>
+                <div class="admin-dash-bars__track">
+                  <div class="admin-dash-bars__fill" style="height: <%= Math.max(pct, d.count ? 8 : 0) %>%"></div>
+                </div>
+                <span class="admin-dash-bars__label"><%= d.label %></span>
+              </div>
+              <% }); %>
+            </div>
+          </section>
+
+          <section class="card admin-dashboard-panel" aria-labelledby="dash-lead-status-title">
+            <div class="admin-dashboard-panel__head">
+              <h2 id="dash-lead-status-title" class="admin-dashboard-panel__title">Leads by status</h2>
+              <span class="admin-dashboard-panel__hint muted">Pipeline snapshot</span>
+            </div>
+            <ul class="admin-dash-status">
+              <% (leadsByStatus || []).forEach(function (row) { %>
+              <% var sp = leadsStatusDen ? Math.round((row.count / leadsStatusDen) * 100) : 0; %>
+              <li class="admin-dash-status__row">
+                <div class="admin-dash-status__top">
+                  <span class="admin-dash-status__name"><%= row.label %></span>
+                  <span class="admin-dash-status__num"><%= row.count %></span>
+                </div>
+                <div class="admin-dash-status__bar" role="presentation">
+                  <span class="admin-dash-status__fill" style="width: <%= sp %>%"></span>
+                </div>
+              </li>
+              <% }); %>
+            </ul>
+          </section>
         </div>
-      </div>
+
+        <% if (typeof canAccessCrm !== 'undefined' && canAccessCrm && crmSnapshot) { %>
+        <section class="card admin-dashboard-panel admin-dashboard-panel--crm" aria-labelledby="dash-crm-title">
+          <div class="admin-dashboard-panel__head admin-dashboard-panel__head--row">
+            <div>
+              <h2 id="dash-crm-title" class="admin-dashboard-panel__title">CRM tasks</h2>
+              <span class="admin-dashboard-panel__hint muted"><%= crmSnapshot.total %> total in this region</span>
+            </div>
+            <a class="btn btn-primary" href="/admin/crm">Open CRM board</a>
+          </div>
+          <ul class="admin-dash-crm">
+            <% crmSnapshot.byStatus.forEach(function (row) { %>
+            <% var cp = crmSnapshot.den ? Math.round((row.count / crmSnapshot.den) * 100) : 0; %>
+            <li class="admin-dash-crm__item">
+              <span class="admin-dash-crm__label"><%= row.label %></span>
+              <div class="admin-dash-crm__track">
+                <span class="admin-dash-crm__fill" style="width: <%= cp %>%"></span>
+              </div>
+              <span class="admin-dash-crm__n"><%= row.count %></span>
+            </li>
+            <% }); %>
+          </ul>
+        </section>
+        <% } %>
+
+        <section class="admin-dashboard__leads-section" aria-labelledby="dash-latest-leads">
+          <div class="admin-dashboard__section-head">
+            <h2 id="dash-latest-leads" class="admin-dashboard__section-title">Latest leads</h2>
+            <a class="admin-dashboard__section-link" href="/admin/leads">View all</a>
+          </div>
+          <div class="card admin-dashboard-table-card">
+            <div class="table-wrap">
+              <table class="table admin-dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Company</th>
+                    <th>Contact</th>
+                    <th>Message</th>
+                    <th>Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (!latestLeads || latestLeads.length === 0) { %>
+                  <tr>
+                    <td colspan="4" class="muted admin-dashboard-table__empty">No leads yet for this region.</td>
+                  </tr>
+                  <% } %>
+                  <% (latestLeads || []).forEach(function (l) { %>
+                  <tr>
+                    <td>
+                      <div class="admin-dashboard-table__company"><%= l.company_name %></div>
+                      <div class="muted admin-dashboard-table__sub">@<%= l.company_subdomain %></div>
+                    </td>
+                    <td>
+                      <div><%= l.name %></div>
+                      <div class="muted admin-dashboard-table__sub"><%= l.phone %></div>
+                    </td>
+                    <td class="admin-dashboard-table__msg"><%= l.message %></td>
+                    <td class="muted admin-dashboard-table__time"><%= l.created_at %></td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   </body>
 </html>
-
