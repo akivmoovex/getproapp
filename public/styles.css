@@ -692,12 +692,122 @@ a:hover {
   overflow: hidden;
 }
 
+.admin-settings-modal__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--text);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
+}
+
+.admin-settings-modal__close:hover {
+  background: color-mix(in srgb, var(--wf-primary) 10%, var(--surface));
+}
+
 .admin-settings-modal__iframe {
   flex: 1;
   min-height: 0;
   width: 100%;
   border: 0;
   background: var(--bg);
+}
+
+/* Super admin — regions list: inline region settings (matches settings-hub modal chrome) */
+.admin-tenant-settings-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-tenant-settings-inline {
+  display: flex;
+  flex-direction: column;
+  min-height: min(72vh, 640px);
+  background: var(--surface);
+}
+
+.admin-tenant-settings-inline[hidden] {
+  display: none !important;
+}
+
+.admin-tenant-settings-inline__chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 10px 16px;
+  border-bottom: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface) 96%, var(--muted) 4%);
+  flex-shrink: 0;
+}
+
+.admin-tenant-settings-inline__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  padding-right: 48px;
+}
+
+.admin-tenant-settings-inline__close {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.admin-tenant-settings-inline__close:hover {
+  background: color-mix(in srgb, var(--wf-primary) 10%, var(--surface));
+}
+
+.admin-tenant-settings-inline__iframe {
+  flex: 1;
+  min-height: 420px;
+  width: 100%;
+  border: 0;
+  background: var(--bg);
+}
+
+.admin-settings-tenant-table__name-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--wf-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-settings-tenant-table__name-btn:hover {
+  color: color-mix(in srgb, var(--wf-primary) 82%, var(--text));
 }
 
 /* ——— Company mini-site workspace (admin) ——— */

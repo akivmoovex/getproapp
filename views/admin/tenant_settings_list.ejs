@@ -10,49 +10,81 @@
     <%- include('../partials/admin_nav', { navTitle: 'Region settings', activeNav: 'settings' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
-        <div class="admin-toolbar" style="margin-bottom: 8px">
-          <a class="btn" href="/admin/settings">← Settings hub</a>
-        </div>
         <h1 class="section-title" style="margin-top: 0">Region settings</h1>
         <p class="admin-intro" style="margin-bottom: 20px">
           Choose a region to edit call-center phone, support line, WhatsApp, and email. These apply to directory footers and company mini-sites.
         </p>
-        <div class="card">
-          <div class="table-wrap">
-            <table class="table admin-settings-tenant-table">
-              <thead>
-                <tr>
-                  <th scope="col">Region</th>
-                  <th scope="col">Short</th>
-                  <th scope="col">Stage</th>
-                  <th scope="col">Listing phone</th>
-                  <th scope="col" class="admin-settings-tenant-table__actions"> </th>
-                </tr>
-              </thead>
-              <tbody>
-                <% if (!tenants || tenants.length === 0) { %>
-                <tr>
-                  <td colspan="5" class="muted">No regions found.</td>
-                </tr>
-                <% } %>
-                <% (tenants || []).forEach(function (t) { %>
-                <tr class="admin-settings-tenant-table__row">
-                  <td>
-                    <a class="admin-settings-tenant-table__name" href="/admin/settings/tenant/<%= t.id %>"><%= t.name %></a>
-                  </td>
-                  <td class="muted"><span class="kbd"><%= t.slug %></span></td>
-                  <td><%= t.stage %></td>
-                  <td class="muted" style="font-size: 13px"><%= t.callcenter_phone ? t.callcenter_phone : '—' %></td>
-                  <td class="admin-settings-tenant-table__actions">
-                    <a class="btn btn-primary" href="/admin/settings/tenant/<%= t.id %>">Edit</a>
-                  </td>
-                </tr>
-                <% }); %>
-              </tbody>
-            </table>
+        <div class="card admin-tenant-settings-card">
+          <div id="tenant_settings_table_wrap" class="admin-tenant-settings-table-wrap">
+            <div class="table-wrap">
+              <table class="table admin-settings-tenant-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Region</th>
+                    <th scope="col">Short</th>
+                    <th scope="col">Stage</th>
+                    <th scope="col">Listing phone</th>
+                    <th scope="col" class="admin-settings-tenant-table__actions"> </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (!tenants || tenants.length === 0) { %>
+                  <tr>
+                    <td colspan="5" class="muted">No regions found.</td>
+                  </tr>
+                  <% } %>
+                  <% (tenants || []).forEach(function (t) { %>
+                  <tr class="admin-settings-tenant-table__row">
+                    <td>
+                      <button
+                        type="button"
+                        class="admin-settings-tenant-table__name-btn admin-tenant-settings-open"
+                        data-tenant-url="/admin/settings/tenant/<%= t.id %>?embed=1"
+                        data-tenant-name="<%= t.name %>"
+                      >
+                        <%= t.name %>
+                      </button>
+                    </td>
+                    <td class="muted"><span class="kbd"><%= t.slug %></span></td>
+                    <td><%= t.stage %></td>
+                    <td class="muted" style="font-size: 13px"><%= t.callcenter_phone ? t.callcenter_phone : '—' %></td>
+                    <td class="admin-settings-tenant-table__actions">
+                      <button
+                        type="button"
+                        class="btn btn-primary admin-tenant-settings-open"
+                        data-tenant-url="/admin/settings/tenant/<%= t.id %>?embed=1"
+                        data-tenant-name="<%= t.name %>"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div
+            id="tenant_settings_inline"
+            class="admin-tenant-settings-inline"
+            hidden
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tenant_settings_inline_title"
+            aria-hidden="true"
+          >
+            <div class="admin-tenant-settings-inline__chrome">
+              <h2 id="tenant_settings_inline_title" class="admin-tenant-settings-inline__title">Region settings</h2>
+              <button type="button" class="admin-tenant-settings-inline__close" aria-label="Close region settings">
+                ×
+              </button>
+            </div>
+            <iframe class="admin-tenant-settings-inline__iframe" title="Region settings form"></iframe>
           </div>
         </div>
       </div>
     </main>
+    <script src="/admin-tenant-settings-list.js?v=<%= stylesVersion %>"></script>
   </body>
 </html>

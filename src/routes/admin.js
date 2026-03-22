@@ -863,6 +863,11 @@ module.exports = function adminRoutes({ db }) {
     const u = req.session.adminUser;
     if (!u) return res.redirect("/admin/login");
     if (!isSuperAdmin(u.role)) {
+      if (!canAccessTenantSettings(u.role)) {
+        return res.status(403).type("text").send("Access denied.");
+      }
+      const tid = getAdminTenantId(req);
+      if (tid) return res.redirect(`/admin/settings/tenant/${tid}`);
       return res.status(403).type("text").send("Access denied.");
     }
     const tenants = db.prepare("SELECT * FROM tenants ORDER BY name COLLATE NOCASE ASC, id ASC").all();
@@ -892,7 +897,6 @@ module.exports = function adminRoutes({ db }) {
       tenant,
       isSuper: isSuperAdmin(u.role),
       saved,
-      backHref: "/admin/settings",
     });
   });
 

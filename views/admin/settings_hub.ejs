@@ -13,7 +13,7 @@
         <header class="admin-settings-hub__hero">
           <h1 class="admin-settings-hub__title">Settings</h1>
           <p class="admin-settings-hub__lead muted">
-            Choose a tool below. It opens in a full-width panel; click the dimmed area outside the panel or press <kbd class="admin-settings-hub__kbd">Esc</kbd> to return here.
+            Choose a tool below. It opens in a full-width panel; use <strong>×</strong> in the top-right, click the dimmed backdrop, or press <kbd class="admin-settings-hub__kbd">Esc</kbd> to return here.
           </p>
         </header>
 
@@ -68,6 +68,7 @@
     <div id="admin_settings_modal" class="admin-settings-modal" aria-hidden="true" hidden>
       <div class="admin-settings-modal__backdrop" data-settings-modal-close tabindex="-1"></div>
       <div class="admin-settings-modal__dialog" role="dialog" aria-modal="true" aria-label="Admin tool">
+        <button type="button" class="admin-settings-modal__close" data-settings-modal-close aria-label="Close">×</button>
         <iframe id="admin_settings_iframe" class="admin-settings-modal__iframe" title="Embedded admin screen"></iframe>
       </div>
     </div>

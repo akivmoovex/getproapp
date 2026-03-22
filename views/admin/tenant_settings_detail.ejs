@@ -10,9 +10,15 @@
     <%- include('../partials/admin_nav', { navTitle: tenant ? tenant.name + ' — settings' : 'Settings', activeNav: 'settings' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
+        <% if (!(typeof embed !== 'undefined' && embed)) { %>
         <div class="admin-toolbar" style="margin-bottom: 8px">
-          <a class="btn" href="<%= backHref %>">← Settings hub</a>
+          <% if (typeof isSuper !== 'undefined' && isSuper) { %>
+          <a class="btn" href="/admin/settings/tenants">← All regions</a>
+          <% } else { %>
+          <a class="btn" href="/admin/settings">← Settings</a>
+          <% } %>
         </div>
+        <% } %>
 
         <% if (typeof saved !== 'undefined' && saved) { %>
         <div class="flash" role="status">Settings saved.</div>
