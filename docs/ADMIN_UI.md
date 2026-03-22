@@ -1,6 +1,6 @@
 # Admin console UI patterns
 
-This app uses **one stylesheet** (`public/styles.css`) for both the public site and the admin UI. Admin-specific layout is scoped with `.admin-app`, `.admin-main`, and **CSS variables** under `:root` with the `--admin-*` prefix so grids, cards, tables, and modals stay consistent.
+This app uses **one stylesheet** (`public/styles.css`) for both the public site and the admin UI. Admin-specific layout is scoped with `.admin-app`, `.admin-main`, and **CSS variables** under `:root` with the `--admin-*` prefix so grids, cards, tables, and modals stay consistent. **Material Design 3** spacing, elevation, and surfaces use the `--md-sys-*` tokens (see [`MATERIAL_DESIGN_3.md`](./MATERIAL_DESIGN_3.md)).
 
 ## Database files (`data/`)
 

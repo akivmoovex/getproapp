@@ -78,6 +78,37 @@
   --admin-modal-max-width: 960px;
   --admin-modal-max-height-vh: 88vh;
   --admin-modal-max-height-px: 820px;
+
+  /* Material Design 3 — spacing (4px base / 8dp grid), shape, elevation (see docs/MATERIAL_DESIGN_3.md) */
+  --md-sys-spacing-1: 4px;
+  --md-sys-spacing-2: 8px;
+  --md-sys-spacing-3: 12px;
+  --md-sys-spacing-4: 16px;
+  --md-sys-spacing-5: 24px;
+  --md-sys-spacing-6: 32px;
+  --md-sys-shape-corner-none: 0;
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-color-surface: var(--surface);
+  --md-sys-color-surface-container: var(--bg);
+  --md-sys-color-surface-container-low: color-mix(in srgb, var(--surface) 94%, var(--bg) 6%);
+  --md-sys-color-surface-container-high: color-mix(in srgb, var(--surface) 88%, var(--bg) 12%);
+  --md-sys-color-surface-container-highest: color-mix(in srgb, var(--surface) 82%, var(--bg) 18%);
+  --md-sys-color-surface-container-lowest: var(--surface);
+  --md-sys-color-outline-variant: color-mix(in srgb, var(--border-strong) 65%, var(--surface) 35%);
+  /* M3 elevation shadows (light, on-neutral background) */
+  --md-sys-elevation-level0: none;
+  --md-sys-elevation-level1: 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 3px 1px rgba(0, 0, 0, 0.06);
+  --md-sys-elevation-level2: 0 1px 2px rgba(0, 0, 0, 0.1), 0 2px 6px 2px rgba(0, 0, 0, 0.08);
+  --md-sys-elevation-level3: 0 4px 8px 3px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1);
+  --md-sys-elevation-level4: 0 6px 10px 4px rgba(0, 0, 0, 0.08), 0 2px 3px rgba(0, 0, 0, 0.1);
+  --md-sys-elevation-level5: 0 8px 12px 6px rgba(0, 0, 0, 0.1), 0 4px 4px rgba(0, 0, 0, 0.08);
+  --md-sys-motion-duration-short1: 150ms;
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
 * {
@@ -87,8 +118,20 @@
 body {
   margin: 0;
   font-family: var(--font-display);
-  background: var(--bg);
+  background: var(--md-sys-color-surface-container);
   color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 a {
@@ -1890,12 +1933,22 @@ a:hover {
   border: 0;
 }
 
-/* CRM task detail — two-column layout + tokens */
+/* CRM task detail — M3 surfaces, elevation, spacing */
+.admin-crm-page .admin-main {
+  background: var(--md-sys-color-surface-container);
+}
+
 .crm-task-shell {
   display: flex;
   flex-direction: column;
-  gap: var(--admin-gap-section);
+  gap: var(--md-sys-spacing-4);
   max-width: min(100%, 920px);
+}
+
+@media (max-width: 879px) {
+  .crm-task-shell {
+    gap: var(--md-sys-spacing-3);
+  }
 }
 
 .crm-task-shell--panel {
@@ -1904,33 +1957,49 @@ a:hover {
 
 .crm-task-layout {
   display: grid;
-  gap: var(--admin-gap-section);
+  gap: var(--md-sys-spacing-4);
   grid-template-columns: 1fr;
   align-items: start;
+}
+
+.crm-task-layout__primary,
+.crm-task-layout__aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-sys-spacing-4);
+  min-width: 0;
+}
+
+@media (max-width: 879px) {
+  .crm-task-layout {
+    gap: var(--md-sys-spacing-3);
+  }
+
+  .crm-task-layout__primary,
+  .crm-task-layout__aside {
+    gap: var(--md-sys-spacing-3);
+  }
 }
 
 @media (min-width: 880px) {
   .crm-task-layout {
     grid-template-columns: 1fr min(300px, 34%);
-    gap: calc(var(--admin-gap-section) + 4px);
+    gap: var(--md-sys-spacing-5);
+    align-items: start;
   }
 
   .crm-task-layout__aside {
     position: sticky;
-    top: 10px;
+    top: max(12px, env(safe-area-inset-top, 0px));
   }
 }
 
 .crm-task-hero {
-  padding: 14px 16px 16px;
-  border-radius: var(--admin-radius-xl);
-  border: 1px solid var(--border-strong);
-  background: linear-gradient(
-    145deg,
-    color-mix(in srgb, var(--surface) 90%, var(--wf-primary) 10%) 0%,
-    var(--surface) 55%
-  );
-  box-shadow: var(--card-shadow-sm);
+  padding: var(--md-sys-spacing-4) var(--md-sys-spacing-4) var(--md-sys-spacing-5);
+  border-radius: var(--md-sys-shape-corner-large);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-low);
+  box-shadow: var(--md-sys-elevation-level2);
 }
 
 .crm-task-hero__eyebrow {
@@ -1953,13 +2022,14 @@ a:hover {
 .crm-task-pill {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
+  padding: var(--md-sys-spacing-1) var(--md-sys-spacing-3);
+  border-radius: var(--md-sys-shape-corner-extra-large);
   font-size: 11px;
   font-weight: 800;
-  background: color-mix(in srgb, var(--wf-primary) 12%, var(--surface));
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--wf-primary) 14%, var(--md-sys-color-surface-container-lowest));
   color: var(--text);
-  border: 1px solid color-mix(in srgb, var(--wf-primary) 26%, var(--border-strong));
+  border: 1px solid color-mix(in srgb, var(--wf-primary) 28%, var(--md-sys-color-outline-variant));
 }
 
 .crm-task-hero__assignee {
@@ -1982,11 +2052,11 @@ a:hover {
 }
 
 .crm-task-section {
-  padding: 12px 14px;
-  border-radius: var(--admin-radius-lg);
-  border: 1px solid var(--border-strong);
-  background: var(--surface);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  padding: var(--md-sys-spacing-4) var(--md-sys-spacing-4);
+  border-radius: var(--md-sys-shape-corner-large);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-lowest);
+  box-shadow: var(--md-sys-elevation-level1);
 }
 
 .crm-task-section--form .crm-task-form > div:last-of-type {
@@ -1994,16 +2064,21 @@ a:hover {
 }
 
 .crm-task-section--form {
-  padding-bottom: 14px;
+  padding-bottom: var(--md-sys-spacing-4);
+}
+.crm-task-section--form:focus-within {
+  box-shadow: var(--md-sys-elevation-level2);
 }
 
 .crm-task-section--callout {
-  background: color-mix(in srgb, var(--wf-primary) 5%, var(--surface));
-  border-color: color-mix(in srgb, var(--wf-primary) 20%, var(--border-strong));
+  background: color-mix(in srgb, var(--wf-primary) 6%, var(--md-sys-color-surface-container-lowest));
+  border-color: color-mix(in srgb, var(--wf-primary) 22%, var(--md-sys-color-outline-variant));
+  box-shadow: var(--md-sys-elevation-level1);
 }
 
 .crm-task-section--history {
-  background: color-mix(in srgb, var(--surface) 98%, var(--muted) 2%);
+  background: var(--md-sys-color-surface-container-low);
+  border-color: var(--md-sys-color-outline-variant);
 }
 
 .crm-task-aside__title {
@@ -2050,12 +2125,12 @@ a:hover {
 }
 
 .crm-task-attach {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
+  margin-top: var(--md-sys-spacing-3);
+  padding-top: var(--md-sys-spacing-3);
+  border-top: 1px solid var(--md-sys-color-outline-variant);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--md-sys-spacing-1);
 }
 
 .crm-task-attach__label {
@@ -2077,14 +2152,15 @@ a:hover {
 }
 
 .crm-task-form .form > div {
-  margin-bottom: 10px;
+  margin-bottom: var(--md-sys-spacing-3);
 }
 
 .crm-task-form__actions {
-  margin-top: 12px;
+  margin-top: var(--md-sys-spacing-3);
+  padding-top: var(--md-sys-spacing-2);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--md-sys-spacing-2);
 }
 
 .crm-task-form--comment textarea {
@@ -2107,18 +2183,19 @@ a:hover {
 
 .crm-task-comments {
   list-style: none;
-  margin: 0 0 12px;
+  margin: 0 0 var(--md-sys-spacing-3);
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--md-sys-spacing-2);
 }
 
 .crm-task-comments__item {
-  padding: 10px 12px;
-  border-radius: var(--admin-radius);
-  background: color-mix(in srgb, var(--muted) 5%, var(--surface));
-  border: 1px solid var(--border);
+  padding: var(--md-sys-spacing-3);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  box-shadow: var(--md-sys-elevation-level0);
 }
 
 .crm-task-comments__meta {
@@ -2142,15 +2219,16 @@ a:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--md-sys-spacing-2);
 }
 
 .crm-task-audit__row {
-  padding: 8px 10px;
-  border-radius: var(--admin-radius);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  padding: var(--md-sys-spacing-3);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-variant);
   font-size: 12px;
+  box-shadow: var(--md-sys-elevation-level0);
 }
 
 .crm-task-audit__meta {
@@ -2180,6 +2258,29 @@ a:hover {
   font-size: 11px;
   line-height: 1.4;
   word-break: break-word;
+}
+
+@media (max-width: 600px) {
+  .crm-task-section .btn,
+  .crm-task-layout__aside .btn {
+    min-height: 48px;
+  }
+
+  .crm-task-form select {
+    min-height: 48px;
+    border-radius: var(--md-sys-shape-corner-small);
+  }
+
+  .crm-task-form input:not([type="hidden"]) {
+    min-height: 48px;
+    border-radius: var(--md-sys-shape-corner-small);
+  }
+
+  .crm-task-form textarea {
+    min-height: 120px;
+    padding: var(--md-sys-spacing-3);
+    border-radius: var(--md-sys-shape-corner-small);
+  }
 }
 
 @media (min-width: 1200px) {
@@ -3076,11 +3177,12 @@ a:hover {
 }
 
 .card {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  padding: 16px;
-  border-radius: 14px;
-  box-shadow: var(--card-shadow-sm);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-lowest);
+  padding: var(--md-sys-spacing-4);
+  border-radius: var(--md-sys-shape-corner-medium);
+  box-shadow: var(--md-sys-elevation-level1);
+  transition: box-shadow var(--md-sys-motion-duration-short1) var(--md-sys-motion-easing-standard);
 }
 
 .btn {
@@ -3309,9 +3411,9 @@ textarea {
   padding: 24px;
 }
 
-/* Home page: subtle tint (optional) */
+/* Home page: surface container (M3-aligned) */
 .home-page {
-  background: var(--bg);
+  background: var(--md-sys-color-surface-container);
 }
 
 .visually-hidden {
