@@ -22,6 +22,11 @@ const {
 const { STAGES, normalizeStage } = require("../tenantStages");
 const { TENANT_ZM } = require("../tenantIds");
 const {
+  DEFAULT_CALLCENTER_PHONE,
+  DEFAULT_WHATSAPP_PHONE,
+  DEFAULT_CALLCENTER_EMAIL,
+} = require("../tenantContactSupport");
+const {
   parseGalleryAdminText,
   parseGalleryJson,
   galleryToAdminText,
@@ -296,8 +301,13 @@ module.exports = function adminRoutes({ db }) {
     if (dup) return res.status(400).send("This short code is already in use.");
     const maxRow = db.prepare("SELECT MAX(id) AS m FROM tenants").get();
     const nextId = (maxRow && maxRow.m ? Number(maxRow.m) : 0) + 1;
+    const callcenter_phone = String(req.body.callcenter_phone || "").trim() || DEFAULT_CALLCENTER_PHONE;
+    const whatsapp_phone = String(req.body.whatsapp_phone || "").trim() || DEFAULT_WHATSAPP_PHONE;
+    const callcenter_email = String(req.body.callcenter_email || "").trim() || DEFAULT_CALLCENTER_EMAIL;
     try {
-      db.prepare("INSERT INTO tenants (id, slug, name, stage) VALUES (?, ?, ?, ?)").run(nextId, slug, name, stage);
+      db.prepare(
+        "INSERT INTO tenants (id, slug, name, stage, callcenter_phone, whatsapp_phone, callcenter_email) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      ).run(nextId, slug, name, stage, callcenter_phone, whatsapp_phone, callcenter_email);
       seedCategoriesFromTenant(db, nextId, TENANT_ZM);
       return res.redirect("/admin/super");
     } catch (e) {
@@ -331,7 +341,14 @@ module.exports = function adminRoutes({ db }) {
     }
     const dup = db.prepare("SELECT id FROM tenants WHERE slug = ? AND id != ?").get(slug, id);
     if (dup) return res.status(400).send("This short code is already in use.");
-    const r = db.prepare("UPDATE tenants SET name = ?, slug = ?, stage = ? WHERE id = ?").run(name, slug, stage, id);
+    const callcenter_phone = String(req.body.callcenter_phone || "").trim() || DEFAULT_CALLCENTER_PHONE;
+    const whatsapp_phone = String(req.body.whatsapp_phone || "").trim() || DEFAULT_WHATSAPP_PHONE;
+    const callcenter_email = String(req.body.callcenter_email || "").trim() || DEFAULT_CALLCENTER_EMAIL;
+    const r = db
+      .prepare(
+        "UPDATE tenants SET name = ?, slug = ?, stage = ?, callcenter_phone = ?, whatsapp_phone = ?, callcenter_email = ? WHERE id = ?"
+      )
+      .run(name, slug, stage, callcenter_phone, whatsapp_phone, callcenter_email, id);
     if (r.changes === 0) return res.status(404).send("Region not found");
     return res.redirect("/admin/super");
   });

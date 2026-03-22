@@ -509,7 +509,7 @@ try {
           "Full-service electrical installations, repairs, and safety inspections. Electrician services across Lusaka with same-week callouts.",
         services: "Rewiring\nPanel upgrades\nEmergency Electrician callouts",
         phone: "+260211000101",
-        email: "spark@demo.getproapp.invalid",
+        email: "info@getproapp.org",
         loc: "Lusaka, Zambia",
         cta: "+260211000101",
       },
@@ -522,7 +522,7 @@ try {
           "Retail fit-outs, warehouses, and backup power. Search Electrician Lusaka — we cover CBD and Woodlands.",
         services: "Three-phase installs\nLighting design\nCompliance certificates",
         phone: "+260211000102",
-        email: "voltpro@demo.getproapp.invalid",
+        email: "info@getproapp.org",
         loc: "Lusaka",
         cta: "+260211000102",
       },
@@ -534,7 +534,7 @@ try {
         about: "Burst pipes, geysers, and bathroom refits. Fast response in Lusaka and nearby areas.",
         services: "Leak detection\nDrain clearing\nBathroom installs",
         phone: "+260211000103",
-        email: "flow@demo.getproapp.invalid",
+        email: "info@getproapp.org",
         loc: "Lusaka, Zambia",
         cta: "+260211000103",
       },
@@ -546,7 +546,7 @@ try {
         about: "Industrial Electrician support — not in Lusaka; used to test city filters.",
         services: "Motor control\nCabling\nMaintenance",
         phone: "+260212000201",
-        email: "kitwe@demo.getproapp.invalid",
+        email: "info@getproapp.org",
         loc: "Kitwe, Zambia",
         cta: "+260212000201",
       },
@@ -1075,6 +1075,48 @@ try {
 } catch (e) {
   // eslint-disable-next-line no-console
   console.error("[getpro] crm_tasks migration:", e.message);
+}
+
+/** Per-tenant call center / WhatsApp / support email (footers + mini-site). */
+try {
+  const tenantColNames = () =>
+    new Set(db.prepare("PRAGMA table_info(tenants)").all().map((c) => c.name));
+  let tc = tenantColNames();
+  if (!tc.has("callcenter_phone")) {
+    db.exec(
+      "ALTER TABLE tenants ADD COLUMN callcenter_phone TEXT NOT NULL DEFAULT '+260211000101'"
+    );
+    tc = tenantColNames();
+  }
+  if (!tc.has("whatsapp_phone")) {
+    db.exec(
+      "ALTER TABLE tenants ADD COLUMN whatsapp_phone TEXT NOT NULL DEFAULT '+260211000102'"
+    );
+    tc = tenantColNames();
+  }
+  if (!tc.has("callcenter_email")) {
+    db.exec(
+      "ALTER TABLE tenants ADD COLUMN callcenter_email TEXT NOT NULL DEFAULT 'info@getproapp.org'"
+    );
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] tenants contact columns migration:", e.message);
+}
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("demo_company_email_invalid_fix_v1")) {
+    db.prepare(
+      `UPDATE companies SET email = 'info@getproapp.org' WHERE email LIKE '%getproapp.invalid%'`
+    ).run();
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("demo_company_email_invalid_fix_v1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] demo company email fix migration:", e.message);
 }
 
 function run(query, params = []) {

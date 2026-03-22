@@ -470,6 +470,15 @@ a:hover {
   flex-direction: column;
 }
 
+.admin-workspace__shell-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px;
+  padding-bottom: 40px;
+}
+
 .admin-workspace__shell {
   display: flex;
   flex-direction: column;
@@ -481,7 +490,7 @@ a:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 10px;
   padding: 10px 0 14px;
   border-bottom: 1px solid var(--border-strong);
@@ -493,6 +502,10 @@ a:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.admin-workspace__toolbar-meta {
+  margin-left: 4px;
 }
 
 .admin-workspace__stage {

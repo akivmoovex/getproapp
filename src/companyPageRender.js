@@ -1,20 +1,13 @@
 const QRCode = require("qrcode");
 const { getTenantById, DEFAULT_TENANT_SLUG } = require("./tenants");
 const { TENANT_ZM } = require("./tenantIds");
+const { getTenantContactSupport } = require("./tenantContactSupport");
 const {
   parseGalleryJson,
   formatReviewDateLabel,
   buildCompanyMiniSiteUrl,
   companyMiniSiteLabel,
 } = require("./companyProfile");
-
-function platformSupport() {
-  return {
-    getproPhone: process.env.CALL_CENTER_PHONE || "",
-    getproEmail: process.env.GETPRO_EMAIL || "",
-    getproAddress: process.env.GETPRO_ADDRESS || "",
-  };
-}
 
 function tenantHomeHrefFromPrefix(prefix) {
   if (!prefix) return "/";
@@ -192,7 +185,7 @@ async function buildCompanyPageLocals(req, db, company, options = {}) {
     tenantUrlPrefix,
     tenantHomeHref: tenantHomeHrefFromPrefix(tenantUrlPrefix),
     regionChoices: req.regionChoices || [],
-    ...platformSupport(),
+    ...getTenantContactSupport(db, company.tenant_id),
   };
 }
 

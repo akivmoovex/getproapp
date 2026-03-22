@@ -9,18 +9,19 @@
   <body class="admin-app admin-workspace-page">
     <%- include('../partials/admin_nav', { navTitle: 'Mini-site editor', activeNav: 'companies' }) %>
     <main class="admin-main admin-workspace">
-      <div class="admin-workspace__shell">
+      <div class="container admin-workspace__shell-wrap">
+        <div class="admin-workspace__shell">
         <div class="admin-workspace__toolbar" role="toolbar" aria-label="Mini-site actions">
           <div class="admin-workspace__toolbar-left">
+            <a class="btn" href="/admin/companies?edit=1">← Back</a>
             <button type="button" class="btn btn-primary admin-workspace__btn-edit" data-ws-edit style="display:none;">Edit</button>
-            <a class="btn" href="/admin/companies?edit=1">← Companies</a>
             <button type="button" class="btn btn-primary admin-workspace__btn-preview" data-ws-preview style="display:none;">Preview</button>
             <button type="button" class="btn admin-workspace__btn-close" data-ws-close style="display:none;">Close</button>
             <button type="button" class="btn btn-primary admin-workspace__btn-publish" data-ws-publish style="display:none;">Publish</button>
             <button type="button" class="btn admin-workspace__btn-back-edit" data-ws-back-edit style="display:none;">Back to edit</button>
-          </div>
-          <div class="admin-workspace__toolbar-meta muted" style="font-size:12px;">
-            <span class="kbd"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : company.subdomain %></span>
+            <span class="admin-workspace__toolbar-meta muted" style="font-size:12px;">
+              <span class="kbd"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : company.subdomain %></span>
+            </span>
           </div>
         </div>
 
@@ -87,7 +88,7 @@
                     <th scope="row">Email</th>
                     <td>
                       <input type="text" class="input-grow" data-f="email" inputmode="email" autocomplete="email" />
-                      <div class="muted" style="font-size:11px;margin-top:4px;">Use a full address (e.g. name@business.com). Demo domains like .invalid are allowed.</div>
+                      <div class="muted" style="font-size:11px;margin-top:4px;">Use a real address customers can reply to (e.g. name@business.com).</div>
                     </td>
                   </tr>
                   <tr>
@@ -125,6 +126,7 @@
               </table>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </main>

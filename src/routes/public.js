@@ -7,6 +7,7 @@ const { getTenantCitiesForClient, getJoinCityWatermarkRotate } = require("../ten
 const { israelComingSoonEnabled } = require("../israelComingSoon");
 const { attachReviewStatsToCompanies } = require("../reviewStats");
 const { buildCompanyPageLocals } = require("../companyPageRender");
+const { getTenantContactSupport } = require("../tenantContactSupport");
 
 function loadSearchLists() {
   const p = path.join(__dirname, "../../public/data/search-lists.json");
@@ -23,14 +24,6 @@ function isWhitelistedCity(value) {
   if (!value) return true;
   const v = String(value).trim().toLowerCase();
   return loadSearchLists().cities.some((c) => c.toLowerCase() === v);
-}
-
-function platformSupport() {
-  return {
-    getproPhone: process.env.CALL_CENTER_PHONE || "",
-    getproEmail: process.env.GETPRO_EMAIL || "",
-    getproAddress: process.env.GETPRO_ADDRESS || "",
-  };
 }
 
 function tenantHomeHrefFromPrefix(prefix) {
@@ -81,6 +74,11 @@ const MINI_SITE_RESERVED_SEGMENTS = new Set([
 module.exports = function publicRoutes({ db }) {
   const router = express.Router();
 
+  function platformSupport(req) {
+    const tid = req.tenant && req.tenant.id;
+    return getTenantContactSupport(db, tid);
+  }
+
   async function renderCompanyPage(req, res, company) {
     const locals = await buildCompanyPageLocals(req, db, company);
     return res.render("company", locals);
@@ -115,7 +113,7 @@ module.exports = function publicRoutes({ db }) {
         ...tenantLocals(req),
         apexUrl,
         apexHostLabel: base || "Home",
-        ...platformSupport(),
+        ...platformSupport(req),
       });
     }
     next();
@@ -131,7 +129,7 @@ module.exports = function publicRoutes({ db }) {
       categories,
       baseDomain: process.env.BASE_DOMAIN || "",
       ...tenantLocals(req),
-      ...platformSupport(),
+      ...platformSupport(req),
     });
   });
 
@@ -206,7 +204,7 @@ module.exports = function publicRoutes({ db }) {
       baseDomain: process.env.BASE_DOMAIN || "",
       companyMiniSiteHref: (sub) => `/${encodeURIComponent(String(sub || "").trim())}`,
       ...tenantLocals(req),
-      ...platformSupport(),
+      ...platformSupport(req),
     });
   });
 
@@ -222,7 +220,7 @@ module.exports = function publicRoutes({ db }) {
         slug: categorySlug,
         kind: "category",
         ...tenantLocals(req),
-        ...platformSupport(),
+        ...platformSupport(req),
       });
     }
 
@@ -249,7 +247,7 @@ module.exports = function publicRoutes({ db }) {
       baseDomain: process.env.BASE_DOMAIN || "",
       companyMiniSiteHref: (sub) => `/${encodeURIComponent(String(sub || "").trim())}`,
       ...tenantLocals(req),
-      ...platformSupport(),
+      ...platformSupport(req),
     });
   });
 
@@ -263,7 +261,7 @@ module.exports = function publicRoutes({ db }) {
           slug: String(req.params.id || ""),
           kind: "company",
           ...tenantLocals(req),
-          ...platformSupport(),
+          ...platformSupport(req),
         });
       }
       const company = db
@@ -282,7 +280,7 @@ module.exports = function publicRoutes({ db }) {
           slug: String(id),
           kind: "company",
           ...tenantLocals(req),
-          ...platformSupport(),
+          ...platformSupport(req),
         });
       }
       return await renderCompanyPage(req, res, company);
@@ -300,7 +298,7 @@ module.exports = function publicRoutes({ db }) {
       joinTenantCities,
       joinCityWatermarkRotate,
       ...tenantLocals(req),
-      ...platformSupport(),
+      ...platformSupport(req),
     });
   });
 
@@ -331,7 +329,7 @@ module.exports = function publicRoutes({ db }) {
           slug: seg,
           kind: "mini-site",
           ...tenantLocals(req),
-          ...platformSupport(),
+          ...platformSupport(req),
         });
       }
       return await renderCompanyPage(req, res, company);
@@ -363,7 +361,7 @@ module.exports = function publicRoutes({ db }) {
         tenantUrlPrefix: tp,
         tenantHomeHref: tenantHomeHrefFromPrefix(tp),
         regionChoices: req.regionChoices || [],
-        ...platformSupport(),
+        ...getTenantContactSupport(db, TENANT_ZM),
       });
     }
 

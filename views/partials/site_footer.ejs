@@ -33,10 +33,19 @@
           <% if (getproEmail) { %>
             <li><a href="mailto:<%= getproEmail %>"><%= getproEmail %></a></li>
           <% } %>
+          <% if (typeof getproWhatsapp !== 'undefined' && getproWhatsapp) { %>
+            <li>
+              <% if (typeof getproWhatsappHref !== 'undefined' && getproWhatsappHref) { %>
+                <a href="<%= getproWhatsappHref %>" rel="noopener noreferrer" target="_blank">WhatsApp <%= getproWhatsapp %></a>
+              <% } else { %>
+                WhatsApp <%= getproWhatsapp %>
+              <% } %>
+            </li>
+          <% } %>
           <% if (getproAddress) { %>
             <li><%= getproAddress %></li>
           <% } %>
-          <% if (!getproPhone && !getproEmail && !getproAddress) { %>
+          <% if (!getproPhone && !getproEmail && !getproAddress && !(typeof getproWhatsapp !== 'undefined' && getproWhatsapp)) { %>
             <li style="color:rgba(255,255,255,0.55);">Configure contact details via environment variables.</li>
           <% } %>
         </ul>

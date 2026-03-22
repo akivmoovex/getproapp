@@ -46,6 +46,39 @@
               Only <strong>Enabled</strong> regions appear in the public picker and accept traffic on their subdomain (except <strong>global</strong>, apex-only).
             </div>
           </div>
+          <div>
+            <label for="st_callcenter_phone">Call center phone</label>
+            <input
+              id="st_callcenter_phone"
+              name="callcenter_phone"
+              type="text"
+              value="<%= tenant && tenant.callcenter_phone ? tenant.callcenter_phone : '+260211000101' %>"
+              placeholder="+260211000101"
+            />
+          </div>
+          <div>
+            <label for="st_whatsapp_phone">WhatsApp phone</label>
+            <input
+              id="st_whatsapp_phone"
+              name="whatsapp_phone"
+              type="text"
+              value="<%= tenant && tenant.whatsapp_phone ? tenant.whatsapp_phone : '+260211000102' %>"
+              placeholder="+260211000102"
+            />
+          </div>
+          <div>
+            <label for="st_callcenter_email">Call center email</label>
+            <input
+              id="st_callcenter_email"
+              name="callcenter_email"
+              type="email"
+              value="<%= tenant && tenant.callcenter_email ? tenant.callcenter_email : 'info@getproapp.org' %>"
+              placeholder="info@getproapp.org"
+            />
+            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+              Shown in site footers and the “GetPro support” block on company mini-sites. Per-region overrides; env vars apply if a field is left empty on save.
+            </div>
+          </div>
           <div class="admin-gate-actions">
             <button class="btn btn-primary" type="submit"><%= tenant ? 'Save' : 'Create' %></button>
             <a class="btn" href="/admin/super">Cancel</a>

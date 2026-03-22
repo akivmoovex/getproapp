@@ -218,7 +218,7 @@
               <% } %>
               <% if (company.email) { %>
                 <% var _mail = String(company.email || '').trim(); %>
-                <li><span class="muted">Email</span><br /><a href="mailto:<%= encodeURIComponent(_mail) %>"><%= _mail %></a></li>
+                <li><span class="muted">Email</span><br /><a href="mailto:<%= _mail %>"><%= _mail %></a></li>
               <% } %>
               <% if (company.location) { %>
                 <li><span class="muted">Location</span><br /><%= company.location %></li>
@@ -254,6 +254,16 @@
               <% } %>
               <% if (getproEmail) { %>
                 <p class="muted" style="margin:8px 0 0;"><a href="mailto:<%= getproEmail %>"><%= getproEmail %></a></p>
+              <% } %>
+              <% if (typeof getproWhatsapp !== 'undefined' && getproWhatsapp) { %>
+                <p class="muted" style="margin:8px 0 0;">
+                  WhatsApp
+                  <% if (typeof getproWhatsappHref !== 'undefined' && getproWhatsappHref) { %>
+                    <br /><a href="<%= getproWhatsappHref %>" rel="noopener noreferrer" target="_blank"><%= getproWhatsapp %></a>
+                  <% } else { %>
+                    <br /><%= getproWhatsapp %>
+                  <% } %>
+                </p>
               <% } %>
             </div>
           </aside>
