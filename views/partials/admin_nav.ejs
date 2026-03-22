@@ -10,9 +10,9 @@
   const scoped = !!nav.tenantScoped;
   const title = typeof navTitle !== 'undefined' ? navTitle : '';
   const scopeTenant = typeof adminScopeTenant !== 'undefined' && adminScopeTenant ? adminScopeTenant : null;
-  const embed = typeof embed !== 'undefined' && embed;
+  const isEmbed = typeof embed !== 'undefined' && embed;
 %>
-<% if (embed) { %>
+<% if (isEmbed) { %>
 <div class="admin-embed-bar">
   <div class="admin-embed-bar__inner">
     <span class="admin-embed-bar__label">Embedded view</span>
