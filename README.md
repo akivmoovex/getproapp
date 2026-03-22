@@ -94,7 +94,9 @@ npm install
 npm start
 ```
 
-**Database:** Schema changes, migrations, and built-in demo data run **automatically** when the app loads `src/db.js` (no separate `seed` script). Use `SQLITE_PATH` if the database file lives outside `data/`.
+**Database:** Schema changes, migrations, and built-in demo data run **automatically** when the app loads `src/db.js` (no separate `seed` script). Use `SQLITE_PATH` if the database file lives outside `data/`. Only **`data/getpro.sqlite`** is used by default — extra `*.sqlite` / `*.db` files (e.g. copied from other projects) are ignored unless `SQLITE_PATH` points at them; see `data/README.md`.
+
+**Admin UI:** Layout tokens and patterns for grids, cards, tables, and modals are documented in [`docs/ADMIN_UI.md`](docs/ADMIN_UI.md).
 
 **URLs:** The marketing site defaults to **`https://getproapp.org`** (apex). **Zambia** (ISO alpha-2 **`zm`**) uses **`https://zm.getproapp.org`**. **Israel** uses **`https://il.getproapp.org`**. The apex home shows a **Region** control (globe) to open those sites — **unless** the visitor’s country is **Zambia** (see below). Legacy paths **`/zm/…`** and **`/il/…`** redirect to **`zm.*`** and **`il.*`**. The old host **`zam.getproapp.org`** redirects to **`zm.getproapp.org`**. Configure **DNS** (and SSL) for `zm` and `il` (and wildcard `*.getproapp.org` if you use company subdomains).
 

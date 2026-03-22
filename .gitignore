@@ -6,4 +6,5 @@ node_modules/
 .env.*
 
 data/*.sqlite
+data/*.db
 data/sessions.db
