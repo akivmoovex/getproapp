@@ -16,6 +16,8 @@ const db = new Database(sqlitePath);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
+db.exec(`CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);`);
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS admin_users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -270,9 +272,6 @@ try {
 /** One-time: remap legacy tenant ids to global=1, demo=2, il=3, zm=4, zw=5, bw=6, za=7, na=8. */
 try {
   const TID = require("./tenantIds");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("tenant_id_layout_v1")) {
     const gm = db.prepare("SELECT id FROM tenants WHERE slug = 'global'").get();
     const zm = db.prepare("SELECT id FROM tenants WHERE slug = 'zm'").get();
@@ -372,9 +371,6 @@ try {
  * that still has none (fixes empty admin Professions + directory categories on fresh or partial DBs).
  */
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("ensure_canonical_categories_all_tenants_v1")) {
     const zmId = 4;
     const zmCount = db.prepare("SELECT COUNT(*) AS c FROM categories WHERE tenant_id = ?").get(zmId).c;
@@ -447,9 +443,6 @@ try {
 
 /** One-time: only Global + Zambia stay enabled; other regions disabled (re-enable via admin + optional env). */
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   const ran = db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("disable_tenants_except_global_zm_v1");
   if (!ran && process.env.GETPRO_SKIP_TENANT_REGION_LOCK !== "1") {
     db.prepare("UPDATE tenants SET stage = ? WHERE slug NOT IN ('global', 'zm')").run("Disabled");
@@ -464,9 +457,6 @@ try {
 
 /** One-time: demo enabled for demo.{BASE_DOMAIN} (not listed in region picker); South Africa disabled by default. */
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("tenant_demo_enabled_za_disabled_v1")) {
     db.prepare("UPDATE tenants SET stage = ? WHERE slug = 'demo'").run("Enabled");
     db.prepare("UPDATE tenants SET stage = ? WHERE slug = 'za'").run("Disabled");
@@ -483,9 +473,6 @@ try {
 try {
   const TID = require("./tenantIds");
   const demoTenantId = TID.TENANT_DEMO;
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("demo_seed_sample_companies_v1")) {
     const elCat = db
       .prepare("SELECT id FROM categories WHERE tenant_id = ? AND slug = 'electricians'")
@@ -603,9 +590,6 @@ try {
 /** One-time: seed demo reviews (mixed dates so “last 3 months” highlight differs from all-time average). */
 try {
   const TID = require("./tenantIds");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("reviews_seed_demo_v1")) {
     const demoTenantId = TID.TENANT_DEMO;
     const ins = db.prepare(`
@@ -721,9 +705,6 @@ try {
 
 /** One-time: ensure every Enabled tenant has professions copied from Zambia when empty (fixes gaps after manual deletes or failed seeds). */
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("repair_empty_categories_enabled_tenants_v1")) {
     const zmId = 4;
     const enabled = db.prepare("SELECT id FROM tenants WHERE stage = 'Enabled'").all();
@@ -747,9 +728,6 @@ try {
 
 /** One-time: directory company detail page fields (gallery JSON, hours, service areas). */
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("companies_profile_columns_v1")) {
     const cols = db.prepare("PRAGMA table_info(companies)").all();
     const names = new Set(cols.map((c) => c.name));
@@ -767,9 +745,6 @@ try {
 
 /** One-time: company logo URL for directory / mini-site header. */
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("companies_logo_url_v1")) {
     const cols = db.prepare("PRAGMA table_info(companies)").all();
     const names = new Set(cols.map((c) => c.name));
@@ -784,9 +759,6 @@ try {
 /** One-time: rich demo profiles (gallery + hours) for demo tenant companies. */
 try {
   const TID = require("./tenantIds");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("demo_company_profile_rich_v1")) {
     const demoTid = TID.TENANT_DEMO;
     const upd = db.prepare(`
@@ -881,9 +853,6 @@ try {
 /** One-time: delete super-admin–created tenants not in the canonical slug list (and their scoped data). */
 try {
   const { CANONICAL_TENANT_SLUGS_LIST } = require("./tenantIds");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("delete_non_canonical_tenants_v1")) {
     const ph = CANONICAL_TENANT_SLUGS_LIST.map(() => "?").join(",");
     const orphans = db
@@ -933,9 +902,6 @@ try {
 }
 
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("tenant_cities_seed_zm_v1")) {
     const zmId = 4;
     const n = db.prepare("SELECT COUNT(*) AS c FROM tenant_cities WHERE tenant_id = ?").get(zmId).c;
@@ -970,9 +936,6 @@ try {
 /** One-time: copy Zambia city list to demo tenant when demo has no cities (admin Cities tab + join autocomplete). */
 try {
   const TID = require("./tenantIds");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("demo_tenant_cities_copy_from_zm_v1")) {
     const demoId = TID.TENANT_DEMO;
     const zmId = TID.TENANT_ZM;
@@ -1004,9 +967,6 @@ try {
 
 /** Lead workflow: status values + threaded admin comments. */
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("leads_comments_and_status_v1")) {
     db.exec(`
       CREATE TABLE IF NOT EXISTS lead_comments (
@@ -1038,9 +998,6 @@ try {
 
 /** Multi-tenant CRM tasks + audit trail. */
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("crm_tasks_v1")) {
     db.exec(`
       CREATE TABLE IF NOT EXISTS crm_tasks (
@@ -1079,9 +1036,6 @@ try {
 
 /** CRM task comments (detail page). */
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("crm_task_comments_v1")) {
     db.exec(`
       CREATE TABLE IF NOT EXISTS crm_task_comments (
@@ -1104,9 +1058,6 @@ try {
 
 /** CRM: replace pending/waiting with blocked; optional attachment URL. */
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("crm_tasks_blocked_attachment_v1")) {
     db.prepare("UPDATE crm_tasks SET status = 'blocked' WHERE status IN ('pending', 'waiting')").run();
     const crmCols = new Set(db.prepare("PRAGMA table_info(crm_tasks)").all().map((c) => c.name));
@@ -1154,9 +1105,6 @@ try {
 }
 
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("tenant_support_help_phone_v1")) {
     db.prepare("UPDATE tenants SET support_help_phone = callcenter_phone").run();
     db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("tenant_support_help_phone_v1");
@@ -1167,9 +1115,6 @@ try {
 }
 
 try {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("demo_company_email_invalid_fix_v1")) {
     db.prepare(
       `UPDATE companies SET email = 'info@getproapp.org' WHERE email LIKE '%getproapp.invalid%'`
@@ -1184,9 +1129,6 @@ try {
 /** One-time: demo tenant sample companies get distinct placeholder logos (hero + carousel). */
 try {
   const TID = require("./tenantIds");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("demo_company_logos_v1")) {
     const demoTenantId = TID.TENANT_DEMO;
     const logos = [
@@ -1223,9 +1165,6 @@ try {
   const bcrypt = require("bcryptjs");
   const { ROLES } = require("./roles");
   const TID = require("./tenantIds");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
-  `);
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("demo_tenant_users_and_tasks_v1")) {
     const demoTid = TID.TENANT_DEMO;
     const hash = (p) => bcrypt.hashSync(p, 10);

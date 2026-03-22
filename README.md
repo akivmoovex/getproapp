@@ -94,6 +94,8 @@ npm install
 npm start
 ```
 
+**Database:** Schema changes, migrations, and built-in demo data run **automatically** when the app loads `src/db.js` (no separate `seed` script). Use `SQLITE_PATH` if the database file lives outside `data/`.
+
 **URLs:** The marketing site defaults to **`https://getproapp.org`** (apex). **Zambia** (ISO alpha-2 **`zm`**) uses **`https://zm.getproapp.org`**. **Israel** uses **`https://il.getproapp.org`**. The apex home shows a **Region** control (globe) to open those sites — **unless** the visitor’s country is **Zambia** (see below). Legacy paths **`/zm/…`** and **`/il/…`** redirect to **`zm.*`** and **`il.*`**. The old host **`zam.getproapp.org`** redirects to **`zm.getproapp.org`**. Configure **DNS** (and SSL) for `zm` and `il` (and wildcard `*.getproapp.org` if you use company subdomains).
 
 **Apex + Zambia visitors:** If **`CF-IPCountry`** is **`ZM`** (Cloudflare passes this to the origin), the apex host serves the **Zambia** tenant home (same content as **`zm.{BASE_DOMAIN}`**), with links pointing at the regional host. For local testing without Cloudflare, set **`GETPRO_FORCE_CLIENT_COUNTRY=ZM`**. Other regions are unchanged; only **`zm`** enforces a national phone format (**0** + **9** digits).

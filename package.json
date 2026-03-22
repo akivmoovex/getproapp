@@ -8,7 +8,6 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon --watch \"server.js\" --watch \"index.js\" --exec \"node index.js\"",
-    "seed": "node scripts/seed.js",
     "build-search-lists": "node scripts/build-search-lists.js",
     "build": "npm run build-search-lists",
     "rebuild-sqlite": "npm rebuild better-sqlite3"
