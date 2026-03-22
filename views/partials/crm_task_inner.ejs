@@ -1,45 +1,45 @@
 <% var _ov = typeof overlayMode !== 'undefined' && overlayMode; %>
-<% if (_ov) { %>
-<h2 class="admin-crm-overlay__task-title">Task #<%= task.id %></h2>
-<% } %>
-<p class="admin-intro muted admin-crm-detail__meta">
-  <span class="admin-crm-detail__meta-item"
-    >Status: <strong><%= typeof crmTaskStatusLabel === 'function' ? crmTaskStatusLabel(task.status) : task.status %></strong></span
-  >
-  <span class="admin-crm-detail__meta-sep" aria-hidden="true">·</span>
-  <% if (task.owner_username) { %>
-    <span class="admin-crm-detail__meta-item">Owner: <strong><%= task.owner_username %></strong></span>
-  <% } else { %>
-    <span class="admin-crm-detail__meta-item"><em>Unassigned</em></span>
-  <% } %>
-</p>
+<div class="crm-task-shell<%= _ov ? ' crm-task-shell--panel' : '' %>">
+  <header class="crm-task-hero card">
+    <% if (_ov) { %>
+    <p class="crm-task-hero__eyebrow">Task #<%= task.id %></p>
+    <% } %>
+    <div class="crm-task-hero__row">
+      <span class="crm-task-pill"><%= typeof crmTaskStatusLabel === 'function' ? crmTaskStatusLabel(task.status) : task.status %></span>
+      <% if (task.owner_username) { %>
+        <span class="crm-task-hero__assignee muted">Assignee: <strong><%= task.owner_username %></strong></span>
+      <% } else { %>
+        <span class="crm-task-hero__assignee muted"><em>Unassigned</em></span>
+      <% } %>
+    </div>
+    <h1 class="crm-task-hero__title"><%= task.title %></h1>
+  </header>
 
-<div class="card admin-crm-panel admin-crm-detail__block">
-  <h2 class="admin-crm-section__title">Details</h2>
-  <p class="admin-crm-detail__task-title"><%= task.title %></p>
-  <% if (task.description) { %>
-    <div class="admin-crm-detail__body"><%= task.description %></div>
-  <% } else { %>
-    <p class="muted">No description.</p>
-  <% } %>
-  <% var _att = task.attachment_url && String(task.attachment_url).trim(); %>
-  <% if (_att) { %>
-    <p class="admin-crm-detail__attachment" style="margin-top: 12px">
-      <span class="muted">Attachment: </span>
-      <a href="<%= _att %>" rel="noopener noreferrer" target="_blank"><%= _att %></a>
+  <section class="crm-task-section card">
+    <h2 class="crm-task-section__h">Description</h2>
+    <% if (task.description) { %>
+      <div class="crm-task-prose"><%= task.description %></div>
+    <% } else { %>
+      <p class="muted" style="margin: 0">No description.</p>
+    <% } %>
+    <% var _att = task.attachment_url && String(task.attachment_url).trim(); %>
+    <% if (_att) { %>
+      <div class="crm-task-attach">
+        <span class="muted">Attachment</span>
+        <a class="crm-task-attach__link" href="<%= _att %>" rel="noopener noreferrer" target="_blank"><%= _att %></a>
+      </div>
+    <% } %>
+    <p class="crm-task-meta muted">
+      Created <%= task.created_at %><% if (task.creator_username) { %> · <%= task.creator_username %><% } %>
+      · Updated <%= task.updated_at %>
     </p>
-  <% } %>
-  <p class="muted admin-crm-detail__timestamps">
-    Created <%= task.created_at %><% if (task.creator_username) { %> · <%= task.creator_username %><% } %>
-    · Updated <%= task.updated_at %>
-  </p>
-</div>
+  </section>
 
-<% if (canEdit) { %>
-  <div class="card admin-form-card admin-crm-panel admin-crm-detail__block">
-    <h2 class="admin-crm-section__title">Edit task</h2>
-    <p class="muted admin-crm-section__lead">Title, description, and optional link to a file (https://…).</p>
-    <form method="post" action="/admin/crm/tasks/<%= task.id %>/fields" class="form">
+  <% if (canEdit) { %>
+  <section class="crm-task-section card crm-task-section--form">
+    <h2 class="crm-task-section__h">Edit task</h2>
+    <p class="crm-task-section__lead muted">Title, description, and optional file link.</p>
+    <form method="post" action="/admin/crm/tasks/<%= task.id %>/fields" class="form crm-task-form">
       <% if (_ov) { %>
         <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
       <% } %>
@@ -61,34 +61,31 @@
           placeholder="https://…"
           value="<%= _att || '' %>"
         />
-        <div class="muted" style="margin-top: 6px; font-size: 12px; line-height: 1.55">Paste a URL to a document or file (Google Drive, Dropbox, etc.).</div>
       </div>
-      <div class="admin-gate-actions">
+      <div class="crm-task-form__actions">
         <button class="btn btn-primary" type="submit">Save details</button>
       </div>
     </form>
-  </div>
-<% } %>
+  </section>
+  <% } %>
 
-<% if (showClaim && canClaimCrmTasks) { %>
-  <div class="card admin-form-card admin-crm-panel admin-crm-detail__block">
-    <p class="admin-crm-detail__lead">This task is unassigned.</p>
+  <% if (showClaim && canClaimCrmTasks) { %>
+  <section class="crm-task-section card crm-task-section--callout">
+    <p class="crm-task-section__lead" style="margin: 0 0 12px">This task is unassigned.</p>
     <form method="post" action="/admin/crm/tasks/<%= task.id %>/claim">
       <% if (_ov) { %>
         <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
       <% } %>
-      <div class="admin-gate-actions">
-        <button class="btn btn-primary" type="submit">Assign to me</button>
-      </div>
+      <button class="btn btn-primary" type="submit">Assign to me</button>
     </form>
-  </div>
-<% } %>
+  </section>
+  <% } %>
 
-<% if (typeof isSuperCrm !== 'undefined' && isSuperCrm) { %>
-  <div class="card admin-form-card admin-crm-panel admin-crm-detail__block">
-    <h2 class="admin-crm-section__title">Reassign (super admin)</h2>
-    <p class="muted admin-crm-section__lead">Move this task to another user in this region, or unassign it.</p>
-    <form method="post" action="/admin/crm/tasks/<%= task.id %>/reassign" class="form">
+  <% if (typeof isSuperCrm !== 'undefined' && isSuperCrm) { %>
+  <section class="crm-task-section card crm-task-section--form">
+    <h2 class="crm-task-section__h">Reassign</h2>
+    <p class="crm-task-section__lead muted">Super admin — move to another user or unassign.</p>
+    <form method="post" action="/admin/crm/tasks/<%= task.id %>/reassign" class="form crm-task-form">
       <% if (_ov) { %>
         <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
       <% } %>
@@ -101,87 +98,83 @@
           <% }); %>
         </select>
       </div>
-      <div class="admin-gate-actions">
+      <div class="crm-task-form__actions">
         <button class="btn btn-primary" type="submit">Save assignment</button>
       </div>
     </form>
-  </div>
-<% } %>
+  </section>
+  <% } %>
 
-<% if (canEdit) { %>
-  <div class="card admin-form-card admin-crm-panel admin-crm-detail__block">
-    <h2 class="admin-crm-section__title">Update status</h2>
-    <p class="muted admin-crm-section__lead">Change workflow status for this task.</p>
-    <form method="post" action="/admin/crm/tasks/<%= task.id %>/status" class="form">
+  <% if (canEdit) { %>
+  <section class="crm-task-section card crm-task-section--form">
+    <h2 class="crm-task-section__h">Status</h2>
+    <form method="post" action="/admin/crm/tasks/<%= task.id %>/status" class="form crm-task-form crm-task-form--inline">
       <% if (_ov) { %>
         <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
       <% } %>
-      <div>
-        <label for="crm_status">Status</label>
+      <div class="crm-task-form__inline">
+        <label for="crm_status" class="sr-only">Status</label>
         <select id="crm_status" name="status" required>
           <% (CRM_TASK_STATUSES || []).forEach(function(st) { %>
             <option value="<%= st %>" <%= currentStatus === st ? 'selected' : '' %>><%= typeof crmTaskStatusLabel === 'function' ? crmTaskStatusLabel(st) : st %></option>
           <% }); %>
         </select>
-      </div>
-      <div class="admin-gate-actions">
-        <button class="btn btn-primary" type="submit">Save status</button>
+        <button class="btn btn-primary" type="submit">Update</button>
       </div>
     </form>
-  </div>
-<% } else if (canMutateCrm && !isOwner && task.owner_id) { %>
-  <p class="muted admin-crm-detail__block">Only <strong><%= task.owner_username || 'the owner' %></strong> or a super admin can change this task’s status.</p>
-<% } %>
+  </section>
+  <% } else if (canMutateCrm && !isOwner && task.owner_id) { %>
+  <p class="muted crm-task-note">Only <strong><%= task.owner_username || 'the owner' %></strong> or a super admin can change this task’s status.</p>
+  <% } %>
 
-<% if (canMutateCrm) { %>
-  <div class="card admin-crm-panel admin-crm-detail__block">
-    <h2 class="admin-crm-section__title">Comments</h2>
+  <% if (canMutateCrm) { %>
+  <section class="crm-task-section card">
+    <h2 class="crm-task-section__h">Comments</h2>
     <% if (comments && comments.length) { %>
-      <ul class="admin-crm-comments">
+      <ul class="crm-task-comments">
         <% comments.forEach(function(c) { %>
-          <li class="admin-crm-comments__item">
-            <div class="admin-crm-comments__meta muted">
-              <span class="admin-crm-comments__author"><%= c.author_username || '—' %></span>
-              <span class="admin-crm-comments__time"><%= c.created_at %></span>
+          <li class="crm-task-comments__item">
+            <div class="crm-task-comments__meta muted">
+              <span><%= c.author_username || '—' %></span>
+              <span><%= c.created_at %></span>
             </div>
-            <div class="admin-crm-comments__body"><%= c.body %></div>
+            <div class="crm-task-comments__body"><%= c.body %></div>
           </li>
         <% }); %>
       </ul>
     <% } else { %>
-      <p class="muted">No comments yet.</p>
+      <p class="muted" style="margin: 0">No comments yet.</p>
     <% } %>
-    <form method="post" action="/admin/crm/tasks/<%= task.id %>/comments" class="form admin-crm-comments__form">
+    <form method="post" action="/admin/crm/tasks/<%= task.id %>/comments" class="form crm-task-form crm-task-form--comment">
       <% if (_ov) { %>
         <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
       <% } %>
-      <div>
-        <label for="crm_comment_body">Add a comment</label>
-        <textarea id="crm_comment_body" name="body" rows="4" required maxlength="4000" placeholder="Write a note for your team…"></textarea>
-      </div>
-      <div class="admin-gate-actions">
-        <button class="btn btn-primary" type="submit">Post comment</button>
+      <label for="crm_comment_body">Add a comment</label>
+      <textarea id="crm_comment_body" name="body" rows="3" required maxlength="4000" placeholder="Write a note…"></textarea>
+      <div class="crm-task-form__actions">
+        <button class="btn btn-primary" type="submit">Post</button>
       </div>
     </form>
-  </div>
-<% } %>
-
-<div class="card admin-crm-panel admin-crm-detail__block">
-  <h2 class="admin-crm-section__title">History</h2>
-  <% if (!auditLogs || auditLogs.length === 0) { %>
-    <p class="muted">No audit entries yet.</p>
-  <% } else { %>
-    <ul class="admin-crm-audit">
-      <% auditLogs.forEach(function(a) { %>
-        <li class="admin-crm-audit__row">
-          <div class="admin-crm-audit__meta">
-            <span class="admin-crm-audit__time"><%= a.created_at %></span>
-            <span class="admin-crm-audit__actor"><%= a.actor_username || '—' %></span>
-            <span class="kbd"><%= a.action_type %></span>
-          </div>
-          <div class="admin-crm-audit__details"><%= a.details %></div>
-        </li>
-      <% }); %>
-    </ul>
+  </section>
   <% } %>
+
+  <section class="crm-task-section card crm-task-section--history">
+    <h2 class="crm-task-section__h">History</h2>
+    <% if (!auditLogs || auditLogs.length === 0) { %>
+      <p class="muted" style="margin: 0">No audit entries yet.</p>
+    <% } else { %>
+      <ul class="crm-task-audit">
+        <% auditLogs.forEach(function(a) { %>
+          <li class="crm-task-audit__row">
+            <div class="crm-task-audit__meta">
+              <span class="crm-task-audit__time"><%= a.created_at %></span>
+              <span><%= a.actor_username || '—' %></span>
+              <span class="crm-task-audit__badge"><%= a.action_type %></span>
+            </div>
+            <div class="crm-task-audit__details muted"><%= a.details %></div>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </section>
 </div>

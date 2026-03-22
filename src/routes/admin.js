@@ -1821,6 +1821,12 @@ module.exports = function adminRoutes({ db }) {
       if (tasksByStatus[st]) tasksByStatus[st].push(t);
     }
 
+    let crmTenantUsers = getTenantUsersForCrm(db, tid);
+    if (!crmTenantUsers.length) {
+      const uname = req.session.adminUser.username || "You";
+      crmTenantUsers = [{ id: uid, username: uname }];
+    }
+
     return res.render("admin/crm", {
       activeNav: "crm",
       tasksByStatus,
@@ -1830,6 +1836,8 @@ module.exports = function adminRoutes({ db }) {
       canClaimCrmTasks: canClaimCrmTasks(role),
       isSuperCrm: superU,
       currentUserId: uid,
+      currentUsername: req.session.adminUser.username || "",
+      crmTenantUsers,
     });
   });
 
@@ -1853,6 +1861,21 @@ module.exports = function adminRoutes({ db }) {
     const description = String((req.body && req.body.description) || "").trim().slice(0, 8000);
     const attachment_url = normalizeCrmAttachmentUrl(req.body && req.body.attachment_url);
     if (!title) return res.status(400).send("Title is required.");
+
+    const rawOwner = req.body && req.body.owner_id;
+    let ownerId = null;
+    if (rawOwner !== "" && rawOwner !== undefined && rawOwner !== null) {
+      const n = Number(rawOwner);
+      if (n && n > 0) ownerId = n;
+    }
+    if (ownerId != null) {
+      const urow = db
+        .prepare("SELECT id FROM admin_users WHERE id = ? AND tenant_id = ? AND COALESCE(enabled, 1) = 1")
+        .get(ownerId, tid);
+      if (!urow) return res.status(400).send("Invalid assignee.");
+    }
+    const status = ownerId != null ? "in_progress" : "new";
+
     let taskId;
     try {
       db.transaction(() => {
@@ -1860,17 +1883,22 @@ module.exports = function adminRoutes({ db }) {
           .prepare(
             `
             INSERT INTO crm_tasks (tenant_id, title, description, status, owner_id, created_by_id, attachment_url)
-            VALUES (?, ?, ?, 'new', NULL, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             `
           )
-          .run(tid, title, description, uid, attachment_url);
+          .run(tid, title, description, status, ownerId, uid, attachment_url);
         taskId = Number(r.lastInsertRowid);
         insertCrmAudit(db, {
           tenantId: tid,
           taskId,
           userId: uid,
           actionType: "task_created",
-          details: JSON.stringify({ title, attachment_url: attachment_url || undefined }),
+          details: JSON.stringify({
+            title,
+            attachment_url: attachment_url || undefined,
+            owner_id: ownerId,
+            status,
+          }),
         });
       })();
     } catch (e) {

@@ -12,14 +12,13 @@
       <div class="container admin-main__pad">
         <h1 class="section-title admin-crm-page__title" style="margin-top:0;">CRM — board</h1>
         <p class="admin-intro muted">
-          Drag cards between columns to update status (use the <strong>⋮⋮</strong> handle). Click a card to view details.
-          Unassigned tasks in <strong>New</strong> move to another column to claim them. Super admin can move any task and reassign on the task panel.
+          Drag tasks between columns to update status. Click a card to open details. New tasks can include an assignee; unassigned tasks stay in <strong>New</strong>.
         </p>
 
         <% if (canMutateCrm) { %>
           <div class="card admin-form-card admin-crm-panel admin-crm-create">
             <h2 class="admin-crm-section__title">New task</h2>
-            <p class="muted admin-crm-section__lead">Creates an unassigned task in the <strong>New</strong> column.</p>
+            <p class="muted admin-crm-section__lead">Assignee defaults to you; choose <strong>Unassigned</strong> to leave the task in the New column.</p>
             <form method="post" action="/admin/crm/tasks" class="form">
               <div>
                 <label for="crm_title">Title</label>
@@ -28,6 +27,15 @@
               <div>
                 <label for="crm_desc">Description</label>
                 <textarea id="crm_desc" name="description" rows="4" placeholder="Details…"></textarea>
+              </div>
+              <div>
+                <label for="crm_owner">Assignee</label>
+                <select id="crm_owner" name="owner_id">
+                  <option value="">Unassigned (stays in New)</option>
+                  <% (crmTenantUsers || []).forEach(function(u) { %>
+                    <option value="<%= u.id %>" <%= Number(u.id) === Number(currentUserId) ? 'selected' : '' %>><%= u.username %></option>
+                  <% }); %>
+                </select>
               </div>
               <div>
                 <label for="crm_attachment">Attachment link (optional)</label>
@@ -60,19 +68,12 @@
               >
                 <% colTasks.forEach(function(t) { %>
                   <article
-                    class="admin-crm-card <%= t.canDrag ? 'admin-crm-card--has-handle' : '' %>"
+                    class="admin-crm-card <%= t.canDrag ? 'admin-crm-card--draggable' : '' %>"
                     role="listitem"
                     data-task-id="<%= t.id %>"
                     data-crm-status="<%= st %>"
+                    <% if (t.canDrag) { %>draggable="true"<% } else { %>draggable="false"<% } %>
                   >
-                    <% if (t.canDrag) { %>
-                      <span
-                        class="admin-crm-card__handle"
-                        draggable="true"
-                        title="Drag to move"
-                        aria-label="Drag to move task"
-                      >⋮⋮</span>
-                    <% } %>
                     <div class="admin-crm-card__body" data-crm-open-task="<%= t.id %>" role="button" tabindex="0">
                       <h3 class="admin-crm-card__title-text"><%= t.title %></h3>
                       <% if (t.owner_username) { %>

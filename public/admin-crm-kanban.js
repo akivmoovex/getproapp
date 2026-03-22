@@ -4,25 +4,59 @@
 
   var draggingId = null;
 
-  document.querySelectorAll(".admin-crm-card__handle").forEach(function (handle) {
-    handle.addEventListener("dragstart", function (e) {
-      var card = handle.closest(".admin-crm-card");
-      if (!card) return;
+  document.querySelectorAll(".admin-crm-card[draggable='true']").forEach(function (card) {
+    var dragEndAt = 0;
+    card.addEventListener("dragstart", function (e) {
       draggingId = card.getAttribute("data-task-id");
       card.classList.add("admin-crm-card--dragging");
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", draggingId || "");
     });
-    handle.addEventListener("dragend", function () {
-      var card = handle.closest(".admin-crm-card");
-      if (card) card.classList.remove("admin-crm-card--dragging");
+    card.addEventListener("dragend", function () {
+      card.classList.remove("admin-crm-card--dragging");
       draggingId = null;
+      dragEndAt = Date.now();
     });
-    handle.addEventListener("click", function (e) {
-      e.stopPropagation();
+
+    var body = card.querySelector("[data-crm-open-task]");
+    if (!body) return;
+
+    function openFromCard() {
+      var id = body.getAttribute("data-crm-open-task");
+      if (id) openOverlay(id);
+    }
+
+    body.addEventListener("click", function (e) {
+      if (Date.now() - dragEndAt < 320) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      e.preventDefault();
+      openFromCard();
     });
-    handle.addEventListener("mousedown", function (e) {
-      e.stopPropagation();
+    body.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openFromCard();
+      }
+    });
+  });
+
+  document.querySelectorAll(".admin-crm-card[draggable='false'] [data-crm-open-task]").forEach(function (body) {
+    function openFromCard() {
+      var id = body.getAttribute("data-crm-open-task");
+      if (id) openOverlay(id);
+    }
+    body.addEventListener("click", function (e) {
+      e.preventDefault();
+      openFromCard();
+    });
+    body.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openFromCard();
+      }
     });
   });
 
@@ -122,23 +156,6 @@
     if (e.key === "Escape" && overlay && !overlay.hasAttribute("hidden")) {
       closeOverlay();
     }
-  });
-
-  document.querySelectorAll("[data-crm-open-task]").forEach(function (el) {
-    function open() {
-      var id = el.getAttribute("data-crm-open-task");
-      if (id) openOverlay(id);
-    }
-    el.addEventListener("click", function (e) {
-      e.preventDefault();
-      open();
-    });
-    el.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        open();
-      }
-    });
   });
 
   try {
