@@ -22,6 +22,7 @@
         <% var _supTel = typeof getproSupportTelHref !== 'undefined' ? String(getproSupportTelHref || '').trim() : ''; %>
         <% var _gpWa = typeof getproWhatsappHref !== 'undefined' ? String(getproWhatsappHref || '').trim() : ''; %>
         <% var _gpWaLabel = typeof getproWhatsapp !== 'undefined' ? String(getproWhatsapp || '').trim() : ''; %>
+        <% var _gpEmail = typeof getproEmail !== 'undefined' ? String(getproEmail || '').trim() : ''; %>
         <nav class="pro-company-profile__breadcrumb" aria-label="Breadcrumb">
           <a href="<%= typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/' %>">Home</a>
           <span class="pro-company-profile__bc-sep" aria-hidden="true">/</span>
@@ -43,41 +44,22 @@
               <span class="pro-company-profile__pill pro-company-profile__pill--muted">Mini-site</span>
             </div>
             <div class="pro-company-profile__title-row">
-              <div class="pro-company-profile__title-block">
-                <h1 class="pro-company-profile__title"><%= company.name %></h1>
-                <% if (company.headline) { %>
-                  <p class="pro-company-profile__headline"><%= company.headline %></p>
-                <% } %>
-              </div>
               <% var logoU = company.logo_url && String(company.logo_url).trim(); %>
               <% if (logoU) { %>
                 <div class="pro-company-profile__logo-wrap">
                   <img class="pro-company-profile__logo" src="<%= logoU %>" alt="<%= company.name %> logo" loading="lazy" width="120" height="120" />
                 </div>
               <% } %>
+              <div class="pro-company-profile__title-block">
+                <h1 class="pro-company-profile__title"><%= company.name %></h1>
+                <% if (company.headline) { %>
+                  <p class="pro-company-profile__headline"><%= company.headline %></p>
+                <% } %>
+              </div>
             </div>
             <% var yoe = company.years_experience != null && company.years_experience !== '' ? Number(company.years_experience) : null; %>
             <% if (yoe != null && !isNaN(yoe) && yoe > 0) { %>
               <p class="pro-company-profile__meta-line"><strong><%= yoe %></strong> years in business</p>
-            <% } %>
-            <% if (_gpPhone && _gpTel) { %>
-              <div class="pro-company-profile__hero-contact">
-                <div class="pro-company-profile__hero-contact-row">
-                  <span class="muted pro-company-profile__hero-contact-label">Customer number</span>
-                  <a class="pro-company-profile__hero-contact-phone" href="<%= _gpTel %>"><%= _gpPhone %></a>
-                </div>
-                <% if (_gpWa) { %>
-                  <div class="pro-company-profile__hero-contact-row">
-                    <span class="muted pro-company-profile__hero-contact-label">WhatsApp</span>
-                    <a
-                      class="pro-company-profile__hero-contact-wa"
-                      href="<%= _gpWa %>"
-                      rel="noopener noreferrer"
-                      target="_blank"
-                      ><%= _gpWaLabel || 'Chat on WhatsApp' %></a>
-                  </div>
-                <% } %>
-              </div>
             <% } %>
           </div>
 
@@ -279,20 +261,36 @@
                 <div class="pro-company-profile__qr-heading">Mini-site QR code</div>
                 <p class="muted" style="font-size:12px;line-height:1.5;margin:0 0 10px;">Scan to open this page on a phone.</p>
                 <div class="pro-company-profile__qr-single">
-                  <img src="<%= qrMiniSiteDataUrl %>" alt="QR code for this mini-site URL" width="168" height="168" class="pro-company-profile__qr-img" />
+                  <img src="<%= qrMiniSiteDataUrl %>" alt="QR code for this mini-site URL" width="168" height="168" class="pro-company-profile__qr-img" data-qr-image />
+                </div>
+                <div class="pro-company-profile__qr-actions">
+                  <button type="button" class="btn pro-company-profile__qr-copy" data-copy-qr-image>Copy QR image</button>
+                  <span class="muted pro-company-profile__qr-copy-status" data-qr-copy-status hidden aria-live="polite"></span>
                 </div>
               </div>
             <% } %>
 
             <div class="pro-company-profile__support">
               <div class="pro-company-profile__support-title">GetPro support</div>
-              <p class="muted" style="line-height:1.6;margin:0;">Questions about the directory? We’re here in business hours.</p>
-              <% if (_supPhone && _supTel) { %>
-                <a class="btn btn-primary pro-company-profile__support-call" href="<%= _supTel %>" aria-label="Call GetPro support">Call Support</a>
-              <% } %>
-              <% if (getproEmail) { %>
-                <p class="muted" style="margin:10px 0 0;"><a href="mailto:<%= getproEmail %>"><%= getproEmail %></a></p>
-              <% } %>
+              <p class="muted pro-company-profile__support-intro">Questions about the directory? Reach your region’s call center below.</p>
+              <div class="pro-company-profile__support-actions" role="group" aria-label="Region call center">
+                <% if (_supPhone && _supTel) { %>
+                  <a class="btn btn-primary pro-company-profile__support-pill" href="<%= _supTel %>" aria-label="Call region call center">Call</a>
+                <% } %>
+                <% if (_gpEmail) { %>
+                  <a class="btn pro-company-profile__support-pill" href="mailto:<%= _gpEmail %>" aria-label="Email region call center">Email</a>
+                <% } %>
+                <% if (_gpWa) { %>
+                  <a
+                    class="btn pro-company-profile__support-pill"
+                    href="<%= _gpWa %>"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    aria-label="WhatsApp region call center"
+                    >WhatsApp</a
+                  >
+                <% } %>
+              </div>
             </div>
           </aside>
         </div>

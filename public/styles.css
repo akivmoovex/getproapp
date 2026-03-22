@@ -3306,9 +3306,9 @@ textarea {
 .pro-company-profile__title-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px 20px;
   width: 100%;
 }
 
@@ -3804,6 +3804,23 @@ textarea {
   text-align: center;
 }
 
+.pro-company-profile__qr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  justify-content: center;
+}
+
+.pro-company-profile__qr-copy {
+  font-weight: 800;
+}
+
+.pro-company-profile__qr-copy-status {
+  font-size: 12px;
+}
+
 .pro-company-profile__qr-caption {
   margin: 8px 0 0;
   font-size: 12px;
@@ -3867,6 +3884,28 @@ textarea {
   font-weight: 900;
   margin-bottom: 6px;
   font-size: 14px;
+}
+
+.pro-company-profile__support-intro {
+  line-height: 1.6;
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.pro-company-profile__support-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pro-company-profile__support-pill {
+  flex: 1 1 5.5rem;
+  min-width: min(100%, 5.5rem);
+  justify-content: center;
+  text-align: center;
+  font-weight: 800;
+  margin-top: 0 !important;
 }
 
 .pro-company-profile__support-call {

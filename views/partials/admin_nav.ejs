@@ -5,6 +5,7 @@
   const canEdit = !!nav.canEditDirectory;
   const canUsers = !!nav.canManageUsers;
   const canCrm = !!nav.canAccessCrm;
+  const canSettings = !!nav.canAccessTenantSettings;
   const scoped = !!nav.tenantScoped;
   const title = typeof navTitle !== 'undefined' ? navTitle : '';
   const scopeTenant = typeof adminScopeTenant !== 'undefined' && adminScopeTenant ? adminScopeTenant : null;
@@ -52,6 +53,9 @@
         <% } %>
         <% if (canUsers && !isViewer) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'users' ? 'admin-nav__link--active' : '' %>" href="/admin/users">Users</a>
+        <% } %>
+        <% if (canSettings) { %>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'settings' ? 'admin-nav__link--active' : '' %>" href="/admin/settings">Settings</a>
         <% } %>
       <% } %>
       <form method="post" action="/admin/logout" class="admin-nav__logout">

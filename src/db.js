@@ -1163,6 +1163,43 @@ try {
   console.error("[getpro] demo company email fix migration:", e.message);
 }
 
+/** One-time: demo tenant sample companies get distinct placeholder logos (hero + carousel). */
+try {
+  const TID = require("./tenantIds");
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _getpro_migrations (id TEXT PRIMARY KEY NOT NULL);
+  `);
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("demo_company_logos_v1")) {
+    const demoTenantId = TID.TENANT_DEMO;
+    const logos = [
+      {
+        sub: "demo-lusaka-spark",
+        url: "https://ui-avatars.com/api/?name=Spark&size=120&background=2563eb&color=fff&bold=true",
+      },
+      {
+        sub: "demo-lusaka-voltpro",
+        url: "https://ui-avatars.com/api/?name=VoltPro&size=120&background=dc2626&color=fff&bold=true",
+      },
+      {
+        sub: "demo-lusaka-flow",
+        url: "https://ui-avatars.com/api/?name=Flow&size=120&background=059669&color=fff&bold=true",
+      },
+      {
+        sub: "demo-kitwe-wire",
+        url: "https://ui-avatars.com/api/?name=Copper&size=120&background=ca8a04&color=fff&bold=true",
+      },
+    ];
+    const upd = db.prepare("UPDATE companies SET logo_url = ? WHERE tenant_id = ? AND subdomain = ?");
+    for (const row of logos) {
+      upd.run(row.url, demoTenantId, row.sub);
+    }
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("demo_company_logos_v1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] demo company logos migration:", e.message);
+}
+
 function run(query, params = []) {
   return db.prepare(query).run(params);
 }

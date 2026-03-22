@@ -18,6 +18,7 @@ const {
   canAccessCrm,
   canMutateCrm,
   canClaimCrmTasks,
+  canAccessTenantSettings,
 } = require("../roles");
 const { STAGES, normalizeStage } = require("../tenantStages");
 const { TENANT_ZM } = require("../tenantIds");
@@ -210,6 +211,7 @@ module.exports = function adminRoutes({ db }) {
       canAccessCrm: canAccessCrm(u.role),
       canMutateCrm: canMutateCrm(u.role),
       canClaimCrmTasks: canClaimCrmTasks(u.role),
+      canAccessTenantSettings: canAccessTenantSettings(u.role),
     };
     if (isSuperAdmin(u.role)) {
       const tn = db.prepare("SELECT id, slug, name FROM tenants WHERE id = ?").get(tid);
@@ -800,6 +802,60 @@ module.exports = function adminRoutes({ db }) {
       role: u.role,
       isViewer: isTenantViewer(u.role),
     });
+  });
+
+  router.get("/settings", (req, res) => {
+    const u = req.session.adminUser;
+    if (!u) return res.redirect("/admin/login");
+    if (!canAccessTenantSettings(u.role)) {
+      return res.status(403).type("text").send("Access denied.");
+    }
+    if (isSuperAdmin(u.role)) {
+      const tenants = db.prepare("SELECT * FROM tenants ORDER BY name COLLATE NOCASE ASC, id ASC").all();
+      return res.render("admin/tenant_settings", {
+        activeNav: "settings",
+        mode: "super",
+        tenants,
+      });
+    }
+    const tid = getAdminTenantId(req);
+    const tenant = db.prepare("SELECT * FROM tenants WHERE id = ?").get(tid);
+    if (!tenant) return res.status(404).send("Region not found");
+    return res.render("admin/tenant_settings", {
+      activeNav: "settings",
+      mode: "manager",
+      tenant,
+    });
+  });
+
+  router.post("/settings/tenant/:id", (req, res) => {
+    const u = req.session.adminUser;
+    if (!u) return res.redirect("/admin/login");
+    if (!canAccessTenantSettings(u.role)) {
+      return res.status(403).type("text").send("Access denied.");
+    }
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id.");
+    const adminTid = getAdminTenantId(req);
+    if (!isSuperAdmin(u.role) && id !== adminTid) {
+      return res.status(403).type("text").send("You can only edit your region.");
+    }
+    const row = db.prepare("SELECT id FROM tenants WHERE id = ?").get(id);
+    if (!row) return res.status(404).send("Region not found.");
+
+    const callcenter_phone = String(req.body.callcenter_phone || "").trim() || DEFAULT_CALLCENTER_PHONE;
+    const support_help_phone = String(req.body.support_help_phone || "").trim() || DEFAULT_SUPPORT_HELP_PHONE;
+    const whatsapp_phone = String(req.body.whatsapp_phone || "").trim() || DEFAULT_WHATSAPP_PHONE;
+    const callcenter_email = String(req.body.callcenter_email || "").trim() || DEFAULT_CALLCENTER_EMAIL;
+
+    try {
+      db.prepare(
+        `UPDATE tenants SET callcenter_phone = ?, support_help_phone = ?, whatsapp_phone = ?, callcenter_email = ? WHERE id = ?`
+      ).run(callcenter_phone, support_help_phone, whatsapp_phone, callcenter_email, id);
+    } catch (e) {
+      return res.status(400).send(e.message || "Could not save");
+    }
+    return res.redirect("/admin/settings");
   });
 
   router.get("/categories", requireDirectoryEditor, (req, res) => {

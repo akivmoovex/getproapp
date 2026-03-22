@@ -79,6 +79,12 @@ function canClaimCrmTasks(role) {
   );
 }
 
+/** Region contact / business settings (admin Settings tab). */
+function canAccessTenantSettings(role) {
+  const n = normalizeRole(role);
+  return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER;
+}
+
 module.exports = {
   ROLES,
   ALL_ROLES,
@@ -91,4 +97,5 @@ module.exports = {
   canAccessCrm,
   canMutateCrm,
   canClaimCrmTasks,
+  canAccessTenantSettings,
 };
