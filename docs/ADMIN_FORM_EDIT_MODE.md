@@ -11,11 +11,15 @@
 
 Optional: `.admin-form-shell__back` (e.g. “← Users”) with `.admin-form-shell__toolbar--split` for a back link on the left; it hides while editing.
 
+Optional: `<p class="admin-form-shell__unsaved" hidden>Unsaved changes</p>` inside the toolbar — shown only while **editing** and the form **differs** from the page-load snapshot.
+
 ## Behaviour
 
 - **Read mode:** text inputs and textareas are `readOnly`; `select` and `checkbox` are `disabled` (so values still serialize correctly when switching modes). Password fields are cleared in read mode.
-- **Done:** enables controls and calls `form.requestSubmit()` (HTML5 validation runs).
-- **Cancel:** restores field values from the initial snapshot (including checkbox) and returns to read mode.
+- **Done:** enabled only when the form is **dirty** (differs from the initial snapshot). Calls `form.requestSubmit()` (HTML5 validation runs). Implied submit (e.g. Enter) is blocked while Done is disabled.
+- **Cancel:** restores field values from the initial snapshot (including checkbox), clears dirty state, returns to read mode.
+- **Dirty:** `input` / `change` listeners compare current values to the snapshot; shell gets `.is-dirty` when they differ.
+- **Leaving:** `beforeunload` prompts when the form is dirty in edit mode (reload/close tab). **← Users** (`.admin-form-shell__back`) prompts with `confirm()` when dirty in edit mode.
 
 ## Styling
 

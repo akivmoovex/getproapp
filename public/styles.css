@@ -374,16 +374,45 @@
   margin-left: auto;
 }
 
+.admin-form-shell.is-read-mode .form label {
+  opacity: 0.7;
+}
+
+.admin-form-shell.is-read-mode .form input:not([type="hidden"]):not([type="checkbox"]),
+.admin-form-shell.is-read-mode .form textarea {
+  border: none;
+  background: transparent;
+  padding-left: 0;
+}
+
 .admin-form-shell.is-read-mode .form input:not([type="hidden"]):not([type="checkbox"]),
 .admin-form-shell.is-read-mode .form textarea,
 .admin-form-shell.is-read-mode .form select {
-  border: none;
-  background: transparent;
   box-shadow: none;
   color: var(--text);
   pointer-events: none;
   outline: none;
   padding-inline: 0;
+}
+
+.admin-form-shell__unsaved {
+  width: 100%;
+  margin: 0 0 var(--space-1) 0;
+  font-size: var(--typo-label-small-size);
+  line-height: 1.4;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.admin-form-shell__toolbar .admin-form-shell__unsaved {
+  flex-basis: 100%;
+  order: -1;
+  margin-bottom: var(--space-0-75);
+}
+
+.admin-form-shell.is-edit-mode .btn-primary.admin-form-shell__btn--done:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .admin-form-shell.is-read-mode .form select:disabled {
@@ -4385,11 +4414,32 @@ textarea {
 .pro-directory-layout {
   grid-template-columns: minmax(var(--layout-dim-220), 0.88fr) minmax(0, 1.22fr);
   gap: var(--space-3);
+  min-width: 0;
 }
 
-/* Grid items default to min-width:auto; long card content can block shrinking and overflow the viewport */
-.hero-grid.pro-directory-layout > * {
+/* Directory layout safety: grid/flex children + page column (directory + category share .hero-grid.pro-directory-layout) */
+.hero-grid.pro-directory-layout > *,
+.hero-grid.pro-directory-layout .card,
+.hero-grid.pro-directory-layout .list {
   min-width: 0;
+}
+
+.container:has(.hero-grid.pro-directory-layout) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.container.directory-page {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.directory-page-toolbar {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .pro-directory-results {
@@ -4409,7 +4459,12 @@ form.pro-search.pro-search--directory {
 }
 
 .pro-directory-card {
+  display: flex;
+  flex-direction: column;
   margin: 0;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
   border-radius: var(--space-1-75);
   border: var(--border-width-hairline) solid var(--border-strong);
   background: var(--surface);
@@ -4428,6 +4483,9 @@ form.pro-search.pro-search--directory {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
   gap: var(--space-2-25);
   padding: var(--space-2-25) var(--space-2-25) var(--space-2-25) var(--space-2);
   text-decoration: none;
@@ -4491,12 +4549,16 @@ form.pro-search.pro-search--directory {
   line-height: 1.45;
   color: var(--muted);
   font-weight: 600;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .pro-directory-card__rating-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
   gap: var(--space-0-75) var(--space-1-25);
   margin: 0 0 var(--space-1-25);
   font-size: var(--space-1-75);
@@ -4538,6 +4600,8 @@ form.pro-search.pro-search--directory {
   line-height: 1.5;
   font-style: italic;
   color: var(--text);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .pro-directory-card__highlight-cap {
@@ -4567,6 +4631,8 @@ form.pro-search.pro-search--directory {
   font-size: var(--space-1-625);
   line-height: 1.45;
   color: var(--muted);
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .pro-directory-card__loc {
@@ -4604,8 +4670,11 @@ form.pro-search.pro-search--directory {
 }
 
 .pro-directory-empty {
+  min-width: 0;
+  max-width: 100%;
   padding: var(--space-2-75) var(--space-2-5);
   text-align: center;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 520px) {

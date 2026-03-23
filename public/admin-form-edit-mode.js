@@ -1,8 +1,6 @@
 /**
- * Admin forms: default READ mode (static appearance), EDIT → Done saves, Cancel reverts.
- * Mount on a wrapper: [data-admin-form-edit] with one <form> inside.
- * Buttons: .admin-form-shell__btn--edit | --done | --cancel
- * Classes toggled: .is-read-mode / .is-edit-mode
+ * Admin forms: READ → EDIT → Done. Dirty tracking, Done only when changed, leave-confirm when unsaved.
+ * Mount: [data-admin-form-edit] with one <form>. Optional: .admin-form-shell__unsaved
  */
 (function () {
   function getControlValue(el) {
@@ -37,6 +35,19 @@
     });
   }
 
+  function snapshotsEqual(a, b) {
+    var keys = {};
+    var k;
+    for (k in a) keys[k] = true;
+    for (k in b) keys[k] = true;
+    for (k in keys) {
+      var av = a[k] != null ? String(a[k]) : "";
+      var bv = b[k] != null ? String(b[k]) : "";
+      if (av !== bv) return false;
+    }
+    return true;
+  }
+
   function setControlsEditable(shell, editable) {
     var form = shell.querySelector("form");
     if (!form) return;
@@ -66,9 +77,29 @@
     if (back) back.hidden = editing;
   }
 
+  function refreshDirty(shell, form, initial) {
+    var cur = collectSnapshot(form);
+    var dirty = !snapshotsEqual(initial, cur);
+    shell.classList.toggle("is-dirty", dirty);
+
+    var editing = shell.classList.contains("is-edit-mode");
+    var unsaved = shell.querySelector(".admin-form-shell__unsaved");
+    if (unsaved) {
+      unsaved.hidden = !editing || !dirty;
+    }
+
+    var done = shell.querySelector(".admin-form-shell__btn--done");
+    if (done && editing) {
+      done.disabled = !dirty;
+    } else if (done && !editing) {
+      done.disabled = false;
+    }
+  }
+
   function initShell(shell) {
     var form = shell.querySelector("form");
     if (!form) return;
+
     var initial = collectSnapshot(form);
 
     function setMode(editing) {
@@ -76,9 +107,24 @@
       shell.classList.toggle("is-edit-mode", editing);
       setToolbar(shell, editing);
       setControlsEditable(shell, editing);
+      refreshDirty(shell, form, initial);
+    }
+
+    function onFieldChange() {
+      refreshDirty(shell, form, initial);
     }
 
     setMode(false);
+
+    form.addEventListener("input", onFieldChange);
+    form.addEventListener("change", onFieldChange);
+
+    form.addEventListener("submit", function (e) {
+      var done = shell.querySelector(".admin-form-shell__btn--done");
+      if (shell.classList.contains("is-edit-mode") && done && done.disabled) {
+        e.preventDefault();
+      }
+    });
 
     shell.querySelector(".admin-form-shell__btn--edit")?.addEventListener("click", function () {
       setMode(true);
@@ -90,8 +136,24 @@
     });
 
     shell.querySelector(".admin-form-shell__btn--done")?.addEventListener("click", function () {
+      if (shell.querySelector(".admin-form-shell__btn--done")?.disabled) return;
       setControlsEditable(shell, true);
       form.requestSubmit();
+    });
+
+    shell.querySelector(".admin-form-shell__back")?.addEventListener("click", function (e) {
+      if (!shell.classList.contains("is-edit-mode")) return;
+      if (!shell.classList.contains("is-dirty")) return;
+      if (!window.confirm("You have unsaved changes. Leave without saving?")) {
+        e.preventDefault();
+      }
+    });
+
+    window.addEventListener("beforeunload", function (e) {
+      if (!shell.classList.contains("is-edit-mode")) return;
+      if (!shell.classList.contains("is-dirty")) return;
+      e.preventDefault();
+      e.returnValue = "";
     });
   }
 

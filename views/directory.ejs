@@ -9,7 +9,7 @@
   <body class="<%= tenant.themeClass %>">
     <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
 
-    <div class="container directory-page-toolbar">
+    <div class="container directory-page directory-page-toolbar">
       <form class="pro-search pro-search--directory pro-search--directory-wide" action="<%= tenantUrlPrefix %>/directory" method="get" role="search">
         <div class="pro-ac" data-ac-list="service" data-watermark-text="Search: Electrician">
           <input
