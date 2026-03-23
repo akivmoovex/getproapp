@@ -7959,6 +7959,17 @@ body[class*="tenant-"] {
     justify-content: center;
   }
 
+  .pro-company-sticky-cta__btn--call {
+    max-width: min(100%, 18rem);
+    font-size: clamp(0.85rem, 2.8vw, 0.95rem);
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   body:has(.pro-company-sticky-cta) {
     padding-bottom: 76px;
   }

@@ -12,11 +12,19 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Join / onboarding form. TODO: POST /api/professional-signups, tenant slug, file uploads.
+ * Join / onboarding form — submits via [BusinessOnboardingRepository] (remote-ready `POST /api/professional-signups`).
  */
 class JoinBusinessViewModel(
     private val onboardingRepository: BusinessOnboardingRepository,
 ) : ViewModel() {
+
+    private val emailFormatRegex = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
+
+    private fun isValidOptionalEmail(raw: String): Boolean {
+        val s = raw.trim()
+        if (s.isEmpty()) return true
+        return emailFormatRegex.matches(s)
+    }
 
     private val _uiState = MutableStateFlow(JoinBusinessUiState())
     val uiState: StateFlow<JoinBusinessUiState> = _uiState.asStateFlow()
@@ -54,7 +62,7 @@ class JoinBusinessViewModel(
         if (s.phone.isBlank()) phErr = "Enter phone number"
         else if (s.phone.trim().length < 8) phErr = "Enter a valid phone number"
         val email = s.email.trim()
-        if (email.isNotEmpty() && !email.contains("@")) {
+        if (!isValidOptionalEmail(s.email)) {
             emErr = "Enter a valid email or leave blank"
         }
         if (pErr != null || cErr != null || bErr != null || phErr != null || emErr != null) {

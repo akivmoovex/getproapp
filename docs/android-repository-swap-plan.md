@@ -31,7 +31,7 @@ Existing template already follows **ViewModel → interface → fake**. Replace 
 | `CategoryRepository` | `FakeCategoryRepository` | `RemoteCategoryRepository` | `suspend fun getCategories(): List<CategoryUiModel>` |
 | `ProfessionalRepository` | `FakeProfessionalRepository` | `RemoteProfessionalRepository` | `getById`, `getByIdOrSlug` |
 | `CallbackRepository` | `FakeCallbackRepository` | `RemoteCallbackRepository` | `submitCallback(CallbackSubmission): Result<Unit>` |
-| `BusinessOnboardingRepository` | `FakeBusinessOnboardingRepository` | `RemoteBusinessOnboardingRepository` | `submitOnboarding(OnboardingSubmission): Result<Unit>` |
+| `BusinessOnboardingRepository` | `RemoteBusinessOnboardingRepository` + `FakeBusinessOnboardingApiService` (or legacy `FakeBusinessOnboardingRepository`) | Retrofit `BusinessOnboardingApiService` | `submitOnboarding(OnboardingSubmission): Result<Unit>` |
 
 **Rule:** ViewModels depend only on these interfaces (constructor injection or a single factory). Swapping `AppDependencies` (or DI module) from fake to remote is a **one-line** change per app variant when ready.
 

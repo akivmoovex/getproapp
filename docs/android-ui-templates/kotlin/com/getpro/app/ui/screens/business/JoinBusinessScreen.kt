@@ -21,7 +21,7 @@ import com.getpro.app.ui.state.JoinBusinessUiState
 import com.getpro.app.ui.theme.GetProTheme
 
 /**
- * Simplified join vs web `/join`. TODO: POST /api/professional-signups + tenant resolution.
+ * Simplified join vs web `/join` — state from [com.getpro.app.ui.viewmodel.JoinBusinessViewModel] (POST `/api/professional-signups` via repository).
  */
 @Composable
 fun JoinBusinessScreen(

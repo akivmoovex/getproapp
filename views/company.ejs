@@ -28,6 +28,15 @@
         <% var _gpWa = typeof getproWhatsappHref !== 'undefined' ? String(getproWhatsappHref || '').trim() : ''; %>
         <% var _gpWaLabel = typeof getproWhatsapp !== 'undefined' ? String(getproWhatsapp || '').trim() : ''; %>
         <% var _gpEmail = typeof getproEmail !== 'undefined' ? String(getproEmail || '').trim() : ''; %>
+        <% var _bizPhone = company.phone ? String(company.phone).trim() : ''; %>
+        <% var _featuredPhone = company.featured_cta_phone ? String(company.featured_cta_phone).trim() : ''; %>
+        <% var _primaryCall = _featuredPhone || _bizPhone || ''; %>
+        <% var _primaryTelHref = _primaryCall ? ('tel:' + _primaryCall.replace(/[^\d+]/g, '')) : ''; %>
+        <% var _gpD = _gpPhone.replace(/\D/g, ''); %>
+        <% var _bizD = _bizPhone.replace(/\D/g, ''); %>
+        <% var _showBizPhone = _bizPhone && _bizD !== _gpD; %>
+        <% var _primaryD = _primaryCall.replace(/\D/g, ''); %>
+        <% var _showBizPhoneRow = _showBizPhone && _bizD !== _primaryD; %>
         <nav class="pro-company-profile__breadcrumb" aria-label="Breadcrumb">
           <a href="<%= typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/' %>">Home</a>
           <span class="pro-company-profile__bc-sep" aria-hidden="true">/</span>
@@ -227,15 +236,11 @@
 
           <aside class="pro-company-profile__aside card">
             <h2 class="pro-company-profile__aside-title">Contact</h2>
-            <% var _bizPhone = company.phone ? String(company.phone).trim() : ''; %>
-            <% var _gpD = _gpPhone.replace(/\D/g, ''); %>
-            <% var _bizD = _bizPhone.replace(/\D/g, ''); %>
-            <% var _showBizPhone = _bizPhone && _bizD !== _gpD; %>
-            <% if (company.featured_cta_phone) { %>
-              <a class="btn btn-primary pro-company-profile__cta" href="tel:<%= company.featured_cta_phone %>"><%= company.featured_cta_label || 'Call us' %></a>
+            <% if (_primaryTelHref) { %>
+              <a class="btn btn-primary pro-company-profile__cta" href="<%= _primaryTelHref %>" aria-label="Call <%= _primaryCall %>">Call <%= _primaryCall %></a>
             <% } %>
             <ul class="pro-company-profile__contact-list">
-              <% if (_showBizPhone) { %>
+              <% if (_showBizPhoneRow) { %>
                 <li><span class="muted">Business phone</span><br /><a href="tel:<%= _bizPhone.replace(/[^\d+]/g, '') %>"><%= _bizPhone %></a></li>
               <% } %>
               <% if (_gpWa) { %>
@@ -303,22 +308,10 @@
         </div>
         </div>
     </main>
-    <%
-      var _bizPhoneSticky = company.phone ? String(company.phone).trim() : '';
-      var _gpDSticky = _gpPhone.replace(/\D/g, '');
-      var _bizDSticky = _bizPhoneSticky.replace(/\D/g, '');
-      var _showBizSticky = _bizPhoneSticky && _bizDSticky !== _gpDSticky;
-      var _stickyTelHref = '';
-      if (company.featured_cta_phone) {
-        _stickyTelHref = 'tel:' + String(company.featured_cta_phone).replace(/[^\d+]/g, '');
-      } else if (_showBizSticky) {
-        _stickyTelHref = 'tel:' + _bizPhoneSticky.replace(/[^\d+]/g, '');
-      }
-    %>
-    <% if (_stickyTelHref || _gpWa) { %>
+    <% if (_primaryTelHref || _gpWa) { %>
     <div class="pro-company-sticky-cta" role="region" aria-label="Quick contact">
-      <% if (_stickyTelHref) { %>
-      <a class="btn btn-primary pro-company-sticky-cta__btn" href="<%= _stickyTelHref %>">Call</a>
+      <% if (_primaryTelHref) { %>
+      <a class="btn btn-primary pro-company-sticky-cta__btn pro-company-sticky-cta__btn--call" href="<%= _primaryTelHref %>" aria-label="Call <%= _primaryCall %>">Call <%= _primaryCall %></a>
       <% } %>
       <% if (_gpWa) { %>
       <a class="btn btn-secondary-wf pro-company-sticky-cta__btn" href="<%= _gpWa %>" rel="noopener noreferrer" target="_blank">WhatsApp</a>

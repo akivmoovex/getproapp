@@ -64,6 +64,8 @@ See also **`docs/android-callback-api.md`** (Android DTO + mapper + session sour
 
 ### 2.2 `POST /api/professional-signups`
 
+**Android DTO + mapper + repository:** see **`docs/android-onboarding-api.md`**.
+
 | | |
 |--|--|
 | **Method** | POST |
@@ -79,9 +81,9 @@ See also **`docs/android-callback-api.md`** (Android DTO + mapper + session sour
 | `city` | string | Yes | |
 | `name` | string | Yes | **Business name** (maps from Android `businessName`). |
 | `phone` | string | Yes | Region-specific validation for `zm`. |
-| `vat_or_pacra` | string | No | max ~200; web often sends `""`. |
+| `vat_or_pacra` | string | No | max ~200; web often sends `""`. The Android template may place **optional email** here until a dedicated column exists (see `docs/android-onboarding-api.md`). |
 
-**Optional future:** `email` — **not** in current API; add only if backend extends `professional_signups`.
+**Optional future:** dedicated `email` column — **not** in current API; map via `vat_or_pacra` for prototype or add when backend extends `professional_signups`.
 
 **Success:** `200` — `{ "ok": true }`
 

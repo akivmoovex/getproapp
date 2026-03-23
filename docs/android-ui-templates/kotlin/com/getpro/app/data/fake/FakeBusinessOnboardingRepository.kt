@@ -4,6 +4,10 @@ import com.getpro.app.data.repository.BusinessOnboardingRepository
 import com.getpro.app.data.repository.OnboardingSubmission
 import kotlinx.coroutines.delay
 
+/**
+ * Direct in-memory onboarding (no DTO / API layer). Prefer [com.getpro.app.data.remote.RemoteBusinessOnboardingRepository]
+ * + [FakeBusinessOnboardingApiService] in [com.getpro.app.data.AppDependencies] for parity with production.
+ */
 class FakeBusinessOnboardingRepository : BusinessOnboardingRepository {
     override suspend fun submitOnboarding(data: OnboardingSubmission): Result<Unit> {
         delay(400)
