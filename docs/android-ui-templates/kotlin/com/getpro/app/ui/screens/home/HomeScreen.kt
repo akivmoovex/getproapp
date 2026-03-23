@@ -13,10 +13,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -26,24 +22,24 @@ import com.getpro.app.ui.components.GetProTab
 import com.getpro.app.ui.components.GetProTopAppBar
 import com.getpro.app.ui.components.SearchCard
 import com.getpro.app.ui.model.CategoryUiModel
+import com.getpro.app.ui.state.HomeUiState
 import com.getpro.app.ui.theme.GetProTheme
 
 /**
- * Launcher: search-first. TODO: inject ViewModel for categories + tenant branding.
+ * Launcher: search-first. State from [HomeViewModel]; categories from fake [com.getpro.app.data.repository.CategoryRepository].
  */
 @Composable
 fun HomeScreen(
-    categories: List<CategoryUiModel>,
-    onSearch: (service: String, city: String) -> Unit,
+    state: HomeUiState,
+    onServiceChange: (String) -> Unit,
+    onCityChange: (String) -> Unit,
+    onSearch: () -> Unit,
     onCategoryClick: (CategoryUiModel) -> Unit,
     onBusinessEntryClick: () -> Unit,
     onTabSelect: (GetProTab) -> Unit,
     selectedTab: GetProTab,
     modifier: Modifier = Modifier,
 ) {
-    var service by remember { mutableStateOf("") }
-    var city by remember { mutableStateOf("") }
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -70,20 +66,35 @@ fun HomeScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                state.categoriesError?.let { err ->
+                    Text(
+                        err,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
             }
             item {
                 SearchCard(
-                    serviceText = service,
-                    cityText = city,
-                    onServiceChange = { service = it },
-                    onCityChange = { city = it },
-                    onSearch = { onSearch(service.trim(), city.trim()) },
+                    serviceText = state.serviceInput,
+                    cityText = state.cityInput,
+                    onServiceChange = onServiceChange,
+                    onCityChange = onCityChange,
+                    onSearch = onSearch,
                 )
             }
             item {
                 Text("Categories", style = MaterialTheme.typography.titleMedium)
+                if (state.isLoadingCategories) {
+                    Text(
+                        "Loading categories…",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 CategoryChipRow(
-                    categories = categories,
+                    categories = state.categories,
                     onCategoryClick = onCategoryClick,
                 )
             }
@@ -124,11 +135,15 @@ fun HomeScreen(
 private fun HomeScreenPreview() {
     GetProTheme {
         HomeScreen(
-            categories = listOf(
-                CategoryUiModel("1", "Electrician", "electrician"),
-                CategoryUiModel("2", "Plumber", "plumber"),
+            state = HomeUiState(
+                categories = listOf(
+                    CategoryUiModel("1", "Electrician", "electrician"),
+                    CategoryUiModel("2", "Plumber", "plumber"),
+                ),
             ),
-            onSearch = { _, _ -> },
+            onServiceChange = {},
+            onCityChange = {},
+            onSearch = {},
             onCategoryClick = {},
             onBusinessEntryClick = {},
             onTabSelect = {},

@@ -13,15 +13,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.getpro.app.ui.components.GetProTopAppBar
-import com.getpro.app.ui.model.JoinFormState
+import com.getpro.app.ui.state.JoinBusinessUiState
 import com.getpro.app.ui.theme.GetProTheme
 
 /**
@@ -29,17 +25,17 @@ import com.getpro.app.ui.theme.GetProTheme
  */
 @Composable
 fun JoinBusinessScreen(
-    initial: JoinFormState = JoinFormState(),
+    state: JoinBusinessUiState,
+    onProfessionChange: (String) -> Unit,
+    onCityChange: (String) -> Unit,
+    onBusinessNameChange: (String) -> Unit,
+    onPhoneChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onSubmit: () -> Unit,
     onBack: () -> Unit,
-    onSubmit: (JoinFormState) -> Unit,
+    onDoneAfterSuccess: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var profession by remember { mutableStateOf(initial.profession) }
-    var city by remember { mutableStateOf(initial.city) }
-    var businessName by remember { mutableStateOf(initial.businessName) }
-    var phone by remember { mutableStateOf(initial.phone) }
-    var email by remember { mutableStateOf(initial.email) }
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = { GetProTopAppBar(title = "Apply to list", onBack = onBack) },
@@ -52,60 +48,82 @@ fun JoinBusinessScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (state.completed) {
+                Text(
+                    "Application received",
+                    style = MaterialTheme.typography.headlineSmall,
+                )
+                Text(
+                    "Thanks — we’ll review your details and get in touch.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = onDoneAfterSuccess,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) {
+                    Text("Done")
+                }
+            } else {
             Text(
                 "Tell us about your business",
                 style = MaterialTheme.typography.titleMedium,
             )
+            state.submitError?.let { err ->
+                Text(err, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
             OutlinedTextField(
-                value = profession,
-                onValueChange = { profession = it },
+                value = state.profession,
+                onValueChange = onProfessionChange,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Service / profession") },
                 singleLine = true,
+                isError = state.professionError != null,
+                supportingText = { state.professionError?.let { Text(it) } },
             )
             OutlinedTextField(
-                value = city,
-                onValueChange = { city = it },
+                value = state.city,
+                onValueChange = onCityChange,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("City") },
                 singleLine = true,
+                isError = state.cityError != null,
+                supportingText = { state.cityError?.let { Text(it) } },
             )
             OutlinedTextField(
-                value = businessName,
-                onValueChange = { businessName = it },
+                value = state.businessName,
+                onValueChange = onBusinessNameChange,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Business name") },
                 singleLine = true,
+                isError = state.businessNameError != null,
+                supportingText = { state.businessNameError?.let { Text(it) } },
             )
             OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
+                value = state.phone,
+                onValueChange = onPhoneChange,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Phone") },
                 singleLine = true,
+                isError = state.phoneError != null,
+                supportingText = { state.phoneError?.let { Text(it) } },
             )
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
+                value = state.email,
+                onValueChange = onEmailChange,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Email (optional)") },
                 singleLine = true,
+                isError = state.emailError != null,
+                supportingText = { state.emailError?.let { Text(it) } },
             )
             Button(
-                onClick = {
-                    onSubmit(
-                        JoinFormState(
-                            profession = profession.trim(),
-                            city = city.trim(),
-                            businessName = businessName.trim(),
-                            phone = phone.trim(),
-                            email = email.trim(),
-                        ),
-                    )
-                },
+                onClick = onSubmit,
+                enabled = !state.isSubmitting,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Submit application")
+                Text(if (state.isSubmitting) "Submitting…" else "Submit application")
+            }
             }
         }
     }
@@ -115,6 +133,16 @@ fun JoinBusinessScreen(
 @Composable
 private fun JoinBusinessPreview() {
     GetProTheme {
-        JoinBusinessScreen(onBack = {}, onSubmit = {})
+        JoinBusinessScreen(
+            state = JoinBusinessUiState(),
+            onProfessionChange = {},
+            onCityChange = {},
+            onBusinessNameChange = {},
+            onPhoneChange = {},
+            onEmailChange = {},
+            onSubmit = {},
+            onBack = {},
+            onDoneAfterSuccess = {},
+        )
     }
 }

@@ -15,17 +15,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.getpro.app.ui.model.CallbackFormState
 import com.getpro.app.ui.model.CallbackSheetStage
+import com.getpro.app.ui.state.CallbackUiState
 
 /**
- * Bottom-sheet capture for [com.getpro.app.ui.model.CallbackFormState].
+ * Bottom-sheet capture wired to [CallbackViewModel] / [CallbackUiState].
  * Maps to POST /api/callback-interest (name, phone, context, interest_label, tenantId, tenantSlug).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestCallbackSheet(
-    state: CallbackFormState,
+    state: CallbackUiState,
     onDismiss: () -> Unit,
     onFullNameChange: (String) -> Unit,
     onPhoneChange: (String) -> Unit,
@@ -60,6 +60,8 @@ fun RequestCallbackSheet(
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Full name") },
                         singleLine = true,
+                        isError = state.nameError != null,
+                        supportingText = { state.nameError?.let { Text(it) } },
                     )
                     OutlinedTextField(
                         value = state.phone,
@@ -67,6 +69,8 @@ fun RequestCallbackSheet(
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Phone") },
                         singleLine = true,
+                        isError = state.phoneError != null,
+                        supportingText = { state.phoneError?.let { Text(it) } },
                     )
                     OutlinedTextField(
                         value = state.note,
@@ -75,12 +79,16 @@ fun RequestCallbackSheet(
                         label = { Text("Note (optional)") },
                         minLines = 2,
                     )
+                    state.submitError?.let { err ->
+                        Text(err, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
                     // TODO: validate tenant phone rules (e.g. zm) before submit.
                     Button(
                         onClick = onSubmit,
+                        enabled = !state.isSubmitting,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text("Submit")
+                        Text(if (state.isSubmitting) "Submitting…" else "Submit")
                     }
                 }
             }
@@ -109,7 +117,7 @@ fun RequestCallbackSheet(
 /** Alias for spec naming — same composable. */
 @Composable
 fun CallbackSheet(
-    state: CallbackFormState,
+    state: CallbackUiState,
     onDismiss: () -> Unit,
     onFullNameChange: (String) -> Unit,
     onPhoneChange: (String) -> Unit,

@@ -1,6 +1,7 @@
 package com.getpro.app.ui.screens.profile
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,12 +10,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -22,6 +25,7 @@ import com.getpro.app.ui.components.GetProTopAppBar
 import com.getpro.app.ui.components.ProfileBottomActionBar
 import com.getpro.app.ui.model.ProfileUiModel
 import com.getpro.app.ui.model.ReviewUiModel
+import com.getpro.app.ui.state.ProfessionalProfileUiState
 import com.getpro.app.ui.theme.GetProTheme
 
 /**
@@ -29,19 +33,22 @@ import com.getpro.app.ui.theme.GetProTheme
  */
 @Composable
 fun ProfessionalProfileScreen(
-    profile: ProfileUiModel,
+    state: ProfessionalProfileUiState,
     onBack: () -> Unit,
     onCall: () -> Unit,
     onWhatsApp: (() -> Unit)?,
     onRequestContact: () -> Unit,
+    onRetry: () -> Unit = {},
     onShare: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val profile = state.profile
+    val title = profile?.name ?: "Profile"
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             GetProTopAppBar(
-                title = profile.name,
+                title = title,
                 onBack = onBack,
                 actions = {
                     if (onShare != null) {
@@ -51,13 +58,42 @@ fun ProfessionalProfileScreen(
             )
         },
         bottomBar = {
-            ProfileBottomActionBar(
-                onCall = onCall,
-                onWhatsApp = onWhatsApp,
-            )
+            if (profile != null) {
+                ProfileBottomActionBar(
+                    onCall = onCall,
+                    onWhatsApp = onWhatsApp,
+                )
+            }
         },
     ) { padding ->
-        LazyColumn(
+        when {
+            state.isLoading -> {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            state.error != null && profile == null -> {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(state.error, color = MaterialTheme.colorScheme.error)
+                        Button(onClick = onRetry, modifier = Modifier.padding(top = 16.dp)) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            }
+            profile != null -> LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -129,6 +165,8 @@ fun ProfessionalProfileScreen(
                 }
             }
         }
+            else -> { }
+        }
     }
 }
 
@@ -150,18 +188,22 @@ private fun ReviewRow(review: ReviewUiModel) {
 private fun ProfessionalProfilePreview() {
     GetProTheme {
         ProfessionalProfileScreen(
-            profile = ProfileUiModel(
-                id = "1",
-                name = "City Electric Co.",
-                headline = "Licensed electricians",
-                categoryName = "Electrician",
-                location = "Lusaka",
-                aboutHtmlOrText = "We handle installs, fault finding, and compliance certificates.",
-                servicesLines = listOf("Rewiring", "New builds", "Emergency call-outs"),
-                reviews = listOf(
-                    ReviewUiModel("Jane", 5f, "Quick response and tidy work.", "Mar 2026"),
+            state = ProfessionalProfileUiState(
+                profile = ProfileUiModel(
+                    id = "1",
+                    name = "City Electric Co.",
+                    headline = "Licensed electricians",
+                    categoryName = "Electrician",
+                    location = "Lusaka",
+                    aboutHtmlOrText = "We handle installs, fault finding, and compliance certificates.",
+                    servicesLines = listOf("Rewiring", "New builds", "Emergency call-outs"),
+                    reviews = listOf(
+                        ReviewUiModel("Jane", 5f, "Quick response and tidy work.", "Mar 2026"),
+                    ),
+                    yearsInBusiness = 8,
+                    phone = "+260900000000",
+                    whatsappHref = "https://wa.me/260900000000",
                 ),
-                yearsInBusiness = 8,
             ),
             onBack = {},
             onCall = {},

@@ -8,9 +8,13 @@ Kotlin **templates** for a future `app` module. They are **not** built by this N
 - Compose BOM + `material3`, `ui`, `foundation`
 - `navigation-compose`
 - `activity-compose`
+- `lifecycle-viewmodel-compose` + `lifecycle-runtime-ktx` (ViewModels + `viewModel()`)
+- `kotlinx-coroutines-android` (for `viewModelScope` / fake delays)
 - `material-icons-extended` optional (templates use `Icons.Filled.*` from core where possible)
 
 **Suggested:** `minSdk 26`, `compileSdk 34+`, enable Compose in `build.gradle.kts`.
+
+**Prototype wiring:** `data/` fake repositories + `ui/viewmodel/` + `AppDependencies` service locator. Replace with Hilt + Retrofit when the API is ready.
 
 See `docs/android-material3-spec.md` for product context.
 
@@ -18,12 +22,19 @@ See `docs/android-material3-spec.md` for product context.
 
 | Path | Role |
 |------|------|
-| `MainActivity.kt` | `setContent` + `AppNavigation` + `SampleData` |
-| `ui/model/UiModels.kt` | UI models / form state |
-| `ui/support/SampleData.kt` | Preview + navigation sample lists |
+| `MainActivity.kt` | `setContent` + `AppNavigation()` |
+| `data/AppDependencies.kt` | Prototype service locator (fake repos) |
+| `data/fake/FakeDataSource.kt` | Zambia-relevant sample directory data |
+| `data/fake/Fake*Repository.kt` | Fake repository implementations |
+| `data/repository/*.kt` | Repository interfaces |
+| `ui/state/UiStates.kt` | Per-screen immutable UI state |
+| `ui/viewmodel/*ViewModel.kt` | `StateFlow` + fake repo wiring |
+| `ui/model/UiModels.kt` | UI models / legacy form state |
+| `ui/support/SampleData.kt` | Preview helpers (mirrors `FakeDataSource`) |
 | `ui/theme/GetProTheme.kt` | `MaterialTheme` wrapper |
-| `ui/navigation/Routes.kt` | Route constants |
-| `ui/navigation/AppNavigation.kt` | `NavHost` graph |
+| `ui/navigation/Routes.kt` | Route constants + `buildResultsRoute` |
+| `ui/navigation/NavEncoding.kt` | Safe path segments for Nav |
+| `ui/navigation/AppNavigation.kt` | `NavHost` + ViewModels + callback sheet |
 | `ui/components/*` | Reusable composables (see below) |
 | `ui/screens/home/HomeScreen.kt` | Launcher |
 | `ui/screens/results/SearchResultsScreen.kt` | Directory results |

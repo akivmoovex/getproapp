@@ -21,7 +21,16 @@ object Routes {
     const val ARG_PROFILE_ID = "profileId"
     const val ARG_SLUG = "slug"
 
+    /** Path args are [NavEncoding]-encoded; blank segments use [NavEncoding.EMPTY_SEGMENT]. */
+    const val RESULTS_WITH_ARGS =
+        "$RESULTS/{$ARG_SERVICE}/{$ARG_CITY}/{$ARG_CATEGORY}"
+
     fun profileRoute(id: String) = "$PROFILE/{$ARG_PROFILE_ID}"
+
+    fun buildResultsRoute(service: String, city: String, categorySlug: String?) =
+        "$RESULTS/${NavEncoding.encodeSegment(service)}/" +
+            "${NavEncoding.encodeSegment(city)}/" +
+            NavEncoding.encodeSegment(categorySlug ?: "")
 
     fun resultsRouteTemplate() =
         "$RESULTS?$ARG_SERVICE={$ARG_SERVICE}&$ARG_CITY={$ARG_CITY}&$ARG_CATEGORY={$ARG_CATEGORY}"

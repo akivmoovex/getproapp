@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.getpro.app.ui.navigation.AppNavigation
-import com.getpro.app.ui.support.SampleData
 import com.getpro.app.ui.theme.GetProTheme
 
 /**
@@ -20,11 +19,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             GetProTheme {
                 Surface(Modifier.fillMaxSize()) {
-                    AppNavigation(
-                        sampleCategories = SampleData.categories,
-                        sampleResults = SampleData.professionals,
-                        sampleProfile = SampleData.profile,
-                    )
+                    AppNavigation()
                 }
             }
         }

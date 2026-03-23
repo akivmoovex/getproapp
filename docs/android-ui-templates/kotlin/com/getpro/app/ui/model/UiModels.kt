@@ -36,6 +36,10 @@ data class ProfileUiModel(
     val servicesLines: List<String>,
     val reviews: List<ReviewUiModel>,
     val yearsInBusiness: Int? = null,
+    /** E.164 or local display — for [Intent.ACTION_DIAL] */
+    val phone: String? = null,
+    /** WhatsApp click URL — optional */
+    val whatsappHref: String? = null,
 )
 
 /** Active query driving [SearchResultsScreen]. */
@@ -50,6 +54,7 @@ enum class CallbackSheetStage {
     Success,
 }
 
+/** Legacy / previews; screens use [com.getpro.app.ui.state.CallbackUiState] + [com.getpro.app.ui.viewmodel.CallbackViewModel]. */
 data class CallbackFormState(
     val fullName: String = "",
     val phone: String = "",
@@ -57,6 +62,7 @@ data class CallbackFormState(
     val stage: CallbackSheetStage = CallbackSheetStage.Form,
 )
 
+/** Legacy / previews; use [com.getpro.app.ui.state.JoinBusinessUiState]. */
 data class JoinFormState(
     val profession: String = "",
     val city: String = "",
