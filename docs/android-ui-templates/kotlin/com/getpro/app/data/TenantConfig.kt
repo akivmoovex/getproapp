@@ -7,4 +7,12 @@ package com.getpro.app.data
 data class TenantConfig(
     val tenantId: Long,
     val tenantSlug: String,
-)
+) {
+    companion object {
+        /**
+         * Placeholder for templates — **must** match a real `tenants` row (id + slug) in production
+         * (`resolveTenantIdStrict` in `src/routes/api.js`). Change per flavor / `BuildConfig`.
+         */
+        val prototype: TenantConfig = TenantConfig(tenantId = 1L, tenantSlug = "zm")
+    }
+}

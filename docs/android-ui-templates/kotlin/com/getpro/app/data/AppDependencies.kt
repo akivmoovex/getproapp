@@ -1,10 +1,12 @@
 package com.getpro.app.data
 
+import com.getpro.app.data.TenantConfig
 import com.getpro.app.data.fake.FakeBusinessOnboardingRepository
-import com.getpro.app.data.fake.FakeCallbackRepository
+import com.getpro.app.data.fake.FakeCallbackApiService
 import com.getpro.app.data.fake.FakeCategoryRepository
 import com.getpro.app.data.fake.FakeSearchApiService
 import com.getpro.app.data.fake.FakeProfileApiService
+import com.getpro.app.data.remote.RemoteCallbackRepository
 import com.getpro.app.data.remote.RemoteProfessionalRepository
 import com.getpro.app.data.remote.RemoteSearchRepository
 import com.getpro.app.data.repository.BusinessOnboardingRepository
@@ -35,6 +37,13 @@ object AppDependencies {
     val professionalRepository: ProfessionalRepository = RemoteProfessionalRepository(FakeProfileApiService())
     // Legacy direct fake mapping:
     // val professionalRepository: ProfessionalRepository = FakeProfessionalRepository()
-    val callbackRepository: CallbackRepository = FakeCallbackRepository()
+    // Callback vertical slice: ViewModel -> CallbackRepository -> CallbackApiService (DTO) -> POST /api/callback-interest.
+    // TODO: Swap FakeCallbackApiService for Retrofit; set [TenantConfig] from BuildConfig to match production tenant row.
+    val callbackRepository: CallbackRepository = RemoteCallbackRepository(
+        FakeCallbackApiService(),
+        TenantConfig.prototype,
+    )
+    // Legacy in-memory fake (no DTO path):
+    // val callbackRepository: CallbackRepository = FakeCallbackRepository()
     val onboardingRepository: BusinessOnboardingRepository = FakeBusinessOnboardingRepository()
 }

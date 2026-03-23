@@ -22,9 +22,10 @@ See `docs/android-material3-spec.md` for product context.
 
 - `docs/android-api-contracts.md` — endpoints, request/response shapes, tenant rules
 - `docs/android-profile-api.md` — company profile read contract
+- `docs/android-callback-api.md` — callback / request-a-call write contract
 - `docs/android-repository-swap-plan.md` — fake → real swap, errors, migration phases
 
-**Network placeholders (copy into `app` module):** `data/api/` (`SearchApiService`, `ProfileApiService`, optional Retrofit `GetProApiService`, DTOs, `NetworkResult`), `data/remote/RemoteSearchRepository.kt`, `data/remote/RemoteProfessionalRepository.kt`, `data/mapper/DtoToUiMappers.kt`. Add Retrofit/OkHttp in Gradle before compiling Retrofit-based files.
+**Network placeholders (copy into `app` module):** `data/api/` (`SearchApiService`, `ProfileApiService`, `CallbackApiService`, optional Retrofit `GetProApiService`, DTOs, `NetworkResult`), `data/remote/Remote*Repository.kt`, `data/mapper/DtoToUiMappers.kt`, `data/mapper/CallbackSubmissionMapper.kt`. Add Retrofit/OkHttp in Gradle before compiling Retrofit-based files.
 
 ## File layout (under `kotlin/com/getpro/app/`)
 

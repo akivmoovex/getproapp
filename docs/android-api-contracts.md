@@ -36,6 +36,8 @@ Read paths for search/profile/categories are **proposed** as versioned endpoints
 
 ### 2.1 `POST /api/callback-interest`
 
+See also **`docs/android-callback-api.md`** (Android DTO + mapper + session sources).
+
 | | |
 |--|--|
 | **Method** | POST |

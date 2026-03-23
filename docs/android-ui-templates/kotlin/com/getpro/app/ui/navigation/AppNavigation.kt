@@ -16,6 +16,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.getpro.app.data.AppDependencies
+import com.getpro.app.data.model.CallbackSession
+import com.getpro.app.data.model.CallbackSource
 import com.getpro.app.data.model.SearchParams
 import com.getpro.app.ui.components.GetProTab
 import com.getpro.app.ui.components.RequestCallbackSheet
@@ -50,8 +52,8 @@ fun AppNavigation(
     val callbackState by callbackVm.uiState.collectAsState()
     var showCallbackSheet by remember { mutableStateOf(false) }
 
-    fun openCallbackSheet() {
-        callbackVm.reset()
+    fun openCallbackSheet(session: CallbackSession = CallbackSession()) {
+        callbackVm.reset(session)
         showCallbackSheet = true
     }
 
@@ -130,7 +132,15 @@ fun AppNavigation(
                             "${Routes.PROFILE}/${NavEncoding.encodeSegment(pro.id)}",
                         )
                     },
-                    onRequestCallback = { openCallbackSheet() },
+                    onRequestCallback = {
+                        openCallbackSheet(
+                            CallbackSession(
+                                source = CallbackSource.EmptyResults,
+                                searchQuery = params.service,
+                                searchCity = params.city,
+                            ),
+                        )
+                    },
                 )
             }
             composable(
@@ -158,7 +168,14 @@ fun AppNavigation(
                     } else {
                         null
                     },
-                    onRequestContact = { openCallbackSheet() },
+                    onRequestContact = {
+                        openCallbackSheet(
+                            CallbackSession(
+                                source = CallbackSource.Profile,
+                                companyId = profile?.id,
+                            ),
+                        )
+                    },
                     onRetry = { vm.load() },
                 )
             }

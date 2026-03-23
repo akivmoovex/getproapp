@@ -1,5 +1,6 @@
 package com.getpro.app.ui.state
 
+import com.getpro.app.data.model.CallbackSource
 import com.getpro.app.data.model.SearchParams
 import com.getpro.app.ui.model.CategoryUiModel
 import com.getpro.app.ui.model.CallbackSheetStage
@@ -38,6 +39,11 @@ data class CallbackUiState(
     val fullName: String = "",
     val phone: String = "",
     val note: String = "",
+    /** Set when opening the sheet (empty results vs profile vs generic). */
+    val source: CallbackSource = CallbackSource.Generic,
+    val companyId: String? = null,
+    val searchQuery: String? = null,
+    val searchCity: String? = null,
     val stage: CallbackSheetStage = CallbackSheetStage.Form,
     val nameError: String? = null,
     val phoneError: String? = null,
