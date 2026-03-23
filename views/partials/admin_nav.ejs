@@ -60,7 +60,7 @@
       <% } %>
       <% if (scoped) { %>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'dashboard' ? 'admin-nav__link--active' : '' %>" href="/admin/dashboard">Dashboard</a>
-        <% if (isViewer) { %>
+        <% if (isViewer || canEdit || canCrm) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'leads' ? 'admin-nav__link--active' : '' %>" href="/admin/leads">Leads</a>
         <% } %>
         <% if (canCrm) { %>

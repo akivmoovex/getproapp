@@ -110,6 +110,17 @@ function getCategoriesForSelect(db, tenantId) {
     .all(tenantId);
 }
 
+function uniqueCompanySubdomainForTenant(dbConn, desiredTenantId, desiredSlug) {
+  const tid = Number(desiredTenantId);
+  let base = slugify(String(desiredSlug || "listing"), { lower: true, strict: true, trim: true }).slice(0, 60) || "listing";
+  let sub = base;
+  let n = 1;
+  while (dbConn.prepare("SELECT 1 FROM companies WHERE tenant_id = ? AND subdomain = ?").get(tid, sub)) {
+    sub = `${base}-${n++}`.slice(0, 80);
+  }
+  return sub;
+}
+
 function parseEditMode(req) {
   return (
     req.query.edit === "1" || req.query.edit === "true" || req.query.mode === "edit"
@@ -1995,34 +2006,32 @@ module.exports = function adminRoutes({ db }) {
 
   router.get("/leads", (req, res) => {
     const tid = getAdminTenantId(req);
-    const embed = res.locals.embed;
 
     let leads = [];
     let companies = [];
     let selectedCompanyId = null;
-    if (!embed) {
-      const companyId = req.query.company_id ? Number(req.query.company_id) : null;
-      selectedCompanyId = companyId;
-      companies = db
-        .prepare("SELECT id, name, subdomain FROM companies WHERE tenant_id = ? ORDER BY name ASC")
-        .all(tid);
+    const companyId = req.query.company_id ? Number(req.query.company_id) : null;
+    selectedCompanyId = companyId;
+    companies = db
+      .prepare("SELECT id, name, subdomain FROM companies WHERE tenant_id = ? ORDER BY name ASC")
+      .all(tid);
 
-      if (companyId) {
-        leads = db
-          .prepare(
-            `
+    if (companyId) {
+      leads = db
+        .prepare(
+          `
           SELECT l.*, c.name AS company_name, c.subdomain AS company_subdomain
           FROM leads l
           INNER JOIN companies c ON c.id = l.company_id
           WHERE l.company_id = ? AND l.tenant_id = ? AND c.tenant_id = ?
           ORDER BY l.created_at DESC
           `
-          )
-          .all(companyId, tid, tid);
-      } else {
-        leads = db
-          .prepare(
-            `
+        )
+        .all(companyId, tid, tid);
+    } else {
+      leads = db
+        .prepare(
+          `
           SELECT l.*, c.name AS company_name, c.subdomain AS company_subdomain
           FROM leads l
           INNER JOIN companies c ON c.id = l.company_id
@@ -2030,9 +2039,8 @@ module.exports = function adminRoutes({ db }) {
           ORDER BY l.created_at DESC
           LIMIT 200
           `
-          )
-          .all(tid);
-      }
+        )
+        .all(tid);
     }
 
     const partnerCallbacks = db
@@ -2050,7 +2058,8 @@ module.exports = function adminRoutes({ db }) {
     const partnerSignups = db
       .prepare(
         `
-        SELECT id, profession, city, name, phone, vat_or_pacra, created_at
+        SELECT id, profession, city, name, phone, vat_or_pacra, created_at,
+               COALESCE(converted_company_id, 0) AS converted_company_id
         FROM professional_signups
         WHERE tenant_id = ?
         ORDER BY created_at DESC
@@ -2125,6 +2134,132 @@ module.exports = function adminRoutes({ db }) {
       return res.status(400).send(e.message || "Could not save");
     }
     return res.redirect(redirectWithEmbed(req, `/admin/leads/${id}/edit`));
+  });
+
+  router.get("/partner-signups/:id", requireDirectoryEditor, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id");
+    const signup = db.prepare("SELECT * FROM professional_signups WHERE id = ? AND tenant_id = ?").get(id, tid);
+    if (!signup) return res.status(404).send("Join signup not found.");
+    const conv = signup.converted_company_id != null ? Number(signup.converted_company_id) : 0;
+    let convertedCompany = null;
+    if (conv > 0) {
+      convertedCompany = db.prepare("SELECT id, name, subdomain FROM companies WHERE id = ? AND tenant_id = ?").get(conv, tid);
+    }
+    const categories = getCategoriesForSelect(db, tid);
+    const defaultSub = uniqueCompanySubdomainForTenant(db, tid, signup.name || signup.profession || "listing");
+    return res.render("admin/partner_signup_convert", {
+      signup,
+      categories,
+      defaultSub,
+      convertedCompany,
+      activeNav: "leads",
+    });
+  });
+
+  router.post("/partner-signups/:id/convert-to-company", requireDirectoryEditor, requireNotViewer, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id");
+    const signup = db.prepare("SELECT * FROM professional_signups WHERE id = ? AND tenant_id = ?").get(id, tid);
+    if (!signup) return res.status(404).send("Join signup not found.");
+    const conv = signup.converted_company_id != null ? Number(signup.converted_company_id) : 0;
+    if (conv > 0) return res.status(400).send("This signup was already converted.");
+
+    const body = req.body || {};
+    const cleanName = String(body.name || signup.name || "").trim();
+    let cleanSubdomain = String(body.subdomain || "").trim().toLowerCase();
+    if (!cleanName) return res.status(400).send("Company name is required.");
+    if (!cleanSubdomain) cleanSubdomain = uniqueCompanySubdomainForTenant(db, tid, cleanName);
+    else cleanSubdomain = slugify(cleanSubdomain, { lower: true, strict: true, trim: true }).slice(0, 80);
+
+    const catId = body.category_id ? Number(body.category_id) : null;
+    if (catId) {
+      const okCat = db.prepare("SELECT id FROM categories WHERE id = ? AND tenant_id = ?").get(catId, tid);
+      if (!okCat) return res.status(400).send("Invalid category for this tenant.");
+    }
+
+    const headline = String(body.headline || signup.profession || cleanName).trim().slice(0, 500);
+    const about = String(body.about || "").trim();
+    const services = String(body.services || signup.profession || "").trim();
+    const phone = String(body.phone || signup.phone || "").trim();
+    const email = String(body.email || "").trim();
+    const location = String(body.location || signup.city || "").trim();
+    const featured_cta_label = String(body.featured_cta_label || "Call us").trim() || "Call us";
+    const featured_cta_phone = String(body.featured_cta_phone || signup.phone || "").trim();
+    const service_areas = String(body.service_areas || "").trim();
+    const hours_text = String(body.hours_text || "").trim();
+    const logo_url = String(body.logo_url || "").trim();
+    const gallery_text = String(body.gallery_text || "").trim();
+
+    const tenantSlugRow = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    if (tenantSlugRow && tenantSlugRow.slug === "zm") {
+      if (phone && !isValidPhoneForTenant("zm", phone)) {
+        return res.status(400).send("Phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
+      }
+      if (featured_cta_phone && !isValidPhoneForTenant("zm", featured_cta_phone)) {
+        return res.status(400).send("CTA phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
+      }
+    }
+
+    const yoeRaw = String(body.years_experience || "").trim();
+    const yearsExp = yoeRaw === "" ? null : Number(yoeRaw);
+    if (yearsExp != null && (Number.isNaN(yearsExp) || yearsExp < 0 || yearsExp > 999)) {
+      return res.status(400).send("Years in business must be a number between 0 and 999.");
+    }
+
+    const galleryJson = JSON.stringify(parseGalleryAdminText(gallery_text));
+    const dup = db.prepare("SELECT 1 FROM companies WHERE tenant_id = ? AND subdomain = ?").get(tid, cleanSubdomain);
+    if (dup) return res.status(400).send("That mini-site slug is already in use for this region.");
+
+    let newCompanyId = null;
+    try {
+      db.transaction(() => {
+        const r = db
+          .prepare(
+            `
+            INSERT INTO companies
+              (subdomain, name, category_id, headline, about, services, phone, email, location, featured_cta_label, featured_cta_phone, tenant_id, updated_at,
+               years_experience, service_areas, hours_text, gallery_json, logo_url)
+            VALUES
+              (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'),
+               ?, ?, ?, ?, ?)
+            `
+          )
+          .run(
+            cleanSubdomain,
+            cleanName,
+            catId,
+            headline,
+            about,
+            services,
+            phone,
+            email,
+            location,
+            featured_cta_label,
+            featured_cta_phone,
+            tid,
+            yearsExp,
+            service_areas,
+            hours_text,
+            galleryJson,
+            logo_url
+          );
+        newCompanyId = Number(r.lastInsertRowid);
+        const hasConv = db.prepare("PRAGMA table_info(professional_signups)").all().some((c) => c.name === "converted_company_id");
+        if (hasConv) {
+          db.prepare("UPDATE professional_signups SET converted_company_id = ? WHERE id = ? AND tenant_id = ?").run(
+            newCompanyId,
+            id,
+            tid
+          );
+        }
+      })();
+    } catch (e) {
+      return res.status(400).send(e.message || "Could not create company");
+    }
+    return res.redirect(redirectWithEmbed(req, `/admin/companies/${newCompanyId}/workspace`));
   });
 
   function requireCrmAccess(req, res, next) {
@@ -2257,9 +2392,14 @@ module.exports = function adminRoutes({ db }) {
       crmTenantUsers = [{ id: uid, username: uname }];
     }
 
+    const unassignedTasks = rows.filter(
+      (t) => t.owner_id == null && normalizeCrmTaskStatus(t.status) === "new"
+    );
+
     return res.render("admin/crm", {
       activeNav: "crm",
       tasksByStatus,
+      unassignedTasks,
       CRM_TASK_STATUSES,
       crmTaskStatusLabel,
       canMutateCrm: canMutateCrm(role),
@@ -2309,8 +2449,8 @@ module.exports = function adminRoutes({ db }) {
         const r = db
           .prepare(
             `
-            INSERT INTO crm_tasks (tenant_id, title, description, status, owner_id, created_by_id, attachment_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO crm_tasks (tenant_id, title, description, status, owner_id, created_by_id, attachment_url, source_type, source_ref_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', NULL)
             `
           )
           .run(tid, title, description, status, ownerId, uid, attachment_url);

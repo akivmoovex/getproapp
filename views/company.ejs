@@ -46,6 +46,9 @@
               <% if (category) { %>
                 <span class="pro-company-profile__pill"><%= category.name %></span>
               <% } %>
+              <% if (company.location && String(company.location).trim()) { %>
+                <span class="pro-company-profile__pill pro-company-profile__pill--muted"><%= company.location %></span>
+              <% } %>
               <span class="pro-company-profile__pill pro-company-profile__pill--muted">Mini-site</span>
             </div>
             <div class="pro-company-profile__title-row">
@@ -81,45 +84,6 @@
 
         <div class="pro-company-profile__grid">
           <div class="pro-company-profile__primary">
-
-            <% if (rc > 0 && typeof star_distribution !== 'undefined' && typeof star_distribution_total !== 'undefined' && star_distribution_total > 0) { %>
-              <section class="pro-company-profile__section" aria-labelledby="dist-heading">
-                <h2 id="dist-heading" class="pro-company-profile__h2">Rating breakdown</h2>
-                <div class="pro-company-profile__dist">
-                  <% for (var star = 5; star >= 1; star--) { %>
-                    <% var cnt = star_distribution[star] || 0; %>
-                    <% var pct = Math.round((cnt / star_distribution_total) * 100); %>
-                    <div class="pro-company-profile__dist-row">
-                      <span class="pro-company-profile__dist-label"><%= star %>★</span>
-                      <div class="pro-company-profile__dist-bar" role="presentation">
-                        <span class="pro-company-profile__dist-fill" data-width-pct="<%= pct %>"></span>
-                      </div>
-                      <span class="pro-company-profile__dist-pct"><%= pct %>%</span>
-                    </div>
-                  <% } %>
-                </div>
-              </section>
-            <% } %>
-
-            <section class="pro-company-profile__section" aria-labelledby="reviews-heading">
-              <h2 id="reviews-heading" class="pro-company-profile__h2">Customer reviews</h2>
-              <% if (!reviews || !reviews.length) { %>
-                <p class="muted">No reviews yet — be the first to leave feedback after you work with this business.</p>
-              <% } else { %>
-                <ul class="pro-company-profile__reviews">
-                  <% reviews.forEach(function(r) { %>
-                    <li class="pro-company-profile__review">
-                      <div class="pro-company-profile__review-top">
-                        <span class="pro-company-profile__review-score"><%= Number(r.rating).toFixed(2) %> ★</span>
-                        <span class="pro-company-profile__review-author"><%= r.author_name || 'Customer' %></span>
-                        <span class="pro-company-profile__review-date"><%= r.dateLabel || '' %></span>
-                      </div>
-                      <blockquote class="pro-company-profile__review-body">“<%= r.body %>”</blockquote>
-                    </li>
-                  <% }); %>
-                </ul>
-              <% } %>
-            </section>
 
             <% if (company.about && String(company.about).trim()) { %>
               <section class="pro-company-profile__section" aria-labelledby="about-heading">
@@ -191,6 +155,45 @@
                 <div class="pro-company-profile__prose pro-company-profile__preline"><%= company.hours_text %></div>
               </section>
             <% } %>
+
+            <% if (rc > 0 && typeof star_distribution !== 'undefined' && typeof star_distribution_total !== 'undefined' && star_distribution_total > 0) { %>
+              <section class="pro-company-profile__section" aria-labelledby="dist-heading">
+                <h2 id="dist-heading" class="pro-company-profile__h2">Rating breakdown</h2>
+                <div class="pro-company-profile__dist">
+                  <% for (var star = 5; star >= 1; star--) { %>
+                    <% var cnt = star_distribution[star] || 0; %>
+                    <% var pct = Math.round((cnt / star_distribution_total) * 100); %>
+                    <div class="pro-company-profile__dist-row">
+                      <span class="pro-company-profile__dist-label"><%= star %>★</span>
+                      <div class="pro-company-profile__dist-bar" role="presentation">
+                        <span class="pro-company-profile__dist-fill" data-width-pct="<%= pct %>"></span>
+                      </div>
+                      <span class="pro-company-profile__dist-pct"><%= pct %>%</span>
+                    </div>
+                  <% } %>
+                </div>
+              </section>
+            <% } %>
+
+            <section class="pro-company-profile__section" aria-labelledby="reviews-heading">
+              <h2 id="reviews-heading" class="pro-company-profile__h2">Customer reviews</h2>
+              <% if (!reviews || !reviews.length) { %>
+                <p class="muted">No reviews yet — be the first to leave feedback after you work with this business.</p>
+              <% } else { %>
+                <ul class="pro-company-profile__reviews">
+                  <% reviews.forEach(function(r) { %>
+                    <li class="pro-company-profile__review">
+                      <div class="pro-company-profile__review-top">
+                        <span class="pro-company-profile__review-score"><%= Number(r.rating).toFixed(2) %> ★</span>
+                        <span class="pro-company-profile__review-author"><%= r.author_name || 'Customer' %></span>
+                        <span class="pro-company-profile__review-date"><%= r.dateLabel || '' %></span>
+                      </div>
+                      <blockquote class="pro-company-profile__review-body">“<%= r.body %>”</blockquote>
+                    </li>
+                  <% }); %>
+                </ul>
+              <% } %>
+            </section>
 
             <section class="pro-company-profile__section" aria-labelledby="lead-heading">
               <h2 id="lead-heading" class="pro-company-profile__h2">Request contact</h2>

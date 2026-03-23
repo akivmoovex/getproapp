@@ -3,6 +3,7 @@ const { resolveHostname } = require("../host");
 const { israelComingSoonEnabled } = require("../israelComingSoon");
 const { TENANT_IL } = require("../tenantIds");
 const { isValidPhoneForTenant } = require("../tenants");
+const { createCrmTaskFromEvent } = require("../crmAutoTasks");
 
 /**
  * Resolves tenant for join/callback APIs. Never defaults to Zambia — wrong defaults
@@ -65,19 +66,30 @@ module.exports = function apiRoutes({ db }) {
       return res.status(400).json({ error: "Invalid phone number for this region." });
     }
 
-    db.prepare(
-      `
+    const lr = db
+      .prepare(
+        `
       INSERT INTO leads (company_id, name, phone, email, message, status, tenant_id)
       VALUES (?, ?, ?, ?, ?, 'open', ?)
       `
-    ).run(
-      companyIdNum,
-      String(name).slice(0, 120),
-      String(phone).slice(0, 30),
-      String(email).slice(0, 120),
-      String(message).slice(0, 2000),
-      company.tenant_id
-    );
+      )
+      .run(
+        companyIdNum,
+        String(name).slice(0, 120),
+        String(phone).slice(0, 30),
+        String(email).slice(0, 120),
+        String(message).slice(0, 2000),
+        company.tenant_id
+      );
+    const leadId = Number(lr.lastInsertRowid);
+    const cname = db.prepare("SELECT name FROM companies WHERE id = ?").get(companyIdNum);
+    createCrmTaskFromEvent(db, {
+      tenantId: company.tenant_id,
+      title: `Company lead · ${cname && cname.name ? cname.name : "Listing"}`,
+      description: `Contact: ${String(name).trim() || "—"}\nPhone: ${String(phone).trim() || "—"}\nEmail: ${String(email).trim() || "—"}\n\n${String(message).trim().slice(0, 4000)}`,
+      sourceType: "company_lead",
+      sourceRefId: leadId,
+    });
 
     return res.json({ ok: true });
   });
@@ -108,12 +120,22 @@ module.exports = function apiRoutes({ db }) {
       return res.status(400).json({ error: "Invalid phone number for this region." });
     }
 
-    db.prepare(
-      `
+    const ins = db
+      .prepare(
+        `
       INSERT INTO professional_signups (profession, city, name, phone, vat_or_pacra, tenant_id)
       VALUES (?, ?, ?, ?, ?, ?)
       `
-    ).run(profession, city, name, phone, vatOrPacra, tenantId);
+      )
+      .run(profession, city, name, phone, vatOrPacra, tenantId);
+    const signupId = Number(ins.lastInsertRowid);
+    createCrmTaskFromEvent(db, {
+      tenantId,
+      title: `Join signup · ${name}`,
+      description: `Profession: ${profession}\nCity: ${city}\nPhone: ${phone}\nVAT / PACRA: ${vatOrPacra || "—"}`,
+      sourceType: "join_signup",
+      sourceRefId: signupId,
+    });
 
     return res.json({ ok: true });
   });
@@ -157,12 +179,22 @@ module.exports = function apiRoutes({ db }) {
     if (tenantSlugCb && tenantSlugCb.slug === "zm" && phone && !isValidPhoneForTenant("zm", phone)) {
       return res.status(400).json({ error: "Invalid phone number for this region." });
     }
-    db.prepare(
-      `
+    const cb = db
+      .prepare(
+        `
       INSERT INTO callback_interests (phone, name, context, tenant_id, interest_label)
       VALUES (?, ?, ?, ?, ?)
       `
-    ).run(phone, name, context || "join_exit", tenantId, interestLabel || "Potential Partner");
+      )
+      .run(phone, name, context || "join_exit", tenantId, interestLabel || "Potential Partner");
+    const cbId = Number(cb.lastInsertRowid);
+    createCrmTaskFromEvent(db, {
+      tenantId,
+      title: `Callback · ${name || phone || "request"}`,
+      description: `Phone: ${phone || "—"}\nLabel: ${interestLabel || "—"}\nContext: ${context || "join_exit"}`,
+      sourceType: "callback_interest",
+      sourceRefId: cbId,
+    });
     return res.json({ ok: true });
   });
 

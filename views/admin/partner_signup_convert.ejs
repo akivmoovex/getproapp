@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Convert join signup | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Convert join signup', activeNav: 'leads' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <p class="admin-intro"><a class="btn" href="/admin/leads">← Back to leads</a></p>
+
+        <% if (convertedCompany) { %>
+        <div class="card card--mb-md">
+          <p style="margin:0">This signup was already converted to <strong><%= convertedCompany.name %></strong> (@<%= convertedCompany.subdomain %>).</p>
+          <p class="u-mt-sm"><a class="btn btn-primary" href="/admin/companies/<%= convertedCompany.id %>/workspace">Open company workspace</a></p>
+        </div>
+        <% } %>
+
+        <h1 class="section-title section-title--flush">Review join signup</h1>
+        <p class="admin-intro muted">Source data from the Join flow. Complete fields below, then create the directory listing.</p>
+
+        <div class="card admin-partner-source card--mb-md">
+          <h2 class="admin-crm-section__title">Original submission</h2>
+          <dl class="admin-dl-grid">
+            <div><dt>Profession</dt><dd><%= signup.profession %></dd></div>
+            <div><dt>City</dt><dd><%= signup.city %></dd></div>
+            <div><dt>Name</dt><dd><%= signup.name %></dd></div>
+            <div><dt>Phone</dt><dd><%= signup.phone %></dd></div>
+            <div><dt>VAT / PACRA</dt><dd class="muted"><%= signup.vat_or_pacra || '—' %></dd></div>
+          </dl>
+        </div>
+
+        <% if (!convertedCompany) { %>
+        <div class="card admin-form-card">
+          <h2 class="admin-crm-section__title">Create company listing</h2>
+          <form method="post" action="/admin/partner-signups/<%= signup.id %>/convert-to-company" class="form">
+            <div>
+              <label for="ps_name">Company / professional name</label>
+              <input id="ps_name" name="name" required maxlength="200" value="<%= signup.name %>" />
+            </div>
+            <div>
+              <label for="ps_sub">Mini-site slug (URL path)</label>
+              <input id="ps_sub" name="subdomain" maxlength="80" value="<%= defaultSub %>" placeholder="e.g. acme-electrical" />
+              <div class="admin-field-hint">Lowercase letters, numbers, and hyphens. Must be unique in this region.</div>
+            </div>
+            <div>
+              <label for="ps_cat">Category</label>
+              <select id="ps_cat" name="category_id">
+                <option value="">— Select —</option>
+                <% (categories || []).forEach(function(c) { %>
+                  <option value="<%= c.id %>"><%= c.name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div>
+              <label for="ps_head">Headline</label>
+              <input id="ps_head" name="headline" maxlength="500" value="<%= signup.profession %>" />
+            </div>
+            <div>
+              <label for="ps_about">About</label>
+              <textarea id="ps_about" name="about" rows="5" placeholder="Short description for the profile"></textarea>
+            </div>
+            <div>
+              <label for="ps_services">Services (one per line)</label>
+              <textarea id="ps_services" name="services" rows="4" placeholder="e.g. Domestic wiring"><%= signup.profession %></textarea>
+            </div>
+            <div>
+              <label for="ps_phone">Business phone</label>
+              <input id="ps_phone" name="phone" maxlength="40" value="<%= signup.phone %>" />
+            </div>
+            <div>
+              <label for="ps_email">Email (optional)</label>
+              <input id="ps_email" name="email" type="email" maxlength="120" />
+            </div>
+            <div>
+              <label for="ps_loc">Location / city shown on profile</label>
+              <input id="ps_loc" name="location" maxlength="200" value="<%= signup.city %>" />
+            </div>
+            <div>
+              <label for="ps_cta_l">Primary call button label</label>
+              <input id="ps_cta_l" name="featured_cta_label" maxlength="80" value="Call us" />
+            </div>
+            <div>
+              <label for="ps_cta_p">Primary call number (dial)</label>
+              <input id="ps_cta_p" name="featured_cta_phone" maxlength="40" value="<%= signup.phone %>" />
+            </div>
+            <div>
+              <label for="ps_yoe">Years in business (optional)</label>
+              <input id="ps_yoe" name="years_experience" inputmode="numeric" maxlength="3" placeholder="e.g. 5" />
+            </div>
+            <div>
+              <label for="ps_areas">Service areas (optional)</label>
+              <textarea id="ps_areas" name="service_areas" rows="3"></textarea>
+            </div>
+            <div>
+              <label for="ps_hours">Hours (optional)</label>
+              <textarea id="ps_hours" name="hours_text" rows="2"></textarea>
+            </div>
+            <div>
+              <label for="ps_logo">Logo URL (optional)</label>
+              <input id="ps_logo" name="logo_url" type="url" maxlength="500" placeholder="https://…" />
+            </div>
+            <div class="admin-gate-actions">
+              <button class="btn btn-primary" type="submit">Create listing from signup</button>
+              <a class="btn" href="/admin/leads">Cancel</a>
+            </div>
+          </form>
+        </div>
+        <% } %>
+      </div>
+    </main>
+  </body>
+</html>

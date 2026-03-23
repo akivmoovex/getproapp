@@ -1071,6 +1071,37 @@ try {
   console.error("[getpro] crm_tasks blocked/attachment migration:", e.message);
 }
 
+/** CRM: optional source linkage for auto-created tasks. */
+try {
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("crm_tasks_source_v1")) {
+    const crmCols = new Set(db.prepare("PRAGMA table_info(crm_tasks)").all().map((c) => c.name));
+    if (!crmCols.has("source_type")) {
+      db.exec("ALTER TABLE crm_tasks ADD COLUMN source_type TEXT NOT NULL DEFAULT 'manual'");
+    }
+    if (!crmCols.has("source_ref_id")) {
+      db.exec("ALTER TABLE crm_tasks ADD COLUMN source_ref_id INTEGER");
+    }
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("crm_tasks_source_v1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] crm_tasks source migration:", e.message);
+}
+
+/** Join signups: track converted listing. */
+try {
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("professional_signups_converted_v1")) {
+    const psCols = new Set(db.prepare("PRAGMA table_info(professional_signups)").all().map((c) => c.name));
+    if (!psCols.has("converted_company_id")) {
+      db.exec("ALTER TABLE professional_signups ADD COLUMN converted_company_id INTEGER REFERENCES companies(id)");
+    }
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("professional_signups_converted_v1");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] professional_signups converted migration:", e.message);
+}
+
 /** Per-tenant call center / WhatsApp / support email (footers + mini-site). */
 try {
   const tenantColNames = () =>

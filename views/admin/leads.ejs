@@ -54,12 +54,13 @@
               <th>Name</th>
               <th>Phone</th>
               <th>VAT / PACRA</th>
+              <% if (typeof adminNav !== 'undefined' && adminNav.canEditDirectory) { %><th>Actions</th><% } %>
               <th>Time</th>
             </tr>
           </thead>
           <tbody>
             <% if (!partnerSignups || partnerSignups.length === 0) { %>
-              <tr><td colspan="6" class="muted">No join sign-ups yet.</td></tr>
+              <tr><td colspan="<%= typeof adminNav !== 'undefined' && adminNav.canEditDirectory ? 7 : 6 %>" class="muted">No join sign-ups yet.</td></tr>
             <% } %>
             <% (partnerSignups || []).forEach(function(s) { %>
               <tr>
@@ -68,6 +69,15 @@
                 <td><%= s.name %></td>
                 <td><%= s.phone %></td>
                 <td class="muted"><%= s.vat_or_pacra %></td>
+                <% if (typeof adminNav !== 'undefined' && adminNav.canEditDirectory) { %>
+                <td>
+                  <% if (!s.converted_company_id || Number(s.converted_company_id) === 0) { %>
+                    <a class="btn btn-primary" href="/admin/partner-signups/<%= s.id %>">Review &amp; convert</a>
+                  <% } else { %>
+                    <a class="btn" href="/admin/companies/<%= Number(s.converted_company_id) %>/workspace">Open listing</a>
+                  <% } %>
+                </td>
+                <% } %>
                 <td class="muted"><%- include('../partials/event_time', { at: s.created_at }) %></td>
               </tr>
             <% }) %>
@@ -76,7 +86,6 @@
         </div>
       </div>
 
-      <% if (!embed) { %>
       <h2 class="section-title">Company lead requests</h2>
       <p class="admin-intro">Messages from company profile pages.</p>
 
@@ -137,7 +146,6 @@
         </table>
         </div>
       </div>
-      <% } %>
 
       </div>
     </main>

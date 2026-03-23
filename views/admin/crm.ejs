@@ -15,7 +15,8 @@
           Drag tasks between columns to update status. Click a card to open details. New tasks can include an assignee; unassigned tasks stay in <strong>New</strong>.
         </p>
 
-        <% if (canMutateCrm) { %>
+        <div class="admin-crm-top">
+          <% if (canMutateCrm) { %>
           <div class="card admin-form-card admin-crm-panel admin-crm-create">
             <h2 class="admin-crm-section__title">New task</h2>
             <p class="muted admin-crm-section__lead">Assignee defaults to you; choose <strong>Unassigned</strong> to leave the task in the New column.</p>
@@ -47,7 +48,30 @@
               </div>
             </form>
           </div>
-        <% } %>
+          <% } %>
+
+          <aside class="card admin-crm-unassigned" aria-labelledby="crm-unassigned-title">
+            <h2 id="crm-unassigned-title" class="admin-crm-section__title">Unassigned (New)</h2>
+            <p class="muted admin-crm-section__lead">Pool tasks with no assignee. Also listed in the <strong>New</strong> column below — claim from the card or open details.</p>
+            <% var _u = typeof unassignedTasks !== 'undefined' && unassignedTasks ? unassignedTasks : []; %>
+            <% if (!_u.length) { %>
+              <p class="muted admin-crm-unassigned__empty">No unassigned tasks.</p>
+            <% } else { %>
+              <ul class="admin-crm-unassigned__list">
+                <% _u.forEach(function(t) { %>
+                  <li class="admin-crm-unassigned__item">
+                    <button type="button" class="admin-crm-unassigned__link" data-crm-open-task="<%= t.id %>">
+                      <span class="admin-crm-unassigned__item-title"><%= t.title %></span>
+                      <% if (t.description) { %>
+                        <span class="admin-crm-unassigned__item-snippet muted"><%= String(t.description).length > 120 ? String(t.description).slice(0, 120) + '…' : t.description %></span>
+                      <% } %>
+                    </button>
+                  </li>
+                <% }); %>
+              </ul>
+            <% } %>
+          </aside>
+        </div>
 
         <div class="admin-crm-kanban" aria-label="Task board by status">
           <% (CRM_TASK_STATUSES || []).forEach(function(st) { %>
