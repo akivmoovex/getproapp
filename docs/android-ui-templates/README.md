@@ -18,6 +18,13 @@ Kotlin **templates** for a future `app` module. They are **not** built by this N
 
 See `docs/android-material3-spec.md` for product context.
 
+**API & migration (backend alignment):**
+
+- `docs/android-api-contracts.md` — endpoints, request/response shapes, tenant rules
+- `docs/android-repository-swap-plan.md` — fake → real swap, errors, migration phases
+
+**Network placeholders (copy into `app` module):** `data/api/*` (Retrofit `GetProApiService`, DTOs, [NetworkResult]), `data/mapper/DtoToUiMappers.kt`. Add Retrofit/OkHttp in Gradle before compiling those files.
+
 ## File layout (under `kotlin/com/getpro/app/`)
 
 | Path | Role |

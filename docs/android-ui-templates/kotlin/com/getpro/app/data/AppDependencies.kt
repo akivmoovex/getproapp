@@ -13,6 +13,10 @@ import com.getpro.app.data.repository.SearchRepository
 
 /**
  * Simple service locator for prototype — replace with Hilt / manual DI later.
+ *
+ * **Swap to real API:** provide [com.getpro.app.data.repository] implementations that call
+ * [com.getpro.app.data.api.GetProApiService] + [com.getpro.app.data.mapper.DtoToUiMappers];
+ * keep ViewModels on the same interfaces. See `docs/android-repository-swap-plan.md`.
  */
 object AppDependencies {
     val categoryRepository: CategoryRepository = FakeCategoryRepository()
