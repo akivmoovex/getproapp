@@ -12,7 +12,7 @@
     }) %>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body class="join-page <%= tenant.themeClass %>">
+  <body class="join-page <%= tenant.themeClass %>" data-screen-role="support">
     <div class="join-topbar-row">
       <%- include('partials/brand_lockup_getpro', { tenant, brandLockupVariant: 'join', brandLockupHref: tenantHomeHref }) %>
     </div>

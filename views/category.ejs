@@ -12,27 +12,23 @@
     }) %>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body class="<%= tenant.themeClass %>">
+  <body class="<%= tenant.themeClass %>" data-screen-role="results">
     <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
 
     <div class="container directory-page directory-page-toolbar">
       <div class="pro-directory-toolbar pro-directory-toolbar--category" role="region" aria-label="Category browse">
-        <div class="pro-directory-toolbar__fields pro-directory-toolbar__fields--category-only">
-          <div class="pro-directory-toolbar__category pro-directory-toolbar__category--grow">
-            <label class="pro-directory-toolbar__label" for="category-page-select">Category</label>
-            <select
-              id="category-page-select"
-              class="pro-directory-toolbar__select"
-              aria-label="Switch category"
-              onchange="if (this.value) window.location.href = this.value;"
-            >
-              <option value="<%= tenantUrlPrefix %>/directory">All categories</option>
-              <% (categories || []).forEach(function(cat) { %>
-              <option value="<%= tenantUrlPrefix %>/category/<%= cat.slug %>"<%= category.slug === cat.slug ? ' selected' : '' %>><%= cat.name %></option>
-              <% }); %>
-            </select>
-          </div>
-        </div>
+        <%- include('partials/pro_search_form', {
+          variant: 'directory',
+          tenantUrlPrefix,
+          formId: 'category-toolbar',
+          idPrefix: 'cat',
+          searchQuery: '',
+          cityQuery: '',
+          showCategoryFilter: true,
+          selectedCategory: category.slug,
+          categories: typeof categories !== 'undefined' ? categories : [],
+          ariaLabel: 'Search by category, service, and city',
+        }) %>
         <div class="pro-directory-toolbar__meta" aria-live="polite">
           <span class="pro-directory-toolbar__count">
             <strong><%= (companies || []).length %></strong>
@@ -42,6 +38,8 @@
         </div>
       </div>
 
+      <%- include('partials/refine_search_fab', { toolbarAnchorId: 'category-toolbar' }) %>
+
       <div class="pro-directory-main">
         <% if ((companies || []).length === 0) { %>
           <%- include('partials/directory_empty_state', {
@@ -50,6 +48,9 @@
             emptyStateMode: 'category',
             categoryName: category.name,
             category,
+            toolbarAnchorId: 'category-toolbar',
+            emptyAltCategories: typeof emptyAltCategories !== 'undefined' ? emptyAltCategories : [],
+            emptyAltCities: typeof emptyAltCities !== 'undefined' ? emptyAltCities : [],
           }) %>
         <% } else { %>
           <%- include('partials/directory_company_cards', { companies, baseDomain, companyMiniSiteHref }) %>
@@ -59,6 +60,7 @@
 
     <%- include('partials/site_footer', { tenantUrlPrefix }) %>
     <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <%- include('partials/autocomplete_defer_bootstrap') %>
     <% if ((companies || []).length === 0) { %>
     <script src="/directory-empty-callback.js?v=<%= stylesVersion %>" defer></script>
     <% } %>

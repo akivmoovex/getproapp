@@ -16,7 +16,7 @@
     <% } %>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body class="home-page wf-home-layout <%= tenant.themeClass %>">
+  <body class="home-page home-page--launcher wf-home-layout <%= tenant.themeClass %>" data-screen-role="launcher">
     <header class="home-m3-app-bar" role="banner">
       <div class="home-m3-app-bar__inner">
         <div class="home-m3-app-bar__start">
@@ -414,6 +414,6 @@
     <%- include('partials/site_footer', { tenantUrlPrefix }) %>
 
     <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
-    <script src="/autocomplete.js?v=<%= stylesVersion %>" defer></script>
+    <%- include('partials/autocomplete_defer_bootstrap') %>
   </body>
 </html>

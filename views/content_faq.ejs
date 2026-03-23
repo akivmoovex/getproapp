@@ -9,7 +9,7 @@
     <script type="application/ld+json"><%- jsonLdFaq %></script>
     <% } %>
   </head>
-  <body class="<%= tenant.themeClass %>">
+  <body class="page-support-content <%= tenant.themeClass %>" data-screen-role="support">
     <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
 
     <main class="container content-faq-page" style="padding: 1.5rem 0 3rem; max-width: 720px">

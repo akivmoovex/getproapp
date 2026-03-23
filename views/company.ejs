@@ -15,7 +15,7 @@
     <% } %>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body class="<%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
+  <body class="page-company-profile <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>" data-screen-role="profile">
     <%- include('partials/site_header', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '', tenant: typeof tenant !== 'undefined' ? tenant : null, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
 
     <div class="pro-company-profile__shell">
@@ -303,6 +303,28 @@
         </div>
         </div>
     </main>
+    <%
+      var _bizPhoneSticky = company.phone ? String(company.phone).trim() : '';
+      var _gpDSticky = _gpPhone.replace(/\D/g, '');
+      var _bizDSticky = _bizPhoneSticky.replace(/\D/g, '');
+      var _showBizSticky = _bizPhoneSticky && _bizDSticky !== _gpDSticky;
+      var _stickyTelHref = '';
+      if (company.featured_cta_phone) {
+        _stickyTelHref = 'tel:' + String(company.featured_cta_phone).replace(/[^\d+]/g, '');
+      } else if (_showBizSticky) {
+        _stickyTelHref = 'tel:' + _bizPhoneSticky.replace(/[^\d+]/g, '');
+      }
+    %>
+    <% if (_stickyTelHref || _gpWa) { %>
+    <div class="pro-company-sticky-cta" role="region" aria-label="Quick contact">
+      <% if (_stickyTelHref) { %>
+      <a class="btn btn-primary pro-company-sticky-cta__btn" href="<%= _stickyTelHref %>">Call</a>
+      <% } %>
+      <% if (_gpWa) { %>
+      <a class="btn btn-secondary-wf pro-company-sticky-cta__btn" href="<%= _gpWa %>" rel="noopener noreferrer" target="_blank">WhatsApp</a>
+      <% } %>
+    </div>
+    <% } %>
     </div>
 
     <%- include('partials/site_footer', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>

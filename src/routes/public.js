@@ -37,6 +37,21 @@ function isWhitelistedCity(value) {
   return loadSearchLists().cities.some((c) => c.toLowerCase() === v);
 }
 
+/** Suggested chips for empty directory / category states (no duplicate city; exclude selected category). */
+function buildEmptyStateSuggestions(categories, selectedSlug, cityQ) {
+  const lists = loadSearchLists();
+  const norm = (s) => String(s || "").trim().toLowerCase();
+  const cityNorm = norm(cityQ);
+  const selected = String(selectedSlug || "").trim();
+  const emptyAltCategories = (categories || [])
+    .filter((c) => c && c.slug && c.slug !== selected)
+    .slice(0, 5);
+  const emptyAltCities = (lists.cities || [])
+    .filter((c) => !cityNorm || norm(c) !== cityNorm)
+    .slice(0, 5);
+  return { emptyAltCategories, emptyAltCities };
+}
+
 function tenantHomeHrefFromPrefix(prefix) {
   if (!prefix) return "/";
   const p = String(prefix);
@@ -302,6 +317,7 @@ module.exports = function publicRoutes({ db }) {
       seoDescription,
       canonicalUrl,
       ogUrl: canonicalUrl,
+      ...buildEmptyStateSuggestions(categories, selected, cityOk ? cityRaw : ""),
       ...tenantLocals(req),
       ...platformSupport(req),
     });
@@ -355,6 +371,7 @@ module.exports = function publicRoutes({ db }) {
       seoDescription,
       canonicalUrl,
       ogUrl: canonicalUrl,
+      ...buildEmptyStateSuggestions(categories, category.slug, ""),
       ...tenantLocals(req),
       ...platformSupport(req),
     });

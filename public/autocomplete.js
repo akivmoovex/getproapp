@@ -429,7 +429,9 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
+  function runSearchAutocomplete() {
+    if (typeof window !== "undefined" && window.__getproAutocompleteRan) return;
+    if (typeof window !== "undefined") window.__getproAutocompleteRan = true;
     fetch(LIST_URL)
       .then((r) => {
         if (!r.ok) throw new Error(String(r.status));
@@ -459,5 +461,17 @@
         // eslint-disable-next-line no-console
         console.error("Failed to load search lists");
       });
-  });
+  }
+
+  if (typeof window !== "undefined") {
+    window.__getproInitSearchAutocomplete = runSearchAutocomplete;
+  }
+
+  if (typeof window !== "undefined" && window.__getproAutocompleteSkipAutoInit === true) {
+    // Loaded lazily; caller invokes window.__getproInitSearchAutocomplete().
+  } else if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", runSearchAutocomplete);
+  } else {
+    runSearchAutocomplete();
+  }
 })();

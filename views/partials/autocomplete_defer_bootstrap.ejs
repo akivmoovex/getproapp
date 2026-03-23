@@ -1,0 +1,58 @@
+<script>
+(function () {
+  function boot() {
+    if (window.__getproAutocompleteLazyScheduled) return;
+    window.__getproAutocompleteLazyScheduled = true;
+    window.__getproAutocompleteSkipAutoInit = true;
+    var s = document.createElement("script");
+    s.src = "/autocomplete.js?v=<%= stylesVersion %>";
+    s.onload = function () {
+      if (window.__getproInitSearchAutocomplete) window.__getproInitSearchAutocomplete();
+    };
+    document.body.appendChild(s);
+  }
+  function targetInSearchForm(el) {
+    return (
+      el &&
+      el.classList &&
+      el.classList.contains("pro-ac-input") &&
+      el.closest("form.pro-home-dual-search, form.pro-search--directory")
+    );
+  }
+  document.addEventListener(
+    "focusin",
+    function (e) {
+      if (targetInSearchForm(e.target)) boot();
+    },
+    true
+  );
+  document.addEventListener(
+    "touchstart",
+    function (e) {
+      if (targetInSearchForm(e.target)) boot();
+    },
+    { passive: true, capture: true }
+  );
+  if ("IntersectionObserver" in window) {
+    document.querySelectorAll("form.pro-home-dual-search, form.pro-search--directory").forEach(function (form) {
+      var io = new IntersectionObserver(
+        function (entries) {
+          if (entries.some(function (en) { return en.isIntersecting; })) {
+            boot();
+            io.disconnect();
+          }
+        },
+        { rootMargin: "320px 0px", threshold: 0.01 }
+      );
+      io.observe(form);
+    });
+  }
+  function scheduleIdle(fn) {
+    if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 2800 });
+    else setTimeout(fn, 500);
+  }
+  scheduleIdle(function () {
+    boot();
+  });
+})();
+</script>

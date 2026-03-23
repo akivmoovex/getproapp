@@ -9,6 +9,7 @@
   - showCategoryFilter: boolean — when false but selectedCategory set, emits hidden input
   - selectedCategory, categories (for hidden or future visible category)
   - ariaLabel (optional)
+  - idPrefix (optional) — input ids: home | dir | cat (default: home vs dir from variant)
 -%>
 <%
   var _v = typeof variant !== 'undefined' ? String(variant) : 'directory';
@@ -16,6 +17,9 @@
   var _action = typeof formAction !== 'undefined' && formAction ? String(formAction) : (_tp.replace(/\/$/, '') + '/directory');
   var _fid = typeof formId !== 'undefined' ? String(formId || '') : (_v === 'directory' ? 'directory-toolbar' : '');
   var _pre = _v === 'home' ? 'home' : 'dir';
+  if (typeof idPrefix !== 'undefined' && idPrefix) {
+    _pre = String(idPrefix).replace(/[^a-z0-9_-]/gi, '') || _pre;
+  }
   var _q = typeof searchQuery !== 'undefined' ? String(searchQuery || '') : '';
   var _city = typeof cityQuery !== 'undefined' ? String(cityQuery || '') : '';
   var _showCat = typeof showCategoryFilter !== 'undefined' && showCategoryFilter;

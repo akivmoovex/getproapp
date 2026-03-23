@@ -166,6 +166,20 @@ function initDirectoryAvatarHue() {
   });
 }
 
+function initRefineSearchFab() {
+  document.querySelectorAll(".pro-refine-search-fab[data-refine-target]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const sel = btn.getAttribute("data-refine-target");
+      if (!sel) return;
+      const el = document.querySelector(sel);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      const focusable = el.querySelector(".pro-ac-input");
+      if (focusable) window.setTimeout(() => focusable.focus(), 450);
+    });
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("lead_form");
   if (form) form.addEventListener("submit", submitLeadForm);
@@ -173,4 +187,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initRegionPicker();
   initGlobalTenantSearchOpensRegion();
   initDirectoryAvatarHue();
+  initRefineSearchFab();
 });

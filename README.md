@@ -98,7 +98,7 @@ npm start
 
 **Admin UI:** Layout tokens and patterns for grids, cards, tables, and modals are documented in [`docs/ADMIN_UI.md`](docs/ADMIN_UI.md).
 
-**Design system:** Global tokens live in [`public/theme.css`](public/theme.css) (imported by [`public/styles.css`](public/styles.css)). Overview: [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md). Material Design 3 details: [`docs/MATERIAL_DESIGN_3.md`](docs/MATERIAL_DESIGN_3.md).
+**Design system:** Global tokens live in [`public/theme.css`](public/theme.css) (imported by [`public/styles.css`](public/styles.css)). Overview: [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md). Material Design 3 details: [`docs/MATERIAL_DESIGN_3.md`](docs/MATERIAL_DESIGN_3.md). **Mobile screen roles** (launcher / results / profile / support): [`docs/MOBILE_SCREEN_INVENTORY.md`](docs/MOBILE_SCREEN_INVENTORY.md).
 
 **URLs:** The marketing site defaults to **`https://getproapp.org`** (apex). **Zambia** (ISO alpha-2 **`zm`**) uses **`https://zm.getproapp.org`**. **Israel** uses **`https://il.getproapp.org`**. The apex home shows a **Region** control (globe) to open those sites — **unless** the visitor’s country is **Zambia** (see below). Legacy paths **`/zm/…`** and **`/il/…`** redirect to **`zm.*`** and **`il.*`**. The old host **`zam.getproapp.org`** redirects to **`zm.getproapp.org`**. Configure **DNS** (and SSL) for `zm` and `il` (and wildcard `*.getproapp.org` if you use company subdomains).
 
