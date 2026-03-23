@@ -34,7 +34,7 @@ class ProfessionalProfileViewModel(
                         it.copy(
                             isLoading = false,
                             profile = profile,
-                            error = if (profile == null) "Professional not found" else null,
+                            error = if (profile == null) "Company not found" else null,
                         )
                     }
                 }

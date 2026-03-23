@@ -67,6 +67,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_companies_category_id ON companies(category_id);
   CREATE INDEX IF NOT EXISTS idx_leads_company_id ON leads(company_id);
 
+  /* Partner join signups (UI: company / join flow). Name kept for migration compatibility — see docs/DB_NAMING.md */
   CREATE TABLE IF NOT EXISTS professional_signups (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     profession TEXT NOT NULL DEFAULT '',

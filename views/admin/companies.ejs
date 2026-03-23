@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Professionals | GetPro Admin</title>
+    <title>Companies | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../partials/admin_nav', { navTitle: 'Professionals', activeNav: 'companies' }) %>
+    <%- include('../partials/admin_nav', { navTitle: 'Companies', activeNav: 'companies' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
       <% var _fs = typeof filterSuffix !== 'undefined' ? filterSuffix : ''; %>
@@ -20,7 +20,7 @@
         <% } %>
       </div>
 
-      <h1 class="section-title section-title--flush">Professionals</h1>
+      <h1 class="section-title section-title--flush">Companies</h1>
       <% var f = typeof filters !== 'undefined' ? filters : {}; %>
       <form method="get" action="/admin/companies" class="admin-filter-form">
         <% if (editMode) { %><input type="hidden" name="edit" value="1" /><% } %>

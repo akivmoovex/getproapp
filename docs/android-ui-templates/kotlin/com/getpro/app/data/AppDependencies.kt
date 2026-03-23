@@ -4,7 +4,8 @@ import com.getpro.app.data.fake.FakeBusinessOnboardingRepository
 import com.getpro.app.data.fake.FakeCallbackRepository
 import com.getpro.app.data.fake.FakeCategoryRepository
 import com.getpro.app.data.fake.FakeSearchApiService
-import com.getpro.app.data.fake.FakeProfessionalRepository
+import com.getpro.app.data.fake.FakeProfileApiService
+import com.getpro.app.data.remote.RemoteProfessionalRepository
 import com.getpro.app.data.remote.RemoteSearchRepository
 import com.getpro.app.data.repository.BusinessOnboardingRepository
 import com.getpro.app.data.repository.CallbackRepository
@@ -16,7 +17,8 @@ import com.getpro.app.data.repository.SearchRepository
  * Simple service locator for prototype — replace with Hilt / manual DI later.
  *
  * **Swap to real API:** provide [com.getpro.app.data.repository] implementations that call
- * [com.getpro.app.data.api.GetProApiService] + [com.getpro.app.data.mapper.DtoToUiMappers];
+ * [SearchApiService] / [ProfileApiService] + [com.getpro.app.data.mapper.DtoToUiMappers]
+ * (optionally consolidate behind Retrofit [com.getpro.app.data.api.GetProApiService] later);
  * keep ViewModels on the same interfaces. See `docs/android-repository-swap-plan.md`.
  */
 object AppDependencies {
@@ -28,7 +30,11 @@ object AppDependencies {
     val searchRepository: SearchRepository = RemoteSearchRepository(FakeSearchApiService())
     // If you want the legacy direct mapping path, you can swap back to:
     // val searchRepository: SearchRepository = FakeSearchRepository()
-    val professionalRepository: ProfessionalRepository = FakeProfessionalRepository()
+    // Profile vertical slice: ViewModel -> ProfessionalRepository -> ProfileApiService (DTOs) -> mapper -> ProfileUiModel.
+    // TODO: Swap FakeProfileApiService for Retrofit [ProfileApiService] when GET /api/v1/companies/:idOrSlug exists.
+    val professionalRepository: ProfessionalRepository = RemoteProfessionalRepository(FakeProfileApiService())
+    // Legacy direct fake mapping:
+    // val professionalRepository: ProfessionalRepository = FakeProfessionalRepository()
     val callbackRepository: CallbackRepository = FakeCallbackRepository()
     val onboardingRepository: BusinessOnboardingRepository = FakeBusinessOnboardingRepository()
 }

@@ -2,7 +2,7 @@ package com.getpro.app.data.remote
 
 import com.getpro.app.data.api.SearchApiService
 import com.getpro.app.data.api.dto.SearchRequestDto
-import com.getpro.app.data.api.mapper.DtoToUiMappers
+import com.getpro.app.data.mapper.DtoToUiMappers
 import com.getpro.app.data.model.SearchParams
 import com.getpro.app.data.repository.SearchRepository
 import com.getpro.app.ui.model.ProfessionalUiModel

@@ -36,24 +36,35 @@ object DtoToUiMappers {
         )
     }
 
-    fun companyProfile(dto: CompanyProfileDto): ProfileUiModel = ProfileUiModel(
-        id = dto.id,
-        name = dto.name,
-        headline = dto.headline,
-        categoryName = dto.category_name,
-        location = dto.city,
-        aboutHtmlOrText = dto.about,
-        servicesLines = dto.services,
-        reviews = dto.reviews.map { r ->
-            ReviewUiModel(
-                author = r.author,
-                ratingStars = r.rating,
-                body = r.body,
-                dateLabel = r.date_label,
-            )
-        },
-        yearsInBusiness = dto.years_in_business,
-        phone = dto.phone,
-        whatsappHref = dto.whatsapp_href,
-    )
+    fun companyProfile(dto: CompanyProfileDto): ProfileUiModel {
+        val location = listOfNotNull(dto.city, dto.address)
+            .filter { it.isNotBlank() }
+            .distinct()
+            .joinToString(" · ")
+            .takeIf { it.isNotBlank() }
+        return ProfileUiModel(
+            id = dto.id,
+            name = dto.name,
+            headline = dto.headline,
+            categoryName = dto.category_name,
+            location = location ?: dto.city,
+            aboutHtmlOrText = dto.about,
+            servicesLines = when {
+                dto.services.isNotEmpty() -> dto.services
+                dto.service_areas.isNotEmpty() -> dto.service_areas
+                else -> emptyList()
+            },
+            reviews = dto.reviews.map { r ->
+                ReviewUiModel(
+                    author = r.author,
+                    ratingStars = r.rating,
+                    body = r.body,
+                    dateLabel = r.date_label,
+                )
+            },
+            yearsInBusiness = dto.years_in_business,
+            phone = dto.phone,
+            whatsappHref = dto.whatsapp_href,
+        )
+    }
 }

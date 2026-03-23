@@ -21,16 +21,17 @@ See `docs/android-material3-spec.md` for product context.
 **API & migration (backend alignment):**
 
 - `docs/android-api-contracts.md` — endpoints, request/response shapes, tenant rules
+- `docs/android-profile-api.md` — company profile read contract
 - `docs/android-repository-swap-plan.md` — fake → real swap, errors, migration phases
 
-**Network placeholders (copy into `app` module):** `data/api/*` (Retrofit `GetProApiService`, DTOs, [NetworkResult]), `data/mapper/DtoToUiMappers.kt`. Add Retrofit/OkHttp in Gradle before compiling those files.
+**Network placeholders (copy into `app` module):** `data/api/` (`SearchApiService`, `ProfileApiService`, optional Retrofit `GetProApiService`, DTOs, `NetworkResult`), `data/remote/RemoteSearchRepository.kt`, `data/remote/RemoteProfessionalRepository.kt`, `data/mapper/DtoToUiMappers.kt`. Add Retrofit/OkHttp in Gradle before compiling Retrofit-based files.
 
 ## File layout (under `kotlin/com/getpro/app/`)
 
 | Path | Role |
 |------|------|
 | `MainActivity.kt` | `setContent` + `AppNavigation()` |
-| `data/AppDependencies.kt` | Prototype service locator (fake repos) |
+| `data/AppDependencies.kt` | Prototype service locator (search/profile use remote-ready repos + stub APIs) |
 | `data/fake/FakeDataSource.kt` | Zambia-relevant sample directory data |
 | `data/fake/Fake*Repository.kt` | Fake repository implementations |
 | `data/repository/*.kt` | Repository interfaces |

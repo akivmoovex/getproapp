@@ -182,17 +182,17 @@ Map to list card `ProfessionalUiModel` + optional rating label string in mapper.
 
 ---
 
-### 3.3 `GET /api/v1/companies/:id`
+### 3.3 `GET /api/v1/companies/:idOrSlug`
 
-`:id` — numeric company id (matches `/company/:id`).
+`:idOrSlug` — numeric company id **or** listing slug (Android and future JSON should accept both, like the in-app navigation).
 
-**Response `200`:** full profile DTO (about, services, reviews, phone, WhatsApp, years in business, etc.).
+**Response `200`:** full profile DTO (slug, about, services, service areas, reviews, phone, WhatsApp, email optional, rating/review_count optional, logo/hero optional, address optional). See `docs/android-profile-api.md` and `CompanyProfileDto` in the Android template.
 
 **Response `404`:** `{ "error": "..." }`
 
 Map → `ProfileUiModel` in the UI layer via a single mapper.
 
-**Optional:** `GET /api/v1/companies/by-slug/:slug` if mini-site slugs must be supported without id.
+**Optional:** `GET /api/v1/companies/by-slug/:slug` if you prefer two routes instead of one combined parameter.
 
 ---
 
