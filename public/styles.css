@@ -1003,6 +1003,82 @@ a:hover {
   color: var(--text);
 }
 
+a.admin-dashboard-kpi--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+a.admin-dashboard-kpi--link:hover {
+  border-color: color-mix(in srgb, var(--wf-primary) 35%, var(--border-strong));
+  box-shadow: var(--elevation-slate-md);
+}
+
+a.admin-dashboard-kpi--link:focus {
+  outline: none;
+}
+
+a.admin-dashboard-kpi--link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--wf-primary) 55%, var(--text));
+  outline-offset: 2px;
+}
+
+a.admin-dashboard-panel--link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+a.admin-dashboard-panel--link:hover {
+  border-color: color-mix(in srgb, var(--wf-primary) 32%, var(--border-strong));
+  box-shadow: var(--elevation-slate-sm);
+}
+
+a.admin-dashboard-panel--link:focus {
+  outline: none;
+}
+
+a.admin-dashboard-panel--link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--wf-primary) 55%, var(--text));
+  outline-offset: 2px;
+}
+
+.admin-dashboard-panel__chevron {
+  flex-shrink: 0;
+  font-size: var(--space-2);
+  font-weight: 700;
+  color: var(--wf-primary);
+  line-height: 1;
+}
+
+.admin-dashboard-click-card {
+  position: relative;
+}
+
+.admin-dashboard-stretched-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.admin-dashboard-stretched-link:focus {
+  outline: none;
+}
+
+.admin-dashboard-stretched-link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--wf-primary) 55%, var(--text));
+  outline-offset: 2px;
+}
+
+.admin-dashboard-table-card .table-wrap {
+  position: relative;
+  z-index: 0;
+}
+
 .admin-dashboard__charts {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -4484,6 +4560,191 @@ textarea {
   max-width: 100%;
   overflow-x: hidden;
   overflow-x: clip;
+}
+
+/* Directory: compact filter toolbar (replaces sidebar category button list) */
+.pro-directory-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-25);
+  margin-bottom: var(--space-2);
+  padding: var(--space-1-5) var(--space-2);
+  border-radius: var(--border-radius-lg);
+  border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 88%, transparent);
+  background: color-mix(in srgb, var(--surface) 97%, var(--wf-primary) 3%);
+  box-shadow: var(--elevation-slate-sm);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.pro-directory-toolbar--category {
+  margin-bottom: var(--space-2);
+}
+
+.pro-directory-toolbar__fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-1-25) var(--space-1-5);
+  width: 100%;
+  min-width: 0;
+}
+
+.pro-directory-toolbar__fields--category-only {
+  align-items: center;
+}
+
+.pro-directory-toolbar__ac {
+  flex: 1 1 min(0, 12rem);
+  min-width: 0;
+}
+
+.pro-directory-toolbar__category {
+  flex: 0 1 min(100%, 14rem);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.pro-directory-toolbar__category--grow {
+  flex: 1 1 min(0, 20rem);
+}
+
+.pro-directory-toolbar__label {
+  font-size: var(--space-1-5);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.pro-directory-toolbar__select {
+  width: 100%;
+  max-width: 100%;
+  min-height: var(--space-touch);
+  padding: var(--space-1) var(--space-1-25);
+  border-radius: var(--border-radius-md);
+  border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 90%, transparent);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--space-1-75);
+  font-weight: 600;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.pro-directory-toolbar__select:hover {
+  border-color: color-mix(in srgb, var(--wf-primary) 28%, var(--border-strong));
+}
+
+.pro-directory-toolbar__select:focus {
+  outline: none;
+}
+
+.pro-directory-toolbar__select:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--wf-primary) 55%, var(--text));
+  outline-offset: 2px;
+}
+
+.pro-directory-toolbar__submit {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-0-75);
+  min-height: var(--space-touch);
+  padding: var(--space-1) var(--space-1-75);
+  border-radius: var(--border-radius-full);
+  border: var(--border-width-hairline) solid color-mix(in srgb, var(--wf-primary) 35%, var(--border-strong));
+  background: color-mix(in srgb, var(--surface) 92%, var(--wf-primary) 8%);
+  color: var(--wf-primary);
+  font-weight: 700;
+  font-size: var(--space-1-625);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pro-directory-toolbar__submit:hover {
+  border-color: color-mix(in srgb, var(--wf-primary) 50%, var(--border-strong));
+  background: color-mix(in srgb, var(--surface) 86%, var(--wf-primary) 14%);
+}
+
+.pro-directory-toolbar__submit:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--wf-primary) 55%, var(--text));
+  outline-offset: 2px;
+}
+
+.pro-directory-toolbar__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-2);
+  padding-top: var(--space-0-75);
+  border-top: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 75%, transparent);
+  font-size: var(--space-1-625);
+  line-height: 1.45;
+  min-width: 0;
+}
+
+.pro-directory-toolbar__count strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.pro-directory-toolbar__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-0-75) var(--space-1);
+  min-width: 0;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+}
+
+.pro-directory-toolbar__chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: var(--space-0-5) var(--space-1);
+  border-radius: var(--border-radius-full);
+  border: var(--border-width-hairline) solid color-mix(in srgb, var(--wf-primary) 22%, var(--border-strong));
+  background: color-mix(in srgb, var(--surface) 94%, var(--wf-primary) 6%);
+  color: var(--text);
+  font-weight: 600;
+  font-size: var(--space-1-5);
+  overflow-wrap: anywhere;
+}
+
+.pro-directory-toolbar__hint {
+  font-size: var(--space-1-5);
+}
+
+.pro-directory-main {
+  min-width: 0;
+  width: 100%;
+}
+
+@media (min-width: 720px) {
+  .pro-directory-toolbar__fields {
+    flex-wrap: nowrap;
+  }
+
+  .pro-directory-toolbar__ac {
+    flex: 1 1 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .pro-directory-toolbar {
+    padding: var(--space-1-25) var(--space-1-5);
+  }
+
+  .pro-directory-toolbar__submit {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .pro-directory-results-wrap {

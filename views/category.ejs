@@ -9,36 +9,39 @@
   <body class="<%= tenant.themeClass %>">
     <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
 
-    <div class="container directory-page">
-      <div class="u-stack-sm">
-        <div class="section-title section-title--flush"><%= category.name %></div>
-        <div class="muted muted--relaxed">
-          One-page company sites in this category. Each company has a unique subdomain.
+    <div class="container directory-page directory-page-toolbar">
+      <div class="pro-directory-toolbar pro-directory-toolbar--category" role="region" aria-label="Category browse">
+        <div class="pro-directory-toolbar__fields pro-directory-toolbar__fields--category-only">
+          <div class="pro-directory-toolbar__category pro-directory-toolbar__category--grow">
+            <label class="pro-directory-toolbar__label" for="category-page-select">Category</label>
+            <select
+              id="category-page-select"
+              class="pro-directory-toolbar__select"
+              aria-label="Switch category"
+              onchange="if (this.value) window.location.href = this.value;"
+            >
+              <option value="<%= tenantUrlPrefix %>/directory">All categories</option>
+              <% (categories || []).forEach(function(cat) { %>
+              <option value="<%= tenantUrlPrefix %>/category/<%= cat.slug %>"<%= category.slug === cat.slug ? ' selected' : '' %>><%= cat.name %></option>
+              <% }); %>
+            </select>
+          </div>
+        </div>
+        <div class="pro-directory-toolbar__meta" aria-live="polite">
+          <span class="pro-directory-toolbar__count">
+            <strong><%= (companies || []).length %></strong>
+            <%= (companies || []).length === 1 ? 'listing' : 'listings' %>
+          </span>
+          <span class="pro-directory-toolbar__hint muted">One-page company sites in this category.</span>
         </div>
       </div>
 
-      <div class="hero-grid pro-directory-layout">
-        <div class="card" id="directory-categories">
-          <div class="directory-cat-title">All Categories</div>
-          <div class="list">
-            <% categories.forEach(function(cat) { %>
-              <a
-                href="<%= tenantUrlPrefix %>/category/<%= cat.slug %>"
-                class="btn btn--start<%= category.slug === cat.slug ? ' directory-category-link--active' : '' %>"
-              >
-                <%= cat.name %>
-              </a>
-            <% }) %>
-          </div>
-        </div>
-
-        <div>
-          <% if (companies.length === 0) { %>
-            <%- include('partials/directory_empty_state', { tenantUrlPrefix, emptyStateMode: 'category' }) %>
-          <% } else { %>
-            <%- include('partials/directory_company_cards', { companies, baseDomain, companyMiniSiteHref }) %>
-          <% } %>
-        </div>
+      <div class="pro-directory-main">
+        <% if (companies.length === 0) { %>
+          <%- include('partials/directory_empty_state', { tenantUrlPrefix, emptyStateMode: 'category' }) %>
+        <% } else { %>
+          <%- include('partials/directory_company_cards', { companies, baseDomain, companyMiniSiteHref }) %>
+        <% } %>
       </div>
     </div>
 

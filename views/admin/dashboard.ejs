@@ -24,8 +24,13 @@
           </div>
         </header>
 
+        <% var dashNav = typeof adminNav !== 'undefined' ? adminNav : {}; var dashDir = !!dashNav.canEditDirectory; %>
         <section class="admin-dashboard__kpis" aria-label="Key metrics">
+          <% if (dashDir) { %>
+          <a class="admin-dashboard-kpi admin-dashboard-kpi--link" href="/admin/categories">
+          <% } else { %>
           <article class="admin-dashboard-kpi">
+          <% } %>
             <div class="admin-dashboard-kpi__icon" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
             </div>
@@ -33,8 +38,16 @@
               <span class="admin-dashboard-kpi__label">Professions</span>
               <span class="admin-dashboard-kpi__value"><%= categoriesCount %></span>
             </div>
+          <% if (dashDir) { %>
+          </a>
+          <% } else { %>
           </article>
+          <% } %>
+          <% if (dashDir) { %>
+          <a class="admin-dashboard-kpi admin-dashboard-kpi--link" href="/admin/companies">
+          <% } else { %>
           <article class="admin-dashboard-kpi">
+          <% } %>
             <div class="admin-dashboard-kpi__icon" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
             </div>
@@ -42,8 +55,12 @@
               <span class="admin-dashboard-kpi__label">Companies</span>
               <span class="admin-dashboard-kpi__value"><%= companiesCount %></span>
             </div>
+          <% if (dashDir) { %>
+          </a>
+          <% } else { %>
           </article>
-          <article class="admin-dashboard-kpi admin-dashboard-kpi--accent">
+          <% } %>
+          <a class="admin-dashboard-kpi admin-dashboard-kpi--accent admin-dashboard-kpi--link" href="/admin/leads">
             <div class="admin-dashboard-kpi__icon" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
@@ -51,11 +68,11 @@
               <span class="admin-dashboard-kpi__label">Leads</span>
               <span class="admin-dashboard-kpi__value"><%= leadsCount %></span>
             </div>
-          </article>
+          </a>
         </section>
 
         <div class="admin-dashboard__charts">
-          <section class="card admin-dashboard-panel" aria-labelledby="dash-leads-chart-title">
+          <a class="card admin-dashboard-panel admin-dashboard-panel--link" href="/admin/leads" aria-labelledby="dash-leads-chart-title">
             <div class="admin-dashboard-panel__head">
               <h2 id="dash-leads-chart-title" class="admin-dashboard-panel__title">Leads · last 7 days</h2>
               <span class="admin-dashboard-panel__hint muted">New inquiries per day</span>
@@ -72,9 +89,9 @@
               </div>
               <% }); %>
             </div>
-          </section>
+          </a>
 
-          <section class="card admin-dashboard-panel" aria-labelledby="dash-lead-status-title">
+          <a class="card admin-dashboard-panel admin-dashboard-panel--link" href="/admin/leads" aria-labelledby="dash-lead-status-title">
             <div class="admin-dashboard-panel__head">
               <h2 id="dash-lead-status-title" class="admin-dashboard-panel__title">Leads by status</h2>
               <span class="admin-dashboard-panel__hint muted">Pipeline snapshot</span>
@@ -93,17 +110,17 @@
               </li>
               <% }); %>
             </ul>
-          </section>
+          </a>
         </div>
 
         <% if (typeof canAccessCrm !== 'undefined' && canAccessCrm && crmSnapshot) { %>
-        <section class="card admin-dashboard-panel admin-dashboard-panel--crm" aria-labelledby="dash-crm-title">
+        <a class="card admin-dashboard-panel admin-dashboard-panel--crm admin-dashboard-panel--link" href="/admin/crm" aria-labelledby="dash-crm-title">
           <div class="admin-dashboard-panel__head admin-dashboard-panel__head--row">
             <div>
               <h2 id="dash-crm-title" class="admin-dashboard-panel__title">CRM tasks</h2>
-              <span class="admin-dashboard-panel__hint muted"><%= crmSnapshot.total %> total in this region</span>
+              <span class="admin-dashboard-panel__hint muted"><%= crmSnapshot.total %> total in this region · Open board</span>
             </div>
-            <a class="btn btn-primary" href="/admin/crm">Open CRM board</a>
+            <span class="admin-dashboard-panel__chevron" aria-hidden="true">→</span>
           </div>
           <ul class="admin-dash-crm">
             <% crmSnapshot.byStatus.forEach(function (row) { %>
@@ -117,7 +134,7 @@
             </li>
             <% }); %>
           </ul>
-        </section>
+        </a>
         <% } %>
 
         <section class="admin-dashboard__leads-section" aria-labelledby="dash-latest-leads">
@@ -125,7 +142,8 @@
             <h2 id="dash-latest-leads" class="admin-dashboard__section-title">Latest leads</h2>
             <a class="admin-dashboard__section-link" href="/admin/leads">View all</a>
           </div>
-          <div class="card admin-dashboard-table-card">
+          <div class="card admin-dashboard-table-card admin-dashboard-click-card">
+            <a class="admin-dashboard-stretched-link" href="/admin/leads" aria-label="View all leads"><span class="visually-hidden">View all leads</span></a>
             <div class="table-wrap">
               <table class="table admin-dashboard-table">
                 <thead>

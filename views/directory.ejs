@@ -10,86 +10,93 @@
     <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
 
     <div class="container directory-page directory-page-toolbar">
-      <form class="pro-search pro-search--directory pro-search--directory-wide" action="<%= tenantUrlPrefix %>/directory" method="get" role="search">
-        <div class="pro-ac" data-ac-list="service" data-watermark-text="Search: Electrician">
-          <input
-            id="dir-search-q"
-            class="pro-ac-input"
-            type="text"
-            value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
-            placeholder=""
-            autocomplete="off"
-            role="combobox"
-            aria-autocomplete="list"
-            aria-expanded="false"
-            aria-controls="dir-search-q-dropdown"
-          />
-          <input type="hidden" class="pro-ac-hidden" name="q" id="dir-search-q-value" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" />
-          <ul class="pro-ac-dropdown" id="dir-search-q-dropdown" role="listbox" hidden></ul>
-          <p class="pro-ac-msg" hidden></p>
-        </div>
-        <div class="pro-ac" data-ac-list="city" data-watermark-text="Search: Lusaka">
-          <input
-            id="dir-search-city"
-            class="pro-ac-input"
-            type="text"
-            value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>"
-            placeholder=""
-            autocomplete="off"
-            role="combobox"
-            aria-autocomplete="list"
-            aria-expanded="false"
-            aria-controls="dir-search-city-dropdown"
-          />
-          <input type="hidden" class="pro-ac-hidden" name="city" id="dir-search-city-value" value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>" />
-          <ul class="pro-ac-dropdown" id="dir-search-city-dropdown" role="listbox" hidden></ul>
-          <p class="pro-ac-msg" hidden></p>
-        </div>
-        <button type="submit" class="pro-search-dir-btn">
-          <span>Search Professionals</span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-        </button>
-      </form>
-      <div class="u-mb-lg">
-        <div class="section-title section-title--flush">
-          <% if (selectedCategory) { %>
-            Category: <%= selectedCategory %>
-          <% } else if ((typeof searchQuery !== 'undefined' && searchQuery) || (typeof cityQuery !== 'undefined' && cityQuery)) { %>
-            Search
-            <% if (typeof searchQuery !== 'undefined' && searchQuery) { %>: “<%= searchQuery %>”<% } %>
-            <% if (typeof cityQuery !== 'undefined' && cityQuery) { %><% if (typeof searchQuery !== 'undefined' && searchQuery) { %> · <% } else { %>: <% } %>City: <%= cityQuery %><% } %>
-          <% } else { %>
-            Browse categories
-          <% } %>
-        </div>
-      </div>
-
-      <div class="hero-grid pro-directory-layout">
-        <div class="card" id="directory-categories">
-          <div class="directory-cat-title">Categories</div>
-          <div class="list">
-            <a href="<%= tenantUrlPrefix %>/directory" class="btn btn--start">All</a>
-            <% categories.forEach(function(cat) { %>
-              <a
-                href="<%= tenantUrlPrefix %>/directory?category=<%= cat.slug %>"
-                class="btn btn--start<%= selectedCategory === cat.slug ? ' directory-category-link--active' : '' %>"
-              >
-                <%= cat.name %>
-              </a>
-            <% }) %>
+      <% var activeCatLabel = ''; %>
+      <% if (typeof selectedCategory !== 'undefined' && selectedCategory) { %>
+        <% (categories || []).forEach(function(c) { if (c.slug === selectedCategory) activeCatLabel = c.name; }); %>
+      <% } %>
+      <form class="pro-directory-toolbar" action="<%= tenantUrlPrefix %>/directory" method="get" role="search">
+        <div class="pro-directory-toolbar__fields">
+          <div class="pro-ac pro-directory-toolbar__ac" data-ac-list="service" data-watermark-text="Search: Electrician">
+            <label class="visually-hidden" for="dir-search-q">Service or profession</label>
+            <input
+              id="dir-search-q"
+              class="pro-ac-input"
+              type="text"
+              value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+              placeholder=""
+              autocomplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="dir-search-q-dropdown"
+            />
+            <input type="hidden" class="pro-ac-hidden" name="q" id="dir-search-q-value" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" />
+            <ul class="pro-ac-dropdown" id="dir-search-q-dropdown" role="listbox" hidden></ul>
+            <p class="pro-ac-msg" hidden></p>
           </div>
+          <div class="pro-ac pro-directory-toolbar__ac" data-ac-list="city" data-watermark-text="City">
+            <label class="visually-hidden" for="dir-search-city">City</label>
+            <input
+              id="dir-search-city"
+              class="pro-ac-input"
+              type="text"
+              value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>"
+              placeholder=""
+              autocomplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="dir-search-city-dropdown"
+            />
+            <input type="hidden" class="pro-ac-hidden" name="city" id="dir-search-city-value" value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>" />
+            <ul class="pro-ac-dropdown" id="dir-search-city-dropdown" role="listbox" hidden></ul>
+            <p class="pro-ac-msg" hidden></p>
+          </div>
+          <div class="pro-directory-toolbar__category">
+            <label class="pro-directory-toolbar__label" for="dir-category-filter">Category</label>
+            <select id="dir-category-filter" name="category" class="pro-directory-toolbar__select" aria-label="Filter by category">
+              <option value=""<%= !selectedCategory ? ' selected' : '' %>>All categories</option>
+              <% (categories || []).forEach(function(cat) { %>
+              <option value="<%= cat.slug %>"<%= selectedCategory === cat.slug ? ' selected' : '' %>><%= cat.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <button type="submit" class="pro-directory-toolbar__submit">
+            <span>Search</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </button>
         </div>
+        <div class="pro-directory-toolbar__meta" aria-live="polite">
+          <span class="pro-directory-toolbar__count">
+            <strong><%= (companies || []).length %></strong>
+            <%= (companies || []).length === 1 ? 'result' : 'results' %>
+          </span>
+          <span class="pro-directory-toolbar__filters">
+            <% if (activeCatLabel) { %>
+              <span class="pro-directory-toolbar__chip"><%= activeCatLabel %></span>
+            <% } %>
+            <% if (typeof searchQuery !== 'undefined' && searchQuery) { %>
+              <span class="pro-directory-toolbar__chip">“<%= searchQuery %>”</span>
+            <% } %>
+            <% if (typeof cityQuery !== 'undefined' && cityQuery) { %>
+              <span class="pro-directory-toolbar__chip"><%= cityQuery %></span>
+            <% } %>
+            <% if (!activeCatLabel && !(typeof searchQuery !== 'undefined' && searchQuery) && !(typeof cityQuery !== 'undefined' && cityQuery)) { %>
+              <span class="pro-directory-toolbar__hint muted">Browse professionals in your area</span>
+            <% } %>
+          </span>
+        </div>
+      </form>
 
-        <div>
-          <% if (companies.length === 0) { %>
-            <%- include('partials/directory_empty_state', { tenantUrlPrefix, emptyStateMode: 'directory' }) %>
-          <% } else { %>
-            <%- include('partials/directory_company_cards', { companies, baseDomain, companyMiniSiteHref }) %>
-          <% } %>
-        </div>
+      <div class="pro-directory-main">
+        <% if (companies.length === 0) { %>
+          <%- include('partials/directory_empty_state', { tenantUrlPrefix, emptyStateMode: 'directory' }) %>
+        <% } else { %>
+          <%- include('partials/directory_company_cards', { companies, baseDomain, companyMiniSiteHref }) %>
+        <% } %>
       </div>
     </div>
 
