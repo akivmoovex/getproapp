@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const { ROLES, normalizeRole, isSuperAdmin, isTenantViewer, canEditDirectoryData, canAccessSuperConsole } = require("./roles");
 const { TENANT_ZM } = require("./tenantIds");
+const { upsertMembership } = require("./adminUserTenants");
 
 async function ensureAdminUser({ db }) {
   const username = (process.env.ADMIN_USERNAME || "admin").toLowerCase();
@@ -25,12 +26,20 @@ async function ensureAdminUser({ db }) {
       : ROLES.SUPER_ADMIN;
   const tenantId = role === ROLES.SUPER_ADMIN ? null : Number(process.env.ADMIN_TENANT_ID) || TENANT_ZM;
 
-  db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
+  const info = db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
     username,
     passwordHash,
     role,
     tenantId
   );
+  if (role !== ROLES.SUPER_ADMIN && tenantId != null && Number(tenantId) > 0) {
+    try {
+      upsertMembership(db, Number(info.lastInsertRowid), Number(tenantId), role);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[getpro] ensureAdminUser membership:", e.message);
+    }
+  }
   // eslint-disable-next-line no-console
   console.log(`Admin user created: ${username} (${role})`);
 }

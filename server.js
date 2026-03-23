@@ -20,6 +20,7 @@ console.log(
 
 const { ensureAdminUser } = require("./src/auth");
 const { seedBuiltinUsers } = require("./src/seedBuiltinUsers");
+const { seedManagerUsers } = require("./src/seedManagerUsers");
 const { getSubdomain, resolveHostname } = require("./src/host");
 
 let db;
@@ -65,7 +66,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use((req, res, next) => {
-  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260321demo-m3-unsaved-empty";
+  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260320-directory-cards-m3";
   res.locals.encodeURIComponent = encodeURIComponent;
   res.locals.eventTimeParts = eventTimeParts;
   next();
@@ -289,6 +290,7 @@ if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
 ensureAdminUser({ db })
   .then(() => {
     seedBuiltinUsers(db);
+    seedManagerUsers(db);
     app.listen(port, host, () => {
       // eslint-disable-next-line no-console
       console.log(`GetPro listening on ${host}:${port}`);

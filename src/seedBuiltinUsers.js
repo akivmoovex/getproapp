@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const { ROLES } = require("./roles");
 const { TENANT_ZM } = require("./tenantIds");
+const { upsertMembership } = require("./adminUserTenants");
 
 /**
  * Idempotent built-in demo accounts (weak passwords for local/demo only).
@@ -16,12 +17,18 @@ function seedBuiltinUsers(db) {
     const exists = db.prepare("SELECT id FROM admin_users WHERE username = ?").get(u);
     if (exists) return;
     try {
-      db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
+      const info = db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
         u,
         hash(password),
         role,
         tenantId
       );
+      try {
+        upsertMembership(db, Number(info.lastInsertRowid), Number(tenantId), role);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error("[getpro] seedBuiltinUsers membership:", e.message);
+      }
       // eslint-disable-next-line no-console
       console.log(`[getpro] Seeded admin user: ${u} (${role})`);
     } catch (e) {

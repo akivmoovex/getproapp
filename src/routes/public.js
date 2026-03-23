@@ -150,7 +150,7 @@ module.exports = function publicRoutes({ db }) {
     let companies = [];
     if (selected) {
       let sql = `
-        SELECT c.*
+        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
         FROM companies c
         INNER JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
         WHERE cat.slug = ? AND c.tenant_id = ?
@@ -163,33 +163,44 @@ module.exports = function publicRoutes({ db }) {
       sql += ` ORDER BY c.name ASC`;
       companies = db.prepare(sql).all(...params);
     } else if (searchQ || cityQ) {
-      const parts = [`tenant_id = ?`];
+      const parts = [`c.tenant_id = ?`];
       const params = [tenantId];
       if (searchQ) {
         parts.push(
-          `(name LIKE ? COLLATE NOCASE OR headline LIKE ? COLLATE NOCASE OR about LIKE ? COLLATE NOCASE)`
+          `(c.name LIKE ? COLLATE NOCASE OR c.headline LIKE ? COLLATE NOCASE OR c.about LIKE ? COLLATE NOCASE)`
         );
         const p = `%${searchQ}%`;
         params.push(p, p, p);
       }
       if (cityQ) {
-        parts.push(`location LIKE ? COLLATE NOCASE`);
+        parts.push(`c.location LIKE ? COLLATE NOCASE`);
         params.push(`%${cityQ}%`);
       }
       const where = parts.join(" AND ");
       companies = db
         .prepare(
           `
-          SELECT * FROM companies
+          SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+          FROM companies c
+          LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
           WHERE ${where}
-          ORDER BY name ASC
+          ORDER BY c.name ASC
           LIMIT 48
           `
         )
         .all(...params);
     } else {
       companies = db
-        .prepare("SELECT * FROM companies WHERE tenant_id = ? ORDER BY updated_at DESC LIMIT 24")
+        .prepare(
+          `
+          SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+          FROM companies c
+          LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+          WHERE c.tenant_id = ?
+          ORDER BY c.updated_at DESC
+          LIMIT 24
+          `
+        )
         .all(tenantId);
     }
 
@@ -227,10 +238,11 @@ module.exports = function publicRoutes({ db }) {
     const companies = db
       .prepare(
         `
-        SELECT *
-        FROM companies
-        WHERE category_id = ? AND tenant_id = ?
-        ORDER BY name ASC
+        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+        FROM companies c
+        INNER JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+        WHERE c.category_id = ? AND c.tenant_id = ?
+        ORDER BY c.name ASC
         `
       )
       .all(category.id, tenantId);

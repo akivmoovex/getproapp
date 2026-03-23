@@ -37,7 +37,7 @@ These tables hold **one row set per tenant** (filter with `WHERE tenant_id = ?`)
 - **`professional_signups`** — join / interest signups  
 - **`callback_interests`** — callback requests (e.g. Join **Call me**), with `interest_label` (e.g. `Potential Partner`)  
 - **`tenant_cities`** — per-region city names for Join autocomplete; `enabled` (normal sign-up vs waitlist popup), `big_city` (rotating watermark hints on Join step 2 when also enabled)  
-- **`admin_users`** — admin accounts; `tenant_id` is **NULL** only for `super_admin`
+- **`admin_users`** — admin accounts; `tenant_id` is **NULL** only for `super_admin`. Optional **`display_name`** for UI. Effective per-region roles for users attached to multiple tenants live in **`admin_user_tenant_roles`** (`admin_user_id`, `tenant_id`, `role`, primary key on `(admin_user_id, tenant_id)`).
 
 ## Reviews
 

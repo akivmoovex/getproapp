@@ -1227,6 +1227,39 @@ try {
   console.error("[getpro] demo tenant users/tasks migration:", e.message);
 }
 
+/** Multi-tenant admin: one username, many regions via admin_user_tenant_roles (idempotent). */
+try {
+  const { ROLES } = require("./roles");
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("admin_user_tenant_roles_v1")) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS admin_user_tenant_roles (
+        admin_user_id INTEGER NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        role TEXT NOT NULL,
+        PRIMARY KEY (admin_user_id, tenant_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_admin_user_tenant_roles_user ON admin_user_tenant_roles(admin_user_id);
+      CREATE INDEX IF NOT EXISTS idx_admin_user_tenant_roles_tenant ON admin_user_tenant_roles(tenant_id);
+    `);
+    const adCols = db.prepare("PRAGMA table_info(admin_users)").all();
+    if (!adCols.some((c) => c.name === "display_name")) {
+      db.exec("ALTER TABLE admin_users ADD COLUMN display_name TEXT NOT NULL DEFAULT ''");
+    }
+    const backfill = db.prepare(`
+      INSERT OR IGNORE INTO admin_user_tenant_roles (admin_user_id, tenant_id, role)
+      SELECT id, tenant_id, role FROM admin_users
+      WHERE tenant_id IS NOT NULL AND COALESCE(role, '') != ?
+    `);
+    backfill.run(ROLES.SUPER_ADMIN);
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("admin_user_tenant_roles_v1");
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Migration: admin_user_tenant_roles + admin_users.display_name (backfilled).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] admin_user_tenant_roles migration:", e.message);
+}
+
 function run(query, params = []) {
   return db.prepare(query).run(params);
 }

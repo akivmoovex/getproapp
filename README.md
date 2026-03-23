@@ -135,6 +135,8 @@ npm start
 
 **Built-in demo users** (password `1234`, created once if missing): `tenantmanager` (`tenant_manager`, Zambia) and `superadmin` (`super_admin`). Disable seeding in production with **`SEED_BUILTIN_USERS=0`**.
 
+**Demo tenant managers** (`martin`, `faith`, `daisy`, password `1234`, `tenant_manager` on **Demo** + **Zambia**): idempotently upserted on boot via `src/seedManagerUsers.js`. Disable with **`SEED_MANAGER_USERS=0`** in production if you do not want these accounts.
+
 **CSS cache bust:** Set **`GETPRO_STYLES_V`** (or rely on the default in code) so all templates use one `stylesVersion` for `/styles.css?v=…`.
 
 Home and directory search use autocomplete lists in `public/data/search-lists.json` (professional services + Zambia places). Regenerate with:
@@ -149,7 +151,7 @@ The animated “typing” hint is set with `data-watermark-text` on the `.pro-ac
 
 ## Environment
 
-**Common variables:** `ADMIN_PASSWORD` (required), `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `SQLITE_PATH`, `SESSION_DIR`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, `GETPRO_STYLES_V`, `SEED_BUILTIN_USERS` (`0` to skip demo admin seeding), **`GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG`** (optional: force super admin’s initial tenant scope, e.g. `zm` or `demo`).
+**Common variables:** `ADMIN_PASSWORD` (required), `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `SQLITE_PATH`, `SESSION_DIR`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, `GETPRO_STYLES_V`, `SEED_BUILTIN_USERS` (`0` to skip demo admin seeding), `SEED_MANAGER_USERS` (`0` to skip martin/faith/daisy multi-tenant seed), **`GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG`** (optional: force super admin’s initial tenant scope, e.g. `zm` or `demo`).
 
 **Production:** set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). Optional: `DEBUG_HOST=1` temporarily for `/healthz` and `/api/debug/host`; `ISRAEL_COMING_SOON=true` to lock Israel to coming-soon; `TRUST_PROXY=0` only if Node is exposed directly without a reverse proxy (Hostinger usually needs the default trust proxy). On hosts that don’t deploy `.env`, set the same keys in the panel’s environment variables.
 

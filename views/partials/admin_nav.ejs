@@ -10,6 +10,7 @@
   const scoped = !!nav.tenantScoped;
   const title = typeof navTitle !== 'undefined' ? navTitle : '';
   const scopeTenant = typeof adminScopeTenant !== 'undefined' && adminScopeTenant ? adminScopeTenant : null;
+  const regionSwitch = typeof adminRegionSwitch !== 'undefined' && adminRegionSwitch ? adminRegionSwitch : null;
   const isEmbed = typeof embed !== 'undefined' && embed;
 %>
 <% if (!isEmbed) { %>
@@ -36,6 +37,20 @@
         <% } %>
       </div>
       <a class="admin-scope-banner__link" href="/admin/super#act-as-region">Change region</a>
+    </div>
+    <% } %>
+    <% if (!isSuper && regionSwitch && regionSwitch.options && regionSwitch.options.length > 1) { %>
+    <div class="admin-scope-banner admin-scope-banner--tenant" role="region">
+      <form method="post" action="/admin/tenant-scope" class="admin-region-switch">
+        <% if (isEmbed) { %><input type="hidden" name="embed" value="1" /><% } %>
+        <label class="admin-region-switch__label" for="admin-region-select">Region</label>
+        <select id="admin-region-select" name="tenant_id" class="admin-region-switch__select" aria-label="Switch region">
+          <% regionSwitch.options.forEach(function (opt) { %>
+            <option value="<%= opt.id %>" <%= Number(regionSwitch.currentId) === Number(opt.id) ? 'selected' : '' %>><%= opt.name %> (<%= opt.slug %>)</option>
+          <% }); %>
+        </select>
+        <button type="submit" class="btn admin-region-switch__btn">Switch</button>
+      </form>
     </div>
     <% } %>
     <nav class="admin-nav" aria-label="Admin navigation">

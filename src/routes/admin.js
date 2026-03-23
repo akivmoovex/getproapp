@@ -42,6 +42,7 @@ const { LEAD_STATUSES, normalizeLeadStatus, leadStatusLabel } = require("../lead
 const { buildCompanyPageLocals, enrichCompanyWithCategory } = require("../companyPageRender");
 const { CRM_TASK_STATUSES, normalizeCrmTaskStatus, crmTaskStatusLabel } = require("../crmTaskStatuses");
 const { insertCrmAudit } = require("../crmAudit");
+const { resolveSessionAfterLogin, upsertMembership, adminUserIsInTenant } = require("../adminUserTenants");
 
 function normalizeCrmAttachmentUrl(raw) {
   const s = String(raw || "").trim();
@@ -199,13 +200,25 @@ module.exports = function adminRoutes({ db }) {
     const user = await authenticateAdmin({ db, username, password });
     if (!user) return res.render("admin/login", { error: "Invalid username or password.", cancelHref: "/getpro-admin" });
 
-    req.session.adminUser = {
-      id: user.id,
-      username: user.username,
-      role: user.role || ROLES.TENANT_EDITOR,
-      tenantId: user.tenant_id,
-    };
     req.session.adminTenantScope = null;
+    req.session.adminTenantMemberships = undefined;
+    if (isSuperAdmin(user.role)) {
+      req.session.adminUser = {
+        id: user.id,
+        username: user.username,
+        role: user.role || ROLES.TENANT_EDITOR,
+        tenantId: user.tenant_id,
+      };
+    } else {
+      const resolved = resolveSessionAfterLogin(db, user);
+      req.session.adminUser = {
+        id: user.id,
+        username: user.username,
+        role: resolved.role,
+        tenantId: resolved.tenantId,
+      };
+      req.session.adminTenantMemberships = resolved.memberships;
+    }
     if (isSuperAdmin(user.role)) {
       /** Default region for directory tools: env override → demo → global → zm. Global is apex-only and usually has no listings — demo holds sample data. */
       const envSlug = (process.env.GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG || "").trim().toLowerCase();
@@ -238,6 +251,42 @@ module.exports = function adminRoutes({ db }) {
   router.use((req, res, next) => {
     if (!req.path.startsWith("/login")) return requireAdmin(req, res, next);
     return next();
+  });
+
+  /** Keep session tenant in sync with membership rows (multi-region managers). */
+  router.use((req, res, next) => {
+    if (!req.session || !req.session.adminUser || isSuperAdmin(req.session.adminUser.role)) {
+      return next();
+    }
+    const u = req.session.adminUser;
+    const mems = req.session.adminTenantMemberships || [];
+    if (mems.length > 0) {
+      const ok = mems.some((m) => Number(m.tenantId) === Number(u.tenantId));
+      if (!ok) {
+        const first = mems[0];
+        u.tenantId = first.tenantId;
+        u.role = first.role;
+      }
+    }
+    return next();
+  });
+
+  router.post("/tenant-scope", (req, res) => {
+    const u = req.session && req.session.adminUser;
+    if (!u) return res.redirect("/admin/login");
+    if (isSuperAdmin(u.role)) {
+      return res.redirect(String(req.body.redirect || "/admin/dashboard"));
+    }
+    const tid = Number(req.body.tenant_id);
+    if (!tid || tid <= 0) return res.status(400).send("Invalid region.");
+    const mems = req.session.adminTenantMemberships || [];
+    const match = mems.find((m) => Number(m.tenantId) === tid);
+    if (!match) return res.status(400).send("You do not have access to that region.");
+    u.tenantId = tid;
+    u.role = match.role;
+    const redir = String(req.body.redirect || "/admin/dashboard").trim();
+    const safe = redir.startsWith("/admin") && !redir.includes("//") ? redir : "/admin/dashboard";
+    req.session.save(() => res.redirect(safe));
   });
 
   router.use((req, res, next) => {
@@ -275,9 +324,35 @@ module.exports = function adminRoutes({ db }) {
       res.locals.adminScopeTenant = tn || null;
       res.locals.adminScopeIsSession =
         req.session.adminTenantScope != null && Number(req.session.adminTenantScope) > 0;
+      res.locals.adminRegionSwitch = null;
     } else {
       res.locals.adminScopeTenant = null;
       res.locals.adminScopeIsSession = false;
+      const mems = req.session.adminTenantMemberships || [];
+      if (mems.length > 1) {
+        const ids = [...new Set(mems.map((m) => Number(m.tenantId)))].filter((n) => Number.isFinite(n) && n > 0);
+        if (ids.length > 0) {
+          const ph = ids.map(() => "?").join(",");
+          const rows = db.prepare(`SELECT id, slug, name FROM tenants WHERE id IN (${ph})`).all(...ids);
+          const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
+          res.locals.adminRegionSwitch = {
+            currentId: Number(u.tenantId),
+            options: mems.map((m) => {
+              const id = Number(m.tenantId);
+              const r = byId[id];
+              return {
+                id,
+                name: r ? r.name : `Region ${id}`,
+                slug: r ? r.slug : "",
+              };
+            }),
+          };
+        } else {
+          res.locals.adminRegionSwitch = null;
+        }
+      } else {
+        res.locals.adminRegionSwitch = null;
+      }
     }
     return next();
   });
@@ -332,7 +407,31 @@ module.exports = function adminRoutes({ db }) {
     dbConn.prepare("DELETE FROM callback_interests WHERE tenant_id = ?").run(tid);
     dbConn.prepare("DELETE FROM professional_signups WHERE tenant_id = ?").run(tid);
     dbConn.prepare("DELETE FROM tenant_cities WHERE tenant_id = ?").run(tid);
-    dbConn.prepare("DELETE FROM admin_users WHERE tenant_id = ?").run(tid);
+
+    const affectedIds = new Set();
+    dbConn
+      .prepare("SELECT admin_user_id AS id FROM admin_user_tenant_roles WHERE tenant_id = ?")
+      .all(tid)
+      .forEach((r) => affectedIds.add(Number(r.id)));
+    dbConn
+      .prepare("SELECT id FROM admin_users WHERE tenant_id = ?")
+      .all(tid)
+      .forEach((r) => affectedIds.add(Number(r.id)));
+
+    dbConn.prepare("DELETE FROM admin_user_tenant_roles WHERE tenant_id = ?").run(tid);
+
+    for (const uid of affectedIds) {
+      if (!uid) continue;
+      const next = dbConn
+        .prepare("SELECT tenant_id, role FROM admin_user_tenant_roles WHERE admin_user_id = ? ORDER BY tenant_id ASC LIMIT 1")
+        .get(uid);
+      if (next) {
+        dbConn.prepare("UPDATE admin_users SET tenant_id = ?, role = ? WHERE id = ?").run(next.tenant_id, next.role, uid);
+      } else {
+        dbConn.prepare("DELETE FROM admin_users WHERE id = ?").run(uid);
+      }
+    }
+
     dbConn.prepare("DELETE FROM tenants WHERE id = ?").run(tid);
   }
 
@@ -525,12 +624,15 @@ module.exports = function adminRoutes({ db }) {
 
     const hash = await bcrypt.hash(password, 12);
     try {
-      db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
+      const info = db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
         username,
         hash,
         role,
         tenantId
       );
+      if (role !== ROLES.SUPER_ADMIN && tenantId != null && Number(tenantId) > 0) {
+        upsertMembership(db, Number(info.lastInsertRowid), Number(tenantId), role);
+      }
       return res.redirect("/admin/super/users?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not create user: ${e.message}`);
@@ -632,6 +734,10 @@ module.exports = function adminRoutes({ db }) {
     try {
       const r = db.prepare(sql).run(...params);
       if (r.changes === 0) return res.status(404).send("User not found.");
+      db.prepare("DELETE FROM admin_user_tenant_roles WHERE admin_user_id = ?").run(id);
+      if (role !== ROLES.SUPER_ADMIN && tenantId != null && Number(tenantId) > 0) {
+        upsertMembership(db, id, Number(tenantId), role);
+      }
       return res.redirect("/admin/super/users?edit=1");
     } catch (e) {
       return res.status(400).send(`Could not update user: ${e.message}`);
@@ -700,9 +806,14 @@ module.exports = function adminRoutes({ db }) {
     const tid = getAdminTenantId(req);
     const users = db
       .prepare(
-        "SELECT id, username, role, enabled, created_at FROM admin_users WHERE tenant_id = ? ORDER BY username"
+        `SELECT DISTINCT u.id, u.username, u.enabled, u.created_at,
+            COALESCE(m.role, u.role) AS role
+         FROM admin_users u
+         LEFT JOIN admin_user_tenant_roles m ON m.admin_user_id = u.id AND m.tenant_id = ?
+         WHERE m.tenant_id IS NOT NULL OR u.tenant_id = ?
+         ORDER BY u.username COLLATE NOCASE ASC`
       )
-      .all(tid);
+      .all(tid, tid);
     return res.render("admin/users", { users, tenantId: tid });
   });
 
@@ -731,12 +842,13 @@ module.exports = function adminRoutes({ db }) {
     }
     const hash = await bcrypt.hash(password, 12);
     try {
-      db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
+      const info = db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
         username,
         hash,
         role,
         tid
       );
+      upsertMembership(db, Number(info.lastInsertRowid), Number(tid), role);
       return res.redirect(redirectWithEmbed(req, "/admin/users"));
     } catch (e) {
       return res.status(400).send(`Could not create user: ${e.message}`);
@@ -745,7 +857,19 @@ module.exports = function adminRoutes({ db }) {
 
   function loadTenantAdminUser(req, id) {
     const tid = getAdminTenantId(req);
-    const row = db.prepare("SELECT * FROM admin_users WHERE id = ? AND tenant_id = ?").get(id, tid);
+    const row = db
+      .prepare(
+        `SELECT u.* FROM admin_users u
+         WHERE u.id = ?
+           AND (
+             u.tenant_id = ?
+             OR EXISTS (SELECT 1 FROM admin_user_tenant_roles m WHERE m.admin_user_id = u.id AND m.tenant_id = ?)
+           )`
+      )
+      .get(id, tid, tid);
+    if (!row) return null;
+    const m = db.prepare("SELECT role FROM admin_user_tenant_roles WHERE admin_user_id = ? AND tenant_id = ?").get(id, tid);
+    if (m && m.role) row.role = m.role;
     return row;
   }
 
@@ -793,6 +917,7 @@ module.exports = function adminRoutes({ db }) {
     }
     if (password && password.length < 8) return res.status(400).send("Password must be at least 8 characters.");
 
+    const scopedTid = getAdminTenantId(req);
     let sql = "UPDATE admin_users SET username = ?, role = ?, enabled = ?";
     const params = [username, role, enabled];
     if (password) {
@@ -800,12 +925,16 @@ module.exports = function adminRoutes({ db }) {
       sql += ", password_hash = ?";
       params.push(hash);
     }
-    sql += " WHERE id = ? AND tenant_id = ?";
-    params.push(id, getAdminTenantId(req));
+    sql += " WHERE id = ?";
+    params.push(id);
 
     try {
       const r = db.prepare(sql).run(...params);
       if (r.changes === 0) return res.status(404).send("User not found.");
+      upsertMembership(db, id, Number(scopedTid), role);
+      if (req.session.adminUser && Number(req.session.adminUser.id) === Number(id)) {
+        req.session.adminUser.role = role;
+      }
       return res.redirect(redirectWithEmbed(req, "/admin/users"));
     } catch (e) {
       return res.status(400).send(`Could not update user: ${e.message}`);
@@ -819,9 +948,21 @@ module.exports = function adminRoutes({ db }) {
     if (!target) return res.status(404).send("User not found.");
     if (target.role === ROLES.SUPER_ADMIN) return res.status(403).send("Cannot delete super admin here.");
     if (target.id === req.session.adminUser.id) return res.status(400).send("Cannot delete your own account.");
+    const scopedTid = getAdminTenantId(req);
     try {
-      const r = db.prepare("DELETE FROM admin_users WHERE id = ? AND tenant_id = ?").run(id, getAdminTenantId(req));
-      if (r.changes === 0) return res.status(404).send("User not found.");
+      db.prepare("DELETE FROM admin_user_tenant_roles WHERE admin_user_id = ? AND tenant_id = ?").run(id, scopedTid);
+      const remaining = db.prepare("SELECT COUNT(*) AS c FROM admin_user_tenant_roles WHERE admin_user_id = ?").get(id).c;
+      if (Number(remaining) === 0) {
+        const r = db.prepare("DELETE FROM admin_users WHERE id = ?").run(id);
+        if (r.changes === 0) return res.status(404).send("User not found.");
+      } else {
+        const next = db
+          .prepare("SELECT tenant_id, role FROM admin_user_tenant_roles WHERE admin_user_id = ? ORDER BY tenant_id ASC LIMIT 1")
+          .get(id);
+        if (next) {
+          db.prepare("UPDATE admin_users SET tenant_id = ?, role = ? WHERE id = ?").run(next.tenant_id, next.role, id);
+        }
+      }
       return res.redirect(redirectWithEmbed(req, "/admin/users"));
     } catch (e) {
       return res.status(400).send(`Could not delete user: ${e.message}`);
@@ -1808,11 +1949,16 @@ module.exports = function adminRoutes({ db }) {
   }
 
   function getTenantUsersForCrm(dbConn, tenantId) {
+    const tid = Number(tenantId);
     return dbConn
       .prepare(
-        `SELECT id, username FROM admin_users WHERE tenant_id = ? AND COALESCE(enabled, 1) = 1 ORDER BY username COLLATE NOCASE ASC`
+        `SELECT DISTINCT u.id, u.username
+         FROM admin_users u
+         LEFT JOIN admin_user_tenant_roles m ON m.admin_user_id = u.id AND m.tenant_id = ?
+         WHERE COALESCE(u.enabled, 1) = 1 AND (m.tenant_id IS NOT NULL OR u.tenant_id = ?)
+         ORDER BY u.username COLLATE NOCASE ASC`
       )
-      .all(Number(tenantId));
+      .all(tid, tid);
   }
 
   function loadCrmTaskDetailData(req, rawId) {
@@ -1966,10 +2112,7 @@ module.exports = function adminRoutes({ db }) {
       if (n && n > 0) ownerId = n;
     }
     if (ownerId != null) {
-      const urow = db
-        .prepare("SELECT id FROM admin_users WHERE id = ? AND tenant_id = ? AND COALESCE(enabled, 1) = 1")
-        .get(ownerId, tid);
-      if (!urow) return res.status(400).send("Invalid assignee.");
+      if (!adminUserIsInTenant(db, ownerId, tid)) return res.status(400).send("Invalid assignee.");
     }
     const status = ownerId != null ? "in_progress" : "new";
 
@@ -2200,10 +2343,7 @@ module.exports = function adminRoutes({ db }) {
     if (!task) return res.status(404).send("Not found");
 
     if (newOwnerId != null) {
-      const urow = db
-        .prepare("SELECT id FROM admin_users WHERE id = ? AND tenant_id = ? AND COALESCE(enabled, 1) = 1")
-        .get(newOwnerId, tid);
-      if (!urow) return res.status(400).send("User not in this tenant.");
+      if (!adminUserIsInTenant(db, newOwnerId, tid)) return res.status(400).send("User not in this tenant.");
     }
 
     const prevOwner = task.owner_id;
