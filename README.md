@@ -4,16 +4,16 @@ Node + Express directory app using SQLite via `better-sqlite3`.
 
 ## Git / CI deployment (Hostinger Node.js, etc.)
 
-This app is **Express**: it starts with `npm start` (`node index.js` → `server.js`) from the **repository root**. There is **no** framework bundle folder (no `dist/`, `.next`, or `out/` from a static export).
+This app is **Express**: it starts with `npm start` (`node server.js`) from the **repository root**. `package.json` sets `"main": "server.js"` and `"start": "node server.js"` so hosts that run `npm start` need **no** custom entry file. There is **no** framework bundle folder (no `dist/`, `.next`, or `out/` from a static export).
 
 | Panel field | What to use |
 |-------------|-------------|
 | **Root / App directory** | Repo root (often `.` or left blank) |
-| **Entry file / Startup file** | **`index.js`** (at repo root). Do **not** leave this blank — Hostinger may treat a missing entry as `null` and fail the build. The real server code is still `server.js`; `index.js` only loads it. |
+| **Entry file / Startup file** | **Leave unset / default** if the host runs **`npm start`** (recommended). The process entry is **`server.js`** via `package.json` `main` + `start`. Only set a startup file explicitly if your panel requires it — use **`server.js`**. |
 | **Install** | `npm ci` or `npm install` |
 | **Build** | `npm run build` — in this repo that runs `build-search-lists` only. If your host runs install separately, a build-only step of `npm run build` is enough. |
 | **Output / Publish directory** | **Leave empty**, **none**, **`.`**, or the option your UI labels **null / no output** for backend-only apps. **Do not** set `dist`, `build`, `out`, or `.next` — those paths do not exist here and will break deploy. |
-| **Start** | `npm start` (runs `node index.js`) |
+| **Start** | `npm start` (runs `node server.js`) |
 
 Some UIs fail when **Output directory** points at a missing folder or when they expect a SPA build. For a **server-only** Node app, the fix is usually to **clear** that field or set output to **null / none / root** per the provider’s Express template — not a static export path.
 
