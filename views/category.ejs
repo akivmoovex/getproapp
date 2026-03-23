@@ -52,9 +52,9 @@
     </div>
 
     <%- include('partials/site_footer', { tenantUrlPrefix }) %>
-    <script src="/scripts.js?v=<%= stylesVersion %>"></script>
+    <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
     <% if ((companies || []).length === 0) { %>
-    <script src="/directory-empty-callback.js?v=<%= stylesVersion %>"></script>
+    <script src="/directory-empty-callback.js?v=<%= stylesVersion %>" defer></script>
     <% } %>
   </body>
 </html>

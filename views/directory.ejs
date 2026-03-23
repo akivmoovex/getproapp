@@ -16,14 +16,15 @@
       <% } %>
       <form id="directory-toolbar" class="pro-directory-toolbar pro-search--directory" action="<%= tenantUrlPrefix %>/directory" method="get" role="search">
         <div class="pro-directory-toolbar__fields">
-          <div class="pro-ac pro-directory-toolbar__ac" data-ac-list="service" data-watermark-text="Search: Electrician">
-            <label class="visually-hidden" for="dir-search-q">Service or profession</label>
+          <div class="pro-directory-toolbar__field pro-directory-toolbar__ac">
+            <label class="pro-directory-toolbar__input-label" for="dir-search-q">Service or profession</label>
+            <div class="pro-ac" data-ac-list="service">
             <input
               id="dir-search-q"
               class="pro-ac-input"
               type="text"
               value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
-              placeholder=""
+              placeholder="e.g. Electrician, Plumber, Carpenter"
               autocomplete="off"
               role="combobox"
               aria-autocomplete="list"
@@ -33,15 +34,17 @@
             <input type="hidden" class="pro-ac-hidden" name="q" id="dir-search-q-value" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" />
             <ul class="pro-ac-dropdown" id="dir-search-q-dropdown" role="listbox" hidden></ul>
             <p class="pro-ac-msg" hidden></p>
+            </div>
           </div>
-          <div class="pro-ac pro-directory-toolbar__ac" data-ac-list="city" data-watermark-text="City">
-            <label class="visually-hidden" for="dir-search-city">City</label>
+          <div class="pro-directory-toolbar__field pro-directory-toolbar__ac">
+            <label class="pro-directory-toolbar__input-label" for="dir-search-city">City</label>
+            <div class="pro-ac" data-ac-list="city">
             <input
               id="dir-search-city"
               class="pro-ac-input"
               type="text"
               value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>"
-              placeholder=""
+              placeholder="e.g. Lusaka"
               autocomplete="off"
               role="combobox"
               aria-autocomplete="list"
@@ -51,6 +54,7 @@
             <input type="hidden" class="pro-ac-hidden" name="city" id="dir-search-city-value" value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>" />
             <ul class="pro-ac-dropdown" id="dir-search-city-dropdown" role="listbox" hidden></ul>
             <p class="pro-ac-msg" hidden></p>
+            </div>
           </div>
           <div class="pro-directory-toolbar__category">
             <label class="pro-directory-toolbar__label" for="dir-category-filter">Category</label>
@@ -85,7 +89,7 @@
               <span class="pro-directory-toolbar__chip"><%= cityQuery %></span>
             <% } %>
             <% if (!activeCatLabel && !(typeof searchQuery !== 'undefined' && searchQuery) && !(typeof cityQuery !== 'undefined' && cityQuery)) { %>
-              <span class="pro-directory-toolbar__hint muted">Browse professionals in your area</span>
+              <span class="pro-directory-toolbar__hint muted">Browse trusted professionals in your area</span>
             <% } %>
           </span>
         </div>
@@ -109,8 +113,8 @@
     </div>
 
     <%- include('partials/site_footer', { tenantUrlPrefix }) %>
-    <script src="/scripts.js?v=<%= stylesVersion %>"></script>
-    <script src="/autocomplete.js?v=<%= stylesVersion %>"></script>
+    <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <script src="/autocomplete.js?v=<%= stylesVersion %>" defer></script>
     <% if ((companies || []).length === 0) { %>
     <script src="/directory-empty-callback.js?v=<%= stylesVersion %>"></script>
     <% } %>

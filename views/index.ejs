@@ -6,7 +6,7 @@
     <title>GetPro · Trusted professional directory | getproapp.org</title>
     <meta
       name="description"
-      content="GetPro connects you with professionals. Search the directory, browse categories, and contact businesses directly."
+      content="Find trusted professionals near you. Search by service and city, compare profiles, and contact the right business quickly."
     />
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
@@ -15,7 +15,7 @@
       <%- include('partials/brand_lockup_getpro', { tenant, brandLockupVariant: 'home', brandLockupHref: tenantHomeHref }) %>
     </div>
     <div class="wf-home-topbar-actions">
-      <a class="wf-home-join-btn" href="<%= tenantUrlPrefix %>/join">Join us</a>
+      <a class="wf-home-join-btn" href="<%= tenantUrlPrefix %>/join">List your business</a>
       <% if (typeof showRegionPickerUi !== 'undefined' && showRegionPickerUi) { %>
       <button
         type="button"
@@ -110,38 +110,52 @@
         <section class="pro-home-hero" aria-labelledby="pro-home-hero-heading">
           <div class="pro-home-hero-visual">
             <div class="pro-home-hero-media">
-              <!-- Service / trade professional — replace src with your own asset if preferred (pro.co.il–style hero). -->
-              <img
-                class="pro-home-hero-photo"
-                src="https://images.unsplash.com/photo-1621905251918-48416bd8575a?auto=format&amp;fit=crop&amp;w=1920&amp;q=80"
-                width="1920"
-                height="800"
-                alt="Professional providing a home service"
-                loading="eager"
-                decoding="async"
-              />
+              <picture>
+                <source
+                  type="image/avif"
+                  srcset="/images/hero/home-hero-640.avif 640w"
+                  sizes="100vw"
+                />
+                <source
+                  type="image/webp"
+                  srcset="/images/hero/home-hero-640.webp 640w, /images/hero/home-hero-960.webp 960w, /images/hero/home-hero-1280.webp 1280w"
+                  sizes="100vw"
+                />
+                <img
+                  class="pro-home-hero-photo"
+                  src="/images/hero/home-hero-640.webp"
+                  srcset="/images/hero/home-hero-640.webp 640w, /images/hero/home-hero-960.webp 960w, /images/hero/home-hero-1280.webp 1280w"
+                  sizes="100vw"
+                  width="1280"
+                  height="720"
+                  alt="Professional providing a home service"
+                  loading="eager"
+                  fetchpriority="high"
+                  decoding="async"
+                />
+              </picture>
               <div class="pro-home-hero-scrim"></div>
             </div>
 
             <div class="pro-home-hero-panel">
               <div class="pro-home-hero-caption">
-                <p id="pro-home-hero-heading" class="pro-home-hero-tagline">Our recommended professionals</p>
+                <h1 id="pro-home-hero-heading" class="pro-home-hero-title">Find trusted professionals near you</h1>
+                <p class="pro-home-hero-lead">
+                  Search by service and city to compare local professionals, view profiles, and contact the right one quickly.
+                </p>
               </div>
               <div class="pro-home-search-wrap pro-home-search-wrap--hero">
-            <form class="pro-home-dual-search" action="<%= tenantUrlPrefix %>/directory" method="get" role="search" aria-label="Search by field and city">
+            <form class="pro-home-dual-search" action="<%= tenantUrlPrefix %>/directory" method="get" role="search" aria-label="Search by service and city">
               <div class="pro-home-search-fields">
                 <% if (tenant.slug === 'global') { %>
-                <div
-                  class="pro-ac"
-                  data-ac-list="service"
-                  data-watermark-rotate="Search: Electrician|Search: Plumber|Search: Carpenter"
-                >
-                  <label class="visually-hidden" for="home-search-q">Field</label>
+                <div class="pro-home-search-field">
+                  <label class="pro-home-field-label" for="home-search-q">Service or profession</label>
+                  <div class="pro-ac" data-ac-list="service">
                   <input
                     id="home-search-q"
                     class="pro-ac-input"
                     type="text"
-                    placeholder=""
+                    placeholder="e.g. Electrician, Plumber, Carpenter"
                     autocomplete="off"
                     role="combobox"
                     aria-autocomplete="list"
@@ -151,18 +165,16 @@
                   <input type="hidden" class="pro-ac-hidden" name="q" id="home-search-q-value" value="" />
                   <ul class="pro-ac-dropdown" id="home-search-q-dropdown" role="listbox" hidden></ul>
                   <p class="pro-ac-msg" hidden></p>
+                  </div>
                 </div>
-                <div
-                  class="pro-ac"
-                  data-ac-list="city"
-                  data-watermark-rotate="Search: Lusaka|Search: Johannesburg|Search: Harare"
-                >
-                  <label class="visually-hidden" for="home-search-city">City</label>
+                <div class="pro-home-search-field">
+                  <label class="pro-home-field-label" for="home-search-city">City</label>
+                  <div class="pro-ac" data-ac-list="city">
                   <input
                     id="home-search-city"
                     class="pro-ac-input"
                     type="text"
-                    placeholder=""
+                    placeholder="e.g. Lusaka"
                     autocomplete="off"
                     role="combobox"
                     aria-autocomplete="list"
@@ -172,15 +184,17 @@
                   <input type="hidden" class="pro-ac-hidden" name="city" id="home-search-city-value" value="" />
                   <ul class="pro-ac-dropdown" id="home-search-city-dropdown" role="listbox" hidden></ul>
                   <p class="pro-ac-msg" hidden></p>
+                  </div>
                 </div>
                 <% } else { %>
-                <div class="pro-ac" data-ac-list="service" data-watermark-text="Search: Electrician">
-                  <label class="visually-hidden" for="home-search-q">Field</label>
+                <div class="pro-home-search-field">
+                  <label class="pro-home-field-label" for="home-search-q">Service or profession</label>
+                  <div class="pro-ac" data-ac-list="service">
                   <input
                     id="home-search-q"
                     class="pro-ac-input"
                     type="text"
-                    placeholder=""
+                    placeholder="e.g. Electrician, Plumber, Carpenter"
                     autocomplete="off"
                     role="combobox"
                     aria-autocomplete="list"
@@ -190,14 +204,16 @@
                   <input type="hidden" class="pro-ac-hidden" name="q" id="home-search-q-value" value="" />
                   <ul class="pro-ac-dropdown" id="home-search-q-dropdown" role="listbox" hidden></ul>
                   <p class="pro-ac-msg" hidden></p>
+                  </div>
                 </div>
-                <div class="pro-ac" data-ac-list="city" data-watermark-text="Search: Lusaka">
-                  <label class="visually-hidden" for="home-search-city">City</label>
+                <div class="pro-home-search-field">
+                  <label class="pro-home-field-label" for="home-search-city">City</label>
+                  <div class="pro-ac" data-ac-list="city">
                   <input
                     id="home-search-city"
                     class="pro-ac-input"
                     type="text"
-                    placeholder=""
+                    placeholder="e.g. Lusaka"
                     autocomplete="off"
                     role="combobox"
                     aria-autocomplete="list"
@@ -207,11 +223,12 @@
                   <input type="hidden" class="pro-ac-hidden" name="city" id="home-search-city-value" value="" />
                   <ul class="pro-ac-dropdown" id="home-search-city-dropdown" role="listbox" hidden></ul>
                   <p class="pro-ac-msg" hidden></p>
+                  </div>
                 </div>
                 <% } %>
               </div>
               <button class="pro-home-search-submit" type="submit">
-                <span class="pro-home-search-submit-text">Search Professionals</span>
+                <span class="pro-home-search-submit-text">Search</span>
                 <svg class="pro-home-search-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <circle cx="11" cy="11" r="7" />
                   <path d="m21 21-4.3-4.3" />
@@ -226,18 +243,18 @@
     <section class="wf-stats" aria-label="Highlights">
       <div class="container wf-stats-grid">
         <div class="wf-stat">
-          <div class="wf-stat-value">Live</div>
-          <p class="wf-stat-label">search across the directory</p>
+          <div class="wf-stat-value">Verified listings</div>
+          <p class="wf-stat-label">Browse active professional profiles</p>
         </div>
         <div class="wf-stat wf-stat-divider" aria-hidden="true"></div>
         <div class="wf-stat">
-          <div class="wf-stat-value">Categories</div>
-          <p class="wf-stat-label">organized for faster discovery</p>
+          <div class="wf-stat-value">Popular categories</div>
+          <p class="wf-stat-label">Explore services faster by category</p>
         </div>
         <div class="wf-stat wf-stat-divider" aria-hidden="true"></div>
         <div class="wf-stat">
-          <div class="wf-stat-value">One-page</div>
-          <p class="wf-stat-label">profiles with clear contact options</p>
+          <div class="wf-stat-value">Direct contact</div>
+          <p class="wf-stat-label">View profiles and contact businesses directly</p>
         </div>
       </div>
     </section>
@@ -471,7 +488,7 @@
 
     <%- include('partials/site_footer', { tenantUrlPrefix }) %>
 
-    <script src="/scripts.js?v=<%= stylesVersion %>"></script>
-    <script src="/autocomplete.js?v=<%= stylesVersion %>"></script>
+    <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <script src="/autocomplete.js?v=<%= stylesVersion %>" defer></script>
   </body>
 </html>

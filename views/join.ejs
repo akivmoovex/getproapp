@@ -113,10 +113,10 @@
 
               <div id="join-panels">
                 <div class="join-step-panel" id="join-step-1" data-step="1">
-                  <h2>What is your profession?</h2>
-                  <p class="join-step-hint">Type a few letters — matching suggestions appear below, like on the home page.</p>
+                  <h2>What service do you provide?</h2>
+                  <p class="join-step-hint">Choose the main service customers should find you under.</p>
                   <div class="join-field join-field--ac">
-                    <label for="join-profession">Profession</label>
+                    <label for="join-profession">Service or profession</label>
                     <div
                       class="pro-ac join-pro-ac"
                       data-ac-list="service"
@@ -181,7 +181,7 @@
                 <div class="join-step-panel" id="join-step-3" data-step="3" hidden>
                   <div id="join-step-3-form">
                     <h2>Your contact details</h2>
-                    <p class="join-step-hint">We’ll use this to reach you about your listing</p>
+                    <p class="join-step-hint">We’ll use these details to contact you about your listing.</p>
                     <div class="join-field">
                       <label for="join-name">Full name</label>
                       <input
@@ -202,12 +202,12 @@
                         class="join-plain-input"
                         type="tel"
                         autocomplete="tel"
-                        placeholder="<%= tenant.slug === 'zm' ? 'e.g. 0977123456 (10 digits)' : 'Phone number' %>"
+                        placeholder="<%= tenant.slug === 'zm' ? 'e.g. 0977 123 456' : 'e.g. 0977 123 456' %>"
                         required
                       />
                     </div>
                     <div class="join-wizard-actions join-wizard-actions--split">
-                      <button type="button" class="btn btn-primary" id="join-submit">Submit</button>
+                      <button type="button" class="btn btn-primary" id="join-submit">Send application</button>
                       <button type="button" class="btn btn-secondary-wf" id="join-back-3">Back</button>
                     </div>
                     <p class="join-wizard-error" id="join-error-3" hidden></p>
@@ -338,7 +338,7 @@
       window.__GETPRO_HOME__ = "<%= tenantHomeHref %>";
       window.__GETPRO_TENANT_CITIES__ = <%- JSON.stringify(joinTenantCities || []) %>;
     </script>
-    <script src="/autocomplete.js?v=<%= stylesVersion %>"></script>
-    <script src="/join.js?v=<%= stylesVersion %>"></script>
+    <script src="/autocomplete.js?v=<%= stylesVersion %>" defer></script>
+    <script src="/join.js?v=<%= stylesVersion %>" defer></script>
   </body>
 </html>

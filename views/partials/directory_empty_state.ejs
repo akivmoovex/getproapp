@@ -42,9 +42,9 @@
         <% } %>
       </h2>
     <% } else if (q && city) { %>
-      <h2 class="pro-directory-empty__title">No matching professionals for &ldquo;<%= q %>&rdquo; in <%= city %></h2>
+      <h2 class="pro-directory-empty__title">No <%= q %> found in <%= city %></h2>
     <% } else if (q && !city) { %>
-      <h2 class="pro-directory-empty__title">No results for &ldquo;<%= q %>&rdquo;</h2>
+      <h2 class="pro-directory-empty__title">No results for <%= q %></h2>
     <% } else if (!q && city && catLabel) { %>
       <h2 class="pro-directory-empty__title">No <%= catLabel %> in <%= city %></h2>
     <% } else if (!q && city && !catLabel) { %>
@@ -52,7 +52,7 @@
     <% } else if (!q && !city && catLabel) { %>
       <h2 class="pro-directory-empty__title">No <%= catLabel %> listings yet</h2>
     <% } else { %>
-      <h2 class="pro-directory-empty__title">No matching professionals</h2>
+      <h2 class="pro-directory-empty__title">No professionals found for your search</h2>
     <% } %>
 
     <p class="pro-directory-empty__hint muted">
@@ -61,7 +61,7 @@
 
     <% if (_mode === 'directory' && (q || city || catLabel)) { %>
       <div class="pro-directory-empty__summary muted" aria-label="Current search">
-        <% if (q) { %><span class="pro-directory-empty__summary-item"><span class="pro-directory-empty__summary-k">Profession</span> <span class="pro-directory-empty__summary-v"><%= q %></span></span><% } %>
+        <% if (q) { %><span class="pro-directory-empty__summary-item"><span class="pro-directory-empty__summary-k">Service</span> <span class="pro-directory-empty__summary-v"><%= q %></span></span><% } %>
         <% if (city) { %><span class="pro-directory-empty__summary-item"><span class="pro-directory-empty__summary-k">City</span> <span class="pro-directory-empty__summary-v"><%= city %></span></span><% } %>
         <% if (catLabel) { %><span class="pro-directory-empty__summary-item"><span class="pro-directory-empty__summary-k">Category</span> <span class="pro-directory-empty__summary-v"><%= catLabel %></span></span><% } %>
       </div>
@@ -83,7 +83,7 @@
       <input type="hidden" name="interest_label" value="<%= interestPayload %>" />
       <div class="pro-directory-empty__callback-panel" id="directory-empty-callback-panel">
         <div class="join-modal-fields pro-directory-empty__fields">
-          <label class="join-modal-label" for="directory-empty-callback-name">Your name</label>
+          <label class="join-modal-label" for="directory-empty-callback-name">Full name</label>
           <input
             class="join-plain-input join-modal-input"
             id="directory-empty-callback-name"

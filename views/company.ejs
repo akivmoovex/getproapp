@@ -195,19 +195,19 @@
 
                   <div>
                     <label for="lead_name">Full name</label>
-                    <input id="lead_name" name="name" required autocomplete="name" />
+                    <input id="lead_name" name="name" required autocomplete="name" placeholder="e.g. Chanda Phiri" />
                   </div>
                   <div>
-                    <label for="lead_phone">Phone</label>
-                    <input id="lead_phone" name="phone" required autocomplete="tel" />
+                    <label for="lead_phone">Phone number</label>
+                    <input id="lead_phone" name="phone" required autocomplete="tel" placeholder="e.g. 0977 123 456" />
                   </div>
                   <div>
-                    <label for="lead_email">Email (optional)</label>
-                    <input id="lead_email" name="email" type="text" inputmode="email" autocomplete="email" />
+                    <label for="lead_email">Email address (optional)</label>
+                    <input id="lead_email" name="email" type="text" inputmode="email" autocomplete="email" placeholder="e.g. chanda@example.com" />
                   </div>
                   <div>
                     <label for="lead_message">How can we help?</label>
-                    <textarea id="lead_message" name="message" required></textarea>
+                    <textarea id="lead_message" name="message" required placeholder="Tell us what service you need and when you need it"></textarea>
                   </div>
                   <button class="btn btn-primary" type="submit">Send request</button>
 
@@ -299,7 +299,7 @@
     </div>
 
     <%- include('partials/site_footer', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>
-    <script src="/scripts.js?v=<%= stylesVersion %>"></script>
-    <script src="/company-profile.js?v=<%= stylesVersion %>"></script>
+    <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <script src="/company-profile.js?v=<%= stylesVersion %>" defer></script>
   </body>
 </html>

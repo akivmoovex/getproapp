@@ -2989,6 +2989,21 @@ a.admin-dashboard-panel--link:focus-visible {
   padding: var(--space-touch) 0;
 }
 
+@media (max-width: 520px) {
+  .wf-stats {
+    padding: var(--space-2-5) 0 var(--space-3);
+  }
+
+  .wf-stat-value {
+    font-size: clamp(var(--space-2-125), 3.8vw, var(--space-3-25));
+    line-height: 1.2;
+  }
+
+  .wf-stat-label {
+    font-size: var(--space-1-625);
+  }
+}
+
 .wf-stats-grid {
   display: flex;
   flex-wrap: wrap;
@@ -4176,6 +4191,20 @@ textarea {
   background: var(--wf-primary-dark);
 }
 
+@media (max-width: 620px) {
+  .pro-home-hero-visual {
+    min-height: min(48vw, var(--layout-dim-280));
+    max-height: min(52vw, var(--layout-dim-320));
+  }
+}
+
+@media (max-width: 430px) {
+  .pro-home-hero-visual {
+    min-height: min(44vw, 220px);
+    max-height: 260px;
+  }
+}
+
 /* Clip only the photo — keeps autocomplete dropdowns from being cut off by overflow:hidden */
 .pro-home-hero-media {
   position: absolute;
@@ -4220,15 +4249,42 @@ textarea {
   pointer-events: none;
 }
 
-.pro-home-hero-tagline {
-  margin: 0;
-  max-width: none;
-  font-size: clamp(var(--space-2-5), 2.8vw, var(--space-3-75));
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+.pro-home-hero-title {
+  margin: 0 0 var(--space-1);
+  max-width: min(22ch, 100%);
+  font-size: clamp(var(--space-2-25), 4.2vw, var(--space-3-75));
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
   color: var(--color-white);
   text-shadow: var(--text-shadow-hero-soft);
+}
+
+.pro-home-hero-lead {
+  margin: 0;
+  max-width: min(40ch, 100%);
+  font-size: clamp(var(--space-1-25), 2.2vw, var(--space-3));
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+
+.pro-home-search-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  flex: 1 1 min(0, 12rem);
+  min-width: 0;
+}
+
+.pro-home-field-label {
+  font-size: var(--space-1-5);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  padding-left: var(--space-0-75);
 }
 
 .pro-home-search-wrap {
@@ -4267,6 +4323,7 @@ textarea {
   min-width: 0;
   flex-wrap: nowrap;
   gap: var(--space-1-25);
+  align-items: stretch;
 }
 
 .pro-home-search-wrap--hero .pro-ac {
@@ -4288,11 +4345,29 @@ textarea {
 @media (max-width: 620px) {
   .pro-home-search-wrap--hero .pro-home-dual-search {
     flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .pro-home-search-wrap--hero .pro-home-search-fields {
-    flex: 1 1 100%;
+    flex: 1 1 auto;
+    flex-direction: column;
     flex-wrap: nowrap;
+    width: 100%;
+    gap: var(--space-1-25);
+  }
+
+  .pro-home-search-wrap--hero .pro-home-search-field {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pro-home-search-wrap--hero .pro-home-search-submit {
+    width: 100%;
+    justify-content: center;
+    min-height: var(--space-touch);
+    white-space: normal;
   }
 }
 
@@ -4308,13 +4383,10 @@ textarea {
     padding: var(--space-1-75) var(--space-1-75) var(--space-2);
   }
 
-  .pro-home-search-wrap--hero .pro-home-search-fields {
-    flex-wrap: wrap;
-  }
-
   .pro-home-search-wrap--hero .pro-ac {
-    flex: 1 1 calc(50% - var(--space-0-75));
-    min-width: var(--layout-dim-140);
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
   }
 }
 
@@ -4589,10 +4661,30 @@ textarea {
 .pro-directory-toolbar__fields {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: var(--space-1-25) var(--space-1-5);
   width: 100%;
   min-width: 0;
+}
+
+.pro-directory-toolbar__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  flex: 1 1 min(0, 12rem);
+  min-width: 0;
+}
+
+.pro-directory-toolbar__field .pro-ac {
+  width: 100%;
+}
+
+.pro-directory-toolbar__input-label {
+  font-size: var(--space-1-5);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
 }
 
 .pro-directory-toolbar__fields--category-only {
@@ -4749,6 +4841,23 @@ textarea {
 @media (max-width: 520px) {
   .pro-directory-toolbar {
     padding: var(--space-1-25) var(--space-1-5);
+  }
+
+  .pro-directory-toolbar__fields {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pro-directory-toolbar__field {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .pro-directory-toolbar__category {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
   }
 
   .pro-directory-toolbar__submit {
