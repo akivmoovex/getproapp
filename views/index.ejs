@@ -21,6 +21,7 @@
       <%- include('partials/brand_lockup_getpro', { tenant, brandLockupVariant: 'home', brandLockupHref: tenantHomeHref }) %>
     </div>
     <div class="wf-home-topbar-actions">
+      <a class="wf-home-dir-link" href="<%= tenantUrlPrefix %>/directory">Search</a>
       <a class="wf-home-join-btn" href="<%= tenantUrlPrefix %>/join">List your business</a>
       <% if (typeof showRegionPickerUi !== 'undefined' && showRegionPickerUi) { %>
       <button
@@ -147,7 +148,8 @@
               <div class="pro-home-hero-caption">
                 <h1 id="pro-home-hero-heading" class="pro-home-hero-title">Find trusted professionals near you</h1>
                 <p class="pro-home-hero-lead">
-                  Search by service and city to compare local professionals, view profiles, and contact the right one quickly.
+                  <span class="home-hero-lead-full">Search by service and city to compare local professionals, view profiles, and contact the right one quickly.</span>
+                  <span class="home-hero-lead-short">Search by service and city — then call or message a professional.</span>
                 </p>
               </div>
               <div class="pro-home-search-wrap pro-home-search-wrap--hero">
@@ -246,6 +248,7 @@
           </div>
         </section>
 
+    <div class="home-page__desktop-only" data-home-desktop-only>
     <section class="wf-stats" aria-label="Highlights">
       <div class="container wf-stats-grid">
         <div class="wf-stat">
@@ -264,6 +267,7 @@
         </div>
       </div>
     </section>
+    </div>
 
     <section class="pro-section">
       <div class="container">
@@ -271,7 +275,7 @@
           <h2 class="pro-section-title"><a href="<%= tenantUrlPrefix %>/directory">Leading categories</a></h2>
           <a class="pro-link-all" href="<%= tenantUrlPrefix %>/directory">All categories →</a>
         </div>
-        <div class="pro-cat-grid">
+        <div id="home-categories" class="pro-cat-grid">
           <% categories.forEach(function(cat) { %>
             <a href="<%= tenantUrlPrefix %>/category/<%= cat.slug %>"><%= cat.name %></a>
           <% }) %>
@@ -282,6 +286,22 @@
       </div>
     </section>
 
+    <section class="home-m3-cta home-m3-cta--help" aria-labelledby="home-help-cta-heading">
+      <div class="container">
+        <div class="home-m3-cta__card">
+          <h2 id="home-help-cta-heading" class="home-m3-cta__title">Need help finding the right professional?</h2>
+          <p class="home-m3-cta__text muted">Tell us what you need — our team can point you to the right category or service.</p>
+          <div class="home-m3-cta__actions">
+            <% if (typeof getproTelHref !== 'undefined' && getproTelHref && typeof getproPhone !== 'undefined' && getproPhone) { %>
+            <a class="btn btn-primary home-m3-cta__btn" href="<%= getproTelHref %>">Call <%= getproPhone %></a>
+            <% } %>
+            <a class="btn btn-secondary-wf home-m3-cta__btn" href="<%= tenantUrlPrefix %>/directory">Open directory</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="home-page__desktop-only" data-home-desktop-only>
     <section class="pro-section" id="about">
       <div class="container">
         <div class="pro-section-head">
@@ -460,6 +480,7 @@
         </div>
       </div>
     </section>
+    </div>
 
       </div>
     </div>

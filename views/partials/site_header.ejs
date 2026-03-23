@@ -3,15 +3,19 @@
 <% var ten = typeof tenant !== 'undefined' ? tenant : null; %>
 <div class="wf-header-wrap wf-header-wrap--minimal">
   <div class="container">
-    <div class="nav wf-nav wf-nav--minimal">
+    <div class="nav wf-nav wf-nav--minimal wf-nav--public">
       <div class="brand">
         <div class="brand-primary">
           <%- include('brand_lockup_getpro', { tenant: ten, brandLockupVariant: 'nav', brandLockupHref: tpHome }) %>
           <span class="brand-tagline">Trusted professionals · verified directory</span>
         </div>
       </div>
+      <nav class="wf-nav-public" aria-label="Main navigation">
+        <a class="wf-nav-public__link" href="<%= tp %>/directory">Search</a>
+        <a class="wf-nav-public__link" href="<%= tp %>/directory">Categories</a>
+      </nav>
       <div class="nav-links wf-nav-actions wf-nav-actions--minimal">
-        <a href="<%= tp %>/join">List your business</a>
+        <a class="wf-nav-public__cta" href="<%= tp %>/join">List your business</a>
       </div>
     </div>
   </div>
