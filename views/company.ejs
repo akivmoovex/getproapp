@@ -228,18 +228,18 @@
             <% var _gpD = _gpPhone.replace(/\D/g, ''); %>
             <% var _bizD = _bizPhone.replace(/\D/g, ''); %>
             <% var _showBizPhone = _bizPhone && _bizD !== _gpD; %>
+            <% if (company.featured_cta_phone) { %>
+              <a class="btn btn-primary pro-company-profile__cta" href="tel:<%= company.featured_cta_phone %>"><%= company.featured_cta_label || 'Call us' %></a>
+            <% } %>
             <ul class="pro-company-profile__contact-list">
-              <% if (_gpPhone && _gpTel) { %>
-                <li><span class="muted">Customer number</span><br /><a href="<%= _gpTel %>"><%= _gpPhone %></a></li>
+              <% if (_showBizPhone) { %>
+                <li><span class="muted">Business phone</span><br /><a href="tel:<%= _bizPhone.replace(/[^\d+]/g, '') %>"><%= _bizPhone %></a></li>
               <% } %>
               <% if (_gpWa) { %>
                 <li>
                   <span class="muted">WhatsApp</span><br />
                   <a href="<%= _gpWa %>" rel="noopener noreferrer" target="_blank"><%= _gpWaLabel || 'Open WhatsApp chat' %></a>
                 </li>
-              <% } %>
-              <% if (_showBizPhone) { %>
-                <li><span class="muted">Business phone</span><br /><a href="tel:<%= _bizPhone.replace(/[^\d+]/g, '') %>"><%= _bizPhone %></a></li>
               <% } %>
               <% if (company.email) { %>
                 <% var _mail = String(company.email || '').trim(); %>
@@ -248,11 +248,10 @@
               <% if (company.location) { %>
                 <li><span class="muted">Location</span><br /><%= company.location %></li>
               <% } %>
+              <% if (_gpPhone && _gpTel) { %>
+                <li><span class="muted">Directory help</span><br /><a href="<%= _gpTel %>"><%= _gpPhone %></a></li>
+              <% } %>
             </ul>
-
-            <% if (company.featured_cta_phone) { %>
-              <a class="btn btn-primary pro-company-profile__cta" href="tel:<%= company.featured_cta_phone %>"><%= company.featured_cta_label || 'Call us' %></a>
-            <% } %>
 
             <% if (typeof companyUrl !== 'undefined' && companyUrl && companyUrl !== '#') { %>
               <p class="muted pro-company-profile__mini-hint">Mini-site URL</p>
