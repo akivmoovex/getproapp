@@ -1,18 +1,128 @@
 <% var _tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var _mode = typeof emptyStateMode !== 'undefined' ? emptyStateMode : 'directory'; %>
+<% 
+  var q = String(typeof searchQuery !== 'undefined' && searchQuery ? searchQuery : '').trim();
+  var city = String(typeof cityQuery !== 'undefined' && cityQuery ? cityQuery : '').trim();
+  var catLabel = String(typeof activeCatLabel !== 'undefined' && activeCatLabel ? activeCatLabel : '').trim();
+  var _catName = String(typeof categoryName !== 'undefined' && categoryName ? categoryName : '').trim();
+  if (_mode === 'category' && !_catName && typeof category !== 'undefined' && category && category.name) {
+    _catName = String(category.name).trim();
+  }
+  var _tenant = typeof tenant !== 'undefined' ? tenant : null;
+  var _tid = _tenant && _tenant.id ? Number(_tenant.id) : 0;
+  var _tslug = _tenant && _tenant.slug ? String(_tenant.slug) : '';
+%>
+<% 
+  var ctxParts = ['dir_nores'];
+  if (_mode === 'category' && _catName) ctxParts.push('cat:' + _catName.replace(/\|/g, ' '));
+  if (q) ctxParts.push('q:' + q.replace(/\|/g, ' '));
+  if (city) ctxParts.push('city:' + city.replace(/\|/g, ' '));
+  if (catLabel) ctxParts.push('lbl:' + catLabel.replace(/\|/g, ' '));
+  var contextPayload = ctxParts.join('|').slice(0, 120);
+  var interestPayload = '';
+  if (_mode === 'category' && _catName) {
+    interestPayload = ('Category — ' + _catName + ' — no listings').slice(0, 120);
+  } else {
+    var bits = [];
+    if (q) bits.push(q);
+    if (city) bits.push(city);
+    if (catLabel) bits.push(catLabel);
+    var tail = bits.join(' · ');
+    interestPayload = (tail ? ('Directory — no match: ' + tail) : 'Directory — no match').slice(0, 120);
+  }
+%>
 <div class="card pro-directory-empty pro-directory-empty--rich" role="status">
   <div class="pro-directory-empty__inner">
-    <h2 class="pro-directory-empty__title">No results found</h2>
+    <% if (_mode === 'category') { %>
+      <h2 class="pro-directory-empty__title">
+        <% if (_catName) { %>
+          No <%= _catName %> listings yet
+        <% } else { %>
+          No listings in this category yet
+        <% } %>
+      </h2>
+    <% } else if (q && city) { %>
+      <h2 class="pro-directory-empty__title">No matching professionals for &ldquo;<%= q %>&rdquo; in <%= city %></h2>
+    <% } else if (q && !city) { %>
+      <h2 class="pro-directory-empty__title">No results for &ldquo;<%= q %>&rdquo;</h2>
+    <% } else if (!q && city && catLabel) { %>
+      <h2 class="pro-directory-empty__title">No <%= catLabel %> in <%= city %></h2>
+    <% } else if (!q && city && !catLabel) { %>
+      <h2 class="pro-directory-empty__title">No professionals found in <%= city %></h2>
+    <% } else if (!q && !city && catLabel) { %>
+      <h2 class="pro-directory-empty__title">No <%= catLabel %> listings yet</h2>
+    <% } else { %>
+      <h2 class="pro-directory-empty__title">No matching professionals</h2>
+    <% } %>
+
     <p class="pro-directory-empty__hint muted">
-      <% if (_mode === 'category') { %>
-        Try another category or go back to the full directory.
-      <% } else { %>
-        Try adjusting your search or filters.
-      <% } %>
+      Leave your details and we&rsquo;ll help connect you with a suitable professional.
     </p>
+
+    <% if (_mode === 'directory' && (q || city || catLabel)) { %>
+      <div class="pro-directory-empty__summary muted" aria-label="Current search">
+        <% if (q) { %><span class="pro-directory-empty__summary-item"><span class="pro-directory-empty__summary-k">Profession</span> <span class="pro-directory-empty__summary-v"><%= q %></span></span><% } %>
+        <% if (city) { %><span class="pro-directory-empty__summary-item"><span class="pro-directory-empty__summary-k">City</span> <span class="pro-directory-empty__summary-v"><%= city %></span></span><% } %>
+        <% if (catLabel) { %><span class="pro-directory-empty__summary-item"><span class="pro-directory-empty__summary-k">Category</span> <span class="pro-directory-empty__summary-v"><%= catLabel %></span></span><% } %>
+      </div>
+    <% } else if (_mode === 'category' && _catName) { %>
+      <div class="pro-directory-empty__summary muted" aria-label="Category">
+        <span class="pro-directory-empty__summary-item"><span class="pro-directory-empty__summary-k">Category</span> <span class="pro-directory-empty__summary-v"><%= _catName %></span></span>
+      </div>
+    <% } %>
+
+    <% if (_tid > 0 && _tslug) { %>
+    <form
+      id="directory-empty-callback-form"
+      class="pro-directory-empty__callback"
+      data-tenant-id="<%= _tid %>"
+      data-tenant-slug="<%= _tslug %>"
+      novalidate
+    >
+      <input type="hidden" name="context" value="<%= contextPayload %>" />
+      <input type="hidden" name="interest_label" value="<%= interestPayload %>" />
+      <div class="pro-directory-empty__callback-panel" id="directory-empty-callback-panel">
+        <div class="join-modal-fields pro-directory-empty__fields">
+          <label class="join-modal-label" for="directory-empty-callback-name">Your name</label>
+          <input
+            class="join-plain-input join-modal-input"
+            id="directory-empty-callback-name"
+            name="name"
+            type="text"
+            autocomplete="name"
+            maxlength="120"
+            required
+          />
+          <label class="join-modal-label" for="directory-empty-callback-phone">Phone number</label>
+          <input
+            class="join-plain-input join-modal-input"
+            id="directory-empty-callback-phone"
+            name="phone"
+            type="tel"
+            autocomplete="tel"
+            maxlength="40"
+            required
+          />
+        </div>
+        <p class="join-modal-error" id="directory-empty-callback-error" hidden role="alert"></p>
+        <div class="join-modal-actions pro-directory-empty__callback-actions">
+          <button type="submit" class="btn btn-primary" id="directory-empty-callback-submit">Request a call</button>
+        </div>
+      </div>
+      <div class="pro-directory-empty__callback-success" id="directory-empty-callback-success" hidden role="status">
+        <p class="pro-directory-empty__callback-success-text">Thanks &mdash; we&rsquo;ll be in touch shortly.</p>
+      </div>
+    </form>
+    <% } %>
+
     <div class="pro-directory-empty__actions">
-      <a href="<%= _tp %>/directory" class="btn btn--text">Reset filters</a>
-      <a href="<%= _tp %>/directory#directory-categories" class="btn btn-primary">Browse categories</a>
+      <% if (_mode === 'directory') { %>
+        <a href="<%= _tp %>/directory" class="btn btn--text">Clear all filters</a>
+        <a href="#directory-toolbar" class="btn btn-secondary-wf">Adjust search</a>
+      <% } else { %>
+        <a href="<%= _tp %>/directory" class="btn btn--text">All categories</a>
+        <a href="<%= _tp %>/directory" class="btn btn-secondary-wf">Open directory</a>
+      <% } %>
     </div>
   </div>
 </div>

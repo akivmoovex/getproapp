@@ -14,7 +14,7 @@
       <% if (typeof selectedCategory !== 'undefined' && selectedCategory) { %>
         <% (categories || []).forEach(function(c) { if (c.slug === selectedCategory) activeCatLabel = c.name; }); %>
       <% } %>
-      <form class="pro-directory-toolbar pro-search--directory" action="<%= tenantUrlPrefix %>/directory" method="get" role="search">
+      <form id="directory-toolbar" class="pro-directory-toolbar pro-search--directory" action="<%= tenantUrlPrefix %>/directory" method="get" role="search">
         <div class="pro-directory-toolbar__fields">
           <div class="pro-ac pro-directory-toolbar__ac" data-ac-list="service" data-watermark-text="Search: Electrician">
             <label class="visually-hidden" for="dir-search-q">Service or profession</label>
@@ -92,8 +92,16 @@
       </form>
 
       <div class="pro-directory-main">
-        <% if (companies.length === 0) { %>
-          <%- include('partials/directory_empty_state', { tenantUrlPrefix, emptyStateMode: 'directory' }) %>
+        <% if ((companies || []).length === 0) { %>
+          <%- include('partials/directory_empty_state', {
+            tenantUrlPrefix,
+            tenant,
+            emptyStateMode: 'directory',
+            searchQuery: typeof searchQuery !== 'undefined' ? searchQuery : '',
+            cityQuery: typeof cityQuery !== 'undefined' ? cityQuery : '',
+            selectedCategory: typeof selectedCategory !== 'undefined' ? selectedCategory : '',
+            activeCatLabel: activeCatLabel,
+          }) %>
         <% } else { %>
           <%- include('partials/directory_company_cards', { companies, baseDomain, companyMiniSiteHref }) %>
         <% } %>
@@ -103,5 +111,8 @@
     <%- include('partials/site_footer', { tenantUrlPrefix }) %>
     <script src="/scripts.js?v=<%= stylesVersion %>"></script>
     <script src="/autocomplete.js?v=<%= stylesVersion %>"></script>
+    <% if ((companies || []).length === 0) { %>
+    <script src="/directory-empty-callback.js?v=<%= stylesVersion %>"></script>
+    <% } %>
   </body>
 </html>

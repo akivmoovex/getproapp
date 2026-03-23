@@ -5115,6 +5115,74 @@ form.pro-search.pro-search--directory {
   align-items: center;
   justify-content: center;
   gap: var(--space-1-25);
+  margin-top: var(--space-2-5);
+  padding-top: var(--space-2);
+  border-top: 1px solid color-mix(in srgb, var(--border-strong) 55%, transparent);
+}
+
+.pro-directory-empty__summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1-5) var(--space-2-5);
+  margin: 0 0 var(--space-2-5);
+  font-size: var(--typo-body-small-size, var(--space-1-625));
+  line-height: 1.45;
+}
+
+.pro-directory-empty__summary-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-0-75);
+  text-align: left;
+}
+
+.pro-directory-empty__summary-k {
+  font-weight: 600;
+  color: var(--text);
+  opacity: 0.72;
+}
+
+.pro-directory-empty__summary-v {
+  color: var(--text);
+}
+
+.pro-directory-empty__callback {
+  width: 100%;
+  max-width: min(100%, var(--layout-dim-400));
+  margin: 0 auto var(--space-1);
+  text-align: left;
+}
+
+.pro-directory-empty__callback .join-modal-fields {
+  margin-bottom: var(--space-1);
+}
+
+.pro-directory-empty__callback .join-modal-error {
+  text-align: left;
+}
+
+.pro-directory-empty__callback-actions {
+  justify-content: stretch;
+  width: 100%;
+}
+
+.pro-directory-empty__callback-actions .btn-primary {
+  flex: 1 1 auto;
+  min-width: min(100%, var(--space-touch) * 5);
+}
+
+.pro-directory-empty__callback-success {
+  padding: var(--space-2) 0 var(--space-1);
+  text-align: center;
+}
+
+.pro-directory-empty__callback-success-text {
+  margin: 0;
+  font-size: var(--typo-body-large-size, var(--space-2));
+  font-weight: 600;
+  color: var(--text);
+  line-height: var(--typo-body-large-line, 1.45);
 }
 
 @media (max-width: 520px) {
