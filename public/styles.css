@@ -347,6 +347,58 @@
   margin: 0 0 var(--space-1-5);
 }
 
+/* ——— Admin: read → edit → done (single form, no duplicate fields) ——— */
+.admin-form-shell__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1-25);
+  margin-bottom: var(--space-2);
+}
+
+.admin-form-shell__toolbar--split {
+  justify-content: space-between;
+}
+
+.admin-form-shell__toolbar--split .admin-form-shell__toolbar-end {
+  margin-left: 0;
+}
+
+.admin-form-shell__toolbar-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1-25);
+  margin-left: auto;
+}
+
+.admin-form-shell.is-read-mode .form input:not([type="hidden"]):not([type="checkbox"]),
+.admin-form-shell.is-read-mode .form textarea,
+.admin-form-shell.is-read-mode .form select {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+  pointer-events: none;
+  outline: none;
+  padding-inline: 0;
+}
+
+.admin-form-shell.is-read-mode .form select:disabled {
+  opacity: 1;
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+  background: transparent;
+  border: none;
+  appearance: none;
+}
+
+.admin-form-shell.is-read-mode .form input[type="checkbox"]:disabled {
+  opacity: 0.88;
+}
+
 .hero-grid--2col {
   grid-template-columns: 1fr 1fr;
 }
@@ -4321,8 +4373,8 @@ textarea {
   }
 }
 
-/* Directory two-column layout → single column on phones */
-@media (max-width: 768px) {
+/* Directory two-column layout → single column (match .hero-grid @ 860px; avoids 769–860px two-column overflow) */
+@media (max-width: 860px) {
   .hero-grid.pro-directory-layout {
     grid-template-columns: 1fr;
     gap: var(--space-2-25);
@@ -4335,11 +4387,25 @@ textarea {
   gap: var(--space-3);
 }
 
+/* Grid items default to min-width:auto; long card content can block shrinking and overflow the viewport */
+.hero-grid.pro-directory-layout > * {
+  min-width: 0;
+}
+
 .pro-directory-results {
   display: flex;
   flex-direction: column;
   gap: var(--space-1-75);
   text-align: left;
+  min-width: 0;
+  max-width: 100%;
+}
+
+form.pro-search.pro-search--directory {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .pro-directory-card {
@@ -4414,8 +4480,9 @@ textarea {
   font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  line-height: 1.25;
+  line-height: var(--typo-title-large-line);
   color: var(--text);
+  overflow-wrap: anywhere;
 }
 
 .pro-directory-card__headline {
