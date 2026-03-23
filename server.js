@@ -66,7 +66,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use((req, res, next) => {
-  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260320-directory-cards-m3";
+  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260320-directory-toolbar-dash";
   res.locals.encodeURIComponent = encodeURIComponent;
   res.locals.eventTimeParts = eventTimeParts;
   next();

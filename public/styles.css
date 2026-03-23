@@ -4541,7 +4541,8 @@ textarea {
   min-width: 0;
 }
 
-.container:has(.hero-grid.pro-directory-layout) {
+.container:has(.hero-grid.pro-directory-layout),
+.container:has(.pro-directory-toolbar) {
   min-width: 0;
   max-width: 100%;
   overflow-x: hidden;
@@ -4599,6 +4600,13 @@ textarea {
 .pro-directory-toolbar__ac {
   flex: 1 1 min(0, 12rem);
   min-width: 0;
+}
+
+.pro-directory-toolbar .pro-ac-input,
+.pro-directory-toolbar .pro-ac-watermark {
+  font-size: var(--space-1-875);
+  min-height: var(--space-touch);
+  box-sizing: border-box;
 }
 
 .pro-directory-toolbar__category {

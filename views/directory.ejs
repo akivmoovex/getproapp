@@ -14,7 +14,7 @@
       <% if (typeof selectedCategory !== 'undefined' && selectedCategory) { %>
         <% (categories || []).forEach(function(c) { if (c.slug === selectedCategory) activeCatLabel = c.name; }); %>
       <% } %>
-      <form class="pro-directory-toolbar" action="<%= tenantUrlPrefix %>/directory" method="get" role="search">
+      <form class="pro-directory-toolbar pro-search--directory" action="<%= tenantUrlPrefix %>/directory" method="get" role="search">
         <div class="pro-directory-toolbar__fields">
           <div class="pro-ac pro-directory-toolbar__ac" data-ac-list="service" data-watermark-text="Search: Electrician">
             <label class="visually-hidden" for="dir-search-q">Service or profession</label>
