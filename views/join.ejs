@@ -3,11 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Become a GetPro Partner | GetPro</title>
-    <meta
-      name="description"
-      content="Become a GetPro Partner — list your professional services, reach clients across Zambia, and grow your business with a clear profile and partner support."
-    />
+    <%- include('partials/seo_meta', {
+      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : 'Become a GetPro Partner | GetPro',
+      seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : 'Become a GetPro Partner — list your professional services and grow your business with a clear profile.',
+      canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
+      ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
+      ogType: 'website'
+    }) %>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="join-page <%= tenant.themeClass %>">

@@ -3,11 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>GetPro · Trusted professional directory | getproapp.org</title>
-    <meta
-      name="description"
-      content="Find trusted professionals near you. Search by service and city, compare profiles, and contact the right business quickly."
-    />
+    <%- include('partials/seo_meta', {
+      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : 'GetPro · Trusted professional directory',
+      seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : 'Find trusted professionals near you. Search by service and city, compare profiles, and contact the right business quickly.',
+      canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
+      ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
+      ogImage: typeof ogImage !== 'undefined' ? ogImage : '',
+      ogType: 'website'
+    }) %>
+    <% if (typeof orgJsonLd !== 'undefined' && orgJsonLd) { %>
+    <script type="application/ld+json"><%- orgJsonLd %></script>
+    <% } %>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="home-page wf-home-layout <%= tenant.themeClass %>">
@@ -362,42 +368,30 @@
     <section class="pro-section" id="services">
       <div class="container">
         <div class="pro-section-head">
-          <h2 class="pro-section-title">Popular jobs &amp; topics</h2>
-          <a class="pro-link-all" href="<%= tenantUrlPrefix %>/directory">View professionals →</a>
+          <h2 class="pro-section-title"><a href="<%= tenantUrlPrefix %>/articles">Popular jobs &amp; topics</a></h2>
+          <a class="pro-link-all" href="<%= tenantUrlPrefix %>/articles">All articles →</a>
         </div>
         <div class="pro-articles">
+          <% if (typeof contentArticles !== 'undefined' && contentArticles && contentArticles.length) { %>
+            <% contentArticles.forEach(function (a) { %>
           <article class="pro-article">
+            <% if (a.hero_image_url) { %>
+            <div class="pro-article-thumb pro-article-thumb--img" aria-hidden="true">
+              <img src="<%= a.hero_image_url %>" alt="" width="120" height="80" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover" />
+            </div>
+            <% } else { %>
             <div class="pro-article-thumb" aria-hidden="true"></div>
+            <% } %>
             <div class="pro-article-body">
-              <h4><a href="<%= tenantUrlPrefix %>/directory">Before you book a renovation</a></h4>
-              <p>What to clarify with a contractor: scope, timeline, and payment milestones.</p>
-              <a class="pro-readmore" href="<%= tenantUrlPrefix %>/directory">Read more →</a>
+              <h4><a href="<%= tenantUrlPrefix %>/articles/<%= encodeURIComponent(a.slug) %>"><%= a.title %></a></h4>
+              <p><%= a.excerpt || '' %></p>
+              <a class="pro-readmore" href="<%= tenantUrlPrefix %>/articles/<%= encodeURIComponent(a.slug) %>">Read more →</a>
             </div>
           </article>
-          <article class="pro-article">
-            <div class="pro-article-thumb" aria-hidden="true"></div>
-            <div class="pro-article-body">
-              <h4><a href="<%= tenantUrlPrefix %>/directory">HVAC checks homeowners skip</a></h4>
-              <p>Simple maintenance questions to ask before peak season demand.</p>
-              <a class="pro-readmore" href="<%= tenantUrlPrefix %>/directory">Read more →</a>
-            </div>
-          </article>
-          <article class="pro-article">
-            <div class="pro-article-thumb" aria-hidden="true"></div>
-            <div class="pro-article-body">
-              <h4><a href="<%= tenantUrlPrefix %>/directory">Electrical safety at home</a></h4>
-              <p>When to call a licensed professional instead of DIY troubleshooting.</p>
-              <a class="pro-readmore" href="<%= tenantUrlPrefix %>/directory">Read more →</a>
-            </div>
-          </article>
-          <article class="pro-article">
-            <div class="pro-article-thumb" aria-hidden="true"></div>
-            <div class="pro-article-body">
-              <h4><a href="<%= tenantUrlPrefix %>/directory">Plumbing emergencies</a></h4>
-              <p>Shutoffs, damage control, and how to describe the issue when you call.</p>
-              <a class="pro-readmore" href="<%= tenantUrlPrefix %>/directory">Read more →</a>
-            </div>
-          </article>
+            <% }); %>
+          <% } else { %>
+            <p class="muted pro-cat-grid__full-span">Editorial articles will appear here when published in admin.</p>
+          <% } %>
         </div>
       </div>
     </section>
@@ -405,42 +399,30 @@
     <section class="pro-section" id="guide">
       <div class="container">
         <div class="pro-section-head">
-          <h2 class="pro-section-title">Pro guide</h2>
-          <a class="pro-link-all" href="<%= tenantUrlPrefix %>/directory">All topics →</a>
+          <h2 class="pro-section-title"><a href="<%= tenantUrlPrefix %>/guides">Pro guide</a></h2>
+          <a class="pro-link-all" href="<%= tenantUrlPrefix %>/guides">All guides →</a>
         </div>
         <div class="pro-articles">
+          <% if (typeof contentGuides !== 'undefined' && contentGuides && contentGuides.length) { %>
+            <% contentGuides.forEach(function (g) { %>
           <article class="pro-article">
+            <% if (g.hero_image_url) { %>
+            <div class="pro-article-thumb pro-article-thumb--img" aria-hidden="true">
+              <img src="<%= g.hero_image_url %>" alt="" width="120" height="80" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover" />
+            </div>
+            <% } else { %>
             <div class="pro-article-thumb" aria-hidden="true"></div>
+            <% } %>
             <div class="pro-article-body">
-              <h4><a href="<%= tenantUrlPrefix %>/directory">Choosing the right category</a></h4>
-              <p>How we group trades so customers land on the right specialists.</p>
-              <a class="pro-readmore" href="<%= tenantUrlPrefix %>/directory">Read more →</a>
+              <h4><a href="<%= tenantUrlPrefix %>/guides/<%= encodeURIComponent(g.slug) %>"><%= g.title %></a></h4>
+              <p><%= g.excerpt || '' %></p>
+              <a class="pro-readmore" href="<%= tenantUrlPrefix %>/guides/<%= encodeURIComponent(g.slug) %>">Read more →</a>
             </div>
           </article>
-          <article class="pro-article">
-            <div class="pro-article-thumb" aria-hidden="true"></div>
-            <div class="pro-article-body">
-              <h4><a href="<%= tenantUrlPrefix %>/directory">What belongs on your one-page site</a></h4>
-              <p>Headline, proof points, and a single strong call to action.</p>
-              <a class="pro-readmore" href="<%= tenantUrlPrefix %>/directory">Read more →</a>
-            </div>
-          </article>
-          <article class="pro-article">
-            <div class="pro-article-thumb" aria-hidden="true"></div>
-            <div class="pro-article-body">
-              <h4><a href="<%= tenantUrlPrefix %>/directory">Responding to leads quickly</a></h4>
-              <p>Templates and timing that improve conversion from directory inquiries.</p>
-              <a class="pro-readmore" href="<%= tenantUrlPrefix %>/directory">Read more →</a>
-            </div>
-          </article>
-          <article class="pro-article">
-            <div class="pro-article-thumb" aria-hidden="true"></div>
-            <div class="pro-article-body">
-              <h4><a href="<%= tenantUrlPrefix %>/directory">Photo and brand basics</a></h4>
-              <p>Keep your profile credible with consistent naming and contact details.</p>
-              <a class="pro-readmore" href="<%= tenantUrlPrefix %>/directory">Read more →</a>
-            </div>
-          </article>
+            <% }); %>
+          <% } else { %>
+            <p class="muted pro-cat-grid__full-span">Pro guides will appear here when published in admin.</p>
+          <% } %>
         </div>
       </div>
     </section>
@@ -448,25 +430,21 @@
     <section class="pro-section" id="qa">
       <div class="container">
         <div class="pro-section-head">
-          <h2 class="pro-section-title">Questions &amp; answers</h2>
-          <a class="pro-link-all" href="<%= tenantUrlPrefix %>/directory">More →</a>
+          <h2 class="pro-section-title"><a href="<%= tenantUrlPrefix %>/answers">Questions &amp; answers</a></h2>
+          <a class="pro-link-all" href="<%= tenantUrlPrefix %>/answers">All answers →</a>
         </div>
         <div class="pro-qa-list">
+          <% if (typeof contentFaqs !== 'undefined' && contentFaqs && contentFaqs.length) { %>
+            <% contentFaqs.forEach(function (f) { %>
           <div class="pro-qa-item">
-            <p class="pro-qa-q"><a href="<%= tenantUrlPrefix %>/directory">How do I contact a business?</a></p>
-            <p class="pro-qa-a">Open the listing and use the phone, email, or lead form shown on their page.</p>
+            <p class="pro-qa-q"><a href="<%= tenantUrlPrefix %>/answers/<%= encodeURIComponent(f.slug) %>"><%= f.title %></a></p>
+            <p class="pro-qa-a"><%= (f.excerpt && f.excerpt.trim()) ? f.excerpt : (f.body_preview ? String(f.body_preview).replace(/\s+/g, ' ').trim() : '') %></p>
             <div class="pro-qa-meta">Updated · <%= new Date().getFullYear() %></div>
           </div>
-          <div class="pro-qa-item">
-            <p class="pro-qa-q"><a href="<%= tenantUrlPrefix %>/join">How can my company appear here?</a></p>
-            <p class="pro-qa-a">Professionals sign in to the partner area to create a category and subdomain profile.</p>
-            <div class="pro-qa-meta">For businesses</div>
-          </div>
-          <div class="pro-qa-item">
-            <p class="pro-qa-q"><a href="<%= tenantUrlPrefix %>/directory">Is search available?</a></p>
-            <p class="pro-qa-a">Yes — use the search bar above or browse categories to narrow results.</p>
-            <div class="pro-qa-meta">Directory</div>
-          </div>
+            <% }); %>
+          <% } else { %>
+            <p class="muted">Q&amp;A items will appear here when published in admin.</p>
+          <% } %>
         </div>
       </div>
     </section>

@@ -19,6 +19,21 @@
 
         <div class="admin-settings-hub__grid">
           <% if (typeof canEditDirectory !== 'undefined' && canEditDirectory) { %>
+          <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/content?kind=article&embed=1">
+            <span class="admin-settings-hub__card-icon" aria-hidden="true">📰</span>
+            <span class="admin-settings-hub__card-title">Articles</span>
+            <span class="admin-settings-hub__card-desc muted">Popular topics and editorial pages</span>
+          </button>
+          <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/content?kind=guide&embed=1">
+            <span class="admin-settings-hub__card-icon" aria-hidden="true">📘</span>
+            <span class="admin-settings-hub__card-title">Pro guides</span>
+            <span class="admin-settings-hub__card-desc muted">Guides for professionals</span>
+          </button>
+          <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/content?kind=faq&embed=1">
+            <span class="admin-settings-hub__card-icon" aria-hidden="true">❓</span>
+            <span class="admin-settings-hub__card-title">Q&amp;A</span>
+            <span class="admin-settings-hub__card-desc muted">Questions and answers</span>
+          </button>
           <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/categories?embed=1">
             <span class="admin-settings-hub__card-icon" aria-hidden="true">📋</span>
             <span class="admin-settings-hub__card-title">Categories</span>

@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Directory | GetPro</title>
+    <%- include('partials/seo_meta', {
+      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : 'Directory | GetPro',
+      seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : 'Browse verified professionals on GetPro.',
+      canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
+      ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
+      ogType: 'website'
+    }) %>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="<%= tenant.themeClass %>">
@@ -116,7 +122,7 @@
     <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
     <script src="/autocomplete.js?v=<%= stylesVersion %>" defer></script>
     <% if ((companies || []).length === 0) { %>
-    <script src="/directory-empty-callback.js?v=<%= stylesVersion %>"></script>
+    <script src="/directory-empty-callback.js?v=<%= stylesVersion %>" defer></script>
     <% } %>
   </body>
 </html>

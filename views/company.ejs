@@ -3,11 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title><%= company.name %> | <%= category ? category.name + ' · ' : '' %>GetPro</title>
-    <meta
-      name="description"
-      content="<%= (company.headline || company.name || '').replace(/"/g, '') %> · Verified directory listing on GetPro."
-    />
+    <%- include('partials/seo_meta', {
+      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : (company.name + ' | GetPro'),
+      seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : ((company.headline || company.name || '').replace(/"/g, '') + ' · Verified directory listing on GetPro.'),
+      canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
+      ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
+      ogType: 'website'
+    }) %>
+    <% if (typeof jsonLdCompany !== 'undefined' && jsonLdCompany) { %>
+    <script type="application/ld+json"><%- jsonLdCompany %></script>
+    <% } %>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="<%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">

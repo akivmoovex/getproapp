@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= kindLabel %> | Content | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app admin-settings-hub-page<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: kindLabel, activeNav: 'settings' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <div class="admin-super-users__topbar">
+          <% if (!editMode) { %>
+          <a class="btn btn-primary" href="/admin/content?kind=<%= kind %>&edit=1<%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Edit</a>
+          <% } else { %>
+          <a class="btn" href="/admin/content?kind=<%= kind %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Done</a>
+          <% } %>
+        </div>
+
+        <h1 class="section-title section-title--flush"><%= kindLabel %></h1>
+        <% if (!(typeof embed !== 'undefined' && embed)) { %>
+        <p class="admin-intro admin-intro--tight-top muted">Editorial pages for this region. Opens from Settings → Content.</p>
+        <% } %>
+
+        <% if (editMode) { %>
+        <div class="admin-toolbar">
+          <a class="btn btn-primary" href="/admin/content/new?kind=<%= kind %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">New entry</a>
+        </div>
+        <% } else { %>
+        <p class="admin-intro">View-only. Choose <strong>Edit</strong> to add or change items.</p>
+        <% } %>
+
+        <div class="admin-settings-hub__grid" style="margin-top: 1rem">
+          <% (items || []).forEach(function (it) { %>
+          <% if (typeof embed !== 'undefined' && embed) { %>
+          <button
+            type="button"
+            class="admin-settings-hub__card"
+            data-settings-embed-url="/admin/content/<%= it.id %>?embed=1"
+          >
+            <span class="admin-settings-hub__card-icon" aria-hidden="true"><%= it.published ? '✓' : '◌' %></span>
+            <span class="admin-settings-hub__card-title"><%= it.title %></span>
+            <span class="admin-settings-hub__card-desc muted"><%= it.slug %><% if (!it.published) { %> · draft<% } %></span>
+          </button>
+          <% } else { %>
+          <a class="admin-settings-hub__card" href="/admin/content/<%= it.id %>" style="text-decoration: none; color: inherit">
+            <span class="admin-settings-hub__card-icon" aria-hidden="true"><%= it.published ? '✓' : '◌' %></span>
+            <span class="admin-settings-hub__card-title"><%= it.title %></span>
+            <span class="admin-settings-hub__card-desc muted"><%= it.slug %><% if (!it.published) { %> · draft<% } %></span>
+          </a>
+          <% } %>
+          <% }); %>
+          <% if (!items || items.length === 0) { %>
+          <p class="muted">No items yet.<% if (editMode) { %> Use <strong>New entry</strong>.<% } %></p>
+          <% } %>
+        </div>
+      </div>
+    </main>
+
+    <div id="admin_settings_modal" class="m3-modal-overlay admin-settings-modal" aria-hidden="true" hidden>
+      <div class="m3-modal-overlay__backdrop" data-settings-modal-close tabindex="-1"></div>
+      <div class="m3-modal m3-modal--settings-iframe" role="dialog" aria-modal="true" aria-labelledby="admin_settings_modal_title">
+        <header class="m3-modal__header">
+          <h2 id="admin_settings_modal_title" class="m3-modal__title">Content</h2>
+          <button type="button" class="m3-modal__close" data-settings-modal-close aria-label="Close dialog">×</button>
+        </header>
+        <div class="m3-modal__body m3-modal__body--iframe">
+          <iframe id="admin_settings_iframe" title="Content detail"></iframe>
+        </div>
+        <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
+      </div>
+    </div>
+
+    <script src="/admin-settings-hub.js?v=<%= stylesVersion %>"></script>
+  </body>
+</html>

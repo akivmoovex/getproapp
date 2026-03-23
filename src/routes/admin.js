@@ -39,7 +39,8 @@ const {
 } = require("../companyProfile");
 const { isValidPhoneForTenant } = require("../tenants");
 const { LEAD_STATUSES, normalizeLeadStatus, leadStatusLabel } = require("../leadStatuses");
-const { buildCompanyPageLocals, enrichCompanyWithCategory } = require("../companyPageRender");
+const { buildCompanyPageLocals, enrichCompanyWithCategory, platformTenantPrefixForSlug } = require("../companyPageRender");
+const { listAllByKind, getById } = require("../contentPages");
 const { CRM_TASK_STATUSES, normalizeCrmTaskStatus, crmTaskStatusLabel } = require("../crmTaskStatuses");
 const { insertCrmAudit } = require("../crmAudit");
 const { resolveSessionAfterLogin, upsertMembership, adminUserIsInTenant } = require("../adminUserTenants");
@@ -1078,6 +1079,192 @@ module.exports = function adminRoutes({ db }) {
       canManageUsers: canManageTenantUsers(u.role),
       canAccessTenantSettings: canAccessTenantSettings(u.role),
     });
+  });
+
+  function contentKindLabel(kind) {
+    if (kind === "guide") return "Pro guides";
+    if (kind === "faq") return "Questions & answers";
+    return "Articles";
+  }
+
+  function tenantPublicPrefixForAdmin(req) {
+    const tid = getAdminTenantId(req);
+    const t = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    if (!t || !t.slug) return "";
+    return platformTenantPrefixForSlug(t.slug);
+  }
+
+  function contentPreviewPath(kind, slug) {
+    const seg = kind === "article" ? "articles" : kind === "guide" ? "guides" : "answers";
+    return `/${seg}/${encodeURIComponent(slug)}?preview=1`;
+  }
+
+  router.get("/content/new", requireDirectoryEditor, (req, res) => {
+    const kind = String(req.query.kind || "article").toLowerCase();
+    if (!["article", "guide", "faq"].includes(kind)) return res.status(400).send("Invalid kind.");
+    return res.render("admin/content_form", {
+      activeNav: "settings",
+      kind,
+      kindLabel: contentKindLabel(kind),
+      row: null,
+      editMode: true,
+      embed: isEmbedRequest(req),
+      publicPreviewUrl: "",
+    });
+  });
+
+  router.get("/content", requireDirectoryEditor, (req, res) => {
+    const kind = String(req.query.kind || "article").toLowerCase();
+    if (!["article", "guide", "faq"].includes(kind)) return res.status(400).send("Invalid kind.");
+    const tid = getAdminTenantId(req);
+    const items = listAllByKind(db, tid, kind);
+    return res.render("admin/content_list", {
+      activeNav: "settings",
+      kind,
+      kindLabel: contentKindLabel(kind),
+      items,
+      editMode: parseEditMode(req),
+      embed: isEmbedRequest(req),
+    });
+  });
+
+  router.get("/content/:id", requireDirectoryEditor, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id.");
+    const tid = getAdminTenantId(req);
+    const row = getById(db, tid, id);
+    if (!row) return res.status(404).send("Content not found.");
+    const prefix = tenantPublicPrefixForAdmin(req);
+    const previewPath = contentPreviewPath(row.kind, row.slug);
+    const publicPreviewUrl = prefix ? `${String(prefix).replace(/\/$/, "")}${previewPath}` : previewPath;
+    return res.render("admin/content_form", {
+      activeNav: "settings",
+      kind: row.kind,
+      kindLabel: contentKindLabel(row.kind),
+      row,
+      editMode: parseEditMode(req),
+      embed: isEmbedRequest(req),
+      publicPreviewUrl,
+    });
+  });
+
+  router.post("/content", requireDirectoryEditor, requireNotViewer, (req, res) => {
+    const kind = String(req.body.kind || "").toLowerCase();
+    if (!["article", "guide", "faq"].includes(kind)) return res.status(400).send("Invalid kind.");
+    const title = String(req.body.title || "").trim();
+    if (!title) return res.status(400).send("Title is required.");
+    let slug = String(req.body.slug || "").trim().toLowerCase();
+    if (!slug) slug = slugify(title, { lower: true, strict: true });
+    const excerpt = String(req.body.excerpt || "").trim();
+    const body = String(req.body.body || "").trim();
+    const hero_image_url = String(req.body.hero_image_url || "").trim();
+    const hero_image_alt = String(req.body.hero_image_alt || "").trim();
+    const seo_title = String(req.body.seo_title || "").trim();
+    const seo_description = String(req.body.seo_description || "").trim();
+    const sort_order = Number(req.body.sort_order || 0) || 0;
+    const published = req.body.published === "1" || req.body.published === "on" ? 1 : 0;
+    const tid = getAdminTenantId(req);
+    try {
+      const info = db
+        .prepare(
+          `
+        INSERT INTO content_pages (
+          tenant_id, kind, slug, title, excerpt, body, hero_image_url, hero_image_alt,
+          seo_title, seo_description, published, sort_order, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        `
+        )
+        .run(
+          tid,
+          kind,
+          slug,
+          title,
+          excerpt,
+          body,
+          hero_image_url,
+          hero_image_alt,
+          seo_title || title,
+          seo_description || excerpt,
+          published,
+          sort_order
+        );
+      const newId = Number(info.lastInsertRowid);
+      return res.redirect(redirectWithEmbed(req, `/admin/content/${newId}?edit=1`));
+    } catch (e) {
+      return res.status(400).send(e.message || "Could not create content.");
+    }
+  });
+
+  router.post("/content/:id", requireDirectoryEditor, requireNotViewer, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id.");
+    const tid = getAdminTenantId(req);
+    const existing = getById(db, tid, id);
+    if (!existing) return res.status(404).send("Not found.");
+    const title = String(req.body.title || "").trim();
+    if (!title) return res.status(400).send("Title is required.");
+    let slug = String(req.body.slug || "").trim().toLowerCase();
+    if (!slug) slug = slugify(title, { lower: true, strict: true });
+    const excerpt = String(req.body.excerpt || "").trim();
+    const body = String(req.body.body || "").trim();
+    const hero_image_url = String(req.body.hero_image_url || "").trim();
+    const hero_image_alt = String(req.body.hero_image_alt || "").trim();
+    const seo_title = String(req.body.seo_title || "").trim();
+    const seo_description = String(req.body.seo_description || "").trim();
+    const sort_order = Number(req.body.sort_order || 0) || 0;
+    const published = req.body.published === "1" || req.body.published === "on" ? 1 : 0;
+    try {
+      db.prepare(
+        `
+        UPDATE content_pages SET
+          slug = ?, title = ?, excerpt = ?, body = ?, hero_image_url = ?, hero_image_alt = ?,
+          seo_title = ?, seo_description = ?, published = ?, sort_order = ?, updated_at = datetime('now')
+        WHERE id = ? AND tenant_id = ?
+        `
+      ).run(
+        slug,
+        title,
+        excerpt,
+        body,
+        hero_image_url,
+        hero_image_alt,
+        seo_title || title,
+        seo_description || excerpt,
+        published,
+        sort_order,
+        id,
+        tid
+      );
+      return res.redirect(redirectWithEmbed(req, `/admin/content/${id}?edit=1`));
+    } catch (e) {
+      return res.status(400).send(e.message || "Could not update content.");
+    }
+  });
+
+  router.post("/content/:id/publish", requireDirectoryEditor, requireNotViewer, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id.");
+    const tid = getAdminTenantId(req);
+    const row = getById(db, tid, id);
+    if (!row) return res.status(404).send("Not found.");
+    const published = row.published ? 0 : 1;
+    db.prepare("UPDATE content_pages SET published = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?").run(
+      published,
+      id,
+      tid
+    );
+    return res.redirect(redirectWithEmbed(req, `/admin/content/${id}?edit=1`));
+  });
+
+  router.post("/content/:id/delete", requireDirectoryEditor, requireNotViewer, (req, res) => {
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id.");
+    const tid = getAdminTenantId(req);
+    const r = db.prepare("DELETE FROM content_pages WHERE id = ? AND tenant_id = ?").run(id, tid);
+    if (r.changes === 0) return res.status(404).send("Not found.");
+    const kind = String(req.body.kind || "article").toLowerCase();
+    const k = ["article", "guide", "faq"].includes(kind) ? kind : "article";
+    return res.redirect(redirectWithEmbed(req, `/admin/content?kind=${encodeURIComponent(k)}&edit=1`));
   });
 
   router.get("/settings/tenants", (req, res) => {

@@ -1,0 +1,172 @@
+{
+  "items": [
+    {
+      "kind": "article",
+      "slug": "before-you-book-a-renovation",
+      "title": "Before You Book a Renovation",
+      "excerpt": "A clear checklist for comparing quotes, setting expectations, and starting your project with fewer surprises.",
+      "seo_title": "Before You Book a Renovation | GetPro",
+      "seo_description": "A practical checklist for planning a renovation, comparing quotes, and avoiding common mistakes before work begins.",
+      "hero_image_url": "/images/hero/home-hero-960.webp",
+      "hero_image_alt": "Renovation plans and materials prepared before starting a home project",
+      "sort_order": 10,
+      "bodyFile": "before-you-book-a-renovation.txt"
+    },
+    {
+      "kind": "article",
+      "slug": "hvac-checks-homeowners-skip",
+      "title": "HVAC Checks Homeowners Skip",
+      "excerpt": "Small maintenance habits that can improve comfort, reduce breakdowns, and help you know when it is time to call a technician.",
+      "seo_title": "HVAC Checks Homeowners Skip | GetPro",
+      "seo_description": "Simple HVAC checks that help homeowners avoid breakdowns, improve airflow, and know when to call a professional.",
+      "hero_image_url": "/images/hero/home-hero-960.webp",
+      "hero_image_alt": "HVAC technician inspecting a residential cooling system",
+      "sort_order": 20,
+      "bodyFile": "hvac-checks-homeowners-skip.txt"
+    },
+    {
+      "kind": "article",
+      "slug": "electrical-safety-at-home",
+      "title": "Electrical Safety at Home",
+      "excerpt": "A simple guide to warning signs, safe habits, and the moments when a licensed electrician is the right call.",
+      "seo_title": "Electrical Safety at Home | GetPro",
+      "seo_description": "A homeowner-friendly guide to electrical warning signs, safe habits, and when to call a licensed electrician.",
+      "hero_image_url": "/images/hero/home-hero-960.webp",
+      "hero_image_alt": "Licensed electrician inspecting a home breaker panel safely",
+      "sort_order": 30,
+      "bodyFile": "electrical-safety-at-home.txt"
+    },
+    {
+      "kind": "article",
+      "slug": "plumbing-emergencies-what-to-do-first",
+      "title": "Plumbing Emergencies: What to Do First",
+      "excerpt": "A calm first-response guide for leaks, burst pipes, blocked drains, and the information a plumber needs from you.",
+      "seo_title": "Plumbing Emergencies: What to Do First | GetPro",
+      "seo_description": "What to do during a plumbing emergency, from shutting off water to describing the problem clearly when calling for help.",
+      "hero_image_url": "/images/hero/home-hero-960.webp",
+      "hero_image_alt": "Homeowner shutting off a water valve during a plumbing emergency",
+      "sort_order": 40,
+      "bodyFile": "plumbing-emergencies-what-to-do-first.txt"
+    },
+    {
+      "kind": "guide",
+      "slug": "choosing-the-right-category-for-your-business",
+      "title": "Choosing the Right Category for Your Business",
+      "excerpt": "A practical guide to matching your business with the category customers actually search for.",
+      "seo_title": "Choosing the Right Category for Your Business | GetPro",
+      "seo_description": "Learn how to choose the best service category so customers can find your business faster.",
+      "hero_image_url": "/images/hero/home-hero-960.webp",
+      "hero_image_alt": "Business owner selecting the correct service category online",
+      "sort_order": 10,
+      "bodyFile": "choosing-the-right-category-for-your-business.txt"
+    },
+    {
+      "kind": "guide",
+      "slug": "what-belongs-on-your-one-page-site",
+      "title": "What Belongs on Your One-Page Site",
+      "excerpt": "The core sections that help customers trust your business and contact you faster.",
+      "seo_title": "What Belongs on Your One-Page Site | GetPro",
+      "seo_description": "The essential sections every professional profile should include to build trust and improve conversions.",
+      "hero_image_url": "/images/hero/home-hero-960.webp",
+      "hero_image_alt": "Simple business profile website displayed on a laptop and phone",
+      "sort_order": 20,
+      "bodyFile": "what-belongs-on-your-one-page-site.txt"
+    },
+    {
+      "kind": "guide",
+      "slug": "how-to-respond-to-leads-faster",
+      "title": "How to Respond to Leads Faster",
+      "excerpt": "Faster replies often win the job before pricing even becomes the main factor.",
+      "seo_title": "How to Respond to Leads Faster | GetPro",
+      "seo_description": "Improve lead conversion by replying quickly, clearly, and professionally to directory inquiries.",
+      "hero_image_url": "/images/hero/home-hero-960.webp",
+      "hero_image_alt": "Small business owner replying to a customer inquiry on a mobile phone",
+      "sort_order": 30,
+      "bodyFile": "how-to-respond-to-leads-faster.txt"
+    },
+    {
+      "kind": "guide",
+      "slug": "photo-and-brand-basics-for-local-professionals",
+      "title": "Photo and Brand Basics for Local Professionals",
+      "excerpt": "Better photos and consistent branding make your profile feel more credible at a glance.",
+      "seo_title": "Photo and Brand Basics for Local Professionals | GetPro",
+      "seo_description": "Practical tips for profile photos, service images, and consistent branding that build trust.",
+      "hero_image_url": "/images/hero/home-hero-960.webp",
+      "hero_image_alt": "Professional preparing branded service photos for a business profile",
+      "sort_order": 40,
+      "bodyFile": "photo-and-brand-basics-for-local-professionals.txt"
+    },
+    {
+      "kind": "faq",
+      "slug": "how-do-i-contact-a-business",
+      "title": "How do I contact a business?",
+      "excerpt": "",
+      "seo_title": "How do I contact a business? | GetPro",
+      "seo_description": "Use phone, email, or the request form on a business profile to get in touch.",
+      "hero_image_url": "",
+      "hero_image_alt": "",
+      "sort_order": 10,
+      "bodyFile": "faq-how-do-i-contact-a-business.txt"
+    },
+    {
+      "kind": "faq",
+      "slug": "how-can-my-company-appear-here",
+      "title": "How can my company appear here?",
+      "excerpt": "",
+      "seo_title": "How can my company appear here? | GetPro",
+      "seo_description": "List your business on GetPro with onboarding and a public profile.",
+      "hero_image_url": "",
+      "hero_image_alt": "",
+      "sort_order": 20,
+      "bodyFile": "faq-how-can-my-company-appear-here.txt"
+    },
+    {
+      "kind": "faq",
+      "slug": "can-i-update-my-business-details-later",
+      "title": "Can I update my business details later?",
+      "excerpt": "",
+      "seo_title": "Can I update my business details later? | GetPro",
+      "seo_description": "Yes — update your GetPro profile from the admin console after setup.",
+      "hero_image_url": "",
+      "hero_image_alt": "",
+      "sort_order": 30,
+      "bodyFile": "faq-can-i-update-my-business-details-later.txt"
+    },
+    {
+      "kind": "faq",
+      "slug": "how-do-customers-send-lead-requests",
+      "title": "How do customers send lead requests?",
+      "excerpt": "",
+      "seo_title": "How do customers send lead requests? | GetPro",
+      "seo_description": "Customers use your profile contact form; leads appear in your admin area.",
+      "hero_image_url": "",
+      "hero_image_alt": "",
+      "sort_order": 40,
+      "bodyFile": "faq-how-do-customers-send-lead-requests.txt"
+    },
+    {
+      "kind": "faq",
+      "slug": "what-makes-a-good-profile-photo",
+      "title": "What makes a good profile photo?",
+      "excerpt": "",
+      "seo_title": "What makes a good profile photo? | GetPro",
+      "seo_description": "Tips for a clear, professional profile photo that builds trust.",
+      "hero_image_url": "",
+      "hero_image_alt": "",
+      "sort_order": 50,
+      "bodyFile": "faq-what-makes-a-good-profile-photo.txt"
+    },
+    {
+      "kind": "faq",
+      "slug": "can-i-list-more-than-one-service",
+      "title": "Can I list more than one service?",
+      "excerpt": "",
+      "seo_title": "Can I list more than one service? | GetPro",
+      "seo_description": "Lead with your main category and describe additional services on your profile.",
+      "hero_image_url": "",
+      "hero_image_alt": "",
+      "sort_order": 60,
+      "bodyFile": "faq-can-i-list-more-than-one-service.txt"
+    }
+  ]
+}

@@ -21,6 +21,7 @@ console.log(
 const { ensureAdminUser } = require("./src/auth");
 const { seedBuiltinUsers } = require("./src/seedBuiltinUsers");
 const { seedManagerUsers } = require("./src/seedManagerUsers");
+const { seedContentPages } = require("./src/seedContentPages");
 const { getSubdomain, resolveHostname } = require("./src/host");
 
 let db;
@@ -66,7 +67,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use((req, res, next) => {
-  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260323-mobile-hero-perf";
+  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260320-content-seo";
   res.locals.encodeURIComponent = encodeURIComponent;
   res.locals.eventTimeParts = eventTimeParts;
   next();
@@ -75,7 +76,11 @@ app.use((req, res, next) => {
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    maxAge: process.env.NODE_ENV === "production" ? "7d" : 0,
+  })
+);
 
 const sessionSecret = process.env.SESSION_SECRET || "dev_secret_change_me";
 const sessionDir = process.env.SESSION_DIR || path.join(__dirname, "data");
@@ -291,6 +296,7 @@ ensureAdminUser({ db })
   .then(() => {
     seedBuiltinUsers(db);
     seedManagerUsers(db);
+    seedContentPages(db);
     app.listen(port, host, () => {
       // eslint-disable-next-line no-console
       console.log(`GetPro listening on ${host}:${port}`);

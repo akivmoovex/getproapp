@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= row ? row.title : 'New' %> | <%= kindLabel %> | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: row ? row.title : 'New content', activeNav: 'settings' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <div class="admin-super-users__topbar" style="flex-wrap: wrap; gap: 0.5rem">
+          <a class="btn" href="/admin/content?kind=<%= kind %><%= editMode ? '&edit=1' : '' %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">← List</a>
+          <% if (!editMode && row) { %>
+          <a class="btn btn-primary" href="/admin/content/<%= row.id %>?edit=1<%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Edit</a>
+          <% } else if (editMode && row) { %>
+          <a class="btn" href="/admin/content/<%= row.id %><%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">View</a>
+          <% } %>
+          <% if (row && publicPreviewUrl) { %>
+          <a class="btn" href="<%= publicPreviewUrl %>" target="_blank" rel="noopener noreferrer">Preview</a>
+          <% } %>
+          <% if (row && editMode) { %>
+          <form method="post" action="/admin/content/<%= row.id %>/publish<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>" style="display: inline">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <button class="btn" type="submit"><%= row.published ? 'Unpublish' : 'Publish' %></button>
+          </form>
+          <% } %>
+        </div>
+
+        <h1 class="section-title section-title--flush"><%= row ? row.title : ('New ' + kindLabel) %></h1>
+        <% if (row && !row.published) { %>
+        <p class="muted admin-intro--tight-top">Status: <strong>draft</strong></p>
+        <% } else if (row && row.published) { %>
+        <p class="muted admin-intro--tight-top">Status: <strong>published</strong></p>
+        <% } %>
+
+        <% if (!editMode && row) { %>
+        <div class="card" style="padding: 1rem">
+          <dl class="admin-dl">
+            <dt>Slug</dt><dd><code><%= row.slug %></code></dd>
+            <% if (kind !== 'faq') { %>
+            <dt>Excerpt</dt><dd><%= row.excerpt || '—' %></dd>
+            <% } %>
+            <dt>Body</dt><dd style="white-space: pre-wrap"><%= row.body %></dd>
+            <% if (kind !== 'faq') { %>
+            <dt>Hero image URL</dt><dd><%= row.hero_image_url || '—' %></dd>
+            <dt>Hero alt</dt><dd><%= row.hero_image_alt || '—' %></dd>
+            <% } %>
+            <dt>SEO title</dt><dd><%= row.seo_title || '—' %></dd>
+            <dt>SEO description</dt><dd><%= row.seo_description || '—' %></dd>
+            <dt>Sort</dt><dd><%= row.sort_order %></dd>
+            <dt>Updated</dt><dd><%= row.updated_at || '—' %></dd>
+          </dl>
+        </div>
+        <% } else { %>
+        <form method="post" action="<%= row ? '/admin/content/' + row.id : '/admin/content' %>" class="card" style="padding: 1rem">
+          <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+          <input type="hidden" name="kind" value="<%= kind %>" />
+
+          <div class="form-group">
+            <label for="title"><%= kind === 'faq' ? 'Question' : 'Title' %></label>
+            <input id="title" name="title" type="text" required value="<%= row ? row.title : '' %>" />
+          </div>
+          <div class="form-group">
+            <label for="slug">Slug</label>
+            <input id="slug" name="slug" type="text" value="<%= row ? row.slug : '' %>" placeholder="auto from title if empty" />
+          </div>
+          <% if (kind !== 'faq') { %>
+          <div class="form-group">
+            <label for="excerpt">Excerpt / summary</label>
+            <textarea id="excerpt" name="excerpt" rows="3"><%= row ? row.excerpt : '' %></textarea>
+          </div>
+          <% } %>
+          <div class="form-group">
+            <label for="body"><%= kind === 'faq' ? 'Answer' : 'Body' %></label>
+            <textarea id="body" name="body" rows="14" required><%= row ? row.body : '' %></textarea>
+          </div>
+          <% if (kind !== 'faq') { %>
+          <div class="form-group">
+            <label for="hero_image_url">Hero image URL</label>
+            <input id="hero_image_url" name="hero_image_url" type="text" value="<%= row ? row.hero_image_url : '' %>" />
+          </div>
+          <div class="form-group">
+            <label for="hero_image_alt">Hero image alt text</label>
+            <input id="hero_image_alt" name="hero_image_alt" type="text" value="<%= row ? row.hero_image_alt : '' %>" />
+          </div>
+          <% } %>
+          <div class="form-group">
+            <label for="seo_title">SEO title</label>
+            <input id="seo_title" name="seo_title" type="text" value="<%= row ? row.seo_title : '' %>" />
+          </div>
+          <div class="form-group">
+            <label for="seo_description">SEO description</label>
+            <textarea id="seo_description" name="seo_description" rows="2"><%= row ? row.seo_description : '' %></textarea>
+          </div>
+          <div class="form-group">
+            <label for="sort_order">Sort order</label>
+            <input id="sort_order" name="sort_order" type="number" value="<%= row ? row.sort_order : 0 %>" />
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" name="published" value="1" <%= row && row.published ? 'checked' : '' %> />
+              Published
+            </label>
+          </div>
+          <div class="flex-row-wrap" style="gap: 0.5rem">
+            <button class="btn btn-primary" type="submit">Save</button>
+          </div>
+        </form>
+        <% if (row && editMode) { %>
+        <form method="post" action="/admin/content/<%= row.id %>/delete" class="card" style="padding: 1rem; margin-top: 1rem" onsubmit="return confirm('Delete this item?');">
+          <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+          <input type="hidden" name="kind" value="<%= kind %>" />
+          <button class="btn" type="submit">Delete</button>
+        </form>
+        <% } %>
+        <% } %>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,1 @@
+Customers can use the contact form or request-call flow on your public profile. Those requests should appear in the admin area using the existing lead/request handling pattern.

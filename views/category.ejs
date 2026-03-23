@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title><%= category.name %> | Directory | GetPro</title>
+    <%- include('partials/seo_meta', {
+      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : (category.name + ' | Directory | GetPro'),
+      seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : ('Browse ' + category.name + ' professionals on GetPro.'),
+      canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
+      ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
+      ogType: 'website'
+    }) %>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="<%= tenant.themeClass %>">

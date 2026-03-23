@@ -1260,6 +1260,40 @@ try {
   console.error("[getpro] admin_user_tenant_roles migration:", e.message);
 }
 
+try {
+  const mig = db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("content_pages_v1");
+  if (!mig) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS content_pages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        kind TEXT NOT NULL CHECK(kind IN ('article','guide','faq')),
+        slug TEXT NOT NULL,
+        title TEXT NOT NULL,
+        excerpt TEXT NOT NULL DEFAULT '',
+        body TEXT NOT NULL DEFAULT '',
+        hero_image_url TEXT NOT NULL DEFAULT '',
+        hero_image_alt TEXT NOT NULL DEFAULT '',
+        seo_title TEXT NOT NULL DEFAULT '',
+        seo_description TEXT NOT NULL DEFAULT '',
+        published INTEGER NOT NULL DEFAULT 0,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(tenant_id, kind, slug)
+      );
+      CREATE INDEX IF NOT EXISTS idx_content_pages_tenant_kind ON content_pages(tenant_id, kind);
+      CREATE INDEX IF NOT EXISTS idx_content_pages_published ON content_pages(tenant_id, published);
+    `);
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("content_pages_v1");
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Migration: content_pages (editorial / SEO).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] content_pages migration:", e.message);
+}
+
 function run(query, params = []) {
   return db.prepare(query).run(params);
 }

@@ -1,0 +1,23 @@
+<% var _canon = typeof canonicalUrl !== 'undefined' ? canonicalUrl : ''; %>
+<% var _og = typeof ogUrl !== 'undefined' && ogUrl ? ogUrl : _canon; %>
+<% var _type = typeof ogType !== 'undefined' && ogType ? ogType : 'website'; %>
+<title><%= typeof seoTitle !== 'undefined' ? seoTitle : 'GetPro' %></title>
+<meta name="description" content="<%= typeof seoDescription !== 'undefined' ? seoDescription : '' %>" />
+<% if (_canon) { %>
+<link rel="canonical" href="<%= _canon %>" />
+<% } %>
+<% if (typeof noindex !== 'undefined' && noindex) { %>
+<meta name="robots" content="noindex, nofollow" />
+<% } %>
+<meta property="og:type" content="<%= _type %>" />
+<meta property="og:title" content="<%= typeof seoTitle !== 'undefined' ? seoTitle : 'GetPro' %>" />
+<meta property="og:description" content="<%= typeof seoDescription !== 'undefined' ? seoDescription : '' %>" />
+<% if (_og) { %>
+<meta property="og:url" content="<%= _og %>" />
+<% } %>
+<% if (typeof ogImage !== 'undefined' && ogImage) { %>
+<meta property="og:image" content="<%= ogImage %>" />
+<% } %>
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="<%= typeof seoTitle !== 'undefined' ? seoTitle : 'GetPro' %>" />
+<meta name="twitter:description" content="<%= typeof seoDescription !== 'undefined' ? seoDescription : '' %>" />

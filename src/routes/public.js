@@ -8,6 +8,17 @@ const { israelComingSoonEnabled } = require("../israelComingSoon");
 const { attachReviewStatsToCompanies } = require("../reviewStats");
 const { buildCompanyPageLocals } = require("../companyPageRender");
 const { getTenantContactSupport } = require("../tenantContactSupport");
+const {
+  formatBodyToHtml,
+  listPublishedByKind,
+  getBySlug,
+  getRowBySlug,
+  canonicalUrlForTenant,
+  absolutePublicUrl,
+  escapeHtml,
+} = require("../contentPages");
+const { buildSitemapXml, buildRobotsTxt } = require("../seoPublic");
+const { canPreviewDraft } = require("../adminPreview");
 
 function loadSearchLists() {
   const p = path.join(__dirname, "../../public/data/search-lists.json");
@@ -60,6 +71,9 @@ const MINI_SITE_RESERVED_SEGMENTS = new Set([
   "favicon.ico",
   "robots.txt",
   "sitemap.xml",
+  "articles",
+  "guides",
+  "answers",
   "getpro-admin",
   "global",
   "demo",
@@ -81,7 +95,29 @@ module.exports = function publicRoutes({ db }) {
 
   async function renderCompanyPage(req, res, company) {
     const locals = await buildCompanyPageLocals(req, db, company);
-    return res.render("company", locals);
+    const canonicalUrl = canonicalUrlForTenant(req, `/company/${company.id}`);
+    const seoTitle = `${company.name} | ${locals.category ? locals.category.name + " · " : ""}GetPro`;
+    const seoDescription = `${(company.headline || company.name || "").replace(/"/g, "")} · Verified directory listing on GetPro.`;
+    const lb = {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      name: company.name,
+      url: canonicalUrl,
+    };
+    if (company.headline) lb.description = company.headline;
+    if (company.phone) lb.telephone = company.phone;
+    if (company.email) lb.email = company.email;
+    if (company.location) {
+      lb.address = { "@type": "PostalAddress", streetAddress: company.location };
+    }
+    return res.render("company", {
+      ...locals,
+      canonicalUrl,
+      seoTitle,
+      seoDescription,
+      ogUrl: canonicalUrl,
+      jsonLdCompany: JSON.stringify(lb),
+    });
   }
 
   function tenantLocals(req) {
@@ -119,15 +155,49 @@ module.exports = function publicRoutes({ db }) {
     next();
   });
 
+  function resolveContentRow(req, kind, slug) {
+    const tenantId = req.tenant.id;
+    const preview =
+      (req.query.preview === "1" || req.query.preview === "true") && canPreviewDraft(req, tenantId);
+    if (preview) {
+      return getRowBySlug(db, tenantId, kind, slug) || null;
+    }
+    return getBySlug(db, tenantId, kind, slug) || null;
+  }
+
   router.get("/", async (req, res) => {
     const tenantId = req.tenant.id;
     const categories = db
       .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
       .all(tenantId);
 
+    const contentArticles = listPublishedByKind(db, tenantId, "article");
+    const contentGuides = listPublishedByKind(db, tenantId, "guide");
+    const contentFaqs = listPublishedByKind(db, tenantId, "faq");
+
+    const canonicalUrl = canonicalUrlForTenant(req, "/");
+    const seoTitle = `${req.tenant.name || "GetPro"} · Trusted professional directory`;
+    const seoDescription =
+      "Find trusted professionals near you. Search by service and city, compare profiles, and contact the right business quickly.";
+    const orgJsonLd = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: req.tenant.name || "GetPro",
+      url: canonicalUrl,
+    };
+
     return res.render("index", {
       categories,
       baseDomain: process.env.BASE_DOMAIN || "",
+      seoTitle,
+      seoDescription,
+      canonicalUrl,
+      ogUrl: canonicalUrl,
+      ogImage: absolutePublicUrl(req, "/images/hero/home-hero-960.webp"),
+      orgJsonLd: JSON.stringify(orgJsonLd),
+      contentArticles,
+      contentGuides,
+      contentFaqs,
       ...tenantLocals(req),
       ...platformSupport(req),
     });
@@ -206,6 +276,20 @@ module.exports = function publicRoutes({ db }) {
 
     companies = attachReviewStatsToCompanies(db, companies);
 
+    const canonicalUrl = canonicalUrlForTenant(req, "/directory");
+    let seoTitle = `Directory | ${req.tenant.name || "GetPro"}`;
+    let seoDescription = `Browse verified professionals in ${req.tenant.name || "GetPro"}. Search by service and city or explore categories.`;
+    if (selected) {
+      const catRow = (categories || []).find((c) => c.slug === selected);
+      if (catRow) {
+        seoTitle = `${catRow.name} · Directory | ${req.tenant.name || "GetPro"}`;
+        seoDescription = `Find ${String(catRow.name).toLowerCase()} and related professionals. Compare profiles and contact businesses in the directory.`;
+      }
+    } else if (searchQ || cityQ) {
+      seoTitle = `Search results · Directory | ${req.tenant.name || "GetPro"}`;
+      seoDescription = `Directory search for services and professionals${cityQ ? ` in ${cityQ}` : ""}.`;
+    }
+
     return res.render("directory", {
       categories,
       selectedCategory: selected,
@@ -214,6 +298,10 @@ module.exports = function publicRoutes({ db }) {
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",
       companyMiniSiteHref: (sub) => `/${encodeURIComponent(String(sub || "").trim())}`,
+      seoTitle,
+      seoDescription,
+      canonicalUrl,
+      ogUrl: canonicalUrl,
       ...tenantLocals(req),
       ...platformSupport(req),
     });
@@ -252,12 +340,21 @@ module.exports = function publicRoutes({ db }) {
     const categories = db
       .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
       .all(tenantId);
+
+    const canonicalUrl = canonicalUrlForTenant(req, `/category/${category.slug}`);
+    const seoTitle = `${category.name} · Directory | ${req.tenant.name || "GetPro"}`;
+    const seoDescription = `Browse ${category.name} professionals — verified listings, profiles, and direct contact on GetPro.`;
+
     return res.render("category", {
       category,
       categories,
       companies: companiesWithReviews,
       baseDomain: process.env.BASE_DOMAIN || "",
       companyMiniSiteHref: (sub) => `/${encodeURIComponent(String(sub || "").trim())}`,
+      seoTitle,
+      seoDescription,
+      canonicalUrl,
+      ogUrl: canonicalUrl,
       ...tenantLocals(req),
       ...platformSupport(req),
     });
@@ -305,10 +402,193 @@ module.exports = function publicRoutes({ db }) {
     const tenantId = req.tenant.id;
     const joinTenantCities = getTenantCitiesForClient(db, tenantId);
     const joinCityWatermarkRotate = getJoinCityWatermarkRotate(db, tenantId);
+    const canonicalUrl = canonicalUrlForTenant(req, "/join");
     return res.render("join", {
       baseDomain: process.env.BASE_DOMAIN || "",
       joinTenantCities,
       joinCityWatermarkRotate,
+      seoTitle: `List your business | ${req.tenant.name || "GetPro"}`,
+      seoDescription:
+        "Create a verified profile on GetPro so customers can find your services, view your details, and send lead requests.",
+      canonicalUrl,
+      ogUrl: canonicalUrl,
+      ...tenantLocals(req),
+      ...platformSupport(req),
+    });
+  });
+
+  router.get("/sitemap.xml", (req, res) => {
+    res.type("application/xml");
+    res.send(buildSitemapXml(req, db));
+  });
+
+  router.get("/robots.txt", (req, res) => {
+    res.type("text/plain");
+    res.send(buildRobotsTxt(req));
+  });
+
+  function renderContentIndex(req, res, kind, label) {
+    const tenantId = req.tenant.id;
+    const items = listPublishedByKind(db, tenantId, kind);
+    const seg = kind === "article" ? "articles" : kind === "guide" ? "guides" : "answers";
+    const canonicalUrl = canonicalUrlForTenant(req, `/${seg}`);
+    const seoTitle = `${label} | ${req.tenant.name || "GetPro"}`;
+    const seoDescription = `Browse ${label.toLowerCase()} on GetPro — guides and answers for customers and professionals.`;
+    return res.render("content_index_public", {
+      kind,
+      seg,
+      label,
+      items,
+      seoTitle,
+      seoDescription,
+      canonicalUrl,
+      ogUrl: canonicalUrl,
+      ...tenantLocals(req),
+      ...platformSupport(req),
+    });
+  }
+
+  router.get("/articles", (req, res) => renderContentIndex(req, res, "article", "Articles & topics"));
+  router.get("/guides", (req, res) => renderContentIndex(req, res, "guide", "Pro guides"));
+  router.get("/answers", (req, res) => renderContentIndex(req, res, "faq", "Questions & answers"));
+
+  function absoluteMediaUrl(req, raw) {
+    const u = String(raw || "").trim();
+    if (!u) return "";
+    if (u.startsWith("http://") || u.startsWith("https://")) return u;
+    return absolutePublicUrl(req, u.startsWith("/") ? u : `/${u}`);
+  }
+
+  router.get("/articles/:slug", (req, res) => {
+    const tenantId = req.tenant.id;
+    const slug = String(req.params.slug || "").trim();
+    const row = resolveContentRow(req, "article", slug);
+    if (!row) {
+      res.status(404);
+      return res.render("not_found", {
+        slug,
+        kind: "article",
+        ...tenantLocals(req),
+        ...platformSupport(req),
+      });
+    }
+    const preview =
+      (req.query.preview === "1" || req.query.preview === "true") && canPreviewDraft(req, tenantId);
+    const canonicalUrl = canonicalUrlForTenant(req, `/articles/${encodeURIComponent(row.slug)}`);
+    const bodyHtml = formatBodyToHtml(row.body);
+    const seoTitle = row.seo_title || row.title;
+    const seoDescription = row.seo_description || row.excerpt || "";
+    const hero = row.hero_image_url || "/images/hero/home-hero-960.webp";
+    const articleJsonLd = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: row.title,
+      dateModified: row.updated_at,
+      author: { "@type": "Organization", name: req.tenant.name || "GetPro" },
+    };
+    return res.render("content_article", {
+      segment: "articles",
+      segmentLabel: "Articles & topics",
+      segmentIndexHref: `${req.tenantUrlPrefix || ""}/articles`,
+      row,
+      bodyHtml,
+      seoTitle,
+      seoDescription,
+      canonicalUrl,
+      ogUrl: canonicalUrl,
+      ogImage: absoluteMediaUrl(req, hero),
+      heroImage: hero,
+      jsonLdArticle: JSON.stringify(articleJsonLd),
+      previewBanner: !!(preview && !row.published),
+      ...tenantLocals(req),
+      ...platformSupport(req),
+    });
+  });
+
+  router.get("/guides/:slug", (req, res) => {
+    const tenantId = req.tenant.id;
+    const slug = String(req.params.slug || "").trim();
+    const row = resolveContentRow(req, "guide", slug);
+    if (!row) {
+      res.status(404);
+      return res.render("not_found", {
+        slug,
+        kind: "guide",
+        ...tenantLocals(req),
+        ...platformSupport(req),
+      });
+    }
+    const preview =
+      (req.query.preview === "1" || req.query.preview === "true") && canPreviewDraft(req, tenantId);
+    const canonicalUrl = canonicalUrlForTenant(req, `/guides/${encodeURIComponent(row.slug)}`);
+    const bodyHtml = formatBodyToHtml(row.body);
+    const seoTitle = row.seo_title || row.title;
+    const seoDescription = row.seo_description || row.excerpt || "";
+    const hero = row.hero_image_url || "/images/hero/home-hero-960.webp";
+    const guideJsonLd = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: row.title,
+      dateModified: row.updated_at,
+      author: { "@type": "Organization", name: req.tenant.name || "GetPro" },
+    };
+    return res.render("content_article", {
+      segment: "guides",
+      segmentLabel: "Pro guides",
+      segmentIndexHref: `${req.tenantUrlPrefix || ""}/guides`,
+      row,
+      bodyHtml,
+      seoTitle,
+      seoDescription,
+      canonicalUrl,
+      ogUrl: canonicalUrl,
+      ogImage: absoluteMediaUrl(req, hero),
+      heroImage: hero,
+      jsonLdArticle: JSON.stringify(guideJsonLd),
+      previewBanner: !!(preview && !row.published),
+      ...tenantLocals(req),
+      ...platformSupport(req),
+    });
+  });
+
+  router.get("/answers/:slug", (req, res) => {
+    const tenantId = req.tenant.id;
+    const slug = String(req.params.slug || "").trim();
+    const row = resolveContentRow(req, "faq", slug);
+    if (!row) {
+      res.status(404);
+      return res.render("not_found", {
+        slug,
+        kind: "faq",
+        ...tenantLocals(req),
+        ...platformSupport(req),
+      });
+    }
+    const preview =
+      (req.query.preview === "1" || req.query.preview === "true") && canPreviewDraft(req, tenantId);
+    const canonicalUrl = canonicalUrlForTenant(req, `/answers/${encodeURIComponent(row.slug)}`);
+    const seoTitle = row.seo_title || row.title;
+    const seoDescription = row.seo_description || row.excerpt || row.body.slice(0, 200);
+    const faqJsonLd = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: row.title,
+          acceptedAnswer: { "@type": "Answer", text: row.body.replace(/\s+/g, " ").trim().slice(0, 8000) },
+        },
+      ],
+    };
+    return res.render("content_faq", {
+      row,
+      answerHtml: formatBodyToHtml(row.body) || `<p>${escapeHtml(row.body)}</p>`,
+      seoTitle,
+      seoDescription,
+      canonicalUrl,
+      ogUrl: canonicalUrl,
+      jsonLdFaq: JSON.stringify(faqJsonLd),
+      previewBanner: !!(preview && !row.published),
       ...tenantLocals(req),
       ...platformSupport(req),
     });
