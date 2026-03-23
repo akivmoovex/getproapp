@@ -69,6 +69,7 @@
   const disabledCityPanel = document.getElementById("join-disabled-city-panel");
   const disabledCityThanks = document.getElementById("join-disabled-city-thanks");
   const disabledCityClose = document.getElementById("join-disabled-city-close");
+  const exitModalTitle = document.getElementById("join-exit-modal-title");
 
   const steps = {
     1: document.getElementById("join-step-1"),
@@ -136,6 +137,39 @@
     return false;
   }
 
+  function openModalLayer(el) {
+    if (!el) return;
+    el.hidden = false;
+    el.setAttribute("aria-hidden", "false");
+    void el.offsetWidth;
+    el.classList.add("m3-modal-overlay--open");
+    document.body.classList.add("join-modal-open");
+  }
+
+  function closeModalLayer(el, after) {
+    if (!el) return;
+    el.classList.remove("m3-modal-overlay--open");
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      el.setAttribute("hidden", "");
+      el.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("join-modal-open");
+      if (typeof after === "function") after();
+    }
+    function onEnd(e) {
+      if (e.target !== el || e.propertyName !== "opacity") return;
+      el.removeEventListener("transitionend", onEnd);
+      finish();
+    }
+    el.addEventListener("transitionend", onEnd);
+    window.setTimeout(function () {
+      el.removeEventListener("transitionend", onEnd);
+      finish();
+    }, 320);
+  }
+
   function resetDisabledCityForm() {
     if (disabledCityName) disabledCityName.value = "";
     if (disabledCityPhone) disabledCityPhone.value = "";
@@ -151,18 +185,17 @@
     resetDisabledCityForm();
     if (disabledCityPanel) disabledCityPanel.hidden = false;
     if (disabledCityThanks) disabledCityThanks.hidden = true;
-    disabledCityModal.hidden = false;
-    document.body.classList.add("join-modal-open");
+    openModalLayer(disabledCityModal);
     disabledCityName?.focus();
   }
 
   function closeDisabledCityModal() {
     if (!disabledCityModal) return;
-    disabledCityModal.hidden = true;
-    document.body.classList.remove("join-modal-open");
-    resetDisabledCityForm();
-    if (disabledCityPanel) disabledCityPanel.hidden = false;
-    if (disabledCityThanks) disabledCityThanks.hidden = true;
+    closeModalLayer(disabledCityModal, function () {
+      resetDisabledCityForm();
+      if (disabledCityPanel) disabledCityPanel.hidden = false;
+      if (disabledCityThanks) disabledCityThanks.hidden = true;
+    });
   }
 
   function ensureAc(wrap, pool) {
@@ -248,6 +281,7 @@
       exitModalError.textContent = "";
       exitModalError.hidden = true;
     }
+    if (exitModalTitle) exitModalTitle.textContent = "Need Help?";
   }
 
   function showExitModalForm() {
@@ -257,24 +291,24 @@
       exitModalError.textContent = "";
       exitModalError.hidden = true;
     }
+    if (exitModalTitle) exitModalTitle.textContent = "Need help?";
     exitModalName?.focus();
   }
 
   function openExitModal() {
     if (!exitModal) return;
     showExitModalQuestion();
-    exitModal.hidden = false;
-    document.body.classList.add("join-modal-open");
+    openModalLayer(exitModal);
     exitModalDismiss?.focus();
   }
 
   function closeExitModal() {
     if (!exitModal) return;
-    exitModal.hidden = true;
-    document.body.classList.remove("join-modal-open");
-    showExitModalQuestion();
-    if (exitModalName) exitModalName.value = "";
-    if (exitModalPhone) exitModalPhone.value = "";
+    closeModalLayer(exitModal, function () {
+      showExitModalQuestion();
+      if (exitModalName) exitModalName.value = "";
+      if (exitModalPhone) exitModalPhone.value = "";
+    });
   }
 
   function isValidName(s) {
@@ -349,13 +383,16 @@
   });
 
   exitModal?.addEventListener("click", (e) => {
-    if (e.target === exitModal) closeExitModal();
+    if (e.target.closest(".m3-modal-overlay__backdrop")) closeExitModal();
   });
+
+  document.getElementById("join-exit-modal-x")?.addEventListener("click", () => closeExitModal());
 
   disabledCityDismiss?.addEventListener("click", () => closeDisabledCityModal());
   disabledCityClose?.addEventListener("click", () => closeDisabledCityModal());
+  document.getElementById("join-disabled-city-x")?.addEventListener("click", () => closeDisabledCityModal());
   disabledCityModal?.addEventListener("click", (e) => {
-    if (e.target === disabledCityModal) closeDisabledCityModal();
+    if (e.target.closest(".m3-modal-overlay__backdrop")) closeDisabledCityModal();
   });
 
   disabledCitySubmit?.addEventListener("click", async () => {

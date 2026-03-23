@@ -71,48 +71,67 @@ function initHomeDrawerMenu() {
   });
 }
 
-/** Region sheet controls shared by the globe button and global-tenant search gate. */
+/** Region sheet controls shared by the globe button and global-tenant search gate (M3 modal shell). */
 function getRegionSheetControls() {
   const openBtn = document.getElementById("wf-region-open");
+  const root = document.getElementById("wf-region-m3-root");
   const overlay = document.getElementById("wf-region-overlay");
   const sheet = document.getElementById("wf-region-sheet");
   const closeBtn = document.getElementById("wf-region-close-x");
-  if (!overlay || !sheet) return null;
+  if (!root || !sheet) return null;
 
   const setOpen = (open) => {
     if (openBtn) openBtn.setAttribute("aria-expanded", open ? "true" : "false");
     if (open) {
-      sheet.removeAttribute("hidden");
-      overlay.removeAttribute("hidden");
-      overlay.setAttribute("aria-hidden", "false");
+      root.removeAttribute("hidden");
+      root.setAttribute("aria-hidden", "false");
+      void root.offsetWidth;
+      root.classList.add("m3-modal-overlay--open");
       document.body.style.overflow = "hidden";
       closeBtn?.focus();
     } else {
-      sheet.setAttribute("hidden", "");
-      overlay.setAttribute("hidden", "");
-      overlay.setAttribute("aria-hidden", "true");
-      document.body.style.overflow = "";
-      openBtn?.focus();
+      root.classList.remove("m3-modal-overlay--open");
+      const finish = () => {
+        root.setAttribute("hidden", "");
+        root.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+        openBtn?.focus();
+      };
+      let done = false;
+      const onEnd = (e) => {
+        if (e.target !== root || e.propertyName !== "opacity") return;
+        if (done) return;
+        done = true;
+        root.removeEventListener("transitionend", onEnd);
+        finish();
+      };
+      root.addEventListener("transitionend", onEnd);
+      window.setTimeout(() => {
+        if (done) return;
+        done = true;
+        root.removeEventListener("transitionend", onEnd);
+        finish();
+      }, 320);
     }
   };
 
-  return { openBtn, overlay, sheet, closeBtn, setOpen };
+  return { openBtn, overlay, sheet, closeBtn, setOpen, root };
 }
 
 function initRegionPicker() {
   const c = getRegionSheetControls();
   if (!c) return;
 
-  const { openBtn, overlay, sheet, closeBtn, setOpen } = c;
+  const { openBtn, overlay, sheet, closeBtn, setOpen, root } = c;
 
   openBtn?.addEventListener("click", () => setOpen(true));
   closeBtn?.addEventListener("click", () => setOpen(false));
-  overlay.addEventListener("click", () => setOpen(false));
+  overlay?.addEventListener("click", () => setOpen(false));
   sheet.querySelectorAll("a.wf-region-btn").forEach((a) => {
     a.addEventListener("click", () => setOpen(false));
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !sheet.hasAttribute("hidden")) setOpen(false);
+    if (e.key === "Escape" && root && !root.hasAttribute("hidden")) setOpen(false);
   });
 }
 

@@ -109,10 +109,11 @@
 
   function openOverlay(taskId) {
     if (!overlay || !overlayBody) return;
-    overlayBody.innerHTML = '<p class="muted" style="padding:16px;">Loading…</p>';
+    overlayBody.innerHTML = '<p class="muted m3-modal__loading">Loading…</p>';
     overlay.removeAttribute("hidden");
     overlay.setAttribute("aria-hidden", "false");
-    overlay.classList.add("admin-crm-overlay--open");
+    void overlay.offsetWidth;
+    overlay.classList.add("m3-modal-overlay--open");
     document.body.style.overflow = "hidden";
     fetch("/admin/crm/tasks/" + encodeURIComponent(taskId) + "/panel", {
       credentials: "same-origin",
@@ -126,23 +127,38 @@
         overlayBody.innerHTML = html;
       })
       .catch(function () {
-        overlayBody.innerHTML = '<p class="muted" style="padding:16px;">Could not load task.</p>';
+        overlayBody.innerHTML = '<p class="muted m3-modal__loading">Could not load task.</p>';
       });
   }
 
   function closeOverlay() {
     if (!overlay) return;
-    overlay.setAttribute("hidden", "hidden");
-    overlay.setAttribute("aria-hidden", "true");
-    overlay.classList.remove("admin-crm-overlay--open");
-    document.body.style.overflow = "";
-    if (overlayBody) overlayBody.innerHTML = "";
-    try {
-      var u = new URL(window.location.href);
-      u.searchParams.delete("openTask");
-      var q = u.searchParams.toString();
-      window.history.replaceState({}, "", u.pathname + (q ? "?" + q : "") + u.hash);
-    } catch (e) {}
+    overlay.classList.remove("m3-modal-overlay--open");
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      overlay.setAttribute("hidden", "hidden");
+      overlay.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      if (overlayBody) overlayBody.innerHTML = "";
+      try {
+        var u = new URL(window.location.href);
+        u.searchParams.delete("openTask");
+        var q = u.searchParams.toString();
+        window.history.replaceState({}, "", u.pathname + (q ? "?" + q : "") + u.hash);
+      } catch (e) {}
+    }
+    function onEnd(e) {
+      if (e.target !== overlay || e.propertyName !== "opacity") return;
+      overlay.removeEventListener("transitionend", onEnd);
+      finish();
+    }
+    overlay.addEventListener("transitionend", onEnd);
+    window.setTimeout(function () {
+      overlay.removeEventListener("transitionend", onEnd);
+      finish();
+    }, 320);
   }
 
   document.querySelectorAll("[data-crm-close-overlay]").forEach(function (el) {

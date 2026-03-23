@@ -4,14 +4,16 @@
 
 | File | Role |
 |------|------|
-| **`public/theme.css`** | Global tokens only: `--color-*`, `--spacing-*`, `--border-radius-*`, `--typo-*`, `--md-sys-*`, legacy aliases (`--wf-primary`, `--bg`, …), optional `.app-layout` / `.card--elevated`. |
-| **`public/styles.css`** | `@import "./theme.css"` then all components, pages, and layout rules. **Templates link only `/styles.css`** — the import loads the theme in one cascade. |
+| **`public/theme.css`** | Global tokens only: `--color-*`, `--space-1`…`--space-5` (8px grid), `--spacing-*` (legacy aliases), `--border-radius-*`, `--typo-*`, `--elevation-*`, `--md-sys-*`, legacy aliases (`--wf-primary`, `--bg`, …), optional `.app-layout` / `.card--elevated`. |
+| **`public/m3-modal.css`** | **Single M3 modal shell** (`.m3-modal-overlay`, `.m3-modal`, header/body/footer, open/close animation). Imported by `styles.css` after `theme.css`. |
+| **`public/styles.css`** | `@import "./theme.css"` and `@import "./m3-modal.css"` then all components, pages, and layout rules. **Templates link only `/styles.css`** — the import loads the theme in one cascade. |
 | **`public/theme-colors.css`** | Stub / pointer for diffs; not loaded by the app. |
 
 ## Semantic tokens (use in new CSS)
 
 - **Color:** `--color-primary`, `--color-on-primary`, `--color-background`, `--color-surface`, `--color-text-primary`, `--color-text-secondary`, `--color-error`, …
-- **Spacing:** `--spacing-1` … `--spacing-8` (alias of `--md-sys-spacing-*` where defined).
+- **Spacing:** `--space-1` … `--space-5` (**8, 16, 24, 32, 40**). Legacy `--spacing-*` maps to this grid.
+- **Modals:** use only `.m3-modal-overlay` + inner `.m3-modal` structure (see `docs/MODALS.md`).
 - **Radius:** `--border-radius-xs` … `--border-radius-full`; legacy `--radius` → `--border-radius-md`.
 - **Typography:** `--typo-body-large-size`, `--typo-title-large-size`, `--font-family-body`, …
 - **Elevation:** `--md-sys-elevation-level0` … `level5`.

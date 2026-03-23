@@ -249,73 +249,86 @@
     </section>
 
     <div
-      class="join-modal-backdrop"
+      class="m3-modal-overlay join-modal-layer"
       id="join-disabled-city-modal"
       hidden
       role="dialog"
       aria-modal="true"
       aria-labelledby="join-disabled-city-title"
     >
-      <div class="join-modal join-modal--wide">
-        <div class="join-modal-panel" id="join-disabled-city-panel">
-          <h2 class="join-modal-title" id="join-disabled-city-title">City not open yet</h2>
-          <p class="join-modal-text" id="join-disabled-city-intro">
-            We are validating trusted partners in <strong id="join-disabled-city-label"></strong>. Please leave us some details so that we can keep you updated.
-          </p>
-          <div class="join-modal-fields">
-            <label class="join-modal-label" for="join-disabled-city-name">Client name</label>
-            <input class="join-plain-input join-modal-input" id="join-disabled-city-name" type="text" autocomplete="name" />
-            <label class="join-modal-label" for="join-disabled-city-phone">Phone number</label>
-            <input class="join-plain-input join-modal-input" id="join-disabled-city-phone" type="tel" autocomplete="tel" />
+      <div class="m3-modal-overlay__backdrop" data-join-modal-dismiss="disabled-city"></div>
+      <div class="m3-modal m3-modal--join join-modal join-modal--wide">
+        <header class="m3-modal__header">
+          <h2 class="m3-modal__title join-modal-title" id="join-disabled-city-title">City not open yet</h2>
+          <button type="button" class="m3-modal__close" id="join-disabled-city-x" aria-label="Close">×</button>
+        </header>
+        <div class="m3-modal__body join-modal__scroll">
+          <div class="join-modal-panel" id="join-disabled-city-panel">
+            <p class="join-modal-text" id="join-disabled-city-intro">
+              We are validating trusted partners in <strong id="join-disabled-city-label"></strong>. Please leave us some details so that we can keep you updated.
+            </p>
+            <div class="join-modal-fields">
+              <label class="join-modal-label" for="join-disabled-city-name">Client name</label>
+              <input class="join-plain-input join-modal-input" id="join-disabled-city-name" type="text" autocomplete="name" />
+              <label class="join-modal-label" for="join-disabled-city-phone">Phone number</label>
+              <input class="join-plain-input join-modal-input" id="join-disabled-city-phone" type="tel" autocomplete="tel" />
+            </div>
+            <p class="join-modal-error" id="join-disabled-city-error" hidden></p>
+            <div class="join-modal-actions join-modal-actions--split">
+              <button type="button" class="btn btn-primary" id="join-disabled-city-submit">Submit</button>
+              <button type="button" class="btn btn-secondary-wf" id="join-disabled-city-dismiss">Cancel</button>
+            </div>
           </div>
-          <p class="join-modal-error" id="join-disabled-city-error" hidden></p>
-          <div class="join-modal-actions join-modal-actions--split">
-            <button type="button" class="btn btn-primary" id="join-disabled-city-submit">Submit</button>
-            <button type="button" class="btn btn-secondary-wf" id="join-disabled-city-dismiss">Cancel</button>
+          <div class="join-modal-panel" id="join-disabled-city-thanks" hidden>
+            <h2 class="join-modal-title">Thank you</h2>
+            <p class="join-modal-text">We’ll keep you updated as we expand coverage in this area.</p>
+            <div class="join-modal-actions">
+              <button type="button" class="btn btn-primary" id="join-disabled-city-close">OK</button>
+            </div>
           </div>
         </div>
-        <div class="join-modal-panel" id="join-disabled-city-thanks" hidden>
-          <h2 class="join-modal-title">Thank you</h2>
-          <p class="join-modal-text">We’ll keep you updated as we expand coverage in this area.</p>
-          <div class="join-modal-actions">
-            <button type="button" class="btn btn-primary" id="join-disabled-city-close">OK</button>
-          </div>
-        </div>
+        <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
       </div>
     </div>
 
     <div
-      class="join-modal-backdrop"
+      class="m3-modal-overlay join-modal-layer"
       id="join-exit-modal"
       hidden
       role="dialog"
       aria-modal="true"
       aria-labelledby="join-exit-modal-title"
     >
-      <div class="join-modal">
-        <div class="join-modal-panel" id="join-exit-modal-q">
-          <h2 class="join-modal-title" id="join-exit-modal-title">Need Help?</h2>
-          <p class="join-modal-text">We can still reach out if you'd like a call.</p>
-          <div class="join-modal-actions join-modal-actions--split">
-            <button type="button" class="btn btn-primary" id="join-exit-modal-call">Call Me</button>
-            <button type="button" class="btn btn-secondary-wf" id="join-exit-modal-dismiss">Close</button>
+      <div class="m3-modal-overlay__backdrop" data-join-modal-dismiss="exit"></div>
+      <div class="m3-modal m3-modal--join join-modal">
+        <header class="m3-modal__header">
+          <h2 class="m3-modal__title join-modal-title" id="join-exit-modal-title">Need Help?</h2>
+          <button type="button" class="m3-modal__close" id="join-exit-modal-x" aria-label="Close">×</button>
+        </header>
+        <div class="m3-modal__body join-modal__scroll">
+          <div class="join-modal-panel" id="join-exit-modal-q">
+            <p class="join-modal-text">We can still reach out if you'd like a call.</p>
+            <div class="join-modal-actions join-modal-actions--split">
+              <button type="button" class="btn btn-primary" id="join-exit-modal-call">Call Me</button>
+              <button type="button" class="btn btn-secondary-wf" id="join-exit-modal-dismiss">Close</button>
+            </div>
+          </div>
+          <div class="join-modal-panel join-modal-panel--form" id="join-exit-modal-form" hidden>
+            <p class="join-modal-text">We’ll use this to call you back.</p>
+            <div class="join-modal-fields">
+              <label class="join-modal-label" for="join-exit-modal-name">Full name</label>
+              <input class="join-plain-input join-modal-input" id="join-exit-modal-name" type="text" autocomplete="name" />
+              <label class="join-modal-label" for="join-exit-modal-phone">Phone number</label>
+              <input class="join-plain-input join-modal-input" id="join-exit-modal-phone" type="tel" autocomplete="tel" />
+            </div>
+            <p class="join-modal-error" id="join-exit-modal-error" hidden></p>
+            <div class="join-modal-actions join-modal-actions--split">
+              <button type="button" class="btn btn-primary" id="join-exit-modal-submit">Submit</button>
+              <button type="button" class="btn btn-secondary-wf" id="join-exit-modal-back">Back</button>
+            </div>
           </div>
         </div>
-        <div class="join-modal-panel join-modal-panel--form" id="join-exit-modal-form" hidden>
-          <h2 class="join-modal-title" id="join-exit-modal-form-title">Need help?</h2>
-          <p class="join-modal-text">We’ll use this to call you back.</p>
-          <div class="join-modal-fields">
-            <label class="join-modal-label" for="join-exit-modal-name">Full name</label>
-            <input class="join-plain-input join-modal-input" id="join-exit-modal-name" type="text" autocomplete="name" />
-            <label class="join-modal-label" for="join-exit-modal-phone">Phone number</label>
-            <input class="join-plain-input join-modal-input" id="join-exit-modal-phone" type="tel" autocomplete="tel" />
-          </div>
-          <p class="join-modal-error" id="join-exit-modal-error" hidden></p>
-          <div class="join-modal-actions join-modal-actions--split">
-            <button type="button" class="btn btn-primary" id="join-exit-modal-submit">Submit</button>
-            <button type="button" class="btn btn-secondary-wf" id="join-exit-modal-back">Back</button>
-          </div>
-        </div>
+        <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
       </div>
     </div>
 

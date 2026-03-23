@@ -19,7 +19,7 @@
             <button type="button" class="btn admin-workspace__btn-close" data-ws-close style="display:none;">Close</button>
             <button type="button" class="btn btn-primary admin-workspace__btn-publish" data-ws-publish style="display:none;">Publish</button>
             <button type="button" class="btn admin-workspace__btn-back-edit" data-ws-back-edit style="display:none;">Back to edit</button>
-            <span class="admin-workspace__toolbar-meta muted" style="font-size:12px;">
+            <span class="admin-workspace__toolbar-meta muted">
               <span class="kbd"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : company.subdomain %></span>
             </span>
           </div>
@@ -37,7 +37,7 @@
 
           <div class="admin-workspace__edit card admin-form-card" data-ws-edit-panel style="display:none;">
             <h2 class="admin-workspace__edit-title">Edit mini-site content</h2>
-            <p class="muted" style="font-size:13px;margin-top:0;">
+            <p class="muted admin-workspace__edit-lead">
               Use the table below, then <strong>Preview</strong> to see the mini-site layout with your unsaved changes.
               <strong>Publish</strong> saves to the live mini-site (after preview). Customer reviews and ratings are not edited here.
             </p>
@@ -88,7 +88,7 @@
                     <th scope="row">Email</th>
                     <td>
                       <input type="text" class="input-grow" data-f="email" inputmode="email" autocomplete="email" />
-                      <div class="muted" style="font-size:11px;margin-top:4px;">Use a real address customers can reply to (e.g. name@business.com).</div>
+                      <div class="muted admin-workspace__form-hint">Use a real address customers can reply to (e.g. name@business.com).</div>
                     </td>
                   </tr>
                   <tr>
@@ -119,7 +119,7 @@
                     <th scope="row">Pictures (URLs)</th>
                     <td>
                       <textarea data-f="gallery_text" rows="6" placeholder="https://…|caption"></textarea>
-                      <div class="muted" style="font-size:11px;margin-top:4px;">One per line. Optional caption after |</div>
+                      <div class="muted admin-workspace__form-hint">One per line. Optional caption after |</div>
                     </td>
                   </tr>
                 </tbody>
@@ -131,23 +131,43 @@
       </div>
     </main>
 
-    <dialog class="admin-workspace__dialog" data-ws-dialog>
-      <div class="admin-workspace__dialog-inner card">
-        <p style="margin:0 0 16px;font-weight:700;">You’ve started editing this mini-site. Are you sure you want to leave?</p>
-        <p class="muted" style="font-size:13px;margin:0 0 16px;">Leave discards unsaved changes and returns to the saved preview. Cancel keeps you in edit mode.</p>
-        <div class="admin-workspace__dialog-actions">
+    <div
+      id="ws_leave_modal"
+      class="m3-modal-overlay admin-workspace-leave-m3"
+      data-ws-dialog
+      hidden
+      aria-hidden="true"
+    >
+      <div class="m3-modal-overlay__backdrop" data-ws-dialog-dismiss tabindex="-1"></div>
+      <div class="m3-modal m3-modal--workspace-confirm" role="dialog" aria-modal="true" aria-labelledby="ws_leave_modal_title">
+        <div class="m3-modal__body admin-workspace-leave-m3__body">
+          <h2 id="ws_leave_modal_title" class="admin-workspace-leave-m3__title">You’ve started editing this mini-site. Are you sure you want to leave?</h2>
+          <p class="muted admin-workspace-leave-m3__desc">
+            Leave discards unsaved changes and returns to the saved preview. Cancel keeps you in edit mode.
+          </p>
+        </div>
+        <div class="m3-modal__footer">
           <button type="button" class="btn" data-ws-dialog-cancel>Cancel</button>
           <button type="button" class="btn btn-primary" data-ws-dialog-leave>Leave</button>
         </div>
       </div>
-    </dialog>
+    </div>
 
-    <div class="admin-workspace__overlay" data-ws-overlay hidden aria-hidden="true">
-      <div class="admin-workspace__overlay-inner" role="status" aria-live="polite">
-        <div class="admin-workspace__hourglass" aria-hidden="true">
-          <span class="admin-workspace__hourglass-inner">⏳</span>
+    <div
+      id="ws_publish_overlay"
+      class="m3-modal-overlay admin-workspace-busy-m3"
+      data-ws-overlay
+      hidden
+      aria-hidden="true"
+    >
+      <div class="m3-modal-overlay__backdrop"></div>
+      <div class="m3-modal m3-modal--workspace-busy" role="alertdialog" aria-live="polite" aria-busy="true">
+        <div class="m3-modal__body m3-modal__body--workspace-busy">
+          <div class="admin-workspace__hourglass" aria-hidden="true">
+            <span class="admin-workspace__hourglass-inner">⏳</span>
+          </div>
+          <div class="admin-workspace__overlay-text">Publishing mini-site…</div>
         </div>
-        <div class="admin-workspace__overlay-text">Publishing mini-site…</div>
       </div>
     </div>
 

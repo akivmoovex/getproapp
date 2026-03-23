@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 /**
  * GetPro — global design system (Material Design 3 / Material You aligned)
  * Single source of truth for colors, typography, spacing, shape, elevation.
@@ -5,8 +7,8 @@
  */
 
 :root {
-  /* —— Semantic colors (M3 roles) —— */
-  --color-primary: #7c3aed;
+  /* —— Semantic colors (M3 roles) — canonical palette — */
+  --color-primary: #7c4dff;
   --color-on-primary: #ffffff;
   --color-primary-container: #ede9fe;
   --color-on-primary-container: #2e1064;
@@ -14,22 +16,35 @@
   --color-on-secondary: #ffffff;
   --color-secondary-container: #e8def8;
   --color-on-secondary-container: #1d192b;
-  --color-background: #f8f8fa;
+  --color-background: #f7f7fb;
   --color-surface: #ffffff;
   --color-surface-variant: #e7e0ec;
-  --color-text-primary: #0d0d0d;
-  --color-text-secondary: #5c5c6d;
+  --color-text-primary: #1c1b1f;
+  --color-text-secondary: #49454f;
   --color-text-tertiary: #7c7c8f;
-  --color-outline: #e0e0e8;
+  --color-outline: #e0e0e0;
   --color-outline-strong: #cfcfe0;
   --color-error: #b3261e;
   --color-on-error: #ffffff;
   --color-error-container: #f9dedc;
   --color-on-error-container: #410e0b;
 
+  /* Misc palette (marketing / tenant themes — single reference, avoids hex in styles.css) */
+  --color-slate-100: #f1f5f9;
+  --color-amber-600: #d4a012;
+  --color-amber-300: #fbbf24;
+  --palette-tenant-green: #198754;
+  --palette-tenant-blue: #0066cc;
+  --palette-tenant-sky: #6ba3c7;
+  --palette-tenant-forest: #1f7a3d;
+  --palette-tenant-teal: #007a4d;
+  --palette-tenant-navy: #1e3a8a;
+  --palette-tenant-violet: #7c3aed;
+  --palette-tenant-cyan: #0d9488;
+
   /* —— Legacy aliases (used across styles.css / views) —— */
   --color-white: #ffffff;
-  --color-black: #0d0d0d;
+  --color-black: #1c1b1f;
   --bg: var(--color-background);
   --surface: var(--color-surface);
   --text-primary: var(--color-text-primary);
@@ -44,7 +59,7 @@
   --wf-primary: var(--color-primary);
   --wf-primary-dark: #5a1ab5;
   --wf-primary-light: #a78bfa;
-  --wf-primary-rgb: 124, 58, 237;
+  --wf-primary-rgb: 124, 77, 255;
   --wf-secondary: var(--wf-primary-dark);
   --wf-secondary-hover: #45108f;
   --wf-secondary-deep: #2e0a64;
@@ -58,8 +73,10 @@
   --focus-ring: rgba(var(--wf-primary-rgb), 0.32);
   --primary-border-hover: rgba(var(--wf-primary-rgb), 0.35);
   --secondary-fill-ghost: var(--primary-softer-bg);
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --card-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.06);
+  --elevation-1: 0 2px 6px rgba(0, 0, 0, 0.1);
+  --elevation-2: 0 6px 20px rgba(0, 0, 0, 0.15);
+  --shadow: var(--elevation-2);
+  --card-shadow-sm: var(--elevation-1);
   --cta-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   --footer-btn-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
   --btn-primary-bg: var(--color-primary);
@@ -85,8 +102,8 @@
   --flash-error-bg: rgba(180, 50, 50, 0.08);
   --flash-error-text: #8b2525;
 
-  /* —— Typography scale (M3-inspired; rem = 16px base) —— */
-  --font-display: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  /* —— Typography — Inter first (loaded in this file), then system fallbacks —— */
+  --font-display: "Inter", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
   --font-family-body: var(--font-display);
   --typo-display-small-size: 2.25rem;
   --typo-display-small-line: 1.2;
@@ -102,47 +119,197 @@
   --typo-label-large-weight: 600;
   --typo-label-small-size: 0.75rem;
 
-  /* —— Spacing scale (4px base / 8dp grid) —— */
-  --spacing-1: 4px;
-  --spacing-2: 8px;
-  --spacing-3: 12px;
-  --spacing-4: 16px;
-  --spacing-5: 24px;
-  --spacing-6: 32px;
-  --spacing-8: 48px;
+  /* —— Spacing: strict 8px grid (8, 16, 24, 32, 40) —— */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  /** Minimum touch target (outside the 8px content scale). */
+  --space-touch: 48px;
+
+  /* Legacy spacing names → map to 8px grid (no raw px outside tokens). */
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-1);
+  --spacing-3: var(--space-2);
+  --spacing-4: var(--space-2);
+  --spacing-5: var(--space-3);
+  --spacing-6: var(--space-4);
+  --spacing-8: var(--space-touch);
+
+  /* —— Extended spacing (tokenized former raw px; prefer these over literals in components) —— */
+  --space-half: 4px;
+  --space-0-625: 5px;
+  --space-0-75: 6px;
+  --space-1-125: 9px;
+  --space-1-25: 10px;
+  --space-1-375: 11px;
+  --space-1-5: 12px;
+  --space-1-625: 13px;
+  --space-1-75: 14px;
+  --space-1-875: 15px;
+  --space-2-125: 17px;
+  --space-2-25: 18px;
+  --space-2-5: 20px;
+  --space-2-75: 22px;
+  --space-3-25: 26px;
+  --space-3-5: 28px;
+  --space-3-75: 30px;
+  --space-4-25: 34px;
+  --space-4-5: 36px;
+  --space-4-75: 38px;
+  --space-5-25: 42px;
+  --space-5-5: 44px;
+  --space-5-75: 46px;
+  --space-6-25: 50px;
+  --space-6-5: 52px;
+  --space-6-75: 54px;
+  --space-7: 56px;
+  --space-7-25: 58px;
+  --space-7-5: 60px;
+  --space-7-75: 62px;
+  --space-8: 64px;
+  --space-8-5: 66px;
+  --space-9: 72px;
+  --space-9-5: 76px;
+  --space-10: 80px;
+  --space-10-5: 84px;
+  --space-11: 88px;
+  --space-11-5: 92px;
+  --space-12: 96px;
+  --space-12-5: 100px;
+
+  /* Layout dimensions (widths / heights — not the core spacing scale) */
+  --layout-dim-96: 96px;
+  --layout-dim-112: 112px;
+  --layout-dim-120: 120px;
+  --layout-dim-128: 128px;
+  --layout-dim-140: 140px;
+  --layout-dim-160: 160px;
+  --layout-dim-180: 180px;
+  --layout-dim-200: 200px;
+  --layout-dim-220: 220px;
+  --layout-dim-240: 240px;
+  --layout-dim-280: 280px;
+  --layout-dim-300: 300px;
+  --layout-dim-320: 320px;
+  --layout-dim-360: 360px;
+  --layout-dim-380: 380px;
+  --layout-dim-400: 400px;
+  --layout-dim-420: 420px;
+  --layout-dim-440: 440px;
+  --layout-dim-520: 520px;
+  --layout-dim-540: 540px;
+  --layout-dim-560: 560px;
+  --layout-dim-620: 620px;
+  --layout-dim-640: 640px;
+  --layout-dim-680: 680px;
+  --layout-dim-820: 820px;
+  --layout-dim-879: 879px;
+  --layout-max-admin: 1140px;
+
+  /* —— Border widths (hairlines may stay 1px per spec) —— */
+  --border-width-hairline: 1px;
+  --border-width-medium: 2px;
+  --border-width-thick: 3px;
+
+  /* Micro-adjustments (replaces raw negative px in components) */
+  --motion-nudge-1: -1px;
+  --motion-nudge-2: -2px;
+  --motion-nudge-3: -3px;
+  --motion-nudge-4: -4px;
+  --motion-nudge-6: -6px;
+  --motion-nudge-8: -8px;
+  --motion-nudge-14: -14px;
+
+  /* —— Breakpoints & layout widths (media queries + max-width) —— */
+  --bp-xs: 480px;
+  --bp-sm: 600px;
+  --bp-md: 720px;
+  --bp-md-tab: 768px;
+  --bp-lg: 860px;
+  --bp-lg-2: 880px;
+  --bp-xl: 900px;
+  --bp-xl-2: 920px;
+  --bp-2xl: 960px;
+  --bp-3xl: 980px;
+  --bp-max-lg: 1100px;
+  --bp-max-xl: 1200px;
+
+  /* —— Motion (public surfaces) —— */
+  --transition-fast: 150ms;
+  --transition-medium: 200ms;
+  --transition-slow: 250ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* —— Typography (sizes often used instead of raw px) —— */
+  --typo-size-2xs: 0.6875rem;
+  --typo-size-caption: 0.8125rem;
+  --typo-size-body-comfort: 0.9375rem;
+  --typo-size-title-sm: 1.0625rem;
+  --typo-size-hero: 2.125rem;
+
+  /* —— Font stacks —— */
+  --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* —— Surfaces & scrims (no raw rgba in components — reference these) —— */
+  --color-surface-glass: rgb(255 255 255 / 0.94);
+  --color-scrim-strong: rgb(15 23 42 / 0.45);
+  --color-scrim-medium: rgb(15 23 42 / 0.35);
+  --color-scrim-veil: rgb(15 10 30 / 0.45);
+  --color-scrim-drawer: rgb(12 12 18 / 0.9);
+  --color-scrim-join-backdrop: rgb(12 12 22 / 0.52);
+  --elevation-hairline-bottom: 0 var(--border-width-hairline) 0 rgb(0 0 0 / 0.04);
+  --elevation-hairline-on-surface: 0 var(--border-width-hairline) 0 rgb(15 23 42 / 0.04);
+  --elevation-admin-nav-hover: 0 var(--space-0-75) var(--space-2-25) rgb(46 10 100 / 0.12);
+  --elevation-admin-nav-hover-primary: 0 var(--space-1) var(--space-2-75) rgb(46 10 100 / 0.22);
+  --elevation-btn-primary: 0 var(--space-half) var(--space-2-5) rgba(var(--wf-primary-rgb), 0.28);
+  --elevation-btn-primary-hover: 0 var(--space-1) var(--space-4) rgba(var(--wf-primary-rgb), 0.38);
+  --elevation-card-hover-admin: 0 var(--space-3) var(--space-8) rgb(15 23 42 / 0.1);
+  --elevation-dialog: 0 var(--space-4) var(--space-touch) rgb(15 23 42 / 0.2);
+  --elevation-busy-panel: 0 var(--space-3) var(--space-10) rgb(15 23 42 / 0.15);
+  --elevation-drawer-glow: var(--motion-nudge-8) 0 var(--space-4) rgba(46, 10, 100, 0.12);
+  --elevation-inset-highlight: inset 0 var(--border-width-hairline) 0 rgb(255 255 255 / 0.5);
+  --elevation-inset-highlight-strong: inset 0 var(--border-width-hairline) 0 rgb(255 255 255 / 0.65);
 
   /* —— Border radius —— */
-  --border-radius-xs: 4px;
-  --border-radius-sm: 8px;
-  --border-radius-md: 12px;
-  --border-radius-lg: 16px;
-  --border-radius-xl: 28px;
+  --radius-small: 8px;
+  --radius-medium: 16px;
+  --radius-large: 24px;
+  --border-radius-xs: var(--space-1);
+  --border-radius-sm: var(--radius-small);
+  --border-radius-md: var(--space-1-5);
+  --border-radius-lg: var(--radius-medium);
+  --border-radius-xl: var(--radius-large);
   --border-radius-full: 9999px;
   --radius: var(--border-radius-md);
   --radius-pill: var(--border-radius-full);
 
   /* Admin layout (see docs/ADMIN_UI.md) */
   --admin-radius: var(--border-radius-md);
-  --admin-radius-lg: 14px;
+  --admin-radius-lg: var(--space-1-75);
   --admin-radius-xl: var(--border-radius-lg);
   --admin-gap: var(--spacing-3);
-  --admin-gap-section: 14px;
-  --admin-main-pad-y: 22px;
+  --admin-gap-section: var(--space-1-75);
+  --admin-main-pad-y: var(--space-2-75);
   --admin-main-pad-x: var(--spacing-4);
-  --admin-main-pad-bottom: 44px;
-  --admin-card-padding: 14px var(--spacing-4);
-  --admin-table-cell-padding: 10px var(--spacing-3);
-  --admin-container-max: 1140px;
-  --admin-modal-max-width: 960px;
+  --admin-main-pad-bottom: var(--space-5-5);
+  --admin-card-padding: var(--space-1-75) var(--spacing-4);
+  --admin-table-cell-padding: var(--space-1-25) var(--spacing-3);
+  --admin-container-max: var(--layout-max-admin);
+  --admin-modal-max-width: var(--bp-2xl);
   --admin-modal-max-height-vh: 88vh;
-  --admin-modal-max-height-px: 820px;
-  /* M3-ish modal chrome (8px grid): header strip + 48px minimum touch targets */
-  --modal-space-1: 8px;
-  --modal-space-2: 16px;
-  --modal-space-3: 24px;
-  --modal-header-min-height: 48px;
-  --modal-close-btn-size: 48px;
+  --admin-modal-max-height-px: var(--layout-dim-820);
+  /* Modal chrome → use global space scale */
+  --modal-space-1: var(--space-1);
+  --modal-space-2: var(--space-2);
+  --modal-space-3: var(--space-3);
+  --modal-header-min-height: var(--space-touch);
+  --modal-close-btn-size: var(--space-touch);
   --modal-z-dialog: 10060;
+  --m3-modal-duration: 250ms;
+  --m3-modal-duration-backdrop: 200ms;
+  --m3-modal-ease: cubic-bezier(0.2, 0, 0, 1);
 
   /* Material Design 3 — system tokens */
   --md-sys-spacing-1: var(--spacing-1);

@@ -2,6 +2,8 @@
   var W = window.__WORKSPACE__;
   if (!W || !W.paths) return;
 
+  var M3_CLOSE_MS = 280;
+
   var mode = "saved";
   var savedState = {
     company: JSON.parse(JSON.stringify(W.company)),
@@ -26,6 +28,25 @@
 
   function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
+  }
+
+  function openM3Modal(el) {
+    if (!el) return;
+    el.removeAttribute("hidden");
+    el.setAttribute("aria-hidden", "false");
+    void el.offsetWidth;
+    el.classList.add("m3-modal-overlay--open");
+  }
+
+  function closeM3Modal(el) {
+    if (!el) return;
+    el.classList.remove("m3-modal-overlay--open");
+    window.setTimeout(function () {
+      if (!el.classList.contains("m3-modal-overlay--open")) {
+        el.setAttribute("hidden", "hidden");
+        el.setAttribute("aria-hidden", "true");
+      }
+    }, M3_CLOSE_MS);
   }
 
   function applyStateToForm(st) {
@@ -155,23 +176,39 @@
 
   if (els.btnClose) {
     els.btnClose.addEventListener("click", function () {
-      if (els.dialog && typeof els.dialog.showModal === "function") els.dialog.showModal();
+      openM3Modal(els.dialog);
     });
+  }
+
+  function closeLeaveModal() {
+    closeM3Modal(els.dialog);
   }
 
   if (els.dialogCancel) {
     els.dialogCancel.addEventListener("click", function () {
-      if (els.dialog) els.dialog.close();
+      closeLeaveModal();
     });
   }
 
+  document.querySelectorAll("[data-ws-dialog-dismiss]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      closeLeaveModal();
+    });
+  });
+
   if (els.dialogLeave) {
     els.dialogLeave.addEventListener("click", function () {
-      if (els.dialog) els.dialog.close();
+      closeLeaveModal();
       draft = clone(savedState);
       showSavedPreview();
     });
   }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape" || !els.dialog || els.dialog.hasAttribute("hidden")) return;
+    if (!els.dialog.classList.contains("m3-modal-overlay--open")) return;
+    closeLeaveModal();
+  });
 
   if (els.btnBackEdit) {
     els.btnBackEdit.addEventListener("click", function () {
@@ -183,9 +220,11 @@
     els.btnPublish.addEventListener("click", function () {
       var payload = mergeDraftForApi(draft);
       if (els.overlay) {
-        els.overlay.hidden = false;
+        els.overlay.removeAttribute("hidden");
         els.overlay.setAttribute("aria-hidden", "false");
         els.overlay.setAttribute("aria-busy", "true");
+        void els.overlay.offsetWidth;
+        els.overlay.classList.add("m3-modal-overlay--open");
       }
       fetch(W.paths.publish, {
         method: "POST",
@@ -222,17 +261,27 @@
           savedState.galleryAdminText = j.galleryAdminText || "";
           draft = clone(savedState);
           if (els.overlay) {
-            els.overlay.hidden = true;
-            els.overlay.setAttribute("aria-hidden", "true");
+            els.overlay.classList.remove("m3-modal-overlay--open");
             els.overlay.removeAttribute("aria-busy");
+            window.setTimeout(function () {
+              if (els.overlay && !els.overlay.classList.contains("m3-modal-overlay--open")) {
+                els.overlay.setAttribute("hidden", "hidden");
+                els.overlay.setAttribute("aria-hidden", "true");
+              }
+            }, M3_CLOSE_MS);
           }
           showSavedPreview();
         })
         .catch(function (e) {
           if (els.overlay) {
-            els.overlay.hidden = true;
-            els.overlay.setAttribute("aria-hidden", "true");
+            els.overlay.classList.remove("m3-modal-overlay--open");
             els.overlay.removeAttribute("aria-busy");
+            window.setTimeout(function () {
+              if (els.overlay && !els.overlay.classList.contains("m3-modal-overlay--open")) {
+                els.overlay.setAttribute("hidden", "hidden");
+                els.overlay.setAttribute("aria-hidden", "true");
+              }
+            }, M3_CLOSE_MS);
           }
           alert(e.message || "Publish failed");
         });

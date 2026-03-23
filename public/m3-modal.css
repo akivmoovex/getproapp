@@ -1,0 +1,252 @@
+/**
+ * Material 3 modal shell — single source of truth for overlays / dialogs.
+ * Layout: flex only (no absolute positioning for header/body/footer flow).
+ * Tokens: theme.css (--space-*, --color-*, --elevation-*, --modal-*).
+ */
+
+/* Root overlay: centers the dialog; fades in when .m3-modal-overlay--open is set */
+.m3-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--modal-z-dialog);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(var(--space-2), env(safe-area-inset-top, 0px)) max(var(--space-2), env(safe-area-inset-right, 0px))
+    max(var(--space-2), env(safe-area-inset-bottom, 0px)) max(var(--space-2), env(safe-area-inset-left, 0px));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--m3-modal-duration-backdrop) var(--m3-modal-ease),
+    visibility 0s linear var(--m3-modal-duration-backdrop);
+}
+
+.m3-modal-overlay[hidden] {
+  display: none !important;
+}
+
+.m3-modal-overlay:not([hidden]) {
+  display: flex;
+}
+
+.m3-modal-overlay.m3-modal-overlay--open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity var(--m3-modal-duration-backdrop) var(--m3-modal-ease),
+    visibility 0s linear 0s;
+}
+
+.m3-modal-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-text-primary) 55%, transparent);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity var(--m3-modal-duration-backdrop) var(--m3-modal-ease);
+}
+
+.m3-modal-overlay.m3-modal-overlay--open .m3-modal-overlay__backdrop {
+  opacity: 1;
+}
+
+/* Dialog surface: scales + slides in (no absolute children for structure) */
+.m3-modal {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, var(--m3-modal-max-width, 560px));
+  max-height: min(90vh, 760px);
+  min-height: 0;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--color-outline);
+  box-shadow: var(--elevation-2);
+  overflow: hidden;
+  transform: scale(0.96) translateY(var(--space-1));
+  opacity: 0;
+  transition:
+    transform var(--m3-modal-duration) var(--m3-modal-ease),
+    opacity var(--m3-modal-duration) var(--m3-modal-ease);
+}
+
+.m3-modal-overlay.m3-modal-overlay--open .m3-modal {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.m3-modal__header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--modal-header-min-height);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--color-outline);
+  background: var(--color-surface);
+}
+
+.m3-modal__header--end {
+  justify-content: flex-end;
+}
+
+.m3-modal__title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--typo-title-large-size);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.m3-modal__close {
+  flex: 0 0 auto;
+  width: var(--modal-close-btn-size);
+  min-width: var(--modal-close-btn-size);
+  height: var(--modal-close-btn-size);
+  min-height: var(--modal-close-btn-size);
+  border-radius: var(--border-radius-full);
+  border: 1px solid var(--color-outline-strong);
+  background: var(--color-surface);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--color-text-primary);
+  box-shadow: var(--elevation-1);
+}
+
+.m3-modal__close:hover {
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+}
+
+.m3-modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--space-2);
+}
+
+.m3-modal__body--iframe {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.m3-modal__body--iframe iframe {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border: 0;
+  background: var(--color-background);
+}
+
+.m3-modal__footer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-top: 1px solid var(--color-outline);
+  background: var(--color-surface);
+}
+
+.m3-modal__footer--empty {
+  display: none;
+}
+
+.m3-modal__loading {
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--color-text-secondary);
+}
+
+/* Size modifiers */
+.m3-modal--settings-iframe {
+  --m3-modal-max-width: var(--admin-modal-max-width);
+  width: min(100%, var(--admin-modal-max-width));
+  height: min(var(--admin-modal-max-height-vh), var(--admin-modal-max-height-px));
+  max-height: min(var(--admin-modal-max-height-vh), var(--admin-modal-max-height-px));
+}
+
+.m3-modal--crm-task {
+  --m3-modal-max-width: var(--layout-dim-640);
+}
+
+.m3-modal--join {
+  --m3-modal-max-width: 440px;
+  max-height: min(85vh, 640px);
+}
+
+/* Admin: mini-site workspace — leave confirm + publish busy (same overlay animation as other M3 modals) */
+.admin-workspace-leave-m3.m3-modal-overlay {
+  z-index: 10055;
+}
+
+.admin-workspace-leave-m3 .m3-modal--workspace-confirm {
+  --m3-modal-max-width: var(--layout-dim-400);
+}
+
+.admin-workspace-busy-m3.m3-modal-overlay {
+  z-index: 10058;
+}
+
+.admin-workspace-busy-m3 .m3-modal--workspace-busy {
+  --m3-modal-max-width: var(--layout-dim-360);
+  box-shadow: var(--elevation-busy-panel);
+}
+
+.admin-workspace-busy-m3 .m3-modal__body--workspace-busy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-3) var(--space-2);
+  gap: var(--space-2);
+}
+
+/* Region picker: compact sheet */
+.wf-region-m3.m3-modal-overlay {
+  z-index: 10003;
+}
+
+.wf-region-m3 .m3-modal.wf-region-sheet {
+  width: min(92vw, 440px);
+  max-height: min(85vh, 560px);
+}
+
+.wf-region-m3 .m3-modal__body.wf-region-sheet__body {
+  padding: 0 var(--space-2) var(--space-2);
+}
+
+/* Join page modals (join.ejs) */
+.join-modal-layer.m3-modal-overlay {
+  z-index: 10050;
+}
+
+.join-modal-layer .m3-modal-overlay__backdrop {
+  background: var(--color-scrim-join-backdrop);
+  backdrop-filter: blur(var(--space-half));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3-modal-overlay,
+  .m3-modal-overlay__backdrop,
+  .m3-modal {
+    transition-duration: 0.01ms !important;
+  }
+}

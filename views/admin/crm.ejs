@@ -100,16 +100,14 @@
       </div>
     </main>
 
-    <div id="crm_task_overlay" class="admin-crm-overlay" aria-hidden="true" hidden>
-      <div class="admin-crm-overlay__backdrop" data-crm-close-overlay tabindex="-1"></div>
-      <div class="admin-crm-overlay__dialog" role="dialog" aria-modal="true" aria-label="Task details">
-        <!-- Dismiss strip: close is not absolutely positioned over task content (avoids overlap with hero titles/actions). -->
-        <div class="admin-crm-overlay__chrome">
-          <button type="button" class="admin-crm-overlay__close" data-crm-close-overlay aria-label="Close task details">
-            ×
-          </button>
-        </div>
-        <div id="crm_task_overlay_body" class="admin-crm-overlay__body"></div>
+    <div id="crm_task_overlay" class="m3-modal-overlay admin-crm-overlay" aria-hidden="true" hidden>
+      <div class="m3-modal-overlay__backdrop" data-crm-close-overlay tabindex="-1"></div>
+      <div class="m3-modal m3-modal--crm-task" role="dialog" aria-modal="true" aria-label="Task details">
+        <header class="m3-modal__header m3-modal__header--end">
+          <button type="button" class="m3-modal__close" data-crm-close-overlay aria-label="Close task details">×</button>
+        </header>
+        <div class="m3-modal__body" id="crm_task_overlay_body"></div>
+        <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
       </div>
     </div>
 

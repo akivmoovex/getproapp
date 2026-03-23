@@ -65,17 +65,17 @@
       </div>
     </main>
 
-    <div id="admin_settings_modal" class="admin-settings-modal" aria-hidden="true" hidden>
-      <div class="admin-settings-modal__backdrop" data-settings-modal-close tabindex="-1"></div>
-      <!-- Header row keeps the close control out of the iframe document (no overlap with embedded toolbars). -->
-      <div class="admin-settings-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="admin_settings_modal_title">
-        <header class="admin-settings-modal__header">
-          <h2 id="admin_settings_modal_title" class="admin-settings-modal__headline">Admin tool</h2>
-          <button type="button" class="admin-settings-modal__close" data-settings-modal-close aria-label="Close dialog">
-            ×
-          </button>
+    <div id="admin_settings_modal" class="m3-modal-overlay admin-settings-modal" aria-hidden="true" hidden>
+      <div class="m3-modal-overlay__backdrop" data-settings-modal-close tabindex="-1"></div>
+      <div class="m3-modal m3-modal--settings-iframe" role="dialog" aria-modal="true" aria-labelledby="admin_settings_modal_title">
+        <header class="m3-modal__header">
+          <h2 id="admin_settings_modal_title" class="m3-modal__title">Admin tool</h2>
+          <button type="button" class="m3-modal__close" data-settings-modal-close aria-label="Close dialog">×</button>
         </header>
-        <iframe id="admin_settings_iframe" class="admin-settings-modal__iframe" title="Embedded admin screen"></iframe>
+        <div class="m3-modal__body m3-modal__body--iframe">
+          <iframe id="admin_settings_iframe" title="Embedded admin screen"></iframe>
+        </div>
+        <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
       </div>
     </div>
 

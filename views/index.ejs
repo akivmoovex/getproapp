@@ -63,20 +63,21 @@
     </div>
     <div class="wf-menu-backdrop" id="wf-menu-backdrop" hidden></div>
     <% if (typeof showRegionPickerUi !== 'undefined' && showRegionPickerUi) { %>
-    <div id="wf-region-overlay" class="wf-region-overlay" hidden aria-hidden="true"></div>
-    <div
-      id="wf-region-sheet"
-      class="wf-region-sheet wf-region-sheet--picker"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="wf-region-title"
-      hidden
-    >
-      <div class="wf-region-sheet__header">
-        <h2 id="wf-region-title" class="wf-region-title wf-region-title--picker">Choose region</h2>
-        <button type="button" class="wf-region-close-x" id="wf-region-close-x" aria-label="Close">×</button>
-      </div>
-      <div class="wf-region-actions wf-region-actions--grid">
+    <div id="wf-region-m3-root" class="m3-modal-overlay wf-region-m3" hidden aria-hidden="true">
+      <div class="m3-modal-overlay__backdrop" id="wf-region-overlay"></div>
+      <div
+        id="wf-region-sheet"
+        class="m3-modal wf-region-sheet wf-region-sheet--picker"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wf-region-title"
+      >
+        <header class="m3-modal__header wf-region-sheet__header">
+          <h2 id="wf-region-title" class="m3-modal__title wf-region-title wf-region-title--picker">Choose region</h2>
+          <button type="button" class="m3-modal__close wf-region-close-x" id="wf-region-close-x" aria-label="Close">×</button>
+        </header>
+        <div class="m3-modal__body wf-region-sheet__body">
+          <div class="wf-region-actions wf-region-actions--grid">
         <% if (typeof regionChoices !== 'undefined' && regionChoices && regionChoices.length) { %>
           <% regionChoices.forEach(function (r) { %>
             <a class="wf-region-btn" href="<%= r.href %>">
@@ -96,6 +97,9 @@
         </a>
         <% } %>
         <% } %>
+          </div>
+        </div>
+        <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
       </div>
     </div>
     <% } %>
