@@ -19,7 +19,7 @@ Optional: `<p class="admin-form-shell__unsaved" hidden>Unsaved changes</p>` insi
 - **Done:** enabled only when the form is **dirty** (differs from the initial snapshot). Calls `form.requestSubmit()` (HTML5 validation runs). Implied submit (e.g. Enter) is blocked while Done is disabled.
 - **Cancel:** restores field values from the initial snapshot (including checkbox), clears dirty state, returns to read mode.
 - **Dirty:** `input` / `change` listeners compare current values to the snapshot; shell gets `.is-dirty` when they differ.
-- **Leaving:** `beforeunload` prompts when the form is dirty in edit mode (reload/close tab). **← Users** (`.admin-form-shell__back`) prompts with `confirm()` when dirty in edit mode.
+- **Leaving:** Same-origin navigation (links) while **edit + dirty** opens an **M3 modal** (“Discard changes?” / Cancel / Discard). **Esc** or backdrop dismiss = Cancel. **Reload / close tab** still uses the browser’s native `beforeunload` prompt (custom UI is not allowed there by the spec).
 
 ## Styling
 

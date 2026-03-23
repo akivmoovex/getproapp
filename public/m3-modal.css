@@ -204,6 +204,15 @@
   z-index: 10058;
 }
 
+/* Admin: unsaved changes (discard confirm) */
+.admin-form-unsaved-m3.m3-modal-overlay {
+  z-index: 10056;
+}
+
+.m3-modal--admin-unsaved {
+  --m3-modal-max-width: min(100%, var(--layout-dim-400));
+}
+
 .admin-workspace-busy-m3 .m3-modal--workspace-busy {
   --m3-modal-max-width: var(--layout-dim-360);
   box-shadow: var(--elevation-busy-panel);

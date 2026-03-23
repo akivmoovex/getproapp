@@ -1,0 +1,18 @@
+<% var _tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
+<% var _mode = typeof emptyStateMode !== 'undefined' ? emptyStateMode : 'directory'; %>
+<div class="card pro-directory-empty pro-directory-empty--rich" role="status">
+  <div class="pro-directory-empty__inner">
+    <h2 class="pro-directory-empty__title">No results found</h2>
+    <p class="pro-directory-empty__hint muted">
+      <% if (_mode === 'category') { %>
+        Try another category or go back to the full directory.
+      <% } else { %>
+        Try adjusting your search or filters.
+      <% } %>
+    </p>
+    <div class="pro-directory-empty__actions">
+      <a href="<%= _tp %>/directory" class="btn btn--text">Reset filters</a>
+      <a href="<%= _tp %>/directory#directory-categories" class="btn btn-primary">Browse categories</a>
+    </div>
+  </div>
+</div>
