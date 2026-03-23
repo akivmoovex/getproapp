@@ -22,11 +22,11 @@
         >
           <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
           <div>
-            <label for="name">Profession name</label>
+            <label for="name">Category name</label>
             <input id="name" name="name" value="<%= category ? category.name : '' %>" required />
           </div>
           <div>
-            <label for="slug">Profession slug</label>
+            <label for="slug">Category slug</label>
             <input id="slug" name="slug" value="<%= category ? category.slug : '' %>" required />
             <div class="admin-field-hint">
               Example: `accounting`, `lawyers`, `electricians`.

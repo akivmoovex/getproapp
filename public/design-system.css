@@ -1,0 +1,82 @@
+/**
+ * GetPro Design System V1 — canonical aliases & patterns
+ * ========================================================
+ * Loaded after public/theme.css via styles.css.
+ * Human-readable spec: docs/DESIGN_SYSTEM.md
+ *
+ * Rules:
+ * - Prefer these semantic names in NEW component CSS.
+ * - Existing code may still use legacy aliases (--bg, --wf-primary, --space-1…).
+ * - App spacing scale uses an 8px rhythm (--space-1 = 8px). DS “4px scale” lives in --gp-ds-*.
+ */
+
+:root {
+  /* —— Color (canonical DS V1 names → theme tokens) —— */
+  --color-bg: var(--color-background);
+  --color-surface-alt: var(--color-surface-variant);
+  --color-text: var(--color-text-primary);
+  --color-text-muted: var(--color-text-secondary);
+  --color-text-soft: var(--color-text-tertiary);
+  --color-primary-hover: var(--wf-primary-dark);
+  --color-primary-soft: rgba(var(--wf-primary-rgb), 0.08);
+  --color-border: var(--color-outline);
+  --color-border-strong: var(--color-outline-strong);
+
+  /* —— Radius (DS naming — map to existing shape tokens) —— */
+  --radius-sm: var(--radius-small);
+  --radius-md: var(--border-radius-md);
+  --radius-lg: var(--border-radius-lg);
+  --radius-xl: var(--border-radius-xl);
+
+  /* —— Typography scale (pixel-aligned labels for design handoff) —— */
+  --font-family: var(--font-family-body);
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --font-medium: 500;
+  --font-semibold: 600;
+
+  /* —— DS V1 spacing (4px base). Map app tokens where they match. —— */
+  --gp-ds-space-1: 4px;
+  --gp-ds-space-2: 8px;
+  --gp-ds-space-3: 12px;
+  --gp-ds-space-4: 16px;
+  --gp-ds-space-5: 20px;
+  --gp-ds-space-6: 24px;
+  --gp-ds-space-8: 32px;
+  --gp-ds-space-10: 40px;
+  --gp-ds-space-12: 48px;
+
+  /* —— Focus (visible keyboard ring — use on interactive controls) —— */
+  --focus-ring-color: color-mix(in srgb, var(--color-focus) 55%, var(--color-text-primary));
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+/**
+ * Focus utility — use for custom interactive surfaces not covered by .btn / links
+ */
+.gp-focus-ring:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/**
+ * Directory “professional card” (BEM: .pro-directory-card*)
+ * Structure: header row (title + CTA) → meta → body → footer
+ * Do not duplicate; extend these classes only.
+ */
+
+/**
+ * Search toolbar (BEM: .pro-directory-toolbar*)
+ * Compact horizontal filter; stacks on small viewports.
+ */
+
+/**
+ * Button hierarchy (existing classes — do not fork):
+ * - Primary:   .btn.btn-primary
+ * - Secondary: .btn.btn-secondary-wf  (outline / alternate)
+ * - Ghost/text:.btn.btn--text
+ */

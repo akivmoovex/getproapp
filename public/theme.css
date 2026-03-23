@@ -1,33 +1,37 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 /**
- * GetPro — global design system (Material Design 3 / Material You aligned)
+ * GetPro — global design tokens (Material Design 3 aligned; DS V1 palette in docs/DESIGN_SYSTEM.md)
  * Single source of truth for colors, typography, spacing, shape, elevation.
- * Imported first by styles.css. Do not duplicate :root elsewhere.
+ * Imported first by styles.css; design-system.css adds canonical aliases. Do not duplicate :root elsewhere.
  */
 
 :root {
-  /* —— Semantic colors (M3 roles) — canonical palette — */
-  --color-primary: #7c4dff;
+  /* —— Semantic colors (M3 roles) — GetPro Design System V1 (see docs/DESIGN_SYSTEM.md + public/design-system.css) — */
+  --color-primary: #6c5ce7;
   --color-on-primary: #ffffff;
   --color-primary-container: #ede9fe;
   --color-on-primary-container: #2e1064;
-  --color-secondary: #5a1ab5;
+  --color-secondary: #5a4bd1;
   --color-on-secondary: #ffffff;
   --color-secondary-container: #e8def8;
   --color-on-secondary-container: #1d192b;
-  --color-background: #f7f7fb;
+  --color-background: #f6f7fb;
   --color-surface: #ffffff;
-  --color-surface-variant: #e7e0ec;
-  --color-text-primary: #1c1b1f;
-  --color-text-secondary: #49454f;
-  --color-text-tertiary: #7c7c8f;
-  --color-outline: #e0e0e0;
-  --color-outline-strong: #cfcfe0;
-  --color-error: #b3261e;
+  /* Alternate / subtle surface (maps to DS --color-surface-alt) */
+  --color-surface-variant: #f1f3f9;
+  --color-text-primary: #121417;
+  --color-text-secondary: #5f6b7a;
+  --color-text-tertiary: #8a94a6;
+  --color-outline: #e4e8f0;
+  --color-outline-strong: #d6dbe6;
+  --color-error: #dc2626;
   --color-on-error: #ffffff;
-  --color-error-container: #f9dedc;
-  --color-on-error-container: #410e0b;
+  --color-error-container: #fee2e2;
+  --color-on-error-container: #450a0a;
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-focus: #6c5ce7;
 
   /* Misc palette (marketing / tenant themes — single reference, avoids hex in styles.css) */
   --color-slate-100: #f1f5f9;
@@ -57,12 +61,12 @@
   --muted: var(--color-text-secondary);
   --muted-soft: var(--color-text-tertiary);
   --wf-primary: var(--color-primary);
-  --wf-primary-dark: #5a1ab5;
-  --wf-primary-light: #a78bfa;
-  --wf-primary-rgb: 124, 77, 255;
+  --wf-primary-dark: #5a4bd1;
+  --wf-primary-light: #a5b4fc;
+  --wf-primary-rgb: 108, 92, 231;
   --wf-secondary: var(--wf-primary-dark);
-  --wf-secondary-hover: #45108f;
-  --wf-secondary-deep: #2e0a64;
+  --wf-secondary-hover: #4c3d9e;
+  --wf-secondary-deep: #312a72;
   --link: var(--color-primary);
   --pro-orange: var(--color-primary);
   --pro-orange-hover: var(--wf-primary-dark);
@@ -73,8 +77,11 @@
   --focus-ring: rgba(var(--wf-primary-rgb), 0.32);
   --primary-border-hover: rgba(var(--wf-primary-rgb), 0.35);
   --secondary-fill-ghost: var(--primary-softer-bg);
-  --elevation-1: 0 2px 6px rgba(0, 0, 0, 0.1);
-  --elevation-2: 0 6px 20px rgba(0, 0, 0, 0.15);
+  --elevation-1: 0 2px 6px rgba(0, 0, 0, 0.08);
+  --elevation-2: 0 6px 20px rgba(0, 0, 0, 0.12);
+  /* DS V1 subtle elevation (prefer for cards / surfaces) */
+  --elevation-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --elevation-md: 0 4px 12px rgba(0, 0, 0, 0.06);
   --shadow: var(--elevation-2);
   --card-shadow-sm: var(--elevation-1);
   --cta-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
@@ -89,7 +96,7 @@
   --cta-gradient-hover: var(--btn-primary-hover);
   --hero-kicker-bg: var(--primary-softer-bg);
   --article-thumb-gradient: var(--primary-soft-bg);
-  --footer-bg: var(--wf-primary-dark);
+  --footer-bg: var(--wf-secondary-deep);
   --footer-cta-gradient: var(--footer-bg);
   --footer-main-gradient: var(--footer-bg);
   --footer-on-dark: rgba(255, 255, 255, 0.92);
@@ -98,9 +105,9 @@
   --footer-on-dark-border: rgba(255, 255, 255, 0.12);
   --footer-cta-lead: rgba(255, 255, 255, 0.88);
   --wf-footer-link-hover: var(--color-white);
-  --flash-error-border: rgba(180, 50, 50, 0.35);
-  --flash-error-bg: rgba(180, 50, 50, 0.08);
-  --flash-error-text: #8b2525;
+  --flash-error-border: color-mix(in srgb, var(--color-error) 35%, transparent);
+  --flash-error-bg: color-mix(in srgb, var(--color-error) 8%, transparent);
+  --flash-error-text: color-mix(in srgb, var(--color-error) 88%, var(--color-text-primary));
 
   /* —— Typography — Inter first (loaded in this file), then system fallbacks —— */
   --font-display: "Inter", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
@@ -402,13 +409,13 @@
   --tenant-theme-za-chip-bg: rgba(0, 122, 77, 0.1);
   --tenant-theme-na-hero-tint: rgba(30, 58, 138, 0.12);
   --tenant-theme-na-chip-bg: rgba(30, 58, 138, 0.1);
-  --tenant-theme-global-hero-tint: rgba(124, 58, 237, 0.1);
-  --tenant-theme-global-chip-bg: rgba(124, 58, 237, 0.08);
+  --tenant-theme-global-hero-tint: rgba(108, 92, 231, 0.1);
+  --tenant-theme-global-chip-bg: rgba(108, 92, 231, 0.08);
   --tenant-theme-demo-hero-tint: rgba(13, 148, 136, 0.12);
   --tenant-theme-demo-chip-bg: rgba(13, 148, 136, 0.1);
   --tenant-theme-il-border: rgba(0, 102, 204, 0.35);
 
-  /* —— Border radius —— */
+  /* —— Border radius —— (DS V1 aliases: --radius-sm/md/lg/xl in design-system.css) */
   --radius-small: 8px;
   --radius-medium: 16px;
   --radius-large: 24px;

@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Professions | GetPro Admin</title>
+    <title>Categories | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../partials/admin_nav', { navTitle: 'Professions', activeNav: 'categories' }) %>
+    <%- include('../partials/admin_nav', { navTitle: 'Categories', activeNav: 'categories' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
       <div class="admin-super-users__topbar">
@@ -18,17 +18,17 @@
         <% } %>
       </div>
 
-      <h1 class="section-title section-title--flush">Professions</h1>
+      <h1 class="section-title section-title--flush">Categories</h1>
       <% if (!(typeof embed !== 'undefined' && embed)) { %>
       <p class="admin-intro admin-intro--tight-top">
-        Each region has its own profession list in the database. Add or edit here only affects this region
+        Each region has its own category list in the database. Add or edit here only affects this region
         <% if (typeof adminScopeTenant !== 'undefined' && adminScopeTenant) { %>
           (<strong><%= adminScopeTenant.name %></strong>)
         <% } %>
         — not other tenants. Super admins: switch region under <a href="/admin/super#act-as-region">Super admin → Act as region</a>.
       </p>
       <% } else { %>
-      <p class="admin-intro admin-intro--embed muted admin-intro--embed-tight">Professions for this region. Filters and table below.</p>
+      <p class="admin-intro admin-intro--embed muted admin-intro--embed-tight">Categories for this region. Filters and table below.</p>
       <% } %>
       <% var f = typeof filters !== 'undefined' ? filters : {}; %>
       <form method="get" action="/admin/categories" class="admin-filter-form">
@@ -55,10 +55,10 @@
       </form>
 
       <% if (!editMode) { %>
-      <p class="admin-intro">View-only list. Choose <strong>Edit</strong> to add, change, or remove professions.</p>
+      <p class="admin-intro">View-only list. Choose <strong>Edit</strong> to add, change, or remove categories.</p>
       <% } else { %>
       <div class="admin-toolbar">
-        <a class="btn btn-primary" href="/admin/categories/new<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">New profession</a>
+        <a class="btn btn-primary" href="/admin/categories/new<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">New category</a>
       </div>
       <% } %>
 
@@ -77,11 +77,11 @@
             <% if (!categories || categories.length === 0) { %>
               <tr><td colspan="<%= editMode ? 4 : 3 %>" class="muted">
                 <% if (typeof hasActiveFilters !== 'undefined' && hasActiveFilters) { %>
-                  No professions match these filters.
+                  No categories match these filters.
                 <% } else if (typeof totalCategoryCount !== 'undefined' && totalCategoryCount === 0) { %>
-                  No professions for this region in the database. Choose <strong>Edit</strong> to add some, or open <strong>Super admin</strong> → <em>Act as region</em> and pick a tenant that should already have professions (e.g. Demo or Zambia).
+                  No categories for this region in the database. Choose <strong>Edit</strong> to add some, or open <strong>Super admin</strong> → <em>Act as region</em> and pick a tenant that should already have categories (e.g. Demo or Zambia).
                 <% } else { %>
-                  No professions match these filters.
+                  No categories match these filters.
                 <% } %>
               </td></tr>
             <% } %>
@@ -94,7 +94,7 @@
                 <td>
                   <div class="flex-row-wrap">
                     <a class="btn" href="/admin/categories/<%= cat.id %>/edit">Edit</a>
-                    <form method="post" action="/admin/categories/<%= cat.id %>/delete" onsubmit="return confirm('Delete this profession? Companies will be uncategorized.');">
+                    <form method="post" action="/admin/categories/<%= cat.id %>/delete" onsubmit="return confirm('Delete this category? Professionals in it will be uncategorized.');">
                       <button class="btn" type="submit">Delete</button>
                     </form>
                   </div>

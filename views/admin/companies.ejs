@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Companies | GetPro Admin</title>
+    <title>Professionals | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../partials/admin_nav', { navTitle: 'Companies', activeNav: 'companies' }) %>
+    <%- include('../partials/admin_nav', { navTitle: 'Professionals', activeNav: 'companies' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
       <% var _fs = typeof filterSuffix !== 'undefined' ? filterSuffix : ''; %>
@@ -20,7 +20,7 @@
         <% } %>
       </div>
 
-      <h1 class="section-title section-title--flush">Companies</h1>
+      <h1 class="section-title section-title--flush">Professionals</h1>
       <% var f = typeof filters !== 'undefined' ? filters : {}; %>
       <form method="get" action="/admin/companies" class="admin-filter-form">
         <% if (editMode) { %><input type="hidden" name="edit" value="1" /><% } %>
@@ -35,7 +35,7 @@
             <input id="q_subdomain" name="q_subdomain" type="search" value="<%= f.q_subdomain || '' %>" placeholder="Filter…" autocomplete="off" />
           </div>
           <div>
-            <label class="admin-filter-form__label" for="q_category">Profession</label>
+            <label class="admin-filter-form__label" for="q_category">Category</label>
             <input id="q_category" name="q_category" type="search" value="<%= f.q_category || '' %>" placeholder="Filter…" autocomplete="off" />
           </div>
           <div>
@@ -64,7 +64,7 @@
             <tr>
               <th>Name</th>
               <th>Mini-site</th>
-              <th>Profession</th>
+              <th>Category</th>
               <th>Directory profile</th>
               <th>Updated</th>
               <% if (editMode) { %><th>Actions</th><% } %>

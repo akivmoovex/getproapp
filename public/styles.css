@@ -1,8 +1,10 @@
 /**
  * GetPro — application styles (components, layouts, pages).
- * Design tokens: public/theme.css (Material Design 3). Single link in templates remains /styles.css (imports theme).
+ * Design tokens: public/theme.css → public/design-system.css (DS V1 aliases). Single link: /styles.css.
+ * Spec: docs/DESIGN_SYSTEM.md
  */
 @import url("./theme.css");
+@import url("./design-system.css");
 @import url("./m3-modal.css");
 
 /* ——— Utilities (no inline styles in templates) ——— */
@@ -4570,10 +4572,10 @@ textarea {
   gap: var(--space-1-25);
   margin-bottom: var(--space-2);
   padding: var(--space-1-5) var(--space-2);
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--radius-lg);
   border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 88%, transparent);
   background: color-mix(in srgb, var(--surface) 97%, var(--wf-primary) 3%);
-  box-shadow: var(--elevation-slate-sm);
+  box-shadow: var(--elevation-sm);
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
@@ -4798,17 +4800,17 @@ form.pro-search.pro-search--directory {
   min-width: 0;
   min-height: 0;
   height: 100%;
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--radius-lg);
   border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 92%, var(--text) 8%);
   background: var(--surface);
-  box-shadow: var(--elevation-slate-sm);
+  box-shadow: var(--elevation-sm);
   overflow: hidden;
   transition: box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
 }
 
 .pro-directory-card:hover {
   border-color: color-mix(in srgb, var(--wf-primary) 22%, var(--border-strong));
-  box-shadow: var(--elevation-slate-md);
+  box-shadow: var(--elevation-md);
 }
 
 .pro-directory-card:has(.pro-directory-card__link:focus-visible) {

@@ -1,6 +1,6 @@
 # Admin console UI patterns
 
-This app uses **one stylesheet** (`public/styles.css`) for both the public site and the admin UI. Admin-specific layout is scoped with `.admin-app`, `.admin-main`, and **CSS variables** under `:root` with the `--admin-*` prefix so grids, cards, tables, and modals stay consistent. **Material Design 3** spacing, elevation, and surfaces use the `--md-sys-*` tokens (see [`MATERIAL_DESIGN_3.md`](./MATERIAL_DESIGN_3.md)).
+This app uses **one stylesheet** (`public/styles.css`) for both the public site and the admin UI. **Design tokens** live in [`theme.css`](../public/theme.css) and [`design-system.css`](../public/design-system.css); see [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md). Admin layout is scoped with `.admin-app`, `.admin-main`, and **CSS variables** under `:root` with the `--admin-*` prefix so grids, cards, tables, and modals stay consistent. **Material Design 3** spacing, elevation, and surfaces use the `--md-sys-*` tokens (see [`MATERIAL_DESIGN_3.md`](./MATERIAL_DESIGN_3.md)).
 
 ## Database files (`data/`)
 
@@ -8,7 +8,7 @@ The app opens **only** the path from `SQLITE_PATH` or the default **`data/getpro
 
 If you see files like **`netraz.sqlite`**, **`pronline.sqlite`**, or other extra `*.sqlite` / `*.db` names in `data/`, they are **not** referenced by GetPro unless `SQLITE_PATH` points at them. Remove the matching **`-wal`** and **`-shm`** files when deleting an unused database. Keep a backup first if unsure.
 
-## Tokens (see `:root` in `styles.css`)
+## Tokens (see `:root` in `theme.css` / `design-system.css`, imported by `styles.css`)
 
 | Token | Role |
 |--------|------|

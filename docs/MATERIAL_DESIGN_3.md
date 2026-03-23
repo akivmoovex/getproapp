@@ -1,6 +1,6 @@
 # Material Design 3 alignment
 
-GetPro maps [Material Design 3](https://m3.material.io/) (M3) guidelines to a **central token file** — **`public/theme.css`** — imported at the top of **`public/styles.css`**. Brand violet maps to **`--color-primary`** (legacy **`--wf-primary`** unchanged). See **`docs/DESIGN_SYSTEM.md`** for the full token list and component class contracts.
+GetPro maps [Material Design 3](https://m3.material.io/) (M3) guidelines to **`public/theme.css`**, with **DS V1 aliases** in **`public/design-system.css`**, both imported at the top of **`public/styles.css`**. Brand violet maps to **`--color-primary`** (legacy **`--wf-primary`**). See **`docs/DESIGN_SYSTEM.md`** for tokens, BEM blocks, and copy rules.
 
 ## What we implement
 
