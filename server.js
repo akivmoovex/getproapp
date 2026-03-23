@@ -67,7 +67,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use((req, res, next) => {
-  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260320-public-admin-ux-v1";
+  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260320-shared-search-empty-callback-v1";
   res.locals.encodeURIComponent = encodeURIComponent;
   res.locals.eventTimeParts = eventTimeParts;
   next();

@@ -1,0 +1,103 @@
+<%#
+  Shared service + city search (homepage + directory).
+  Options:
+  - variant: 'home' | 'directory'
+  - tenantUrlPrefix
+  - formAction (optional)
+  - formId (optional; default 'directory-toolbar' when variant=directory)
+  - searchQuery, cityQuery (directory prefills)
+  - showCategoryFilter: boolean — when false but selectedCategory set, emits hidden input
+  - selectedCategory, categories (for hidden or future visible category)
+  - ariaLabel (optional)
+-%>
+<%
+  var _v = typeof variant !== 'undefined' ? String(variant) : 'directory';
+  var _tp = typeof tenantUrlPrefix !== 'undefined' ? String(tenantUrlPrefix || '') : '';
+  var _action = typeof formAction !== 'undefined' && formAction ? String(formAction) : (_tp.replace(/\/$/, '') + '/directory');
+  var _fid = typeof formId !== 'undefined' ? String(formId || '') : (_v === 'directory' ? 'directory-toolbar' : '');
+  var _pre = _v === 'home' ? 'home' : 'dir';
+  var _q = typeof searchQuery !== 'undefined' ? String(searchQuery || '') : '';
+  var _city = typeof cityQuery !== 'undefined' ? String(cityQuery || '') : '';
+  var _showCat = typeof showCategoryFilter !== 'undefined' && showCategoryFilter;
+  var _selCat = typeof selectedCategory !== 'undefined' ? String(selectedCategory || '').trim() : '';
+  var _cats = typeof categories !== 'undefined' && categories ? categories : [];
+  var _aria = typeof ariaLabel !== 'undefined' ? String(ariaLabel) : 'Search by service and city';
+  var _formClass = 'pro-search-form pro-search-form--' + _v;
+  if (_v === 'home') {
+    _formClass += ' pro-home-dual-search';
+  } else {
+    _formClass += ' pro-search--directory';
+  }
+%>
+<form
+  <% if (_fid) { %>id="<%= _fid %>"<% } %>
+  class="<%= _formClass %>"
+  action="<%= _action %>"
+  method="get"
+  role="search"
+  aria-label="<%= _aria %>"
+>
+  <% if (_showCat && _cats && _cats.length) { %>
+  <div class="pro-search-form__category">
+    <label class="pro-search-form__label pro-home-field-label" for="<%= _pre %>-category-filter">Category</label>
+    <select id="<%= _pre %>-category-filter" name="category" class="pro-search-form__select" aria-label="Filter by category">
+      <option value=""<%= !_selCat ? ' selected' : '' %>>All categories</option>
+      <% _cats.forEach(function (cat) { %>
+      <option value="<%= cat.slug %>"<%= _selCat === cat.slug ? ' selected' : '' %>><%= cat.name %></option>
+      <% }); %>
+    </select>
+  </div>
+  <% } else if (_selCat) { %>
+  <input type="hidden" name="category" value="<%= _selCat %>" />
+  <% } %>
+
+  <div class="pro-search-form__fields pro-home-search-fields">
+    <div class="pro-search-form__field pro-home-search-field">
+      <label class="pro-search-form__label pro-home-field-label" for="<%= _pre %>-search-q">Service or profession</label>
+      <div class="pro-ac" data-ac-list="service">
+        <input
+          id="<%= _pre %>-search-q"
+          class="pro-ac-input"
+          type="text"
+          value="<%= _q %>"
+          placeholder="e.g. Electrician, Plumber, Carpenter"
+          autocomplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded="false"
+          aria-controls="<%= _pre %>-search-q-dropdown"
+        />
+        <input type="hidden" class="pro-ac-hidden" name="q" id="<%= _pre %>-search-q-value" value="<%= _q %>" />
+        <ul class="pro-ac-dropdown" id="<%= _pre %>-search-q-dropdown" role="listbox" hidden></ul>
+        <p class="pro-ac-msg" hidden></p>
+      </div>
+    </div>
+    <div class="pro-search-form__field pro-home-search-field">
+      <label class="pro-search-form__label pro-home-field-label" for="<%= _pre %>-search-city">City</label>
+      <div class="pro-ac" data-ac-list="city">
+        <input
+          id="<%= _pre %>-search-city"
+          class="pro-ac-input"
+          type="text"
+          value="<%= _city %>"
+          placeholder="e.g. Lusaka"
+          autocomplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded="false"
+          aria-controls="<%= _pre %>-search-city-dropdown"
+        />
+        <input type="hidden" class="pro-ac-hidden" name="city" id="<%= _pre %>-search-city-value" value="<%= _city %>" />
+        <ul class="pro-ac-dropdown" id="<%= _pre %>-search-city-dropdown" role="listbox" hidden></ul>
+        <p class="pro-ac-msg" hidden></p>
+      </div>
+    </div>
+  </div>
+  <button class="pro-search-form__submit pro-home-search-submit" type="submit">
+    <span class="pro-home-search-submit-text">Search</span>
+    <svg class="pro-home-search-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  </button>
+</form>

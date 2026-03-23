@@ -33,6 +33,7 @@
 %>
 <div class="card pro-directory-empty pro-directory-empty--rich" role="status">
   <div class="pro-directory-empty__inner">
+    <div id="directory-empty-message-block">
     <% if (_mode === 'category') { %>
       <h2 class="pro-directory-empty__title">
         <% if (_catName) { %>
@@ -70,6 +71,7 @@
         <span class="pro-directory-empty__summary-item"><span class="pro-directory-empty__summary-k">Category</span> <span class="pro-directory-empty__summary-v"><%= _catName %></span></span>
       </div>
     <% } %>
+    </div>
 
     <% if (_tid > 0 && _tslug) { %>
     <form
@@ -109,13 +111,15 @@
           <button type="submit" class="btn btn-primary" id="directory-empty-callback-submit">Request a call</button>
         </div>
       </div>
-      <div class="pro-directory-empty__callback-success" id="directory-empty-callback-success" hidden role="status">
-        <p class="pro-directory-empty__callback-success-text">Thanks &mdash; we&rsquo;ll be in touch shortly.</p>
+      <div class="pro-directory-empty__callback-success" id="directory-empty-callback-success" hidden role="status" tabindex="-1">
+        <h2 class="pro-directory-empty__title pro-directory-empty__callback-success-title">Request received</h2>
+        <p class="pro-directory-empty__callback-success-lead">Thanks &mdash; we&rsquo;ve received your details.</p>
+        <p class="pro-directory-empty__callback-success-muted muted">We&rsquo;ll use your details to help connect you with a suitable professional.</p>
       </div>
     </form>
     <% } %>
 
-    <div class="pro-directory-empty__actions">
+    <div class="pro-directory-empty__actions" id="directory-empty-footer-actions">
       <% if (_mode === 'directory') { %>
         <a href="<%= _tp %>/directory" class="btn btn--text">Clear all filters</a>
         <a href="#directory-toolbar" class="btn btn-secondary-wf">Adjust search</a>

@@ -20,65 +20,16 @@
       <% if (typeof selectedCategory !== 'undefined' && selectedCategory) { %>
         <% (categories || []).forEach(function(c) { if (c.slug === selectedCategory) activeCatLabel = c.name; }); %>
       <% } %>
-      <form id="directory-toolbar" class="pro-directory-toolbar pro-search--directory" action="<%= tenantUrlPrefix %>/directory" method="get" role="search">
-        <div class="pro-directory-toolbar__fields">
-          <div class="pro-directory-toolbar__field pro-directory-toolbar__ac">
-            <label class="pro-directory-toolbar__input-label" for="dir-search-q">Service or profession</label>
-            <div class="pro-ac" data-ac-list="service">
-            <input
-              id="dir-search-q"
-              class="pro-ac-input"
-              type="text"
-              value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
-              placeholder="e.g. Electrician, Plumber, Carpenter"
-              autocomplete="off"
-              role="combobox"
-              aria-autocomplete="list"
-              aria-expanded="false"
-              aria-controls="dir-search-q-dropdown"
-            />
-            <input type="hidden" class="pro-ac-hidden" name="q" id="dir-search-q-value" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" />
-            <ul class="pro-ac-dropdown" id="dir-search-q-dropdown" role="listbox" hidden></ul>
-            <p class="pro-ac-msg" hidden></p>
-            </div>
-          </div>
-          <div class="pro-directory-toolbar__field pro-directory-toolbar__ac">
-            <label class="pro-directory-toolbar__input-label" for="dir-search-city">City</label>
-            <div class="pro-ac" data-ac-list="city">
-            <input
-              id="dir-search-city"
-              class="pro-ac-input"
-              type="text"
-              value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>"
-              placeholder="e.g. Lusaka"
-              autocomplete="off"
-              role="combobox"
-              aria-autocomplete="list"
-              aria-expanded="false"
-              aria-controls="dir-search-city-dropdown"
-            />
-            <input type="hidden" class="pro-ac-hidden" name="city" id="dir-search-city-value" value="<%= typeof cityQuery !== 'undefined' ? cityQuery : '' %>" />
-            <ul class="pro-ac-dropdown" id="dir-search-city-dropdown" role="listbox" hidden></ul>
-            <p class="pro-ac-msg" hidden></p>
-            </div>
-          </div>
-          <div class="pro-directory-toolbar__category">
-            <label class="pro-directory-toolbar__label" for="dir-category-filter">Category</label>
-            <select id="dir-category-filter" name="category" class="pro-directory-toolbar__select" aria-label="Filter by category">
-              <option value=""<%= !selectedCategory ? ' selected' : '' %>>All categories</option>
-              <% (categories || []).forEach(function(cat) { %>
-              <option value="<%= cat.slug %>"<%= selectedCategory === cat.slug ? ' selected' : '' %>><%= cat.name %></option>
-              <% }); %>
-            </select>
-          </div>
-          <button type="submit" class="pro-directory-toolbar__submit">
-            <span>Search</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-          </button>
-        </div>
+      <div class="pro-directory-toolbar">
+        <%- include('partials/pro_search_form', {
+          variant: 'directory',
+          tenantUrlPrefix,
+          searchQuery: typeof searchQuery !== 'undefined' ? searchQuery : '',
+          cityQuery: typeof cityQuery !== 'undefined' ? cityQuery : '',
+          showCategoryFilter: false,
+          selectedCategory: typeof selectedCategory !== 'undefined' ? selectedCategory : '',
+          categories: typeof categories !== 'undefined' ? categories : [],
+        }) %>
         <div class="pro-directory-toolbar__meta" aria-live="polite">
           <span class="pro-directory-toolbar__count">
             <strong><%= (companies || []).length %></strong>
@@ -99,7 +50,7 @@
             <% } %>
           </span>
         </div>
-      </form>
+      </div>
 
       <div class="pro-directory-main">
         <% if ((companies || []).length === 0) { %>

@@ -35,6 +35,7 @@
   const form = document.getElementById("directory-empty-callback-form");
   if (!form) return;
 
+  const messageBlock = document.getElementById("directory-empty-message-block");
   const panel = document.getElementById("directory-empty-callback-panel");
   const success = document.getElementById("directory-empty-callback-success");
   const errEl = document.getElementById("directory-empty-callback-error");
@@ -101,10 +102,10 @@
         errEl.hidden = false;
         return;
       }
+      if (messageBlock) messageBlock.hidden = true;
       if (panel) panel.hidden = true;
       if (success) {
         success.hidden = false;
-        success.setAttribute("tabindex", "-1");
         success.focus();
       }
       form.reset();

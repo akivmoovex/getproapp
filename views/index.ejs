@@ -24,7 +24,7 @@
         </div>
         <nav class="home-m3-app-bar__nav" aria-label="Quick links">
           <a class="home-m3-app-bar__link" href="<%= tenantUrlPrefix %>/directory">Search</a>
-          <a class="home-m3-app-bar__link" href="<%= tenantUrlPrefix %>/directory#dir-category-filter">Categories</a>
+          <a class="home-m3-app-bar__link" href="<%= tenantUrlPrefix %>/directory#directory-toolbar">Categories</a>
         </nav>
         <div class="home-m3-app-bar__end">
           <a class="wf-home-dir-link home-m3-app-bar__dir-desktop" href="<%= tenantUrlPrefix %>/directory">Search</a>
@@ -164,96 +164,11 @@
                 </p>
               </div>
               <div class="pro-home-search-wrap pro-home-search-wrap--hero">
-            <form class="pro-home-dual-search" action="<%= tenantUrlPrefix %>/directory" method="get" role="search" aria-label="Search by service and city">
-              <div class="pro-home-search-fields">
-                <% if (tenant.slug === 'global') { %>
-                <div class="pro-home-search-field">
-                  <label class="pro-home-field-label" for="home-search-q">Service or profession</label>
-                  <div class="pro-ac" data-ac-list="service">
-                  <input
-                    id="home-search-q"
-                    class="pro-ac-input"
-                    type="text"
-                    placeholder="e.g. Electrician, Plumber, Carpenter"
-                    autocomplete="off"
-                    role="combobox"
-                    aria-autocomplete="list"
-                    aria-expanded="false"
-                    aria-controls="home-search-q-dropdown"
-                  />
-                  <input type="hidden" class="pro-ac-hidden" name="q" id="home-search-q-value" value="" />
-                  <ul class="pro-ac-dropdown" id="home-search-q-dropdown" role="listbox" hidden></ul>
-                  <p class="pro-ac-msg" hidden></p>
-                  </div>
-                </div>
-                <div class="pro-home-search-field">
-                  <label class="pro-home-field-label" for="home-search-city">City</label>
-                  <div class="pro-ac" data-ac-list="city">
-                  <input
-                    id="home-search-city"
-                    class="pro-ac-input"
-                    type="text"
-                    placeholder="e.g. Lusaka"
-                    autocomplete="off"
-                    role="combobox"
-                    aria-autocomplete="list"
-                    aria-expanded="false"
-                    aria-controls="home-search-city-dropdown"
-                  />
-                  <input type="hidden" class="pro-ac-hidden" name="city" id="home-search-city-value" value="" />
-                  <ul class="pro-ac-dropdown" id="home-search-city-dropdown" role="listbox" hidden></ul>
-                  <p class="pro-ac-msg" hidden></p>
-                  </div>
-                </div>
-                <% } else { %>
-                <div class="pro-home-search-field">
-                  <label class="pro-home-field-label" for="home-search-q">Service or profession</label>
-                  <div class="pro-ac" data-ac-list="service">
-                  <input
-                    id="home-search-q"
-                    class="pro-ac-input"
-                    type="text"
-                    placeholder="e.g. Electrician, Plumber, Carpenter"
-                    autocomplete="off"
-                    role="combobox"
-                    aria-autocomplete="list"
-                    aria-expanded="false"
-                    aria-controls="home-search-q-dropdown"
-                  />
-                  <input type="hidden" class="pro-ac-hidden" name="q" id="home-search-q-value" value="" />
-                  <ul class="pro-ac-dropdown" id="home-search-q-dropdown" role="listbox" hidden></ul>
-                  <p class="pro-ac-msg" hidden></p>
-                  </div>
-                </div>
-                <div class="pro-home-search-field">
-                  <label class="pro-home-field-label" for="home-search-city">City</label>
-                  <div class="pro-ac" data-ac-list="city">
-                  <input
-                    id="home-search-city"
-                    class="pro-ac-input"
-                    type="text"
-                    placeholder="e.g. Lusaka"
-                    autocomplete="off"
-                    role="combobox"
-                    aria-autocomplete="list"
-                    aria-expanded="false"
-                    aria-controls="home-search-city-dropdown"
-                  />
-                  <input type="hidden" class="pro-ac-hidden" name="city" id="home-search-city-value" value="" />
-                  <ul class="pro-ac-dropdown" id="home-search-city-dropdown" role="listbox" hidden></ul>
-                  <p class="pro-ac-msg" hidden></p>
-                  </div>
-                </div>
-                <% } %>
-              </div>
-              <button class="pro-home-search-submit" type="submit">
-                <span class="pro-home-search-submit-text">Search</span>
-                <svg class="pro-home-search-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m21 21-4.3-4.3" />
-                </svg>
-              </button>
-            </form>
+                <%- include('partials/pro_search_form', {
+                  variant: 'home',
+                  tenantUrlPrefix,
+                  showCategoryFilter: false,
+                }) %>
               </div>
             </div>
           </div>
