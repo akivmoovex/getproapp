@@ -16,21 +16,21 @@
 
       <div class="card admin-form-card admin-form-card--wide">
         <% if (company && typeof miniSiteUrl !== 'undefined' && miniSiteUrl && miniSiteUrl !== '#') { %>
-        <div class="admin-mini-site-preview" style="margin-bottom:20px;padding:14px 16px;border-radius:12px;background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.08);">
-          <div style="font-weight:800;font-size:13px;margin-bottom:6px;">Public URLs</div>
-          <div class="muted" style="font-size:13px;line-height:1.5;">
+        <div class="admin-mini-site-urls">
+          <div class="admin-mini-site-urls__title">Public URLs</div>
+          <div class="muted admin-mini-site-urls__line">
             <strong>Mini-site</strong> (what customers see on this page):
             <a href="<%= miniSiteUrl %>" target="_blank" rel="noopener noreferrer"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : miniSiteUrl %></a>
           </div>
           <% if (typeof directoryProfileUrl !== 'undefined' && directoryProfileUrl && directoryProfileUrl !== '/company') { %>
-          <div class="muted" style="font-size:13px;line-height:1.5;margin-top:6px;">
+          <div class="muted admin-mini-site-urls__line u-mt-tight">
             <strong>Directory profile</strong> (same company, directory layout):
             <a href="<%= directoryProfileUrl %>" target="_blank" rel="noopener noreferrer"><%= directoryProfileUrl.replace(/^https?:\/\//, '') %></a>
           </div>
           <% } %>
         </div>
         <% } else if (typeof miniSiteExampleLabel !== 'undefined' && miniSiteExampleLabel) { %>
-        <div class="muted" style="margin-bottom:20px;padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.04);font-size:13px;line-height:1.5;">
+        <div class="muted admin-callout-muted">
           After you save, the mini-site will live at <span class="kbd"><%= miniSiteExampleLabel %></span> (replace <span class="kbd">your-company-slug</span> with the <strong>Subdomain</strong> you choose below).
         </div>
         <% } %>
@@ -50,12 +50,12 @@
               placeholder="https://…"
               value="<%= company && company.logo_url ? company.logo_url : '' %>"
             />
-            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+            <div class="muted admin-field-hint">
               Shown in the company header next to the name. Use a square or wide logo over HTTPS.
             </div>
           </div>
 
-          <div class="hero-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="hero-grid hero-grid--2col">
             <div>
               <label for="name">Company Name</label>
               <input id="name" name="name" value="<%= company ? company.name : '' %>" required />
@@ -63,7 +63,7 @@
             <div>
               <label for="subdomain">Subdomain</label>
               <input id="subdomain" name="subdomain" value="<%= company ? company.subdomain : '' %>" required />
-              <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+              <div class="muted admin-field-hint">
                 URL path on this region’s site, e.g. <span class="kbd"><%= typeof adminTenantSlug !== 'undefined' && adminTenantSlug ? adminTenantSlug + '.' : '' %><%= baseDomain || 'getproapp.org' %>/mybiz</span> — use <span class="kbd">mybiz</span> as the value here (letters, numbers, hyphens).
               </div>
             </div>
@@ -95,11 +95,11 @@
           </div>
 
           <% if (typeof adminTenantSlug !== 'undefined' && adminTenantSlug === 'zm') { %>
-          <p class="muted" style="font-size:13px;line-height:1.5;margin:0 0 12px;">
+          <p class="muted admin-zm-phone-note">
             Zambian numbers: <strong>0</strong> followed by <strong>9 digits</strong> (10 digits total, e.g. 0977123456).
           </p>
           <% } %>
-          <div class="hero-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="hero-grid hero-grid--2col">
             <div>
               <label for="phone">Phone</label>
               <input id="phone" name="phone" value="<%= company ? company.phone : '' %>" />
@@ -141,12 +141,12 @@
           <div>
             <label for="gallery_text">Recent work — image URLs</label>
             <textarea id="gallery_text" name="gallery_text" rows="7" placeholder="https://example.com/job1.jpg|Kitchen rewire&#10;https://example.com/job2.jpg"><%= typeof galleryAdminText !== 'undefined' ? galleryAdminText : '' %></textarea>
-            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+            <div class="muted admin-field-hint">
               One URL per line. Optional caption after <span class="kbd">|</span>. Use HTTPS links to images you are allowed to display.
             </div>
           </div>
 
-          <div class="hero-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="hero-grid hero-grid--2col">
             <div>
               <label for="featured_cta_label">CTA Label</label>
               <input id="featured_cta_label" name="featured_cta_label" value="<%= company ? company.featured_cta_label : 'Call us' %>" />

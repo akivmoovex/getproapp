@@ -14,7 +14,7 @@
         <div class="flash" role="alert">Choose a tenant scope below before using directory tools or user management.</div>
       <% } %>
 
-      <h1 class="section-title" style="margin-top:0;">All regions</h1>
+      <h1 class="section-title section-title--flush">All regions</h1>
       <p class="admin-intro">
         Create, edit, or remove regions. Set <strong>stage</strong> to <strong>Enabled</strong> for live traffic on the subdomain, or <strong>Disabled</strong> / <strong>PartnerCollection</strong> to hide from the picker and return 503 on that host (except <strong>global</strong>, apex-only).
       </p>
@@ -22,7 +22,7 @@
         <a class="btn btn-primary" href="/admin/super/tenants/new">New region</a>
         <a class="btn" href="/admin/super/users">All admin users</a>
       </div>
-      <div class="card" style="margin-bottom:28px;">
+      <div class="card card--mb-xl">
         <div class="table-wrap">
         <table class="table">
           <thead>
@@ -53,14 +53,14 @@
                   </form>
                 </td>
                 <td>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                  <div class="flex-row-wrap--tight">
                     <a class="btn" href="/admin/super/tenants/<%= t.id %>/edit">Edit</a>
                     <% if (t.id !== 1 && t.slug !== 'global') { %>
                     <form method="post" action="/admin/super/tenants/<%= t.id %>/delete" onsubmit="return confirm('Delete region <%= t.name %> and all its directory data? This cannot be undone.');">
                       <button class="btn" type="submit">Delete</button>
                     </form>
                     <% } else { %>
-                    <span class="muted" style="font-size:12px;">—</span>
+                    <span class="muted muted--caption">—</span>
                     <% } %>
                   </div>
                 </td>
@@ -69,14 +69,14 @@
           </tbody>
         </table>
         </div>
-        <p class="muted" style="margin-top:14px;font-size:12px;line-height:1.5;">
+        <p class="muted admin-muted-footnote">
           Use <strong>Set stage</strong> or <strong>Edit</strong> to enable or disable a region. Only <strong>Enabled</strong> tenants appear in the public region list (except <strong>global</strong>).
         </p>
       </div>
 
       <h2 class="section-title" id="act-as-region">Act as region</h2>
       <p class="admin-intro">Scope the directory and leads tools to one region. Sample listings and demo companies live under <strong>demo</strong>; production traffic is usually <strong>zm</strong> or another enabled region.</p>
-      <div class="card" style="max-width:640px;">
+      <div class="card card--max-640">
         <form method="post" action="/admin/super/scope" class="form">
           <input type="hidden" name="redirect" value="/admin/dashboard" />
           <div>
@@ -87,7 +87,7 @@
                 <option value="<%= t.id %>" <%= typeof selectedTenantId !== 'undefined' && selectedTenantId === t.id ? 'selected' : '' %>><%= t.name %> (<%= t.slug %>, <%= t.stage %>)</option>
               <% }) %>
             </select>
-            <div class="muted" style="margin-top:8px;font-size:12px;line-height:1.5;">
+            <div class="muted admin-field-hint">
               While scoped, Professions, Companies, Leads, and Users apply to that tenant only.
             </div>
           </div>

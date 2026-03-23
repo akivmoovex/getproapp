@@ -253,7 +253,7 @@
             <a href="<%= tenantUrlPrefix %>/category/<%= cat.slug %>"><%= cat.name %></a>
           <% }) %>
           <% if (categories.length === 0) { %>
-            <p class="muted" style="grid-column: 1 / -1;">No categories yet. Add them in the admin panel.</p>
+            <p class="muted pro-cat-grid__full-span">No categories yet. Add them in the admin panel.</p>
           <% } %>
         </div>
       </div>
@@ -294,7 +294,7 @@
       <div class="container">
         <div class="pro-section-head">
           <h2 class="pro-section-title">Sample pricing awareness</h2>
-          <span class="muted" style="font-size:14px;">Illustrative ranges — always confirm with the professional.</span>
+          <span class="muted pro-section-head__aside">Illustrative ranges — always confirm with the professional.</span>
         </div>
         <div class="pro-price-row">
           <div class="pro-price-card">
@@ -456,9 +456,9 @@
 
     <section class="pro-section">
       <div class="container">
-        <div class="card cta-card wf-cta-card" style="text-align:center;max-width:640px;margin:0 auto;">
-          <h2 class="section-title" style="margin-top:0;">Your next professional is a search away</h2>
-          <p class="subtitle" style="margin-bottom:18px;">Browse the directory or list your business on GetPro.</p>
+        <div class="card cta-card wf-cta-card cta-card--center">
+          <h2 class="section-title section-title--flush">Your next professional is a search away</h2>
+          <p class="subtitle subtitle--cta">Browse the directory or list your business on GetPro.</p>
           <div class="hero-actions wf-cta-actions wf-cta-actions--single">
             <a class="btn btn-primary" href="<%= tenantUrlPrefix %>/directory">Start Search</a>
           </div>

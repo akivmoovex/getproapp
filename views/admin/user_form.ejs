@@ -24,7 +24,7 @@
           <div>
             <label for="password">Password</label>
             <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" />
-            <div class="muted" style="margin-top:6px;font-size:12px;">At least 8 characters.</div>
+            <div class="admin-field-hint">At least 8 characters.</div>
           </div>
           <div>
             <label for="role">Role</label>
@@ -35,7 +35,7 @@
               <option value="tenant_viewer">tenant_viewer — reports only (dashboard + leads)</option>
             </select>
           </div>
-          <div class="muted" style="font-size:12px;line-height:1.5;">
+          <div class="muted admin-zm-phone-note">
             New users belong to tenant <strong>#<%= tenantId %></strong>. Super admin accounts are not created here.
           </div>
           <div class="admin-gate-actions">

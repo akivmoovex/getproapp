@@ -10,22 +10,21 @@
     <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
 
     <div class="container">
-      <div style="margin:18px 0;">
-        <div class="section-title" style="margin-top:0;"><%= category.name %></div>
-        <div class="muted" style="line-height:1.6;">
+      <div class="u-stack-sm">
+        <div class="section-title section-title--flush"><%= category.name %></div>
+        <div class="muted muted--relaxed">
           One-page company sites in this category. Each company has a unique subdomain.
         </div>
       </div>
 
       <div class="hero-grid pro-directory-layout">
         <div class="card">
-          <div style="font-weight:900;margin-bottom:12px;">All Categories</div>
+          <div class="directory-cat-title">All Categories</div>
           <div class="list">
             <% categories.forEach(function(cat) { %>
               <a
                 href="<%= tenantUrlPrefix %>/category/<%= cat.slug %>"
-                class="btn"
-                style="justify-content:flex-start;width:100%;<%= category.slug === cat.slug ? 'border-color:var(--wf-primary);background:var(--primary-soft-bg);' : '' %>"
+                class="btn btn--start<%= category.slug === cat.slug ? ' directory-category-link--active' : '' %>"
               >
                 <%= cat.name %>
               </a>

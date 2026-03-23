@@ -66,7 +66,7 @@
               <div class="admin-dash-bars__col">
                 <span class="admin-dash-bars__value" aria-hidden="true"><%= d.count %></span>
                 <div class="admin-dash-bars__track">
-                  <div class="admin-dash-bars__fill" style="height: <%= Math.max(pct, d.count ? 8 : 0) %>%"></div>
+                  <div class="admin-dash-bars__fill" data-dash-bar-pct="<%= Math.max(pct, d.count ? 8 : 0) %>"></div>
                 </div>
                 <span class="admin-dash-bars__label"><%= d.label %></span>
               </div>
@@ -88,7 +88,7 @@
                   <span class="admin-dash-status__num"><%= row.count %></span>
                 </div>
                 <div class="admin-dash-status__bar" role="presentation">
-                  <span class="admin-dash-status__fill" style="width: <%= sp %>%"></span>
+                  <span class="admin-dash-status__fill" data-dash-width-pct="<%= sp %>"></span>
                 </div>
               </li>
               <% }); %>
@@ -111,7 +111,7 @@
             <li class="admin-dash-crm__item">
               <span class="admin-dash-crm__label"><%= row.label %></span>
               <div class="admin-dash-crm__track">
-                <span class="admin-dash-crm__fill" style="width: <%= cp %>%"></span>
+                <span class="admin-dash-crm__fill" data-dash-width-pct="<%= cp %>"></span>
               </div>
               <span class="admin-dash-crm__n"><%= row.count %></span>
             </li>
@@ -163,5 +163,6 @@
         </section>
       </div>
     </main>
+    <script src="/admin-dashboard.js?v=<%= stylesVersion %>"></script>
   </body>
 </html>

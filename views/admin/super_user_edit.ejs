@@ -23,7 +23,7 @@
           <div>
             <label for="se_password">New password (optional)</label>
             <input id="se_password" name="password" type="password" autocomplete="new-password" minlength="8" />
-            <div class="muted" style="margin-top:6px;font-size:12px;">Leave blank to keep current hash. Min 8 characters if set.</div>
+            <div class="admin-field-hint">Leave blank to keep current hash. Min 8 characters if set.</div>
           </div>
           <div>
             <label for="se_role">Role</label>
@@ -34,20 +34,20 @@
             </select>
           </div>
 
-          <div class="super-user-tenant-block" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <div class="super-user-tenant-block">
             <div>
               <label for="tenant_name_display">Tenant name</label>
               <input
                 id="tenant_name_display"
+                class="super-user-tenant-readonly"
                 type="text"
                 readonly
                 tabindex="-1"
                 value="<%= typeof currentTenantLabel !== 'undefined' ? currentTenantLabel : '—' %>"
-                style="background:var(--bg);color:var(--text);cursor:default;"
                 aria-describedby="tenant-assign-hint"
               />
             </div>
-            <div style="margin-top:12px;">
+            <div class="super-user-tenant-extra">
               <label for="se_tenant">Assign or change tenant</label>
               <select id="se_tenant" name="tenant_id">
                 <option value="" <%= user.tenant_id == null ? 'selected' : '' %>>— None (super admin only) —</option>
@@ -60,7 +60,7 @@
                   ><%= t.name %> — <%= t.slug %> · <%= t.stage %></option>
                 <% }) %>
               </select>
-              <p id="tenant-assign-hint" class="muted" style="margin-top:8px;font-size:12px;line-height:1.5;">
+              <p id="tenant-assign-hint" class="muted admin-field-hint">
                 Super admin: leave <strong>None</strong>. Other roles must belong to a tenant. You can move this user to any tenant.
               </p>
             </div>
@@ -79,8 +79,8 @@
         </form>
 
         <% if (typeof currentUserId !== 'undefined' && user.id !== currentUserId) { %>
-        <form method="post" action="/admin/super/users/<%= user.id %>/delete" style="margin-top:22px;" onsubmit="return confirm('Delete this user?');">
-          <button class="btn" type="submit" style="border-color: var(--flash-error-border); color: var(--flash-error-text);">Delete user</button>
+        <form method="post" action="/admin/super/users/<%= user.id %>/delete" class="form--delete" onsubmit="return confirm('Delete this user?');">
+          <button class="btn btn--danger-outline" type="submit">Delete user</button>
         </form>
         <% } %>
       </div>

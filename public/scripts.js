@@ -159,10 +159,18 @@ function initGlobalTenantSearchOpensRegion() {
   });
 }
 
+function initDirectoryAvatarHue() {
+  document.querySelectorAll("[data-avatar-hue]").forEach((el) => {
+    const h = el.getAttribute("data-avatar-hue");
+    if (h != null && h !== "") el.style.setProperty("--avatar-hue", h);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("lead_form");
   if (form) form.addEventListener("submit", submitLeadForm);
   initHomeDrawerMenu();
   initRegionPicker();
   initGlobalTenantSearchOpensRegion();
+  initDirectoryAvatarHue();
 });

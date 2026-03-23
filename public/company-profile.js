@@ -294,5 +294,10 @@
     });
   }
 
+  document.querySelectorAll(".pro-company-profile__dist-fill[data-width-pct]").forEach(function (el) {
+    var w = el.getAttribute("data-width-pct");
+    if (w != null && w !== "") el.style.width = w + "%";
+  });
+
   initQrCopy();
 })();

@@ -20,7 +20,7 @@ Open/close animations are **CSS-only**; JS toggles `hidden`, then `m3-modal-over
 | **Settings hub iframe** | `views/admin/settings_hub.ejs` | `public/admin-settings-hub.js` | `m3-modal.css` + `.m3-modal--settings-iframe` |
 | **CRM task overlay** | `views/admin/crm.ejs` | `public/admin-crm-kanban.js` | `m3-modal.css` + `.m3-modal--crm-task` |
 | **Super admin region iframe** | `views/admin/tenant_settings_list.ejs` | `public/admin-tenant-settings-list.js` | `.admin-tenant-settings-inline*` |
-| **Company workspace** | `views/admin/company_workspace.ejs` | `public/admin-company-workspace.js` | Native `<dialog>` |
+| **Company workspace** | `views/admin/company_workspace.ejs` | `public/admin-company-workspace.js` | `m3-modal.css` + `.m3-modal--workspace-*` (leave / busy overlays) |
 | **Home region picker** | `views/index.ejs` | `public/scripts.js` | `m3-modal.css` + `.wf-region-m3` |
 | **Join exit / disabled city** | `views/join.ejs` | `public/join.js` | `m3-modal.css` + `.join-modal-layer` |
 

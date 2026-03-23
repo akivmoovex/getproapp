@@ -102,22 +102,27 @@
     };
   }
 
+  function setVis(el, hidden) {
+    if (!el) return;
+    el.classList.toggle("u-hidden", !!hidden);
+  }
+
   function setToolbar() {
     var isSaved = mode === "saved";
     var isEdit = mode === "edit";
     var isDraft = mode === "draftPreview";
-    if (els.btnEdit) els.btnEdit.style.display = isSaved ? "inline-flex" : "none";
-    if (els.btnPreview) els.btnPreview.style.display = isEdit ? "inline-flex" : "none";
-    if (els.btnClose) els.btnClose.style.display = isEdit ? "inline-flex" : "none";
-    if (els.btnPublish) els.btnPublish.style.display = isDraft ? "inline-flex" : "none";
-    if (els.btnBackEdit) els.btnBackEdit.style.display = isDraft ? "inline-flex" : "none";
+    setVis(els.btnEdit, !isSaved);
+    setVis(els.btnPreview, !isEdit);
+    setVis(els.btnClose, !isEdit);
+    setVis(els.btnPublish, !isDraft);
+    setVis(els.btnBackEdit, !isDraft);
   }
 
   function showSavedPreview() {
     mode = "saved";
     draft = clone(savedState);
-    if (els.previewWrap) els.previewWrap.style.display = "";
-    if (els.editPanel) els.editPanel.style.display = "none";
+    if (els.previewWrap) els.previewWrap.classList.remove("u-hidden");
+    if (els.editPanel) els.editPanel.setAttribute("hidden", "hidden");
     if (els.iframe) {
       els.iframe.removeAttribute("srcdoc");
       els.iframe.src = W.paths.previewFrame + "?t=" + Date.now();
@@ -127,16 +132,16 @@
 
   function showEdit() {
     mode = "edit";
-    if (els.previewWrap) els.previewWrap.style.display = "none";
-    if (els.editPanel) els.editPanel.style.display = "block";
+    if (els.previewWrap) els.previewWrap.classList.add("u-hidden");
+    if (els.editPanel) els.editPanel.removeAttribute("hidden");
     applyStateToForm(draft);
     setToolbar();
   }
 
   function showDraftPreview(html) {
     mode = "draftPreview";
-    if (els.previewWrap) els.previewWrap.style.display = "";
-    if (els.editPanel) els.editPanel.style.display = "none";
+    if (els.previewWrap) els.previewWrap.classList.remove("u-hidden");
+    if (els.editPanel) els.editPanel.setAttribute("hidden", "hidden");
     if (els.iframe) {
       els.iframe.src = "about:blank";
       els.iframe.srcdoc = html;

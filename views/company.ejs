@@ -87,7 +87,7 @@
                     <div class="pro-company-profile__dist-row">
                       <span class="pro-company-profile__dist-label"><%= star %>★</span>
                       <div class="pro-company-profile__dist-bar" role="presentation">
-                        <span class="pro-company-profile__dist-fill" style="width:<%= pct %>%;"></span>
+                        <span class="pro-company-profile__dist-fill" data-width-pct="<%= pct %>"></span>
                       </div>
                       <span class="pro-company-profile__dist-pct"><%= pct %>%</span>
                     </div>
@@ -211,7 +211,7 @@
                   </div>
                   <button class="btn btn-primary" type="submit">Send request</button>
 
-                  <div id="lead_status" style="margin-top:10px;" class="muted"></div>
+                  <div id="lead_status" class="muted pro-company-profile__lead-status"></div>
                 </form>
               </div>
             </section>
@@ -259,7 +259,7 @@
             <% if (typeof qrMiniSiteDataUrl !== 'undefined' && qrMiniSiteDataUrl) { %>
               <div class="pro-company-profile__qr-block">
                 <div class="pro-company-profile__qr-heading">Mini-site QR code</div>
-                <p class="muted" style="font-size:12px;line-height:1.5;margin:0 0 10px;">Scan to open this page on a phone.</p>
+                <p class="muted pro-company-profile__qr-hint">Scan to open this page on a phone.</p>
                 <div class="pro-company-profile__qr-single">
                   <img src="<%= qrMiniSiteDataUrl %>" alt="QR code for this mini-site URL" width="168" height="168" class="pro-company-profile__qr-img" data-qr-image />
                 </div>

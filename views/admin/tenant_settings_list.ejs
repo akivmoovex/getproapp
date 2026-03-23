@@ -10,8 +10,8 @@
     <%- include('../partials/admin_nav', { navTitle: 'Region settings', activeNav: 'settings' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
-        <h1 class="section-title" style="margin-top: 0">Region settings</h1>
-        <p class="admin-intro" style="margin-bottom: 20px">
+        <h1 class="section-title section-title--flush">Region settings</h1>
+        <p class="admin-intro u-mb-lg">
           Choose a region to edit call-center phone, support line, WhatsApp, and email. These apply to directory footers and company mini-sites.
         </p>
         <div class="card admin-tenant-settings-card">
@@ -47,7 +47,7 @@
                     </td>
                     <td class="muted"><span class="kbd"><%= t.slug %></span></td>
                     <td><%= t.stage %></td>
-                    <td class="muted" style="font-size: 13px"><%= t.callcenter_phone ? t.callcenter_phone : '—' %></td>
+                    <td class="muted admin-settings-tenant-table__phone"><%= t.callcenter_phone ? t.callcenter_phone : '—' %></td>
                     <td class="admin-settings-tenant-table__actions">
                       <button
                         type="button"

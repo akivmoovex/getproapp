@@ -11,7 +11,7 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
         <% if (!(typeof embed !== 'undefined' && embed)) { %>
-        <div class="admin-toolbar" style="margin-bottom: 8px">
+        <div class="admin-toolbar admin-toolbar--mb-sm">
           <% if (typeof isSuper !== 'undefined' && isSuper) { %>
           <a class="btn" href="/admin/settings/tenants">← All regions</a>
           <% } else { %>
@@ -24,7 +24,7 @@
         <div class="flash" role="status">Settings saved.</div>
         <% } %>
 
-        <h1 class="section-title" style="margin-top: 0"><%= tenant ? tenant.name : 'Region' %></h1>
+        <h1 class="section-title section-title--flush"><%= tenant ? tenant.name : 'Region' %></h1>
         <% if (tenant) { %>
         <p class="muted admin-settings-detail__meta">
           <span class="kbd"><%= tenant.slug %></span>
@@ -35,10 +35,10 @@
           <span>Stage <%= tenant.stage %></span>
           <% } %>
         </p>
-        <p class="admin-intro" style="margin-bottom: 20px">
+        <p class="admin-intro u-mb-lg">
           Default numbers and email for this region’s directory and company mini-sites. Leave fields empty on save to use platform defaults (same behaviour as the Super admin region form).
         </p>
-        <div class="card admin-form-card" style="max-width: 520px">
+        <div class="card admin-form-card card--max-520">
           <form method="post" action="/admin/settings/tenant/<%= tenant.id %>" class="form">
             <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
             <div>

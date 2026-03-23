@@ -12,7 +12,7 @@
     <div class="pro-footer-grid">
       <div class="pro-footer-col">
         <strong>GetPro</strong>
-        <p style="margin:0;line-height:1.55;color:rgba(255,255,255,0.75);">
+        <p class="pro-footer-col__lead">
           Find vetted professionals and browse one-page business profiles in our directory.
         </p>
       </div>
@@ -46,7 +46,7 @@
             <li><%= getproAddress %></li>
           <% } %>
           <% if (!getproPhone && !getproEmail && !getproAddress && !(typeof getproWhatsapp !== 'undefined' && getproWhatsapp)) { %>
-            <li style="color:rgba(255,255,255,0.55);">Configure contact details via environment variables.</li>
+            <li class="pro-footer-col__placeholder">Configure contact details via environment variables.</li>
           <% } %>
         </ul>
       </div>

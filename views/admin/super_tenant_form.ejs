@@ -31,7 +31,7 @@
               pattern="[a-z0-9][a-z0-9-]{0,62}"
               <%= tenant && tenant.slug === 'global' ? 'readonly' : '' %>
             />
-            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+            <div class="admin-field-hint">
               Used as <span class="kbd">short.<%= typeof baseDomain !== 'undefined' && baseDomain ? baseDomain : 'yourdomain.org' %></span>. Lowercase letters, numbers, hyphens.
             </div>
           </div>
@@ -42,7 +42,7 @@
               <option value="<%= stages.ENABLED %>" <%= tenant && tenant.stage === stages.ENABLED ? 'selected' : '' %>><%= stages.ENABLED %> (live)</option>
               <option value="<%= stages.DISABLED %>" <%= tenant && tenant.stage === stages.DISABLED ? 'selected' : '' %>><%= stages.DISABLED %></option>
             </select>
-            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+            <div class="admin-field-hint">
               Only <strong>Enabled</strong> regions appear in the public picker and accept traffic on their subdomain (except <strong>global</strong>, apex-only).
             </div>
           </div>
@@ -55,7 +55,7 @@
               value="<%= tenant && tenant.callcenter_phone ? tenant.callcenter_phone : '+260211000101' %>"
               placeholder="+260211000101"
             />
-            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+            <div class="admin-field-hint">
               Default number shown on company mini-sites (hero and Contact).
             </div>
           </div>
@@ -68,7 +68,7 @@
               value="<%= tenant && tenant.support_help_phone ? tenant.support_help_phone : '+260211000101' %>"
               placeholder="+260211000101"
             />
-            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+            <div class="admin-field-hint">
               GetPro support / directory help — shown in the “GetPro support” block on company pages (separate from the customer listing number).
             </div>
           </div>
@@ -91,7 +91,7 @@
               value="<%= tenant && tenant.callcenter_email ? tenant.callcenter_email : 'info@getproapp.org' %>"
               placeholder="info@getproapp.org"
             />
-            <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">
+            <div class="admin-field-hint">
               Shown in site footers. Per-region overrides; env vars apply if a field is left empty on save.
             </div>
           </div>

@@ -23,7 +23,7 @@
           <div>
             <label for="s_password">Password</label>
             <input id="s_password" name="password" type="password" autocomplete="new-password" required minlength="8" />
-            <div class="muted" style="margin-top:6px;font-size:12px;">At least 8 characters.</div>
+            <div class="admin-field-hint">At least 8 characters.</div>
           </div>
           <div>
             <label for="s_role">Role</label>
@@ -34,20 +34,20 @@
             </select>
           </div>
 
-          <div class="super-user-tenant-block" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <div class="super-user-tenant-block">
             <div>
               <label for="tenant_name_display">Tenant name</label>
               <input
                 id="tenant_name_display"
+                class="super-user-tenant-readonly"
                 type="text"
                 readonly
                 tabindex="-1"
                 value="—"
-                style="background:var(--bg);color:var(--text);cursor:default;"
                 aria-describedby="tenant-new-hint"
               />
             </div>
-            <div style="margin-top:12px;">
+            <div class="super-user-tenant-extra">
               <label for="s_tenant">Assign tenant</label>
               <select id="s_tenant" name="tenant_id">
                 <option value="">— None (super admin only) —</option>
@@ -57,7 +57,7 @@
                   </option>
                 <% }) %>
               </select>
-              <p id="tenant-new-hint" class="muted" style="margin-top:8px;font-size:12px;line-height:1.5;">
+              <p id="tenant-new-hint" class="muted admin-field-hint">
                 Choose <strong>None</strong> only for <code>super_admin</code>. For other roles, pick the tenant — the <strong>Tenant name</strong> field above updates to match.
               </p>
             </div>

@@ -20,7 +20,7 @@
         <% } %>
       </div>
 
-      <h1 class="section-title" style="margin-top:0;">Companies</h1>
+      <h1 class="section-title section-title--flush">Companies</h1>
       <% var f = typeof filters !== 'undefined' ? filters : {}; %>
       <form method="get" action="/admin/companies" class="admin-filter-form">
         <% if (editMode) { %><input type="hidden" name="edit" value="1" /><% } %>
@@ -76,8 +76,8 @@
             <% } %>
             <% (companies || []).forEach(function(c) { %>
               <tr>
-                <td style="font-weight:800;"><%= c.name %></td>
-                <td class="muted" style="font-size:12px;">
+                <td class="table__strong-800"><%= c.name %></td>
+                <td class="muted muted--caption">
                   <% if (baseDomain && typeof adminTenantSlug !== 'undefined' && adminTenantSlug) { %>
                     <span class="kbd"><%= adminTenantSlug %>.<%= baseDomain %>/<%= c.subdomain %></span>
                     <% if (c.miniSitePublicUrl) { %>

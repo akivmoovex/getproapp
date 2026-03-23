@@ -24,7 +24,7 @@
           <div>
             <label for="password">New password (optional)</label>
             <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" />
-            <div class="muted" style="margin-top:6px;font-size:12px;">Leave blank to keep the current password. Minimum 8 characters if set.</div>
+            <div class="admin-field-hint">Leave blank to keep the current password. Minimum 8 characters if set.</div>
           </div>
           <div>
             <label for="role">Role</label>
@@ -48,9 +48,9 @@
         </form>
 
         <% if (typeof currentUserId !== 'undefined' && user.id !== currentUserId) { %>
-        <form method="post" action="/admin/users/<%= user.id %>/delete" style="margin-top:22px;" onsubmit="return confirm('Delete this user permanently?');">
+        <form method="post" action="/admin/users/<%= user.id %>/delete" class="form--delete" onsubmit="return confirm('Delete this user permanently?');">
           <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
-          <button class="btn" type="submit" style="border-color: var(--flash-error-border); color: var(--flash-error-text);">Delete user</button>
+          <button class="btn btn--danger-outline" type="submit">Delete user</button>
         </form>
         <% } %>
       </div>

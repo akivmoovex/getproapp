@@ -10,7 +10,7 @@
     <%- include('../partials/admin_nav', { navTitle: 'CRM tasks', activeNav: 'crm' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
-        <h1 class="section-title admin-crm-page__title" style="margin-top:0;">CRM — board</h1>
+        <h1 class="section-title admin-crm-page__title">CRM — board</h1>
         <p class="admin-intro muted">
           Drag tasks between columns to update status. Click a card to open details. New tasks can include an assignee; unassigned tasks stay in <strong>New</strong>.
         </p>
@@ -40,7 +40,7 @@
               <div>
                 <label for="crm_attachment">Attachment link (optional)</label>
                 <input id="crm_attachment" name="attachment_url" type="url" maxlength="2000" placeholder="https://…" />
-                <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.5;">Link to a file or document (https only).</div>
+                <div class="admin-field-hint">Link to a file or document (https only).</div>
               </div>
               <div class="admin-gate-actions">
                 <button class="btn btn-primary" type="submit">Create task</button>

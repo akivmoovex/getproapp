@@ -14,11 +14,11 @@
         <div class="admin-workspace__toolbar" role="toolbar" aria-label="Mini-site actions">
           <div class="admin-workspace__toolbar-left">
             <a class="btn" href="/admin/companies?edit=1">← Back</a>
-            <button type="button" class="btn btn-primary admin-workspace__btn-edit" data-ws-edit style="display:none;">Edit</button>
-            <button type="button" class="btn btn-primary admin-workspace__btn-preview" data-ws-preview style="display:none;">Preview</button>
-            <button type="button" class="btn admin-workspace__btn-close" data-ws-close style="display:none;">Close</button>
-            <button type="button" class="btn btn-primary admin-workspace__btn-publish" data-ws-publish style="display:none;">Publish</button>
-            <button type="button" class="btn admin-workspace__btn-back-edit" data-ws-back-edit style="display:none;">Back to edit</button>
+            <button type="button" class="btn btn-primary admin-workspace__btn-edit u-hidden" data-ws-edit>Edit</button>
+            <button type="button" class="btn btn-primary admin-workspace__btn-preview u-hidden" data-ws-preview>Preview</button>
+            <button type="button" class="btn admin-workspace__btn-close u-hidden" data-ws-close>Close</button>
+            <button type="button" class="btn btn-primary admin-workspace__btn-publish u-hidden" data-ws-publish>Publish</button>
+            <button type="button" class="btn admin-workspace__btn-back-edit u-hidden" data-ws-back-edit>Back to edit</button>
             <span class="admin-workspace__toolbar-meta muted">
               <span class="kbd"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : company.subdomain %></span>
             </span>
@@ -35,7 +35,7 @@
             ></iframe>
           </div>
 
-          <div class="admin-workspace__edit card admin-form-card" data-ws-edit-panel style="display:none;">
+          <div class="admin-workspace__edit card admin-form-card" data-ws-edit-panel hidden>
             <h2 class="admin-workspace__edit-title">Edit mini-site content</h2>
             <p class="muted admin-workspace__edit-lead">
               Use the table below, then <strong>Preview</strong> to see the mini-site layout with your unsaved changes.
