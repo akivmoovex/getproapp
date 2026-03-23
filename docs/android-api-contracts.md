@@ -163,10 +163,13 @@ Android maps → domain/`CategoryUiModel`.
   "items": [
     {
       "id": "string",
+      "slug": "string|null",
       "name": "string",
       "headline": "string|null",
       "category_name": "string|null",
       "city": "string|null",
+      "phone": "string|null",
+      "whatsapp_href": "string|null",
       "rating": 4.8,
       "review_count": 12
     }

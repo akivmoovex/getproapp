@@ -11,10 +11,14 @@ data class DirectoryResponseDto(
 
 data class DirectoryCompanyDto(
     val id: String,
+    val slug: String? = null,
     val name: String,
     val headline: String? = null,
     val category_name: String? = null,
     val city: String? = null,
+    val phone: String? = null,
+    val whatsapp_href: String? = null,
     val rating: Float? = null,
     val review_count: Int? = null,
+    val logo_url: String? = null,
 )
