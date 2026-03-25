@@ -6710,12 +6710,6 @@ body.join-modal-open {
   overflow: hidden;
 }
 
-.join-wizard-error {
-  margin-top: var(--space-1-5);
-  font-size: var(--space-1-75);
-  color: var(--flash-error-text);
-}
-
 .join-step-thanks-message {
   margin: 0;
   font-size: clamp(var(--space-2-25), 2.2vw, var(--space-3));

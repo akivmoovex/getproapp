@@ -75,6 +75,15 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
   - Wrapped the lead form fields + status + actions with `.form-step` body/actions while preserving `#lead_form`, `#lead_status`, and `button[type=submit]` for `public/scripts.js`.
 - Added minimal shared CSS for `.form-step__header/body/actions` spacing in `public/design-system.css`.
 
+### This rollout (JOIN step-1/2 errors + public legacy button aliases)
+- `views/join.ejs`: aligned top-level wizard errors `#join-error-1` and `#join-error-2` with step 3 — `class="input-field__error"` and `role="alert"` (IDs unchanged; `public/join.js` still uses `getElementById(\`join-error-${step}\`)` only).
+- `public/styles.css`: removed obsolete `.join-wizard-error` rules (superseded by shared `.input-field__error` on these elements).
+- Public pages: migrated remaining low-risk `btn-primary` usage to `btn btn--primary`:
+  - `views/not_found.ejs` (homepage link)
+  - `views/coming_soon_il.ejs` (apex link)
+- `views/ui_demo.ejs`: pattern library no longer renders live legacy `btn-primary` / `btn-secondary-wf` buttons; comparison table remains the mapping reference; live samples use semantic classes only.
+- **Deferred (out of scope):** admin templates, CRM partials, admin gate login, and other `btn-primary` usages in `/admin/*` — future admin-focused pass.
+
 ## Recommended rollout order
 1. Migrate “standalone CTAs” first (homepage search submit, company mini-site contact buttons, join/callback primary & secondary actions).
 2. Migrate form label/control/error shells next (add `input-field*` semantics without touching autocomplete JS hooks).
