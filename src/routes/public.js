@@ -434,6 +434,20 @@ module.exports = function publicRoutes({ db }) {
     });
   });
 
+  // Internal UI component pattern library (dev reference).
+  // Intentionally not linked in public navigation.
+  router.get("/ui-demo", (req, res) => {
+    const canonicalUrl = canonicalUrlForTenant(req, "/ui-demo");
+    return res.render("ui_demo", {
+      seoTitle: `UI Demo · ${req.tenant.name || "GetPro"}`,
+      seoDescription: "Visual reference for the GetPro web component system (Buttons / Cards / Inputs).",
+      canonicalUrl,
+      ogUrl: canonicalUrl,
+      ...tenantLocals(req),
+      ...platformSupport(req),
+    });
+  });
+
   router.get("/sitemap.xml", (req, res) => {
     res.type("application/xml");
     res.send(buildSitemapXml(req, db));

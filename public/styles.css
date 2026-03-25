@@ -7848,3 +7848,115 @@ body[class*="tenant-"] {
     padding-bottom: 76px;
   }
 }
+
+/* ——— UI Demo / Pattern Library ——— */
+.ui-demo-container {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-4);
+}
+
+.ui-demo-hero {
+  margin-bottom: var(--space-3);
+}
+
+.ui-demo-section {
+  margin-bottom: var(--space-4);
+}
+
+.ui-demo-section-title {
+  font-size: var(--space-2);
+  font-weight: 900;
+  margin: 0 0 var(--space-2) 0;
+  letter-spacing: -0.02em;
+}
+
+.ui-demo-card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+@media (min-width: 900px) {
+  .ui-demo-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ui-demo-spacer {
+  height: var(--space-1-5);
+}
+
+.ui-demo-note {
+  margin-top: var(--space-1);
+  line-height: 1.5;
+}
+
+.ui-demo-token-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-25);
+}
+
+.ui-demo-token {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0-75);
+  padding: var(--space-0-75) var(--space-1-25);
+  border-radius: var(--radius);
+  border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 80%, transparent);
+  background: color-mix(in srgb, var(--surface) 92%, var(--wf-primary) 8%);
+}
+
+.ui-demo-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: var(--border-width-hairline) solid var(--border-strong);
+  display: inline-block;
+}
+
+.ui-demo-swatch--primary {
+  background: var(--wf-primary);
+}
+
+.ui-demo-swatch--surface {
+  background: var(--surface);
+}
+
+.ui-demo-swatch--outline {
+  background: var(--border-strong);
+}
+
+.ui-demo-swatch--error {
+  background: var(--flash-error-text);
+}
+
+.ui-demo-swatch--radius {
+  background: var(--radius-pill);
+}
+
+.ui-demo-swatch--focus {
+  background: var(--color-focus);
+}
+
+.ui-demo-migration-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-25);
+}
+
+.ui-demo-migration-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-0-75);
+}
+
+.ui-demo-migration-cell code {
+  font-size: var(--space-1-5);
+}
+
+.ui-demo-migration-arrow {
+  color: var(--muted);
+  font-weight: 800;
+}

@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <%- include('partials/seo_meta', {
+      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : 'UI Demo | GetPro',
+      seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : 'Visual reference for component system',
+      canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
+      ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
+      ogImage: typeof ogImage !== 'undefined' ? ogImage : '',
+      ogType: 'website'
+    }) %>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="ui-demo-page <%= tenant && tenant.themeClass ? tenant.themeClass : '' %>" data-screen-role="ui-demo">
+    <div class="app-layout">
+      <%- include('partials/site_header', {
+        tenantUrlPrefix,
+        tenant,
+        regionChoices: regionChoices,
+        renderRegionPickerTrigger: true,
+      }) %>
+      <%- include('partials/app_navigation', { tenantUrlPrefix }) %>
+
+      <div class="app-layout__main">
+        <div class="container ui-demo-container">
+          <header class="ui-demo-hero">
+            <h1 class="section-title section-title--flush">UI Component Pattern Library</h1>
+            <p class="subtitle">Buttons, Cards, and Inputs using shared design tokens (Material 3-inspired, EJS + CSS).</p>
+          </header>
+
+          <section class="ui-demo-section">
+            <h2 class="ui-demo-section-title">Buttons</h2>
+
+            <div class="ui-demo-card-grid">
+              <div class="card">
+                <div class="card__header">
+                  <h3 class="card__title">New semantic variants</h3>
+                  <div class="card__meta">.btn + .btn--*</div>
+                </div>
+                <div class="card__body">
+                  <div class="flex-row-wrap">
+                    <button class="btn btn--primary" type="button">Primary</button>
+                    <button class="btn btn--secondary" type="button">Secondary</button>
+                    <button class="btn btn--text" type="button">Text / Ghost</button>
+                  </div>
+
+                  <div class="ui-demo-spacer" aria-hidden="true"></div>
+
+                  <div class="flex-row-wrap">
+                    <button class="btn btn--primary btn--sm" type="button">Small</button>
+                    <button class="btn btn--primary" type="button">Default</button>
+                    <button class="btn btn--primary btn--lg" type="button">Large</button>
+                    <button class="btn btn--primary btn--icon" type="button" aria-label="Icon button">
+                      <span class="btn__icon" aria-hidden="true">+</span>
+                    </button>
+                  </div>
+
+                  <div class="ui-demo-spacer" aria-hidden="true"></div>
+
+                  <div class="flex-row-wrap">
+                    <button class="btn btn--primary" type="button" disabled>Disabled</button>
+                    <button class="btn btn--secondary" type="button" disabled>Disabled</button>
+                    <button class="btn btn--text" type="button" disabled>Disabled</button>
+                  </div>
+
+                  <p class="muted ui-demo-note">
+                    Tip: Use keyboard `Tab` to inspect focus rings. Hover to inspect hover states.
+                  </p>
+                </div>
+              </div>
+
+              <div class="card card--elevated">
+                <div class="card__header">
+                  <h3 class="card__title">Legacy → new mapping</h3>
+                  <div class="card__meta">Safe migration reference</div>
+                </div>
+                <div class="card__body">
+                  <div class="ui-demo-migration-table" role="table" aria-label="Button mapping table">
+                    <div class="ui-demo-migration-row" role="row">
+                      <div class="ui-demo-migration-cell" role="cell"><code>btn-primary</code></div>
+                      <div class="ui-demo-migration-arrow" role="cell">→</div>
+                      <div class="ui-demo-migration-cell" role="cell"><code>btn btn--primary</code></div>
+                    </div>
+                    <div class="ui-demo-migration-row" role="row">
+                      <div class="ui-demo-migration-cell" role="cell"><code>btn-secondary-wf</code></div>
+                      <div class="ui-demo-migration-arrow" role="cell">→</div>
+                      <div class="ui-demo-migration-cell" role="cell"><code>btn btn--secondary</code></div>
+                    </div>
+                    <div class="ui-demo-migration-row" role="row">
+                      <div class="ui-demo-migration-cell" role="cell"><code>btn btn--text</code></div>
+                      <div class="ui-demo-migration-arrow" role="cell">→</div>
+                      <div class="ui-demo-migration-cell" role="cell"><code>btn btn--text</code></div>
+                    </div>
+                  </div>
+
+                  <div class="ui-demo-spacer" aria-hidden="true"></div>
+
+                  <div class="flex-row-wrap">
+                    <button class="btn btn-primary" type="button">Legacy Primary</button>
+                    <button class="btn btn--primary" type="button">New Primary</button>
+                  </div>
+                  <div class="ui-demo-spacer" aria-hidden="true"></div>
+                  <div class="flex-row-wrap">
+                    <button class="btn btn-secondary-wf" type="button">Legacy Secondary</button>
+                    <button class="btn btn--secondary" type="button">New Secondary</button>
+                  </div>
+                  <div class="ui-demo-spacer" aria-hidden="true"></div>
+                  <div class="flex-row-wrap">
+                    <button class="btn btn--text" type="button">Text / Ghost</button>
+                    <button class="btn btn--text" type="button">Text / Ghost</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ui-demo-section">
+            <h2 class="ui-demo-section-title">Cards</h2>
+
+            <div class="ui-demo-card-grid">
+              <div class="card">
+                <div class="card__header">
+                  <h3 class="card__title">Standard card</h3>
+                  <div class="card__meta">Low emphasis, consistent surface</div>
+                </div>
+                <div class="card__body">
+                  <p class="muted" style="margin: 0;">
+                    This card uses `.card` for border radius, padding, and subtle elevation aligned with Material 3.
+                  </p>
+                </div>
+                <div class="card__footer">
+                  <div class="card__actions">
+                    <a class="btn btn--primary" href="#" role="button">Primary action</a>
+                    <a class="btn btn--secondary" href="#" role="button">Secondary</a>
+                  </div>
+                </div>
+              </div>
+
+              <a class="card card--interactive" href="#" aria-label="Interactive card demo">
+                <div class="card__header">
+                  <h3 class="card__title">Interactive card</h3>
+                  <div class="card__meta">Clickable surface</div>
+                </div>
+                <div class="card__body">
+                  <p class="muted" style="margin: 0;">
+                    Use `<a href>` for interactive cards so keyboard and screen-reader behavior is correct.
+                  </p>
+                </div>
+              </a>
+
+              <div class="card card--elevated">
+                <div class="card__header">
+                  <h3 class="card__title">Elevated card</h3>
+                  <div class="card__meta">Higher surface hierarchy</div>
+                </div>
+                <div class="card__body">
+                  <p class="muted" style="margin: 0;">
+                    `.card--elevated` increases shadow level for highlight moments (e.g., key info).
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <div class="card__header">
+                  <h3 class="card__title">Directory-style card (example)</h3>
+                  <div class="card__meta">Uses `.pro-directory-card` (page-specific layout)</div>
+                </div>
+                <div class="ui-demo-spacer" aria-hidden="true"></div>
+                <article class="pro-directory-card">
+                  <a class="pro-directory-card__link" href="#">
+                    <div class="pro-directory-card__media" aria-hidden="true">
+                      <div class="pro-directory-card__avatar"><span class="pro-directory-card__initials">AB</span></div>
+                    </div>
+                    <div class="pro-directory-card__body">
+                      <div class="pro-directory-card__header">
+                        <h3 class="pro-directory-card__title">Alice Builders</h3>
+                        <span class="pro-directory-card__cta">
+                          <span class="pro-directory-card__cta-label">View profile</span>
+                        </span>
+                      </div>
+                      <div class="pro-directory-card__meta-line" aria-label="Listing details">
+                        <span class="pro-directory-card__category">Builders</span>
+                        <span class="pro-directory-card__loc">Lusaka</span>
+                      </div>
+                      <p class="pro-directory-card__excerpt">
+                        Clean work, clear timelines, and direct communication for residential construction projects.
+                      </p>
+                      <p class="pro-directory-card__footer">
+                        <span class="pro-directory-card__host">Verified · 4.7 ★</span>
+                      </p>
+                    </div>
+                  </a>
+                </article>
+              </div>
+
+              <div class="card">
+                <div class="card__header">
+                  <h3 class="card__title">No-results / help card</h3>
+                  <div class="card__meta">Example uses `.pro-directory-empty--rich`</div>
+                </div>
+                <div class="card__body">
+                  <div class="pro-directory-empty pro-directory-empty--rich" role="status" aria-live="polite">
+                    <div class="pro-directory-empty__inner">
+                      <h2 class="pro-directory-empty__title">No professionals found</h2>
+                      <p class="pro-directory-empty__hint muted">Leave your details and we’ll help connect you with a suitable professional.</p>
+                      <div class="pro-directory-empty__edit-search muted">
+                        <a class="pro-directory-empty__edit-search-link" href="#directory-toolbar">Jump to search</a>
+                      </div>
+                      <div class="pro-directory-empty__actions" style="margin-top: var(--space-2);">
+                        <a class="btn btn--primary" href="#" role="button">Request a call</a>
+                        <a class="btn btn--text" href="#" role="button">Adjust filters</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ui-demo-section">
+            <h2 class="ui-demo-section-title">Inputs</h2>
+
+            <div class="ui-demo-card-grid">
+              <div class="card">
+                <div class="card__header">
+                  <h3 class="card__title">Standard input (with help)</h3>
+                  <div class="card__meta">.input-field + visible label</div>
+                </div>
+                <div class="card__body">
+                  <div class="join-field input-field">
+                    <label class="input-field__label" for="ui-demo-name">Full name</label>
+                    <input id="ui-demo-name" class="join-plain-input input-field__control" type="text" placeholder="e.g. Jane Banda" />
+                    <p class="input-field__help">We’ll use this to contact you.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card card--elevated">
+                <div class="card__header">
+                  <h3 class="card__title">Error input state</h3>
+                  <div class="card__meta">.input-field--error</div>
+                </div>
+                <div class="card__body">
+                  <div class="join-field input-field input-field--error">
+                    <label class="input-field__label" for="ui-demo-phone">Phone number</label>
+                    <input id="ui-demo-phone" class="join-plain-input input-field__control" type="tel" placeholder="e.g. 0977 123 456" />
+                    <p class="input-field__error" role="alert">Phone number is required.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card__header">
+                  <h3 class="card__title">Search-style input shell</h3>
+                  <div class="card__meta">Autocomplete shell (visual)</div>
+                </div>
+                <div class="card__body">
+                  <div class="pro-ac input-field input-field--search" data-ac-list="service">
+                    <input
+                      id="ui-demo-search-q"
+                      class="pro-ac-input input-field__control"
+                      type="text"
+                      placeholder="e.g. Electrician"
+                      autocomplete="off"
+                      role="combobox"
+                      aria-autocomplete="list"
+                      aria-expanded="false"
+                    />
+                    <p class="pro-ac-msg input-field__error" hidden></p>
+                  </div>
+                  <p class="muted ui-demo-note">This uses `.pro-ac` styles; autocomplete is initialized lazily like the real search forms.</p>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card__header">
+                  <h3 class="card__title">Select / dropdown</h3>
+                  <div class="card__meta">Token-aligned field control</div>
+                </div>
+                <div class="card__body">
+                  <div class="input-field">
+                    <label class="input-field__label" for="ui-demo-cat">Category</label>
+                    <select id="ui-demo-cat" class="pro-search-form__select input-field__control" aria-label="Category demo">
+                      <option value="">All categories</option>
+                      <option value="builders">Builders</option>
+                      <option value="plumbing">Plumbing</option>
+                      <option value="electrical">Electrical</option>
+                    </select>
+                    <p class="input-field__help">Dropdowns should keep the same radius and touch height as inputs.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ui-demo-section">
+            <h2 class="ui-demo-section-title">Real-world combinations</h2>
+
+            <div class="ui-demo-card-grid">
+              <div class="card">
+                <div class="card__header">
+                  <h3 class="card__title">Search form (shared)</h3>
+                  <div class="card__meta">Uses `partials/pro_search_form.ejs`</div>
+                </div>
+                <div class="card__body">
+                  <%- include('partials/pro_search_form', {
+                    variant: 'directory',
+                    tenantUrlPrefix,
+                    showCategoryFilter: false,
+                    searchQuery: 'Electrician',
+                    cityQuery: 'Lusaka'
+                  }) %>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card__header">
+                  <h3 class="card__title">Callback / join-style fields</h3>
+                  <div class="card__meta">Plain inputs + labels</div>
+                </div>
+                <div class="card__body">
+                  <form class="join-modal-panel join-modal-panel--form" onsubmit="return false;" aria-label="Callback form demo">
+                    <div class="join-modal-fields">
+                      <label class="join-modal-label input-field__label" for="ui-demo-cb-name">Full name</label>
+                      <input id="ui-demo-cb-name" class="join-plain-input join-modal-input input-field__control" type="text" placeholder="e.g. Chanda Phiri" />
+                      <label class="join-modal-label input-field__label" for="ui-demo-cb-phone">Phone number</label>
+                      <input id="ui-demo-cb-phone" class="join-plain-input join-modal-input input-field__control" type="tel" placeholder="e.g. 0977 123 456" />
+                    </div>
+                    <div class="join-modal-actions join-modal-actions--split">
+                      <button type="submit" class="btn btn--primary" disabled>Request a call</button>
+                      <a class="btn btn--text" href="#">Cancel</a>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div class="card card--elevated">
+                <div class="card__header">
+                  <h3 class="card__title">Company contact CTA block</h3>
+                  <div class="card__meta">Visual reference for CTAs</div>
+                </div>
+                <div class="card__body">
+                  <div class="card pro-company-profile__lead-card" style="margin: 0;">
+                    <div class="muted" style="margin-bottom: var(--space-1);">Request contact</div>
+                    <div class="flex-row-wrap">
+                      <a class="btn btn--primary" href="#" role="button">Call</a>
+                      <a class="btn btn--secondary" href="#" role="button">WhatsApp</a>
+                      <a class="btn btn--text" href="#" role="button">Email</a>
+                    </div>
+                  </div>
+                  <p class="muted ui-demo-note">For mini-site CTAs, prefer `.btn` + semantic variant classes.</p>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card__header">
+                  <h3 class="card__title">Trust / help card</h3>
+                  <div class="card__meta">Content-first card</div>
+                </div>
+                <div class="card__body">
+                  <div class="card__header">
+                    <h4 class="card__title" style="font-size: var(--space-1-875);">Verified listings</h4>
+                    <div class="card__meta">Direct contact through one-page profiles</div>
+                  </div>
+                  <p class="muted" style="margin: 0; margin-top: var(--space-1);">
+                    The directory is designed to reduce clutter: customers search by service and city, then contact businesses directly.
+                  </p>
+                  <div class="card__footer">
+                    <div class="card__actions">
+                      <a class="btn btn--primary" href="#">Learn more</a>
+                      <a class="btn btn--secondary" href="#">Browse directory</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ui-demo-section">
+            <h2 class="ui-demo-section-title">Token quick reference</h2>
+            <div class="card card--elevated">
+              <div class="card__body">
+                <div class="ui-demo-token-grid" role="list">
+                  <div class="ui-demo-token" role="listitem">
+                    <span class="ui-demo-swatch ui-demo-swatch--primary" aria-hidden="true"></span>
+                    <span><strong>Primary</strong></span>
+                    <span class="muted">(--wf-primary / --btn-primary-bg)</span>
+                  </div>
+                  <div class="ui-demo-token" role="listitem">
+                    <span class="ui-demo-swatch ui-demo-swatch--surface" aria-hidden="true"></span>
+                    <span><strong>Surface</strong></span>
+                    <span class="muted">(--surface / cards)</span>
+                  </div>
+                  <div class="ui-demo-token" role="listitem">
+                    <span class="ui-demo-swatch ui-demo-swatch--outline" aria-hidden="true"></span>
+                    <span><strong>Outline</strong></span>
+                    <span class="muted">(--border-strong / outline-variant)</span>
+                  </div>
+                  <div class="ui-demo-token" role="listitem">
+                    <span class="ui-demo-swatch ui-demo-swatch--error" aria-hidden="true"></span>
+                    <span><strong>Error</strong></span>
+                    <span class="muted">(--flash-error-text / focus emphasis)</span>
+                  </div>
+                  <div class="ui-demo-token" role="listitem">
+                    <span class="ui-demo-swatch ui-demo-swatch--radius" aria-hidden="true"></span>
+                    <span><strong>Radius</strong></span>
+                    <span class="muted">(--radius-pill / --border-radius-*)</span>
+                  </div>
+                  <div class="ui-demo-token" role="listitem">
+                    <span class="ui-demo-swatch ui-demo-swatch--focus" aria-hidden="true"></span>
+                    <span><strong>Focus ring</strong></span>
+                    <span class="muted">(--focus-ring-color)</span>
+                  </div>
+                </div>
+
+                <p class="muted ui-demo-note">
+                  This demo uses the same class names and CSS variables as the real app. Inspect components by opening this page and reviewing the DOM + computed styles.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+        <%- include('partials/site_footer', { tenantUrlPrefix }) %>
+      </div>
+    </div>
+
+    <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <%- include('partials/autocomplete_defer_bootstrap') %>
+  </body>
+</html>
+

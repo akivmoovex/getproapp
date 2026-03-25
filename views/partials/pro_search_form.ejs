@@ -97,11 +97,26 @@
       </div>
     </div>
   </div>
-  <%- include('partials/components/button', {
-    type: 'submit',
-    variant: 'primary',
-    icon: 'search',
-    text: 'Search',
-    className: 'pro-search-form__submit pro-home-search-submit'
-  }) %>
+  <button
+    class="btn btn--primary pro-search-form__submit pro-home-search-submit"
+    type="submit"
+  >
+    <span class="pro-home-search-submit-text">Search</span>
+    <svg
+      class="pro-home-search-icon"
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.25"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  </button>
 </form>
