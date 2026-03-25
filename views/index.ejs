@@ -161,9 +161,9 @@
           <p class="home-m3-cta__text muted">Tell us what you need — our team can point you to the right category or service.</p>
           <div class="home-m3-cta__actions">
             <% if (typeof getproTelHref !== 'undefined' && getproTelHref && typeof getproPhone !== 'undefined' && getproPhone) { %>
-            <a class="btn btn-primary home-m3-cta__btn" href="<%= getproTelHref %>">Call <%= getproPhone %></a>
+            <a class="btn btn--primary home-m3-cta__btn" href="<%= getproTelHref %>">Call <%= getproPhone %></a>
             <% } %>
-            <a class="btn btn-secondary-wf home-m3-cta__btn" href="<%= tenantUrlPrefix %>/directory">Open directory</a>
+            <a class="btn btn--secondary home-m3-cta__btn" href="<%= tenantUrlPrefix %>/directory">Open directory</a>
           </div>
         </div>
       </div>
@@ -343,7 +343,7 @@
           <h2 class="section-title section-title--flush">Your next professional is a search away</h2>
           <p class="subtitle subtitle--cta">Browse the directory or list your business on GetPro.</p>
           <div class="hero-actions wf-cta-actions wf-cta-actions--single">
-            <a class="btn btn-primary" href="<%= tenantUrlPrefix %>/directory">Start Search</a>
+            <a class="btn btn--primary" href="<%= tenantUrlPrefix %>/directory">Start Search</a>
           </div>
         </div>
       </div>

@@ -30,13 +30,19 @@ Cards are already broadly consistent via `.card`. The recommended migration is:
 - Elevated / highlighted cards:
   - Use: `card--elevated` when you truly need higher emphasis.
 
-Note: Directory result cards (`pro-directory-card*`) are still page-specific layout components and should be migrated only after we agree on a shared directory-card base block.
+Note: Directory result cards (`pro-directory-card*`) are still page-specific layout components.
+However, we can safely standardize *CTAs inside those cards* without changing the card layout:
+- Directory “View profile” CTA badge now uses `.btn.btn--primary` on `.pro-directory-card__cta` while keeping the existing badge placement/layout.
 
 ## Page-specific CSS to keep for later
 Examples you should treat as “migration candidates,” not immediate rewrites:
-- `pro-directory-card__cta` (CTA badge styling inside directory cards)
+- `pro-directory-card__cta` (CTA badge styling inside directory cards; partially standardized to match `.btn--primary`, but sizing/placement remains layout-specific)
 - `pro-directory-empty*` (no-results states)
 - `join-wizard*` (join flow wizard panels)
+
+### This rollout (safe, low-risk)
+- Migrated directory card “View profile” CTA badge to shared semantic button classes (`.btn .btn--primary`) without rewriting the directory card layout.
+- Migrated homepage help / CTA card buttons to semantic button variants (`.btn--primary`, `.btn--secondary`).
 
 ## Recommended rollout order
 1. Migrate “standalone CTAs” first (homepage search submit, company mini-site contact buttons, join/callback primary & secondary actions).

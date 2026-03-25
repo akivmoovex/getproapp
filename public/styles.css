@@ -5180,6 +5180,23 @@ textarea {
   pointer-events: none;
 }
 
+/* CTA badge: use shared button system without changing card layout. */
+.pro-directory-card__cta.btn {
+  min-height: 0; /* `.btn` defaults to touch height; keep badge compact */
+}
+
+.pro-directory-card__cta.btn.btn--primary {
+  border: none;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  box-shadow: var(--elevation-btn-primary);
+}
+
+.pro-directory-card__link:hover .pro-directory-card__cta.btn.btn--primary {
+  background: var(--btn-primary-hover);
+  box-shadow: var(--elevation-btn-primary-hover);
+}
+
 .pro-directory-card__link:hover .pro-directory-card__cta {
   border-color: color-mix(in srgb, var(--wf-primary) 58%, var(--border-strong));
   background: color-mix(in srgb, var(--surface) 88%, var(--wf-primary) 12%);
