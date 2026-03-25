@@ -308,7 +308,8 @@ module.exports = function publicRoutes({ db }) {
     return res.render("directory", {
       categories,
       selectedCategory: selected,
-      searchQuery: searchOk ? searchRaw : "",
+      /* When filtering by category, show raw q in the field (e.g. category name from home) even if not in service whitelist — SQL uses category slug only. */
+      searchQuery: selected ? searchRaw : searchOk ? searchRaw : "",
       cityQuery: cityOk ? cityRaw : "",
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",

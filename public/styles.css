@@ -4297,23 +4297,35 @@ textarea {
 
 .pro-home-hero-title {
   margin: 0 0 var(--space-1);
-  max-width: min(22ch, 100%);
+  max-width: min(36ch, 100%);
   font-size: clamp(var(--space-2-25), 4.2vw, var(--space-3-75));
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.03em;
   color: var(--color-white);
   text-shadow: var(--text-shadow-hero-soft);
+  text-wrap: balance;
 }
 
 .pro-home-hero-subline {
   margin: 0;
-  max-width: min(48ch, 100%);
+  max-width: min(58ch, 100%);
   font-size: clamp(var(--space-1-375), 2vw, var(--space-2-25));
   font-weight: 500;
   line-height: 1.38;
   color: rgba(255, 255, 255, 0.9);
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+  text-wrap: balance;
+}
+
+@media (min-width: 720px) {
+  .pro-home-hero-panel .pro-home-hero-title {
+    max-width: min(42ch, 100%);
+  }
+
+  .pro-home-hero-panel .pro-home-hero-subline {
+    max-width: min(62ch, 100%);
+  }
 }
 
 .pro-home-search-field {
@@ -4385,17 +4397,42 @@ textarea {
   }
 }
 
-/* Match directory toolbar density on larger screens (compact M3-filled row; ~44px target) */
-@media (min-width: 768px) {
+/* Match directory toolbar density (compact M3-filled row — web widths) */
+@media (min-width: 621px) {
+  .pro-home-search-wrap--hero .pro-search-form__toolbar-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: var(--space-1-25);
+    row-gap: var(--space-1);
+    flex-wrap: unset;
+  }
+
+  .pro-home-search-wrap--hero .pro-home-search-fields {
+    display: contents;
+  }
+
+  .pro-home-search-wrap--hero .pro-home-search-field {
+    min-width: 0;
+  }
+}
+
+@media (min-width: 621px) {
   .pro-home-search-wrap--hero .pro-ac-input {
-    min-height: 44px;
-    padding: 0 var(--space-1-125);
+    min-height: 40px;
+    padding: 0 var(--space-1);
     box-sizing: border-box;
+    font-size: var(--space-1-625);
   }
 
   .pro-home-search-wrap--hero .pro-search-form__toolbar-row .pro-home-search-submit {
-    min-height: 44px;
-    padding: 0 var(--space-2-25);
+    min-height: 40px;
+    padding: 0 var(--space-2);
+    font-size: var(--space-1-625);
+  }
+
+  .pro-home-search-wrap--hero .pro-home-field-label {
+    font-size: var(--space-1-375);
   }
 }
 
@@ -4417,12 +4454,14 @@ textarea {
 
 @media (max-width: 620px) {
   .pro-home-search-wrap--hero .pro-search-form__toolbar-row {
+    display: flex;
     flex-wrap: wrap;
     flex-direction: column;
     align-items: stretch;
   }
 
   .pro-home-search-wrap--hero .pro-home-search-fields {
+    display: flex;
     flex: 1 1 auto;
     flex-direction: column;
     flex-wrap: nowrap;
@@ -4726,42 +4765,24 @@ textarea {
   font-size: var(--space-1-75);
 }
 
-/* Desktop: compact M3-filled row (~44px) — aligned with hero search density */
-@media (min-width: 768px) {
+/* Web widths: compact M3-filled row (aligned with hero — ~40px) */
+@media (min-width: 721px) {
   .pro-directory-toolbar .pro-search-form--directory .pro-ac-input,
   .pro-directory-toolbar .pro-search-form--directory .pro-ac-watermark {
-    min-height: 44px;
-    padding: 0 var(--space-1-125);
+    min-height: 40px;
+    padding: 0 var(--space-1);
     box-sizing: border-box;
+    font-size: var(--space-1-625);
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-home-search-submit {
-    min-height: 44px;
-    padding: 0 var(--space-2-25);
-  }
-}
-
-/* Web: keep service + city + Search on one row (button immediately after city) */
-@media (min-width: 721px) {
-  .pro-directory-toolbar .pro-search-form__toolbar-row {
-    flex-wrap: nowrap;
-    align-items: flex-end;
+    min-height: 40px;
+    padding: 0 var(--space-2);
+    font-size: var(--space-1-625);
   }
 
-  .pro-directory-toolbar .pro-search-form--directory .pro-search-form__fields {
-    flex-wrap: nowrap;
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
-  .pro-directory-toolbar .pro-search-form--directory .pro-search-form__field {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
-  .pro-directory-toolbar .pro-search-form__toolbar-row .pro-home-search-submit {
-    flex: 0 0 auto;
-    align-self: stretch;
+  .pro-directory-toolbar .pro-home-field-label {
+    font-size: var(--space-1-375);
   }
 }
 
@@ -4774,11 +4795,13 @@ textarea {
   }
 
   .pro-directory-toolbar .pro-search-form__toolbar-row {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-search-form__fields {
+    display: flex;
     flex: 1 1 auto;
     width: 100%;
     flex-direction: column;
@@ -4882,7 +4905,7 @@ textarea {
 
 .pro-directory-toolbar .pro-search-form__toolbar-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: flex-end;
   gap: var(--space-1) var(--space-1-25);
   width: 100%;
@@ -4891,11 +4914,31 @@ textarea {
 
 .pro-directory-toolbar .pro-search-form--directory .pro-search-form__fields {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: stretch;
   gap: var(--space-1) var(--space-1-25);
-  flex: 1 1 min(0, 28rem);
+  flex: 1 1 0;
   min-width: 0;
+  min-height: 0;
+}
+
+/* PERF: grid locks [service][city][Search] order — must stay after base toolbar rules (earlier nowrap was overridden here). */
+@media (min-width: 721px) {
+  .pro-directory-toolbar .pro-search-form__toolbar-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: var(--space-1-25);
+    row-gap: var(--space-1);
+  }
+
+  .pro-directory-toolbar .pro-search-form--directory .pro-search-form__fields {
+    display: contents;
+  }
+
+  .pro-directory-toolbar .pro-search-form--directory .pro-search-form__field {
+    min-width: 0;
+  }
 }
 
 .pro-directory-toolbar .pro-search-form--directory .pro-search-form__field {
@@ -7440,6 +7483,37 @@ body.join-modal-open {
   align-self: center;
 }
 
+.app-top-app-bar .wf-nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text);
+  font-weight: 800;
+  font-size: var(--space-2-25);
+  letter-spacing: -0.02em;
+}
+
+.app-top-app-bar .wf-nav-brand:hover {
+  color: var(--wf-primary);
+  text-decoration: none;
+}
+
+.app-top-app-bar__join {
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 0 var(--space-1-25);
+  font-size: var(--space-1-625);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 380px) {
+  .app-top-app-bar__join {
+    padding: 0 var(--space-1);
+    font-size: var(--space-1-5);
+  }
+}
+
 .app-top-app-bar__tagline {
   margin: 0;
   font-size: var(--space-1-5);
@@ -7510,21 +7584,23 @@ body.join-modal-open {
 .app-nav-drawer {
   position: fixed;
   top: var(--app-top-app-bar-height);
-  left: 0;
+  right: 0;
+  left: auto;
   bottom: 0;
   width: min(var(--app-nav-rail-width), 92vw);
   z-index: 60;
   background: var(--surface);
-  border-right: var(--border-width-hairline) solid var(--border-strong);
+  border-left: var(--border-width-hairline) solid var(--border-strong);
+  border-right: none;
   padding: var(--space-1-5) var(--space-2) var(--space-3-5);
   overflow-y: auto;
-  transform: translateX(-102%);
+  transform: translateX(102%);
   transition: transform 0.28s ease;
 }
 
 .app-nav-drawer-top {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
   margin: var(--motion-nudge-4) 0 var(--space-half);
 }

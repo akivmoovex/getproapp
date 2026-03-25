@@ -150,7 +150,7 @@
         </div>
         <div id="home-categories" class="pro-cat-grid">
           <% categories.forEach(function(cat) { %>
-            <a href="<%= tenantUrlPrefix %>/category/<%= cat.slug %>"><%= cat.name %></a>
+            <a href="<%= tenantUrlPrefix %>/directory?category=<%= encodeURIComponent(cat.slug) %>&amp;q=<%= encodeURIComponent(cat.name) %>"><%= cat.name %></a>
           <% }) %>
           <% if (categories.length === 0) { %>
             <p class="muted pro-cat-grid__full-span">No categories yet. Add them in the admin panel.</p>

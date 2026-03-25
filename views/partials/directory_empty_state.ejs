@@ -110,7 +110,7 @@
       <input type="hidden" name="context" value="<%= contextPayload %>" />
       <input type="hidden" name="interest_label" value="<%= interestPayload %>" />
       <div class="pro-directory-empty__callback-panel" id="directory-empty-callback-panel">
-        <%- include('partials/components/loading_block', {
+        <%- include('components/loading_block', {
           id: 'directory-empty-callback-loading',
           message: 'Sending request…',
           hidden: true,
