@@ -229,3 +229,21 @@
   outline: var(--border-width-medium) solid var(--color-error);
   outline-offset: var(--border-width-hairline);
 }
+
+/* Form step rhythm (multi-step flows: join wizard, modals, callback panels) */
+.form-step__header {
+  margin: 0 0 var(--space-1-5);
+}
+
+.form-step__title {
+  margin: 0;
+}
+
+.form-step__subtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+}
+
+.form-step__actions {
+  margin-top: var(--space-3);
+}

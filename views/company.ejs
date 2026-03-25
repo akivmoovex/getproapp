@@ -213,27 +213,32 @@
                 <form id="lead_form" class="form">
                   <input type="hidden" name="company_id" value="<%= company.id %>" />
 
-                  <div class="input-field">
-                    <label for="lead_name" class="input-field__label">Full name</label>
-                    <input id="lead_name" name="name" required autocomplete="name" placeholder="e.g. Chanda Phiri" class="input-field__control" />
+                  <div class="form-step">
+                    <div class="form-step__body">
+                      <div class="input-field">
+                        <label for="lead_name" class="input-field__label">Full name</label>
+                        <input id="lead_name" name="name" required autocomplete="name" placeholder="e.g. Chanda Phiri" class="input-field__control" />
+                      </div>
+                      <div class="input-field">
+                        <label for="lead_phone" class="input-field__label">Phone number</label>
+                        <input id="lead_phone" name="phone" required autocomplete="tel" placeholder="e.g. 0977 123 456" class="input-field__control" />
+                      </div>
+                      <div class="input-field">
+                        <label for="lead_email" class="input-field__label">Email address (optional)</label>
+                        <input id="lead_email" name="email" type="text" inputmode="email" autocomplete="email" placeholder="e.g. chanda@example.com" class="input-field__control" />
+                      </div>
+                      <div class="input-field">
+                        <label for="lead_message" class="input-field__label">How can we help?</label>
+                        <textarea id="lead_message" name="message" required placeholder="Tell us what service you need and when you need it" class="input-field__control"></textarea>
+                      </div>
+                      <div id="lead_status" class="muted pro-company-profile__lead-status"></div>
+                    </div>
+                    <div class="form-step__actions">
+                      <div class="card__actions">
+                        <button class="btn btn--primary" type="submit">Send request</button>
+                      </div>
+                    </div>
                   </div>
-                  <div class="input-field">
-                    <label for="lead_phone" class="input-field__label">Phone number</label>
-                    <input id="lead_phone" name="phone" required autocomplete="tel" placeholder="e.g. 0977 123 456" class="input-field__control" />
-                  </div>
-                  <div class="input-field">
-                    <label for="lead_email" class="input-field__label">Email address (optional)</label>
-                    <input id="lead_email" name="email" type="text" inputmode="email" autocomplete="email" placeholder="e.g. chanda@example.com" class="input-field__control" />
-                  </div>
-                  <div class="input-field">
-                    <label for="lead_message" class="input-field__label">How can we help?</label>
-                    <textarea id="lead_message" name="message" required placeholder="Tell us what service you need and when you need it" class="input-field__control"></textarea>
-                  </div>
-                  <div class="card__actions">
-                    <button class="btn btn--primary" type="submit">Send request</button>
-                  </div>
-
-                  <div id="lead_status" class="muted pro-company-profile__lead-status"></div>
                 </form>
               </div>
             </section>

@@ -110,31 +110,37 @@
       <input type="hidden" name="context" value="<%= contextPayload %>" />
       <input type="hidden" name="interest_label" value="<%= interestPayload %>" />
       <div class="pro-directory-empty__callback-panel" id="directory-empty-callback-panel">
-        <div class="join-modal-fields pro-directory-empty__fields input-field">
-          <label class="join-modal-label input-field__label" for="directory-empty-callback-name">Full name</label>
-          <input
-            class="join-plain-input join-modal-input input-field__control"
-            id="directory-empty-callback-name"
-            name="name"
-            type="text"
-            autocomplete="name"
-            maxlength="120"
-            required
-          />
-          <label class="join-modal-label input-field__label" for="directory-empty-callback-phone">Phone number</label>
-          <input
-            class="join-plain-input join-modal-input input-field__control"
-            id="directory-empty-callback-phone"
-            name="phone"
-            type="tel"
-            autocomplete="tel"
-            maxlength="40"
-            required
-          />
-        </div>
-        <p class="join-modal-error input-field__error" id="directory-empty-callback-error" hidden role="alert"></p>
-        <div class="join-modal-actions pro-directory-empty__callback-actions">
-          <button type="submit" class="btn btn--primary" id="directory-empty-callback-submit">Request a call</button>
+        <div class="form-step">
+          <div class="form-step__body">
+            <div class="join-modal-fields pro-directory-empty__fields input-field">
+              <label class="join-modal-label input-field__label" for="directory-empty-callback-name">Full name</label>
+              <input
+                class="join-plain-input join-modal-input input-field__control"
+                id="directory-empty-callback-name"
+                name="name"
+                type="text"
+                autocomplete="name"
+                maxlength="120"
+                required
+              />
+              <label class="join-modal-label input-field__label" for="directory-empty-callback-phone">Phone number</label>
+              <input
+                class="join-plain-input join-modal-input input-field__control"
+                id="directory-empty-callback-phone"
+                name="phone"
+                type="tel"
+                autocomplete="tel"
+                maxlength="40"
+                required
+              />
+            </div>
+            <p class="join-modal-error input-field__error" id="directory-empty-callback-error" hidden role="alert"></p>
+          </div>
+          <div class="form-step__actions">
+            <div class="join-modal-actions pro-directory-empty__callback-actions">
+              <button type="submit" class="btn btn--primary" id="directory-empty-callback-submit">Request a call</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="pro-directory-empty__callback-success" id="directory-empty-callback-success" hidden role="status" tabindex="-1">

@@ -55,6 +55,8 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
   - `views/join.ejs`: added `input-field__control` to the `.pro-ac` wrapper for the service/category and city fields.
   - `views/join.ejs`: added deterministic `id`s to the `.pro-ac-msg` elements and wired `aria-describedby` on the underlying inputs.
 
+- `views/join.ejs`: standardized the JOIN step-3 top-level validation error element (`#join-error-3`) to use shared `input-field__error` semantics (kept `id` and JS behavior unchanged).
+
 ### This rollout (safe, structure + contact-side polish)
 - Added a reusable multi-step form wrapper pattern:
   - `views/partials/components/form_section.ejs` provides the canonical `.form-step` markup structure.
@@ -62,6 +64,16 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
 - Finished the company mini-site contact-side elements:
   - QR block: standardized the “Copy QR image” action to `btn btn--text` and aligned the actions container with `card__actions`.
   - Mini-site URL block: standardized the URL link to `btn btn--text` inside the existing `pro-company-profile__mini-url` styling, with a tiny CSS compactness override.
+
+### This rollout (safe, form-step applied to other public forms)
+- Join modals (`views/join.ejs`):
+  - Disabled-city modal: wrapped panel body/actions with `.form-step__body` / `.form-step__actions` without changing any existing IDs used by `public/join.js`.
+  - Exit/call modal (question + form panel): wrapped body/actions with `.form-step` rhythm while preserving IDs and validation hooks.
+- Callback / request-call (`views/partials/directory_empty_state.ejs`):
+  - Wrapped the no-results callback panel (`directory-empty-callback-*`) with `.form-step` body/actions while preserving existing submission + success behavior.
+- Request-contact (`views/company.ejs`):
+  - Wrapped the lead form fields + status + actions with `.form-step` body/actions while preserving `#lead_form`, `#lead_status`, and `button[type=submit]` for `public/scripts.js`.
+- Added minimal shared CSS for `.form-step__header/body/actions` spacing in `public/design-system.css`.
 
 ## Recommended rollout order
 1. Migrate “standalone CTAs” first (homepage search submit, company mini-site contact buttons, join/callback primary & secondary actions).
