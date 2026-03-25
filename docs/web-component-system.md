@@ -24,6 +24,11 @@ Templates should rely on the component classes below instead of one-off inline s
 - `.btn__text` for the label
 - `.btn__icon` for icons (sets consistent icon alignment)
 
+### Size modifiers (optional)
+- Small: `.btn.btn--sm`
+- Large: `.btn.btn--lg`
+- Icon-only: `.btn.btn--icon`
+
 ### EJS partial
 `views/partials/components/button.ejs`
 

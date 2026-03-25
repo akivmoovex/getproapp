@@ -84,20 +84,20 @@
 /* ——— Component primitives (buttons / cards / inputs) ——— */
 
 /* Buttons: semantic modifiers layered on top of existing `.btn` */
-.btn--primary {
+.btn.btn--primary {
   background: var(--btn-primary-bg);
   border: none;
   color: var(--btn-primary-text);
   box-shadow: var(--elevation-btn-primary);
 }
 
-.btn--primary:hover {
+.btn.btn--primary:hover {
   background: var(--btn-primary-hover);
   color: var(--btn-primary-text);
   box-shadow: var(--elevation-btn-primary-hover);
 }
 
-.btn--secondary {
+.btn.btn--secondary {
   border-radius: var(--radius-pill);
   padding: var(--space-1-5) var(--space-3);
   font-weight: 700;
@@ -106,13 +106,13 @@
   color: var(--wf-primary-dark);
 }
 
-.btn--secondary:hover {
+.btn.btn--secondary:hover {
   background: var(--primary-softer-bg);
   border-color: var(--wf-primary-dark);
   color: var(--wf-primary-dark);
 }
 
-.btn--text {
+.btn.btn--text {
   background: transparent;
   border: none;
   color: var(--color-primary);
@@ -121,9 +121,27 @@
   padding-inline: var(--spacing-3);
 }
 
-.btn--text:hover {
+.btn.btn--text:hover {
   background: var(--primary-softer-bg);
   filter: none;
+}
+
+.btn.btn--sm {
+  min-height: calc(var(--space-touch) - var(--space-1));
+  padding: var(--space-0-75) var(--space-2);
+  font-size: var(--space-1-75);
+}
+
+.btn.btn--lg {
+  min-height: calc(var(--space-touch) + var(--space-1));
+  padding: var(--space-1-25) var(--space-3);
+}
+
+.btn.btn--icon {
+  min-width: var(--space-touch);
+  width: var(--space-touch);
+  min-height: var(--space-touch);
+  padding: 0;
 }
 
 .btn__icon {
@@ -131,6 +149,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Accessibility: visible keyboard focus for design-system button variants */
+.btn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.btn.btn--primary:focus-visible,
+.btn.btn--secondary:focus-visible,
+.btn.btn--text:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Card structure helpers (pair with existing `.card` styles) */

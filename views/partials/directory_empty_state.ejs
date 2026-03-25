@@ -134,7 +134,7 @@
         </div>
         <p class="join-modal-error input-field__error" id="directory-empty-callback-error" hidden role="alert"></p>
         <div class="join-modal-actions pro-directory-empty__callback-actions">
-          <button type="submit" class="btn btn-primary" id="directory-empty-callback-submit">Request a call</button>
+          <button type="submit" class="btn btn--primary" id="directory-empty-callback-submit">Request a call</button>
         </div>
       </div>
       <div class="pro-directory-empty__callback-success" id="directory-empty-callback-success" hidden role="status" tabindex="-1">
@@ -148,10 +148,10 @@
     <div class="pro-directory-empty__actions" id="directory-empty-footer-actions">
       <% if (_mode === 'directory') { %>
         <a href="<%= _tp %>/directory" class="btn btn--text">Clear all filters</a>
-        <a href="#<%= _toolbarId %>" class="btn btn-secondary-wf btn--secondary">Adjust search</a>
+        <a href="#<%= _toolbarId %>" class="btn btn--secondary">Adjust search</a>
       <% } else { %>
         <a href="<%= _tp %>/directory" class="btn btn--text">All categories</a>
-        <a href="#<%= _toolbarId %>" class="btn btn-secondary-wf btn--secondary">Refine search</a>
+        <a href="#<%= _toolbarId %>" class="btn btn--secondary">Refine search</a>
       <% } %>
     </div>
   </div>
