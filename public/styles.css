@@ -6190,6 +6190,14 @@ a.pro-directory-empty__chip:hover {
   justify-content: center;
 }
 
+.pro-company-profile__qr-actions .btn.btn--text {
+  /* QR copy is a compact utility action; keep `btn--text` from increasing row height. */
+  min-height: 0;
+  padding: 0 var(--space-half);
+  border: none;
+  box-shadow: none;
+}
+
 .pro-company-profile__qr-copy {
   font-weight: 800;
 }
@@ -6257,6 +6265,14 @@ a.pro-directory-empty__chip:hover {
   word-break: break-all;
   font-weight: 600;
   color: var(--text);
+}
+
+.pro-company-profile__mini-url .btn.btn--text {
+  /* Keep the mini-site URL link compact and aligned with the surrounding info rows. */
+  min-height: 0;
+  padding: 0 var(--space-half);
+  border: none;
+  box-shadow: none;
 }
 
 .pro-company-profile__support {

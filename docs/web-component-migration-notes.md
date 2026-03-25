@@ -55,6 +55,14 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
   - `views/join.ejs`: added `input-field__control` to the `.pro-ac` wrapper for the service/category and city fields.
   - `views/join.ejs`: added deterministic `id`s to the `.pro-ac-msg` elements and wired `aria-describedby` on the underlying inputs.
 
+### This rollout (safe, structure + contact-side polish)
+- Added a reusable multi-step form wrapper pattern:
+  - `views/partials/components/form_section.ejs` provides the canonical `.form-step` markup structure.
+  - `views/join.ejs` now uses the same `.form-step/*` wrapper structure around join wizard steps (wrapper-only; no JS hook/IDs changed).
+- Finished the company mini-site contact-side elements:
+  - QR block: standardized the “Copy QR image” action to `btn btn--text` and aligned the actions container with `card__actions`.
+  - Mini-site URL block: standardized the URL link to `btn btn--text` inside the existing `pro-company-profile__mini-url` styling, with a tiny CSS compactness override.
+
 ## Recommended rollout order
 1. Migrate “standalone CTAs” first (homepage search submit, company mini-site contact buttons, join/callback primary & secondary actions).
 2. Migrate form label/control/error shells next (add `input-field*` semantics without touching autocomplete JS hooks).

@@ -115,104 +115,126 @@
 
               <div id="join-panels">
                 <div class="join-step-panel" id="join-step-1" data-step="1">
-                  <h2>What service do you provide?</h2>
-                  <p class="join-step-hint">Choose the main service customers should find you under.</p>
-                  <div class="join-field join-field--ac input-field input-field--search">
-                    <label for="join-profession" class="input-field__label">Service or profession</label>
-                    <div
-                      class="pro-ac join-pro-ac input-field__control"
-                      data-ac-list="service"
-                      data-watermark-rotate="Search: Electrician|Search: Plumber|Search: Carpenter"
-                    >
-                      <input
-                        id="join-profession"
-                        class="pro-ac-input input-field__control"
-                        type="text"
-                        autocomplete="off"
-                        role="combobox"
-                        aria-autocomplete="list"
-                        aria-expanded="false"
-                        aria-controls="join-profession-dropdown"
-                        aria-describedby="join-profession-msg"
-                        required
-                      />
-                      <input type="hidden" class="pro-ac-hidden" id="join-profession-hid" value="" />
-                      <ul class="pro-ac-dropdown" id="join-profession-dropdown" role="listbox" hidden></ul>
-                      <p class="pro-ac-msg input-field__error" id="join-profession-msg" hidden></p>
+                  <div class="form-step">
+                    <div class="form-step__header">
+                      <h2 class="form-step__title">What service do you provide?</h2>
+                      <p class="form-step__subtitle join-step-hint">Choose the main service customers should find you under.</p>
                     </div>
-                  </div>
-                  <div class="join-wizard-actions join-wizard-actions--split">
-                    <button type="button" class="btn btn--primary" id="join-next-1">Continue</button>
-                    <button type="button" class="btn btn--secondary" id="join-cancel-1">Cancel</button>
-                  </div>
+                    <div class="form-step__body">
+                      <div class="join-field join-field--ac input-field input-field--search">
+                        <label for="join-profession" class="input-field__label">Service or profession</label>
+                        <div
+                          class="pro-ac join-pro-ac input-field__control"
+                          data-ac-list="service"
+                          data-watermark-rotate="Search: Electrician|Search: Plumber|Search: Carpenter"
+                        >
+                          <input
+                            id="join-profession"
+                            class="pro-ac-input input-field__control"
+                            type="text"
+                            autocomplete="off"
+                            role="combobox"
+                            aria-autocomplete="list"
+                            aria-expanded="false"
+                            aria-controls="join-profession-dropdown"
+                            aria-describedby="join-profession-msg"
+                            required
+                          />
+                          <input type="hidden" class="pro-ac-hidden" id="join-profession-hid" value="" />
+                          <ul class="pro-ac-dropdown" id="join-profession-dropdown" role="listbox" hidden></ul>
+                          <p class="pro-ac-msg input-field__error" id="join-profession-msg" hidden></p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-step__actions">
+                      <div class="join-wizard-actions join-wizard-actions--split">
+                        <button type="button" class="btn btn--primary" id="join-next-1">Continue</button>
+                        <button type="button" class="btn btn--secondary" id="join-cancel-1">Cancel</button>
+                      </div>
+                    </div>
                   <p class="join-wizard-error" id="join-error-1" hidden></p>
+                  </div>
                 </div>
 
                 <div class="join-step-panel" id="join-step-2" data-step="2" hidden>
-                  <h2>Which city or town do you work in?</h2>
-                  <p class="join-step-hint">Type a few letters — city suggestions appear below, same as the home search.</p>
-                  <div class="join-field join-field--ac input-field input-field--search">
-                    <label for="join-city" class="input-field__label">City</label>
-                    <div
-                      class="pro-ac join-pro-ac input-field__control"
-                      data-ac-list="city"
-                      data-watermark-rotate="<%= joinCityWatermarkRotate %>"
-                    >
-                      <input
-                        id="join-city"
-                        class="pro-ac-input input-field__control"
-                        type="text"
-                        autocomplete="off"
-                        role="combobox"
-                        aria-autocomplete="list"
-                        aria-expanded="false"
-                        aria-controls="join-city-dropdown"
-                        aria-describedby="join-city-msg"
-                        required
-                      />
-                      <input type="hidden" class="pro-ac-hidden" id="join-city-hid" value="" />
-                      <ul class="pro-ac-dropdown" id="join-city-dropdown" role="listbox" hidden></ul>
-                      <p class="pro-ac-msg input-field__error" id="join-city-msg" hidden></p>
+                  <div class="form-step">
+                    <div class="form-step__header">
+                      <h2 class="form-step__title">Which city or town do you work in?</h2>
+                      <p class="form-step__subtitle join-step-hint">Type a few letters — city suggestions appear below, same as the home search.</p>
                     </div>
-                  </div>
-                  <div class="join-wizard-actions join-wizard-actions--split">
-                    <button type="button" class="btn btn--primary" id="join-next-2">Continue</button>
-                    <button type="button" class="btn btn--secondary" id="join-back-2">Back</button>
-                  </div>
+                    <div class="form-step__body">
+                      <div class="join-field join-field--ac input-field input-field--search">
+                        <label for="join-city" class="input-field__label">City</label>
+                        <div
+                          class="pro-ac join-pro-ac input-field__control"
+                          data-ac-list="city"
+                          data-watermark-rotate="<%= joinCityWatermarkRotate %>"
+                        >
+                          <input
+                            id="join-city"
+                            class="pro-ac-input input-field__control"
+                            type="text"
+                            autocomplete="off"
+                            role="combobox"
+                            aria-autocomplete="list"
+                            aria-expanded="false"
+                            aria-controls="join-city-dropdown"
+                            aria-describedby="join-city-msg"
+                            required
+                          />
+                          <input type="hidden" class="pro-ac-hidden" id="join-city-hid" value="" />
+                          <ul class="pro-ac-dropdown" id="join-city-dropdown" role="listbox" hidden></ul>
+                          <p class="pro-ac-msg input-field__error" id="join-city-msg" hidden></p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-step__actions">
+                      <div class="join-wizard-actions join-wizard-actions--split">
+                        <button type="button" class="btn btn--primary" id="join-next-2">Continue</button>
+                        <button type="button" class="btn btn--secondary" id="join-back-2">Back</button>
+                      </div>
+                    </div>
                   <p class="join-wizard-error" id="join-error-2" hidden></p>
+                  </div>
                 </div>
 
                 <div class="join-step-panel" id="join-step-3" data-step="3" hidden>
-                  <div id="join-step-3-form">
-                    <h2>Your contact details</h2>
-                    <p class="join-step-hint">We’ll use these details to contact you about your listing.</p>
-                    <div class="join-field input-field">
-                      <label for="join-name" class="input-field__label">Full name</label>
-                      <input
-                        id="join-name"
-                        name="name"
-                        class="join-plain-input input-field__control"
-                        type="text"
-                        autocomplete="name"
-                        placeholder="e.g. Jane Banda"
-                        required
-                      />
+                  <div id="join-step-3-form" class="form-step">
+                    <div class="form-step__header">
+                      <h2 class="form-step__title">Your contact details</h2>
+                      <p class="form-step__subtitle join-step-hint">We’ll use these details to contact you about your listing.</p>
                     </div>
-                    <div class="join-field input-field">
-                      <label for="join-phone" class="input-field__label">Phone number</label>
-                      <input
-                        id="join-phone"
-                        name="phone"
-                        class="join-plain-input input-field__control"
-                        type="tel"
-                        autocomplete="tel"
-                        placeholder="<%= tenant.slug === 'zm' ? 'e.g. 0977 123 456' : 'e.g. 0977 123 456' %>"
-                        required
-                      />
+                    <div class="form-step__body">
+                      <div class="join-field input-field">
+                        <label for="join-name" class="input-field__label">Full name</label>
+                        <input
+                          id="join-name"
+                          name="name"
+                          class="join-plain-input input-field__control"
+                          type="text"
+                          autocomplete="name"
+                          placeholder="e.g. Jane Banda"
+                          required
+                        />
+                      </div>
+                      <div class="join-field input-field">
+                        <label for="join-phone" class="input-field__label">Phone number</label>
+                        <input
+                          id="join-phone"
+                          name="phone"
+                          class="join-plain-input input-field__control"
+                          type="tel"
+                          autocomplete="tel"
+                          placeholder="<%= tenant.slug === 'zm' ? 'e.g. 0977 123 456' : 'e.g. 0977 123 456' %>"
+                          required
+                        />
+                      </div>
                     </div>
-                    <div class="join-wizard-actions join-wizard-actions--split">
-                      <button type="button" class="btn btn--primary" id="join-submit">Send application</button>
-                      <button type="button" class="btn btn--secondary" id="join-back-3">Back</button>
+                    <div class="form-step__actions">
+                      <div class="join-wizard-actions join-wizard-actions--split">
+                        <button type="button" class="btn btn--primary" id="join-submit">Send application</button>
+                        <button type="button" class="btn btn--secondary" id="join-back-3">Back</button>
+                      </div>
                     </div>
                     <p class="join-wizard-error" id="join-error-3" hidden></p>
                   </div>

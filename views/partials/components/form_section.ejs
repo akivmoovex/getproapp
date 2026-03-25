@@ -1,0 +1,29 @@
+<%
+  var _title = typeof title !== 'undefined' ? String(title) : '';
+  var _subtitle = typeof subtitle !== 'undefined' ? String(subtitle) : '';
+  var _bodyHtml = typeof bodyHtml !== 'undefined' ? String(bodyHtml) : '';
+  var _actionsHtml = typeof actionsHtml !== 'undefined' ? String(actionsHtml) : '';
+  var _extraClass = typeof className !== 'undefined' && className ? String(className) : '';
+  var _variantClass = typeof variant !== 'undefined' && variant ? String(variant) : '';
+  var _compactClass = compact ? 'form-step--compact' : '';
+%>
+
+<div class="form-step <%= _variantClass %> <%= _compactClass %> <%= _extraClass %>">
+  <div class="form-step__header">
+    <% if (_title) { %>
+      <h2 class="form-step__title"><%= _title %></h2>
+    <% } %>
+    <% if (_subtitle) { %>
+      <p class="form-step__subtitle"><%= _subtitle %></p>
+    <% } %>
+  </div>
+
+  <% if (_bodyHtml) { %>
+    <div class="form-step__body"><%- _bodyHtml %></div>
+  <% } %>
+
+  <% if (_actionsHtml) { %>
+    <div class="form-step__actions"><%- _actionsHtml %></div>
+  <% } %>
+</div>
+

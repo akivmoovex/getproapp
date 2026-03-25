@@ -268,8 +268,8 @@
 
             <% if (typeof companyUrl !== 'undefined' && companyUrl && companyUrl !== '#') { %>
               <p class="muted pro-company-profile__mini-hint">Mini-site URL</p>
-              <p>
-                <a href="<%= companyUrl %>"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : companyUrl %></a>
+              <p class="pro-company-profile__mini-url">
+                <a class="btn btn--text" href="<%= companyUrl %>"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : companyUrl %></a>
               </p>
             <% } %>
 
@@ -280,8 +280,8 @@
                 <div class="pro-company-profile__qr-single">
                   <img src="<%= qrMiniSiteDataUrl %>" alt="QR code for this mini-site URL" width="168" height="168" class="pro-company-profile__qr-img" data-qr-image />
                 </div>
-                <div class="pro-company-profile__qr-actions">
-                  <button type="button" class="btn pro-company-profile__qr-copy" data-copy-qr-image>Copy QR image</button>
+                <div class="pro-company-profile__qr-actions card__actions">
+                  <button type="button" class="btn btn--text pro-company-profile__qr-copy" data-copy-qr-image>Copy QR image</button>
                   <span class="muted pro-company-profile__qr-copy-status" data-qr-copy-status hidden aria-live="polite"></span>
                 </div>
               </div>
