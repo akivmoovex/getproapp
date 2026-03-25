@@ -75,29 +75,32 @@
  */
 
 /**
- * Button hierarchy (existing classes — do not fork):
- * - Primary:   .btn.btn-primary
- * - Secondary: .btn.btn-secondary-wf  (outline / alternate)
+ * Button hierarchy (prefer semantic modifiers):
+ * - Primary:   .btn.btn--primary   (legacy alias: .btn.btn-primary)
+ * - Secondary: .btn.btn--secondary (legacy alias: .btn.btn-secondary-wf)
  * - Ghost/text:.btn.btn--text
  */
 
 /* ——— Component primitives (buttons / cards / inputs) ——— */
 
 /* Buttons: semantic modifiers layered on top of existing `.btn` */
-.btn.btn--primary {
+.btn.btn--primary,
+.btn.btn-primary {
   background: var(--btn-primary-bg);
   border: none;
   color: var(--btn-primary-text);
   box-shadow: var(--elevation-btn-primary);
 }
 
-.btn.btn--primary:hover {
+.btn.btn--primary:hover,
+.btn.btn-primary:hover {
   background: var(--btn-primary-hover);
   color: var(--btn-primary-text);
   box-shadow: var(--elevation-btn-primary-hover);
 }
 
-.btn.btn--secondary {
+.btn.btn--secondary,
+.btn.btn-secondary-wf {
   border-radius: var(--radius-pill);
   padding: var(--space-1-5) var(--space-3);
   font-weight: 700;
@@ -106,7 +109,8 @@
   color: var(--wf-primary-dark);
 }
 
-.btn.btn--secondary:hover {
+.btn.btn--secondary:hover,
+.btn.btn-secondary-wf:hover {
   background: var(--primary-softer-bg);
   border-color: var(--wf-primary-dark);
   color: var(--wf-primary-dark);
@@ -158,7 +162,9 @@
 }
 
 .btn.btn--primary:focus-visible,
+.btn.btn-primary:focus-visible,
 .btn.btn--secondary:focus-visible,
+.btn.btn-secondary-wf:focus-visible,
 .btn.btn--text:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);

@@ -75,8 +75,8 @@ Prefer **`--elevation-sm`** and **`--elevation-md`** for cards and surfaces. Avo
 
 | Role | Classes |
 |------|---------|
-| Primary | `.btn.btn-primary` |
-| Secondary / outline | `.btn.btn-secondary-wf` |
+| Primary | `.btn.btn--primary` (legacy alias: `.btn.btn-primary`) |
+| Secondary / outline | `.btn.btn--secondary` (legacy alias: `.btn.btn-secondary-wf`) |
 | Ghost / text | `.btn.btn--text` |
 
 **Rules:** contextual labels (“View profile”, “Request a call”), not vague “Submit” unless unavoidable.

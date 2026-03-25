@@ -14,10 +14,10 @@
         <div class="admin-workspace__toolbar" role="toolbar" aria-label="Mini-site actions">
           <div class="admin-workspace__toolbar-left">
             <a class="btn" href="/admin/companies?edit=1">← Back</a>
-            <button type="button" class="btn btn-primary admin-workspace__btn-edit u-hidden" data-ws-edit>Edit</button>
-            <button type="button" class="btn btn-primary admin-workspace__btn-preview u-hidden" data-ws-preview>Preview</button>
+            <button type="button" class="btn btn--primary admin-workspace__btn-edit u-hidden" data-ws-edit>Edit</button>
+            <button type="button" class="btn btn--primary admin-workspace__btn-preview u-hidden" data-ws-preview>Preview</button>
             <button type="button" class="btn admin-workspace__btn-close u-hidden" data-ws-close>Close</button>
-            <button type="button" class="btn btn-primary admin-workspace__btn-publish u-hidden" data-ws-publish>Publish</button>
+            <button type="button" class="btn btn--primary admin-workspace__btn-publish u-hidden" data-ws-publish>Publish</button>
             <button type="button" class="btn admin-workspace__btn-back-edit u-hidden" data-ws-back-edit>Back to edit</button>
             <span class="admin-workspace__toolbar-meta muted">
               <span class="kbd"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : company.subdomain %></span>
@@ -148,7 +148,7 @@
         </div>
         <div class="m3-modal__footer">
           <button type="button" class="btn" data-ws-dialog-cancel>Cancel</button>
-          <button type="button" class="btn btn-primary" data-ws-dialog-leave>Leave</button>
+          <button type="button" class="btn btn--primary" data-ws-dialog-leave>Leave</button>
         </div>
       </div>
     </div>

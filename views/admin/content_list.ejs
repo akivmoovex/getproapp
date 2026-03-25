@@ -12,7 +12,7 @@
       <div class="container admin-main__pad">
         <div class="admin-super-users__topbar">
           <% if (!editMode) { %>
-          <a class="btn btn-primary" href="/admin/content?kind=<%= kind %>&edit=1<%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Edit</a>
+          <a class="btn btn--primary" href="/admin/content?kind=<%= kind %>&edit=1<%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Edit</a>
           <% } else { %>
           <a class="btn" href="/admin/content?kind=<%= kind %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Done</a>
           <% } %>
@@ -25,7 +25,7 @@
 
         <% if (editMode) { %>
         <div class="admin-toolbar">
-          <a class="btn btn-primary" href="/admin/content/new?kind=<%= kind %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">New entry</a>
+          <a class="btn btn--primary" href="/admin/content/new?kind=<%= kind %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">New entry</a>
         </div>
         <% } else { %>
         <p class="admin-intro">View-only. Choose <strong>Edit</strong> to add or change items.</p>

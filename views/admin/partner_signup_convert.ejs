@@ -15,7 +15,7 @@
         <% if (convertedCompany) { %>
         <div class="card card--mb-md">
           <p style="margin:0">This signup was already converted to <strong><%= convertedCompany.name %></strong> (@<%= convertedCompany.subdomain %>).</p>
-          <p class="u-mt-sm"><a class="btn btn-primary" href="/admin/companies/<%= convertedCompany.id %>/workspace">Open company workspace</a></p>
+          <p class="u-mt-sm"><a class="btn btn--primary" href="/admin/companies/<%= convertedCompany.id %>/workspace">Open company workspace</a></p>
         </div>
         <% } %>
 
@@ -104,7 +104,7 @@
               <input id="ps_logo" name="logo_url" type="url" maxlength="500" placeholder="https://…" />
             </div>
             <div class="admin-gate-actions">
-              <button class="btn btn-primary" type="submit">Create listing from signup</button>
+              <button class="btn btn--primary" type="submit">Create listing from signup</button>
               <a class="btn" href="/admin/leads">Cancel</a>
             </div>
           </form>

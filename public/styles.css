@@ -417,7 +417,7 @@
   margin-bottom: var(--space-0-75);
 }
 
-.admin-form-shell.is-edit-mode .btn-primary.admin-form-shell__btn--done:disabled {
+.admin-form-shell.is-edit-mode .btn--primary.admin-form-shell__btn--done:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -721,7 +721,7 @@ a:hover {
   box-shadow: var(--elevation-admin-nav-hover);
 }
 
-.admin-app .btn-primary:hover {
+.admin-app .btn--primary:hover {
   box-shadow: var(--elevation-admin-nav-hover-primary);
 }
 
@@ -3663,19 +3663,6 @@ a.admin-dashboard-panel--link:focus-visible {
   filter: none;
 }
 
-.btn-primary {
-  background: var(--btn-primary-bg);
-  border: none;
-  color: var(--btn-primary-text);
-  box-shadow: var(--elevation-btn-primary);
-}
-
-.btn-primary:hover {
-  background: var(--btn-primary-hover);
-  color: var(--btn-primary-text);
-  box-shadow: var(--elevation-btn-primary-hover);
-}
-
 .btn-block {
   width: 100%;
   justify-content: center;
@@ -3694,21 +3681,6 @@ a.admin-dashboard-panel--link:focus-visible {
 .btn.btn--text:hover {
   background: var(--primary-softer-bg);
   filter: none;
-}
-
-.btn-secondary-wf {
-  border-radius: var(--radius-pill);
-  padding: var(--space-1-5) var(--space-3);
-  font-weight: 700;
-  border: var(--border-width-hairline) solid var(--wf-primary);
-  background: var(--surface);
-  color: var(--wf-primary-dark);
-}
-
-.btn-secondary-wf:hover {
-  background: var(--primary-softer-bg);
-  border-color: var(--wf-primary-dark);
-  color: var(--wf-primary-dark);
 }
 
 .wf-cta-card {
@@ -5518,7 +5490,7 @@ a.pro-directory-empty__chip:hover {
   width: 100%;
 }
 
-.pro-directory-empty__callback-actions .btn-primary {
+.pro-directory-empty__callback-actions .btn--primary {
   flex: 1 1 auto;
   min-width: min(100%, var(--space-touch) * 5);
 }
@@ -5862,7 +5834,7 @@ a.pro-directory-empty__chip:hover {
   box-sizing: border-box;
 }
 
-.pro-company-profile__cta.btn-primary {
+.pro-company-profile__cta.btn--primary {
   width: 100%;
   justify-content: center;
   font-size: var(--space-1-875);

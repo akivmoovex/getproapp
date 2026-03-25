@@ -82,7 +82,13 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
   - `views/not_found.ejs` (homepage link)
   - `views/coming_soon_il.ejs` (apex link)
 - `views/ui_demo.ejs`: pattern library no longer renders live legacy `btn-primary` / `btn-secondary-wf` buttons; comparison table remains the mapping reference; live samples use semantic classes only.
-- **Deferred (out of scope):** admin templates, CRM partials, admin gate login, and other `btn-primary` usages in `/admin/*` — future admin-focused pass.
+- **Deferred (at the time):** admin/internal templates — addressed in the **admin / internal button aliases** rollout below.
+
+### This rollout (admin / internal button aliases)
+- **Templates:** All `views/admin/*.ejs`, `views/partials/admin_gate_form.ejs`, and `views/partials/crm_task_inner.ejs` now use `btn btn--primary` instead of `btn btn-primary` for primary actions (IDs, `data-*` hooks, `type`, and `form` attributes unchanged).
+- **Dynamic admin UI:** `public/admin-form-edit-mode.js` unsaved-changes “Discard” control updated to `btn btn--primary`.
+- **CSS:** `public/design-system.css` — `.btn.btn-primary` and `.btn.btn-secondary-wf` are **compatibility aliases** on the same rules as `.btn.btn--primary` / `.btn.btn--secondary` (focus-visible included). `public/styles.css` — removed duplicate standalone `.btn-primary` / `.btn-secondary-wf` blocks; tightened admin and public layout selectors (`.admin-form-shell…btn--primary`, `.admin-app .btn--primary:hover`, `.pro-directory-empty__callback-actions .btn--primary`, `.pro-company-profile__cta.btn--primary`).
+- **Deferred:** Any third-party or cached HTML still using old class names remains covered by alias rules in the design system; optional follow-up is removing legacy aliases entirely once all markup is verified.
 
 ### This rollout (public form helper / error / status microcopy)
 - **Shared pattern:** `public/design-system.css` adds `.form-status-message` for post-submit / inline status copy rhythm where a compact line is appropriate (optional on new markup; existing blocks keep their page classes when typography must stay unchanged).

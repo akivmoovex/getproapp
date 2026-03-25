@@ -12,7 +12,7 @@
       <div class="container admin-main__pad">
       <div class="admin-super-users__topbar">
         <% if (!editMode) { %>
-        <a class="btn btn-primary" href="/admin/categories?edit=1<%= typeof filterSuffix !== 'undefined' ? filterSuffix : '' %>">Edit</a>
+        <a class="btn btn--primary" href="/admin/categories?edit=1<%= typeof filterSuffix !== 'undefined' ? filterSuffix : '' %>">Edit</a>
         <% } else { %>
         <a class="btn" href="/admin/categories<%= typeof filterSuffix !== 'undefined' && filterSuffix ? '?' + filterSuffix.slice(1) : '' %>">Done</a>
         <% } %>
@@ -49,7 +49,7 @@
           </div>
         </div>
         <div class="admin-filter-form__actions">
-          <button class="btn btn-primary" type="submit">Apply filters</button>
+          <button class="btn btn--primary" type="submit">Apply filters</button>
           <a class="btn" href="/admin/categories<%= editMode ? '?edit=1' : '' %><%= typeof embed !== 'undefined' && embed ? (editMode ? '&' : '?') + 'embed=1' : '' %>">Clear</a>
         </div>
       </form>
@@ -58,7 +58,7 @@
       <p class="admin-intro">View-only list. Choose <strong>Edit</strong> to add, change, or remove categories.</p>
       <% } else { %>
       <div class="admin-toolbar">
-        <a class="btn btn-primary" href="/admin/categories/new<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">New category</a>
+        <a class="btn btn--primary" href="/admin/categories/new<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">New category</a>
       </div>
       <% } %>
 

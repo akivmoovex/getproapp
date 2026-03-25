@@ -19,7 +19,7 @@
         Create, edit, or remove regions. Set <strong>stage</strong> to <strong>Enabled</strong> for live traffic on the subdomain, or <strong>Disabled</strong> / <strong>PartnerCollection</strong> to hide from the picker and return 503 on that host (except <strong>global</strong>, apex-only).
       </p>
       <div class="admin-toolbar">
-        <a class="btn btn-primary" href="/admin/super/tenants/new">New region</a>
+        <a class="btn btn--primary" href="/admin/super/tenants/new">New region</a>
         <a class="btn" href="/admin/super/users">All admin users</a>
       </div>
       <div class="card card--mb-xl">
@@ -49,7 +49,7 @@
                       <option value="<%= stages.ENABLED %>" <%= t.stage === stages.ENABLED ? 'selected' : '' %>><%= stages.ENABLED %></option>
                       <option value="<%= stages.DISABLED %>" <%= t.stage === stages.DISABLED ? 'selected' : '' %>><%= stages.DISABLED %></option>
                     </select>
-                    <button class="btn btn-primary" type="submit">Update</button>
+                    <button class="btn btn--primary" type="submit">Update</button>
                   </form>
                 </td>
                 <td>
@@ -92,7 +92,7 @@
             </div>
           </div>
           <div class="admin-gate-actions">
-            <button class="btn btn-primary" type="submit">Apply scope</button>
+            <button class="btn btn--primary" type="submit">Apply scope</button>
           </div>
         </form>
       </div>

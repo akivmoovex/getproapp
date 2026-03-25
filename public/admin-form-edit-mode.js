@@ -81,7 +81,7 @@
       "</div>" +
       '<footer class="m3-modal__footer">' +
       '<button type="button" class="btn btn--text" data-admin-unsaved-cancel>Cancel</button>' +
-      '<button type="button" class="btn btn-primary" data-admin-unsaved-discard>Discard</button>' +
+      '<button type="button" class="btn btn--primary" data-admin-unsaved-discard>Discard</button>' +
       "</footer>" +
       "</div>";
 

@@ -72,7 +72,7 @@
                 <% if (typeof adminNav !== 'undefined' && adminNav.canEditDirectory) { %>
                 <td>
                   <% if (!s.converted_company_id || Number(s.converted_company_id) === 0) { %>
-                    <a class="btn btn-primary" href="/admin/partner-signups/<%= s.id %>">Review &amp; convert</a>
+                    <a class="btn btn--primary" href="/admin/partner-signups/<%= s.id %>">Review &amp; convert</a>
                   <% } else { %>
                     <a class="btn" href="/admin/companies/<%= Number(s.converted_company_id) %>/workspace">Open listing</a>
                   <% } %>
@@ -102,7 +102,7 @@
               <% }) %>
             </select>
           </div>
-          <button class="btn btn-primary" type="submit">Apply</button>
+          <button class="btn btn--primary" type="submit">Apply</button>
         </form>
       </div>
 
