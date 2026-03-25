@@ -50,6 +50,11 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
 - Company mini-site contact block: standardized the lead form submit action into `card__actions`, migrated “GetPro support” Email/WhatsApp pills to `btn btn--secondary`, and applied compact semantic `btn btn--text` styling to interactive contact info links while keeping existing SSR bindings and `lead_form` behavior.
 - Standardized JOIN / CALLBACK form *actions* to shared button variants where applicable (primary/secondary are already aligned to `.btn--primary` / `.btn--secondary`).
 
+### Next safe rollout: JOIN wizard autocomplete wrappers
+- Updated JOIN wizard autocomplete wrapper markup (wrapper-only; no JS selector changes) so the autocomplete control container (`.pro-ac`) participates in the shared `input-field` semantics:
+  - `views/join.ejs`: added `input-field__control` to the `.pro-ac` wrapper for the service/category and city fields.
+  - `views/join.ejs`: added deterministic `id`s to the `.pro-ac-msg` elements and wired `aria-describedby` on the underlying inputs.
+
 ## Recommended rollout order
 1. Migrate “standalone CTAs” first (homepage search submit, company mini-site contact buttons, join/callback primary & secondary actions).
 2. Migrate form label/control/error shells next (add `input-field*` semantics without touching autocomplete JS hooks).
