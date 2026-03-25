@@ -4965,6 +4965,21 @@ textarea {
   font-size: var(--space-1-75);
 }
 
+/* Desktop-only: align directory search controls to ~56px M3 touch target */
+@media (min-width: 768px) {
+  .pro-directory-toolbar .pro-search-form--directory .pro-ac-input,
+  .pro-directory-toolbar .pro-search-form--directory .pro-ac-watermark {
+    min-height: 56px;
+    padding: 0 var(--space-1-5);
+    box-sizing: border-box;
+  }
+
+  .pro-directory-toolbar .pro-search-form--directory .pro-home-search-submit {
+    min-height: 56px;
+    padding: 0 var(--space-3);
+  }
+}
+
 /* Directory search: full-width stacked fields on small screens (avoid clipped inputs) */
 @media (max-width: 720px) {
   .pro-directory-toolbar .pro-search-form--directory {
@@ -5503,6 +5518,33 @@ textarea {
 .pro-directory-card__link:hover .pro-directory-card__cta {
   border-color: color-mix(in srgb, var(--wf-primary) 58%, var(--border-strong));
   background: color-mix(in srgb, var(--surface) 88%, var(--wf-primary) 12%);
+}
+
+/* Desktop-only: normalize card spacing + filled CTA (M3 primary hierarchy) */
+@media (min-width: 768px) {
+  .pro-directory-card {
+    border-radius: 16px;
+    box-shadow: var(--elevation-sm);
+  }
+
+  .pro-directory-card__link {
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-2);
+  }
+
+  .pro-directory-card__cta {
+    border: none;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    box-shadow: var(--elevation-btn-primary);
+    font-size: var(--space-1-75);
+    font-weight: 800;
+  }
+
+  .pro-directory-card__link:hover .pro-directory-card__cta {
+    background: var(--btn-primary-hover);
+    box-shadow: var(--elevation-btn-primary-hover);
+  }
 }
 
 .pro-directory-card__headline {
@@ -7571,6 +7613,17 @@ body.join-modal-open {
   text-decoration: underline;
 }
 
+/* Public navigation items: desktop-only */
+.wf-public-desktop-only {
+  display: none !important;
+}
+
+@media (min-width: 901px) {
+  .wf-public-desktop-only {
+    display: inline-flex !important;
+  }
+}
+
 @media (max-width: 560px) {
   .wf-header-wrap--minimal .nav.wf-nav--public.wf-nav--minimal {
     flex-direction: column;
@@ -7611,10 +7664,6 @@ body.join-modal-open {
 /* ——— Homepage: mobile-first — hide marketing-heavy blocks on small screens ——— */
 @media (max-width: 767px) {
   .home-page__desktop-only {
-    display: none !important;
-  }
-
-  .wf-public-desktop-only {
     display: none !important;
   }
 
