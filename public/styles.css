@@ -7614,6 +7614,10 @@ body.join-modal-open {
     display: none !important;
   }
 
+  .wf-public-desktop-only {
+    display: none !important;
+  }
+
   .home-page .wf-home-main > .pro-section {
     padding-block: var(--space-2-5);
   }
