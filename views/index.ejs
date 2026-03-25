@@ -22,72 +22,6 @@
       <%- include('partials/app_navigation', { tenantUrlPrefix }) %>
 
       <div class="app-layout__main">
-        <% /* homepage: keep existing hero/search UX, just replace nav */ %>
-        <% if (false) { %>
-    <header class="home-m3-app-bar" role="banner">
-      <div class="home-m3-app-bar__inner">
-        <div class="home-m3-app-bar__start">
-          <%- include('partials/brand_lockup_getpro', { tenant, brandLockupVariant: 'home', brandLockupHref: tenantHomeHref }) %>
-        </div>
-        <nav class="home-m3-app-bar__nav" aria-label="Quick links">
-          <a class="home-m3-app-bar__link" href="<%= tenantUrlPrefix %>/directory">Search</a>
-          <a class="home-m3-app-bar__link" href="<%= tenantUrlPrefix %>/directory#directory-toolbar">Categories</a>
-        </nav>
-        <div class="home-m3-app-bar__end">
-          <a class="wf-home-dir-link home-m3-app-bar__dir-desktop" href="<%= tenantUrlPrefix %>/directory">Search</a>
-          <a class="wf-home-join-btn" href="<%= tenantUrlPrefix %>/join" aria-label="List your business">
-            <span class="home-m3-app-bar__join-long">List your business</span>
-            <span class="home-m3-app-bar__join-short" aria-hidden="true">List</span>
-          </a>
-          <% if (typeof showRegionPickerUi !== 'undefined' && showRegionPickerUi) { %>
-          <button
-            type="button"
-            class="wf-home-region-trigger"
-            id="wf-region-open"
-            aria-haspopup="dialog"
-            aria-expanded="false"
-            aria-controls="wf-region-sheet"
-          >
-            <svg
-              class="wf-home-region-globe"
-              xmlns="http://www.w3.org/2000/svg"
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-            <span class="wf-home-region-label">Region</span>
-          </button>
-          <% } %>
-          <button
-            type="button"
-            class="wf-menu-toggle"
-            id="wf-menu-toggle"
-            aria-label="Open menu"
-            aria-expanded="false"
-            aria-controls="wf-home-sidebar"
-          >
-            <svg class="wf-menu-icon wf-menu-icon--hamburger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-            <svg class="wf-menu-icon wf-menu-icon--close" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true">
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </header>
-    <div class="wf-menu-backdrop" id="wf-menu-backdrop" hidden></div>
-        <% } %>
     <% if (typeof showRegionPickerUi !== 'undefined' && showRegionPickerUi) { %>
     <div id="wf-region-m3-root" class="m3-modal-overlay wf-region-m3" hidden aria-hidden="true">
       <div class="m3-modal-overlay__backdrop" id="wf-region-overlay"></div>
@@ -414,7 +348,6 @@
         </div>
       </div>
     </section>
-    </div>
 
       </div>
     </div>
