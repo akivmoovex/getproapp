@@ -1,0 +1,80 @@
+<%
+  var _variant = typeof variant !== 'undefined' ? String(variant) : 'primary';
+  var _size = typeof size !== 'undefined' ? String(size) : '';
+  var _icon = typeof icon !== 'undefined' ? String(icon) : '';
+  var _iconPosition = typeof iconPosition !== 'undefined' ? String(iconPosition) : 'trailing';
+  var _text = typeof text !== 'undefined' ? String(text) : '';
+  var _href = typeof href !== 'undefined' && href ? String(href) : '';
+  var _type = typeof type !== 'undefined' && type ? String(type) : 'button';
+  var _disabled = typeof disabled !== 'undefined' && !!disabled;
+  var _ariaLabel = typeof ariaLabel !== 'undefined' && ariaLabel ? String(ariaLabel) : '';
+  var _className = typeof className !== 'undefined' && className ? String(className) : '';
+  var _extraAttrs = typeof extraAttrs !== 'undefined' && extraAttrs ? String(extraAttrs) : '';
+
+  var _variantClass = '';
+  if (_variant === 'primary') _variantClass = 'btn--primary';
+  else if (_variant === 'secondary') _variantClass = 'btn--secondary';
+  else if (_variant === 'text' || _variant === 'ghost') _variantClass = 'btn--text';
+  else if (_variant === 'icon') _variantClass = 'btn--text';
+  else _variantClass = 'btn--primary';
+
+  var _sizeClass = '';
+  if (_size === 'sm') _sizeClass = 'btn--sm';
+  if (_size === 'lg') _sizeClass = 'btn--lg';
+  if (_size === 'icon') _sizeClass = 'btn--icon';
+%>
+
+<%
+  var _cls = ['btn', _variantClass, _sizeClass, _className].filter(Boolean).join(' ');
+%>
+
+<% if (_href) { %>
+  <a class="<%= _cls %>" href="<%= _href %>" <% if (_ariaLabel) { %>aria-label="<%= _ariaLabel %>"<% } %> <%- _extraAttrs %>>
+    <% if (_icon && _iconPosition === 'leading') { %>
+      <span class="btn__icon" aria-hidden="true">
+        <% if (_icon === 'search') { %>
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+        <% } %>
+      </span>
+    <% } %>
+    <% if (_text) { %><span class="btn__text"><%= _text %></span><% } %>
+    <% if (_icon && _iconPosition !== 'leading') { %>
+      <span class="btn__icon" aria-hidden="true">
+        <% if (_icon === 'search') { %>
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+        <% } %>
+      </span>
+    <% } %>
+  </a>
+<% } else { %>
+  <button type="<%= _type %>" class="<%= _cls %>" <% if (_disabled) { %>disabled<% } %> <% if (_ariaLabel) { %>aria-label="<%= _ariaLabel %>"<% } %> <%- _extraAttrs %>>
+    <% if (_icon && _iconPosition === 'leading') { %>
+      <span class="btn__icon" aria-hidden="true">
+        <% if (_icon === 'search') { %>
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+        <% } %>
+      </span>
+    <% } %>
+    <% if (_text) { %><span class="btn__text"><%= _text %></span><% } %>
+    <% if (_icon && _iconPosition !== 'leading') { %>
+      <span class="btn__icon" aria-hidden="true">
+        <% if (_icon === 'search') { %>
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+        <% } %>
+      </span>
+    <% } %>
+  </button>
+<% } %>
+

@@ -1,0 +1,43 @@
+<%
+  var _id = typeof id !== 'undefined' && id ? String(id) : '';
+  var _name = typeof name !== 'undefined' && name ? String(name) : '';
+  var _type = typeof type !== 'undefined' && type ? String(type) : 'text';
+  var _label = typeof label !== 'undefined' && label ? String(label) : '';
+  var _placeholder = typeof placeholder !== 'undefined' ? String(placeholder) : '';
+  var _value = typeof value !== 'undefined' && value !== null ? String(value) : '';
+  var _required = typeof required !== 'undefined' && !!required;
+  var _disabled = typeof disabled !== 'undefined' && !!disabled;
+  var _autocomplete = typeof autocomplete !== 'undefined' ? String(autocomplete) : '';
+  var _helper = typeof helper !== 'undefined' ? String(helper) : '';
+  var _error = typeof error !== 'undefined' ? String(error) : '';
+  var _wrapperClass = typeof wrapperClass !== 'undefined' && wrapperClass ? String(wrapperClass) : '';
+  var _controlClass = typeof controlClass !== 'undefined' && controlClass ? String(controlClass) : '';
+
+  var _hasError = !!_error;
+  var _wrapperClasses = ['input-field', _wrapperClass, _hasError ? 'input-field--error' : ''].filter(Boolean).join(' ');
+%>
+
+<div class="<%= _wrapperClasses %>">
+  <% if (_label) { %>
+    <label class="input-field__label" for="<%= _id %>"><%= _label %></label>
+  <% } %>
+
+  <input
+    id="<%= _id %>"
+    name="<%= _name %>"
+    type="<%= _type %>"
+    class="input-field__control <%= _controlClass %>"
+    placeholder="<%= _placeholder %>"
+    value="<%= _value %>"
+    <% if (_required) { %>required<% } %>
+    <% if (_disabled) { %>disabled<% } %>
+    <% if (_autocomplete) { %>autocomplete="<%= _autocomplete %>"<% } %>
+  />
+
+  <% if (_hasError) { %>
+    <p class="input-field__error" role="alert"><%= _error %></p>
+  <% } else if (_helper) { %>
+    <p class="input-field__help"><%= _helper %></p>
+  <% } %>
+</div>
+

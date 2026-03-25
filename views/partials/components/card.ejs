@@ -1,0 +1,43 @@
+<%
+  var _variant = typeof variant !== 'undefined' ? String(variant) : '';
+  var _className = typeof className !== 'undefined' && className ? String(className) : '';
+  var _title = typeof title !== 'undefined' && title ? String(title) : '';
+  var _meta = typeof meta !== 'undefined' && meta ? String(meta) : '';
+  var _bodyHtml = typeof bodyHtml !== 'undefined' ? String(bodyHtml) : '';
+  var _actionsHtml = typeof actionsHtml !== 'undefined' ? String(actionsHtml) : '';
+  var _headerHtml = typeof headerHtml !== 'undefined' ? String(headerHtml) : '';
+  var _footerHtml = typeof footerHtml !== 'undefined' ? String(footerHtml) : '';
+
+  var _variantClass = '';
+  if (_variant === 'interactive') _variantClass = 'card--interactive';
+  else if (_variant === 'elevated') _variantClass = 'card--elevated';
+%>
+
+<div class="card <%= _variantClass %> <%= _className %>">
+  <% if (_headerHtml || _title || _meta) { %>
+    <div class="card__header">
+      <% if (_headerHtml) { %><%- _headerHtml %><% } %>
+      <% if (_title) { %>
+        <h2 class="card__title"><%= _title %></h2>
+      <% } %>
+      <% if (_meta) { %>
+        <div class="card__meta"><%= _meta %></div>
+      <% } %>
+    </div>
+  <% } %>
+
+  <% if (_bodyHtml) { %>
+    <div class="card__body"><%- _bodyHtml %></div>
+  <% } %>
+
+  <% if (_actionsHtml) { %>
+    <div class="card__footer">
+      <div class="card__actions"><%- _actionsHtml %></div>
+    </div>
+  <% } %>
+
+  <% if (_footerHtml) { %>
+    <div class="card__footer"><%- _footerHtml %></div>
+  <% } %>
+</div>
+

@@ -4571,18 +4571,6 @@ textarea {
   gap: var(--space-1-25);
   min-height: var(--space-touch);
   padding: var(--space-1-25) var(--space-2-75);
-  border: none;
-  border-radius: var(--border-radius-full);
-  background: var(--btn-primary-bg);
-  color: var(--color-white);
-  font-size: var(--space-1-875);
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: var(--shadow);
-}
-
-.pro-home-search-submit:hover {
-  background: var(--btn-primary-hover);
 }
 
 .pro-home-search-icon {
