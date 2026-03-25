@@ -67,7 +67,7 @@
               <% var logoU = company.logo_url && String(company.logo_url).trim(); %>
               <% if (logoU) { %>
                 <div class="pro-company-profile__logo-wrap">
-                  <img class="pro-company-profile__logo" src="<%= logoU %>" alt="<%= company.name %> logo" loading="lazy" width="120" height="120" />
+                  <img class="pro-company-profile__logo" src="<%= logoU %>" alt="<%= company.name %> logo" width="120" height="120" fetchpriority="high" decoding="async" />
                 </div>
               <% } %>
               <div class="pro-company-profile__title-block">
@@ -134,7 +134,7 @@
                         <% var isLogo = g.kind === 'logo'; %>
                         <figure class="pro-company-carousel__slide<%= isLogo ? ' pro-company-carousel__slide--logo' : '' %>" data-carousel-slide aria-label="Slide <%= gi + 1 %> of <%= mediaItems.length %>">
                           <div class="pro-company-carousel__img-wrap">
-                            <img src="<%= g.url %>" alt="<%= isLogo ? (company.name + ' logo') : (g.caption ? g.caption.replace(/"/g, '') : 'Work photo') %>" loading="<%= gi === 0 ? 'eager' : 'lazy' %>" width="960" height="640" draggable="false" />
+                            <img src="<%= g.url %>" alt="<%= isLogo ? (company.name + ' logo') : (g.caption ? g.caption.replace(/"/g, '') : 'Work photo') %>" loading="<%= gi === 0 ? 'eager' : 'lazy' %>" decoding="async" width="960" height="640" draggable="false" />
                           </div>
                           <% if (g.caption) { %>
                             <figcaption class="pro-company-carousel__cap"><%= g.caption %></figcaption>
@@ -231,12 +231,12 @@
                         <label for="lead_message" class="input-field__label">How can we help?</label>
                         <textarea id="lead_message" name="message" required placeholder="Tell us what service you need and when you need it" class="input-field__control"></textarea>
                       </div>
-                      <div
+                      <p
                         id="lead_status"
-                        class="form-status-message muted pro-company-profile__lead-status"
+                        class="form-status-message status-message muted pro-company-profile__lead-status"
                         role="status"
                         aria-live="polite"
-                      ></div>
+                      ></p>
                     </div>
                     <div class="form-step__actions">
                       <div class="card__actions">
@@ -288,7 +288,7 @@
                 <div class="pro-company-profile__qr-heading">Mini-site QR code</div>
                 <p class="muted pro-company-profile__qr-hint">Scan to open this page on a phone.</p>
                 <div class="pro-company-profile__qr-single">
-                  <img src="<%= qrMiniSiteDataUrl %>" alt="QR code for this mini-site URL" width="168" height="168" class="pro-company-profile__qr-img" data-qr-image />
+                  <img src="<%= qrMiniSiteDataUrl %>" alt="QR code for this mini-site URL" width="168" height="168" class="pro-company-profile__qr-img" data-qr-image loading="lazy" decoding="async" />
                 </div>
                 <div class="pro-company-profile__qr-actions card__actions">
                   <button type="button" class="btn btn--text pro-company-profile__qr-copy" data-copy-qr-image>Copy QR image</button>

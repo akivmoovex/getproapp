@@ -1,0 +1,33 @@
+<%#
+  Shared block for loading / success / error / empty / info surfaces.
+  Params: variant (loading|success|error|empty|info), optional title, body, bodyMuted,
+  compact, id, hidden, extraClass, role, ariaLive, titleTag (h2|h3|p)
+%>
+<%
+  var _v = typeof variant !== 'undefined' && variant ? String(variant) : 'empty';
+  var _title = typeof title !== 'undefined' ? title : '';
+  var _body = typeof body !== 'undefined' ? body : '';
+  var _bodyMuted = typeof bodyMuted !== 'undefined' ? bodyMuted : '';
+  var _compact = typeof compact !== 'undefined' && compact;
+  var _id = typeof id !== 'undefined' && id ? String(id) : '';
+  var _hidden = typeof hidden !== 'undefined' && hidden;
+  var _extra = typeof extraClass !== 'undefined' ? String(extraClass) : '';
+  var _role = typeof role !== 'undefined' && role ? String(role) : (_v === 'error' ? 'alert' : 'status');
+  var _live = typeof ariaLive !== 'undefined' && ariaLive ? String(ariaLive) : (_v === 'error' ? 'assertive' : 'polite');
+  var _titleTag = typeof titleTag !== 'undefined' && titleTag ? String(titleTag) : 'h2';
+  var _classes = 'state-block state-block--' + _v + (_compact ? ' state-block--compact' : '') + (_extra ? ' ' + _extra : '');
+%>
+<div
+  class="<%= _classes.trim() %>"
+  <% if (_id) { %>id="<%= _id %>"<% } %>
+  <% if (_hidden) { %>hidden<% } %>
+  role="<%= _role %>"
+  aria-live="<%= _live %>"
+>
+  <% if (_title) { %>
+    <% if (_titleTag === 'h3') { %><h3 class="state-block__title"><%= _title %></h3><% } else if (_titleTag === 'p') { %><p class="state-block__title"><%= _title %></p><% } else { %><h2 class="state-block__title"><%= _title %></h2><% } %>
+  <% } %>
+  <% if (_body) { %><p class="state-block__body"><%= _body %></p><% } %>
+  <% if (_bodyMuted) { %><p class="state-block__body state-block__body--muted muted"><%= _bodyMuted %></p><% } %>
+  <% if (typeof actions !== 'undefined' && actions) { %><div class="state-block__actions"><%- actions %></div><% } %>
+</div>

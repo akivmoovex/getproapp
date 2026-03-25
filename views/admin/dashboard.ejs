@@ -157,7 +157,13 @@
                 <tbody>
                   <% if (!latestLeads || latestLeads.length === 0) { %>
                   <tr>
-                    <td colspan="4" class="muted admin-dashboard-table__empty">No leads yet for this region.</td>
+                    <td colspan="4" class="admin-dashboard-table__empty">
+                      <%- include('../partials/components/empty_state', {
+                        hint: 'No leads yet for this region.',
+                        compact: true,
+                        extraClass: 'state-block--admin-inline'
+                      }) %>
+                    </td>
                   </tr>
                   <% } %>
                   <% (latestLeads || []).forEach(function (l) { %>

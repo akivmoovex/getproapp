@@ -672,9 +672,11 @@ module.exports = function adminRoutes({ db }) {
         : tenantName
           ? `${tenantName} (${tenantSlug})`
           : `Tenant id ${row.tenant_id} (name not found)`;
+    const saved = req.query.saved === "1" || req.query.saved === "true";
     return res.render("admin/super_user_edit", {
       user: row,
       error: null,
+      saved,
       tenants,
       roles: [ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER],
       currentUserId: req.session.adminUser.id,
@@ -750,7 +752,7 @@ module.exports = function adminRoutes({ db }) {
       if (role !== ROLES.SUPER_ADMIN && tenantId != null && Number(tenantId) > 0) {
         upsertMembership(db, id, Number(tenantId), role);
       }
-      return res.redirect("/admin/super/users?edit=1");
+      return res.redirect(redirectWithEmbed(req, `/admin/super/users/${id}/edit?saved=1`));
     } catch (e) {
       return res.status(400).send(`Could not update user: ${e.message}`);
     }
@@ -892,9 +894,11 @@ module.exports = function adminRoutes({ db }) {
     if (!row) return res.status(404).send("User not found.");
     if (row.role === ROLES.SUPER_ADMIN) return res.status(403).send("Cannot edit super admin here.");
     const tid = getAdminTenantId(req);
+    const saved = req.query.saved === "1" || req.query.saved === "true";
     return res.render("admin/user_edit", {
       user: row,
       error: null,
+      saved,
       tenantId: tid,
       currentUserId: req.session.adminUser.id,
     });
@@ -947,7 +951,7 @@ module.exports = function adminRoutes({ db }) {
       if (req.session.adminUser && Number(req.session.adminUser.id) === Number(id)) {
         req.session.adminUser.role = role;
       }
-      return res.redirect(redirectWithEmbed(req, "/admin/users"));
+      return res.redirect(redirectWithEmbed(req, `/admin/users/${id}/edit?saved=1`));
     } catch (e) {
       return res.status(400).send(`Could not update user: ${e.message}`);
     }
@@ -1548,12 +1552,14 @@ module.exports = function adminRoutes({ db }) {
           : "";
       return { ...c, miniSitePublicUrl };
     });
+    const saved = req.query.saved === "1" || req.query.saved === "true";
     return res.render("admin/companies", {
       companies: companiesWithUrls,
       baseDomain,
       adminTenantSlug: tenantSlug,
       editMode,
       filterSuffix,
+      saved,
       filters: {
         q_name: req.query.q_name || "",
         q_subdomain: req.query.q_subdomain || "",
@@ -1569,6 +1575,7 @@ module.exports = function adminRoutes({ db }) {
     const ts = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
     const baseForUrls = (process.env.BASE_DOMAIN || "").trim() || "getproapp.org";
     const tenantSlug = ts ? String(ts.slug) : "";
+    const saved = req.query.saved === "1" || req.query.saved === "true";
     return res.render("admin/company_form", {
       company: null,
       categories,
@@ -1579,6 +1586,8 @@ module.exports = function adminRoutes({ db }) {
       miniSiteLabel: "",
       directoryProfileUrl: "",
       miniSiteExampleLabel: tenantSlug ? companyMiniSiteLabel(tenantSlug, "your-company-slug", baseForUrls) : "",
+      error: null,
+      saved,
     });
   });
 
@@ -1875,7 +1884,7 @@ module.exports = function adminRoutes({ db }) {
         galleryJson,
         String(logo_url || "").trim()
       );
-      return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1"));
+      return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1&saved=1"));
     } catch (e) {
       return res.status(400).send(`Could not create company: ${e.message}`);
     }
@@ -1985,7 +1994,7 @@ module.exports = function adminRoutes({ db }) {
         tid
       );
       if (r.changes === 0) return res.status(404).send("Company not found");
-      return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1"));
+      return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1&saved=1"));
     } catch (e) {
       return res.status(400).send(`Could not update company: ${e.message}`);
     }

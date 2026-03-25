@@ -110,6 +110,13 @@
       <input type="hidden" name="context" value="<%= contextPayload %>" />
       <input type="hidden" name="interest_label" value="<%= interestPayload %>" />
       <div class="pro-directory-empty__callback-panel" id="directory-empty-callback-panel">
+        <%- include('partials/components/loading_block', {
+          id: 'directory-empty-callback-loading',
+          message: 'Sending request…',
+          hidden: true,
+          compact: true,
+          extraClass: 'pro-directory-empty__callback-loading'
+        }) %>
         <div class="form-step">
           <div class="form-step__body">
             <div class="join-modal-fields pro-directory-empty__fields input-field">
@@ -134,7 +141,7 @@
                 required
               />
             </div>
-            <p class="join-modal-error input-field__error" id="directory-empty-callback-error" hidden role="alert"></p>
+            <p class="join-modal-error input-field__error status-message status-message--error" id="directory-empty-callback-error" hidden role="alert"></p>
           </div>
           <div class="form-step__actions">
             <div class="join-modal-actions pro-directory-empty__callback-actions">
@@ -143,10 +150,10 @@
           </div>
         </div>
       </div>
-      <div class="pro-directory-empty__callback-success" id="directory-empty-callback-success" hidden role="status" tabindex="-1">
-        <h2 class="pro-directory-empty__title pro-directory-empty__callback-success-title">Request received</h2>
-        <p class="pro-directory-empty__callback-success-lead">Thanks—we&rsquo;ve received your details.</p>
-        <p class="pro-directory-empty__callback-success-muted muted">We&rsquo;ll use your details to help connect you with a suitable professional.</p>
+      <div class="pro-directory-empty__callback-success state-block state-block--success" id="directory-empty-callback-success" hidden role="status" tabindex="-1">
+        <h2 class="pro-directory-empty__title pro-directory-empty__callback-success-title state-block__title">Request received</h2>
+        <p class="pro-directory-empty__callback-success-lead state-block__body">Thanks—we&rsquo;ve received your details.</p>
+        <p class="pro-directory-empty__callback-success-muted state-block__body state-block__body--muted muted">We&rsquo;ll use your details to help connect you with a suitable professional.</p>
       </div>
     </form>
     <% } %>

@@ -1,4 +1,6 @@
 (function () {
+  if (!document.getElementById("join-wizard")) return;
+
   const LIST_URL = "/data/search-lists.json?v=20260329e";
 
   function tenantSlug() {

@@ -97,7 +97,15 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
 - **Rhythm:** Wrapped compact admin flows in `.form-step.form-step--admin` with `.form-step__body` and `.form-step__actions` (paired with existing `admin-gate-actions` where present). CRM task partial keeps `.crm-task-form__actions` for stable aside/toolbar spacing (no duplicate `form-step__actions` margin).
 - **Actions / secondary:** Admin gate and new-user cancel links use `btn btn--text` for low-emphasis cancel (same `href`s).
 - **CSS (`public/styles.css`):** `.form-step--admin .form-step__body` flex column + gap; scoped `.form-step__actions` top margin for admin; `.admin-gate-card .input-field__label`; CRM rules now target `.input-field` / `.input-field__label`; `.admin-form-shell` read-mode includes `.input-field__label`; CRM last-child selector targets `.crm-task-form__actions` instead of generic `div:last-of-type`.
-- **Deferred:** `company_form`, `super_tenant_form`, `category_form`, `content_form`, embed-heavy edit shells, and checkbox-heavy forms — higher risk due to `data-admin-form-edit`, table layouts, and `form-check` patterns; migrate incrementally.
+- **Deferred:** `super_tenant_form`, `category_form`, `content_form`, embed-heavy edit shells, and other checkbox-heavy / table-heavy forms — migrate incrementally where `data-admin-form-edit` or layout risk is high.
+
+### This rollout (admin user + company create templates)
+- **`views/admin/user_edit.ejs`:** Wrapped fields in `.input-field` / `.form-step.form-step--admin`; hints use `.input-field__help`; success via `?saved=1` → **“Changes saved.”** (`flash flash--success`). `data-admin-form-edit` shell and control `id`/`name` unchanged for `admin-form-edit-mode.js`.
+- **`views/admin/super_user_edit.ejs`:** Same field rhythm; **Save** → `btn btn--primary`, **Cancel** → `btn btn--secondary`; tenant hint uses `.input-field__help` (`id="tenant-assign-hint"` preserved for `aria-describedby`). POST success redirects to `/admin/super/users/:id/edit?saved=1` (with embed preserved).
+- **`views/admin/company_form.ejs`:** New-company form uses `.form-step--admin`, `.input-field*` throughout; mini-site intro uses `.flash.flash--info`; toolbar back link uses `btn btn--text`; **Save** in `.form-step__actions`. `GET /admin/companies/new` passes `saved` / `error` for consistency.
+- **`views/admin/companies.ejs`:** Success banner when `saved` is set (after create/update company redirect with `?edit=1&saved=1`).
+- **`src/routes/admin.js`:** Tenant user edit GET/POST: `saved` flag + redirect to `/admin/users/:id/edit?saved=1`. Company POST create/update: redirect adds `saved=1`. Companies list GET passes `saved`.
+- **Deferred:** CRM/workspace-only flows, `super_user_form` (create), publish toasts, JS-driven status lines tied to `admin-company-workspace.js`.
 
 ### This rollout (admin / internal flash, status, feedback)
 - **`public/theme.css`:** Added `--flash-success-*` and `--flash-info-*` tokens (alongside existing `--flash-error-*`).
@@ -106,7 +114,7 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
 - **`views/admin/super.ejs`:** Scope reminder uses `flash flash--info`, `role="status"` (was `alert`), `aria-live="polite"` — informational, not an error.
 - **`views/admin/lead_edit.ejs` + `src/routes/admin.js`:** After POST to update a lead, redirect includes `?saved=1`; GET passes `saved` and renders **“Lead updated.”** with `flash flash--success`. Section caption copy tightened (“Notes are saved with a timestamp.”).
 - **Error flashes:** Unchanged class list (`flash` + `role="alert"`) on login gate, user create/edit, super user forms — still use default error styling.
-- **Deferred:** Query-param success flash on CRM create/edit flows, workspace publish toasts, and any JS-driven status lines that need contract review with `admin-company-workspace.js` / `admin-crm-kanban.js`.
+- **Deferred:** Query-param success flash on CRM create/edit flows, workspace publish toasts, and any JS-driven status lines that need contract review with `admin-company-workspace.js` / `admin-crm-kanban.js`. (User/company list + edit flows above now use `?saved=1` where noted.)
 
 ### This rollout (public form helper / error / status microcopy)
 - **Shared pattern:** `public/design-system.css` adds `.form-status-message` for post-submit / inline status copy rhythm where a compact line is appropriate (optional on new markup; existing blocks keep their page classes when typography must stay unchanged).
@@ -116,8 +124,17 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
 - **`public/join.js`:** User-facing validation and top-level error strings aligned (name, phone required, region/tenant, list load, autocomplete hints, step validation fallback). **IDs and `showError()` / `ensureAc()` behavior unchanged.**
 - **Deferred:** splitting `#lead_status` into separate success vs error elements (would need JS/CSS state); admin and non-public copy; deeper rewrite of directory empty-state headings.
 
+### This rollout (UI state system — lightweight SSR)
+- **`public/design-system.css`:** `.state-block` + modifiers (`--loading`, `--success`, `--error`, `--info`, `--empty`, `--compact`, `--admin-inline`); spinner keyframes `gp-state-spin`; `.status-message--*` inline modifiers (aligned with `--flash-*` tokens); `.admin-table-empty-cell`.
+- **Partials:** `views/partials/components/state_block.ejs`, `empty_state.ejs`, `loading_block.ejs`, `status_message.ejs`.
+- **Applied:** Directory no-results callback — `loading_block` (`#directory-empty-callback-loading`), success panel uses `.state-block.state-block--success`, inline error uses `.status-message.status-message--error` (`public/directory-empty-callback.js` shows loading during fetch). Company request-contact — `#lead_status` gains `.status-message`; `public/scripts.js` adds `setLeadStatus()` to toggle `--loading` / `--success` / `--error`. Admin **Companies** empty filter row and **Dashboard** empty leads row use `empty_state.ejs` with `.state-block--admin-inline`.
+- **`public/styles.css`:** Callback success primary-tint box removed where `.state-block--success` supplies surface; added `.pro-directory-empty__callback-loading` spacing.
+- **`server.js`:** `stylesVersion` bump for cache.
+- **Deferred:** CRM Kanban/workspace status lines, join wizard inline status, migrating all admin flashes to partials (`.flash` remains correct for page-level feedback), bulk-replace `form-status-message`-only markup elsewhere.
+
 ## Recommended rollout order
 1. Migrate “standalone CTAs” first (homepage search submit, company mini-site contact buttons, join/callback primary & secondary actions).
 2. Migrate form label/control/error shells next (add `input-field*` semantics without touching autocomplete JS hooks).
 3. Migrate directory/info cards only after we define a stable shared card block for those layouts.
+4. Adopt `state_block` / `empty_state` / `status_message` modifiers incrementally where inline or empty-list feedback repeats.
 

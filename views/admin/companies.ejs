@@ -12,6 +12,9 @@
       <div class="container admin-main__pad">
       <% var _fs = typeof filterSuffix !== 'undefined' ? filterSuffix : ''; %>
       <% var _embed = typeof embed !== 'undefined' && embed; %>
+      <% if (typeof saved !== 'undefined' && saved) { %>
+      <div class="flash flash--success" role="status" aria-live="polite">Changes saved.</div>
+      <% } %>
       <div class="admin-super-users__topbar">
         <% if (!editMode) { %>
         <a class="btn btn--primary" href="/admin/companies?edit=1<%= _fs %><%= _embed ? '&embed=1' : '' %>">Edit</a>
@@ -72,7 +75,15 @@
           </thead>
           <tbody>
             <% if (!companies || companies.length === 0) { %>
-              <tr><td colspan="<%= editMode ? 6 : 5 %>" class="muted">No companies match these filters.</td></tr>
+              <tr>
+                <td colspan="<%= editMode ? 6 : 5 %>" class="admin-table-empty-cell">
+                  <%- include('../partials/components/empty_state', {
+                    hint: 'No companies match these filters.',
+                    compact: true,
+                    extraClass: 'state-block--admin-inline'
+                  }) %>
+                </td>
+              </tr>
             <% } %>
             <% (companies || []).forEach(function(c) { %>
               <tr>

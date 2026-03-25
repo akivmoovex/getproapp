@@ -42,6 +42,7 @@
   const nameInput = document.getElementById("directory-empty-callback-name");
   const phoneInput = document.getElementById("directory-empty-callback-phone");
   const submitBtn = document.getElementById("directory-empty-callback-submit");
+  const loadingEl = document.getElementById("directory-empty-callback-loading");
 
   const ctxInput = form.querySelector('input[name="context"]');
   const labelInput = form.querySelector('input[name="interest_label"]');
@@ -88,6 +89,7 @@
     };
 
     if (submitBtn) submitBtn.disabled = true;
+    if (loadingEl) loadingEl.hidden = false;
     try {
       const resp = await fetch("/api/callback-interest", {
         method: "POST",
@@ -113,6 +115,7 @@
       errEl.textContent = "Network error. Please try again.";
       errEl.hidden = false;
     } finally {
+      if (loadingEl) loadingEl.hidden = true;
       if (submitBtn) submitBtn.disabled = false;
     }
   });

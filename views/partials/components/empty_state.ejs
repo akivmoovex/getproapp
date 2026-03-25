@@ -1,0 +1,24 @@
+<%#
+  Empty list / no-results block (wraps state_block with variant empty).
+  Params: title, hint (optional body), compact, extraClass, id, hidden.
+  Optional: actions (trusted HTML only — e.g. buttons from a static partial).
+%>
+<%
+  var _title = typeof title !== 'undefined' ? title : '';
+  var _hint = typeof hint !== 'undefined' ? hint : '';
+  var _compact = typeof compact !== 'undefined' && compact;
+  var _extra = typeof extraClass !== 'undefined' ? String(extraClass) : '';
+  var _id = typeof id !== 'undefined' ? id : '';
+  var _hidden = typeof hidden !== 'undefined' && hidden;
+  var _actions = typeof actions !== 'undefined' ? actions : '';
+%>
+<%- include('partials/components/state_block', {
+  variant: 'empty',
+  title: _title,
+  body: _hint,
+  compact: _compact,
+  id: _id,
+  hidden: _hidden,
+  extraClass: _extra,
+  actions: _actions
+}) %>

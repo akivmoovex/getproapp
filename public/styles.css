@@ -455,6 +455,8 @@
   margin-top: var(--space-1-25);
   font-size: var(--typo-body-medium-size, var(--space-1-75));
   line-height: var(--typo-body-large-line, 1.5);
+  min-height: 3em;
+  box-sizing: border-box;
 }
 
 .pro-company-profile__qr-hint {
@@ -5529,12 +5531,18 @@ a.pro-directory-empty__chip:hover {
   min-width: min(100%, var(--space-touch) * 5);
 }
 
-.pro-directory-empty__callback-success {
+.pro-directory-empty__callback-loading {
+  margin-bottom: var(--space-2);
+  width: 100%;
+  max-width: min(100%, var(--layout-dim-400));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pro-directory-empty__callback-success.state-block--success {
   padding: var(--space-2-5) var(--space-1-5) var(--space-2);
   text-align: center;
   border-radius: var(--radius);
-  border: var(--border-width-hairline) solid color-mix(in srgb, var(--wf-primary) 22%, var(--border-strong));
-  background: color-mix(in srgb, var(--wf-primary) 6%, var(--surface));
 }
 
 .pro-directory-empty__callback-success-title {

@@ -1,0 +1,21 @@
+<%#
+  Inline status line (form submit, API feedback). Pairs with .form-status-message base rules.
+  Params: variant (success|error|info|loading|neutral), message, id, extraClass, role, ariaLive, hidden
+%>
+<%
+  var _v = typeof variant !== 'undefined' && variant ? String(variant) : 'neutral';
+  var _msg = typeof message !== 'undefined' ? message : '';
+  var _id = typeof id !== 'undefined' && id ? String(id) : '';
+  var _extra = typeof extraClass !== 'undefined' ? String(extraClass) : '';
+  var _role = typeof role !== 'undefined' && role ? String(role) : 'status';
+  var _live = typeof ariaLive !== 'undefined' && ariaLive ? String(ariaLive) : 'polite';
+  var _hidden = typeof hidden !== 'undefined' && hidden;
+  var _classes = 'form-status-message status-message status-message--' + _v + (_extra ? ' ' + _extra : '');
+%>
+<p
+  class="<%= _classes.trim() %>"
+  <% if (_id) { %>id="<%= _id %>"<% } %>
+  <% if (_hidden) { %>hidden<% } %>
+  role="<%= _role %>"
+  aria-live="<%= _live %>"
+><%= _msg %></p>

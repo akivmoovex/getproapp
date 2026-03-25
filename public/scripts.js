@@ -1,3 +1,16 @@
+function setLeadStatus(el, text, kind) {
+  if (!el) return;
+  el.textContent = text || "";
+  el.classList.remove(
+    "status-message--success",
+    "status-message--error",
+    "status-message--loading",
+    "status-message--info",
+    "status-message--neutral"
+  );
+  if (kind) el.classList.add("status-message--" + kind);
+}
+
 async function submitLeadForm(e) {
   e.preventDefault();
   const form = e.target;
@@ -5,7 +18,7 @@ async function submitLeadForm(e) {
   const submitBtn = form.querySelector("button[type=submit]");
 
   if (submitBtn) submitBtn.disabled = true;
-  if (statusEl) statusEl.textContent = "Sending request…";
+  setLeadStatus(statusEl, "Sending request…", "loading");
 
   const payload = Object.fromEntries(new FormData(form).entries());
 
@@ -21,10 +34,10 @@ async function submitLeadForm(e) {
       throw new Error(data.error || `Request failed (${resp.status})`);
     }
 
-    if (statusEl) statusEl.textContent = "Thanks—we’ve received your request. We’ll contact you shortly.";
+    setLeadStatus(statusEl, "Thanks—we’ve received your request. We’ll contact you shortly.", "success");
     form.reset();
   } catch (err) {
-    if (statusEl) statusEl.textContent = err.message || "Something went wrong. Please try again.";
+    setLeadStatus(statusEl, err.message || "Something went wrong. Please try again.", "error");
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
@@ -188,9 +201,11 @@ function initAppNavDrawer() {
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("lead_form");
   if (form) form.addEventListener("submit", submitLeadForm);
-  initRegionPicker();
-  initGlobalTenantSearchOpensRegion();
-  initDirectoryAvatarHue();
-  initRefineSearchFab();
+  if (document.getElementById("wf-region-m3-root")) {
+    initRegionPicker();
+    initGlobalTenantSearchOpensRegion();
+  }
+  if (document.querySelector("[data-avatar-hue]")) initDirectoryAvatarHue();
+  if (document.querySelector(".pro-refine-search-fab[data-refine-target]")) initRefineSearchFab();
   initAppNavDrawer();
 });

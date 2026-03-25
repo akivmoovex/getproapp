@@ -14,6 +14,13 @@
     <% if (typeof orgJsonLd !== 'undefined' && orgJsonLd) { %>
     <script type="application/ld+json"><%- orgJsonLd %></script>
     <% } %>
+    <link
+      rel="preload"
+      as="image"
+      href="/images/hero/home-hero-640.webp"
+      imagesrcset="/images/hero/home-hero-640.webp 640w, /images/hero/home-hero-960.webp 960w, /images/hero/home-hero-1280.webp 1280w"
+      imagesizes="100vw"
+    />
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="home-page home-page--launcher wf-home-layout <%= tenant.themeClass %>" data-screen-role="launcher">

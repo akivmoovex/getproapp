@@ -13,6 +13,9 @@
       <% if (error) { %>
         <div class="flash" role="alert"><%= error %></div>
       <% } %>
+      <% if (typeof saved !== 'undefined' && saved) { %>
+        <div class="flash flash--success" role="status" aria-live="polite">Changes saved.</div>
+      <% } %>
 
       <div class="card admin-form-card">
         <div class="admin-form-shell is-read-mode" data-admin-form-edit>
@@ -27,29 +30,33 @@
           </div>
           <form method="post" action="/admin/users/<%= user.id %>" class="form">
             <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
-            <div>
-              <label for="username">Username</label>
-              <input id="username" name="username" value="<%= user.username %>" autocomplete="username" required />
-            </div>
-            <div>
-              <label for="password">New password (optional)</label>
-              <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" />
-              <div class="admin-field-hint">Leave blank to keep the current password. Minimum 8 characters if set.</div>
-            </div>
-            <div>
-              <label for="role">Role</label>
-              <select id="role" name="role">
-                <option value="tenant_manager" <%= user.role === 'tenant_manager' ? 'selected' : '' %>>tenant_manager</option>
-                <option value="tenant_editor" <%= user.role === 'tenant_editor' ? 'selected' : '' %>>tenant_editor</option>
-                <option value="tenant_agent" <%= user.role === 'tenant_agent' ? 'selected' : '' %>>tenant_agent</option>
-                <option value="tenant_viewer" <%= user.role === 'tenant_viewer' ? 'selected' : '' %>>tenant_viewer</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-check">
-                <input type="checkbox" name="enabled" value="1" <%= user.enabled !== 0 ? 'checked' : '' %> />
-                Account enabled (can sign in)
-              </label>
+            <div class="form-step form-step--admin">
+              <div class="form-step__body">
+                <div class="input-field">
+                  <label for="username" class="input-field__label">Username</label>
+                  <input id="username" name="username" class="input-field__control" value="<%= user.username %>" autocomplete="username" required />
+                </div>
+                <div class="input-field">
+                  <label for="password" class="input-field__label">New password (optional)</label>
+                  <input id="password" name="password" class="input-field__control" type="password" autocomplete="new-password" minlength="8" />
+                  <p class="input-field__help">Leave blank to keep the current password. Minimum 8 characters if set.</p>
+                </div>
+                <div class="input-field">
+                  <label for="role" class="input-field__label">Role</label>
+                  <select id="role" name="role" class="input-field__control">
+                    <option value="tenant_manager" <%= user.role === 'tenant_manager' ? 'selected' : '' %>>tenant_manager</option>
+                    <option value="tenant_editor" <%= user.role === 'tenant_editor' ? 'selected' : '' %>>tenant_editor</option>
+                    <option value="tenant_agent" <%= user.role === 'tenant_agent' ? 'selected' : '' %>>tenant_agent</option>
+                    <option value="tenant_viewer" <%= user.role === 'tenant_viewer' ? 'selected' : '' %>>tenant_viewer</option>
+                  </select>
+                </div>
+                <div class="input-field">
+                  <label class="form-check">
+                    <input type="checkbox" name="enabled" value="1" <%= user.enabled !== 0 ? 'checked' : '' %> />
+                    Account enabled (can sign in)
+                  </label>
+                </div>
+              </div>
             </div>
           </form>
         </div>

@@ -10,8 +10,15 @@
     <%- include('../partials/admin_nav', { navTitle: company ? 'Edit company' : 'New company', activeNav: 'companies' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="flash" role="alert"><%= error %></div>
+      <% } %>
+      <% if (typeof saved !== 'undefined' && saved) { %>
+        <div class="flash flash--success" role="status" aria-live="polite">Changes saved.</div>
+      <% } %>
+
       <div class="admin-toolbar">
-        <a class="btn" href="/admin/companies?edit=1<%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">← All companies</a>
+        <a class="btn btn--text" href="/admin/companies?edit=1<%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">← All companies</a>
       </div>
 
       <div class="card admin-form-card admin-form-card--wide">
@@ -30,7 +37,7 @@
           <% } %>
         </div>
         <% } else if (typeof miniSiteExampleLabel !== 'undefined' && miniSiteExampleLabel) { %>
-        <div class="muted admin-callout-muted">
+        <div class="flash flash--info" role="status" aria-live="polite">
           After you save, the mini-site will live at <span class="kbd"><%= miniSiteExampleLabel %></span> (replace <span class="kbd">your-company-slug</span> with the <strong>Subdomain</strong> you choose below).
         </div>
         <% } %>
@@ -40,125 +47,128 @@
           class="form"
         >
           <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
-          <div>
-            <label for="logo_url">Logo image URL</label>
-            <input
-              id="logo_url"
-              name="logo_url"
-              type="url"
-              inputmode="url"
-              placeholder="https://…"
-              value="<%= company && company.logo_url ? company.logo_url : '' %>"
-            />
-            <div class="muted admin-field-hint">
-              Shown in the company header next to the name. Use a square or wide logo over HTTPS.
-            </div>
-          </div>
+          <div class="form-step form-step--admin">
+            <div class="form-step__body">
+              <div class="input-field">
+                <label for="logo_url" class="input-field__label">Logo image URL</label>
+                <input
+                  id="logo_url"
+                  name="logo_url"
+                  class="input-field__control"
+                  type="url"
+                  inputmode="url"
+                  placeholder="https://…"
+                  value="<%= company && company.logo_url ? company.logo_url : '' %>"
+                />
+                <p class="input-field__help">Shown in the company header next to the name. Use a square or wide logo over HTTPS.</p>
+              </div>
 
-          <div class="hero-grid hero-grid--2col">
-            <div>
-              <label for="name">Company Name</label>
-              <input id="name" name="name" value="<%= company ? company.name : '' %>" required />
-            </div>
-            <div>
-              <label for="subdomain">Subdomain</label>
-              <input id="subdomain" name="subdomain" value="<%= company ? company.subdomain : '' %>" required />
-              <div class="muted admin-field-hint">
-                URL path on this region’s site, e.g. <span class="kbd"><%= typeof adminTenantSlug !== 'undefined' && adminTenantSlug ? adminTenantSlug + '.' : '' %><%= baseDomain || 'getproapp.org' %>/mybiz</span> — use <span class="kbd">mybiz</span> as the value here (letters, numbers, hyphens).
+              <div class="hero-grid hero-grid--2col">
+                <div class="input-field">
+                  <label for="name" class="input-field__label">Company Name</label>
+                  <input id="name" name="name" class="input-field__control" value="<%= company ? company.name : '' %>" required />
+                </div>
+                <div class="input-field">
+                  <label for="subdomain" class="input-field__label">Subdomain</label>
+                  <input id="subdomain" name="subdomain" class="input-field__control" value="<%= company ? company.subdomain : '' %>" required />
+                  <p class="input-field__help">
+                    URL path on this region’s site, e.g. <span class="kbd"><%= typeof adminTenantSlug !== 'undefined' && adminTenantSlug ? adminTenantSlug + '.' : '' %><%= baseDomain || 'getproapp.org' %>/mybiz</span> — use <span class="kbd">mybiz</span> as the value here (letters, numbers, hyphens).
+                  </p>
+                </div>
+              </div>
+
+              <div class="input-field">
+                <label for="category_id" class="input-field__label">Category</label>
+                <select id="category_id" name="category_id" class="input-field__control">
+                  <option value="">Uncategorized</option>
+                  <% categories.forEach(function(cat) { %>
+                    <option value="<%= cat.id %>" <%= company && company.category_id === cat.id ? 'selected' : '' %>><%= cat.name %></option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="input-field">
+                <label for="headline" class="input-field__label">Headline</label>
+                <input id="headline" name="headline" class="input-field__control" value="<%= company ? company.headline : '' %>" />
+              </div>
+
+              <div class="input-field">
+                <label for="about" class="input-field__label">About</label>
+                <textarea id="about" name="about" class="input-field__control"><%= company ? company.about : '' %></textarea>
+              </div>
+
+              <div class="input-field">
+                <label for="services" class="input-field__label">Services (one per line)</label>
+                <textarea id="services" name="services" class="input-field__control"><%= company ? company.services : '' %></textarea>
+              </div>
+
+              <% if (typeof adminTenantSlug !== 'undefined' && adminTenantSlug === 'zm') { %>
+              <p class="input-field__help muted admin-zm-phone-note">
+                Zambian numbers: <strong>0</strong> followed by <strong>9 digits</strong> (10 digits total, e.g. 0977123456).
+              </p>
+              <% } %>
+              <div class="hero-grid hero-grid--2col">
+                <div class="input-field">
+                  <label for="phone" class="input-field__label">Phone</label>
+                  <input id="phone" name="phone" class="input-field__control" value="<%= company ? company.phone : '' %>" />
+                </div>
+                <div class="input-field">
+                  <label for="email" class="input-field__label">Email</label>
+                  <input id="email" name="email" class="input-field__control" type="text" inputmode="email" autocomplete="email" value="<%= company ? company.email : '' %>" />
+                </div>
+              </div>
+
+              <div class="input-field">
+                <label for="location" class="input-field__label">Location</label>
+                <input id="location" name="location" class="input-field__control" value="<%= company ? company.location : '' %>" />
+              </div>
+
+              <div class="input-field">
+                <label for="years_experience" class="input-field__label">Years in business</label>
+                <input
+                  id="years_experience"
+                  name="years_experience"
+                  class="input-field__control"
+                  type="number"
+                  min="0"
+                  max="999"
+                  placeholder="e.g. 8"
+                  value="<%= company && company.years_experience != null && company.years_experience !== '' ? company.years_experience : '' %>"
+                />
+              </div>
+
+              <div class="input-field">
+                <label for="service_areas" class="input-field__label">Service areas (regions &amp; cities)</label>
+                <textarea id="service_areas" name="service_areas" class="input-field__control" rows="4" placeholder="One area per line"><%= company ? company.service_areas : '' %></textarea>
+              </div>
+
+              <div class="input-field">
+                <label for="hours_text" class="input-field__label">Hours / availability</label>
+                <textarea id="hours_text" name="hours_text" class="input-field__control" rows="4" placeholder="e.g. Mon–Fri 08:00–17:00"><%= company ? company.hours_text : '' %></textarea>
+              </div>
+
+              <div class="input-field">
+                <label for="gallery_text" class="input-field__label">Recent work — image URLs</label>
+                <textarea id="gallery_text" name="gallery_text" class="input-field__control" rows="7" placeholder="https://example.com/job1.jpg|Kitchen rewire&#10;https://example.com/job2.jpg"><%= typeof galleryAdminText !== 'undefined' ? galleryAdminText : '' %></textarea>
+                <p class="input-field__help">
+                  One URL per line. Optional caption after <span class="kbd">|</span>. Use HTTPS links to images you are allowed to display.
+                </p>
+              </div>
+
+              <div class="hero-grid hero-grid--2col">
+                <div class="input-field">
+                  <label for="featured_cta_label" class="input-field__label">CTA Label</label>
+                  <input id="featured_cta_label" name="featured_cta_label" class="input-field__control" value="<%= company ? company.featured_cta_label : 'Call us' %>" />
+                </div>
+                <div class="input-field">
+                  <label for="featured_cta_phone" class="input-field__label">CTA Phone</label>
+                  <input id="featured_cta_phone" name="featured_cta_phone" class="input-field__control" value="<%= company ? company.featured_cta_phone : '' %>" />
+                </div>
               </div>
             </div>
-          </div>
-
-          <div>
-            <label for="category_id">Category</label>
-            <select id="category_id" name="category_id">
-              <option value="">Uncategorized</option>
-              <% categories.forEach(function(cat) { %>
-                <option value="<%= cat.id %>" <%= company && company.category_id === cat.id ? 'selected' : '' %>><%= cat.name %></option>
-              <% }) %>
-            </select>
-          </div>
-
-          <div>
-            <label for="headline">Headline</label>
-            <input id="headline" name="headline" value="<%= company ? company.headline : '' %>" />
-          </div>
-
-          <div>
-            <label for="about">About</label>
-            <textarea id="about" name="about"><%= company ? company.about : '' %></textarea>
-          </div>
-
-          <div>
-            <label for="services">Services (one per line)</label>
-            <textarea id="services" name="services"><%= company ? company.services : '' %></textarea>
-          </div>
-
-          <% if (typeof adminTenantSlug !== 'undefined' && adminTenantSlug === 'zm') { %>
-          <p class="muted admin-zm-phone-note">
-            Zambian numbers: <strong>0</strong> followed by <strong>9 digits</strong> (10 digits total, e.g. 0977123456).
-          </p>
-          <% } %>
-          <div class="hero-grid hero-grid--2col">
-            <div>
-              <label for="phone">Phone</label>
-              <input id="phone" name="phone" value="<%= company ? company.phone : '' %>" />
+            <div class="form-step__actions admin-gate-actions">
+              <button class="btn btn--primary" type="submit">Save</button>
             </div>
-            <div>
-              <label for="email">Email</label>
-              <input id="email" name="email" type="text" inputmode="email" autocomplete="email" value="<%= company ? company.email : '' %>" />
-            </div>
-          </div>
-
-          <div>
-            <label for="location">Location</label>
-            <input id="location" name="location" value="<%= company ? company.location : '' %>" />
-          </div>
-
-          <div>
-            <label for="years_experience">Years in business</label>
-            <input
-              id="years_experience"
-              name="years_experience"
-              type="number"
-              min="0"
-              max="999"
-              placeholder="e.g. 8"
-              value="<%= company && company.years_experience != null && company.years_experience !== '' ? company.years_experience : '' %>"
-            />
-          </div>
-
-          <div>
-            <label for="service_areas">Service areas (regions &amp; cities)</label>
-            <textarea id="service_areas" name="service_areas" rows="4" placeholder="One area per line"><%= company ? company.service_areas : '' %></textarea>
-          </div>
-
-          <div>
-            <label for="hours_text">Hours / availability</label>
-            <textarea id="hours_text" name="hours_text" rows="4" placeholder="e.g. Mon–Fri 08:00–17:00"><%= company ? company.hours_text : '' %></textarea>
-          </div>
-
-          <div>
-            <label for="gallery_text">Recent work — image URLs</label>
-            <textarea id="gallery_text" name="gallery_text" rows="7" placeholder="https://example.com/job1.jpg|Kitchen rewire&#10;https://example.com/job2.jpg"><%= typeof galleryAdminText !== 'undefined' ? galleryAdminText : '' %></textarea>
-            <div class="muted admin-field-hint">
-              One URL per line. Optional caption after <span class="kbd">|</span>. Use HTTPS links to images you are allowed to display.
-            </div>
-          </div>
-
-          <div class="hero-grid hero-grid--2col">
-            <div>
-              <label for="featured_cta_label">CTA Label</label>
-              <input id="featured_cta_label" name="featured_cta_label" value="<%= company ? company.featured_cta_label : 'Call us' %>" />
-            </div>
-            <div>
-              <label for="featured_cta_phone">CTA Phone</label>
-              <input id="featured_cta_phone" name="featured_cta_phone" value="<%= company ? company.featured_cta_phone : '' %>" />
-            </div>
-          </div>
-
-          <div class="admin-gate-actions">
-            <button class="btn btn--primary" type="submit">Save</button>
           </div>
         </form>
       </div>
@@ -166,4 +176,3 @@
     </main>
   </body>
 </html>
-

@@ -1,0 +1,24 @@
+<%#
+  Compact loading row (spinner + text). Uses state_block variant loading.
+  Params: message, id, hidden, extraClass, compact
+%>
+<%
+  var _msg = typeof message !== 'undefined' && message ? String(message) : 'Loading…';
+  var _id = typeof id !== 'undefined' && id ? String(id) : '';
+  var _hidden = typeof hidden !== 'undefined' && hidden;
+  var _extra = typeof extraClass !== 'undefined' ? String(extraClass) : '';
+  var _compact = typeof compact !== 'undefined' ? !!compact : true;
+%>
+<div
+  class="state-block state-block--loading<%= _compact ? ' state-block--compact' : '' %><%= _extra ? ' ' + _extra : '' %>"
+  <% if (_id) { %>id="<%= _id %>"<% } %>
+  <% if (_hidden) { %>hidden<% } %>
+  role="status"
+  aria-live="polite"
+  aria-busy="true"
+>
+  <div class="state-block__loading-inner">
+    <span class="state-block__spinner" aria-hidden="true"></span>
+    <span class="state-block__loading-text"><%= _msg %></span>
+  </div>
+</div>

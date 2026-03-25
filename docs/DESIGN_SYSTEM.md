@@ -94,9 +94,41 @@ Use visible labels and the shared field shell where practical: `.input-field`, `
 
 Tokens: `--flash-error-*`, `--flash-success-*`, `--flash-info-*` in `public/theme.css`.
 
+**Query success (admin):** Some routes append `?saved=1` (and `embed=1` when embedded). List/edit pages show a full-width **“Changes saved.”** line using `.flash.flash--success` (`role="status"`, `aria-live="polite"`). Examples: tenant user edit, super user edit, companies list after company save.
+
+### UI state blocks & inline status (shared)
+
+Use this layer for **repeatable** loading / success / error / empty / info surfaces **without** replacing page-level `.flash` (keep `.flash` for top-of-page redirects and errors).
+
+**Block pattern** — `public/design-system.css`:
+
+| Modifier | Use |
+|----------|-----|
+| `.state-block` | Base padded surface (border + radius + token spacing). |
+| `.state-block--loading` | Spinner row; pair with `partials/components/loading_block.ejs`. |
+| `.state-block--success` | Calm confirmation (uses `--flash-success-*`). |
+| `.state-block--error` | Recoverable / inline error block (uses `--flash-error-*`). |
+| `.state-block--info` | Neutral guidance. |
+| `.state-block--empty` | No results / empty list (dashed border, muted fill). |
+| `.state-block--compact` | Tighter padding. |
+| `.state-block--admin-inline` | Table cell or tight admin row: transparent background, no border, centered copy. |
+
+**Elements:** `.state-block__title`, `.state-block__body`, `.state-block__body--muted`, `.state-block__actions`, `.state-block__loading-inner`, `.state-block__spinner`, `.state-block__loading-text`.
+
+**EJS partials** (`views/partials/components/`):
+
+- **`state_block.ejs`** — generic block (`variant`, `title`, `body`, `bodyMuted`, `compact`, `id`, `hidden`, `extraClass`, optional trusted `actions` HTML).
+- **`empty_state.ejs`** — convenience wrapper for `variant: empty` (params: `title`, `hint`, `compact`, `extraClass`, …).
+- **`loading_block.ejs`** — compact loading row (default `compact: true`).
+- **`status_message.ejs`** — optional SSR helper; many flows keep a single `<p>` with classes instead.
+
+**Inline status** — add `.status-message` next to `.form-status-message` and a modifier: `.status-message--success` | `--error` | `--info` | `--loading` | `--neutral`. JS may toggle modifiers on one element (e.g. `#lead_status` via `setLeadStatus` in `public/scripts.js`).
+
+**Copy tone:** short, calm, specific (“Sending request…”, “Thanks—we’ve received your request.”). Avoid alarmist language for success; errors should say what failed and imply retry when appropriate.
+
 ### Empty states
 
-Headline → short explanation → primary CTA → optional secondary action. Tone: reassuring, not error-like unless it is an error.
+Prefer **`empty_state.ejs`** / `.state-block--empty` for **empty lists and no-results** when you need a reusable shell. Headline → short explanation → primary CTA → optional secondary action. Tone: reassuring, not error-like unless it is an error. Directory no-results still use the richer `.pro-directory-empty` card; inner callback success/loading align with `state-block` classes.
 
 ## Layout
 

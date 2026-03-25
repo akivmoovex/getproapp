@@ -13,68 +13,77 @@
       <% if (error) { %>
         <div class="flash" role="alert"><%= error %></div>
       <% } %>
+      <% if (typeof saved !== 'undefined' && saved) { %>
+        <div class="flash flash--success" role="status" aria-live="polite">Changes saved.</div>
+      <% } %>
 
       <div class="card admin-form-card">
         <form method="post" action="/admin/super/users/<%= user.id %>" class="form">
-          <div>
-            <label for="se_username">Username</label>
-            <input id="se_username" name="username" value="<%= user.username %>" autocomplete="username" required />
-          </div>
-          <div>
-            <label for="se_password">New password (optional)</label>
-            <input id="se_password" name="password" type="password" autocomplete="new-password" minlength="8" />
-            <div class="admin-field-hint">Leave blank to keep current hash. Min 8 characters if set.</div>
-          </div>
-          <div>
-            <label for="se_role">Role</label>
-            <select id="se_role" name="role">
-              <% (roles || []).forEach(function(r) { %>
-                <option value="<%= r %>" <%= user.role === r ? 'selected' : '' %>><%= r %></option>
-              <% }) %>
-            </select>
-          </div>
+          <div class="form-step form-step--admin">
+            <div class="form-step__body">
+              <div class="input-field">
+                <label for="se_username" class="input-field__label">Username</label>
+                <input id="se_username" name="username" class="input-field__control" value="<%= user.username %>" autocomplete="username" required />
+              </div>
+              <div class="input-field">
+                <label for="se_password" class="input-field__label">New password (optional)</label>
+                <input id="se_password" name="password" class="input-field__control" type="password" autocomplete="new-password" minlength="8" />
+                <p class="input-field__help">Leave blank to keep current hash. Min 8 characters if set.</p>
+              </div>
+              <div class="input-field">
+                <label for="se_role" class="input-field__label">Role</label>
+                <select id="se_role" name="role" class="input-field__control">
+                  <% (roles || []).forEach(function(r) { %>
+                    <option value="<%= r %>" <%= user.role === r ? 'selected' : '' %>><%= r %></option>
+                  <% }) %>
+                </select>
+              </div>
 
-          <div class="super-user-tenant-block">
-            <div>
-              <label for="tenant_name_display">Tenant name</label>
-              <input
-                id="tenant_name_display"
-                class="super-user-tenant-readonly"
-                type="text"
-                readonly
-                tabindex="-1"
-                value="<%= typeof currentTenantLabel !== 'undefined' ? currentTenantLabel : '—' %>"
-                aria-describedby="tenant-assign-hint"
-              />
-            </div>
-            <div class="super-user-tenant-extra">
-              <label for="se_tenant">Assign or change tenant</label>
-              <select id="se_tenant" name="tenant_id">
-                <option value="" <%= user.tenant_id == null ? 'selected' : '' %>>— None (super admin only) —</option>
-                <% (tenants || []).forEach(function(t) { %>
-                  <option
-                    value="<%= t.id %>"
-                    data-tenant-name="<%= t.name %>"
-                    data-tenant-slug="<%= t.slug %>"
-                    <%= user.tenant_id === t.id ? 'selected' : '' %>
-                  ><%= t.name %> — <%= t.slug %> · <%= t.stage %></option>
-                <% }) %>
-              </select>
-              <p id="tenant-assign-hint" class="muted admin-field-hint">
-                Super admin: leave <strong>None</strong>. Other roles must belong to a tenant. You can move this user to any tenant.
-              </p>
-            </div>
-          </div>
+              <div class="super-user-tenant-block">
+                <div class="input-field">
+                  <label for="tenant_name_display" class="input-field__label">Tenant name</label>
+                  <input
+                    id="tenant_name_display"
+                    class="input-field__control super-user-tenant-readonly"
+                    type="text"
+                    readonly
+                    tabindex="-1"
+                    value="<%= typeof currentTenantLabel !== 'undefined' ? currentTenantLabel : '—' %>"
+                    aria-describedby="tenant-assign-hint"
+                  />
+                </div>
+                <div class="super-user-tenant-extra">
+                  <div class="input-field">
+                    <label for="se_tenant" class="input-field__label">Assign or change tenant</label>
+                    <select id="se_tenant" name="tenant_id" class="input-field__control">
+                      <option value="" <%= user.tenant_id == null ? 'selected' : '' %>>— None (super admin only) —</option>
+                      <% (tenants || []).forEach(function(t) { %>
+                        <option
+                          value="<%= t.id %>"
+                          data-tenant-name="<%= t.name %>"
+                          data-tenant-slug="<%= t.slug %>"
+                          <%= user.tenant_id === t.id ? 'selected' : '' %>
+                        ><%= t.name %> — <%= t.slug %> · <%= t.stage %></option>
+                      <% }) %>
+                    </select>
+                    <p id="tenant-assign-hint" class="input-field__help">
+                      Super admin: leave <strong>None</strong>. Other roles must belong to a tenant. You can move this user to any tenant.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-          <div>
-            <label class="form-check">
-              <input type="checkbox" name="enabled" value="1" <%= user.enabled !== 0 ? 'checked' : '' %> />
-              Account enabled
-            </label>
-          </div>
-          <div class="admin-gate-actions">
-            <button class="btn btn--primary" type="submit">Save</button>
-            <a class="btn" href="/admin/super/users?edit=1">Cancel</a>
+              <div class="input-field">
+                <label class="form-check">
+                  <input type="checkbox" name="enabled" value="1" <%= user.enabled !== 0 ? 'checked' : '' %> />
+                  Account enabled
+                </label>
+              </div>
+            </div>
+            <div class="form-step__actions admin-gate-actions">
+              <button class="btn btn--primary" type="submit">Save</button>
+              <a class="btn btn--secondary" href="/admin/super/users?edit=1">Cancel</a>
+            </div>
           </div>
         </form>
 
