@@ -64,7 +64,7 @@ Implemented in **`server.js`** (not only in `public.js`):
 | Directory | `/directory` | `views/directory.ejs` | Query params for search; empty state may load `directory-empty-callback.js`. |
 | Category browse | `/category/:categorySlug` | `views/category.ejs` | Same card/empty patterns as directory; toolbar `formId` is `category-toolbar`. |
 | Company (canonical) | `/company/:id` | `views/company.ejs` | Shared with mini-site rendering. |
-| Join | `/join` | `views/join.ejs` | `join.js` only here. |
+| Join | `/join` | `views/join.ejs` | `autocomplete.js` + `join.js` here; **`scripts.js` is not loaded** on this template. |
 | Mini-site | `/{miniSiteSlug}` | `views/company.ejs` | **After** reserved segments (`directory`, `join`, `company`, …); same `renderCompanyPage` as `/company/:id`. |
 | Content | `/articles`, `/guides`, `/answers`, … | Content templates | See `src/routes/public.js`. |
 
