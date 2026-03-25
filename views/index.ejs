@@ -17,6 +17,13 @@
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="home-page home-page--launcher wf-home-layout <%= tenant.themeClass %>" data-screen-role="launcher">
+    <div class="app-layout">
+      <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], renderRegionPickerTrigger: true }) %>
+      <%- include('partials/app_navigation', { tenantUrlPrefix }) %>
+
+      <div class="app-layout__main">
+        <% /* homepage: keep existing hero/search UX, just replace nav */ %>
+        <% if (false) { %>
     <header class="home-m3-app-bar" role="banner">
       <div class="home-m3-app-bar__inner">
         <div class="home-m3-app-bar__start">
@@ -80,6 +87,7 @@
       </div>
     </header>
     <div class="wf-menu-backdrop" id="wf-menu-backdrop" hidden></div>
+        <% } %>
     <% if (typeof showRegionPickerUi !== 'undefined' && showRegionPickerUi) { %>
     <div id="wf-region-m3-root" class="m3-modal-overlay wf-region-m3" hidden aria-hidden="true">
       <div class="m3-modal-overlay__backdrop" id="wf-region-overlay"></div>
@@ -121,7 +129,7 @@
       </div>
     </div>
     <% } %>
-    <%- include('partials/home_sidebar', { tenantUrlPrefix }) %>
+
 
     <div class="wf-home-shell">
       <div class="wf-home-main">
@@ -412,6 +420,8 @@
     </div>
 
     <%- include('partials/site_footer', { tenantUrlPrefix }) %>
+    </div>
+  </div>
 
     <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
     <%- include('partials/autocomplete_defer_bootstrap') %>

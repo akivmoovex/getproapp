@@ -1,6 +1,8 @@
 <% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var tpHome = tp ? tp + '/' : '/'; %>
 <% var ten = typeof tenant !== 'undefined' ? tenant : null; %>
+<% var _renderRegionPickerTrigger = typeof renderRegionPickerTrigger !== 'undefined' ? !!renderRegionPickerTrigger : false; %>
+<% var _showRegionPickerUi = typeof showRegionPickerUi !== 'undefined' ? !!showRegionPickerUi : false; %>
 <header class="app-top-app-bar" role="banner">
   <div class="container app-top-app-bar__inner">
     <div class="app-top-app-bar__brand">
@@ -8,47 +10,78 @@
       <span class="app-top-app-bar__tagline">Trusted professionals · verified directory</span>
     </div>
 
-    <button
-      type="button"
-      class="app-menu-toggle"
-      id="wf-app-nav-toggle"
-      aria-label="Open navigation"
-      aria-controls="wf-app-nav-drawer"
-      aria-expanded="false"
-    >
-      <svg
-        class="app-menu-icon app-menu-icon--hamburger"
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.25"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
+    <div class="app-top-app-bar__actions">
+      <% if (_renderRegionPickerTrigger && _showRegionPickerUi) { %>
+      <button
+        type="button"
+        class="wf-home-region-trigger"
+        id="wf-region-open"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        aria-controls="wf-region-sheet"
       >
-        <path d="M4 6h16" />
-        <path d="M4 12h16" />
-        <path d="M4 18h16" />
-      </svg>
-      <svg
-        class="app-menu-icon app-menu-icon--close"
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.25"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
+        <svg
+          class="wf-home-region-globe"
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+        <span class="wf-home-region-label">Region</span>
+      </button>
+      <% } %>
+
+      <button
+        type="button"
+        class="app-menu-toggle"
+        id="wf-app-nav-toggle"
+        aria-label="Open navigation"
+        aria-controls="wf-app-nav-drawer"
+        aria-expanded="false"
       >
-        <path d="M18 6 6 18" />
-        <path d="m6 6 12 12" />
-      </svg>
-    </button>
+        <svg
+          class="app-menu-icon app-menu-icon--hamburger"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.25"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4 6h16" />
+          <path d="M4 12h16" />
+          <path d="M4 18h16" />
+        </svg>
+        <svg
+          class="app-menu-icon app-menu-icon--close"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.25"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
   </div>
 </header>
