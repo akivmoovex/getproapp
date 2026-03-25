@@ -7,6 +7,8 @@
 | Doc | Role |
 |-----|------|
 | **`docs/route-asset-inventory.md`** | **What files affect which route** — edit this map mentally before large changes. |
+| **`docs/clean-architecture.md`** | **Real** folder layout and public route families. |
+| **`docs/route-ownership-matrix.md`** | **Per-route** LCP, guards, edit risk. |
 | **`docs/performance-budgets.md`** | **Per-route limits** — images, JS guards, ATF rules. |
 | **`docs/lighthouse-checklist.md`** | **How to verify** — mobile/desktop Lighthouse, run log. |
 | **`docs/performance-optimization-notes.md`** | **History** — what was fixed, server caching. |
@@ -82,6 +84,8 @@ A few files carry **`PERF:`** / **`PERF NOTE:`** comments at high-risk spots (he
 
 ## 7. Links
 
+- **Architecture (actual):** [`clean-architecture.md`](clean-architecture.md)  
+- **Route matrix (LCP / risk):** [`route-ownership-matrix.md`](route-ownership-matrix.md)  
 - **Impact map:** [`route-asset-inventory.md`](route-asset-inventory.md)  
 - **Budgets:** [`performance-budgets.md`](performance-budgets.md)  
 - **Measure:** [`lighthouse-checklist.md`](lighthouse-checklist.md)  

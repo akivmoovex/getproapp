@@ -11,6 +11,8 @@
 | **`docs/route-asset-inventory.md`** | **Impact map** — templates, partials, CSS/JS per route; “if I change X, what’s affected?” |
 | **`docs/performance-aware-development-rules.md`** | **PR checklist** — when a change is perf-sensitive, red flags, pre-merge checks. |
 | **`docs/performance-budgets.md` (this file)** | **Guardrails for future changes** — what “good” looks like per route before you ship. |
+| **`docs/clean-architecture.md`** | **Actual** app structure (routes + `src/` helpers). |
+| **`docs/route-ownership-matrix.md`** | **Route-level** LCP/guard/risk notes. |
 
 **When to use:** Planning a PR that touches `views/index.ejs`, `views/directory.ejs`, `views/company.ejs`, `public/styles.css`, `public/design-system.css`, `public/scripts.js`, or shared partials. Start with **`docs/performance-aware-development-rules.md`** if unsure whether perf review applies.
 

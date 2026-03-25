@@ -2,7 +2,7 @@
 
 This document records a practical performance pass for the GetPro SSR app (Express + EJS), focused on Core Web Vitals–friendly, low-risk changes. It complements `docs/DESIGN_SYSTEM.md` (UI).
 
-**Docs:** **`docs/performance-aware-development-rules.md`** — PR checklist for perf-sensitive UI changes. **`docs/lighthouse-checklist.md`** — how to measure (Lighthouse workflow, run log). **`docs/performance-budgets.md`** — route-based budgets. **`docs/route-asset-inventory.md`** — which templates/partials/CSS/JS apply per route. This file — what was found and fixed in the recorded pass(es).
+**Docs:** **`docs/clean-architecture.md`** · **`docs/route-ownership-matrix.md`**. **`docs/performance-aware-development-rules.md`** — PR checklist for perf-sensitive UI changes. **`docs/lighthouse-checklist.md`** — how to measure (Lighthouse workflow, run log). **`docs/performance-budgets.md`** — route-based budgets. **`docs/route-asset-inventory.md`** — which templates/partials/CSS/JS apply per route. This file — what was found and fixed in the recorded pass(es).
 
 ## 1. Issues identified (highest impact)
 

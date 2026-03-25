@@ -2,7 +2,7 @@
 
 **Purpose:** Repeatable, route-specific verification for the Express + EJS GetPro app after performance work (hero preload, guarded `public/scripts.js`, company logo LCP behavior, lead status `min-height`, etc.).
 
-**Docs:** **`docs/performance-aware-development-rules.md`** (PR checklist, perf-sensitive changes) · **`docs/lighthouse-checklist.md`** (how to measure) · **`docs/performance-budgets.md`** (guardrails) · **`docs/route-asset-inventory.md`** (templates/CSS/JS per route) · **`docs/performance-optimization-notes.md`** (what was found/fixed). **`docs/DESIGN_SYSTEM.md`** — UI tokens and patterns.
+**Docs:** **`docs/clean-architecture.md`** · **`docs/route-ownership-matrix.md`** · **`docs/performance-aware-development-rules.md`** (PR checklist, perf-sensitive changes) · **`docs/lighthouse-checklist.md`** (how to measure) · **`docs/performance-budgets.md`** (guardrails) · **`docs/route-asset-inventory.md`** (templates/CSS/JS per route) · **`docs/performance-optimization-notes.md`** (what was found/fixed). **`docs/DESIGN_SYSTEM.md`** — UI tokens and patterns.
 
 **Tools:** Chrome DevTools **Lighthouse** panel (or **PageSpeed Insights** for field-like remote tests). No extra frameworks required.
 

@@ -4,6 +4,8 @@
 
 **Grounded in repo docs:**
 
+- **`docs/clean-architecture.md`** — how the SSR app and public routes are actually organized.  
+- **`docs/route-ownership-matrix.md`** — which web routes map to which screens for parity checks.  
 - **`docs/DESIGN_SYSTEM.md`** — tokens, BEM blocks, buttons, forms, state blocks.  
 - **`docs/MATERIAL_DESIGN_3.md`** — how web maps M3 tokens (`--md-sys-*`).  
 - **`docs/MOBILE_SCREEN_INVENTORY.md`** — route → screen role (launcher / results / profile / support).  

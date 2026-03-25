@@ -7899,7 +7899,8 @@ body[class*="tenant-"] {
   }
 
   body:has(.pro-company-sticky-cta) {
-    padding-bottom: 76px;
+    /* PERF NOTE: Include safe-area so content clears the home indicator when sticky CTA uses env(safe-area-inset-bottom). */
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   }
 }
 

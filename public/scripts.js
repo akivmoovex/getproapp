@@ -198,7 +198,7 @@ function initAppNavDrawer() {
   });
 }
 
-// PERF: Shared init — keep route guards cheap; only run when target DOM exists (see docs/route-asset-inventory.md §6).
+// PERF WARNING: Keep new behavior behind DOM guards — this file loads on every public page; regressions hit LCP/INP (docs/route-ownership-matrix.md).
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("lead_form");
   if (form) form.addEventListener("submit", submitLeadForm);

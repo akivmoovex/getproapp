@@ -11,6 +11,8 @@
 | **`docs/lighthouse-checklist.md`** | How to measure after changes. |
 | **`docs/performance-optimization-notes.md`** | Past fixes and server notes. |
 | **`docs/route-asset-inventory.md` (this file)** | **What files power each route** and what actually runs at runtime. |
+| **`docs/clean-architecture.md`** | **How the repo is actually structured** (no fictional `controllers/` tree). |
+| **`docs/route-ownership-matrix.md`** | **Route → handler → template → LCP → risk** for main public URLs. |
 
 **CSS chain (all public pages):** `views` link **`/styles.css?v=…`** → imports **`public/theme.css`** → **`public/design-system.css`** → **`public/m3-modal.css`** → rest of **`public/styles.css`**. One bundle; no per-route CSS file.
 
@@ -64,6 +66,12 @@
 | `directory_empty_state` | CLS for callback/state blocks; extra script only when zero results |
 | Filters / query params | SSR output only — no extra bundle unless you add one |
 
+### 2a. Category browse (`/category/:slug`)
+
+**Router:** `src/routes/public.js` → `res.render("category", …)`.
+
+Same **asset pattern** as §2: **`views/category.ejs`**, search form id **`category-toolbar`**, **`partials/refine_search_fab`** with matching anchor, cards or empty state, **`/scripts.js`** + lazy autocomplete. **Details:** `docs/route-ownership-matrix.md` (`/category/:categorySlug`).
+
 ---
 
 ## 3. Directory — no results (same URL, zero companies)
@@ -114,7 +122,7 @@
 | **Entry template** | `views/join.ejs` |
 | **Partials** | `partials/seo_meta`, `partials/brand_lockup_getpro`, … (wizard shell in file) |
 | **CSS** | Full bundle + join-specific classes in `styles.css` |
-| **JS** | **`/join.js`** (defer) — **early exit** if **`#join-wizard`** missing. **Not** on other routes |
+| **JS** | **`/autocomplete.js`** (defer) for wizard fields; **`/join.js`** (defer) — **early exit** if **`#join-wizard`** missing. **`/scripts.js` is not** included on this template |
 | **Key assets** | Wizard UI; **no** homepage hero preload |
 
 **If you change this, check:** INP on steps; **do not** add `join.js` to global layout.
@@ -128,7 +136,7 @@
 | `submitLeadForm` / `#lead_form` | **Company** (and any page that includes the form) |
 | `initRegionPicker` + `initGlobalTenantSearchOpensRegion` | **`#wf-region-m3-root`** in DOM (e.g. some homepages) |
 | `initDirectoryAvatarHue` | **`[data-avatar-hue]`** (directory cards) |
-| `initRefineSearchFab` | **`.pro-refine-search-fab[data-refine-target]`** (directory) |
+| `initRefineSearchFab` | **`.pro-refine-search-fab[data-refine-target]`** (directory **or** category browse) |
 | `initAppNavDrawer` | **`#wf-app-nav-toggle`** etc. (pages with app layout nav) |
 
 All wired from **one** `DOMContentLoaded` listener — **guards** prevent useless work; see `docs/performance-optimization-notes.md`.
@@ -141,16 +149,17 @@ All wired from **one** `DOMContentLoaded` listener — **guards** prevent useles
 |------|---------|
 | `views/index.ejs` | **/** only |
 | `views/directory.ejs` | **`/directory`** only |
-| `views/company.ejs` | **`/{subdomain}`** mini-site |
+| `views/category.ejs` | **`/category/:slug`** only |
+| `views/company.ejs` | **`/company/:id`** and **`/{miniSiteSlug}`** mini-site (same template) |
 | `partials/site_header.ejs`, `app_navigation.ejs` | **All** public pages using them |
-| `partials/pro_search_form.ejs` | **Home + directory** (variants) |
-| `partials/directory_company_cards.ejs` | **Directory** (has results) |
-| `partials/directory_empty_state.ejs` | **Directory** (no results) |
+| `partials/pro_search_form.ejs` | **Home + directory + category** (variants) |
+| `partials/directory_company_cards.ejs` | **Directory** or **category** (has results) |
+| `partials/directory_empty_state.ejs` | **Directory** (no results) **or** **category** (no listings; `emptyStateMode: 'category'`) |
 | `public/styles.css` / `design-system.css` / `theme.css` | **Global** (import chain) |
 | `public/scripts.js` | **Every page** that includes the script — **scope** of *work* is guarded |
 | `public/autocomplete.js` | Loaded **lazily** where bootstrap is included (home, directory, …) |
 | `public/directory-empty-callback.js` | **Directory no-results** only |
-| `public/company-profile.js` | **Company** mini-site only |
+| `public/company-profile.js` | **`/company/:id`** and **`/{miniSiteSlug}`** (same template) |
 | `public/join.js` | **`/join`** only |
 | `server.js` `stylesVersion` | Cache bust for **all** `?v=` assets |
 
@@ -158,6 +167,8 @@ All wired from **one** `DOMContentLoaded` listener — **guards** prevent useles
 
 ## 8. Links
 
+- Architecture (actual layout) → [`clean-architecture.md`](clean-architecture.md)  
+- Route matrix (LCP / risk) → [`route-ownership-matrix.md`](route-ownership-matrix.md)  
 - PR rules → [`performance-aware-development-rules.md`](performance-aware-development-rules.md)  
 - Budgets → [`performance-budgets.md`](performance-budgets.md)  
 - Lighthouse → [`lighthouse-checklist.md`](lighthouse-checklist.md)  

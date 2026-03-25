@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <%- include('partials/seo_meta', {
       seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : 'GetPro · Trusted professional directory',
       seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : 'Find trusted professionals near you. Search by service and city, compare profiles, and contact the right business quickly.',
@@ -14,7 +14,7 @@
     <% if (typeof orgJsonLd !== 'undefined' && orgJsonLd) { %>
     <script type="application/ld+json"><%- orgJsonLd %></script>
     <% } %>
-    <%# PERF: Homepage hero is LCP-sensitive. Keep preload + picture in sync; avoid blocking ATF DOM/ sync JS here — see docs/performance-aware-development-rules.md %>
+    <%# PERF NOTE: Homepage hero is LCP-sensitive — keep preload imagesrcset aligned with <picture> srcset; avoid blocking ATF JS (docs/performance-budgets.md §2.1). %>
     <link
       rel="preload"
       as="image"
