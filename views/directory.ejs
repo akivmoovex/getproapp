@@ -57,6 +57,10 @@
 
       <%- include('partials/refine_search_fab', { toolbarAnchorId: 'directory-toolbar' }) %>
 
+      <% if ((companies || []).length > 0) { %>
+      <p class="pro-directory-results-helper" role="note">Browse trusted professionals in your area. Click on card to view more details.</p>
+      <% } %>
+
       <div class="pro-directory-main">
         <% if ((companies || []).length === 0) { %>
           <%- include('partials/directory_empty_state', {

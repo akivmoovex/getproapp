@@ -5,41 +5,7 @@
 <% var _showRegionPickerUi = typeof showRegionPickerUi !== 'undefined' ? !!showRegionPickerUi : false; %>
 <header class="app-top-app-bar" role="banner">
   <div class="container app-top-app-bar__inner">
-    <div class="app-top-app-bar__brand">
-      <%- include('brand_lockup_getpro', { tenant: ten, brandLockupVariant: 'nav', brandLockupHref: tpHome }) %>
-      <span class="app-top-app-bar__tagline">Trusted professionals · verified directory</span>
-    </div>
-
-    <div class="app-top-app-bar__actions">
-      <% if (_renderRegionPickerTrigger && _showRegionPickerUi) { %>
-      <button
-        type="button"
-        class="wf-home-region-trigger"
-        id="wf-region-open"
-        aria-haspopup="dialog"
-        aria-expanded="false"
-        aria-controls="wf-region-sheet"
-      >
-        <svg
-          class="wf-home-region-globe"
-          xmlns="http://www.w3.org/2000/svg"
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
-        <span class="wf-home-region-label">Region</span>
-      </button>
-      <% } %>
-
+    <div class="app-top-app-bar__start">
       <button
         type="button"
         class="app-menu-toggle"
@@ -82,6 +48,41 @@
           <path d="m6 6 12 12" />
         </svg>
       </button>
+      <div class="app-top-app-bar__brand">
+        <%- include('brand_lockup_getpro', { tenant: ten, brandLockupVariant: 'nav', brandLockupHref: tpHome }) %>
+        <span class="app-top-app-bar__tagline">Trusted professionals · verified directory</span>
+      </div>
+    </div>
+
+    <div class="app-top-app-bar__actions">
+      <% if (_renderRegionPickerTrigger && _showRegionPickerUi) { %>
+      <button
+        type="button"
+        class="wf-home-region-trigger"
+        id="wf-region-open"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        aria-controls="wf-region-sheet"
+      >
+        <svg
+          class="wf-home-region-globe"
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+        <span class="wf-home-region-label">Region</span>
+      </button>
+      <% } %>
     </div>
   </div>
 </header>
