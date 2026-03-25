@@ -55,68 +55,78 @@
   <input type="hidden" name="category" value="<%= _selCat %>" />
   <% } %>
 
-  <div class="pro-search-form__fields pro-home-search-fields">
-    <div class="pro-search-form__field pro-home-search-field input-field input-field--search">
-      <label class="pro-search-form__label pro-home-field-label input-field__label" for="<%= _pre %>-search-q">Service or profession</label>
-      <div class="pro-ac" data-ac-list="service">
-        <input
-          id="<%= _pre %>-search-q"
-          class="pro-ac-input input-field__control"
-          type="text"
-          value="<%= _q %>"
-          placeholder="e.g. Electrician, Plumber, Carpenter"
-          autocomplete="off"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded="false"
-          aria-controls="<%= _pre %>-search-q-dropdown"
-        />
-        <input type="hidden" class="pro-ac-hidden" name="q" id="<%= _pre %>-search-q-value" value="<%= _q %>" />
-        <ul class="pro-ac-dropdown" id="<%= _pre %>-search-q-dropdown" role="listbox" hidden></ul>
-        <p class="pro-ac-msg input-field__error" hidden></p>
+  <div class="pro-search-form__toolbar-row">
+    <div class="pro-search-form__fields pro-home-search-fields">
+      <div class="pro-search-form__field pro-home-search-field input-field input-field--search">
+        <label class="pro-search-form__label pro-home-field-label input-field__label" for="<%= _pre %>-search-q">Service or profession</label>
+        <div
+          class="pro-ac"
+          data-ac-list="service"
+          data-watermark-rotate="Electrician|Plumber|Carpenter"
+        >
+          <input
+            id="<%= _pre %>-search-q"
+            class="pro-ac-input input-field__control"
+            type="text"
+            value="<%= _q %>"
+            placeholder=""
+            autocomplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded="false"
+            aria-controls="<%= _pre %>-search-q-dropdown"
+          />
+          <input type="hidden" class="pro-ac-hidden" name="q" id="<%= _pre %>-search-q-value" value="<%= _q %>" />
+          <ul class="pro-ac-dropdown" id="<%= _pre %>-search-q-dropdown" role="listbox" hidden></ul>
+          <p class="pro-ac-msg input-field__error" hidden></p>
+        </div>
+      </div>
+      <div class="pro-search-form__field pro-home-search-field input-field input-field--search">
+        <label class="pro-search-form__label pro-home-field-label input-field__label" for="<%= _pre %>-search-city">City</label>
+        <div
+          class="pro-ac"
+          data-ac-list="city"
+          data-watermark-rotate="Lusaka|Ndola|Kitwe"
+        >
+          <input
+            id="<%= _pre %>-search-city"
+            class="pro-ac-input input-field__control"
+            type="text"
+            value="<%= _city %>"
+            placeholder=""
+            autocomplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded="false"
+            aria-controls="<%= _pre %>-search-city-dropdown"
+          />
+          <input type="hidden" class="pro-ac-hidden" name="city" id="<%= _pre %>-search-city-value" value="<%= _city %>" />
+          <ul class="pro-ac-dropdown" id="<%= _pre %>-search-city-dropdown" role="listbox" hidden></ul>
+          <p class="pro-ac-msg input-field__error" hidden></p>
+        </div>
       </div>
     </div>
-    <div class="pro-search-form__field pro-home-search-field input-field input-field--search">
-      <label class="pro-search-form__label pro-home-field-label input-field__label" for="<%= _pre %>-search-city">City</label>
-      <div class="pro-ac" data-ac-list="city">
-        <input
-          id="<%= _pre %>-search-city"
-          class="pro-ac-input input-field__control"
-          type="text"
-          value="<%= _city %>"
-          placeholder="e.g. Lusaka"
-          autocomplete="off"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded="false"
-          aria-controls="<%= _pre %>-search-city-dropdown"
-        />
-        <input type="hidden" class="pro-ac-hidden" name="city" id="<%= _pre %>-search-city-value" value="<%= _city %>" />
-        <ul class="pro-ac-dropdown" id="<%= _pre %>-search-city-dropdown" role="listbox" hidden></ul>
-        <p class="pro-ac-msg input-field__error" hidden></p>
-      </div>
-    </div>
-  </div>
-  <button
-    class="btn btn--primary pro-search-form__submit pro-home-search-submit"
-    type="submit"
-  >
-    <span class="pro-home-search-submit-text">Search</span>
-    <svg
-      class="pro-home-search-icon"
-      xmlns="http://www.w3.org/2000/svg"
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.25"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      aria-hidden="true"
+    <button
+      class="btn btn--primary pro-search-form__submit pro-home-search-submit"
+      type="submit"
     >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
-  </button>
+      <span class="pro-home-search-submit-text">Search</span>
+      <svg
+        class="pro-home-search-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.25"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="7" />
+        <path d="m21 21-4.3-4.3" />
+      </svg>
+    </button>
+  </div>
 </form>
