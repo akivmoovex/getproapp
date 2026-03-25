@@ -14,6 +14,7 @@
     <% if (typeof orgJsonLd !== 'undefined' && orgJsonLd) { %>
     <script type="application/ld+json"><%- orgJsonLd %></script>
     <% } %>
+    <%# LCP: hero .pro-home-hero-photo + preload below — see docs/route-asset-inventory.md %>
     <link
       rel="preload"
       as="image"

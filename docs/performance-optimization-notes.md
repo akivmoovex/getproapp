@@ -1,6 +1,8 @@
 # Performance & Lighthouse optimization notes
 
-This document records a practical performance pass for the GetPro SSR app (Express + EJS), focused on Core Web Vitals–friendly, low-risk changes. It complements `docs/DESIGN_SYSTEM.md` (UI) and is meant for ongoing Lighthouse and field measurement.
+This document records a practical performance pass for the GetPro SSR app (Express + EJS), focused on Core Web Vitals–friendly, low-risk changes. It complements `docs/DESIGN_SYSTEM.md` (UI).
+
+**Docs:** **`docs/lighthouse-checklist.md`** — how to measure (Lighthouse workflow, run log). **`docs/performance-budgets.md`** — route-based budgets and PR guardrails. **`docs/route-asset-inventory.md`** — which templates/partials/CSS/JS apply per route. This file — what was found and fixed in the recorded pass(es).
 
 ## 1. Issues identified (highest impact)
 
@@ -52,15 +54,14 @@ These are deployment-side and do not require code changes:
 
 ## 6. What to measure next (Lighthouse)
 
-Run Lighthouse (mobile + desktop) on:
+Use **`docs/lighthouse-checklist.md`** for:
 
-1. `/` (tenant home) — **LCP** (hero), **FCP**, **CLS** (hero + search).
-2. `/directory` — **CLS** on toolbar + cards; **TBT** from main-thread work.
-3. A representative **company mini-site** URL — **LCP** (logo vs text), **CLS** (lead status area).
+- Step-by-step **mobile + desktop** workflow  
+- **Route-specific** checks (homepage, directory, company mini-site `/{subdomain}`, optional no-results + join)  
+- **LCP / Network** verification (hero preload, company logo behavior)  
+- **Regression thresholds** and a **copy-paste run log template**  
 
-Compare before/after on the same environment (staging or production). Watch **INP** (interaction to next paint) on search, nav drawer, and lead submit.
-
-In Chrome DevTools **Performance** panel, verify hero image request starts earlier on the homepage after preload (waterfall).
+Quick reminder: compare before/after on the **same environment**; in the **Performance** / **Network** panels, confirm the homepage hero request starts early after preload (waterfall).
 
 ## 7. Files touched in this pass
 
@@ -71,5 +72,8 @@ In Chrome DevTools **Performance** panel, verify hero image request starts earli
 - `public/styles.css` — lead status min-height  
 - `server.js` — `stylesVersion`  
 - `docs/performance-optimization-notes.md` — this file  
+- `docs/lighthouse-checklist.md` — Lighthouse QA playbook and run template  
+- `docs/performance-budgets.md` — route performance budgets and PR review checklist  
+- `docs/route-asset-inventory.md` — route → templates / partials / CSS / JS map  
 
 No frontend framework added; SSR and routes unchanged.
