@@ -27,9 +27,9 @@
 
   function phoneErrorHint(slug) {
     if (slug === "zm") {
-      return "Enter a Zambian number: 0 followed by 9 digits (10 digits total, e.g. 0977123456).";
+      return "Use a Zambian mobile number: 0 and 9 digits (10 digits total, e.g. 0977123456).";
     }
-    return "Enter a phone number.";
+    return "Enter a valid phone number.";
   }
 
   const form = document.getElementById("directory-empty-callback-form");
@@ -59,13 +59,13 @@
     errEl.hidden = true;
 
     if (!isValidName(nameVal)) {
-      errEl.textContent = "Name must be at least 3 letters.";
+      errEl.textContent = "Full name must be at least 3 letters.";
       errEl.hidden = false;
       nameInput.focus();
       return;
     }
     if (!phoneVal) {
-      errEl.textContent = "Enter a phone number.";
+      errEl.textContent = "Phone number is required.";
       errEl.hidden = false;
       phoneInput.focus();
       return;

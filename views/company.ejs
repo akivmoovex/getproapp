@@ -231,7 +231,12 @@
                         <label for="lead_message" class="input-field__label">How can we help?</label>
                         <textarea id="lead_message" name="message" required placeholder="Tell us what service you need and when you need it" class="input-field__control"></textarea>
                       </div>
-                      <div id="lead_status" class="muted pro-company-profile__lead-status"></div>
+                      <div
+                        id="lead_status"
+                        class="form-status-message muted pro-company-profile__lead-status"
+                        role="status"
+                        aria-live="polite"
+                      ></div>
                     </div>
                     <div class="form-step__actions">
                       <div class="card__actions">

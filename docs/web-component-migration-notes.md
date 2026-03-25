@@ -84,6 +84,14 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
 - `views/ui_demo.ejs`: pattern library no longer renders live legacy `btn-primary` / `btn-secondary-wf` buttons; comparison table remains the mapping reference; live samples use semantic classes only.
 - **Deferred (out of scope):** admin templates, CRM partials, admin gate login, and other `btn-primary` usages in `/admin/*` — future admin-focused pass.
 
+### This rollout (public form helper / error / status microcopy)
+- **Shared pattern:** `public/design-system.css` adds `.form-status-message` for post-submit / inline status copy rhythm where a compact line is appropriate (optional on new markup; existing blocks keep their page classes when typography must stay unchanged).
+- **Join wizard (`views/join.ejs` + `public/styles.css`):** removed redundant `join-step-hint` class; step intros use `.form-step__subtitle` with a scoped `.join-wizard .form-step__subtitle` rule for font size and spacing. Small copy edits on step 2 subtitle, disabled-city intro, exit modal line, and step-3 thanks message. Disabled-city field label aligned to “Full name”. Modal inline errors (`#join-disabled-city-error`, `#join-exit-modal-error`) gained `role="alert"`.
+- **Company request-contact (`views/company.ejs` + `public/scripts.js` + `public/styles.css`):** `#lead_status` uses `form-status-message` with a scoped override so copy stays body-sized; adds `role="status"` and `aria-live="polite"`. Submit progress and success/error strings updated for calmer, consistent tone (same element still receives all states from JS).
+- **Directory no-results callback (`views/partials/directory_empty_state.ejs` + `public/directory-empty-callback.js`):** success lead line uses an em dash for consistency with other flows; validation strings aligned with join (full name, phone required, Zambian format hint, generic phone hint).
+- **`public/join.js`:** User-facing validation and top-level error strings aligned (name, phone required, region/tenant, list load, autocomplete hints, step validation fallback). **IDs and `showError()` / `ensureAc()` behavior unchanged.**
+- **Deferred:** splitting `#lead_status` into separate success vs error elements (would need JS/CSS state); admin and non-public copy; deeper rewrite of directory empty-state headings.
+
 ## Recommended rollout order
 1. Migrate “standalone CTAs” first (homepage search submit, company mini-site contact buttons, join/callback primary & secondary actions).
 2. Migrate form label/control/error shells next (add `input-field*` semantics without touching autocomplete JS hooks).

@@ -449,8 +449,11 @@
   color: var(--footer-on-dark-faint);
 }
 
-.pro-company-profile__lead-status {
+/* Request-contact status: shared form-status-message rhythm, body-sized copy */
+.pro-company-profile__lead-status.form-status-message {
   margin-top: var(--space-1-25);
+  font-size: var(--typo-body-medium-size, var(--space-1-75));
+  line-height: var(--typo-body-large-line, 1.5);
 }
 
 .pro-company-profile__qr-hint {
@@ -6528,9 +6531,11 @@ a.pro-directory-empty__chip:hover {
   font-weight: 800;
 }
 
-.join-step-hint {
-  margin: 0 0 var(--space-2-5);
+/* Join wizard: step intro lines use shared .form-step__subtitle; scoped rhythm below */
+.join-wizard .form-step__subtitle {
+  margin: var(--space-1) 0 var(--space-2-5);
   font-size: var(--space-1-75);
+  line-height: 1.45;
   color: var(--muted);
 }
 

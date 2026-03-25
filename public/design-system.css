@@ -247,3 +247,10 @@
 .form-step__actions {
   margin-top: var(--space-3);
 }
+
+/* Inline status / feedback (submit progress, success, mixed post-submit copy on public forms) */
+.form-status-message {
+  margin: var(--space-1) 0 0;
+  font-size: var(--space-1-5);
+  line-height: 1.45;
+}

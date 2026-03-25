@@ -5,7 +5,7 @@ async function submitLeadForm(e) {
   const submitBtn = form.querySelector("button[type=submit]");
 
   if (submitBtn) submitBtn.disabled = true;
-  if (statusEl) statusEl.textContent = "Sending...";
+  if (statusEl) statusEl.textContent = "Sending request…";
 
   const payload = Object.fromEntries(new FormData(form).entries());
 
@@ -21,10 +21,10 @@ async function submitLeadForm(e) {
       throw new Error(data.error || `Request failed (${resp.status})`);
     }
 
-    if (statusEl) statusEl.textContent = "Thanks! Our team will contact you shortly.";
+    if (statusEl) statusEl.textContent = "Thanks—we’ve received your request. We’ll contact you shortly.";
     form.reset();
   } catch (err) {
-    if (statusEl) statusEl.textContent = err.message || "Something went wrong.";
+    if (statusEl) statusEl.textContent = err.message || "Something went wrong. Please try again.";
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }

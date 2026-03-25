@@ -33,9 +33,9 @@
   function phoneErrorHint() {
     const slug = tenantSlug();
     if (slug === "zm") {
-      return "Enter a Zambian number: 0 followed by 9 digits (10 digits total, e.g. 0977123456).";
+      return "Use a Zambian mobile number: 0 and 9 digits (10 digits total, e.g. 0977123456).";
     }
-    return "Enter a phone number.";
+    return "Enter a valid phone number.";
   }
 
   const wizardFrame = document.getElementById("join-wizard-frame");
@@ -107,7 +107,7 @@
   async function getLists() {
     if (!listsCache) {
       const r = await fetch(LIST_URL);
-      if (!r.ok) throw new Error("Could not load lists");
+      if (!r.ok) throw new Error("Couldn't load options. Refresh the page and try again.");
       listsCache = await r.json();
     }
     return listsCache;
@@ -207,7 +207,7 @@
     const typed = (input.value || "").trim();
     if (!typed) {
       if (msg) {
-        msg.textContent = "Type at least one letter and choose from the list.";
+        msg.textContent = "Type at least one letter, then choose an option from the list.";
         msg.hidden = false;
       }
       return { ok: false, value: "" };
@@ -230,8 +230,8 @@
     if (msg) {
       msg.textContent =
         wrap.getAttribute("data-ac-list") === "city"
-          ? "Choose a town or city from the list."
-          : "Choose a professional service from the list.";
+          ? "Choose a city or town from the list."
+          : "Choose a service from the list.";
       msg.hidden = false;
     }
     return { ok: false, value: "" };
@@ -341,12 +341,12 @@
     const nameVal = exitModalName.value.trim();
     const phoneVal = exitModalPhone.value.trim();
     if (!isValidName(nameVal)) {
-      exitModalError.textContent = "Name must be at least 3 letters.";
+      exitModalError.textContent = "Full name must be at least 3 letters.";
       exitModalError.hidden = false;
       return;
     }
     if (!phoneVal) {
-      exitModalError.textContent = "Enter a phone number.";
+      exitModalError.textContent = "Phone number is required.";
       exitModalError.hidden = false;
       return;
     }
@@ -357,7 +357,7 @@
     }
     exitModalError.hidden = true;
     if (!tenantIdNum()) {
-      exitModalError.textContent = "Missing region on this page. Refresh and try again.";
+      exitModalError.textContent = "We couldn't load your region. Refresh the page and try again.";
       exitModalError.hidden = false;
       return;
     }
@@ -400,12 +400,12 @@
     const nameVal = disabledCityName.value.trim();
     const phoneVal = disabledCityPhone.value.trim();
     if (!isValidName(nameVal)) {
-      disabledCityError.textContent = "Name must be at least 3 letters.";
+      disabledCityError.textContent = "Full name must be at least 3 letters.";
       disabledCityError.hidden = false;
       return;
     }
     if (!phoneVal) {
-      disabledCityError.textContent = "Enter a phone number.";
+      disabledCityError.textContent = "Phone number is required.";
       disabledCityError.hidden = false;
       return;
     }
@@ -415,7 +415,7 @@
       return;
     }
     if (!tenantIdNum()) {
-      disabledCityError.textContent = "Missing region on this page. Refresh and try again.";
+      disabledCityError.textContent = "We couldn't load your region. Refresh the page and try again.";
       disabledCityError.hidden = false;
       return;
     }
@@ -488,7 +488,7 @@
       showStep(2);
       cityInput?.focus();
     } catch (e) {
-      showError(1, e.message || "Could not validate. Try again.");
+      showError(1, e.message || "Couldn't verify your selection. Try again.");
     }
   });
 
@@ -510,7 +510,7 @@
       showStep(3);
       name?.focus();
     } catch (e) {
-      showError(2, e.message || "Could not validate. Try again.");
+      showError(2, e.message || "Couldn't verify your selection. Try again.");
     }
   });
 
@@ -523,11 +523,11 @@
     const phoneVal = (phone.value || "").trim();
 
     if (!isValidName(nameVal)) {
-      showError(3, "Incorrect name.");
+      showError(3, "Full name must be at least 3 letters.");
       return;
     }
     if (!phoneVal) {
-      showError(3, "Enter a phone number.");
+      showError(3, "Phone number is required.");
       return;
     }
     if (!isValidPhoneForTenant(phoneVal)) {
@@ -540,7 +540,7 @@
     const cityVal = (cityHid && cityHid.value) || (cityInput && cityInput.value.trim()) || "";
 
     if (!tenantIdNum()) {
-      showError(3, "Missing region on this page. Refresh and try again.");
+      showError(3, "We couldn't load your region. Refresh the page and try again.");
       return;
     }
 
