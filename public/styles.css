@@ -6232,6 +6232,14 @@ a.pro-directory-empty__chip:hover {
   hyphens: auto;
 }
 
+.pro-company-profile__contact-list .btn.btn--text {
+  /* Keep contact rows compact; only use semantic button for focus/hover consistency. */
+  min-height: 0;
+  padding: 0 var(--space-half);
+  border: none;
+  box-shadow: none;
+}
+
 .pro-company-profile__cta {
   width: 100%;
   justify-content: center;

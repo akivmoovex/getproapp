@@ -269,13 +269,27 @@
             <p class="join-modal-text" id="join-disabled-city-intro">
               We are validating trusted partners in <strong id="join-disabled-city-label"></strong>. Please leave us some details so that we can keep you updated.
             </p>
-            <div class="join-modal-fields">
-              <label class="join-modal-label" for="join-disabled-city-name">Client name</label>
-              <input class="join-plain-input join-modal-input" id="join-disabled-city-name" type="text" autocomplete="name" />
-              <label class="join-modal-label" for="join-disabled-city-phone">Phone number</label>
-              <input class="join-plain-input join-modal-input" id="join-disabled-city-phone" type="tel" autocomplete="tel" />
+            <div class="join-modal-fields input-field">
+              <div class="input-field">
+                <label class="join-modal-label input-field__label" for="join-disabled-city-name">Client name</label>
+                <input
+                  class="join-plain-input join-modal-input input-field__control"
+                  id="join-disabled-city-name"
+                  type="text"
+                  autocomplete="name"
+                />
+              </div>
+              <div class="input-field">
+                <label class="join-modal-label input-field__label" for="join-disabled-city-phone">Phone number</label>
+                <input
+                  class="join-plain-input join-modal-input input-field__control"
+                  id="join-disabled-city-phone"
+                  type="tel"
+                  autocomplete="tel"
+                />
+              </div>
             </div>
-            <p class="join-modal-error" id="join-disabled-city-error" hidden></p>
+            <p class="join-modal-error input-field__error" id="join-disabled-city-error" hidden></p>
             <div class="join-modal-actions join-modal-actions--split">
               <button type="button" class="btn btn--primary" id="join-disabled-city-submit">Submit</button>
               <button type="button" class="btn btn--secondary" id="join-disabled-city-dismiss">Cancel</button>
@@ -317,13 +331,27 @@
           </div>
           <div class="join-modal-panel join-modal-panel--form" id="join-exit-modal-form" hidden>
             <p class="join-modal-text">We’ll use this to call you back.</p>
-            <div class="join-modal-fields">
-              <label class="join-modal-label" for="join-exit-modal-name">Full name</label>
-              <input class="join-plain-input join-modal-input" id="join-exit-modal-name" type="text" autocomplete="name" />
-              <label class="join-modal-label" for="join-exit-modal-phone">Phone number</label>
-              <input class="join-plain-input join-modal-input" id="join-exit-modal-phone" type="tel" autocomplete="tel" />
+            <div class="join-modal-fields input-field">
+              <div class="input-field">
+                <label class="join-modal-label input-field__label" for="join-exit-modal-name">Full name</label>
+                <input
+                  class="join-plain-input join-modal-input input-field__control"
+                  id="join-exit-modal-name"
+                  type="text"
+                  autocomplete="name"
+                />
+              </div>
+              <div class="input-field">
+                <label class="join-modal-label input-field__label" for="join-exit-modal-phone">Phone number</label>
+                <input
+                  class="join-plain-input join-modal-input input-field__control"
+                  id="join-exit-modal-phone"
+                  type="tel"
+                  autocomplete="tel"
+                />
+              </div>
             </div>
-            <p class="join-modal-error" id="join-exit-modal-error" hidden></p>
+            <p class="join-modal-error input-field__error" id="join-exit-modal-error" hidden></p>
             <div class="join-modal-actions join-modal-actions--split">
               <button type="button" class="btn btn--primary" id="join-exit-modal-submit">Submit</button>
               <button type="button" class="btn btn--secondary" id="join-exit-modal-back">Back</button>

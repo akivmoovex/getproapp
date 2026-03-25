@@ -213,23 +213,25 @@
                 <form id="lead_form" class="form">
                   <input type="hidden" name="company_id" value="<%= company.id %>" />
 
-                  <div>
-                    <label for="lead_name">Full name</label>
-                    <input id="lead_name" name="name" required autocomplete="name" placeholder="e.g. Chanda Phiri" />
+                  <div class="input-field">
+                    <label for="lead_name" class="input-field__label">Full name</label>
+                    <input id="lead_name" name="name" required autocomplete="name" placeholder="e.g. Chanda Phiri" class="input-field__control" />
                   </div>
-                  <div>
-                    <label for="lead_phone">Phone number</label>
-                    <input id="lead_phone" name="phone" required autocomplete="tel" placeholder="e.g. 0977 123 456" />
+                  <div class="input-field">
+                    <label for="lead_phone" class="input-field__label">Phone number</label>
+                    <input id="lead_phone" name="phone" required autocomplete="tel" placeholder="e.g. 0977 123 456" class="input-field__control" />
                   </div>
-                  <div>
-                    <label for="lead_email">Email address (optional)</label>
-                    <input id="lead_email" name="email" type="text" inputmode="email" autocomplete="email" placeholder="e.g. chanda@example.com" />
+                  <div class="input-field">
+                    <label for="lead_email" class="input-field__label">Email address (optional)</label>
+                    <input id="lead_email" name="email" type="text" inputmode="email" autocomplete="email" placeholder="e.g. chanda@example.com" class="input-field__control" />
                   </div>
-                  <div>
-                    <label for="lead_message">How can we help?</label>
-                    <textarea id="lead_message" name="message" required placeholder="Tell us what service you need and when you need it"></textarea>
+                  <div class="input-field">
+                    <label for="lead_message" class="input-field__label">How can we help?</label>
+                    <textarea id="lead_message" name="message" required placeholder="Tell us what service you need and when you need it" class="input-field__control"></textarea>
                   </div>
-                  <button class="btn btn--primary" type="submit">Send request</button>
+                  <div class="card__actions">
+                    <button class="btn btn--primary" type="submit">Send request</button>
+                  </div>
 
                   <div id="lead_status" class="muted pro-company-profile__lead-status"></div>
                 </form>
@@ -244,23 +246,23 @@
             <% } %>
             <ul class="pro-company-profile__contact-list">
               <% if (_showBizPhoneRow) { %>
-                <li><span class="muted">Business phone</span><br /><a href="tel:<%= _bizPhone.replace(/[^\d+]/g, '') %>"><%= _bizPhone %></a></li>
+                <li><span class="muted">Business phone</span><br /><a class="btn btn--text" href="tel:<%= _bizPhone.replace(/[^\d+]/g, '') %>"><%= _bizPhone %></a></li>
               <% } %>
               <% if (_gpWa) { %>
                 <li>
                   <span class="muted">WhatsApp</span><br />
-                  <a href="<%= _gpWa %>" rel="noopener noreferrer" target="_blank"><%= _gpWaLabel || 'Open WhatsApp chat' %></a>
+                  <a class="btn btn--text" href="<%= _gpWa %>" rel="noopener noreferrer" target="_blank"><%= _gpWaLabel || 'Open WhatsApp chat' %></a>
                 </li>
               <% } %>
               <% if (company.email) { %>
                 <% var _mail = String(company.email || '').trim(); %>
-                <li><span class="muted">Email</span><br /><a href="mailto:<%= _mail %>"><%= _mail %></a></li>
+                <li><span class="muted">Email</span><br /><a class="btn btn--text" href="mailto:<%= _mail %>"><%= _mail %></a></li>
               <% } %>
               <% if (company.location) { %>
                 <li><span class="muted">Location</span><br /><%= company.location %></li>
               <% } %>
               <% if (_gpPhone && _gpTel) { %>
-                <li><span class="muted">Directory help</span><br /><a href="<%= _gpTel %>"><%= _gpPhone %></a></li>
+                <li><span class="muted">Directory help</span><br /><a class="btn btn--text" href="<%= _gpTel %>"><%= _gpPhone %></a></li>
               <% } %>
             </ul>
 
@@ -293,11 +295,15 @@
                   <a class="btn btn--primary pro-company-profile__support-pill" href="<%= _supTel %>" aria-label="Call region call center">Call</a>
                 <% } %>
                 <% if (_gpEmail) { %>
-                  <a class="btn pro-company-profile__support-pill" href="mailto:<%= _gpEmail %>" aria-label="Email region call center">Email</a>
+                  <a
+                    class="btn btn--secondary pro-company-profile__support-pill"
+                    href="mailto:<%= _gpEmail %>"
+                    aria-label="Email region call center"
+                  >Email</a>
                 <% } %>
                 <% if (_gpWa) { %>
                   <a
-                    class="btn pro-company-profile__support-pill"
+                    class="btn btn--secondary pro-company-profile__support-pill"
                     href="<%= _gpWa %>"
                     rel="noopener noreferrer"
                     target="_blank"

@@ -43,6 +43,12 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
 ### This rollout (safe, low-risk)
 - Migrated directory card “View profile” CTA badge to shared semantic button classes (`.btn .btn--primary`) without rewriting the directory card layout.
 - Migrated homepage help / CTA card buttons to semantic button variants (`.btn--primary`, `.btn--secondary`).
+- Migrated JOIN / CALLBACK form *plain fields* to shared `input-field` label/control/error semantics:
+  - `views/join.ejs`: standardized the remaining modal inputs (disabled-city + exit modal) while keeping existing IDs, JS dismiss hooks, and `join-modal-error` behavior.
+  - `views/partials/directory_empty_state.ejs`: standardized the directory empty-state callback inputs/buttons (`directory-empty-callback-*`) using the same `input-field` + semantic button conventions.
+  - `views/company.ejs`: standardized the “Request contact” lead form inputs (name/phone/email/message) using `input-field` + `input-field__label` + `input-field__control`.
+- Company mini-site contact block: standardized the lead form submit action into `card__actions`, migrated “GetPro support” Email/WhatsApp pills to `btn btn--secondary`, and applied compact semantic `btn btn--text` styling to interactive contact info links while keeping existing SSR bindings and `lead_form` behavior.
+- Standardized JOIN / CALLBACK form *actions* to shared button variants where applicable (primary/secondary are already aligned to `.btn--primary` / `.btn--secondary`).
 
 ## Recommended rollout order
 1. Migrate “standalone CTAs” first (homepage search submit, company mini-site contact buttons, join/callback primary & secondary actions).
