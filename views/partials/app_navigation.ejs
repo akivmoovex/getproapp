@@ -1,0 +1,31 @@
+<aside class="app-nav-rail" aria-label="Main navigation rail">
+  <%- include('navigation_menu', { tenantUrlPrefix, showAdmin: true }) %>
+</aside>
+
+<div class="app-nav-backdrop" id="wf-app-nav-backdrop" hidden></div>
+
+<aside
+  class="app-nav-drawer"
+  id="wf-app-nav-drawer"
+  aria-label="Navigation drawer"
+  aria-hidden="true"
+>
+  <div class="app-nav-drawer-top">
+    <button
+      type="button"
+      class="wf-home-sidebar-close app-nav-drawer-close"
+      id="wf-app-nav-close"
+      aria-label="Close menu"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true">
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="app-nav-drawer-body">
+    <%- include('navigation_menu', { tenantUrlPrefix, showAdmin: false }) %>
+  </div>
+</aside>
+

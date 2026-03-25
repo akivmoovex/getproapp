@@ -10,9 +10,12 @@
     <% } %>
   </head>
   <body class="page-support-content <%= tenant.themeClass %>" data-screen-role="support">
-    <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
+    <div class="app-layout">
+      <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
+      <%- include('partials/app_navigation', { tenantUrlPrefix }) %>
 
-    <main class="container content-faq-page" style="padding: 1.5rem 0 3rem; max-width: 720px">
+      <div class="app-layout__main">
+        <main class="container content-faq-page" style="padding: 1.5rem 0 3rem; max-width: 720px">
       <% if (typeof previewBanner !== 'undefined' && previewBanner) { %>
         <p class="card" style="padding: 0.75rem 1rem; margin-bottom: 1rem; background: var(--color-surface-container-high, #eee)">
           <strong>Draft preview</strong> — this page is not published to the public yet.
@@ -34,9 +37,11 @@
       <p style="margin-top: 2rem">
         <a href="<%= tenantUrlPrefix %>/directory">Browse professionals →</a>
       </p>
-    </main>
+        </main>
 
-    <%- include('partials/site_footer', { tenantUrlPrefix }) %>
+        <%- include('partials/site_footer', { tenantUrlPrefix }) %>
+      </div>
+    </div>
     <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
   </body>
 </html>

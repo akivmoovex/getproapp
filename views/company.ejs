@@ -16,9 +16,12 @@
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="page-company-profile <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>" data-screen-role="profile">
-    <%- include('partials/site_header', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '', tenant: typeof tenant !== 'undefined' ? tenant : null, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
+    <div class="app-layout">
+      <%- include('partials/site_header', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '', tenant: typeof tenant !== 'undefined' ? tenant : null, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
+      <%- include('partials/app_navigation', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>
 
-    <div class="pro-company-profile__shell">
+      <div class="app-layout__main">
+        <div class="pro-company-profile__shell">
     <main class="pro-company-profile" dir="ltr" lang="en">
       <div class="container pro-company-profile__inner">
         <% var _gpPhone = typeof getproPhone !== 'undefined' ? String(getproPhone || '').trim() : ''; %>
@@ -321,6 +324,8 @@
     </div>
 
     <%- include('partials/site_footer', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>
+      </div>
+    </div>
     <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
     <script src="/company-profile.js?v=<%= stylesVersion %>" defer></script>
   </body>

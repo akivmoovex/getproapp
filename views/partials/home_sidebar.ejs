@@ -9,15 +9,5 @@
     </button>
   </div>
 
-  <nav class="wf-home-sidebar-nav wf-home-sidebar-nav--primary" aria-label="Primary">
-    <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= tp %>/directory">Search directory</a>
-    <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= tp %>/directory#directory-toolbar">Categories</a>
-    <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= tp %>/join">List your business</a>
-  </nav>
-
-  <nav class="wf-home-sidebar-nav wf-home-sidebar-nav--secondary" aria-label="Quick links">
-    <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= tp %>/answers">Help &amp; answers</a>
-    <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= tp %>/articles">Articles &amp; tips</a>
-    <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="#footer-terms">Terms</a>
-  </nav>
+  <%- include('navigation_menu', { tenantUrlPrefix: tp, showAdmin: false }) %>
 </aside>

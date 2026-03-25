@@ -180,6 +180,52 @@ function initRefineSearchFab() {
   });
 }
 
+function initAppNavDrawer() {
+  const toggle = document.getElementById("wf-app-nav-toggle");
+  const drawer = document.getElementById("wf-app-nav-drawer");
+  const backdrop = document.getElementById("wf-app-nav-backdrop");
+  const closeBtn = document.getElementById("wf-app-nav-close");
+  if (!toggle || !drawer || !backdrop || !closeBtn) return;
+
+  const layout = toggle.closest(".app-layout") || document.body;
+
+  const open = () => {
+    layout.classList.add("app-nav-drawer-open");
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.setAttribute("aria-label", "Close navigation");
+    backdrop.removeAttribute("hidden");
+    document.body.style.overflow = "hidden";
+    void closeBtn.offsetWidth;
+    drawer.setAttribute("aria-hidden", "false");
+    closeBtn.focus();
+  };
+
+  const close = () => {
+    layout.classList.remove("app-nav-drawer-open");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Open navigation");
+    backdrop.setAttribute("hidden", "");
+    document.body.style.overflow = "";
+    drawer.setAttribute("aria-hidden", "true");
+    toggle.focus();
+  };
+
+  toggle.addEventListener("click", () => {
+    if (layout.classList.contains("app-nav-drawer-open")) close();
+    else open();
+  });
+  backdrop.addEventListener("click", close);
+  closeBtn.addEventListener("click", close);
+
+  drawer.querySelectorAll("a").forEach((a) => {
+    a.addEventListener("click", () => close());
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && layout.classList.contains("app-nav-drawer-open")) close();
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("lead_form");
   if (form) form.addEventListener("submit", submitLeadForm);
@@ -188,4 +234,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initGlobalTenantSearchOpensRegion();
   initDirectoryAvatarHue();
   initRefineSearchFab();
+  initAppNavDrawer();
 });

@@ -1,23 +1,54 @@
 <% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var tpHome = tp ? tp + '/' : '/'; %>
 <% var ten = typeof tenant !== 'undefined' ? tenant : null; %>
-<div class="wf-header-wrap wf-header-wrap--minimal">
-  <div class="container">
-    <div class="nav wf-nav wf-nav--minimal wf-nav--public">
-      <div class="brand">
-        <div class="brand-primary">
-          <%- include('brand_lockup_getpro', { tenant: ten, brandLockupVariant: 'nav', brandLockupHref: tpHome }) %>
-          <span class="brand-tagline">Trusted professionals · verified directory</span>
-        </div>
-      </div>
-      <nav class="wf-nav-public" aria-label="Main navigation">
-        <a class="wf-nav-public__link" href="<%= tp %>/directory">Search</a>
-        <a class="wf-nav-public__link" href="<%= tp %>/directory#directory-toolbar">Categories</a>
-        <a class="wf-nav-public__link wf-public-desktop-only" href="<%= tp %>/getpro-admin">GetPro Admin</a>
-      </nav>
-      <div class="nav-links wf-nav-actions wf-nav-actions--minimal">
-        <a class="wf-nav-public__cta" href="<%= tp %>/join">List your business</a>
-      </div>
+<header class="app-top-app-bar" role="banner">
+  <div class="container app-top-app-bar__inner">
+    <div class="app-top-app-bar__brand">
+      <%- include('brand_lockup_getpro', { tenant: ten, brandLockupVariant: 'nav', brandLockupHref: tpHome }) %>
+      <span class="app-top-app-bar__tagline">Trusted professionals · verified directory</span>
     </div>
+
+    <button
+      type="button"
+      class="app-menu-toggle"
+      id="wf-app-nav-toggle"
+      aria-label="Open navigation"
+      aria-controls="wf-app-nav-drawer"
+      aria-expanded="false"
+    >
+      <svg
+        class="app-menu-icon app-menu-icon--hamburger"
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.25"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M4 6h16" />
+        <path d="M4 12h16" />
+        <path d="M4 18h16" />
+      </svg>
+      <svg
+        class="app-menu-icon app-menu-icon--close"
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.25"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
+      </svg>
+    </button>
   </div>
-</div>
+</header>

@@ -4325,19 +4325,19 @@ textarea {
 .wf-home-sidebar {
   position: fixed;
   top: 0;
-  right: 0;
-  left: auto;
+  right: auto;
+  left: 0;
   bottom: 0;
   width: min(var(--layout-dim-300), 92vw);
   z-index: 301;
   background: var(--surface);
-  border-left: var(--border-width-hairline) solid var(--border-strong);
-  border-right: none;
+  border-left: none;
+  border-right: var(--border-width-hairline) solid var(--border-strong);
   padding: var(--space-1-5) var(--space-2) var(--space-3-5);
   display: flex;
   flex-direction: column;
   gap: var(--space-0-75);
-  transform: translateX(102%);
+  transform: translateX(-102%);
   transition: transform 0.28s ease;
   box-shadow: var(--elevation-drawer-glow);
   overflow-y: auto;
@@ -7613,14 +7613,164 @@ body.join-modal-open {
   text-decoration: underline;
 }
 
-/* Public navigation items: desktop-only */
-.wf-public-desktop-only {
-  display: none !important;
+/* ——— Material 3 navigation layout (desktop rail + mobile drawer) ——— */
+:root {
+  --app-nav-rail-width: 240px;
+  --app-top-app-bar-height: 56px;
 }
 
-@media (min-width: 901px) {
-  .wf-public-desktop-only {
-    display: inline-flex !important;
+.app-top-app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--surface);
+  border-bottom: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 78%, transparent);
+  min-height: var(--app-top-app-bar-height);
+  display: flex;
+  align-items: center;
+}
+
+.app-top-app-bar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.app-top-app-bar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.app-top-app-bar__tagline {
+  font-size: var(--space-1-5);
+  font-weight: 600;
+  color: var(--muted);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 52vw;
+}
+
+.app-menu-toggle {
+  border: var(--border-width-hairline) solid var(--border-strong);
+  background: var(--surface);
+  color: var(--wf-primary-dark);
+  box-shadow: var(--card-shadow-sm);
+  width: var(--space-touch);
+  height: var(--space-touch);
+  padding: 0;
+  border-radius: var(--space-1-25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.app-menu-icon {
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+}
+
+.app-menu-icon--close {
+  display: none;
+}
+
+.app-nav-drawer-open .app-menu-icon--hamburger {
+  display: none;
+}
+
+.app-nav-drawer-open .app-menu-icon--close {
+  display: block;
+}
+
+/* Desktop rail */
+.app-nav-rail {
+  display: none;
+}
+
+.app-nav-drawer-backdrop,
+.app-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  background: var(--color-overlay-purple-45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+
+.app-nav-drawer {
+  position: fixed;
+  top: var(--app-top-app-bar-height);
+  left: 0;
+  bottom: 0;
+  width: min(var(--app-nav-rail-width), 92vw);
+  z-index: 60;
+  background: var(--surface);
+  border-right: var(--border-width-hairline) solid var(--border-strong);
+  padding: var(--space-1-5) var(--space-2) var(--space-3-5);
+  overflow-y: auto;
+  transform: translateX(-102%);
+  transition: transform 0.28s ease;
+}
+
+.app-nav-drawer-top {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin: var(--motion-nudge-4) 0 var(--space-half);
+}
+
+.app-nav-drawer-close {
+  /* reuse existing close button dimensions */
+}
+
+.app-nav-drawer-body {
+  padding-top: var(--space-0-75);
+}
+
+.app-nav-drawer-open .app-nav-drawer {
+  transform: translateX(0);
+}
+
+.app-nav-drawer-open .app-nav-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* App layout shift on desktop for rail */
+@media (min-width: 900px) {
+  .app-nav-drawer,
+  .app-nav-backdrop {
+    display: none !important;
+  }
+
+  .app-menu-toggle {
+    display: none;
+  }
+
+  .app-nav-rail {
+    display: block;
+    position: fixed;
+    top: var(--app-top-app-bar-height);
+    left: 0;
+    bottom: 0;
+    width: var(--app-nav-rail-width);
+    padding: var(--space-1-5) var(--space-2) var(--space-3-5);
+    overflow-y: auto;
+    z-index: 30;
+    background: var(--surface);
+    border-right: var(--border-width-hairline) solid var(--border-strong);
+    box-shadow: var(--elevation-drawer-glow);
+  }
+
+  .app-layout {
+    padding-left: var(--app-nav-rail-width);
   }
 }
 
