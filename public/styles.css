@@ -376,7 +376,8 @@
   margin-left: auto;
 }
 
-.admin-form-shell.is-read-mode .form label {
+.admin-form-shell.is-read-mode .form label,
+.admin-form-shell.is-read-mode .form .input-field__label {
   opacity: 0.7;
 }
 
@@ -515,9 +516,21 @@ a:hover {
 }
 
 /* ——— Admin gate (GetPro admin login / getpro-admin) ——— */
-.admin-gate-card .form label {
+.admin-gate-card .form label,
+.admin-gate-card .input-field__label {
   font-weight: 600;
   font-size: var(--space-1-75);
+}
+
+/* Admin compact forms: shared form-step + input-field rhythm (gate, user create, CRM create, lead status) */
+.form-step--admin .form-step__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-step--admin .form-step__actions {
+  margin-top: var(--space-2);
 }
 
 .admin-gate-actions {
@@ -2444,7 +2457,7 @@ a.admin-dashboard-panel--link:focus-visible {
   box-shadow: var(--md-sys-elevation-level1);
 }
 
-.crm-task-section--form .crm-task-form > div:last-of-type {
+.crm-task-section--form .crm-task-form > .crm-task-form__actions {
   margin-bottom: 0;
 }
 
@@ -2531,12 +2544,13 @@ a.admin-dashboard-panel--link:focus-visible {
   word-break: break-all;
 }
 
-.crm-task-form .form label {
+.crm-task-form .form label,
+.crm-task-form .input-field__label {
   font-weight: 700;
   font-size: var(--space-1-5);
 }
 
-.crm-task-form .form > div {
+.crm-task-form .form > .input-field {
   margin-bottom: var(--md-sys-spacing-3);
 }
 

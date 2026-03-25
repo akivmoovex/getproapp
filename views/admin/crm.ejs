@@ -21,30 +21,34 @@
             <h2 class="admin-crm-section__title">New task</h2>
             <p class="muted admin-crm-section__lead">Assignee defaults to you; choose <strong>Unassigned</strong> to leave the task in the New column.</p>
             <form method="post" action="/admin/crm/tasks" class="form">
-              <div>
-                <label for="crm_title">Title</label>
-                <input id="crm_title" name="title" required maxlength="200" placeholder="Short summary" />
-              </div>
-              <div>
-                <label for="crm_desc">Description</label>
-                <textarea id="crm_desc" name="description" rows="4" placeholder="Details…"></textarea>
-              </div>
-              <div>
-                <label for="crm_owner">Assignee</label>
-                <select id="crm_owner" name="owner_id">
-                  <option value="">Unassigned (stays in New)</option>
-                  <% (crmTenantUsers || []).forEach(function(u) { %>
-                    <option value="<%= u.id %>" <%= Number(u.id) === Number(currentUserId) ? 'selected' : '' %>><%= u.username %></option>
-                  <% }); %>
-                </select>
-              </div>
-              <div>
-                <label for="crm_attachment">Attachment link (optional)</label>
-                <input id="crm_attachment" name="attachment_url" type="url" maxlength="2000" placeholder="https://…" />
-                <div class="admin-field-hint">Link to a file or document (https only).</div>
-              </div>
-              <div class="admin-gate-actions">
-                <button class="btn btn--primary" type="submit">Create task</button>
+              <div class="form-step form-step--admin">
+                <div class="form-step__body">
+                  <div class="input-field">
+                    <label for="crm_title" class="input-field__label">Title</label>
+                    <input id="crm_title" name="title" class="input-field__control" required maxlength="200" placeholder="Short summary" />
+                  </div>
+                  <div class="input-field">
+                    <label for="crm_desc" class="input-field__label">Description</label>
+                    <textarea id="crm_desc" name="description" class="input-field__control" rows="4" placeholder="Details…"></textarea>
+                  </div>
+                  <div class="input-field">
+                    <label for="crm_owner" class="input-field__label">Assignee</label>
+                    <select id="crm_owner" name="owner_id" class="input-field__control">
+                      <option value="">Unassigned (stays in New)</option>
+                      <% (crmTenantUsers || []).forEach(function(u) { %>
+                        <option value="<%= u.id %>" <%= Number(u.id) === Number(currentUserId) ? 'selected' : '' %>><%= u.username %></option>
+                      <% }); %>
+                    </select>
+                  </div>
+                  <div class="input-field">
+                    <label for="crm_attachment" class="input-field__label">Attachment link (optional)</label>
+                    <input id="crm_attachment" name="attachment_url" class="input-field__control" type="url" maxlength="2000" placeholder="https://…" />
+                    <p class="input-field__help">Link to a file or document (https only).</p>
+                  </div>
+                </div>
+                <div class="form-step__actions admin-gate-actions">
+                  <button class="btn btn--primary" type="submit">Create task</button>
+                </div>
               </div>
             </form>
           </div>

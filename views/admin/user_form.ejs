@@ -17,30 +17,34 @@
       <div class="card admin-form-card">
         <form method="post" action="/admin/users" class="form">
           <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
-          <div>
-            <label for="username">Username</label>
-            <input id="username" name="username" autocomplete="username" required />
-          </div>
-          <div>
-            <label for="password">Password</label>
-            <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" />
-            <div class="admin-field-hint">At least 8 characters.</div>
-          </div>
-          <div>
-            <label for="role">Role</label>
-            <select id="role" name="role">
-              <option value="tenant_manager">tenant_manager — create users, edit directory</option>
-              <option value="tenant_editor" selected>tenant_editor — edit directory data</option>
-              <option value="tenant_agent">tenant_agent — CRM tasks (claim &amp; update)</option>
-              <option value="tenant_viewer">tenant_viewer — reports only (dashboard + leads)</option>
-            </select>
-          </div>
-          <div class="muted admin-zm-phone-note">
-            New users belong to tenant <strong>#<%= tenantId %></strong>. Super admin accounts are not created here.
-          </div>
-          <div class="admin-gate-actions">
-            <button class="btn btn--primary" type="submit">Create user</button>
-            <a class="btn" href="/admin/users">Cancel</a>
+          <div class="form-step form-step--admin">
+            <div class="form-step__body">
+              <div class="input-field">
+                <label for="username" class="input-field__label">Username</label>
+                <input id="username" name="username" class="input-field__control" autocomplete="username" required />
+              </div>
+              <div class="input-field">
+                <label for="password" class="input-field__label">Password</label>
+                <input id="password" name="password" class="input-field__control" type="password" autocomplete="new-password" required minlength="8" />
+                <p class="input-field__help">At least 8 characters.</p>
+              </div>
+              <div class="input-field">
+                <label for="role" class="input-field__label">Role</label>
+                <select id="role" name="role" class="input-field__control">
+                  <option value="tenant_manager">tenant_manager — create users, edit directory</option>
+                  <option value="tenant_editor" selected>tenant_editor — edit directory data</option>
+                  <option value="tenant_agent">tenant_agent — CRM tasks (claim &amp; update)</option>
+                  <option value="tenant_viewer">tenant_viewer — reports only (dashboard + leads)</option>
+                </select>
+              </div>
+              <p class="input-field__help muted admin-zm-phone-note">
+                New users belong to tenant <strong>#<%= tenantId %></strong>. Super admin accounts are not created here.
+              </p>
+            </div>
+            <div class="form-step__actions admin-gate-actions">
+              <button class="btn btn--primary" type="submit">Create user</button>
+              <a class="btn btn--text" href="/admin/users">Cancel</a>
+            </div>
           </div>
         </form>
       </div>

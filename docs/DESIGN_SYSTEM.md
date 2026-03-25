@@ -83,7 +83,7 @@ Prefer **`--elevation-sm`** and **`--elevation-md`** for cards and surfaces. Avo
 
 ### Forms
 
-Use visible labels, shared input styles (`join-modal-*` on join flows; admin forms use `.admin-app` patterns). Focus must be visible (`--focus-ring-color`).
+Use visible labels and the shared field shell where practical: `.input-field`, `.input-field__label`, `.input-field__control`, `.input-field__help`, `.input-field__error`. Join/callback flows may also use `join-modal-*` classes alongside those primitives. Admin/internal compact flows may use `.form-step.form-step--admin` with `.form-step__body` / `.form-step__actions` for grouping (not a multi-step wizard). Focus must be visible (`--focus-ring-color`).
 
 ### Empty states
 

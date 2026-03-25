@@ -48,19 +48,20 @@
           <% if (_ov) { %>
             <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
           <% } %>
-          <div>
-            <label for="crm_edit_title">Title</label>
-            <input id="crm_edit_title" name="title" required maxlength="200" value="<%= task.title %>" />
+          <div class="input-field">
+            <label for="crm_edit_title" class="input-field__label">Title</label>
+            <input id="crm_edit_title" name="title" class="input-field__control" required maxlength="200" value="<%= task.title %>" />
           </div>
-          <div>
-            <label for="crm_edit_desc">Description</label>
-            <textarea id="crm_edit_desc" name="description" rows="3" placeholder="Details…"><%= task.description || '' %></textarea>
+          <div class="input-field">
+            <label for="crm_edit_desc" class="input-field__label">Description</label>
+            <textarea id="crm_edit_desc" name="description" class="input-field__control" rows="3" placeholder="Details…"><%= task.description || '' %></textarea>
           </div>
-          <div>
-            <label for="crm_edit_attachment">Attachment link</label>
+          <div class="input-field">
+            <label for="crm_edit_attachment" class="input-field__label">Attachment link</label>
             <input
               id="crm_edit_attachment"
               name="attachment_url"
+              class="input-field__control"
               type="url"
               maxlength="2000"
               placeholder="https://…"
@@ -96,8 +97,10 @@
           <% if (_ov) { %>
             <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
           <% } %>
-          <label for="crm_comment_body">Add a comment</label>
-          <textarea id="crm_comment_body" name="body" rows="2" required maxlength="4000" placeholder="Write a note…"></textarea>
+          <div class="input-field">
+            <label for="crm_comment_body" class="input-field__label">Add a comment</label>
+            <textarea id="crm_comment_body" name="body" class="input-field__control" rows="2" required maxlength="4000" placeholder="Write a note…"></textarea>
+          </div>
           <div class="crm-task-form__actions">
             <button class="btn btn--primary" type="submit">Post</button>
           </div>
@@ -146,9 +149,9 @@
           <% if (_ov) { %>
             <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
           <% } %>
-          <div>
-            <label for="crm_reassign">Assign to</label>
-            <select id="crm_reassign" name="owner_id">
+          <div class="input-field">
+            <label for="crm_reassign" class="input-field__label">Assign to</label>
+            <select id="crm_reassign" name="owner_id" class="input-field__control">
               <option value="">— Unassign —</option>
               <% (tenantUsersForReassign || []).forEach(function(u) { %>
                 <option value="<%= u.id %>" <%= task.owner_id && Number(task.owner_id) === Number(u.id) ? 'selected' : '' %>><%= u.username %></option>
@@ -169,12 +172,14 @@
           <% if (_ov) { %>
             <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
           <% } %>
-          <label for="crm_status" class="crm-task-aside__label">Workflow</label>
-          <select id="crm_status" name="status" required>
-            <% (CRM_TASK_STATUSES || []).forEach(function(st) { %>
-              <option value="<%= st %>" <%= currentStatus === st ? 'selected' : '' %>><%= typeof crmTaskStatusLabel === 'function' ? crmTaskStatusLabel(st) : st %></option>
-            <% }); %>
-          </select>
+          <div class="input-field">
+            <label for="crm_status" class="input-field__label crm-task-aside__label">Workflow</label>
+            <select id="crm_status" name="status" class="input-field__control" required>
+              <% (CRM_TASK_STATUSES || []).forEach(function(st) { %>
+                <option value="<%= st %>" <%= currentStatus === st ? 'selected' : '' %>><%= typeof crmTaskStatusLabel === 'function' ? crmTaskStatusLabel(st) : st %></option>
+              <% }); %>
+            </select>
+          </div>
           <div class="crm-task-form__actions">
             <button class="btn btn--primary btn-block" type="submit">Update status</button>
           </div>

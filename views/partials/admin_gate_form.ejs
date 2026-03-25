@@ -1,19 +1,23 @@
 <% var _cancel = typeof cancelHref !== 'undefined' ? cancelHref : '/'; %>
 <% var _action = typeof formAction !== 'undefined' ? formAction : '/admin/login'; %>
 <% if (typeof error !== 'undefined' && error) { %>
-  <div class="flash"><%= error %></div>
+  <div class="flash" role="alert"><%= error %></div>
 <% } %>
 <form method="post" action="<%= _action %>" class="form admin-gate-form">
-  <div>
-    <label for="admin_gate_username">Username</label>
-    <input id="admin_gate_username" name="username" autocomplete="username" required />
-  </div>
-  <div>
-    <label for="admin_gate_password">Password</label>
-    <input id="admin_gate_password" name="password" type="password" autocomplete="current-password" required />
-  </div>
-  <div class="admin-gate-actions">
-    <button class="btn btn--primary" type="submit">Login</button>
-    <a class="btn" href="<%= _cancel %>">Cancel</a>
+  <div class="form-step form-step--admin">
+    <div class="form-step__body">
+      <div class="input-field">
+        <label for="admin_gate_username" class="input-field__label">Username</label>
+        <input id="admin_gate_username" name="username" class="input-field__control" autocomplete="username" required />
+      </div>
+      <div class="input-field">
+        <label for="admin_gate_password" class="input-field__label">Password</label>
+        <input id="admin_gate_password" name="password" class="input-field__control" type="password" autocomplete="current-password" required />
+      </div>
+    </div>
+    <div class="form-step__actions admin-gate-actions">
+      <button class="btn btn--primary" type="submit">Login</button>
+      <a class="btn btn--text" href="<%= _cancel %>">Cancel</a>
+    </div>
   </div>
 </form>
