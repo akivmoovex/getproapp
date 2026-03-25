@@ -152,6 +152,8 @@ Prefer **`empty_state.ejs`** / `.state-block--empty` for **empty lists and no-re
 **Do:** use tokens, reuse blocks above, keep UI calm, refactor incrementally.  
 **Don’t:** hardcode colors/spacing in new rules, add heavy JS frameworks, or one-off duplicate components without reason.
 
+**Performance-aware UI work:** see **`docs/performance-aware-development-rules.md`** (when to treat a PR as perf-sensitive, PR checklist, links to **`docs/route-asset-inventory.md`** and **`docs/performance-budgets.md`**).
+
 ## Accessibility
 
 Readable line-heights, `prefers-reduced-motion` respected in `styles.css`, visible focus.

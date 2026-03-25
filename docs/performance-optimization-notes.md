@@ -2,7 +2,7 @@
 
 This document records a practical performance pass for the GetPro SSR app (Express + EJS), focused on Core Web Vitals–friendly, low-risk changes. It complements `docs/DESIGN_SYSTEM.md` (UI).
 
-**Docs:** **`docs/lighthouse-checklist.md`** — how to measure (Lighthouse workflow, run log). **`docs/performance-budgets.md`** — route-based budgets and PR guardrails. **`docs/route-asset-inventory.md`** — which templates/partials/CSS/JS apply per route. This file — what was found and fixed in the recorded pass(es).
+**Docs:** **`docs/performance-aware-development-rules.md`** — PR checklist for perf-sensitive UI changes. **`docs/lighthouse-checklist.md`** — how to measure (Lighthouse workflow, run log). **`docs/performance-budgets.md`** — route-based budgets. **`docs/route-asset-inventory.md`** — which templates/partials/CSS/JS apply per route. This file — what was found and fixed in the recorded pass(es).
 
 ## 1. Issues identified (highest impact)
 
@@ -75,5 +75,7 @@ Quick reminder: compare before/after on the **same environment**; in the **Perfo
 - `docs/lighthouse-checklist.md` — Lighthouse QA playbook and run template  
 - `docs/performance-budgets.md` — route performance budgets and PR review checklist  
 - `docs/route-asset-inventory.md` — route → templates / partials / CSS / JS map  
+- `docs/performance-aware-development-rules.md` — PR checklist for perf-sensitive changes  
+- `docs/android-ui-mapping.md` — web DS → Android M3/Compose mapping (first pass)  
 
 No frontend framework added; SSR and routes unchanged.

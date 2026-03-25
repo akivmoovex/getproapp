@@ -198,6 +198,7 @@ function initAppNavDrawer() {
   });
 }
 
+// PERF: Shared init — keep route guards cheap; only run when target DOM exists (see docs/route-asset-inventory.md §6).
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("lead_form");
   if (form) form.addEventListener("submit", submitLeadForm);

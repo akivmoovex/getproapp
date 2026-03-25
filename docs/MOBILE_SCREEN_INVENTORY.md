@@ -94,6 +94,8 @@ This document maps **tenant public routes** to a **single screen role** for mobi
 4. **Re-use tokens:** map CSS variables (`--wf-primary`, radii, elevation) to M3 `ColorScheme` + `Shapes`.
 5. **Callbacks:** same JSON endpoints (`/api/callback-interest`, `/api/leads`).
 
+**Structured mapping (web DS → Android M3 / Compose templates):** see **`docs/android-ui-mapping.md`**.
+
 ---
 
 *Generated for internal architecture; update when routes change.*

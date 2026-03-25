@@ -14,7 +14,7 @@
     <% if (typeof orgJsonLd !== 'undefined' && orgJsonLd) { %>
     <script type="application/ld+json"><%- orgJsonLd %></script>
     <% } %>
-    <%# LCP: hero .pro-home-hero-photo + preload below — see docs/route-asset-inventory.md %>
+    <%# PERF: Homepage hero is LCP-sensitive. Keep preload + picture in sync; avoid blocking ATF DOM/ sync JS here — see docs/performance-aware-development-rules.md %>
     <link
       rel="preload"
       as="image"

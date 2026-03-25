@@ -9,9 +9,10 @@
 | **`docs/lighthouse-checklist.md`** | **How to measure** — Lighthouse workflow, route checks, run log template. |
 | **`docs/performance-optimization-notes.md`** | **What was found / fixed** — historical pass, server tuning, file list. |
 | **`docs/route-asset-inventory.md`** | **Impact map** — templates, partials, CSS/JS per route; “if I change X, what’s affected?” |
+| **`docs/performance-aware-development-rules.md`** | **PR checklist** — when a change is perf-sensitive, red flags, pre-merge checks. |
 | **`docs/performance-budgets.md` (this file)** | **Guardrails for future changes** — what “good” looks like per route before you ship. |
 
-**When to use:** Planning a PR that touches `views/index.ejs`, `views/directory.ejs`, `views/company.ejs`, `public/styles.css`, `public/design-system.css`, `public/scripts.js`, or shared partials.
+**When to use:** Planning a PR that touches `views/index.ejs`, `views/directory.ejs`, `views/company.ejs`, `public/styles.css`, `public/design-system.css`, `public/scripts.js`, or shared partials. Start with **`docs/performance-aware-development-rules.md`** if unsure whether perf review applies.
 
 ---
 
@@ -183,6 +184,7 @@ Before merging UI that touches public surfaces:
 
 ## 8. Links
 
+- **PR rules & checklist:** [`docs/performance-aware-development-rules.md`](performance-aware-development-rules.md)  
 - **Measure:** [`docs/lighthouse-checklist.md`](lighthouse-checklist.md)  
 - **Impact map (templates / JS per route):** [`docs/route-asset-inventory.md`](route-asset-inventory.md)  
 - **History / fixes / server:** [`docs/performance-optimization-notes.md`](performance-optimization-notes.md)  

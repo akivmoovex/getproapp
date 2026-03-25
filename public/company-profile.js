@@ -1,4 +1,5 @@
 (function () {
+  /* PERF NOTE: Company profile only. Carousel uses timers + pointer/touch listeners; keep work under [data-company-carousel] roots. */
   var AUTO_MS = 5000;
 
   function prefersReducedMotion() {

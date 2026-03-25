@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  /* PERF: Loaded only when directory has zero results (views/directory.ejs). Do not add this script to result pages. */
+
   function tenantSlugFromDataset(form) {
     return String(form.dataset.tenantSlug || "").trim();
   }

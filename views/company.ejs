@@ -66,7 +66,7 @@
             <div class="pro-company-profile__title-row">
               <% var logoU = company.logo_url && String(company.logo_url).trim(); %>
               <% if (logoU) { %>
-                <%# LCP candidate when logo_url set — see docs/route-asset-inventory.md §4 %>
+                <%# PERF: Company logo is LCP candidate when present — do not lazy-load; see docs/performance-budgets.md §2.4 %>
                 <div class="pro-company-profile__logo-wrap">
                   <img class="pro-company-profile__logo" src="<%= logoU %>" alt="<%= company.name %> logo" width="120" height="120" fetchpriority="high" decoding="async" />
                 </div>

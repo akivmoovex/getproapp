@@ -6,6 +6,7 @@
 
 | Doc | Use |
 |-----|-----|
+| **`docs/performance-aware-development-rules.md`** | **PR checklist** — when perf review applies, red flags. |
 | **`docs/performance-budgets.md`** | Guardrails (what not to break). |
 | **`docs/lighthouse-checklist.md`** | How to measure after changes. |
 | **`docs/performance-optimization-notes.md`** | Past fixes and server notes. |
@@ -157,6 +158,7 @@ All wired from **one** `DOMContentLoaded` listener — **guards** prevent useles
 
 ## 8. Links
 
+- PR rules → [`performance-aware-development-rules.md`](performance-aware-development-rules.md)  
 - Budgets → [`performance-budgets.md`](performance-budgets.md)  
 - Lighthouse → [`lighthouse-checklist.md`](lighthouse-checklist.md)  
 - History → [`performance-optimization-notes.md`](performance-optimization-notes.md)
