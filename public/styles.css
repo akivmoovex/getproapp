@@ -4422,9 +4422,10 @@ textarea {
   z-index: 200;
 }
 
+/* end (not stretch): stretch made the button as tall as label+inputs in the grid row */
 .pro-home-search-wrap--hero .pro-search-form__toolbar-row .pro-home-search-submit {
   flex: 0 0 auto;
-  align-self: stretch;
+  align-self: end;
   white-space: nowrap;
 }
 
@@ -4759,6 +4760,16 @@ textarea {
     min-height: 40px;
     padding: 0 var(--space-2);
     font-size: var(--space-1-625);
+    line-height: 1.2;
+    box-sizing: border-box;
+  }
+
+  /* Match home: default .btn padding would inflate Search vs hero — keep compact row */
+  .pro-home-search-wrap--hero .pro-home-search-submit.btn,
+  .pro-search-form--directory .pro-home-search-submit.btn {
+    padding-block: 0;
+    padding-inline: var(--space-2);
+    min-height: 40px;
   }
 
   .pro-home-search-wrap--hero .pro-home-search-icon,
@@ -4944,7 +4955,7 @@ textarea {
 
 .pro-directory-toolbar .pro-search-form__toolbar-row .pro-home-search-submit {
   flex: 0 0 auto;
-  align-self: stretch;
+  align-self: end;
 }
 
 .pro-directory-toolbar--category {
