@@ -3815,6 +3815,26 @@ textarea {
   border: var(--border-width-hairline) solid var(--flash-error-border);
   background: var(--flash-error-bg);
   color: var(--flash-error-text);
+  font-size: var(--typo-body-medium-size);
+  line-height: var(--typo-body-medium-line);
+}
+
+/* Admin / app feedback: default `.flash` = error/danger; modifiers for other tones */
+.flash.flash--success {
+  border-color: var(--flash-success-border);
+  background: var(--flash-success-bg);
+  color: var(--flash-success-text);
+}
+
+.flash.flash--info {
+  border-color: var(--flash-info-border);
+  background: var(--flash-info-bg);
+  color: var(--flash-info-text);
+}
+
+/* Admin: separate flash from following title/content */
+.admin-main .container.admin-main__pad .flash {
+  margin-bottom: var(--space-2);
 }
 
 .table {

@@ -85,6 +85,15 @@ Prefer **`--elevation-sm`** and **`--elevation-md`** for cards and surfaces. Avo
 
 Use visible labels and the shared field shell where practical: `.input-field`, `.input-field__label`, `.input-field__control`, `.input-field__help`, `.input-field__error`. Join/callback flows may also use `join-modal-*` classes alongside those primitives. Admin/internal compact flows may use `.form-step.form-step--admin` with `.form-step__body` / `.form-step__actions` for grouping (not a multi-step wizard). Focus must be visible (`--focus-ring-color`).
 
+### Flash & inline feedback (admin / app)
+
+- **Default** `.flash` — validation / login / form errors (error-colored surface; use `role="alert"` for errors).
+- **`.flash.flash--success`** — post-save confirmation (calm green tint; `role="status"`, `aria-live="polite"`).
+- **`.flash.flash--info`** — non-blocking guidance (primary-tinted neutral surface; `role="status"`, `aria-live="polite"`).
+- **`.form-status-message`** — compact inline status under forms (e.g. request-contact); not a full-width banner.
+
+Tokens: `--flash-error-*`, `--flash-success-*`, `--flash-info-*` in `public/theme.css`.
+
 ### Empty states
 
 Headline → short explanation → primary CTA → optional secondary action. Tone: reassuring, not error-like unless it is an error.

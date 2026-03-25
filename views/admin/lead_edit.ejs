@@ -14,6 +14,10 @@
           <a class="btn" href="/admin/leads">← All leads</a>
         </div>
 
+        <% if (typeof saved !== 'undefined' && saved) { %>
+        <div class="flash flash--success" role="status" aria-live="polite">Lead updated.</div>
+        <% } %>
+
         <h1 class="section-title section-title--flush">Lead #<%= lead.id %></h1>
         <p class="muted u-mt-overlap-tight">
           <strong><%= lead.company_name %></strong>
@@ -57,7 +61,7 @@
         <div class="card admin-form-card">
           <h2 class="admin-lead-detail__h">Status &amp; notes</h2>
           <p class="muted muted--lead-caption">
-            Set the workflow status and add internal notes. Each note is stored with the time it was saved.
+            Set the workflow status and add internal notes. Notes are saved with a timestamp.
           </p>
 
           <form method="post" action="/admin/leads/<%= lead.id %>" class="form">

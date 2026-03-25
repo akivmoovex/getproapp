@@ -2100,12 +2100,14 @@ module.exports = function adminRoutes({ db }) {
         `SELECT id, body, created_at FROM lead_comments WHERE lead_id = ? ORDER BY datetime(created_at) ASC, id ASC`
       )
       .all(id);
+    const saved = req.query.saved === "1" || req.query.saved === "true";
     return res.render("admin/lead_edit", {
       lead,
       comments,
       leadStatuses: LEAD_STATUSES,
       currentStatus: normalizeLeadStatus(lead.status),
       activeNav: "leads",
+      saved,
     });
   });
 
@@ -2133,7 +2135,7 @@ module.exports = function adminRoutes({ db }) {
     } catch (e) {
       return res.status(400).send(e.message || "Could not save");
     }
-    return res.redirect(redirectWithEmbed(req, `/admin/leads/${id}/edit`));
+    return res.redirect(redirectWithEmbed(req, `/admin/leads/${id}/edit?saved=1`));
   });
 
   router.get("/partner-signups/:id", requireDirectoryEditor, (req, res) => {

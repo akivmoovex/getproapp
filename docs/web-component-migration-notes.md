@@ -99,6 +99,15 @@ Examples you should treat as “migration candidates,” not immediate rewrites:
 - **CSS (`public/styles.css`):** `.form-step--admin .form-step__body` flex column + gap; scoped `.form-step__actions` top margin for admin; `.admin-gate-card .input-field__label`; CRM rules now target `.input-field` / `.input-field__label`; `.admin-form-shell` read-mode includes `.input-field__label`; CRM last-child selector targets `.crm-task-form__actions` instead of generic `div:last-of-type`.
 - **Deferred:** `company_form`, `super_tenant_form`, `category_form`, `content_form`, embed-heavy edit shells, and checkbox-heavy forms — higher risk due to `data-admin-form-edit`, table layouts, and `form-check` patterns; migrate incrementally.
 
+### This rollout (admin / internal flash, status, feedback)
+- **`public/theme.css`:** Added `--flash-success-*` and `--flash-info-*` tokens (alongside existing `--flash-error-*`).
+- **`public/styles.css`:** Base `.flash` typography + `.flash.flash--success` / `.flash.flash--info` surfaces; admin container spacing for `.admin-main .container.admin-main__pad .flash`.
+- **`views/admin/tenant_settings_detail.ejs`:** Success banner uses `flash flash--success`, `aria-live="polite"`; copy **“Changes saved.”**
+- **`views/admin/super.ejs`:** Scope reminder uses `flash flash--info`, `role="status"` (was `alert`), `aria-live="polite"` — informational, not an error.
+- **`views/admin/lead_edit.ejs` + `src/routes/admin.js`:** After POST to update a lead, redirect includes `?saved=1`; GET passes `saved` and renders **“Lead updated.”** with `flash flash--success`. Section caption copy tightened (“Notes are saved with a timestamp.”).
+- **Error flashes:** Unchanged class list (`flash` + `role="alert"`) on login gate, user create/edit, super user forms — still use default error styling.
+- **Deferred:** Query-param success flash on CRM create/edit flows, workspace publish toasts, and any JS-driven status lines that need contract review with `admin-company-workspace.js` / `admin-crm-kanban.js`.
+
 ### This rollout (public form helper / error / status microcopy)
 - **Shared pattern:** `public/design-system.css` adds `.form-status-message` for post-submit / inline status copy rhythm where a compact line is appropriate (optional on new markup; existing blocks keep their page classes when typography must stay unchanged).
 - **Join wizard (`views/join.ejs` + `public/styles.css`):** removed redundant `join-step-hint` class; step intros use `.form-step__subtitle` with a scoped `.join-wizard .form-step__subtitle` rule for font size and spacing. Small copy edits on step 2 subtitle, disabled-city intro, exit modal line, and step-3 thanks message. Disabled-city field label aligned to “Full name”. Modal inline errors (`#join-disabled-city-error`, `#join-exit-modal-error`) gained `role="alert"`.

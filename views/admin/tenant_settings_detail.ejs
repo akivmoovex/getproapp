@@ -21,7 +21,7 @@
         <% } %>
 
         <% if (typeof saved !== 'undefined' && saved) { %>
-        <div class="flash" role="status">Settings saved.</div>
+        <div class="flash flash--success" role="status" aria-live="polite">Changes saved.</div>
         <% } %>
 
         <h1 class="section-title section-title--flush"><%= tenant ? tenant.name : 'Region' %></h1>
