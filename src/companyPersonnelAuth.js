@@ -3,6 +3,45 @@ const clientIntake = require("./clientProjectIntake");
 
 const SESSION_KEY = "companyPersonnel";
 
+/** Per-tenant IP throttling for /company/login (in-memory; resets on process restart). */
+const COMPANY_LOGIN_FAIL_WINDOW_MS = 15 * 60 * 1000;
+const COMPANY_LOGIN_MAX_FAILS = 12;
+const companyLoginFailState = new Map();
+
+function companyPortalThrottleKey(tenantId, req) {
+  const ip = String(req.ip || "").trim() || (req.socket && req.socket.remoteAddress) || "unknown";
+  return `${Number(tenantId)}:${ip}`;
+}
+
+function isCompanyPortalLoginBlocked(tenantId, req) {
+  const k = companyPortalThrottleKey(tenantId, req);
+  const rec = companyLoginFailState.get(k);
+  if (!rec) return false;
+  if (Date.now() > rec.blockedUntil) {
+    companyLoginFailState.delete(k);
+    return false;
+  }
+  return rec.failCount >= COMPANY_LOGIN_MAX_FAILS;
+}
+
+function recordCompanyPortalLoginFailure(tenantId, req) {
+  const k = companyPortalThrottleKey(tenantId, req);
+  const now = Date.now();
+  let rec = companyLoginFailState.get(k);
+  if (!rec || now > rec.blockedUntil) {
+    rec = { failCount: 0, blockedUntil: now + COMPANY_LOGIN_FAIL_WINDOW_MS };
+  }
+  rec.failCount += 1;
+  if (rec.failCount >= COMPANY_LOGIN_MAX_FAILS) {
+    rec.blockedUntil = now + COMPANY_LOGIN_FAIL_WINDOW_MS;
+  }
+  companyLoginFailState.set(k, rec);
+}
+
+function clearCompanyPortalLoginFailures(tenantId, req) {
+  companyLoginFailState.delete(companyPortalThrottleKey(tenantId, req));
+}
+
 /**
  * @returns {{ userId: number, tenantId: number, companyId: number, fullName: string }|null}
  */
@@ -107,4 +146,7 @@ module.exports = {
   clearCompanyPersonnelSession,
   requireCompanyPersonnelAuth,
   authenticateCompanyPersonnel,
+  isCompanyPortalLoginBlocked,
+  recordCompanyPortalLoginFailure,
+  clearCompanyPortalLoginFailures,
 };

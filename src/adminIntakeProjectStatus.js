@@ -1,5 +1,6 @@
 /**
- * Tenant-scoped intake project status list: server-side sort/filter (whitelisted only).
+ * Tenant-scoped intake project status list: server-side sort/filter (whitelisted only)
+ * and conservative pagination.
  */
 
 const SORT_MAP = {
@@ -13,6 +14,9 @@ const SORT_MAP = {
 
 const ASSIGNMENT_STATUS_FILTER = new Set(["pending", "interested", "declined", "callback_requested"]);
 
+const PAGE_SIZE = 50;
+const MAX_PAGE = 500;
+
 function escapeLike(s) {
   return String(s || "")
     .replace(/\\/g, "\\\\")
@@ -21,11 +25,10 @@ function escapeLike(s) {
 }
 
 /**
- * @param {import("better-sqlite3").Database} db
  * @param {number} tenantId
  * @param {Record<string, string | undefined>} q raw req.query
  */
-function buildIntakeProjectStatusList(db, tenantId, q) {
+function buildIntakeProjectStatusQueryParts(tenantId, q) {
   const tid = Number(tenantId);
   const sortKey = SORT_MAP[q.sort] ? q.sort : "created_at";
   const dir = String(q.dir || "desc").toLowerCase() === "asc" ? "ASC" : "DESC";
@@ -81,7 +84,48 @@ function buildIntakeProjectStatusList(db, tenantId, q) {
     params.push(dt);
   }
 
-  const sql = `
+  const whereSql = where.join(" AND ");
+
+  const filters = {
+    q: qtext,
+    project_status: projectStatus,
+    assignment_status: asg && ASSIGNMENT_STATUS_FILTER.has(asg) ? asg : "",
+    city,
+    company_id: companyId > 0 ? String(companyId) : "",
+    date_from: df,
+    date_to: dt,
+  };
+
+  return { tid, whereSql, params, filters, sortKey, dir, orderCol };
+}
+
+/**
+ * @param {import("better-sqlite3").Database} db
+ * @param {number} tenantId
+ * @param {Record<string, string | undefined>} q raw req.query
+ */
+function buildIntakeProjectStatusList(db, tenantId, q) {
+  const { tid, whereSql, params, filters, sortKey, dir, orderCol } = buildIntakeProjectStatusQueryParts(
+    tenantId,
+    q
+  );
+
+  const countSql = `
+    SELECT COUNT(*) AS c
+    FROM intake_client_projects p
+    INNER JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
+    WHERE ${whereSql}
+  `;
+  const totalRow = db.prepare(countSql).get(...params);
+  const total = totalRow && totalRow.c != null ? Number(totalRow.c) : 0;
+
+  const maxPage = Math.max(1, Math.min(MAX_PAGE, Math.ceil(total / PAGE_SIZE) || 1));
+  let page = parseInt(String(q.page || "1"), 10);
+  if (!Number.isFinite(page) || page < 1) page = 1;
+  if (page > maxPage) page = maxPage;
+  const offset = (page - 1) * PAGE_SIZE;
+
+  const dataSql = `
     SELECT
       p.id,
       p.project_code,
@@ -98,12 +142,12 @@ function buildIntakeProjectStatusList(db, tenantId, q) {
       (SELECT group_concat(ax2.status, ',') FROM intake_project_assignments ax2 WHERE ax2.project_id = p.id AND ax2.tenant_id = p.tenant_id) AS assign_statuses_raw
     FROM intake_client_projects p
     INNER JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
-    WHERE ${where.join(" AND ")}
+    WHERE ${whereSql}
     ORDER BY ${orderCol} ${dir}, p.id DESC
-    LIMIT 200
+    LIMIT ? OFFSET ?
   `;
 
-  const rows = db.prepare(sql).all(...params);
+  const rows = db.prepare(dataSql).all(...params, PAGE_SIZE, offset);
 
   const companies = db
     .prepare(`SELECT id, name, subdomain FROM companies WHERE tenant_id = ? ORDER BY name ASC`)
@@ -116,21 +160,22 @@ function buildIntakeProjectStatusList(db, tenantId, q) {
     .all(tid)
     .map((r) => r.city);
 
+  const filtersOut = {
+    ...filters,
+    page: page > 1 ? String(page) : "",
+  };
+
   return {
     rows,
+    total,
+    page,
+    pageSize: PAGE_SIZE,
+    maxPage,
     companies,
     cities,
     sort: sortKey,
     dir: dir.toLowerCase(),
-    filters: {
-      q: qtext,
-      project_status: projectStatus,
-      assignment_status: asg && ASSIGNMENT_STATUS_FILTER.has(asg) ? asg : "",
-      city,
-      company_id: companyId > 0 ? String(companyId) : "",
-      date_from: df,
-      date_to: dt,
-    },
+    filters: filtersOut,
   };
 }
 
@@ -159,6 +204,8 @@ function buildProjectStatusHref(filters, sort, dir) {
   if (filters.company_id) p.set("company_id", filters.company_id);
   if (filters.date_from) p.set("date_from", filters.date_from);
   if (filters.date_to) p.set("date_to", filters.date_to);
+  const pg = Number(filters.page);
+  if (Number.isFinite(pg) && pg > 1) p.set("page", String(Math.floor(pg)));
   p.set("sort", sort);
   p.set("dir", dir);
   const qs = p.toString();
@@ -166,12 +213,15 @@ function buildProjectStatusHref(filters, sort, dir) {
 }
 
 /**
+ * Sorting resets to page 1.
  * @param {Record<string, string>} filters
  */
 function sortToggleHref(filters, sortKey, currentSort, currentDir) {
   const nextDir =
     currentSort === sortKey && String(currentDir || "").toLowerCase() === "desc" ? "asc" : "desc";
-  return buildProjectStatusHref(filters, sortKey, nextDir);
+  const f = { ...filters };
+  delete f.page;
+  return buildProjectStatusHref(f, sortKey, nextDir);
 }
 
 module.exports = {

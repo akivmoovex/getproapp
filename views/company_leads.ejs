@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>Pending leads | Company portal</title>
+    <title>
+      <% var _sc = typeof scope !== 'undefined' ? scope : 'active'; %>
+      <% if (_sc === 'declined') { %>Declined leads<% } else if (_sc === 'all') { %>All leads<% } else { %>Active leads<% } %> | Company portal
+    </title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="company-portal-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
@@ -12,23 +15,98 @@
       companyName: typeof companyName !== 'undefined' ? companyName : '',
     }) %>
     <main class="company-portal-main" id="main-content">
-      <h1 class="company-portal-page-title">Active leads</h1>
-      <p class="muted company-portal-intro">Assigned opportunities (awaiting response, interested, or callback requested). Customer identity is not shown here.</p>
-      <% if (!assignments || assignments.length === 0) { %>
-        <p class="muted">No active assignments.</p>
+      <% var sc = typeof scope !== 'undefined' ? scope : 'active'; %>
+      <% var act = typeof activeAssignments !== 'undefined' ? activeAssignments : []; %>
+      <% var dec = typeof declinedAssignments !== 'undefined' ? declinedAssignments : []; %>
+      <h1 class="company-portal-page-title">
+        <% if (sc === 'declined') { %>Declined leads<% } else if (sc === 'all') { %>Leads<% } else { %>Active leads<% } %>
+      </h1>
+      <p class="muted company-portal-intro">
+        <% if (sc === 'active') { %>
+          Awaiting your response, interested, or callback requested. Declined assignments are hidden here — use <strong>Declined</strong> or <strong>All</strong> to review them.
+        <% } else if (sc === 'declined') { %>
+          Assignments your company declined. Open a row for read-only detail.
+        <% } else { %>
+          Active first, then declined. Customer identity is not shown.
+        <% } %>
+      </p>
+      <nav class="company-leads-scope" aria-label="Lead list scope">
+        <a class="company-leads-scope__link <%= sc === 'active' ? 'company-leads-scope__link--active' : '' %>" href="/company/leads?scope=active">Active</a>
+        <span class="company-leads-scope__sep" aria-hidden="true">·</span>
+        <a class="company-leads-scope__link <%= sc === 'declined' ? 'company-leads-scope__link--active' : '' %>" href="/company/leads?scope=declined">Declined</a>
+        <span class="company-leads-scope__sep" aria-hidden="true">·</span>
+        <a class="company-leads-scope__link <%= sc === 'all' ? 'company-leads-scope__link--active' : '' %>" href="/company/leads?scope=all">All</a>
+      </nav>
+
+      <% if (sc === 'active') { %>
+        <% if (!act.length) { %>
+          <p class="muted">No active assignments. <a href="/company/leads?scope=declined">View declined</a> if you need history.</p>
+        <% } else { %>
+          <ul class="company-lead-cards" role="list">
+            <% act.forEach(function (a) { %>
+              <li>
+                <a class="company-lead-card card card--interactive" href="/company/leads/<%= a.assignment_id %>">
+                  <span class="company-lead-card__code"><%= a.project_code %></span>
+                  <span class="company-lead-card__badge"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.assignment_status) : a.assignment_status %></span>
+                  <span class="company-lead-card__meta"><%= a.city %><% if (a.neighborhood && String(a.neighborhood).trim()) { %> · <%= a.neighborhood %><% } %></span>
+                  <span class="muted company-lead-card__hint">View details</span>
+                </a>
+              </li>
+            <% }); %>
+          </ul>
+        <% } %>
+      <% } else if (sc === 'declined') { %>
+        <% if (!dec.length) { %>
+          <p class="muted">No declined assignments.</p>
+        <% } else { %>
+          <ul class="company-lead-cards" role="list">
+            <% dec.forEach(function (a) { %>
+              <li>
+                <a class="company-lead-card card card--interactive" href="/company/leads/<%= a.assignment_id %>">
+                  <span class="company-lead-card__code"><%= a.project_code %></span>
+                  <span class="company-lead-card__badge"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.assignment_status) : a.assignment_status %></span>
+                  <span class="company-lead-card__meta"><%= a.city %><% if (a.neighborhood && String(a.neighborhood).trim()) { %> · <%= a.neighborhood %><% } %></span>
+                  <span class="muted company-lead-card__hint">View details</span>
+                </a>
+              </li>
+            <% }); %>
+          </ul>
+        <% } %>
       <% } else { %>
-        <ul class="company-lead-cards" role="list">
-          <% assignments.forEach(function (a) { %>
-            <li>
-              <a class="company-lead-card card card--interactive" href="/company/leads/<%= a.assignment_id %>">
-                <span class="company-lead-card__code"><%= a.project_code %></span>
-                <span class="company-lead-card__badge"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.assignment_status) : a.assignment_status %></span>
-                <span class="company-lead-card__meta"><%= a.city %><% if (a.neighborhood && String(a.neighborhood).trim()) { %> · <%= a.neighborhood %><% } %></span>
-                <span class="muted company-lead-card__hint">View details</span>
-              </a>
-            </li>
-          <% }); %>
-        </ul>
+        <h2 class="company-leads-section__title">Active</h2>
+        <% if (!act.length) { %>
+          <p class="muted company-leads-section__empty">None right now.</p>
+        <% } else { %>
+          <ul class="company-lead-cards" role="list">
+            <% act.forEach(function (a) { %>
+              <li>
+                <a class="company-lead-card card card--interactive" href="/company/leads/<%= a.assignment_id %>">
+                  <span class="company-lead-card__code"><%= a.project_code %></span>
+                  <span class="company-lead-card__badge"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.assignment_status) : a.assignment_status %></span>
+                  <span class="company-lead-card__meta"><%= a.city %><% if (a.neighborhood && String(a.neighborhood).trim()) { %> · <%= a.neighborhood %><% } %></span>
+                  <span class="muted company-lead-card__hint">View details</span>
+                </a>
+              </li>
+            <% }); %>
+          </ul>
+        <% } %>
+        <h2 class="company-leads-section__title">Declined</h2>
+        <% if (!dec.length) { %>
+          <p class="muted company-leads-section__empty">None.</p>
+        <% } else { %>
+          <ul class="company-lead-cards" role="list">
+            <% dec.forEach(function (a) { %>
+              <li>
+                <a class="company-lead-card card card--interactive" href="/company/leads/<%= a.assignment_id %>">
+                  <span class="company-lead-card__code"><%= a.project_code %></span>
+                  <span class="company-lead-card__badge"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.assignment_status) : a.assignment_status %></span>
+                  <span class="company-lead-card__meta"><%= a.city %><% if (a.neighborhood && String(a.neighborhood).trim()) { %> · <%= a.neighborhood %><% } %></span>
+                  <span class="muted company-lead-card__hint">View details</span>
+                </a>
+              </li>
+            <% }); %>
+          </ul>
+        <% } %>
       <% } %>
     </main>
     <%- include('partials/company_portal_shell_end') %>

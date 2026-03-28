@@ -54,6 +54,7 @@ const {
   buildProjectStatusHref,
 } = require("../adminIntakeProjectStatus");
 const { buildCompanyPageLocals, enrichCompanyWithCategory, platformTenantPrefixForSlug } = require("../companyPageRender");
+const { assignmentStatusLabelForPortal } = require("../intakeProjectCompanyViewModel");
 const { listAllByKind, getById } = require("../contentPages");
 const { CRM_TASK_STATUSES, normalizeCrmTaskStatus, crmTaskStatusLabel } = require("../crmTaskStatuses");
 const { insertCrmAudit } = require("../crmAudit");
@@ -3487,6 +3488,7 @@ module.exports = function adminRoutes({ db }) {
       assignableCompanies,
       budget,
       projectStatusLabel: clientIntake.intakeProjectStatusLabel(project.status),
+      assignmentStatusLabelForPortal,
       error: error || null,
       notice: notice || null,
       intakeFileBase: "/admin/project-intake/files/",
@@ -3616,12 +3618,13 @@ module.exports = function adminRoutes({ db }) {
   router.get("/project-status", requireClientProjectIntakeAccess, (req, res) => {
     const tid = getAdminTenantId(req);
     const q = req.query || {};
-    const { rows, companies, cities, sort, dir, filters } = buildIntakeProjectStatusList(db, tid, q);
+    const list = buildIntakeProjectStatusList(db, tid, q);
     const budget = clientIntake.getBudgetMetaForTenant(db, tid);
-    const rowsView = rows.map((r) => ({
+    const rowsView = list.rows.map((r) => ({
       ...r,
       assign_summary: summarizeAssignmentStatuses(r.assign_statuses_raw),
     }));
+    const { companies, cities, sort, dir, filters, total, page, maxPage, pageSize } = list;
     return res.render("admin/intake_project_status", {
       activeNav: "project_status",
       navTitle: "Order / project status",
@@ -3631,10 +3634,15 @@ module.exports = function adminRoutes({ db }) {
       sort,
       dir,
       filters,
+      total,
+      page,
+      maxPage,
+      pageSize,
       budget,
       intakeProjectStatusLabel: clientIntake.intakeProjectStatusLabel,
       sortToggleHref: (col) => sortToggleHref(filters, col, sort, dir),
       resetHref: buildProjectStatusHref({}, "created_at", "desc"),
+      projectStatusPageHref: (p) => buildProjectStatusHref({ ...filters, page: p > 1 ? String(p) : "" }, sort, dir),
     });
   });
 

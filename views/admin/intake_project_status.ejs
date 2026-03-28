@@ -34,6 +34,7 @@
         <div class="card admin-form-card card--mb-block">
           <h2 class="admin-form-card__title">Filters</h2>
           <form method="get" action="/admin/project-status" class="form admin-status-filters">
+            <input type="hidden" name="page" value="1" />
             <input type="hidden" name="sort" value="<%= typeof sort !== 'undefined' ? sort : 'created_at' %>" />
             <input type="hidden" name="dir" value="<%= typeof dir !== 'undefined' ? dir : 'desc' %>" />
             <div class="admin-status-filter-grid">
@@ -134,7 +135,22 @@
             </tbody>
           </table>
         </div>
-        <p class="muted u-mt-note">Showing up to 200 rows. Assignment summary is a count of statuses across all assigned companies.</p>
+        <% var _tot = typeof total !== 'undefined' ? total : 0; %>
+        <% var _pg = typeof page !== 'undefined' ? page : 1; %>
+        <% var _mp = typeof maxPage !== 'undefined' ? maxPage : 1; %>
+        <% var _ps = typeof pageSize !== 'undefined' ? pageSize : 50; %>
+        <% if (typeof projectStatusPageHref === 'function' && _mp > 1) { %>
+        <nav class="admin-status-pagination muted" aria-label="Results pages">
+          <% if (_pg > 1) { %>
+            <a class="btn btn--text" href="<%= projectStatusPageHref(_pg - 1) %>">← Previous</a>
+          <% } %>
+          <span class="admin-status-pagination__meta">Page <%= _pg %> of <%= _mp %></span>
+          <% if (_pg < _mp) { %>
+            <a class="btn btn--text" href="<%= projectStatusPageHref(_pg + 1) %>">Next →</a>
+          <% } %>
+        </nav>
+        <% } %>
+        <p class="muted u-mt-note"><%= _tot %> project(s) match; showing <%= _ps %> per page. Assignment summary is a count of statuses across assigned companies.</p>
       </div>
     </main>
   </body>

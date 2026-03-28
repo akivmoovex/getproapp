@@ -7,6 +7,9 @@ const {
   setCompanyPersonnelSession,
   clearCompanyPersonnelSession,
   getCompanyPersonnelSession,
+  isCompanyPortalLoginBlocked,
+  recordCompanyPortalLoginFailure,
+  clearCompanyPortalLoginFailures,
 } = require("../companyPersonnelAuth");
 const { buildCompanyPageLocals, enrichCompanyWithCategory } = require("../companyPageRender");
 const clientIntake = require("../clientProjectIntake");
@@ -19,6 +22,8 @@ const {
   nextAssignmentStatusFromCompanyAction,
   assignmentStatusLabelForPortal,
 } = require("../intakeProjectCompanyViewModel");
+
+const COMPANY_LEADS_SCOPES = new Set(["active", "declined", "all"]);
 
 function tenantUrlPrefixFromReq(req) {
   const p = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
@@ -48,12 +53,20 @@ module.exports = function companyPortalRoutes({ db }) {
 
   router.post("/company/login", requirePublicTenant, async (req, res) => {
     const tid = req.tenant.id;
+    if (isCompanyPortalLoginBlocked(tid, req)) {
+      return res.redirect(
+        "/company/login?error=" +
+          encodeURIComponent("Too many sign-in attempts from this network. Please wait a few minutes and try again.")
+      );
+    }
     const login = String((req.body && req.body.login) || (req.body && req.body.phone) || "").trim();
     const password = String((req.body && req.body.password) || "");
     const user = await authenticateCompanyPersonnel(db, tid, login, password);
     if (!user) {
+      recordCompanyPortalLoginFailure(tid, req);
       return res.redirect("/company/login?error=" + encodeURIComponent("Invalid login or password."));
     }
+    clearCompanyPortalLoginFailures(tid, req);
     setCompanyPersonnelSession(req, {
       userId: user.id,
       tenantId: tid,
@@ -75,26 +88,41 @@ module.exports = function companyPortalRoutes({ db }) {
   router.get("/company/leads", requirePublicTenant, requireCompanyPersonnelAuth, (req, res) => {
     const tid = req.tenant.id;
     const cid = req.companyPersonnel.companyId;
+    let scope = String((req.query && req.query.scope) || "active").trim().toLowerCase();
+    if (!COMPANY_LEADS_SCOPES.has(scope)) scope = "active";
+
     const stPlace = COMPANY_PORTAL_ACTIVE_ASSIGNMENT_STATUSES.map(() => "?").join(", ");
-    const rows = db
-      .prepare(
-        `
-        SELECT ${COMPANY_PORTAL_ASSIGNMENT_LIST_SELECT}
-        FROM intake_project_assignments a
-        INNER JOIN intake_client_projects p ON p.id = a.project_id AND p.tenant_id = a.tenant_id
-        WHERE a.tenant_id = ? AND a.company_id = ? AND a.status IN (${stPlace})
-        ORDER BY datetime(a.created_at) DESC, a.id DESC
-        `
-      )
-      .all(tid, cid, ...COMPANY_PORTAL_ACTIVE_ASSIGNMENT_STATUSES);
-    const assignments = rows.map(mapCompanyPortalAssignmentSummary).filter(Boolean);
+    const baseSql = `
+      SELECT ${COMPANY_PORTAL_ASSIGNMENT_LIST_SELECT}
+      FROM intake_project_assignments a
+      INNER JOIN intake_client_projects p ON p.id = a.project_id AND p.tenant_id = a.tenant_id
+      WHERE a.tenant_id = ? AND a.company_id = ?
+    `;
+    const orderSql = ` ORDER BY datetime(a.created_at) DESC, a.id DESC`;
+
+    let activeAssignments = [];
+    let declinedAssignments = [];
+
+    if (scope === "active" || scope === "all") {
+      const activeRows = db
+        .prepare(`${baseSql} AND a.status IN (${stPlace})${orderSql}`)
+        .all(tid, cid, ...COMPANY_PORTAL_ACTIVE_ASSIGNMENT_STATUSES);
+      activeAssignments = activeRows.map(mapCompanyPortalAssignmentSummary).filter(Boolean);
+    }
+    if (scope === "declined" || scope === "all") {
+      const declinedRows = db.prepare(`${baseSql} AND a.status = 'declined'${orderSql}`).all(tid, cid);
+      declinedAssignments = declinedRows.map(mapCompanyPortalAssignmentSummary).filter(Boolean);
+    }
+
     const company = db.prepare("SELECT * FROM companies WHERE id = ? AND tenant_id = ?").get(cid, tid);
     return res.render("company_leads", {
       tenant: req.tenant,
       tenantUrlPrefix: tenantUrlPrefixFromReq(req),
       companyPersonnel: req.companyPersonnel,
       companyName: company ? company.name : "",
-      assignments,
+      scope,
+      activeAssignments,
+      declinedAssignments,
       assignmentStatusLabelForPortal,
       activeCompanyNav: "leads",
     });

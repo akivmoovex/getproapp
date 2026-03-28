@@ -66,29 +66,50 @@
         <% } %>
 
         <div class="card admin-form-card card--mb-block">
-          <h2 class="admin-form-card__title">Assigned companies</h2>
+          <h2 class="admin-form-card__title">Assigned companies &amp; portal responses</h2>
+          <p class="muted admin-intake-assignments__lead">Per-company assignment workflow (company personnel actions), not the intake project status.</p>
           <% if (!assignments || assignments.length === 0) { %>
             <p class="muted">No companies assigned yet.</p>
           <% } else { %>
-            <ul class="admin-intake-assignments">
-              <% assignments.forEach(function (a) { %>
-                <li class="admin-intake-assignments__row">
-                  <span class="admin-intake-assignments__body">
-                    <strong><%= a.company_name %></strong> <span class="muted">@<%= a.company_subdomain %></span>
-                    · <span class="u-text-strong"><%= a.status %></span>
-                    <% if (a.responded_at) { %>
-                      <span class="muted"> · responded <%- include('../partials/event_time', { at: a.responded_at }) %></span>
-                    <% } %>
-                    <% if (a.response_note && String(a.response_note).trim()) { %>
-                      <span class="admin-intake-assignments__note muted"> · note: <%= a.response_note %></span>
-                    <% } %>
-                  </span>
-                  <form method="post" action="/admin/projects/<%= project.id %>/assignments/<%= a.id %>/delete" class="admin-intake-assignments__del">
-                    <button type="submit" class="btn btn--text">Remove</button>
-                  </form>
-                </li>
-              <% }); %>
-            </ul>
+            <div class="table-wrap admin-intake-assignments-table-wrap">
+              <table class="table admin-intake-assignments-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Company</th>
+                    <th scope="col">Response status</th>
+                    <th scope="col">Responded</th>
+                    <th scope="col">Note</th>
+                    <th scope="col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% assignments.forEach(function (a) { %>
+                    <tr>
+                      <td>
+                        <strong><%= a.company_name %></strong>
+                        <span class="muted"> @<%= a.company_subdomain %></span>
+                      </td>
+                      <td>
+                        <span class="u-text-strong"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.status) : a.status %></span>
+                      </td>
+                      <td class="muted">
+                        <% if (a.responded_at) { %>
+                          <%- include('../partials/event_time', { at: a.responded_at }) %>
+                        <% } else { %>
+                          —
+                        <% } %>
+                      </td>
+                      <td class="admin-intake-assignments-table__note"><%= a.response_note && String(a.response_note).trim() ? a.response_note : '—' %></td>
+                      <td>
+                        <form method="post" action="/admin/projects/<%= project.id %>/assignments/<%= a.id %>/delete" class="admin-intake-assignments__del">
+                          <button type="submit" class="btn btn--text">Remove</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
           <% } %>
           <% if (assignableCompanies && assignableCompanies.length) { %>
             <h3 class="input-field__label">Assign another company</h3>

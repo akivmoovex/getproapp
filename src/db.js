@@ -1557,7 +1557,10 @@ try {
   console.error("[getpro] company_portal_v1 migration:", e.message);
 }
 
-/** Assignment workflow fields + username login + partial unique phone; demo_client seed (demo tenant only). */
+/**
+ * Assignment workflow fields + username login + partial unique phone.
+ * demo_client seed: see company_portal_v3_demo_portal_polish (deterministic company + env gate).
+ */
 try {
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("company_portal_v2")) {
     const bcrypt = require("bcryptjs");
@@ -1589,35 +1592,113 @@ try {
        ON company_personnel_users(tenant_id, username) WHERE length(trim(username)) > 0`
     );
 
-    const demoTenant = db.prepare("SELECT id FROM tenants WHERE lower(trim(slug)) = 'demo'").get();
-    if (demoTenant && demoTenant.id) {
-      const demoCo = db
-        .prepare("SELECT id FROM companies WHERE tenant_id = ? ORDER BY id ASC LIMIT 1")
-        .get(demoTenant.id);
-      const existing = db
-        .prepare(
-          `SELECT 1 FROM company_personnel_users WHERE tenant_id = ? AND lower(trim(username)) = 'demo_client' AND length(trim(username)) > 0`
-        )
-        .get(demoTenant.id);
-      if (demoCo && !existing) {
-        const hash = bcrypt.hashSync("1234", 11);
-        db.prepare(
-          `INSERT INTO company_personnel_users (
-            tenant_id, company_id, full_name, username, phone_normalized, password_hash, is_active, updated_at
-          ) VALUES (?, ?, ?, ?, '', ?, 1, datetime('now'))`
-        ).run(demoTenant.id, demoCo.id, "Demo company portal", "demo_client", hash);
-        // eslint-disable-next-line no-console
-        console.log("[getpro] Seeded demo company personnel: username demo_client (tenant demo, company id " + demoCo.id + ").");
-      }
-    }
-
     db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("company_portal_v2");
     // eslint-disable-next-line no-console
-    console.log("[getpro] Migration: company_portal_v2 (assignment workflow, username login, demo_client seed).");
+    console.log("[getpro] Migration: company_portal_v2 (assignment workflow, username login).");
   }
 } catch (e) {
   // eslint-disable-next-line no-console
   console.error("[getpro] company_portal_v2 migration:", e.message);
+}
+
+/**
+ * Demo portal login `demo_client` / weak password: deterministic company + production gate + repair.
+ * - Company: subdomain `demo-lusaka-spark` on the `demo` tenant (same row as demo_seed_sample_companies_v1).
+ * - Seed only when NODE_ENV !== 'production' OR GETPRO_SEED_DEMO_PORTAL_LOGIN=1.
+ * - Re-links existing demo_client to that company if the row exists but company_id mismatches.
+ */
+try {
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("company_portal_v3_demo_portal_polish")) {
+    const bcrypt = require("bcryptjs");
+    const DEMO_PORTAL_SUBDOMAIN = "demo-lusaka-spark";
+    const allowWeakDemoPortalLogin =
+      process.env.NODE_ENV !== "production" || String(process.env.GETPRO_SEED_DEMO_PORTAL_LOGIN || "").trim() === "1";
+
+    const demoTenant = db.prepare("SELECT id FROM tenants WHERE lower(trim(slug)) = 'demo'").get();
+    if (demoTenant && demoTenant.id) {
+      const sparkCo = db
+        .prepare(
+          `SELECT id FROM companies WHERE tenant_id = ? AND lower(trim(subdomain)) = ? LIMIT 1`
+        )
+        .get(demoTenant.id, DEMO_PORTAL_SUBDOMAIN);
+
+      const demoUser = db
+        .prepare(
+          `SELECT id, company_id FROM company_personnel_users
+           WHERE tenant_id = ? AND lower(trim(username)) = 'demo_client' AND length(trim(username)) > 0
+           LIMIT 1`
+        )
+        .get(demoTenant.id);
+
+      if (demoUser && sparkCo && Number(demoUser.company_id) !== Number(sparkCo.id)) {
+        db.prepare(
+          `UPDATE company_personnel_users SET company_id = ?, updated_at = datetime('now')
+           WHERE id = ? AND tenant_id = ?`
+        ).run(sparkCo.id, demoUser.id, demoTenant.id);
+        // eslint-disable-next-line no-console
+        console.log(
+          "[getpro] Re-linked demo_client to company @" +
+            DEMO_PORTAL_SUBDOMAIN +
+            " (id " +
+            sparkCo.id +
+            ") on demo tenant."
+        );
+      }
+
+      const stillMissing = !db
+        .prepare(
+          `SELECT 1 FROM company_personnel_users
+           WHERE tenant_id = ? AND lower(trim(username)) = 'demo_client' AND length(trim(username)) > 0
+           LIMIT 1`
+        )
+        .get(demoTenant.id);
+
+      if (stillMissing) {
+        if (!sparkCo) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            "[getpro] Skipped demo_client seed: no company with subdomain '" +
+              DEMO_PORTAL_SUBDOMAIN +
+              "' in demo tenant (demo sample companies migration may not have run)."
+          );
+        } else if (!allowWeakDemoPortalLogin) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            "[getpro] Skipped demo_client seed: production without GETPRO_SEED_DEMO_PORTAL_LOGIN=1 (weak demo password)."
+          );
+        } else {
+          const hash = bcrypt.hashSync("1234", 11);
+          try {
+            db.prepare(
+              `INSERT INTO company_personnel_users (
+                tenant_id, company_id, full_name, username, phone_normalized, password_hash, is_active, updated_at
+              ) VALUES (?, ?, ?, ?, '', ?, 1, datetime('now'))`
+            ).run(demoTenant.id, sparkCo.id, "Demo company portal", "demo_client", hash);
+            // eslint-disable-next-line no-console
+            console.log(
+              "[getpro] Seeded demo company personnel: username demo_client → company @" +
+                DEMO_PORTAL_SUBDOMAIN +
+                " (tenant demo). Non-production or GETPRO_SEED_DEMO_PORTAL_LOGIN=1."
+            );
+          } catch (insErr) {
+            if (String(insErr.message || "").includes("UNIQUE")) {
+              // eslint-disable-next-line no-console
+              console.warn("[getpro] demo_client seed skipped: username already present (race or duplicate).");
+            } else {
+              throw insErr;
+            }
+          }
+        }
+      }
+    }
+
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("company_portal_v3_demo_portal_polish");
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Migration: company_portal_v3_demo_portal_polish (demo portal login safety).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] company_portal_v3_demo_portal_polish migration:", e.message);
 }
 
 function run(query, params = []) {
