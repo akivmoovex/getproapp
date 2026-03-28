@@ -10,7 +10,6 @@
     <%- include('../partials/admin_nav', { navTitle: navTitle || 'New client', activeNav: activeNav || 'project_intake' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
-        <%- include('../partials/admin_intake_otp_banner') %>
         <% if (typeof error !== 'undefined' && error) { %>
           <div class="flash" role="alert"><%= error %></div>
         <% } %>
@@ -28,11 +27,6 @@
           <form method="post" action="/admin/project-intake/clients" class="form" id="intake-client-form">
             <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
             <div class="input-field">
-              <label class="input-field__label" for="external_client_reference">External client reference</label>
-              <input id="external_client_reference" name="external_client_reference" class="input-field__control" required value="<%= form.external_client_reference %>" maxlength="120" />
-              <p class="input-field__help muted">Your CRM or support reference for this person (not the internal database id).</p>
-            </div>
-            <div class="input-field">
               <label class="input-field__label" for="full_name">User name</label>
               <input id="full_name" name="full_name" class="input-field__control" required value="<%= form.full_name %>" maxlength="200" />
             </div>
@@ -43,10 +37,10 @@
             <div class="input-field">
               <label class="input-field__label" for="whatsapp_phone">WhatsApp number</label>
               <input id="whatsapp_phone" name="whatsapp_phone" class="input-field__control" value="<%= form.whatsapp_phone %>" autocomplete="tel" />
-              <label class="input-field__help" style="display:flex;align-items:center;gap:0.35rem;margin-top:0.35rem;">
+              <div class="admin-intake-inline-check">
                 <input type="checkbox" name="whatsapp_same" value="1" id="whatsapp_same" />
-                Same as phone number
-              </label>
+                <label for="whatsapp_same">Same as phone number</label>
+              </div>
             </div>
             <div class="input-field">
               <label class="input-field__label" for="nrz_number">NRZ number (optional)</label>
@@ -58,14 +52,9 @@
               <input name="address_house_number" class="input-field__control" placeholder="House number" value="<%= form.address_house_number %>" style="margin-bottom:0.5rem;" />
               <input name="address_apartment_number" class="input-field__control" placeholder="Apartment number" value="<%= form.address_apartment_number %>" />
             </fieldset>
-            <div class="input-field">
-              <label class="input-field__help" style="display:flex;align-items:center;gap:0.35rem;">
-                <input type="checkbox" name="send_otp_after" value="1" id="send_otp_after" />
-                After save, attempt SMS OTP (subject to SMS configuration above)
-              </label>
-            </div>
             <div class="form-step__actions admin-gate-actions">
               <button class="btn btn--primary" type="submit">Save client &amp; continue</button>
+              <button class="btn btn--secondary" type="submit" name="send_otp_after" value="1">Send OTP</button>
               <a class="btn btn--text" href="/admin/project-intake<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">Back</a>
             </div>
           </form>

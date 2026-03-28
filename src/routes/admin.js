@@ -2866,7 +2866,6 @@ module.exports = function adminRoutes({ db }) {
       navTitle: "New client",
       tenantId: tid,
       form: {
-        external_client_reference: "",
         full_name: "",
         phone: phone || "",
         whatsapp_phone: "",
@@ -2877,7 +2876,6 @@ module.exports = function adminRoutes({ db }) {
       },
       error: String((req.query && req.query.error) || "").trim().slice(0, 500),
       otpNotice: String((req.query && req.query.otp_notice) || "").trim().slice(0, 500),
-      ...intakeOtpBannerLocals(),
     });
   });
 
@@ -2885,9 +2883,7 @@ module.exports = function adminRoutes({ db }) {
     const tid = getAdminTenantId(req);
     const uid = req.session.adminUser.id;
     const b = req.body || {};
-    const external_client_reference = String(b.external_client_reference || "")
-      .trim()
-      .slice(0, 120);
+    const external_client_reference = String(b.external_client_reference || "").trim().slice(0, 120);
     const full_name = String(b.full_name || "").trim().slice(0, 200);
     let phone = String(b.phone || "").trim();
     let whatsapp_phone = String(b.whatsapp_phone || "").trim();
@@ -2899,17 +2895,6 @@ module.exports = function adminRoutes({ db }) {
     const address_apartment_number = String(b.address_apartment_number || "").trim().slice(0, 40);
     const send_otp_after = b.send_otp_after === "1" || b.send_otp_after === "on";
 
-    if (!external_client_reference) {
-      return res.redirect(
-        redirectWithEmbed(
-          req,
-          "/admin/project-intake/clients/new?error=" +
-            encodeURIComponent(
-              "Enter an external client reference (for example your CRM or ticket ID). This field is required and cannot be only spaces."
-            )
-        )
-      );
-    }
     if (!full_name) {
       return res.redirect(redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent("Name is required.")));
     }
@@ -2983,16 +2968,21 @@ module.exports = function adminRoutes({ db }) {
             )
           );
         }
-        const extDup = db
-          .prepare(
-            "SELECT client_code FROM intake_clients WHERE tenant_id = ? AND external_client_reference = ? LIMIT 1"
-          )
-          .get(tid, external_client_reference);
-        const dupMsg = extDup
-          ? `That external reference is already used by client ${extDup.client_code} in this region. Enter a different reference or search by phone/NRZ to open that client.`
-          : "That external client reference is already in use in this region. Use a different reference or search for the existing client.";
+        if (external_client_reference) {
+          const extDup = db
+            .prepare(
+              "SELECT client_code FROM intake_clients WHERE tenant_id = ? AND external_client_reference = ? LIMIT 1"
+            )
+            .get(tid, external_client_reference);
+          const dupMsg = extDup
+            ? `That external reference is already used by client ${extDup.client_code} in this region. Enter a different reference or search by phone/NRZ to open that client.`
+            : "That external client reference is already in use in this region. Use a different reference or search for the existing client.";
+          return res.redirect(
+            redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent(dupMsg))
+          );
+        }
         return res.redirect(
-          redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent(dupMsg))
+          redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent("Could not create client. Try again or search for an existing client."))
         );
       }
       return res.status(400).send(msg || "Could not create client.");
@@ -3004,31 +2994,51 @@ module.exports = function adminRoutes({ db }) {
 
     if (send_otp_after && phoneNorm) {
       const recent = clientIntake.countRecentOtpSends(db, tid, phoneNorm);
+      let otpNotice = "";
+      let otpOk = "0";
       if (recent >= 5) {
-        return res.redirect(
-          redirectWithEmbed(
-            req,
-            `/admin/project-intake/project/new?clientId=${row.id}&otp_notice=` +
-              encodeURIComponent("OTP rate limit: max 5 sends per phone per hour.")
-          )
-        );
+        otpNotice =
+          "Send OTP: rate limit reached (max 5 sends per phone per hour). The client was saved — try again later.";
+        otpOk = "0";
+      } else {
+        const code = clientIntake.generateOtpDigits();
+        const send = clientIntake.sendOtpPlaceholder({ phoneDisplay: phone, code });
+        if (send.sent) {
+          const exp = db.prepare(`SELECT datetime('now', '+10 minutes') AS e`).get().e;
+          db.prepare(
+            `INSERT INTO intake_phone_otp (tenant_id, client_id, phone_normalized, code_hash, purpose, expires_at, max_attempts)
+             VALUES (?, ?, ?, ?, 'phone_verify', ?, 5)`
+          ).run(tid, row.id, phoneNorm, clientIntake.hashOtpCode(code, tid, phoneNorm), exp);
+          if (send.devMode) {
+            otpNotice =
+              "OTP issued successfully. This environment does not send SMS — check the server log for the verification code, then enter it below.";
+            otpOk = "1";
+          } else {
+            otpNotice =
+              "OTP sent by SMS. The client should receive the verification code shortly — ask them to enter it below.";
+            otpOk = "1";
+          }
+        } else {
+          otpNotice =
+            "We could not send an OTP: " + (send.error || "SMS is not available in this environment.");
+          otpOk = "0";
+        }
       }
-      const code = clientIntake.generateOtpDigits();
-      const send = clientIntake.sendOtpPlaceholder({ phoneDisplay: phone, code });
-      if (send.sent) {
-        const exp = db.prepare(`SELECT datetime('now', '+10 minutes') AS e`).get().e;
-        db.prepare(
-          `INSERT INTO intake_phone_otp (tenant_id, client_id, phone_normalized, code_hash, purpose, expires_at, max_attempts)
-           VALUES (?, ?, ?, ?, 'phone_verify', ?, 5)`
-        ).run(tid, row.id, phoneNorm, clientIntake.hashOtpCode(code, tid, phoneNorm), exp);
-      }
-      const otpQ =
-        send.sent && send.devMode
-          ? "&otp_notice=" + encodeURIComponent("Dev mode: OTP logged to server console. Phone not verified until code is entered.")
-          : !send.sent
-            ? "&otp_notice=" + encodeURIComponent(send.error || "OTP not sent.")
-            : "";
+      const otpQ = "&otp_notice=" + encodeURIComponent(otpNotice) + "&otp_ok=" + otpOk;
       return res.redirect(redirectWithEmbed(req, `/admin/project-intake/project/new?clientId=${row.id}${otpQ}`));
+    }
+
+    if (send_otp_after && !phoneNorm) {
+      return res.redirect(
+        redirectWithEmbed(
+          req,
+          `/admin/project-intake/project/new?clientId=${row.id}&otp_notice=` +
+            encodeURIComponent(
+              "We could not send an OTP: the phone number could not be normalized. The client was saved — fix the number and use Send OTP on the project page."
+            ) +
+            "&otp_ok=0"
+        )
+      );
     }
 
     return res.redirect(redirectWithEmbed(req, `/admin/project-intake/project/new?clientId=${row.id}`));
@@ -3052,6 +3062,8 @@ module.exports = function adminRoutes({ db }) {
       budget,
       error: String((req.query && req.query.error) || "").trim().slice(0, 500),
       otp_notice: String((req.query && req.query.otp_notice) || "").trim().slice(0, 500),
+      otp_notice_ok:
+        req.query && req.query.otp_ok === "1" ? true : req.query && req.query.otp_ok === "0" ? false : null,
       notice: String((req.query && req.query.notice) || "").trim().slice(0, 500),
       ...intakeOtpBannerLocals(),
     });
@@ -3246,7 +3258,20 @@ module.exports = function adminRoutes({ db }) {
     if (!phoneNorm) return res.status(400).send("Client has no phone on file.");
 
     const recent = clientIntake.countRecentOtpSends(db, tid, phoneNorm);
-    if (recent >= 5) return res.status(429).type("text").send("Too many OTP requests for this phone in the last hour.");
+    if (recent >= 5) {
+      return res.redirect(
+        redirectWithEmbed(
+          req,
+          "/admin/project-intake/project/new?clientId=" +
+            clientId +
+            "&otp_notice=" +
+            encodeURIComponent(
+              "Send OTP: rate limit reached (max 5 sends per phone per hour). Try again later."
+            ) +
+            "&otp_ok=0"
+        )
+      );
+    }
 
     const code = clientIntake.generateOtpDigits();
     const send = clientIntake.sendOtpPlaceholder({ phoneDisplay: client.phone, code });
@@ -3255,7 +3280,10 @@ module.exports = function adminRoutes({ db }) {
         "/admin/project-intake/project/new?clientId=" +
         clientId +
         "&otp_notice=" +
-        encodeURIComponent(send.error || "OTP was not sent. No verification row created.");
+        encodeURIComponent(
+          "We could not send an OTP: " + (send.error || "No verification code was created.")
+        ) +
+        "&otp_ok=0";
       return res.redirect(redirectWithEmbed(req, next));
     }
     const exp = db.prepare(`SELECT datetime('now', '+10 minutes') AS e`).get().e;
@@ -3264,15 +3292,15 @@ module.exports = function adminRoutes({ db }) {
        VALUES (?, ?, ?, ?, 'phone_verify', ?, 5)`
     ).run(tid, clientId, phoneNorm, clientIntake.hashOtpCode(code, tid, phoneNorm), exp);
 
+    const okMsg = send.devMode
+      ? "OTP issued successfully. This environment does not send SMS — check the server log for the code, then enter it below."
+      : "OTP sent by SMS. The client should receive the code shortly — enter it below to verify.";
     const next =
       "/admin/project-intake/project/new?clientId=" +
       clientId +
       "&otp_notice=" +
-      encodeURIComponent(
-        send.devMode
-          ? "Dev: OTP logged to server console. Enter it below to verify."
-          : "OTP send reported success. Enter the code below to verify."
-      );
+      encodeURIComponent(okMsg) +
+      "&otp_ok=1";
     return res.redirect(redirectWithEmbed(req, next));
   });
 
@@ -3286,7 +3314,8 @@ module.exports = function adminRoutes({ db }) {
       return res.redirect(
         redirectWithEmbed(
           req,
-          `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` + encodeURIComponent("Enter the 6-digit code.")
+          `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` +
+            encodeURIComponent("Enter the 6-digit code from the SMS or server log, then try again.")
         )
       );
     }
@@ -3307,7 +3336,8 @@ module.exports = function adminRoutes({ db }) {
         redirectWithEmbed(
           req,
           `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` +
-            encodeURIComponent("No active OTP for this client’s current phone. Send a code first.")
+            encodeURIComponent("No active OTP for this client’s current phone. Send a code first.") +
+            "&otp_ok=0"
         )
       );
     }
@@ -3316,7 +3346,8 @@ module.exports = function adminRoutes({ db }) {
         redirectWithEmbed(
           req,
           `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` +
-            encodeURIComponent("OTP does not match this client’s phone on file.")
+            encodeURIComponent("OTP does not match this client’s phone on file.") +
+            "&otp_ok=0"
         )
       );
     }
@@ -3325,7 +3356,9 @@ module.exports = function adminRoutes({ db }) {
       return res.redirect(
         redirectWithEmbed(
           req,
-          `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` + encodeURIComponent("Too many failed attempts. Request a new code.")
+          `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` +
+            encodeURIComponent("Too many failed attempts. Request a new code.") +
+            "&otp_ok=0"
         )
       );
     }
@@ -3335,7 +3368,9 @@ module.exports = function adminRoutes({ db }) {
       return res.redirect(
         redirectWithEmbed(
           req,
-          `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` + encodeURIComponent("Incorrect code.")
+          `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` +
+            encodeURIComponent("Incorrect code. Check the number and try again.") +
+            "&otp_ok=0"
         )
       );
     }
@@ -3350,7 +3385,9 @@ module.exports = function adminRoutes({ db }) {
     return res.redirect(
       redirectWithEmbed(
         req,
-        `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` + encodeURIComponent("Phone verified.")
+        `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` +
+          encodeURIComponent("Phone verified successfully.") +
+          "&otp_ok=1"
       )
     );
   });

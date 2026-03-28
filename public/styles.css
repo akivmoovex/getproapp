@@ -3895,6 +3895,41 @@ textarea {
   color: var(--text);
 }
 
+/* Admin intake: checkbox + label on one row, left-aligned */
+.admin-intake-inline-check {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-0-75);
+  margin-top: var(--space-0-75);
+  flex-wrap: nowrap;
+}
+
+.admin-intake-inline-check input[type="checkbox"] {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.admin-intake-inline-check label {
+  margin: 0;
+  font-size: var(--typo-body-medium-size, 0.9375rem);
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+@media (max-width: 420px) {
+  .admin-intake-inline-check {
+    flex-wrap: wrap;
+  }
+
+  .admin-intake-inline-check label {
+    white-space: normal;
+  }
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -4943,6 +4978,19 @@ textarea {
   padding-inline: 0;
 }
 
+/* Mobile only (≤620px): hero-style shell for directory toolbar. Desktop & tablet keep default .pro-directory-toolbar padding/border below. */
+@media (max-width: 620px) {
+  .directory-page .pro-directory-top-band .pro-directory-toolbar {
+    padding: var(--space-2) var(--space-2-25) var(--space-2-25);
+    border-radius: var(--space-2);
+    border: var(--border-width-hairline) solid var(--color-on-inverse-50);
+    background: var(--color-glass-hero-search);
+    -webkit-backdrop-filter: blur(var(--space-1-5));
+    backdrop-filter: blur(var(--space-1-5));
+    box-shadow: var(--elevation-hero-card);
+  }
+}
+
 /* Directory: compact filter toolbar (replaces sidebar category button list) */
 .pro-directory-toolbar {
   display: flex;
@@ -5549,6 +5597,11 @@ textarea {
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* After removing card footer: no extra bottom gap from last block margins */
+.pro-directory-card__body > :last-child {
+  margin-bottom: 0;
 }
 
 .pro-directory-empty {
@@ -7095,8 +7148,8 @@ body.join-modal-open {
   flex-shrink: 0;
 }
 
-/* Apex: region globe — same vertical size as Join us */
-.home-page .wf-home-region-trigger {
+/* Region trigger in sticky app bar (light surface): readable text/icon — not hero “inverse” colors */
+.app-top-app-bar .wf-home-region-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -7105,29 +7158,37 @@ body.join-modal-open {
   min-height: var(--space-touch);
   padding: 0 var(--space-1-75);
   border-radius: var(--space-1-5);
-  border: var(--border-width-hairline) solid var(--color-on-inverse-22);
-  background: var(--color-on-inverse-12);
-  color: var(--color-on-primary);
+  border: var(--border-width-hairline) solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
   font-size: var(--space-1-75);
   font-weight: 700;
   letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow: var(--elevation-wf-card-strong);
-  transition: background 0.15s, border-color 0.15s;
+  box-shadow: var(--elevation-sm);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.home-page .wf-home-region-trigger:hover {
-  background: var(--color-on-inverse-20);
-  border-color: var(--color-on-inverse-35);
+.app-top-app-bar .wf-home-region-trigger:hover {
+  background: color-mix(in srgb, var(--wf-primary) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--wf-primary) 35%, var(--border-strong));
 }
 
-.home-page .wf-home-region-trigger:focus-visible {
-  outline: var(--border-width-medium) solid var(--color-on-inverse-55);
+.app-top-app-bar .wf-home-region-trigger:focus-visible {
+  outline: var(--border-width-medium) solid var(--wf-primary);
   outline-offset: var(--border-width-medium);
 }
 
-.home-page .wf-home-region-trigger .wf-home-region-globe {
+.app-top-app-bar .wf-home-region-trigger .wf-home-region-globe {
   flex-shrink: 0;
+  color: var(--wf-primary);
+}
+
+.app-top-app-bar .wf-home-region-trigger .wf-home-region-label {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .wf-home-layout.wf-menu-drawer-open .wf-home-region-trigger {

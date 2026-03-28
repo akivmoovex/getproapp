@@ -33,12 +33,6 @@
     <% var catLabel = c.category_name && String(c.category_name).trim() ? String(c.category_name).trim() : ''; %>
     <% var hasLoc = c.location && String(c.location).trim(); %>
     <% var showMeta = !!(catLabel || hasLoc || hasReviews); %>
-    <% var hostLine = ''; %>
-    <% if (typeof tenant !== 'undefined' && tenant && baseDomain) { %>
-      <% hostLine = tenant.slug + '.' + baseDomain + '/' + c.subdomain; %>
-    <% } else { %>
-      <% hostLine = '/' + c.subdomain; %>
-    <% } %>
     <article class="pro-directory-card card--interactive">
       <a class="pro-directory-card__link" href="<%= url %>">
         <div class="pro-directory-card__media" data-avatar-hue="<%= hue %>">
@@ -82,7 +76,6 @@
           <% if (c.about && String(c.about).trim()) { %>
             <p class="pro-directory-card__excerpt"><%= directoryExcerpt(c.about, 240) %></p>
           <% } %>
-          <p class="pro-directory-card__footer"><span class="pro-directory-card__host"><%= hostLine %></span></p>
         </div>
       </a>
     </article>

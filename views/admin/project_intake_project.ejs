@@ -22,7 +22,9 @@
           <div class="flash flash--info" role="status"><%= notice %></div>
         <% } %>
         <% if (typeof otp_notice !== 'undefined' && otp_notice) { %>
-          <div class="flash flash--info" role="status"><%= otp_notice %></div>
+          <% var _otpFlashClass = typeof otp_notice_ok !== 'undefined' && otp_notice_ok === true ? 'flash flash--success' : (typeof otp_notice_ok !== 'undefined' && otp_notice_ok === false ? 'flash' : 'flash flash--info'); %>
+          <% var _otpRole = typeof otp_notice_ok !== 'undefined' && otp_notice_ok === false ? 'alert' : 'status'; %>
+          <div class="<%= _otpFlashClass %>" role="<%= _otpRole %>"><%= otp_notice %></div>
         <% } %>
 
         <% const canMutate = typeof adminNav !== 'undefined' && adminNav.canMutateProjectIntake; %>
