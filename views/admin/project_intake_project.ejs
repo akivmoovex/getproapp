@@ -14,8 +14,12 @@
     <%- include('../partials/admin_nav', { navTitle: navTitle || 'New project', activeNav: activeNav || 'project_intake' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
+        <%- include('../partials/admin_intake_otp_banner') %>
         <% if (typeof error !== 'undefined' && error) { %>
           <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+        <% if (typeof notice !== 'undefined' && notice) { %>
+          <div class="flash flash--info" role="status"><%= notice %></div>
         <% } %>
         <% if (typeof otp_notice !== 'undefined' && otp_notice) { %>
           <div class="flash flash--info" role="status"><%= otp_notice %></div>
@@ -25,8 +29,10 @@
 
         <div class="card admin-form-card">
           <h1 class="admin-form-card__title">Client</h1>
-          <p><strong><%= client.full_name %></strong> · <code><%= client.client_code %></code></p>
-          <p class="muted">User ID: <%= client.external_user_id %> · Phone: <%= client.phone %></p>
+          <p class="muted" style="margin-bottom:0.35rem;">Client code</p>
+          <div class="admin-intake-code" aria-label="Client code"><%= client.client_code %></div>
+          <p style="margin-top:0.75rem;"><strong><%= client.full_name %></strong></p>
+          <p class="muted">External ref: <%= client.external_client_reference %> · Phone: <%= client.phone %></p>
           <% if (client.phone_verified_at) { %>
             <p class="flash flash--info" role="status">Phone verified at <%= client.phone_verified_at %>.</p>
           <% } else { %>
@@ -37,6 +43,7 @@
         <% if (canMutate && !client.phone_verified_at) { %>
         <div class="card admin-form-card" style="margin-top:1rem;">
           <h2 class="admin-form-card__title">SMS OTP (optional)</h2>
+          <p class="input-field__help muted" style="margin-top:0;">Uses the same SMS rules as the banner at the top of this page.</p>
           <form method="post" action="/admin/project-intake/otp/send" class="form" style="margin-bottom:1rem;">
             <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
             <input type="hidden" name="client_id" value="<%= client.id %>" />
@@ -104,8 +111,9 @@
               <p class="input-field__help muted"><%= budget.label %> · stored currency code <%= budget.code %></p>
             </div>
             <div class="input-field">
-              <label class="input-field__label" for="images">Pictures (max 5, JPEG/PNG/WebP/GIF, <%= 5 %> MB each)</label>
+              <label class="input-field__label" for="images">Pictures</label>
               <input id="images" name="images" type="file" class="input-field__control" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+              <p class="input-field__help muted">Up to 5 images per project. JPEG, PNG, WebP, or GIF; 5 MB max each. Images are compressed automatically after upload.</p>
               <div id="intake-preview" class="intake-carousel" aria-live="polite"></div>
             </div>
             <div class="form-step__actions admin-gate-actions">

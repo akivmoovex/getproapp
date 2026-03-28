@@ -17,8 +17,13 @@
       <div class="container admin-main__pad">
         <div class="card admin-form-card">
           <h1 class="admin-form-card__title">Project recorded</h1>
-          <p>Project <code><%= project.project_code %></code> for client <code><%= project.client_code %></code> (<%= project.client_name %>).</p>
-          <p class="muted">User ID: <%= project.external_user_id %> · Phone: <%= project.client_phone %></p>
+          <p class="muted" style="margin-bottom:0.35rem;">Project code</p>
+          <div class="admin-intake-code" aria-label="Project code"><%= project.project_code %></div>
+          <p class="muted" style="margin-top:0.75rem;margin-bottom:0.35rem;">Client code</p>
+          <div class="admin-intake-code" aria-label="Client code"><%= project.client_code %></div>
+          <p style="margin-top:0.75rem;"><strong><%= project.client_name %></strong></p>
+          <p class="muted">External ref: <%= project.external_client_reference %> · Phone: <%= project.client_phone %> (snapshot from save)</p>
+          <p><span class="muted">Project status:</span> <strong><%= typeof projectStatusLabel !== 'undefined' ? projectStatusLabel : project.status %></strong><% if (typeof projectStatusLabel !== 'undefined' && projectStatusLabel !== project.status) { %> <span class="muted">(<%= project.status %>)</span><% } %></p>
           <p>City: <strong><%= project.city %></strong> · Budget: <% if (project.estimated_budget_value != null) { %><%= budget.displayPrefix %> <%= project.estimated_budget_value %><% } else { %>—<% } %></p>
         </div>
 

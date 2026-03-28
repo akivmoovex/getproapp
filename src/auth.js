@@ -92,7 +92,7 @@ function requireClientProjectIntakeAccess(req, res, next) {
   return next();
 }
 
-/** POST/create for project intake only; keeps tenant_viewer read-only without opening other admin POSTs. */
+/** POST/create for project intake only; excludes tenant_viewer (same rule as CRM writes). */
 function requireClientProjectIntakeMutate(req, res, next) {
   if (!req.session || !req.session.adminUser) return res.redirect("/admin/login");
   if (!canMutateClientProjectIntake(req.session.adminUser.role)) {

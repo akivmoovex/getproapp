@@ -2768,6 +2768,38 @@ module.exports = function adminRoutes({ db }) {
     return names.includes(c);
   }
 
+  function intakeOtpBannerLocals() {
+    const b = clientIntake.getIntakeOtpOperationalBanner();
+    return b ? { intakeOtpBanner: b } : {};
+  }
+
+  function redirectProjectIntakeUploadError(req, res, err) {
+    const clientId = Number((req.body && req.body.client_id) || 0);
+    const base =
+      clientId > 0
+        ? `/admin/project-intake/project/new?clientId=${clientId}&error=`
+        : "/admin/project-intake?error=";
+    let msg = "Upload could not be processed. Use JPEG, PNG, WebP, or GIF and try again.";
+    if (err.code === "LIMIT_FILE_SIZE") {
+      msg = "Each image must be 5 MB or smaller. Choose smaller files or fewer images and try again.";
+    } else if (err.code === "LIMIT_FILE_COUNT" || err.code === "LIMIT_UNEXPECTED_FILE") {
+      msg = "You can attach up to 5 images. Remove extra files and try again.";
+    } else if (err instanceof multer.MulterError) {
+      msg = "Upload was rejected. Check image type and size, then try again.";
+    }
+    return res.redirect(redirectWithEmbed(req, base + encodeURIComponent(msg)));
+  }
+
+  function intakeMulterProjectImages(req, res, next) {
+    projectIntakeUpload.array("images", 5)(req, res, (err) => {
+      if (!err) return next();
+      if (err instanceof multer.MulterError) {
+        return redirectProjectIntakeUploadError(req, res, err);
+      }
+      return next(err);
+    });
+  }
+
   function renderProjectIntakeSearch(req, res, { phone, nrz, searched, foundClient, notice, error }) {
     const tid = getAdminTenantId(req);
     return res.render("admin/project_intake_search", {
@@ -2780,6 +2812,7 @@ module.exports = function adminRoutes({ db }) {
       notice: String(notice || "").trim().slice(0, 500),
       error: String(error || "").trim().slice(0, 500),
       tenantId: tid,
+      ...intakeOtpBannerLocals(),
     });
   }
 
@@ -2833,7 +2866,7 @@ module.exports = function adminRoutes({ db }) {
       navTitle: "New client",
       tenantId: tid,
       form: {
-        external_user_id: "",
+        external_client_reference: "",
         full_name: "",
         phone: phone || "",
         whatsapp_phone: "",
@@ -2844,13 +2877,17 @@ module.exports = function adminRoutes({ db }) {
       },
       error: String((req.query && req.query.error) || "").trim().slice(0, 500),
       otpNotice: String((req.query && req.query.otp_notice) || "").trim().slice(0, 500),
+      ...intakeOtpBannerLocals(),
     });
   });
 
   router.post("/project-intake/clients", requireClientProjectIntakeAccess, requireClientProjectIntakeMutate, (req, res) => {
     const tid = getAdminTenantId(req);
+    const uid = req.session.adminUser.id;
     const b = req.body || {};
-    const external_user_id = String(b.external_user_id || "").trim().slice(0, 120);
+    const external_client_reference = String(b.external_client_reference || "")
+      .trim()
+      .slice(0, 120);
     const full_name = String(b.full_name || "").trim().slice(0, 200);
     let phone = String(b.phone || "").trim();
     let whatsapp_phone = String(b.whatsapp_phone || "").trim();
@@ -2862,8 +2899,16 @@ module.exports = function adminRoutes({ db }) {
     const address_apartment_number = String(b.address_apartment_number || "").trim().slice(0, 40);
     const send_otp_after = b.send_otp_after === "1" || b.send_otp_after === "on";
 
-    if (!external_user_id) {
-      return res.redirect(redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent("User ID is required.")));
+    if (!external_client_reference) {
+      return res.redirect(
+        redirectWithEmbed(
+          req,
+          "/admin/project-intake/clients/new?error=" +
+            encodeURIComponent(
+              "Enter an external client reference (for example your CRM or ticket ID). This field is required and cannot be only spaces."
+            )
+        )
+      );
     }
     if (!full_name) {
       return res.redirect(redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent("Name is required.")));
@@ -2881,6 +2926,19 @@ module.exports = function adminRoutes({ db }) {
     const phoneNorm = clientIntake.normalizeDigits(phone);
     const nrzNorm = nrzCheck.value;
 
+    const duplicateClient = clientIntake.findClientBySearch(db, tid, { phone, nrz: nrzRaw });
+    if (duplicateClient) {
+      return res.redirect(
+        redirectWithEmbed(
+          req,
+          `/admin/project-intake/project/new?clientId=${duplicateClient.id}&notice=` +
+            encodeURIComponent(
+              `Existing client reused — no duplicate was created. Client code ${duplicateClient.client_code} (${duplicateClient.full_name}). Continue with the project form below.`
+            )
+        )
+      );
+    }
+
     let client_code;
     try {
       client_code = clientIntake.nextSequentialCode(db, tid, "client");
@@ -2891,14 +2949,14 @@ module.exports = function adminRoutes({ db }) {
     try {
       db.prepare(
         `INSERT INTO intake_clients (
-          tenant_id, client_code, external_user_id, full_name, phone, phone_normalized, whatsapp_phone,
+          tenant_id, client_code, external_client_reference, full_name, phone, phone_normalized, whatsapp_phone,
           nrz_number, nrz_normalized, address_street, address_house_number, address_apartment_number,
-          updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+          updated_by_admin_user_id, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
       ).run(
         tid,
         client_code,
-        external_user_id,
+        external_client_reference,
         full_name,
         phone,
         phoneNorm,
@@ -2907,17 +2965,34 @@ module.exports = function adminRoutes({ db }) {
         nrzNorm,
         address_street,
         address_house_number,
-        address_apartment_number
+        address_apartment_number,
+        uid
       );
     } catch (e) {
       const msg = String(e.message || "");
       if (msg.includes("UNIQUE")) {
-        return res.redirect(
-          redirectWithEmbed(
-            req,
-            "/admin/project-intake/clients/new?error=" +
-              encodeURIComponent("A client with this phone, NRZ, or User ID already exists in this region.")
+        const again = clientIntake.findClientBySearch(db, tid, { phone, nrz: nrzRaw });
+        if (again) {
+          return res.redirect(
+            redirectWithEmbed(
+              req,
+              `/admin/project-intake/project/new?clientId=${again.id}&notice=` +
+                encodeURIComponent(
+                  `Existing client reused (${again.client_code}). Another request may have created this record first—we opened their profile instead of duplicating.`
+                )
+            )
+          );
+        }
+        const extDup = db
+          .prepare(
+            "SELECT client_code FROM intake_clients WHERE tenant_id = ? AND external_client_reference = ? LIMIT 1"
           )
+          .get(tid, external_client_reference);
+        const dupMsg = extDup
+          ? `That external reference is already used by client ${extDup.client_code} in this region. Enter a different reference or search by phone/NRZ to open that client.`
+          : "That external client reference is already in use in this region. Use a different reference or search for the existing client.";
+        return res.redirect(
+          redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent(dupMsg))
         );
       }
       return res.status(400).send(msg || "Could not create client.");
@@ -2945,7 +3020,7 @@ module.exports = function adminRoutes({ db }) {
         db.prepare(
           `INSERT INTO intake_phone_otp (tenant_id, client_id, phone_normalized, code_hash, purpose, expires_at, max_attempts)
            VALUES (?, ?, ?, ?, 'phone_verify', ?, 5)`
-        ).run(tid, row.id, phoneNorm, clientIntake.hashOtpCode(code), exp);
+        ).run(tid, row.id, phoneNorm, clientIntake.hashOtpCode(code, tid, phoneNorm), exp);
       }
       const otpQ =
         send.sent && send.devMode
@@ -2977,6 +3052,8 @@ module.exports = function adminRoutes({ db }) {
       budget,
       error: String((req.query && req.query.error) || "").trim().slice(0, 500),
       otp_notice: String((req.query && req.query.otp_notice) || "").trim().slice(0, 500),
+      notice: String((req.query && req.query.notice) || "").trim().slice(0, 500),
+      ...intakeOtpBannerLocals(),
     });
   });
 
@@ -2984,7 +3061,7 @@ module.exports = function adminRoutes({ db }) {
     "/project-intake/projects",
     requireClientProjectIntakeAccess,
     requireClientProjectIntakeMutate,
-    projectIntakeUpload.array("images", 5),
+    intakeMulterProjectImages,
     async (req, res) => {
       const tid = getAdminTenantId(req);
       const b = req.body || {};
@@ -3033,15 +3110,20 @@ module.exports = function adminRoutes({ db }) {
         const info = db
           .prepare(
             `INSERT INTO intake_client_projects (
-              tenant_id, client_id, project_code, city, neighborhood, street_name, house_number, apartment_number,
+              tenant_id, client_id, project_code,
+              client_full_name_snapshot, client_phone_snapshot,
+              city, neighborhood, street_name, house_number, apartment_number,
               client_address_street, client_address_house_number, client_address_apartment_number,
-              estimated_budget_value, estimated_budget_currency, status, created_by_admin_user_id, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?, datetime('now'))`
+              estimated_budget_value, estimated_budget_currency, status,
+              created_by_admin_user_id, updated_by_admin_user_id, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, datetime('now'))`
           )
           .run(
             tid,
             clientId,
             project_code,
+            String(client.full_name || ""),
+            String(client.phone || ""),
             city,
             neighborhood,
             street_name,
@@ -3052,6 +3134,7 @@ module.exports = function adminRoutes({ db }) {
             client_address_apartment_number,
             budgetVal,
             budgetMeta.code,
+            uid,
             uid
           );
         projectId = Number(info.lastInsertRowid);
@@ -3063,12 +3146,13 @@ module.exports = function adminRoutes({ db }) {
         db.prepare(
           `UPDATE intake_clients SET
             address_street = ?, address_house_number = ?, address_apartment_number = ?,
-            updated_at = datetime('now')
+            updated_by_admin_user_id = ?, updated_at = datetime('now')
            WHERE id = ? AND tenant_id = ?`
         ).run(
           client_address_street,
           client_address_house_number,
           client_address_apartment_number,
+          uid,
           clientId,
           tid
         );
@@ -3115,7 +3199,10 @@ module.exports = function adminRoutes({ db }) {
     if (!projectId || projectId < 1) return res.redirect(redirectWithEmbed(req, "/admin/project-intake"));
     const project = db
       .prepare(
-        `SELECT p.*, c.client_code, c.full_name AS client_name, c.phone AS client_phone, c.external_user_id
+        `SELECT p.*, c.client_code,
+            COALESCE(NULLIF(trim(p.client_full_name_snapshot), ''), c.full_name) AS client_name,
+            COALESCE(NULLIF(trim(p.client_phone_snapshot), ''), c.phone) AS client_phone,
+            c.external_client_reference
          FROM intake_client_projects p
          JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
          WHERE p.id = ? AND p.tenant_id = ?`
@@ -3134,6 +3221,7 @@ module.exports = function adminRoutes({ db }) {
       project,
       images,
       budget,
+      projectStatusLabel: clientIntake.intakeProjectStatusLabel(project.status),
     });
   });
 
@@ -3174,7 +3262,7 @@ module.exports = function adminRoutes({ db }) {
     db.prepare(
       `INSERT INTO intake_phone_otp (tenant_id, client_id, phone_normalized, code_hash, purpose, expires_at, max_attempts)
        VALUES (?, ?, ?, ?, 'phone_verify', ?, 5)`
-    ).run(tid, clientId, phoneNorm, clientIntake.hashOtpCode(code), exp);
+    ).run(tid, clientId, phoneNorm, clientIntake.hashOtpCode(code, tid, phoneNorm), exp);
 
     const next =
       "/admin/project-intake/project/new?clientId=" +
@@ -3190,6 +3278,7 @@ module.exports = function adminRoutes({ db }) {
 
   router.post("/project-intake/otp/verify", requireClientProjectIntakeAccess, requireClientProjectIntakeMutate, (req, res) => {
     const tid = getAdminTenantId(req);
+    const uid = req.session.adminUser.id;
     const clientId = Number((req.body && req.body.client_id) || 0);
     const code = String((req.body && req.body.otp_code) || "").trim();
     if (!clientId || clientId < 1) return res.status(400).send("Invalid client.");
@@ -3218,7 +3307,16 @@ module.exports = function adminRoutes({ db }) {
         redirectWithEmbed(
           req,
           `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` +
-            encodeURIComponent("No active OTP. Send a code first.")
+            encodeURIComponent("No active OTP for this client’s current phone. Send a code first.")
+        )
+      );
+    }
+    if (String(row.phone_normalized || "") !== phoneNorm) {
+      return res.redirect(
+        redirectWithEmbed(
+          req,
+          `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` +
+            encodeURIComponent("OTP does not match this client’s phone on file.")
         )
       );
     }
@@ -3231,7 +3329,7 @@ module.exports = function adminRoutes({ db }) {
         )
       );
     }
-    const ok = clientIntake.verifyOtpCodeHash(code, row.code_hash);
+    const ok = clientIntake.verifyOtpCodeHash(code, row.code_hash, tid, row.phone_normalized);
     if (!ok) {
       db.prepare(`UPDATE intake_phone_otp SET attempts = ? WHERE id = ? AND tenant_id = ?`).run(attempts, row.id, tid);
       return res.redirect(
@@ -3246,10 +3344,9 @@ module.exports = function adminRoutes({ db }) {
       row.id,
       tid
     );
-    db.prepare(`UPDATE intake_clients SET phone_verified_at = datetime('now'), updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`).run(
-      clientId,
-      tid
-    );
+    db.prepare(
+      `UPDATE intake_clients SET phone_verified_at = datetime('now'), updated_by_admin_user_id = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
+    ).run(uid, clientId, tid);
     return res.redirect(
       redirectWithEmbed(
         req,

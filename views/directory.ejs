@@ -23,43 +23,44 @@
       <% if (typeof selectedCategory !== 'undefined' && selectedCategory) { %>
         <% (categories || []).forEach(function(c) { if (c.slug === selectedCategory) activeCatLabel = c.name; }); %>
       <% } %>
-      <div class="pro-directory-toolbar">
-        <%- include('partials/pro_search_form', {
-          variant: 'directory',
-          tenantUrlPrefix,
-          searchQuery: typeof searchQuery !== 'undefined' ? searchQuery : '',
-          cityQuery: typeof cityQuery !== 'undefined' ? cityQuery : '',
-          showCategoryFilter: false,
-          selectedCategory: typeof selectedCategory !== 'undefined' ? selectedCategory : '',
-          categories: typeof categories !== 'undefined' ? categories : [],
-        }) %>
-        <div class="pro-directory-toolbar__meta" aria-live="polite">
-          <span class="pro-directory-toolbar__count">
-            <strong><%= (companies || []).length %></strong>
-            <%= (companies || []).length === 1 ? 'result' : 'results' %>
-          </span>
-          <span class="pro-directory-toolbar__filters">
-            <% if (activeCatLabel) { %>
-              <span class="pro-directory-toolbar__chip"><%= activeCatLabel %></span>
-            <% } %>
-            <% if (typeof searchQuery !== 'undefined' && searchQuery) { %>
-              <span class="pro-directory-toolbar__chip">“<%= searchQuery %>”</span>
-            <% } %>
-            <% if (typeof cityQuery !== 'undefined' && cityQuery) { %>
-              <span class="pro-directory-toolbar__chip"><%= cityQuery %></span>
-            <% } %>
-            <% if (!activeCatLabel && !(typeof searchQuery !== 'undefined' && searchQuery) && !(typeof cityQuery !== 'undefined' && cityQuery)) { %>
-              <span class="pro-directory-toolbar__hint muted">Browse trusted professionals in your area</span>
-            <% } %>
-          </span>
+      <div class="pro-directory-top-band">
+        <div class="pro-directory-toolbar">
+          <%- include('partials/pro_search_form', {
+            variant: 'directory',
+            tenantUrlPrefix,
+            searchQuery: typeof searchQuery !== 'undefined' ? searchQuery : '',
+            cityQuery: typeof cityQuery !== 'undefined' ? cityQuery : '',
+            showCategoryFilter: false,
+            selectedCategory: typeof selectedCategory !== 'undefined' ? selectedCategory : '',
+            categories: typeof categories !== 'undefined' ? categories : [],
+          }) %>
+          <div class="pro-directory-toolbar__meta" aria-live="polite">
+            <span class="pro-directory-toolbar__count">
+              <strong><%= (companies || []).length %></strong>
+              <%= (companies || []).length === 1 ? 'result' : 'results' %>
+            </span>
+            <span class="pro-directory-toolbar__filters">
+              <% if (activeCatLabel) { %>
+                <span class="pro-directory-toolbar__chip"><%= activeCatLabel %></span>
+              <% } %>
+              <% if (typeof searchQuery !== 'undefined' && searchQuery) { %>
+                <span class="pro-directory-toolbar__chip">“<%= searchQuery %>”</span>
+              <% } %>
+              <% if (typeof cityQuery !== 'undefined' && cityQuery) { %>
+                <span class="pro-directory-toolbar__chip"><%= cityQuery %></span>
+              <% } %>
+              <% if (!activeCatLabel && !(typeof searchQuery !== 'undefined' && searchQuery) && !(typeof cityQuery !== 'undefined' && cityQuery)) { %>
+                <span class="pro-directory-toolbar__hint muted">Browse trusted professionals in your area</span>
+              <% } %>
+            </span>
+          </div>
         </div>
+        <% if ((companies || []).length > 0) { %>
+        <p class="pro-directory-results-helper" role="note">Browse trusted professionals in your area. Click on card to view more details.</p>
+        <% } %>
       </div>
 
       <%- include('partials/refine_search_fab', { toolbarAnchorId: 'directory-toolbar' }) %>
-
-      <% if ((companies || []).length > 0) { %>
-      <p class="pro-directory-results-helper" role="note">Browse trusted professionals in your area. Click on card to view more details.</p>
-      <% } %>
 
       <div class="pro-directory-main">
         <% if ((companies || []).length === 0) { %>

@@ -99,8 +99,10 @@ function canAccessSettingsHub(role) {
 
 /**
  * “New Project” intake (admin): search clients, create clients, create projects.
- * GET access mirrors CRM (all tenant roles incl. viewer). Mutations are explicit and exclude viewer
- * so we do not weaken global requireNotViewer elsewhere — only these routes allow non-viewer writes.
+ * GET access mirrors CRM (all tenant roles incl. viewer). Mutations use canMutateCrm (excludes tenant_viewer).
+ * Decision: tenant_viewer stays read-only for intake writes (same as CRM tasks/comments) so support agents
+ * with viewer role cannot create clients/projects; only manager/editor/agent/super_admin can. Unrelated
+ * admin POSTs remain guarded by requireDirectoryEditor / requireNotViewer as before.
  */
 function canAccessClientProjectIntake(role) {
   return canAccessCrm(role);

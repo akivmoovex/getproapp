@@ -10,6 +10,7 @@
     <%- include('../partials/admin_nav', { navTitle: navTitle || 'New client', activeNav: activeNav || 'project_intake' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
+        <%- include('../partials/admin_intake_otp_banner') %>
         <% if (typeof error !== 'undefined' && error) { %>
           <div class="flash" role="alert"><%= error %></div>
         <% } %>
@@ -27,8 +28,9 @@
           <form method="post" action="/admin/project-intake/clients" class="form" id="intake-client-form">
             <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
             <div class="input-field">
-              <label class="input-field__label" for="external_user_id">User ID (manual)</label>
-              <input id="external_user_id" name="external_user_id" class="input-field__control" required value="<%= form.external_user_id %>" maxlength="120" />
+              <label class="input-field__label" for="external_client_reference">External client reference</label>
+              <input id="external_client_reference" name="external_client_reference" class="input-field__control" required value="<%= form.external_client_reference %>" maxlength="120" />
+              <p class="input-field__help muted">Your CRM or support reference for this person (not the internal database id).</p>
             </div>
             <div class="input-field">
               <label class="input-field__label" for="full_name">User name</label>
@@ -59,9 +61,8 @@
             <div class="input-field">
               <label class="input-field__help" style="display:flex;align-items:center;gap:0.35rem;">
                 <input type="checkbox" name="send_otp_after" value="1" id="send_otp_after" />
-                After save, send SMS OTP (requires dev console provider or future SMS integration)
+                After save, attempt SMS OTP (subject to SMS configuration above)
               </label>
-              <p class="input-field__help muted">OTP is not sent in production until an SMS provider is configured. Use GETPRO_SMS_PROVIDER=console or GETPRO_OTP_DEV_LOG=1 in non-production for testing.</p>
             </div>
             <div class="form-step__actions admin-gate-actions">
               <button class="btn btn--primary" type="submit">Save client &amp; continue</button>

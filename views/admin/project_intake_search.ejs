@@ -10,6 +10,7 @@
     <%- include('../partials/admin_nav', { navTitle: navTitle || 'New project', activeNav: activeNav || 'project_intake' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
+        <%- include('../partials/admin_intake_otp_banner') %>
         <% if (typeof notice !== 'undefined' && notice) { %>
           <div class="flash flash--info" role="status"><%= notice %></div>
         <% } %>
@@ -40,8 +41,10 @@
           <div class="card admin-form-card" style="margin-top: 1rem;">
             <% if (foundClient) { %>
               <h2 class="admin-form-card__title">Client found</h2>
-              <p><strong><%= foundClient.full_name %></strong> — code <code><%= foundClient.client_code %></code></p>
-              <p class="muted">User ID: <%= foundClient.external_user_id %> · Phone: <%= foundClient.phone %></p>
+              <p class="muted" style="margin-bottom:0.35rem;">Client code</p>
+              <div class="admin-intake-code" aria-label="Client code"><%= foundClient.client_code %></div>
+              <p><strong><%= foundClient.full_name %></strong></p>
+              <p class="muted">External ref: <%= foundClient.external_client_reference %> · Phone: <%= foundClient.phone %></p>
               <a class="btn btn--primary" href="/admin/project-intake/project/new?clientId=<%= foundClient.id %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Continue to new project</a>
             <% } else { %>
               <h2 class="admin-form-card__title">No client found</h2>

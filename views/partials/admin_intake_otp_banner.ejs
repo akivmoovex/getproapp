@@ -1,0 +1,8 @@
+<% if (typeof intakeOtpBanner !== 'undefined' && intakeOtpBanner && intakeOtpBanner.text) { %>
+<div
+  class="flash <%= intakeOtpBanner.level === 'warn' ? '' : 'flash--info' %>"
+  role="<%= intakeOtpBanner.level === 'warn' ? 'alert' : 'status' %>"
+>
+  <%= intakeOtpBanner.text %>
+</div>
+<% } %>

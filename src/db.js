@@ -1330,7 +1330,7 @@ try {
  * Admin “New Project” intake: tenant-scoped clients, projects, images, OTP rows.
  *
  * Internal PKs: INTEGER AUTOINCREMENT on intake_clients.id, intake_client_projects.id.
- * Public codes: client_code / project_code — UNIQUE(tenant_id, code); PREFIX-000001 from tenant slug + intake_code_sequences.
+ * Public codes: client_code / project_code — UNIQUE(tenant_id, code); PREFIX-000001 from tenants.intake_code_prefix (if set) else slug-derived + intake_code_sequences.
  */
 try {
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("client_project_intake_v1")) {
@@ -1346,7 +1346,7 @@ try {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tenant_id INTEGER NOT NULL REFERENCES tenants(id),
         client_code TEXT NOT NULL,
-        external_user_id TEXT NOT NULL DEFAULT '',
+        external_client_reference TEXT NOT NULL DEFAULT '',
         full_name TEXT NOT NULL DEFAULT '',
         phone TEXT NOT NULL DEFAULT '',
         phone_normalized TEXT NOT NULL DEFAULT '',
@@ -1357,6 +1357,7 @@ try {
         address_house_number TEXT NOT NULL DEFAULT '',
         address_apartment_number TEXT NOT NULL DEFAULT '',
         phone_verified_at TEXT,
+        updated_by_admin_user_id INTEGER REFERENCES admin_users(id),
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now')),
         UNIQUE(tenant_id, client_code)
@@ -1365,14 +1366,16 @@ try {
         ON intake_clients(tenant_id, phone_normalized) WHERE length(trim(phone_normalized)) > 0;
       CREATE UNIQUE INDEX IF NOT EXISTS idx_intake_clients_tenant_nrz
         ON intake_clients(tenant_id, nrz_normalized) WHERE length(trim(nrz_normalized)) > 0;
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_intake_clients_tenant_extuser
-        ON intake_clients(tenant_id, external_user_id) WHERE length(trim(external_user_id)) > 0;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_intake_clients_tenant_extref
+        ON intake_clients(tenant_id, external_client_reference) WHERE length(trim(external_client_reference)) > 0;
 
       CREATE TABLE IF NOT EXISTS intake_client_projects (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tenant_id INTEGER NOT NULL REFERENCES tenants(id),
         client_id INTEGER NOT NULL REFERENCES intake_clients(id) ON DELETE CASCADE,
         project_code TEXT NOT NULL,
+        client_full_name_snapshot TEXT NOT NULL DEFAULT '',
+        client_phone_snapshot TEXT NOT NULL DEFAULT '',
         city TEXT NOT NULL DEFAULT '',
         neighborhood TEXT NOT NULL DEFAULT '',
         street_name TEXT NOT NULL DEFAULT '',
@@ -1383,8 +1386,9 @@ try {
         client_address_apartment_number TEXT NOT NULL DEFAULT '',
         estimated_budget_value REAL,
         estimated_budget_currency TEXT NOT NULL DEFAULT '',
-        status TEXT NOT NULL DEFAULT 'submitted',
+        status TEXT NOT NULL DEFAULT 'new',
         created_by_admin_user_id INTEGER REFERENCES admin_users(id),
+        updated_by_admin_user_id INTEGER REFERENCES admin_users(id),
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now')),
         UNIQUE(tenant_id, project_code)
@@ -1423,6 +1427,89 @@ try {
 } catch (e) {
   // eslint-disable-next-line no-console
   console.error("[getpro] client_project_intake migration:", e.message);
+}
+
+/** Intake cleanup: rename external ref column, tenant prefix, snapshots, status default, updated_by. */
+try {
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("client_project_intake_v2")) {
+    const tcols = db.prepare("PRAGMA table_info(tenants)").all();
+    const tNames = new Set(tcols.map((c) => c.name));
+    if (!tNames.has("intake_code_prefix")) {
+      db.exec("ALTER TABLE tenants ADD COLUMN intake_code_prefix TEXT NOT NULL DEFAULT ''");
+    }
+    const slugPrefixes = [
+      ["global", "GLOBAL"],
+      ["demo", "DEMO"],
+      ["il", "IL"],
+      ["zm", "ZM"],
+      ["zw", "ZW"],
+      ["bw", "BW"],
+      ["za", "ZA"],
+      ["na", "NA"],
+    ];
+    const updPref = db.prepare("UPDATE tenants SET intake_code_prefix = ? WHERE slug = ? AND (intake_code_prefix IS NULL OR trim(intake_code_prefix) = '')");
+    for (const [slug, pref] of slugPrefixes) {
+      updPref.run(pref, slug);
+    }
+
+    const hasIntakeClients = db
+      .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='intake_clients'")
+      .get();
+    if (hasIntakeClients) {
+      const icols = db.prepare("PRAGMA table_info(intake_clients)").all();
+      const iNames = new Set(icols.map((c) => c.name));
+      if (iNames.has("external_user_id") && !iNames.has("external_client_reference")) {
+        db.exec("DROP INDEX IF EXISTS idx_intake_clients_tenant_extuser");
+        db.exec("ALTER TABLE intake_clients RENAME COLUMN external_user_id TO external_client_reference");
+      }
+      db.exec(
+        `CREATE UNIQUE INDEX IF NOT EXISTS idx_intake_clients_tenant_extref
+         ON intake_clients(tenant_id, external_client_reference) WHERE length(trim(external_client_reference)) > 0`
+      );
+      const ic2 = db.prepare("PRAGMA table_info(intake_clients)").all();
+      const in2 = new Set(ic2.map((c) => c.name));
+      if (!in2.has("updated_by_admin_user_id")) {
+        db.exec("ALTER TABLE intake_clients ADD COLUMN updated_by_admin_user_id INTEGER REFERENCES admin_users(id)");
+      }
+    }
+
+    const pcols = db.prepare("PRAGMA table_info(intake_client_projects)").all();
+    if (pcols.length > 0) {
+      const pNames = new Set(pcols.map((c) => c.name));
+      if (!pNames.has("client_full_name_snapshot")) {
+        db.exec("ALTER TABLE intake_client_projects ADD COLUMN client_full_name_snapshot TEXT NOT NULL DEFAULT ''");
+      }
+      if (!pNames.has("client_phone_snapshot")) {
+        db.exec("ALTER TABLE intake_client_projects ADD COLUMN client_phone_snapshot TEXT NOT NULL DEFAULT ''");
+      }
+      if (!pNames.has("updated_by_admin_user_id")) {
+        db.exec("ALTER TABLE intake_client_projects ADD COLUMN updated_by_admin_user_id INTEGER REFERENCES admin_users(id)");
+      }
+      db.exec("UPDATE intake_client_projects SET status = 'new' WHERE status = 'submitted'");
+      const snapRows = db
+        .prepare(
+          `SELECT p.id AS pid, p.tenant_id AS tid, c.full_name AS fn, c.phone AS ph
+           FROM intake_client_projects p
+           JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
+           WHERE trim(COALESCE(p.client_full_name_snapshot, '')) = ''
+              OR trim(COALESCE(p.client_phone_snapshot, '')) = ''`
+        )
+        .all();
+      const upSnap = db.prepare(
+        `UPDATE intake_client_projects SET client_full_name_snapshot = ?, client_phone_snapshot = ? WHERE id = ? AND tenant_id = ?`
+      );
+      for (const r of snapRows) {
+        upSnap.run(r.fn || "", r.ph || "", r.pid, r.tid);
+      }
+    }
+
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("client_project_intake_v2");
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Migration: client_project_intake_v2 (intake ref rename, tenant prefix, snapshots, status).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] client_project_intake_v2 migration:", e.message);
 }
 
 function run(query, params = []) {

@@ -2,10 +2,9 @@
  * Admin console: client + project intake (“New Project”).
  *
  * Internal keys: INTEGER PRIMARY KEY on intake_clients / intake_client_projects (immutable).
- * Public codes: client_code, project_code — UNIQUE per tenant; format PREFIX-000001 where PREFIX
- * is derived from the tenant slug (alphanumeric, max 6 chars). Uniqueness is enforced by
- * UNIQUE(tenant_id, client_code|project_code) plus monotonic allocation via intake_code_sequences
- * (transactional next_seq per tenant + scope).
+ * Public codes: client_code, project_code — UNIQUE per tenant; PREFIX-000001 uses tenants.intake_code_prefix
+ * when set (explicit per-tenant config), otherwise a slug-derived prefix (alphanumeric, max 6 chars).
+ * Uniqueness: UNIQUE(tenant_id, client_code|project_code) + intake_code_sequences (transactional next_seq).
  */
 
 const crypto = require("crypto");
@@ -53,10 +52,26 @@ function slugToPrefix(slug) {
   return s.slice(0, 6) || "RG";
 }
 
+/**
+ * Prefix for public client/project codes: tenants.intake_code_prefix (trimmed, A–Z/0–9, max 6) when set;
+ * otherwise derived from slug. Empty DB column means “use slug fallback”.
+ */
+function getIntakeCodePrefix(db, tenantId) {
+  let row;
+  try {
+    row = db.prepare("SELECT slug, intake_code_prefix FROM tenants WHERE id = ?").get(Number(tenantId));
+  } catch {
+    row = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(Number(tenantId));
+  }
+  if (!row) throw new Error("Tenant not found");
+  const configured = row.intake_code_prefix != null ? String(row.intake_code_prefix) : "";
+  const cleaned = configured.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (cleaned.length > 0) return cleaned.slice(0, 6);
+  return slugToPrefix(row.slug);
+}
+
 function nextSequentialCode(db, tenantId, scope) {
-  const tenant = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(Number(tenantId));
-  if (!tenant) throw new Error("Tenant not found");
-  const prefix = slugToPrefix(tenant.slug);
+  const prefix = getIntakeCodePrefix(db, tenantId);
   const seq = db.transaction(() => {
     const cur = db.prepare("SELECT next_seq FROM intake_code_sequences WHERE tenant_id = ? AND scope = ?").get(
       tenantId,
@@ -103,13 +118,15 @@ function validateNrz(nrz) {
   return { ok: true, value: s };
 }
 
-function hashOtpCode(code) {
+/** Binds OTP to tenant + normalized phone so a row cannot verify for another number without the code. */
+function hashOtpCode(code, tenantId, phoneNormalized) {
   const pepper = process.env.GETPRO_OTP_PEPPER || "getpro_dev_otp_pepper_change_me";
-  return crypto.pbkdf2Sync(String(code), pepper, 12000, 32, "sha256").toString("hex");
+  const payload = `v2|${Number(tenantId)}|${String(phoneNormalized)}|phone_verify|${String(code)}`;
+  return crypto.pbkdf2Sync(payload, pepper, 12000, 32, "sha256").toString("hex");
 }
 
-function verifyOtpCodeHash(code, storedHash) {
-  const h = hashOtpCode(code);
+function verifyOtpCodeHash(code, storedHash, tenantId, phoneNormalized) {
+  const h = hashOtpCode(code, tenantId, phoneNormalized);
   try {
     return crypto.timingSafeEqual(Buffer.from(h, "hex"), Buffer.from(String(storedHash), "hex"));
   } catch {
@@ -135,6 +152,7 @@ function countRecentOtpSends(db, tenantId, phoneNorm) {
  * SMS is not wired to a production provider here. Integrate via env-driven adapter later.
  * - GETPRO_SMS_PROVIDER=console — logs code (dev/staging only; blocked when NODE_ENV=production).
  * - GETPRO_OTP_DEV_LOG=1 — same as console but explicit dev flag (blocked in production).
+ * - GETPRO_SMS_LIVE=1 — set when production SMS is wired; hides the admin OTP operational banner (getIntakeOtpOperationalBanner).
  */
 function sendOtpPlaceholder({ phoneDisplay, code }) {
   if (process.env.NODE_ENV === "production") {
@@ -216,6 +234,32 @@ async function processAndSaveProjectImages(tenantId, projectId, files) {
   return relPaths;
 }
 
+/**
+ * Admin UI: show until real SMS delivery is confirmed for this deployment.
+ * Set GETPRO_SMS_LIVE=1 when ops has wired a production SMS provider (hides the banner).
+ */
+function getIntakeOtpOperationalBanner() {
+  if (String(process.env.GETPRO_SMS_LIVE || "").trim() === "1") return null;
+  if (process.env.NODE_ENV === "production") {
+    return {
+      level: "warn",
+      text: "Production: SMS OTP is not marked as live (GETPRO_SMS_LIVE is unset). “Send OTP” will not text the customer until an SMS provider is integrated and this flag is set per your runbook.",
+    };
+  }
+  return {
+    level: "info",
+    text: "Non-production / test mode: OTP codes are not sent as real SMS unless GETPRO_SMS_PROVIDER=console or GETPRO_OTP_DEV_LOG=1 is set—they appear in the server log only.",
+  };
+}
+
+/** Human label for intake project status (default new). */
+function intakeProjectStatusLabel(status) {
+  const s = String(status || "").trim().toLowerCase();
+  if (s === "new") return "New — awaiting review";
+  if (s === "submitted") return "Submitted";
+  return String(status || "—");
+}
+
 module.exports = {
   UPLOAD_ROOT,
   ensureUploadRoot,
@@ -224,6 +268,7 @@ module.exports = {
   getTenantSlug,
   getBudgetMetaForTenant,
   nextSequentialCode,
+  getIntakeCodePrefix,
   findClientBySearch,
   validateNrz,
   hashOtpCode,
@@ -235,4 +280,6 @@ module.exports = {
   safeAbsoluteImagePath,
   processAndSaveProjectImages,
   MAX_IMAGE_BYTES,
+  getIntakeOtpOperationalBanner,
+  intakeProjectStatusLabel,
 };

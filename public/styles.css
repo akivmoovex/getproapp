@@ -3880,6 +3880,21 @@ textarea {
   margin-bottom: var(--space-2);
 }
 
+/* Admin project intake: prominent public client / code display */
+.admin-intake-code {
+  display: inline-block;
+  margin: 0 0 var(--space-1);
+  padding: var(--space-0-75) var(--space-1-25);
+  font-size: var(--typo-size-title-sm, 1.125rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--space-1);
+  border: var(--border-width-hairline) solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -4909,6 +4924,23 @@ textarea {
   max-width: 100%;
   overflow-x: hidden;
   overflow-x: clip;
+}
+
+/**
+ * Top search + intro on /directory and /category: same horizontal cap as the homepage hero search
+ * (.pro-home-hero-panel uses min(--bp-xl-2, …) ≈ 920px). Full .container stays wider for listing cards.
+ */
+.pro-directory-top-band {
+  width: 100%;
+  max-width: min(100%, var(--bp-xl-2));
+  margin-inline: auto;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.pro-directory-top-band .pro-directory-results-helper {
+  max-width: none;
+  padding-inline: 0;
 }
 
 /* Directory: compact filter toolbar (replaces sidebar category button list) */
