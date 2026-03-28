@@ -1512,6 +1512,114 @@ try {
   console.error("[getpro] client_project_intake_v2 migration:", e.message);
 }
 
+/** Company portal: personnel logins + explicit intake project → company assignments (no heuristic matching). */
+try {
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("company_portal_v1")) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS company_personnel_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        company_id INTEGER NOT NULL REFERENCES companies(id),
+        full_name TEXT NOT NULL DEFAULT '',
+        phone_normalized TEXT NOT NULL DEFAULT '',
+        password_hash TEXT NOT NULL DEFAULT '',
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_company_personnel_tenant_phone
+        ON company_personnel_users(tenant_id, phone_normalized);
+      CREATE INDEX IF NOT EXISTS idx_company_personnel_company
+        ON company_personnel_users(tenant_id, company_id);
+
+      CREATE TABLE IF NOT EXISTS intake_project_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        project_id INTEGER NOT NULL REFERENCES intake_client_projects(id) ON DELETE CASCADE,
+        company_id INTEGER NOT NULL REFERENCES companies(id),
+        assigned_by_admin_user_id INTEGER REFERENCES admin_users(id),
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(tenant_id, project_id, company_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_intake_assign_company_status
+        ON intake_project_assignments(tenant_id, company_id, status);
+      CREATE INDEX IF NOT EXISTS idx_intake_assign_project
+        ON intake_project_assignments(tenant_id, project_id);
+    `);
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("company_portal_v1");
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Migration: company_portal_v1 (personnel users, project assignments).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] company_portal_v1 migration:", e.message);
+}
+
+/** Assignment workflow fields + username login + partial unique phone; demo_client seed (demo tenant only). */
+try {
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("company_portal_v2")) {
+    const bcrypt = require("bcryptjs");
+    const cpuCols = db.prepare("PRAGMA table_info(company_personnel_users)").all();
+    const cpuNames = new Set(cpuCols.map((c) => c.name));
+    if (!cpuNames.has("username")) {
+      db.exec("ALTER TABLE company_personnel_users ADD COLUMN username TEXT NOT NULL DEFAULT ''");
+    }
+    const asgCols = db.prepare("PRAGMA table_info(intake_project_assignments)").all();
+    const asgNames = new Set(asgCols.map((c) => c.name));
+    if (!asgNames.has("responded_at")) {
+      db.exec("ALTER TABLE intake_project_assignments ADD COLUMN responded_at TEXT");
+    }
+    if (!asgNames.has("response_note")) {
+      db.exec("ALTER TABLE intake_project_assignments ADD COLUMN response_note TEXT NOT NULL DEFAULT ''");
+    }
+    if (!asgNames.has("updated_by_company_user_id")) {
+      db.exec(
+        "ALTER TABLE intake_project_assignments ADD COLUMN updated_by_company_user_id INTEGER REFERENCES company_personnel_users(id)"
+      );
+    }
+    db.exec("DROP INDEX IF EXISTS idx_company_personnel_tenant_phone");
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_company_personnel_tenant_phone_nonempty
+       ON company_personnel_users(tenant_id, phone_normalized) WHERE length(trim(phone_normalized)) > 0`
+    );
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_company_personnel_tenant_username_nonempty
+       ON company_personnel_users(tenant_id, username) WHERE length(trim(username)) > 0`
+    );
+
+    const demoTenant = db.prepare("SELECT id FROM tenants WHERE lower(trim(slug)) = 'demo'").get();
+    if (demoTenant && demoTenant.id) {
+      const demoCo = db
+        .prepare("SELECT id FROM companies WHERE tenant_id = ? ORDER BY id ASC LIMIT 1")
+        .get(demoTenant.id);
+      const existing = db
+        .prepare(
+          `SELECT 1 FROM company_personnel_users WHERE tenant_id = ? AND lower(trim(username)) = 'demo_client' AND length(trim(username)) > 0`
+        )
+        .get(demoTenant.id);
+      if (demoCo && !existing) {
+        const hash = bcrypt.hashSync("1234", 11);
+        db.prepare(
+          `INSERT INTO company_personnel_users (
+            tenant_id, company_id, full_name, username, phone_normalized, password_hash, is_active, updated_at
+          ) VALUES (?, ?, ?, ?, '', ?, 1, datetime('now'))`
+        ).run(demoTenant.id, demoCo.id, "Demo company portal", "demo_client", hash);
+        // eslint-disable-next-line no-console
+        console.log("[getpro] Seeded demo company personnel: username demo_client (tenant demo, company id " + demoCo.id + ").");
+      }
+    }
+
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("company_portal_v2");
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Migration: company_portal_v2 (assignment workflow, username login, demo_client seed).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] company_portal_v2 migration:", e.message);
+}
+
 function run(query, params = []) {
   return db.prepare(query).run(params);
 }

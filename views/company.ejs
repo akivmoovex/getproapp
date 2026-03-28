@@ -15,12 +15,22 @@
     <% } %>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
-  <body class="page-company-profile <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>" data-screen-role="profile">
+  <% var _cpPortal = typeof companyPortalLayout !== 'undefined' && companyPortalLayout; %>
+  <% var _cpReadOnly = typeof companyPortalReadOnly !== 'undefined' && companyPortalReadOnly; %>
+  <body class="page-company-profile <%= _cpPortal ? 'company-portal' : '' %> <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>" data-screen-role="<%= _cpPortal ? 'company-portal' : 'profile' %>">
+    <% if (_cpPortal) { %>
+    <%- include('partials/company_portal_shell_start', {
+      activeCompanyNav: typeof activeCompanyNav !== 'undefined' ? activeCompanyNav : 'minisite',
+      companyName: typeof company !== 'undefined' && company && company.name ? company.name : '',
+    }) %>
+    <div class="company-portal-profile-embed">
+    <% } else { %>
     <div class="app-layout">
       <%- include('partials/site_header', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '', tenant: typeof tenant !== 'undefined' ? tenant : null, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
       <%- include('partials/app_navigation', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>
 
       <div class="app-layout__main">
+    <% } %>
         <div class="pro-company-profile__shell">
     <main class="pro-company-profile" dir="ltr" lang="en">
       <div class="container pro-company-profile__inner">
@@ -208,6 +218,7 @@
               <% } %>
             </section>
 
+            <% if (!_cpReadOnly) { %>
             <section class="pro-company-profile__section" aria-labelledby="lead-heading">
               <h2 id="lead-heading" class="pro-company-profile__h2">Request contact</h2>
               <div class="card pro-company-profile__lead-card">
@@ -248,6 +259,7 @@
                 </form>
               </div>
             </section>
+            <% } %>
           </div>
 
           <aside class="pro-company-profile__aside card">
@@ -328,7 +340,7 @@
         </div>
         </div>
     </main>
-    <% if (_primaryTelHref || _gpWa) { %>
+    <% if (!_cpReadOnly && (_primaryTelHref || _gpWa)) { %>
     <div class="pro-company-sticky-cta" role="region" aria-label="Quick contact">
       <% if (_primaryTelHref) { %>
       <a class="btn btn--primary pro-company-sticky-cta__btn pro-company-sticky-cta__btn--call" href="<%= _primaryTelHref %>" aria-label="Call <%= _primaryCall %>">Call <%= _primaryCall %></a>
@@ -340,9 +352,14 @@
     <% } %>
     </div>
 
+    <% if (_cpPortal) { %>
+    </div>
+    <%- include('partials/company_portal_shell_end') %>
+    <% } else { %>
     <%- include('partials/site_footer', { tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '' }) %>
       </div>
     </div>
+    <% } %>
     <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
     <script src="/company-profile.js?v=<%= stylesVersion %>" defer></script>
   </body>

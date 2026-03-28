@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Intake projects | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Intake projects', activeNav: 'projects' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <div class="admin-toolbar">
+          <a class="btn" href="/admin/project-intake">New project intake</a>
+        </div>
+        <h1 class="section-title section-title--flush">Intake projects</h1>
+        <p class="muted admin-intro">Tenant-scoped list. Assign companies from each project’s detail page (explicit assignment only).</p>
+        <div class="table-wrap card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>Client</th>
+                <th>Phone</th>
+                <th>City</th>
+                <th>Area</th>
+                <th>Budget</th>
+                <th>Status</th>
+                <th>Assigned</th>
+                <th>Created</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!projects || projects.length === 0) { %>
+                <tr><td colspan="10" class="muted">No intake projects yet.</td></tr>
+              <% } %>
+              <% (projects || []).forEach(function (p) { %>
+                <tr>
+                  <td class="u-text-strong"><%= p.project_code %></td>
+                  <td><%= p.client_code %> · <%= p.client_display_name %></td>
+                  <td><%= p.client_display_phone %></td>
+                  <td><%= p.city || '—' %></td>
+                  <td><%= p.neighborhood || '—' %></td>
+                  <td>
+                    <% if (p.estimated_budget_value != null && p.estimated_budget_value !== '') { %>
+                      <%= typeof budget !== 'undefined' && budget ? budget.displayPrefix + ' ' : '' %><%= p.estimated_budget_value %> <%= p.estimated_budget_currency || '' %>
+                    <% } else { %>—<% } %>
+                  </td>
+                  <td><%= typeof intakeProjectStatusLabel === 'function' ? intakeProjectStatusLabel(p.status) : p.status %></td>
+                  <td><%= p.assignment_count != null ? p.assignment_count : 0 %></td>
+                  <td class="muted"><%- include('../partials/event_time', { at: p.created_at }) %></td>
+                  <td><a class="btn" href="/admin/projects/<%= p.id %>">Open</a></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

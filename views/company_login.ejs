@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Company portal · Sign in | GetPro</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="company-login-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
+    <main class="company-login-main">
+      <div class="card company-login-card">
+        <h1 class="company-login-card__title">Company portal</h1>
+        <p class="muted company-login-card__lead">Sign in with your phone number or portal username and password (as set by your administrator).</p>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+        <form method="post" action="/company/login" class="form">
+          <div class="input-field">
+            <label class="input-field__label" for="cp_login">Phone or username</label>
+            <input id="cp_login" name="login" type="text" class="input-field__control" required autocomplete="username" autocapitalize="none" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="cp_password">Password</label>
+            <input id="cp_password" name="password" type="password" class="input-field__control" required autocomplete="current-password" />
+          </div>
+          <div class="form-step__actions">
+            <button type="submit" class="btn btn--primary">Sign in</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,34 @@
+<% var _cpNav = typeof activeCompanyNav !== 'undefined' ? activeCompanyNav : 'minisite'; %>
+<div class="company-portal-wrap">
+  <header class="company-portal-header" role="banner">
+    <span class="company-portal-header__title"><%= typeof companyName !== 'undefined' && companyName ? companyName : 'Company portal' %></span>
+    <button
+      type="button"
+      class="company-portal-menu-btn"
+      id="cp-nav-toggle"
+      aria-expanded="false"
+      aria-controls="cp-nav-drawer"
+      aria-label="Open menu"
+    >
+      Menu
+    </button>
+  </header>
+  <div class="company-portal-backdrop" id="cp-nav-backdrop" hidden></div>
+  <aside
+    class="company-portal-drawer"
+    id="cp-nav-drawer"
+    aria-label="Company portal navigation"
+    aria-hidden="true"
+  >
+    <div class="company-portal-drawer__top">
+      <button type="button" class="company-portal-drawer__close" id="cp-nav-close" aria-label="Close menu">×</button>
+    </div>
+    <nav class="company-portal-drawer__nav" aria-label="Portal">
+      <a class="company-portal-drawer__link <%= _cpNav === 'minisite' ? 'company-portal-drawer__link--active' : '' %>" href="/company/minisite">Minisite</a>
+      <a class="company-portal-drawer__link <%= _cpNav === 'leads' ? 'company-portal-drawer__link--active' : '' %>" href="/company/leads">Pending leads</a>
+      <form method="post" action="/company/logout" class="company-portal-drawer__logout">
+        <button type="submit" class="btn btn--text company-portal-drawer__logout-btn">Log out</button>
+      </form>
+    </nav>
+  </aside>
+  <div class="company-portal-content">

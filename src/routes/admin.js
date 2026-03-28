@@ -47,6 +47,12 @@ const {
 const { isValidPhoneForTenant } = require("../tenants");
 const { LEAD_STATUSES, normalizeLeadStatus, leadStatusLabel } = require("../leadStatuses");
 const { ADMIN_COMPANY_LEAD_SELECT, mapAdminCompanyLeadRow } = require("../leadCompanyRequestViewModel");
+const {
+  buildIntakeProjectStatusList,
+  summarizeAssignmentStatuses,
+  sortToggleHref,
+  buildProjectStatusHref,
+} = require("../adminIntakeProjectStatus");
 const { buildCompanyPageLocals, enrichCompanyWithCategory, platformTenantPrefixForSlug } = require("../companyPageRender");
 const { listAllByKind, getById } = require("../contentPages");
 const { CRM_TASK_STATUSES, normalizeCrmTaskStatus, crmTaskStatusLabel } = require("../crmTaskStatuses");
@@ -3399,6 +3405,237 @@ module.exports = function adminRoutes({ db }) {
           "&otp_ok=1"
       )
     );
+  });
+
+  router.get("/projects", requireClientProjectIntakeAccess, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const projects = db
+      .prepare(
+        `SELECT
+          p.id,
+          p.project_code,
+          p.client_id,
+          c.client_code,
+          COALESCE(NULLIF(trim(p.client_full_name_snapshot), ''), c.full_name) AS client_display_name,
+          COALESCE(NULLIF(trim(p.client_phone_snapshot), ''), c.phone) AS client_display_phone,
+          p.city,
+          p.neighborhood,
+          p.estimated_budget_value,
+          p.estimated_budget_currency,
+          p.status,
+          p.created_at,
+          p.updated_at,
+          (SELECT COUNT(*) FROM intake_project_assignments a WHERE a.tenant_id = p.tenant_id AND a.project_id = p.id) AS assignment_count
+        FROM intake_client_projects p
+        INNER JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
+        WHERE p.tenant_id = ?
+        ORDER BY datetime(p.created_at) DESC
+        LIMIT 400`
+      )
+      .all(tid);
+    const budget = clientIntake.getBudgetMetaForTenant(db, tid);
+    return res.render("admin/projects_list", {
+      activeNav: "projects",
+      navTitle: "Intake projects",
+      projects,
+      budget,
+      intakeProjectStatusLabel: clientIntake.intakeProjectStatusLabel,
+    });
+  });
+
+  router.get("/projects/:id", requireClientProjectIntakeAccess, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const pid = Number(req.params.id);
+    if (!pid || pid < 1) return res.status(400).send("Invalid id.");
+    const project = db
+      .prepare(
+        `SELECT p.*, c.client_code, c.full_name AS client_live_name, c.phone AS client_live_phone, c.external_client_reference
+         FROM intake_client_projects p
+         INNER JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
+         WHERE p.id = ? AND p.tenant_id = ?`
+      )
+      .get(pid, tid);
+    if (!project) return res.status(404).send("Project not found.");
+    const images = db
+      .prepare(
+        `SELECT id, image_path, sort_order FROM intake_project_images WHERE tenant_id = ? AND project_id = ? ORDER BY sort_order ASC, id ASC`
+      )
+      .all(tid, pid);
+    const assignments = db
+      .prepare(
+        `SELECT a.id, a.company_id, a.status, a.created_at, a.responded_at, a.response_note, c.name AS company_name, c.subdomain AS company_subdomain
+         FROM intake_project_assignments a
+         INNER JOIN companies c ON c.id = a.company_id AND c.tenant_id = a.tenant_id
+         WHERE a.project_id = ? AND a.tenant_id = ?
+         ORDER BY datetime(a.created_at) DESC`
+      )
+      .all(pid, tid);
+    const companies = db
+      .prepare(`SELECT id, name, subdomain FROM companies WHERE tenant_id = ? ORDER BY name ASC`)
+      .all(tid);
+    const assignedIds = new Set(assignments.map((a) => Number(a.company_id)));
+    const assignableCompanies = companies.filter((c) => !assignedIds.has(Number(c.id)));
+    const budget = clientIntake.getBudgetMetaForTenant(db, tid);
+    const error = String((req.query && req.query.error) || "").trim().slice(0, 400);
+    const notice = String((req.query && req.query.notice) || "").trim().slice(0, 400);
+    return res.render("admin/intake_project_detail", {
+      activeNav: "projects",
+      navTitle: `Project ${project.project_code}`,
+      project,
+      images,
+      assignments,
+      assignableCompanies,
+      budget,
+      projectStatusLabel: clientIntake.intakeProjectStatusLabel(project.status),
+      error: error || null,
+      notice: notice || null,
+      intakeFileBase: "/admin/project-intake/files/",
+    });
+  });
+
+  router.post(
+    "/projects/:id/assignments",
+    requireClientProjectIntakeAccess,
+    requireClientProjectIntakeMutate,
+    (req, res) => {
+      const tid = getAdminTenantId(req);
+      const pid = Number(req.params.id);
+      const companyId = Number((req.body && req.body.company_id) || 0);
+      const uid = req.session.adminUser.id;
+      if (!pid || pid < 1 || !companyId || companyId < 1) {
+        return res.redirect(`/admin/projects/${pid}?error=` + encodeURIComponent("Choose a company."));
+      }
+      const project = db.prepare("SELECT id FROM intake_client_projects WHERE id = ? AND tenant_id = ?").get(pid, tid);
+      if (!project) return res.status(404).send("Project not found.");
+      const company = db.prepare("SELECT id FROM companies WHERE id = ? AND tenant_id = ?").get(companyId, tid);
+      if (!company) {
+        return res.redirect(`/admin/projects/${pid}?error=` + encodeURIComponent("Company not in this region."));
+      }
+      try {
+        db.prepare(
+          `INSERT INTO intake_project_assignments (tenant_id, project_id, company_id, assigned_by_admin_user_id, status, updated_at)
+           VALUES (?, ?, ?, ?, 'pending', datetime('now'))`
+        ).run(tid, pid, companyId, uid);
+      } catch (e) {
+        const msg = String(e.message || "");
+        if (msg.includes("UNIQUE")) {
+          return res.redirect(`/admin/projects/${pid}?error=` + encodeURIComponent("That company is already assigned."));
+        }
+        return res.status(400).send(msg || "Could not assign.");
+      }
+      return res.redirect(`/admin/projects/${pid}?notice=` + encodeURIComponent("Assignment added."));
+    }
+  );
+
+  router.post(
+    "/projects/:id/assignments/:assignmentId/delete",
+    requireClientProjectIntakeAccess,
+    requireClientProjectIntakeMutate,
+    (req, res) => {
+      const tid = getAdminTenantId(req);
+      const pid = Number(req.params.id);
+      const aid = Number(req.params.assignmentId);
+      const row = db
+        .prepare(`SELECT id FROM intake_project_assignments WHERE id = ? AND tenant_id = ? AND project_id = ?`)
+        .get(aid, tid, pid);
+      if (!row) return res.status(404).send("Assignment not found.");
+      db.prepare(`DELETE FROM intake_project_assignments WHERE id = ? AND tenant_id = ?`).run(aid, tid);
+      return res.redirect(`/admin/projects/${pid}?notice=` + encodeURIComponent("Assignment removed."));
+    }
+  );
+
+  router.get("/companies/:id/portal-users", requireDirectoryEditor, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const cid = Number(req.params.id);
+    const company = db.prepare("SELECT id, name, subdomain FROM companies WHERE id = ? AND tenant_id = ?").get(cid, tid);
+    if (!company) return res.status(404).send("Company not found.");
+    const users = db
+      .prepare(
+        `SELECT id, full_name, username, phone_normalized, is_active, created_at FROM company_personnel_users WHERE tenant_id = ? AND company_id = ? ORDER BY id ASC`
+      )
+      .all(tid, cid);
+    const error = String((req.query && req.query.error) || "").trim().slice(0, 400);
+    const notice = String((req.query && req.query.notice) || "").trim().slice(0, 400);
+    return res.render("admin/company_portal_users", {
+      activeNav: "companies",
+      navTitle: "Portal users",
+      company,
+      users,
+      error: error || null,
+      notice: notice || null,
+    });
+  });
+
+  router.post("/companies/:id/portal-users", requireDirectoryEditor, requireNotViewer, async (req, res) => {
+    const tid = getAdminTenantId(req);
+    const cid = Number(req.params.id);
+    const company = db.prepare("SELECT id FROM companies WHERE id = ? AND tenant_id = ?").get(cid, tid);
+    if (!company) return res.status(404).send("Company not found.");
+    const full_name = String((req.body && req.body.full_name) || "").trim().slice(0, 200);
+    let username = String((req.body && req.body.username) || "").trim().toLowerCase().slice(0, 60);
+    if (username && !/^[a-z0-9_]+$/.test(username)) {
+      return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("Username may contain letters, digits, and underscores only."));
+    }
+    const phone = String((req.body && req.body.phone) || "").trim();
+    const password = String((req.body && req.body.password) || "");
+    const tsRow = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    const slug = tsRow ? String(tsRow.slug) : "zm";
+    if (!full_name || !password) {
+      return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("Name and password are required."));
+    }
+    const phoneNorm = phone ? clientIntake.normalizeDigits(phone) : "";
+    if (!username && !phoneNorm) {
+      return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("Enter a phone number or a username."));
+    }
+    if (phoneNorm && !isValidPhoneForTenant(slug, phone)) {
+      return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("Invalid phone for this region."));
+    }
+    let passwordHash;
+    try {
+      passwordHash = await bcrypt.hash(password, 11);
+    } catch (e) {
+      return res.status(500).send("Could not hash password.");
+    }
+    try {
+      db.prepare(
+        `INSERT INTO company_personnel_users (tenant_id, company_id, full_name, username, phone_normalized, password_hash, is_active, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'))`
+      ).run(tid, cid, full_name, username || "", phoneNorm, passwordHash);
+    } catch (e) {
+      if (String(e.message || "").includes("UNIQUE")) {
+        return res.redirect(
+          `/admin/companies/${cid}/portal-users?error=` +
+            encodeURIComponent("That phone or username is already registered for portal login in this region.")
+        );
+      }
+      return res.status(400).send(String(e.message || "Could not create user."));
+    }
+    return res.redirect(`/admin/companies/${cid}/portal-users?notice=` + encodeURIComponent("Portal user created."));
+  });
+
+  router.get("/project-status", requireClientProjectIntakeAccess, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const q = req.query || {};
+    const { rows, companies, cities, sort, dir, filters } = buildIntakeProjectStatusList(db, tid, q);
+    const budget = clientIntake.getBudgetMetaForTenant(db, tid);
+    const rowsView = rows.map((r) => ({
+      ...r,
+      assign_summary: summarizeAssignmentStatuses(r.assign_statuses_raw),
+    }));
+    return res.render("admin/intake_project_status", {
+      activeNav: "project_status",
+      navTitle: "Order / project status",
+      rows: rowsView,
+      companies,
+      cities,
+      sort,
+      dir,
+      filters,
+      budget,
+      intakeProjectStatusLabel: clientIntake.intakeProjectStatusLabel,
+      sortToggleHref: (col) => sortToggleHref(filters, col, sort, dir),
+      resetHref: buildProjectStatusHref({}, "created_at", "desc"),
+    });
   });
 
   return router;

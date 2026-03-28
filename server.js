@@ -43,6 +43,7 @@ const { STAGES } = require("./src/tenantStages");
 const { eventTimeParts } = require("./src/eventTime");
 const publicModule = require("./src/routes/public")({ db });
 const adminRoutes = require("./src/routes/admin");
+const companyPortalRoutes = require("./src/routes/companyPortal");
 const apiRoutes = require("./src/routes/api");
 
 const app = express();
@@ -284,6 +285,9 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+/** Company personnel portal (tenant must be enabled — same gate as public site). */
+app.use(companyPortalRoutes({ db }));
 
 app.use("/", publicModule.router);
 

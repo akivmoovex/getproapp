@@ -148,7 +148,8 @@ function enrichCompanyWithCategory(db, company) {
  * @param {object} [options.reviewOverride] - if set, use instead of DB reviews
  */
 async function buildCompanyPageLocals(req, db, company, options = {}) {
-  const { reviewOverride } = options;
+  const { reviewOverride, companyPortalReadOnly, companyPortalLayout, companyPortalPersonnel, activeCompanyNav } =
+    options;
   const tenant = getTenantById(company.tenant_id, db) || getTenantById(TENANT_ZM, db);
   const tenantUrlPrefix = platformTenantPrefixForSlug(tenant.slug);
   const extras = reviewOverride
@@ -186,6 +187,10 @@ async function buildCompanyPageLocals(req, db, company, options = {}) {
     tenantHomeHref: tenantHomeHrefFromPrefix(tenantUrlPrefix),
     regionChoices: req.regionChoices || [],
     ...getTenantContactSupport(db, company.tenant_id),
+    companyPortalReadOnly: !!companyPortalReadOnly,
+    companyPortalLayout: !!companyPortalLayout,
+    companyPortalPersonnel: companyPortalPersonnel || null,
+    activeCompanyNav: activeCompanyNav || "",
   };
 }
 

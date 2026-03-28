@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Order / project status | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Order / project status', activeNav: 'project_status' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <div class="admin-toolbar">
+          <a class="btn" href="/admin/projects">Intake projects (CRM)</a>
+        </div>
+        <h1 class="section-title section-title--flush">Order / project status</h1>
+        <p class="muted admin-intro">Tenant-scoped intake projects and assignment response summary. Sorting and filters use the query string only.</p>
+
+        <% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
+        <% var hasFilters = !!(f.q || f.project_status || f.assignment_status || f.city || f.company_id || f.date_from || f.date_to); %>
+        <% if (hasFilters) { %>
+        <p class="admin-status-active-filters muted">
+          Active filters
+          <% if (f.q) { %><span class="admin-status-chip">q: <%= f.q %></span><% } %>
+          <% if (f.project_status) { %><span class="admin-status-chip">project: <%= f.project_status %></span><% } %>
+          <% if (f.assignment_status) { %><span class="admin-status-chip">assignment: <%= f.assignment_status %></span><% } %>
+          <% if (f.city) { %><span class="admin-status-chip">city: <%= f.city %></span><% } %>
+          <% if (f.company_id) { %><span class="admin-status-chip">company id: <%= f.company_id %></span><% } %>
+          <% if (f.date_from || f.date_to) { %><span class="admin-status-chip">dates: <%= f.date_from || '…' %> – <%= f.date_to || '…' %></span><% } %>
+          <a class="btn btn--text" href="<%= typeof resetHref !== 'undefined' ? resetHref : '/admin/project-status' %>">Clear filters</a>
+        </p>
+        <% } %>
+
+        <div class="card admin-form-card card--mb-block">
+          <h2 class="admin-form-card__title">Filters</h2>
+          <form method="get" action="/admin/project-status" class="form admin-status-filters">
+            <input type="hidden" name="sort" value="<%= typeof sort !== 'undefined' ? sort : 'created_at' %>" />
+            <input type="hidden" name="dir" value="<%= typeof dir !== 'undefined' ? dir : 'desc' %>" />
+            <div class="admin-status-filter-grid">
+              <div class="input-field">
+                <label class="input-field__label" for="f_q">Search (project or client code)</label>
+                <input id="f_q" name="q" class="input-field__control" value="<%= f.q || '' %>" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="f_ps">Project status</label>
+                <input id="f_ps" name="project_status" class="input-field__control" placeholder="e.g. new" value="<%= f.project_status || '' %>" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="f_as">Assignment status</label>
+                <select id="f_as" name="assignment_status" class="input-field__control">
+                  <option value="">Any</option>
+                  <option value="pending" <%= f.assignment_status === 'pending' ? 'selected' : '' %>>pending</option>
+                  <option value="interested" <%= f.assignment_status === 'interested' ? 'selected' : '' %>>interested</option>
+                  <option value="declined" <%= f.assignment_status === 'declined' ? 'selected' : '' %>>declined</option>
+                  <option value="callback_requested" <%= f.assignment_status === 'callback_requested' ? 'selected' : '' %>>callback_requested</option>
+                </select>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="f_city">City (exact)</label>
+                <select id="f_city" name="city" class="input-field__control">
+                  <option value="">Any</option>
+                  <% (cities || []).forEach(function (ct) { %>
+                    <option value="<%= ct %>" <%= f.city === ct ? 'selected' : '' %>><%= ct %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="f_co">Assigned company</label>
+                <select id="f_co" name="company_id" class="input-field__control">
+                  <option value="">Any</option>
+                  <% (companies || []).forEach(function (co) { %>
+                    <option value="<%= co.id %>" <%= String(f.company_id) === String(co.id) ? 'selected' : '' %>><%= co.name %> (@<%= co.subdomain %>)</option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="f_df">Created from (YYYY-MM-DD)</label>
+                <input id="f_df" name="date_from" class="input-field__control" value="<%= f.date_from || '' %>" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="f_dt">Created to (YYYY-MM-DD)</label>
+                <input id="f_dt" name="date_to" class="input-field__control" value="<%= f.date_to || '' %>" />
+              </div>
+            </div>
+            <div class="form-step__actions">
+              <button type="submit" class="btn btn--primary">Apply</button>
+              <a class="btn btn--text" href="<%= typeof resetHref !== 'undefined' ? resetHref : '/admin/project-status' %>">Reset</a>
+            </div>
+          </form>
+        </div>
+
+        <div class="table-wrap card">
+          <table class="table admin-status-table">
+            <thead>
+              <tr>
+                <th><a href="<%= sortToggleHref('project_code') %>" class="admin-status-sort">Project code<% if (sort === 'project_code') { %> <span class="muted"><%= dir %></span><% } %></a></th>
+                <th>Client code</th>
+                <th>Client name</th>
+                <th><a href="<%= sortToggleHref('city') %>" class="admin-status-sort">City<% if (sort === 'city') { %> <span class="muted"><%= dir %></span><% } %></a></th>
+                <th>Neighborhood</th>
+                <th><a href="<%= sortToggleHref('estimated_budget_value') %>" class="admin-status-sort">Budget<% if (sort === 'estimated_budget_value') { %> <span class="muted"><%= dir %></span><% } %></a></th>
+                <th><a href="<%= sortToggleHref('status') %>" class="admin-status-sort">Project status<% if (sort === 'status') { %> <span class="muted"><%= dir %></span><% } %></a></th>
+                <th>Company responses</th>
+                <th>Assigned #</th>
+                <th><a href="<%= sortToggleHref('created_at') %>" class="admin-status-sort">Created<% if (sort === 'created_at') { %> <span class="muted"><%= dir %></span><% } %></a></th>
+                <th><a href="<%= sortToggleHref('updated_at') %>" class="admin-status-sort">Updated<% if (sort === 'updated_at') { %> <span class="muted"><%= dir %></span><% } %></a></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!rows || rows.length === 0) { %>
+                <tr><td colspan="12" class="muted">No projects match the current filters.</td></tr>
+              <% } %>
+              <% (rows || []).forEach(function (r) { %>
+                <tr>
+                  <td class="u-text-strong"><%= r.project_code %></td>
+                  <td><%= r.client_code %></td>
+                  <td><%= r.client_display_name %></td>
+                  <td><%= r.city || '—' %></td>
+                  <td><%= r.neighborhood || '—' %></td>
+                  <td>
+                    <% if (r.estimated_budget_value != null && r.estimated_budget_value !== '') { %>
+                      <%= typeof budget !== 'undefined' && budget ? budget.displayPrefix + ' ' : '' %><%= r.estimated_budget_value %> <%= r.estimated_budget_currency || '' %>
+                    <% } else { %>—<% } %>
+                  </td>
+                  <td><%= typeof intakeProjectStatusLabel === 'function' ? intakeProjectStatusLabel(r.project_status) : r.project_status %></td>
+                  <td class="muted admin-status-summary"><%= r.assign_summary %></td>
+                  <td><%= r.assign_count != null ? r.assign_count : 0 %></td>
+                  <td class="muted"><%- include('../partials/event_time', { at: r.created_at }) %></td>
+                  <td class="muted"><%- include('../partials/event_time', { at: r.updated_at }) %></td>
+                  <td><a class="btn" href="/admin/projects/<%= r.id %>">Open</a></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted u-mt-note">Showing up to 200 rows. Assignment summary is a count of statuses across all assigned companies.</p>
+      </div>
+    </main>
+  </body>
+</html>

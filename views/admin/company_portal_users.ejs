@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Portal users · <%= company.name %> | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Portal users', activeNav: 'companies' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <div class="admin-toolbar">
+          <a class="btn" href="/admin/companies/<%= company.id %>/workspace">← Workspace</a>
+        </div>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+        <% if (typeof notice !== 'undefined' && notice) { %>
+          <div class="flash flash--success" role="status"><%= notice %></div>
+        <% } %>
+        <h1 class="section-title section-title--flush">Company portal logins</h1>
+        <p class="muted"><strong><%= company.name %></strong> · staff sign in at <code class="kbd">/company/login</code> on this region’s site using <strong>phone</strong> or <strong>portal username</strong> plus password.</p>
+
+        <div class="card admin-form-card card--mb-block">
+          <h2 class="admin-form-card__title">Existing users</h2>
+          <% if (!users || users.length === 0) { %>
+            <p class="muted">No portal users yet.</p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Phone (normalized)</th>
+                    <th>Active</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% users.forEach(function (u) { %>
+                    <tr>
+                      <td><%= u.full_name %></td>
+                      <td><%= u.username && String(u.username).trim() ? u.username : '—' %></td>
+                      <td><%= u.phone_normalized && String(u.phone_normalized).trim() ? u.phone_normalized : '—' %></td>
+                      <td><%= Number(u.is_active) === 1 ? 'Yes' : 'No' %></td>
+                      <td class="muted"><%- include('../partials/event_time', { at: u.created_at }) %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="card admin-form-card">
+          <h2 class="admin-form-card__title">Add portal user</h2>
+          <form method="post" action="/admin/companies/<%= company.id %>/portal-users" class="form">
+            <div class="input-field">
+              <label class="input-field__label" for="cpu_name">Full name</label>
+              <input id="cpu_name" name="full_name" class="input-field__control" required maxlength="200" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="cpu_username">Portal username (optional)</label>
+              <input id="cpu_username" name="username" type="text" class="input-field__control" maxlength="60" autocomplete="username" autocapitalize="none" placeholder="e.g. demo_client" />
+              <p class="muted input-field__hint">Lowercase letters, digits, underscores. At least one of username or phone is required.</p>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="cpu_phone">Phone (optional)</label>
+              <input id="cpu_phone" name="phone" type="tel" class="input-field__control" autocomplete="tel" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="cpu_pw">Password</label>
+              <input id="cpu_pw" name="password" type="password" class="input-field__control" required autocomplete="new-password" />
+            </div>
+            <div class="form-step__actions">
+              <button type="submit" class="btn btn--primary">Create user</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

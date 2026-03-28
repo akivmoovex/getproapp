@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= project.project_code %> | Intake project</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: project.project_code, activeNav: 'projects' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <div class="admin-toolbar">
+          <a class="btn" href="/admin/projects">← All projects</a>
+        </div>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+        <% if (typeof notice !== 'undefined' && notice) { %>
+          <div class="flash flash--success" role="status"><%= notice %></div>
+        <% } %>
+        <h1 class="section-title section-title--flush">Project <%= project.project_code %></h1>
+        <p class="muted">Status: <strong><%= typeof projectStatusLabel !== 'undefined' ? projectStatusLabel : project.status %></strong></p>
+
+        <div class="card admin-form-card card--mb-block">
+          <h2 class="admin-form-card__title">Client (admin)</h2>
+          <table class="admin-workspace__table">
+            <tbody>
+              <tr><th scope="row">Client code</th><td><%= project.client_code %></td></tr>
+              <tr><th scope="row">Name</th><td><%= project.client_live_name %></td></tr>
+              <tr><th scope="row">Phone</th><td><%= project.client_live_phone %></td></tr>
+              <tr><th scope="row">External ref</th><td><%= project.external_client_reference || '—' %></td></tr>
+              <tr><th scope="row">Snapshots on project</th><td><%= project.client_full_name_snapshot %> / <%= project.client_phone_snapshot %></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card admin-form-card card--mb-block">
+          <h2 class="admin-form-card__title">Project fields</h2>
+          <table class="admin-workspace__table">
+            <tbody>
+              <tr><th scope="row">City</th><td><%= project.city || '—' %></td></tr>
+              <tr><th scope="row">Neighborhood</th><td><%= project.neighborhood || '—' %></td></tr>
+              <tr><th scope="row">Street / house / unit</th><td><%= [project.street_name, project.house_number, project.apartment_number].filter(Boolean).join(', ') || '—' %></td></tr>
+              <tr><th scope="row">Client address (on file)</th><td><%= [project.client_address_street, project.client_address_house_number, project.client_address_apartment_number].filter(Boolean).join(', ') || '—' %></td></tr>
+              <tr><th scope="row">Budget</th><td>
+                <% if (project.estimated_budget_value != null && project.estimated_budget_value !== '') { %>
+                  <%= typeof budget !== 'undefined' && budget ? budget.displayPrefix + ' ' : '' %><%= project.estimated_budget_value %> <%= project.estimated_budget_currency || '' %>
+                <% } else { %>—<% } %>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <% if (images && images.length) { %>
+        <div class="card admin-form-card card--mb-block">
+          <h2 class="admin-form-card__title">Images</h2>
+          <div class="admin-intake-detail-images">
+            <% images.forEach(function (im) { %>
+              <a href="<%= intakeFileBase %><%= im.id %>" target="_blank" rel="noopener noreferrer" class="admin-intake-detail-images__link">
+                <img src="<%= intakeFileBase %><%= im.id %>" alt="" width="200" height="150" class="admin-intake-detail-images__img" loading="lazy" />
+              </a>
+            <% }); %>
+          </div>
+        </div>
+        <% } %>
+
+        <div class="card admin-form-card card--mb-block">
+          <h2 class="admin-form-card__title">Assigned companies</h2>
+          <% if (!assignments || assignments.length === 0) { %>
+            <p class="muted">No companies assigned yet.</p>
+          <% } else { %>
+            <ul class="admin-intake-assignments">
+              <% assignments.forEach(function (a) { %>
+                <li class="admin-intake-assignments__row">
+                  <span class="admin-intake-assignments__body">
+                    <strong><%= a.company_name %></strong> <span class="muted">@<%= a.company_subdomain %></span>
+                    · <span class="u-text-strong"><%= a.status %></span>
+                    <% if (a.responded_at) { %>
+                      <span class="muted"> · responded <%- include('../partials/event_time', { at: a.responded_at }) %></span>
+                    <% } %>
+                    <% if (a.response_note && String(a.response_note).trim()) { %>
+                      <span class="admin-intake-assignments__note muted"> · note: <%= a.response_note %></span>
+                    <% } %>
+                  </span>
+                  <form method="post" action="/admin/projects/<%= project.id %>/assignments/<%= a.id %>/delete" class="admin-intake-assignments__del">
+                    <button type="submit" class="btn btn--text">Remove</button>
+                  </form>
+                </li>
+              <% }); %>
+            </ul>
+          <% } %>
+          <% if (assignableCompanies && assignableCompanies.length) { %>
+            <h3 class="input-field__label">Assign another company</h3>
+            <form method="post" action="/admin/projects/<%= project.id %>/assignments" class="form admin-intake-assign-form">
+              <div class="input-field" style="max-width:22rem;">
+                <label class="input-field__label" for="assign_company">Company</label>
+                <select id="assign_company" name="company_id" class="input-field__control" required>
+                  <option value="">Select…</option>
+                  <% assignableCompanies.forEach(function (c) { %>
+                    <option value="<%= c.id %>"><%= c.name %> (@<%= c.subdomain %>)</option>
+                  <% }); %>
+                </select>
+              </div>
+              <button type="submit" class="btn btn--primary">Add assignment</button>
+            </form>
+          <% } else { %>
+            <p class="muted u-mt-note">All companies in this region are already assigned, or there are no listings.</p>
+          <% } %>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

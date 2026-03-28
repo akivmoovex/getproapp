@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Pending leads | Company portal</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="company-portal-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
+    <%- include('partials/company_portal_shell_start', {
+      activeCompanyNav: typeof activeCompanyNav !== 'undefined' ? activeCompanyNav : 'leads',
+      companyName: typeof companyName !== 'undefined' ? companyName : '',
+    }) %>
+    <main class="company-portal-main" id="main-content">
+      <h1 class="company-portal-page-title">Active leads</h1>
+      <p class="muted company-portal-intro">Assigned opportunities (awaiting response, interested, or callback requested). Customer identity is not shown here.</p>
+      <% if (!assignments || assignments.length === 0) { %>
+        <p class="muted">No active assignments.</p>
+      <% } else { %>
+        <ul class="company-lead-cards" role="list">
+          <% assignments.forEach(function (a) { %>
+            <li>
+              <a class="company-lead-card card card--interactive" href="/company/leads/<%= a.assignment_id %>">
+                <span class="company-lead-card__code"><%= a.project_code %></span>
+                <span class="company-lead-card__badge"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.assignment_status) : a.assignment_status %></span>
+                <span class="company-lead-card__meta"><%= a.city %><% if (a.neighborhood && String(a.neighborhood).trim()) { %> · <%= a.neighborhood %><% } %></span>
+                <span class="muted company-lead-card__hint">View details</span>
+              </a>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </main>
+    <%- include('partials/company_portal_shell_end') %>
+  </body>
+</html>
