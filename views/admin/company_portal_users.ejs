@@ -34,6 +34,7 @@
                     <th>Name</th>
                     <th>Username</th>
                     <th>Phone (normalized)</th>
+                    <th>NRZ number</th>
                     <th>Active</th>
                     <th>Created</th>
                   </tr>
@@ -44,6 +45,7 @@
                       <td><%= u.full_name %></td>
                       <td><%= u.username && String(u.username).trim() ? u.username : '—' %></td>
                       <td><%= u.phone_normalized && String(u.phone_normalized).trim() ? u.phone_normalized : '—' %></td>
+                      <td><%= u.nrz_number && String(u.nrz_number).trim() ? u.nrz_number : '—' %></td>
                       <td><%= Number(u.is_active) === 1 ? 'Yes' : 'No' %></td>
                       <td class="muted"><%- include('../partials/event_time', { at: u.created_at }) %></td>
                     </tr>
@@ -69,6 +71,11 @@
             <div class="input-field">
               <label class="input-field__label" for="cpu_phone">Phone (optional)</label>
               <input id="cpu_phone" name="phone" type="tel" class="input-field__control" autocomplete="tel" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="cpu_nrz">NRZ number (optional)</label>
+              <input id="cpu_nrz" name="nrz_number" type="text" class="input-field__control" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="Same rules as client intake NRZ" />
+              <p class="muted input-field__hint">Letters, digits, hyphens; 2–40 characters when provided. Stored for reference only (not used for portal login).</p>
             </div>
             <div class="input-field">
               <label class="input-field__label" for="cpu_pw">Password</label>

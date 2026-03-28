@@ -1,6 +1,5 @@
 /**
- * Tenant-scoped intake project status list: server-side sort/filter (whitelisted only)
- * and conservative pagination.
+ * Admin “Client Lead Status” list: tenant-scoped intake projects, whitelisted sort/filter/pagination.
  */
 
 const SORT_MAP = {
@@ -209,7 +208,7 @@ function buildProjectStatusHref(filters, sort, dir) {
   p.set("sort", sort);
   p.set("dir", dir);
   const qs = p.toString();
-  return `/admin/project-status${qs ? `?${qs}` : ""}`;
+  return `/admin/client-lead-status${qs ? `?${qs}` : ""}`;
 }
 
 /**

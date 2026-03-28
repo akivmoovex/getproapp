@@ -67,7 +67,7 @@
         <% if (canProjectIntake) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'project_intake' ? 'admin-nav__link--active' : '' %>" href="/admin/project-intake">New project</a>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'projects' ? 'admin-nav__link--active' : '' %>" href="/admin/projects">Projects</a>
-          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'project_status' ? 'admin-nav__link--active' : '' %>" href="/admin/project-status">Order status</a>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && (activeNav === 'client_lead_status' || activeNav === 'project_status') ? 'admin-nav__link--active' : '' %>" href="/admin/client-lead-status">Client Lead Status</a>
         <% } %>
         <% if (canCrm) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'crm' ? 'admin-nav__link--active' : '' %>" href="/admin/crm">CRM</a>

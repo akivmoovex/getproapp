@@ -3,18 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Order / project status | GetPro Admin</title>
+    <title>Client Lead Status | GetPro Admin</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../partials/admin_nav', { navTitle: 'Order / project status', activeNav: 'project_status' }) %>
+    <%- include('../partials/admin_nav', { navTitle: 'Client Lead Status', activeNav: 'client_lead_status' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
         <div class="admin-toolbar">
           <a class="btn" href="/admin/projects">Intake projects (CRM)</a>
         </div>
-        <h1 class="section-title section-title--flush">Order / project status</h1>
-        <p class="muted admin-intro">Tenant-scoped intake projects and assignment response summary. Sorting and filters use the query string only.</p>
+        <h1 class="section-title section-title--flush">Client Lead Status</h1>
+        <p class="muted admin-intro">Intake projects (client leads), company assignments, and portal response summary for this region. Sorting, filters, and pagination use the query string only.</p>
 
         <% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
         <% var hasFilters = !!(f.q || f.project_status || f.assignment_status || f.city || f.company_id || f.date_from || f.date_to); %>
@@ -27,13 +27,13 @@
           <% if (f.city) { %><span class="admin-status-chip">city: <%= f.city %></span><% } %>
           <% if (f.company_id) { %><span class="admin-status-chip">company id: <%= f.company_id %></span><% } %>
           <% if (f.date_from || f.date_to) { %><span class="admin-status-chip">dates: <%= f.date_from || '…' %> – <%= f.date_to || '…' %></span><% } %>
-          <a class="btn btn--text" href="<%= typeof resetHref !== 'undefined' ? resetHref : '/admin/project-status' %>">Clear filters</a>
+          <a class="btn btn--text" href="<%= typeof resetHref !== 'undefined' ? resetHref : '/admin/client-lead-status' %>">Clear filters</a>
         </p>
         <% } %>
 
         <div class="card admin-form-card card--mb-block">
           <h2 class="admin-form-card__title">Filters</h2>
-          <form method="get" action="/admin/project-status" class="form admin-status-filters">
+          <form method="get" action="/admin/client-lead-status" class="form admin-status-filters">
             <input type="hidden" name="page" value="1" />
             <input type="hidden" name="sort" value="<%= typeof sort !== 'undefined' ? sort : 'created_at' %>" />
             <input type="hidden" name="dir" value="<%= typeof dir !== 'undefined' ? dir : 'desc' %>" />
@@ -85,7 +85,7 @@
             </div>
             <div class="form-step__actions">
               <button type="submit" class="btn btn--primary">Apply</button>
-              <a class="btn btn--text" href="<%= typeof resetHref !== 'undefined' ? resetHref : '/admin/project-status' %>">Reset</a>
+              <a class="btn btn--text" href="<%= typeof resetHref !== 'undefined' ? resetHref : '/admin/client-lead-status' %>">Reset</a>
             </div>
           </form>
         </div>

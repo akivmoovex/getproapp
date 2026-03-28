@@ -3553,7 +3553,7 @@ module.exports = function adminRoutes({ db }) {
     if (!company) return res.status(404).send("Company not found.");
     const users = db
       .prepare(
-        `SELECT id, full_name, username, phone_normalized, is_active, created_at FROM company_personnel_users WHERE tenant_id = ? AND company_id = ? ORDER BY id ASC`
+        `SELECT id, full_name, username, phone_normalized, nrz_number, is_active, created_at FROM company_personnel_users WHERE tenant_id = ? AND company_id = ? ORDER BY id ASC`
       )
       .all(tid, cid);
     const error = String((req.query && req.query.error) || "").trim().slice(0, 400);
@@ -3580,6 +3580,11 @@ module.exports = function adminRoutes({ db }) {
     }
     const phone = String((req.body && req.body.phone) || "").trim();
     const password = String((req.body && req.body.password) || "");
+    const nrzRaw = String((req.body && req.body.nrz_number) || "").trim();
+    const nrzCheck = clientIntake.validateNrz(nrzRaw);
+    if (!nrzCheck.ok) {
+      return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent(nrzCheck.error));
+    }
     const tsRow = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
     const slug = tsRow ? String(tsRow.slug) : "zm";
     if (!full_name || !password) {
@@ -3600,9 +3605,9 @@ module.exports = function adminRoutes({ db }) {
     }
     try {
       db.prepare(
-        `INSERT INTO company_personnel_users (tenant_id, company_id, full_name, username, phone_normalized, password_hash, is_active, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'))`
-      ).run(tid, cid, full_name, username || "", phoneNorm, passwordHash);
+        `INSERT INTO company_personnel_users (tenant_id, company_id, full_name, username, phone_normalized, nrz_number, password_hash, is_active, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))`
+      ).run(tid, cid, full_name, username || "", phoneNorm, nrzCheck.value || "", passwordHash);
     } catch (e) {
       if (String(e.message || "").includes("UNIQUE")) {
         return res.redirect(
@@ -3615,7 +3620,7 @@ module.exports = function adminRoutes({ db }) {
     return res.redirect(`/admin/companies/${cid}/portal-users?notice=` + encodeURIComponent("Portal user created."));
   });
 
-  router.get("/project-status", requireClientProjectIntakeAccess, (req, res) => {
+  function renderClientLeadStatus(req, res) {
     const tid = getAdminTenantId(req);
     const q = req.query || {};
     const list = buildIntakeProjectStatusList(db, tid, q);
@@ -3626,8 +3631,8 @@ module.exports = function adminRoutes({ db }) {
     }));
     const { companies, cities, sort, dir, filters, total, page, maxPage, pageSize } = list;
     return res.render("admin/intake_project_status", {
-      activeNav: "project_status",
-      navTitle: "Order / project status",
+      activeNav: "client_lead_status",
+      navTitle: "Client Lead Status",
       rows: rowsView,
       companies,
       cities,
@@ -3644,7 +3649,10 @@ module.exports = function adminRoutes({ db }) {
       resetHref: buildProjectStatusHref({}, "created_at", "desc"),
       projectStatusPageHref: (p) => buildProjectStatusHref({ ...filters, page: p > 1 ? String(p) : "" }, sort, dir),
     });
-  });
+  }
+
+  router.get("/client-lead-status", requireClientProjectIntakeAccess, renderClientLeadStatus);
+  router.get("/project-status", requireClientProjectIntakeAccess, renderClientLeadStatus);
 
   return router;
 };
