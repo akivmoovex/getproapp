@@ -38,6 +38,11 @@ const TENANT_IL_ID = TENANT_IL;
 module.exports = function apiRoutes({ db }) {
   const router = express.Router();
 
+  /**
+   * Company contact lead: `company_id` must be explicit (profile form hidden field or API body).
+   * Do not infer the listing from category, city, or search heuristics — wrong assignment would
+   * route customer PII to the wrong business.
+   */
   router.post("/leads", async (req, res) => {
     const {
       company_id,

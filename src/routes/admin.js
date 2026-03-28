@@ -46,6 +46,7 @@ const {
 } = require("../companyProfile");
 const { isValidPhoneForTenant } = require("../tenants");
 const { LEAD_STATUSES, normalizeLeadStatus, leadStatusLabel } = require("../leadStatuses");
+const { ADMIN_COMPANY_LEAD_SELECT, mapAdminCompanyLeadRow } = require("../leadCompanyRequestViewModel");
 const { buildCompanyPageLocals, enrichCompanyWithCategory, platformTenantPrefixForSlug } = require("../companyPageRender");
 const { listAllByKind, getById } = require("../contentPages");
 const { CRM_TASK_STATUSES, normalizeCrmTaskStatus, crmTaskStatusLabel } = require("../crmTaskStatuses");
@@ -1070,16 +1071,17 @@ module.exports = function adminRoutes({ db }) {
     const latestLeads = db
       .prepare(
         `
-        SELECT l.*, c.name AS company_name, c.subdomain AS company_subdomain, cat.slug AS company_category_slug
+        SELECT ${ADMIN_COMPANY_LEAD_SELECT}
         FROM leads l
         INNER JOIN companies c ON c.id = l.company_id
-        LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
         WHERE l.tenant_id = ?
         ORDER BY l.created_at DESC
         LIMIT 10
         `
       )
-      .all(tid);
+      .all(tid)
+      .map(mapAdminCompanyLeadRow)
+      .filter(Boolean);
 
     return res.render("admin/dashboard", {
       categoriesCount,
@@ -2032,6 +2034,7 @@ module.exports = function adminRoutes({ db }) {
     }
   });
 
+  /** Company leads: optional `company_id` filter is an explicit admin choice, not inferred from category/city. */
   router.get("/leads", (req, res) => {
     const tid = getAdminTenantId(req);
 
@@ -2048,19 +2051,21 @@ module.exports = function adminRoutes({ db }) {
       leads = db
         .prepare(
           `
-          SELECT l.*, c.name AS company_name, c.subdomain AS company_subdomain
+          SELECT ${ADMIN_COMPANY_LEAD_SELECT}
           FROM leads l
           INNER JOIN companies c ON c.id = l.company_id
           WHERE l.company_id = ? AND l.tenant_id = ? AND c.tenant_id = ?
           ORDER BY l.created_at DESC
           `
         )
-        .all(companyId, tid, tid);
+        .all(companyId, tid, tid)
+        .map(mapAdminCompanyLeadRow)
+        .filter(Boolean);
     } else {
       leads = db
         .prepare(
           `
-          SELECT l.*, c.name AS company_name, c.subdomain AS company_subdomain
+          SELECT ${ADMIN_COMPANY_LEAD_SELECT}
           FROM leads l
           INNER JOIN companies c ON c.id = l.company_id
           WHERE l.tenant_id = ?
@@ -2068,7 +2073,9 @@ module.exports = function adminRoutes({ db }) {
           LIMIT 200
           `
         )
-        .all(tid);
+        .all(tid)
+        .map(mapAdminCompanyLeadRow)
+        .filter(Boolean);
     }
 
     const partnerCallbacks = db
@@ -2112,16 +2119,18 @@ module.exports = function adminRoutes({ db }) {
     const tid = getAdminTenantId(req);
     const id = Number(req.params.id);
     if (!id || id < 1) return res.status(400).send("Invalid id");
-    const lead = db
-      .prepare(
-        `
-        SELECT l.*, c.name AS company_name, c.subdomain AS company_subdomain
-        FROM leads l
-        INNER JOIN companies c ON c.id = l.company_id
-        WHERE l.id = ? AND l.tenant_id = ? AND c.tenant_id = ?
-        `
-      )
-      .get(id, tid, tid);
+    const lead = mapAdminCompanyLeadRow(
+      db
+        .prepare(
+          `
+          SELECT ${ADMIN_COMPANY_LEAD_SELECT}
+          FROM leads l
+          INNER JOIN companies c ON c.id = l.company_id
+          WHERE l.id = ? AND l.tenant_id = ? AND c.tenant_id = ?
+          `
+        )
+        .get(id, tid, tid)
+    );
     if (!lead) return res.status(404).send("Lead not found");
     const comments = db
       .prepare(
