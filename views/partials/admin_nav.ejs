@@ -5,6 +5,7 @@
   const canEdit = !!nav.canEditDirectory;
   const canUsers = !!nav.canManageUsers;
   const canCrm = !!nav.canAccessCrm;
+  const canProjectIntake = !!nav.canAccessProjectIntake;
   const canSettings = !!nav.canAccessTenantSettings;
   const canHub = !!nav.canAccessSettingsHub;
   const scoped = !!nav.tenantScoped;
@@ -62,6 +63,9 @@
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'dashboard' ? 'admin-nav__link--active' : '' %>" href="/admin/dashboard">Dashboard</a>
         <% if (isViewer || canEdit || canCrm) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'leads' ? 'admin-nav__link--active' : '' %>" href="/admin/leads">Leads</a>
+        <% } %>
+        <% if (canProjectIntake) { %>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'project_intake' ? 'admin-nav__link--active' : '' %>" href="/admin/project-intake">New project</a>
         <% } %>
         <% if (canCrm) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'crm' ? 'admin-nav__link--active' : '' %>" href="/admin/crm">CRM</a>

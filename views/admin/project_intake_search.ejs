@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>New project | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: navTitle || 'New project', activeNav: activeNav || 'project_intake' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <% if (typeof notice !== 'undefined' && notice) { %>
+          <div class="flash flash--info" role="status"><%= notice %></div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+
+        <div class="card admin-form-card">
+          <h1 class="admin-form-card__title">Find existing client</h1>
+          <p class="muted">Search by phone or NRZ for this region only. All lookups are scoped to your current admin tenant.</p>
+          <form method="post" action="/admin/project-intake/search" class="form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <div class="input-field">
+              <label class="input-field__label" for="phone">Phone</label>
+              <input id="phone" name="phone" class="input-field__control" value="<%= phone || '' %>" autocomplete="tel" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="nrz">NRZ number</label>
+              <input id="nrz" name="nrz" class="input-field__control" value="<%= nrz || '' %>" />
+            </div>
+            <div class="form-step__actions admin-gate-actions">
+              <button class="btn btn--primary" type="submit">Search</button>
+            </div>
+          </form>
+        </div>
+
+        <% if (searched) { %>
+          <div class="card admin-form-card" style="margin-top: 1rem;">
+            <% if (foundClient) { %>
+              <h2 class="admin-form-card__title">Client found</h2>
+              <p><strong><%= foundClient.full_name %></strong> — code <code><%= foundClient.client_code %></code></p>
+              <p class="muted">User ID: <%= foundClient.external_user_id %> · Phone: <%= foundClient.phone %></p>
+              <a class="btn btn--primary" href="/admin/project-intake/project/new?clientId=<%= foundClient.id %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Continue to new project</a>
+            <% } else { %>
+              <h2 class="admin-form-card__title">No client found</h2>
+              <p>Create a new client record, then you will open the project form.</p>
+              <a class="btn btn--primary" href="/admin/project-intake/clients/new?phone=<%= encodeURIComponent(phone || '') %>&nrz=<%= encodeURIComponent(nrz || '') %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Create new client</a>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+    </main>
+  </body>
+</html>

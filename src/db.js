@@ -1326,6 +1326,105 @@ try {
   console.error("[getpro] content_pages migration:", e.message);
 }
 
+/**
+ * Admin “New Project” intake: tenant-scoped clients, projects, images, OTP rows.
+ *
+ * Internal PKs: INTEGER AUTOINCREMENT on intake_clients.id, intake_client_projects.id.
+ * Public codes: client_code / project_code — UNIQUE(tenant_id, code); PREFIX-000001 from tenant slug + intake_code_sequences.
+ */
+try {
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("client_project_intake_v1")) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS intake_code_sequences (
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        scope TEXT NOT NULL CHECK(scope IN ('client','project')),
+        next_seq INTEGER NOT NULL DEFAULT 1,
+        PRIMARY KEY (tenant_id, scope)
+      );
+
+      CREATE TABLE IF NOT EXISTS intake_clients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        client_code TEXT NOT NULL,
+        external_user_id TEXT NOT NULL DEFAULT '',
+        full_name TEXT NOT NULL DEFAULT '',
+        phone TEXT NOT NULL DEFAULT '',
+        phone_normalized TEXT NOT NULL DEFAULT '',
+        whatsapp_phone TEXT NOT NULL DEFAULT '',
+        nrz_number TEXT NOT NULL DEFAULT '',
+        nrz_normalized TEXT NOT NULL DEFAULT '',
+        address_street TEXT NOT NULL DEFAULT '',
+        address_house_number TEXT NOT NULL DEFAULT '',
+        address_apartment_number TEXT NOT NULL DEFAULT '',
+        phone_verified_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(tenant_id, client_code)
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_intake_clients_tenant_phone
+        ON intake_clients(tenant_id, phone_normalized) WHERE length(trim(phone_normalized)) > 0;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_intake_clients_tenant_nrz
+        ON intake_clients(tenant_id, nrz_normalized) WHERE length(trim(nrz_normalized)) > 0;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_intake_clients_tenant_extuser
+        ON intake_clients(tenant_id, external_user_id) WHERE length(trim(external_user_id)) > 0;
+
+      CREATE TABLE IF NOT EXISTS intake_client_projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        client_id INTEGER NOT NULL REFERENCES intake_clients(id) ON DELETE CASCADE,
+        project_code TEXT NOT NULL,
+        city TEXT NOT NULL DEFAULT '',
+        neighborhood TEXT NOT NULL DEFAULT '',
+        street_name TEXT NOT NULL DEFAULT '',
+        house_number TEXT NOT NULL DEFAULT '',
+        apartment_number TEXT NOT NULL DEFAULT '',
+        client_address_street TEXT NOT NULL DEFAULT '',
+        client_address_house_number TEXT NOT NULL DEFAULT '',
+        client_address_apartment_number TEXT NOT NULL DEFAULT '',
+        estimated_budget_value REAL,
+        estimated_budget_currency TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'submitted',
+        created_by_admin_user_id INTEGER REFERENCES admin_users(id),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(tenant_id, project_code)
+      );
+      CREATE INDEX IF NOT EXISTS idx_intake_projects_tenant_client ON intake_client_projects(tenant_id, client_id);
+
+      CREATE TABLE IF NOT EXISTS intake_project_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        project_id INTEGER NOT NULL REFERENCES intake_client_projects(id) ON DELETE CASCADE,
+        image_path TEXT NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_intake_project_images_lookup ON intake_project_images(tenant_id, project_id, sort_order);
+
+      CREATE TABLE IF NOT EXISTS intake_phone_otp (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+        client_id INTEGER REFERENCES intake_clients(id) ON DELETE SET NULL,
+        phone_normalized TEXT NOT NULL,
+        code_hash TEXT NOT NULL,
+        purpose TEXT NOT NULL DEFAULT 'phone_verify',
+        expires_at TEXT NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        max_attempts INTEGER NOT NULL DEFAULT 5,
+        verified_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_intake_otp_lookup ON intake_phone_otp(tenant_id, phone_normalized, expires_at);
+    `);
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("client_project_intake_v1");
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Migration: client_project_intake_v1 (intake_clients, projects, images, OTP).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] client_project_intake migration:", e.message);
+}
+
 function run(query, params = []) {
   return db.prepare(query).run(params);
 }

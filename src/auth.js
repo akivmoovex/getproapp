@@ -1,5 +1,14 @@
 const bcrypt = require("bcryptjs");
-const { ROLES, normalizeRole, isSuperAdmin, isTenantViewer, canEditDirectoryData, canAccessSuperConsole } = require("./roles");
+const {
+  ROLES,
+  normalizeRole,
+  isSuperAdmin,
+  isTenantViewer,
+  canEditDirectoryData,
+  canAccessSuperConsole,
+  canAccessClientProjectIntake,
+  canMutateClientProjectIntake,
+} = require("./roles");
 const { TENANT_ZM } = require("./tenantIds");
 const { upsertMembership } = require("./adminUserTenants");
 
@@ -75,6 +84,23 @@ function requireNotViewer(req, res, next) {
   return next();
 }
 
+function requireClientProjectIntakeAccess(req, res, next) {
+  if (!req.session || !req.session.adminUser) return res.redirect("/admin/login");
+  if (!canAccessClientProjectIntake(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Project intake is not available for your role.");
+  }
+  return next();
+}
+
+/** POST/create for project intake only; keeps tenant_viewer read-only without opening other admin POSTs. */
+function requireClientProjectIntakeMutate(req, res, next) {
+  if (!req.session || !req.session.adminUser) return res.redirect("/admin/login");
+  if (!canMutateClientProjectIntake(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Read-only access. Creating clients or projects requires a non-viewer role.");
+  }
+  return next();
+}
+
 async function authenticateAdmin({ db, username, password }) {
   const admin = db.prepare("SELECT * FROM admin_users WHERE username = ?").get(username.toLowerCase());
   if (!admin) return null;
@@ -90,6 +116,8 @@ module.exports = {
   requireSuperAdmin,
   requireDirectoryEditor,
   requireNotViewer,
+  requireClientProjectIntakeAccess,
+  requireClientProjectIntakeMutate,
   authenticateAdmin,
   isSuperAdmin,
   isTenantViewer,

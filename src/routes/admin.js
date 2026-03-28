@@ -1,4 +1,7 @@
 const express = require("express");
+const path = require("path");
+const fs = require("fs");
+const multer = require("multer");
 const bcrypt = require("bcryptjs");
 const slugify = require("slugify");
 const {
@@ -6,6 +9,8 @@ const {
   requireSuperAdmin,
   requireDirectoryEditor,
   requireNotViewer,
+  requireClientProjectIntakeAccess,
+  requireClientProjectIntakeMutate,
   authenticateAdmin,
   isSuperAdmin,
   isTenantViewer,
@@ -20,6 +25,8 @@ const {
   canClaimCrmTasks,
   canAccessTenantSettings,
   canAccessSettingsHub,
+  canAccessClientProjectIntake,
+  canMutateClientProjectIntake,
 } = require("../roles");
 const { STAGES, normalizeStage } = require("../tenantStages");
 const { TENANT_ZM } = require("../tenantIds");
@@ -44,6 +51,8 @@ const { listAllByKind, getById } = require("../contentPages");
 const { CRM_TASK_STATUSES, normalizeCrmTaskStatus, crmTaskStatusLabel } = require("../crmTaskStatuses");
 const { insertCrmAudit } = require("../crmAudit");
 const { resolveSessionAfterLogin, upsertMembership, adminUserIsInTenant } = require("../adminUserTenants");
+const { getTenantCitiesForClient } = require("../tenantCities");
+const clientIntake = require("../clientProjectIntake");
 
 function normalizeCrmAttachmentUrl(raw) {
   const s = String(raw || "").trim();
@@ -194,6 +203,10 @@ function requireManageUsers(req, res, next) {
 
 module.exports = function adminRoutes({ db }) {
   const router = express.Router();
+  const projectIntakeUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: clientIntake.MAX_IMAGE_BYTES, files: 5 },
+  });
 
   router.use((req, res, next) => {
     const em = req.query.embed === "1" || req.query.embed === "true";
@@ -305,7 +318,11 @@ module.exports = function adminRoutes({ db }) {
     if (!req.session.adminUser) return next();
     if (isTenantViewer(req.session.adminUser.role)) {
       const p = req.path;
-      if (p.startsWith("/categories") || p.startsWith("/companies") || p.startsWith("/cities")) {
+      if (
+        p.startsWith("/categories") ||
+        p.startsWith("/companies") ||
+        p.startsWith("/cities")
+      ) {
         return res.redirect("/admin/leads");
       }
     }
@@ -330,6 +347,8 @@ module.exports = function adminRoutes({ db }) {
       canClaimCrmTasks: canClaimCrmTasks(u.role),
       canAccessTenantSettings: canAccessTenantSettings(u.role),
       canAccessSettingsHub: canAccessSettingsHub(u.role),
+      canAccessProjectIntake: canAccessClientProjectIntake(u.role),
+      canMutateProjectIntake: canMutateClientProjectIntake(u.role),
     };
     if (isSuperAdmin(u.role)) {
       const tn = db.prepare("SELECT id, slug, name FROM tenants WHERE id = ?").get(tid);
@@ -2740,6 +2759,503 @@ module.exports = function adminRoutes({ db }) {
       return res.status(400).send(e.message || "Could not save comment");
     }
     return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${id}`));
+  });
+
+  // —— Client / project intake (“New Project”) ——
+  function intakeCityAllowed(dbConn, tenantId, cityName) {
+    const names = getTenantCitiesForClient(dbConn, tenantId).map((c) => String(c.name).trim());
+    const c = String(cityName || "").trim();
+    return names.includes(c);
+  }
+
+  function renderProjectIntakeSearch(req, res, { phone, nrz, searched, foundClient, notice, error }) {
+    const tid = getAdminTenantId(req);
+    return res.render("admin/project_intake_search", {
+      activeNav: "project_intake",
+      navTitle: "New project",
+      phone,
+      nrz,
+      searched,
+      foundClient,
+      notice: String(notice || "").trim().slice(0, 500),
+      error: String(error || "").trim().slice(0, 500),
+      tenantId: tid,
+    });
+  }
+
+  router.get("/project-intake", requireClientProjectIntakeAccess, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const phone = String((req.query && req.query.phone) || "").trim();
+    const nrz = String((req.query && req.query.nrz) || "").trim();
+    let foundClient = null;
+    let searched = false;
+    if (phone || nrz) {
+      searched = true;
+      foundClient = clientIntake.findClientBySearch(db, tid, { phone, nrz });
+    }
+    return renderProjectIntakeSearch(req, res, {
+      phone,
+      nrz,
+      searched,
+      foundClient,
+      notice: (req.query && req.query.notice) || "",
+      error: (req.query && req.query.error) || "",
+    });
+  });
+
+  /** POST search: same tenant-scoped lookup as GET; does not require mutation (viewers may search). */
+  router.post("/project-intake/search", requireClientProjectIntakeAccess, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const b = req.body || {};
+    const phone = String(b.phone || "").trim();
+    const nrz = String(b.nrz || "").trim();
+    let foundClient = null;
+    const searched = !!(phone || nrz);
+    if (searched) {
+      foundClient = clientIntake.findClientBySearch(db, tid, { phone, nrz });
+    }
+    return renderProjectIntakeSearch(req, res, {
+      phone,
+      nrz,
+      searched,
+      foundClient,
+      notice: "",
+      error: "",
+    });
+  });
+
+  router.get("/project-intake/clients/new", requireClientProjectIntakeAccess, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const phone = String((req.query && req.query.phone) || "").trim();
+    const nrz = String((req.query && req.query.nrz) || "").trim();
+    return res.render("admin/project_intake_client_new", {
+      activeNav: "project_intake",
+      navTitle: "New client",
+      tenantId: tid,
+      form: {
+        external_user_id: "",
+        full_name: "",
+        phone: phone || "",
+        whatsapp_phone: "",
+        nrz_number: nrz || "",
+        address_street: "",
+        address_house_number: "",
+        address_apartment_number: "",
+      },
+      error: String((req.query && req.query.error) || "").trim().slice(0, 500),
+      otpNotice: String((req.query && req.query.otp_notice) || "").trim().slice(0, 500),
+    });
+  });
+
+  router.post("/project-intake/clients", requireClientProjectIntakeAccess, requireClientProjectIntakeMutate, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const b = req.body || {};
+    const external_user_id = String(b.external_user_id || "").trim().slice(0, 120);
+    const full_name = String(b.full_name || "").trim().slice(0, 200);
+    let phone = String(b.phone || "").trim();
+    let whatsapp_phone = String(b.whatsapp_phone || "").trim();
+    const whatsapp_same = b.whatsapp_same === "1" || b.whatsapp_same === "on" || b.whatsapp_same === true;
+    if (whatsapp_same) whatsapp_phone = phone;
+    const nrzRaw = String(b.nrz_number || "").trim();
+    const address_street = String(b.address_street || "").trim().slice(0, 200);
+    const address_house_number = String(b.address_house_number || "").trim().slice(0, 40);
+    const address_apartment_number = String(b.address_apartment_number || "").trim().slice(0, 40);
+    const send_otp_after = b.send_otp_after === "1" || b.send_otp_after === "on";
+
+    if (!external_user_id) {
+      return res.redirect(redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent("User ID is required.")));
+    }
+    if (!full_name) {
+      return res.redirect(redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent("Name is required.")));
+    }
+    const pv = clientIntake.validatePhonesForTenant(db, tid, phone, whatsapp_phone);
+    if (!pv.ok) {
+      return res.redirect(redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent(pv.error)));
+    }
+    phone = pv.phone;
+    whatsapp_phone = pv.whatsapp || "";
+    const nrzCheck = clientIntake.validateNrz(nrzRaw);
+    if (!nrzCheck.ok) {
+      return res.redirect(redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent(nrzCheck.error)));
+    }
+    const phoneNorm = clientIntake.normalizeDigits(phone);
+    const nrzNorm = nrzCheck.value;
+
+    let client_code;
+    try {
+      client_code = clientIntake.nextSequentialCode(db, tid, "client");
+    } catch (e) {
+      return res.status(400).send(e.message || "Could not allocate client code.");
+    }
+
+    try {
+      db.prepare(
+        `INSERT INTO intake_clients (
+          tenant_id, client_code, external_user_id, full_name, phone, phone_normalized, whatsapp_phone,
+          nrz_number, nrz_normalized, address_street, address_house_number, address_apartment_number,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      ).run(
+        tid,
+        client_code,
+        external_user_id,
+        full_name,
+        phone,
+        phoneNorm,
+        whatsapp_phone,
+        nrzRaw,
+        nrzNorm,
+        address_street,
+        address_house_number,
+        address_apartment_number
+      );
+    } catch (e) {
+      const msg = String(e.message || "");
+      if (msg.includes("UNIQUE")) {
+        return res.redirect(
+          redirectWithEmbed(
+            req,
+            "/admin/project-intake/clients/new?error=" +
+              encodeURIComponent("A client with this phone, NRZ, or User ID already exists in this region.")
+          )
+        );
+      }
+      return res.status(400).send(msg || "Could not create client.");
+    }
+
+    const row = db
+      .prepare("SELECT id FROM intake_clients WHERE tenant_id = ? AND client_code = ?")
+      .get(tid, client_code);
+
+    if (send_otp_after && phoneNorm) {
+      const recent = clientIntake.countRecentOtpSends(db, tid, phoneNorm);
+      if (recent >= 5) {
+        return res.redirect(
+          redirectWithEmbed(
+            req,
+            `/admin/project-intake/project/new?clientId=${row.id}&otp_notice=` +
+              encodeURIComponent("OTP rate limit: max 5 sends per phone per hour.")
+          )
+        );
+      }
+      const code = clientIntake.generateOtpDigits();
+      const send = clientIntake.sendOtpPlaceholder({ phoneDisplay: phone, code });
+      if (send.sent) {
+        const exp = db.prepare(`SELECT datetime('now', '+10 minutes') AS e`).get().e;
+        db.prepare(
+          `INSERT INTO intake_phone_otp (tenant_id, client_id, phone_normalized, code_hash, purpose, expires_at, max_attempts)
+           VALUES (?, ?, ?, ?, 'phone_verify', ?, 5)`
+        ).run(tid, row.id, phoneNorm, clientIntake.hashOtpCode(code), exp);
+      }
+      const otpQ =
+        send.sent && send.devMode
+          ? "&otp_notice=" + encodeURIComponent("Dev mode: OTP logged to server console. Phone not verified until code is entered.")
+          : !send.sent
+            ? "&otp_notice=" + encodeURIComponent(send.error || "OTP not sent.")
+            : "";
+      return res.redirect(redirectWithEmbed(req, `/admin/project-intake/project/new?clientId=${row.id}${otpQ}`));
+    }
+
+    return res.redirect(redirectWithEmbed(req, `/admin/project-intake/project/new?clientId=${row.id}`));
+  });
+
+  router.get("/project-intake/project/new", requireClientProjectIntakeAccess, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const clientId = Number(req.query.clientId);
+    if (!clientId || clientId < 1) {
+      return res.redirect(redirectWithEmbed(req, "/admin/project-intake?error=" + encodeURIComponent("Missing client.")));
+    }
+    const client = db.prepare("SELECT * FROM intake_clients WHERE id = ? AND tenant_id = ?").get(clientId, tid);
+    if (!client) return res.status(404).send("Client not found.");
+    const cities = getTenantCitiesForClient(db, tid);
+    const budget = clientIntake.getBudgetMetaForTenant(db, tid);
+    return res.render("admin/project_intake_project", {
+      activeNav: "project_intake",
+      navTitle: "New project",
+      client,
+      cities,
+      budget,
+      error: String((req.query && req.query.error) || "").trim().slice(0, 500),
+      otp_notice: String((req.query && req.query.otp_notice) || "").trim().slice(0, 500),
+    });
+  });
+
+  router.post(
+    "/project-intake/projects",
+    requireClientProjectIntakeAccess,
+    requireClientProjectIntakeMutate,
+    projectIntakeUpload.array("images", 5),
+    async (req, res) => {
+      const tid = getAdminTenantId(req);
+      const b = req.body || {};
+      const clientId = Number(b.client_id);
+      const client = db.prepare("SELECT * FROM intake_clients WHERE id = ? AND tenant_id = ?").get(clientId, tid);
+      if (!client) return res.status(404).send("Client not found.");
+
+      const city = String(b.city || "").trim();
+      if (!city || !intakeCityAllowed(db, tid, city)) {
+        return res.redirect(
+          redirectWithEmbed(
+            req,
+            `/admin/project-intake/project/new?clientId=${clientId}&error=` + encodeURIComponent("Choose a valid city from the list.")
+          )
+        );
+      }
+      const neighborhood = String(b.neighborhood || "").trim().slice(0, 120);
+      const street_name = String(b.street_name || "").trim().slice(0, 200);
+      const house_number = String(b.house_number || "").trim().slice(0, 40);
+      const apartment_number = String(b.apartment_number || "").trim().slice(0, 40);
+      const client_address_street = String(b.client_address_street || "").trim().slice(0, 200);
+      const client_address_house_number = String(b.client_address_house_number || "").trim().slice(0, 40);
+      const client_address_apartment_number = String(b.client_address_apartment_number || "").trim().slice(0, 40);
+      const budgetRaw = String(b.estimated_budget || "").trim();
+      const budgetVal = budgetRaw === "" ? null : Number(budgetRaw);
+      if (budgetRaw !== "" && (Number.isNaN(budgetVal) || budgetVal < 0)) {
+        return res.redirect(
+          redirectWithEmbed(
+            req,
+            `/admin/project-intake/project/new?clientId=${clientId}&error=` + encodeURIComponent("Budget must be a non-negative number.")
+          )
+        );
+      }
+      const budgetMeta = clientIntake.getBudgetMetaForTenant(db, tid);
+      const uid = req.session.adminUser.id;
+
+      let project_code;
+      try {
+        project_code = clientIntake.nextSequentialCode(db, tid, "project");
+      } catch (e) {
+        return res.status(400).send(e.message || "Could not allocate project code.");
+      }
+
+      let projectId;
+      try {
+        const info = db
+          .prepare(
+            `INSERT INTO intake_client_projects (
+              tenant_id, client_id, project_code, city, neighborhood, street_name, house_number, apartment_number,
+              client_address_street, client_address_house_number, client_address_apartment_number,
+              estimated_budget_value, estimated_budget_currency, status, created_by_admin_user_id, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?, datetime('now'))`
+          )
+          .run(
+            tid,
+            clientId,
+            project_code,
+            city,
+            neighborhood,
+            street_name,
+            house_number,
+            apartment_number,
+            client_address_street,
+            client_address_house_number,
+            client_address_apartment_number,
+            budgetVal,
+            budgetMeta.code,
+            uid
+          );
+        projectId = Number(info.lastInsertRowid);
+      } catch (e) {
+        return res.status(400).send(e.message || "Could not save project.");
+      }
+
+      try {
+        db.prepare(
+          `UPDATE intake_clients SET
+            address_street = ?, address_house_number = ?, address_apartment_number = ?,
+            updated_at = datetime('now')
+           WHERE id = ? AND tenant_id = ?`
+        ).run(
+          client_address_street,
+          client_address_house_number,
+          client_address_apartment_number,
+          clientId,
+          tid
+        );
+      } catch (e) {
+        return res.status(400).send(e.message || "Could not update client address.");
+      }
+
+      const files = req.files && Array.isArray(req.files) ? req.files : [];
+      if (files.length > 5) {
+        return res.redirect(
+          redirectWithEmbed(
+            req,
+            `/admin/project-intake/project/new?clientId=${clientId}&error=` + encodeURIComponent("Maximum 5 images.")
+          )
+        );
+      }
+
+      try {
+        const relPaths = await clientIntake.processAndSaveProjectImages(tid, projectId, files);
+        const ins = db.prepare(
+          `INSERT INTO intake_project_images (tenant_id, project_id, image_path, sort_order) VALUES (?, ?, ?, ?)`
+        );
+        let ord = 0;
+        for (const rel of relPaths) {
+          ins.run(tid, projectId, rel, ord++);
+        }
+      } catch (e) {
+        return res.redirect(
+          redirectWithEmbed(
+            req,
+            `/admin/project-intake/project/new?clientId=${clientId}&error=` +
+              encodeURIComponent(e.message || "Image processing failed.")
+          )
+        );
+      }
+
+      return res.redirect(redirectWithEmbed(req, `/admin/project-intake/success?projectId=${projectId}`));
+    }
+  );
+
+  router.get("/project-intake/success", requireClientProjectIntakeAccess, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const projectId = Number(req.query.projectId);
+    if (!projectId || projectId < 1) return res.redirect(redirectWithEmbed(req, "/admin/project-intake"));
+    const project = db
+      .prepare(
+        `SELECT p.*, c.client_code, c.full_name AS client_name, c.phone AS client_phone, c.external_user_id
+         FROM intake_client_projects p
+         JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
+         WHERE p.id = ? AND p.tenant_id = ?`
+      )
+      .get(projectId, tid);
+    if (!project) return res.status(404).send("Project not found.");
+    const images = db
+      .prepare(
+        `SELECT id, image_path, sort_order FROM intake_project_images WHERE tenant_id = ? AND project_id = ? ORDER BY sort_order ASC, id ASC`
+      )
+      .all(tid, projectId);
+    const budget = clientIntake.getBudgetMetaForTenant(db, tid);
+    return res.render("admin/project_intake_success", {
+      activeNav: "project_intake",
+      navTitle: "Project saved",
+      project,
+      images,
+      budget,
+    });
+  });
+
+  router.get("/project-intake/files/:id", requireClientProjectIntakeAccess, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const id = Number(req.params.id);
+    if (!id || id < 1) return res.status(400).send("Invalid id.");
+    const row = db.prepare("SELECT * FROM intake_project_images WHERE id = ? AND tenant_id = ?").get(id, tid);
+    if (!row) return res.status(404).send("Not found.");
+    const abs = clientIntake.safeAbsoluteImagePath(row.image_path);
+    if (!abs || !fs.existsSync(abs)) return res.status(404).send("File missing.");
+    return res.type("jpeg").sendFile(path.resolve(abs));
+  });
+
+  router.post("/project-intake/otp/send", requireClientProjectIntakeAccess, requireClientProjectIntakeMutate, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const clientId = Number((req.body && req.body.client_id) || 0);
+    if (!clientId || clientId < 1) return res.status(400).send("Invalid client.");
+    const client = db.prepare("SELECT * FROM intake_clients WHERE id = ? AND tenant_id = ?").get(clientId, tid);
+    if (!client) return res.status(404).send("Client not found.");
+    const phoneNorm = String(client.phone_normalized || "").trim();
+    if (!phoneNorm) return res.status(400).send("Client has no phone on file.");
+
+    const recent = clientIntake.countRecentOtpSends(db, tid, phoneNorm);
+    if (recent >= 5) return res.status(429).type("text").send("Too many OTP requests for this phone in the last hour.");
+
+    const code = clientIntake.generateOtpDigits();
+    const send = clientIntake.sendOtpPlaceholder({ phoneDisplay: client.phone, code });
+    if (!send.sent) {
+      const next =
+        "/admin/project-intake/project/new?clientId=" +
+        clientId +
+        "&otp_notice=" +
+        encodeURIComponent(send.error || "OTP was not sent. No verification row created.");
+      return res.redirect(redirectWithEmbed(req, next));
+    }
+    const exp = db.prepare(`SELECT datetime('now', '+10 minutes') AS e`).get().e;
+    db.prepare(
+      `INSERT INTO intake_phone_otp (tenant_id, client_id, phone_normalized, code_hash, purpose, expires_at, max_attempts)
+       VALUES (?, ?, ?, ?, 'phone_verify', ?, 5)`
+    ).run(tid, clientId, phoneNorm, clientIntake.hashOtpCode(code), exp);
+
+    const next =
+      "/admin/project-intake/project/new?clientId=" +
+      clientId +
+      "&otp_notice=" +
+      encodeURIComponent(
+        send.devMode
+          ? "Dev: OTP logged to server console. Enter it below to verify."
+          : "OTP send reported success. Enter the code below to verify."
+      );
+    return res.redirect(redirectWithEmbed(req, next));
+  });
+
+  router.post("/project-intake/otp/verify", requireClientProjectIntakeAccess, requireClientProjectIntakeMutate, (req, res) => {
+    const tid = getAdminTenantId(req);
+    const clientId = Number((req.body && req.body.client_id) || 0);
+    const code = String((req.body && req.body.otp_code) || "").trim();
+    if (!clientId || clientId < 1) return res.status(400).send("Invalid client.");
+    if (!/^\d{6}$/.test(code)) {
+      return res.redirect(
+        redirectWithEmbed(
+          req,
+          `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` + encodeURIComponent("Enter the 6-digit code.")
+        )
+      );
+    }
+    const client = db.prepare("SELECT * FROM intake_clients WHERE id = ? AND tenant_id = ?").get(clientId, tid);
+    if (!client) return res.status(404).send("Client not found.");
+    const phoneNorm = String(client.phone_normalized || "").trim();
+
+    const row = db
+      .prepare(
+        `SELECT * FROM intake_phone_otp
+         WHERE tenant_id = ? AND client_id = ? AND phone_normalized = ? AND verified_at IS NULL
+         AND datetime(expires_at) > datetime('now')
+         ORDER BY id DESC LIMIT 1`
+      )
+      .get(tid, clientId, phoneNorm);
+    if (!row) {
+      return res.redirect(
+        redirectWithEmbed(
+          req,
+          `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` +
+            encodeURIComponent("No active OTP. Send a code first.")
+        )
+      );
+    }
+    const attempts = Number(row.attempts) + 1;
+    if (attempts > Number(row.max_attempts)) {
+      return res.redirect(
+        redirectWithEmbed(
+          req,
+          `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` + encodeURIComponent("Too many failed attempts. Request a new code.")
+        )
+      );
+    }
+    const ok = clientIntake.verifyOtpCodeHash(code, row.code_hash);
+    if (!ok) {
+      db.prepare(`UPDATE intake_phone_otp SET attempts = ? WHERE id = ? AND tenant_id = ?`).run(attempts, row.id, tid);
+      return res.redirect(
+        redirectWithEmbed(
+          req,
+          `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` + encodeURIComponent("Incorrect code.")
+        )
+      );
+    }
+    db.prepare(`UPDATE intake_phone_otp SET attempts = ?, verified_at = datetime('now') WHERE id = ? AND tenant_id = ?`).run(
+      attempts,
+      row.id,
+      tid
+    );
+    db.prepare(`UPDATE intake_clients SET phone_verified_at = datetime('now'), updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`).run(
+      clientId,
+      tid
+    );
+    return res.redirect(
+      redirectWithEmbed(
+        req,
+        `/admin/project-intake/project/new?clientId=${clientId}&otp_notice=` + encodeURIComponent("Phone verified.")
+      )
+    );
   });
 
   return router;

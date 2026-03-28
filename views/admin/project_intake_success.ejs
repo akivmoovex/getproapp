@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Project saved | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <style>
+      .intake-success-carousel { display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.75rem 0; }
+      .intake-success-carousel a { flex-shrink: 0; }
+      .intake-success-carousel img { height: 160px; width: auto; border-radius: 4px; object-fit: cover; display: block; }
+    </style>
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: navTitle || 'Project saved', activeNav: activeNav || 'project_intake' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <div class="card admin-form-card">
+          <h1 class="admin-form-card__title">Project recorded</h1>
+          <p>Project <code><%= project.project_code %></code> for client <code><%= project.client_code %></code> (<%= project.client_name %>).</p>
+          <p class="muted">User ID: <%= project.external_user_id %> · Phone: <%= project.client_phone %></p>
+          <p>City: <strong><%= project.city %></strong> · Budget: <% if (project.estimated_budget_value != null) { %><%= budget.displayPrefix %> <%= project.estimated_budget_value %><% } else { %>—<% } %></p>
+        </div>
+
+        <% if (images && images.length) { %>
+        <div class="card admin-form-card" style="margin-top:1rem;">
+          <h2 class="admin-form-card__title">Photos</h2>
+          <div class="intake-success-carousel">
+            <% images.forEach(function (im) { %>
+              <a href="/admin/project-intake/files/<%= im.id %><%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>" target="_blank" rel="noopener">
+                <img src="/admin/project-intake/files/<%= im.id %><%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>" alt="" loading="lazy" />
+              </a>
+            <% }); %>
+          </div>
+        </div>
+        <% } %>
+
+        <p style="margin-top:1rem;">
+          <a class="btn btn--primary" href="/admin/project-intake<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">Another project</a>
+        </p>
+      </div>
+    </main>
+  </body>
+</html>

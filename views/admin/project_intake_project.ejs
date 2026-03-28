@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>New project details | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <style>
+      .intake-carousel { display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.5rem 0; max-width: 100%; }
+      .intake-carousel img { height: 120px; width: auto; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+    </style>
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: navTitle || 'New project', activeNav: activeNav || 'project_intake' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+        <% if (typeof otp_notice !== 'undefined' && otp_notice) { %>
+          <div class="flash flash--info" role="status"><%= otp_notice %></div>
+        <% } %>
+
+        <% const canMutate = typeof adminNav !== 'undefined' && adminNav.canMutateProjectIntake; %>
+
+        <div class="card admin-form-card">
+          <h1 class="admin-form-card__title">Client</h1>
+          <p><strong><%= client.full_name %></strong> · <code><%= client.client_code %></code></p>
+          <p class="muted">User ID: <%= client.external_user_id %> · Phone: <%= client.phone %></p>
+          <% if (client.phone_verified_at) { %>
+            <p class="flash flash--info" role="status">Phone verified at <%= client.phone_verified_at %>.</p>
+          <% } else { %>
+            <p class="muted">Phone not verified.</p>
+          <% } %>
+        </div>
+
+        <% if (canMutate && !client.phone_verified_at) { %>
+        <div class="card admin-form-card" style="margin-top:1rem;">
+          <h2 class="admin-form-card__title">SMS OTP (optional)</h2>
+          <form method="post" action="/admin/project-intake/otp/send" class="form" style="margin-bottom:1rem;">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <input type="hidden" name="client_id" value="<%= client.id %>" />
+            <button type="submit" class="btn">Send OTP</button>
+          </form>
+          <form method="post" action="/admin/project-intake/otp/verify" class="form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <input type="hidden" name="client_id" value="<%= client.id %>" />
+            <div class="input-field" style="max-width:12rem;">
+              <label class="input-field__label" for="otp_code">6-digit code</label>
+              <input id="otp_code" name="otp_code" class="input-field__control" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" />
+            </div>
+            <button type="submit" class="btn btn--primary">Verify</button>
+          </form>
+        </div>
+        <% } %>
+
+        <div class="card admin-form-card" style="margin-top:1rem;">
+          <h2 class="admin-form-card__title">Project</h2>
+          <% if (!canMutate) { %>
+            <p class="flash" role="status">Read-only role: you cannot submit projects.</p>
+          <% } else { %>
+          <form method="post" action="/admin/project-intake/projects" class="form" enctype="multipart/form-data" id="intake-project-form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <input type="hidden" name="client_id" value="<%= client.id %>" />
+            <h3 class="input-field__label">Client address (editable)</h3>
+            <div class="input-field">
+              <input name="client_address_street" class="input-field__control" placeholder="Street name" value="<%= client.address_street %>" />
+            </div>
+            <div class="input-field">
+              <input name="client_address_house_number" class="input-field__control" placeholder="House number" value="<%= client.address_house_number %>" />
+            </div>
+            <div class="input-field">
+              <input name="client_address_apartment_number" class="input-field__control" placeholder="Apartment number" value="<%= client.address_apartment_number %>" />
+            </div>
+            <h3 class="input-field__label" style="margin-top:1rem;">Project location</h3>
+            <div class="input-field">
+              <label class="input-field__label" for="city">City</label>
+              <select id="city" name="city" class="input-field__control" required>
+                <option value="">Select city</option>
+                <% cities.forEach(function (c) { %>
+                  <option value="<%= c.name %>"><%= c.name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="neighborhood">Neighborhood</label>
+              <input id="neighborhood" name="neighborhood" class="input-field__control" maxlength="120" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="street_name">Street name</label>
+              <input id="street_name" name="street_name" class="input-field__control" maxlength="200" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="house_number">House number</label>
+              <input id="house_number" name="house_number" class="input-field__control" maxlength="40" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="apartment_number">Apartment number</label>
+              <input id="apartment_number" name="apartment_number" class="input-field__control" maxlength="40" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="estimated_budget">Estimated budget (<%= budget.displayPrefix %>)</label>
+              <input id="estimated_budget" name="estimated_budget" class="input-field__control" inputmode="decimal" />
+              <p class="input-field__help muted"><%= budget.label %> · stored currency code <%= budget.code %></p>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="images">Pictures (max 5, JPEG/PNG/WebP/GIF, <%= 5 %> MB each)</label>
+              <input id="images" name="images" type="file" class="input-field__control" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+              <div id="intake-preview" class="intake-carousel" aria-live="polite"></div>
+            </div>
+            <div class="form-step__actions admin-gate-actions">
+              <button class="btn btn--primary" type="submit">Save project</button>
+              <a class="btn btn--text" href="/admin/project-intake<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">Cancel</a>
+            </div>
+          </form>
+          <script>
+            (function () {
+              var input = document.getElementById("images");
+              var box = document.getElementById("intake-preview");
+              if (!input || !box) return;
+              input.addEventListener("change", function () {
+                box.innerHTML = "";
+                var files = Array.prototype.slice.call(input.files || [], 0, 5);
+                files.forEach(function (f) {
+                  if (!f.type || f.type.indexOf("image/") !== 0) return;
+                  var url = URL.createObjectURL(f);
+                  var img = document.createElement("img");
+                  img.src = url;
+                  img.alt = "";
+                  box.appendChild(img);
+                });
+              });
+            })();
+          </script>
+          <% } %>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

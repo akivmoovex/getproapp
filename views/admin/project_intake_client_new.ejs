@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>New client | GetPro Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: navTitle || 'New client', activeNav: activeNav || 'project_intake' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+        <% if (typeof otpNotice !== 'undefined' && otpNotice) { %>
+          <div class="flash flash--info" role="status"><%= otpNotice %></div>
+        <% } %>
+
+        <% const canMutate = typeof adminNav !== 'undefined' && adminNav.canMutateProjectIntake; %>
+
+        <div class="card admin-form-card">
+          <h1 class="admin-form-card__title">Create client</h1>
+          <% if (!canMutate) { %>
+            <p class="flash" role="status">Read-only role: you cannot create clients. Ask a manager or agent.</p>
+          <% } else { %>
+          <form method="post" action="/admin/project-intake/clients" class="form" id="intake-client-form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <div class="input-field">
+              <label class="input-field__label" for="external_user_id">User ID (manual)</label>
+              <input id="external_user_id" name="external_user_id" class="input-field__control" required value="<%= form.external_user_id %>" maxlength="120" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="full_name">User name</label>
+              <input id="full_name" name="full_name" class="input-field__control" required value="<%= form.full_name %>" maxlength="200" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="phone">Phone number</label>
+              <input id="phone" name="phone" class="input-field__control" required value="<%= form.phone %>" autocomplete="tel" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="whatsapp_phone">WhatsApp number</label>
+              <input id="whatsapp_phone" name="whatsapp_phone" class="input-field__control" value="<%= form.whatsapp_phone %>" autocomplete="tel" />
+              <label class="input-field__help" style="display:flex;align-items:center;gap:0.35rem;margin-top:0.35rem;">
+                <input type="checkbox" name="whatsapp_same" value="1" id="whatsapp_same" />
+                Same as phone number
+              </label>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="nrz_number">NRZ number (optional)</label>
+              <input id="nrz_number" name="nrz_number" class="input-field__control" value="<%= form.nrz_number %>" maxlength="40" />
+            </div>
+            <fieldset class="input-field">
+              <legend class="input-field__label">User address</legend>
+              <input name="address_street" class="input-field__control" placeholder="Street name" value="<%= form.address_street %>" style="margin-bottom:0.5rem;" />
+              <input name="address_house_number" class="input-field__control" placeholder="House number" value="<%= form.address_house_number %>" style="margin-bottom:0.5rem;" />
+              <input name="address_apartment_number" class="input-field__control" placeholder="Apartment number" value="<%= form.address_apartment_number %>" />
+            </fieldset>
+            <div class="input-field">
+              <label class="input-field__help" style="display:flex;align-items:center;gap:0.35rem;">
+                <input type="checkbox" name="send_otp_after" value="1" id="send_otp_after" />
+                After save, send SMS OTP (requires dev console provider or future SMS integration)
+              </label>
+              <p class="input-field__help muted">OTP is not sent in production until an SMS provider is configured. Use GETPRO_SMS_PROVIDER=console or GETPRO_OTP_DEV_LOG=1 in non-production for testing.</p>
+            </div>
+            <div class="form-step__actions admin-gate-actions">
+              <button class="btn btn--primary" type="submit">Save client &amp; continue</button>
+              <a class="btn btn--text" href="/admin/project-intake<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">Back</a>
+            </div>
+          </form>
+          <script>
+            (function () {
+              var phone = document.getElementById("phone");
+              var wa = document.getElementById("whatsapp_phone");
+              var same = document.getElementById("whatsapp_same");
+              if (!phone || !wa || !same) return;
+              same.addEventListener("change", function () {
+                if (same.checked) wa.value = phone.value;
+              });
+              phone.addEventListener("input", function () {
+                if (same.checked) wa.value = phone.value;
+              });
+            })();
+          </script>
+          <% } %>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

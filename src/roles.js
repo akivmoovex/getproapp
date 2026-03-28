@@ -97,6 +97,19 @@ function canAccessSettingsHub(role) {
   );
 }
 
+/**
+ * “New Project” intake (admin): search clients, create clients, create projects.
+ * GET access mirrors CRM (all tenant roles incl. viewer). Mutations are explicit and exclude viewer
+ * so we do not weaken global requireNotViewer elsewhere — only these routes allow non-viewer writes.
+ */
+function canAccessClientProjectIntake(role) {
+  return canAccessCrm(role);
+}
+
+function canMutateClientProjectIntake(role) {
+  return canMutateCrm(role);
+}
+
 module.exports = {
   ROLES,
   ALL_ROLES,
@@ -111,4 +124,6 @@ module.exports = {
   canClaimCrmTasks,
   canAccessTenantSettings,
   canAccessSettingsHub,
+  canAccessClientProjectIntake,
+  canMutateClientProjectIntake,
 };
