@@ -10,6 +10,7 @@
     <%- include('partials/company_portal_shell_start', {
       activeCompanyNav: typeof activeCompanyNav !== 'undefined' ? activeCompanyNav : 'leads',
       companyName: typeof companyName !== 'undefined' ? companyName : '',
+      companyPersonnel: typeof companyPersonnel !== 'undefined' ? companyPersonnel : null,
     }) %>
     <main class="company-portal-main" id="main-content">
       <p class="company-portal-back"><a class="btn btn--text" href="/company/leads">← Active leads</a></p>

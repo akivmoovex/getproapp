@@ -20,7 +20,14 @@
           <div class="flash flash--success" role="status"><%= notice %></div>
         <% } %>
         <h1 class="section-title section-title--flush">Company portal logins</h1>
-        <p class="muted"><strong><%= company.name %></strong> · staff sign in at <code class="kbd">/company/login</code> on this region’s site using <strong>phone</strong> or <strong>portal username</strong> plus password.</p>
+        <p class="muted">
+          <strong><%= company.name %></strong>
+          <% if (typeof tenantRegionLabel !== 'undefined' && tenantRegionLabel) { %>
+            <span class="muted"> · <%= tenantRegionLabel %></span>
+          <% } %>
+          <span class="muted"> · @<%= company.subdomain %></span>
+        </p>
+        <p class="muted admin-portal-users__hint">Staff sign in at <code class="kbd">/company/login</code> on this region’s site using <strong>phone</strong> or <strong>portal username</strong> plus password. Inactive users cannot sign in.</p>
 
         <div class="card admin-form-card card--mb-block">
           <h2 class="admin-form-card__title">Existing users</h2>

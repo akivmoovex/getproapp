@@ -1606,7 +1606,7 @@ try {
  * - Company: subdomain `demo-lusaka-spark` on the `demo` tenant (same row as demo_seed_sample_companies_v1).
  * - Seed only when NODE_ENV !== 'production' OR GETPRO_SEED_DEMO_PORTAL_LOGIN=1.
  * - Re-links existing demo_client to that company if the row exists but company_id mismatches.
- * - TestElectricals + user `test`: see migration company_portal_v4_demo_test_electricals (single place).
+ * - Full INTERNAL demo portal credential inventory: see comment block on migration company_portal_v4_demo_test_electricals.
  */
 try {
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("company_portal_v3_demo_portal_polish")) {
@@ -1704,10 +1704,17 @@ try {
 
 /**
  * Demo tenant: TestElectricals company + optional weak portal user `test` / 1234 (same env gate as demo_client).
- * - Company: subdomain `testelectricals`, name TestElectricals (idempotent; any NODE_ENV).
- * - Personnel: username `test`, phone 1234, NRZ 5678 (stored as nrz_number; see NRZ labeling in repo), bcrypt password, only on TestElectricals.
- * - Login: company portal accepts username `Test` or phone `1234` (existing auth).
- * All logic lives here; do not duplicate in other seed files.
+ *
+ * INTERNAL — demo portal seeds (never show passwords in UI):
+ * - demo_client → company @demo-lusaka-spark (migration company_portal_v3). Purpose: smoke-test portal on sample listing.
+ * - username test / TestElectricals → company @testelectricals (this migration). Purpose: explicit TestElectricals QA user.
+ * Weak passwords are bcrypt-hashed; inserts use GETPRO_SEED_DEMO_PORTAL_LOGIN or non-production (see .env.example).
+ *
+ * - Company row TestElectricals: intentionally NOT gated by NODE_ENV (directory fixture only; no credentials in companies table).
+ * - Personnel rows: gated like v3.
+ * - Login: company portal accepts username or phone (existing auth); NRZ is stored on personnel only (informational).
+ *
+ * All demo portal seed logic stays in db.js migrations; do not duplicate elsewhere.
  */
 try {
   if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("company_portal_v4_demo_test_electricals")) {
@@ -1736,6 +1743,10 @@ try {
           "[getpro] Skipped TestElectricals seed: subdomain '" + DEMO_TEST_SUB + "' already exists on another tenant."
         );
       } else if (!subRow) {
+        // eslint-disable-next-line no-console
+        console.log(
+          "[getpro] Demo tenant: inserting TestElectricals (@testelectricals) — directory listing only; weak portal user seed is gated separately (GETPRO_SEED_DEMO_PORTAL_LOGIN / NODE_ENV)."
+        );
         const elCat = db.prepare("SELECT id FROM categories WHERE tenant_id = ? AND slug = 'electricians'").get(tid);
         const insCo = db.prepare(`
           INSERT INTO companies
@@ -1757,7 +1768,7 @@ try {
           tid
         );
         // eslint-disable-next-line no-console
-        console.log("[getpro] Seeded demo company TestElectricals (@" + DEMO_TEST_SUB + ").");
+        console.log("[getpro] Seeded demo company TestElectricals (@" + DEMO_TEST_SUB + ", tenant_id=" + tid + ").");
       }
 
       const testCo = db
@@ -1826,6 +1837,45 @@ try {
 } catch (e) {
   // eslint-disable-next-line no-console
   console.error("[getpro] company_portal_v4_demo_test_electricals migration:", e.message);
+}
+
+/**
+ * company_personnel_users.nrz_number: optional reference data (same validation as intake NRZ in admin).
+ * Enforce at most one non-empty NRZ per tenant when values match after trim+uppercase (SQLite stores normalized form from admin/seed).
+ * If legacy duplicates exist, skip index and log once — operators should resolve manually.
+ */
+try {
+  if (!db.prepare("SELECT 1 FROM _getpro_migrations WHERE id = ?").get("company_portal_v5_nrz_unique")) {
+    const dup = db
+      .prepare(
+        `
+        SELECT tenant_id, upper(trim(nrz_number)) AS n
+        FROM company_personnel_users
+        WHERE length(trim(nrz_number)) > 0
+        GROUP BY tenant_id, upper(trim(nrz_number))
+        HAVING COUNT(*) > 1
+        LIMIT 1
+        `
+      )
+      .get();
+    if (dup) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[getpro] Skipped unique index on company_personnel_users.nrz_number: duplicate NRZ values exist for a tenant; resolve duplicates then re-run migration manually if needed."
+      );
+    } else {
+      db.exec(
+        `CREATE UNIQUE INDEX IF NOT EXISTS idx_company_personnel_tenant_nrz_nonempty
+         ON company_personnel_users(tenant_id, nrz_number) WHERE length(trim(nrz_number)) > 0`
+      );
+    }
+    db.prepare("INSERT INTO _getpro_migrations (id) VALUES (?)").run("company_portal_v5_nrz_unique");
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Migration: company_portal_v5_nrz_unique (optional NRZ uniqueness per tenant).");
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error("[getpro] company_portal_v5_nrz_unique migration:", e.message);
 }
 
 function run(query, params = []) {

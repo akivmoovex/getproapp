@@ -22,6 +22,7 @@
     <%- include('partials/company_portal_shell_start', {
       activeCompanyNav: typeof activeCompanyNav !== 'undefined' ? activeCompanyNav : 'minisite',
       companyName: typeof company !== 'undefined' && company && company.name ? company.name : '',
+      companyPortalPersonnel: typeof companyPortalPersonnel !== 'undefined' ? companyPortalPersonnel : null,
     }) %>
     <div class="company-portal-profile-embed">
     <% } else { %>

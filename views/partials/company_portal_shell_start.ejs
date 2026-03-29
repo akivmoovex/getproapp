@@ -1,7 +1,15 @@
 <% var _cpNav = typeof activeCompanyNav !== 'undefined' ? activeCompanyNav : 'minisite'; %>
+<% var _cpP = typeof companyPersonnel !== 'undefined' ? companyPersonnel : (typeof companyPortalPersonnel !== 'undefined' ? companyPortalPersonnel : null); %>
+<% var _cpStaff = _cpP && _cpP.fullName ? String(_cpP.fullName).trim() : ''; %>
+<% var _cpCo = typeof companyName !== 'undefined' && companyName ? String(companyName).trim() : ''; %>
 <div class="company-portal-wrap">
   <header class="company-portal-header" role="banner">
-    <span class="company-portal-header__title"><%= typeof companyName !== 'undefined' && companyName ? companyName : 'Company portal' %></span>
+    <div class="company-portal-header__brand">
+      <span class="company-portal-header__title"><%= _cpCo ? _cpCo : 'Company portal' %></span>
+      <% if (_cpP && _cpCo) { %>
+      <p class="company-portal-header__context muted">Signed in as <%= _cpStaff || 'Staff' %></p>
+      <% } %>
+    </div>
     <button
       type="button"
       class="company-portal-menu-btn"
@@ -25,7 +33,7 @@
     </div>
     <nav class="company-portal-drawer__nav" aria-label="Portal">
       <a class="company-portal-drawer__link <%= _cpNav === 'minisite' ? 'company-portal-drawer__link--active' : '' %>" href="/company/minisite">Minisite</a>
-      <a class="company-portal-drawer__link <%= _cpNav === 'leads' ? 'company-portal-drawer__link--active' : '' %>" href="/company/leads">Pending leads</a>
+      <a class="company-portal-drawer__link <%= _cpNav === 'leads' ? 'company-portal-drawer__link--active' : '' %>" href="/company/leads">Leads</a>
       <form method="post" action="/company/logout" class="company-portal-drawer__logout">
         <button type="submit" class="btn btn--text company-portal-drawer__logout-btn">Log out</button>
       </form>

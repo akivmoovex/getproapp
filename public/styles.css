@@ -8262,12 +8262,30 @@ body[class*="tenant-"] {
   border-bottom: var(--border-width-hairline) solid var(--border-strong);
 }
 
+.company-portal-header__brand {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
 .company-portal-header__title {
   font-weight: 700;
   font-size: var(--typo-size-title-sm, 1.125rem);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.company-portal-header__context {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.admin-portal-users__hint {
+  margin: var(--space-2) 0 0;
+  max-width: 42rem;
 }
 
 .company-portal-menu-btn {

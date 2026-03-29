@@ -3551,6 +3551,7 @@ module.exports = function adminRoutes({ db }) {
     const cid = Number(req.params.id);
     const company = db.prepare("SELECT id, name, subdomain FROM companies WHERE id = ? AND tenant_id = ?").get(cid, tid);
     if (!company) return res.status(404).send("Company not found.");
+    const tenantRow = db.prepare("SELECT slug, name FROM tenants WHERE id = ?").get(tid);
     const users = db
       .prepare(
         `SELECT id, full_name, username, phone_normalized, nrz_number, is_active, created_at FROM company_personnel_users WHERE tenant_id = ? AND company_id = ? ORDER BY id ASC`
@@ -3562,6 +3563,9 @@ module.exports = function adminRoutes({ db }) {
       activeNav: "companies",
       navTitle: "Portal users",
       company,
+      tenantRegionLabel: tenantRow
+        ? `${String(tenantRow.name || "").trim() || "Region"} (${String(tenantRow.slug || "").trim()})`
+        : "",
       users,
       error: error || null,
       notice: notice || null,
@@ -3596,6 +3600,18 @@ module.exports = function adminRoutes({ db }) {
     }
     if (phoneNorm && !isValidPhoneForTenant(slug, phone)) {
       return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("Invalid phone for this region."));
+    }
+    if (nrzCheck.value) {
+      const nrzDup = db
+        .prepare(
+          `SELECT id FROM company_personnel_users WHERE tenant_id = ? AND length(trim(nrz_number)) > 0 AND upper(trim(nrz_number)) = ? LIMIT 1`
+        )
+        .get(tid, nrzCheck.value);
+      if (nrzDup) {
+        return res.redirect(
+          `/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("That NRZ number is already used by another portal user in this region.")
+        );
+      }
     }
     let passwordHash;
     try {
