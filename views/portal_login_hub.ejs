@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Sign in | GetPro</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="portal-login-hub-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
+    <main class="portal-login-hub-main">
+      <div class="portal-login-hub-inner">
+        <h1 class="portal-login-hub-title">Sign in</h1>
+        <p class="muted portal-login-hub-lead">Choose your account type. Each area uses a separate session and menu — they are not combined.</p>
+        <ul class="portal-login-hub-cards" role="list">
+          <li>
+            <a class="card portal-login-hub-card portal-login-hub-card--admin" href="/admin/login">
+              <span class="portal-login-hub-card__label">GetPro staff</span>
+              <span class="portal-login-hub-card__desc muted">Customer service and admin console</span>
+            </a>
+          </li>
+          <li>
+            <a class="card portal-login-hub-card portal-login-hub-card--provider" href="/provider/login">
+              <span class="portal-login-hub-card__label">Service provider</span>
+              <span class="portal-login-hub-card__desc muted">Directory businesses — leads and minisite</span>
+            </a>
+          </li>
+          <li>
+            <a class="card portal-login-hub-card portal-login-hub-card--client" href="/client/login">
+              <span class="portal-login-hub-card__label">Client</span>
+              <span class="portal-login-hub-card__desc muted">Project updates (preview — sign-in not enabled)</span>
+            </a>
+          </li>
+        </ul>
+        <p class="muted portal-login-hub-foot">
+          <% var th = typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/'; %>
+          <a href="<%= th %>">← Back to site</a>
+          · <a href="/getpro-admin">Staff sign-in (alternate page)</a>
+        </p>
+      </div>
+    </main>
+  </body>
+</html>

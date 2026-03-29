@@ -69,14 +69,19 @@
               <th>Mini-site</th>
               <th>Category</th>
               <th>Directory profile</th>
+              <% if (typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive) { %>
+              <th>Portal credit</th>
+              <% } %>
               <th>Updated</th>
               <% if (editMode) { %><th>Actions</th><% } %>
             </tr>
           </thead>
           <tbody>
+            <% var _pcCol = typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive ? 1 : 0; %>
+            <% var _emptyCols = (editMode ? 6 : 5) + _pcCol; %>
             <% if (!companies || companies.length === 0) { %>
               <tr>
-                <td colspan="<%= editMode ? 6 : 5 %>" class="admin-table-empty-cell">
+                <td colspan="<%= _emptyCols %>" class="admin-table-empty-cell">
                   <%- include('../partials/components/empty_state', {
                     hint: 'No companies match these filters.',
                     compact: true,
@@ -106,6 +111,14 @@
                     <span class="muted" title="Set BASE_DOMAIN">—</span>
                   <% } %>
                 </td>
+                <% if (typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive) { %>
+                <td>
+                  <% if (c.portal_credit_blocked) { %>
+                  <span class="admin-credit-blocked-badge">Blocked</span>
+                  <% } %>
+                  <span class="muted admin-companies-credit-balance"><%= c.portal_lead_credits_balance != null ? c.portal_lead_credits_balance : '0' %> ZMW</span>
+                </td>
+                <% } %>
                 <td class="muted"><%- include('../partials/event_time', { at: c.updated_at }) %></td>
                 <% if (editMode) { %><td><a class="btn" href="/admin/companies/<%= c.id %>/workspace<%= _embed ? '?embed=1' : '' %>">Edit</a></td><% } %>
               </tr>

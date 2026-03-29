@@ -61,6 +61,19 @@ const { insertCrmAudit } = require("../crmAudit");
 const { resolveSessionAfterLogin, upsertMembership, adminUserIsInTenant } = require("../adminUserTenants");
 const { getTenantCitiesForClient } = require("../tenantCities");
 const clientIntake = require("../clientProjectIntake");
+const {
+  validateIntakeProjectForPublish,
+  INTAKE_PROJECT_PUBLISHABLE_STATUSES,
+  getCategoryResponseWindowHours,
+} = require("../intakeProjectPublishValidation");
+const intakeProjectAllocation = require("../intakeProjectAllocation");
+const { tenantUsesZmwLeadCredits, isLeadAcceptanceBlockedByCredit } = require("../companyPortalLeadCredits");
+const {
+  listRecentLedgerEntries,
+  recordAdminPaymentCredit,
+  paymentMethodLabel,
+  PAYMENT_METHODS,
+} = require("../companyPortalCreditLedger");
 
 function normalizeCrmAttachmentUrl(raw) {
   const s = String(raw || "").trim();
@@ -1572,13 +1585,16 @@ module.exports = function adminRoutes({ db }) {
     const baseDomain = (process.env.BASE_DOMAIN || "").trim();
     const scheme = process.env.PUBLIC_SCHEME || "https";
     const tenantSlug = tsCompanies && tsCompanies.slug ? String(tsCompanies.slug) : "";
+    const portalCreditUiActive = tenantUsesZmwLeadCredits(db, tid);
     const companiesWithUrls = companies.map((c) => {
       const sub = String(c.subdomain || "").trim();
       const miniSitePublicUrl =
         baseDomain && tenantSlug && sub
           ? `${scheme}://${tenantSlug}.${baseDomain}/${encodeURIComponent(sub)}`
           : "";
-      return { ...c, miniSitePublicUrl };
+      const portal_credit_blocked =
+        portalCreditUiActive && isLeadAcceptanceBlockedByCredit(db, tid, c.portal_lead_credits_balance);
+      return { ...c, miniSitePublicUrl, portal_credit_blocked };
     });
     const saved = req.query.saved === "1" || req.query.saved === "true";
     return res.render("admin/companies", {
@@ -1588,6 +1604,7 @@ module.exports = function adminRoutes({ db }) {
       editMode,
       filterSuffix,
       saved,
+      portalCreditUiActive,
       filters: {
         q_name: req.query.q_name || "",
         q_subdomain: req.query.q_subdomain || "",
@@ -1642,6 +1659,18 @@ module.exports = function adminRoutes({ db }) {
     const miniSiteUrl = buildCompanyMiniSiteUrl(tenantSlug, company.subdomain, baseForUrls);
     const miniSiteLabel = companyMiniSiteLabel(tenantSlug, company.subdomain, baseForUrls);
     const directoryProfileUrl = absoluteCompanyProfileUrl(tenantSlug, company.id);
+    const portalCreditUiActive = tenantUsesZmwLeadCredits(db, tid);
+    const portalCreditBlocked =
+      portalCreditUiActive && isLeadAcceptanceBlockedByCredit(db, tid, company.portal_lead_credits_balance);
+    const recentLedgerRaw = portalCreditUiActive ? listRecentLedgerEntries(db, tid, cid, 25) : [];
+    const recentLedgerEntries = recentLedgerRaw.map((r) => ({
+      ...r,
+      payment_method_label: paymentMethodLabel(r.payment_method),
+    }));
+    const paymentMethodOptions = PAYMENT_METHODS.map((v) => ({ value: v, label: paymentMethodLabel(v) }));
+    const defaultPaymentDate = new Date().toISOString().slice(0, 10);
+    const portalCreditNotice = String(req.query.credit_notice || "").trim().slice(0, 500) || null;
+    const portalCreditError = String(req.query.credit_error || "").trim().slice(0, 500) || null;
     return res.render("admin/company_workspace", {
       company,
       categories,
@@ -1652,8 +1681,53 @@ module.exports = function adminRoutes({ db }) {
       miniSiteLabel,
       directoryProfileUrl,
       previewFramePath: `/admin/companies/${cid}/preview-frame`,
+      portalCreditUiActive,
+      portalCreditBlocked,
+      portalCreditBalance: Number(company.portal_lead_credits_balance) || 0,
+      recentLedgerEntries,
+      paymentMethodOptions,
+      defaultPaymentDate,
+      portalCreditNotice,
+      portalCreditError,
     });
   });
+
+  router.post(
+    "/companies/:id/portal-credit-payment",
+    requireDirectoryEditor,
+    requireNotViewer,
+    (req, res) => {
+      const tid = getAdminTenantId(req);
+      const cid = Number(req.params.id);
+      if (!cid || cid < 1) return res.status(400).send("Invalid id.");
+      if (!tenantUsesZmwLeadCredits(db, tid)) {
+        return res.status(400).send("Credit ledger applies only in ZMW (Zambia) regions.");
+      }
+      const result = recordAdminPaymentCredit(db, {
+        tenantId: tid,
+        companyId: cid,
+        adminUserId: req.session.adminUser.id,
+        amountZmw: req.body && req.body.amount_zmw,
+        paymentMethod: req.body && req.body.payment_method,
+        transactionReference: req.body && req.body.transaction_reference,
+        paymentDate: req.body && req.body.payment_date,
+        approverName: req.body && req.body.approver_name,
+        notes: req.body && req.body.notes,
+      });
+      if (!result.ok) {
+        return res.redirect(
+          redirectWithEmbed(req, `/admin/companies/${cid}/workspace?credit_error=` + encodeURIComponent(result.error))
+        );
+      }
+      return res.redirect(
+        redirectWithEmbed(
+          req,
+          `/admin/companies/${cid}/workspace?credit_notice=` +
+            encodeURIComponent(`Payment recorded. New balance: ${result.newBalance} ZMW.`)
+        )
+      );
+    }
+  );
 
   router.get("/companies/:id/preview-frame", requireDirectoryEditor, async (req, res, next) => {
     try {
@@ -3069,12 +3143,16 @@ module.exports = function adminRoutes({ db }) {
     const client = db.prepare("SELECT * FROM intake_clients WHERE id = ? AND tenant_id = ?").get(clientId, tid);
     if (!client) return res.status(404).send("Client not found.");
     const cities = getTenantCitiesForClient(db, tid);
+    const intakeCategories = db
+      .prepare(`SELECT id, name FROM categories WHERE tenant_id = ? ORDER BY name COLLATE NOCASE ASC`)
+      .all(tid);
     const budget = clientIntake.getBudgetMetaForTenant(db, tid);
     return res.render("admin/project_intake_project", {
       activeNav: "project_intake",
       navTitle: "New project",
       client,
       cities,
+      intakeCategories,
       budget,
       error: String((req.query && req.query.error) || "").trim().slice(0, 500),
       otp_notice: String((req.query && req.query.otp_notice) || "").trim().slice(0, 500),
@@ -3123,6 +3201,24 @@ module.exports = function adminRoutes({ db }) {
           )
         );
       }
+      const intakeCategoryId = Number(b.intake_category_id);
+      if (!intakeCategoryId || intakeCategoryId < 1) {
+        return res.redirect(
+          redirectWithEmbed(
+            req,
+            `/admin/project-intake/project/new?clientId=${clientId}&error=` + encodeURIComponent("Choose a profession / category for this project.")
+          )
+        );
+      }
+      const catOk = db.prepare(`SELECT id FROM categories WHERE id = ? AND tenant_id = ?`).get(intakeCategoryId, tid);
+      if (!catOk) {
+        return res.redirect(
+          redirectWithEmbed(
+            req,
+            `/admin/project-intake/project/new?clientId=${clientId}&error=` + encodeURIComponent("Invalid category for this region.")
+          )
+        );
+      }
       const budgetMeta = clientIntake.getBudgetMetaForTenant(db, tid);
       const uid = req.session.adminUser.id;
 
@@ -3142,9 +3238,9 @@ module.exports = function adminRoutes({ db }) {
               client_full_name_snapshot, client_phone_snapshot,
               city, neighborhood, street_name, house_number, apartment_number,
               client_address_street, client_address_house_number, client_address_apartment_number,
-              estimated_budget_value, estimated_budget_currency, status,
+              estimated_budget_value, estimated_budget_currency, intake_category_id, status,
               created_by_admin_user_id, updated_by_admin_user_id, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, datetime('now'))`
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, datetime('now'))`
           )
           .run(
             tid,
@@ -3162,6 +3258,7 @@ module.exports = function adminRoutes({ db }) {
             client_address_apartment_number,
             budgetVal,
             budgetMeta.code,
+            intakeCategoryId,
             uid,
             uid
           );
@@ -3217,7 +3314,113 @@ module.exports = function adminRoutes({ db }) {
         );
       }
 
+      const imgCountRow = db
+        .prepare(`SELECT COUNT(*) AS c FROM intake_project_images WHERE tenant_id = ? AND project_id = ?`)
+        .get(tid, projectId);
+      const imageCount = Number(imgCountRow && imgCountRow.c) || 0;
+      const savedProject = db.prepare(`SELECT * FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(projectId, tid);
+      const pubVal = validateIntakeProjectForPublish(db, tid, savedProject, imageCount);
+      const nextLifecycle = pubVal.ok ? "ready_to_publish" : "needs_review";
+      db.prepare(
+        `UPDATE intake_client_projects SET status = ?, updated_by_admin_user_id = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
+      ).run(nextLifecycle, uid, projectId, tid);
+
       return res.redirect(redirectWithEmbed(req, `/admin/project-intake/success?projectId=${projectId}`));
+    }
+  );
+
+  router.post(
+    "/projects/:id/intake-quick-edit",
+    requireClientProjectIntakeAccess,
+    requireClientProjectIntakeMutate,
+    (req, res) => {
+      const tid = getAdminTenantId(req);
+      const pid = Number(req.params.id);
+      const uid = req.session.adminUser.id;
+      const b = req.body || {};
+      if (!pid || pid < 1) return res.status(400).send("Invalid project.");
+      const project = db.prepare(`SELECT id, status FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
+      if (!project) return res.status(404).send("Project not found.");
+      const st = String(project.status || "").trim().toLowerCase();
+      if (!INTAKE_PROJECT_PUBLISHABLE_STATUSES.has(st)) {
+        return res.redirect(
+          redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent("Quick edit is only allowed before publish."))
+        );
+      }
+      const neighborhood = String(b.neighborhood || "").trim().slice(0, 120);
+      const street_name = String(b.street_name || "").trim().slice(0, 200);
+      const house_number = String(b.house_number || "").trim().slice(0, 40);
+      const budgetRaw = String(b.estimated_budget || "").trim();
+      const budgetVal = budgetRaw === "" ? null : Number(budgetRaw);
+      if (budgetRaw !== "" && (Number.isNaN(budgetVal) || budgetVal < 0)) {
+        return res.redirect(
+          redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent("Budget must be a non-negative number."))
+        );
+      }
+      db.prepare(
+        `UPDATE intake_client_projects SET
+          neighborhood = ?, street_name = ?, house_number = ?,
+          estimated_budget_value = ?,
+          updated_by_admin_user_id = ?, updated_at = datetime('now')
+         WHERE id = ? AND tenant_id = ?`
+      ).run(neighborhood, street_name, house_number, budgetVal, uid, pid, tid);
+      const full = db.prepare(`SELECT * FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
+      const imgCountRow = db
+        .prepare(`SELECT COUNT(*) AS c FROM intake_project_images WHERE tenant_id = ? AND project_id = ?`)
+        .get(tid, pid);
+      const imageCount = Number(imgCountRow && imgCountRow.c) || 0;
+      const pubVal = validateIntakeProjectForPublish(db, tid, full, imageCount);
+      const nextLifecycle = pubVal.ok ? "ready_to_publish" : "needs_review";
+      db.prepare(
+        `UPDATE intake_client_projects SET status = ?, updated_by_admin_user_id = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
+      ).run(nextLifecycle, uid, pid, tid);
+      return res.redirect(
+        redirectWithEmbed(req, `/admin/projects/${pid}?notice=` + encodeURIComponent("Project details updated."))
+      );
+    }
+  );
+
+  router.post(
+    "/project-intake/projects/:id/publish",
+    requireClientProjectIntakeAccess,
+    requireClientProjectIntakeMutate,
+    (req, res) => {
+      const tid = getAdminTenantId(req);
+      const pid = Number(req.params.id);
+      const uid = req.session.adminUser.id;
+      if (!pid || pid < 1) return res.status(400).send("Invalid project.");
+      const project = db.prepare(`SELECT * FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
+      if (!project) return res.status(404).send("Project not found.");
+      const st = String(project.status || "").trim().toLowerCase();
+      if (st === "published" || st === "closed") {
+        return res.redirect(
+          redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent("Project is already published or closed."))
+        );
+      }
+      if (!INTAKE_PROJECT_PUBLISHABLE_STATUSES.has(st)) {
+        return res.redirect(
+          redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent("This project cannot be published from its current state."))
+        );
+      }
+      const imgCountRow = db
+        .prepare(`SELECT COUNT(*) AS c FROM intake_project_images WHERE tenant_id = ? AND project_id = ?`)
+        .get(tid, pid);
+      const imageCount = Number(imgCountRow && imgCountRow.c) || 0;
+      const pubVal = validateIntakeProjectForPublish(db, tid, project, imageCount);
+      if (!pubVal.ok) {
+        const msg = pubVal.errors.map((e) => e.message).join(" ");
+        return res.redirect(redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent(msg || "Project is not ready to publish.")));
+      }
+      const txn = db.transaction(() => {
+        db.prepare(
+          `UPDATE intake_client_projects SET status = 'published', updated_by_admin_user_id = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
+        ).run(uid, pid, tid);
+        intakeProjectAllocation.onProjectPublished(db, tid, pid, uid);
+      });
+      txn();
+      return res.redirect(
+        redirectWithEmbed(req, `/admin/projects/${pid}?notice=` + encodeURIComponent("Project published. Eligible providers are assigned per allocation rules; companies see leads in the portal when assigned."))
+      );
     }
   );
 
@@ -3243,12 +3446,19 @@ module.exports = function adminRoutes({ db }) {
       )
       .all(tid, projectId);
     const budget = clientIntake.getBudgetMetaForTenant(db, tid);
+    const imageCount = images.length;
+    const publishValidation = validateIntakeProjectForPublish(db, tid, project, imageCount);
+    const lifecycle = String(project.status || "").trim().toLowerCase();
+    const showPublishOnSuccess = INTAKE_PROJECT_PUBLISHABLE_STATUSES.has(lifecycle);
     return res.render("admin/project_intake_success", {
       activeNav: "project_intake",
       navTitle: "Project saved",
       project,
       images,
       budget,
+      imageCount,
+      publishValidation,
+      showPublishOnSuccess,
       projectStatusLabel: clientIntake.intakeProjectStatusLabel(project.status),
     });
   });
@@ -3450,21 +3660,32 @@ module.exports = function adminRoutes({ db }) {
     if (!pid || pid < 1) return res.status(400).send("Invalid id.");
     const project = db
       .prepare(
-        `SELECT p.*, c.client_code, c.full_name AS client_live_name, c.phone AS client_live_phone, c.external_client_reference
+        `SELECT p.*, c.client_code, c.full_name AS client_live_name, c.phone AS client_live_phone, c.external_client_reference,
+            cat.name AS intake_category_name
          FROM intake_client_projects p
          INNER JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
+         LEFT JOIN categories cat ON cat.id = p.intake_category_id AND cat.tenant_id = p.tenant_id
          WHERE p.id = ? AND p.tenant_id = ?`
       )
       .get(pid, tid);
     if (!project) return res.status(404).send("Project not found.");
+    const lifecycle = String(project.status || "").trim().toLowerCase();
+    if (lifecycle === "published") {
+      intakeProjectAllocation.processPublishedProjectAllocation(db, tid, pid);
+    }
     const images = db
       .prepare(
         `SELECT id, image_path, sort_order FROM intake_project_images WHERE tenant_id = ? AND project_id = ? ORDER BY sort_order ASC, id ASC`
       )
       .all(tid, pid);
+    const imageCount = images.length;
+    const publishValidation = validateIntakeProjectForPublish(db, tid, project, imageCount);
+    const showPublishOnDetail = INTAKE_PROJECT_PUBLISHABLE_STATUSES.has(lifecycle);
     const assignments = db
       .prepare(
-        `SELECT a.id, a.company_id, a.status, a.created_at, a.responded_at, a.response_note, c.name AS company_name, c.subdomain AS company_subdomain
+        `SELECT a.id, a.company_id, a.status, a.created_at, a.responded_at, a.response_note,
+            a.response_deadline_at, a.allocation_source, a.allocation_wave,
+            c.name AS company_name, c.subdomain AS company_subdomain
          FROM intake_project_assignments a
          INNER JOIN companies c ON c.id = a.company_id AND c.tenant_id = a.tenant_id
          WHERE a.project_id = ? AND a.tenant_id = ?
@@ -3484,6 +3705,9 @@ module.exports = function adminRoutes({ db }) {
       navTitle: `Project ${project.project_code}`,
       project,
       images,
+      imageCount,
+      publishValidation,
+      showPublishOnDetail,
       assignments,
       assignableCompanies,
       budget,
@@ -3513,11 +3737,25 @@ module.exports = function adminRoutes({ db }) {
       if (!company) {
         return res.redirect(`/admin/projects/${pid}?error=` + encodeURIComponent("Company not in this region."));
       }
+      const projRow = db
+        .prepare(`SELECT status, intake_category_id FROM intake_client_projects WHERE id = ? AND tenant_id = ?`)
+        .get(pid, tid);
+      const stPub = String((projRow && projRow.status) || "")
+        .trim()
+        .toLowerCase();
+      let responseDeadline = null;
+      if (stPub === "published" && projRow && projRow.intake_category_id) {
+        const h = getCategoryResponseWindowHours(db, tid, Number(projRow.intake_category_id));
+        const drow = db.prepare(`SELECT datetime('now', '+' || ? || ' hours') AS d`).get(String(Math.max(1, Math.floor(Number(h) || 72))));
+        responseDeadline = drow && drow.d ? String(drow.d) : null;
+      }
       try {
         db.prepare(
-          `INSERT INTO intake_project_assignments (tenant_id, project_id, company_id, assigned_by_admin_user_id, status, updated_at)
-           VALUES (?, ?, ?, ?, 'pending', datetime('now'))`
-        ).run(tid, pid, companyId, uid);
+          `INSERT INTO intake_project_assignments (
+            tenant_id, project_id, company_id, assigned_by_admin_user_id, status,
+            response_deadline_at, allocation_source, allocation_wave, updated_at
+          ) VALUES (?, ?, ?, ?, 'pending', ?, 'manual', 0, datetime('now'))`
+        ).run(tid, pid, companyId, uid, responseDeadline);
       } catch (e) {
         const msg = String(e.message || "");
         if (msg.includes("UNIQUE")) {

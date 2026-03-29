@@ -77,15 +77,21 @@ function clearCompanyPersonnelSession(req) {
 /**
  * Tenant must match host-resolved region; prevents session reuse across regional hosts.
  */
+function providerPortalLoginPath(req) {
+  const b = req.baseUrl != null && String(req.baseUrl).length > 0 ? String(req.baseUrl) : "/company";
+  return `${b.replace(/\/$/, "")}/login`;
+}
+
 function requireCompanyPersonnelAuth(req, res, next) {
   const cp = getCompanyPersonnelSession(req);
+  const loginPath = providerPortalLoginPath(req);
   if (!cp) {
-    return res.redirect("/company/login");
+    return res.redirect(loginPath);
   }
   const tenant = req.tenant;
   if (!tenant || Number(tenant.id) !== Number(cp.tenantId)) {
     clearCompanyPersonnelSession(req);
-    return res.redirect("/company/login");
+    return res.redirect(loginPath);
   }
   req.companyPersonnel = cp;
   return next();
@@ -145,6 +151,7 @@ module.exports = {
   setCompanyPersonnelSession,
   clearCompanyPersonnelSession,
   requireCompanyPersonnelAuth,
+  providerPortalLoginPath,
   authenticateCompanyPersonnel,
   isCompanyPortalLoginBlocked,
   recordCompanyPortalLoginFailure,

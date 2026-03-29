@@ -39,6 +39,7 @@
           <h2 class="admin-form-card__title">Project fields</h2>
           <table class="admin-workspace__table">
             <tbody>
+              <tr><th scope="row">Profession / category</th><td><%= project.intake_category_name && String(project.intake_category_name).trim() ? project.intake_category_name : '—' %></td></tr>
               <tr><th scope="row">City</th><td><%= project.city || '—' %></td></tr>
               <tr><th scope="row">Neighborhood</th><td><%= project.neighborhood || '—' %></td></tr>
               <tr><th scope="row">Street / house / unit</th><td><%= [project.street_name, project.house_number, project.apartment_number].filter(Boolean).join(', ') || '—' %></td></tr>
@@ -51,6 +52,51 @@
             </tbody>
           </table>
         </div>
+
+        <% var _pvD = typeof publishValidation !== 'undefined' && publishValidation ? publishValidation : { ok: true, errors: [] }; %>
+        <% var _showPubD = typeof showPublishOnDetail !== 'undefined' && showPublishOnDetail; %>
+        <% var _canMut = typeof adminNav !== 'undefined' && adminNav.canMutateProjectIntake; %>
+        <% if (_showPubD) { %>
+        <div class="card admin-form-card card--mb-block">
+          <h2 class="admin-form-card__title">Publish</h2>
+          <p class="muted" style="margin-top:0;">Company portal visibility requires <strong>published</strong> status. Unpublished projects stay internal to admin.</p>
+          <% if (_pvD.errors && _pvD.errors.length) { %>
+            <ul class="intake-publish-warnings" role="list" style="padding-left:1.1rem;">
+              <% _pvD.errors.forEach(function (e) { %>
+                <li class="muted" style="margin-bottom:0.25rem;"><%= e.message %></li>
+              <% }); %>
+            </ul>
+          <% } else { %>
+            <p class="flash flash--success" role="status">Ready against current intake rules.</p>
+          <% } %>
+          <% if (_showPubD && _canMut) { %>
+            <form method="post" action="/admin/project-intake/projects/<%= project.id %>/publish" class="form" style="margin-top:0.75rem;">
+              <button type="submit" class="btn btn--primary" <%= _pvD.ok ? '' : 'disabled aria-disabled="true"' %>>Publish project</button>
+            </form>
+            <h3 class="input-field__label" style="margin-top:1.25rem;">Quick edit (before publish)</h3>
+            <p class="muted input-field__help">Adjust site detail and budget. Photos cannot be changed here yet.</p>
+            <form method="post" action="/admin/projects/<%= project.id %>/intake-quick-edit" class="form">
+              <div class="input-field">
+                <label class="input-field__label" for="qe_neighborhood">Neighborhood</label>
+                <input id="qe_neighborhood" name="neighborhood" class="input-field__control" maxlength="120" value="<%= project.neighborhood || '' %>" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="qe_street">Street name</label>
+                <input id="qe_street" name="street_name" class="input-field__control" maxlength="200" value="<%= project.street_name || '' %>" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="qe_house">House number</label>
+                <input id="qe_house" name="house_number" class="input-field__control" maxlength="40" value="<%= project.house_number || '' %>" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="qe_budget">Estimated budget (<%= typeof budget !== 'undefined' && budget ? budget.displayPrefix : '' %>)</label>
+                <input id="qe_budget" name="estimated_budget" class="input-field__control" inputmode="decimal" value="<%= project.estimated_budget_value != null && project.estimated_budget_value !== '' ? project.estimated_budget_value : '' %>" />
+              </div>
+              <button type="submit" class="btn">Save &amp; re-check</button>
+            </form>
+          <% } %>
+        </div>
+        <% } %>
 
         <% if (images && images.length) { %>
         <div class="card admin-form-card card--mb-block">
@@ -77,6 +123,8 @@
                   <tr>
                     <th scope="col">Company</th>
                     <th scope="col">Response status</th>
+                    <th scope="col">Source</th>
+                    <th scope="col">Respond by</th>
                     <th scope="col">Responded</th>
                     <th scope="col">Note</th>
                     <th scope="col"></th>
@@ -91,6 +139,14 @@
                       </td>
                       <td>
                         <span class="u-text-strong"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.status) : a.status %></span>
+                      </td>
+                      <td class="muted"><%= a.allocation_source === 'auto' ? 'Auto' : 'Manual' %></td>
+                      <td class="muted">
+                        <% if (a.response_deadline_at) { %>
+                          <%- include('../partials/event_time', { at: a.response_deadline_at }) %>
+                        <% } else { %>
+                          —
+                        <% } %>
                       </td>
                       <td class="muted">
                         <% if (a.responded_at) { %>

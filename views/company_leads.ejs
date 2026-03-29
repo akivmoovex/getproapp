@@ -14,45 +14,46 @@
       activeCompanyNav: typeof activeCompanyNav !== 'undefined' ? activeCompanyNav : 'leads',
       companyName: typeof companyName !== 'undefined' ? companyName : '',
       companyPersonnel: typeof companyPersonnel !== 'undefined' ? companyPersonnel : null,
+      providerPortalBasePath: typeof providerPortalBasePath !== 'undefined' ? providerPortalBasePath : '/company',
     }) %>
     <main class="company-portal-main" id="main-content">
+      <% var _pb = typeof providerPortalBasePath !== 'undefined' && providerPortalBasePath ? String(providerPortalBasePath).replace(/\/$/, '') : '/company'; %>
       <% var sc = typeof scope !== 'undefined' ? scope : 'active'; %>
-      <% var act = typeof activeAssignments !== 'undefined' ? activeAssignments : []; %>
-      <% var dec = typeof declinedAssignments !== 'undefined' ? declinedAssignments : []; %>
+      <% var act = typeof activeLeadCards !== 'undefined' ? activeLeadCards : []; %>
+      <% var dec = typeof declinedLeadCards !== 'undefined' ? declinedLeadCards : []; %>
+      <% var bc = typeof blocked_credit !== 'undefined' && blocked_credit; %>
       <h1 class="company-portal-page-title">
         <% if (sc === 'declined') { %>Declined leads<% } else if (sc === 'all') { %>Leads<% } else { %>Active leads<% } %>
       </h1>
+      <% if (bc) { %>
+      <p id="company-portal-credit-hold-notice" class="company-portal-credit-hold flash" role="status">
+        <strong>Credit hold.</strong> Your account balance is below the allowed threshold. You can open leads to review summaries, but you cannot mark <strong>Interested</strong> or <strong>Request callback</strong> until your balance improves. You may still <strong>Decline</strong> if you do not want a lead.
+      </p>
+      <% } %>
       <p class="muted company-portal-intro">
         <% if (sc === 'active') { %>
-          Awaiting your response, interested, or callback requested. Declined assignments are hidden here — use <strong>Declined</strong> or <strong>All</strong> to review them.
+          Allocated projects appear as cards (estimated budget top-right). Declined assignments are hidden here — use <strong>Declined</strong> or <strong>All</strong> for history. Client identity is never shown.
         <% } else if (sc === 'declined') { %>
-          Assignments your company declined. Open a row for read-only detail.
+          Assignments your company declined or that timed out. Open a card for the same summary as active leads.
         <% } else { %>
-          Active first, then declined. Customer identity is not shown.
+          Active leads first, then declined. Client identity is not shown.
         <% } %>
       </p>
       <nav class="company-leads-scope" aria-label="Lead list scope">
-        <a class="company-leads-scope__link <%= sc === 'active' ? 'company-leads-scope__link--active' : '' %>" href="/company/leads?scope=active">Active</a>
+        <a class="company-leads-scope__link <%= sc === 'active' ? 'company-leads-scope__link--active' : '' %>" href="<%= _pb %>/leads?scope=active">Active</a>
         <span class="company-leads-scope__sep" aria-hidden="true">·</span>
-        <a class="company-leads-scope__link <%= sc === 'declined' ? 'company-leads-scope__link--active' : '' %>" href="/company/leads?scope=declined">Declined</a>
+        <a class="company-leads-scope__link <%= sc === 'declined' ? 'company-leads-scope__link--active' : '' %>" href="<%= _pb %>/leads?scope=declined">Declined</a>
         <span class="company-leads-scope__sep" aria-hidden="true">·</span>
-        <a class="company-leads-scope__link <%= sc === 'all' ? 'company-leads-scope__link--active' : '' %>" href="/company/leads?scope=all">All</a>
+        <a class="company-leads-scope__link <%= sc === 'all' ? 'company-leads-scope__link--active' : '' %>" href="<%= _pb %>/leads?scope=all">All</a>
       </nav>
 
       <% if (sc === 'active') { %>
         <% if (!act.length) { %>
-          <p class="muted">No active assignments. <a href="/company/leads?scope=declined">View declined</a> if you need history.</p>
+          <p class="muted">No active assignments. <a href="<%= _pb %>/leads?scope=declined">View declined</a> if you need history.</p>
         <% } else { %>
-          <ul class="company-lead-cards" role="list">
+          <ul class="company-lead-cards company-portal-lead-card-grid" role="list">
             <% act.forEach(function (a) { %>
-              <li>
-                <a class="company-lead-card card card--interactive" href="/company/leads/<%= a.assignment_id %>">
-                  <span class="company-lead-card__code"><%= a.project_code %></span>
-                  <span class="company-lead-card__badge"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.assignment_status) : a.assignment_status %></span>
-                  <span class="company-lead-card__meta"><%= a.city %><% if (a.neighborhood && String(a.neighborhood).trim()) { %> · <%= a.neighborhood %><% } %></span>
-                  <span class="muted company-lead-card__hint">View details</span>
-                </a>
-              </li>
+              <%- include('partials/company_portal_lead_card', { card: a, dimForCreditBlock: bc, assignmentStatusLabelForPortal: assignmentStatusLabelForPortal, providerPortalBasePath: _pb }) %>
             <% }); %>
           </ul>
         <% } %>
@@ -60,16 +61,9 @@
         <% if (!dec.length) { %>
           <p class="muted">No declined assignments.</p>
         <% } else { %>
-          <ul class="company-lead-cards" role="list">
+          <ul class="company-lead-cards company-portal-lead-card-grid" role="list">
             <% dec.forEach(function (a) { %>
-              <li>
-                <a class="company-lead-card card card--interactive" href="/company/leads/<%= a.assignment_id %>">
-                  <span class="company-lead-card__code"><%= a.project_code %></span>
-                  <span class="company-lead-card__badge"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.assignment_status) : a.assignment_status %></span>
-                  <span class="company-lead-card__meta"><%= a.city %><% if (a.neighborhood && String(a.neighborhood).trim()) { %> · <%= a.neighborhood %><% } %></span>
-                  <span class="muted company-lead-card__hint">View details</span>
-                </a>
-              </li>
+              <%- include('partials/company_portal_lead_card', { card: a, dimForCreditBlock: false, assignmentStatusLabelForPortal: assignmentStatusLabelForPortal, providerPortalBasePath: _pb }) %>
             <% }); %>
           </ul>
         <% } %>
@@ -78,16 +72,9 @@
         <% if (!act.length) { %>
           <p class="muted company-leads-section__empty">None right now.</p>
         <% } else { %>
-          <ul class="company-lead-cards" role="list">
+          <ul class="company-lead-cards company-portal-lead-card-grid" role="list">
             <% act.forEach(function (a) { %>
-              <li>
-                <a class="company-lead-card card card--interactive" href="/company/leads/<%= a.assignment_id %>">
-                  <span class="company-lead-card__code"><%= a.project_code %></span>
-                  <span class="company-lead-card__badge"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.assignment_status) : a.assignment_status %></span>
-                  <span class="company-lead-card__meta"><%= a.city %><% if (a.neighborhood && String(a.neighborhood).trim()) { %> · <%= a.neighborhood %><% } %></span>
-                  <span class="muted company-lead-card__hint">View details</span>
-                </a>
-              </li>
+              <%- include('partials/company_portal_lead_card', { card: a, dimForCreditBlock: bc, assignmentStatusLabelForPortal: assignmentStatusLabelForPortal, providerPortalBasePath: _pb }) %>
             <% }); %>
           </ul>
         <% } %>
@@ -95,16 +82,9 @@
         <% if (!dec.length) { %>
           <p class="muted company-leads-section__empty">None.</p>
         <% } else { %>
-          <ul class="company-lead-cards" role="list">
+          <ul class="company-lead-cards company-portal-lead-card-grid" role="list">
             <% dec.forEach(function (a) { %>
-              <li>
-                <a class="company-lead-card card card--interactive" href="/company/leads/<%= a.assignment_id %>">
-                  <span class="company-lead-card__code"><%= a.project_code %></span>
-                  <span class="company-lead-card__badge"><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(a.assignment_status) : a.assignment_status %></span>
-                  <span class="company-lead-card__meta"><%= a.city %><% if (a.neighborhood && String(a.neighborhood).trim()) { %> · <%= a.neighborhood %><% } %></span>
-                  <span class="muted company-lead-card__hint">View details</span>
-                </a>
-              </li>
+              <%- include('partials/company_portal_lead_card', { card: a, dimForCreditBlock: false, assignmentStatusLabelForPortal: assignmentStatusLabelForPortal, providerPortalBasePath: _pb }) %>
             <% }); %>
           </ul>
         <% } %>

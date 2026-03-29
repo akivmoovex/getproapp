@@ -1,0 +1,23 @@
+<% var _card = typeof card !== 'undefined' ? card : {}; %>
+<% var _pb = typeof providerPortalBasePath !== 'undefined' && providerPortalBasePath ? String(providerPortalBasePath).replace(/\/$/, '') : '/company'; %>
+<% var _dim = !!dimForCreditBlock; %>
+<% var _lbl = typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal : function () { return ''; }; %>
+<li>
+  <a
+    class="company-portal-lead-card card card--interactive<% if (_dim) { %> company-portal-lead-card--credit-blocked<% } %>"
+    href="<%= _pb %>/leads/<%= _card.assignment_id %>"
+    <% if (_dim) { %>aria-describedby="company-portal-credit-hold-notice"<% } %>
+  >
+    <div class="company-portal-lead-card__top">
+      <div class="company-portal-lead-card__title-block">
+        <span class="company-portal-lead-card__code"><%= _card.project_code %></span>
+        <span class="company-lead-card__badge company-portal-lead-card__badge"><%= _lbl(_card.assignment_status) %></span>
+      </div>
+      <span class="company-portal-lead-card__price"><%= _card.lead_price_display %></span>
+    </div>
+    <span class="company-portal-lead-card__meta">
+      <%= _card.city || '—' %><% if (_card.neighborhood && String(_card.neighborhood).trim()) { %> · <%= _card.neighborhood %><% } %>
+    </span>
+    <span class="muted company-portal-lead-card__hint">View details</span>
+  </a>
+</li>

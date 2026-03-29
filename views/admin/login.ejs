@@ -16,6 +16,7 @@
             <div class="admin-gate-brand__subtitle">Sign in to manage categories, listings, and leads.</div>
           </div>
         </a>
+        <p class="muted admin-gate-alt" style="margin:0 0 0.75rem;font-size:0.9rem;"><a href="/login">Other sign-in options</a> (provider, client)</p>
         <%- include('../partials/admin_gate_form', { formAction: '/admin/login', error: error, cancelHref: typeof cancelHref !== 'undefined' ? cancelHref : '/getpro-admin' }) %>
       </div>
     </div>

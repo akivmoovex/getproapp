@@ -25,7 +25,13 @@ const COMPANY_PORTAL_ASSIGNMENT_LIST_SELECT = [
 const COMPANY_PORTAL_ASSIGNMENT_DETAIL_SELECT = COMPANY_PORTAL_ASSIGNMENT_LIST_SELECT;
 
 /** Shown in company portal list (declined hidden from list query). */
-const COMPANY_PORTAL_ACTIVE_ASSIGNMENT_STATUSES = ["pending", "interested", "callback_requested"];
+const COMPANY_PORTAL_ACTIVE_ASSIGNMENT_STATUSES = [
+  "pending",
+  "allocated",
+  "viewed",
+  "interested",
+  "callback_requested",
+];
 
 /**
  * @param {string} action interested | decline | callback
@@ -35,13 +41,24 @@ function nextAssignmentStatusFromCompanyAction(currentStatus, action) {
   const c = String(currentStatus || "").trim().toLowerCase();
   const a = String(action || "").trim().toLowerCase();
   if (c === "declined") return null;
-  if (a === "interested") return c === "pending" ? "interested" : null;
+  if (a === "interested") {
+    if (c === "pending" || c === "allocated" || c === "viewed") return "interested";
+    return null;
+  }
   if (a === "decline") {
-    if (c === "pending" || c === "interested" || c === "callback_requested") return "declined";
+    if (
+      c === "pending" ||
+      c === "allocated" ||
+      c === "viewed" ||
+      c === "interested" ||
+      c === "callback_requested"
+    ) {
+      return "declined";
+    }
     return null;
   }
   if (a === "callback") {
-    if (c === "pending" || c === "interested") return "callback_requested";
+    if (c === "pending" || c === "allocated" || c === "viewed" || c === "interested") return "callback_requested";
     return null;
   }
   return null;
@@ -50,9 +67,13 @@ function nextAssignmentStatusFromCompanyAction(currentStatus, action) {
 function assignmentStatusLabelForPortal(status) {
   const s = String(status || "").trim().toLowerCase();
   if (s === "pending") return "Awaiting your response";
+  if (s === "allocated") return "New lead assigned";
+  if (s === "viewed") return "Viewed";
   if (s === "interested") return "Interested";
   if (s === "declined") return "Declined";
   if (s === "callback_requested") return "Callback requested";
+  if (s === "timed_out") return "Response window ended";
+  if (s === "expired") return "Expired";
   return s || "—";
 }
 

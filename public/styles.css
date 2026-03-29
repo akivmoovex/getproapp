@@ -8456,6 +8456,239 @@ body[class*="tenant-"] {
   color: var(--accent, #1d4ed8);
 }
 
+/* Provider portal leads: directory-card–style rows, budget top-right */
+.company-portal-lead-card-grid {
+  gap: var(--space-1-5);
+}
+
+.company-portal-lead-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-0-75);
+  padding: var(--space-1-5) var(--space-1-75);
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground, #0f172a) 6%, transparent);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.company-portal-lead-card:hover {
+  border-color: color-mix(in srgb, var(--accent, #2563eb) 35%, var(--border, #e2e8f0));
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--foreground, #0f172a) 8%, transparent);
+}
+
+.company-portal-lead-card--credit-blocked {
+  opacity: 0.72;
+  filter: grayscale(0.25);
+  border-style: dashed;
+}
+
+.company-portal-lead-card--credit-blocked:hover {
+  border-color: var(--border, rgba(0, 0, 0, 0.12));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground, #0f172a) 5%, transparent);
+}
+
+.company-portal-lead-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-1-5);
+  width: 100%;
+}
+
+.company-portal-lead-card__title-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-0-5);
+  min-width: 0;
+}
+
+.company-portal-lead-card__code {
+  font-weight: 800;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.company-portal-lead-card__badge {
+  margin-top: 0;
+}
+
+.company-portal-lead-card__price {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--accent, #1d4ed8);
+  white-space: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.company-portal-lead-card__meta {
+  color: var(--muted);
+  font-size: var(--typo-body-medium-size, 0.9375rem);
+  line-height: 1.35;
+}
+
+.company-portal-lead-card__hint {
+  font-size: var(--typo-body-medium-size, 0.875rem);
+}
+
+.company-portal-credit-hold {
+  margin: 0 0 var(--space-1-5);
+  padding: var(--space-1) var(--space-1-25);
+  border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--warn, #b45309) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn, #b45309) 28%, transparent);
+  color: inherit;
+  font-size: var(--typo-body-medium-size, 0.9375rem);
+}
+
+.company-lead-detail__masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-2);
+  margin: 0 0 var(--space-1-5);
+}
+
+.company-lead-detail__title {
+  margin: 0;
+}
+
+.company-lead-detail__lead-price {
+  margin: 0.15rem 0 0;
+  font-weight: 800;
+  font-size: 1.125rem;
+  color: var(--accent, #1d4ed8);
+  white-space: nowrap;
+}
+
+/* Admin: provider portal credit ledger + unblock dialog */
+.admin-company-credit-card {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-1-5) var(--space-1-75);
+}
+
+.admin-company-credit-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+.admin-company-credit-card__title {
+  margin: 0;
+}
+
+.admin-company-credit-card__balance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-0-75);
+}
+
+.admin-company-credit-card__balance-label {
+  font-size: 0.8125rem;
+}
+
+.admin-company-credit-card__balance-value {
+  font-size: 1.125rem;
+}
+
+.admin-company-credit-card__lead {
+  margin: 0 0 var(--space-1);
+  font-size: var(--typo-body-medium-size, 0.9375rem);
+}
+
+.admin-company-credit-card__actions {
+  margin: 0 0 var(--space-1-5);
+}
+
+.admin-company-credit-card__flash {
+  margin: 0 0 var(--space-1);
+}
+
+.admin-company-credit-card__ledger-title {
+  font-size: 1rem;
+  margin: var(--space-1-5) 0 var(--space-0-75);
+}
+
+.admin-company-credit-card__empty {
+  margin: 0;
+  font-size: var(--typo-body-medium-size, 0.9375rem);
+}
+
+.admin-company-credit-ledger-table {
+  font-size: var(--typo-body-medium-size, 0.875rem);
+}
+
+.admin-credit-blocked-badge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm, 4px);
+  background: color-mix(in srgb, #b91c1c 14%, transparent);
+  color: #991b1b;
+  margin-right: var(--space-0-5);
+}
+
+.admin-credit-ok-badge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.45rem;
+  border-radius: var(--radius-sm, 4px);
+  background: color-mix(in srgb, #15803d 12%, transparent);
+  color: #166534;
+}
+
+.admin-companies-credit-balance {
+  font-size: 0.875rem;
+}
+
+.admin-credit-dialog {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-2);
+  max-width: 28rem;
+  width: calc(100vw - 2rem);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.admin-credit-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.admin-credit-dialog__title {
+  margin: 0 0 var(--space-0-75);
+  font-size: 1.15rem;
+}
+
+.admin-credit-dialog__lead {
+  margin: 0 0 var(--space-1-25);
+  font-size: var(--typo-body-medium-size, 0.9375rem);
+}
+
+.admin-credit-dialog__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1-5);
+  justify-content: flex-end;
+}
+
 .company-lead-actions__hint {
   margin: 0 0 var(--space-1);
   font-size: var(--typo-body-medium-size, 0.9375rem);
@@ -8652,6 +8885,140 @@ body[class*="tenant-"] {
   justify-content: center;
   padding: var(--space-2);
   background: color-mix(in srgb, var(--surface) 94%, var(--wf-primary) 6%);
+}
+
+.company-login-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.company-login-back {
+  margin: 0 0 var(--space-1);
+  width: 100%;
+  max-width: 22rem;
+}
+
+.portal-login-hub-page {
+  min-height: 100vh;
+  padding: var(--space-2);
+  background: color-mix(in srgb, var(--surface) 94%, var(--wf-primary) 6%);
+}
+
+.portal-login-hub-main {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-2);
+}
+
+.portal-login-hub-inner {
+  width: 100%;
+  max-width: 36rem;
+}
+
+.portal-login-hub-title {
+  margin: 0 0 var(--space-0-75);
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.portal-login-hub-lead {
+  margin: 0 0 var(--space-2);
+  font-size: var(--typo-body-medium-size, 0.9375rem);
+}
+
+.portal-login-hub-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-25);
+}
+
+.portal-login-hub-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-35);
+  padding: var(--space-1-5) var(--space-1-75);
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.portal-login-hub-card:hover {
+  border-color: color-mix(in srgb, var(--accent, #2563eb) 40%, var(--border, #e2e8f0));
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.portal-login-hub-card__label {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.portal-login-hub-card__desc {
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.portal-login-hub-foot {
+  margin: var(--space-2) 0 0;
+  font-size: 0.875rem;
+}
+
+.client-portal-page {
+  min-height: 100vh;
+  padding: var(--space-2);
+  background: color-mix(in srgb, var(--surface) 96%, var(--wf-primary) 4%);
+}
+
+.client-portal-back {
+  margin: 0 auto var(--space-1);
+  max-width: 28rem;
+}
+
+.client-portal-wrap {
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.client-portal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-0-75);
+  margin-bottom: var(--space-1);
+  padding-bottom: var(--space-0-75);
+  border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.client-portal-header__title {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.client-portal-header__badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.client-login-card {
+  padding: var(--space-2);
+}
+
+.client-login-card__title {
+  margin: 0 0 var(--space-1);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.client-login-card__lead {
+  margin: 0 0 var(--space-1);
+  font-size: var(--typo-body-medium-size, 0.9375rem);
+  line-height: 1.45;
 }
 
 .company-login-card {

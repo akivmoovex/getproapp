@@ -1,0 +1,131 @@
+<% var co = typeof company !== 'undefined' ? company : {}; %>
+<% var bal = typeof portalCreditBalance !== 'undefined' ? portalCreditBalance : 0; %>
+<% var blocked = typeof portalCreditBlocked !== 'undefined' && portalCreditBlocked; %>
+<% var rows = typeof recentLedgerEntries !== 'undefined' ? recentLedgerEntries : []; %>
+<% var pmOpts = typeof paymentMethodOptions !== 'undefined' ? paymentMethodOptions : []; %>
+<% var defDate = typeof defaultPaymentDate !== 'undefined' ? defaultPaymentDate : ''; %>
+<div class="card admin-company-credit-card">
+  <div class="admin-company-credit-card__head">
+    <h2 class="admin-form-card__title admin-company-credit-card__title">Provider portal credits</h2>
+    <div class="admin-company-credit-card__balance">
+      <span class="muted admin-company-credit-card__balance-label">Balance (ZMW)</span>
+      <strong class="admin-company-credit-card__balance-value"><%= bal %></strong>
+      <% if (blocked) { %>
+      <span class="admin-credit-blocked-badge" title="Lead acceptance blocked in provider portal">Credit blocked</span>
+      <% } else { %>
+      <span class="admin-credit-ok-badge">Active</span>
+      <% } %>
+    </div>
+  </div>
+  <% if (typeof portalCreditNotice !== 'undefined' && portalCreditNotice) { %>
+  <p class="flash flash--success admin-company-credit-card__flash" role="status"><%= portalCreditNotice %></p>
+  <% } %>
+  <% if (typeof portalCreditError !== 'undefined' && portalCreditError) { %>
+  <p class="flash admin-company-credit-card__flash" role="alert"><%= portalCreditError %></p>
+  <% } %>
+  <p class="muted admin-company-credit-card__lead">
+    When balance is below <strong>−200 ZMW</strong>, this provider cannot mark leads as interested or request callbacks until a payment is recorded here. Ledger entries are append-only.
+  </p>
+  <% if (blocked) { %>
+  <p class="admin-company-credit-card__actions">
+    <button type="button" class="btn btn--primary" id="admin-credit-unblock-open">Record payment / unblock</button>
+  </p>
+  <% } else { %>
+  <p class="admin-company-credit-card__actions">
+    <button type="button" class="btn" id="admin-credit-unblock-open">Record payment</button>
+  </p>
+  <% } %>
+
+  <% if (rows.length) { %>
+  <h3 class="admin-company-credit-card__ledger-title">Recent payments (audit)</h3>
+  <div class="table-wrap">
+    <table class="table table--compact admin-company-credit-ledger-table">
+      <thead>
+        <tr>
+          <th scope="col">Recorded</th>
+          <th scope="col">Amount</th>
+          <th scope="col">Method</th>
+          <th scope="col">Txn ref</th>
+          <th scope="col">Payment date</th>
+          <th scope="col">Approver</th>
+          <th scope="col">Admin user id</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function (r) { %>
+        <tr>
+          <td class="muted"><%- include('partials/event_time', { at: r.created_at }) %></td>
+          <td><%= r.amount_zmw %></td>
+          <td><%= r.payment_method_label || r.payment_method %></td>
+          <td><%= r.transaction_reference %></td>
+          <td><%= r.payment_date %></td>
+          <td><%= r.approver_name %></td>
+          <td class="muted"><%= r.recorded_by_admin_user_id != null ? r.recorded_by_admin_user_id : '—' %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } else { %>
+  <p class="muted admin-company-credit-card__empty">No ledger entries yet. Payments you record will appear here.</p>
+  <% } %>
+</div>
+
+<dialog id="admin-credit-unblock-dialog" class="admin-credit-dialog" aria-labelledby="admin-credit-dialog-title">
+  <form method="post" action="/admin/companies/<%= co.id %>/portal-credit-payment" class="form admin-credit-dialog-form">
+    <% if (typeof embed !== 'undefined' && embed) { %>
+    <input type="hidden" name="embed" value="1" />
+    <% } %>
+    <h2 id="admin-credit-dialog-title" class="admin-credit-dialog__title">Record payment</h2>
+    <p class="muted admin-credit-dialog__lead">Creates a ledger entry and increases the provider balance. Required for audit.</p>
+    <div class="input-field">
+      <label class="input-field__label" for="cc_amount_zmw">Amount credited (ZMW)</label>
+      <input id="cc_amount_zmw" name="amount_zmw" class="input-field__control" type="number" inputmode="decimal" min="0.01" step="any" required />
+    </div>
+    <div class="input-field">
+      <label class="input-field__label" for="cc_payment_method">Payment method</label>
+      <select id="cc_payment_method" name="payment_method" class="input-field__control" required>
+        <option value="">Select…</option>
+        <% pmOpts.forEach(function (o) { %>
+        <option value="<%= o.value %>"><%= o.label %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="input-field">
+      <label class="input-field__label" for="cc_transaction_reference">Transaction / reference number</label>
+      <input id="cc_transaction_reference" name="transaction_reference" class="input-field__control" maxlength="200" required autocomplete="off" />
+    </div>
+    <div class="input-field">
+      <label class="input-field__label" for="cc_payment_date">Payment date</label>
+      <input id="cc_payment_date" name="payment_date" class="input-field__control" type="date" required value="<%= defDate %>" />
+    </div>
+    <div class="input-field">
+      <label class="input-field__label" for="cc_approver_name">Approver name</label>
+      <input id="cc_approver_name" name="approver_name" class="input-field__control" maxlength="200" required autocomplete="name" />
+    </div>
+    <div class="input-field">
+      <label class="input-field__label" for="cc_notes">Notes (optional)</label>
+      <textarea id="cc_notes" name="notes" class="input-field__control" rows="2" maxlength="2000"></textarea>
+    </div>
+    <div class="admin-credit-dialog__footer">
+      <button type="button" class="btn" id="admin-credit-unblock-cancel">Cancel</button>
+      <button type="submit" class="btn btn--primary">Submit payment</button>
+    </div>
+  </form>
+</dialog>
+<script>
+  (function () {
+    var dlg = document.getElementById("admin-credit-unblock-dialog");
+    var openBtn = document.getElementById("admin-credit-unblock-open");
+    var cancelBtn = document.getElementById("admin-credit-unblock-cancel");
+    if (!dlg || !openBtn) return;
+    openBtn.addEventListener("click", function () {
+      if (typeof dlg.showModal === "function") dlg.showModal();
+    });
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", function () {
+        if (typeof dlg.close === "function") dlg.close();
+      });
+    }
+  })();
+</script>

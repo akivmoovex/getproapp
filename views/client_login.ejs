@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Client portal | GetPro</title>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <% var _cb = typeof clientPortalBasePath !== 'undefined' && clientPortalBasePath ? String(clientPortalBasePath).replace(/\/$/, '') : '/client'; %>
+  <body class="client-portal-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
+    <p class="client-portal-back muted"><a class="btn btn--text" href="/login">← All sign-in options</a></p>
+    <%- include('partials/client_portal_shell_start', { clientPortalBasePath: _cb }) %>
+      <div class="card client-login-card">
+        <h1 class="client-login-card__title">Client area</h1>
+        <% if (typeof notice !== 'undefined' && notice) { %>
+        <div class="flash flash--success" role="status"><%= notice %></div>
+        <% } %>
+        <p class="muted client-login-card__lead">
+          End-client sign-in is <strong>not enabled</strong> in this release. This route exists only as a foundation for a future client experience. No credentials are accepted here yet.
+        </p>
+        <p class="muted client-login-card__lead">When available, clients will use a separate layout and session from staff and providers.</p>
+      </div>
+    <%- include('partials/client_portal_shell_end') %>
+  </body>
+</html>

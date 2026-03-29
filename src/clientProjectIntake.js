@@ -252,11 +252,16 @@ function getIntakeOtpOperationalBanner() {
   };
 }
 
-/** Human label for intake project status (default new). */
+/** Human label for intake project lifecycle / legacy status. */
 function intakeProjectStatusLabel(status) {
   const s = String(status || "").trim().toLowerCase();
-  if (s === "new") return "New — awaiting review";
-  if (s === "submitted") return "Submitted";
+  if (s === "draft") return "Draft";
+  if (s === "needs_review") return "Needs review";
+  if (s === "ready_to_publish") return "Ready to publish";
+  if (s === "published") return "Published";
+  if (s === "closed") return "Closed";
+  if (s === "new") return "Published (legacy)";
+  if (s === "submitted") return "Published (legacy)";
   return String(status || "—");
 }
 

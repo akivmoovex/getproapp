@@ -51,9 +51,13 @@
                 <select id="f_as" name="assignment_status" class="input-field__control">
                   <option value="">Any</option>
                   <option value="pending" <%= f.assignment_status === 'pending' ? 'selected' : '' %>>pending</option>
+                  <option value="allocated" <%= f.assignment_status === 'allocated' ? 'selected' : '' %>>allocated</option>
+                  <option value="viewed" <%= f.assignment_status === 'viewed' ? 'selected' : '' %>>viewed</option>
                   <option value="interested" <%= f.assignment_status === 'interested' ? 'selected' : '' %>>interested</option>
                   <option value="declined" <%= f.assignment_status === 'declined' ? 'selected' : '' %>>declined</option>
                   <option value="callback_requested" <%= f.assignment_status === 'callback_requested' ? 'selected' : '' %>>callback_requested</option>
+                  <option value="timed_out" <%= f.assignment_status === 'timed_out' ? 'selected' : '' %>>timed_out</option>
+                  <option value="expired" <%= f.assignment_status === 'expired' ? 'selected' : '' %>>expired</option>
                 </select>
               </div>
               <div class="input-field">

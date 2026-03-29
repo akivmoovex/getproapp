@@ -65,6 +65,10 @@
 
         <div class="card admin-form-card" style="margin-top:1rem;">
           <h2 class="admin-form-card__title">Project</h2>
+          <p class="muted intake-lifecycle-hint" style="margin:0 0 1rem; max-width:40rem;">
+            Saving creates a <strong>draft</strong>, then sets the project to <strong>needs review</strong> or <strong>ready to publish</strong> based on completeness.
+            Nothing is exposed to assigned companies until you <strong>Publish</strong> on the next screen (or project detail).
+          </p>
           <% if (!canMutate) { %>
             <p class="flash" role="status">Read-only role: you cannot submit projects.</p>
           <% } else { %>
@@ -80,6 +84,16 @@
             </div>
             <div class="input-field">
               <input name="client_address_apartment_number" class="input-field__control" placeholder="Apartment number" value="<%= client.address_apartment_number %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="intake_category_id">Profession / category</label>
+              <select id="intake_category_id" name="intake_category_id" class="input-field__control" required>
+                <option value="">Select profession</option>
+                <% (typeof intakeCategories !== 'undefined' ? intakeCategories : []).forEach(function (cat) { %>
+                  <option value="<%= cat.id %>"><%= cat.name %></option>
+                <% }); %>
+              </select>
+              <p class="input-field__help muted">Required for publishing; used for lead routing settings per category.</p>
             </div>
             <h3 class="input-field__label" style="margin-top:1rem;">Project location</h3>
             <div class="input-field">
@@ -119,7 +133,7 @@
               <div id="intake-preview" class="intake-carousel" aria-live="polite"></div>
             </div>
             <div class="form-step__actions admin-gate-actions">
-              <button class="btn btn--primary" type="submit">Save project</button>
+              <button class="btn btn--primary" type="submit">Save project (not published)</button>
               <a class="btn btn--text" href="/admin/project-intake<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">Cancel</a>
             </div>
           </form>

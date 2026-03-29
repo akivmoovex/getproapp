@@ -1,3 +1,4 @@
+<% var _pb = typeof providerPortalBasePath !== 'undefined' && providerPortalBasePath ? String(providerPortalBasePath).replace(/\/$/, '') : '/company'; %>
 <% var _cpNav = typeof activeCompanyNav !== 'undefined' ? activeCompanyNav : 'minisite'; %>
 <% var _cpP = typeof companyPersonnel !== 'undefined' ? companyPersonnel : (typeof companyPortalPersonnel !== 'undefined' ? companyPortalPersonnel : null); %>
 <% var _cpStaff = _cpP && _cpP.fullName ? String(_cpP.fullName).trim() : ''; %>
@@ -32,9 +33,9 @@
       <button type="button" class="company-portal-drawer__close" id="cp-nav-close" aria-label="Close menu">×</button>
     </div>
     <nav class="company-portal-drawer__nav" aria-label="Portal">
-      <a class="company-portal-drawer__link <%= _cpNav === 'minisite' ? 'company-portal-drawer__link--active' : '' %>" href="/company/minisite">Minisite</a>
-      <a class="company-portal-drawer__link <%= _cpNav === 'leads' ? 'company-portal-drawer__link--active' : '' %>" href="/company/leads">Leads</a>
-      <form method="post" action="/company/logout" class="company-portal-drawer__logout">
+      <a class="company-portal-drawer__link <%= _cpNav === 'minisite' ? 'company-portal-drawer__link--active' : '' %>" href="<%= _pb %>/minisite">Minisite</a>
+      <a class="company-portal-drawer__link <%= _cpNav === 'leads' ? 'company-portal-drawer__link--active' : '' %>" href="<%= _pb %>/leads">Leads</a>
+      <form method="post" action="<%= _pb %>/logout" class="company-portal-drawer__logout">
         <button type="submit" class="btn btn--text company-portal-drawer__logout-btn">Log out</button>
       </form>
     </nav>

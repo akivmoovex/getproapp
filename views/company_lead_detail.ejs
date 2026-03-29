@@ -6,34 +6,39 @@
     <title>Lead · <%= detail.project_code %> | Company portal</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
+  <% var _pb = typeof providerPortalBasePath !== 'undefined' && providerPortalBasePath ? String(providerPortalBasePath).replace(/\/$/, '') : '/company'; %>
   <body class="company-portal-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
     <%- include('partials/company_portal_shell_start', {
       activeCompanyNav: typeof activeCompanyNav !== 'undefined' ? activeCompanyNav : 'leads',
       companyName: typeof companyName !== 'undefined' ? companyName : '',
       companyPersonnel: typeof companyPersonnel !== 'undefined' ? companyPersonnel : null,
+      providerPortalBasePath: typeof providerPortalBasePath !== 'undefined' ? providerPortalBasePath : '/company',
     }) %>
     <main class="company-portal-main" id="main-content">
-      <p class="company-portal-back"><a class="btn btn--text" href="/company/leads">← Active leads</a></p>
+      <p class="company-portal-back"><a class="btn btn--text" href="<%= _pb %>/leads">← Active leads</a></p>
       <% if (typeof error !== 'undefined' && error) { %>
         <div class="flash" role="alert"><%= error %></div>
       <% } %>
       <% if (typeof notice !== 'undefined' && notice) { %>
         <div class="flash flash--success" role="status"><%= notice %></div>
       <% } %>
-      <h1 class="company-portal-page-title">Project <%= detail.project_code %></h1>
+      <% var _bc = typeof blocked_credit !== 'undefined' && blocked_credit; %>
+      <% var _accept = typeof can_accept_lead_actions === 'undefined' || can_accept_lead_actions; %>
+      <% if (_bc) { %>
+      <p class="company-portal-credit-hold flash" role="status">
+        <strong>Credit hold.</strong> You can read this lead, but you cannot mark <strong>Interested</strong> or <strong>Request callback</strong> until your account balance is above the threshold.
+      </p>
+      <% } %>
+      <header class="company-lead-detail__masthead">
+        <h1 class="company-portal-page-title company-lead-detail__title">Project <%= detail.project_code %></h1>
+        <p class="company-lead-detail__lead-price" aria-label="Estimated project budget"><%= detail.lead_price_display %></p>
+      </header>
       <div class="card company-lead-detail-card">
         <dl class="company-lead-detail-dl">
           <div><dt>Your response</dt><dd><strong><%= typeof assignmentStatusLabelForPortal === 'function' ? assignmentStatusLabelForPortal(detail.assignment_status) : detail.assignment_status %></strong></dd></div>
           <div><dt>Project status</dt><dd><%= typeof projectStatusLabel !== 'undefined' ? projectStatusLabel : detail.project_status %></dd></div>
           <div><dt>City</dt><dd><%= detail.city || '—' %></dd></div>
           <div><dt>Neighborhood</dt><dd><%= detail.neighborhood || '—' %></dd></div>
-          <% if (detail.estimated_budget_value != null && detail.estimated_budget_value !== '') { %>
-          <div><dt>Budget</dt><dd>
-            <% var _bp = typeof budget !== 'undefined' && budget ? budget.displayPrefix : ''; %>
-            <%= _bp ? _bp + ' ' : '' %><%= detail.estimated_budget_value %>
-            <% if (detail.estimated_budget_currency) { %> <span class="muted"><%= detail.estimated_budget_currency %></span><% } %>
-          </dd></div>
-          <% } %>
           <div><dt>Received</dt><dd class="muted"><%- include('partials/event_time', { at: detail.project_created_at }) %></dd></div>
           <% if (detail.assignment_responded_at) { %>
           <div><dt>Last updated</dt><dd class="muted"><%- include('partials/event_time', { at: detail.assignment_responded_at }) %></dd></div>
@@ -45,14 +50,14 @@
       </div>
 
       <% var _st = String(detail.assignment_status || '').toLowerCase(); %>
-      <% var _canInt = _st === 'pending'; %>
-      <% var _canDecl = _st === 'pending' || _st === 'interested' || _st === 'callback_requested'; %>
-      <% var _canCb = _st === 'pending' || _st === 'interested'; %>
+      <% var _canInt = _accept && (_st === 'pending' || _st === 'allocated' || _st === 'viewed'); %>
+      <% var _canDecl = _st === 'pending' || _st === 'allocated' || _st === 'viewed' || _st === 'interested' || _st === 'callback_requested'; %>
+      <% var _canCb = _accept && (_st === 'pending' || _st === 'allocated' || _st === 'viewed' || _st === 'interested'); %>
       <% if (_canInt || _canDecl || _canCb) { %>
       <div class="card company-lead-actions card--mb-block">
         <h2 class="company-lead-detail__h2">Your actions</h2>
         <p class="muted company-lead-actions__hint">Optional note is saved with the action you choose (max 400 characters).</p>
-        <form method="post" action="/company/leads/<%= detail.assignment_id %>/action" class="form company-lead-actions-form">
+        <form method="post" action="<%= _pb %>/leads/<%= detail.assignment_id %>/action" class="form company-lead-actions-form">
           <div class="input-field company-lead-actions__note">
             <label class="input-field__label" for="lead_action_note">Note (optional)</label>
             <textarea id="lead_action_note" name="note" class="input-field__control" rows="2" maxlength="400"></textarea>
@@ -76,8 +81,8 @@
         <ul class="company-lead-detail__images" role="list">
           <% images.forEach(function (im) { %>
             <li>
-              <a href="/company/project-files/<%= im.id %>" target="_blank" rel="noopener noreferrer" class="company-lead-detail__img-link">
-                <img src="/company/project-files/<%= im.id %>" alt="" class="company-lead-detail__img" loading="lazy" width="320" height="240" />
+              <a href="<%= _pb %>/project-files/<%= im.id %>" target="_blank" rel="noopener noreferrer" class="company-lead-detail__img-link">
+                <img src="<%= _pb %>/project-files/<%= im.id %>" alt="" class="company-lead-detail__img" loading="lazy" width="320" height="240" />
                 <span class="visually-hidden">Open full size</span>
               </a>
             </li>

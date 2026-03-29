@@ -26,6 +26,19 @@
           </div>
         </div>
 
+        <% if (typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive) { %>
+        <%- include('../partials/admin_company_portal_credits', {
+          company,
+          portalCreditBlocked,
+          portalCreditBalance,
+          recentLedgerEntries,
+          paymentMethodOptions,
+          defaultPaymentDate,
+          portalCreditNotice,
+          portalCreditError,
+        }) %>
+        <% } %>
+
         <div class="admin-workspace__stage">
           <div class="admin-workspace__preview-wrap" data-ws-preview-wrap>
             <iframe

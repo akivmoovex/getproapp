@@ -44,6 +44,7 @@ const { eventTimeParts } = require("./src/eventTime");
 const publicModule = require("./src/routes/public")({ db });
 const adminRoutes = require("./src/routes/admin");
 const companyPortalRoutes = require("./src/routes/companyPortal");
+const clientPortalRoutes = require("./src/routes/clientPortal");
 const apiRoutes = require("./src/routes/api");
 
 const app = express();
@@ -286,8 +287,23 @@ app.use((req, res, next) => {
   next();
 });
 
-/** Company personnel portal (tenant must be enabled — same gate as public site). */
-app.use(companyPortalRoutes({ db }));
+/** Shared sign-in hub (tenant must be enabled — same gate as public site). */
+app.get("/login", (req, res) => {
+  if (!req.tenant || !req.tenant.id) {
+    return res.status(404).type("text").send("Region not found.");
+  }
+  const prefix = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
+  return res.render("portal_login_hub", {
+    tenant: req.tenant,
+    tenantUrlPrefix: prefix,
+    tenantHomeHref: tenantHomeHrefFromPrefix(prefix),
+  });
+});
+
+/** Role-separated portals: client (foundation), provider + legacy company path, same router. */
+app.use("/client", clientPortalRoutes());
+app.use("/company", companyPortalRoutes({ db }));
+app.use("/provider", companyPortalRoutes({ db }));
 
 app.use("/", publicModule.router);
 

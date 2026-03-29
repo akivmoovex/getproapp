@@ -11,7 +11,16 @@ const SORT_MAP = {
   updated_at: "p.updated_at",
 };
 
-const ASSIGNMENT_STATUS_FILTER = new Set(["pending", "interested", "declined", "callback_requested"]);
+const ASSIGNMENT_STATUS_FILTER = new Set([
+  "pending",
+  "allocated",
+  "viewed",
+  "interested",
+  "declined",
+  "callback_requested",
+  "timed_out",
+  "expired",
+]);
 
 const PAGE_SIZE = 50;
 const MAX_PAGE = 500;
