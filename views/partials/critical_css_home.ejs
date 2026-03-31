@@ -92,4 +92,24 @@
       font-size: 1.85rem;
     }
   }
+
+  /* Mobile home: ensure the search card feels intentional before full CSS loads. */
+  @media (max-width: 768px) {
+    .pro-home-hero-panel {
+      position: static;
+      inset: auto;
+      display: block;
+      margin-top: -28px;
+    }
+    .pro-home-search-wrap--hero {
+      padding: 0 16px;
+    }
+    .pro-home-search-wrap--hero .pro-home-dual-search {
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(228, 232, 240, 0.9);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      padding: 16px;
+    }
+  }
 </style>
