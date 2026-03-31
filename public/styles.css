@@ -9942,57 +9942,51 @@ body[class*="tenant-"] {
 }
 
 /* =========================
- * GetPro homepage (new structure) — strictly scoped to `.gp-home`
- * Mobile-first, Moovit-inspired minimal landing page
- * No gradients / no hero image styling / no shared-component overrides
+ * GetPro homepage — strictly scoped to `.gp-home`
+ * Product-led landing: dominant hero search, clear hierarchy, calm premium rhythm
  * ========================= */
 
 .gp-home {
-  /* Overflow protection */
   overflow-x: clip;
-  background: var(--md-sys-color-surface-container);
+  background: color-mix(in srgb, var(--md-sys-color-surface-container) 94%, #fff);
   color: var(--color-text-primary);
-
-  /* Page rhythm — deliberate spacing to final CTA */
-  padding: 20px 0 52px;
+  padding: 16px 0 56px;
 }
 
 /* ---------- HERO ---------- */
 
 .gp-home .gp-home-hero {
-  /* Clear the sticky app bar */
-  padding: calc(24px + var(--app-top-app-bar-height, 56px)) 0 28px;
+  padding: calc(22px + var(--app-top-app-bar-height, 56px)) 0 24px;
 }
 
 .gp-home .gp-home-hero__inner {
-  width: min(1100px, calc(100% - 32px));
+  width: min(1080px, calc(100% - 32px));
   margin: 0 auto;
-
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .gp-home .gp-home-hero__copy {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   align-self: start;
 }
 
 .gp-home .gp-home-hero__title {
   margin: 0;
-  font-size: clamp(1.85rem, 5vw, 2.55rem);
-  line-height: 1.06;
+  font-size: clamp(2rem, 5.2vw, 2.85rem);
+  line-height: 1.02;
   font-weight: 900;
-  letter-spacing: -0.03em;
-  max-width: min(26ch, 100%);
+  letter-spacing: -0.035em;
+  max-width: min(24ch, 100%);
 }
 
 .gp-home .gp-home-hero__subtitle {
   margin: 0;
   color: var(--color-text-secondary);
-  line-height: 1.45;
-  font-size: 1.0625rem;
-  max-width: 32ch;
+  line-height: 1.4;
+  font-size: clamp(0.98rem, 2.2vw, 1.0625rem);
+  max-width: min(30ch, 100%);
 }
 
 /* Hero primary column: search card only (form submit is the hero CTA) */
@@ -10012,18 +10006,27 @@ body[class*="tenant-"] {
   width: 100%;
 }
 
-/* Search card (primary surface — focal point) */
+/* Search card — primary product surface */
 .gp-home .gp-home-search {
   position: relative;
   z-index: 1;
   background: #fff;
-  border: 1px solid color-mix(in srgb, var(--color-outline-strong) 92%, transparent);
-  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--color-outline-strong) 88%, transparent);
+  border-radius: 24px;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.85) inset,
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 24px 56px rgba(15, 23, 42, 0.11);
-  padding: 20px;
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 2px 6px rgba(15, 23, 42, 0.05),
+    0 28px 64px rgba(15, 23, 42, 0.1);
+  padding: 22px;
+}
+
+/* Form labels: compact product UI */
+.gp-home .gp-home-search .pro-home-field-label {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text-secondary) 92%, transparent);
 }
 
 /* Preserve existing search form behavior; only layout improvements inside homepage card */
@@ -10075,27 +10078,28 @@ body[class*="tenant-"] {
 .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-submit.btn {
   width: 100%;
   min-height: 48px;
-  border-radius: 12px;
+  border-radius: 14px;
   justify-content: center;
   font-weight: 800;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   box-shadow: var(--elevation-btn-primary);
   align-self: end;
   height: auto;
-  padding-inline: 20px;
+  padding-inline: 22px;
   box-sizing: border-box;
 }
 
-/* Homepage search helper line: keep compact */
 .gp-home .gp-home-search-hint {
-  margin-top: 8px;
-  line-height: 1.35;
+  margin-top: 10px;
+  line-height: 1.4;
+  font-size: 0.8125rem;
+  color: color-mix(in srgb, var(--color-text-secondary) 95%, transparent);
 }
 
 /* ---------- SHARED SECTION HEADERS ---------- */
 
 .gp-home .gp-home-section-head {
-  margin: 0 0 18px;
+  margin: 0 0 14px;
 }
 
 .gp-home .gp-home-section-title {
@@ -10106,18 +10110,29 @@ body[class*="tenant-"] {
   letter-spacing: -0.02em;
 }
 
+/* Secondary sections: quieter titles (hero is dominant) */
+.gp-home .gp-home-steps .gp-home-section-title,
+.gp-home .gp-home-trust .gp-home-section-title,
+.gp-home .gp-home-provider .gp-home-section-title {
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.018em;
+  color: color-mix(in srgb, var(--color-text-primary) 88%, transparent);
+}
+
 .gp-home .gp-home-section-subtitle {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   color: var(--color-text-secondary);
-  line-height: 1.5;
-  max-width: 42ch;
-  font-size: 0.98rem;
+  line-height: 1.45;
+  max-width: 40ch;
+  font-size: 0.9375rem;
 }
 
 /* ---------- HOW IT WORKS ---------- */
 
 .gp-home .gp-home-steps {
-  padding: 28px 0 40px;
+  padding: 36px 0 32px;
+  border-top: 1px solid color-mix(in srgb, var(--color-outline) 45%, transparent);
 }
 
 .gp-home .gp-home-steps__inner {
@@ -10135,31 +10150,32 @@ body[class*="tenant-"] {
 }
 
 .gp-home .gp-home-step {
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 78%, transparent);
-  border-radius: 16px;
-  padding: 14px 16px 16px;
+  background: color-mix(in srgb, #fff 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 65%, transparent);
+  border-radius: 18px;
+  padding: 16px 18px;
 }
 
 .gp-home .gp-home-step__title {
   margin: 0;
-  font-size: 1.0625rem;
-  font-weight: 900;
-  letter-spacing: -0.015em;
-  line-height: 1.25;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.28;
 }
 
 .gp-home .gp-home-step__text {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   color: var(--color-text-secondary);
-  line-height: 1.5;
-  font-size: 0.9375rem;
+  line-height: 1.45;
+  font-size: 0.875rem;
 }
 
 /* ---------- TRUST ---------- */
 
 .gp-home .gp-home-trust {
-  padding: 36px 0 40px;
+  padding: 32px 0 36px;
+  border-top: 1px solid color-mix(in srgb, var(--color-outline) 40%, transparent);
 }
 
 .gp-home .gp-home-trust__inner {
@@ -10179,29 +10195,29 @@ body[class*="tenant-"] {
 
 /* Reuse existing `.gp-home-stat*` markup in the trust section */
 .gp-home .gp-home-stat {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 76%, transparent);
-  border-radius: 14px;
-  padding: 12px 14px;
-  min-height: 54px;
-
+  background: color-mix(in srgb, #fff 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 58%, transparent);
+  border-radius: 16px;
+  padding: 14px 16px;
+  min-height: 52px;
   display: grid;
   align-content: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .gp-home .gp-home-stat__value {
-  font-size: 1.2rem;
+  font-size: 1.125rem;
   font-weight: 900;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
   font-variant-numeric: tabular-nums;
 }
 
 .gp-home .gp-home-stat__label {
   color: var(--color-text-secondary);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   line-height: 1.25;
+  letter-spacing: 0.01em;
 }
 
 /* Quotes (if present) — keep subtle */
@@ -10213,16 +10229,16 @@ body[class*="tenant-"] {
 
 .gp-home .gp-home-quote {
   margin: 0;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid color-mix(in srgb, var(--color-outline) 72%, transparent);
-  border-radius: 14px;
-  padding: 12px 14px;
+  background: color-mix(in srgb, #fff 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 58%, transparent);
+  border-radius: 16px;
+  padding: 14px 16px;
 }
 
 .gp-home .gp-home-quote__text {
   margin: 0;
-  line-height: 1.5;
-  font-size: 0.9375rem;
+  line-height: 1.45;
+  font-size: 0.875rem;
 }
 
 .gp-home .gp-home-quote__meta {
@@ -10234,7 +10250,8 @@ body[class*="tenant-"] {
 /* ---------- PROVIDER CTA ---------- */
 
 .gp-home .gp-home-provider {
-  padding: 44px 0;
+  padding: 36px 0 40px;
+  border-top: 1px solid color-mix(in srgb, var(--color-outline) 40%, transparent);
 }
 
 .gp-home .gp-home-provider__inner {
@@ -10264,20 +10281,21 @@ body[class*="tenant-"] {
 .gp-home .gp-home-final__inner {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
-
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid color-mix(in srgb, var(--color-outline-strong) 75%, transparent);
-  border-radius: 22px;
-  padding: 22px 20px;
-  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.07);
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--color-outline-strong) 70%, transparent);
+  border-radius: 24px;
+  padding: 24px 22px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 16px 40px rgba(15, 23, 42, 0.07);
 }
 
 .gp-home .gp-home-final__title {
   margin: 0;
-  font-size: 1.375rem;
-  line-height: 1.2;
+  font-size: 1.25rem;
+  line-height: 1.22;
   font-weight: 900;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.022em;
 }
 
 .gp-home .gp-home-final__text {
@@ -10302,14 +10320,13 @@ body[class*="tenant-"] {
   }
 
   .gp-home .gp-home-hero {
-    padding: calc(20px + var(--app-top-app-bar-height, 56px)) 0 32px;
+    padding: calc(18px + var(--app-top-app-bar-height, 56px)) 0 28px;
   }
 
   .gp-home .gp-home-hero__inner {
-    /* Slightly favor search column; top-align for one cohesive scan line */
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.18fr);
+    grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.22fr);
     align-items: start;
-    gap: clamp(18px, 2.6vw, 32px);
+    gap: clamp(16px, 2.2vw, 28px);
   }
 
   .gp-home .gp-home-hero__primary {
@@ -10324,10 +10341,9 @@ body[class*="tenant-"] {
     min-width: 12rem;
   }
 
-  /* Desktop: search card as dominant hero surface */
   .gp-home .gp-home-search {
-    padding: 22px 24px;
-    border-radius: 22px;
+    padding: 26px 28px;
+    border-radius: 24px;
   }
 
   .gp-home .gp-home-search .pro-home-dual-search .pro-search-form__toolbar-row {
@@ -10345,21 +10361,25 @@ body[class*="tenant-"] {
     width: 148px;
     min-width: 148px;
     max-width: 148px;
-    min-height: 50px;
+    min-height: 52px;
+    border-radius: 14px;
     justify-self: end;
     align-self: end;
   }
 
   .gp-home .gp-home-section-head {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
 
-  .gp-home .gp-home-section-title {
-    font-size: 1.4rem;
+  /* Keep secondary section titles subdued vs hero */
+  .gp-home .gp-home-steps .gp-home-section-title,
+  .gp-home .gp-home-trust .gp-home-section-title,
+  .gp-home .gp-home-provider .gp-home-section-title {
+    font-size: 1.1875rem;
   }
 
   .gp-home .gp-home-steps {
-    padding: 44px 0 48px;
+    padding: 48px 0 44px;
   }
 
   .gp-home .gp-home-steps__list {
