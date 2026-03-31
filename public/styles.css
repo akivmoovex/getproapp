@@ -10139,6 +10139,212 @@ body[class*="tenant-"] {
   }
 }
 
+@media (min-width: 768px) {
+  .gp-home .gp-home-hero__top {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: calc(var(--app-top-app-bar-height, 56px) + 56px) 24px 0;
+  }
+
+  .gp-home .gp-home-hero__search-shell {
+    position: relative;
+    z-index: 5;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
+  .gp-home .gp-home-search {
+    position: relative;
+    z-index: 5;
+  }
+
+  .gp-home .gp-home-hero__band {
+    margin-top: -28px;
+    padding: 92px 0 72px;
+    background: #f97316;
+    position: relative;
+    z-index: 1;
+  }
+
+  .gp-home .gp-home-hero__band-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 56px;
+    align-items: center;
+  }
+
+  .gp-home .gp-home-hero__copy {
+    max-width: 520px;
+    width: 100%;
+  }
+
+  .gp-home .gp-home-hero__title {
+    font-size: 56px;
+    line-height: 1.05;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .gp-home .gp-home-hero__subtitle {
+    margin-top: 20px;
+    font-size: 18px;
+    line-height: 1.55;
+  }
+
+  .gp-home .gp-home-hero__cta {
+    margin-top: 24px;
+  }
+
+  .gp-home .gp-home-hero__mockup {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .gp-home .gp-home-hero__mockup-card {
+    display: block;
+    max-width: 380px;
+    width: 100%;
+    margin-left: auto;
+    background: #1f2937;
+    color: #fff;
+    border-radius: 28px;
+    padding: 20px;
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.18);
+  }
+
+  .gp-home .gp-home-hero__mockup-header {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .gp-home .gp-home-hero__mockup-row {
+    display: block;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  .gp-home .gp-home-hero__mockup-name {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .gp-home .gp-home-hero__mockup-meta {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .gp-home .gp-home-hero__mockup-footer {
+    display: block;
+    margin-top: 16px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.76);
+  }
+}
+
+@media (min-width: 768px) {
+  .gp-home {
+    background: #ffffff;
+  }
+
+  .gp-home .gp-home-hero {
+    background: #ffffff;
+  }
+
+  .gp-home .gp-home-hero__band {
+    background: #f97316;
+  }
+
+  .gp-home .gp-home-hero__title {
+    color: #111827;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .gp-home .gp-home-hero__subtitle {
+    color: #4b5563;
+  }
+
+  .gp-home .gp-home-hero__band-inner {
+    gap: 56px;
+  }
+
+  .gp-home .gp-home-hero__copy {
+    margin-top: 0;
+  }
+
+  .gp-home .gp-home-hero__mockup {
+    margin-top: 0;
+  }
+
+  .gp-home .gp-home-search {
+    background: #ffffff;
+    border-radius: 24px;
+    border: 1px solid #e5e7eb;
+    box-shadow:
+      0 10px 25px rgba(0, 0, 0, 0.06),
+      0 2px 6px rgba(0, 0, 0, 0.04);
+    padding: 22px 24px;
+  }
+
+  .gp-home .gp-home-search .pro-home-dual-search .pro-ac-input {
+    height: 48px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  .gp-home .gp-home-search .pro-home-dual-search .pro-ac-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+  }
+
+  .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-submit.btn {
+    height: 48px;
+    width: 148px;
+    min-width: 148px;
+    max-width: 148px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #6366f1, #7c3aed);
+    color: #ffffff;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    box-shadow: 0 6px 14px rgba(99, 102, 241, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none;
+  }
+
+  .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-submit.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+  }
+
+  .gp-home .gp-home-hero__mockup-card {
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.25),
+      0 4px 10px rgba(0, 0, 0, 0.15);
+  }
+
+  .gp-home .gp-home-hero__mockup-row {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+}
+
 /* Product benefit rows (below hero, before “How it works”) */
 .gp-home .gp-home-benefits {
   border-top: 1px solid var(--gp-hp-border);
