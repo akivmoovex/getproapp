@@ -67,20 +67,19 @@
     <main class="gp-home" role="main">
       <!-- 1) HERO (no hero image) -->
       <section class="gp-home-hero" aria-labelledby="gp-home-hero-title">
-        <div class="container gp-home-hero__inner">
-          <header class="gp-home-hero__copy">
-            <h1 id="gp-home-hero-title" class="gp-home-hero__title">Start your project. Find a trusted local pro.</h1>
-            <p class="gp-home-hero__subtitle">Search by service and city. Compare providers and contact the right one fast.</p>
-          </header>
-
-          <div class="gp-home-hero__primary">
-            <div id="gp-home-search" class="gp-home-search" aria-label="Project search">
-              <%- include('partials/pro_search_form', {
-                variant: 'home',
-                tenantUrlPrefix,
-                showCategoryFilter: false,
-              }) %>
-              <p class="gp-home-search-hint muted muted--caption u-mt-sm">Finding verified service providers—made easy.</p>
+        <div class="container">
+          <div class="gp-home-hero__inner">
+            <div class="gp-home-hero__content">
+              <h1 id="gp-home-hero-title" class="gp-home-hero__title">Start your project. Find a trusted local pro.</h1>
+              <p class="gp-home-hero__subtitle">Search by service and city. Compare providers and contact the right one fast.</p>
+              <div id="gp-home-search" class="gp-home-search" aria-label="Project search">
+                <%- include('partials/pro_search_form', {
+                  variant: 'home',
+                  tenantUrlPrefix,
+                  showCategoryFilter: false,
+                }) %>
+                <p class="gp-home-search-hint muted muted--caption u-mt-sm">Finding verified service providers—made easy.</p>
+              </div>
             </div>
           </div>
         </div>
