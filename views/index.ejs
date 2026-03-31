@@ -15,14 +15,30 @@
     <script type="application/ld+json"><%- orgJsonLd %></script>
     <% } %>
     <%# PERF NOTE: Homepage hero is LCP-sensitive — keep preload imagesrcset aligned with <picture> srcset; avoid blocking ATF JS (docs/performance-budgets.md §2.1). %>
+    <%- include('partials/critical_css_home') %>
     <link
       rel="preload"
       as="image"
+      type="image/avif"
+      href="/images/hero/home-hero-640.avif"
+      imagesrcset="/images/hero/home-hero-640.avif 640w"
+      imagesizes="100vw"
+    />
+    <link
+      rel="preload"
+      as="image"
+      type="image/webp"
       href="/images/hero/home-hero-640.webp"
       imagesrcset="/images/hero/home-hero-640.webp 640w, /images/hero/home-hero-960.webp 960w, /images/hero/home-hero-1280.webp 1280w"
       imagesizes="100vw"
     />
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link
+      rel="preload"
+      as="style"
+      href="/styles.css?v=<%= stylesVersion %>"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript><link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" /></noscript>
   </head>
   <body class="home-page home-page--launcher wf-home-layout <%= tenant.themeClass %>" data-screen-role="launcher">
     <div class="app-layout">
@@ -96,6 +112,7 @@
                   sizes="100vw"
                   width="1280"
                   height="720"
+                  style="width:100%;height:auto;aspect-ratio:16/9;object-fit:cover"
                   alt="Professional providing a home service"
                   loading="eager"
                   fetchpriority="high"

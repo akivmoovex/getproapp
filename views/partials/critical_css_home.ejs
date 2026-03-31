@@ -1,0 +1,95 @@
+<style>
+  /* Critical CSS for homepage LCP (hero + top bar layout). Keep tiny. */
+  :root {
+    color-scheme: light;
+  }
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f6f7fb;
+    color: #121417;
+  }
+  .container {
+    width: min(1100px, calc(100% - 32px));
+    margin: 0 auto;
+  }
+  .app-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .app-layout__main {
+    flex: 1 0 auto;
+    width: 100%;
+  }
+  .app-top-app-bar {
+    background: #f6f7fb;
+    border-bottom: 1px solid #e4e8f0;
+  }
+  .app-top-app-bar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    gap: 12px;
+  }
+  .pro-home-hero {
+    position: relative;
+  }
+  .pro-home-hero-visual {
+    position: relative;
+  }
+  .pro-home-hero-media {
+    position: relative;
+    overflow: hidden;
+    background: #0b0b10;
+  }
+  .pro-home-hero-photo {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+  .pro-home-hero-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 45%, rgba(0, 0, 0, 0.35) 100%);
+    pointer-events: none;
+  }
+  .pro-home-hero-panel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+  }
+  .pro-home-hero-caption {
+    width: min(720px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 24px 0 18px;
+    color: rgba(255, 255, 255, 0.96);
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+  }
+  .pro-home-hero-title {
+    margin: 0 0 8px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-size: 2.125rem;
+    line-height: 1.12;
+  }
+  .pro-home-hero-subline {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.88);
+  }
+  @media (max-width: 420px) {
+    .pro-home-hero-title {
+      font-size: 1.85rem;
+    }
+  }
+</style>

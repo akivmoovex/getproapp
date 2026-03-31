@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
 /**
  * GetPro — global design tokens (Material Design 3 aligned; DS V1 palette in docs/DESIGN_SYSTEM.md)
  * Single source of truth for colors, typography, spacing, shape, elevation.
@@ -115,8 +113,8 @@
   --flash-info-bg: color-mix(in srgb, var(--wf-primary) 7%, var(--surface));
   --flash-info-text: var(--color-text-primary);
 
-  /* —— Typography — Inter first (loaded in this file), then system fallbacks —— */
-  --font-display: "Inter", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  /* —— Typography — system stack first (avoid render-blocking webfonts) —— */
+  --font-display: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-family-body: var(--font-display);
   --typo-display-small-size: 2.25rem;
   --typo-display-small-line: 1.2;
