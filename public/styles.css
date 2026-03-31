@@ -9960,7 +9960,8 @@ body[class*="tenant-"] {
 /* ---------- HERO ---------- */
 
 .gp-home .gp-home-hero {
-  padding: 32px 0 28px;
+  /* Clear the sticky app bar */
+  padding: calc(24px + var(--app-top-app-bar-height, 56px)) 0 28px;
 }
 
 .gp-home .gp-home-hero__inner {
@@ -10058,7 +10059,7 @@ body[class*="tenant-"] {
 .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-submit.btn {
   width: 100%;
   min-height: 52px;
-  border-radius: 9999px;
+  border-radius: 12px; /* match the (non-pill) input shape */
   justify-content: center;
   font-weight: 800;
   box-shadow: var(--elevation-btn-primary);
@@ -10081,11 +10082,18 @@ body[class*="tenant-"] {
 .gp-home .gp-home-search .pro-home-dual-search .pro-ac-input {
   min-height: 52px;
   padding-block: 12px;
+  font-size: 1rem;
 }
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-submit.btn {
   border-radius: 12px; /* match inputs (desktop row) */
   align-self: stretch;
+  padding-inline: 18px;
+}
+
+/* Remove CTA conflict: the primary CTA is the form submit button */
+.gp-home .gp-home-hero__cta {
+  display: none;
 }
 
 /* ---------- SHARED SECTION HEADERS ---------- */
@@ -10298,7 +10306,7 @@ body[class*="tenant-"] {
   }
 
   .gp-home .gp-home-hero {
-    padding: 48px 0 40px;
+    padding: calc(32px + var(--app-top-app-bar-height, 56px)) 0 40px;
   }
 
   .gp-home .gp-home-hero__inner {
