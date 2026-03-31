@@ -9994,30 +9994,13 @@ body[class*="tenant-"] {
   max-width: 36ch;
 }
 
-/* Search first in this column, then the lighter hero CTA — conversion focus (DOM order matches layout) */
+/* Hero primary column: search card only (form submit is the hero CTA) */
 .gp-home .gp-home-hero__primary {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* Hero CTA: visible but secondary to the search card (outline, not solid primary) */
-.gp-home .gp-home-hero__cta.btn--primary {
-  background: var(--surface);
-  border: var(--border-width-hairline) solid var(--wf-primary);
-  color: var(--wf-primary-dark);
-  box-shadow: none;
-  font-weight: 700;
-}
-
-.gp-home .gp-home-hero__cta.btn--primary:hover {
-  background: var(--primary-softer-bg);
-  border-color: var(--wf-primary-dark);
-  color: var(--wf-primary-dark);
-  box-shadow: none;
-}
-
-.gp-home .gp-home-hero__cta,
 .gp-home .gp-home-final__cta {
   min-height: 48px;
   border-radius: 9999px;
@@ -10098,11 +10081,6 @@ body[class*="tenant-"] {
 /* Homepage search helper line: keep compact */
 .gp-home .gp-home-search-hint {
   margin-top: 6px;
-}
-
-/* Remove CTA conflict: the primary CTA is the form submit button */
-.gp-home .gp-home-hero__cta {
-  display: none;
 }
 
 /* ---------- SHARED SECTION HEADERS ---------- */
@@ -10329,8 +10307,7 @@ body[class*="tenant-"] {
     gap: 18px;
   }
 
-  /* Keep CTA + search aligned; CTA not full-width on desktop */
-  .gp-home .gp-home-hero__cta,
+  /* Final section CTA not full-width on desktop */
   .gp-home .gp-home-final__cta {
     width: auto;
     justify-self: start;
@@ -10444,7 +10421,6 @@ body[class*="tenant-"] {
   max-width: 100%;
 }
 
-.gp-home .gp-home-hero__cta,
 .gp-home .gp-home-final__cta,
 .gp-home .gp-home-provider__actions .btn {
   max-width: 100%;
