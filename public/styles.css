@@ -10062,14 +10062,10 @@ body[class*="tenant-"] {
 
 .gp-home .gp-home-feature {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 40px;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
   align-items: center;
-  padding: 48px 0;
-}
-
-.gp-home .gp-home-benefits .gp-home-feature:first-child {
-  padding-top: 32px;
+  padding: 72px 0;
 }
 
 .gp-home .gp-home-feature:not(:last-child) {
@@ -10084,30 +10080,35 @@ body[class*="tenant-"] {
   direction: ltr;
 }
 
-.gp-home .gp-home-feature__content {
+.gp-home .gp-home-feature__text {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
 }
 
 .gp-home .gp-home-feature__eyebrow {
-  margin: 0 0 var(--gp-space-sm);
+  display: block;
+  margin: 0 0 10px;
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--gp-hp-eyebrow);
+  color: #9ca3af;
 }
 
 .gp-home .gp-home-feature__title {
-  margin: 0 0 var(--gp-space-sm);
+  margin: 0 0 12px;
   font-size: 32px;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.2;
   color: var(--gp-hp-text);
 }
 
-.gp-home .gp-home-feature__body {
-  margin: 0 0 var(--gp-space-md);
+.gp-home .gp-home-feature__desc {
+  margin: 0 0 20px;
   font-size: 16px;
-  color: var(--gp-hp-muted);
+  color: #6b7280;
   line-height: 1.5;
   max-width: 42ch;
 }
@@ -10117,39 +10118,235 @@ body[class*="tenant-"] {
 }
 
 .gp-home .gp-home-feature__visual {
-  height: 180px;
-  max-width: 460px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Feature mockups (UI-style, not empty placeholders) */
+.gp-home .gp-home-feature-mock {
   width: 100%;
+  max-width: 400px;
   margin-inline: auto;
-  border-radius: 20px;
-  background: #f9fafb;
+  background: #fff;
   border: 1px solid #e5e7eb;
-  min-height: 0;
+  border-radius: 18px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.gp-home .gp-home-feature-mock--results .gp-home-feature-mock__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.gp-home .gp-home-feature-mock__head-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.gp-home .gp-home-feature-mock__head-meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.gp-home .gp-home-feature-mock__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gp-home .gp-home-feature-mock__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.gp-home .gp-home-feature-mock__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.gp-home .gp-home-feature-mock__row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gp-home .gp-home-feature-mock__row-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gp-hp-text);
+}
+
+.gp-home .gp-home-feature-mock__row-sub {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.gp-home .gp-home-feature-mock--compare .gp-home-feature-mock__compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.gp-home .gp-home-feature-mock__profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 12px 10px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.gp-home .gp-home-feature-mock__profile-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.gp-home .gp-home-feature-mock__profile-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gp-hp-text);
+}
+
+.gp-home .gp-home-feature-mock__profile-tag {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.gp-home .gp-home-feature-mock__profile-lines {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  color: #9ca3af;
+  display: flex;
+  gap: 8px;
+}
+
+.gp-home .gp-home-feature-mock--contact {
+  padding: 14px;
+}
+
+.gp-home .gp-home-feature-mock__contact-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.gp-home .gp-home-feature-mock__contact-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.gp-home .gp-home-feature-mock__contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gp-home .gp-home-feature-mock__contact-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gp-hp-text);
+}
+
+.gp-home .gp-home-feature-mock__contact-sub {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.gp-home .gp-home-feature-mock__contact-body {
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gp-home .gp-home-feature-mock__line {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: #e5e7eb;
+}
+
+.gp-home .gp-home-feature-mock__line--short {
+  width: 72%;
+}
+
+.gp-home .gp-home-feature-mock__contact-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.gp-home .gp-home-feature-mock__pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gp-hp-text);
+  border: 1px solid #e5e7eb;
+  background: #fff;
 }
 
 @media (max-width: 767px) {
   .gp-home .gp-home-feature {
     grid-template-columns: 1fr;
     gap: 20px;
-    padding: 32px 0;
-  }
-
-  .gp-home .gp-home-benefits .gp-home-feature:first-child {
-    padding-top: 24px;
+    padding: 48px 0;
   }
 
   .gp-home .gp-home-feature--reverse {
     direction: ltr;
   }
 
-  /* Middle row: visual-first on small screens (matches desktop “visual left”) */
-  .gp-home .gp-home-feature--reverse .gp-home-feature__visual {
+  .gp-home .gp-home-feature__visual {
     order: -1;
   }
 
-  .gp-home .gp-home-feature__visual {
-    height: 140px;
-    max-width: 100%;
+  .gp-home .gp-home-feature-mock--compare .gp-home-feature-mock__compare {
+    grid-template-columns: 1fr;
   }
 }
 
