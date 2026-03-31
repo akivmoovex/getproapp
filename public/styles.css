@@ -5663,32 +5663,6 @@ textarea {
   outline-offset: var(--border-width-medium);
 }
 
-.wf-home-shell {
-  min-height: 100vh;
-}
-
-.wf-home-main {
-  width: 100%;
-  min-width: 0;
-  padding-top: var(--space-8);
-  display: flex;
-  flex-direction: column;
-}
-
-/* Home: prevent horizontal overflow on all regional tenants (incl. demo subdomain) */
-.home-page.wf-home-layout .wf-home-shell,
-.home-page.wf-home-layout .wf-home-main {
-  min-width: 0;
-  max-width: 100%;
-  overflow-x: hidden;
-  overflow-x: clip;
-}
-
-/* Home: hero flush to top; logo + menu float over image */
-.home-page .wf-home-main {
-  padding-top: 0;
-}
-
 .wf-home-sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -5749,113 +5723,7 @@ textarea {
   border-color: transparent;
 }
 
-/* Hero image + overlay (full width of main column) */
-.pro-home-hero {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-}
-
-.pro-home-hero-visual {
-  position: relative;
-  width: 100%;
-  min-height: min(62vw, var(--layout-dim-560));
-  max-height: var(--layout-dim-680);
-  overflow: visible;
-  background: var(--wf-primary-dark);
-}
-
-@media (max-width: 620px) {
-  .pro-home-hero-visual {
-    min-height: min(48vw, var(--layout-dim-280));
-    max-height: min(52vw, var(--layout-dim-320));
-  }
-}
-
-@media (max-width: 430px) {
-  .pro-home-hero-visual {
-    min-height: min(44vw, 220px);
-    max-height: 260px;
-  }
-}
-
-/* Clip only the photo — keeps autocomplete dropdowns from being cut off by overflow:hidden */
-.pro-home-hero-media {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  background: var(--wf-primary-dark);
-}
-
-.pro-home-hero-photo {
-  width: 100%;
-  height: 100%;
-  min-height: var(--layout-dim-320);
-  object-fit: cover;
-  object-position: 68% 35%;
-  display: block;
-}
-
-.pro-home-hero-scrim {
-  position: absolute;
-  inset: 0;
-  background: var(--gradient-hero-scrim);
-  pointer-events: none;
-}
-
-.pro-home-hero-panel {
-  position: absolute;
-  left: clamp(var(--space-2), 3vw, var(--space-4-5));
-  bottom: clamp(var(--space-2-5), 4vw, var(--space-5-5));
-  z-index: 20;
-  width: min(var(--bp-xl-2), calc(100% - clamp(var(--space-4), 6vw, var(--space-9))));
-  max-width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: clamp(var(--space-1-25), 2vw, var(--space-2));
-}
-
-.pro-home-hero-panel .pro-home-hero-caption {
-  position: static;
-  padding: 0;
-  max-width: min(40ch, 100%);
-  pointer-events: none;
-}
-
-.pro-home-hero-title {
-  margin: 0 0 var(--space-1);
-  max-width: min(36ch, 100%);
-  font-size: clamp(var(--space-2-25), 4.2vw, var(--space-3-75));
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.03em;
-  color: var(--color-white);
-  text-shadow: var(--text-shadow-hero-soft);
-  text-wrap: balance;
-}
-
-.pro-home-hero-subline {
-  margin: 0;
-  max-width: min(58ch, 100%);
-  font-size: clamp(var(--space-1-375), 2vw, var(--space-2-25));
-  font-weight: 500;
-  line-height: 1.38;
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
-  text-wrap: balance;
-}
-
-@media (min-width: 720px) {
-  .pro-home-hero-panel .pro-home-hero-title {
-    max-width: min(42ch, 100%);
-  }
-
-  .pro-home-hero-panel .pro-home-hero-subline {
-    max-width: min(62ch, 100%);
-  }
-}
+/* NOTE: Homepage hero now uses `.gp-home-*` selectors in `views/index.ejs`. */
 
 .pro-home-search-field {
   display: flex;
@@ -5874,209 +5742,8 @@ textarea {
   padding-left: var(--space-0-75);
 }
 
-.pro-home-search-wrap {
-  background: var(--surface);
-  border-bottom: var(--border-width-hairline) solid var(--border);
-  padding: var(--space-2-25) clamp(var(--space-2), 3vw, var(--space-4)) var(--space-2-75);
-}
-
-.pro-home-search-wrap--hero {
-  position: static;
-  width: 100%;
-  margin: 0;
-  padding: var(--space-2) var(--space-2-25) var(--space-2-25);
-  border: var(--border-width-hairline) solid var(--color-on-inverse-50);
-  border-radius: var(--space-2);
-  background: var(--color-glass-hero-search);
-  backdrop-filter: blur(var(--space-1-5));
-  -webkit-backdrop-filter: blur(var(--space-1-5));
-  box-shadow: var(--elevation-hero-card);
-}
-
-.pro-home-search-wrap--hero .pro-home-dual-search {
-  max-width: none;
-}
-
-.pro-home-search-wrap--hero .pro-search-form__toolbar-row {
-  flex-wrap: nowrap;
-  align-items: flex-end;
-  gap: var(--space-1);
-}
-
-.pro-home-search-wrap--hero .pro-home-search-fields {
-  flex: 1 1 0;
-  min-width: 0;
-  flex-wrap: nowrap;
-  gap: var(--space-1);
-  align-items: stretch;
-}
-
-@media (min-width: 900px) {
-  .pro-home-search-wrap--hero .pro-search-form__toolbar-row {
-    gap: var(--space-1-25);
-  }
-
-  .pro-home-search-wrap--hero .pro-home-search-fields {
-    gap: var(--space-1-25);
-  }
-}
-
-/* Match directory toolbar density (compact M3-filled row — web widths) */
-@media (min-width: 621px) {
-  .pro-home-search-wrap--hero .pro-search-form__toolbar-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-    align-items: end;
-    column-gap: var(--space-1-25);
-    row-gap: var(--space-1);
-    flex-wrap: unset;
-  }
-
-  .pro-home-search-wrap--hero .pro-home-search-fields {
-    display: contents;
-  }
-
-  .pro-home-search-wrap--hero .pro-home-search-field {
-    min-width: 0;
-  }
-}
-
-.pro-home-search-wrap--hero .pro-ac {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-/* Dropdowns must stack above the white stats strip below the hero */
-.pro-home-search-wrap--hero .pro-ac-dropdown {
-  z-index: 200;
-}
-
-/* end (not stretch): stretch made the button as tall as label+inputs in the grid row */
-.pro-home-search-wrap--hero .pro-search-form__toolbar-row .pro-home-search-submit {
-  flex: 0 0 auto;
-  align-self: end;
-  white-space: nowrap;
-}
-
-@media (max-width: 620px) {
-  .pro-home-search-wrap--hero .pro-search-form__toolbar-row {
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .pro-home-search-wrap--hero .pro-home-search-fields {
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    width: 100%;
-    gap: var(--space-1-25);
-  }
-
-  .pro-home-search-wrap--hero .pro-home-search-field {
-    flex: 1 1 auto;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .pro-home-search-wrap--hero .pro-search-form__toolbar-row .pro-home-search-submit {
-    width: 100%;
-    justify-content: center;
-    min-height: var(--space-touch);
-    white-space: normal;
-  }
-}
-
-@media (max-width: 520px) {
-  .pro-home-hero-panel {
-    left: var(--space-1-5);
-    width: calc(100% - var(--space-3));
-    bottom: var(--space-2);
-    gap: var(--space-1-25);
-  }
-
-  .pro-home-search-wrap--hero {
-    padding: var(--space-1-75) var(--space-1-75) var(--space-2);
-  }
-
-  .pro-home-search-wrap--hero .pro-ac {
-    flex: 1 1 auto;
-    min-width: 0;
-    width: 100%;
-  }
-}
-
-/* Home hero: stack image band + headline + search (no overlap) — mobile */
-@media (max-width: 767px) {
-  .pro-home-hero-visual {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .pro-home-hero-media {
-    position: relative;
-    flex-shrink: 0;
-    align-self: stretch;
-    width: 100%;
-    height: min(40vw, 200px);
-    min-height: 112px;
-    max-height: 200px;
-    overflow: hidden;
-    inset: auto;
-  }
-
-  .pro-home-hero-photo {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    object-fit: cover;
-  }
-
-  .pro-home-hero-panel {
-    position: relative;
-    left: auto;
-    bottom: auto;
-    width: 100%;
-    max-width: none;
-    box-sizing: border-box;
-    padding: var(--space-2) var(--space-1-5) var(--space-2-5);
-    gap: var(--space-1-25);
-    background: var(--surface);
-    z-index: 21;
-  }
-
-  .pro-home-hero-panel .pro-home-hero-caption {
-    max-width: none;
-    pointer-events: auto;
-  }
-
-  .pro-home-hero-title {
-    max-width: none;
-    color: var(--text);
-    text-shadow: none;
-    font-size: clamp(1.2rem, 5.2vw, 1.65rem);
-  }
-
-  .pro-home-hero-subline {
-    color: var(--muted);
-    text-shadow: none;
-  }
-
-  .pro-home-search-wrap--hero {
-    border: var(--border-width-hairline) solid var(--border);
-    background: var(--surface);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    box-shadow: var(--elevation-sm);
-  }
-}
+/* NOTE: Legacy home hero/search wrap styles removed.
+   Home now uses `.gp-home-*` selectors in `views/index.ejs`. */
 
 .pro-home-dual-search {
   display: flex;
@@ -6261,7 +5928,6 @@ textarea {
     box-sizing: border-box;
   }
 
-  .pro-home-search-wrap--hero .pro-ac-input,
   .pro-directory-toolbar .pro-search-form--directory .pro-ac-input,
   .pro-search-form--directory .pro-ac-input {
     min-height: 40px;
@@ -6271,14 +5937,12 @@ textarea {
     line-height: 1.4;
   }
 
-  .pro-home-search-wrap--hero .pro-ac-watermark,
   .pro-directory-toolbar .pro-search-form--directory .pro-ac-watermark,
   .pro-search-form--directory .pro-ac-watermark {
     font-size: var(--space-1-625);
     line-height: 1.35;
   }
 
-  .pro-home-search-wrap--hero .pro-home-field-label,
   .pro-directory-toolbar .pro-search-form--directory .pro-home-field-label,
   .pro-search-form--directory .pro-home-field-label {
     font-size: var(--space-1-375);
@@ -6286,7 +5950,6 @@ textarea {
     letter-spacing: 0.01em;
   }
 
-  .pro-home-search-wrap--hero .pro-search-form__toolbar-row .pro-home-search-submit,
   .pro-directory-toolbar .pro-search-form--directory .pro-home-search-submit,
   .pro-search-form--directory .pro-home-search-submit {
     min-height: 40px;
@@ -6296,7 +5959,6 @@ textarea {
     box-sizing: border-box;
   }
 
-  .pro-home-search-wrap--hero .pro-home-search-submit.btn,
   .pro-directory-toolbar .pro-search-form--directory .pro-home-search-submit.btn,
   .pro-search-form--directory .pro-home-search-submit.btn {
     padding-block: 0;
@@ -6304,7 +5966,6 @@ textarea {
     min-height: 40px;
   }
 
-  .pro-home-search-wrap--hero .pro-home-search-icon,
   .pro-directory-toolbar .pro-search-form--directory .pro-home-search-icon,
   .pro-search-form--directory .pro-home-search-icon {
     width: 20px;
@@ -6313,7 +5974,6 @@ textarea {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .pro-home-search-wrap--hero .pro-ac:hover,
   .pro-directory-toolbar .pro-search-form--directory .pro-ac:hover,
   .pro-search-form--directory .pro-ac:hover {
     border-color: color-mix(in srgb, var(--wf-primary) 20%, var(--border-strong));
@@ -9278,10 +8938,6 @@ body.join-modal-open {
 @media (max-width: 767px) {
   .home-page__desktop-only {
     display: none !important;
-  }
-
-  .home-page .wf-home-main > .pro-section {
-    padding-block: var(--space-2-5);
   }
 
   .home-m3-cta--help {
