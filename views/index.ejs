@@ -75,20 +75,21 @@
       <section class="gp-home-hero" aria-labelledby="gp-home-hero-title">
         <div class="container gp-home-hero__inner">
           <header class="gp-home-hero__copy">
-            <h1 id="gp-home-hero-title" class="gp-home-hero__title">Start your project. Find the right pro.</h1>
-            <p class="gp-home-hero__subtitle">Choose a service and city—we’ll match you with providers near you.</p>
+            <h1 id="gp-home-hero-title" class="gp-home-hero__title">Start your project. Find a trusted local pro.</h1>
+            <p class="gp-home-hero__subtitle">Search by service and city. Compare providers and contact the right one fast.</p>
           </header>
 
           <div class="gp-home-hero__primary">
-            <a class="gp-home-hero__cta btn btn--primary" href="#gp-home-search">Start your project</a>
-
             <div id="gp-home-search" class="gp-home-search" aria-label="Project search">
               <%- include('partials/pro_search_form', {
                 variant: 'home',
                 tenantUrlPrefix,
                 showCategoryFilter: false,
               }) %>
+              <p class="gp-home-search-hint muted muted--caption u-mt-sm">Finding verified service providers—made easy.</p>
             </div>
+
+            <a class="gp-home-hero__cta btn btn--primary" href="#gp-home-search">Search providers</a>
           </div>
         </div>
       </section>
@@ -102,16 +103,16 @@
 
           <ol class="gp-home-steps__list">
             <li class="gp-home-step">
-              <h3 class="gp-home-step__title">Describe your project</h3>
-              <p class="gp-home-step__text">Pick a service, add your city, and share what you need.</p>
+              <h3 class="gp-home-step__title">Tell us what you need</h3>
+              <p class="gp-home-step__text">Choose a service and add your city.</p>
             </li>
             <li class="gp-home-step">
-              <h3 class="gp-home-step__title">Get matched with providers</h3>
-              <p class="gp-home-step__text">See relevant providers for your job and location.</p>
+              <h3 class="gp-home-step__title">See matching providers</h3>
+              <p class="gp-home-step__text">Browse profiles and availability details.</p>
             </li>
             <li class="gp-home-step">
-              <h3 class="gp-home-step__title">Choose and connect</h3>
-              <p class="gp-home-step__text">Compare options, then contact the provider you prefer.</p>
+              <h3 class="gp-home-step__title">Contact with confidence</h3>
+              <p class="gp-home-step__text">Compare options, then reach out to the best fit.</p>
             </li>
           </ol>
         </div>
@@ -122,7 +123,7 @@
         <div class="container gp-home-trust__inner">
           <header class="gp-home-section-head">
             <h2 id="gp-home-trust-title" class="gp-home-section-title">Trusted at a glance</h2>
-            <p class="gp-home-section-subtitle">Clear profiles. Simple decisions.</p>
+            <p class="gp-home-section-subtitle">Real providers. Clear profiles. Quick decisions.</p>
           </header>
 
           <ul class="gp-home-trust__stats" aria-label="Key stats">
@@ -146,11 +147,11 @@
 
           <div class="gp-home-trust__quotes" aria-label="Recent feedback">
             <figure class="gp-home-quote">
-              <blockquote class="gp-home-quote__text">Found a specialist in minutes and booked straight from the profile.</blockquote>
+              <blockquote class="gp-home-quote__text">Found the right specialist in minutes.</blockquote>
               <figcaption class="gp-home-quote__meta">Dana · last week</figcaption>
             </figure>
             <figure class="gp-home-quote">
-              <blockquote class="gp-home-quote__text">Clear and fast on mobile—easy to compare and contact.</blockquote>
+              <blockquote class="gp-home-quote__text">Easy to compare on mobile and contact right away.</blockquote>
               <figcaption class="gp-home-quote__meta">Yossi · March 2026</figcaption>
             </figure>
           </div>
@@ -162,7 +163,7 @@
         <div class="container gp-home-provider__inner">
           <header class="gp-home-section-head">
             <h2 id="gp-home-provider-title" class="gp-home-section-title">Are you a service provider?</h2>
-            <p class="gp-home-section-subtitle">Get discovered by customers searching for your services in your city.</p>
+            <p class="gp-home-section-subtitle">Get discovered by customers searching in your city.</p>
           </header>
           <div class="gp-home-provider__actions">
             <a class="btn btn--secondary" href="https://getproapp.org/join" target="_blank" rel="noopener noreferrer">Join as a provider</a>
@@ -173,9 +174,9 @@
       <!-- 5) FINAL CTA -->
       <section class="gp-home-final" aria-labelledby="gp-home-final-title">
         <div class="container gp-home-final__inner">
-          <h2 id="gp-home-final-title" class="gp-home-final__title">Ready to get started?</h2>
-          <p class="gp-home-final__text">Start your project in under a minute.</p>
-          <a class="gp-home-final__cta btn btn--primary" href="#gp-home-search">Start your project</a>
+          <h2 id="gp-home-final-title" class="gp-home-final__title">Ready to find the right pro?</h2>
+          <p class="gp-home-final__text">Search now—pick a service and city to get started.</p>
+          <a class="gp-home-final__cta btn btn--primary" href="#gp-home-search">Start searching</a>
         </div>
       </section>
     </main>

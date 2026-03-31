@@ -9947,20 +9947,20 @@ body[class*="tenant-"] {
  * No gradients / no hero image styling / no shared-component overrides
  * ========================= */
 
- .gp-home {
+.gp-home {
   /* Overflow protection */
   overflow-x: clip;
   background: var(--md-sys-color-surface-container);
   color: var(--color-text-primary);
 
-  /* Page rhythm */
-  padding: 16px 0 48px;
+  /* Page rhythm — extra bottom air for the closing CTA */
+  padding: 20px 0 56px;
 }
 
 /* ---------- HERO ---------- */
 
 .gp-home .gp-home-hero {
-  padding: 28px 0 24px;
+  padding: 32px 0 28px;
 }
 
 .gp-home .gp-home-hero__inner {
@@ -9968,35 +9968,54 @@ body[class*="tenant-"] {
   margin: 0 auto;
 
   display: grid;
-  gap: 16px;
+  gap: 24px;
 }
 
 .gp-home .gp-home-hero__copy {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .gp-home .gp-home-hero__title {
   margin: 0;
-  font-size: clamp(1.75rem, 4.5vw, 2.35rem);
-  line-height: 1.08;
+  font-size: clamp(1.85rem, 5vw, 2.55rem);
+  line-height: 1.06;
   font-weight: 900;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  max-width: min(30ch, 100%);
 }
 
 .gp-home .gp-home-hero__subtitle {
   margin: 0;
   color: var(--color-text-secondary);
-  line-height: 1.45;
-  max-width: 60ch;
+  line-height: 1.5;
+  font-size: 1.0625rem;
+  max-width: 36ch;
 }
 
+/* Search first in this column, then the lighter hero CTA — conversion focus (DOM order matches layout) */
 .gp-home .gp-home-hero__primary {
-  display: grid;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-/* Keep the “Start your project” CTA modern and clear, without changing global .btn */
+/* Hero CTA: visible but secondary to the search card (outline, not solid primary) */
+.gp-home .gp-home-hero__cta.btn--primary {
+  background: var(--surface);
+  border: var(--border-width-hairline) solid var(--wf-primary);
+  color: var(--wf-primary-dark);
+  box-shadow: none;
+  font-weight: 700;
+}
+
+.gp-home .gp-home-hero__cta.btn--primary:hover {
+  background: var(--primary-softer-bg);
+  border-color: var(--wf-primary-dark);
+  color: var(--wf-primary-dark);
+  box-shadow: none;
+}
+
 .gp-home .gp-home-hero__cta,
 .gp-home .gp-home-final__cta {
   min-height: 48px;
@@ -10005,13 +10024,15 @@ body[class*="tenant-"] {
   width: 100%;
 }
 
-/* Search card (primary surface) */
+/* Search card (primary surface — central focal point) */
 .gp-home .gp-home-search {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid var(--color-outline-strong);
-  border-radius: 20px;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
-  padding: 16px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid color-mix(in srgb, var(--color-outline-strong) 88%, transparent);
+  border-radius: 22px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 18px 44px rgba(15, 23, 42, 0.09);
+  padding: 20px 18px;
 }
 
 /* Preserve existing search form behavior; only layout improvements inside homepage card */
@@ -10022,12 +10043,12 @@ body[class*="tenant-"] {
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-search-form__toolbar-row {
   display: grid;
-  gap: 16px;
+  gap: 18px;
 }
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-fields {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .gp-home .gp-home-search .pro-home-dual-search .input-field__control {
@@ -10036,36 +10057,39 @@ body[class*="tenant-"] {
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-submit.btn {
   width: 100%;
-  min-height: 48px;
+  min-height: 52px;
   border-radius: 9999px;
   justify-content: center;
+  font-weight: 800;
+  box-shadow: var(--elevation-btn-primary);
 }
 
 /* ---------- SHARED SECTION HEADERS ---------- */
 
 .gp-home .gp-home-section-head {
-  margin: 0 0 16px;
+  margin: 0 0 20px;
 }
 
 .gp-home .gp-home-section-title {
   margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.2;
+  font-size: 1.3125rem;
+  line-height: 1.22;
   font-weight: 900;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .gp-home .gp-home-section-subtitle {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   color: var(--color-text-secondary);
-  line-height: 1.45;
-  max-width: 70ch;
+  line-height: 1.5;
+  max-width: 42ch;
+  font-size: 0.98rem;
 }
 
 /* ---------- HOW IT WORKS ---------- */
 
 .gp-home .gp-home-steps {
-  padding: 36px 0;
+  padding: 44px 0;
 }
 
 .gp-home .gp-home-steps__inner {
@@ -10079,34 +10103,35 @@ body[class*="tenant-"] {
   list-style: none;
 
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .gp-home .gp-home-step {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid var(--color-outline);
-  border-radius: 16px;
-  padding: 14px 14px 16px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 82%, transparent);
+  border-radius: 14px;
+  padding: 16px 18px 18px;
 }
 
 .gp-home .gp-home-step__title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.0625rem;
   font-weight: 900;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
 }
 
 .gp-home .gp-home-step__text {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   color: var(--color-text-secondary);
-  line-height: 1.45;
+  line-height: 1.5;
+  font-size: 0.9375rem;
 }
 
 /* ---------- TRUST ---------- */
 
 .gp-home .gp-home-trust {
-  padding: 36px 0;
+  padding: 44px 0;
 }
 
 .gp-home .gp-home-trust__inner {
@@ -10121,65 +10146,67 @@ body[class*="tenant-"] {
 
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
 /* Reuse existing `.gp-home-stat*` markup in the trust section */
 .gp-home .gp-home-stat {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid var(--color-outline);
-  border-radius: 18px;
-  padding: 12px 14px;
-  min-height: 56px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 82%, transparent);
+  border-radius: 16px;
+  padding: 14px 16px;
+  min-height: 58px;
 
   display: grid;
   align-content: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 .gp-home .gp-home-stat__value {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 900;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   line-height: 1.05;
+  font-variant-numeric: tabular-nums;
 }
 
 .gp-home .gp-home-stat__label {
   color: var(--color-text-secondary);
-  font-size: 0.85rem;
-  line-height: 1.2;
+  font-size: 0.8125rem;
+  line-height: 1.25;
 }
 
 /* Quotes (if present) — keep subtle */
 .gp-home .gp-home-trust__quotes {
-  margin-top: 16px;
+  margin-top: 22px;
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .gp-home .gp-home-quote {
   margin: 0;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid var(--color-outline);
-  border-radius: 16px;
-  padding: 14px 14px 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid color-mix(in srgb, var(--color-outline) 65%, transparent);
+  border-radius: 14px;
+  padding: 12px 14px 14px;
 }
 
 .gp-home .gp-home-quote__text {
   margin: 0;
-  line-height: 1.45;
+  line-height: 1.5;
+  font-size: 0.9375rem;
 }
 
 .gp-home .gp-home-quote__meta {
-  margin-top: 10px;
+  margin-top: 8px;
   color: var(--color-text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
 }
 
 /* ---------- PROVIDER CTA ---------- */
 
 .gp-home .gp-home-provider {
-  padding: 36px 0;
+  padding: 44px 0;
 }
 
 .gp-home .gp-home-provider__inner {
@@ -10188,7 +10215,7 @@ body[class*="tenant-"] {
 }
 
 .gp-home .gp-home-provider__actions {
-  margin-top: 12px;
+  margin-top: 16px;
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -10203,35 +10230,38 @@ body[class*="tenant-"] {
 /* ---------- FINAL CTA ---------- */
 
 .gp-home .gp-home-final {
-  padding: 36px 0 0;
+  padding: 48px 0 8px;
 }
 
 .gp-home .gp-home-final__inner {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
 
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid var(--color-outline);
-  border-radius: 20px;
-  padding: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid color-mix(in srgb, var(--color-outline-strong) 75%, transparent);
+  border-radius: 22px;
+  padding: 22px 20px;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.07);
 }
 
 .gp-home .gp-home-final__title {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.375rem;
   line-height: 1.2;
   font-weight: 900;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .gp-home .gp-home-final__text {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   color: var(--color-text-secondary);
-  line-height: 1.45;
+  line-height: 1.5;
+  font-size: 0.98rem;
+  max-width: 40ch;
 }
 
 .gp-home .gp-home-final__cta {
-  margin-top: 14px;
+  margin-top: 18px;
 }
 
 /* =========================
@@ -10240,21 +10270,22 @@ body[class*="tenant-"] {
 
 @media (min-width: 768px) {
   .gp-home {
-    padding: 24px 0 64px;
+    padding: 28px 0 72px;
   }
 
   .gp-home .gp-home-hero {
-    padding: 44px 0 36px;
+    padding: 48px 0 40px;
   }
 
   .gp-home .gp-home-hero__inner {
     grid-template-columns: 1.05fr 0.95fr;
     align-items: start;
-    gap: 24px;
+    gap: 32px;
   }
 
   .gp-home .gp-home-hero__primary {
     align-content: start;
+    gap: 18px;
   }
 
   /* Keep CTA + search aligned; CTA not full-width on desktop */
@@ -10262,56 +10293,67 @@ body[class*="tenant-"] {
   .gp-home .gp-home-final__cta {
     width: auto;
     justify-self: start;
+    min-width: 12rem;
   }
 
   /* Desktop: keep search in a clean, compact row without changing form fields */
   .gp-home .gp-home-search {
-    padding: 18px;
+    padding: 22px 22px 20px;
     border-radius: 24px;
   }
 
   .gp-home .gp-home-search .pro-home-dual-search .pro-search-form__toolbar-row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
     align-items: end;
-    column-gap: 12px;
-    row-gap: 12px;
+    column-gap: 14px;
+    row-gap: 14px;
   }
 
   .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-fields {
     display: contents;
   }
 
+  .gp-home .gp-home-section-head {
+    margin-bottom: 22px;
+  }
+
+  .gp-home .gp-home-section-title {
+    font-size: 1.4rem;
+  }
+
   .gp-home .gp-home-steps {
-    padding: 52px 0;
+    padding: 56px 0;
   }
 
   .gp-home .gp-home-steps__list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    gap: 16px;
   }
 
   .gp-home .gp-home-trust {
-    padding: 52px 0;
+    padding: 56px 0;
   }
 
   .gp-home .gp-home-trust__stats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
   }
 
   .gp-home .gp-home-trust__quotes {
     grid-template-columns: 1fr 1fr;
+    gap: 16px;
   }
 
   .gp-home .gp-home-provider {
-    padding: 52px 0;
+    padding: 56px 0;
   }
 
   .gp-home .gp-home-final {
-    padding-top: 52px;
+    padding: 56px 0 0;
   }
 
   .gp-home .gp-home-final__inner {
-    padding: 18px;
+    padding: 26px 28px;
   }
 }
 
