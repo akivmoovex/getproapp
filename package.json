@@ -6,6 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "prepare": "node scripts/ensure-apple-touch-icon.js",
     "start": "node server.js",
     "dev": "nodemon --watch \"server.js\" --exec \"node server.js\"",
     "build-search-lists": "node scripts/build-search-lists.js",
