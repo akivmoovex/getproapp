@@ -10069,6 +10069,7 @@ body[class*="tenant-"] {
 }
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-ac {
+  flex: 0 1 auto;
   overflow: hidden;
   box-shadow: none;
   min-height: 48px;
