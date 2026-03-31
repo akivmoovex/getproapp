@@ -103,6 +103,11 @@ const MINI_SITE_RESERVED_SEGMENTS = new Set([
 module.exports = function publicRoutes({ db }) {
   const router = express.Router();
 
+  // PERF: Tiny in-process cache for homepage query results to reduce TTFB.
+  // Safe: short TTL, per-tenant, caches only public lists (not user-specific).
+  const HOME_CACHE_TTL_MS = 60 * 1000;
+  const homeCache = new Map(); // tenantId -> { ts, categories, contentArticles, contentGuides, contentFaqs }
+
   function platformSupport(req) {
     const tid = req.tenant && req.tenant.id;
     return getTenantContactSupport(db, tid);
@@ -182,13 +187,20 @@ module.exports = function publicRoutes({ db }) {
 
   router.get("/", async (req, res) => {
     const tenantId = req.tenant.id;
-    const categories = db
-      .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
-      .all(tenantId);
-
-    const contentArticles = listPublishedByKind(db, tenantId, "article");
-    const contentGuides = listPublishedByKind(db, tenantId, "guide");
-    const contentFaqs = listPublishedByKind(db, tenantId, "faq");
+    const now = Date.now();
+    let cached = homeCache.get(tenantId);
+    if (!cached || now - cached.ts > HOME_CACHE_TTL_MS) {
+      cached = {
+        ts: now,
+        categories: db
+          .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
+          .all(tenantId),
+        contentArticles: listPublishedByKind(db, tenantId, "article"),
+        contentGuides: listPublishedByKind(db, tenantId, "guide"),
+        contentFaqs: listPublishedByKind(db, tenantId, "faq"),
+      };
+      homeCache.set(tenantId, cached);
+    }
 
     const canonicalUrl = canonicalUrlForTenant(req, "/");
     const seoTitle = `${req.tenant.name || "GetPro"} · Trusted professional directory`;
@@ -202,7 +214,7 @@ module.exports = function publicRoutes({ db }) {
     };
 
     return res.render("index", {
-      categories,
+      categories: cached.categories,
       baseDomain: process.env.BASE_DOMAIN || "",
       seoTitle,
       seoDescription,
@@ -210,9 +222,9 @@ module.exports = function publicRoutes({ db }) {
       ogUrl: canonicalUrl,
       ogImage: absolutePublicUrl(req, "/images/hero/home-hero-960.webp"),
       orgJsonLd: JSON.stringify(orgJsonLd),
-      contentArticles,
-      contentGuides,
-      contentFaqs,
+      contentArticles: cached.contentArticles,
+      contentGuides: cached.contentGuides,
+      contentFaqs: cached.contentFaqs,
       ...tenantLocals(req),
       ...platformSupport(req),
     });
