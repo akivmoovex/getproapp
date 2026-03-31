@@ -1211,32 +1211,39 @@
  * - no extra JS; scroll-snap rail
  * ========================= */
 @media (max-width: 768px) {
+  /* Default home content remains; we only swap mobile UI surfaces below. */
+  .mobile-home-shell,
+  .mobile-feature-strip,
+  .mobile-stats-section {
+    display: block;
+  }
+
+  /* Hide the desktop-style hero search on mobile (we reuse the same form in the mobile card). */
+  .home-page .pro-home-search-wrap--hero {
+    display: none;
+  }
+
+  /* Keep hero media for existing LCP path, but reduce clutter. */
   /* Hide the big hero caption on mobile; keep image for current LCP path. */
   .home-page .pro-home-hero-panel .pro-home-hero-caption {
     display: none;
   }
 
-  /* Convert hero search into a centered floating card. */
   .home-page .pro-home-hero {
     margin-top: 8px;
   }
-  .home-page .pro-home-hero-media {
-    border-radius: 0;
+
+  /* Mobile shell spacing: app bar (unchanged) → spacer → search card */
+  .mobile-home-shell {
+    padding: 16px 0 0;
   }
-  .home-page .pro-home-hero-panel {
-    position: static;
-    inset: auto;
-    display: block;
-    align-items: initial;
-    padding: 0;
-    margin-top: -24px; /* pull card slightly over hero like an app header */
-  }
-  .home-page .pro-home-search-wrap--hero {
+
+  .mobile-search-card {
     width: min(680px, 100%);
     margin: 0 auto;
     padding: 0 16px;
   }
-  .home-page .pro-home-search-wrap--hero .pro-home-dual-search {
+  .mobile-search-card__inner {
     background: rgba(255, 255, 255, 0.96);
     border: 1px solid rgba(228, 232, 240, 0.9);
     border-radius: 20px;
@@ -1244,36 +1251,39 @@
     backdrop-filter: blur(6px);
     padding: 16px;
   }
-  .home-page .pro-home-search-wrap--hero .pro-search-form__toolbar-row {
+
+  /* Make the existing home search form stack vertically + full width (reuse existing markup). */
+  .mobile-search-card .pro-home-dual-search .pro-search-form__toolbar-row {
+    display: grid;
     gap: 16px;
   }
-  .home-page .pro-home-search-wrap--hero .pro-home-search-field .input-field__control {
+  .mobile-search-card .pro-home-dual-search .pro-home-search-fields {
+    display: grid;
+    gap: 12px;
+  }
+  .mobile-search-card .pro-home-dual-search .input-field__control {
     min-height: 48px;
   }
-  .home-page .pro-home-search-wrap--hero .pro-home-search-submit.btn {
+  .mobile-search-card .pro-home-dual-search .pro-home-search-submit.btn {
+    width: 100%;
     min-height: 48px;
     border-radius: 9999px;
   }
 
-  /* Mobile-only sections */
-  .home-mobile-section {
-    display: block;
-    padding: 24px 0;
-  }
-  .home-mobile-section__inner {
-    display: grid;
-    gap: 16px;
-  }
-  .home-mobile-title {
-    margin: 0;
-    font-size: 1.0625rem; /* 17px-ish */
+  /* Section titles */
+  .mobile-home-title {
+    margin: 0 0 12px;
+    font-size: 1.0625rem;
     font-weight: 800;
     letter-spacing: -0.01em;
     color: var(--color-text-primary);
   }
 
-  /* Feature showcase rail (CSS scroll-snap) */
-  .home-mobile-feature-rail {
+  /* Feature strip (scroll-snap) */
+  .mobile-feature-strip {
+    padding: 24px 0;
+  }
+  .mobile-feature-strip__rail {
     display: flex;
     gap: 12px;
     overflow-x: auto;
@@ -1283,10 +1293,10 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
   }
-  .home-mobile-feature-rail::-webkit-scrollbar {
+  .mobile-feature-strip__rail::-webkit-scrollbar {
     display: none;
   }
-  .home-mobile-feature {
+  .mobile-feature-card {
     scroll-snap-align: start;
     flex: 0 0 78%;
     max-width: 340px;
@@ -1296,36 +1306,37 @@
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
     padding: 12px 12px 16px;
   }
-  .home-mobile-feature__shot {
-    border-radius: 18px;
-    overflow: hidden;
-    background: rgba(108, 92, 231, 0.06);
-  }
-  .home-mobile-feature__shot svg {
+  .mobile-feature-card__img {
     display: block;
     width: 100%;
     height: auto;
+    border-radius: 18px;
+    background: rgba(108, 92, 231, 0.06);
+    object-fit: cover;
   }
-  .home-mobile-feature__title {
+  .mobile-feature-card__title {
     margin: 12px 0 6px;
     font-size: 1rem;
     font-weight: 800;
     letter-spacing: -0.01em;
   }
-  .home-mobile-feature__desc {
+  .mobile-feature-card__desc {
     margin: 0;
     color: var(--color-text-secondary);
     line-height: 1.4;
     font-size: 0.9375rem;
   }
 
-  /* Stats bubbles (2 per row) */
-  .home-mobile-stats-grid {
+  /* Stats */
+  .mobile-stats-section {
+    padding: 0 0 24px;
+  }
+  .mobile-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
-  .home-mobile-stat {
+  .mobile-stat-bubble {
     border-radius: 9999px;
     border: 1px solid rgba(214, 219, 230, 0.9);
     background: rgba(255, 255, 255, 0.96);
@@ -1338,7 +1349,7 @@
     text-align: left;
     min-height: 56px;
   }
-  .home-mobile-stat__icon {
+  .mobile-stat-bubble__icon {
     width: 28px;
     height: 28px;
     display: inline-flex;
@@ -1346,20 +1357,25 @@
     justify-content: center;
     font-size: 18px;
   }
-  .home-mobile-stat__value {
+  .mobile-stat-bubble__value {
     font-weight: 900;
     letter-spacing: -0.01em;
     line-height: 1.05;
   }
-  .home-mobile-stat__label {
+  .mobile-stat-bubble__label {
     grid-column: 2;
     color: var(--color-text-secondary);
     font-size: 0.8125rem;
     line-height: 1.2;
     margin-top: 3px;
   }
+}
 
-  /* Don’t affect desktop/tablet: hide these sections above 768px elsewhere via default (they’re just unstyled). */
+/* Hide mobile homepage UI by default (desktop/tablet). */
+.mobile-home-shell,
+.mobile-feature-strip,
+.mobile-stats-section {
+  display: none;
 }
 
 .section-title--flush {
