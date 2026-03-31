@@ -14,16 +14,6 @@
     <% if (typeof orgJsonLd !== 'undefined' && orgJsonLd) { %>
     <script type="application/ld+json"><%- orgJsonLd %></script>
     <% } %>
-    <%# PERF NOTE: Homepage hero is LCP-sensitive — keep preload imagesrcset aligned with <picture> srcset; avoid blocking ATF JS (docs/performance-budgets.md §2.1). %>
-    <%- include('partials/critical_css_home') %>
-    <link
-      rel="preload"
-      as="image"
-      type="image/avif"
-      href="/images/hero/home-hero-640.avif"
-      imagesrcset="/images/hero/home-hero-640.avif 640w, /images/hero/home-hero-960.avif 960w, /images/hero/home-hero-1280.avif 1280w"
-      imagesizes="100vw"
-    />
     <link
       rel="preload"
       as="style"
@@ -80,135 +70,112 @@
     </div>
     <% } %>
 
-
     <main class="gp-home" role="main">
+      <!-- 1) HERO (no hero image) -->
       <section class="gp-home-hero" aria-labelledby="gp-home-hero-title">
-        <div class="gp-home-hero__bg" aria-hidden="true">
-          <picture>
-            <source
-              type="image/avif"
-              srcset="/images/hero/home-hero-640.avif 640w, /images/hero/home-hero-960.avif 960w, /images/hero/home-hero-1280.avif 1280w"
-              sizes="100vw"
-            />
-            <source
-              type="image/webp"
-              srcset="/images/hero/home-hero-640.webp 640w, /images/hero/home-hero-960.webp 960w, /images/hero/home-hero-1280.webp 1280w"
-              sizes="100vw"
-            />
-            <img
-              class="gp-home-hero__photo"
-              src="/images/hero/home-hero-640.webp"
-              srcset="/images/hero/home-hero-640.webp 640w, /images/hero/home-hero-960.webp 960w, /images/hero/home-hero-1280.webp 1280w"
-              sizes="100vw"
-              width="1280"
-              height="720"
-              style="width:100%;height:auto;aspect-ratio:16/9;object-fit:cover"
-              alt=""
-              loading="eager"
-              fetchpriority="high"
-              decoding="async"
-            />
-          </picture>
-          <div class="gp-home-hero__scrim"></div>
-        </div>
+        <div class="container gp-home-hero__inner">
+          <header class="gp-home-hero__copy">
+            <h1 id="gp-home-hero-title" class="gp-home-hero__title">Start your project. Find the right pro.</h1>
+            <p class="gp-home-hero__subtitle">Choose a service and city—we’ll match you with providers near you.</p>
+          </header>
 
-        <div class="container gp-home-hero__content">
-          <h1 id="gp-home-hero-title" class="gp-home-hero__title">Find the right pro, fast.</h1>
-          <p class="gp-home-hero__subtext">Search by service and city to connect with trusted providers near you.</p>
+          <div class="gp-home-hero__primary">
+            <a class="gp-home-hero__cta btn btn--primary" href="#gp-home-search">Start your project</a>
 
-          <div class="gp-home-search-card" aria-label="Search">
-            <%- include('partials/pro_search_form', {
-              variant: 'home',
-              tenantUrlPrefix,
-              showCategoryFilter: false,
-            }) %>
+            <div id="gp-home-search" class="gp-home-search" aria-label="Project search">
+              <%- include('partials/pro_search_form', {
+                variant: 'home',
+                tenantUrlPrefix,
+                showCategoryFilter: false,
+              }) %>
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="gp-home-features" aria-label="Features">
-        <div class="container">
+      <!-- 2) HOW IT WORKS -->
+      <section class="gp-home-steps" aria-labelledby="gp-home-steps-title">
+        <div class="container gp-home-steps__inner">
           <header class="gp-home-section-head">
-            <h2 class="gp-home-section-title">Built for quick decisions</h2>
-            <p class="gp-home-section-subtitle">A lightweight directory experience that feels like an app.</p>
+            <h2 id="gp-home-steps-title" class="gp-home-section-title">How it works</h2>
           </header>
 
-          <div class="gp-home-feature-list">
-            <article class="gp-home-feature" aria-labelledby="gp-home-feature-find-title">
-              <div class="gp-home-feature__media">
-                <img class="gp-home-feature__img" src="/images/mobile/feature-find.svg" alt="" width="560" height="360" loading="lazy" decoding="async" />
-              </div>
-              <div class="gp-home-feature__body">
-                <h3 id="gp-home-feature-find-title" class="gp-home-feature__title">Find services fast</h3>
-                <p class="gp-home-feature__desc">Search and discover trusted providers near you.</p>
-              </div>
-            </article>
-
-            <article class="gp-home-feature gp-home-feature--reverse" aria-labelledby="gp-home-feature-track-title">
-              <div class="gp-home-feature__media">
-                <img class="gp-home-feature__img" src="/images/mobile/feature-track.svg" alt="" width="560" height="360" loading="lazy" decoding="async" />
-              </div>
-              <div class="gp-home-feature__body">
-                <h3 id="gp-home-feature-track-title" class="gp-home-feature__title">Track project updates</h3>
-                <p class="gp-home-feature__desc">Stay updated from request to completion.</p>
-              </div>
-            </article>
-
-            <article class="gp-home-feature" aria-labelledby="gp-home-feature-compare-title">
-              <div class="gp-home-feature__media">
-                <img class="gp-home-feature__img" src="/images/mobile/feature-compare.svg" alt="" width="560" height="360" loading="lazy" decoding="async" />
-              </div>
-              <div class="gp-home-feature__body">
-                <h3 id="gp-home-feature-compare-title" class="gp-home-feature__title">Compare providers</h3>
-                <p class="gp-home-feature__desc">Review options before choosing the right expert.</p>
-              </div>
-            </article>
-          </div>
+          <ol class="gp-home-steps__list">
+            <li class="gp-home-step">
+              <h3 class="gp-home-step__title">Describe your project</h3>
+              <p class="gp-home-step__text">Pick a service, add your city, and share what you need.</p>
+            </li>
+            <li class="gp-home-step">
+              <h3 class="gp-home-step__title">Get matched with providers</h3>
+              <p class="gp-home-step__text">See relevant providers for your job and location.</p>
+            </li>
+            <li class="gp-home-step">
+              <h3 class="gp-home-step__title">Choose and connect</h3>
+              <p class="gp-home-step__text">Compare options, then contact the provider you prefer.</p>
+            </li>
+          </ol>
         </div>
       </section>
 
-      <section class="gp-home-stats" aria-label="Trust stats">
-        <div class="container">
+      <!-- 3) TRUST / SOCIAL PROOF -->
+      <section class="gp-home-trust" aria-labelledby="gp-home-trust-title">
+        <div class="container gp-home-trust__inner">
           <header class="gp-home-section-head">
-            <h2 class="gp-home-section-title">Trusted at a glance</h2>
-            <p class="gp-home-section-subtitle">Key numbers that reflect real usage across the directory.</p>
+            <h2 id="gp-home-trust-title" class="gp-home-section-title">Trusted at a glance</h2>
+            <p class="gp-home-section-subtitle">Clear profiles. Simple decisions.</p>
           </header>
 
-          <div class="gp-home-stats-grid" role="list">
-            <div class="gp-home-stat" role="listitem">
-              <span class="gp-home-stat__icon" aria-hidden="true">📍</span>
+          <ul class="gp-home-trust__stats" aria-label="Key stats">
+            <li class="gp-home-stat">
               <div class="gp-home-stat__value">10+</div>
               <div class="gp-home-stat__label">Locations</div>
-            </div>
-            <div class="gp-home-stat" role="listitem">
-              <span class="gp-home-stat__icon" aria-hidden="true">🧰</span>
+            </li>
+            <li class="gp-home-stat">
               <div class="gp-home-stat__value">200+</div>
               <div class="gp-home-stat__label">Service providers</div>
-            </div>
-            <div class="gp-home-stat" role="listitem">
-              <span class="gp-home-stat__icon" aria-hidden="true">👥</span>
+            </li>
+            <li class="gp-home-stat">
               <div class="gp-home-stat__value">2000+</div>
               <div class="gp-home-stat__label">Served customers</div>
-            </div>
-            <div class="gp-home-stat" role="listitem">
-              <span class="gp-home-stat__icon" aria-hidden="true">⭐</span>
+            </li>
+            <li class="gp-home-stat">
               <div class="gp-home-stat__value">4.3</div>
               <div class="gp-home-stat__label">Customer rating</div>
-            </div>
+            </li>
+          </ul>
+
+          <div class="gp-home-trust__quotes" aria-label="Recent feedback">
+            <figure class="gp-home-quote">
+              <blockquote class="gp-home-quote__text">Found a specialist in minutes and booked straight from the profile.</blockquote>
+              <figcaption class="gp-home-quote__meta">Dana · last week</figcaption>
+            </figure>
+            <figure class="gp-home-quote">
+              <blockquote class="gp-home-quote__text">Clear and fast on mobile—easy to compare and contact.</blockquote>
+              <figcaption class="gp-home-quote__meta">Yossi · March 2026</figcaption>
+            </figure>
           </div>
         </div>
       </section>
 
-      <section class="gp-home-lite" aria-label="Get started">
-        <div class="container">
-          <div class="gp-home-lite-card">
-            <h2 class="gp-home-lite-title">Ready to start?</h2>
-            <p class="gp-home-lite-text">Open the directory or list your business—GetPro keeps it simple.</p>
-            <div class="gp-home-lite-actions">
-              <a class="btn btn--primary" href="<%= tenantUrlPrefix %>/directory">Open directory</a>
-              <a class="btn btn--secondary" href="https://getproapp.org/join" target="_blank" rel="noopener noreferrer">Join as a provider</a>
-            </div>
+      <!-- 4) SERVICE PROVIDER CTA -->
+      <section class="gp-home-provider" aria-labelledby="gp-home-provider-title">
+        <div class="container gp-home-provider__inner">
+          <header class="gp-home-section-head">
+            <h2 id="gp-home-provider-title" class="gp-home-section-title">Are you a service provider?</h2>
+            <p class="gp-home-section-subtitle">Get discovered by customers searching for your services in your city.</p>
+          </header>
+          <div class="gp-home-provider__actions">
+            <a class="btn btn--secondary" href="https://getproapp.org/join" target="_blank" rel="noopener noreferrer">Join as a provider</a>
           </div>
+        </div>
+      </section>
+
+      <!-- 5) FINAL CTA -->
+      <section class="gp-home-final" aria-labelledby="gp-home-final-title">
+        <div class="container gp-home-final__inner">
+          <h2 id="gp-home-final-title" class="gp-home-final__title">Ready to get started?</h2>
+          <p class="gp-home-final__text">Start your project in under a minute.</p>
+          <a class="gp-home-final__cta btn btn--primary" href="#gp-home-search">Start your project</a>
         </div>
       </section>
     </main>

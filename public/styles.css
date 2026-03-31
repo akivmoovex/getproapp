@@ -1203,294 +1203,6 @@
   display: none !important;
 }
 
-/* =========================
- * Homepage redesign (between app bar + footer)
- * - App bar/footer unchanged (partials)
- * - Preserve search markup/IDs via partial include
- * - No heavy JS; responsive with CSS only
- * ========================= */
-
-.gp-home {
-  background: var(--md-sys-color-surface-container);
-}
-
-/* HERO */
-.gp-home-hero {
-  position: relative;
-}
-
-.gp-home-hero__bg {
-  position: relative;
-  overflow: hidden;
-  background: #0b0b10;
-}
-
-.gp-home-hero__photo {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-}
-
-.gp-home-hero__scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 45%, rgba(0, 0, 0, 0.35) 100%);
-  pointer-events: none;
-}
-
-.gp-home-hero__content {
-  position: relative;
-  margin-top: -240px;
-  padding-bottom: 28px;
-}
-
-.gp-home-hero__title {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.96);
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  font-size: 2.4rem;
-  line-height: 1.06;
-}
-
-.gp-home-hero__subtext {
-  margin: 10px 0 0;
-  color: rgba(255, 255, 255, 0.88);
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
-  font-size: 1.05rem;
-  line-height: 1.45;
-  max-width: 60ch;
-}
-
-.gp-home-search-card {
-  margin-top: 18px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(228, 232, 240, 0.9);
-  border-radius: 24px;
-  box-shadow: 0 16px 52px rgba(15, 23, 42, 0.16);
-  backdrop-filter: blur(6px);
-  padding: 18px;
-}
-
-/* Ensure touch-friendly controls regardless of other legacy rules */
-.gp-home-search-card .input-field__control {
-  min-height: 48px;
-}
-
-.gp-home-search-card .btn {
-  min-height: 48px;
-}
-
-/* SECTIONS */
-.gp-home-section-head {
-  margin: 0 0 18px;
-}
-
-.gp-home-section-title {
-  margin: 0;
-  font-size: 1.65rem;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-}
-
-.gp-home-section-subtitle {
-  margin: 8px 0 0;
-  color: var(--color-text-secondary);
-  line-height: 1.45;
-  max-width: 68ch;
-}
-
-/* FEATURES (alternating layout on desktop) */
-.gp-home-features {
-  padding: 56px 0 44px;
-}
-
-.gp-home-feature-list {
-  display: grid;
-  gap: 18px;
-}
-
-.gp-home-feature {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 18px;
-  align-items: center;
-  border-radius: 24px;
-  border: 1px solid rgba(214, 219, 230, 0.9);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-  padding: 16px;
-}
-
-.gp-home-feature--reverse {
-  grid-template-columns: 0.95fr 1.05fr;
-}
-
-.gp-home-feature--reverse .gp-home-feature__media {
-  order: 2;
-}
-
-.gp-home-feature__media {
-  border-radius: 20px;
-  overflow: hidden;
-  background: rgba(108, 92, 231, 0.06);
-}
-
-.gp-home-feature__img {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 14 / 9;
-  object-fit: cover;
-  object-position: center;
-}
-
-.gp-home-feature__title {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-}
-
-.gp-home-feature__desc {
-  margin: 8px 0 0;
-  color: var(--color-text-secondary);
-  line-height: 1.45;
-}
-
-/* TRUST / STATS */
-.gp-home-stats {
-  padding: 44px 0 56px;
-}
-
-.gp-home-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.gp-home-stat {
-  border-radius: 9999px;
-  border: 1px solid rgba(214, 219, 230, 0.9);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
-  padding: 14px 16px;
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  column-gap: 10px;
-  align-items: center;
-  min-height: 60px;
-}
-
-.gp-home-stat__icon {
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-}
-
-.gp-home-stat__value {
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  line-height: 1.05;
-  font-size: 1.05rem;
-}
-
-.gp-home-stat__label {
-  grid-column: 2;
-  margin-top: 3px;
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
-  line-height: 1.2;
-}
-
-/* LIGHT CTA */
-.gp-home-lite {
-  padding: 0 0 56px;
-}
-
-.gp-home-lite-card {
-  border-radius: 24px;
-  border: 1px solid rgba(214, 219, 230, 0.9);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-  padding: 18px;
-}
-
-.gp-home-lite-title {
-  margin: 0;
-  font-size: 1.35rem;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-}
-
-.gp-home-lite-text {
-  margin: 8px 0 0;
-  color: var(--color-text-secondary);
-  line-height: 1.45;
-}
-
-.gp-home-lite-actions {
-  margin-top: 14px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-@media (max-width: 900px) {
-  .gp-home-feature {
-    grid-template-columns: 1fr;
-  }
-  .gp-home-feature--reverse .gp-home-feature__media {
-    order: 0;
-  }
-  .gp-home-stats-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .gp-home-hero__content {
-    margin-top: -200px;
-    padding-bottom: 18px;
-  }
-  .gp-home-hero__title {
-    font-size: 1.95rem;
-  }
-  .gp-home-hero__subtext {
-    font-size: 1rem;
-  }
-  .gp-home-search-card {
-    border-radius: 20px;
-    padding: 16px;
-  }
-
-  /* Stack search fields cleanly on mobile (same form markup). */
-  .gp-home-search-card .pro-home-dual-search .pro-search-form__toolbar-row {
-    display: grid;
-    gap: 16px;
-  }
-  .gp-home-search-card .pro-home-dual-search .pro-home-search-fields {
-    display: grid;
-    gap: 12px;
-  }
-  .gp-home-search-card .pro-home-dual-search .pro-home-search-submit.btn {
-    width: 100%;
-    border-radius: 9999px;
-  }
-}
-
-@media (max-width: 380px) {
-  .gp-home-stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 .section-title--flush {
   margin-top: 0;
 }
@@ -10227,4 +9939,447 @@ body[class*="tenant-"] {
   margin: 0.35rem 0 0;
   font-size: 0.8125rem;
   line-height: 1.35;
+}
+
+/* =========================
+ * GetPro homepage (new structure) — strictly scoped to `.gp-home`
+ * Mobile-first, Moovit-inspired minimal landing page
+ * No gradients / no hero image styling / no shared-component overrides
+ * ========================= */
+
+ .gp-home {
+  /* Overflow protection */
+  overflow-x: clip;
+  background: var(--md-sys-color-surface-container);
+  color: var(--color-text-primary);
+
+  /* Page rhythm */
+  padding: 16px 0 48px;
+}
+
+/* ---------- HERO ---------- */
+
+.gp-home .gp-home-hero {
+  padding: 28px 0 24px;
+}
+
+.gp-home .gp-home-hero__inner {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+
+  display: grid;
+  gap: 16px;
+}
+
+.gp-home .gp-home-hero__copy {
+  display: grid;
+  gap: 10px;
+}
+
+.gp-home .gp-home-hero__title {
+  margin: 0;
+  font-size: clamp(1.75rem, 4.5vw, 2.35rem);
+  line-height: 1.08;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.gp-home .gp-home-hero__subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  max-width: 60ch;
+}
+
+.gp-home .gp-home-hero__primary {
+  display: grid;
+  gap: 12px;
+}
+
+/* Keep the “Start your project” CTA modern and clear, without changing global .btn */
+.gp-home .gp-home-hero__cta,
+.gp-home .gp-home-final__cta {
+  min-height: 48px;
+  border-radius: 9999px;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Search card (primary surface) */
+.gp-home .gp-home-search {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--color-outline-strong);
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
+  padding: 16px;
+}
+
+/* Preserve existing search form behavior; only layout improvements inside homepage card */
+.gp-home .gp-home-search .pro-home-dual-search {
+  width: 100%;
+  max-width: 100%;
+}
+
+.gp-home .gp-home-search .pro-home-dual-search .pro-search-form__toolbar-row {
+  display: grid;
+  gap: 16px;
+}
+
+.gp-home .gp-home-search .pro-home-dual-search .pro-home-search-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.gp-home .gp-home-search .pro-home-dual-search .input-field__control {
+  min-height: 48px;
+}
+
+.gp-home .gp-home-search .pro-home-dual-search .pro-home-search-submit.btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 9999px;
+  justify-content: center;
+}
+
+/* ---------- SHARED SECTION HEADERS ---------- */
+
+.gp-home .gp-home-section-head {
+  margin: 0 0 16px;
+}
+
+.gp-home .gp-home-section-title {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.gp-home .gp-home-section-subtitle {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  max-width: 70ch;
+}
+
+/* ---------- HOW IT WORKS ---------- */
+
+.gp-home .gp-home-steps {
+  padding: 36px 0;
+}
+
+.gp-home .gp-home-steps__inner {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.gp-home .gp-home-steps__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  display: grid;
+  gap: 12px;
+}
+
+.gp-home .gp-home-step {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--color-outline);
+  border-radius: 16px;
+  padding: 14px 14px 16px;
+}
+
+.gp-home .gp-home-step__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.gp-home .gp-home-step__text {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+/* ---------- TRUST ---------- */
+
+.gp-home .gp-home-trust {
+  padding: 36px 0;
+}
+
+.gp-home .gp-home-trust__inner {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.gp-home .gp-home-trust__stats {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Reuse existing `.gp-home-stat*` markup in the trust section */
+.gp-home .gp-home-stat {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--color-outline);
+  border-radius: 18px;
+  padding: 12px 14px;
+  min-height: 56px;
+
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+
+.gp-home .gp-home-stat__value {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+.gp-home .gp-home-stat__label {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+/* Quotes (if present) — keep subtle */
+.gp-home .gp-home-trust__quotes {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.gp-home .gp-home-quote {
+  margin: 0;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--color-outline);
+  border-radius: 16px;
+  padding: 14px 14px 16px;
+}
+
+.gp-home .gp-home-quote__text {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.gp-home .gp-home-quote__meta {
+  margin-top: 10px;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+/* ---------- PROVIDER CTA ---------- */
+
+.gp-home .gp-home-provider {
+  padding: 36px 0;
+}
+
+.gp-home .gp-home-provider__inner {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.gp-home .gp-home-provider__actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Ensure provider button feels tappable without altering global button styles */
+.gp-home .gp-home-provider__actions .btn {
+  min-height: 48px;
+  border-radius: 9999px;
+}
+
+/* ---------- FINAL CTA ---------- */
+
+.gp-home .gp-home-final {
+  padding: 36px 0 0;
+}
+
+.gp-home .gp-home-final__inner {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--color-outline);
+  border-radius: 20px;
+  padding: 16px;
+}
+
+.gp-home .gp-home-final__title {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.gp-home .gp-home-final__text {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.gp-home .gp-home-final__cta {
+  margin-top: 14px;
+}
+
+/* =========================
+ * Breakpoints
+ * ========================= */
+
+@media (min-width: 768px) {
+  .gp-home {
+    padding: 24px 0 64px;
+  }
+
+  .gp-home .gp-home-hero {
+    padding: 44px 0 36px;
+  }
+
+  .gp-home .gp-home-hero__inner {
+    grid-template-columns: 1.05fr 0.95fr;
+    align-items: start;
+    gap: 24px;
+  }
+
+  .gp-home .gp-home-hero__primary {
+    align-content: start;
+  }
+
+  /* Keep CTA + search aligned; CTA not full-width on desktop */
+  .gp-home .gp-home-hero__cta,
+  .gp-home .gp-home-final__cta {
+    width: auto;
+    justify-self: start;
+  }
+
+  /* Desktop: keep search in a clean, compact row without changing form fields */
+  .gp-home .gp-home-search {
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .gp-home .gp-home-search .pro-home-dual-search .pro-search-form__toolbar-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: 12px;
+    row-gap: 12px;
+  }
+
+  .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-fields {
+    display: contents;
+  }
+
+  .gp-home .gp-home-steps {
+    padding: 52px 0;
+  }
+
+  .gp-home .gp-home-steps__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .gp-home .gp-home-trust {
+    padding: 52px 0;
+  }
+
+  .gp-home .gp-home-trust__stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .gp-home .gp-home-trust__quotes {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gp-home .gp-home-provider {
+    padding: 52px 0;
+  }
+
+  .gp-home .gp-home-final {
+    padding-top: 52px;
+  }
+
+  .gp-home .gp-home-final__inner {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 380px) {
+  .gp-home .gp-home-trust__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .gp-home .gp-home-final__inner {
+    padding: 14px;
+  }
+}
+
+/* ---------- `.gp-home` layout safeguards (overflow / narrow viewports) ---------- */
+
+.gp-home {
+  max-width: 100%;
+}
+
+.gp-home .gp-home-hero__inner,
+.gp-home [class$="__inner"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.gp-home .gp-home-hero__primary {
+  min-width: 0;
+}
+
+.gp-home .gp-home-search {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.gp-home .gp-home-search .pro-home-dual-search,
+.gp-home .gp-home-search .pro-home-dual-search form {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.gp-home .gp-home-hero__cta,
+.gp-home .gp-home-final__cta,
+.gp-home .gp-home-provider__actions .btn {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.gp-home .gp-home-steps,
+.gp-home .gp-home-trust,
+.gp-home .gp-home-provider {
+  padding-inline-start: max(0px, env(safe-area-inset-left, 0px));
+  padding-inline-end: max(0px, env(safe-area-inset-right, 0px));
+}
+
+.gp-home img,
+.gp-home video {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (min-width: 768px) {
+  .gp-home .gp-home-search .pro-home-dual-search .pro-search-form__toolbar-row > * {
+    min-width: 0;
+  }
+
+  .gp-home .gp-home-search .pro-home-dual-search .pro-search-form__toolbar-row .pro-home-search-submit.btn {
+    flex-shrink: 0;
+  }
 }
