@@ -110,6 +110,59 @@
         </div>
       </section>
 
+      <!-- Auto-advancing product story -->
+      <section
+        class="gp-home-story gp-home-story--t1"
+        data-gp-home-story
+        aria-labelledby="gp-home-story-title"
+      >
+        <div class="container gp-home-story__inner">
+          <div class="gp-home-story__content" id="gp-home-story-region" aria-live="polite">
+            <span class="gp-home-story__eyebrow">Why use GetPro</span>
+            <h2 id="gp-home-story-title" class="gp-home-story__title">Find the right local pro</h2>
+            <p class="gp-home-story__text">
+              Search by service and city to discover relevant providers near you and contact the best fit faster.
+            </p>
+          </div>
+
+          <div class="gp-home-story__visual" aria-hidden="true">
+            <div class="gp-home-story-panel is-active" data-story-panel="0" aria-hidden="false">
+              <div class="gp-home-story-mock gp-home-story-mock--list">
+                <div class="gp-home-story-mock__label">Near you</div>
+                <ul class="gp-home-story-mock__list">
+                  <li><span class="gp-home-story-mock__name">Apex Plumbing</span><span class="gp-home-story-mock__sub">4.9 · Today</span></li>
+                  <li><span class="gp-home-story-mock__name">City Electric</span><span class="gp-home-story-mock__sub">4.8 · Open</span></li>
+                  <li><span class="gp-home-story-mock__name">Pro HVAC</span><span class="gp-home-story-mock__sub">5.0 · Fast</span></li>
+                </ul>
+              </div>
+            </div>
+            <div class="gp-home-story-panel" data-story-panel="1" aria-hidden="true">
+              <div class="gp-home-story-mock gp-home-story-mock--reviews">
+                <div class="gp-home-story-mock__stars" aria-hidden="true">★★★★★</div>
+                <p class="gp-home-story-mock__quote">“Clear ratings helped us pick fast.”</p>
+                <div class="gp-home-story-mock__chips">
+                  <span>Verified</span><span>12 reviews</span><span>4.9 avg</span>
+                </div>
+              </div>
+            </div>
+            <div class="gp-home-story-panel" data-story-panel="2" aria-hidden="true">
+              <div class="gp-home-story-mock gp-home-story-mock--profile">
+                <div class="gp-home-story-mock__avatar" aria-hidden="true"></div>
+                <div class="gp-home-story-mock__profile-name">Summit Services</div>
+                <div class="gp-home-story-mock__profile-meta">Profile complete · In search</div>
+                <div class="gp-home-story-mock__bar"><span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="gp-home-story__dots" role="group" aria-label="Story slides">
+            <button type="button" class="gp-home-story__dot is-active" data-story-dot="0" aria-label="Slide 1 of 3" aria-current="true"></button>
+            <button type="button" class="gp-home-story__dot" data-story-dot="1" aria-label="Slide 2 of 3"></button>
+            <button type="button" class="gp-home-story__dot" data-story-dot="2" aria-label="Slide 3 of 3"></button>
+          </div>
+        </div>
+      </section>
+
       <!-- Product benefits (Moovit-style storytelling) -->
       <section class="gp-home-benefits" aria-label="Why GetPro">
         <div class="container">
@@ -199,6 +252,43 @@
         </div>
       </section>
 
+      <!-- Platform accomplishments -->
+      <section class="gp-home-metrics" aria-labelledby="gp-home-metrics-title">
+        <div class="container gp-home-metrics__inner">
+          <header class="gp-home-metrics__head">
+            <span class="gp-home-metrics__eyebrow">Platform growth</span>
+            <h2 id="gp-home-metrics-title" class="gp-home-metrics__title">Built to help customers and providers connect</h2>
+          </header>
+
+          <div class="gp-home-metrics__grid">
+            <article class="gp-home-metric-circle">
+              <div class="gp-home-metric-circle__ring">
+                <div class="gp-home-metric-circle__value">2000+</div>
+              </div>
+              <div class="gp-home-metric-circle__label">Deals</div>
+            </article>
+            <article class="gp-home-metric-circle">
+              <div class="gp-home-metric-circle__ring">
+                <div class="gp-home-metric-circle__value">300+</div>
+              </div>
+              <div class="gp-home-metric-circle__label">Service providers</div>
+            </article>
+            <article class="gp-home-metric-circle">
+              <div class="gp-home-metric-circle__ring">
+                <div class="gp-home-metric-circle__value">10+</div>
+              </div>
+              <div class="gp-home-metric-circle__label">Locations in Zambia</div>
+            </article>
+            <article class="gp-home-metric-circle">
+              <div class="gp-home-metric-circle__ring">
+                <div class="gp-home-metric-circle__value">4.3</div>
+              </div>
+              <div class="gp-home-metric-circle__label">Service rating</div>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <!-- 3) TRUST / SOCIAL PROOF -->
       <section class="gp-home-trust" aria-labelledby="gp-home-trust-title">
         <div class="container gp-home-trust__inner">
@@ -273,5 +363,88 @@
 
     <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
     <%- include('partials/autocomplete_defer_bootstrap') %>
+    <script>
+(function () {
+  var root = document.querySelector('.gp-home-story[data-gp-home-story]');
+  if (!root) return;
+
+  var slides = [
+    {
+      theme: 1,
+      title: 'Find the right local pro',
+      text: 'Search by service and city to discover relevant providers near you and contact the best fit faster.'
+    },
+    {
+      theme: 2,
+      title: 'See ratings and reviews',
+      text: 'Browse verified details, service ratings, and review signals so you can choose with more confidence.'
+    },
+    {
+      theme: 3,
+      title: 'Build an online presence',
+      text: 'Service providers can create a stronger presence, appear in more searches, and be discovered by more customers.'
+    }
+  ];
+
+  var titleEl = root.querySelector('.gp-home-story__title');
+  var textEl = root.querySelector('.gp-home-story__text');
+  var panels = root.querySelectorAll('[data-story-panel]');
+  var dots = root.querySelectorAll('[data-story-dot]');
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var i = 0;
+  var timer;
+
+  function apply(n) {
+    i = n;
+    var s = slides[i];
+    if (titleEl) titleEl.textContent = s.title;
+    if (textEl) textEl.textContent = s.text;
+    root.classList.remove('gp-home-story--t1', 'gp-home-story--t2', 'gp-home-story--t3');
+    root.classList.add('gp-home-story--t' + s.theme);
+
+    panels.forEach(function (p, idx) {
+      var on = idx === i;
+      p.classList.toggle('is-active', on);
+      p.setAttribute('aria-hidden', on ? 'false' : 'true');
+    });
+
+    dots.forEach(function (d, idx) {
+      var on = idx === i;
+      d.classList.toggle('is-active', on);
+      d.setAttribute('aria-current', on ? 'true' : 'false');
+    });
+  }
+
+  function next() {
+    apply((i + 1) % slides.length);
+  }
+
+  function arm() {
+    if (reduced) return;
+    if (timer) window.clearInterval(timer);
+    timer = window.setInterval(next, 4500);
+  }
+
+  function disarm() {
+    if (timer) {
+      window.clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  dots.forEach(function (d) {
+    d.addEventListener('click', function () {
+      var idx = parseInt(d.getAttribute('data-story-dot'), 10);
+      if (isNaN(idx)) return;
+      disarm();
+      apply(idx);
+      arm();
+    });
+  });
+
+  apply(0);
+  arm();
+})();
+    </script>
   </body>
 </html>
