@@ -9969,7 +9969,7 @@ body[class*="tenant-"] {
   margin: 0 auto;
 
   display: grid;
-  gap: 24px;
+  gap: 18px;
 }
 
 .gp-home .gp-home-hero__copy {
@@ -9998,7 +9998,7 @@ body[class*="tenant-"] {
 .gp-home .gp-home-hero__primary {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 /* Hero CTA: visible but secondary to the search card (outline, not solid primary) */
@@ -10029,11 +10029,11 @@ body[class*="tenant-"] {
 .gp-home .gp-home-search {
   background: rgba(255, 255, 255, 0.98);
   border: 1px solid color-mix(in srgb, var(--color-outline-strong) 88%, transparent);
-  border-radius: 22px;
+  border-radius: 20px;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.65) inset,
     0 18px 44px rgba(15, 23, 42, 0.09);
-  padding: 20px 18px;
+  padding: 16px;
 }
 
 /* Preserve existing search form behavior; only layout improvements inside homepage card */
@@ -10044,12 +10044,12 @@ body[class*="tenant-"] {
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-search-form__toolbar-row {
   display: grid;
-  gap: 18px;
+  gap: 12px;
 }
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-fields {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .gp-home .gp-home-search .pro-home-dual-search .input-field__control {
@@ -10058,16 +10058,22 @@ body[class*="tenant-"] {
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-submit.btn {
   width: 100%;
-  min-height: 52px;
+  min-height: 48px;
   border-radius: 12px; /* match the (non-pill) input shape */
   justify-content: center;
   font-weight: 800;
   box-shadow: var(--elevation-btn-primary);
 }
 
-/* Homepage search: fix pill/circle inputs + align submit with fields */
+/* Homepage search: fix pill/circle inputs + inherited flex width/height */
 .gp-home .gp-home-search .pro-home-dual-search .pro-search-form__toolbar-row {
   align-items: stretch;
+}
+
+.gp-home .gp-home-search .pro-home-dual-search .pro-search-form__field,
+.gp-home .gp-home-search .pro-home-dual-search .pro-ac {
+  width: 100%;
+  min-width: 0;
 }
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-ac,
@@ -10077,18 +10083,26 @@ body[class*="tenant-"] {
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-ac {
   box-shadow: none;
+  min-height: 48px;
 }
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-ac-input {
-  min-height: 52px;
-  padding-block: 12px;
+  min-height: 48px;
+  height: 48px;
+  padding-block: 10px;
   font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-submit.btn {
   border-radius: 12px; /* match inputs (desktop row) */
   align-self: stretch;
   padding-inline: 18px;
+}
+
+/* Homepage search helper line: keep compact */
+.gp-home .gp-home-search-hint {
+  margin-top: 6px;
 }
 
 /* Remove CTA conflict: the primary CTA is the form submit button */
@@ -10121,7 +10135,7 @@ body[class*="tenant-"] {
 /* ---------- HOW IT WORKS ---------- */
 
 .gp-home .gp-home-steps {
-  padding: 44px 0;
+  padding: 40px 0;
 }
 
 .gp-home .gp-home-steps__inner {
@@ -10306,13 +10320,13 @@ body[class*="tenant-"] {
   }
 
   .gp-home .gp-home-hero {
-    padding: calc(32px + var(--app-top-app-bar-height, 56px)) 0 40px;
+    padding: calc(20px + var(--app-top-app-bar-height, 56px)) 0 28px;
   }
 
   .gp-home .gp-home-hero__inner {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.05fr 0.95fr;
     align-items: center;
-    gap: 32px;
+    gap: 24px;
   }
 
   .gp-home .gp-home-hero__primary {
@@ -10330,15 +10344,15 @@ body[class*="tenant-"] {
 
   /* Desktop: keep search in a clean, compact row without changing form fields */
   .gp-home .gp-home-search {
-    padding: 22px 22px 20px;
-    border-radius: 24px;
+    padding: 18px;
+    border-radius: 20px;
   }
 
   .gp-home .gp-home-search .pro-home-dual-search .pro-search-form__toolbar-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 148px;
+    align-items: end;
     column-gap: 10px;
-    row-gap: 12px;
+    row-gap: 8px;
   }
 
   .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-fields {
@@ -10347,7 +10361,8 @@ body[class*="tenant-"] {
 
   .gp-home .gp-home-search .pro-home-dual-search .pro-home-search-submit.btn {
     width: auto;
-    min-width: 12.5rem;
+    min-width: 148px;
+    width: 148px;
     justify-self: end;
   }
 
