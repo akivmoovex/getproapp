@@ -10022,6 +10022,94 @@ body[class*="tenant-"] {
   min-width: 0;
 }
 
+/* Product benefit rows (below hero, before “How it works”) */
+.gp-home .gp-home-benefits {
+  border-top: 1px solid var(--gp-hp-border);
+}
+
+.gp-home .gp-home-benefits .container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.gp-home .gp-home-feature {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+  padding: 64px 0;
+}
+
+.gp-home .gp-home-feature:not(:last-child) {
+  border-bottom: 1px solid color-mix(in srgb, var(--gp-hp-border) 70%, transparent);
+}
+
+.gp-home .gp-home-feature--reverse {
+  direction: rtl;
+}
+
+.gp-home .gp-home-feature--reverse > * {
+  direction: ltr;
+}
+
+.gp-home .gp-home-feature__content {
+  min-width: 0;
+}
+
+.gp-home .gp-home-feature__eyebrow {
+  margin: 0 0 var(--gp-space-sm);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gp-hp-eyebrow);
+}
+
+.gp-home .gp-home-feature__title {
+  margin: 0 0 var(--gp-space-sm);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--gp-hp-text);
+}
+
+.gp-home .gp-home-feature__body {
+  margin: 0 0 var(--gp-space-md);
+  font-size: 16px;
+  color: var(--gp-hp-muted);
+  line-height: 1.5;
+  max-width: 42ch;
+}
+
+.gp-home .gp-home-feature__cta {
+  align-self: flex-start;
+}
+
+.gp-home .gp-home-feature__visual {
+  height: 240px;
+  border-radius: 16px;
+  background: var(--gp-hp-bg);
+  border: 1px solid var(--gp-hp-border);
+  min-height: 0;
+}
+
+@media (max-width: 767px) {
+  .gp-home .gp-home-feature {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 40px 0;
+  }
+
+  .gp-home .gp-home-feature--reverse {
+    direction: ltr;
+  }
+
+  /* Middle row: visual-first on small screens (matches desktop “visual left”) */
+  .gp-home .gp-home-feature--reverse .gp-home-feature__visual {
+    order: -1;
+  }
+}
+
 .gp-home .gp-home-final__cta {
   min-height: 48px;
   border-radius: 9999px;
