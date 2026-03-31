@@ -9961,7 +9961,7 @@ body[class*="tenant-"] {
 
 .gp-home .gp-home-hero {
   /* Clear the sticky app bar */
-  padding: calc(24px + var(--app-top-app-bar-height, 56px)) 0 32px;
+  padding: calc(24px + var(--app-top-app-bar-height, 56px)) 0 28px;
 }
 
 .gp-home .gp-home-hero__inner {
@@ -9969,7 +9969,7 @@ body[class*="tenant-"] {
   margin: 0 auto;
 
   display: grid;
-  gap: 20px;
+  gap: 14px;
 }
 
 .gp-home .gp-home-hero__copy {
@@ -9984,7 +9984,7 @@ body[class*="tenant-"] {
   line-height: 1.06;
   font-weight: 900;
   letter-spacing: -0.03em;
-  max-width: min(28ch, 100%);
+  max-width: min(26ch, 100%);
 }
 
 .gp-home .gp-home-hero__subtitle {
@@ -9992,7 +9992,7 @@ body[class*="tenant-"] {
   color: var(--color-text-secondary);
   line-height: 1.45;
   font-size: 1.0625rem;
-  max-width: 34ch;
+  max-width: 32ch;
 }
 
 /* Hero primary column: search card only (form submit is the hero CTA) */
@@ -10022,7 +10022,7 @@ body[class*="tenant-"] {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.85) inset,
     0 1px 2px rgba(15, 23, 42, 0.04),
-    0 22px 52px rgba(15, 23, 42, 0.1);
+    0 24px 56px rgba(15, 23, 42, 0.11);
   padding: 20px;
 }
 
@@ -10302,14 +10302,14 @@ body[class*="tenant-"] {
   }
 
   .gp-home .gp-home-hero {
-    padding: calc(20px + var(--app-top-app-bar-height, 56px)) 0 40px;
+    padding: calc(20px + var(--app-top-app-bar-height, 56px)) 0 32px;
   }
 
   .gp-home .gp-home-hero__inner {
     /* Slightly favor search column; top-align for one cohesive scan line */
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.14fr);
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.18fr);
     align-items: start;
-    gap: clamp(24px, 3.5vw, 40px);
+    gap: clamp(18px, 2.6vw, 32px);
   }
 
   .gp-home .gp-home-hero__primary {
