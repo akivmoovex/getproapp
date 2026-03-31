@@ -1204,122 +1204,168 @@
 }
 
 /* =========================
- * Homepage landing layout (Moovit-like structure; GetPro styling)
- * - App bar unchanged (template partial)
- * - One responsive structure for desktop + mobile
- * - No heavy JS; use CSS only for responsiveness
+ * Homepage redesign (between app bar + footer)
+ * - App bar/footer unchanged (partials)
+ * - Preserve search markup/IDs via partial include
+ * - No heavy JS; responsive with CSS only
  * ========================= */
 
-/* Hero: keep existing LCP media; style panel as “floating search card” */
-.home-page .pro-home-hero-panel .pro-home-hero-caption {
-  width: min(840px, calc(100% - 48px));
-  padding: 32px 0 20px;
+.gp-home {
+  background: var(--md-sys-color-surface-container);
 }
 
-.home-page .pro-home-search-wrap--hero {
-  width: min(920px, calc(100% - 48px));
-  margin: 0 auto 28px;
+/* HERO */
+.gp-home-hero {
+  position: relative;
 }
 
-.home-page .pro-home-search-wrap--hero .pro-home-dual-search {
+.gp-home-hero__bg {
+  position: relative;
+  overflow: hidden;
+  background: #0b0b10;
+}
+
+.gp-home-hero__photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.gp-home-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 45%, rgba(0, 0, 0, 0.35) 100%);
+  pointer-events: none;
+}
+
+.gp-home-hero__content {
+  position: relative;
+  margin-top: -240px;
+  padding-bottom: 28px;
+}
+
+.gp-home-hero__title {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.96);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  font-size: 2.4rem;
+  line-height: 1.06;
+}
+
+.gp-home-hero__subtext {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+  font-size: 1.05rem;
+  line-height: 1.45;
+  max-width: 60ch;
+}
+
+.gp-home-search-card {
+  margin-top: 18px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(228, 232, 240, 0.9);
-  border-radius: 22px;
-  box-shadow: 0 14px 44px rgba(15, 23, 42, 0.14);
+  border-radius: 24px;
+  box-shadow: 0 16px 52px rgba(15, 23, 42, 0.16);
   backdrop-filter: blur(6px);
   padding: 18px;
 }
 
-.home-page .pro-home-search-wrap--hero .pro-search-form__toolbar-row {
-  gap: 16px;
-}
-
-/* Align the search card content to a clean center column on wide screens. */
-.home-page .pro-home-search-wrap--hero .pro-home-dual-search {
-  max-width: 920px;
-}
-
-.home-page .pro-home-search-wrap--hero .pro-home-search-field .input-field__control {
+/* Ensure touch-friendly controls regardless of other legacy rules */
+.gp-home-search-card .input-field__control {
   min-height: 48px;
 }
 
-.home-page .pro-home-search-wrap--hero .pro-home-search-submit.btn {
+.gp-home-search-card .btn {
   min-height: 48px;
-  border-radius: 9999px;
 }
 
-/* Sections */
-.gp-home-section {
-  padding: 48px 0;
-}
-
-.gp-home-section--features {
-  padding-top: 40px;
-}
-
-.gp-home-section--trust {
-  padding-top: 40px;
-  padding-bottom: 40px;
-}
-
-.gp-home-section__head {
+/* SECTIONS */
+.gp-home-section-head {
   margin: 0 0 18px;
 }
 
-.gp-home-title {
+.gp-home-section-title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.65rem;
   font-weight: 900;
   letter-spacing: -0.02em;
 }
 
-.gp-home-subtitle {
+.gp-home-section-subtitle {
   margin: 8px 0 0;
   color: var(--color-text-secondary);
   line-height: 1.45;
   max-width: 68ch;
 }
 
-/* Feature showcase: desktop grid */
-.gp-home-feature-grid {
+/* FEATURES (alternating layout on desktop) */
+.gp-home-features {
+  padding: 56px 0 44px;
+}
+
+.gp-home-feature-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 18px;
 }
 
 .gp-home-feature {
-  border-radius: 22px;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 18px;
+  align-items: center;
+  border-radius: 24px;
   border: 1px solid rgba(214, 219, 230, 0.9);
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-  padding: 14px 14px 18px;
+  padding: 16px;
+}
+
+.gp-home-feature--reverse {
+  grid-template-columns: 0.95fr 1.05fr;
+}
+
+.gp-home-feature--reverse .gp-home-feature__media {
+  order: 2;
+}
+
+.gp-home-feature__media {
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(108, 92, 231, 0.06);
 }
 
 .gp-home-feature__img {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 18px;
-  background: rgba(108, 92, 231, 0.06);
-  object-fit: cover;
   aspect-ratio: 14 / 9;
+  object-fit: cover;
   object-position: center;
 }
 
 .gp-home-feature__title {
-  margin: 14px 0 6px;
-  font-size: 1.05rem;
+  margin: 0;
+  font-size: 1.25rem;
   font-weight: 900;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .gp-home-feature__desc {
-  margin: 0;
+  margin: 8px 0 0;
   color: var(--color-text-secondary);
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
-/* Trust stats */
+/* TRUST / STATS */
+.gp-home-stats {
+  padding: 44px 0 56px;
+}
+
 .gp-home-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1363,62 +1409,79 @@
   line-height: 1.2;
 }
 
+/* LIGHT CTA */
+.gp-home-lite {
+  padding: 0 0 56px;
+}
+
+.gp-home-lite-card {
+  border-radius: 24px;
+  border: 1px solid rgba(214, 219, 230, 0.9);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  padding: 18px;
+}
+
+.gp-home-lite-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.gp-home-lite-text {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.gp-home-lite-actions {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 @media (max-width: 900px) {
-  .gp-home-feature-grid {
+  .gp-home-feature {
     grid-template-columns: 1fr;
+  }
+  .gp-home-feature--reverse .gp-home-feature__media {
+    order: 0;
   }
   .gp-home-stats-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
 
-/* Mobile refinements: keep the same structure, stacked, app-like */
 @media (max-width: 768px) {
-  .gp-home-section {
-    padding: 32px 0;
+  .gp-home-hero__content {
+    margin-top: -200px;
+    padding-bottom: 18px;
   }
-  .home-page .pro-home-hero-panel .pro-home-hero-caption {
-    width: min(720px, calc(100% - 32px));
-    padding: 20px 0 14px;
+  .gp-home-hero__title {
+    font-size: 1.95rem;
   }
-  .home-page .pro-home-search-wrap--hero {
-    width: min(680px, 100%);
-    padding: 0 16px;
-    margin-bottom: 16px;
+  .gp-home-hero__subtext {
+    font-size: 1rem;
   }
-  .home-page .pro-home-search-wrap--hero .pro-search-form__toolbar-row {
+  .gp-home-search-card {
+    border-radius: 20px;
+    padding: 16px;
+  }
+
+  /* Stack search fields cleanly on mobile (same form markup). */
+  .gp-home-search-card .pro-home-dual-search .pro-search-form__toolbar-row {
     display: grid;
     gap: 16px;
   }
-  .home-page .pro-home-search-wrap--hero .pro-home-search-fields {
+  .gp-home-search-card .pro-home-dual-search .pro-home-search-fields {
     display: grid;
     gap: 12px;
   }
-  /* Mobile: use a lightweight scroll-snap rail for features (same cards). */
-  .gp-home-feature-grid {
-    grid-auto-flow: column;
-    grid-auto-columns: 78%;
-    grid-template-columns: unset;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scroll-padding-left: 16px;
-    padding: 4px 16px 10px;
-    gap: 12px;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-  .gp-home-feature-grid::-webkit-scrollbar {
-    display: none;
-  }
-  .gp-home-feature {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-  }
-
-  /* Stats: prevent cramped pills on very narrow devices. */
-  .gp-home-stats-grid {
-    grid-template-columns: 1fr 1fr;
+  .gp-home-search-card .pro-home-dual-search .pro-home-search-submit.btn {
+    width: 100%;
+    border-radius: 9999px;
   }
 }
 

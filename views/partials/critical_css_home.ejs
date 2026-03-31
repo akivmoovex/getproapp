@@ -37,78 +37,70 @@
     padding: 12px 0;
     gap: 12px;
   }
-  .pro-home-hero {
+  .gp-home-hero {
     position: relative;
   }
-  .pro-home-hero-visual {
-    position: relative;
-  }
-  .pro-home-hero-media {
+  .gp-home-hero__bg {
     position: relative;
     overflow: hidden;
     background: #0b0b10;
   }
-  .pro-home-hero-photo {
+  .gp-home-hero__photo {
     display: block;
     width: 100%;
     height: auto;
     aspect-ratio: 16 / 9;
     object-fit: cover;
   }
-  .pro-home-hero-scrim {
+  .gp-home-hero__scrim {
     position: absolute;
     inset: 0;
     background: linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 45%, rgba(0, 0, 0, 0.35) 100%);
     pointer-events: none;
   }
-  .pro-home-hero-panel {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: flex-end;
+  .gp-home-hero__content {
+    position: relative;
+    margin-top: -240px;
+    padding-bottom: 28px;
   }
-  .pro-home-hero-caption {
-    width: min(720px, calc(100% - 32px));
-    margin: 0 auto;
-    padding: 24px 0 18px;
+  .gp-home-hero__title {
+    margin: 0;
     color: rgba(255, 255, 255, 0.96);
     text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
-  }
-  .pro-home-hero-title {
-    margin: 0 0 8px;
-    font-weight: 800;
+    font-weight: 900;
     letter-spacing: -0.02em;
-    font-size: 2.125rem;
-    line-height: 1.12;
+    font-size: 2.1rem;
+    line-height: 1.1;
   }
-  .pro-home-hero-subline {
-    margin: 0;
+  .gp-home-hero__subtext {
+    margin: 8px 0 0;
+    color: rgba(255, 255, 255, 0.88);
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
     font-size: 1rem;
     line-height: 1.45;
-    color: rgba(255, 255, 255, 0.88);
+    max-width: 60ch;
+  }
+  .gp-home-search-card {
+    margin-top: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(228, 232, 240, 0.9);
+    border-radius: 22px;
+    box-shadow: 0 14px 44px rgba(15, 23, 42, 0.14);
+    padding: 16px;
   }
   @media (max-width: 420px) {
-    .pro-home-hero-title {
+    .gp-home-hero__title {
       font-size: 1.85rem;
     }
   }
 
-  /* Mobile home: ensure the search card feels intentional before full CSS loads. */
   @media (max-width: 768px) {
-    .pro-home-hero-panel {
-      position: static;
-      inset: auto;
-      display: block;
-      margin-top: -28px;
+    .gp-home-hero__content {
+      margin-top: -200px;
+      padding-bottom: 18px;
     }
-    .pro-home-search-wrap--hero {
-      padding: 0 16px;
-    }
-    .pro-home-search-wrap--hero .pro-home-dual-search {
-      background: rgba(255, 255, 255, 0.96);
-      border: 1px solid rgba(228, 232, 240, 0.9);
+    .gp-home-search-card {
       border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
       padding: 16px;
     }
   }
