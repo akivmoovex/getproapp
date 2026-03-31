@@ -10076,9 +10076,31 @@ body[class*="tenant-"] {
   min-width: 0;
 }
 
+.gp-home .gp-home-search .pro-home-dual-search .pro-search-form__field,
+.gp-home .gp-home-search .pro-home-dual-search .pro-ac {
+  width: 100%;
+  min-width: 0;
+}
+
 .gp-home .gp-home-search .pro-home-dual-search .pro-ac,
 .gp-home .gp-home-search .pro-home-dual-search .pro-ac-input {
-  border-radius: 12px; /* override global pill radius */
+  border-radius: 12px;
+}
+
+.gp-home .gp-home-search .pro-home-dual-search .pro-ac {
+  min-height: 48px;
+}
+
+.gp-home .gp-home-search .pro-home-dual-search .pro-ac-input {
+  min-height: 48px;
+  height: 48px;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .gp-home .gp-home-search .pro-home-dual-search .pro-search-form__toolbar-row {
+    align-items: end;
+  }
 }
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-ac {
