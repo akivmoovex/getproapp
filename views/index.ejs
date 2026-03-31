@@ -65,8 +65,8 @@
     <% } %>
 
     <main class="gp-home" role="main">
-      <!-- Hero: search + band -->
       <section class="gp-home-hero" aria-labelledby="gp-home-hero-title">
+        <h1 id="gp-home-hero-title" class="visually-hidden">GetPro — professional directory</h1>
         <div class="gp-home-hero__top">
           <div class="gp-home-hero__search-shell">
             <div id="gp-home-search" class="gp-home-search" aria-label="Project search">
@@ -76,35 +76,15 @@
                 showCategoryFilter: false,
               }) %>
             </div>
-          </div>
-        </div>
-
-        <div class="gp-home-hero__band">
-          <div class="gp-home-hero__band-inner">
-            <div class="gp-home-hero__copy">
-              <span class="gp-home-hero__eyebrow">Why use GetPro</span>
-              <h1 id="gp-home-hero-title" class="gp-home-hero__title">Find the right pro, faster</h1>
-              <p class="gp-home-hero__subtitle">
-                Search by service and city—compare profiles and contact the best fit in one flow.
-              </p>
-            </div>
-            <div class="gp-home-hero__mockup">
-              <div class="gp-home-hero__mockup-card">
-                <div class="gp-home-hero__mockup-header">Suggested providers</div>
-                <div class="gp-home-hero__mockup-row">
-                  <div class="gp-home-hero__mockup-name">Northside Electric</div>
-                  <div class="gp-home-hero__mockup-meta">4.9 · Open now</div>
-                </div>
-                <div class="gp-home-hero__mockup-row">
-                  <div class="gp-home-hero__mockup-name">Urban HVAC Co.</div>
-                  <div class="gp-home-hero__mockup-meta">4.8 · Same-day</div>
-                </div>
-                <div class="gp-home-hero__mockup-row">
-                  <div class="gp-home-hero__mockup-name">QuickFix Plumbing</div>
-                  <div class="gp-home-hero__mockup-meta">5.0 · Emergency</div>
-                </div>
-                <div class="gp-home-hero__mockup-footer">Compare details and contact the best fit</div>
-              </div>
+            <div class="gp-home-search-specs">
+              <article class="gp-home-search-spec">
+                <h3 class="gp-home-search-spec__title">Compare before you decide</h3>
+                <p class="gp-home-search-spec__text">View profiles, availability, and details so you can choose the best fit with confidence.</p>
+              </article>
+              <article class="gp-home-search-spec">
+                <h3 class="gp-home-search-spec__title">Contact with confidence</h3>
+                <p class="gp-home-search-spec__text">Reach out directly to providers that match your needs without guesswork.</p>
+              </article>
             </div>
           </div>
         </div>
@@ -160,71 +140,6 @@
             <button type="button" class="gp-home-story__dot" data-story-dot="1" aria-label="Slide 2 of 3"></button>
             <button type="button" class="gp-home-story__dot" data-story-dot="2" aria-label="Slide 3 of 3"></button>
           </div>
-        </div>
-      </section>
-
-      <!-- Product benefits (Moovit-style storytelling) -->
-      <section class="gp-home-benefits" aria-label="Why GetPro">
-        <div class="container">
-          <section class="gp-home-feature gp-home-feature--reverse" aria-labelledby="gp-home-benefit-2-title">
-            <div class="gp-home-feature__text">
-              <span class="gp-home-feature__eyebrow">Make better choices</span>
-              <h2 id="gp-home-benefit-2-title" class="gp-home-feature__title">Compare before you decide</h2>
-              <p class="gp-home-feature__desc">View profiles, availability, and details so you can choose the best fit with confidence.</p>
-              <a class="gp-home-feature__cta btn btn--primary" href="#gp-home-search">Search providers</a>
-            </div>
-            <div class="gp-home-feature__visual" aria-hidden="true">
-              <div class="gp-home-feature-mock gp-home-feature-mock--compare">
-                <div class="gp-home-feature-mock__compare">
-                  <div class="gp-home-feature-mock__profile">
-                    <span class="gp-home-feature-mock__profile-avatar" aria-hidden="true"></span>
-                    <span class="gp-home-feature-mock__profile-name">Studio Build</span>
-                    <span class="gp-home-feature-mock__profile-tag">Next slot · Tue</span>
-                    <ul class="gp-home-feature-mock__profile-lines">
-                      <li>Verified</li>
-                      <li>12 reviews</li>
-                    </ul>
-                  </div>
-                  <div class="gp-home-feature-mock__profile">
-                    <span class="gp-home-feature-mock__profile-avatar" aria-hidden="true"></span>
-                    <span class="gp-home-feature-mock__profile-name">Craft &amp; Co.</span>
-                    <span class="gp-home-feature-mock__profile-tag">Next slot · Wed</span>
-                    <ul class="gp-home-feature-mock__profile-lines">
-                      <li>Verified</li>
-                      <li>28 reviews</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="gp-home-feature" aria-labelledby="gp-home-benefit-3-title">
-            <div class="gp-home-feature__text">
-              <span class="gp-home-feature__eyebrow">Take action</span>
-              <h2 id="gp-home-benefit-3-title" class="gp-home-feature__title">Contact with confidence</h2>
-              <p class="gp-home-feature__desc">Reach out directly to providers that match your needs without guesswork.</p>
-              <a class="gp-home-feature__cta btn btn--primary" href="#gp-home-search">Search providers</a>
-            </div>
-            <div class="gp-home-feature__visual" aria-hidden="true">
-              <div class="gp-home-feature-mock gp-home-feature-mock--contact">
-                <div class="gp-home-feature-mock__contact-bar">
-                  <span class="gp-home-feature-mock__contact-avatar" aria-hidden="true"></span>
-                  <span class="gp-home-feature-mock__contact-info">
-                    <span class="gp-home-feature-mock__contact-name">BrightView Cleaning</span>
-                    <span class="gp-home-feature-mock__contact-sub">Responds in ~1h</span>
-                  </span>
-                </div>
-                <div class="gp-home-feature-mock__contact-body">
-                  <span class="gp-home-feature-mock__line"></span>
-                  <span class="gp-home-feature-mock__line gp-home-feature-mock__line--short"></span>
-                </div>
-                <div class="gp-home-feature-mock__contact-actions">
-                  <span class="gp-home-feature-mock__pill">Message</span>
-                </div>
-              </div>
-            </div>
-          </section>
         </div>
       </section>
 
