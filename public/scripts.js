@@ -138,6 +138,138 @@ function initDirectoryAvatarHue() {
   });
 }
 
+function scheduleAfterInteractivity(fn) {
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(fn, { timeout: 2500 });
+    return;
+  }
+  window.setTimeout(fn, 350);
+}
+
+function applyAvatarHueOnce(el) {
+  if (!el || el.nodeType !== 1) return;
+  if (el.dataset && el.dataset.avatarHueApplied === "1") return;
+  const h = el.getAttribute("data-avatar-hue");
+  if (h != null && h !== "") el.style.setProperty("--avatar-hue", h);
+  if (el.dataset) el.dataset.avatarHueApplied = "1";
+}
+
+function collectAvatarHueEls() {
+  return Array.from(document.querySelectorAll("[data-avatar-hue]"));
+}
+
+function getLikelyVisibleAvatarEls(els) {
+  const vh = window.innerHeight || 0;
+  // Small margin so near-the-fold cards are also “immediate”.
+  const margin = 220;
+  const visible = [];
+  for (let i = 0; i < els.length; i++) {
+    const el = els[i];
+    if (el.dataset && el.dataset.avatarHueApplied === "1") continue;
+    const r = el.getBoundingClientRect();
+    if (r.bottom < -margin) continue;
+    if (r.top > vh + margin) continue;
+    visible.push(el);
+  }
+  // Cap work to avoid startup long tasks on huge lists.
+  visible.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+  return visible.slice(0, 16);
+}
+
+function applyAvatarHuesIdleChunked(els) {
+  const remaining = els.filter((el) => !(el.dataset && el.dataset.avatarHueApplied === "1"));
+  if (remaining.length === 0) return;
+
+  const run = (deadline) => {
+    let budget = deadline && typeof deadline.timeRemaining === "function" ? deadline.timeRemaining() : 8;
+    // Process small batches; bail when time is low.
+    while (remaining.length && budget > 4) {
+      const el = remaining.shift();
+      applyAvatarHueOnce(el);
+      budget = deadline && typeof deadline.timeRemaining === "function" ? deadline.timeRemaining() : 0;
+    }
+    if (remaining.length) {
+      if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 2500 });
+      else window.setTimeout(() => run(null), 40);
+    }
+  };
+
+  if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 2500 });
+  else window.setTimeout(() => run(null), 200);
+}
+
+// Mobile perf: apply avatar hues immediately for visible cards; defer the rest to idle (chunked).
+function initDirectoryAvatarHueDeferredOnMobile() {
+  if (!isMobileLikeViewport()) {
+    initDirectoryAvatarHue();
+    return;
+  }
+  const els = collectAvatarHueEls();
+  if (els.length === 0) return;
+
+  // Immediate: above-the-fold/first visible avatars (reduces “unstyled” risk).
+  getLikelyVisibleAvatarEls(els).forEach(applyAvatarHueOnce);
+
+  // Deferred: everything else, chunked in idle time (reduces TBT).
+  scheduleAfterInteractivity(() => applyAvatarHuesIdleChunked(els));
+}
+
+// Mobile perf: defer region picker wiring until user opens it.
+function initRegionPickerLazyOnMobile() {
+  if (!isMobileLikeViewport()) {
+    initRegionPicker();
+    return;
+  }
+  const openBtn = document.getElementById("wf-region-open");
+  if (!openBtn) return;
+
+  // Prevent duplicate wiring across multiple entry points.
+  const ensureInit = () => {
+    if (window.__getproRegionPickerInit) return false;
+    window.__getproRegionPickerInit = true;
+    initRegionPicker();
+    return true;
+  };
+
+  // Earliest intent: initialize before the click is dispatched so the *same* interaction opens reliably.
+  // - pointerdown/touchstart: happens before click → no replay needed.
+  // - focusin: accessibility; ensures keyboard activation works on first try.
+  const onPointerDown = () => {
+    if (ensureInit()) cleanup();
+  };
+  const onTouchStart = () => {
+    if (ensureInit()) cleanup();
+  };
+  const onFocusIn = (e) => {
+    if (e.target !== openBtn) return;
+    if (ensureInit()) cleanup();
+  };
+
+  // Fallback: if the first intent is a click (e.g. some assistive tech / synthetic click),
+  // listeners added during this event won't fire for the same click → replay once.
+  const onClickCapture = (e) => {
+    if (window.__getproRegionPickerInit) return;
+    e.preventDefault();
+    e.stopPropagation();
+    ensureInit();
+    cleanup();
+    // Replay on next tick so initRegionPicker's click handler can run.
+    window.setTimeout(() => openBtn.click(), 0);
+  };
+
+  function cleanup() {
+    openBtn.removeEventListener("pointerdown", onPointerDown, true);
+    openBtn.removeEventListener("touchstart", onTouchStart, true);
+    openBtn.removeEventListener("focusin", onFocusIn, true);
+    openBtn.removeEventListener("click", onClickCapture, true);
+  }
+
+  openBtn.addEventListener("pointerdown", onPointerDown, true);
+  openBtn.addEventListener("touchstart", onTouchStart, { passive: true, capture: true });
+  openBtn.addEventListener("focusin", onFocusIn, true);
+  openBtn.addEventListener("click", onClickCapture, true);
+}
+
 function initRefineSearchFab() {
   document.querySelectorAll(".pro-refine-search-fab[data-refine-target]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -198,15 +330,45 @@ function initAppNavDrawer() {
   });
 }
 
+function isMobileLikeViewport() {
+  try {
+    return (
+      (window.matchMedia && window.matchMedia("(max-width: 720px)").matches) ||
+      (window.matchMedia && window.matchMedia("(pointer: coarse)").matches)
+    );
+  } catch (e) {
+    return false;
+  }
+}
+
+// Mobile perf: defer nav drawer wiring until first tap.
+function initAppNavDrawerLazyOnMobile() {
+  if (!isMobileLikeViewport()) {
+    initAppNavDrawer();
+    return;
+  }
+  const toggle = document.getElementById("wf-app-nav-toggle");
+  if (!toggle) return;
+  const onFirstTap = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggle.removeEventListener("click", onFirstTap, true);
+    initAppNavDrawer();
+    // Replay the user's intent now that handlers exist.
+    toggle.click();
+  };
+  toggle.addEventListener("click", onFirstTap, true);
+}
+
 // PERF WARNING: Keep new behavior behind DOM guards — this file loads on every public page; regressions hit LCP/INP (docs/route-ownership-matrix.md).
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("lead_form");
   if (form) form.addEventListener("submit", submitLeadForm);
   if (document.getElementById("wf-region-m3-root")) {
-    initRegionPicker();
+    initRegionPickerLazyOnMobile();
     initGlobalTenantSearchOpensRegion();
   }
-  if (document.querySelector("[data-avatar-hue]")) initDirectoryAvatarHue();
+  if (document.querySelector("[data-avatar-hue]")) initDirectoryAvatarHueDeferredOnMobile();
   if (document.querySelector(".pro-refine-search-fab[data-refine-target]")) initRefineSearchFab();
-  initAppNavDrawer();
+  initAppNavDrawerLazyOnMobile();
 });

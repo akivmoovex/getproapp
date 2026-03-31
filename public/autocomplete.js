@@ -260,10 +260,17 @@
           .filter(Boolean)
       : null;
     const phrase = wrap.getAttribute("data-watermark-text");
-    if (rotatePhrases && rotatePhrases.length > 0) {
-      initRotatingTypewriterWatermark(wrap, input, hidden, rotatePhrases, watermarkOpts.startDelayMs);
-    } else if (phrase) {
-      initTypewriterWatermark(wrap, input, hidden, phrase, watermarkOpts.startDelayMs);
+    // Mobile perf: watermark typing is cosmetic and uses timers; skip on small/coarse-pointer viewports.
+    const skipWatermark =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      (window.matchMedia("(max-width: 720px)").matches || window.matchMedia("(pointer: coarse)").matches);
+    if (!skipWatermark) {
+      if (rotatePhrases && rotatePhrases.length > 0) {
+        initRotatingTypewriterWatermark(wrap, input, hidden, rotatePhrases, watermarkOpts.startDelayMs);
+      } else if (phrase) {
+        initTypewriterWatermark(wrap, input, hidden, phrase, watermarkOpts.startDelayMs);
+      }
     }
 
     let open = false;

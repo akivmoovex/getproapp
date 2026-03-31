@@ -1,5 +1,16 @@
 <script>
 (function () {
+  function isMobileLike() {
+    try {
+      // Mobile-only perf: avoid loading autocomplete until interaction.
+      return (
+        (window.matchMedia && window.matchMedia("(max-width: 720px)").matches) ||
+        (window.matchMedia && window.matchMedia("(pointer: coarse)").matches)
+      );
+    } catch (e) {
+      return false;
+    }
+  }
   function boot() {
     if (window.__getproAutocompleteLazyScheduled) return;
     window.__getproAutocompleteLazyScheduled = true;
@@ -33,26 +44,30 @@
     },
     { passive: true, capture: true }
   );
-  if ("IntersectionObserver" in window) {
-    document.querySelectorAll("form.pro-home-dual-search, form.pro-search--directory").forEach(function (form) {
-      var io = new IntersectionObserver(
-        function (entries) {
-          if (entries.some(function (en) { return en.isIntersecting; })) {
-            boot();
-            io.disconnect();
-          }
-        },
-        { rootMargin: "320px 0px", threshold: 0.01 }
-      );
-      io.observe(form);
+  // Desktop/tablet: prefetch autocomplete as search enters viewport / idle.
+  // Mobile: wait for touch/focus to avoid adding TBT on initial load.
+  if (!isMobileLike()) {
+    if ("IntersectionObserver" in window) {
+      document.querySelectorAll("form.pro-home-dual-search, form.pro-search--directory").forEach(function (form) {
+        var io = new IntersectionObserver(
+          function (entries) {
+            if (entries.some(function (en) { return en.isIntersecting; })) {
+              boot();
+              io.disconnect();
+            }
+          },
+          { rootMargin: "320px 0px", threshold: 0.01 }
+        );
+        io.observe(form);
+      });
+    }
+    function scheduleIdle(fn) {
+      if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 2800 });
+      else setTimeout(fn, 500);
+    }
+    scheduleIdle(function () {
+      boot();
     });
   }
-  function scheduleIdle(fn) {
-    if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 2800 });
-    else setTimeout(fn, 500);
-  }
-  scheduleIdle(function () {
-    boot();
-  });
 })();
 </script>
