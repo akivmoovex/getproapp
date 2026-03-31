@@ -1204,178 +1204,228 @@
 }
 
 /* =========================
- * Mobile-only homepage redesign (M3 app-like layout)
- * Rules:
- * - mobile only
- * - do not alter desktop/tablet layout
- * - no extra JS; scroll-snap rail
+ * Homepage landing layout (Moovit-like structure; GetPro styling)
+ * - App bar unchanged (template partial)
+ * - One responsive structure for desktop + mobile
+ * - No heavy JS; use CSS only for responsiveness
  * ========================= */
-@media (max-width: 768px) {
-  /* Default home content remains; we only swap mobile UI surfaces below. */
-  .mobile-home-shell,
-  .mobile-feature-strip,
-  .mobile-stats-section {
-    display: block;
-  }
 
-  /* Hide the desktop-style hero search on mobile (we reuse the same form in the mobile card). */
-  .home-page .pro-home-search-wrap--hero {
-    display: none;
-  }
+/* Hero: keep existing LCP media; style panel as “floating search card” */
+.home-page .pro-home-hero-panel .pro-home-hero-caption {
+  width: min(840px, calc(100% - 48px));
+  padding: 32px 0 20px;
+}
 
-  /* Keep hero media for existing LCP path, but reduce clutter. */
-  /* Hide the big hero caption on mobile; keep image for current LCP path. */
-  .home-page .pro-home-hero-panel .pro-home-hero-caption {
-    display: none;
-  }
+.home-page .pro-home-search-wrap--hero {
+  width: min(920px, calc(100% - 48px));
+  margin: 0 auto 28px;
+}
 
-  .home-page .pro-home-hero {
-    margin-top: 8px;
-  }
+.home-page .pro-home-search-wrap--hero .pro-home-dual-search {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(228, 232, 240, 0.9);
+  border-radius: 22px;
+  box-shadow: 0 14px 44px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(6px);
+  padding: 18px;
+}
 
-  /* Mobile shell spacing: app bar (unchanged) → spacer → search card */
-  .mobile-home-shell {
-    padding: 16px 0 0;
-  }
+.home-page .pro-home-search-wrap--hero .pro-search-form__toolbar-row {
+  gap: 16px;
+}
 
-  .mobile-search-card {
-    width: min(680px, 100%);
-    margin: 0 auto;
-    padding: 0 16px;
-  }
-  .mobile-search-card__inner {
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(228, 232, 240, 0.9);
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-    backdrop-filter: blur(6px);
-    padding: 16px;
-  }
+/* Align the search card content to a clean center column on wide screens. */
+.home-page .pro-home-search-wrap--hero .pro-home-dual-search {
+  max-width: 920px;
+}
 
-  /* Make the existing home search form stack vertically + full width (reuse existing markup). */
-  .mobile-search-card .pro-home-dual-search .pro-search-form__toolbar-row {
-    display: grid;
-    gap: 16px;
-  }
-  .mobile-search-card .pro-home-dual-search .pro-home-search-fields {
-    display: grid;
-    gap: 12px;
-  }
-  .mobile-search-card .pro-home-dual-search .input-field__control {
-    min-height: 48px;
-  }
-  .mobile-search-card .pro-home-dual-search .pro-home-search-submit.btn {
-    width: 100%;
-    min-height: 48px;
-    border-radius: 9999px;
-  }
+.home-page .pro-home-search-wrap--hero .pro-home-search-field .input-field__control {
+  min-height: 48px;
+}
 
-  /* Section titles */
-  .mobile-home-title {
-    margin: 0 0 12px;
-    font-size: 1.0625rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    color: var(--color-text-primary);
-  }
+.home-page .pro-home-search-wrap--hero .pro-home-search-submit.btn {
+  min-height: 48px;
+  border-radius: 9999px;
+}
 
-  /* Feature strip (scroll-snap) */
-  .mobile-feature-strip {
-    padding: 24px 0;
-  }
-  .mobile-feature-strip__rail {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    padding: 4px 16px 10px;
-    scroll-snap-type: x mandatory;
-    scroll-padding-left: 16px;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-  }
-  .mobile-feature-strip__rail::-webkit-scrollbar {
-    display: none;
-  }
-  .mobile-feature-card {
-    scroll-snap-align: start;
-    flex: 0 0 78%;
-    max-width: 340px;
-    border-radius: 20px;
-    border: 1px solid rgba(214, 219, 230, 0.9);
-    background: rgba(255, 255, 255, 0.96);
-    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
-    padding: 12px 12px 16px;
-  }
-  .mobile-feature-card__img {
-    display: block;
-    width: 100%;
-    height: auto;
-    border-radius: 18px;
-    background: rgba(108, 92, 231, 0.06);
-    object-fit: cover;
-  }
-  .mobile-feature-card__title {
-    margin: 12px 0 6px;
-    font-size: 1rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-  }
-  .mobile-feature-card__desc {
-    margin: 0;
-    color: var(--color-text-secondary);
-    line-height: 1.4;
-    font-size: 0.9375rem;
-  }
+/* Sections */
+.gp-home-section {
+  padding: 48px 0;
+}
 
-  /* Stats */
-  .mobile-stats-section {
-    padding: 0 0 24px;
+.gp-home-section--features {
+  padding-top: 40px;
+}
+
+.gp-home-section--trust {
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
+.gp-home-section__head {
+  margin: 0 0 18px;
+}
+
+.gp-home-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.gp-home-subtitle {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  max-width: 68ch;
+}
+
+/* Feature showcase: desktop grid */
+.gp-home-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.gp-home-feature {
+  border-radius: 22px;
+  border: 1px solid rgba(214, 219, 230, 0.9);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  padding: 14px 14px 18px;
+}
+
+.gp-home-feature__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  background: rgba(108, 92, 231, 0.06);
+  object-fit: cover;
+  aspect-ratio: 14 / 9;
+  object-position: center;
+}
+
+.gp-home-feature__title {
+  margin: 14px 0 6px;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.gp-home-feature__desc {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+/* Trust stats */
+.gp-home-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gp-home-stat {
+  border-radius: 9999px;
+  border: 1px solid rgba(214, 219, 230, 0.9);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  column-gap: 10px;
+  align-items: center;
+  min-height: 60px;
+}
+
+.gp-home-stat__icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.gp-home-stat__value {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  font-size: 1.05rem;
+}
+
+.gp-home-stat__label {
+  grid-column: 2;
+  margin-top: 3px;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+@media (max-width: 900px) {
+  .gp-home-feature-grid {
+    grid-template-columns: 1fr;
   }
-  .mobile-stats-grid {
-    display: grid;
+  .gp-home-stats-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-  .mobile-stat-bubble {
-    border-radius: 9999px;
-    border: 1px solid rgba(214, 219, 230, 0.9);
-    background: rgba(255, 255, 255, 0.96);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.055);
-    padding: 12px 14px;
-    display: grid;
-    grid-template-columns: 28px 1fr;
-    column-gap: 10px;
-    align-items: center;
-    text-align: left;
-    min-height: 56px;
-  }
-  .mobile-stat-bubble__icon {
-    width: 28px;
-    height: 28px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-  }
-  .mobile-stat-bubble__value {
-    font-weight: 900;
-    letter-spacing: -0.01em;
-    line-height: 1.05;
-  }
-  .mobile-stat-bubble__label {
-    grid-column: 2;
-    color: var(--color-text-secondary);
-    font-size: 0.8125rem;
-    line-height: 1.2;
-    margin-top: 3px;
   }
 }
 
-/* Hide mobile homepage UI by default (desktop/tablet). */
-.mobile-home-shell,
-.mobile-feature-strip,
-.mobile-stats-section {
-  display: none;
+/* Mobile refinements: keep the same structure, stacked, app-like */
+@media (max-width: 768px) {
+  .gp-home-section {
+    padding: 32px 0;
+  }
+  .home-page .pro-home-hero-panel .pro-home-hero-caption {
+    width: min(720px, calc(100% - 32px));
+    padding: 20px 0 14px;
+  }
+  .home-page .pro-home-search-wrap--hero {
+    width: min(680px, 100%);
+    padding: 0 16px;
+    margin-bottom: 16px;
+  }
+  .home-page .pro-home-search-wrap--hero .pro-search-form__toolbar-row {
+    display: grid;
+    gap: 16px;
+  }
+  .home-page .pro-home-search-wrap--hero .pro-home-search-fields {
+    display: grid;
+    gap: 12px;
+  }
+  /* Mobile: use a lightweight scroll-snap rail for features (same cards). */
+  .gp-home-feature-grid {
+    grid-auto-flow: column;
+    grid-auto-columns: 78%;
+    grid-template-columns: unset;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 16px;
+    padding: 4px 16px 10px;
+    gap: 12px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .gp-home-feature-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .gp-home-feature {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  /* Stats: prevent cramped pills on very narrow devices. */
+  .gp-home-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 380px) {
+  .gp-home-stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .section-title--flush {

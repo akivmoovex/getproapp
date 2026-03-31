@@ -83,97 +83,6 @@
 
     <div class="wf-home-shell">
       <div class="wf-home-main">
-        <!-- Mobile-only homepage shell (CSS hides this on tablet/desktop). -->
-        <section class="mobile-home-shell" aria-label="GetPro mobile home">
-          <div class="mobile-search-card" aria-label="Search">
-            <div class="mobile-search-card__inner">
-              <%- include('partials/pro_search_form', {
-                variant: 'home',
-                tenantUrlPrefix,
-                showCategoryFilter: false,
-              }) %>
-            </div>
-          </div>
-        </section>
-
-        <section class="mobile-feature-strip" aria-label="Features">
-          <div class="container">
-            <h2 class="mobile-home-title">Features</h2>
-          </div>
-          <div class="mobile-feature-strip__rail" role="list">
-            <article class="mobile-feature-card" role="listitem">
-              <!-- TODO: replace with real screenshot at /public/images/mobile/feature-find.webp -->
-              <img
-                class="mobile-feature-card__img"
-                src="/images/mobile/feature-find.webp"
-                alt=""
-                width="280"
-                height="180"
-                loading="lazy"
-                decoding="async"
-              />
-              <h3 class="mobile-feature-card__title">Find services fast</h3>
-              <p class="mobile-feature-card__desc">Search and discover trusted providers near you</p>
-            </article>
-            <article class="mobile-feature-card" role="listitem">
-              <!-- TODO: replace with real screenshot at /public/images/mobile/feature-track.webp -->
-              <img
-                class="mobile-feature-card__img"
-                src="/images/mobile/feature-track.webp"
-                alt=""
-                width="280"
-                height="180"
-                loading="lazy"
-                decoding="async"
-              />
-              <h3 class="mobile-feature-card__title">Track project updates</h3>
-              <p class="mobile-feature-card__desc">Stay updated from request to completion</p>
-            </article>
-            <article class="mobile-feature-card" role="listitem">
-              <!-- TODO: replace with real screenshot at /public/images/mobile/feature-compare.webp -->
-              <img
-                class="mobile-feature-card__img"
-                src="/images/mobile/feature-compare.webp"
-                alt=""
-                width="280"
-                height="180"
-                loading="lazy"
-                decoding="async"
-              />
-              <h3 class="mobile-feature-card__title">Compare providers</h3>
-              <p class="mobile-feature-card__desc">Review options before choosing the right expert</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="mobile-stats-section" aria-label="Stats">
-          <div class="container">
-            <h2 class="mobile-home-title">Stats</h2>
-            <div class="mobile-stats-grid" role="list">
-              <div class="mobile-stat-bubble" role="listitem">
-                <span class="mobile-stat-bubble__icon" aria-hidden="true">📍</span>
-                <div class="mobile-stat-bubble__value">10+</div>
-                <div class="mobile-stat-bubble__label">Locations</div>
-              </div>
-              <div class="mobile-stat-bubble" role="listitem">
-                <span class="mobile-stat-bubble__icon" aria-hidden="true">🧰</span>
-                <div class="mobile-stat-bubble__value">200+</div>
-                <div class="mobile-stat-bubble__label">Service providers</div>
-              </div>
-              <div class="mobile-stat-bubble" role="listitem">
-                <span class="mobile-stat-bubble__icon" aria-hidden="true">👥</span>
-                <div class="mobile-stat-bubble__value">2000+</div>
-                <div class="mobile-stat-bubble__label">Served customers</div>
-              </div>
-              <div class="mobile-stat-bubble" role="listitem">
-                <span class="mobile-stat-bubble__icon" aria-hidden="true">⭐</span>
-                <div class="mobile-stat-bubble__value">4.3</div>
-                <div class="mobile-stat-bubble__label">Customer rating</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section class="pro-home-hero" aria-labelledby="pro-home-hero-heading">
           <div class="pro-home-hero-visual">
             <div class="pro-home-hero-media">
@@ -216,6 +125,66 @@
                   tenantUrlPrefix,
                   showCategoryFilter: false,
                 }) %>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="gp-home-section gp-home-section--features" aria-label="Features">
+          <div class="container gp-home-section__inner">
+            <header class="gp-home-section__head">
+              <h2 class="gp-home-title">Built for fast hiring decisions</h2>
+              <p class="gp-home-subtitle">Search, compare, and connect with trusted local providers.</p>
+            </header>
+            <div class="gp-home-feature-grid" role="list">
+              <article class="gp-home-feature" role="listitem">
+                <!-- TODO: replace placeholder with real screenshot (keep dimensions/aspect to avoid layout shift). -->
+                <img class="gp-home-feature__img" src="/images/mobile/feature-find.svg" alt="" width="560" height="360" loading="lazy" decoding="async" />
+                <h3 class="gp-home-feature__title">Find services fast</h3>
+                <p class="gp-home-feature__desc">Search and discover trusted providers near you.</p>
+              </article>
+              <article class="gp-home-feature" role="listitem">
+                <!-- TODO: replace placeholder with real screenshot (keep dimensions/aspect to avoid layout shift). -->
+                <img class="gp-home-feature__img" src="/images/mobile/feature-track.svg" alt="" width="560" height="360" loading="lazy" decoding="async" />
+                <h3 class="gp-home-feature__title">Track project updates</h3>
+                <p class="gp-home-feature__desc">Stay updated from request to completion.</p>
+              </article>
+              <article class="gp-home-feature" role="listitem">
+                <!-- TODO: replace placeholder with real screenshot (keep dimensions/aspect to avoid layout shift). -->
+                <img class="gp-home-feature__img" src="/images/mobile/feature-compare.svg" alt="" width="560" height="360" loading="lazy" decoding="async" />
+                <h3 class="gp-home-feature__title">Compare providers</h3>
+                <p class="gp-home-feature__desc">Review options before choosing the right expert.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="gp-home-section gp-home-section--trust" aria-label="Trust stats">
+          <div class="container gp-home-section__inner">
+            <header class="gp-home-section__head">
+              <h2 class="gp-home-title">Trusted across regions</h2>
+              <p class="gp-home-subtitle">Real activity on the directory—built to stay lightweight on mobile.</p>
+            </header>
+            <div class="gp-home-stats-grid" role="list">
+              <div class="gp-home-stat" role="listitem">
+                <span class="gp-home-stat__icon" aria-hidden="true">📍</span>
+                <div class="gp-home-stat__value">10+</div>
+                <div class="gp-home-stat__label">Locations</div>
+              </div>
+              <div class="gp-home-stat" role="listitem">
+                <span class="gp-home-stat__icon" aria-hidden="true">🧰</span>
+                <div class="gp-home-stat__value">200+</div>
+                <div class="gp-home-stat__label">Service providers</div>
+              </div>
+              <div class="gp-home-stat" role="listitem">
+                <span class="gp-home-stat__icon" aria-hidden="true">👥</span>
+                <div class="gp-home-stat__value">2000+</div>
+                <div class="gp-home-stat__label">Served customers</div>
+              </div>
+              <div class="gp-home-stat" role="listitem">
+                <span class="gp-home-stat__icon" aria-hidden="true">⭐</span>
+                <div class="gp-home-stat__value">4.3</div>
+                <div class="gp-home-stat__label">Customer rating</div>
               </div>
             </div>
           </div>
