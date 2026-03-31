@@ -65,22 +65,47 @@
     <% } %>
 
     <main class="gp-home" role="main">
-      <!-- 1) HERO (no hero image) -->
+      <!-- 1) HERO: search shell + orange band (first product story) -->
       <section class="gp-home-hero" aria-labelledby="gp-home-hero-title">
-        <div class="container">
-          <div class="gp-home-hero__inner">
-            <div class="gp-home-hero__content">
-              <div class="gp-home-hero__copy">
-                <h1 id="gp-home-hero-title" class="gp-home-hero__title">Start your project. Find a trusted local pro.</h1>
-                <p class="gp-home-hero__subtitle">Search by service and city. Compare providers and contact the right one fast.</p>
-              </div>
-              <div id="gp-home-search" class="gp-home-search" aria-label="Project search">
-                <%- include('partials/pro_search_form', {
-                  variant: 'home',
-                  tenantUrlPrefix,
-                  showCategoryFilter: false,
-                }) %>
-                <p class="gp-home-search-hint muted muted--caption u-mt-sm">Finding verified service providers—made easy.</p>
+        <div class="gp-home-hero__top">
+          <div class="gp-home-hero__search-shell">
+            <div id="gp-home-search" class="gp-home-search" aria-label="Project search">
+              <%- include('partials/pro_search_form', {
+                variant: 'home',
+                tenantUrlPrefix,
+                showCategoryFilter: false,
+              }) %>
+              <p class="gp-home-search-hint muted muted--caption u-mt-sm">Finding verified service providers—made easy.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="gp-home-hero__band">
+          <div class="gp-home-hero__band-inner">
+            <div class="gp-home-hero__copy">
+              <span class="gp-home-hero__eyebrow">Why use GetPro</span>
+              <h1 id="gp-home-hero-title" class="gp-home-hero__title">Find the right local pro faster</h1>
+              <p class="gp-home-hero__subtitle">
+                Search by service and city, compare providers, and contact the right fit with confidence.
+              </p>
+              <a class="gp-home-hero__cta btn btn--secondary" href="#gp-home-search">Search providers</a>
+            </div>
+            <div class="gp-home-hero__mockup">
+              <div class="gp-home-hero__mockup-card">
+                <div class="gp-home-hero__mockup-header">Suggested providers</div>
+                <div class="gp-home-hero__mockup-row">
+                  <div class="gp-home-hero__mockup-name">Northside Electric</div>
+                  <div class="gp-home-hero__mockup-meta">4.9 · Open now</div>
+                </div>
+                <div class="gp-home-hero__mockup-row">
+                  <div class="gp-home-hero__mockup-name">Urban HVAC Co.</div>
+                  <div class="gp-home-hero__mockup-meta">4.8 · Same-day</div>
+                </div>
+                <div class="gp-home-hero__mockup-row">
+                  <div class="gp-home-hero__mockup-name">QuickFix Plumbing</div>
+                  <div class="gp-home-hero__mockup-meta">5.0 · Emergency</div>
+                </div>
+                <div class="gp-home-hero__mockup-footer">Compare details and contact the best fit</div>
               </div>
             </div>
           </div>
@@ -90,46 +115,6 @@
       <!-- Product benefits (Moovit-style storytelling) -->
       <section class="gp-home-benefits" aria-label="Why GetPro">
         <div class="container">
-          <section class="gp-home-feature" aria-labelledby="gp-home-benefit-1-title">
-            <div class="gp-home-feature__text">
-              <span class="gp-home-feature__eyebrow">Why use GetPro</span>
-              <h2 id="gp-home-benefit-1-title" class="gp-home-feature__title">Find the right provider fast</h2>
-              <p class="gp-home-feature__desc">Search by service and city to instantly see relevant professionals near you.</p>
-              <a class="gp-home-feature__cta btn btn--primary" href="#gp-home-search">Search providers</a>
-            </div>
-            <div class="gp-home-feature__visual" aria-hidden="true">
-              <div class="gp-home-feature-mock gp-home-feature-mock--results">
-                <div class="gp-home-feature-mock__head">
-                  <span class="gp-home-feature-mock__head-label">Matching pros</span>
-                  <span class="gp-home-feature-mock__head-meta">Near you</span>
-                </div>
-                <ul class="gp-home-feature-mock__list">
-                  <li class="gp-home-feature-mock__row">
-                    <span class="gp-home-feature-mock__avatar" aria-hidden="true"></span>
-                    <span class="gp-home-feature-mock__row-text">
-                      <span class="gp-home-feature-mock__row-title">Northside Electric</span>
-                      <span class="gp-home-feature-mock__row-sub">Licensed · 4.9 · Open now</span>
-                    </span>
-                  </li>
-                  <li class="gp-home-feature-mock__row">
-                    <span class="gp-home-feature-mock__avatar" aria-hidden="true"></span>
-                    <span class="gp-home-feature-mock__row-text">
-                      <span class="gp-home-feature-mock__row-title">Urban HVAC Co.</span>
-                      <span class="gp-home-feature-mock__row-sub">Same-day · 4.8</span>
-                    </span>
-                  </li>
-                  <li class="gp-home-feature-mock__row">
-                    <span class="gp-home-feature-mock__avatar" aria-hidden="true"></span>
-                    <span class="gp-home-feature-mock__row-text">
-                      <span class="gp-home-feature-mock__row-title">QuickFix Plumbing</span>
-                      <span class="gp-home-feature-mock__row-sub">Emergency · 5.0</span>
-                    </span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
           <section class="gp-home-feature gp-home-feature--reverse" aria-labelledby="gp-home-benefit-2-title">
             <div class="gp-home-feature__text">
               <span class="gp-home-feature__eyebrow">Make better choices</span>
