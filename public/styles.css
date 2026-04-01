@@ -9994,6 +9994,11 @@ body.home-page .app-top-app-bar__tagline {
   color: #6b7280;
 }
 
+body.home-page .app-top-app-bar {
+  border-bottom: none;
+  box-shadow: none;
+}
+
 @media (min-width: 768px) {
   body.home-page .app-top-app-bar .wf-brand-lockup-product {
     font-size: 32px;
@@ -10393,45 +10398,81 @@ body.home-page .app-top-app-bar__tagline {
 
 .gp-home .gp-home-story__visual {
   position: relative;
-  min-height: 280px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
   min-width: 0;
+  height: 220px;
+  min-height: 220px;
+  max-height: 220px;
+  overflow: hidden;
 }
 
-.gp-home .gp-home-story__visual > * {
-  border-radius: 20px;
+.gp-home .gp-home-story-panel {
+  position: absolute;
+  inset: 0;
+  display: none;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.gp-home .gp-home-story-panel.is-active {
+  display: flex;
+  animation: gp-home-story-fade 0.4s ease;
+}
+
+.gp-home .gp-home-story__visual-frame {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 24px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   background: #111827;
   box-sizing: border-box;
 }
 
-.gp-home .gp-home-story-panel {
-  display: none;
+.gp-home .gp-home-story__visual-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  max-width: 100%;
-  margin: 0;
-  padding: 14px;
-  min-height: 260px;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  pointer-events: none;
 }
 
-.gp-home .gp-home-story-panel.is-active {
+.gp-home .gp-home-story-mock-layer {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  animation: gp-home-story-fade 0.4s ease;
+  padding: 8px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.gp-home .gp-home-story-mock-layer .gp-home-story-mock {
+  pointer-events: auto;
 }
 
 @keyframes gp-home-story-fade {
   from {
     opacity: 0;
-    transform: translateY(10px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -10452,56 +10493,152 @@ body.home-page .app-top-app-bar__tagline {
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
 }
 
+.gp-home .gp-home-story-mock--in-frame {
+  max-height: 168px;
+  overflow: hidden;
+  padding: 8px 10px;
+  border-radius: 14px;
+}
+
+.gp-home .gp-home-story-mock--in-frame .gp-home-story-mock__label {
+  margin-bottom: 6px;
+  font-size: 10px;
+}
+
+.gp-home .gp-home-story-mock--in-frame .gp-home-story-mock__list {
+  gap: 4px;
+}
+
+.gp-home .gp-home-story-mock--in-frame .gp-home-story-mock__list li {
+  padding: 5px 8px;
+  border-radius: 8px;
+}
+
+.gp-home .gp-home-story-mock--in-frame .gp-home-story-mock__name {
+  font-size: 12px;
+}
+
+.gp-home .gp-home-story-mock--in-frame .gp-home-story-mock__sub {
+  font-size: 10px;
+}
+
+.gp-home .gp-home-story-mock--in-frame.gp-home-story-mock--reviews .gp-home-story-mock__stars {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.gp-home .gp-home-story-mock--in-frame.gp-home-story-mock--reviews .gp-home-story-mock__quote {
+  font-size: 12px;
+  line-height: 1.35;
+  margin: 0 0 6px;
+}
+
+.gp-home .gp-home-story-mock--in-frame .gp-home-story-mock__chips {
+  gap: 4px;
+}
+
+.gp-home .gp-home-story-mock--in-frame .gp-home-story-mock__chips span {
+  font-size: 9px;
+  padding: 2px 6px;
+}
+
 .gp-home .gp-home-story-mock--gallery .gp-home-story-mock__gallery {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 4px;
 }
 
 .gp-home .gp-home-story-mock__gallery-item {
+  position: relative;
   aspect-ratio: 1;
-  border-radius: 10px;
-  background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
+  border-radius: 8px;
   border: 1px solid #e5e7eb;
+  overflow: hidden;
+  background: #f3f4f6;
 }
 
-.gp-home .gp-home-story-mock__gallery-caption {
-  margin: 12px 0 0;
-  font-size: 12px;
-  line-height: 1.4;
-  color: #6b7280;
+.gp-home .gp-home-story-mock__gallery-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
-.gp-home .gp-home-story-mock--compare-cards .gp-home-story-mock__compare-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+.gp-home .gp-home-story-mock--in-frame .gp-home-story-mock__gallery-caption {
+  margin: 6px 0 0;
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.gp-home .gp-home-story-mock__compare-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
+.gp-home .gp-home-story-mock--compare-compact {
+  padding: 6px 8px;
+  max-height: 118px;
 }
 
-.gp-home .gp-home-story-mock__compare-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: #111827;
+.gp-home .gp-home-story-mock--compare-compact .gp-home-story-mock__label {
+  margin-bottom: 4px;
 }
 
-.gp-home .gp-home-story-mock__compare-meta {
+.gp-home .gp-home-story-mock--compare-compact .gp-home-story-mock__compare-grid {
+  gap: 4px;
+}
+
+.gp-home .gp-home-story-mock--compare-compact .gp-home-story-mock__compare-item {
+  gap: 2px;
+  padding: 5px 6px;
+  border-radius: 8px;
+}
+
+.gp-home .gp-home-story-mock--compare-compact .gp-home-story-mock__compare-name {
   font-size: 11px;
-  line-height: 1.35;
-  color: #6b7280;
 }
 
-.gp-home .gp-home-story-mock--contact-preview {
-  padding: 14px 16px;
+.gp-home .gp-home-story-mock--compare-compact .gp-home-story-mock__compare-meta {
+  font-size: 9px;
+  line-height: 1.25;
+}
+
+.gp-home .gp-home-story-mock--contact-compact {
+  padding: 8px 10px;
+  max-height: 132px;
+}
+
+.gp-home .gp-home-story-mock--contact-compact .gp-home-story-mock__contact-row {
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.gp-home .gp-home-story-mock--contact-compact .gp-home-story-mock__contact-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.gp-home .gp-home-story-mock--contact-compact .gp-home-story-mock__contact-name {
+  font-size: 12px;
+}
+
+.gp-home .gp-home-story-mock--contact-compact .gp-home-story-mock__contact-sub {
+  font-size: 10px;
+}
+
+.gp-home .gp-home-story-mock--contact-compact .gp-home-story-mock__contact-body {
+  margin-bottom: 6px;
+  padding: 8px;
+  gap: 5px;
+}
+
+.gp-home .gp-home-story-mock--contact-compact .gp-home-story-mock__contact-line {
+  height: 6px;
+}
+
+.gp-home .gp-home-story-mock--contact-compact .gp-home-story-mock__contact-pill {
+  padding: 5px 10px;
+  font-size: 10px;
 }
 
 .gp-home .gp-home-story-mock__contact-row {
@@ -10732,8 +10869,21 @@ body.home-page .app-top-app-bar__tagline {
   }
 
   .gp-home .gp-home-story__visual {
-    min-height: 300px;
-    justify-content: flex-end;
+    height: 260px;
+    min-height: 260px;
+    max-height: 260px;
+  }
+
+  .gp-home .gp-home-story__visual-frame {
+    height: 260px;
+  }
+
+  .gp-home .gp-home-story-mock--in-frame {
+    max-height: 198px;
+  }
+
+  .gp-home .gp-home-story-mock--compare-compact {
+    max-height: 132px;
   }
 }
 
