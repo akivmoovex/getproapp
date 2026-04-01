@@ -66,25 +66,27 @@
 
     <main class="gp-home" role="main">
       <section class="gp-home-hero" aria-labelledby="gp-home-hero-title">
-        <h1 id="gp-home-hero-title" class="visually-hidden">GetPro — professional directory</h1>
-        <div class="gp-home-hero__top">
-          <div class="gp-home-hero__search-shell">
-            <div id="gp-home-search" class="gp-home-search" aria-label="Project search">
-              <%- include('partials/pro_search_form', {
-                variant: 'home',
-                tenantUrlPrefix,
-                showCategoryFilter: false,
-              }) %>
-            </div>
-            <div class="gp-home-search-specs">
-              <article class="gp-home-search-spec">
-                <h3 class="gp-home-search-spec__title">Compare before you decide</h3>
-                <p class="gp-home-search-spec__text">View profiles, availability, and details so you can choose the best fit with confidence.</p>
-              </article>
-              <article class="gp-home-search-spec">
-                <h3 class="gp-home-search-spec__title">Contact with confidence</h3>
-                <p class="gp-home-search-spec__text">Reach out directly to providers that match your needs without guesswork.</p>
-              </article>
+        <div class="gp-home-container">
+          <h1 id="gp-home-hero-title" class="visually-hidden">GetPro — professional directory</h1>
+          <div class="gp-home-hero__top">
+            <div class="gp-home-hero__search-shell">
+              <div id="gp-home-search" class="gp-home-search" aria-label="Project search">
+                <%- include('partials/pro_search_form', {
+                  variant: 'home',
+                  tenantUrlPrefix,
+                  showCategoryFilter: false,
+                }) %>
+              </div>
+              <div class="gp-home-search-specs">
+                <article class="gp-home-search-spec">
+                  <h3 class="gp-home-search-spec__title">Compare before you decide</h3>
+                  <p class="gp-home-search-spec__text">View profiles, availability, and details so you can choose the best fit with confidence.</p>
+                </article>
+                <article class="gp-home-search-spec">
+                  <h3 class="gp-home-search-spec__title">Contact with confidence</h3>
+                  <p class="gp-home-search-spec__text">Reach out directly to providers that match your needs without guesswork.</p>
+                </article>
+              </div>
             </div>
           </div>
         </div>
@@ -96,16 +98,17 @@
         data-gp-home-story
         aria-labelledby="gp-home-story-title"
       >
-        <div class="container gp-home-story__inner">
-          <div class="gp-home-story__content" id="gp-home-story-region" aria-live="polite">
+        <div class="gp-home-container">
+          <div class="gp-home-story__inner">
+            <div class="gp-home-story__content" id="gp-home-story-region" aria-live="polite">
             <span class="gp-home-story__eyebrow">Why use GetPro</span>
             <h2 id="gp-home-story-title" class="gp-home-story__title">Find the right local pro</h2>
             <p class="gp-home-story__text">
               Search by service and city to discover relevant providers near you and contact the best fit faster.
             </p>
-          </div>
+            </div>
 
-          <div class="gp-home-story__visual" aria-hidden="true">
+            <div class="gp-home-story__visual" aria-hidden="true">
             <div class="gp-home-story-panel is-active" data-story-panel="0" aria-hidden="false">
               <div class="gp-home-story-mock gp-home-story-mock--list">
                 <div class="gp-home-story-mock__label">Near you</div>
@@ -133,63 +136,68 @@
                 <div class="gp-home-story-mock__bar"><span></span></div>
               </div>
             </div>
-          </div>
+            </div>
 
-          <div class="gp-home-story__dots" role="group" aria-label="Story slides">
+            <div class="gp-home-story__dots" role="group" aria-label="Story slides">
             <button type="button" class="gp-home-story__dot is-active" data-story-dot="0" aria-label="Slide 1 of 3" aria-current="true"></button>
             <button type="button" class="gp-home-story__dot" data-story-dot="1" aria-label="Slide 2 of 3"></button>
             <button type="button" class="gp-home-story__dot" data-story-dot="2" aria-label="Slide 3 of 3"></button>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- Platform accomplishments -->
       <section class="gp-home-metrics" aria-labelledby="gp-home-metrics-title">
-        <div class="container gp-home-metrics__inner">
-          <header class="gp-home-metrics__head">
-            <span class="gp-home-metrics__eyebrow">Platform growth</span>
-            <h2 id="gp-home-metrics-title" class="gp-home-metrics__title">Built to help customers and providers connect</h2>
-          </header>
+        <div class="gp-home-container">
+          <div class="gp-home-metrics__inner">
+            <header class="gp-home-metrics__head">
+              <span class="gp-home-metrics__eyebrow">Platform growth</span>
+              <h2 id="gp-home-metrics-title" class="gp-home-metrics__title">Built to help customers and providers connect</h2>
+            </header>
 
-          <div class="gp-home-metrics__grid">
-            <article class="gp-home-metric-circle">
-              <div class="gp-home-metric-circle__ring">
-                <div class="gp-home-metric-circle__value">2000+</div>
-              </div>
-              <div class="gp-home-metric-circle__label">Deals</div>
-            </article>
-            <article class="gp-home-metric-circle">
-              <div class="gp-home-metric-circle__ring">
-                <div class="gp-home-metric-circle__value">300+</div>
-              </div>
-              <div class="gp-home-metric-circle__label">Service providers</div>
-            </article>
-            <article class="gp-home-metric-circle">
-              <div class="gp-home-metric-circle__ring">
-                <div class="gp-home-metric-circle__value">10+</div>
-              </div>
-              <div class="gp-home-metric-circle__label">Locations in Zambia</div>
-            </article>
-            <article class="gp-home-metric-circle">
-              <div class="gp-home-metric-circle__ring">
-                <div class="gp-home-metric-circle__value">4.3</div>
-              </div>
-              <div class="gp-home-metric-circle__label">Service rating</div>
-            </article>
+            <div class="gp-home-metrics__grid">
+              <article class="gp-home-metric-circle">
+                <div class="gp-home-metric-circle__ring">
+                  <div class="gp-home-metric-circle__value">2000+</div>
+                </div>
+                <div class="gp-home-metric-circle__label">Deals</div>
+              </article>
+              <article class="gp-home-metric-circle">
+                <div class="gp-home-metric-circle__ring">
+                  <div class="gp-home-metric-circle__value">300+</div>
+                </div>
+                <div class="gp-home-metric-circle__label">Service providers</div>
+              </article>
+              <article class="gp-home-metric-circle">
+                <div class="gp-home-metric-circle__ring">
+                  <div class="gp-home-metric-circle__value">10+</div>
+                </div>
+                <div class="gp-home-metric-circle__label">Locations in Zambia</div>
+              </article>
+              <article class="gp-home-metric-circle">
+                <div class="gp-home-metric-circle__ring">
+                  <div class="gp-home-metric-circle__value">4.3</div>
+                </div>
+                <div class="gp-home-metric-circle__label">Service rating</div>
+              </article>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- Service provider CTA -->
       <section class="gp-home-provider" aria-labelledby="gp-home-provider-title">
-        <div class="container gp-home-provider__inner">
-          <div class="gp-home-section gp-home-section--split">
-            <header class="gp-home-section-head">
-              <h2 id="gp-home-provider-title" class="gp-home-section-title">Are you a service provider?</h2>
-              <p class="gp-home-section-subtitle">Get discovered by customers searching in your city.</p>
-            </header>
-            <div class="gp-home-provider__actions">
-              <a class="btn btn--secondary" href="https://getproapp.org/join" target="_blank" rel="noopener noreferrer">Join as a provider</a>
+        <div class="gp-home-container">
+          <div class="gp-home-provider__inner">
+            <div class="gp-home-section gp-home-section--split">
+              <header class="gp-home-section-head">
+                <h2 id="gp-home-provider-title" class="gp-home-section-title">Are you a service provider?</h2>
+                <p class="gp-home-section-subtitle">Get discovered by customers searching in your city.</p>
+              </header>
+              <div class="gp-home-provider__actions">
+                <a class="btn btn--secondary" href="https://getproapp.org/join" target="_blank" rel="noopener noreferrer">Join as a provider</a>
+              </div>
             </div>
           </div>
         </div>
