@@ -9958,6 +9958,7 @@ body[class*="tenant-"] {
   --gp-space-lg: 40px;
   --gp-space-xl: 64px;
   --gp-space-xxl: 80px;
+  --gp-home-story-overlap: 56px;
 
   overflow-x: clip;
   background: var(--gp-hp-bg);
@@ -10015,7 +10016,12 @@ body.home-page .app-top-app-bar__tagline {
   align-items: center;
 }
 
-/* ---------- HERO (search + spec cards) ---------- */
+/* ---------- HERO + story top stack (search overlaps story) ---------- */
+
+.gp-home .gp-home-top-stack {
+  position: relative;
+  z-index: 0;
+}
 
 .gp-home .gp-home-hero {
   padding: 0;
@@ -10023,19 +10029,20 @@ body.home-page .app-top-app-bar__tagline {
 }
 
 .gp-home .gp-home-hero__top {
-  padding: calc(var(--app-top-app-bar-height, 56px) + 56px) 0 48px;
+  padding: calc(var(--app-top-app-bar-height, 56px) + 56px) 0 0;
 }
 
 .gp-home .gp-home-hero__search-shell {
   position: relative;
-  z-index: 3;
+  z-index: 5;
   width: 100%;
   min-width: 0;
+  margin-bottom: calc(-1 * var(--gp-home-story-overlap));
 }
 
 @media (max-width: 767px) {
   .gp-home .gp-home-hero__top {
-    padding: calc(var(--app-top-app-bar-height, 56px) + 32px) 0 40px;
+    padding: calc(var(--app-top-app-bar-height, 56px) + 32px) 0 0;
   }
 
   .gp-home .gp-home-story__visual {
@@ -10048,19 +10055,21 @@ body.home-page .app-top-app-bar__tagline {
 }
 
 @media (min-width: 768px) {
+  .gp-home {
+    --gp-home-story-overlap: 80px;
+  }
+
   .gp-home .gp-home-hero__top {
-    padding: calc(var(--app-top-app-bar-height, 56px) + 56px) 0 56px;
+    padding: calc(var(--app-top-app-bar-height, 56px) + 56px) 0 0;
   }
 
   .gp-home .gp-home-hero__search-shell {
-    position: relative;
-    z-index: 5;
     width: 100%;
   }
 
   .gp-home .gp-home-search {
     position: relative;
-    z-index: 5;
+    z-index: 6;
   }
 }
 
@@ -10137,7 +10146,7 @@ body.home-page .app-top-app-bar__tagline {
 /* Search card — centerpiece */
 .gp-home .gp-home-search {
   position: relative;
-  z-index: 1;
+  z-index: 6;
   width: 100%;
   max-width: none;
   margin: 0;
@@ -10296,8 +10305,11 @@ body.home-page .app-top-app-bar__tagline {
 
 /* ---------- Auto-advancing story (top half) ---------- */
 .gp-home .gp-home-story {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  padding: 64px 0;
+  padding: calc(40px + var(--gp-home-story-overlap)) 0 64px;
+  margin-top: 0;
   transition: background-color 0.45s ease;
 }
 
@@ -10625,8 +10637,9 @@ body.home-page .app-top-app-bar__tagline {
 
 .gp-home .gp-home-story__dots {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   grid-column: 1 / -1;
 }
 

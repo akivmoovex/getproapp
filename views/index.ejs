@@ -65,6 +65,7 @@
     <% } %>
 
     <main class="gp-home" role="main">
+      <div class="gp-home-top-stack">
       <section class="gp-home-hero" aria-labelledby="gp-home-hero-title">
         <div class="gp-home-container">
           <h1 id="gp-home-hero-title" class="visually-hidden">GetPro — professional directory</h1>
@@ -126,28 +127,7 @@
                 <div class="gp-home-story-mock__bar"><span></span></div>
               </div>
             </div>
-            </div>
-
-            <div class="gp-home-story__dots" role="group" aria-label="Story slides">
-            <button type="button" class="gp-home-story__dot is-active" data-story-dot="0" aria-label="Slide 1 of 3" aria-current="true"></button>
-            <button type="button" class="gp-home-story__dot" data-story-dot="1" aria-label="Slide 2 of 3"></button>
-            <button type="button" class="gp-home-story__dot" data-story-dot="2" aria-label="Slide 3 of 3"></button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="gp-home-story gp-home-story--t4" aria-labelledby="gp-home-story-t4-title">
-        <div class="gp-home-container">
-          <div class="gp-home-story__inner">
-            <div class="gp-home-story__content">
-              <span class="gp-home-story__eyebrow">Why use GetPro</span>
-              <h2 id="gp-home-story-t4-title" class="gp-home-story__title">Compare before you decide</h2>
-              <p class="gp-home-story__text">
-                View profiles, availability, and details so you can choose the best fit with confidence.
-              </p>
-            </div>
-            <div class="gp-home-story__visual" aria-hidden="true">
+            <div class="gp-home-story-panel" data-story-panel="3" aria-hidden="true">
               <div class="gp-home-story-mock gp-home-story-mock--compare-cards">
                 <div class="gp-home-story-mock__label">Side by side</div>
                 <div class="gp-home-story-mock__compare-grid">
@@ -162,21 +142,7 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="gp-home-story gp-home-story--t5" aria-labelledby="gp-home-story-t5-title">
-        <div class="gp-home-container">
-          <div class="gp-home-story__inner">
-            <div class="gp-home-story__content">
-              <span class="gp-home-story__eyebrow">Why use GetPro</span>
-              <h2 id="gp-home-story-t5-title" class="gp-home-story__title">Contact with confidence</h2>
-              <p class="gp-home-story__text">
-                Reach out directly to providers that match your needs without guesswork.
-              </p>
-            </div>
-            <div class="gp-home-story__visual" aria-hidden="true">
+            <div class="gp-home-story-panel" data-story-panel="4" aria-hidden="true">
               <div class="gp-home-story-mock gp-home-story-mock--contact-preview">
                 <div class="gp-home-story-mock__contact-row">
                   <span class="gp-home-story-mock__contact-avatar" aria-hidden="true"></span>
@@ -192,9 +158,19 @@
                 <div class="gp-home-story-mock__contact-pill">Message</div>
               </div>
             </div>
+            </div>
+
+            <div class="gp-home-story__dots" role="group" aria-label="Story slides">
+            <button type="button" class="gp-home-story__dot is-active" data-story-dot="0" aria-label="Slide 1 of 5" aria-current="true"></button>
+            <button type="button" class="gp-home-story__dot" data-story-dot="1" aria-label="Slide 2 of 5"></button>
+            <button type="button" class="gp-home-story__dot" data-story-dot="2" aria-label="Slide 3 of 5"></button>
+            <button type="button" class="gp-home-story__dot" data-story-dot="3" aria-label="Slide 4 of 5"></button>
+            <button type="button" class="gp-home-story__dot" data-story-dot="4" aria-label="Slide 5 of 5"></button>
+            </div>
           </div>
         </div>
       </section>
+      </div>
 
       <!-- Platform accomplishments -->
       <section class="gp-home-metrics" aria-labelledby="gp-home-metrics-title">
@@ -282,6 +258,16 @@
       theme: 3,
       title: 'Build an online presence',
       text: 'Service providers can create a stronger presence, appear in more searches, and be discovered by more customers.'
+    },
+    {
+      theme: 4,
+      title: 'Compare before you decide',
+      text: 'View profiles, availability, and details so you can choose the best fit with confidence.'
+    },
+    {
+      theme: 5,
+      title: 'Contact with confidence',
+      text: 'Reach out directly to providers that match your needs without guesswork.'
     }
   ];
 
@@ -298,7 +284,13 @@
     var s = slides[i];
     if (titleEl) titleEl.textContent = s.title;
     if (textEl) textEl.textContent = s.text;
-    root.classList.remove('gp-home-story--t1', 'gp-home-story--t2', 'gp-home-story--t3');
+    root.classList.remove(
+      'gp-home-story--t1',
+      'gp-home-story--t2',
+      'gp-home-story--t3',
+      'gp-home-story--t4',
+      'gp-home-story--t5'
+    );
     root.classList.add('gp-home-story--t' + s.theme);
 
     panels.forEach(function (p, idx) {
