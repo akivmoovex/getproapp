@@ -5435,6 +5435,19 @@ textarea {
   border-color: transparent;
 }
 
+.wf-home-nav-btn--my-getpro .wf-home-nav-btn__text {
+  display: block;
+}
+
+.wf-home-nav-btn--my-getpro .wf-home-nav-btn__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
 /* NOTE: Homepage hero now uses `.gp-home-*` selectors in `views/index.ejs`. */
 
 .pro-home-search-field {
@@ -10308,40 +10321,44 @@ body.home-page .app-top-app-bar__tagline {
   position: relative;
   z-index: 1;
   width: 100%;
+  min-height: 420px;
+  display: flex;
+  align-items: center;
   padding: calc(40px + var(--gp-home-story-overlap)) 0 64px;
   margin-top: 0;
-  transition: background-color 0.45s ease;
+  color: #fff;
+  transition: background-color 0.4s ease;
 }
 
-.gp-home .gp-home-story--t1 {
+.gp-home .gp-home-story[data-story="t1"] {
+  background: #f97316;
+}
+
+.gp-home .gp-home-story[data-story="t2"] {
   background: #ea580c;
-  color: #fff;
 }
 
-.gp-home .gp-home-story--t2 {
-  background: #b45309;
-  color: #fff;
+.gp-home .gp-home-story[data-story="t3"] {
+  background: #dc2626;
 }
 
-.gp-home .gp-home-story--t3 {
-  background: #5b21b6;
-  color: #fff;
+.gp-home .gp-home-story[data-story="t4"] {
+  background: #b91c1c;
 }
 
-.gp-home .gp-home-story--t4 {
-  background: #0f766e;
-  color: #fff;
+.gp-home .gp-home-story[data-story="t5"] {
+  background: #7c3aed;
 }
 
-.gp-home .gp-home-story--t5 {
-  background: #3730a3;
-  color: #fff;
+.gp-home .gp-home-story__frame {
+  width: 100%;
+  min-width: 0;
 }
 
 .gp-home .gp-home-story__inner {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 28px;
+  gap: 20px;
   align-items: center;
   width: 100%;
   min-width: 0;
@@ -10366,39 +10383,50 @@ body.home-page .app-top-app-bar__tagline {
   color: #fff;
 }
 
-.gp-home .gp-home-story__text {
+.gp-home .gp-home-story__desc {
   margin: 14px 0 0;
   font-size: 16px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.92);
-  max-width: 38ch;
+  color: rgba(255, 255, 255, 0.94);
+  max-width: 40ch;
 }
 
 .gp-home .gp-home-story__visual {
   position: relative;
-  min-height: 200px;
+  min-height: 280px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   min-width: 0;
+}
+
+.gp-home .gp-home-story__visual > * {
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  background: #111827;
+  box-sizing: border-box;
 }
 
 .gp-home .gp-home-story-panel {
   display: none;
   width: 100%;
-  max-width: none;
+  max-width: 100%;
   margin: 0;
+  padding: 14px;
+  min-height: 260px;
 }
 
 .gp-home .gp-home-story-panel.is-active {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   animation: gp-home-story-fade 0.4s ease;
 }
 
 @keyframes gp-home-story-fade {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
 
   to {
@@ -10413,16 +10441,35 @@ body.home-page .app-top-app-bar__tagline {
   box-sizing: border-box;
   background: #fff;
   color: #111827;
-  border-radius: 18px;
+  border-radius: 16px;
   padding: 16px 18px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.22s ease;
 }
 
 .gp-home .gp-home-story-mock:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+}
+
+.gp-home .gp-home-story-mock--gallery .gp-home-story-mock__gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gp-home .gp-home-story-mock__gallery-item {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
+  border: 1px solid #e5e7eb;
+}
+
+.gp-home .gp-home-story-mock__gallery-caption {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6b7280;
 }
 
 .gp-home .gp-home-story-mock--compare-cards .gp-home-story-mock__compare-grid {
@@ -10665,6 +10712,10 @@ body.home-page .app-top-app-bar__tagline {
 }
 
 @media (min-width: 768px) {
+  .gp-home .gp-home-story {
+    min-height: 480px;
+  }
+
   .gp-home .gp-home-story__inner {
     grid-template-columns: 1fr 1fr;
     gap: 48px;
@@ -10678,6 +10729,11 @@ body.home-page .app-top-app-bar__tagline {
   .gp-home .gp-home-story__title {
     font-size: 36px;
     line-height: 1.12;
+  }
+
+  .gp-home .gp-home-story__visual {
+    min-height: 300px;
+    justify-content: flex-end;
   }
 }
 
