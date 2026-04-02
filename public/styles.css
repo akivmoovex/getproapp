@@ -5637,64 +5637,70 @@ textarea {
   background: var(--btn-primary-hover);
 }
 
-/* Web (≥621px): pill surfaces + same dimensions as home hero; embedded directory (e.g. ui_demo) matches */
+/* Web (≥621px): pill surfaces + same control height/radius as homepage hero search (48px) */
 @media (min-width: 621px) {
   .pro-directory-toolbar .pro-search-form--directory .pro-ac,
   .pro-search-form--directory .pro-ac {
-    border-radius: var(--radius-pill);
+    border-radius: 17px;
     box-shadow: var(--card-shadow-sm);
     background: var(--surface);
     border: var(--border-width-hairline) solid var(--border-strong);
+    overflow: visible;
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-ac-input,
   .pro-search-form--directory .pro-ac-input {
-    border-radius: var(--radius-pill);
+    border-radius: 17px;
     box-sizing: border-box;
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-ac-input,
   .pro-search-form--directory .pro-ac-input {
-    min-height: 40px;
-    padding: 0 var(--space-1);
+    min-height: 48px;
+    height: 48px;
+    padding: 10px var(--space-2);
     box-sizing: border-box;
-    font-size: var(--space-1-625);
-    line-height: 1.4;
+    font-size: 16px;
+    line-height: 1.35;
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-ac-watermark,
   .pro-search-form--directory .pro-ac-watermark {
-    font-size: var(--space-1-625);
+    font-size: 16px;
     line-height: 1.35;
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-home-field-label,
   .pro-search-form--directory .pro-home-field-label {
-    font-size: var(--space-1-375);
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-home-search-submit,
   .pro-search-form--directory .pro-home-search-submit {
-    min-height: 40px;
-    padding: 0 var(--space-2);
+    min-height: 48px;
+    height: 48px;
+    padding: 0 var(--space-2-5);
     font-size: var(--space-1-625);
     line-height: 1.2;
     box-sizing: border-box;
+    border-radius: 999px;
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-home-search-submit.btn,
   .pro-search-form--directory .pro-home-search-submit.btn {
     padding-block: 0;
-    padding-inline: var(--space-2);
-    min-height: 40px;
+    padding-inline: var(--space-2-5);
+    min-height: 48px;
+    height: 48px;
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-home-search-icon,
   .pro-search-form--directory .pro-home-search-icon {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
   }
 }
 
@@ -5705,7 +5711,7 @@ textarea {
   }
 }
 
-/* Directory / category results — mobile: Material outlined-style fields (48dp touch), not compact web pill row */
+/* Directory / category results — mobile: stacked fields, touch-friendly, dropdown not clipped */
 @media (max-width: 620px) {
   .pro-directory-toolbar .pro-search-form--directory {
     gap: var(--space-1-5);
@@ -5717,6 +5723,7 @@ textarea {
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    gap: var(--space-1-5);
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-search-form__fields {
@@ -5724,10 +5731,19 @@ textarea {
     flex: 1 1 auto;
     width: 100%;
     flex-direction: column;
+    gap: var(--space-1-25);
+    min-height: 0;
+  }
+
+  .pro-directory-toolbar .pro-search-form--directory .pro-search-form__field {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex: 0 0 auto;
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-ac {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     width: 100%;
     min-width: 0;
     max-width: 100%;
@@ -5735,20 +5751,24 @@ textarea {
     box-shadow: none;
     background: var(--surface);
     border: var(--border-width-hairline) solid var(--border-strong);
+    overflow: visible;
+    position: relative;
+    z-index: 1;
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-ac-input {
     border-radius: var(--border-radius-md);
-    padding: var(--space-1-75) var(--space-2);
-    font-size: var(--space-1-875);
+    padding: var(--space-1-5) var(--space-2);
+    font-size: 16px;
     min-height: var(--space-touch);
-    line-height: 1.25;
+    line-height: 1.35;
     box-sizing: border-box;
+    width: 100%;
   }
 
   .pro-directory-toolbar .pro-search-form--directory .pro-ac-watermark {
-    font-size: var(--space-1-875);
-    line-height: 1.25;
+    font-size: 16px;
+    line-height: 1.35;
     left: var(--space-2);
     right: var(--space-2);
   }
@@ -5757,6 +5777,8 @@ textarea {
     font-size: var(--space-1-5);
     font-weight: 700;
     letter-spacing: 0.02em;
+    text-transform: none;
+    margin-bottom: 0;
   }
 
   .pro-directory-toolbar .pro-search-form__toolbar-row .pro-home-search-submit {
@@ -5767,6 +5789,7 @@ textarea {
     padding: var(--space-1-5) var(--space-2-75);
     font-size: var(--typo-size-body-comfort);
     line-height: 1.3;
+    margin-top: var(--space-0-5);
   }
 
   .pro-directory-toolbar .pro-search-form__toolbar-row .pro-home-search-submit.btn {
@@ -5778,6 +5801,11 @@ textarea {
   .pro-directory-toolbar .pro-search-form__toolbar-row .pro-home-search-icon {
     width: 22px;
     height: 22px;
+  }
+
+  .pro-directory-toolbar .pro-directory-toolbar__meta {
+    margin-top: var(--space-1);
+    padding-top: var(--space-1-25);
   }
 }
 
@@ -5826,13 +5854,12 @@ textarea {
 }
 
 /**
- * Top search + intro on /directory and /category: same horizontal cap as the homepage hero search
- * (.pro-home-hero-panel uses min(--bp-xl-2, …) ≈ 920px). Full .container stays wider for listing cards.
+ * Top search + results meta: span the same horizontal bounds as listing cards (full .container width).
  */
 .pro-directory-top-band {
   width: 100%;
-  max-width: min(100%, var(--bp-xl-2));
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
   box-sizing: border-box;
   min-width: 0;
 }
@@ -5870,7 +5897,12 @@ textarea {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  overflow: visible;
   scroll-margin-top: calc(52px + env(safe-area-inset-top, 0px));
+}
+
+.pro-directory-toolbar .pro-search-form--directory .pro-ac:focus-within {
+  z-index: 5;
 }
 
 /* Shared search form inside results toolbar (see partials/pro_search_form.ejs) */
@@ -8794,8 +8826,8 @@ body[class*="tenant-"] {
 }
 
 .container.directory-page {
-  padding-inline: max(var(--space-1-5), env(safe-area-inset-left, 0px))
-    max(var(--space-1-5), env(safe-area-inset-right, 0px));
+  padding-left: max(var(--admin-main-pad-x), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--admin-main-pad-x), env(safe-area-inset-right, 0px));
 }
 
 .pro-directory-main {
@@ -10230,7 +10262,7 @@ body.home-page .app-top-app-bar {
 
 .gp-home .gp-home-search .pro-home-dual-search .pro-ac {
   flex: 0 1 auto;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: none;
   border-color: var(--gp-hp-border);
 }

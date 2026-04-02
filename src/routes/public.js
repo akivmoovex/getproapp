@@ -227,6 +227,7 @@ module.exports = function publicRoutes({ db }) {
       contentFaqs: cached.contentFaqs,
       ...tenantLocals(req),
       ...platformSupport(req),
+      showRegionPickerUi: false,
     });
   });
 

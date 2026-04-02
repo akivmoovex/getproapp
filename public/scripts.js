@@ -109,6 +109,7 @@ function initRegionPicker() {
 
 /** On global tenant home, search UI is not regional — open the region picker instead. */
 function initGlobalTenantSearchOpensRegion() {
+  if (!document.getElementById("wf-region-open")) return;
   const c = getRegionSheetControls();
   if (!c) return;
   const { setOpen } = c;

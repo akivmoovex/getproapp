@@ -18,7 +18,7 @@
   </head>
   <body class="home-page home-page--launcher wf-home-layout <%= tenant.themeClass %>" data-screen-role="launcher">
     <div class="app-layout">
-      <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], renderRegionPickerTrigger: true }) %>
+      <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
       <%- include('partials/app_navigation', { tenantUrlPrefix }) %>
 
       <div class="app-layout__main">
