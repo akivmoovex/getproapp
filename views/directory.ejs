@@ -18,13 +18,14 @@
       <%- include('partials/app_navigation', { tenantUrlPrefix }) %>
 
       <div class="app-layout__main">
-        <div class="container directory-page directory-page-toolbar">
+        <div class="gp-home-container directory-page directory-page-toolbar">
       <% var activeCatLabel = ''; %>
       <% if (typeof selectedCategory !== 'undefined' && selectedCategory) { %>
         <% (categories || []).forEach(function(c) { if (c.slug === selectedCategory) activeCatLabel = c.name; }); %>
       <% } %>
       <div class="pro-directory-top-band">
         <div class="pro-directory-toolbar">
+          <div class="gp-home-search gp-home-search--directory gp-home-search-card" aria-label="Directory search">
           <%- include('partials/pro_search_form', {
             variant: 'directory',
             tenantUrlPrefix,
@@ -34,6 +35,7 @@
             selectedCategory: typeof selectedCategory !== 'undefined' ? selectedCategory : '',
             categories: typeof categories !== 'undefined' ? categories : [],
           }) %>
+          </div>
           <div class="pro-directory-toolbar__meta" aria-live="polite">
             <span class="pro-directory-toolbar__count">
               <strong><%= (companies || []).length %></strong>

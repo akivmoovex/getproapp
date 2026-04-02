@@ -22,27 +22,51 @@
     };
     document.body.appendChild(s);
   }
-  function targetInSearchForm(el) {
-    return (
-      el &&
-      el.classList &&
-      el.classList.contains("pro-ac-input") &&
-      el.closest("form.pro-home-dual-search, form.pro-search--directory")
-    );
+  /** Load autocomplete when the user clearly interacts with a search combobox (not only if event.target is the raw input). */
+  function shouldBootAutocomplete(el) {
+    if (!el || !el.closest) return false;
+    var form = el.closest("form.pro-home-dual-search, form.pro-search--directory");
+    if (!form) return false;
+    if (el.closest(".pro-ac")) return true;
+    if (el.classList && el.classList.contains("pro-ac-input")) return true;
+    if (el.tagName === "LABEL") {
+      var fid = el.getAttribute("for");
+      if (fid) {
+        var byId = document.getElementById(fid);
+        if (byId && byId.classList && byId.classList.contains("pro-ac-input") && form.contains(byId)) return true;
+      }
+    }
+    return false;
   }
   document.addEventListener(
     "focusin",
     function (e) {
-      if (targetInSearchForm(e.target)) boot();
+      if (shouldBootAutocomplete(e.target)) boot();
     },
     true
   );
   document.addEventListener(
     "touchstart",
     function (e) {
-      if (targetInSearchForm(e.target)) boot();
+      if (shouldBootAutocomplete(e.target)) boot();
     },
     { passive: true, capture: true }
+  );
+  document.addEventListener(
+    "pointerdown",
+    function (e) {
+      if (shouldBootAutocomplete(e.target)) boot();
+    },
+    true
+  );
+  document.addEventListener(
+    "input",
+    function (e) {
+      if (e.target && e.target.classList && e.target.classList.contains("pro-ac-input") && e.target.closest("form.pro-home-dual-search, form.pro-search--directory")) {
+        boot();
+      }
+    },
+    true
   );
   // Desktop/tablet: prefetch autocomplete as search enters viewport / idle.
   // Mobile: wait for touch/focus to avoid adding TBT on initial load.

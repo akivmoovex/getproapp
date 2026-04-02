@@ -18,9 +18,10 @@
       <%- include('partials/app_navigation', { tenantUrlPrefix }) %>
 
       <div class="app-layout__main">
-        <div class="container directory-page directory-page-toolbar">
+        <div class="gp-home-container directory-page directory-page-toolbar">
       <div class="pro-directory-top-band">
         <div class="pro-directory-toolbar pro-directory-toolbar--category" role="region" aria-label="Category browse">
+          <div class="gp-home-search gp-home-search--directory gp-home-search-card" aria-label="Category search">
           <%- include('partials/pro_search_form', {
             variant: 'directory',
             tenantUrlPrefix,
@@ -33,6 +34,7 @@
             categories: typeof categories !== 'undefined' ? categories : [],
             ariaLabel: 'Search by category, service, and city',
           }) %>
+          </div>
           <div class="pro-directory-toolbar__meta" aria-live="polite">
             <span class="pro-directory-toolbar__count">
               <strong><%= (companies || []).length %></strong>
