@@ -116,8 +116,8 @@ module.exports = function publicRoutes({ db }) {
   async function renderCompanyPage(req, res, company) {
     const locals = await buildCompanyPageLocals(req, db, company);
     const canonicalUrl = canonicalUrlForTenant(req, `/company/${company.id}`);
-    const seoTitle = `${company.name} | ${locals.category ? locals.category.name + " · " : ""}GetPro`;
-    const seoDescription = `${(company.headline || company.name || "").replace(/"/g, "")} · Verified directory listing on GetPro.`;
+    const seoTitle = `${company.name} | ${locals.category ? locals.category.name + " · " : ""}Pro-online`;
+    const seoDescription = `${(company.headline || company.name || "").replace(/"/g, "")} · Verified directory listing on Pro-online.`;
     const lb = {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
@@ -203,13 +203,13 @@ module.exports = function publicRoutes({ db }) {
     }
 
     const canonicalUrl = canonicalUrlForTenant(req, "/");
-    const seoTitle = `${req.tenant.name || "GetPro"} · Trusted professional directory`;
+    const seoTitle = `${req.tenant.name || "Pro-online"} · Trusted professional directory`;
     const seoDescription =
       "Find trusted professionals near you. Search by service and city, compare profiles, and contact the right business quickly.";
     const orgJsonLd = {
       "@context": "https://schema.org",
       "@type": "Organization",
-      name: req.tenant.name || "GetPro",
+      name: req.tenant.name || "Pro-online",
       url: canonicalUrl,
     };
 
@@ -304,16 +304,16 @@ module.exports = function publicRoutes({ db }) {
     companies = attachReviewStatsToCompanies(db, companies);
 
     const canonicalUrl = canonicalUrlForTenant(req, "/directory");
-    let seoTitle = `Directory | ${req.tenant.name || "GetPro"}`;
-    let seoDescription = `Browse verified professionals in ${req.tenant.name || "GetPro"}. Search by service and city or explore categories.`;
+    let seoTitle = `Directory | ${req.tenant.name || "Pro-online"}`;
+    let seoDescription = `Browse verified professionals in ${req.tenant.name || "Pro-online"}. Search by service and city or explore categories.`;
     if (selected) {
       const catRow = (categories || []).find((c) => c.slug === selected);
       if (catRow) {
-        seoTitle = `${catRow.name} · Directory | ${req.tenant.name || "GetPro"}`;
+        seoTitle = `${catRow.name} · Directory | ${req.tenant.name || "Pro-online"}`;
         seoDescription = `Find ${String(catRow.name).toLowerCase()} and related professionals. Compare profiles and contact businesses in the directory.`;
       }
     } else if (searchQ || cityQ) {
-      seoTitle = `Search results · Directory | ${req.tenant.name || "GetPro"}`;
+      seoTitle = `Search results · Directory | ${req.tenant.name || "Pro-online"}`;
       seoDescription = `Directory search for services and professionals${cityQ ? ` in ${cityQ}` : ""}.`;
     }
 
@@ -371,8 +371,8 @@ module.exports = function publicRoutes({ db }) {
       .all(tenantId);
 
     const canonicalUrl = canonicalUrlForTenant(req, `/category/${category.slug}`);
-    const seoTitle = `${category.name} · Directory | ${req.tenant.name || "GetPro"}`;
-    const seoDescription = `Browse ${category.name} professionals — verified listings, profiles, and direct contact on GetPro.`;
+    const seoTitle = `${category.name} · Directory | ${req.tenant.name || "Pro-online"}`;
+    const seoDescription = `Browse ${category.name} professionals — verified listings, profiles, and direct contact on Pro-online.`;
 
     return res.render("category", {
       category,
@@ -437,9 +437,9 @@ module.exports = function publicRoutes({ db }) {
       baseDomain: process.env.BASE_DOMAIN || "",
       joinTenantCities,
       joinCityWatermarkRotate,
-      seoTitle: `List your business | ${req.tenant.name || "GetPro"}`,
+      seoTitle: `List your business | ${req.tenant.name || "Pro-online"}`,
       seoDescription:
-        "Create a verified profile on GetPro so customers can find your services, view your details, and send lead requests.",
+        "Create a verified profile on Pro-online so customers can find your services, view your details, and send lead requests.",
       canonicalUrl,
       ogUrl: canonicalUrl,
       ...tenantLocals(req),
@@ -452,8 +452,8 @@ module.exports = function publicRoutes({ db }) {
   router.get("/ui-demo", (req, res) => {
     const canonicalUrl = canonicalUrlForTenant(req, "/ui-demo");
     return res.render("ui_demo", {
-      seoTitle: `UI Demo · ${req.tenant.name || "GetPro"}`,
-      seoDescription: "Visual reference for the GetPro web component system (Buttons / Cards / Inputs).",
+      seoTitle: `UI Demo · ${req.tenant.name || "Pro-online"}`,
+      seoDescription: "Visual reference for the Pro-online web component system (Buttons / Cards / Inputs).",
       canonicalUrl,
       ogUrl: canonicalUrl,
       ...tenantLocals(req),
@@ -476,8 +476,8 @@ module.exports = function publicRoutes({ db }) {
     const items = listPublishedByKind(db, tenantId, kind);
     const seg = kind === "article" ? "articles" : kind === "guide" ? "guides" : "answers";
     const canonicalUrl = canonicalUrlForTenant(req, `/${seg}`);
-    const seoTitle = `${label} | ${req.tenant.name || "GetPro"}`;
-    const seoDescription = `Browse ${label.toLowerCase()} on GetPro — guides and answers for customers and professionals.`;
+    const seoTitle = `${label} | ${req.tenant.name || "Pro-online"}`;
+    const seoDescription = `Browse ${label.toLowerCase()} on Pro-online — guides and answers for customers and professionals.`;
     return res.render("content_index_public", {
       kind,
       seg,
@@ -528,7 +528,7 @@ module.exports = function publicRoutes({ db }) {
       "@type": "Article",
       headline: row.title,
       dateModified: row.updated_at,
-      author: { "@type": "Organization", name: req.tenant.name || "GetPro" },
+      author: { "@type": "Organization", name: req.tenant.name || "Pro-online" },
     };
     return res.render("content_article", {
       segment: "articles",
@@ -574,7 +574,7 @@ module.exports = function publicRoutes({ db }) {
       "@type": "Article",
       headline: row.title,
       dateModified: row.updated_at,
-      author: { "@type": "Organization", name: req.tenant.name || "GetPro" },
+      author: { "@type": "Organization", name: req.tenant.name || "Pro-online" },
     };
     return res.render("content_article", {
       segment: "guides",

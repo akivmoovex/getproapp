@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <%- include('partials/seo_meta', {
-      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : (company.name + ' | GetPro'),
-      seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : ((company.headline || company.name || '').replace(/"/g, '') + ' · Verified directory listing on GetPro.'),
+      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : (company.name + ' | Pro-online'),
+      seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : ((company.headline || company.name || '').replace(/"/g, '') + ' · Verified directory listing on Pro-online.'),
       canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
       ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
       ogType: 'website'
@@ -313,7 +313,7 @@
             <% } %>
 
             <div class="pro-company-profile__support">
-              <div class="pro-company-profile__support-title">GetPro support</div>
+              <div class="pro-company-profile__support-title">Pro-online support</div>
               <p class="muted pro-company-profile__support-intro">Questions about the directory? Reach your region’s call center below.</p>
               <div class="pro-company-profile__support-actions" role="group" aria-label="Region call center">
                 <% if (_supPhone && _supTel) { %>

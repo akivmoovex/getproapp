@@ -16,7 +16,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "GetPro — professional directory for self-employed and small businesses",
+  "description": "Pro-online — professional directory for self-employed and small businesses",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^11.10.0",

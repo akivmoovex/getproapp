@@ -4,12 +4,12 @@
   var tn = typeof tenant !== 'undefined' ? tenant : null;
   var slug = tn && tn.slug ? String(tn.slug) : '';
   var showLockup = tn && slug && slug !== 'global';
-  var aria = showLockup && tn.name ? ('GetPro ' + String(tn.name)) : 'GetPro home';
+  var aria = showLockup && tn.name ? ('Pro-online ' + String(tn.name)) : 'Pro-online home';
   var rootClass = v === 'home' ? 'wf-home-topbar-brand' : v === 'join' ? 'join-top-brand' : 'wf-nav-brand';
 %>
 <a href="<%= href %>" class="<%= rootClass %>"<%= v === 'join' ? ' id="join-top-brand"' : '' %> aria-label="<%= aria %>">
   <span class="wf-brand-lockup-root">
-    <span class="wf-brand-lockup-product">GetPro</span>
+    <span class="wf-brand-lockup-product">Pro-online</span>
     <% if (showLockup) { %>
     <span class="wf-brand-lockup-region">
       <span class="wf-brand-lockup-flag" aria-hidden="true"><%= tn.flagEmoji %></span>
