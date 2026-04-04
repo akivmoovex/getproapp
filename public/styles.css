@@ -5665,19 +5665,36 @@ textarea {
   min-width: 0;
 }
 
-.container:has(.hero-grid.pro-directory-layout),
-.gp-home-container:has(.pro-directory-toolbar) {
+.container:has(.hero-grid.pro-directory-layout) {
   min-width: 0;
   max-width: 100%;
   overflow-x: hidden;
   overflow-x: clip;
 }
 
+/* Directory (gp-home-container): desktop uses same max-width/padding as homepage .gp-home-container; width caps only on small screens. */
+.gp-home-container:has(.pro-directory-toolbar) {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .gp-home-container:has(.pro-directory-toolbar) {
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
+  }
+}
+
 .gp-home-container.directory-page {
   min-width: 0;
-  max-width: 100%;
-  overflow-x: hidden;
-  overflow-x: clip;
+}
+
+@media (max-width: 767px) {
+  .gp-home-container.directory-page {
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
+  }
 }
 
 .directory-page-toolbar {
@@ -8658,9 +8675,11 @@ body[class*="tenant-"] {
   overflow-x: clip;
 }
 
-.gp-home-container.directory-page {
-  padding-left: max(var(--admin-main-pad-x), env(safe-area-inset-left, 0px));
-  padding-right: max(var(--admin-main-pad-x), env(safe-area-inset-right, 0px));
+@media (max-width: 767px) {
+  .gp-home-container.directory-page {
+    padding-left: max(var(--admin-main-pad-x), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--admin-main-pad-x), env(safe-area-inset-right, 0px));
+  }
 }
 
 .pro-directory-main {
