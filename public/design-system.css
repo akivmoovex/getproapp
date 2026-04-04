@@ -53,6 +53,19 @@
   --focus-ring-color: color-mix(in srgb, var(--color-focus) 55%, var(--color-text-primary));
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+
+  /* Typography roles (semantic hierarchy → theme --typo-*) */
+  --typo-role-display: var(--typo-display-small-size);
+  --typo-role-display-line: var(--typo-display-small-line);
+  --typo-role-headline: var(--typo-headline-medium-size);
+  --typo-role-headline-line: var(--typo-headline-medium-line);
+  --typo-role-title: var(--typo-title-large-size);
+  --typo-role-title-line: var(--typo-title-large-line);
+  --typo-role-body: var(--typo-body-large-size);
+  --typo-role-body-line: var(--typo-body-large-line);
+  --typo-role-label: var(--typo-label-large-size);
+  --typo-role-caption: var(--typo-body-medium-size);
+  --typo-role-caption-line: var(--typo-body-medium-line);
 }
 
 /**
@@ -61,6 +74,39 @@
 .gp-focus-ring:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
+}
+
+/**
+ * Public content band — same contract as `.gp-home-container` (token-backed).
+ * Prefer `gp-home-container` for hero/directory; use this for new public pages without renaming markup yet.
+ */
+.ds-layout-public {
+  max-width: var(--layout-content-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--layout-gutter-x-sm);
+}
+
+@media (min-width: 768px) {
+  .ds-layout-public {
+    padding-inline: var(--layout-gutter-x-md);
+  }
+}
+
+/**
+ * Shared search field shell (home + directory): comfortable height + pill radius from tokens.
+ */
+.pro-search-form .pro-ac,
+.gp-home-search-card .pro-ac {
+  border-radius: var(--search-field-radius);
+}
+
+.pro-search-form .pro-ac-input,
+.gp-home-search-card .pro-ac-input {
+  border-radius: var(--search-field-radius);
+  min-height: var(--control-height-comfortable);
 }
 
 /**

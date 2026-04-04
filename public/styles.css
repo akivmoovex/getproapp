@@ -258,6 +258,23 @@
   --bp-max-lg: 1100px;
   --bp-max-xl: 1200px;
 
+  /* —— Public layout band (canonical content column; homepage + directory + future public pages) —— */
+  --layout-content-max-width: var(--bp-max-xl);
+  --layout-gutter-x-sm: var(--space-3);
+  --layout-gutter-x-md: var(--space-4);
+  --layout-gutter-x-tight: var(--space-2);
+  --layout-section-gap-y: var(--space-4);
+  --layout-field-stack-gap: var(--space-1-25);
+
+  /* Interactive targets (Material Design touch) */
+  --control-height-comfortable: var(--space-touch);
+  --control-touch-min: 44px;
+
+  /* Search / combobox (shared home + directory) */
+  --search-field-radius: var(--space-2-125);
+  --elevation-autocomplete: var(--elevation-2);
+  --z-index-autocomplete: 50;
+
   /* —— Motion (public surfaces) —— */
   --transition-fast: 150ms;
   --transition-medium: 200ms;
@@ -579,6 +596,19 @@
   --focus-ring-color: color-mix(in srgb, var(--color-focus) 55%, var(--color-text-primary));
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+
+  /* Typography roles (semantic hierarchy → theme --typo-*) */
+  --typo-role-display: var(--typo-display-small-size);
+  --typo-role-display-line: var(--typo-display-small-line);
+  --typo-role-headline: var(--typo-headline-medium-size);
+  --typo-role-headline-line: var(--typo-headline-medium-line);
+  --typo-role-title: var(--typo-title-large-size);
+  --typo-role-title-line: var(--typo-title-large-line);
+  --typo-role-body: var(--typo-body-large-size);
+  --typo-role-body-line: var(--typo-body-large-line);
+  --typo-role-label: var(--typo-label-large-size);
+  --typo-role-caption: var(--typo-body-medium-size);
+  --typo-role-caption-line: var(--typo-body-medium-line);
 }
 
 /**
@@ -587,6 +617,39 @@
 .gp-focus-ring:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
+}
+
+/**
+ * Public content band — same contract as `.gp-home-container` (token-backed).
+ * Prefer `gp-home-container` for hero/directory; use this for new public pages without renaming markup yet.
+ */
+.ds-layout-public {
+  max-width: var(--layout-content-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--layout-gutter-x-sm);
+}
+
+@media (min-width: 768px) {
+  .ds-layout-public {
+    padding-inline: var(--layout-gutter-x-md);
+  }
+}
+
+/**
+ * Shared search field shell (home + directory): comfortable height + pill radius from tokens.
+ */
+.pro-search-form .pro-ac,
+.gp-home-search-card .pro-ac {
+  border-radius: var(--search-field-radius);
+}
+
+.pro-search-form .pro-ac-input,
+.gp-home-search-card .pro-ac-input {
+  border-radius: var(--search-field-radius);
+  min-height: var(--control-height-comfortable);
 }
 
 /**
@@ -5566,20 +5629,25 @@ textarea {
   left: 0;
   right: 0;
   top: calc(100% + var(--space-half));
-  z-index: 50;
+  z-index: var(--z-index-autocomplete);
   margin: 0;
   padding: var(--space-0-75) 0;
   list-style: none;
   max-height: var(--layout-dim-240);
   overflow-y: auto;
-  border-radius: var(--radius);
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-md);
   border: var(--border-width-hairline) solid var(--border-strong);
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: var(--elevation-autocomplete);
 }
 
 .pro-ac-option {
-  padding: var(--space-1-25) var(--space-1-75);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: var(--control-touch-min);
+  padding: var(--space-1) var(--space-1-75);
   font-size: var(--space-1-75);
   cursor: pointer;
   color: var(--text);
@@ -5805,6 +5873,13 @@ textarea {
 
 .pro-directory-toolbar:has(.gp-home-search-card) .pro-directory-toolbar__meta {
   margin-top: var(--space-1);
+}
+
+@media (max-width: 767px) {
+  .pro-directory-toolbar:has(.gp-home-search-card) .pro-directory-toolbar__meta {
+    margin-top: var(--layout-field-stack-gap);
+    padding-top: var(--space-0-75);
+  }
 }
 
 .pro-directory-toolbar .pro-search-form--directory .pro-ac:focus-within {
@@ -9957,17 +10032,18 @@ body.home-page .app-top-app-bar {
 }
 
 /* GLOBAL PAGE CONTAINER */
+/* Canonical public content band — token-backed; same contract as `.ds-layout-public`. */
 .gp-home-container {
-  max-width: 1200px;
+  max-width: var(--layout-content-max-width);
   margin: 0 auto;
-  padding-inline: var(--space-3);
+  padding-inline: var(--layout-gutter-x-sm);
   width: 100%;
   box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
   .gp-home-container {
-    padding-inline: var(--space-4);
+    padding-inline: var(--layout-gutter-x-md);
   }
 }
 
@@ -10062,7 +10138,7 @@ body.home-page .app-top-app-bar {
 
   .gp-home-search-card .pro-home-dual-search .pro-ac-input {
     height: 48px;
-    border-radius: 17px;
+    border-radius: var(--search-field-radius);
     border: 1px solid #e5e7eb;
     background: #ffffff;
     box-shadow: none;
@@ -10168,9 +10244,9 @@ body.home-page .app-top-app-bar {
 
 .gp-home-search-card .pro-home-dual-search .pro-ac,
 .gp-home-search-card .pro-home-dual-search .pro-ac-input {
-  min-height: 48px;
-  height: 48px;
-  border-radius: 17px;
+  min-height: var(--control-height-comfortable);
+  height: var(--control-height-comfortable);
+  border-radius: var(--search-field-radius);
 }
 
 .gp-home-search-card .pro-home-dual-search .pro-ac {
@@ -11082,10 +11158,11 @@ body.home-page .app-top-app-bar {
   max-width: 100%;
 }
 
+/* `overflow: visible` so absolutely positioned autocomplete is not clipped (M3 menus). Page-level `overflow-x: clip` on body still contains stray horizontal bleed. */
 .gp-home-search-card {
   min-width: 0;
   max-width: 100%;
-  overflow-x: clip;
+  overflow: visible;
 }
 
 .gp-home-search-card .pro-home-dual-search,

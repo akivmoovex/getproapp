@@ -38,6 +38,14 @@ Use **semantic** names in new CSS. Prefer `var(--color-*)` / DS aliases over hex
 - **Layout (existing app scale):** `--space-1` … `--space-5` and extended `--space-*` — **8px-based rhythm** used across the codebase. Do not replace wholesale.
 - **DS V1 4px reference scale:** `--gp-ds-space-1` (4px) … `--gp-ds-space-12` (48px) — use for **new** rules when the spec calls for 4/8/12px steps; map to `--space-half`, `--space-1`, etc. when they align.
 
+## Public layout band (v2)
+
+- **`--layout-content-max-width`** — canonical max width for marketing/directory content (maps to `--bp-max-xl`, 1200px).
+- **`--layout-gutter-x-sm` / `--layout-gutter-x-md`** — horizontal padding inside the band below / at or above 768px (24px / 32px). **`.gp-home-container`** and **`.ds-layout-public`** consume these; avoid ad hoc `padding-inline` on the same nodes.
+- **`--layout-field-stack-gap`** — default vertical gap between stacked labels and controls in dense toolbars (e.g. directory meta under search).
+- **`--control-height-comfortable`** (48px) and **`--control-touch-min`** (44px) — Material-aligned touch targets for search inputs and list options.
+- **Search shell:** `--search-field-radius`, `--elevation-autocomplete`, **`--z-index-autocomplete`** — shared home + directory combobox surfaces.
+
 ## Radius
 
 | Token | Typical use |

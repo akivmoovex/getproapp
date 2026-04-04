@@ -248,6 +248,23 @@
   --bp-max-lg: 1100px;
   --bp-max-xl: 1200px;
 
+  /* —— Public layout band (canonical content column; homepage + directory + future public pages) —— */
+  --layout-content-max-width: var(--bp-max-xl);
+  --layout-gutter-x-sm: var(--space-3);
+  --layout-gutter-x-md: var(--space-4);
+  --layout-gutter-x-tight: var(--space-2);
+  --layout-section-gap-y: var(--space-4);
+  --layout-field-stack-gap: var(--space-1-25);
+
+  /* Interactive targets (Material Design touch) */
+  --control-height-comfortable: var(--space-touch);
+  --control-touch-min: 44px;
+
+  /* Search / combobox (shared home + directory) */
+  --search-field-radius: var(--space-2-125);
+  --elevation-autocomplete: var(--elevation-2);
+  --z-index-autocomplete: 50;
+
   /* —— Motion (public surfaces) —— */
   --transition-fast: 150ms;
   --transition-medium: 200ms;
