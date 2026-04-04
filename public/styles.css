@@ -1464,7 +1464,9 @@
 }
 
 .directory-page-toolbar {
-  padding: var(--space-2-5) 0 var(--space-1);
+  /* Block axis only — avoid `padding` shorthand zeroing inline padding on the same node as `.gp-home-container`. */
+  padding-block-start: var(--space-2-5);
+  padding-block-end: var(--space-1);
 }
 
 .directory-search {
@@ -5705,7 +5707,7 @@ textarea {
 }
 
 /**
- * Top search + results meta: span the same horizontal bounds as listing cards (full .container width).
+ * Top search + results meta: full width of `.gp-home-container` (same band as homepage hero).
  */
 .pro-directory-top-band {
   width: 100%;
@@ -5718,6 +5720,60 @@ textarea {
 .pro-directory-top-band .pro-directory-results-helper {
   max-width: none;
   padding-inline: 0;
+}
+
+/* Desktop: directory/category — same inner column as homepage hero (full width of `.gp-home-container` content box; mirrors `.gp-home-hero__search-shell` → card). */
+@media (min-width: 768px) {
+  .gp-home-container.directory-page .pro-directory-top-band,
+  .gp-home-container.directory-page .pro-directory-main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: 0;
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
+
+  .gp-home-container.directory-page .pro-directory-toolbar:has(.gp-home-search-card) {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: 0;
+    box-sizing: border-box;
+  }
+
+  .gp-home-container.directory-page .gp-home-search-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: 0;
+    box-sizing: border-box;
+  }
+
+  .gp-home-container.directory-page .pro-directory-toolbar__meta {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    align-self: stretch;
+    box-sizing: border-box;
+  }
+
+  .gp-home-container.directory-page .pro-directory-results-helper {
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
+
+  .gp-home-container.directory-page .pro-directory-results-wrap,
+  .gp-home-container.directory-page .pro-directory-results {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: 0;
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
 }
 
 /* Directory: compact filter toolbar (replaces sidebar category button list) */
@@ -6054,8 +6110,10 @@ textarea {
 .pro-directory-results-wrap {
   container-type: inline-size;
   container-name: dirlist;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
+  box-sizing: border-box;
 }
 
 .pro-directory-results {
@@ -6082,11 +6140,16 @@ textarea {
 
 .pro-directory-results-helper {
   margin: 0 0 var(--space-1-5);
-  padding: 0 var(--space-0-25);
   font-size: var(--space-1-625);
   line-height: 1.45;
   color: var(--muted);
-  max-width: 48rem;
+}
+
+@media (max-width: 767px) {
+  .pro-directory-results-helper {
+    padding: 0 var(--space-0-25);
+    max-width: 48rem;
+  }
 }
 
 .pro-directory-card {
@@ -9897,16 +9960,14 @@ body.home-page .app-top-app-bar {
 .gp-home-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-inline: var(--space-3);
   width: 100%;
   box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
   .gp-home-container {
-    padding-left: 32px;
-    padding-right: 32px;
+    padding-inline: var(--space-4);
   }
 }
 
