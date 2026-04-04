@@ -2250,7 +2250,17 @@ a:hover {
   text-decoration: underline;
 }
 
-/* ——— Global layout band — ONE system: max-width, centering, horizontal padding (header, footer, home, directory, optional .ds-layout-public). ——— */
+/* ——— PUBLIC LAYOUT CONTRACT (authoritative band for marketing + directory + support pages)
+ * All public shell content that should align with the header uses `.ds-container` (legacy `.container` keeps same rules for admin).
+ * 1) Content max-width: `var(--layout-content-max-width)` (1200px band).
+ * 2) Horizontal padding: `var(--layout-gutter-x-sm)` mobile, `var(--layout-gutter-x-md)` ≥768px; safe-area respected on small screens.
+ * 3) Centering: `margin-inline: auto`, `width: 100%`, `box-sizing: border-box`.
+ * 4) Section vertical rhythm: prefer `var(--layout-section-gap-y)` between major blocks inside a page (page-specific CSS may add).
+ * 5) `#site-search-bar` fills its parent `.ds-container` content box (`width/max-width: 100%`) — no separate shell max-width math.
+ * 6) Card/grid rows sit inside the same `.ds-container` as the toolbar/search so left/right edges match.
+ * INTENTIONAL EXCEPTION — prose: `.content-article-page` / `.content-faq-page` narrow to 720px reading measure (still use band gutters).
+ * FULL-BLEED: only sections that intentionally span viewport (e.g. ambient backgrounds on `.pro-company-profile__shell`, footer CTA background on `.wf-footer-cta`); inner content still uses `.ds-container` where applicable.
+ * ——— */
 .container,
 .ds-container,
 .ds-layout-public {
@@ -2277,6 +2287,17 @@ a:hover {
     padding-left: max(var(--layout-gutter-x-sm), env(safe-area-inset-left, 0px));
     padding-right: max(var(--layout-gutter-x-sm), env(safe-area-inset-right, 0px));
   }
+}
+
+/* Support hub / article / FAQ: same band as rest of public site; vertical padding replaces removed inline styles. */
+.ds-container.content-hub-page {
+  padding-block: var(--space-3) var(--space-touch);
+}
+
+.ds-container.content-article-page,
+.ds-container.content-faq-page {
+  padding-block: var(--space-3) var(--space-touch);
+  max-width: min(720px, 100%);
 }
 
 /* ——— Admin gate (GetPro admin login / getpro-admin) ——— */
@@ -4618,7 +4639,8 @@ a.admin-dashboard-panel--link:focus-visible {
 }
 
 /* Admin / inner pages: simple top bar without full marketing header */
-.container > .nav:not(.wf-nav) {
+.container > .nav:not(.wf-nav),
+.ds-container > .nav:not(.wf-nav) {
   padding: var(--space-1-75) 0 var(--space-2-25);
   margin-bottom: var(--space-1);
   border-bottom: var(--border-width-hairline) solid var(--border-strong);
@@ -5067,7 +5089,8 @@ a.admin-dashboard-panel--link:focus-visible {
   padding-block: var(--space-1) var(--space-2);
 }
 
-.pro-section--leading-categories .container {
+.pro-section--leading-categories .container,
+.pro-section--leading-categories .ds-container {
   padding: var(--space-2) var(--space-2-25);
   border-radius: var(--radius-lg);
   border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 88%, var(--wf-primary) 12%);
@@ -5302,11 +5325,6 @@ a.admin-dashboard-panel--link:focus-visible {
   color: var(--color-white);
   padding: clamp(var(--space-7), 8vw, var(--space-12-5)) 0 clamp(var(--space-5), 6vw, var(--space-7-5));
   text-align: center;
-}
-
-.wf-footer-cta-inner {
-  max-width: var(--bp-md);
-  margin: 0 auto;
 }
 
 .wf-footer-cta-title {
@@ -6056,19 +6074,11 @@ textarea {
  * Shell chrome: `.c-search-bar-shell.gp-home-search-card` (width/positioning from layout bands is OK).
  * Form: `.c-search-bar.gp-search-bar` — single layout + field appearance source.
  */
-/* Same inner width as `.ds-container` content box (max-width minus horizontal padding) — directory was ~80px wider than home. */
+/* Fills parent `.ds-container` content box; band width is defined only on `.ds-container`. */
 #site-search-bar.c-search-bar-shell {
   box-sizing: border-box;
   width: 100%;
-  max-width: min(100%, calc(var(--layout-content-max-width) - 2 * var(--layout-gutter-x-sm)));
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (min-width: 768px) {
-  #site-search-bar.c-search-bar-shell {
-    max-width: min(100%, calc(var(--layout-content-max-width) - 2 * var(--layout-gutter-x-md)));
-  }
+  max-width: 100%;
 }
 
 .c-search-bar.gp-search-bar {
@@ -6350,7 +6360,8 @@ textarea {
   min-width: 0;
 }
 
-.container:has(.hero-grid.pro-directory-layout) {
+.container:has(.hero-grid.pro-directory-layout),
+.ds-container:has(.hero-grid.pro-directory-layout) {
   min-width: 0;
   max-width: 100%;
   /* No overflow-x clip — avoid clipping absolutely positioned autocomplete in directory layouts. */
@@ -6381,8 +6392,7 @@ textarea {
 
 .directory-page-toolbar {
   min-width: 0;
-  max-width: 100%;
-  /* No overflow-x clip — this node wraps directory search + results; clip hid .pro-ac-dropdown. */
+  /* Do not set max-width here — this class shares the node with `.ds-container`; `max-width: 100%` overrode the global content band (1200px) on desktop. */
 }
 
 /**
@@ -6704,13 +6714,6 @@ textarea {
   color: var(--muted);
 }
 
-@media (max-width: 767px) {
-  .pro-directory-results-helper {
-    padding: 0 var(--space-0-25);
-    max-width: 48rem;
-  }
-}
-
 /* Shared card shell (see partials/components/card.ejs + directory listing layout). */
 .ds-card,
 .pro-directory-card {
@@ -6980,7 +6983,8 @@ textarea {
 .pro-directory-empty {
   min-width: 0;
   max-width: 100%;
-  padding: var(--space-2-75) var(--space-2-5);
+  /* Horizontal padding: 0 — align card edges with `.pro-directory-results` / search band; center copy via `.pro-directory-empty__inner`. */
+  padding: var(--space-2-75) 0;
   text-align: center;
   overflow-wrap: anywhere;
 }
@@ -7204,10 +7208,6 @@ a.pro-directory-empty__chip:hover {
   text-align: left;
   direction: ltr;
   padding: var(--space-1-5) 0 0;
-}
-
-.pro-company-profile__inner {
-  max-width: var(--bp-max-lg);
 }
 
 .pro-company-profile__hero-panel.card {
@@ -7956,10 +7956,6 @@ a.pro-directory-empty__chip:hover {
   padding: clamp(var(--space-7), 10vw, var(--space-11)) 0 clamp(var(--space-5), 6vw, var(--space-9));
   background: var(--gradient-primary-vertical);
   border-bottom: var(--border-width-hairline) solid var(--border-strong);
-}
-
-.join-hero-inner {
-  max-width: var(--bp-2xl);
 }
 
 .join-hero h1 {
@@ -8942,7 +8938,13 @@ body.join-modal-open {
   border-bottom: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 78%, transparent);
   min-height: var(--app-top-app-bar-height);
   display: flex;
+  justify-content: center;
   align-items: center;
+}
+
+/* Flex row + default flex-basis was letting the bar sit flush left while block-level `.ds-container` in main centered — match main content band. */
+.app-top-app-bar > .ds-container.app-top-app-bar__inner {
+  width: min(100%, var(--layout-content-max-width));
 }
 
 .app-top-app-bar__inner {
@@ -9418,20 +9420,10 @@ body[class*="tenant-"] {
     padding: var(--space-2) var(--space-1-75);
   }
 
-  .join-hero {
-    padding-left: max(var(--space-2), env(safe-area-inset-left, 0px));
-    padding-right: max(var(--space-2), env(safe-area-inset-right, 0px));
-  }
-
   .join-topbar-row {
     padding-inline: max(var(--space-1-5), env(safe-area-inset-left, 0px))
       max(var(--space-1-5), env(safe-area-inset-right, 0px));
   }
-}
-
-.pro-company-profile__inner {
-  padding-inline: max(var(--space-1-5), env(safe-area-inset-left, 0px))
-    max(var(--space-1-5), env(safe-area-inset-right, 0px));
 }
 
 @media (max-width: 520px) {

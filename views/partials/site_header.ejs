@@ -7,7 +7,7 @@
 <% var _regionAria = 'Choose region'; %>
 <% if (ten && ten.slug === 'global') { _regionBtnLabel = 'Select region'; _regionAria = 'Select region'; } else if (ten && String(ten.name || '').trim()) { _regionBtnLabel = String(ten.name).trim(); _regionAria = 'Region: ' + _regionBtnLabel; } %>
 <header class="app-top-app-bar" role="banner">
-  <div class="container app-top-app-bar__inner">
+  <div class="ds-container app-top-app-bar__inner">
     <div class="app-top-app-bar__brand-block">
       <div class="app-top-app-bar__brand-row">
         <%- include('brand_lockup_getpro', { tenant: ten, brandLockupVariant: 'nav', brandLockupHref: tpHome }) %>

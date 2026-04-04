@@ -36,6 +36,83 @@ test.beforeEach(async ({ page }) => {
   await freezeUiMotion(page);
 });
 
+test.describe("Public layout band alignment", () => {
+  const tol = 2;
+
+  /**
+   * Horizontal content-box edges (inside padding) for layout-band elements.
+   * @param {import('@playwright/test').Locator} locator
+   */
+  async function contentBoxHorizontalEdges(locator) {
+    return locator.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const cs = window.getComputedStyle(el);
+      const pl = parseFloat(cs.paddingLeft) || 0;
+      const pr = parseFloat(cs.paddingRight) || 0;
+      return { left: r.left + pl, right: r.right - pr };
+    });
+  }
+
+  /**
+   * @param {import('@playwright/test').Page} page
+   * @param {string} headerSel
+   * @param {import('@playwright/test').Locator} band
+   */
+  async function expectHeaderBandEdgesMatch(page, headerSel, band) {
+    const header = page.locator(headerSel);
+    await expect(header).toBeVisible({ timeout: 30_000 });
+    await expect(band).toBeVisible({ timeout: 30_000 });
+    const h = await contentBoxHorizontalEdges(header);
+    const b = await contentBoxHorizontalEdges(band);
+    expect(Math.abs(h.left - b.left), "content left edge").toBeLessThanOrEqual(tol);
+    expect(Math.abs(h.right - b.right), "content right edge").toBeLessThanOrEqual(tol);
+  }
+
+  /**
+   * @param {import('@playwright/test').Locator} search
+   * @param {import('@playwright/test').Locator} band
+   */
+  async function expectSearchFillsBandContent(search, band) {
+    await expect(search).toBeVisible({ timeout: 30_000 });
+    await expect(band).toBeVisible({ timeout: 30_000 });
+    const s = await search.boundingBox();
+    const inner = await contentBoxHorizontalEdges(band);
+    expect(s, "search bounding box").toBeTruthy();
+    expect(Math.abs(s.x - inner.left), "search outer left vs band content left").toBeLessThanOrEqual(tol);
+    expect(Math.abs(s.x + s.width - inner.right), "search outer right vs band content right").toBeLessThanOrEqual(
+      tol,
+    );
+  }
+
+  for (const size of [
+    { width: 375, height: 720 },
+    { width: 768, height: 720 },
+    { width: 1280, height: 720 },
+  ]) {
+    test(`home + directory bands match header @ ${size.width}px`, async ({ page }) => {
+      await page.setViewportSize(size);
+      await page.goto("/", { waitUntil: "networkidle", timeout: 60_000 });
+      await waitForFonts(page);
+      const heroBand = page.locator("main.gp-home .ds-container").first();
+      await expectHeaderBandEdgesMatch(page, ".app-top-app-bar__inner", heroBand);
+      await expectSearchFillsBandContent(page.locator("#site-search-bar").first(), heroBand);
+
+      await page.goto("/directory?q=&city=", { waitUntil: "networkidle", timeout: 60_000 });
+      await waitForFonts(page);
+      const dirBand = page.locator(".ds-container.directory-page").first();
+      await expectHeaderBandEdgesMatch(page, ".app-top-app-bar__inner", dirBand);
+      await expectSearchFillsBandContent(page.locator("#site-search-bar").first(), dirBand);
+    });
+
+    test(`company profile inner band matches header @ ${size.width}px`, async ({ page }) => {
+      await page.setViewportSize(size);
+      await page.goto("/company/1", { waitUntil: "networkidle", timeout: 60_000 });
+      await waitForFonts(page);
+      await expectHeaderBandEdgesMatch(page, ".app-top-app-bar__inner", page.locator(".pro-company-profile__inner"));
+    });
+  }
+});
+
 test.describe("SearchBar cross-page consistency", () => {
   /**
    * Same snapshot name twice: second assertion compares directory against the baseline
