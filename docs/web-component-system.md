@@ -39,7 +39,7 @@ Example (search submit):
   variant: 'primary',
   icon: 'search',
   text: 'Search',
-  className: 'pro-search-form__submit pro-home-search-submit'
+  className: 'pro-search-form__submit'
 }) %>
 ```
 

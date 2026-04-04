@@ -14,7 +14,7 @@ export default {
 
 export const SearchSection = () =>
   wrapAppShell(`<div class="sb-preview-home-search">
-  <div id="gp-home-search" class="gp-home-search gp-home-search-card" aria-label="Project search">
+  <div id="site-search-bar" class="c-search-bar-shell gp-home-search gp-home-search-card" aria-label="Project search">
     ${buildSearchBarForm({ idPrefix: "sb-hp", formAction: "/directory", searchQuery: "", cityQuery: "" })}
   </div>
 </div>`);

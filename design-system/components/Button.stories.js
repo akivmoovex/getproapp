@@ -32,7 +32,7 @@ export const Disabled = () =>
 const SEARCH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>`;
 
 export const WithIcon = () =>
-  shell(`<button type="submit" class="btn btn--primary pro-search-form__submit pro-home-search-submit">
+  shell(`<button type="submit" class="btn btn--primary pro-search-form__submit">
   <span class="btn__text">Search</span>
   <span class="btn__icon" aria-hidden="true">${SEARCH_SVG}</span>
 </button>`);

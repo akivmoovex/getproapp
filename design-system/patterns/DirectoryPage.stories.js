@@ -17,7 +17,9 @@ export default {
 export const ToolbarAndMeta = () =>
   wrapAppShell(
     wrapDsContainer(`<div class="sb-preview-wide">
+    <div id="site-search-bar" class="c-search-bar-shell gp-home-search gp-home-search-card" aria-label="Directory search">
     ${buildSearchBarForm({ idPrefix: "sb-dtb", searchQuery: "Electrician", cityQuery: "Lusaka" })}
+    </div>
     <p class="muted sb-mt-2"><strong>24</strong> results · “Electrician” · Lusaka</p>
   </div>`)
   );

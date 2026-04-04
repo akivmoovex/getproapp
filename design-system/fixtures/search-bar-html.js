@@ -16,7 +16,7 @@ function esc(s) {
 
 const SEARCH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>`;
 
-const SUBMIT_BTN = `<button type="submit" class="btn btn--primary pro-search-form__submit pro-home-search-submit"><span class="btn__text">Search</span><span class="btn__icon" aria-hidden="true">${SEARCH_SVG}</span></button>`;
+const SUBMIT_BTN = `<button type="submit" class="btn btn--primary pro-search-form__submit"><span class="btn__text">Search</span><span class="btn__icon" aria-hidden="true">${SEARCH_SVG}</span></button>`;
 
 /**
  * @param {object} opts
@@ -52,7 +52,7 @@ export function buildSearchBarForm(opts = {}) {
       })
       .join("");
     categoryBlock = `<div class="pro-search-form__category input-field">
-    <label class="pro-search-form__label pro-home-field-label input-field__label" for="${pre}-category-filter">Category</label>
+    <label class="pro-search-form__label input-field__label" for="${pre}-category-filter">Category</label>
     <select id="${pre}-category-filter" name="category" class="pro-search-form__select input-field__control" aria-label="Filter by category">
       <option value=""${!selCat ? " selected" : ""}>All categories</option>${options}
     </select>
@@ -61,12 +61,12 @@ export function buildSearchBarForm(opts = {}) {
     categoryBlock = `<input type="hidden" name="category" value="${esc(selCat)}" />`;
   }
 
-  return `<form${formIdAttr} class="pro-search-form gp-search-bar" action="${action}" method="get" role="search" aria-label="${aria}">
+  return `<form${formIdAttr} class="pro-search-form gp-search-bar c-search-bar" action="${action}" method="get" role="search" aria-label="${aria}">
   ${categoryBlock}
   <div class="pro-search-form__toolbar-row">
-    <div class="pro-search-form__fields pro-home-search-fields">
-      <div class="pro-search-form__field pro-home-search-field input-field input-field--search">
-        <label class="pro-search-form__label pro-home-field-label input-field__label" for="${pre}-search-q">Service or profession</label>
+    <div class="pro-search-form__fields">
+      <div class="pro-search-form__field input-field input-field--search">
+        <label class="pro-search-form__label input-field__label" for="${pre}-search-q">Service or profession</label>
         <div class="pro-ac" data-ac-list="service" data-watermark-rotate="Electrician|Plumber|Carpenter">
           <input id="${pre}-search-q" class="pro-ac-input input-field__control" type="text" value="${q}" placeholder="" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${pre}-search-q-dropdown" />
           <input type="hidden" class="pro-ac-hidden" name="q" id="${pre}-search-q-value" value="${q}" />
@@ -74,8 +74,8 @@ export function buildSearchBarForm(opts = {}) {
           <p class="pro-ac-msg input-field__error" hidden></p>
         </div>
       </div>
-      <div class="pro-search-form__field pro-home-search-field input-field input-field--search">
-        <label class="pro-search-form__label pro-home-field-label input-field__label" for="${pre}-search-city">City</label>
+      <div class="pro-search-form__field input-field input-field--search">
+        <label class="pro-search-form__label input-field__label" for="${pre}-search-city">City</label>
         <div class="pro-ac" data-ac-list="city" data-watermark-rotate="Lusaka|Ndola|Kitwe">
           <input id="${pre}-search-city" class="pro-ac-input input-field__control" type="text" value="${city}" placeholder="" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${pre}-search-city-dropdown" />
           <input type="hidden" class="pro-ac-hidden" name="city" id="${pre}-search-city-value" value="${city}" />

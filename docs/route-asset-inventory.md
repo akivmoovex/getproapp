@@ -26,7 +26,7 @@
 |-------|--------|
 | **Entry template** | `views/index.ejs` |
 | **Partials** | `partials/seo_meta`, `partials/site_header` (region picker trigger when applicable), `partials/app_navigation`, `partials/pro_search_form` (variant `home`), optional **M3 region modal** (`#wf-region-m3-root` when `showRegionPickerUi`), `partials/site_footer` |
-| **CSS** | Full public bundle. Above-the-fold: `wf-home-*`, `pro-home-hero*`, `app-layout`, `pro-home-search*`, header/nav |
+| **CSS** | Full public bundle. Above-the-fold: `wf-home-*`, `pro-home-hero*`, `app-layout`, `c-search-bar` / `gp-home-search-card`, `pro-search-form`, header/nav |
 | **JS** | **`/scripts.js`** (defer): lead form **not** on home unless a stray `#lead_form` (there isn’t). **Region:** `initRegionPicker` + `initGlobalTenantSearchOpensRegion` run **only if** `document.getElementById("wf-region-m3-root")` exists. **Directory-only inits** skipped (no `[data-avatar-hue]`, no refine FAB on typical home). **`initAppNavDrawer`** always if nav DOM exists. **`/autocomplete.js`** loaded lazily via **`partials/autocomplete_defer_bootstrap`** (focus / intersection / idle — not blocking first paint) |
 | **Key assets / LCP** | Hero **`<picture>`** → `.pro-home-hero-photo`: `/images/hero/home-hero-*.webp` / AVIF; **`<link rel="preload" as="image" …>`** in `<head>`; `fetchpriority="high"` on `<img>` |
 

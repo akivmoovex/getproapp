@@ -19,7 +19,7 @@ export const DirectoryDefault = () =>
 DirectoryDefault.storyName = "Directory (wide)";
 
 export const HomepageShell = () =>
-  wrapAppShell(`<div id="gp-home-search" class="gp-home-search gp-home-search-card sb-preview-home-search" aria-label="Project search">
+  wrapAppShell(`<div id="site-search-bar" class="c-search-bar-shell gp-home-search gp-home-search-card sb-preview-home-search" aria-label="Project search">
   ${buildSearchBarForm({ idPrefix: "sb-home", formAction: "/directory" })}
 </div>`);
 
