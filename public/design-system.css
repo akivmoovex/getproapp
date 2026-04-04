@@ -81,18 +81,9 @@
  */
 
 /**
- * Shared search field shell (home + directory): comfortable height + pill radius from tokens.
+ * SearchBar field chrome: single source in `public/styles.css` under `.c-search-bar` (+ shell `.c-search-bar-shell`).
+ * Do not add `.pro-search-form` / `.gp-home-search-card` overrides for autocomplete inputs here.
  */
-.pro-search-form .pro-ac,
-.gp-home-search-card .pro-ac {
-  border-radius: var(--search-field-radius);
-}
-
-.pro-search-form .pro-ac-input,
-.gp-home-search-card .pro-ac-input {
-  border-radius: var(--search-field-radius);
-  min-height: var(--control-height-comfortable);
-}
 
 /**
  * Directory “professional card” (BEM: .pro-directory-card*)

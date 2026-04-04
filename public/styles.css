@@ -736,14 +736,6 @@
  */
 
 /**
- * Search field radius: canonical heights live under `.c-search-bar .pro-ac` (search_bar.ejs).
- */
-.pro-search-form .pro-ac,
-.pro-search-form .pro-ac-input {
-  border-radius: var(--search-field-radius);
-}
-
-/**
  * Directory “professional card” (BEM: .pro-directory-card*)
  * Structure: header row (title + CTA) → meta → body → footer
  * Do not duplicate; extend these classes only.
@@ -5425,7 +5417,8 @@ a.admin-dashboard-panel--link:focus-visible {
   box-shadow: var(--md-sys-elevation-level2);
 }
 
-/* System component roots — views/partials/components/{button,input,card}.ejs (lint-enforced). */
+/* System component roots — views/partials/components/{button,input,card}.ejs (lint-enforced).
+ * Do not target `.c-button` / `.c-input` / `.c-card` from page/feature parent selectors; extend tokens here. */
 .c-button {
   box-sizing: border-box;
 }
@@ -6025,8 +6018,10 @@ textarea {
 }
 
 /* ---------- SearchBar (canonical: views/partials/components/search_bar.ejs + pro_search_form.ejs) ----------
- * Shell: .c-search-bar-shell.gp-home-search-card — same on home / directory / category.
- * Form: .c-search-bar.gp-search-bar — single layout source; do not add .pro-directory-toolbar .gp-search-bar overrides.
+ * COMPONENT BOUNDARY (enforced): Do not style SearchBar internals from page/feature selectors.
+ * Allowed roots only: `.c-search-bar-shell`, `.c-search-bar`, and descendants of `.c-search-bar`.
+ * Shell chrome: `.c-search-bar-shell.gp-home-search-card` (width/positioning from layout bands is OK).
+ * Form: `.c-search-bar.gp-search-bar` — single layout + field appearance source.
  */
 .c-search-bar.gp-search-bar {
   display: flex;
@@ -6261,13 +6256,55 @@ textarea {
   }
 }
 
-.pro-search-form__submit {
+.c-search-bar .pro-search-form__submit {
   flex: 0 0 auto;
   white-space: nowrap;
 }
 
-.pro-search-form__submit .btn__icon {
+.c-search-bar .pro-search-form__submit .btn__icon {
   flex-shrink: 0;
+}
+
+/* Category row (SearchBar only) — was `.pro-directory-toolbar .pro-search-form__*`; keep under `.c-search-bar`. */
+.c-search-bar .pro-search-form__category {
+  flex: 1 1 min(0, 14rem);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+/* Shared with `select.input-field__control` (ui_demo / ui_docs) — SearchBar category uses both classes. */
+.c-search-bar .pro-search-form__select,
+select.input-field__control {
+  width: 100%;
+  max-width: 100%;
+  min-height: var(--space-touch);
+  padding: var(--space-1) var(--space-1-25);
+  border-radius: var(--border-radius-md);
+  border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 90%, transparent);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--space-1-75);
+  font-weight: 600;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.c-search-bar .pro-search-form__select:hover,
+select.input-field__control:hover {
+  border-color: color-mix(in srgb, var(--wf-primary) 28%, var(--border-strong));
+}
+
+.c-search-bar .pro-search-form__select:focus,
+select.input-field__control:focus {
+  outline: none;
+}
+
+.c-search-bar .pro-search-form__select:focus-visible,
+select.input-field__control:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--wf-primary) 55%, var(--text));
+  outline-offset: 2px;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -6496,46 +6533,6 @@ textarea {
   font-weight: 700;
   color: var(--muted);
   letter-spacing: 0.02em;
-}
-
-.pro-directory-toolbar__select,
-.pro-directory-toolbar .pro-search-form__select {
-  width: 100%;
-  max-width: 100%;
-  min-height: var(--space-touch);
-  padding: var(--space-1) var(--space-1-25);
-  border-radius: var(--border-radius-md);
-  border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 90%, transparent);
-  background: var(--surface);
-  color: var(--text);
-  font-size: var(--space-1-75);
-  font-weight: 600;
-  cursor: pointer;
-  box-sizing: border-box;
-}
-
-.pro-directory-toolbar__select:hover,
-.pro-directory-toolbar .pro-search-form__select:hover {
-  border-color: color-mix(in srgb, var(--wf-primary) 28%, var(--border-strong));
-}
-
-.pro-directory-toolbar__select:focus,
-.pro-directory-toolbar .pro-search-form__select:focus {
-  outline: none;
-}
-
-.pro-directory-toolbar__select:focus-visible,
-.pro-directory-toolbar .pro-search-form__select:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--wf-primary) 55%, var(--text));
-  outline-offset: 2px;
-}
-
-.pro-directory-toolbar .pro-search-form__category {
-  flex: 1 1 min(0, 14rem);
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-0-5);
 }
 
 .pro-directory-toolbar__submit {
@@ -11007,6 +11004,14 @@ body.home-page .app-top-app-bar {
 .gp-home .gp-home-provider__actions .btn {
   min-height: 48px;
   border-radius: 9999px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.gp-home .gp-home-provider__actions .btn:hover {
+  transform: translateY(-1px);
 }
 
 /* ---------- Auto-advancing story (top half) ---------- */
@@ -11771,15 +11776,6 @@ body.home-page .app-top-app-bar {
   }
 }
 
-/* Homepage buttons — subtle interaction */
-.gp-home .btn {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-}
-
-.gp-home .btn:hover {
-  transform: translateY(-1px);
-}
-
 /* =========================
  * Breakpoints
  * ========================= */
@@ -11826,12 +11822,6 @@ body.home-page .app-top-app-bar {
   min-width: 0;
   max-width: 100%;
   overflow: visible;
-}
-
-.gp-home .gp-home-provider__actions .btn {
-  max-width: 100%;
-  white-space: normal;
-  overflow-wrap: anywhere;
 }
 
 .gp-home img,
