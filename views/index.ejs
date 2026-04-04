@@ -212,7 +212,7 @@
 
       <!-- Platform accomplishments -->
       <section class="gp-home-metrics" aria-labelledby="gp-home-metrics-title">
-        <div class="gp-home-container">
+        <%- include('partials/components/container_start') %>
           <div class="gp-home-metrics__inner">
             <header class="gp-home-metrics__head">
               <span class="gp-home-metrics__eyebrow">Platform growth</span>
@@ -246,12 +246,12 @@
               </article>
             </div>
           </div>
-        </div>
+        <%- include('partials/components/container_close') %>
       </section>
 
       <!-- Service provider CTA -->
       <section class="gp-home-provider" aria-labelledby="gp-home-provider-title">
-        <div class="gp-home-container">
+        <%- include('partials/components/container_start') %>
           <div class="gp-home-provider__inner">
             <div class="gp-home-section gp-home-section--split">
               <header class="gp-home-section-head">
@@ -259,11 +259,17 @@
                 <p class="gp-home-section-subtitle">Get discovered by customers searching in your city.</p>
               </header>
               <div class="gp-home-provider__actions">
-                <a class="btn btn--secondary" href="https://getproapp.org/join" target="_blank" rel="noopener noreferrer">Join as a provider</a>
+                <%- include('partials/components/button', {
+                  variant: 'secondary',
+                  href: 'https://getproapp.org/join',
+                  text: 'Join as a provider',
+                  className: '',
+                  extraAttrs: 'target="_blank" rel="noopener noreferrer"',
+                }) %>
               </div>
             </div>
           </div>
-        </div>
+        <%- include('partials/components/container_close') %>
       </section>
     </main>
 

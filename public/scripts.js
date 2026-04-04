@@ -117,7 +117,7 @@ function initGlobalTenantSearchOpensRegion() {
 
   const q = document.getElementById("home-search-q");
   const city = document.getElementById("home-search-city");
-  const form = document.querySelector(".pro-home-dual-search");
+  const form = document.querySelector("form.gp-search-bar");
 
   const openSheet = () => setOpen(true);
 

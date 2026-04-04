@@ -46,12 +46,13 @@
       </button>
       <% } %>
 
-      <a
-        class="app-top-app-bar__join btn btn--secondary"
-        href="https://getproapp.org/join"
-        target="_blank"
-        rel="noopener noreferrer"
-      >Join Us</a>
+      <%- include('components/button', {
+        variant: 'secondary',
+        href: 'https://getproapp.org/join',
+        text: 'Join Us',
+        className: 'app-top-app-bar__join',
+        extraAttrs: 'target="_blank" rel="noopener noreferrer"',
+      }) %>
 
       <button
         type="button"

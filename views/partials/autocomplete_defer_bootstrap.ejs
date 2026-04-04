@@ -25,7 +25,7 @@
   /** Load autocomplete when the user clearly interacts with a search combobox (not only if event.target is the raw input). */
   function shouldBootAutocomplete(el) {
     if (!el || !el.closest) return false;
-    var form = el.closest("form.pro-home-dual-search, form.pro-search--directory");
+    var form = el.closest("form.gp-search-bar");
     if (!form) return false;
     if (el.closest(".pro-ac")) return true;
     if (el.classList && el.classList.contains("pro-ac-input")) return true;
@@ -62,7 +62,7 @@
   document.addEventListener(
     "input",
     function (e) {
-      if (e.target && e.target.classList && e.target.classList.contains("pro-ac-input") && e.target.closest("form.pro-home-dual-search, form.pro-search--directory")) {
+      if (e.target && e.target.classList && e.target.classList.contains("pro-ac-input") && e.target.closest("form.gp-search-bar")) {
         boot();
       }
     },
@@ -72,7 +72,7 @@
   // Mobile: wait for touch/focus to avoid adding TBT on initial load.
   if (!isMobileLike()) {
     if ("IntersectionObserver" in window) {
-      document.querySelectorAll("form.pro-home-dual-search, form.pro-search--directory").forEach(function (form) {
+      document.querySelectorAll("form.gp-search-bar").forEach(function (form) {
         var io = new IntersectionObserver(
           function (entries) {
             if (entries.some(function (en) { return en.isIntersecting; })) {

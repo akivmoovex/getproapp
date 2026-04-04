@@ -77,7 +77,7 @@
 }
 
 /**
- * Public layout band: use `.container`, `.gp-home-container`, or `.ds-layout-public` — one shared definition in styles.css (global layout band block).
+ * Public layout band: use `.container`, `.ds-container`, or `.ds-layout-public` — one shared definition in styles.css (global layout band block). Prefer `partials/components/container_*` for major sections.
  */
 
 /**

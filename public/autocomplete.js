@@ -445,7 +445,7 @@
         return r.json();
       })
       .then((lists) => {
-        document.querySelectorAll("form.pro-home-dual-search, form.pro-search--directory").forEach((f) => {
+        document.querySelectorAll("form.gp-search-bar").forEach((f) => {
           resolveForm(f, lists);
         });
         const joinPanels = document.getElementById("join-panels");

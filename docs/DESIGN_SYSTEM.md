@@ -41,7 +41,7 @@ Use **semantic** names in new CSS. Prefer `var(--color-*)` / DS aliases over hex
 ## Public layout band (v2)
 
 - **`--layout-content-max-width`** — canonical max width for marketing/directory content (maps to `--bp-max-xl`, 1200px).
-- **`--layout-gutter-x-sm` / `--layout-gutter-x-md`** — horizontal padding inside the band below / at or above 768px (24px / 32px). **`.container`**, **`.gp-home-container`**, and **`.ds-layout-public`** share one ruleset in `public/styles.css` (global layout band); avoid ad hoc `padding-inline` on those nodes.
+- **`--layout-gutter-x-sm` / `--layout-gutter-x-md`** — horizontal padding inside the band below / at or above 768px (24px / 32px). **`.container`**, **`.ds-container`**, and **`.ds-layout-public`** share one ruleset in `public/styles.css` (global layout band); use `views/partials/components/container_start.ejs` / `container_close.ejs` for major sections; avoid ad hoc `padding-inline` on those nodes.
 - **`--layout-field-stack-gap`** — default vertical gap between stacked labels and controls in dense toolbars (e.g. directory meta under search).
 - **`--control-height-comfortable`** (48px) and **`--control-touch-min`** (44px) — Material-aligned touch targets for search inputs and list options.
 - **Search shell:** `--search-field-radius`, `--elevation-autocomplete`, **`--z-index-autocomplete`** — shared home + directory combobox surfaces.

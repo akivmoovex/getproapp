@@ -5880,7 +5880,7 @@ textarea {
   z-index: 5;
 }
 
-/* Shared search form inside results toolbar (see partials/pro_search_form.ejs) */
+/* Shared search form inside results toolbar (see partials/components/search_bar.ejs) */
 .pro-directory-toolbar .gp-search-bar {
   display: flex;
   flex-direction: column;
@@ -11136,8 +11136,7 @@ body.home-page .app-top-app-bar {
   overflow: visible;
 }
 
-.gp-home-search-card .gp-search-bar,
-.gp-home-search-card .gp-search-bar form {
+.gp-home-search-card .gp-search-bar {
   min-width: 0;
   max-width: 100%;
 }
