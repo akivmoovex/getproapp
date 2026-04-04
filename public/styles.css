@@ -885,6 +885,39 @@
   box-sizing: border-box;
 }
 
+/* Native selects: SearchBar category (`.c-search-bar .pro-search-form__select`) shares these tokens with demo/docs `select.input-field__control`. */
+.c-search-bar .pro-search-form__select,
+select.input-field__control {
+  width: 100%;
+  max-width: 100%;
+  min-height: var(--space-touch);
+  padding: var(--space-1) var(--space-1-25);
+  border-radius: var(--border-radius-md);
+  border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 90%, transparent);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--space-1-75);
+  font-weight: 600;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.c-search-bar .pro-search-form__select:hover,
+select.input-field__control:hover {
+  border-color: color-mix(in srgb, var(--wf-primary) 28%, var(--border-strong));
+}
+
+.c-search-bar .pro-search-form__select:focus,
+select.input-field__control:focus {
+  outline: none;
+}
+
+.c-search-bar .pro-search-form__select:focus-visible,
+select.input-field__control:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--wf-primary) 55%, var(--text));
+  outline-offset: 2px;
+}
+
 .input-field__help {
   margin: var(--space-0-75) 0 0;
   font-size: var(--space-1-5);
@@ -6023,6 +6056,21 @@ textarea {
  * Shell chrome: `.c-search-bar-shell.gp-home-search-card` (width/positioning from layout bands is OK).
  * Form: `.c-search-bar.gp-search-bar` — single layout + field appearance source.
  */
+/* Same inner width as `.ds-container` content box (max-width minus horizontal padding) — directory was ~80px wider than home. */
+#site-search-bar.c-search-bar-shell {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: min(100%, calc(var(--layout-content-max-width) - 2 * var(--layout-gutter-x-sm)));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 768px) {
+  #site-search-bar.c-search-bar-shell {
+    max-width: min(100%, calc(var(--layout-content-max-width) - 2 * var(--layout-gutter-x-md)));
+  }
+}
+
 .c-search-bar.gp-search-bar {
   display: flex;
   flex-direction: column;
@@ -6272,39 +6320,6 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: var(--space-0-5);
-}
-
-/* Shared with `select.input-field__control` (ui_demo / ui_docs) — SearchBar category uses both classes. */
-.c-search-bar .pro-search-form__select,
-select.input-field__control {
-  width: 100%;
-  max-width: 100%;
-  min-height: var(--space-touch);
-  padding: var(--space-1) var(--space-1-25);
-  border-radius: var(--border-radius-md);
-  border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 90%, transparent);
-  background: var(--surface);
-  color: var(--text);
-  font-size: var(--space-1-75);
-  font-weight: 600;
-  cursor: pointer;
-  box-sizing: border-box;
-}
-
-.c-search-bar .pro-search-form__select:hover,
-select.input-field__control:hover {
-  border-color: color-mix(in srgb, var(--wf-primary) 28%, var(--border-strong));
-}
-
-.c-search-bar .pro-search-form__select:focus,
-select.input-field__control:focus {
-  outline: none;
-}
-
-.c-search-bar .pro-search-form__select:focus-visible,
-select.input-field__control:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--wf-primary) 55%, var(--text));
-  outline-offset: 2px;
 }
 
 @media (hover: hover) and (pointer: fine) {

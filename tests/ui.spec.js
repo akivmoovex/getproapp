@@ -27,8 +27,37 @@ async function waitForFonts(page) {
 }
 
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    const el = document.createElement("style");
+    el.textContent = "html{overflow-y:scroll!important;}";
+    document.documentElement.appendChild(el);
+  });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await freezeUiMotion(page);
+});
+
+test.describe("SearchBar cross-page consistency", () => {
+  /**
+   * Same snapshot name twice: second assertion compares directory against the baseline
+   * captured from home, so any visual drift between routes fails the test. Raw PNG buffers
+   * are not compared (metadata/timing can differ); pixel diff uses project thresholds.
+   */
+  test("home and directory #site-search-bar match one baseline", async ({ page }) => {
+    const search = page.locator("#site-search-bar");
+    const masks = [search.locator(".pro-ac-dropdown")];
+
+    await page.goto("/", { waitUntil: "networkidle", timeout: 60_000 });
+    await expect(search).toBeVisible({ timeout: 30_000 });
+    await waitForFonts(page);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(search).toHaveScreenshot("search-bar-consistent.png", { mask: masks });
+
+    await page.goto("/directory?q=&city=", { waitUntil: "networkidle", timeout: 60_000 });
+    await expect(search).toBeVisible({ timeout: 30_000 });
+    await waitForFonts(page);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(search).toHaveScreenshot("search-bar-consistent.png", { mask: masks });
+  });
 });
 
 test.describe("Visual regression", () => {
