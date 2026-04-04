@@ -31,7 +31,7 @@
 %>
 <% if (_showCat && _cats && _cats.length) { %>
   <div class="pro-search-form__category input-field">
-    <label class="pro-search-form__label pro-home-field-label input-field__label" for="<%= _pre %>-category-filter">Category</label>
+    <label class="pro-search-form__label input-field__label" for="<%= _pre %>-category-filter">Category</label>
     <select id="<%= _pre %>-category-filter" name="category" class="pro-search-form__select input-field__control" aria-label="Filter by category">
       <option value=""<%= !_selCat ? ' selected' : '' %>>All categories</option>
       <% _cats.forEach(function (cat) { %>
@@ -44,9 +44,9 @@
 <% } %>
 
   <div class="pro-search-form__toolbar-row">
-    <div class="pro-search-form__fields pro-home-search-fields">
-      <div class="pro-search-form__field pro-home-search-field input-field input-field--search">
-        <label class="pro-search-form__label pro-home-field-label input-field__label" for="<%= _pre %>-search-q">Service or profession</label>
+    <div class="pro-search-form__fields">
+      <div class="pro-search-form__field input-field input-field--search">
+        <label class="pro-search-form__label input-field__label" for="<%= _pre %>-search-q">Service or profession</label>
         <div
           class="pro-ac"
           data-ac-list="service"
@@ -69,8 +69,8 @@
           <p class="pro-ac-msg input-field__error" hidden></p>
         </div>
       </div>
-      <div class="pro-search-form__field pro-home-search-field input-field input-field--search">
-        <label class="pro-search-form__label pro-home-field-label input-field__label" for="<%= _pre %>-search-city">City</label>
+      <div class="pro-search-form__field input-field input-field--search">
+        <label class="pro-search-form__label input-field__label" for="<%= _pre %>-search-city">City</label>
         <div
           class="pro-ac"
           data-ac-list="city"
@@ -99,6 +99,6 @@
       type: 'submit',
       text: 'Search',
       icon: 'search',
-      className: 'pro-search-form__submit pro-home-search-submit',
+      className: 'pro-search-form__submit',
     }) %>
   </div>

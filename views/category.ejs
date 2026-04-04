@@ -21,7 +21,7 @@
         <%- include('partials/components/container_start', { extraClass: 'directory-page directory-page-toolbar' }) %>
       <div class="pro-directory-top-band">
         <div class="pro-directory-toolbar pro-directory-toolbar--category" role="region" aria-label="Category browse">
-          <div class="gp-home-search gp-home-search--directory gp-home-search-card" aria-label="Category search">
+          <div id="site-search-bar" class="c-search-bar-shell gp-home-search gp-home-search-card" aria-label="Category search">
           <%- include('partials/pro_search_form', {
             variant: 'directory',
             tenantUrlPrefix,
