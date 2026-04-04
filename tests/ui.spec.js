@@ -113,6 +113,46 @@ test.describe("Public layout band alignment", () => {
   }
 });
 
+test.describe("Public app bar parity and controls", () => {
+  test("home vs directory: same bar height and no theme/brand controls; tagline text", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+
+    await page.goto("/", { waitUntil: "networkidle", timeout: 60_000 });
+    await waitForFonts(page);
+    const bar = page.locator(".app-top-app-bar").first();
+    await expect(bar).toBeVisible({ timeout: 30_000 });
+    const homeMetrics = await bar.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return {
+        height: r.height,
+        borderBottomWidth: cs.borderBottomWidth,
+      };
+    });
+    await expect(page.locator(".app-top-app-bar__tagline")).toHaveText("My Trusted Professional");
+    await expect(page.locator("#gp-theme-toggle")).toHaveCount(0);
+    await expect(page.locator("#gp-brand-switch")).toHaveCount(0);
+
+    await page.goto("/directory?q=&city=", { waitUntil: "networkidle", timeout: 60_000 });
+    await waitForFonts(page);
+    await expect(bar).toBeVisible({ timeout: 30_000 });
+    const dirMetrics = await bar.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return {
+        height: r.height,
+        borderBottomWidth: cs.borderBottomWidth,
+      };
+    });
+    await expect(page.locator(".app-top-app-bar__tagline")).toHaveText("My Trusted Professional");
+    await expect(page.locator("#gp-theme-toggle")).toHaveCount(0);
+    await expect(page.locator("#gp-brand-switch")).toHaveCount(0);
+
+    expect(Math.abs(homeMetrics.height - dirMetrics.height)).toBeLessThanOrEqual(2);
+    expect(homeMetrics.borderBottomWidth).toBe(dirMetrics.borderBottomWidth);
+  });
+});
+
 test.describe("SearchBar cross-page consistency", () => {
   /**
    * Same snapshot name twice: second assertion compares directory against the baseline

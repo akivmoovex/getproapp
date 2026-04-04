@@ -12,19 +12,10 @@
       <div class="app-top-app-bar__brand-row">
         <%- include('brand_lockup_getpro', { tenant: ten, brandLockupVariant: 'nav', brandLockupHref: tpHome }) %>
       </div>
-      <p class="app-top-app-bar__tagline">Trusted professionals · verified directory</p>
+      <p class="app-top-app-bar__tagline">My Trusted Professional</p>
     </div>
 
     <div class="app-top-app-bar__actions">
-      <div class="gp-theme-switchers" role="group" aria-label="Site appearance">
-        <%- include('components/theme_toggle_button') %>
-        <label class="visually-hidden" for="gp-brand-switch">Brand</label>
-        <select id="gp-brand-switch" class="gp-theme-switchers__select" aria-label="Brand">
-          <option value="">Default</option>
-          <option value="proonline">Pro-online</option>
-          <option value="getpro">GetPro</option>
-        </select>
-      </div>
       <% if (_renderRegionPickerTrigger && _showRegionPickerUi) { %>
       <button
         type="button"

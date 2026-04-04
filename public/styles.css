@@ -641,6 +641,17 @@
   width: 100%;
 }
 
+/* Public results (directory/category): canvas matches homepage `.gp-home` surface rhythm — home is source of truth. */
+body[data-screen-role="results"] .app-layout {
+  background: var(--color-background);
+}
+
+@media (min-width: 768px) {
+  body[data-screen-role="results"] .app-layout {
+    background: var(--color-surface);
+  }
+}
+
 /* Modifier: extra elevation on cards */
 .card--elevated {
   box-shadow: var(--md-sys-elevation-level2);
@@ -6073,7 +6084,18 @@ textarea {
  * Allowed roots only: `.c-search-bar-shell`, `.c-search-bar`, and descendants of `.c-search-bar`.
  * Shell chrome: `.c-search-bar-shell.gp-home-search-card` (width/positioning from layout bands is OK).
  * Form: `.c-search-bar.gp-search-bar` — single layout + field appearance source.
+ *
+ * VISUAL SOURCE OF TRUTH: homepage hero search (`main.gp-home`). Directory/category `#site-search-bar`
+ * must match; do not add directory-only overrides — extend shared rules here or on `#site-search-bar`.
  */
+/* Home hero tokens on the shell so directory (no `.gp-home` ancestor) resolves labels/inputs identically. */
+#site-search-bar.c-search-bar-shell.gp-home-search-card {
+  --gp-hp-text: var(--color-text-primary);
+  --gp-hp-muted: var(--color-text-secondary);
+  --gp-hp-border: var(--color-outline-strong);
+  --gp-hp-eyebrow: var(--color-text-tertiary);
+}
+
 /* Fills parent `.ds-container` content box; band width is defined only on `.ds-container`. */
 #site-search-bar.c-search-bar-shell {
   box-sizing: border-box;
@@ -6089,6 +6111,8 @@ textarea {
   max-width: 100%;
   align-items: stretch;
   box-sizing: border-box;
+  /* Toolbar row/column gap — home hero rhythm, shared with directory (tokenized). */
+  --gp-search-toolbar-gap: var(--space-1-5);
 }
 
 .c-search-bar .pro-ac:focus-within {
@@ -6109,7 +6133,7 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 12px;
+  gap: var(--gp-search-toolbar-gap, var(--space-1-5));
   width: 100%;
   min-width: 0;
 }
@@ -6117,7 +6141,7 @@ textarea {
 .c-search-bar .pro-search-form__toolbar-row .pro-search-form__fields {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--gp-search-toolbar-gap, var(--space-1-5));
   width: 100%;
   min-width: 0;
 }
@@ -6137,7 +6161,7 @@ textarea {
   .c-search-bar .pro-search-form__toolbar-row {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 148px;
-    gap: 12px;
+    gap: var(--gp-search-toolbar-gap, var(--space-1-5));
     align-items: end;
   }
 
@@ -8935,7 +8959,8 @@ body.join-modal-open {
   top: 0;
   z-index: 40;
   background: var(--surface);
-  border-bottom: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 78%, transparent);
+  border-bottom: none;
+  box-shadow: none;
   min-height: var(--app-top-app-bar-height);
   display: flex;
   justify-content: center;
@@ -8985,62 +9010,33 @@ body.join-modal-open {
   justify-content: flex-end;
 }
 
-/* Header theme / brand (pairs with public/theme-prefs.js + partials/theme_boot.ejs; keys gp-theme, gp-brand) */
-.gp-theme-switchers {
-  display: flex;
-  align-items: center;
-  gap: var(--space-0-75);
+/* Theme/brand UI removed from public app bar; theme_boot + theme-prefs.js still apply stored gp-theme / gp-brand. */
+
+.wf-brand-lockup-mark {
+  width: var(--space-4);
+  height: var(--space-4);
+  border-radius: var(--space-1);
   flex-shrink: 0;
+  display: block;
+  object-fit: contain;
 }
 
-.gp-theme-switchers__theme .gp-theme-switchers__theme-icon {
+.wf-brand-lockup-names {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  align-items: baseline;
+  min-width: 0;
 }
 
-.gp-theme-switchers__theme .gp-theme-switchers__theme-icon--sun {
+.wf-brand-lockup-product--getpro {
   display: none;
 }
 
-.gp-theme-switchers__theme .gp-theme-switchers__theme-icon--moon {
-  display: inline-flex;
-}
-
-.gp-theme-switchers__theme.gp-theme-switchers__theme--dark .gp-theme-switchers__theme-icon--moon {
+:root[data-brand="getpro"] .wf-brand-lockup-product--pro {
   display: none;
 }
 
-.gp-theme-switchers__theme.gp-theme-switchers__theme--dark .gp-theme-switchers__theme-icon--sun {
-  display: inline-flex;
-}
-
-.gp-theme-switchers__select {
-  box-sizing: border-box;
-  max-width: 8.5rem;
-  min-height: 40px;
-  padding: var(--space-0-5) var(--space-1-25);
-  border-radius: var(--radius-pill);
-  border: var(--border-width-hairline) solid var(--border-strong);
-  background: var(--surface);
-  color: var(--text);
-  font-size: var(--typo-body-medium-size);
-  font-weight: 600;
-  font-family: var(--font-family-body);
-  cursor: pointer;
-}
-
-.gp-theme-switchers__select:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
-@media (max-width: 380px) {
-  .gp-theme-switchers__select {
-    max-width: 7rem;
-    padding-inline: var(--space-0-75);
-    font-size: var(--typo-size-caption);
-  }
+:root[data-brand="getpro"] .wf-brand-lockup-product--getpro {
+  display: inline;
 }
 
 .app-top-app-bar .wf-nav-brand {
@@ -9049,8 +9045,15 @@ body.join-modal-open {
   gap: var(--space-1);
   color: var(--text);
   font-weight: 800;
-  font-size: var(--space-2-25);
   letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.app-top-app-bar .wf-nav-brand .wf-brand-lockup-product {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .app-top-app-bar .wf-nav-brand:hover {
@@ -9075,18 +9078,27 @@ body.join-modal-open {
 }
 
 .app-top-app-bar__tagline {
-  margin: 0;
-  font-size: var(--space-1-5);
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.35;
   font-weight: 600;
-  color: var(--muted);
-  line-height: 1.2;
+  color: var(--color-text-secondary);
   max-width: min(100%, 22rem);
   text-align: left;
 }
 
+@media (min-width: 768px) {
+  .app-top-app-bar .wf-nav-brand .wf-brand-lockup-product {
+    font-size: 32px;
+  }
+
+  .app-top-app-bar__tagline {
+    font-size: 15px;
+  }
+}
+
 @media (max-width: 720px) {
   .app-top-app-bar__tagline {
-    font-size: var(--space-1-375);
     max-width: calc(100vw - 8rem);
     line-height: 1.25;
   }
@@ -10815,36 +10827,6 @@ body[class*="tenant-"] {
   padding: 0 0 var(--gp-space-xl);
 }
 
-/* Homepage-only: header brand reads stronger (brand lives outside `<main class="gp-home">`) */
-body.home-page .app-top-app-bar .wf-brand-lockup-product {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-}
-
-body.home-page .app-top-app-bar__tagline {
-  margin: 4px 0 0;
-  font-size: 14px;
-  line-height: 1.35;
-  color: var(--color-text-secondary);
-}
-
-body.home-page .app-top-app-bar {
-  border-bottom: none;
-  box-shadow: none;
-}
-
-@media (min-width: 768px) {
-  body.home-page .app-top-app-bar .wf-brand-lockup-product {
-    font-size: 32px;
-  }
-
-  body.home-page .app-top-app-bar__tagline {
-    font-size: 15px;
-  }
-}
-
 /* 2-column section pattern (provider split) */
 .gp-home .gp-home-section {
   display: grid;
@@ -10894,6 +10876,11 @@ body.home-page .app-top-app-bar {
 @media (min-width: 768px) {
   .gp-home {
     --gp-home-story-overlap: 80px;
+    background: var(--color-surface);
+  }
+
+  .gp-home .gp-home-hero {
+    background: var(--color-surface);
   }
 
   .gp-home .gp-home-hero__top {
@@ -10902,29 +10889,6 @@ body.home-page .app-top-app-bar {
 
   .gp-home .gp-home-hero__search-shell {
     width: 100%;
-  }
-
-  .gp-home-search-card {
-    position: relative;
-    z-index: 6;
-  }
-}
-
-@media (min-width: 768px) {
-  .gp-home {
-    background: var(--color-surface);
-  }
-
-  .gp-home .gp-home-hero {
-    background: var(--color-surface);
-  }
-
-  .gp-home-search-card {
-    background: var(--color-surface);
-    border-radius: 22px;
-    border: var(--border-width-hairline) solid var(--color-outline-strong);
-    box-shadow: var(--elevation-md);
-    padding: 18px 22px;
   }
 }
 
@@ -10965,6 +10929,19 @@ body.home-page .app-top-app-bar {
   .gp-home-search-card {
     padding: 16px;
     border-radius: 20px;
+  }
+}
+
+/* Desktop shell — same spec as homepage hero; directory/category must not diverge. */
+@media (min-width: 768px) {
+  .gp-home-search-card {
+    position: relative;
+    z-index: 6;
+    background: var(--color-surface);
+    border-radius: 22px;
+    border: var(--border-width-hairline) solid var(--color-outline-strong);
+    box-shadow: var(--elevation-md);
+    padding: 18px 22px;
   }
 }
 
