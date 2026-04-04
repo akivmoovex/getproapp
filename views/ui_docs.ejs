@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <%- include('partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <%- include('partials/seo_meta', {
@@ -39,8 +40,8 @@
             <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Dark', size: 'sm', id: 'ui-docs-theme-dark' }) %>
             <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'System', size: 'sm', id: 'ui-docs-theme-system' }) %>
             <span class="ui-docs-toolbar__label ui-docs-toolbar__label--gap">Brand</span>
-            <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Pro-online', size: 'sm', id: 'ui-docs-brand-proonline' }) %>
-            <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'GetPro', size: 'sm', id: 'ui-docs-brand-getpro' }) %>
+            <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: _bn, size: 'sm', id: 'ui-docs-brand-proonline' }) %>
+            <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: _bnGetPro, size: 'sm', id: 'ui-docs-brand-getpro' }) %>
             <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Default', size: 'sm', id: 'ui-docs-brand-default' }) %>
           </div>
         </header>

@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <%- include('../partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title><%= tenant ? 'Edit region' : 'New region' %> | Super admin</title>
@@ -69,7 +70,7 @@
               placeholder="+260211000101"
             />
             <div class="admin-field-hint">
-              Pro-online support / directory help — shown in the “Pro-online support” block on company pages (separate from the customer listing number).
+              <%= _bn %> support / directory help — shown in the “<%= _bn %> support” block on company pages (separate from the customer listing number).
             </div>
           </div>
           <div>

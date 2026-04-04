@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <%- include('../partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Admin Login | Pro-online</title>
+    <title>Admin Login | <%= _bn %></title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="admin-gate-page">
@@ -12,7 +13,7 @@
         <a href="/" class="admin-gate-brand">
           <div class="logo" aria-hidden="true"></div>
           <div>
-            <div class="admin-gate-brand__title">Pro-online Admin</div>
+            <div class="admin-gate-brand__title"><%= _bn %> Admin</div>
             <div class="admin-gate-brand__subtitle">Sign in to manage categories, listings, and leads.</div>
           </div>
         </a>

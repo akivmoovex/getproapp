@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <%- include('partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>Sign in | Pro-online</title>
+    <title>Sign in | <%= _bn %></title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <body class="portal-login-hub-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
@@ -14,7 +15,7 @@
         <ul class="portal-login-hub-cards" role="list">
           <li>
             <a class="card portal-login-hub-card portal-login-hub-card--admin" href="/admin/login">
-              <span class="portal-login-hub-card__label">Pro-online staff</span>
+              <span class="portal-login-hub-card__label"><%= _bn %> staff</span>
               <span class="portal-login-hub-card__desc muted">Customer service and admin console</span>
             </a>
           </li>

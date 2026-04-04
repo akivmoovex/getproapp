@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <%- include('partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <%- include('partials/seo_meta', {
-      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : 'UI Demo | Pro-online',
+      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : ('UI Demo | ' + _bn),
       seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : 'Visual reference for component system',
       canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
       ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
@@ -418,8 +419,8 @@
                   <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'System / clear theme', id: 'ui-demo-theme-clear' }) %>
                 </div>
                 <div class="card__actions" style="margin-top: var(--space-1)">
-                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Brand: Pro-online', id: 'ui-demo-brand-proonline' }) %>
-                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Brand: GetPro', id: 'ui-demo-brand-getpro' }) %>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Brand: ' + _bn, id: 'ui-demo-brand-proonline' }) %>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Brand: ' + _bnGetPro, id: 'ui-demo-brand-getpro' }) %>
                   <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Clear brand', id: 'ui-demo-brand-clear' }) %>
                 </div>
               </div>

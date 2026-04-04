@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <%- include('partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>Client portal | Pro-online</title>
+    <title>Client portal | <%= _bn %></title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
   <% var _cb = typeof clientPortalBasePath !== 'undefined' && clientPortalBasePath ? String(clientPortalBasePath).replace(/\/$/, '') : '/client'; %>
