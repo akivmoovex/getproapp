@@ -1,0 +1,4 @@
+<%# Apply persisted theme/brand before first paint (pairs with public/theme-prefs.js). -%>
+<script>
+(function(){try{var d=document.documentElement;var t=localStorage.getItem('gp-theme');var b=localStorage.getItem('gp-brand');if(t==='dark')d.setAttribute('data-theme','dark');else if(t==='light')d.setAttribute('data-theme','light');else d.removeAttribute('data-theme');if(b==='getpro')d.setAttribute('data-brand','getpro');else if(b==='proonline')d.setAttribute('data-brand','proonline');else d.removeAttribute('data-brand');}catch(e){}})();
+</script>

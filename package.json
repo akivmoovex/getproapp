@@ -12,6 +12,7 @@
     "build-search-lists": "node scripts/build-search-lists.js",
     "build": "npm run build-search-lists",
     "inline-ds-framework": "node scripts/inline-ds-framework.js",
+    "sync-inlined-theme": "node scripts/sync-inlined-theme.js",
     "rebuild-sqlite": "npm rebuild better-sqlite3"
   },
   "keywords": [],

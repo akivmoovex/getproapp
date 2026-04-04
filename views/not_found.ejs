@@ -5,6 +5,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <%- include('partials/theme_boot') %>
     <title>Not Found | Pro-online</title>
     <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
   </head>
@@ -36,5 +37,6 @@
         <%- include('partials/site_footer', { tenantUrlPrefix: tp }) %>
       </div>
     </div>
+      <%- include('partials/theme_prefs') %>
   </body>
 </html>

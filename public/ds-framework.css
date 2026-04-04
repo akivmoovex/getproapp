@@ -16,7 +16,7 @@
   --ds-color-on-primary: var(--color-on-primary);
   --ds-color-surface: var(--color-surface);
   --ds-color-background: var(--color-background);
-  --ds-color-on-surface: var(--color-text-primary);
+  --ds-color-on-surface: var(--color-on-surface);
   --ds-color-outline: var(--color-outline);
   --ds-color-outline-strong: var(--color-outline-strong);
   --ds-color-muted: var(--color-text-secondary);

@@ -72,6 +72,7 @@
       </div>
     </div>
     <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <%- include('partials/theme_prefs') %>
     <%- include('partials/autocomplete_defer_bootstrap') %>
     <% if ((companies || []).length === 0) { %>
     <script src="/directory-empty-callback.js?v=<%= stylesVersion %>" defer></script>

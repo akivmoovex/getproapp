@@ -414,6 +414,28 @@
                 </p>
               </div>
             </div>
+
+            <div class="card" style="margin-top: var(--space-3)">
+              <div class="card__header">
+                <h2 class="card__title">Theme &amp; brand (dev)</h2>
+                <div class="card__meta">Uses <code>window.getProThemePrefs</code> + <code>localStorage</code></div>
+              </div>
+              <div class="card__body">
+                <p class="muted" style="margin: 0 0 var(--space-2)">
+                  Toggles <code>data-theme</code> / <code>data-brand</code> on <code>&lt;html&gt;</code>. Preference persists across visits.
+                </p>
+                <div class="card__actions">
+                  <button type="button" class="btn btn--secondary" id="ui-demo-theme-light">Light</button>
+                  <button type="button" class="btn btn--secondary" id="ui-demo-theme-dark">Dark</button>
+                  <button type="button" class="btn btn--text" id="ui-demo-theme-clear">System / clear theme</button>
+                </div>
+                <div class="card__actions" style="margin-top: var(--space-1)">
+                  <button type="button" class="btn btn--secondary" id="ui-demo-brand-proonline">Brand: Pro-online</button>
+                  <button type="button" class="btn btn--secondary" id="ui-demo-brand-getpro">Brand: GetPro</button>
+                  <button type="button" class="btn btn--text" id="ui-demo-brand-clear">Clear brand</button>
+                </div>
+              </div>
+            </div>
           </section>
         </div>
         <%- include('partials/site_footer', { tenantUrlPrefix }) %>
@@ -421,7 +443,36 @@
     </div>
 
     <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <%- include('partials/theme_prefs') %>
     <%- include('partials/autocomplete_defer_bootstrap') %>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        var p = window.getProThemePrefs;
+        if (!p) return;
+        var on = function (id, fn) {
+          var el = document.getElementById(id);
+          if (el) el.addEventListener("click", fn);
+        };
+        on("ui-demo-theme-light", function () {
+          p.setTheme("light");
+        });
+        on("ui-demo-theme-dark", function () {
+          p.setTheme("dark");
+        });
+        on("ui-demo-theme-clear", function () {
+          p.setTheme("system");
+        });
+        on("ui-demo-brand-proonline", function () {
+          p.setBrand("proonline");
+        });
+        on("ui-demo-brand-getpro", function () {
+          p.setBrand("getpro");
+        });
+        on("ui-demo-brand-clear", function () {
+          p.setBrand("default");
+        });
+      });
+    </script>
   </body>
 </html>
 

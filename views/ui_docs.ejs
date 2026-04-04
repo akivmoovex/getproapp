@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <%- include('partials/seo_meta', {
+      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : 'Design system',
+      seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : 'Internal UI playground',
+      canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
+      ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
+      ogImage: typeof ogImage !== 'undefined' ? ogImage : '',
+      ogType: 'website',
+      noindex: true,
+    }) %>
+    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+  </head>
+  <body class="ui-docs-page <%= tenant && tenant.themeClass ? tenant.themeClass : '' %>" data-screen-role="ui-docs">
+    <div class="ui-docs">
+      <aside class="ui-docs-sidebar" aria-label="Component navigation">
+        <h1 class="ui-docs-brand">Design system</h1>
+        <p class="ui-docs-brand__meta">Internal playground · same classes as production</p>
+        <nav aria-label="Components">
+          <ul class="ui-docs-nav">
+            <li><a href="#ui-docs-container">Container</a></li>
+            <li><a href="#ui-docs-button">Button</a></li>
+            <li><a href="#ui-docs-card">Card</a></li>
+            <li><a href="#ui-docs-input">Input</a></li>
+            <li><a href="#ui-docs-search-bar">SearchBar</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main class="ui-docs-main" id="ui-docs-main">
+        <header class="ui-docs-toolbar">
+          <h2 class="ui-docs-toolbar__title">Preview &amp; theme</h2>
+          <div class="ui-docs-toolbar__actions">
+            <span class="ui-docs-toolbar__label">Theme</span>
+            <button type="button" class="btn btn--secondary btn--sm" id="ui-docs-theme-light">Light</button>
+            <button type="button" class="btn btn--secondary btn--sm" id="ui-docs-theme-dark">Dark</button>
+            <button type="button" class="btn btn--text btn--sm" id="ui-docs-theme-system">System</button>
+            <span class="ui-docs-toolbar__label ui-docs-toolbar__label--gap">Brand</span>
+            <button type="button" class="btn btn--secondary btn--sm" id="ui-docs-brand-proonline">Pro-online</button>
+            <button type="button" class="btn btn--secondary btn--sm" id="ui-docs-brand-getpro">GetPro</button>
+            <button type="button" class="btn btn--text btn--sm" id="ui-docs-brand-default">Default</button>
+          </div>
+        </header>
+
+        <div class="ui-docs-scroll">
+          <section class="ui-docs-section" id="ui-docs-container" aria-labelledby="ui-docs-container-heading">
+            <h2 class="ui-docs-section__title" id="ui-docs-container-heading">Container</h2>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Layout band</h3>
+              <p class="ui-docs-variant-meta">
+                <code class="ui-docs-code-inline">.ds-container</code>
+                — same max-width and gutters as directory / homepage content column.
+              </p>
+              <div class="ui-docs-preview">
+                <div class="ui-docs-canvas">
+                  <div class="ds-container">
+                    <p class="muted ui-docs-p--flush">Content inside the public layout band. Resize the viewport to see gutters change at the md breakpoint.</p>
+                  </div>
+                </div>
+              </div>
+              <pre class="ui-docs-code-wrap" tabindex="-1"><code class="ui-docs-code">&lt;div class="ds-container"&gt;
+  …
+&lt;/div&gt;</code></pre>
+            </div>
+          </section>
+
+          <section class="ui-docs-section" id="ui-docs-button" aria-labelledby="ui-docs-button-heading">
+            <h2 class="ui-docs-section__title" id="ui-docs-button-heading">Button</h2>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Primary</h3>
+              <div class="ui-docs-preview">
+                <div class="flex-row-wrap">
+                  <button type="button" class="btn btn--primary">Primary</button>
+                </div>
+              </div>
+              <pre class="ui-docs-code-wrap" tabindex="-1"><code class="ui-docs-code">&lt;button type="button" class="btn btn--primary"&gt;Primary&lt;/button&gt;</code></pre>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Secondary</h3>
+              <div class="ui-docs-preview">
+                <div class="flex-row-wrap">
+                  <button type="button" class="btn btn--secondary">Secondary</button>
+                </div>
+              </div>
+              <pre class="ui-docs-code-wrap" tabindex="-1"><code class="ui-docs-code">&lt;button type="button" class="btn btn--secondary"&gt;Secondary&lt;/button&gt;</code></pre>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Text / ghost</h3>
+              <div class="ui-docs-preview">
+                <div class="flex-row-wrap">
+                  <button type="button" class="btn btn--text">Text</button>
+                </div>
+              </div>
+              <pre class="ui-docs-code-wrap" tabindex="-1"><code class="ui-docs-code">&lt;button type="button" class="btn btn--text"&gt;Text&lt;/button&gt;</code></pre>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Disabled</h3>
+              <div class="ui-docs-preview">
+                <div class="flex-row-wrap">
+                  <button type="button" class="btn btn--primary" disabled>Primary</button>
+                  <button type="button" class="btn btn--secondary" disabled>Secondary</button>
+                  <button type="button" class="btn btn--text" disabled>Text</button>
+                </div>
+              </div>
+              <pre class="ui-docs-code-wrap" tabindex="-1"><code class="ui-docs-code">&lt;button type="button" class="btn btn--primary" disabled&gt;…&lt;/button&gt;</code></pre>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">With icon (partial)</h3>
+              <p class="ui-docs-variant-meta">Renders the same markup as search submit via <code>partials/components/button.ejs</code>.</p>
+              <div class="ui-docs-preview">
+                <div class="flex-row-wrap">
+                  <%- include('partials/components/button', {
+                    variant: 'primary',
+                    type: 'button',
+                    text: 'Search',
+                    icon: 'search',
+                    iconPosition: 'leading',
+                  }) %>
+                  <%- include('partials/components/button', {
+                    variant: 'primary',
+                    type: 'button',
+                    text: 'Disabled',
+                    icon: 'search',
+                    iconPosition: 'leading',
+                    disabled: true,
+                  }) %>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Sizes</h3>
+              <div class="ui-docs-preview">
+                <div class="flex-row-wrap">
+                  <button type="button" class="btn btn--primary btn--sm">Small</button>
+                  <button type="button" class="btn btn--primary">Default</button>
+                  <button type="button" class="btn btn--primary btn--lg">Large</button>
+                  <button type="button" class="btn btn--primary btn--icon" aria-label="Add">
+                    <span class="btn__icon" aria-hidden="true">+</span>
+                  </button>
+                </div>
+              </div>
+              <pre class="ui-docs-code-wrap" tabindex="-1"><code class="ui-docs-code">&lt;button type="button" class="btn btn--primary btn--sm"&gt;Small&lt;/button&gt;
+&lt;button type="button" class="btn btn--primary btn--lg"&gt;Large&lt;/button&gt;
+&lt;button type="button" class="btn btn--primary btn--icon" aria-label="Add"&gt;…&lt;/button&gt;</code></pre>
+            </div>
+          </section>
+
+          <section class="ui-docs-section" id="ui-docs-card" aria-labelledby="ui-docs-card-heading">
+            <h2 class="ui-docs-section__title" id="ui-docs-card-heading">Card</h2>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Basic</h3>
+              <div class="ui-docs-preview">
+                <div class="card">
+                  <div class="card__header">
+                    <h3 class="card__title">Card title</h3>
+                    <div class="card__meta">Supporting line</div>
+                  </div>
+                  <div class="card__body">
+                    <p class="muted ui-docs-p--flush">Body copy uses muted tone for secondary reading.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">With image</h3>
+              <div class="ui-docs-preview">
+                <div class="card ui-docs-card--media">
+                  <div class="ui-docs-card__media">
+                    <img src="/images/mobile/feature-find.svg" width="800" height="450" alt="" decoding="async" />
+                  </div>
+                  <div class="card__header">
+                    <h3 class="card__title">Feature highlight</h3>
+                    <div class="card__meta">Illustration + text stack</div>
+                  </div>
+                  <div class="card__body">
+                    <p class="muted ui-docs-p--flush">Media bleeds to card edges; text blocks keep standard padding.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">With actions</h3>
+              <div class="ui-docs-preview">
+                <div class="card">
+                  <div class="card__header">
+                    <h3 class="card__title">Decision card</h3>
+                    <div class="card__meta">Footer actions</div>
+                  </div>
+                  <div class="card__body">
+                    <p class="muted ui-docs-p--flush">Use <code class="ui-docs-code-inline">card__actions</code> for aligned button groups.</p>
+                  </div>
+                  <div class="card__footer">
+                    <div class="card__actions">
+                      <button type="button" class="btn btn--primary">Continue</button>
+                      <button type="button" class="btn btn--secondary">Back</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Elevated</h3>
+              <div class="ui-docs-preview">
+                <div class="card card--elevated">
+                  <div class="card__header">
+                    <h3 class="card__title">Elevated surface</h3>
+                    <div class="card__meta"><code>card--elevated</code></div>
+                  </div>
+                  <div class="card__body">
+                    <p class="muted ui-docs-p--flush">Stronger shadow level for emphasis.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ui-docs-section" id="ui-docs-input" aria-labelledby="ui-docs-input-heading">
+            <h2 class="ui-docs-section__title" id="ui-docs-input-heading">Input</h2>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Default</h3>
+              <div class="ui-docs-preview">
+                <div class="join-field input-field">
+                  <label class="input-field__label" for="ui-docs-in-default">Full name</label>
+                  <input id="ui-docs-in-default" class="join-plain-input input-field__control" type="text" placeholder="e.g. Jane Banda" autocomplete="name" />
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Focused (simulated)</h3>
+              <p class="ui-docs-variant-meta">
+                Toggles the same outline as <code class="ui-docs-code-inline">:focus-visible</code> for screenshots; prefer real keyboard focus for a11y checks.
+              </p>
+              <div class="ui-docs-preview ui-docs-focus-preview" id="ui-docs-focus-preview">
+                <div class="join-field input-field">
+                  <label class="input-field__label" for="ui-docs-in-focus">Email</label>
+                  <input id="ui-docs-in-focus" class="join-plain-input input-field__control ui-docs-focus-target" type="email" placeholder="you@example.com" autocomplete="email" />
+                </div>
+                <div class="card__actions ui-docs-card__actions--spaced">
+                  <button type="button" class="btn btn--secondary btn--sm" id="ui-docs-toggle-focus-ring">Toggle focus ring</button>
+                  <button type="button" class="btn btn--text btn--sm" id="ui-docs-focus-native">Focus field</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Error</h3>
+              <div class="ui-docs-preview">
+                <div class="join-field input-field input-field--error">
+                  <label class="input-field__label" for="ui-docs-in-err">Phone</label>
+                  <input id="ui-docs-in-err" class="join-plain-input input-field__control" type="tel" placeholder="e.g. 0977 123 456" aria-invalid="true" />
+                  <p class="input-field__error" role="alert">Enter a valid phone number.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">With helper text</h3>
+              <div class="ui-docs-preview">
+                <div class="join-field input-field">
+                  <label class="input-field__label" for="ui-docs-in-help">Business name</label>
+                  <input id="ui-docs-in-help" class="join-plain-input input-field__control" type="text" />
+                  <p class="input-field__help">Shown on your public profile.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Select</h3>
+              <div class="ui-docs-preview">
+                <div class="input-field">
+                  <label class="input-field__label" for="ui-docs-in-select">Category</label>
+                  <select id="ui-docs-in-select" class="pro-search-form__select input-field__control" aria-label="Category">
+                    <option value="">All categories</option>
+                    <option value="builders">Builders</option>
+                    <option value="plumbing">Plumbing</option>
+                  </select>
+                  <p class="input-field__help">Same control styling as search category filter.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="ui-docs-section" id="ui-docs-search-bar" aria-labelledby="ui-docs-search-heading">
+            <h2 class="ui-docs-section__title" id="ui-docs-search-heading">SearchBar</h2>
+            <p class="muted ui-docs-intro--pull">
+              Live <code class="ui-docs-code-inline">partials/pro_search_form.ejs</code> →
+              <code class="ui-docs-code-inline">components/search_bar.ejs</code>. Autocomplete loads on focus / viewport (see
+              <code class="ui-docs-code-inline">autocomplete_defer_bootstrap</code>).
+            </p>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Narrow (mobile-width preview)</h3>
+              <div class="ui-docs-preview ui-docs-preview--narrow">
+                <%- include('partials/pro_search_form', {
+                  variant: 'directory',
+                  tenantUrlPrefix,
+                  idPrefix: 'docs-m',
+                  formId: '',
+                  searchQuery: '',
+                  cityQuery: '',
+                  showCategoryFilter: false,
+                }) %>
+              </div>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">Wide (desktop)</h3>
+              <div class="ui-docs-preview ui-docs-preview--wide">
+                <%- include('partials/pro_search_form', {
+                  variant: 'directory',
+                  tenantUrlPrefix,
+                  idPrefix: 'docs-d',
+                  formId: '',
+                  searchQuery: 'Electrician',
+                  cityQuery: 'Lusaka',
+                  showCategoryFilter: false,
+                }) %>
+              </div>
+            </div>
+
+            <div class="ui-docs-block">
+              <h3 class="ui-docs-variant-title">With category + autocomplete</h3>
+              <p class="ui-docs-variant-meta">Category filter + service/city comboboxes; type in service or city to fetch suggestions.</p>
+              <div class="ui-docs-preview ui-docs-preview--wide">
+                <%- include('partials/pro_search_form', {
+                  variant: 'directory',
+                  tenantUrlPrefix,
+                  idPrefix: 'docs-cat',
+                  formId: '',
+                  searchQuery: '',
+                  cityQuery: '',
+                  showCategoryFilter: true,
+                  selectedCategory: '',
+                  categories: typeof docsSearchCategories !== 'undefined' ? docsSearchCategories : [],
+                }) %>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <%- include('partials/theme_prefs') %>
+    <%- include('partials/autocomplete_defer_bootstrap') %>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        var p = window.getProThemePrefs;
+        function on(id, fn) {
+          var el = document.getElementById(id);
+          if (el) el.addEventListener("click", fn);
+        }
+        if (p) {
+          on("ui-docs-theme-light", function () {
+            p.setTheme("light");
+          });
+          on("ui-docs-theme-dark", function () {
+            p.setTheme("dark");
+          });
+          on("ui-docs-theme-system", function () {
+            p.setTheme("system");
+          });
+          on("ui-docs-brand-proonline", function () {
+            p.setBrand("proonline");
+          });
+          on("ui-docs-brand-getpro", function () {
+            p.setBrand("getpro");
+          });
+          on("ui-docs-brand-default", function () {
+            p.setBrand("default");
+          });
+        }
+
+        var focusPreview = document.getElementById("ui-docs-focus-preview");
+        var focusInput = document.getElementById("ui-docs-in-focus");
+        on("ui-docs-toggle-focus-ring", function () {
+          if (focusPreview) focusPreview.classList.toggle("is-focus-simulated");
+        });
+        on("ui-docs-focus-native", function () {
+          if (focusInput) focusInput.focus();
+        });
+      });
+    </script>
+  </body>
+</html>

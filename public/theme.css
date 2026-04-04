@@ -5,31 +5,74 @@
  */
 
 :root {
-  /* —— Semantic colors (M3 roles) — GetPro Design System V1 (see docs/DESIGN_SYSTEM.md + public/design-system.css) — */
-  --color-primary: #6c5ce7;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #ede9fe;
-  --color-on-primary-container: #2e1064;
-  --color-secondary: #5a4bd1;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #e8def8;
-  --color-on-secondary-container: #1d192b;
-  --color-background: #f6f7fb;
-  --color-surface: #ffffff;
-  /* Alternate / subtle surface (maps to DS --color-surface-alt) */
-  --color-surface-variant: #f1f3f9;
-  --color-text-primary: #121417;
-  --color-text-secondary: #5f6b7a;
-  --color-text-tertiary: #8a94a6;
-  --color-outline: #e4e8f0;
-  --color-outline-strong: #d6dbe6;
-  --color-error: #dc2626;
-  --color-on-error: #ffffff;
-  --color-error-container: #fee2e2;
-  --color-on-error-container: #450a0a;
-  --color-success: #16a34a;
-  --color-warning: #f59e0b;
-  --color-focus: #6c5ce7;
+  /* —— Layer 1: Base palette (raw values — do not use in component CSS; use semantic tokens below) —— */
+  --base-white: #ffffff;
+  --base-black: #121417;
+  --base-canvas: #f6f7fb;
+  --base-surface: #ffffff;
+  --base-surface-muted: #f1f3f9;
+  --base-outline: #e4e8f0;
+  --base-outline-strong: #d6dbe6;
+  --base-text: #121417;
+  --base-text-muted: #5f6b7a;
+  --base-text-subtle: #8a94a6;
+  --base-violet-500: #6c5ce7;
+  --base-violet-600: #5a4bd1;
+  --base-violet-400: #a5b4fc;
+  --base-violet-900: #2e1064;
+  --base-violet-deep: #312a72;
+  --base-violet-hover: #4c3d9e;
+  --base-indigo-500: #6366f1;
+  --base-indigo-600: #4f46e5;
+  --base-purple-600: #7c3aed;
+  --base-error: #dc2626;
+  --base-success: #16a34a;
+  --base-warning: #f59e0b;
+  --base-primary-container: #ede9fe;
+  --base-secondary-container: #e8def8;
+  --base-on-secondary-container: #1d192b;
+  --base-error-container: #fee2e2;
+  --base-on-error-container: #450a0a;
+
+  /* —— Layer 2: Semantic colors (M3 roles — components use ONLY these / their aliases: --text, --surface, …) —— */
+  --color-primary: var(--base-violet-500);
+  --color-on-primary: var(--base-white);
+  --color-primary-container: var(--base-primary-container);
+  --color-on-primary-container: var(--base-violet-900);
+  --color-secondary: var(--base-violet-600);
+  --color-on-secondary: var(--base-white);
+  --color-secondary-container: var(--base-secondary-container);
+  --color-on-secondary-container: var(--base-on-secondary-container);
+  --color-background: var(--base-canvas);
+  --color-surface: var(--base-surface);
+  --color-surface-variant: var(--base-surface-muted);
+  --color-text-primary: var(--base-text);
+  --color-text-secondary: var(--base-text-muted);
+  --color-text-tertiary: var(--base-text-subtle);
+  --color-outline: var(--base-outline);
+  --color-outline-strong: var(--base-outline-strong);
+  --color-border: var(--color-outline);
+  --color-muted: var(--color-text-secondary);
+  --color-on-surface: var(--color-text-primary);
+  --color-error: var(--base-error);
+  --color-on-error: var(--base-white);
+  --color-error-container: var(--base-error-container);
+  --color-on-error-container: var(--base-on-error-container);
+  --color-success: var(--base-success);
+  --color-warning: var(--base-warning);
+  --color-focus: var(--color-primary);
+  /* Secondary hue for primary CTA gradients (hero search button) */
+  --color-accent: var(--base-purple-600);
+  --color-primary-dark: var(--base-violet-600);
+  /* Comma-separated RGB for rgba(..., α) — keep in sync with --color-primary */
+  --color-primary-rgb: 108, 92, 231;
+
+  /* Homepage story carousel (opaque marketing backdrops — tokens so styles stay semantic) */
+  --color-home-story-bg-1: #f97316;
+  --color-home-story-bg-2: #ea580c;
+  --color-home-story-bg-3: #dc2626;
+  --color-home-story-bg-4: #b91c1c;
+  --color-home-story-bg-5: #7c3aed;
 
   /* Misc palette (marketing / tenant themes — single reference, avoids hex in styles.css) */
   --color-slate-100: #f1f5f9;
@@ -59,12 +102,12 @@
   --muted: var(--color-text-secondary);
   --muted-soft: var(--color-text-tertiary);
   --wf-primary: var(--color-primary);
-  --wf-primary-dark: #5a4bd1;
-  --wf-primary-light: #a5b4fc;
-  --wf-primary-rgb: 108, 92, 231;
+  --wf-primary-dark: var(--color-primary-dark);
+  --wf-primary-light: var(--base-violet-400);
+  --wf-primary-rgb: var(--color-primary-rgb);
   --wf-secondary: var(--wf-primary-dark);
-  --wf-secondary-hover: #4c3d9e;
-  --wf-secondary-deep: #312a72;
+  --wf-secondary-hover: var(--base-violet-hover);
+  --wf-secondary-deep: var(--base-violet-deep);
   --link: var(--color-primary);
   --pro-orange: var(--color-primary);
   --pro-orange-hover: var(--wf-primary-dark);
@@ -149,6 +192,7 @@
   --spacing-8: var(--space-touch);
 
   /* —— Extended spacing (tokenized former raw px; prefer these over literals in components) —— */
+  --space-0-25: 2px;
   --space-half: 4px;
   --space-0-625: 5px;
   --space-0-75: 6px;
@@ -505,6 +549,73 @@
   --md-sys-motion-duration-short1: 150ms;
   --md-sys-motion-duration-medium1: 250ms;
   --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* —— Theme: light default (:root). Explicit light for persistence. —— */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* —— Theme: dark (Material-style surfaces; not simple inversion) —— */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-background: #121212;
+  --color-surface: #1e1e1e;
+  --color-surface-variant: #2c2c2e;
+  --color-text-primary: #e8eaed;
+  --color-text-secondary: #bdc1c8;
+  --color-text-tertiary: #9aa0a6;
+  --color-on-surface: var(--color-text-primary);
+  --color-muted: var(--color-text-secondary);
+  --color-outline: #3c4043;
+  --color-outline-strong: #5f6368;
+  --color-border: var(--color-outline);
+  --color-on-primary: #ffffff;
+  --color-primary-container: color-mix(in srgb, var(--color-primary) 24%, var(--color-surface));
+  --color-on-primary-container: color-mix(in srgb, var(--color-primary) 12%, #ffffff);
+  --color-secondary-container: color-mix(in srgb, var(--color-secondary) 18%, var(--color-surface));
+  --color-on-secondary-container: var(--color-text-primary);
+  --color-error-container: color-mix(in srgb, var(--color-error) 22%, var(--color-surface));
+  --color-on-error-container: #fecaca;
+
+  --color-glass-hero-search: color-mix(in srgb, var(--color-surface) 92%, var(--base-white));
+  --color-slate-shadow-035: rgb(0 0 0 / 0.35);
+  --color-slate-shadow-06: rgb(0 0 0 / 0.45);
+  --color-slate-shadow-1: rgb(0 0 0 / 0.5);
+  --color-slate-shadow-12: rgb(0 0 0 / 0.55);
+
+  --elevation-sm: 0 1px 2px rgb(0 0 0 / 0.35);
+  --elevation-md: 0 4px 12px rgb(0 0 0 / 0.45);
+  --elevation-1: 0 2px 6px rgb(0 0 0 / 0.4);
+  --elevation-2: 0 6px 20px rgb(0 0 0 / 0.5);
+  --shadow: var(--elevation-2);
+  --card-shadow-sm: var(--elevation-1);
+
+  --md-sys-elevation-level1: 0 1px 2px rgb(0 0 0 / 0.35), 0 1px 3px 1px rgb(0 0 0 / 0.28);
+  --md-sys-elevation-level2: 0 1px 2px rgb(0 0 0 / 0.38), 0 2px 6px 2px rgb(0 0 0 / 0.32);
+  --md-sys-elevation-level3: 0 4px 8px 3px rgb(0 0 0 / 0.38), 0 1px 3px rgb(0 0 0 / 0.32);
+  --md-sys-elevation-level4: 0 6px 10px 4px rgb(0 0 0 / 0.4), 0 2px 3px rgb(0 0 0 / 0.34);
+  --md-sys-elevation-level5: 0 8px 12px 6px rgb(0 0 0 / 0.42), 0 4px 4px rgb(0 0 0 / 0.34);
+}
+
+/* —— Brand: GetPro (indigo accent; spacing/layout unchanged) —— */
+:root[data-brand="getpro"] {
+  --color-primary: var(--base-indigo-500);
+  --color-primary-dark: var(--base-indigo-600);
+  --color-primary-rgb: 99, 102, 241;
+  --color-focus: var(--color-primary);
+  --color-accent: color-mix(in srgb, var(--base-indigo-500) 55%, var(--base-purple-600) 45%);
+}
+
+/* —— Brand: Pro-online (default violet; explicit when switching back from GetPro) —— */
+:root[data-brand="proonline"] {
+  --color-primary: var(--base-violet-500);
+  --color-primary-dark: var(--base-violet-600);
+  --color-primary-rgb: 108, 92, 231;
+  --color-focus: var(--color-primary);
+  --color-accent: var(--base-purple-600);
 }
 
 /* Optional: layout shell for pages that use header / main / footer */

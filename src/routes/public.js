@@ -462,6 +462,25 @@ module.exports = function publicRoutes({ db }) {
     });
   });
 
+  /** Internal design-system playground (Storybook-style); not product UI. */
+  router.get("/ui", (req, res) => {
+    const canonicalUrl = canonicalUrlForTenant(req, "/ui");
+    return res.render("ui_docs", {
+      seoTitle: `Design system · ${req.tenant.name || "Pro-online"}`,
+      seoDescription: "Internal UI playground for components, states, and theme validation.",
+      canonicalUrl,
+      ogUrl: canonicalUrl,
+      noindex: true,
+      docsSearchCategories: [
+        { slug: "builders", name: "Builders" },
+        { slug: "plumbing", name: "Plumbing" },
+        { slug: "electrical", name: "Electrical" },
+      ],
+      ...tenantLocals(req),
+      ...platformSupport(req),
+    });
+  });
+
   router.get("/sitemap.xml", (req, res) => {
     res.type("application/xml");
     res.send(buildSitemapXml(req, db));
