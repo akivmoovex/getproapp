@@ -1,6 +1,52 @@
 <%#
-  Shared service + city search — delegates to components/search_bar (single implementation).
-  Options unchanged: variant, tenantUrlPrefix, formAction, formId, searchQuery, cityQuery,
+  Shared service + city search — form shell + locals; inner UI: partials/components/search_bar.ejs
+  Callers pass: variant, tenantUrlPrefix, formAction, formId, searchQuery, cityQuery,
   showCategoryFilter, selectedCategory, categories, ariaLabel, idPrefix.
 -%>
-<%- include('partials/components/search_bar') %>
+<%
+  var _v = typeof variant !== 'undefined' ? String(variant) : 'directory';
+  var _tp = typeof tenantUrlPrefix !== 'undefined' ? String(tenantUrlPrefix || '') : '';
+  var _action = typeof formAction !== 'undefined' && formAction ? String(formAction) : (_tp.replace(/\/$/, '') + '/directory');
+  var _fid = typeof formId !== 'undefined' ? String(formId || '') : (_v === 'directory' ? 'directory-toolbar' : '');
+  var _pre = _v === 'home' ? 'home' : 'dir';
+  if (typeof idPrefix !== 'undefined' && idPrefix) {
+    _pre = String(idPrefix).replace(/[^a-z0-9_-]/gi, '') || _pre;
+  }
+  var _q = typeof searchQuery !== 'undefined' ? String(searchQuery || '') : '';
+  var _city = typeof cityQuery !== 'undefined' ? String(cityQuery || '') : '';
+  var _showCat = typeof showCategoryFilter !== 'undefined' && showCategoryFilter;
+  var _selCat = typeof selectedCategory !== 'undefined' ? String(selectedCategory || '').trim() : '';
+  var _cats = typeof categories !== 'undefined' && categories ? categories : [];
+  var _aria = typeof ariaLabel !== 'undefined' ? String(ariaLabel) : 'Search by service and city';
+%>
+<form
+  <% if (_fid) { %>id="<%= _fid %>"<% } %>
+  class="pro-search-form gp-search-bar"
+  action="<%= _action %>"
+  method="get"
+  role="search"
+  aria-label="<%= _aria %>"
+>
+<%- include('components/search_bar', {
+  variant: typeof variant !== 'undefined' ? variant : 'directory',
+  tenantUrlPrefix: typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : '',
+  showCategoryFilter: typeof showCategoryFilter !== 'undefined' ? showCategoryFilter : false,
+  selectedCategory: typeof selectedCategory !== 'undefined' ? selectedCategory : '',
+  categories: typeof categories !== 'undefined' ? categories : [],
+  ariaLabel: typeof ariaLabel !== 'undefined' ? ariaLabel : '',
+  idPrefix: typeof idPrefix !== 'undefined' ? idPrefix : '',
+  formAction: typeof formAction !== 'undefined' ? formAction : '',
+  formId: typeof formId !== 'undefined' ? formId : '',
+  searchQuery: typeof searchQuery !== 'undefined' ? searchQuery : '',
+  cityQuery: typeof cityQuery !== 'undefined' ? cityQuery : '',
+  _pre: _pre,
+  _q: _q,
+  _city: _city,
+  _showCat: _showCat,
+  _selCat: _selCat,
+  _cats: _cats,
+  _fid: _fid,
+  _action: _action,
+  _aria: _aria,
+}) %>
+</form>

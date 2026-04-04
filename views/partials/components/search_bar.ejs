@@ -1,32 +1,7 @@
 <%#
-  Canonical dual-field search (service + city + submit). Used on homepage, directory, category, demos.
-  Inherits locals from parent include (variant, tenantUrlPrefix, formAction, formId, searchQuery, cityQuery, …).
-  One surface + layout: form.gp-search-bar — do not fork homepage vs directory styles.
+  Inner markup only for gp-search-bar (no <form> — parent: pro_search_form.ejs).
+  Locals: _pre, _q, _city, _showCat, _selCat, _cats (plus caller fields passed through for docs only).
 -%>
-<%
-  var _v = typeof variant !== 'undefined' ? String(variant) : 'directory';
-  var _tp = typeof tenantUrlPrefix !== 'undefined' ? String(tenantUrlPrefix || '') : '';
-  var _action = typeof formAction !== 'undefined' && formAction ? String(formAction) : (_tp.replace(/\/$/, '') + '/directory');
-  var _fid = typeof formId !== 'undefined' ? String(formId || '') : (_v === 'directory' ? 'directory-toolbar' : '');
-  var _pre = _v === 'home' ? 'home' : 'dir';
-  if (typeof idPrefix !== 'undefined' && idPrefix) {
-    _pre = String(idPrefix).replace(/[^a-z0-9_-]/gi, '') || _pre;
-  }
-  var _q = typeof searchQuery !== 'undefined' ? String(searchQuery || '') : '';
-  var _city = typeof cityQuery !== 'undefined' ? String(cityQuery || '') : '';
-  var _showCat = typeof showCategoryFilter !== 'undefined' && showCategoryFilter;
-  var _selCat = typeof selectedCategory !== 'undefined' ? String(selectedCategory || '').trim() : '';
-  var _cats = typeof categories !== 'undefined' && categories ? categories : [];
-  var _aria = typeof ariaLabel !== 'undefined' ? String(ariaLabel) : 'Search by service and city';
-%>
-<form
-  <% if (_fid) { %>id="<%= _fid %>"<% } %>
-  class="pro-search-form gp-search-bar"
-  action="<%= _action %>"
-  method="get"
-  role="search"
-  aria-label="<%= _aria %>"
->
   <% if (_showCat && _cats && _cats.length) { %>
   <div class="pro-search-form__category input-field">
     <label class="pro-search-form__label pro-home-field-label input-field__label" for="<%= _pre %>-category-filter">Category</label>
@@ -100,4 +75,3 @@
       className: 'pro-search-form__submit pro-home-search-submit',
     }) %>
   </div>
-</form>

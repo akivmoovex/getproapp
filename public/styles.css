@@ -8979,6 +8979,66 @@ body.join-modal-open {
   flex-shrink: 0;
   margin-left: auto;
   align-self: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Header theme / brand (pairs with public/theme-prefs.js + partials/theme_boot.ejs; keys gp-theme, gp-brand) */
+.gp-theme-switchers {
+  display: flex;
+  align-items: center;
+  gap: var(--space-0-75);
+  flex-shrink: 0;
+}
+
+.gp-theme-switchers__theme .gp-theme-switchers__theme-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gp-theme-switchers__theme .gp-theme-switchers__theme-icon--sun {
+  display: none;
+}
+
+.gp-theme-switchers__theme .gp-theme-switchers__theme-icon--moon {
+  display: inline-flex;
+}
+
+.gp-theme-switchers__theme.gp-theme-switchers__theme--dark .gp-theme-switchers__theme-icon--moon {
+  display: none;
+}
+
+.gp-theme-switchers__theme.gp-theme-switchers__theme--dark .gp-theme-switchers__theme-icon--sun {
+  display: inline-flex;
+}
+
+.gp-theme-switchers__select {
+  box-sizing: border-box;
+  max-width: 8.5rem;
+  min-height: 40px;
+  padding: var(--space-0-5) var(--space-1-25);
+  border-radius: var(--radius-pill);
+  border: var(--border-width-hairline) solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--typo-body-medium-size);
+  font-weight: 600;
+  font-family: var(--font-family-body);
+  cursor: pointer;
+}
+
+.gp-theme-switchers__select:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+@media (max-width: 380px) {
+  .gp-theme-switchers__select {
+    max-width: 7rem;
+    padding-inline: var(--space-0-75);
+    font-size: var(--typo-size-caption);
+  }
 }
 
 .app-top-app-bar .wf-nav-brand {
