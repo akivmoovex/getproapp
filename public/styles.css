@@ -621,7 +621,7 @@
 }
 
 /**
- * Public layout band: `.container`, `.gp-home-container`, `.ds-layout-public` — one definition in the global layout band block (see `.container` in this file).
+ * Public layout band: `.container`, `.ds-container`, `.ds-layout-public` — one definition in the global layout band block (see `.container` in this file).
  */
 
 /**
@@ -1513,7 +1513,7 @@
 }
 
 .directory-page-toolbar {
-  /* Block axis only — avoid `padding` shorthand zeroing inline padding on the same node as `.gp-home-container`. */
+  /* Block axis only — avoid `padding` shorthand zeroing inline padding on the same node as `.ds-container`. */
   padding-block-start: var(--space-2-5);
   padding-block-end: var(--space-1);
 }
@@ -1749,7 +1749,7 @@ a:hover {
 
 /* ——— Global layout band — ONE system: max-width, centering, horizontal padding (header, footer, home, directory, optional .ds-layout-public). ——— */
 .container,
-.gp-home-container,
+.ds-container,
 .ds-layout-public {
   max-width: var(--layout-content-max-width);
   margin-left: auto;
@@ -1761,7 +1761,7 @@ a:hover {
 
 @media (min-width: 768px) {
   .container,
-  .gp-home-container,
+  .ds-container,
   .ds-layout-public {
     padding-inline: var(--layout-gutter-x-md);
   }
@@ -1769,7 +1769,7 @@ a:hover {
 
 @media (max-width: 767px) {
   .container,
-  .gp-home-container,
+  .ds-container,
   .ds-layout-public {
     padding-left: max(var(--layout-gutter-x-sm), env(safe-area-inset-left, 0px));
     padding-right: max(var(--layout-gutter-x-sm), env(safe-area-inset-right, 0px));
@@ -5537,11 +5537,19 @@ textarea {
 /* NOTE: Legacy home hero/search wrap styles removed.
    Home now uses `.gp-home-*` selectors in `views/index.ejs`. */
 
-.pro-home-dual-search {
+.gp-search-bar {
   display: flex;
   flex-direction: column;
   gap: var(--space-1-25);
   max-width: min(var(--bp-xl-2), 56rem);
+  width: 100%;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+.gp-search-bar .pro-ac {
+  flex: 1 1 var(--layout-dim-200);
+  min-width: 0;
 }
 
 .pro-search-form__toolbar-row {
@@ -5673,20 +5681,8 @@ textarea {
   white-space: nowrap;
 }
 
-.pro-home-search-icon {
+.pro-home-search-submit .btn__icon {
   flex-shrink: 0;
-}
-
-/* Directory: dual field search row */
-.pro-search--directory {
-  max-width: 100%;
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
-
-.pro-search--directory .pro-ac {
-  flex: 1 1 var(--layout-dim-200);
-  min-width: 0;
 }
 
 .pro-search-dir-btn {
@@ -5710,7 +5706,7 @@ textarea {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .gp-home-search-card .pro-home-dual-search .pro-ac:hover {
+  .gp-home-search-card .gp-search-bar .pro-ac:hover {
     border-color: color-mix(in srgb, var(--wf-primary) 20%, var(--border-strong));
   }
 }
@@ -5743,24 +5739,24 @@ textarea {
   /* No overflow-x clip — avoid clipping absolutely positioned autocomplete in directory layouts. */
 }
 
-/* Directory (gp-home-container): desktop uses same max-width/padding as homepage .gp-home-container; width caps only on small screens. */
-.gp-home-container:has(.pro-directory-toolbar) {
+/* Directory band (.ds-container): desktop uses same max-width/padding as homepage hero; width caps only on small screens. */
+.ds-container:has(.pro-directory-toolbar) {
   min-width: 0;
 }
 
 @media (max-width: 767px) {
-  .gp-home-container:has(.pro-directory-toolbar) {
+  .ds-container:has(.pro-directory-toolbar) {
     max-width: 100%;
     /* No overflow-x clip — search card + .pro-ac-dropdown must paint outside flex min-width fixes. */
   }
 }
 
-.gp-home-container.directory-page {
+.ds-container.directory-page {
   min-width: 0;
 }
 
 @media (max-width: 767px) {
-  .gp-home-container.directory-page {
+  .ds-container.directory-page {
     max-width: 100%;
     /* No overflow-x clip — same as :has(.pro-directory-toolbar); autocomplete lives inside. */
   }
@@ -5773,7 +5769,7 @@ textarea {
 }
 
 /**
- * Top search + results meta: full width of `.gp-home-container` (same band as homepage hero).
+ * Top search + results meta: full width of `.ds-container` (same band as homepage hero).
  */
 .pro-directory-top-band {
   width: 100%;
@@ -5788,10 +5784,10 @@ textarea {
   padding-inline: 0;
 }
 
-/* Desktop: directory/category — same inner column as homepage hero (full width of `.gp-home-container` content box; mirrors `.gp-home-hero__search-shell` → card). */
+/* Desktop: directory/category — same inner column as homepage hero (full width of `.ds-container` content box; mirrors `.gp-home-hero__search-shell` → card). */
 @media (min-width: 768px) {
-  .gp-home-container.directory-page .pro-directory-top-band,
-  .gp-home-container.directory-page .pro-directory-main {
+  .ds-container.directory-page .pro-directory-top-band,
+  .ds-container.directory-page .pro-directory-main {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -5800,7 +5796,7 @@ textarea {
     box-sizing: border-box;
   }
 
-  .gp-home-container.directory-page .pro-directory-toolbar:has(.gp-home-search-card) {
+  .ds-container.directory-page .pro-directory-toolbar:has(.gp-home-search-card) {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -5808,7 +5804,7 @@ textarea {
     box-sizing: border-box;
   }
 
-  .gp-home-container.directory-page .gp-home-search-card {
+  .ds-container.directory-page .gp-home-search-card {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -5816,7 +5812,7 @@ textarea {
     box-sizing: border-box;
   }
 
-  .gp-home-container.directory-page .pro-directory-toolbar__meta {
+  .ds-container.directory-page .pro-directory-toolbar__meta {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -5824,15 +5820,15 @@ textarea {
     box-sizing: border-box;
   }
 
-  .gp-home-container.directory-page .pro-directory-results-helper {
+  .ds-container.directory-page .pro-directory-results-helper {
     max-width: none;
     margin-inline: 0;
     padding-inline: 0;
     box-sizing: border-box;
   }
 
-  .gp-home-container.directory-page .pro-directory-results-wrap,
-  .gp-home-container.directory-page .pro-directory-results {
+  .ds-container.directory-page .pro-directory-results-wrap,
+  .ds-container.directory-page .pro-directory-results {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -5880,12 +5876,12 @@ textarea {
   }
 }
 
-.pro-directory-toolbar .pro-search-form--directory .pro-ac:focus-within {
+.pro-directory-toolbar .gp-search-bar .pro-ac:focus-within {
   z-index: 5;
 }
 
 /* Shared search form inside results toolbar (see partials/pro_search_form.ejs) */
-.pro-directory-toolbar .pro-search-form--directory {
+.pro-directory-toolbar .gp-search-bar {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -5906,7 +5902,7 @@ textarea {
   min-width: 0;
 }
 
-.pro-directory-toolbar .pro-search-form--directory .pro-search-form__fields {
+.pro-directory-toolbar .gp-search-bar .pro-search-form__fields {
   display: flex;
   flex-wrap: nowrap;
   align-items: stretch;
@@ -5926,16 +5922,16 @@ textarea {
     row-gap: var(--space-1);
   }
 
-  .pro-directory-toolbar .pro-search-form--directory .pro-search-form__fields {
+  .pro-directory-toolbar .gp-search-bar .pro-search-form__fields {
     display: contents;
   }
 
-  .pro-directory-toolbar .pro-search-form--directory .pro-search-form__field {
+  .pro-directory-toolbar .gp-search-bar .pro-search-form__field {
     min-width: 0;
   }
 }
 
-.pro-directory-toolbar .pro-search-form--directory .pro-search-form__field {
+.pro-directory-toolbar .gp-search-bar .pro-search-form__field {
   display: flex;
   flex-direction: column;
   gap: var(--space-0-5);
@@ -5943,7 +5939,7 @@ textarea {
   min-width: 0;
 }
 
-.pro-directory-toolbar .pro-search-form--directory .pro-search-form__field .pro-ac {
+.pro-directory-toolbar .gp-search-bar .pro-search-form__field .pro-ac {
   width: 100%;
 }
 
@@ -6136,7 +6132,7 @@ textarea {
     flex: 1 1 0;
   }
 
-  .pro-directory-toolbar .pro-search-form--directory .pro-search-form__fields {
+  .pro-directory-toolbar .gp-search-bar .pro-search-form__fields {
     flex-wrap: nowrap;
   }
 }
@@ -6168,13 +6164,13 @@ textarea {
     justify-content: center;
   }
 
-  .pro-directory-toolbar .pro-search-form--directory .pro-search-form__field {
+  .pro-directory-toolbar .gp-search-bar .pro-search-form__field {
     flex: 1 1 auto;
     width: 100%;
     max-width: 100%;
   }
 
-  .pro-directory-toolbar .pro-search-form--directory .pro-home-search-submit {
+  .pro-directory-toolbar .gp-search-bar .pro-home-search-submit {
     width: 100%;
     justify-content: center;
   }
@@ -6225,6 +6221,15 @@ textarea {
   }
 }
 
+/* Shared card shell (see partials/components/card.ejs + directory listing layout). */
+.ds-card,
+.pro-directory-card {
+  border-radius: var(--radius-lg);
+  border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 92%, var(--text) 8%);
+  background: var(--surface);
+  box-shadow: var(--elevation-sm);
+}
+
 .pro-directory-card {
   display: flex;
   flex-direction: column;
@@ -6232,10 +6237,6 @@ textarea {
   min-width: 0;
   min-height: 0;
   height: 100%;
-  border-radius: var(--radius-lg);
-  border: var(--border-width-hairline) solid color-mix(in srgb, var(--border-strong) 92%, var(--text) 8%);
-  background: var(--surface);
-  box-shadow: var(--elevation-sm);
   overflow: hidden;
   transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
@@ -10101,12 +10102,12 @@ body.home-page .app-top-app-bar {
     padding: 18px 22px;
   }
 
-  .gp-home-search-card .pro-home-dual-search .pro-search-form__toolbar-row {
+  .gp-home-search-card .gp-search-bar .pro-search-form__toolbar-row {
     gap: 10px;
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 148px;
   }
 
-  .gp-home-search-card .pro-home-dual-search .pro-ac-input {
+  .gp-home-search-card .gp-search-bar .pro-ac-input {
     height: 48px;
     border-radius: var(--search-field-radius);
     border: 1px solid #e5e7eb;
@@ -10114,12 +10115,12 @@ body.home-page .app-top-app-bar {
     box-shadow: none;
   }
 
-  .gp-home-search-card .pro-home-dual-search .pro-ac-input:focus {
+  .gp-home-search-card .gp-search-bar .pro-ac-input:focus {
     border-color: #6366f1;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
   }
 
-  .gp-home-search-card .pro-home-dual-search .pro-home-search-submit.btn {
+  .gp-home-search-card .gp-search-bar .pro-home-search-submit.btn {
     height: 48px;
     width: 148px;
     min-width: 148px;
@@ -10134,7 +10135,7 @@ body.home-page .app-top-app-bar {
     border: none;
   }
 
-  .gp-home-search-card .pro-home-dual-search .pro-home-search-submit.btn:hover {
+  .gp-home-search-card .gp-search-bar .pro-home-search-submit.btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
   }
@@ -10185,48 +10186,48 @@ body.home-page .app-top-app-bar {
   color: var(--gp-hp-eyebrow);
 }
 
-.gp-home-search-card .pro-home-dual-search {
+.gp-home-search-card .gp-search-bar {
   width: 100%;
   max-width: 100%;
 }
 
-.gp-home-search-card .pro-home-dual-search .pro-search-form__toolbar-row {
+.gp-home-search-card .gp-search-bar .pro-search-form__toolbar-row {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 148px;
   gap: 12px;
   align-items: end;
 }
 
-.gp-home-search-card .pro-home-dual-search .pro-home-search-fields {
+.gp-home-search-card .gp-search-bar .pro-home-search-fields {
   display: grid;
   gap: var(--gp-space-sm);
 }
 
-.gp-home-search-card .pro-home-dual-search .input-field__control {
+.gp-home-search-card .gp-search-bar .input-field__control {
   min-height: 48px;
 }
 
-.gp-home-search-card .pro-home-dual-search .pro-search-form__field,
-.gp-home-search-card .pro-home-dual-search .pro-ac {
+.gp-home-search-card .gp-search-bar .pro-search-form__field,
+.gp-home-search-card .gp-search-bar .pro-ac {
   width: 100%;
   min-width: 0;
 }
 
-.gp-home-search-card .pro-home-dual-search .pro-ac,
-.gp-home-search-card .pro-home-dual-search .pro-ac-input {
+.gp-home-search-card .gp-search-bar .pro-ac,
+.gp-home-search-card .gp-search-bar .pro-ac-input {
   min-height: var(--control-height-comfortable);
   height: var(--control-height-comfortable);
   border-radius: var(--search-field-radius);
 }
 
-.gp-home-search-card .pro-home-dual-search .pro-ac {
+.gp-home-search-card .gp-search-bar .pro-ac {
   flex: 0 1 auto;
   overflow: visible;
   box-shadow: none;
   border-color: var(--gp-hp-border);
 }
 
-.gp-home-search-card .pro-home-dual-search .pro-ac-input {
+.gp-home-search-card .gp-search-bar .pro-ac-input {
   height: 48px;
   box-sizing: border-box;
   padding-block: 10px;
@@ -10234,7 +10235,7 @@ body.home-page .app-top-app-bar {
   color: var(--gp-hp-text);
 }
 
-.gp-home-search-card .pro-home-dual-search .pro-home-search-submit.btn {
+.gp-home-search-card .gp-search-bar .pro-home-search-submit.btn {
   width: 148px;
   min-width: 148px;
   max-width: 148px;
@@ -10255,12 +10256,12 @@ body.home-page .app-top-app-bar {
     border-radius: 20px;
   }
 
-  .gp-home-search-card .pro-home-dual-search .pro-search-form__toolbar-row {
+  .gp-home-search-card .gp-search-bar .pro-search-form__toolbar-row {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
-  .gp-home-search-card .pro-home-dual-search .pro-home-search-submit.btn {
+  .gp-home-search-card .gp-search-bar .pro-home-search-submit.btn {
     width: 100%;
     min-width: 0;
     max-width: none;
@@ -11103,7 +11104,7 @@ body.home-page .app-top-app-bar {
     padding: 0 0 var(--gp-space-xl);
   }
 
-  .gp-home-search-card .pro-home-dual-search .pro-home-search-fields {
+  .gp-home-search-card .gp-search-bar .pro-home-search-fields {
     display: contents;
   }
 
@@ -11135,8 +11136,8 @@ body.home-page .app-top-app-bar {
   overflow: visible;
 }
 
-.gp-home-search-card .pro-home-dual-search,
-.gp-home-search-card .pro-home-dual-search form {
+.gp-home-search-card .gp-search-bar,
+.gp-home-search-card .gp-search-bar form {
   min-width: 0;
   max-width: 100%;
 }
@@ -11154,11 +11155,11 @@ body.home-page .app-top-app-bar {
 }
 
 @media (min-width: 768px) {
-  .gp-home-search-card .pro-home-dual-search .pro-search-form__toolbar-row > * {
+  .gp-home-search-card .gp-search-bar .pro-search-form__toolbar-row > * {
     min-width: 0;
   }
 
-  .gp-home-search-card .pro-home-dual-search .pro-search-form__toolbar-row .pro-home-search-submit.btn {
+  .gp-home-search-card .gp-search-bar .pro-search-form__toolbar-row .pro-home-search-submit.btn {
     flex-shrink: 0;
   }
 }

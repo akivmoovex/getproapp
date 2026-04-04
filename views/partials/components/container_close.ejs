@@ -1,0 +1,7 @@
+<%#
+  Closes partials/components/container_start.ejs. Locals: tag (must match container_start if not default div)
+-%>
+<%
+  var _tag = typeof tag !== 'undefined' && tag ? String(tag) : 'div';
+%>
+</<%= _tag %>>

@@ -67,7 +67,7 @@
     <main class="gp-home" role="main">
       <div class="gp-home-top-stack">
       <section class="gp-home-hero" aria-labelledby="gp-home-hero-title">
-        <div class="gp-home-container">
+        <%- include('partials/components/container_start') %>
           <h1 id="gp-home-hero-title" class="visually-hidden">Pro-online — professional directory</h1>
           <div class="gp-home-hero__top">
             <div class="gp-home-hero__search-shell">
@@ -80,7 +80,7 @@
               </div>
             </div>
           </div>
-        </div>
+        <%- include('partials/components/container_close') %>
       </section>
 
       <!-- Auto-advancing product story -->
@@ -90,7 +90,7 @@
         data-story="t1"
         aria-labelledby="gp-home-story-title"
       >
-        <div class="gp-home-container gp-home-story__frame">
+        <%- include('partials/components/container_start', { extraClass: 'gp-home-story__frame' }) %>
           <div class="gp-home-story__inner">
             <div class="gp-home-story__content" id="gp-home-story-region" aria-live="polite">
               <span class="gp-home-story__eyebrow">WHY USE PRO-ONLINE</span>
@@ -206,7 +206,7 @@
               <button type="button" class="gp-home-story__dot" data-story-dot="4" aria-label="Slide 5 of 5"></button>
             </div>
           </div>
-        </div>
+        <%- include('partials/components/container_close') %>
       </section>
       </div>
 

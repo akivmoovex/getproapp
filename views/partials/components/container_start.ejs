@@ -1,0 +1,14 @@
+<%#
+  Layout band: canonical width, horizontal padding, safe-area (see .ds-container in public/styles.css).
+  Pair with partials/components/container_close.ejs. Default element: div.
+  Locals: extraClass (string), id (string), role (string), ariaLabel (string), tag (string, default div)
+-%>
+<%
+  var _tag = typeof tag !== 'undefined' && tag ? String(tag) : 'div';
+  var _extra = typeof extraClass !== 'undefined' && extraClass ? String(extraClass).trim() : '';
+  var _id = typeof id !== 'undefined' && id ? String(id) : '';
+  var _role = typeof role !== 'undefined' && role ? String(role) : '';
+  var _aria = typeof ariaLabel !== 'undefined' && ariaLabel ? String(ariaLabel) : '';
+  var _cls = 'ds-container' + (_extra ? ' ' + _extra : '');
+%>
+<<%= _tag %> class="<%= _cls %>"<% if (_id) { %> id="<%= _id %>"<% } %><% if (_role) { %> role="<%= _role %>"<% } %><% if (_aria) { %> aria-label="<%= _aria %>"<% } %>>
