@@ -1,11 +1,12 @@
 <% var _canon = typeof canonicalUrl !== 'undefined' ? canonicalUrl : ''; %>
 <% var _og = typeof ogUrl !== 'undefined' && ogUrl ? ogUrl : _canon; %>
 <% var _type = typeof ogType !== 'undefined' && ogType ? ogType : 'website'; %>
+<% var _seoFallback = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
 <%- include('theme_boot') %>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
-<title><%= typeof seoTitle !== 'undefined' ? seoTitle : 'Pro-online' %></title>
+<title><%= typeof seoTitle !== 'undefined' ? seoTitle : _seoFallback %></title>
 <meta name="description" content="<%= typeof seoDescription !== 'undefined' ? seoDescription : '' %>" />
 <% if (_canon) { %>
 <link rel="canonical" href="<%= _canon %>" />
@@ -14,7 +15,7 @@
 <meta name="robots" content="noindex, nofollow" />
 <% } %>
 <meta property="og:type" content="<%= _type %>" />
-<meta property="og:title" content="<%= typeof seoTitle !== 'undefined' ? seoTitle : 'Pro-online' %>" />
+<meta property="og:title" content="<%= typeof seoTitle !== 'undefined' ? seoTitle : _seoFallback %>" />
 <meta property="og:description" content="<%= typeof seoDescription !== 'undefined' ? seoDescription : '' %>" />
 <% if (_og) { %>
 <meta property="og:url" content="<%= _og %>" />
@@ -23,5 +24,5 @@
 <meta property="og:image" content="<%= ogImage %>" />
 <% } %>
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="<%= typeof seoTitle !== 'undefined' ? seoTitle : 'Pro-online' %>" />
+<meta name="twitter:title" content="<%= typeof seoTitle !== 'undefined' ? seoTitle : _seoFallback %>" />
 <meta name="twitter:description" content="<%= typeof seoDescription !== 'undefined' ? seoDescription : '' %>" />

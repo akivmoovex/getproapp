@@ -41,6 +41,7 @@ const {
 } = require("./src/tenants");
 const { STAGES } = require("./src/tenantStages");
 const { eventTimeParts } = require("./src/eventTime");
+const branding = require("./src/branding");
 const publicModule = require("./src/routes/public")({ db });
 const adminRoutes = require("./src/routes/admin");
 const companyPortalRoutes = require("./src/routes/companyPortal");
@@ -73,6 +74,9 @@ app.use((req, res, next) => {
   res.locals.encodeURIComponent = encodeURIComponent;
   res.locals.eventTimeParts = eventTimeParts;
   res.locals.showUiGuard = process.env.NODE_ENV !== "production";
+  res.locals.brandProductName = branding.PRODUCT_NAME;
+  res.locals.brandProductNameGetPro = branding.PRODUCT_NAME_GETPRO;
+  res.locals.brandPublicTagline = branding.PUBLIC_TAGLINE;
   next();
 });
 

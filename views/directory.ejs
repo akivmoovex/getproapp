@@ -1,11 +1,12 @@
 <!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <%- include('partials/seo_meta', {
-      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : 'Directory | Pro-online',
-      seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : 'Browse verified professionals on Pro-online.',
+      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : ('Directory | ' + _bn),
+      seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : ('Browse verified professionals on ' + _bn + '.'),
       canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
       ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
       ogType: 'website'

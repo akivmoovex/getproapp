@@ -1,4 +1,5 @@
 <% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
 <footer class="wf-footer" id="footer-terms">
   <div class="wf-footer-cta">
     <div class="ds-container wf-footer-cta-inner">
@@ -11,7 +12,7 @@
   <div class="ds-container">
     <div class="pro-footer-grid">
       <div class="pro-footer-col">
-        <strong>Pro-online</strong>
+        <strong><%= _bn %></strong>
         <p class="pro-footer-col__lead">
           Find vetted professionals and browse one-page business profiles in our directory.
         </p>
@@ -59,7 +60,7 @@
       </div>
     </div>
     <div class="pro-footer-bottom">
-      <span>© <%= new Date().getFullYear() %> Pro-online · getproapp.org</span>
+      <span>© <%= new Date().getFullYear() %> <%= _bn %> · getproapp.org</span>
       <span><a href="#footer-terms">Terms of use</a> · <a href="#">Accessibility</a> · <a href="<%= tp %>/directory">Site map</a></span>
     </div>
   </div>

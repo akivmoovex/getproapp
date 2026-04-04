@@ -4,15 +4,17 @@
   var tn = typeof tenant !== 'undefined' ? tenant : null;
   var slug = tn && tn.slug ? String(tn.slug) : '';
   var showLockup = tn && slug && slug !== 'global';
-  var aria = showLockup && tn.name ? ('Pro-online ' + String(tn.name)) : 'Pro-online home';
+  var productName = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online';
+  var productNameGetPro = typeof brandProductNameGetPro !== 'undefined' ? brandProductNameGetPro : 'GetPro';
+  var aria = showLockup && tn.name ? (productName + ' ' + String(tn.name)) : (productName + ' home');
   var rootClass = v === 'home' ? 'wf-home-topbar-brand' : v === 'join' ? 'join-top-brand' : 'wf-nav-brand';
 %>
 <a href="<%= href %>" class="<%= rootClass %>"<%= v === 'join' ? ' id="join-top-brand"' : '' %> aria-label="<%= aria %>">
   <img class="wf-brand-lockup-mark" src="/favicon.svg" alt="" width="32" height="32" decoding="async" />
   <span class="wf-brand-lockup-root">
     <span class="wf-brand-lockup-names">
-      <span class="wf-brand-lockup-product wf-brand-lockup-product--pro">Pro-online</span>
-      <span class="wf-brand-lockup-product wf-brand-lockup-product--getpro">GetPro</span>
+      <span class="wf-brand-lockup-product wf-brand-lockup-product--pro"><%= productName %></span>
+      <span class="wf-brand-lockup-product wf-brand-lockup-product--getpro"><%= productNameGetPro %></span>
     </span>
     <% if (showLockup) { %>
     <span class="wf-brand-lockup-region">

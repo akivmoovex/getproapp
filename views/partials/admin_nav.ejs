@@ -1,4 +1,5 @@
 <% 
+  const _adminBn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online';
   const nav = typeof adminNav !== 'undefined' ? adminNav : {};
   const isViewer = !!nav.isViewer;
   const isSuper = !!nav.isSuper;
@@ -21,7 +22,7 @@
       <a href="/admin/dashboard" class="admin-header__brand">
         <div class="logo" aria-hidden="true"></div>
         <span class="admin-header__brand-text">
-          <span class="admin-header__product">Pro-online</span>
+          <span class="admin-header__product"><%= _adminBn %></span>
           <span class="admin-header__badge">Admin</span>
         </span>
       </a>

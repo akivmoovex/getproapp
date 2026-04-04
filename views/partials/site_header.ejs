@@ -12,7 +12,7 @@
       <div class="app-top-app-bar__brand-row">
         <%- include('brand_lockup_getpro', { tenant: ten, brandLockupVariant: 'nav', brandLockupHref: tpHome }) %>
       </div>
-      <p class="app-top-app-bar__tagline">My Trusted Professional</p>
+      <p class="app-top-app-bar__tagline"><%= typeof brandPublicTagline !== 'undefined' ? brandPublicTagline : 'My Trusted Professional' %></p>
     </div>
 
     <div class="app-top-app-bar__actions">

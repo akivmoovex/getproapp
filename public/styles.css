@@ -8954,6 +8954,7 @@ body.join-modal-open {
   --app-top-app-bar-height: 56px;
 }
 
+/* Public app bar: homepage (`site_header` on `body.home-page`) is the visual source of truth. Directory/results use the same partial and these rules — no page-specific bar variants. */
 .app-top-app-bar {
   position: sticky;
   top: 0;

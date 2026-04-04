@@ -1,10 +1,11 @@
 <!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <%- include('partials/seo_meta', {
-      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : 'Pro-online · Trusted professional directory',
+      seoTitle: typeof seoTitle !== 'undefined' ? seoTitle : (_bn + ' · Trusted professional directory'),
       seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : 'Find trusted professionals near you. Search by service and city, compare profiles, and contact the right business quickly.',
       canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
       ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
@@ -68,7 +69,7 @@
       <div class="gp-home-top-stack">
       <section class="gp-home-hero" aria-labelledby="gp-home-hero-title">
         <%- include('partials/components/container_start') %>
-          <h1 id="gp-home-hero-title" class="visually-hidden">Pro-online — professional directory</h1>
+          <h1 id="gp-home-hero-title" class="visually-hidden"><%= _bn %> — professional directory</h1>
           <div class="gp-home-hero__top">
             <div class="gp-home-hero__search-shell">
               <div id="site-search-bar" class="c-search-bar-shell gp-home-search gp-home-search-card" aria-label="Project search">
