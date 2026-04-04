@@ -470,7 +470,8 @@
   --admin-main-pad-bottom: var(--space-5-5);
   --admin-card-padding: var(--space-1-75) var(--spacing-4);
   --admin-table-cell-padding: var(--space-1-25) var(--spacing-3);
-  --admin-container-max: var(--layout-max-admin);
+  /* Legacy alias — same as `--layout-content-max-width` (global layout band uses that token directly). */
+  --admin-container-max: var(--layout-content-max-width);
   --admin-modal-max-width: var(--bp-2xl);
   --admin-modal-max-height-vh: 88vh;
   --admin-modal-max-height-px: var(--layout-dim-820);
@@ -620,23 +621,8 @@
 }
 
 /**
- * Public content band — same contract as `.gp-home-container` (token-backed).
- * Prefer `gp-home-container` for hero/directory; use this for new public pages without renaming markup yet.
+ * Public layout band: `.container`, `.gp-home-container`, `.ds-layout-public` — one definition in the global layout band block (see `.container` in this file).
  */
-.ds-layout-public {
-  max-width: var(--layout-content-max-width);
-  margin-left: auto;
-  margin-right: auto;
-  width: 100%;
-  box-sizing: border-box;
-  padding-inline: var(--layout-gutter-x-sm);
-}
-
-@media (min-width: 768px) {
-  .ds-layout-public {
-    padding-inline: var(--layout-gutter-x-md);
-  }
-}
 
 /**
  * Shared search field shell (home + directory): comfortable height + pill radius from tokens.
@@ -1761,16 +1747,32 @@ a:hover {
   text-decoration: underline;
 }
 
-.container {
-  max-width: var(--admin-container-max);
-  margin: 0 auto;
-  padding: 0 var(--admin-main-pad-x);
+/* ——— Global layout band — ONE system: max-width, centering, horizontal padding (header, footer, home, directory, optional .ds-layout-public). ——— */
+.container,
+.gp-home-container,
+.ds-layout-public {
+  max-width: var(--layout-content-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--layout-gutter-x-sm);
 }
 
-@media (max-width: 480px) {
-  .container {
-    padding-left: max(var(--space-1-75), env(safe-area-inset-left, var(--space-1-75)));
-    padding-right: max(var(--space-1-75), env(safe-area-inset-right, var(--space-1-75)));
+@media (min-width: 768px) {
+  .container,
+  .gp-home-container,
+  .ds-layout-public {
+    padding-inline: var(--layout-gutter-x-md);
+  }
+}
+
+@media (max-width: 767px) {
+  .container,
+  .gp-home-container,
+  .ds-layout-public {
+    padding-left: max(var(--layout-gutter-x-sm), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--layout-gutter-x-sm), env(safe-area-inset-right, 0px));
   }
 }
 
@@ -5738,8 +5740,7 @@ textarea {
 .container:has(.hero-grid.pro-directory-layout) {
   min-width: 0;
   max-width: 100%;
-  overflow-x: hidden;
-  overflow-x: clip;
+  /* No overflow-x clip — avoid clipping absolutely positioned autocomplete in directory layouts. */
 }
 
 /* Directory (gp-home-container): desktop uses same max-width/padding as homepage .gp-home-container; width caps only on small screens. */
@@ -5750,8 +5751,7 @@ textarea {
 @media (max-width: 767px) {
   .gp-home-container:has(.pro-directory-toolbar) {
     max-width: 100%;
-    overflow-x: hidden;
-    overflow-x: clip;
+    /* No overflow-x clip — search card + .pro-ac-dropdown must paint outside flex min-width fixes. */
   }
 }
 
@@ -5762,16 +5762,14 @@ textarea {
 @media (max-width: 767px) {
   .gp-home-container.directory-page {
     max-width: 100%;
-    overflow-x: hidden;
-    overflow-x: clip;
+    /* No overflow-x clip — same as :has(.pro-directory-toolbar); autocomplete lives inside. */
   }
 }
 
 .directory-page-toolbar {
   min-width: 0;
   max-width: 100%;
-  overflow-x: hidden;
-  overflow-x: clip;
+  /* No overflow-x clip — this node wraps directory search + results; clip hid .pro-ac-dropdown. */
 }
 
 /**
@@ -8802,7 +8800,7 @@ body.join-modal-open {
   }
 }
 
-/* ——— Mobile public UI v2: overflow, directory cards, join, company carousel ——— */
+/* ——— Mobile public UI v2: document-level horizontal containment (autocomplete: avoid clip on inner wrappers; see .directory-page-toolbar / .gp-home). ——— */
 html {
   overflow-x: clip;
 }
@@ -8811,13 +8809,6 @@ body.home-page,
 body.join-page,
 body[class*="tenant-"] {
   overflow-x: clip;
-}
-
-@media (max-width: 767px) {
-  .gp-home-container.directory-page {
-    padding-left: max(var(--admin-main-pad-x), env(safe-area-inset-left, 0px));
-    padding-right: max(var(--admin-main-pad-x), env(safe-area-inset-right, 0px));
-  }
 }
 
 .pro-directory-main {
@@ -8920,11 +8911,6 @@ body[class*="tenant-"] {
   .pro-company-profile__lead-card textarea {
     min-height: 7rem;
   }
-}
-
-.wf-footer-main .container {
-  padding-inline: max(var(--space-1-5), env(safe-area-inset-left, 0px))
-    max(var(--space-1-5), env(safe-area-inset-right, 0px));
 }
 
 /* Mobile: jump back to shared search after scrolling results */
@@ -9995,7 +9981,7 @@ body[class*="tenant-"] {
   --gp-space-xxl: 80px;
   --gp-home-story-overlap: 56px;
 
-  overflow-x: clip;
+  /* No overflow-x clip here — homepage search autocomplete lives under .gp-home; html/body clip contains bleed. */
   background: var(--gp-hp-bg);
   color: var(--gp-hp-text);
   padding: 0 0 var(--gp-space-xl);
@@ -10028,22 +10014,6 @@ body.home-page .app-top-app-bar {
 
   body.home-page .app-top-app-bar__tagline {
     font-size: 15px;
-  }
-}
-
-/* GLOBAL PAGE CONTAINER */
-/* Canonical public content band — token-backed; same contract as `.ds-layout-public`. */
-.gp-home-container {
-  max-width: var(--layout-content-max-width);
-  margin: 0 auto;
-  padding-inline: var(--layout-gutter-x-sm);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-@media (min-width: 768px) {
-  .gp-home-container {
-    padding-inline: var(--layout-gutter-x-md);
   }
 }
 
@@ -11158,7 +11128,7 @@ body.home-page .app-top-app-bar {
   max-width: 100%;
 }
 
-/* `overflow: visible` so absolutely positioned autocomplete is not clipped (M3 menus). Page-level `overflow-x: clip` on body still contains stray horizontal bleed. */
+/* `overflow: visible` on the card; parent wrappers must not use overflow-x clip (see .directory-page-toolbar / .gp-home). Document-level: html/body overflow-x: clip. */
 .gp-home-search-card {
   min-width: 0;
   max-width: 100%;

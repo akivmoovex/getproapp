@@ -77,23 +77,8 @@
 }
 
 /**
- * Public content band — same contract as `.gp-home-container` (token-backed).
- * Prefer `gp-home-container` for hero/directory; use this for new public pages without renaming markup yet.
+ * Public layout band: use `.container`, `.gp-home-container`, or `.ds-layout-public` — one shared definition in styles.css (global layout band block).
  */
-.ds-layout-public {
-  max-width: var(--layout-content-max-width);
-  margin-left: auto;
-  margin-right: auto;
-  width: 100%;
-  box-sizing: border-box;
-  padding-inline: var(--layout-gutter-x-sm);
-}
-
-@media (min-width: 768px) {
-  .ds-layout-public {
-    padding-inline: var(--layout-gutter-x-md);
-  }
-}
 
 /**
  * Shared search field shell (home + directory): comfortable height + pill radius from tokens.

@@ -16,7 +16,7 @@ If you see files like **`netraz.sqlite`**, **`pronline.sqlite`**, or other extra
 | `--admin-gap`, `--admin-gap-section` | Flex/grid gaps between blocks |
 | `--admin-main-pad-*` | `.admin-main__pad` vertical rhythm |
 | `--admin-card-padding` | Default padding inside `.admin-main .card` |
-| `--admin-container-max` | Max width for `.container` in admin (same as global `1140px`) |
+| `--admin-container-max` | Legacy alias for `--layout-content-max-width` (global layout band) |
 | `--admin-modal-max-width` | Settings hub / embed modal dialog width cap |
 | `--admin-modal-max-height-vh` / `-px` | Modal height (`min(vh, px)`) |
 

@@ -460,7 +460,8 @@
   --admin-main-pad-bottom: var(--space-5-5);
   --admin-card-padding: var(--space-1-75) var(--spacing-4);
   --admin-table-cell-padding: var(--space-1-25) var(--spacing-3);
-  --admin-container-max: var(--layout-max-admin);
+  /* Legacy alias — same as `--layout-content-max-width` (global layout band uses that token directly). */
+  --admin-container-max: var(--layout-content-max-width);
   --admin-modal-max-width: var(--bp-2xl);
   --admin-modal-max-height-vh: 88vh;
   --admin-modal-max-height-px: var(--layout-dim-820);
