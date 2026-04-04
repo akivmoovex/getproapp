@@ -1,0 +1,72 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "ignoreFiles": [
+    "public/design-system.css",
+    "public/ds-framework.css"
+  ],
+  "plugins": ["./stylelint-plugins/getpro-no-ancestor-system-class.mjs"],
+  "rules": {
+    "getpro/no-ancestor-before-system-class": true,
+
+    "max-nesting-depth": 2,
+
+    "color-no-hex": [
+      true,
+      {
+        "severity": "warning",
+        "message": "Prefer CSS variables / theme tokens instead of hex (token sources use overrides)."
+      }
+    ],
+
+    "color-hex-length": null,
+    "no-duplicate-selectors": null,
+    "declaration-block-single-line-max-declarations": null,
+    "selector-not-notation": null,
+    "declaration-property-value-keyword-no-deprecated": null,
+    "property-no-deprecated": null,
+
+    "selector-max-id": null,
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+    "keyframes-name-pattern": null,
+    "import-notation": null,
+    "at-rule-empty-line-before": null,
+    "comment-empty-line-before": null,
+    "rule-empty-line-before": null,
+    "declaration-empty-line-before": null,
+    "color-function-notation": null,
+    "alpha-value-notation": null,
+    "color-function-alias-notation": null,
+    "media-feature-range-notation": null,
+    "shorthand-property-no-redundant-values": null,
+    "declaration-block-no-redundant-longhand-properties": null,
+    "no-descending-specificity": null,
+    "font-family-no-missing-generic-family-keyword": null,
+    "property-no-vendor-prefix": null,
+    "value-no-vendor-prefix": null,
+    "selector-no-vendor-prefix": null,
+    "media-feature-name-no-vendor-prefix": null,
+    "at-rule-no-vendor-prefix": null,
+    "value-keyword-case": null,
+    "function-name-case": null,
+    "custom-property-empty-line-before": null,
+    "length-zero-no-unit": null,
+    "number-max-precision": null
+  },
+  "overrides": [
+    {
+      "files": ["public/theme.css", "public/theme-colors.css"],
+      "rules": {
+        "color-no-hex": null,
+        "color-hex-length": null
+      }
+    },
+    {
+      "files": ["public/styles.css", "public/m3-modal.css"],
+      "rules": {
+        "max-nesting-depth": null,
+        "color-no-hex": null
+      }
+    }
+  ]
+}

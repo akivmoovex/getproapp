@@ -15,6 +15,10 @@
     "lint:components:baseline": "node scripts/check-components.js --json > .ui-baseline.json",
     "lint:components:ci": "node scripts/check-components.js --compare-baseline .ui-baseline.json",
     "lint:components:enforce-btn": "node scripts/check-components.js --enforce-legacy-btn",
+    "lint:css": "stylelint \"public/**/*.css\" --max-warnings 0",
+    "lint:css-boundaries": "node scripts/check-css-boundaries.js",
+    "lint:css-boundaries:baseline": "node scripts/check-css-boundaries.js --json > .css-boundaries-baseline.json",
+    "lint:css-boundaries:ci": "node scripts/check-css-boundaries.js --compare-baseline .css-boundaries-baseline.json",
     "test:ui": "playwright test",
     "test:ui:update": "playwright test --update-snapshots",
     "inline-ds-framework": "node scripts/inline-ds-framework.js",
@@ -52,6 +56,9 @@
     "@storybook/html-vite": "^8.6.18",
     "@storybook/test": "^8.6.18",
     "nodemon": "^3.1.14",
-    "storybook": "^8.6.18"
+    "postcss-selector-parser": "^7.1.1",
+    "storybook": "^8.6.18",
+    "stylelint": "^16.26.1",
+    "stylelint-config-standard": "^39.0.1"
   }
 }

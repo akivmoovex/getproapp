@@ -21,6 +21,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Stylelint (CSS + component boundaries)
+        run: npm run lint:css
+
+      - name: CSS boundary baseline (no new external overrides on .c-*)
+        env:
+          CI: true
+        run: npm run lint:css-boundaries:ci
+
       - name: Enforce no legacy .btn in public templates
         env:
           CI: true
