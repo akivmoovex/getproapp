@@ -1,0 +1,24 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Design system/Introduction" />
+
+# GetPro design system (Storybook)
+
+This Storybook documents the **production** UI layer for Pro-online / GetPro: **Express + EJS** on the server, **global CSS** in `public/styles.css` (inlined `theme.css` + `design-system.css`), and **no SPA framework** on public pages.
+
+## Single source of truth
+
+| Layer | Location |
+|-------|----------|
+| Tokens & themes | `public/theme.css` (sync into `styles.css` via `npm run sync-inlined-theme`) |
+| App styles | `public/styles.css` |
+| Templates | `views/**/*.ejs` |
+| Storybook HTML fixtures | `design-system/fixtures/*` — **must stay aligned** with EJS partials when markup changes |
+
+## Live playground
+
+The in-app playground at **`/ui`** renders EJS partials directly. Storybook uses **static HTML mirrors** of the same class names so we do not run the Express server inside Storybook.
+
+## Toolbar: theme & brand
+
+Use **App theme** and **Brand** in the Storybook toolbar to set `data-theme` and `data-brand` on the preview root, matching production behavior (`public/theme-prefs.js`).

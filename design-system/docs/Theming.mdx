@@ -1,0 +1,11 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Design system/Guidelines/Theming" />
+
+# Theming rules
+
+- **Light default** — `:root` and optional `data-theme="light"`.
+- **Dark** — `data-theme="dark"` on `<html>`; surfaces and text are overridden in `public/theme.css` (not a naive invert).
+- **System** — Clearing `data-theme` currently falls back to **light** defaults (same as `theme-prefs.js` “system”). OS dark mode follow-up would live in theme boot + CSS.
+
+Storybook **App theme** toolbar applies the same attributes on the preview document element.

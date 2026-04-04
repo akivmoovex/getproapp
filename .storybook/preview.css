@@ -1,0 +1,53 @@
+/* Storybook preview shell — uses app tokens only */
+.sb-app-shell {
+  min-height: auto;
+  background: var(--md-sys-color-surface-container);
+}
+
+.sb-app-shell__main {
+  padding: var(--space-2);
+  box-sizing: border-box;
+}
+
+.sb-preview-narrow {
+  max-width: 23rem;
+}
+
+.sb-preview-wide {
+  max-width: min(var(--bp-xl-2), 56rem);
+}
+
+.sb-preview-home-search {
+  max-width: min(var(--bp-xl-2), 56rem);
+}
+
+.sb-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+@media (max-width: 720px) {
+  .sb-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sb-dense-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sb-p-flush {
+  margin: 0;
+}
+
+.sb-mt-2 {
+  margin-top: var(--space-2);
+}
+
+.sb-input-focus-preview.is-focus-simulated .sb-input-focus-target {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}

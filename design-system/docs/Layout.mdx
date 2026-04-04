@@ -1,0 +1,14 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Design system/Guidelines/Layout" />
+
+# Layout rules
+
+- **Content band** — Use `.ds-container` (or `.container`) for the main column; max width is `--layout-content-max-width` (1200px). Header and footer use the same band.
+- **Vertical rhythm** — Prefer `--space-*` between sections; avoid magic `margin` values in new CSS.
+- **Nested cards** — Cards may sit inside the container; avoid full-bleed cards inside the band unless the pattern exists on a real page (e.g. hero exceptions).
+
+## Do not
+
+- Create a second max-width system for public pages.
+- Hardcode pixel widths for the main column in components.

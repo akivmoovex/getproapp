@@ -13,7 +13,9 @@
     "build": "npm run build-search-lists",
     "inline-ds-framework": "node scripts/inline-ds-framework.js",
     "sync-inlined-theme": "node scripts/sync-inlined-theme.js",
-    "rebuild-sqlite": "npm rebuild better-sqlite3"
+    "rebuild-sqlite": "npm rebuild better-sqlite3",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build -o storybook-static"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +37,14 @@
     "slugify": "^1.6.8"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@storybook/addon-a11y": "^8.6.18",
+    "@storybook/addon-essentials": "^8.6.18",
+    "@storybook/addon-interactions": "^8.6.18",
+    "@storybook/blocks": "^8.6.18",
+    "@storybook/html": "^8.6.18",
+    "@storybook/html-vite": "^8.6.18",
+    "@storybook/test": "^8.6.18",
+    "nodemon": "^3.1.14",
+    "storybook": "^8.6.18"
   }
 }

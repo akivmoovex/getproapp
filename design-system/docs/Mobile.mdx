@@ -1,0 +1,13 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Design system/Guidelines/Mobile" />
+
+# Mobile guidelines
+
+- Use the **Viewport** toolbar (e.g. “Mobile (390)”) for regression checks.
+- **Search** — `.gp-search-bar` stacks fields on small viewports; verify narrow previews in **Components → SearchBar → Mobile**.
+- **Safe area** — Production may use `env(safe-area-inset-*)` on fixed UI; Storybook canvas does not simulate notches — validate on devices when touching sticky bars.
+
+## Breakpoints
+
+See **Foundations → Breakpoints** for `--bp-*` token reference; media queries in `styles.css` are authoritative.

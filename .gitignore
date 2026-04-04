@@ -10,3 +10,6 @@ data/*.sqlite-wal
 data/*.sqlite-shm
 data/*.db
 data/sessions.db
+
+*storybook.log
+storybook-static/

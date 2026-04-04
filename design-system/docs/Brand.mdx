@@ -1,0 +1,15 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Design system/Guidelines/Brand" />
+
+# Brand usage
+
+- **Pro-online (default)** — Violet primary (`--base-violet-*`); optional explicit `data-brand="proonline"`.
+- **GetPro** — `data-brand="getpro"` switches primary/accent to indigo per `public/theme.css`.
+
+## Rules
+
+- Brand switches **color only** — do not change spacing, layout, or typography scale per brand.
+- Marketing assets (e.g. SVG illustrations) may still contain fixed hues; prefer tokens for CSS.
+
+Storybook **Brand** toolbar maps to `data-brand` on the preview root.

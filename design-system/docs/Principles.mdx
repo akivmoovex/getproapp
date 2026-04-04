@@ -1,0 +1,14 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Design system/Guidelines/Principles" />
+
+# Design principles
+
+1. **Semantic tokens first** — Components consume `--color-*`, `--space-*`, and documented aliases (`--surface`, `--text`, …). Base palette (`--base-*`) stays in `theme.css` only.
+2. **One search implementation** — Use `partials/pro_search_form` → `components/search_bar.ejs` for service + city search; do not fork homepage vs directory markup.
+3. **Accessible controls** — Visible labels, `focus-visible` rings, combobox roles on autocomplete fields.
+4. **Don’t invent parallel components** — Extend `.btn`, `.card`, `.input-field`, `.ds-container` before adding one-off classes.
+
+## When in doubt
+
+- Match an existing page (directory, join, company profile) and reuse the same BEM blocks.
