@@ -108,7 +108,7 @@
 /**
  * Button hierarchy (prefer semantic modifiers):
  * - Primary:   .btn.btn--primary   (legacy alias: .btn.btn-primary)
- * - Secondary: .btn.btn--secondary (legacy alias: .btn.btn-secondary-wf)
+ * - Secondary / outline: .btn.btn--secondary | .btn.btn--outline (legacy: .btn.btn-secondary-wf)
  * - Ghost/text:.btn.btn--text
  */
 
@@ -131,7 +131,8 @@
 }
 
 .btn.btn--secondary,
-.btn.btn-secondary-wf {
+.btn.btn-secondary-wf,
+.btn.btn--outline {
   border-radius: var(--radius-pill);
   padding: var(--space-1-5) var(--space-3);
   font-weight: 700;
@@ -141,7 +142,8 @@
 }
 
 .btn.btn--secondary:hover,
-.btn.btn-secondary-wf:hover {
+.btn.btn-secondary-wf:hover,
+.btn.btn--outline:hover {
   background: var(--primary-softer-bg);
   border-color: var(--wf-primary-dark);
   color: var(--wf-primary-dark);
@@ -196,6 +198,7 @@
 .btn.btn-primary:focus-visible,
 .btn.btn--secondary:focus-visible,
 .btn.btn-secondary-wf:focus-visible,
+.btn.btn--outline:focus-visible,
 .btn.btn--text:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);

@@ -11,6 +11,7 @@
     "dev": "nodemon --watch \"server.js\" --exec \"node server.js\"",
     "build-search-lists": "node scripts/build-search-lists.js",
     "build": "npm run build-search-lists",
+    "inline-ds-framework": "node scripts/inline-ds-framework.js",
     "rebuild-sqlite": "npm rebuild better-sqlite3"
   },
   "keywords": [],

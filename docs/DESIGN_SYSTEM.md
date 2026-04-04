@@ -8,8 +8,9 @@
 |------|------|
 | **`public/theme.css`** | **Authoritative tokens** — colors, legacy spacing (`--space-*`), typography, elevation, tenant themes, M3 bridge (`--md-sys-*`). **Edit here when changing palette.** |
 | **`public/design-system.css`** | **DS V1 canonical aliases** (`--color-bg`, `--radius-lg`, `--gp-ds-space-*`, focus utilities). Loaded immediately after `theme.css`. |
+| **`public/ds-framework.css`** | **DS framework layer** — semantic `--ds-*` tokens (alias theme), **`.ds-*` utilities** (spacing, flex/grid, type, elevation), responsive helpers (`ds-flex-row-md`, …), state helpers (`ds-focus-ring`, `ds-interactive`, `ds-pressable`), component shells (`ds-cmp-container`, `ds-cmp-card`, `ds-cmp-search-row`). Inlined into `styles.css` after `design-system.css` for one request. **After editing this file, run:** `node scripts/inline-ds-framework.js`. |
 | **`public/m3-modal.css`** | M3 modal shell (see `docs/MODALS.md`). |
-| **`public/styles.css`** | Imports `theme.css` → `design-system.css` → `m3-modal.css`, then all components. **Templates link only `/styles.css`.** |
+| **`public/styles.css`** | Inlines `theme.css` → `design-system.css` → `ds-framework.css` → `m3-modal.css`, then all components. **Templates link only `/styles.css`.** |
 
 ## Color tokens
 
@@ -37,6 +38,7 @@ Use **semantic** names in new CSS. Prefer `var(--color-*)` / DS aliases over hex
 
 - **Layout (existing app scale):** `--space-1` … `--space-5` and extended `--space-*` — **8px-based rhythm** used across the codebase. Do not replace wholesale.
 - **DS V1 4px reference scale:** `--gp-ds-space-1` (4px) … `--gp-ds-space-12` (48px) — use for **new** rules when the spec calls for 4/8/12px steps; map to `--space-half`, `--space-1`, etc. when they align.
+- **Strict framework scale (new utilities/components):** `--ds-space-1` … `--ds-space-9` → 4, 8, 12, 16, 20, 24, 32, 40, 48px via `var(--gp-ds-space-*)`. Prefer **`.ds-p-*` / `.ds-gap-*`** in new markup instead of ad hoc padding.
 
 ## Public layout band (v2)
 

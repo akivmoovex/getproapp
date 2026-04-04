@@ -1,0 +1,369 @@
+/**
+ * GetPro DS Framework — tokens, utilities, responsive & state helpers
+ * =================================================================
+ * Non-visual: all values alias existing theme/design-system variables.
+ * New work SHOULD use `--ds-*` tokens and `.ds-*` utilities (no raw px in new rules).
+ * Spec: docs/DESIGN_SYSTEM.md
+ */
+
+/* -------------------------------------------------------------------------- */
+/* PHASE 1 — Semantic tokens (foundation; maps to theme — no new hex)         */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  /* Colors */
+  --ds-color-primary: var(--color-primary);
+  --ds-color-on-primary: var(--color-on-primary);
+  --ds-color-surface: var(--color-surface);
+  --ds-color-background: var(--color-background);
+  --ds-color-on-surface: var(--color-text-primary);
+  --ds-color-outline: var(--color-outline);
+  --ds-color-outline-strong: var(--color-outline-strong);
+  --ds-color-muted: var(--color-text-secondary);
+  --ds-color-muted-soft: var(--color-text-tertiary);
+  --ds-color-success: var(--color-success);
+  --ds-color-warning: var(--color-warning);
+  --ds-color-error: var(--color-error);
+  --ds-color-on-error: var(--color-on-error);
+
+  /* Strict spacing scale (4 → 48). New utilities/components use ONLY these. */
+  --ds-space-1: var(--gp-ds-space-1);
+  --ds-space-2: var(--gp-ds-space-2);
+  --ds-space-3: var(--gp-ds-space-3);
+  --ds-space-4: var(--gp-ds-space-4);
+  --ds-space-5: var(--gp-ds-space-5);
+  --ds-space-6: var(--gp-ds-space-6);
+  --ds-space-7: var(--gp-ds-space-8);
+  --ds-space-8: var(--gp-ds-space-10);
+  --ds-space-9: var(--gp-ds-space-12);
+
+  /* Typography roles (size / line / weight) */
+  --ds-type-display-size: var(--typo-display-small-size);
+  --ds-type-display-line: var(--typo-display-small-line);
+  --ds-type-display-weight: 800;
+
+  --ds-type-title-size: var(--typo-title-large-size);
+  --ds-type-title-line: var(--typo-title-large-line);
+  --ds-type-title-weight: 700;
+
+  --ds-type-subtitle-size: var(--typo-headline-medium-size);
+  --ds-type-subtitle-line: var(--typo-headline-medium-line);
+  --ds-type-subtitle-weight: 600;
+
+  --ds-type-body-size: var(--typo-body-large-size);
+  --ds-type-body-line: var(--typo-body-large-line);
+  --ds-type-body-weight: 400;
+
+  --ds-type-caption-size: var(--typo-body-medium-size);
+  --ds-type-caption-line: var(--typo-body-medium-line);
+  --ds-type-caption-weight: 400;
+
+  --ds-type-label-size: var(--typo-label-large-size);
+  --ds-type-label-line: 1.2;
+  --ds-type-label-weight: var(--typo-label-large-weight);
+
+  /* Radius */
+  --ds-radius-sm: var(--radius-sm);
+  --ds-radius-md: var(--radius-md);
+  --ds-radius-lg: var(--radius-lg);
+  --ds-radius-pill: var(--radius-pill);
+
+  /* Elevation (alias MD3 / app shadows) */
+  --ds-elev-surface: var(--elevation-sm);
+  --ds-elev-card: var(--elevation-md);
+  --ds-elev-raised: var(--elevation-2);
+
+  /* Layout */
+  --ds-layout-container-max: var(--layout-content-max-width);
+  --ds-layout-pad-x-mobile: var(--layout-gutter-x-sm);
+  --ds-layout-pad-x-desktop: var(--layout-gutter-x-md);
+
+  /* Breakpoints (for documentation; media queries below use same px) */
+  --ds-bp-md: 768px;
+  --ds-bp-lg: 1024px;
+
+  /* Motion / interaction */
+  --ds-state-hover-opacity: 0.92;
+  --ds-state-disabled-opacity: 0.5;
+  --ds-transition-interaction: var(--transition-fast) var(--ease-standard);
+}
+
+/* -------------------------------------------------------------------------- */
+/* PHASE 2 — Utilities (Tailwind-like; all values from --ds-* / tokens)      */
+/* -------------------------------------------------------------------------- */
+
+/* Spacing — padding */
+.ds-p-0 { padding: 0; }
+.ds-p-1 { padding: var(--ds-space-1); }
+.ds-p-2 { padding: var(--ds-space-2); }
+.ds-p-3 { padding: var(--ds-space-3); }
+.ds-p-4 { padding: var(--ds-space-4); }
+.ds-p-5 { padding: var(--ds-space-5); }
+.ds-p-6 { padding: var(--ds-space-6); }
+.ds-p-7 { padding: var(--ds-space-7); }
+.ds-p-8 { padding: var(--ds-space-8); }
+.ds-p-9 { padding: var(--ds-space-9); }
+
+.ds-px-1 { padding-left: var(--ds-space-1); padding-right: var(--ds-space-1); }
+.ds-px-2 { padding-left: var(--ds-space-2); padding-right: var(--ds-space-2); }
+.ds-px-3 { padding-left: var(--ds-space-3); padding-right: var(--ds-space-3); }
+.ds-px-4 { padding-left: var(--ds-space-4); padding-right: var(--ds-space-4); }
+.ds-px-5 { padding-left: var(--ds-space-5); padding-right: var(--ds-space-5); }
+.ds-px-6 { padding-left: var(--ds-space-6); padding-right: var(--ds-space-6); }
+.ds-px-7 { padding-left: var(--ds-space-7); padding-right: var(--ds-space-7); }
+.ds-px-8 { padding-left: var(--ds-space-8); padding-right: var(--ds-space-8); }
+.ds-px-9 { padding-left: var(--ds-space-9); padding-right: var(--ds-space-9); }
+
+.ds-py-1 { padding-top: var(--ds-space-1); padding-bottom: var(--ds-space-1); }
+.ds-py-2 { padding-top: var(--ds-space-2); padding-bottom: var(--ds-space-2); }
+.ds-py-3 { padding-top: var(--ds-space-3); padding-bottom: var(--ds-space-3); }
+.ds-py-4 { padding-top: var(--ds-space-4); padding-bottom: var(--ds-space-4); }
+.ds-py-5 { padding-top: var(--ds-space-5); padding-bottom: var(--ds-space-5); }
+.ds-py-6 { padding-top: var(--ds-space-6); padding-bottom: var(--ds-space-6); }
+.ds-py-7 { padding-top: var(--ds-space-7); padding-bottom: var(--ds-space-7); }
+.ds-py-8 { padding-top: var(--ds-space-8); padding-bottom: var(--ds-space-8); }
+.ds-py-9 { padding-top: var(--ds-space-9); padding-bottom: var(--ds-space-9); }
+
+/* Spacing — margin */
+.ds-m-0 { margin: 0; }
+.ds-m-1 { margin: var(--ds-space-1); }
+.ds-m-2 { margin: var(--ds-space-2); }
+.ds-m-3 { margin: var(--ds-space-3); }
+.ds-m-4 { margin: var(--ds-space-4); }
+.ds-m-5 { margin: var(--ds-space-5); }
+.ds-m-6 { margin: var(--ds-space-6); }
+.ds-m-auto { margin: auto; }
+
+.ds-mt-1 { margin-top: var(--ds-space-1); }
+.ds-mt-2 { margin-top: var(--ds-space-2); }
+.ds-mt-3 { margin-top: var(--ds-space-3); }
+.ds-mt-4 { margin-top: var(--ds-space-4); }
+.ds-mb-1 { margin-bottom: var(--ds-space-1); }
+.ds-mb-2 { margin-bottom: var(--ds-space-2); }
+.ds-mb-3 { margin-bottom: var(--ds-space-3); }
+.ds-mb-4 { margin-bottom: var(--ds-space-4); }
+.ds-mx-auto { margin-left: auto; margin-right: auto; }
+
+/* Gap (flex/grid) */
+.ds-gap-1 { gap: var(--ds-space-1); }
+.ds-gap-2 { gap: var(--ds-space-2); }
+.ds-gap-3 { gap: var(--ds-space-3); }
+.ds-gap-4 { gap: var(--ds-space-4); }
+.ds-gap-5 { gap: var(--ds-space-5); }
+.ds-gap-6 { gap: var(--ds-space-6); }
+
+/* Layout — flex */
+.ds-flex { display: flex; }
+.ds-inline-flex { display: inline-flex; }
+.ds-flex-col { flex-direction: column; }
+.ds-flex-row { flex-direction: row; }
+.ds-flex-wrap { flex-wrap: wrap; }
+.ds-flex-nowrap { flex-wrap: nowrap; }
+.ds-items-start { align-items: flex-start; }
+.ds-items-center { align-items: center; }
+.ds-items-end { align-items: flex-end; }
+.ds-items-stretch { align-items: stretch; }
+.ds-justify-start { justify-content: flex-start; }
+.ds-justify-center { justify-content: center; }
+.ds-justify-end { justify-content: flex-end; }
+.ds-justify-between { justify-content: space-between; }
+.ds-flex-1 { flex: 1 1 0%; }
+.ds-flex-shrink-0 { flex-shrink: 0; }
+.ds-min-w-0 { min-width: 0; }
+
+/* Layout — grid */
+.ds-grid { display: grid; }
+.ds-grid-cols-1 { grid-template-columns: minmax(0, 1fr); }
+.ds-grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ds-grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* Sizing */
+.ds-w-full { width: 100%; }
+.ds-max-w-container { max-width: var(--ds-layout-container-max); }
+.ds-box-border { box-sizing: border-box; }
+
+/* Typography */
+.ds-text-display {
+  font-size: var(--ds-type-display-size);
+  line-height: var(--ds-type-display-line);
+  font-weight: var(--ds-type-display-weight);
+}
+.ds-text-title {
+  font-size: var(--ds-type-title-size);
+  line-height: var(--ds-type-title-line);
+  font-weight: var(--ds-type-title-weight);
+}
+.ds-text-subtitle {
+  font-size: var(--ds-type-subtitle-size);
+  line-height: var(--ds-type-subtitle-line);
+  font-weight: var(--ds-type-subtitle-weight);
+}
+.ds-text-body {
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line);
+  font-weight: var(--ds-type-body-weight);
+}
+.ds-text-caption {
+  font-size: var(--ds-type-caption-size);
+  line-height: var(--ds-type-caption-line);
+  font-weight: var(--ds-type-caption-weight);
+}
+.ds-text-label {
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-label-line);
+  font-weight: var(--ds-type-label-weight);
+}
+.ds-text-muted { color: var(--ds-color-muted); }
+
+/* Radius */
+.ds-rounded-sm { border-radius: var(--ds-radius-sm); }
+.ds-rounded-md { border-radius: var(--ds-radius-md); }
+.ds-rounded-lg { border-radius: var(--ds-radius-lg); }
+.ds-rounded-pill { border-radius: var(--ds-radius-pill); }
+
+/* Elevation */
+.ds-shadow-surface { box-shadow: var(--ds-elev-surface); }
+.ds-shadow-card { box-shadow: var(--ds-elev-card); }
+.ds-shadow-raised { box-shadow: var(--ds-elev-raised); }
+
+/* Surface / border (composable) */
+.ds-bg-surface { background: var(--ds-color-surface); }
+.ds-bg-background { background: var(--ds-color-background); }
+.ds-border-outline {
+  border: var(--border-width-hairline) solid var(--ds-color-outline);
+}
+
+/* -------------------------------------------------------------------------- */
+/* PHASE 3 — Component shells (single implementation; use tokens + utilities) */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Container — same band as `.ds-container` / `.container` layout block.
+ * Use for opt-in composition inside templates without duplicating max-width rules.
+ */
+.ds-cmp-container {
+  max-width: var(--ds-layout-container-max);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--ds-layout-pad-x-mobile);
+}
+
+@media (min-width: 768px) {
+  .ds-cmp-container {
+    padding-inline: var(--ds-layout-pad-x-desktop);
+  }
+}
+
+@media (max-width: 767px) {
+  .ds-cmp-container {
+    padding-left: max(var(--ds-layout-pad-x-mobile), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--ds-layout-pad-x-mobile), env(safe-area-inset-right, 0px));
+  }
+}
+
+/* Card shell (directory + generic blocks; pairs with .ds-card / .pro-directory-card) */
+.ds-cmp-card {
+  box-sizing: border-box;
+  border-radius: var(--ds-radius-lg);
+  border: var(--border-width-hairline) solid color-mix(in srgb, var(--ds-color-outline) 92%, var(--ds-color-on-surface) 8%);
+  background: var(--ds-color-surface);
+  box-shadow: var(--ds-elev-surface);
+}
+
+/* SearchBar layout helper — stacks on small viewports; inline row from md */
+.ds-cmp-search-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ds-space-3);
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .ds-cmp-search-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--ds-space-3) var(--ds-space-4);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* PHASE 4 — Responsive helpers (mobile-first; md ≥768px, lg ≥1024px)        */
+/* -------------------------------------------------------------------------- */
+
+.ds-flex-row-md {
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .ds-flex-row-md {
+    flex-direction: row;
+  }
+}
+
+.ds-grid-cols-2-md {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ds-grid-cols-2-md {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ds-grid-cols-3-lg {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1024px) {
+  .ds-grid-cols-3-lg {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .ds-md-items-center {
+    align-items: center;
+  }
+  .ds-md-justify-between {
+    justify-content: space-between;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* PHASE 5 — State system (Material-aligned; composable)                       */
+/* -------------------------------------------------------------------------- */
+
+.ds-focus-ring:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.ds-interactive {
+  transition:
+    opacity var(--ds-transition-interaction),
+    box-shadow var(--ds-transition-interaction),
+    border-color var(--ds-transition-interaction),
+    background-color var(--ds-transition-interaction),
+    transform var(--ds-transition-interaction);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ds-hover-lift:hover {
+    box-shadow: var(--ds-elev-card);
+  }
+}
+
+.ds-disabled:disabled,
+.ds-disabled[aria-disabled="true"] {
+  opacity: var(--ds-state-disabled-opacity);
+  pointer-events: none;
+}
+
+.ds-pressable:active:not(:disabled) {
+  filter: brightness(0.97);
+}
