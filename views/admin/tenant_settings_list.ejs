@@ -49,14 +49,13 @@
                     <td><%= t.stage %></td>
                     <td class="muted admin-settings-tenant-table__phone"><%= t.callcenter_phone ? t.callcenter_phone : '—' %></td>
                     <td class="admin-settings-tenant-table__actions">
-                      <button
-                        type="button"
-                        class="btn btn--primary admin-tenant-settings-open"
-                        data-tenant-url="/admin/settings/tenant/<%= t.id %>?embed=1"
-                        data-tenant-name="<%= t.name %>"
-                      >
-                        Edit
-                      </button>
+                      <%- include('../partials/components/button', {
+                        variant: 'primary',
+                        type: 'button',
+                        label: 'Edit',
+                        className: 'admin-tenant-settings-open',
+                        extraAttrs: 'data-tenant-url="/admin/settings/tenant/' + t.id + '?embed=1" data-tenant-name="' + String(t.name || '').replace(/"/g, '&quot;') + '"',
+                      }) %>
                     </td>
                   </tr>
                   <% }); %>

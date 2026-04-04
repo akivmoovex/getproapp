@@ -11,10 +11,11 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
       <div class="admin-super-users__topbar">
+        <% var _suf = typeof filterSuffix !== 'undefined' ? filterSuffix : ''; %>
         <% if (!editMode) { %>
-        <a class="btn btn--primary" href="/admin/super/users?edit=1<%= typeof filterSuffix !== 'undefined' ? filterSuffix : '' %>">Edit</a>
+        <%- include('../partials/components/button', { variant: 'primary', href: '/admin/super/users?edit=1' + _suf, label: 'Edit' }) %>
         <% } else { %>
-        <a class="btn" href="/admin/super/users<%= typeof filterSuffix !== 'undefined' && filterSuffix ? '?' + filterSuffix.slice(1) : '' %>">Done</a>
+        <%- include('../partials/components/button', { variant: 'default', href: '/admin/super/users' + (_suf ? '?' + _suf.slice(1) : ''), label: 'Done' }) %>
         <% } %>
       </div>
       <p class="admin-intro u-mb-2-25">
@@ -52,15 +53,15 @@
           </div>
         </div>
         <div class="admin-filter-form__actions">
-          <button class="btn btn--primary" type="submit">Apply filters</button>
-          <a class="btn" href="/admin/super/users<%= editMode ? '?edit=1' : '' %>">Clear</a>
+          <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply filters' }) %>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/super/users' + (editMode ? '?edit=1' : ''), label: 'Clear' }) %>
         </div>
       </form>
 
       <% if (editMode) { %>
       <p class="admin-intro">Create, edit, delete, enable/disable, or change passwords for any admin user.</p>
       <div class="admin-toolbar">
-        <a class="btn btn--primary" href="/admin/super/users/new">New user</a>
+        <%- include('../partials/components/button', { variant: 'primary', href: '/admin/super/users/new', label: 'New user' }) %>
       </div>
       <% } else { %>
       <p class="admin-intro">View-only list. Choose <strong>Edit</strong> above to add or change users.</p>
@@ -89,7 +90,7 @@
                 <td class="muted"><%= u.role %></td>
                 <td class="muted muted--caption">Hashed (not shown)</td>
                 <td><%= u.enabled === 0 ? 'Disabled' : 'Enabled' %></td>
-                <% if (editMode) { %><td><a class="btn" href="/admin/super/users/<%= u.id %>/edit">Edit</a></td><% } %>
+                <% if (editMode) { %><td><%- include('../partials/components/button', { variant: 'default', href: '/admin/super/users/' + u.id + '/edit', label: 'Edit' }) %></td><% } %>
               </tr>
             <% }) %>
           </tbody>

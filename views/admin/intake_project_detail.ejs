@@ -11,7 +11,7 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
         <div class="admin-toolbar">
-          <a class="btn" href="/admin/projects">← All projects</a>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/projects', label: '← All projects' }) %>
         </div>
         <% if (typeof error !== 'undefined' && error) { %>
           <div class="flash" role="alert"><%= error %></div>
@@ -71,7 +71,7 @@
           <% } %>
           <% if (_showPubD && _canMut) { %>
             <form method="post" action="/admin/project-intake/projects/<%= project.id %>/publish" class="form" style="margin-top:0.75rem;">
-              <button type="submit" class="btn btn--primary" <%= _pvD.ok ? '' : 'disabled aria-disabled="true"' %>>Publish project</button>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Publish project', disabled: !_pvD.ok, extraAttrs: !_pvD.ok ? 'aria-disabled="true"' : '' }) %>
             </form>
             <h3 class="input-field__label" style="margin-top:1.25rem;">Quick edit (before publish)</h3>
             <p class="muted input-field__help">Adjust site detail and budget. Photos cannot be changed here yet.</p>
@@ -92,7 +92,7 @@
                 <label class="input-field__label" for="qe_budget">Estimated budget (<%= typeof budget !== 'undefined' && budget ? budget.displayPrefix : '' %>)</label>
                 <input id="qe_budget" name="estimated_budget" class="input-field__control" inputmode="decimal" value="<%= project.estimated_budget_value != null && project.estimated_budget_value !== '' ? project.estimated_budget_value : '' %>" />
               </div>
-              <button type="submit" class="btn">Save &amp; re-check</button>
+              <%- include('../partials/components/button', { variant: 'default', type: 'submit', label: 'Save & re-check' }) %>
             </form>
           <% } %>
         </div>
@@ -158,7 +158,7 @@
                       <td class="admin-intake-assignments-table__note"><%= a.response_note && String(a.response_note).trim() ? a.response_note : '—' %></td>
                       <td>
                         <form method="post" action="/admin/projects/<%= project.id %>/assignments/<%= a.id %>/delete" class="admin-intake-assignments__del">
-                          <button type="submit" class="btn btn--text">Remove</button>
+                          <%- include('../partials/components/button', { variant: 'text', type: 'submit', label: 'Remove' }) %>
                         </form>
                       </td>
                     </tr>
@@ -179,7 +179,7 @@
                   <% }); %>
                 </select>
               </div>
-              <button type="submit" class="btn btn--primary">Add assignment</button>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Add assignment' }) %>
             </form>
           <% } else { %>
             <p class="muted u-mt-note">All companies in this region are already assigned, or there are no listings.</p>

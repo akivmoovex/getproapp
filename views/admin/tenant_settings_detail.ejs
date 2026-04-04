@@ -13,9 +13,9 @@
         <% if (!(typeof embed !== 'undefined' && embed)) { %>
         <div class="admin-toolbar admin-toolbar--mb-sm">
           <% if (typeof isSuper !== 'undefined' && isSuper) { %>
-          <a class="btn" href="/admin/settings/tenants">← All regions</a>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/settings/tenants', label: '← All regions' }) %>
           <% } else { %>
-          <a class="btn" href="/admin/settings">← Settings</a>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/settings', label: '← Settings' }) %>
           <% } %>
         </div>
         <% } %>
@@ -43,9 +43,9 @@
             <div class="admin-form-shell__toolbar">
               <p class="admin-form-shell__unsaved" hidden>Unsaved changes</p>
               <div class="admin-form-shell__toolbar-end">
-                <button type="button" class="btn btn--primary admin-form-shell__btn--done" hidden>Done</button>
-                <button type="button" class="btn btn--text admin-form-shell__btn--cancel" hidden>Cancel</button>
-                <button type="button" class="btn admin-form-shell__btn--edit">Edit</button>
+                <%- include('../partials/components/button', { variant: 'primary', type: 'button', label: 'Done', hidden: true, className: 'admin-form-shell__btn--done' }) %>
+                <%- include('../partials/components/button', { variant: 'text', type: 'button', label: 'Cancel', hidden: true, className: 'admin-form-shell__btn--cancel' }) %>
+                <%- include('../partials/components/button', { variant: 'default', type: 'button', label: 'Edit', className: 'admin-form-shell__btn--edit' }) %>
               </div>
             </div>
             <form method="post" action="/admin/settings/tenant/<%= tenant.id %>" class="form">

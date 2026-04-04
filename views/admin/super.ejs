@@ -19,8 +19,8 @@
         Create, edit, or remove regions. Set <strong>stage</strong> to <strong>Enabled</strong> for live traffic on the subdomain, or <strong>Disabled</strong> / <strong>PartnerCollection</strong> to hide from the picker and return 503 on that host (except <strong>global</strong>, apex-only).
       </p>
       <div class="admin-toolbar">
-        <a class="btn btn--primary" href="/admin/super/tenants/new">New region</a>
-        <a class="btn" href="/admin/super/users">All admin users</a>
+        <%- include('../partials/components/button', { variant: 'primary', href: '/admin/super/tenants/new', label: 'New region' }) %>
+        <%- include('../partials/components/button', { variant: 'default', href: '/admin/super/users', label: 'All admin users' }) %>
       </div>
       <div class="card card--mb-xl">
         <div class="table-wrap">
@@ -49,15 +49,15 @@
                       <option value="<%= stages.ENABLED %>" <%= t.stage === stages.ENABLED ? 'selected' : '' %>><%= stages.ENABLED %></option>
                       <option value="<%= stages.DISABLED %>" <%= t.stage === stages.DISABLED ? 'selected' : '' %>><%= stages.DISABLED %></option>
                     </select>
-                    <button class="btn btn--primary" type="submit">Update</button>
+                    <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Update' }) %>
                   </form>
                 </td>
                 <td>
                   <div class="flex-row-wrap--tight">
-                    <a class="btn" href="/admin/super/tenants/<%= t.id %>/edit">Edit</a>
+                    <%- include('../partials/components/button', { variant: 'default', href: '/admin/super/tenants/' + t.id + '/edit', label: 'Edit' }) %>
                     <% if (t.id !== 1 && t.slug !== 'global') { %>
                     <form method="post" action="/admin/super/tenants/<%= t.id %>/delete" onsubmit="return confirm('Delete region <%= t.name %> and all its directory data? This cannot be undone.');">
-                      <button class="btn" type="submit">Delete</button>
+                      <%- include('../partials/components/button', { variant: 'default', type: 'submit', label: 'Delete' }) %>
                     </form>
                     <% } else { %>
                     <span class="muted muted--caption">—</span>
@@ -92,7 +92,7 @@
             </div>
           </div>
           <div class="admin-gate-actions">
-            <button class="btn btn--primary" type="submit">Apply scope</button>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply scope' }) %>
           </div>
         </form>
       </div>

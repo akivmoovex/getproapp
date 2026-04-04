@@ -8,7 +8,7 @@
   </head>
   <% var _cb = typeof clientPortalBasePath !== 'undefined' && clientPortalBasePath ? String(clientPortalBasePath).replace(/\/$/, '') : '/client'; %>
   <body class="client-portal-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
-    <p class="client-portal-back muted"><a class="btn btn--text" href="/login">← All sign-in options</a></p>
+    <p class="client-portal-back muted"><%- include('partials/components/button', { variant: 'text', href: '/login', label: '← All sign-in options' }) %></p>
     <%- include('partials/client_portal_shell_start', { clientPortalBasePath: _cb }) %>
       <div class="card client-login-card">
         <h1 class="client-login-card__title">Client area</h1>

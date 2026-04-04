@@ -99,7 +99,7 @@
           </div>
         </div>
 
-        <button type="button" class="btn btn--primary join-get-started" id="join-get-started">Get Started</button>
+        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Get Started', id: 'join-get-started', className: 'join-get-started' }) %>
 
         <div class="join-wizard-frame" id="join-wizard-frame" hidden>
           <section class="join-wizard join-wizard--hidden" id="join-wizard" aria-hidden="true">
@@ -148,8 +148,8 @@
                     </div>
                     <div class="form-step__actions">
                       <div class="join-wizard-actions join-wizard-actions--split">
-                        <button type="button" class="btn btn--primary" id="join-next-1">Continue</button>
-                        <button type="button" class="btn btn--secondary" id="join-cancel-1">Cancel</button>
+                        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Continue', id: 'join-next-1' }) %>
+                        <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Cancel', id: 'join-cancel-1' }) %>
                       </div>
                     </div>
                   <p class="input-field__error" id="join-error-1" hidden role="alert"></p>
@@ -190,8 +190,8 @@
                     </div>
                     <div class="form-step__actions">
                       <div class="join-wizard-actions join-wizard-actions--split">
-                        <button type="button" class="btn btn--primary" id="join-next-2">Continue</button>
-                        <button type="button" class="btn btn--secondary" id="join-back-2">Back</button>
+                        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Continue', id: 'join-next-2' }) %>
+                        <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Back', id: 'join-back-2' }) %>
                       </div>
                     </div>
                   <p class="input-field__error" id="join-error-2" hidden role="alert"></p>
@@ -232,8 +232,8 @@
                     </div>
                     <div class="form-step__actions">
                       <div class="join-wizard-actions join-wizard-actions--split">
-                        <button type="button" class="btn btn--primary" id="join-submit">Send application</button>
-                        <button type="button" class="btn btn--secondary" id="join-back-3">Back</button>
+                        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Send application', id: 'join-submit' }) %>
+                        <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Back', id: 'join-back-3' }) %>
                       </div>
                     </div>
                     <p class="input-field__error" id="join-error-3" hidden role="alert"></p>
@@ -319,8 +319,8 @@
               </div>
               <div class="form-step__actions">
                 <div class="join-modal-actions join-modal-actions--split">
-                  <button type="button" class="btn btn--primary" id="join-disabled-city-submit">Submit</button>
-                  <button type="button" class="btn btn--secondary" id="join-disabled-city-dismiss">Cancel</button>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Submit', id: 'join-disabled-city-submit', disabled: true }) %>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Cancel', id: 'join-disabled-city-dismiss', disabled: true }) %>
                 </div>
               </div>
             </div>
@@ -333,7 +333,7 @@
               </div>
               <div class="form-step__actions">
                 <div class="join-modal-actions">
-                  <button type="button" class="btn btn--primary" id="join-disabled-city-close">OK</button>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'OK', id: 'join-disabled-city-close', disabled: true }) %>
                 </div>
               </div>
             </div>
@@ -365,8 +365,8 @@
               </div>
               <div class="form-step__actions">
                 <div class="join-modal-actions join-modal-actions--split">
-                  <button type="button" class="btn btn--primary" id="join-exit-modal-call">Call Me</button>
-                  <button type="button" class="btn btn--secondary" id="join-exit-modal-dismiss">Close</button>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Call Me', id: 'join-exit-modal-call' }) %>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Close', id: 'join-exit-modal-dismiss' }) %>
                 </div>
               </div>
             </div>
@@ -399,8 +399,8 @@
               </div>
               <div class="form-step__actions">
                 <div class="join-modal-actions join-modal-actions--split">
-                  <button type="button" class="btn btn--primary" id="join-exit-modal-submit">Submit</button>
-                  <button type="button" class="btn btn--secondary" id="join-exit-modal-back">Back</button>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Submit', id: 'join-exit-modal-submit' }) %>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Back', id: 'join-exit-modal-back' }) %>
                 </div>
               </div>
             </div>

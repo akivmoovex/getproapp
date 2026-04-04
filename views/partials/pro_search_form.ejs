@@ -1,22 +1,22 @@
 <%#
-  Shared service + city search — form shell + locals; inner UI: partials/components/search_bar.ejs
-  Callers pass: variant, tenantUrlPrefix, formAction, formId, searchQuery, cityQuery,
-  showCategoryFilter, selectedCategory, categories, ariaLabel, idPrefix.
+  ============================================================================
+  Search form — PUBLIC ENTRY for homepage / directory / category search ONLY.
+  Wraps the system SearchBar (components/search_bar.ejs) in <form>.
+
+  Pages: include('partials/pro_search_form', { ... }) — do NOT include
+  partials/components/search_bar (or components/search_bar from partials/) directly;
+  the <form> wrapper must stay paired with the bar.
+
+  Props (pass through to SearchBar + used for form):
+  - variant, tenantUrlPrefix, formAction, formId, searchQuery, cityQuery,
+    showCategoryFilter, selectedCategory, categories, ariaLabel, idPrefix
+  ============================================================================
 -%>
 <%
   var _v = typeof variant !== 'undefined' ? String(variant) : 'directory';
   var _tp = typeof tenantUrlPrefix !== 'undefined' ? String(tenantUrlPrefix || '') : '';
   var _action = typeof formAction !== 'undefined' && formAction ? String(formAction) : (_tp.replace(/\/$/, '') + '/directory');
   var _fid = typeof formId !== 'undefined' ? String(formId || '') : (_v === 'directory' ? 'directory-toolbar' : '');
-  var _pre = _v === 'home' ? 'home' : 'dir';
-  if (typeof idPrefix !== 'undefined' && idPrefix) {
-    _pre = String(idPrefix).replace(/[^a-z0-9_-]/gi, '') || _pre;
-  }
-  var _q = typeof searchQuery !== 'undefined' ? String(searchQuery || '') : '';
-  var _city = typeof cityQuery !== 'undefined' ? String(cityQuery || '') : '';
-  var _showCat = typeof showCategoryFilter !== 'undefined' && showCategoryFilter;
-  var _selCat = typeof selectedCategory !== 'undefined' ? String(selectedCategory || '').trim() : '';
-  var _cats = typeof categories !== 'undefined' && categories ? categories : [];
   var _aria = typeof ariaLabel !== 'undefined' ? String(ariaLabel) : 'Search by service and city';
 %>
 <form
@@ -35,18 +35,7 @@
   categories: typeof categories !== 'undefined' ? categories : [],
   ariaLabel: typeof ariaLabel !== 'undefined' ? ariaLabel : '',
   idPrefix: typeof idPrefix !== 'undefined' ? idPrefix : '',
-  formAction: typeof formAction !== 'undefined' ? formAction : '',
-  formId: typeof formId !== 'undefined' ? formId : '',
   searchQuery: typeof searchQuery !== 'undefined' ? searchQuery : '',
   cityQuery: typeof cityQuery !== 'undefined' ? cityQuery : '',
-  _pre: _pre,
-  _q: _q,
-  _city: _city,
-  _showCat: _showCat,
-  _selCat: _selCat,
-  _cats: _cats,
-  _fid: _fid,
-  _action: _action,
-  _aria: _aria,
 }) %>
 </form>

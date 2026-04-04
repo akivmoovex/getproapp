@@ -11,7 +11,7 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
       <div class="admin-toolbar">
-        <a class="btn" href="/admin/categories?edit=1<%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">← All professions</a>
+        <%- include('../partials/components/button', { variant: 'default', href: '/admin/categories?edit=1' + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: '← All professions' }) %>
       </div>
 
       <div class="card admin-form-card">
@@ -34,7 +34,7 @@
           </div>
 
           <div class="admin-gate-actions">
-            <button class="btn btn--primary" type="submit">Save</button>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save' }) %>
           </div>
         </form>
       </div>

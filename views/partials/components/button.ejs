@@ -1,21 +1,50 @@
+<%#
+  System component. Do NOT duplicate or modify per-page.
+
+  Props (safe if omitted):
+  - variant: 'primary' | 'secondary' | 'outline' | 'text' | 'default' | 'danger-outline'
+  - type: 'button' | 'submit'
+  - disabled: boolean
+  - href: if set, renders <a>
+  - icon: optional ('search' supported)
+  - iconPosition: 'leading' | 'trailing'
+  - label, text: visible label (label wins)
+  - innerHtml: raw inner markup (use rarely; prefer label)
+  - fullWidth: boolean → btn-block + c-button--full-width
+  - id, name, value, form: native attributes when applicable
+  - ariaLabel: string
+  - size: 'sm' | 'lg' | 'icon'
+  - className, extraAttrs: appended to root element
+-%>
 <%
   var _variant = typeof variant !== 'undefined' ? String(variant) : 'primary';
   var _size = typeof size !== 'undefined' ? String(size) : '';
   var _icon = typeof icon !== 'undefined' ? String(icon) : '';
   var _iconPosition = typeof iconPosition !== 'undefined' ? String(iconPosition) : 'trailing';
-  var _text = typeof text !== 'undefined' ? String(text) : '';
+  var _label = typeof label !== 'undefined' && label !== null && label !== ''
+    ? String(label)
+    : (typeof text !== 'undefined' && text !== null && text !== '' ? String(text) : '');
+  var _innerHtml = typeof innerHtml !== 'undefined' && innerHtml ? String(innerHtml) : '';
   var _href = typeof href !== 'undefined' && href ? String(href) : '';
   var _type = typeof type !== 'undefined' && type ? String(type) : 'button';
   var _disabled = typeof disabled !== 'undefined' && !!disabled;
   var _ariaLabel = typeof ariaLabel !== 'undefined' && ariaLabel ? String(ariaLabel) : '';
   var _className = typeof className !== 'undefined' && className ? String(className) : '';
   var _extraAttrs = typeof extraAttrs !== 'undefined' && extraAttrs ? String(extraAttrs) : '';
+  var _id = typeof id !== 'undefined' && id ? String(id) : '';
+  var _name = typeof name !== 'undefined' && name ? String(name) : '';
+  var _value = typeof value !== 'undefined' && value !== null && value !== '' ? String(value) : '';
+  var _form = typeof form !== 'undefined' && form ? String(form) : '';
+  var _fullWidth = typeof fullWidth !== 'undefined' && !!fullWidth;
+  var _hidden = typeof hidden !== 'undefined' && !!hidden;
 
   var _variantClass = '';
   if (_variant === 'primary') _variantClass = 'btn--primary';
   else if (_variant === 'secondary') _variantClass = 'btn--secondary';
   else if (_variant === 'outline') _variantClass = 'btn--outline';
   else if (_variant === 'text' || _variant === 'ghost') _variantClass = 'btn--text';
+  else if (_variant === 'danger-outline') _variantClass = 'btn--danger-outline';
+  else if (_variant === 'default' || _variant === 'neutral') _variantClass = '';
   else if (_variant === 'icon') _variantClass = 'btn--text';
   else _variantClass = 'btn--primary';
 
@@ -23,14 +52,14 @@
   if (_size === 'sm') _sizeClass = 'btn--sm';
   if (_size === 'lg') _sizeClass = 'btn--lg';
   if (_size === 'icon') _sizeClass = 'btn--icon';
-%>
 
-<%
-  var _cls = ['btn', _variantClass, _sizeClass, _className].filter(Boolean).join(' ');
+  var _fw = _fullWidth ? 'btn-block c-button--full-width' : '';
+  var _cls = ['c-button', 'btn', _variantClass, _sizeClass, _fw, _className].filter(Boolean).join(' ');
 %>
 
 <% if (_href) { %>
-  <a class="<%= _cls %>" href="<%= _href %>" <% if (_ariaLabel) { %>aria-label="<%= _ariaLabel %>"<% } %> <%- _extraAttrs %>>
+  <a class="<%= _cls %>" href="<%= _href %>" <% if (_id) { %>id="<%= _id %>"<% } %> <% if (_ariaLabel) { %>aria-label="<%= _ariaLabel %>"<% } %> <%- _extraAttrs %>>
+    <% if (_innerHtml) { %><%- _innerHtml %><% } else { %>
     <% if (_icon && _iconPosition === 'leading') { %>
       <span class="btn__icon" aria-hidden="true">
         <% if (_icon === 'search') { %>
@@ -41,7 +70,7 @@
         <% } %>
       </span>
     <% } %>
-    <% if (_text) { %><span class="btn__text"><%= _text %></span><% } %>
+    <% if (_label) { %><span class="btn__text"><%= _label %></span><% } %>
     <% if (_icon && _iconPosition !== 'leading') { %>
       <span class="btn__icon" aria-hidden="true">
         <% if (_icon === 'search') { %>
@@ -51,10 +80,23 @@
           </svg>
         <% } %>
       </span>
+    <% } %>
     <% } %>
   </a>
 <% } else { %>
-  <button type="<%= _type %>" class="<%= _cls %>" <% if (_disabled) { %>disabled<% } %> <% if (_ariaLabel) { %>aria-label="<%= _ariaLabel %>"<% } %> <%- _extraAttrs %>>
+  <button
+    type="<%= _type %>"
+    class="<%= _cls %>"
+    <% if (_id) { %>id="<%= _id %>"<% } %>
+    <% if (_name) { %>name="<%= _name %>"<% } %>
+    <% if (_value) { %>value="<%= _value %>"<% } %>
+    <% if (_form) { %>form="<%= _form %>"<% } %>
+    <% if (_disabled) { %>disabled<% } %>
+    <% if (_hidden) { %>hidden<% } %>
+    <% if (_ariaLabel) { %>aria-label="<%= _ariaLabel %>"<% } %>
+    <%- _extraAttrs %>
+  >
+    <% if (_innerHtml) { %><%- _innerHtml %><% } else { %>
     <% if (_icon && _iconPosition === 'leading') { %>
       <span class="btn__icon" aria-hidden="true">
         <% if (_icon === 'search') { %>
@@ -65,7 +107,7 @@
         <% } %>
       </span>
     <% } %>
-    <% if (_text) { %><span class="btn__text"><%= _text %></span><% } %>
+    <% if (_label) { %><span class="btn__text"><%= _label %></span><% } %>
     <% if (_icon && _iconPosition !== 'leading') { %>
       <span class="btn__icon" aria-hidden="true">
         <% if (_icon === 'search') { %>
@@ -76,6 +118,6 @@
         <% } %>
       </span>
     <% } %>
+    <% } %>
   </button>
 <% } %>
-

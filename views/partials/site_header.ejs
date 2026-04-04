@@ -17,25 +17,7 @@
 
     <div class="app-top-app-bar__actions">
       <div class="gp-theme-switchers" role="group" aria-label="Site appearance">
-        <button
-          type="button"
-          class="btn btn--secondary btn--sm gp-theme-switchers__theme"
-          id="gp-theme-toggle"
-          aria-pressed="false"
-          aria-label="Switch to dark theme"
-        >
-          <span class="gp-theme-switchers__theme-icon gp-theme-switchers__theme-icon--moon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-            </svg>
-          </span>
-          <span class="gp-theme-switchers__theme-icon gp-theme-switchers__theme-icon--sun" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-            </svg>
-          </span>
-        </button>
+        <%- include('components/theme_toggle_button') %>
         <label class="visually-hidden" for="gp-brand-switch">Brand</label>
         <select id="gp-brand-switch" class="gp-theme-switchers__select" aria-label="Brand">
           <option value="">Default</option>

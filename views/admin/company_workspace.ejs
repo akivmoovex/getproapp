@@ -13,13 +13,13 @@
         <div class="admin-workspace__shell">
         <div class="admin-workspace__toolbar" role="toolbar" aria-label="Mini-site actions">
           <div class="admin-workspace__toolbar-left">
-            <a class="btn" href="/admin/companies?edit=1">← Back</a>
-            <a class="btn" href="/admin/companies/<%= company.id %>/portal-users">Portal logins</a>
-            <button type="button" class="btn btn--primary admin-workspace__btn-edit u-hidden" data-ws-edit>Edit</button>
-            <button type="button" class="btn btn--primary admin-workspace__btn-preview u-hidden" data-ws-preview>Preview</button>
-            <button type="button" class="btn admin-workspace__btn-close u-hidden" data-ws-close>Close</button>
-            <button type="button" class="btn btn--primary admin-workspace__btn-publish u-hidden" data-ws-publish>Publish</button>
-            <button type="button" class="btn admin-workspace__btn-back-edit u-hidden" data-ws-back-edit>Back to edit</button>
+            <%- include('../partials/components/button', { variant: 'default', href: '/admin/companies?edit=1', label: '← Back' }) %>
+            <%- include('../partials/components/button', { variant: 'default', href: '/admin/companies/' + company.id + '/portal-users', label: 'Portal logins' }) %>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'button', label: 'Edit', hidden: true, className: 'admin-workspace__btn-edit u-hidden' }) %>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'button', label: 'Preview', hidden: true, className: 'admin-workspace__btn-preview u-hidden' }) %>
+            <%- include('../partials/components/button', { variant: 'default', type: 'button', label: 'Close', hidden: true, className: 'admin-workspace__btn-close u-hidden' }) %>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'button', label: 'Publish', hidden: true, className: 'admin-workspace__btn-publish u-hidden' }) %>
+            <%- include('../partials/components/button', { variant: 'default', type: 'button', label: 'Back to edit', hidden: true, className: 'admin-workspace__btn-back-edit u-hidden' }) %>
             <span class="admin-workspace__toolbar-meta muted">
               <span class="kbd"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : company.subdomain %></span>
             </span>
@@ -161,8 +161,8 @@
           </p>
         </div>
         <div class="m3-modal__footer">
-          <button type="button" class="btn" data-ws-dialog-cancel>Cancel</button>
-          <button type="button" class="btn btn--primary" data-ws-dialog-leave>Leave</button>
+          <%- include('../partials/components/button', { variant: 'default', type: 'button', label: 'Cancel' }) %>
+          <%- include('../partials/components/button', { variant: 'primary', type: 'button', label: 'Leave' }) %>
         </div>
       </div>
     </div>

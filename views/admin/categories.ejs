@@ -11,10 +11,11 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
       <div class="admin-super-users__topbar">
+        <% var _catFs = typeof filterSuffix !== 'undefined' ? filterSuffix : ''; %>
         <% if (!editMode) { %>
-        <a class="btn btn--primary" href="/admin/categories?edit=1<%= typeof filterSuffix !== 'undefined' ? filterSuffix : '' %>">Edit</a>
+        <%- include('../partials/components/button', { variant: 'primary', href: '/admin/categories?edit=1' + _catFs, label: 'Edit' }) %>
         <% } else { %>
-        <a class="btn" href="/admin/categories<%= typeof filterSuffix !== 'undefined' && filterSuffix ? '?' + filterSuffix.slice(1) : '' %>">Done</a>
+        <%- include('../partials/components/button', { variant: 'default', href: '/admin/categories' + (_catFs ? '?' + _catFs.slice(1) : ''), label: 'Done' }) %>
         <% } %>
       </div>
 
@@ -49,8 +50,8 @@
           </div>
         </div>
         <div class="admin-filter-form__actions">
-          <button class="btn btn--primary" type="submit">Apply filters</button>
-          <a class="btn" href="/admin/categories<%= editMode ? '?edit=1' : '' %><%= typeof embed !== 'undefined' && embed ? (editMode ? '&' : '?') + 'embed=1' : '' %>">Clear</a>
+          <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply filters' }) %>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/categories' + (editMode ? '?edit=1' : '') + (typeof embed !== 'undefined' && embed ? (editMode ? '&' : '?') + 'embed=1' : ''), label: 'Clear' }) %>
         </div>
       </form>
 
@@ -58,7 +59,7 @@
       <p class="admin-intro">View-only list. Choose <strong>Edit</strong> to add, change, or remove categories.</p>
       <% } else { %>
       <div class="admin-toolbar">
-        <a class="btn btn--primary" href="/admin/categories/new<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">New category</a>
+        <%- include('../partials/components/button', { variant: 'primary', href: '/admin/categories/new' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'New category' }) %>
       </div>
       <% } %>
 
@@ -93,9 +94,9 @@
                 <% if (editMode) { %>
                 <td>
                   <div class="flex-row-wrap">
-                    <a class="btn" href="/admin/categories/<%= cat.id %>/edit">Edit</a>
+                    <%- include('../partials/components/button', { variant: 'default', href: '/admin/categories/' + cat.id + '/edit', label: 'Edit' }) %>
                     <form method="post" action="/admin/categories/<%= cat.id %>/delete" onsubmit="return confirm('Delete this category? Companies in it will be uncategorized.');">
-                      <button class="btn" type="submit">Delete</button>
+                      <%- include('../partials/components/button', { variant: 'default', type: 'submit', label: 'Delete' }) %>
                     </form>
                   </div>
                 </td>

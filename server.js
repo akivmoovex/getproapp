@@ -72,6 +72,7 @@ app.use((req, res, next) => {
   res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260331-home-search-fix-final";
   res.locals.encodeURIComponent = encodeURIComponent;
   res.locals.eventTimeParts = eventTimeParts;
+  res.locals.showUiGuard = process.env.NODE_ENV !== "production";
   next();
 });
 

@@ -11,7 +11,7 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
       <div class="admin-toolbar">
-        <a class="btn" href="/admin/super">← All regions</a>
+        <%- include('../partials/components/button', { variant: 'default', href: '/admin/super', label: '← All regions' }) %>
       </div>
 
       <div class="card admin-form-card">
@@ -96,8 +96,8 @@
             </div>
           </div>
           <div class="admin-gate-actions">
-            <button class="btn btn--primary" type="submit"><%= tenant ? 'Save' : 'Create' %></button>
-            <a class="btn" href="/admin/super">Cancel</a>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: tenant ? 'Save' : 'Create' }) %>
+            <%- include('../partials/components/button', { variant: 'default', href: '/admin/super', label: 'Cancel' }) %>
           </div>
         </form>
       </div>

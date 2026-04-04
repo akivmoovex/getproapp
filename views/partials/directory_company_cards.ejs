@@ -33,7 +33,7 @@
     <% var catLabel = c.category_name && String(c.category_name).trim() ? String(c.category_name).trim() : ''; %>
     <% var hasLoc = c.location && String(c.location).trim(); %>
     <% var showMeta = !!(catLabel || hasLoc || hasReviews); %>
-    <article class="ds-card pro-directory-card card--interactive">
+    <article class="c-card ds-card pro-directory-card card--interactive">
       <a class="pro-directory-card__link" href="<%= url %>">
         <div class="pro-directory-card__media" data-avatar-hue="<%= hue %>">
           <div class="pro-directory-card__avatar" aria-hidden="true"><span class="pro-directory-card__initials"><%= initials %></span></div>

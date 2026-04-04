@@ -145,7 +145,7 @@
           </div>
           <div class="form-step__actions">
             <div class="join-modal-actions pro-directory-empty__callback-actions">
-              <button type="submit" class="btn btn--primary" id="directory-empty-callback-submit">Request a call</button>
+              <%- include('components/button', { variant: 'primary', type: 'submit', label: 'Request a call', id: 'directory-empty-callback-submit' }) %>
             </div>
           </div>
         </div>
@@ -160,11 +160,11 @@
 
     <div class="pro-directory-empty__actions" id="directory-empty-footer-actions">
       <% if (_mode === 'directory') { %>
-        <a href="<%= _tp %>/directory" class="btn btn--text">Clear all filters</a>
-        <a href="#<%= _toolbarId %>" class="btn btn--secondary">Adjust search</a>
+        <%- include('components/button', { variant: 'text', href: _tp + '/directory', label: 'Clear all filters' }) %>
+        <%- include('components/button', { variant: 'secondary', href: '#' + _toolbarId, label: 'Adjust search' }) %>
       <% } else { %>
-        <a href="<%= _tp %>/directory" class="btn btn--text">All categories</a>
-        <a href="#<%= _toolbarId %>" class="btn btn--secondary">Refine search</a>
+        <%- include('components/button', { variant: 'text', href: _tp + '/directory', label: 'All categories' }) %>
+        <%- include('components/button', { variant: 'secondary', href: '#' + _toolbarId, label: 'Refine search' }) %>
       <% } %>
     </div>
   </div>

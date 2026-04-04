@@ -44,7 +44,7 @@
           <% if (_canPub) { %>
             <form method="post" action="/admin/project-intake/projects/<%= project.id %>/publish" class="form" style="margin-top:1rem;">
               <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
-              <button type="submit" class="btn btn--primary" <%= _pv.ok ? '' : 'disabled aria-disabled="true"' %>>Publish project</button>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Publish project', disabled: !_pv.ok, extraAttrs: !_pv.ok ? 'aria-disabled="true"' : '' }) %>
               <% if (!_pv.ok) { %>
                 <p class="muted" style="margin-top:0.5rem;">Fix the issues using <strong>Quick edit</strong> on <a href="/admin/projects/<%= project.id %>">project detail</a>, or adjust intake rules in <code>intake_allocation_settings</code>.</p>
               <% } %>
@@ -68,8 +68,8 @@
         <% } %>
 
         <p style="margin-top:1rem;">
-          <a class="btn" href="/admin/projects/<%= project.id %>">Open project detail</a>
-          <a class="btn btn--primary" href="/admin/project-intake<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">Another project</a>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/projects/' + project.id, label: 'Open project detail' }) %>
+          <%- include('../partials/components/button', { variant: 'primary', href: '/admin/project-intake' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'Another project' }) %>
         </p>
       </div>
     </main>

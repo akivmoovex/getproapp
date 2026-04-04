@@ -15,7 +15,7 @@
       providerPortalBasePath: typeof providerPortalBasePath !== 'undefined' ? providerPortalBasePath : '/company',
     }) %>
     <main class="company-portal-main" id="main-content">
-      <p class="company-portal-back"><a class="btn btn--text" href="<%= _pb %>/leads">← Active leads</a></p>
+      <p class="company-portal-back"><%- include('partials/components/button', { variant: 'text', href: _pb + '/leads', label: '← Active leads' }) %></p>
       <% if (typeof error !== 'undefined' && error) { %>
         <div class="flash" role="alert"><%= error %></div>
       <% } %>
@@ -64,13 +64,13 @@
           </div>
           <div class="company-lead-actions__row">
             <% if (_canInt) { %>
-            <button type="submit" name="action" value="interested" class="btn btn--primary">Interested</button>
+            <%- include('partials/components/button', { variant: 'primary', type: 'submit', label: 'Interested', name: 'action', value: 'interested' }) %>
             <% } %>
             <% if (_canCb) { %>
-            <button type="submit" name="action" value="callback" class="btn btn--secondary">Request callback</button>
+            <%- include('partials/components/button', { variant: 'secondary', type: 'submit', label: 'Request callback', name: 'action', value: 'callback' }) %>
             <% } %>
             <% if (_canDecl) { %>
-            <button type="submit" name="action" value="decline" class="btn btn--text" onclick="return confirm('Decline this lead?');">Decline</button>
+            <%- include('partials/components/button', { variant: 'text', type: 'submit', label: 'Decline', name: 'action', value: 'decline', extraAttrs: 'onclick="return confirm(\'Decline this lead?\');"' }) %>
             <% } %>
           </div>
         </form>

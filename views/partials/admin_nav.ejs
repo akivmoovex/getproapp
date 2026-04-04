@@ -50,7 +50,7 @@
             <option value="<%= opt.id %>" <%= Number(regionSwitch.currentId) === Number(opt.id) ? 'selected' : '' %>><%= opt.name %> (<%= opt.slug %>)</option>
           <% }); %>
         </select>
-        <button type="submit" class="btn admin-region-switch__btn">Switch</button>
+        <%- include('components/button', { variant: 'default', type: 'submit', label: 'Switch', className: 'admin-region-switch__btn' }) %>
       </form>
     </div>
     <% } %>
@@ -77,7 +77,7 @@
         <% } %>
       <% } %>
       <form method="post" action="/admin/logout" class="admin-nav__logout">
-        <button class="admin-nav__btn btn" type="submit">Logout</button>
+        <%- include('components/button', { variant: 'default', type: 'submit', label: 'Logout', className: 'admin-nav__btn' }) %>
       </form>
     </nav>
   </div>

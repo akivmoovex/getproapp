@@ -1,3 +1,13 @@
+<%#
+  System component. Do NOT duplicate or modify per-page.
+
+  Props:
+  - type, name, value, placeholder, label, id, required, disabled
+  - error, helper, helperText (helperText wins over helper)
+  - autocomplete
+  - wrapperClass, controlClass, className (className merges into control)
+  - inputmode, pattern, min, max, step (optional passthrough via extraAttrs)
+-%>
 <%
   var _id = typeof id !== 'undefined' && id ? String(id) : '';
   var _name = typeof name !== 'undefined' && name ? String(name) : '';
@@ -8,13 +18,16 @@
   var _required = typeof required !== 'undefined' && !!required;
   var _disabled = typeof disabled !== 'undefined' && !!disabled;
   var _autocomplete = typeof autocomplete !== 'undefined' ? String(autocomplete) : '';
-  var _helper = typeof helper !== 'undefined' ? String(helper) : '';
+  var _helperRaw = typeof helperText !== 'undefined' && helperText ? String(helperText) : (typeof helper !== 'undefined' ? String(helper) : '');
   var _error = typeof error !== 'undefined' ? String(error) : '';
   var _wrapperClass = typeof wrapperClass !== 'undefined' && wrapperClass ? String(wrapperClass) : '';
   var _controlClass = typeof controlClass !== 'undefined' && controlClass ? String(controlClass) : '';
+  var _className = typeof className !== 'undefined' && className ? String(className) : '';
+  var _extraAttrs = typeof extraAttrs !== 'undefined' && extraAttrs ? String(extraAttrs) : '';
 
   var _hasError = !!_error;
-  var _wrapperClasses = ['input-field', _wrapperClass, _hasError ? 'input-field--error' : ''].filter(Boolean).join(' ');
+  var _wrapperClasses = ['c-input', 'input-field', _wrapperClass, _hasError ? 'input-field--error' : ''].filter(Boolean).join(' ');
+  var _ctrl = ['input-field__control', _controlClass, _className].filter(Boolean).join(' ');
 %>
 
 <div class="<%= _wrapperClasses %>">
@@ -26,18 +39,18 @@
     id="<%= _id %>"
     name="<%= _name %>"
     type="<%= _type %>"
-    class="input-field__control <%= _controlClass %>"
+    class="<%= _ctrl %>"
     placeholder="<%= _placeholder %>"
     value="<%= _value %>"
     <% if (_required) { %>required<% } %>
     <% if (_disabled) { %>disabled<% } %>
     <% if (_autocomplete) { %>autocomplete="<%= _autocomplete %>"<% } %>
+    <%- _extraAttrs %>
   />
 
   <% if (_hasError) { %>
     <p class="input-field__error" role="alert"><%= _error %></p>
-  <% } else if (_helper) { %>
-    <p class="input-field__help"><%= _helper %></p>
+  <% } else if (_helperRaw) { %>
+    <p class="input-field__help"><%= _helperRaw %></p>
   <% } %>
 </div>
-

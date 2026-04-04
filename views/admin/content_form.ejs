@@ -11,19 +11,19 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
         <div class="admin-super-users__topbar" style="flex-wrap: wrap; gap: 0.5rem">
-          <a class="btn" href="/admin/content?kind=<%= kind %><%= editMode ? '&edit=1' : '' %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">← List</a>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/content?kind=' + kind + (editMode ? '&edit=1' : '') + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: '← List' }) %>
           <% if (!editMode && row) { %>
-          <a class="btn btn--primary" href="/admin/content/<%= row.id %>?edit=1<%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Edit</a>
+          <%- include('../partials/components/button', { variant: 'primary', href: '/admin/content/' + row.id + '?edit=1' + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: 'Edit' }) %>
           <% } else if (editMode && row) { %>
-          <a class="btn" href="/admin/content/<%= row.id %><%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">View</a>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/content/' + row.id + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'View' }) %>
           <% } %>
           <% if (row && publicPreviewUrl) { %>
-          <a class="btn" href="<%= publicPreviewUrl %>" target="_blank" rel="noopener noreferrer">Preview</a>
+          <%- include('../partials/components/button', { variant: 'default', href: publicPreviewUrl, label: 'Preview', extraAttrs: 'target="_blank" rel="noopener noreferrer"' }) %>
           <% } %>
           <% if (row && editMode) { %>
           <form method="post" action="/admin/content/<%= row.id %>/publish<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>" style="display: inline">
             <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
-            <button class="btn" type="submit"><%= row.published ? 'Unpublish' : 'Publish' %></button>
+            <%- include('../partials/components/button', { variant: 'default', type: 'submit', label: row.published ? 'Unpublish' : 'Publish' }) %>
           </form>
           <% } %>
         </div>
@@ -105,14 +105,14 @@
             </label>
           </div>
           <div class="flex-row-wrap" style="gap: 0.5rem">
-            <button class="btn btn--primary" type="submit">Save</button>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save' }) %>
           </div>
         </form>
         <% if (row && editMode) { %>
         <form method="post" action="/admin/content/<%= row.id %>/delete" class="card" style="padding: 1rem; margin-top: 1rem" onsubmit="return confirm('Delete this item?');">
           <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
           <input type="hidden" name="kind" value="<%= kind %>" />
-          <button class="btn" type="submit">Delete</button>
+          <%- include('../partials/components/button', { variant: 'default', type: 'submit', label: 'Delete' }) %>
         </form>
         <% } %>
         <% } %>

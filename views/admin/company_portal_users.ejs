@@ -11,7 +11,7 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
         <div class="admin-toolbar">
-          <a class="btn" href="/admin/companies/<%= company.id %>/workspace">← Workspace</a>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/companies/' + company.id + '/workspace', label: '← Workspace' }) %>
         </div>
         <% if (typeof error !== 'undefined' && error) { %>
           <div class="flash" role="alert"><%= error %></div>
@@ -89,7 +89,7 @@
               <input id="cpu_pw" name="password" type="password" class="input-field__control" required autocomplete="new-password" />
             </div>
             <div class="form-step__actions">
-              <button type="submit" class="btn btn--primary">Create user</button>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Create user' }) %>
             </div>
           </form>
         </div>

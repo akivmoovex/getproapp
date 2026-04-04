@@ -4,7 +4,7 @@
     <div class="container wf-footer-cta-inner">
       <h2 class="wf-footer-cta-title">Find the right professional in one place</h2>
       <p class="wf-footer-cta-lead">Search the directory, filter by category, and reach businesses through clear one-page profiles.</p>
-      <a class="btn btn-footer-solid" href="<%= tp %>/directory">Open directory</a>
+      <%- include('components/button', { variant: 'default', href: tp + '/directory', label: 'Open directory', className: 'btn-footer-solid' }) %>
     </div>
   </div>
   <div class="wf-footer-main">

@@ -9,7 +9,7 @@
   <% var _pb = typeof providerPortalBasePath !== 'undefined' && providerPortalBasePath ? String(providerPortalBasePath).replace(/\/$/, '') : '/company'; %>
   <body class="company-login-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
     <main class="company-login-main">
-      <p class="company-login-back muted"><a class="btn btn--text" href="/login">← All sign-in options</a></p>
+      <p class="company-login-back muted"><%- include('partials/components/button', { variant: 'text', href: '/login', label: '← All sign-in options' }) %></p>
       <div class="card company-login-card">
         <h1 class="company-login-card__title">Provider portal</h1>
         <p class="muted company-login-card__lead">Sign in with your phone number or portal username and password (as set by your administrator).</p>
@@ -17,16 +17,25 @@
           <div class="flash" role="alert"><%= error %></div>
         <% } %>
         <form method="post" action="<%= _pb %>/login" class="form">
-          <div class="input-field">
-            <label class="input-field__label" for="cp_login">Phone or username</label>
-            <input id="cp_login" name="login" type="text" class="input-field__control" required autocomplete="username" autocapitalize="none" />
-          </div>
-          <div class="input-field">
-            <label class="input-field__label" for="cp_password">Password</label>
-            <input id="cp_password" name="password" type="password" class="input-field__control" required autocomplete="current-password" />
-          </div>
+          <%- include('partials/components/input', {
+            id: 'cp_login',
+            name: 'login',
+            type: 'text',
+            label: 'Phone or username',
+            required: true,
+            autocomplete: 'username',
+            extraAttrs: 'autocapitalize="none"',
+          }) %>
+          <%- include('partials/components/input', {
+            id: 'cp_password',
+            name: 'password',
+            type: 'password',
+            label: 'Password',
+            required: true,
+            autocomplete: 'current-password',
+          }) %>
           <div class="form-step__actions">
-            <button type="submit" class="btn btn--primary">Sign in</button>
+            <%- include('partials/components/button', { variant: 'primary', type: 'submit', label: 'Sign in' }) %>
           </div>
         </form>
       </div>

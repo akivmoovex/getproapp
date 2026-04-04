@@ -81,15 +81,15 @@
               </div>
             </div>
             <div class="form-step__actions admin-gate-actions">
-              <button class="btn btn--primary" type="submit">Save</button>
-              <a class="btn btn--secondary" href="/admin/super/users?edit=1">Cancel</a>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save' }) %>
+              <%- include('../partials/components/button', { variant: 'secondary', href: '/admin/super/users?edit=1', label: 'Cancel' }) %>
             </div>
           </div>
         </form>
 
         <% if (typeof currentUserId !== 'undefined' && user.id !== currentUserId) { %>
         <form method="post" action="/admin/super/users/<%= user.id %>/delete" class="form--delete" onsubmit="return confirm('Delete this user?');">
-          <button class="btn btn--danger-outline" type="submit">Delete user</button>
+          <%- include('../partials/components/button', { variant: 'danger-outline', type: 'submit', label: 'Delete user' }) %>
         </form>
         <% } %>
       </div>

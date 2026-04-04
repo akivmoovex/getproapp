@@ -1,1 +1,4 @@
 <script src="/theme-prefs.js?v=<%= typeof stylesVersion !== 'undefined' ? stylesVersion : '1' %>" defer></script>
+<% if (typeof showUiGuard !== 'undefined' && showUiGuard) { %>
+<script src="/js/ui-guard.js?v=<%= typeof stylesVersion !== 'undefined' ? stylesVersion : '1' %>" defer></script>
+<% } %>

@@ -1,6 +1,9 @@
 /**
- * Static HTML mirror of `views/partials/components/search_bar.ejs` for Storybook.
- * When the EJS partial changes, update this fixture in the same change.
+ * STORYBOOK MIRROR ONLY — NOT A SECOND APP IMPLEMENTATION.
+ *
+ * Canonical markup: `views/partials/components/search_bar.ejs` (system SearchBar).
+ * When that EJS partial changes, update this fixture in the same PR so Storybook
+ * stays visually aligned. Do not fork search field markup elsewhere in the app.
  */
 
 function esc(s) {

@@ -11,16 +11,7 @@
       <p class="company-portal-header__context muted">Signed in as <%= _cpStaff || 'Staff' %></p>
       <% } %>
     </div>
-    <button
-      type="button"
-      class="company-portal-menu-btn"
-      id="cp-nav-toggle"
-      aria-expanded="false"
-      aria-controls="cp-nav-drawer"
-      aria-label="Open menu"
-    >
-      Menu
-    </button>
+    <%- include('components/button', { variant: 'default', type: 'button', label: 'Menu', id: 'cp-nav-toggle', ariaLabel: 'Open menu', className: 'company-portal-menu-btn' }) %>
   </header>
   <div class="company-portal-backdrop" id="cp-nav-backdrop" hidden></div>
   <aside
@@ -36,7 +27,7 @@
       <a class="company-portal-drawer__link <%= _cpNav === 'minisite' ? 'company-portal-drawer__link--active' : '' %>" href="<%= _pb %>/minisite">Minisite</a>
       <a class="company-portal-drawer__link <%= _cpNav === 'leads' ? 'company-portal-drawer__link--active' : '' %>" href="<%= _pb %>/leads">Leads</a>
       <form method="post" action="<%= _pb %>/logout" class="company-portal-drawer__logout">
-        <button type="submit" class="btn btn--text company-portal-drawer__logout-btn">Log out</button>
+        <%- include('components/button', { variant: 'text', type: 'submit', label: 'Log out', className: 'company-portal-drawer__logout-btn' }) %>
       </form>
     </nav>
   </aside>

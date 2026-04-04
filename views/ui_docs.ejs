@@ -35,13 +35,13 @@
           <h2 class="ui-docs-toolbar__title">Preview &amp; theme</h2>
           <div class="ui-docs-toolbar__actions">
             <span class="ui-docs-toolbar__label">Theme</span>
-            <button type="button" class="btn btn--secondary btn--sm" id="ui-docs-theme-light">Light</button>
-            <button type="button" class="btn btn--secondary btn--sm" id="ui-docs-theme-dark">Dark</button>
-            <button type="button" class="btn btn--text btn--sm" id="ui-docs-theme-system">System</button>
+            <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Light', size: 'sm', id: 'ui-docs-theme-light' }) %>
+            <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Dark', size: 'sm', id: 'ui-docs-theme-dark' }) %>
+            <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'System', size: 'sm', id: 'ui-docs-theme-system' }) %>
             <span class="ui-docs-toolbar__label ui-docs-toolbar__label--gap">Brand</span>
-            <button type="button" class="btn btn--secondary btn--sm" id="ui-docs-brand-proonline">Pro-online</button>
-            <button type="button" class="btn btn--secondary btn--sm" id="ui-docs-brand-getpro">GetPro</button>
-            <button type="button" class="btn btn--text btn--sm" id="ui-docs-brand-default">Default</button>
+            <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Pro-online', size: 'sm', id: 'ui-docs-brand-proonline' }) %>
+            <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'GetPro', size: 'sm', id: 'ui-docs-brand-getpro' }) %>
+            <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Default', size: 'sm', id: 'ui-docs-brand-default' }) %>
           </div>
         </header>
 
@@ -75,7 +75,7 @@
               <h3 class="ui-docs-variant-title">Primary</h3>
               <div class="ui-docs-preview">
                 <div class="flex-row-wrap">
-                  <button type="button" class="btn btn--primary">Primary</button>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Primary' }) %>
                 </div>
               </div>
               <pre class="ui-docs-code-wrap" tabindex="-1"><code class="ui-docs-code">&lt;button type="button" class="btn btn--primary"&gt;Primary&lt;/button&gt;</code></pre>
@@ -85,7 +85,7 @@
               <h3 class="ui-docs-variant-title">Secondary</h3>
               <div class="ui-docs-preview">
                 <div class="flex-row-wrap">
-                  <button type="button" class="btn btn--secondary">Secondary</button>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Secondary' }) %>
                 </div>
               </div>
               <pre class="ui-docs-code-wrap" tabindex="-1"><code class="ui-docs-code">&lt;button type="button" class="btn btn--secondary"&gt;Secondary&lt;/button&gt;</code></pre>
@@ -95,7 +95,7 @@
               <h3 class="ui-docs-variant-title">Text / ghost</h3>
               <div class="ui-docs-preview">
                 <div class="flex-row-wrap">
-                  <button type="button" class="btn btn--text">Text</button>
+                  <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Text' }) %>
                 </div>
               </div>
               <pre class="ui-docs-code-wrap" tabindex="-1"><code class="ui-docs-code">&lt;button type="button" class="btn btn--text"&gt;Text&lt;/button&gt;</code></pre>
@@ -105,9 +105,9 @@
               <h3 class="ui-docs-variant-title">Disabled</h3>
               <div class="ui-docs-preview">
                 <div class="flex-row-wrap">
-                  <button type="button" class="btn btn--primary" disabled>Primary</button>
-                  <button type="button" class="btn btn--secondary" disabled>Secondary</button>
-                  <button type="button" class="btn btn--text" disabled>Text</button>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Primary', disabled: true }) %>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Secondary', disabled: true }) %>
+                  <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Text', disabled: true }) %>
                 </div>
               </div>
               <pre class="ui-docs-code-wrap" tabindex="-1"><code class="ui-docs-code">&lt;button type="button" class="btn btn--primary" disabled&gt;…&lt;/button&gt;</code></pre>
@@ -141,12 +141,10 @@
               <h3 class="ui-docs-variant-title">Sizes</h3>
               <div class="ui-docs-preview">
                 <div class="flex-row-wrap">
-                  <button type="button" class="btn btn--primary btn--sm">Small</button>
-                  <button type="button" class="btn btn--primary">Default</button>
-                  <button type="button" class="btn btn--primary btn--lg">Large</button>
-                  <button type="button" class="btn btn--primary btn--icon" aria-label="Add">
-                    <span class="btn__icon" aria-hidden="true">+</span>
-                  </button>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Small', size: 'sm' }) %>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Default' }) %>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Large', size: 'lg' }) %>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', size: 'icon', ariaLabel: 'Add', innerHtml: '<span class="btn__icon" aria-hidden="true">+</span>' }) %>
                 </div>
               </div>
               <pre class="ui-docs-code-wrap" tabindex="-1"><code class="ui-docs-code">&lt;button type="button" class="btn btn--primary btn--sm"&gt;Small&lt;/button&gt;
@@ -204,8 +202,8 @@
                   </div>
                   <div class="card__footer">
                     <div class="card__actions">
-                      <button type="button" class="btn btn--primary">Continue</button>
-                      <button type="button" class="btn btn--secondary">Back</button>
+                      <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Continue' }) %>
+                      <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Back' }) %>
                     </div>
                   </div>
                 </div>
@@ -252,8 +250,8 @@
                   <input id="ui-docs-in-focus" class="join-plain-input input-field__control ui-docs-focus-target" type="email" placeholder="you@example.com" autocomplete="email" />
                 </div>
                 <div class="card__actions ui-docs-card__actions--spaced">
-                  <button type="button" class="btn btn--secondary btn--sm" id="ui-docs-toggle-focus-ring">Toggle focus ring</button>
-                  <button type="button" class="btn btn--text btn--sm" id="ui-docs-focus-native">Focus field</button>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Toggle focus ring', size: 'sm', id: 'ui-docs-toggle-focus-ring' }) %>
+                  <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Focus field', size: 'sm', id: 'ui-docs-focus-native' }) %>
                 </div>
               </div>
             </div>

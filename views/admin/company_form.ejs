@@ -18,7 +18,7 @@
       <% } %>
 
       <div class="admin-toolbar">
-        <a class="btn btn--text" href="/admin/companies?edit=1<%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">← All companies</a>
+        <%- include('../partials/components/button', { variant: 'text', href: '/admin/companies?edit=1' + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: '← All companies' }) %>
       </div>
 
       <div class="card admin-form-card admin-form-card--wide">
@@ -167,7 +167,7 @@
               </div>
             </div>
             <div class="form-step__actions admin-gate-actions">
-              <button class="btn btn--primary" type="submit">Save</button>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save' }) %>
             </div>
           </div>
         </form>

@@ -41,28 +41,26 @@
                 </div>
                 <div class="card__body">
                   <div class="flex-row-wrap">
-                    <button class="btn btn--primary" type="button">Primary</button>
-                    <button class="btn btn--secondary" type="button">Secondary</button>
-                    <button class="btn btn--text" type="button">Text / Ghost</button>
+                    <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Primary' }) %>
+                    <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Secondary' }) %>
+                    <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Text / Ghost' }) %>
                   </div>
 
                   <div class="ui-demo-spacer" aria-hidden="true"></div>
 
                   <div class="flex-row-wrap">
-                    <button class="btn btn--primary btn--sm" type="button">Small</button>
-                    <button class="btn btn--primary" type="button">Default</button>
-                    <button class="btn btn--primary btn--lg" type="button">Large</button>
-                    <button class="btn btn--primary btn--icon" type="button" aria-label="Icon button">
-                      <span class="btn__icon" aria-hidden="true">+</span>
-                    </button>
+                    <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Small', size: 'sm' }) %>
+                    <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Default' }) %>
+                    <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Large', size: 'lg' }) %>
+                    <%- include('partials/components/button', { variant: 'primary', type: 'button', size: 'icon', ariaLabel: 'Icon button', innerHtml: '<span class="btn__icon" aria-hidden="true">+</span>' }) %>
                   </div>
 
                   <div class="ui-demo-spacer" aria-hidden="true"></div>
 
                   <div class="flex-row-wrap">
-                    <button class="btn btn--primary" type="button" disabled>Disabled</button>
-                    <button class="btn btn--secondary" type="button" disabled>Disabled</button>
-                    <button class="btn btn--text" type="button" disabled>Disabled</button>
+                    <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Disabled', disabled: true }) %>
+                    <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Disabled', disabled: true }) %>
+                    <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Disabled', disabled: true }) %>
                   </div>
 
                   <p class="muted ui-demo-note">
@@ -100,13 +98,13 @@
                   <p class="muted ui-demo-note">Live examples use semantic classes; legacy aliases are only documented in the table above.</p>
                   <div class="ui-demo-spacer" aria-hidden="true"></div>
                   <div class="flex-row-wrap">
-                    <button class="btn btn--primary" type="button">Primary</button>
-                    <button class="btn btn--secondary" type="button">Secondary</button>
+                    <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Primary' }) %>
+                    <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Secondary' }) %>
                   </div>
                   <div class="ui-demo-spacer" aria-hidden="true"></div>
                   <div class="flex-row-wrap">
-                    <button class="btn btn--text" type="button">Text / Ghost</button>
-                    <button class="btn btn--text" type="button">Text / Ghost</button>
+                    <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Text / Ghost' }) %>
+                    <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Text / Ghost' }) %>
                   </div>
                 </div>
               </div>
@@ -129,8 +127,8 @@
                 </div>
                 <div class="card__footer">
                   <div class="card__actions">
-                    <a class="btn btn--primary" href="#" role="button">Primary action</a>
-                    <a class="btn btn--secondary" href="#" role="button">Secondary</a>
+                    <%- include('partials/components/button', { variant: 'primary', href: '#', label: 'Primary action', extraAttrs: 'role="button"' }) %>
+                    <%- include('partials/components/button', { variant: 'secondary', href: '#', label: 'Secondary', extraAttrs: 'role="button"' }) %>
                   </div>
                 </div>
               </div>
@@ -203,8 +201,8 @@
                         <a class="pro-directory-empty__edit-search-link" href="#directory-toolbar">Jump to search</a>
                       </div>
                       <div class="pro-directory-empty__actions" style="margin-top: var(--space-2);">
-                        <a class="btn btn--primary" href="#" role="button">Request a call</a>
-                        <a class="btn btn--text" href="#" role="button">Adjust filters</a>
+                        <%- include('partials/components/button', { variant: 'primary', href: '#', label: 'Request a call', extraAttrs: 'role="button"' }) %>
+                        <%- include('partials/components/button', { variant: 'text', href: '#', label: 'Adjust filters', extraAttrs: 'role="button"' }) %>
                       </div>
                     </div>
                   </div>
@@ -247,24 +245,14 @@
 
               <div class="card">
                 <div class="card__header">
-                  <h3 class="card__title">Search-style input shell</h3>
-                  <div class="card__meta">Autocomplete shell (visual)</div>
+                  <h3 class="card__title">Service + city search (system)</h3>
+                  <div class="card__meta">No standalone `.pro-ac` demo — use shared SearchBar only</div>
                 </div>
                 <div class="card__body">
-                  <div class="pro-ac input-field input-field--search" data-ac-list="service">
-                    <input
-                      id="ui-demo-search-q"
-                      class="pro-ac-input input-field__control"
-                      type="text"
-                      placeholder="e.g. Electrician"
-                      autocomplete="off"
-                      role="combobox"
-                      aria-autocomplete="list"
-                      aria-expanded="false"
-                    />
-                    <p class="pro-ac-msg input-field__error" hidden></p>
-                  </div>
-                  <p class="muted ui-demo-note">This uses `.pro-ac` styles; autocomplete is initialized lazily like the real search forms.</p>
+                  <p class="muted ui-demo-note">
+                    The canonical search UI lives in <code class="ui-docs-code-inline">partials/pro_search_form.ejs</code>
+                    → <code class="ui-docs-code-inline">components/search_bar.ejs</code>. See <strong>Real-world combinations → Search form (shared)</strong> below for the live embed; do not duplicate that markup on this page.
+                  </p>
                 </div>
               </div>
 
@@ -323,8 +311,8 @@
                       <input id="ui-demo-cb-phone" class="join-plain-input join-modal-input input-field__control" type="tel" placeholder="e.g. 0977 123 456" />
                     </div>
                     <div class="join-modal-actions join-modal-actions--split">
-                      <button type="submit" class="btn btn--primary" disabled>Request a call</button>
-                      <a class="btn btn--text" href="#">Cancel</a>
+                      <%- include('partials/components/button', { variant: 'primary', type: 'submit', label: 'Request a call', disabled: true }) %>
+                      <%- include('partials/components/button', { variant: 'text', href: '#', label: 'Cancel' }) %>
                     </div>
                   </form>
                 </div>
@@ -339,9 +327,9 @@
                   <div class="card pro-company-profile__lead-card" style="margin: 0;">
                     <div class="muted" style="margin-bottom: var(--space-1);">Request contact</div>
                     <div class="flex-row-wrap">
-                      <a class="btn btn--primary" href="#" role="button">Call</a>
-                      <a class="btn btn--secondary" href="#" role="button">WhatsApp</a>
-                      <a class="btn btn--text" href="#" role="button">Email</a>
+                      <%- include('partials/components/button', { variant: 'primary', href: '#', label: 'Call', extraAttrs: 'role="button"' }) %>
+                      <%- include('partials/components/button', { variant: 'secondary', href: '#', label: 'WhatsApp', extraAttrs: 'role="button"' }) %>
+                      <%- include('partials/components/button', { variant: 'text', href: '#', label: 'Email', extraAttrs: 'role="button"' }) %>
                     </div>
                   </div>
                   <p class="muted ui-demo-note">For mini-site CTAs, prefer `.btn` + semantic variant classes.</p>
@@ -363,8 +351,8 @@
                   </p>
                   <div class="card__footer">
                     <div class="card__actions">
-                      <a class="btn btn--primary" href="#">Learn more</a>
-                      <a class="btn btn--secondary" href="#">Browse directory</a>
+                      <%- include('partials/components/button', { variant: 'primary', href: '#', label: 'Learn more' }) %>
+                      <%- include('partials/components/button', { variant: 'secondary', href: '#', label: 'Browse directory' }) %>
                     </div>
                   </div>
                 </div>
@@ -425,14 +413,14 @@
                   Toggles <code>data-theme</code> / <code>data-brand</code> on <code>&lt;html&gt;</code>. Preference persists across visits.
                 </p>
                 <div class="card__actions">
-                  <button type="button" class="btn btn--secondary" id="ui-demo-theme-light">Light</button>
-                  <button type="button" class="btn btn--secondary" id="ui-demo-theme-dark">Dark</button>
-                  <button type="button" class="btn btn--text" id="ui-demo-theme-clear">System / clear theme</button>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Light', id: 'ui-demo-theme-light' }) %>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Dark', id: 'ui-demo-theme-dark' }) %>
+                  <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'System / clear theme', id: 'ui-demo-theme-clear' }) %>
                 </div>
                 <div class="card__actions" style="margin-top: var(--space-1)">
-                  <button type="button" class="btn btn--secondary" id="ui-demo-brand-proonline">Brand: Pro-online</button>
-                  <button type="button" class="btn btn--secondary" id="ui-demo-brand-getpro">Brand: GetPro</button>
-                  <button type="button" class="btn btn--text" id="ui-demo-brand-clear">Clear brand</button>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Brand: Pro-online', id: 'ui-demo-brand-proonline' }) %>
+                  <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Brand: GetPro', id: 'ui-demo-brand-getpro' }) %>
+                  <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Clear brand', id: 'ui-demo-brand-clear' }) %>
                 </div>
               </div>
             </div>

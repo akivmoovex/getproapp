@@ -13,7 +13,7 @@
       <% var _embed = typeof embed !== 'undefined' && embed; %>
       <h1 class="section-title section-title--flush">Admin users (this region)</h1>
       <div class="admin-toolbar">
-        <a class="btn btn--primary" href="/admin/users/new<%= _embed ? '?embed=1' : '' %>">New user</a>
+        <%- include('../partials/components/button', { variant: 'primary', href: '/admin/users/new' + (_embed ? '?embed=1' : ''), label: 'New user' }) %>
       </div>
       <div class="card">
         <div class="table-wrap">
@@ -34,7 +34,7 @@
                 <td class="muted"><%= u.role %></td>
                 <td><%= u.enabled === 0 ? 'Disabled' : 'Enabled' %></td>
                 <td class="muted"><%- include('../partials/event_time', { at: u.created_at }) %></td>
-                <td><a class="btn" href="/admin/users/<%= u.id %>/edit<%= _embed ? '?embed=1' : '' %>">Edit</a></td>
+                <td><%- include('../partials/components/button', { variant: 'default', href: '/admin/users/' + u.id + '/edit' + (_embed ? '?embed=1' : ''), label: 'Edit' }) %></td>
               </tr>
             <% }) %>
           </tbody>

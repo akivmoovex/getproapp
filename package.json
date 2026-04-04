@@ -11,6 +11,12 @@
     "dev": "nodemon --watch \"server.js\" --exec \"node server.js\"",
     "build-search-lists": "node scripts/build-search-lists.js",
     "build": "npm run build-search-lists",
+    "lint:components": "node scripts/check-components.js",
+    "lint:components:baseline": "node scripts/check-components.js --json > .ui-baseline.json",
+    "lint:components:ci": "node scripts/check-components.js --compare-baseline .ui-baseline.json",
+    "lint:components:enforce-btn": "node scripts/check-components.js --enforce-legacy-btn",
+    "test:ui": "playwright test",
+    "test:ui:update": "playwright test --update-snapshots",
     "inline-ds-framework": "node scripts/inline-ds-framework.js",
     "sync-inlined-theme": "node scripts/sync-inlined-theme.js",
     "rebuild-sqlite": "npm rebuild better-sqlite3",
@@ -37,6 +43,7 @@
     "slugify": "^1.6.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@storybook/addon-a11y": "^8.6.18",
     "@storybook/addon-essentials": "^8.6.18",
     "@storybook/addon-interactions": "^8.6.18",

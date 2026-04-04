@@ -1,22 +1,42 @@
 <%#
-  Generic MD3-style card shell (`.card`). Directory result tiles use `.ds-card.pro-directory-card` instead.
+  System component. Do NOT duplicate or modify per-page.
+
+  Props:
+  - title, meta (subtitle line)
+  - body: plain text (escaped)
+  - bodyHtml: HTML body (prefer for rich content)
+  - image, imageAlt: optional leading image URL + alt
+  - actionsHtml, actions: footer actions HTML (actions wins over actionsHtml)
+  - headerHtml, footerHtml: extra regions
+  - href: if set, wraps body in a single interactive link (use with variant interactive)
+  - variant: '' | 'interactive' | 'elevated'
+  - className
 -%>
 <%
   var _variant = typeof variant !== 'undefined' ? String(variant) : '';
   var _className = typeof className !== 'undefined' && className ? String(className) : '';
   var _title = typeof title !== 'undefined' && title ? String(title) : '';
   var _meta = typeof meta !== 'undefined' && meta ? String(meta) : '';
+  var _body = typeof body !== 'undefined' && body ? String(body) : '';
   var _bodyHtml = typeof bodyHtml !== 'undefined' ? String(bodyHtml) : '';
-  var _actionsHtml = typeof actionsHtml !== 'undefined' ? String(actionsHtml) : '';
+  var _image = typeof image !== 'undefined' && image ? String(image) : '';
+  var _imageAlt = typeof imageAlt !== 'undefined' ? String(imageAlt || '') : '';
+  var _actionsHtml = typeof actions !== 'undefined' && actions ? String(actions) : (typeof actionsHtml !== 'undefined' ? String(actionsHtml) : '');
   var _headerHtml = typeof headerHtml !== 'undefined' ? String(headerHtml) : '';
   var _footerHtml = typeof footerHtml !== 'undefined' ? String(footerHtml) : '';
+  var _href = typeof href !== 'undefined' && href ? String(href) : '';
 
   var _variantClass = '';
   if (_variant === 'interactive') _variantClass = 'card--interactive';
   else if (_variant === 'elevated') _variantClass = 'card--elevated';
 %>
 
-<div class="card <%= _variantClass %> <%= _className %>">
+<div class="c-card card <%= _variantClass %> <%= _className %>">
+  <% if (_image) { %>
+    <div class="c-card__media card__media">
+      <img class="c-card__image" src="<%= _image %>" alt="<%= _imageAlt %>" loading="lazy" decoding="async" />
+    </div>
+  <% } %>
   <% if (_headerHtml || _title || _meta) { %>
     <div class="card__header">
       <% if (_headerHtml) { %><%- _headerHtml %><% } %>
@@ -29,8 +49,18 @@
     </div>
   <% } %>
 
-  <% if (_bodyHtml) { %>
-    <div class="card__body"><%- _bodyHtml %></div>
+  <% if (_bodyHtml || _body || _href) { %>
+    <div class="card__body">
+      <% if (_href) { %>
+        <a class="c-card__link card__link-fallback" href="<%= _href %>">
+          <% if (_bodyHtml) { %><%- _bodyHtml %><% } else if (_body) { %><p><%= _body %></p><% } %>
+        </a>
+      <% } else if (_bodyHtml) { %>
+        <%- _bodyHtml %>
+      <% } else if (_body) { %>
+        <p><%= _body %></p>
+      <% } %>
+    </div>
   <% } %>
 
   <% if (_actionsHtml) { %>
@@ -43,4 +73,3 @@
     <div class="card__footer"><%- _footerHtml %></div>
   <% } %>
 </div>
-

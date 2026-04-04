@@ -6,18 +6,26 @@
 <form method="post" action="<%= _action %>" class="form admin-gate-form">
   <div class="form-step form-step--admin">
     <div class="form-step__body">
-      <div class="input-field">
-        <label for="admin_gate_username" class="input-field__label">Username</label>
-        <input id="admin_gate_username" name="username" class="input-field__control" autocomplete="username" required />
-      </div>
-      <div class="input-field">
-        <label for="admin_gate_password" class="input-field__label">Password</label>
-        <input id="admin_gate_password" name="password" class="input-field__control" type="password" autocomplete="current-password" required />
-      </div>
+      <%- include('components/input', {
+        id: 'admin_gate_username',
+        name: 'username',
+        type: 'text',
+        label: 'Username',
+        required: true,
+        autocomplete: 'username',
+      }) %>
+      <%- include('components/input', {
+        id: 'admin_gate_password',
+        name: 'password',
+        type: 'password',
+        label: 'Password',
+        required: true,
+        autocomplete: 'current-password',
+      }) %>
     </div>
     <div class="form-step__actions admin-gate-actions">
-      <button class="btn btn--primary" type="submit">Login</button>
-      <a class="btn btn--text" href="<%= _cancel %>">Cancel</a>
+      <%- include('components/button', { variant: 'primary', type: 'submit', label: 'Login' }) %>
+      <%- include('components/button', { variant: 'text', href: _cancel, label: 'Cancel' }) %>
     </div>
   </div>
 </form>

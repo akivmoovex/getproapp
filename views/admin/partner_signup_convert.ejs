@@ -10,12 +10,12 @@
     <%- include('../partials/admin_nav', { navTitle: 'Convert join signup', activeNav: 'leads' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
-        <p class="admin-intro"><a class="btn" href="/admin/leads">← Back to leads</a></p>
+        <p class="admin-intro"><%- include('../partials/components/button', { variant: 'default', href: '/admin/leads', label: '← Back to leads' }) %></p>
 
         <% if (convertedCompany) { %>
         <div class="card card--mb-md">
           <p style="margin:0">This signup was already converted to <strong><%= convertedCompany.name %></strong> (@<%= convertedCompany.subdomain %>).</p>
-          <p class="u-mt-sm"><a class="btn btn--primary" href="/admin/companies/<%= convertedCompany.id %>/workspace">Open company workspace</a></p>
+          <p class="u-mt-sm"><%- include('../partials/components/button', { variant: 'primary', href: '/admin/companies/' + convertedCompany.id + '/workspace', label: 'Open company workspace' }) %></p>
         </div>
         <% } %>
 
@@ -104,8 +104,8 @@
               <input id="ps_logo" name="logo_url" type="url" maxlength="500" placeholder="https://…" />
             </div>
             <div class="admin-gate-actions">
-              <button class="btn btn--primary" type="submit">Create listing from signup</button>
-              <a class="btn" href="/admin/leads">Cancel</a>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Create listing from signup' }) %>
+              <%- include('../partials/components/button', { variant: 'default', href: '/admin/leads', label: 'Cancel' }) %>
             </div>
           </form>
         </div>

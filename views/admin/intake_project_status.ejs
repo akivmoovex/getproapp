@@ -11,7 +11,7 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
         <div class="admin-toolbar">
-          <a class="btn" href="/admin/projects">Intake projects (CRM)</a>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/projects', label: 'Intake projects (CRM)' }) %>
         </div>
         <h1 class="section-title section-title--flush">Client Lead Status</h1>
         <p class="muted admin-intro">Intake projects (client leads), company assignments, and portal response summary for this region. Sorting, filters, and pagination use the query string only.</p>
@@ -27,7 +27,7 @@
           <% if (f.city) { %><span class="admin-status-chip">city: <%= f.city %></span><% } %>
           <% if (f.company_id) { %><span class="admin-status-chip">company id: <%= f.company_id %></span><% } %>
           <% if (f.date_from || f.date_to) { %><span class="admin-status-chip">dates: <%= f.date_from || '…' %> – <%= f.date_to || '…' %></span><% } %>
-          <a class="btn btn--text" href="<%= typeof resetHref !== 'undefined' ? resetHref : '/admin/client-lead-status' %>">Clear filters</a>
+          <%- include('../partials/components/button', { variant: 'text', href: (typeof resetHref !== 'undefined' ? resetHref : '/admin/client-lead-status'), label: 'Clear filters' }) %>
         </p>
         <% } %>
 
@@ -88,8 +88,8 @@
               </div>
             </div>
             <div class="form-step__actions">
-              <button type="submit" class="btn btn--primary">Apply</button>
-              <a class="btn btn--text" href="<%= typeof resetHref !== 'undefined' ? resetHref : '/admin/client-lead-status' %>">Reset</a>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply' }) %>
+              <%- include('../partials/components/button', { variant: 'text', href: (typeof resetHref !== 'undefined' ? resetHref : '/admin/client-lead-status'), label: 'Reset' }) %>
             </div>
           </form>
         </div>
@@ -133,7 +133,7 @@
                   <td><%= r.assign_count != null ? r.assign_count : 0 %></td>
                   <td class="muted"><%- include('../partials/event_time', { at: r.created_at }) %></td>
                   <td class="muted"><%- include('../partials/event_time', { at: r.updated_at }) %></td>
-                  <td><a class="btn" href="/admin/projects/<%= r.id %>">Open</a></td>
+                  <td><%- include('../partials/components/button', { variant: 'default', href: '/admin/projects/' + r.id, label: 'Open' }) %></td>
                 </tr>
               <% }); %>
             </tbody>
@@ -146,11 +146,11 @@
         <% if (typeof projectStatusPageHref === 'function' && _mp > 1) { %>
         <nav class="admin-status-pagination muted" aria-label="Results pages">
           <% if (_pg > 1) { %>
-            <a class="btn btn--text" href="<%= projectStatusPageHref(_pg - 1) %>">← Previous</a>
+            <%- include('../partials/components/button', { variant: 'text', href: projectStatusPageHref(_pg - 1), label: '← Previous' }) %>
           <% } %>
           <span class="admin-status-pagination__meta">Page <%= _pg %> of <%= _mp %></span>
           <% if (_pg < _mp) { %>
-            <a class="btn btn--text" href="<%= projectStatusPageHref(_pg + 1) %>">Next →</a>
+            <%- include('../partials/components/button', { variant: 'text', href: projectStatusPageHref(_pg + 1), label: 'Next →' }) %>
           <% } %>
         </nav>
         <% } %>

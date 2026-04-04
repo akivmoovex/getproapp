@@ -11,7 +11,7 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
         <div class="admin-toolbar">
-          <a class="btn" href="/admin/project-intake">New project intake</a>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/project-intake', label: 'New project intake' }) %>
         </div>
         <h1 class="section-title section-title--flush">Intake projects</h1>
         <p class="muted admin-intro">Tenant-scoped list. Assign companies from each project’s detail page (explicit assignment only).</p>
@@ -50,7 +50,7 @@
                   <td><%= typeof intakeProjectStatusLabel === 'function' ? intakeProjectStatusLabel(p.status) : p.status %></td>
                   <td><%= p.assignment_count != null ? p.assignment_count : 0 %></td>
                   <td class="muted"><%- include('../partials/event_time', { at: p.created_at }) %></td>
-                  <td><a class="btn" href="/admin/projects/<%= p.id %>">Open</a></td>
+                  <td><%- include('../partials/components/button', { variant: 'default', href: '/admin/projects/' + p.id, label: 'Open' }) %></td>
                 </tr>
               <% }); %>
             </tbody>

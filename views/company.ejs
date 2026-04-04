@@ -229,18 +229,9 @@
 
                   <div class="form-step">
                     <div class="form-step__body">
-                      <div class="input-field">
-                        <label for="lead_name" class="input-field__label">Full name</label>
-                        <input id="lead_name" name="name" required autocomplete="name" placeholder="e.g. Chanda Phiri" class="input-field__control" />
-                      </div>
-                      <div class="input-field">
-                        <label for="lead_phone" class="input-field__label">Phone number</label>
-                        <input id="lead_phone" name="phone" required autocomplete="tel" placeholder="e.g. 0977 123 456" class="input-field__control" />
-                      </div>
-                      <div class="input-field">
-                        <label for="lead_email" class="input-field__label">Email address (optional)</label>
-                        <input id="lead_email" name="email" type="text" inputmode="email" autocomplete="email" placeholder="e.g. chanda@example.com" class="input-field__control" />
-                      </div>
+                      <%- include('partials/components/input', { id: 'lead_name', name: 'name', required: true, autocomplete: 'name', placeholder: 'e.g. Chanda Phiri', label: 'Full name' }) %>
+                      <%- include('partials/components/input', { id: 'lead_phone', name: 'phone', required: true, autocomplete: 'tel', placeholder: 'e.g. 0977 123 456', label: 'Phone number' }) %>
+                      <%- include('partials/components/input', { id: 'lead_email', name: 'email', type: 'text', autocomplete: 'email', placeholder: 'e.g. chanda@example.com', label: 'Email address (optional)', extraAttrs: 'inputmode="email"' }) %>
                       <div class="input-field">
                         <label for="lead_message" class="input-field__label">How can we help?</label>
                         <textarea id="lead_message" name="message" required placeholder="Tell us what service you need and when you need it" class="input-field__control"></textarea>
@@ -254,7 +245,7 @@
                     </div>
                     <div class="form-step__actions">
                       <div class="card__actions">
-                        <button class="btn btn--primary" type="submit">Send request</button>
+                        <%- include('partials/components/button', { variant: 'primary', type: 'submit', label: 'Send request' }) %>
                       </div>
                     </div>
                   </div>
@@ -267,34 +258,34 @@
           <aside class="pro-company-profile__aside card">
             <h2 class="pro-company-profile__aside-title">Contact</h2>
             <% if (_primaryTelHref) { %>
-              <a class="btn btn--primary pro-company-profile__cta" href="<%= _primaryTelHref %>" aria-label="Call <%= _primaryCall %>">Call <%= _primaryCall %></a>
+              <%- include('partials/components/button', { variant: 'primary', href: _primaryTelHref, label: 'Call ' + _primaryCall, ariaLabel: 'Call ' + _primaryCall, className: 'pro-company-profile__cta' }) %>
             <% } %>
             <ul class="pro-company-profile__contact-list">
               <% if (_showBizPhoneRow) { %>
-                <li><span class="muted">Business phone</span><br /><a class="btn btn--text" href="tel:<%= _bizPhone.replace(/[^\d+]/g, '') %>"><%= _bizPhone %></a></li>
+                <li><span class="muted">Business phone</span><br /><%- include('partials/components/button', { variant: 'text', href: 'tel:' + String(_bizPhone).replace(/[^\d+]/g, ''), label: _bizPhone }) %></li>
               <% } %>
               <% if (_gpWa) { %>
                 <li>
                   <span class="muted">WhatsApp</span><br />
-                  <a class="btn btn--text" href="<%= _gpWa %>" rel="noopener noreferrer" target="_blank"><%= _gpWaLabel || 'Open WhatsApp chat' %></a>
+                  <%- include('partials/components/button', { variant: 'text', href: _gpWa, label: _gpWaLabel || 'Open WhatsApp chat', extraAttrs: 'rel="noopener noreferrer" target="_blank"' }) %>
                 </li>
               <% } %>
               <% if (company.email) { %>
                 <% var _mail = String(company.email || '').trim(); %>
-                <li><span class="muted">Email</span><br /><a class="btn btn--text" href="mailto:<%= _mail %>"><%= _mail %></a></li>
+                <li><span class="muted">Email</span><br /><%- include('partials/components/button', { variant: 'text', href: 'mailto:' + _mail, label: _mail }) %></li>
               <% } %>
               <% if (company.location) { %>
                 <li><span class="muted">Location</span><br /><%= company.location %></li>
               <% } %>
               <% if (_gpPhone && _gpTel) { %>
-                <li><span class="muted">Directory help</span><br /><a class="btn btn--text" href="<%= _gpTel %>"><%= _gpPhone %></a></li>
+                <li><span class="muted">Directory help</span><br /><%- include('partials/components/button', { variant: 'text', href: _gpTel, label: _gpPhone }) %></li>
               <% } %>
             </ul>
 
             <% if (typeof companyUrl !== 'undefined' && companyUrl && companyUrl !== '#') { %>
               <p class="muted pro-company-profile__mini-hint">Mini-site URL</p>
               <p class="pro-company-profile__mini-url">
-                <a class="btn btn--text" href="<%= companyUrl %>"><%= typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : companyUrl %></a>
+                <%- include('partials/components/button', { variant: 'text', href: companyUrl, label: (typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : companyUrl) }) %>
               </p>
             <% } %>
 
@@ -306,7 +297,7 @@
                   <img src="<%= qrMiniSiteDataUrl %>" alt="QR code for this mini-site URL" width="168" height="168" class="pro-company-profile__qr-img" data-qr-image loading="lazy" decoding="async" />
                 </div>
                 <div class="pro-company-profile__qr-actions card__actions">
-                  <button type="button" class="btn btn--text pro-company-profile__qr-copy" data-copy-qr-image>Copy QR image</button>
+                  <%- include('partials/components/button', { variant: 'text', type: 'button', label: 'Copy QR image', className: 'pro-company-profile__qr-copy' }) %>
                   <span class="muted pro-company-profile__qr-copy-status" data-qr-copy-status hidden aria-live="polite"></span>
                 </div>
               </div>
@@ -317,24 +308,13 @@
               <p class="muted pro-company-profile__support-intro">Questions about the directory? Reach your region’s call center below.</p>
               <div class="pro-company-profile__support-actions" role="group" aria-label="Region call center">
                 <% if (_supPhone && _supTel) { %>
-                  <a class="btn btn--primary pro-company-profile__support-pill" href="<%= _supTel %>" aria-label="Call region call center">Call</a>
+                  <%- include('partials/components/button', { variant: 'primary', href: _supTel, label: 'Call', ariaLabel: 'Call region call center', className: 'pro-company-profile__support-pill' }) %>
                 <% } %>
                 <% if (_gpEmail) { %>
-                  <a
-                    class="btn btn--secondary pro-company-profile__support-pill"
-                    href="mailto:<%= _gpEmail %>"
-                    aria-label="Email region call center"
-                  >Email</a>
+                  <%- include('partials/components/button', { variant: 'secondary', href: 'mailto:' + _gpEmail, label: 'Email', ariaLabel: 'Email region call center', className: 'pro-company-profile__support-pill' }) %>
                 <% } %>
                 <% if (_gpWa) { %>
-                  <a
-                    class="btn btn--secondary pro-company-profile__support-pill"
-                    href="<%= _gpWa %>"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    aria-label="WhatsApp region call center"
-                    >WhatsApp</a
-                  >
+                  <%- include('partials/components/button', { variant: 'secondary', href: _gpWa, label: 'WhatsApp', ariaLabel: 'WhatsApp region call center', className: 'pro-company-profile__support-pill', extraAttrs: 'rel="noopener noreferrer" target="_blank"' }) %>
                 <% } %>
               </div>
             </div>
@@ -345,10 +325,10 @@
     <% if (!_cpReadOnly && (_primaryTelHref || _gpWa)) { %>
     <div class="pro-company-sticky-cta" role="region" aria-label="Quick contact">
       <% if (_primaryTelHref) { %>
-      <a class="btn btn--primary pro-company-sticky-cta__btn pro-company-sticky-cta__btn--call" href="<%= _primaryTelHref %>" aria-label="Call <%= _primaryCall %>">Call <%= _primaryCall %></a>
+      <%- include('partials/components/button', { variant: 'primary', href: _primaryTelHref, label: 'Call ' + _primaryCall, ariaLabel: 'Call ' + _primaryCall, className: 'pro-company-sticky-cta__btn pro-company-sticky-cta__btn--call' }) %>
       <% } %>
       <% if (_gpWa) { %>
-      <a class="btn btn--secondary pro-company-sticky-cta__btn" href="<%= _gpWa %>" rel="noopener noreferrer" target="_blank">WhatsApp</a>
+      <%- include('partials/components/button', { variant: 'secondary', href: _gpWa, label: 'WhatsApp', className: 'pro-company-sticky-cta__btn', extraAttrs: 'rel="noopener noreferrer" target="_blank"' }) %>
       <% } %>
     </div>
     <% } %>

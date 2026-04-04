@@ -53,9 +53,9 @@
               <input name="address_apartment_number" class="input-field__control" placeholder="Apartment number" value="<%= form.address_apartment_number %>" />
             </fieldset>
             <div class="form-step__actions admin-gate-actions">
-              <button class="btn btn--primary" type="submit">Save client &amp; continue</button>
-              <button class="btn btn--secondary" type="submit" name="send_otp_after" value="1">Send OTP</button>
-              <a class="btn btn--text" href="/admin/project-intake<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">Back</a>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save client & continue' }) %>
+              <%- include('../partials/components/button', { variant: 'secondary', type: 'submit', label: 'Send OTP', name: 'send_otp_after', value: '1' }) %>
+              <%- include('../partials/components/button', { variant: 'text', href: '/admin/project-intake' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'Back' }) %>
             </div>
           </form>
           <script>

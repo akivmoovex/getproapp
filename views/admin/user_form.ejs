@@ -42,8 +42,8 @@
               </p>
             </div>
             <div class="form-step__actions admin-gate-actions">
-              <button class="btn btn--primary" type="submit">Create user</button>
-              <a class="btn btn--text" href="/admin/users">Cancel</a>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Create user' }) %>
+              <%- include('../partials/components/button', { variant: 'text', href: '/admin/users', label: 'Cancel' }) %>
             </div>
           </div>
         </form>

@@ -32,7 +32,7 @@
               <input id="nrz" name="nrz" class="input-field__control" value="<%= nrz || '' %>" />
             </div>
             <div class="form-step__actions admin-gate-actions">
-              <button class="btn btn--primary" type="submit">Search</button>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Search' }) %>
             </div>
           </form>
         </div>
@@ -45,11 +45,11 @@
               <div class="admin-intake-code" aria-label="Client code"><%= foundClient.client_code %></div>
               <p><strong><%= foundClient.full_name %></strong></p>
               <p class="muted">External ref: <%= foundClient.external_client_reference %> · Phone: <%= foundClient.phone %></p>
-              <a class="btn btn--primary" href="/admin/project-intake/project/new?clientId=<%= foundClient.id %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Continue to new project</a>
+              <%- include('../partials/components/button', { variant: 'primary', href: '/admin/project-intake/project/new?clientId=' + foundClient.id + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: 'Continue to new project' }) %>
             <% } else { %>
               <h2 class="admin-form-card__title">No client found</h2>
               <p>Create a new client record, then you will open the project form.</p>
-              <a class="btn btn--primary" href="/admin/project-intake/clients/new?phone=<%= encodeURIComponent(phone || '') %>&nrz=<%= encodeURIComponent(nrz || '') %><%= typeof embed !== 'undefined' && embed ? '&embed=1' : '' %>">Create new client</a>
+              <%- include('../partials/components/button', { variant: 'primary', href: '/admin/project-intake/clients/new?phone=' + encodeURIComponent(phone || '') + '&nrz=' + encodeURIComponent(nrz || '') + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: 'Create new client' }) %>
             <% } %>
           </div>
         <% } %>

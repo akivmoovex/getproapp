@@ -69,7 +69,7 @@
             />
           </div>
           <div class="crm-task-form__actions">
-            <button class="btn btn--primary" type="submit">Save details</button>
+            <%- include('components/button', { variant: 'primary', type: 'submit', label: 'Save details' }) %>
           </div>
         </form>
       </section>
@@ -102,7 +102,7 @@
             <textarea id="crm_comment_body" name="body" class="input-field__control" rows="2" required maxlength="4000" placeholder="Write a note…"></textarea>
           </div>
           <div class="crm-task-form__actions">
-            <button class="btn btn--primary" type="submit">Post</button>
+            <%- include('components/button', { variant: 'primary', type: 'submit', label: 'Post' }) %>
           </div>
         </form>
       </section>
@@ -137,7 +137,7 @@
           <% if (_ov) { %>
             <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
           <% } %>
-          <button class="btn btn--primary btn-block" type="submit">Assign to me</button>
+          <%- include('components/button', { variant: 'primary', type: 'submit', label: 'Assign to me', className: 'btn-block', fullWidth: true }) %>
         </form>
       </section>
       <% } %>
@@ -159,7 +159,7 @@
             </select>
           </div>
           <div class="crm-task-form__actions">
-            <button class="btn btn--primary btn-block" type="submit">Save</button>
+            <%- include('components/button', { variant: 'primary', type: 'submit', label: 'Save', className: 'btn-block', fullWidth: true }) %>
           </div>
         </form>
       </section>
@@ -181,7 +181,7 @@
             </select>
           </div>
           <div class="crm-task-form__actions">
-            <button class="btn btn--primary btn-block" type="submit">Update status</button>
+            <%- include('components/button', { variant: 'primary', type: 'submit', label: 'Update status', className: 'btn-block', fullWidth: true }) %>
           </div>
         </form>
       </section>

@@ -13,3 +13,8 @@ data/sessions.db
 
 *storybook.log
 storybook-static/
+
+# Playwright (keep tests/__screenshots__/*.png — committed baselines)
+test-results/
+playwright-report/
+playwright/.cache/

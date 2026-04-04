@@ -72,9 +72,9 @@
                 <% if (typeof adminNav !== 'undefined' && adminNav.canEditDirectory) { %>
                 <td>
                   <% if (!s.converted_company_id || Number(s.converted_company_id) === 0) { %>
-                    <a class="btn btn--primary" href="/admin/partner-signups/<%= s.id %>">Review &amp; convert</a>
+                    <%- include('../partials/components/button', { variant: 'primary', href: '/admin/partner-signups/' + s.id, label: 'Review & convert' }) %>
                   <% } else { %>
-                    <a class="btn" href="/admin/companies/<%= Number(s.converted_company_id) %>/workspace">Open listing</a>
+                    <%- include('../partials/components/button', { variant: 'default', href: '/admin/companies/' + Number(s.converted_company_id) + '/workspace', label: 'Open listing' }) %>
                   <% } %>
                 </td>
                 <% } %>
@@ -102,7 +102,7 @@
               <% }) %>
             </select>
           </div>
-          <button class="btn btn--primary" type="submit">Apply</button>
+          <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply' }) %>
         </form>
       </div>
 
@@ -138,7 +138,7 @@
                 <td><%= typeof leadStatusLabel === 'function' ? leadStatusLabel(l.status) : l.status %></td>
                 <td class="muted"><%- include('../partials/event_time', { at: l.created_at }) %></td>
                 <% if (typeof adminNav !== 'undefined' && adminNav.canEditDirectory) { %>
-                  <td><a class="btn" href="/admin/leads/<%= l.id %>/edit">Edit</a></td>
+                  <td><%- include('../partials/components/button', { variant: 'default', href: '/admin/leads/' + l.id + '/edit', label: 'Edit' }) %></td>
                 <% } %>
               </tr>
             <% }) %>

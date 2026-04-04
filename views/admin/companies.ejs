@@ -17,9 +17,9 @@
       <% } %>
       <div class="admin-super-users__topbar">
         <% if (!editMode) { %>
-        <a class="btn btn--primary" href="/admin/companies?edit=1<%= _fs %><%= _embed ? '&embed=1' : '' %>">Edit</a>
+        <%- include('../partials/components/button', { variant: 'primary', href: '/admin/companies?edit=1' + _fs + (_embed ? '&embed=1' : ''), label: 'Edit' }) %>
         <% } else { %>
-        <a class="btn" href="/admin/companies<%= _fs ? '?' + _fs.slice(1) + (_embed ? '&embed=1' : '') : (_embed ? '?embed=1' : '') %>">Done</a>
+        <%- include('../partials/components/button', { variant: 'default', href: '/admin/companies' + (_fs ? '?' + _fs.slice(1) + (_embed ? '&embed=1' : '') : (_embed ? '?embed=1' : '')), label: 'Done' }) %>
         <% } %>
       </div>
 
@@ -47,14 +47,14 @@
           </div>
         </div>
         <div class="admin-filter-form__actions">
-          <button class="btn btn--primary" type="submit">Apply filters</button>
-          <a class="btn" href="/admin/companies<%= editMode ? '?edit=1' : '' %><%= editMode && _embed ? '&embed=1' : (!editMode && _embed ? '?embed=1' : '') %>">Clear</a>
+          <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply filters' }) %>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/companies' + (editMode ? '?edit=1' : '') + (editMode && _embed ? '&embed=1' : (!editMode && _embed ? '?embed=1' : '')), label: 'Clear' }) %>
         </div>
       </form>
 
       <% if (editMode) { %>
       <div class="admin-toolbar">
-        <a class="btn btn--primary" href="/admin/companies/new<%= _embed ? '?embed=1' : '' %>">New company</a>
+        <%- include('../partials/components/button', { variant: 'primary', href: '/admin/companies/new' + (_embed ? '?embed=1' : ''), label: 'New company' }) %>
       </div>
       <% } else { %>
       <p class="admin-intro">View-only list. Choose <strong>Edit</strong> to add or change companies.</p>
@@ -120,7 +120,7 @@
                 </td>
                 <% } %>
                 <td class="muted"><%- include('../partials/event_time', { at: c.updated_at }) %></td>
-                <% if (editMode) { %><td><a class="btn" href="/admin/companies/<%= c.id %>/workspace<%= _embed ? '?embed=1' : '' %>">Edit</a></td><% } %>
+                <% if (editMode) { %><td><%- include('../partials/components/button', { variant: 'default', href: '/admin/companies/' + c.id + '/workspace' + (_embed ? '?embed=1' : ''), label: 'Edit' }) %></td><% } %>
               </tr>
             <% }) %>
           </tbody>

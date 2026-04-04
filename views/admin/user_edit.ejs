@@ -20,12 +20,12 @@
       <div class="card admin-form-card">
         <div class="admin-form-shell is-read-mode" data-admin-form-edit>
           <div class="admin-form-shell__toolbar admin-form-shell__toolbar--split">
-            <a class="btn btn--text admin-form-shell__back" href="/admin/users<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>">← Users</a>
+            <%- include('../partials/components/button', { variant: 'text', href: '/admin/users' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: '← Users', className: 'admin-form-shell__back' }) %>
             <p class="admin-form-shell__unsaved" hidden>Unsaved changes</p>
             <div class="admin-form-shell__toolbar-end">
-              <button type="button" class="btn btn--primary admin-form-shell__btn--done" hidden>Done</button>
-              <button type="button" class="btn btn--text admin-form-shell__btn--cancel" hidden>Cancel</button>
-              <button type="button" class="btn admin-form-shell__btn--edit">Edit</button>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'button', label: 'Done', hidden: true, className: 'admin-form-shell__btn--done' }) %>
+              <%- include('../partials/components/button', { variant: 'text', type: 'button', label: 'Cancel', hidden: true, className: 'admin-form-shell__btn--cancel' }) %>
+              <%- include('../partials/components/button', { variant: 'default', type: 'button', label: 'Edit', className: 'admin-form-shell__btn--edit' }) %>
             </div>
           </div>
           <form method="post" action="/admin/users/<%= user.id %>" class="form">
@@ -64,7 +64,7 @@
         <% if (typeof currentUserId !== 'undefined' && user.id !== currentUserId) { %>
         <form method="post" action="/admin/users/<%= user.id %>/delete" class="form--delete" onsubmit="return confirm('Delete this user permanently?');">
           <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
-          <button class="btn btn--danger-outline" type="submit">Delete user</button>
+          <%- include('../partials/components/button', { variant: 'danger-outline', type: 'submit', label: 'Delete user' }) %>
         </form>
         <% } %>
       </div>

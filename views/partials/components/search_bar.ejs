@@ -1,8 +1,35 @@
 <%#
-  Inner markup only for gp-search-bar (no <form> — parent: pro_search_form.ejs).
-  Locals: _pre, _q, _city, _showCat, _selCat, _cats (plus caller fields passed through for docs only).
+  SearchBar is a system component. Do not duplicate or modify per-page.
+  All changes must be done here.
+
+  Entry: pages use partials/pro_search_form.ejs only (it wraps this partial in <form>
+  with action/method). From views/partials/, include as components/search_bar — same
+  file as partials/components/search_bar.ejs from the views root.
+
+  Props (safe if undefined; no globals):
+  - variant              : 'home' | 'directory' (default id prefix: home | dir)
+  - tenantUrlPrefix      : consumed by pro_search_form for action URL (passed through; unused here)
+  - showCategoryFilter   : boolean
+  - selectedCategory     : slug string
+  - categories           : array of { slug, name }
+  - ariaLabel            : consumed by pro_search_form on <form> (passed through; unused here)
+  - idPrefix             : override field id prefix (sanitized)
+  - searchQuery, cityQuery : controlled input values
+  Form shell props (pro_search_form only): formAction, formId
 -%>
-  <% if (_showCat && _cats && _cats.length) { %>
+<%
+  var _v = typeof variant !== 'undefined' ? String(variant) : 'directory';
+  var _pre = _v === 'home' ? 'home' : 'dir';
+  if (typeof idPrefix !== 'undefined' && idPrefix) {
+    _pre = String(idPrefix).replace(/[^a-z0-9_-]/gi, '') || _pre;
+  }
+  var _q = typeof searchQuery !== 'undefined' ? String(searchQuery || '') : '';
+  var _city = typeof cityQuery !== 'undefined' ? String(cityQuery || '') : '';
+  var _showCat = typeof showCategoryFilter !== 'undefined' && showCategoryFilter;
+  var _selCat = typeof selectedCategory !== 'undefined' ? String(selectedCategory || '').trim() : '';
+  var _cats = typeof categories !== 'undefined' && categories ? categories : [];
+%>
+<% if (_showCat && _cats && _cats.length) { %>
   <div class="pro-search-form__category input-field">
     <label class="pro-search-form__label pro-home-field-label input-field__label" for="<%= _pre %>-category-filter">Category</label>
     <select id="<%= _pre %>-category-filter" name="category" class="pro-search-form__select input-field__control" aria-label="Filter by category">
@@ -12,9 +39,9 @@
       <% }); %>
     </select>
   </div>
-  <% } else if (_selCat) { %>
+<% } else if (_selCat) { %>
   <input type="hidden" name="category" value="<%= _selCat %>" />
-  <% } %>
+<% } %>
 
   <div class="pro-search-form__toolbar-row">
     <div class="pro-search-form__fields pro-home-search-fields">

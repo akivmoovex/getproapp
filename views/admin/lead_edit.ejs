@@ -11,7 +11,7 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
         <div class="admin-toolbar">
-          <a class="btn" href="/admin/leads">← All leads</a>
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/leads', label: '← All leads' }) %>
         </div>
 
         <% if (typeof saved !== 'undefined' && saved) { %>
@@ -84,7 +84,7 @@
                 </div>
               </div>
               <div class="form-step__actions admin-gate-actions">
-                <button class="btn btn--primary" type="submit">Save status &amp; comment</button>
+                <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save status & comment' }) %>
               </div>
             </div>
           </form>

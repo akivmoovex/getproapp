@@ -28,11 +28,11 @@
   </p>
   <% if (blocked) { %>
   <p class="admin-company-credit-card__actions">
-    <button type="button" class="btn btn--primary" id="admin-credit-unblock-open">Record payment / unblock</button>
+    <%- include('components/button', { variant: 'primary', type: 'button', label: 'Record payment / unblock', id: 'admin-credit-unblock-open' }) %>
   </p>
   <% } else { %>
   <p class="admin-company-credit-card__actions">
-    <button type="button" class="btn" id="admin-credit-unblock-open">Record payment</button>
+    <%- include('components/button', { variant: 'default', type: 'button', label: 'Record payment', id: 'admin-credit-unblock-open' }) %>
   </p>
   <% } %>
 
@@ -108,8 +108,8 @@
       <textarea id="cc_notes" name="notes" class="input-field__control" rows="2" maxlength="2000"></textarea>
     </div>
     <div class="admin-credit-dialog__footer">
-      <button type="button" class="btn" id="admin-credit-unblock-cancel">Cancel</button>
-      <button type="submit" class="btn btn--primary">Submit payment</button>
+      <%- include('components/button', { variant: 'default', type: 'button', label: 'Cancel', id: 'admin-credit-unblock-cancel' }) %>
+      <%- include('components/button', { variant: 'primary', type: 'submit', label: 'Submit payment' }) %>
     </div>
   </form>
 </dialog>
