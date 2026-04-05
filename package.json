@@ -47,7 +47,8 @@
     "multer": "^2.1.1",
     "qrcode": "^1.5.4",
     "sharp": "^0.34.5",
-    "slugify": "^1.6.8"
+    "slugify": "^1.6.8",
+    "vite": "^6.4.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
@@ -62,7 +63,6 @@
     "postcss-selector-parser": "^7.1.1",
     "storybook": "^8.6.18",
     "stylelint": "^16.26.1",
-    "stylelint-config-standard": "^39.0.1",
-    "vite": "^6.4.1"
+    "stylelint-config-standard": "^39.0.1"
   }
 }
