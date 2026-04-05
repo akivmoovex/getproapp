@@ -67,7 +67,7 @@
 | Field | Value |
 |-------|--------|
 | **Route** | `GET /company/:id` |
-| **Handler / module** | `src/routes/public.js` → `router.get("/company/:id")` → `renderCompanyPage` → `buildCompanyPageLocals` (`src/companyPageRender.js`) |
+| **Handler / module** | `src/routes/public.js` → `router.get("/company/:id")` → `renderCompanyPage` → `buildCompanyPageLocals` (`src/companies/companyPageRender.js`) |
 | **Template** | `views/company.ejs` |
 | **Main partials** | `partials/seo_meta`, `partials/site_header`, `partials/app_navigation`, `partials/site_footer`; profile sections in-template |
 | **JS entrypoints** | `/scripts.js` (lead form `#lead_form`); `/company-profile.js` (carousel, QR copy, bars) |

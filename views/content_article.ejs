@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <%- include('partials/seo_meta', { seoTitle, seoDescription, canonicalUrl, ogUrl, ogImage, ogType: 'article' }) %>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
     <% if (typeof jsonLdArticle !== 'undefined' && jsonLdArticle) { %>
     <script type="application/ld+json"><%- jsonLdArticle %></script>
     <% } %>
@@ -60,7 +60,7 @@
         <%- include('partials/site_footer', { tenantUrlPrefix }) %>
       </div>
     </div>
-    <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <script src="<%= asset('scripts') %>" defer></script>
     <%- include('partials/theme_prefs') %>
   </body>
 </html>

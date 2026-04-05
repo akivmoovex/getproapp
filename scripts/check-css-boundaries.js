@@ -9,6 +9,7 @@
  * - --compare-baseline <file>: report NEW violations vs baseline; exit 1 in CI when new exist.
  *
  * Baseline keys: file|rule|snippetHash (v2), with legacy file|line|rule support.
+ * Shared with check-components.js: `scripts/checkBaselineShared.js`.
  */
 
 const fs = require("fs");
@@ -17,52 +18,23 @@ const postcss = require("postcss");
 const selectorParser = require("postcss-selector-parser");
 
 const repoRoot = path.join(__dirname, "..");
-const REPORT_VERSION = 2;
+const {
+  REPORT_VERSION,
+  KEY_SCHEMA,
+  relFromRoot,
+  snippetHashFromSnippet,
+  violationKey,
+  legacyLineViolationKey,
+  dedupeViolations,
+  loadBaselineKeys,
+} = require("./checkBaselineShared");
+
 const RULE_ID = "css-boundary-system-component";
-const KEY_SCHEMA = "file|rule|snippetHash";
 
 const IGNORE_REL = new Set([
   "public/design-system.css",
   "public/ds-framework.css",
 ]);
-
-function norm(p) {
-  return p.split(path.sep).join("/");
-}
-
-function relFromRoot(absPath) {
-  return norm(path.relative(repoRoot, absPath));
-}
-
-function normalizeSnippetForHash(s) {
-  return String(s || "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-}
-
-function hashString(s) {
-  let h = 2166136261 >>> 0;
-  const str = String(s);
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  return h.toString(16).padStart(8, "0");
-}
-
-function snippetHashFromSnippet(snippet) {
-  return hashString(normalizeSnippetForHash(snippet));
-}
-
-function violationKey(v) {
-  const h = snippetHashFromSnippet(v.snippet || "");
-  return `${v.file}|${v.rule}|${h}`;
-}
-
-function legacyLineViolationKey(v) {
-  return `${v.file}|${Number(v.line)}|${v.rule}`;
-}
 
 function stripCssCommentsPreserveNewlines(s) {
   return s.replace(/\/\*[\s\S]*?\*\//g, (block) =>
@@ -159,7 +131,7 @@ function collectViolations() {
   const violations = [];
 
   for (const abs of files) {
-    const rel = relFromRoot(abs);
+    const rel = relFromRoot(repoRoot, abs);
     if (IGNORE_REL.has(rel)) continue;
 
     let raw;
@@ -199,52 +171,6 @@ function collectViolations() {
   }
 
   return dedupeViolations(violations);
-}
-
-function dedupeViolations(list) {
-  const seen = new Set();
-  const out = [];
-  for (const v of list) {
-    const k = violationKey(v);
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(v);
-  }
-  return out;
-}
-
-function loadBaselineKeys(baselinePath) {
-  if (!fs.existsSync(baselinePath)) {
-    return { ok: false, keys: new Set(), error: `Baseline file not found: ${baselinePath}` };
-  }
-  let parsed;
-  try {
-    parsed = JSON.parse(fs.readFileSync(baselinePath, "utf8"));
-  } catch (e) {
-    return { ok: false, keys: new Set(), error: `Invalid baseline JSON: ${e.message}` };
-  }
-  const rows = parsed.violations || [];
-  const keys = new Set();
-  const version = Number(parsed.version) || 1;
-
-  for (const v of rows) {
-    if (v.file == null || v.rule == null) continue;
-
-    const storedHash =
-      typeof v.snippetHash === "string" && /^[0-9a-f]{8}$/i.test(v.snippetHash)
-        ? v.snippetHash.toLowerCase()
-        : null;
-    if (storedHash) {
-      keys.add(`${v.file}|${v.rule}|${storedHash}`);
-    } else if (v.snippet != null && String(v.snippet).trim() !== "") {
-      keys.add(`${v.file}|${v.rule}|${snippetHashFromSnippet(v.snippet)}`);
-    }
-
-    if (version < 2 && v.line != null) {
-      keys.add(legacyLineViolationKey(v));
-    }
-  }
-  return { ok: true, keys, error: null };
 }
 
 function parseArgs(argv) {

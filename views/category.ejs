@@ -11,7 +11,7 @@
       ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
       ogType: 'website'
     }) %>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="<%= tenant.themeClass %>" data-screen-role="results">
     <div class="app-layout">
@@ -72,11 +72,11 @@
         <%- include('partials/site_footer', { tenantUrlPrefix }) %>
       </div>
     </div>
-    <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <script src="<%= asset('scripts') %>" defer></script>
     <%- include('partials/theme_prefs') %>
     <%- include('partials/autocomplete_defer_bootstrap') %>
     <% if ((companies || []).length === 0) { %>
-    <script src="/directory-empty-callback.js?v=<%= stylesVersion %>" defer></script>
+    <script src="<%= asset('directory-empty-callback') %>" defer></script>
     <% } %>
   </body>
 </html>

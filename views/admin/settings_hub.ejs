@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Settings | <%= _bn %> Admin</title>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-app admin-settings-hub-page<%- bodyEmbedClass %>">
     <%- include('../partials/admin_nav', { navTitle: 'Settings', activeNav: 'settings' }) %>
@@ -95,6 +95,6 @@
       </div>
     </div>
 
-    <script src="/admin-settings-hub.js?v=<%= stylesVersion %>"></script>
+    <script src="<%= asset('admin-settings-hub') %>"></script>
   </body>
 </html>

@@ -10,7 +10,9 @@
     "start": "node server.js",
     "dev": "nodemon --watch \"server.js\" --exec \"node server.js\"",
     "build-search-lists": "node scripts/build-search-lists.js",
-    "build": "npm run build-search-lists",
+    "build:assets": "vite build",
+    "dev:assets": "vite build --watch",
+    "build": "npm run build:assets && npm run build-search-lists",
     "lint:components": "node scripts/check-components.js",
     "lint:components:baseline": "node scripts/check-components.js --json > .ui-baseline.json",
     "lint:components:ci": "node scripts/check-components.js --compare-baseline .ui-baseline.json",
@@ -24,6 +26,7 @@
     "inline-ds-framework": "node scripts/inline-ds-framework.js",
     "sync-inlined-theme": "node scripts/sync-inlined-theme.js",
     "rebuild-sqlite": "npm rebuild better-sqlite3",
+    "rebuild-company-fts": "node scripts/rebuild-company-fts.js",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build -o storybook-static"
   },
@@ -59,6 +62,7 @@
     "postcss-selector-parser": "^7.1.1",
     "storybook": "^8.6.18",
     "stylelint": "^16.26.1",
-    "stylelint-config-standard": "^39.0.1"
+    "stylelint-config-standard": "^39.0.1",
+    "vite": "^6.4.1"
   }
 }

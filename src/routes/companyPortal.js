@@ -10,9 +10,9 @@ const {
   isCompanyPortalLoginBlocked,
   recordCompanyPortalLoginFailure,
   clearCompanyPortalLoginFailures,
-} = require("../companyPersonnelAuth");
-const { buildCompanyPageLocals, enrichCompanyWithCategory } = require("../companyPageRender");
-const clientIntake = require("../clientProjectIntake");
+} = require("../auth/companyPersonnelAuth");
+const { buildCompanyPageLocals, enrichCompanyWithCategory } = require("../companies/companyPageRender");
+const clientIntake = require("../intake/clientProjectIntake");
 const {
   COMPANY_PORTAL_ASSIGNMENT_LIST_SELECT,
   COMPANY_PORTAL_ASSIGNMENT_DETAIL_SELECT,
@@ -21,16 +21,16 @@ const {
   mapCompanyPortalAssignmentDetail,
   nextAssignmentStatusFromCompanyAction,
   assignmentStatusLabelForPortal,
-} = require("../intakeProjectCompanyViewModel");
-const intakeProjectAllocation = require("../intakeProjectAllocation");
+} = require("../intake/intakeProjectCompanyViewModel");
+const intakeProjectAllocation = require("../intake/intakeProjectAllocation");
 const {
   isLeadAcceptanceBlockedByCredit,
   isLeadAcceptanceAction,
-} = require("../companyPortalLeadCredits");
+} = require("../companyPortal/companyPortalLeadCredits");
 const {
   buildCompanyPortalLeadCardVm,
   buildCompanyPortalLeadDetailVm,
-} = require("../companyPortalLeadPresentation");
+} = require("../companyPortal/companyPortalLeadPresentation");
 
 const COMPANY_LEADS_SCOPES = new Set(["active", "declined", "all"]);
 

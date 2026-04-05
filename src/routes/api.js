@@ -1,9 +1,9 @@
 const express = require("express");
-const { resolveHostname } = require("../host");
-const { israelComingSoonEnabled } = require("../israelComingSoon");
-const { TENANT_IL } = require("../tenantIds");
+const { resolveHostname } = require("../platform/host");
+const { israelComingSoonEnabled } = require("../tenants/israelComingSoon");
+const { TENANT_IL } = require("../tenants/tenantIds");
 const { isValidPhoneForTenant } = require("../tenants");
-const { createCrmTaskFromEvent } = require("../crmAutoTasks");
+const { createCrmTaskFromEvent } = require("../crm/crmAutoTasks");
 
 /**
  * Resolves tenant for join/callback APIs. Never defaults to Zambia — wrong defaults

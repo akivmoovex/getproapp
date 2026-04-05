@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>New user | <%= _bn %> Admin</title>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-app<%- bodyEmbedClass %>">
     <%- include('../partials/admin_nav', { navTitle: 'New tenant user', activeNav: 'users' }) %>

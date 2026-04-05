@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title><%= project.project_code %> | Intake project</title>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-app<%- bodyEmbedClass %>">
     <%- include('../partials/admin_nav', { navTitle: project.project_code, activeNav: 'projects' }) %>

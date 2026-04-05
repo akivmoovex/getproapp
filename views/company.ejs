@@ -14,7 +14,7 @@
     <% if (typeof jsonLdCompany !== 'undefined' && jsonLdCompany) { %>
     <script type="application/ld+json"><%- jsonLdCompany %></script>
     <% } %>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <% var _cpPortal = typeof companyPortalLayout !== 'undefined' && companyPortalLayout; %>
   <% var _cpReadOnly = typeof companyPortalReadOnly !== 'undefined' && companyPortalReadOnly; %>
@@ -343,8 +343,8 @@
       </div>
     </div>
     <% } %>
-    <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <script src="<%= asset('scripts') %>" defer></script>
     <%- include('partials/theme_prefs') %>
-    <script src="/company-profile.js?v=<%= stylesVersion %>" defer></script>
+    <script src="<%= asset('company-profile') %>" defer></script>
   </body>
 </html>

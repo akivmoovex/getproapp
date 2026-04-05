@@ -12,7 +12,7 @@
       ogImage: typeof ogImage !== 'undefined' ? ogImage : '',
       ogType: 'website'
     }) %>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="ui-demo-page <%= tenant && tenant.themeClass ? tenant.themeClass : '' %>" data-screen-role="ui-demo">
     <div class="app-layout">
@@ -431,7 +431,7 @@
       </div>
     </div>
 
-    <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <script src="<%= asset('scripts') %>" defer></script>
     <%- include('partials/theme_prefs') %>
     <%- include('partials/autocomplete_defer_bootstrap') %>
     <script>

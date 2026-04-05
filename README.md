@@ -11,7 +11,7 @@ This app is **Express**: it starts with `npm start` (`node server.js`) from the 
 | **Root / App directory** | Repo root (often `.` or left blank) |
 | **Entry file / Startup file** | **Leave unset / default** if the host runs **`npm start`** (recommended). The process entry is **`server.js`** via `package.json` `main` + `start`. Only set a startup file explicitly if your panel requires it — use **`server.js`**. |
 | **Install** | `npm ci` or `npm install` |
-| **Build** | `npm run build` — in this repo that runs `build-search-lists` only. If your host runs install separately, a build-only step of `npm run build` is enough. |
+| **Build** | `npm run build` — runs `build:assets` (Vite → `public/build/`) then `build-search-lists`. Production should run at least `npm run build:assets` before `npm start` so hashed CSS/JS and `asset-map.json` exist. If your host runs install separately, use `npm run build` or `npm run build:assets` as the build step. |
 | **Output / Publish directory** | **Leave empty**, **none**, **`.`**, or the option your UI labels **null / no output** for backend-only apps. **Do not** set `dist`, `build`, `out`, or `.next` — those paths do not exist here and will break deploy. |
 | **Start** | `npm start` (runs `node server.js`) |
 
@@ -94,7 +94,7 @@ npm install
 npm start
 ```
 
-**Database:** Schema changes, migrations, and built-in demo data run **automatically** when the app loads `src/db.js` (no separate `seed` script). Use `SQLITE_PATH` if the database file lives outside `data/`. Only **`data/getpro.sqlite`** is used by default — extra `*.sqlite` / `*.db` files (e.g. copied from other projects) are ignored unless `SQLITE_PATH` points at them; see `data/README.md`.
+**Database:** Schema changes, migrations, and built-in demo data run **automatically** on startup via `src/db/index.js` (required as `./src/db`; no separate `seed` script). Use `SQLITE_PATH` if the database file lives outside `data/`. Only **`data/getpro.sqlite`** is used by default — extra `*.sqlite` / `*.db` files (e.g. copied from other projects) are ignored unless `SQLITE_PATH` points at them; see `data/README.md`.
 
 **Admin UI:** Layout tokens and patterns for grids, cards, tables, and modals are documented in [`docs/ADMIN_UI.md`](docs/ADMIN_UI.md).
 
@@ -135,7 +135,7 @@ npm start
 
 **Built-in demo users** (password `1234`, created once if missing): `tenantmanager` (`tenant_manager`, Zambia) and `superadmin` (`super_admin`). Disable seeding in production with **`SEED_BUILTIN_USERS=0`**.
 
-**Demo tenant managers** (`martin`, `faith`, `daisy`, password `1234`, `tenant_manager` on **Demo** + **Zambia**): idempotently upserted on boot via `src/seedManagerUsers.js`. Disable with **`SEED_MANAGER_USERS=0`** in production if you do not want these accounts.
+**Demo tenant managers** (`martin`, `faith`, `daisy`, password `1234`, `tenant_manager` on **Demo** + **Zambia**): idempotently upserted on boot via `src/seeds/seedManagerUsers.js`. Disable with **`SEED_MANAGER_USERS=0`** in production if you do not want these accounts.
 
 **CSS cache bust:** Set **`GETPRO_STYLES_V`** (or rely on the default in code) so all templates use one `stylesVersion` for `/styles.css?v=…`.
 

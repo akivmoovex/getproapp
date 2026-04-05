@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <title>Client portal | <%= _bn %></title>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <% var _cb = typeof clientPortalBasePath !== 'undefined' && clientPortalBasePath ? String(clientPortalBasePath).replace(/\/$/, '') : '/client'; %>
   <body class="client-portal-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">

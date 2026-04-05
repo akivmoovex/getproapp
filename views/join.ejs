@@ -11,7 +11,7 @@
       ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
       ogType: 'website'
     }) %>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="join-page <%= tenant.themeClass %>" data-screen-role="support">
     <div class="join-topbar-row">
@@ -417,8 +417,8 @@
       window.__GETPRO_HOME__ = "<%= tenantHomeHref %>";
       window.__GETPRO_TENANT_CITIES__ = <%- JSON.stringify(joinTenantCities || []) %>;
     </script>
-    <script src="/autocomplete.js?v=<%= stylesVersion %>" defer></script>
-    <script src="/join.js?v=<%= stylesVersion %>" defer></script>
+    <script src="<%= asset('autocomplete') %>" defer></script>
+    <script src="<%= asset('join') %>" defer></script>
     <%- include('partials/theme_prefs') %>
   </body>
 </html>

@@ -19,10 +19,10 @@ console.log(
 );
 
 const { ensureAdminUser } = require("./src/auth");
-const { seedBuiltinUsers } = require("./src/seedBuiltinUsers");
-const { seedManagerUsers } = require("./src/seedManagerUsers");
-const { seedContentPages } = require("./src/seedContentPages");
-const { getSubdomain, resolveHostname } = require("./src/host");
+const { seedBuiltinUsers } = require("./src/seeds/seedBuiltinUsers");
+const { seedManagerUsers } = require("./src/seeds/seedManagerUsers");
+const { seedContentPages } = require("./src/seeds/seedContentPages");
+const { getSubdomain, resolveHostname } = require("./src/platform/host");
 
 let db;
 try {
@@ -39,9 +39,10 @@ const {
   createAttachTenantByHost,
   buildRegionChoicesFromDb,
 } = require("./src/tenants");
-const { STAGES } = require("./src/tenantStages");
-const { eventTimeParts } = require("./src/eventTime");
-const branding = require("./src/branding");
+const { STAGES } = require("./src/tenants/tenantStages");
+const { eventTimeParts } = require("./src/lib/eventTime");
+const branding = require("./src/platform/branding");
+const { createAssetUrl } = require("./src/platform/assetUrls");
 const publicModule = require("./src/routes/public")({ db });
 const adminRoutes = require("./src/routes/admin");
 const companyPortalRoutes = require("./src/routes/companyPortal");
@@ -70,7 +71,9 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use((req, res, next) => {
-  res.locals.stylesVersion = process.env.GETPRO_STYLES_V || "20260331-home-search-fix-final";
+  const stylesVersion = process.env.GETPRO_STYLES_V || "20260331-home-search-fix-final";
+  res.locals.stylesVersion = stylesVersion;
+  res.locals.asset = createAssetUrl(stylesVersion);
   res.locals.encodeURIComponent = encodeURIComponent;
   res.locals.eventTimeParts = eventTimeParts;
   res.locals.showUiGuard = process.env.NODE_ENV !== "production";
@@ -85,7 +88,7 @@ app.use(express.json());
 
 app.use(
   express.static(path.join(__dirname, "public"), {
-    // PERF: assets are versioned via `?v=<stylesVersion>` in templates, so we can safely cache longer in prod.
+    // PERF: legacy /public/*.css|js use ?v=<stylesVersion>; /build/* use content hashes (immutable).
     maxAge: process.env.NODE_ENV === "production" ? "30d" : 0,
     immutable: process.env.NODE_ENV === "production",
   })

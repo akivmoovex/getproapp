@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <title>Lead · <%= detail.project_code %> | Company portal</title>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <% var _pb = typeof providerPortalBasePath !== 'undefined' && providerPortalBasePath ? String(providerPortalBasePath).replace(/\/$/, '') : '/company'; %>
   <body class="company-portal-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">

@@ -14,61 +14,29 @@
  * - --compare-baseline <file>: diff vs baseline. Keys are file|rule|snippetHash (stable);
  *   v1 baselines (file|line|rule) still match via legacy keys until regenerated.
  * - CI=true + --compare-baseline: exit 1 only if NEW violations (not in baseline).
+ *
+ * Baseline JSON format / hashing: shared with check-css-boundaries.js (`scripts/checkBaselineShared.js`).
  */
 
 const fs = require("fs");
 const path = require("path");
 
+const {
+  REPORT_VERSION,
+  KEY_SCHEMA,
+  norm,
+  relFromRoot,
+  snippetHashFromSnippet,
+  violationKey,
+  legacyLineViolationKey,
+  dedupeViolations,
+  loadBaselineKeys,
+} = require("./checkBaselineShared");
+
 const repoRoot = path.join(__dirname, "..");
 const viewsDir = path.join(repoRoot, "views");
 
 const BUTTON_SOURCE = path.join(viewsDir, "partials", "components", "button.ejs");
-
-const REPORT_VERSION = 2;
-
-const KEY_SCHEMA = "file|rule|snippetHash";
-
-/** Collapse whitespace, trim, lowercase — before hashing. */
-function normalizeSnippetForHash(s) {
-  return String(s || "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-}
-
-/** FNV-1a 32-bit; return fixed-width hex (stable across Node versions). */
-function hashString(s) {
-  let h = 2166136261 >>> 0;
-  const str = String(s);
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  return h.toString(16).padStart(8, "0");
-}
-
-function snippetHashFromSnippet(snippet) {
-  return hashString(normalizeSnippetForHash(snippet));
-}
-
-/** Stable baseline / dedupe key (line-independent). */
-function violationKey(v) {
-  const h = snippetHashFromSnippet(v.snippet || "");
-  return `${v.file}|${v.rule}|${h}`;
-}
-
-/** v1 baseline compatibility: same as old violationKey. */
-function legacyLineViolationKey(v) {
-  return `${v.file}|${Number(v.line)}|${v.rule}`;
-}
-
-function norm(p) {
-  return p.split(path.sep).join("/");
-}
-
-function relFromRoot(absPath) {
-  return norm(path.relative(repoRoot, absPath));
-}
 
 /** Legacy .btn allowlist (admin, demos, docs). design-system/ is under repo root — not in views walk. */
 function isBtnCheckAllowlisted(relPath) {
@@ -131,18 +99,6 @@ function snippetCompact(tag) {
   return tag.replace(/\s+/g, " ").trim().slice(0, 160);
 }
 
-function dedupeViolations(list) {
-  const seen = new Set();
-  const out = [];
-  for (const v of list) {
-    const k = violationKey(v);
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(v);
-  }
-  return out;
-}
-
 function lintRawBtnOnTags(files) {
   const violations = [];
   const buttonRe = /<button\b[\s\S]*?>/gi;
@@ -153,7 +109,7 @@ function lintRawBtnOnTags(files) {
     const abs = norm(f);
     if (abs === exempt) continue;
 
-    const rel = relFromRoot(f);
+    const rel = relFromRoot(repoRoot, f);
     if (isBtnCheckAllowlisted(rel)) continue;
 
     const raw = fs.readFileSync(f, "utf8");
@@ -194,7 +150,7 @@ function lintRawInputsPublic(files) {
   const inputRe = /<input\b[\s\S]*?>/gi;
 
   for (const f of files) {
-    const rel = relFromRoot(f);
+    const rel = relFromRoot(repoRoot, f);
     if (isInputWarnAllowlisted(rel)) continue;
 
     const raw = fs.readFileSync(f, "utf8");
@@ -219,40 +175,6 @@ function lintRawInputsPublic(files) {
 function collectViolations() {
   const viewFiles = walkEjs(viewsDir);
   return dedupeViolations([...lintRawBtnOnTags(viewFiles), ...lintRawInputsPublic(viewFiles)]);
-}
-
-function loadBaselineKeys(baselinePath) {
-  if (!fs.existsSync(baselinePath)) {
-    return { ok: false, keys: new Set(), error: `Baseline file not found: ${baselinePath}` };
-  }
-  let parsed;
-  try {
-    parsed = JSON.parse(fs.readFileSync(baselinePath, "utf8"));
-  } catch (e) {
-    return { ok: false, keys: new Set(), error: `Invalid baseline JSON: ${e.message}` };
-  }
-  const rows = parsed.violations || [];
-  const keys = new Set();
-  const version = Number(parsed.version) || 1;
-
-  for (const v of rows) {
-    if (v.file == null || v.rule == null) continue;
-
-    const storedHash =
-      typeof v.snippetHash === "string" && /^[0-9a-f]{8}$/i.test(v.snippetHash)
-        ? v.snippetHash.toLowerCase()
-        : null;
-    if (storedHash) {
-      keys.add(`${v.file}|${v.rule}|${storedHash}`);
-    } else if (v.snippet != null && String(v.snippet).trim() !== "") {
-      keys.add(`${v.file}|${v.rule}|${snippetHashFromSnippet(v.snippet)}`);
-    }
-
-    if (version < 2 && v.line != null) {
-      keys.add(legacyLineViolationKey(v));
-    }
-  }
-  return { ok: true, keys, error: null };
 }
 
 function parseArgs(argv) {

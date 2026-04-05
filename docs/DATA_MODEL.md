@@ -2,7 +2,7 @@
 
 ## Tenants (regions)
 
-Rows live in **`tenants`** (`id`, `slug`, `name`, `stage`, …). Canonical seed IDs (see `src/tenantIds.js`):
+Rows live in **`tenants`** (`id`, `slug`, `name`, `stage`, …). Canonical seed IDs (see `src/tenants/tenantIds.js`):
 
 | id | slug | name |
 |----|------|------|

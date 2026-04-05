@@ -7,7 +7,7 @@
       <% var _sc = typeof scope !== 'undefined' ? scope : 'active'; %>
       <% if (_sc === 'declined') { %>Declined leads<% } else if (_sc === 'all') { %>All leads<% } else { %>Active leads<% } %> | Company portal
     </title>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="company-portal-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
     <%- include('partials/company_portal_shell_start', {

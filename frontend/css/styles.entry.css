@@ -1,0 +1,5 @@
+/**
+ * Build entry: bundles the hand-maintained app stylesheet from /public.
+ * Edit sources in public/theme.css, public/ds-framework.css, public/styles.css (see scripts/sync-inlined-theme.js).
+ */
+@import url("../../public/styles.css");

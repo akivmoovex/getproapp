@@ -15,7 +15,7 @@
     <% if (typeof orgJsonLd !== 'undefined' && orgJsonLd) { %>
     <script type="application/ld+json"><%- orgJsonLd %></script>
     <% } %>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="home-page home-page--launcher wf-home-layout <%= tenant.themeClass %>" data-screen-role="launcher">
     <div class="app-layout">
@@ -281,7 +281,7 @@
     </div>
   </div>
 
-    <script src="/scripts.js?v=<%= stylesVersion %>" defer></script>
+    <script src="<%= asset('scripts') %>" defer></script>
     <%- include('partials/theme_prefs') %>
     <%- include('partials/autocomplete_defer_bootstrap') %>
     <script>

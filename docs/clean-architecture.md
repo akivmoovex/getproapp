@@ -27,11 +27,11 @@ There is **no** separate `controllers/` directory. The codebase uses:
 | HTTP app entry | `server.js` | Express app, middleware order, mounts `/api`, `/admin`, public router, host/tenant behavior. |
 | Public routes | `src/routes/public.js` | Router factory `module.exports = function publicRoutes({ db })` returning **`{ router, renderCompanyHome }`**. |
 | Admin / API | `src/routes/admin.js`, `src/routes/api.js` | Mounted before the catch-all public router. |
-| Domain / page helpers | `src/*.js` at repo root under `src/` (e.g. `companyPageRender.js`, `companyProfile.js`, `seoPublic.js`, `tenants.js`, …) | Called from route modules; not split into a formal “use case” layer. |
+| Domain / page helpers | **`src/platform/`** (host, branding, asset URLs), **`src/tenants/`**, **`src/auth/`**, **`src/companies/`** (directory + profiles + FTS), **`src/intake/`**, **`src/companyPortal/`**, **`src/crm/`**, **`src/content/`**, **`src/seeds/`**, **`src/lib/`** | Called from route modules; grouped by domain, not a formal “use case” layer. |
 | Views | `views/*.ejs`, `views/partials/*.ejs` | Templates and shared partials. |
 | Static assets | `public/` | `styles.css` (imports design system), `scripts.js`, route-specific JS, images. |
 
-**Narrative vs reality:** A “clean” layering doc might name *routes → controllers → services*. Here, **route handlers and render orchestration live in `src/routes/public.js`**, with **helpers in `src/` modules**. That is intentional and stable; renaming to `controllers/` would be churn unless the team decides otherwise.
+**Narrative vs reality:** A “clean” layering doc might name *routes → controllers → services*. Here, **route handlers and render orchestration live in `src/routes/public.js`**, with **domain logic in the `src/<domain>/` folders above**. That is intentional and stable; introducing `controllers/` would be churn unless the team decides otherwise.
 
 ---
 
@@ -77,7 +77,7 @@ Implemented in **`server.js`** (not only in `public.js`):
 | Server-first + EJS | Yes | — |
 | Progressive enhancement + guarded JS | Yes | `scripts.js` remains one file with guards (no mandatory route chunks). |
 | Explicit routes | Yes | Handlers are **`public.js`**, not a `controllers/` package. |
-| “Thin controllers” | Partially | Some logic is **inline** in `public.js`; heavier bits are in **`src/` helpers**. |
+| “Thin controllers” | Partially | Some logic is **inline** in `public.js`; heavier bits live in **`src/<domain>/`** modules. |
 | Simple five-route diagram | Conceptually | Production has **redirects**, **content routes**, **healthz**, **getpro-admin**, etc. |
 
 ---

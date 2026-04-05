@@ -16,7 +16,7 @@
     window.__getproAutocompleteLazyScheduled = true;
     window.__getproAutocompleteSkipAutoInit = true;
     var s = document.createElement("script");
-    s.src = "/autocomplete.js?v=<%= stylesVersion %>";
+    s.src = "<%= asset('autocomplete') %>";
     s.onload = function () {
       if (window.__getproInitSearchAutocomplete) window.__getproInitSearchAutocomplete();
     };

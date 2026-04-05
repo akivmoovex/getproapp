@@ -2,12 +2,12 @@ const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const { getTenantById, DEFAULT_TENANT_SLUG } = require("../tenants");
-const { TENANT_ZM } = require("../tenantIds");
-const { getTenantCitiesForClient, getJoinCityWatermarkRotate } = require("../tenantCities");
-const { israelComingSoonEnabled } = require("../israelComingSoon");
-const { attachReviewStatsToCompanies } = require("../reviewStats");
-const { buildCompanyPageLocals } = require("../companyPageRender");
-const { getTenantContactSupport } = require("../tenantContactSupport");
+const { TENANT_ZM } = require("../tenants/tenantIds");
+const { getTenantCitiesForClient, getJoinCityWatermarkRotate } = require("../tenants/tenantCities");
+const { israelComingSoonEnabled } = require("../tenants/israelComingSoon");
+const { attachReviewStatsToCompanies } = require("../companies/reviewStats");
+const { buildCompanyPageLocals } = require("../companies/companyPageRender");
+const { getTenantContactSupport } = require("../tenants/tenantContactSupport");
 const {
   formatBodyToHtml,
   listPublishedByKind,
@@ -16,10 +16,14 @@ const {
   canonicalUrlForTenant,
   absolutePublicUrl,
   escapeHtml,
-} = require("../contentPages");
-const { buildSitemapXml, buildRobotsTxt } = require("../seoPublic");
-const { canPreviewDraft } = require("../adminPreview");
-const { PRODUCT_NAME } = require("../branding");
+} = require("../content/contentPages");
+const { buildSitemapXml, buildRobotsTxt } = require("../companies/seoPublic");
+const { canPreviewDraft } = require("../content/adminPreview");
+const { PRODUCT_NAME } = require("../platform/branding");
+const {
+  buildCompanyDirectoryFtsMatch,
+  companySearchFtsReady,
+} = require("../companies/companySearchFts");
 
 function loadSearchLists() {
   const p = path.join(__dirname, "../../public/data/search-lists.json");
@@ -262,32 +266,56 @@ module.exports = function publicRoutes({ db }) {
       sql += ` ORDER BY c.name ASC`;
       companies = db.prepare(sql).all(...params);
     } else if (searchQ || cityQ) {
-      const parts = [`c.tenant_id = ?`];
-      const params = [tenantId];
-      if (searchQ) {
-        parts.push(
-          `(c.name LIKE ? COLLATE NOCASE OR c.headline LIKE ? COLLATE NOCASE OR c.about LIKE ? COLLATE NOCASE)`
-        );
-        const p = `%${searchQ}%`;
-        params.push(p, p, p);
-      }
-      if (cityQ) {
-        parts.push(`c.location LIKE ? COLLATE NOCASE`);
-        params.push(`%${cityQ}%`);
-      }
-      const where = parts.join(" AND ");
-      companies = db
-        .prepare(
-          `
+      const ftsReady = companySearchFtsReady(db);
+      const ftsMatch = ftsReady && searchQ ? buildCompanyDirectoryFtsMatch(searchQ) : null;
+      const useFts = Boolean(ftsMatch);
+
+      function runDirectorySearch(useFtsInner) {
+        const parts = [`c.tenant_id = ?`];
+        const params = [tenantId];
+        if (searchQ) {
+          if (useFtsInner) {
+            parts.push(`companies_fts MATCH ?`);
+            params.push(ftsMatch);
+          } else {
+            parts.push(
+              `(c.name LIKE ? COLLATE NOCASE OR c.headline LIKE ? COLLATE NOCASE OR c.about LIKE ? COLLATE NOCASE)`
+            );
+            const p = `%${searchQ}%`;
+            params.push(p, p, p);
+          }
+        }
+        if (cityQ) {
+          parts.push(`c.location LIKE ? COLLATE NOCASE`);
+          params.push(`%${cityQ}%`);
+        }
+        const where = parts.join(" AND ");
+        const joinFts = useFtsInner ? `INNER JOIN companies_fts ON companies_fts.rowid = c.id` : "";
+        const orderSql = useFtsInner ? `ORDER BY bm25(companies_fts) ASC, c.name ASC` : `ORDER BY c.name ASC`;
+        return db
+          .prepare(
+            `
           SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
           FROM companies c
+          ${joinFts}
           LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
           WHERE ${where}
-          ORDER BY c.name ASC
+          ${orderSql}
           LIMIT 48
           `
-        )
-        .all(...params);
+          )
+          .all(...params);
+      }
+
+      try {
+        companies = runDirectorySearch(useFts);
+      } catch (err) {
+        if (useFts && searchQ) {
+          companies = runDirectorySearch(false);
+        } else {
+          throw err;
+        }
+      }
     } else {
       companies = db
         .prepare(

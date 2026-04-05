@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Dashboard | <%= _bn %> Admin</title>
-    <link rel="stylesheet" href="/styles.css?v=<%= stylesVersion %>" />
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-app admin-dashboard-page<%- bodyEmbedClass %>">
     <%- include('../partials/admin_nav', { navTitle: 'Dashboard & overview', activeNav: 'dashboard' }) %>
@@ -188,6 +188,6 @@
         </section>
       </div>
     </main>
-    <script src="/admin-dashboard.js?v=<%= stylesVersion %>"></script>
+    <script src="<%= asset('admin-dashboard') %>"></script>
   </body>
 </html>
