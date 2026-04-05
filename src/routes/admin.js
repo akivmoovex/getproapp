@@ -45,6 +45,17 @@ module.exports = function adminRoutes({ db }) {
     next();
   });
 
+  /** Admin EJS titles use `_bn` / `_bnGetPro`; `partials/brand_resolve.ejs` only sets `var` in the include scope (not visible in parent). Mirror that logic on res.locals for every admin render. */
+  router.use((req, res, next) => {
+    res.locals._bn =
+      typeof res.locals.brandProductName !== "undefined" ? res.locals.brandProductName : "Pro-online";
+    res.locals._bnGetPro =
+      typeof res.locals.brandProductNameGetPro !== "undefined"
+        ? res.locals.brandProductNameGetPro
+        : "GetPro";
+    next();
+  });
+
   registerAdminAuthRoutes(router, { db });
 
   router.use((req, res, next) => {

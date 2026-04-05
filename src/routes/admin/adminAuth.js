@@ -11,27 +11,15 @@ const { resolveSessionAfterLogin } = require("../../auth/adminUserTenants");
 
 module.exports = function registerAdminAuthRoutes(router, deps) {
   const { db } = deps;
-  /** Same as `partials/brand_resolve.ejs` — EJS includes do not hoist `var _bn` into the parent template. */
-  function adminLoginLocals(res, extra = {}) {
-    const _bn =
-      typeof res.locals.brandProductName !== "undefined" ? res.locals.brandProductName : "Pro-online";
-    return { ...extra, _bn };
-  }
-
   router.get("/login", (req, res) => {
     if (req.session && req.session.adminUser) return res.redirect("/admin/dashboard");
-    return res.render("admin/login", adminLoginLocals(res, { error: null, cancelHref: "/getpro-admin" }));
+    return res.render("admin/login", { error: null, cancelHref: "/getpro-admin" });
   });
 
   router.post("/login", async (req, res) => {
     const { username = "", password = "" } = req.body || {};
     const user = await authenticateAdmin({ db, username, password });
-    if (!user) {
-      return res.render(
-        "admin/login",
-        adminLoginLocals(res, { error: "Invalid username or password.", cancelHref: "/getpro-admin" })
-      );
-    }
+    if (!user) return res.render("admin/login", { error: "Invalid username or password.", cancelHref: "/getpro-admin" });
 
     req.session.adminTenantScope = null;
     req.session.adminTenantMemberships = undefined;
