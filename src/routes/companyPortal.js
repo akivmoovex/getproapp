@@ -11,6 +11,7 @@ const {
   recordCompanyPortalLoginFailure,
   clearCompanyPortalLoginFailures,
 } = require("../auth/companyPersonnelAuth");
+const { companyPortalLoginLimiter } = require("../middleware/authRateLimit");
 const { buildCompanyPageLocals, enrichCompanyWithCategory } = require("../companies/companyPageRender");
 const clientIntake = require("../intake/clientProjectIntake");
 const {
@@ -73,7 +74,7 @@ module.exports = function companyPortalRoutes({ db }) {
     });
   });
 
-  router.post("/login", requirePublicTenant, async (req, res) => {
+  router.post("/login", requirePublicTenant, companyPortalLoginLimiter, async (req, res) => {
     const tid = req.tenant.id;
     const pb = providerBasePath(req);
     const loginPath = `${pb}/login`;

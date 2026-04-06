@@ -1,0 +1,4 @@
+<%# locals: src — path without leading slash, without .js (e.g. scripts, autocomplete, js/ui-guard); defer (optional boolean) -%>
+<% var _v = typeof stylesVersion !== 'undefined' ? stylesVersion : '1'; %>
+<% var _href = typeof publicScriptSrc === 'function' ? publicScriptSrc(src) : ('/' + String(src).replace(/\.js$/i, '') + '.js'); %>
+<script src="<%= _href %>?v=<%= _v %>"<% if (typeof defer !== 'undefined' && defer) { %> defer<% } %>></script>

@@ -8,6 +8,7 @@ const {
 const { ROLES } = require("../../auth/roles");
 const { STAGES } = require("../../tenants/tenantStages");
 const { resolveSessionAfterLogin } = require("../../auth/adminUserTenants");
+const { adminLoginLimiter } = require("../../middleware/authRateLimit");
 
 module.exports = function registerAdminAuthRoutes(router, deps) {
   const { db } = deps;
@@ -16,7 +17,7 @@ module.exports = function registerAdminAuthRoutes(router, deps) {
     return res.render("admin/login", { error: null, cancelHref: "/getpro-admin" });
   });
 
-  router.post("/login", async (req, res) => {
+  router.post("/login", adminLoginLimiter, async (req, res) => {
     const { username = "", password = "" } = req.body || {};
     const user = await authenticateAdmin({ db, username, password });
     if (!user) return res.render("admin/login", { error: "Invalid username or password.", cancelHref: "/getpro-admin" });

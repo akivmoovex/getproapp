@@ -38,6 +38,8 @@ try {
 const {
   createAttachTenantByHost,
   buildRegionChoicesFromDb,
+  getCachedTenantStageById,
+  getCachedTenantSlugExists,
 } = require("./src/tenants");
 const { STAGES } = require("./src/tenants/tenantStages");
 const { eventTimeParts } = require("./src/lib/eventTime");
@@ -48,6 +50,7 @@ const adminRoutes = require("./src/routes/admin");
 const companyPortalRoutes = require("./src/routes/companyPortal");
 const clientPortalRoutes = require("./src/routes/clientPortal");
 const apiRoutes = require("./src/routes/api");
+const { runProductionStartupChecks } = require("./src/startup/productionStartupChecks");
 
 const app = express();
 
@@ -65,7 +68,29 @@ if (process.env.TRUST_PROXY === "0" || process.env.TRUST_PROXY === "false") {
   app.set("trust proxy", 1);
 }
 app.use(helmet());
-app.use(morgan("dev"));
+
+const isProduction = process.env.NODE_ENV === "production";
+/** Omit query strings from access logs (tokens, PII in URLs). */
+morgan.token("pathNoQuery", (req) => {
+  const u = req.originalUrl || req.url || "";
+  const q = u.indexOf("?");
+  return q === -1 ? u : u.slice(0, q);
+});
+const PROD_LOG_SKIP_EXT = /\.(?:css|js|mjs|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot)$/i;
+function skipProductionRequestLog(req) {
+  if (req.path === "/healthz") return true;
+  if (req.path.startsWith("/build/")) return true;
+  return PROD_LOG_SKIP_EXT.test(req.path);
+}
+if (isProduction) {
+  app.use(
+    morgan(":method :pathNoQuery :status :res[content-length] - :response-time ms", {
+      skip: skipProductionRequestLog,
+    })
+  );
+} else {
+  app.use(morgan("dev"));
+}
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -86,14 +111,35 @@ app.use((req, res, next) => {
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+const publicDir = path.join(__dirname, "public");
+const viteBuildDir = path.join(publicDir, "build");
+// Split cache: Vite emits content-hashed files under /build/* (safe for immutable + long max-age).
+// Legacy /public/* files use ?v= cache-busting; avoid immutable so browsers may revalidate.
 app.use(
-  express.static(path.join(__dirname, "public"), {
-    // PERF: legacy /public/*.css|js use ?v=<stylesVersion>; /build/* use content hashes (immutable).
-    maxAge: process.env.NODE_ENV === "production" ? "30d" : 0,
-    immutable: process.env.NODE_ENV === "production",
+  "/build",
+  express.static(viteBuildDir, {
+    maxAge: isProduction ? "30d" : 0,
+    immutable: isProduction,
+  })
+);
+app.use(
+  express.static(publicDir, {
+    maxAge: isProduction ? "1d" : 0,
+    immutable: false,
   })
 );
 
+if (process.env.NODE_ENV === "production") {
+  const raw = process.env.SESSION_SECRET;
+  if (raw == null || String(raw).trim() === "") {
+    // eslint-disable-next-line no-console
+    console.error(
+      "[getpro] FATAL: SESSION_SECRET must be set to a non-empty string in production (hosting env / panel). Use a long random value; do not commit it."
+    );
+    process.exit(1);
+  }
+  runProductionStartupChecks();
+}
 const sessionSecret = process.env.SESSION_SECRET || "dev_secret_change_me";
 const sessionDir = process.env.SESSION_DIR || path.join(__dirname, "data");
 const sessionDbPath = process.env.SESSION_DB_PATH || path.join(sessionDir, "sessions.db");
@@ -147,8 +193,7 @@ app.use((req, res, next) => {
   req.isPlatformTenant = false;
   const sub = req.subdomain;
   if (sub) {
-    const row = db.prepare("SELECT 1 FROM tenants WHERE slug = ?").get(sub);
-    req.isPlatformTenant = !!row;
+    req.isPlatformTenant = getCachedTenantSlugExists(db, sub);
   }
   next();
 });
@@ -290,7 +335,7 @@ app.get("/getpro-admin", (req, res) => {
 // Only `Enabled` tenants are served publicly (subdomain + apex content)
 app.use((req, res, next) => {
   if (!req.tenant || !req.tenant.slug) return next();
-  const row = db.prepare("SELECT stage FROM tenants WHERE id = ?").get(req.tenant.id);
+  const row = getCachedTenantStageById(db, req.tenant.id);
   if (!row || row.stage !== STAGES.ENABLED) {
     return res.status(503).type("text").send("This region is not available.");
   }
@@ -317,11 +362,6 @@ app.use("/provider", companyPortalRoutes({ db }));
 
 app.use("/", publicModule.router);
 
-if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
-  // eslint-disable-next-line no-console
-  console.warn("[getpro] WARNING: SESSION_SECRET not set in production — using default (set a random secret in hosting env).");
-}
-
 ensureAdminUser({ db })
   .then(() => {
     seedBuiltinUsers(db);
@@ -335,11 +375,6 @@ ensureAdminUser({ db })
         // eslint-disable-next-line no-console
         console.log(
           `[getpro] Subdomain routing: zm.${base} → Zambia (tenant zm), il.${base} → Israel (tenant il). Requires reverse proxy to forward Host unchanged.`
-        );
-      } else {
-        // eslint-disable-next-line no-console
-        console.warn(
-          "[getpro] BASE_DOMAIN is unset — set BASE_DOMAIN=getproapp.org (no scheme) in production so zm.* / il.* resolve to tenants."
         );
       }
     });

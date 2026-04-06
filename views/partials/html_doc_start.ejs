@@ -1,0 +1,5 @@
+<% var _hl = typeof htmlLang !== 'undefined' ? htmlLang : 'en'; %>
+<% var _hd = typeof htmlDir !== 'undefined' ? htmlDir : ''; %>
+<% var _db = typeof brandHtmlDataBrand !== 'undefined' ? String(brandHtmlDataBrand).trim() : ''; %>
+<% var _dbAttr = (_db === 'getpro' || _db === 'proonline') ? (' data-brand="' + _db + '"') : ''; %>
+<html lang="<%= _hl %>"<%= _hd ? (' dir="' + _hd + '"') : '' %><%- _dbAttr %>>
