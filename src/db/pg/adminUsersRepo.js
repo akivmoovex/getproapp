@@ -61,12 +61,16 @@ async function getById(pool, id) {
 async function listUsersForTenantScope(pool, tenantId) {
   const r = await pool.query(
     `
-    SELECT DISTINCT u.id, u.username, u.enabled, u.created_at,
-           COALESCE(m.role, u.role) AS role
-    FROM public.admin_users u
-    LEFT JOIN public.admin_user_tenant_roles m ON m.admin_user_id = u.id AND m.tenant_id = $1
-    WHERE m.tenant_id IS NOT NULL OR u.tenant_id = $1
-    ORDER BY lower(u.username) ASC
+    SELECT sub.id, sub.username, sub.enabled, sub.created_at, sub.role
+    FROM (
+      SELECT DISTINCT u.id, u.username, u.enabled, u.created_at,
+             COALESCE(m.role, u.role) AS role,
+             lower(u.username) AS username_sort
+      FROM public.admin_users u
+      LEFT JOIN public.admin_user_tenant_roles m ON m.admin_user_id = u.id AND m.tenant_id = $1
+      WHERE m.tenant_id IS NOT NULL OR u.tenant_id = $1
+    ) sub
+    ORDER BY sub.username_sort ASC
     `,
     [tenantId]
   );

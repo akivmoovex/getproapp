@@ -66,12 +66,15 @@ function serializeAuditRow(row) {
 async function listTenantUsersForCrm(pool, tenantId) {
   const r = await pool.query(
     `
-    SELECT DISTINCT u.id, u.username
-    FROM public.admin_users u
-    LEFT JOIN public.admin_user_tenant_roles m ON m.admin_user_id = u.id AND m.tenant_id = $1
-    WHERE COALESCE(u.enabled, TRUE) = TRUE
-      AND (m.tenant_id IS NOT NULL OR u.tenant_id = $1)
-    ORDER BY lower(u.username) ASC
+    SELECT sub.id, sub.username
+    FROM (
+      SELECT DISTINCT u.id, u.username, lower(u.username) AS username_sort
+      FROM public.admin_users u
+      LEFT JOIN public.admin_user_tenant_roles m ON m.admin_user_id = u.id AND m.tenant_id = $1
+      WHERE COALESCE(u.enabled, TRUE) = TRUE
+        AND (m.tenant_id IS NOT NULL OR u.tenant_id = $1)
+    ) sub
+    ORDER BY sub.username_sort ASC
     `,
     [tenantId]
   );
