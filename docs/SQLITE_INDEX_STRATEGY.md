@@ -1,5 +1,7 @@
 # SQLite index strategy (evidence-based)
 
+> **Note:** The implementation files this doc references (`src/db/indexes.js`, `src/db/migrations/*.js`) were **removed** from current branches. Treat the body below as **historical / design rationale**; recover SQL from **Git history** if needed. **Production indexes** live in PostgreSQL (`db/postgres/*.sql` and migrations there).
+
 Indexes are added only where real application queries show `WHERE` / `JOIN` / `ORDER BY` patterns. Speculative indexes are avoided.
 
 ## Pre-implementation: table → pattern → support → proposal

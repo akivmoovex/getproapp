@@ -2,6 +2,8 @@
  * Admin “Client Lead Status” list: tenant-scoped intake projects, whitelisted sort/filter/pagination.
  */
 
+const companiesRepo = require("../db/pg/companiesRepo");
+
 const SORT_MAP = {
   project_code: "p.project_code",
   city: "p.city",
@@ -108,24 +110,73 @@ function buildIntakeProjectStatusQueryParts(tenantId, q) {
 }
 
 /**
- * @param {import("better-sqlite3").Database} db
+ * @param {import("pg").Pool} pool
  * @param {number} tenantId
- * @param {Record<string, string | undefined>} q raw req.query
+ * @param {Record<string, string | undefined>} q
  */
-function buildIntakeProjectStatusList(db, tenantId, q) {
-  const { tid, whereSql, params, filters, sortKey, dir, orderCol } = buildIntakeProjectStatusQueryParts(
-    tenantId,
-    q
-  );
+async function buildIntakeProjectStatusListPg(pool, tenantId, q) {
+  const { tid, filters, sortKey, dir, orderCol } = buildIntakeProjectStatusQueryParts(tenantId, q);
+  const params = [];
+  let i = 1;
+  const next = (v) => {
+    params.push(v);
+    return `$${i++}`;
+  };
+
+  const where = [`p.tenant_id = ${next(tid)}`];
+
+  const qtext = String(q.q || "").trim();
+  if (qtext) {
+    const esc = escapeLike(qtext);
+    const like = `%${esc}%`;
+    const a = next(like);
+    const b = next(like);
+    where.push(`(p.project_code LIKE ${a} ESCAPE '\\' OR c.client_code LIKE ${b} ESCAPE '\\')`);
+  }
+
+  const projectStatus = String(q.project_status || "").trim().toLowerCase();
+  if (projectStatus) {
+    where.push(`lower(trim(p.status)) = ${next(projectStatus)}`);
+  }
+
+  const city = String(q.city || "").trim();
+  if (city) {
+    where.push(`trim(p.city) = ${next(city)}`);
+  }
+
+  const asg = String(q.assignment_status || "").trim().toLowerCase();
+  if (asg && ASSIGNMENT_STATUS_FILTER.has(asg)) {
+    where.push(
+      `EXISTS (SELECT 1 FROM intake_project_assignments a0 WHERE a0.project_id = p.id AND a0.tenant_id = p.tenant_id AND lower(trim(a0.status)) = ${next(asg)})`
+    );
+  }
+
+  const companyId = Number(q.company_id);
+  if (companyId > 0) {
+    where.push(
+      `EXISTS (SELECT 1 FROM intake_project_assignments a1 WHERE a1.project_id = p.id AND a1.tenant_id = p.tenant_id AND a1.company_id = ${next(companyId)})`
+    );
+  }
+
+  const df = String(q.date_from || "").trim();
+  if (df) {
+    where.push(`p.created_at::date >= ${next(df)}::date`);
+  }
+  const dt = String(q.date_to || "").trim();
+  if (dt) {
+    where.push(`p.created_at::date <= ${next(dt)}::date`);
+  }
+
+  const whereSql = where.join(" AND ");
 
   const countSql = `
-    SELECT COUNT(*) AS c
+    SELECT COUNT(*)::int AS c
     FROM intake_client_projects p
     INNER JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
     WHERE ${whereSql}
   `;
-  const totalRow = db.prepare(countSql).get(...params);
-  const total = totalRow && totalRow.c != null ? Number(totalRow.c) : 0;
+  const totalRow = await pool.query(countSql, params);
+  const total = totalRow.rows[0] && totalRow.rows[0].c != null ? Number(totalRow.rows[0].c) : 0;
 
   const maxPage = Math.max(1, Math.min(MAX_PAGE, Math.ceil(total / PAGE_SIZE) || 1));
   let page = parseInt(String(q.page || "1"), 10);
@@ -133,6 +184,8 @@ function buildIntakeProjectStatusList(db, tenantId, q) {
   if (page > maxPage) page = maxPage;
   const offset = (page - 1) * PAGE_SIZE;
 
+  const lim = next(PAGE_SIZE);
+  const off = next(offset);
   const dataSql = `
     SELECT
       p.id,
@@ -146,27 +199,30 @@ function buildIntakeProjectStatusList(db, tenantId, q) {
       p.status AS project_status,
       p.created_at,
       p.updated_at,
-      (SELECT COUNT(*) FROM intake_project_assignments ax WHERE ax.project_id = p.id AND ax.tenant_id = p.tenant_id) AS assign_count,
-      (SELECT group_concat(ax2.status, ',') FROM intake_project_assignments ax2 WHERE ax2.project_id = p.id AND ax2.tenant_id = p.tenant_id) AS assign_statuses_raw
+      (SELECT COUNT(*)::int FROM intake_project_assignments ax WHERE ax.project_id = p.id AND ax.tenant_id = p.tenant_id) AS assign_count,
+      (SELECT string_agg(ax2.status::text, ',' ORDER BY ax2.id) FROM intake_project_assignments ax2 WHERE ax2.project_id = p.id AND ax2.tenant_id = p.tenant_id) AS assign_statuses_raw
     FROM intake_client_projects p
     INNER JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
     WHERE ${whereSql}
     ORDER BY ${orderCol} ${dir}, p.id DESC
-    LIMIT ? OFFSET ?
+    LIMIT ${lim} OFFSET ${off}
   `;
 
-  const rows = db.prepare(dataSql).all(...params, PAGE_SIZE, offset);
+  const dataRes = await pool.query(dataSql, params);
+  const rows = dataRes.rows.map((r) => {
+    const o = { ...r };
+    for (const k of ["created_at", "updated_at"]) {
+      if (o[k] instanceof Date) o[k] = o[k].toISOString().replace("T", " ").slice(0, 19);
+    }
+    return o;
+  });
 
-  const companies = db
-    .prepare(`SELECT id, name, subdomain FROM companies WHERE tenant_id = ? ORDER BY name ASC`)
-    .all(tid);
-
-  const cities = db
-    .prepare(
-      `SELECT DISTINCT trim(p.city) AS city FROM intake_client_projects p WHERE p.tenant_id = ? AND length(trim(p.city)) > 0 ORDER BY city ASC`
-    )
-    .all(tid)
-    .map((r) => r.city);
+  const companies = await companiesRepo.listIdNameSubdomainForTenant(pool, tid);
+  const citiesRes = await pool.query(
+    `SELECT DISTINCT trim(p.city) AS city FROM intake_client_projects p WHERE p.tenant_id = $1 AND length(trim(p.city)) > 0 ORDER BY city ASC`,
+    [tid]
+  );
+  const cities = citiesRes.rows.map((r) => r.city);
 
   const filtersOut = {
     ...filters,
@@ -185,6 +241,15 @@ function buildIntakeProjectStatusList(db, tenantId, q) {
     dir: dir.toLowerCase(),
     filters: filtersOut,
   };
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {Record<string, string | undefined>} q
+ */
+async function buildIntakeProjectStatusListWithStore(pool, tenantId, q) {
+  return buildIntakeProjectStatusListPg(pool, tenantId, q);
 }
 
 function summarizeAssignmentStatuses(raw) {
@@ -233,7 +298,7 @@ function sortToggleHref(filters, sortKey, currentSort, currentDir) {
 }
 
 module.exports = {
-  buildIntakeProjectStatusList,
+  buildIntakeProjectStatusListWithStore,
   summarizeAssignmentStatuses,
   ASSIGNMENT_STATUS_FILTER,
   SORT_MAP,

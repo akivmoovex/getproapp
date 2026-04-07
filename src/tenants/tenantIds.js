@@ -1,5 +1,6 @@
 /**
- * Canonical tenant primary keys (SQLite `tenants.id`). Keep in sync with `src/db/schema.js`, migrations, and seeds.
+ * Canonical numeric tenant ids (historically aligned with SQLite `tenants.id` and legacy seed rows — see Git history for removed `src/db/schema.js`).
+ * Runtime uses PostgreSQL; keep these constants consistent with `public.tenants` data and any legacy SQLite tooling.
  */
 const CANONICAL_TENANT_SLUGS_LIST = ["global", "demo", "il", "zm", "zw", "bw", "za", "na"];
 

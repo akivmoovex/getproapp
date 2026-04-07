@@ -13,32 +13,41 @@ const {
 } = require("../../companies/companyProfile");
 const { isValidPhoneForTenant } = require("../../tenants");
 const { LEAD_STATUSES, normalizeLeadStatus, leadStatusLabel } = require("../../crm/leadStatuses");
-const { ADMIN_COMPANY_LEAD_SELECT, mapAdminCompanyLeadRow } = require("../../crm/leadCompanyRequestViewModel");
 const { buildCompanyPageLocals } = require("../../companies/companyPageRender");
-const { tenantUsesZmwLeadCredits, isLeadAcceptanceBlockedByCredit } = require("../../companyPortal/companyPortalLeadCredits");
 const {
-  listRecentLedgerEntries,
-  recordAdminPaymentCredit,
+  tenantUsesZmwLeadCreditsWithStore,
+  isLeadAcceptanceBlockedByCreditWithStore,
+} = require("../../companyPortal/companyPortalLeadCredits");
+const {
+  listRecentLedgerEntriesAsync,
+  recordAdminPaymentCreditAsync,
   paymentMethodLabel,
   PAYMENT_METHODS,
 } = require("../../companyPortal/companyPortalCreditLedger");
 const {
   redirectWithEmbed,
   getAdminTenantId,
-  getCategoriesForSelect,
-  uniqueCompanySubdomainForTenant,
+  getCategoriesForSelectAsync,
+  uniqueCompanySubdomainForTenantAsync,
   parseEditMode,
   filterSuffixFromQuery,
-  mergeDraftCompanyForPreview,
+  mergeDraftCompanyForPreviewAsync,
 } = require("./adminShared");
+const { getPgPool } = require("../../db/pg");
+const callbacksRepo = require("../../db/pg/callbacksRepo");
+const categoriesRepo = require("../../db/pg/categoriesRepo");
+const companiesRepo = require("../../db/pg/companiesRepo");
+const leadsRepo = require("../../db/pg/leadsRepo");
+const tenantCitiesRepo = require("../../db/pg/tenantCitiesRepo");
+const professionalSignupsRepo = require("../../db/pg/professionalSignupsRepo");
+const reviewsRepo = require("../../db/pg/reviewsRepo");
+const tenantsRepo = require("../../db/pg/tenantsRepo");
 
-module.exports = function registerAdminDirectoryRoutes(router, deps) {
-  const { db } = deps;
-  router.get("/categories", requireDirectoryEditor, (req, res) => {
+module.exports = function registerAdminDirectoryRoutes(router) {
+  router.get("/categories", requireDirectoryEditor, async (req, res) => {
     const tid = getAdminTenantId(req);
-    const allCategories = db
-      .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
-      .all(tid);
+    const pool = getPgPool();
+    const allCategories = await categoriesRepo.listByTenantId(pool, tid);
     let categories = allCategories;
     const qn = String(req.query.q_name || "").trim().toLowerCase();
     const qs = String(req.query.q_slug || "").trim().toLowerCase();
@@ -69,7 +78,7 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     return res.render("admin/category_form", { category: null });
   });
 
-  router.post("/categories", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/categories", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const { name = "", slug = "" } = req.body || {};
     const cleanName = String(name).trim();
     const cleanSlug = String(slug || "").trim() ? String(slug).trim().toLowerCase() : slugify(cleanName);
@@ -77,23 +86,25 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     if (!cleanName) return res.status(400).send("Category name is required.");
     if (!cleanSlug) return res.status(400).send("Category slug is required.");
 
+    const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     try {
-      const tid = getAdminTenantId(req);
-      db.prepare("INSERT INTO categories (tenant_id, slug, name) VALUES (?, ?, ?)").run(tid, cleanSlug, cleanName);
+      await categoriesRepo.insert(pool, { tenantId: tid, slug: cleanSlug, name: cleanName });
       return res.redirect(redirectWithEmbed(req, "/admin/categories?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not create category: ${e.message}`);
     }
   });
 
-  router.get("/categories/:id/edit", requireDirectoryEditor, (req, res) => {
+  router.get("/categories/:id/edit", requireDirectoryEditor, async (req, res) => {
     const tid = getAdminTenantId(req);
-    const category = db.prepare("SELECT * FROM categories WHERE id = ? AND tenant_id = ?").get(req.params.id, tid);
+    const pool = getPgPool();
+    const category = await categoriesRepo.getByIdAndTenantId(pool, req.params.id, tid);
     if (!category) return res.status(404).send("Category not found");
     return res.render("admin/category_form", { category });
   });
 
-  router.post("/categories/:id", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/categories/:id", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const { name = "", slug = "" } = req.body || {};
     const cleanName = String(name).trim();
     const cleanSlug = String(slug || "").trim() ? String(slug).trim().toLowerCase() : slugify(cleanName);
@@ -101,39 +112,40 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     if (!cleanName) return res.status(400).send("Category name is required.");
     if (!cleanSlug) return res.status(400).send("Category slug is required.");
 
+    const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     try {
-      const tid = getAdminTenantId(req);
-      const r = db
-        .prepare("UPDATE categories SET slug = ?, name = ? WHERE id = ? AND tenant_id = ?")
-        .run(cleanSlug, cleanName, req.params.id, tid);
-      if (r.changes === 0) return res.status(404).send("Category not found");
+      const row = await categoriesRepo.update(pool, {
+        id: Number(req.params.id),
+        tenantId: tid,
+        slug: cleanSlug,
+        name: cleanName,
+      });
+      if (!row) return res.status(404).send("Category not found");
       return res.redirect(redirectWithEmbed(req, "/admin/categories?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not update category: ${e.message}`);
     }
   });
 
-  router.post("/categories/:id/delete", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/categories/:id/delete", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const catId = Number(req.params.id);
     if (!catId) return res.status(400).send("Invalid id");
     const tid = getAdminTenantId(req);
-    const inTx = db.transaction(() => {
-      db.prepare("UPDATE companies SET category_id = NULL WHERE category_id = ? AND tenant_id = ?").run(catId, tid);
-      db.prepare("DELETE FROM categories WHERE id = ? AND tenant_id = ?").run(catId, tid);
-    });
+    const pool = getPgPool();
     try {
-      inTx();
+      const ok = await categoriesRepo.deleteByIdAndTenantId(pool, catId, tid);
+      if (!ok) return res.status(404).send("Category not found");
       return res.redirect(redirectWithEmbed(req, "/admin/categories?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not delete category: ${e.message}`);
     }
   });
 
-  router.get("/cities", requireDirectoryEditor, (req, res) => {
+  router.get("/cities", requireDirectoryEditor, async (req, res) => {
     const tid = getAdminTenantId(req);
-    let cities = db
-      .prepare("SELECT * FROM tenant_cities WHERE tenant_id = ? ORDER BY name COLLATE NOCASE ASC")
-      .all(tid);
+    const pool = getPgPool();
+    const cities = await tenantCitiesRepo.listByTenantIdOrderByName(pool, tid);
     const qn = String(req.query.q_name || "").trim().toLowerCase();
     const qen = String(req.query.q_enabled || "").trim().toLowerCase();
     const qb = String(req.query.q_big || "").trim().toLowerCase();
@@ -156,57 +168,50 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     });
   });
 
-  router.post("/cities", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/cities", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const name = String(req.body.name || "").trim();
     if (!name) return res.status(400).send("City name is required.");
-    const enabled = req.body.enabled === "1" || req.body.enabled === "on" ? 1 : 0;
-    const bigCity = req.body.big_city === "1" || req.body.big_city === "on" ? 1 : 0;
+    const enabled = req.body.enabled === "1" || req.body.enabled === "on";
+    const bigCity = req.body.big_city === "1" || req.body.big_city === "on";
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     try {
-      db.prepare("INSERT INTO tenant_cities (tenant_id, name, enabled, big_city) VALUES (?, ?, ?, ?)").run(
-        tid,
-        name,
-        enabled,
-        bigCity
-      );
+      await tenantCitiesRepo.insert(pool, { tenantId: tid, name, enabled, bigCity });
       return res.redirect(redirectWithEmbed(req, "/admin/cities?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not add city: ${e.message}`);
     }
   });
 
-  router.post("/cities/:id", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/cities/:id", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const cleanName = String(req.body.name || "").trim();
     if (!cleanName) return res.status(400).send("City name is required.");
-    const enabled = req.body.enabled === "1" || req.body.enabled === "on" ? 1 : 0;
-    const bigCity = req.body.big_city === "1" || req.body.big_city === "on" ? 1 : 0;
+    const enabled = req.body.enabled === "1" || req.body.enabled === "on";
+    const bigCity = req.body.big_city === "1" || req.body.big_city === "on";
     const tid = getAdminTenantId(req);
-    const r = db
-      .prepare("UPDATE tenant_cities SET name = ?, enabled = ?, big_city = ? WHERE id = ? AND tenant_id = ?")
-      .run(cleanName, enabled, bigCity, req.params.id, tid);
-    if (r.changes === 0) return res.status(404).send("City not found");
+    const pool = getPgPool();
+    const row = await tenantCitiesRepo.updateByIdAndTenantId(pool, {
+      id: Number(req.params.id),
+      tenantId: tid,
+      name: cleanName,
+      enabled,
+      bigCity,
+    });
+    if (!row) return res.status(404).send("City not found");
     return res.redirect(redirectWithEmbed(req, "/admin/cities?edit=1"));
   });
 
-  router.post("/cities/:id/delete", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/cities/:id/delete", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const tid = getAdminTenantId(req);
-    db.prepare("DELETE FROM tenant_cities WHERE id = ? AND tenant_id = ?").run(req.params.id, tid);
+    const pool = getPgPool();
+    await tenantCitiesRepo.deleteByIdAndTenantId(pool, Number(req.params.id), tid);
     return res.redirect(redirectWithEmbed(req, "/admin/cities?edit=1"));
   });
 
-  router.get("/companies", requireDirectoryEditor, (req, res) => {
+  router.get("/companies", requireDirectoryEditor, async (req, res) => {
     const tid = getAdminTenantId(req);
-    let companies = db
-      .prepare(
-        `
-        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-        FROM companies c
-        LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-        WHERE c.tenant_id = ?
-        ORDER BY c.updated_at DESC
-        `
-      )
-      .all(tid);
+    const pool = getPgPool();
+    let companies = await companiesRepo.listAdminWithCategory(pool, tid);
     const qn = String(req.query.q_name || "").trim().toLowerCase();
     const qs = String(req.query.q_subdomain || "").trim().toLowerCase();
     const qc = String(req.query.q_category || "").trim().toLowerCase();
@@ -221,21 +226,26 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     }
     const editMode = parseEditMode(req);
     const filterSuffix = filterSuffixFromQuery(req);
-    const tsCompanies = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
     const baseDomain = (process.env.BASE_DOMAIN || "").trim();
     const scheme = process.env.PUBLIC_SCHEME || "https";
-    const tenantSlug = tsCompanies && tsCompanies.slug ? String(tsCompanies.slug) : "";
-    const portalCreditUiActive = tenantUsesZmwLeadCredits(db, tid);
-    const companiesWithUrls = companies.map((c) => {
-      const sub = String(c.subdomain || "").trim();
-      const miniSitePublicUrl =
-        baseDomain && tenantSlug && sub
-          ? `${scheme}://${tenantSlug}.${baseDomain}/${encodeURIComponent(sub)}`
-          : "";
-      const portal_credit_blocked =
-        portalCreditUiActive && isLeadAcceptanceBlockedByCredit(db, tid, c.portal_lead_credits_balance);
-      return { ...c, miniSitePublicUrl, portal_credit_blocked };
-    });
+    const tr = await tenantsRepo.getById(pool, tid);
+    const tenantSlug = tr && tr.slug ? String(tr.slug) : "";
+    const portalCreditUiActive = await tenantUsesZmwLeadCreditsWithStore(pool, tid);
+    const companiesWithUrls = await Promise.all(
+      companies.map(async (c) => {
+        const sub = String(c.subdomain || "").trim();
+        const miniSitePublicUrl =
+          baseDomain && tenantSlug && sub
+            ? `${scheme}://${tenantSlug}.${baseDomain}/${encodeURIComponent(sub)}`
+            : "";
+        const portal_credit_blocked = await isLeadAcceptanceBlockedByCreditWithStore(
+          pool,
+          tid,
+          c.portal_lead_credits_balance
+        );
+        return { ...c, miniSitePublicUrl, portal_credit_blocked };
+      })
+    );
     const saved = req.query.saved === "1" || req.query.saved === "true";
     return res.render("admin/companies", {
       companies: companiesWithUrls,
@@ -254,12 +264,13 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     });
   });
 
-  router.get("/companies/new", requireDirectoryEditor, (req, res) => {
+  router.get("/companies/new", requireDirectoryEditor, async (req, res) => {
     const tid = getAdminTenantId(req);
-    const categories = getCategoriesForSelect(db, tid);
-    const ts = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    const categories = await getCategoriesForSelectAsync(db, tid);
+    const pool = getPgPool();
+    const tr = await tenantsRepo.getById(pool, tid);
+    const tenantSlug = tr && tr.slug ? String(tr.slug) : "";
     const baseForUrls = (process.env.BASE_DOMAIN || "").trim() || "getproapp.org";
-    const tenantSlug = ts ? String(ts.slug) : "";
     const saved = req.query.saved === "1" || req.query.saved === "true";
     return res.render("admin/company_form", {
       company: null,
@@ -276,33 +287,28 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     });
   });
 
-  router.get("/companies/:id/workspace", requireDirectoryEditor, (req, res) => {
+  router.get("/companies/:id/workspace", requireDirectoryEditor, async (req, res) => {
     const tid = getAdminTenantId(req);
     const cid = Number(req.params.id);
     if (!cid || cid < 1) return res.status(400).send("Invalid id");
-    const company = db
-      .prepare(
-        `
-        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-        FROM companies c
-        LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-        WHERE c.id = ? AND c.tenant_id = ?
-        `
-      )
-      .get(cid, tid);
+    const pool = getPgPool();
+    const company = await companiesRepo.getWithCategoryByIdAndTenantId(pool, cid, tid);
     if (!company) return res.status(404).send("Company not found");
-    const categories = getCategoriesForSelect(db, tid);
-    const tsEdit = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    const categories = await getCategoriesForSelectAsync(db, tid);
+    const trWs = await tenantsRepo.getById(pool, tid);
+    const tenantSlug = trWs && trWs.slug ? String(trWs.slug) : "";
     const galleryAdminText = galleryToAdminText(parseGalleryJson(company.gallery_json));
     const baseForUrls = (process.env.BASE_DOMAIN || "").trim() || "getproapp.org";
-    const tenantSlug = tsEdit ? String(tsEdit.slug) : "";
     const miniSiteUrl = buildCompanyMiniSiteUrl(tenantSlug, company.subdomain, baseForUrls);
     const miniSiteLabel = companyMiniSiteLabel(tenantSlug, company.subdomain, baseForUrls);
     const directoryProfileUrl = absoluteCompanyProfileUrl(tenantSlug, company.id);
-    const portalCreditUiActive = tenantUsesZmwLeadCredits(db, tid);
-    const portalCreditBlocked =
-      portalCreditUiActive && isLeadAcceptanceBlockedByCredit(db, tid, company.portal_lead_credits_balance);
-    const recentLedgerRaw = portalCreditUiActive ? listRecentLedgerEntries(db, tid, cid, 25) : [];
+    const portalCreditUiActive = await tenantUsesZmwLeadCreditsWithStore(pool, tid);
+    const portalCreditBlocked = await isLeadAcceptanceBlockedByCreditWithStore(
+      pool,
+      tid,
+      company.portal_lead_credits_balance
+    );
+    const recentLedgerRaw = portalCreditUiActive ? await listRecentLedgerEntriesAsync(pool, tid, cid, 25) : [];
     const recentLedgerEntries = recentLedgerRaw.map((r) => ({
       ...r,
       payment_method_label: paymentMethodLabel(r.payment_method),
@@ -336,14 +342,12 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     "/companies/:id/portal-credit-payment",
     requireDirectoryEditor,
     requireNotViewer,
-    (req, res) => {
+    async (req, res) => {
       const tid = getAdminTenantId(req);
       const cid = Number(req.params.id);
       if (!cid || cid < 1) return res.status(400).send("Invalid id.");
-      if (!tenantUsesZmwLeadCredits(db, tid)) {
-        return res.status(400).send("Credit ledger applies only in ZMW (Zambia) regions.");
-      }
-      const result = recordAdminPaymentCredit(db, {
+      const pool = getPgPool();
+      const payload = {
         tenantId: tid,
         companyId: cid,
         adminUserId: req.session.adminUser.id,
@@ -353,7 +357,11 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
         paymentDate: req.body && req.body.payment_date,
         approverName: req.body && req.body.approver_name,
         notes: req.body && req.body.notes,
-      });
+      };
+      if (!(await tenantUsesZmwLeadCreditsWithStore(pool, tid))) {
+        return res.status(400).send("Credit ledger applies only in ZMW (Zambia) regions.");
+      }
+      const result = await recordAdminPaymentCreditAsync(pool, payload);
       if (!result.ok) {
         return res.redirect(
           redirectWithEmbed(req, `/admin/companies/${cid}/workspace?credit_error=` + encodeURIComponent(result.error))
@@ -374,18 +382,10 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
       const tid = getAdminTenantId(req);
       const cid = Number(req.params.id);
       if (!cid || cid < 1) return res.status(400).type("text").send("Invalid id");
-      const company = db
-        .prepare(
-          `
-          SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-          FROM companies c
-          LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-          WHERE c.id = ? AND c.tenant_id = ?
-          `
-        )
-        .get(cid, tid);
+      const pool = getPgPool();
+      const company = await companiesRepo.getWithCategoryByIdAndTenantId(pool, cid, tid);
       if (!company) return res.status(404).type("text").send("Not found");
-      const locals = await buildCompanyPageLocals(req, db, company);
+      const locals = await buildCompanyPageLocals(req, company);
       return res.render("company", locals);
     } catch (e) {
       return next(e);
@@ -397,20 +397,12 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
       const tid = getAdminTenantId(req);
       const cid = Number(req.params.id);
       if (!cid || cid < 1) return res.status(400).json({ error: "Invalid id" });
-      const baseRow = db
-        .prepare(
-          `
-          SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-          FROM companies c
-          LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-          WHERE c.id = ? AND c.tenant_id = ?
-          `
-        )
-        .get(cid, tid);
+      const pool = getPgPool();
+      const baseRow = await companiesRepo.getWithCategoryByIdAndTenantId(pool, cid, tid);
       if (!baseRow) return res.status(404).json({ error: "Company not found" });
       const draft = req.body && req.body.company ? req.body.company : {};
-      const merged = mergeDraftCompanyForPreview(db, baseRow, draft);
-      const locals = await buildCompanyPageLocals(req, db, merged, {});
+      const merged = await mergeDraftCompanyForPreviewAsync(pool, baseRow, draft);
+      const locals = await buildCompanyPageLocals(req, merged, {});
       return res.render("company", locals, (err, html) => {
         if (err) return next(err);
         return res.type("html").send(html);
@@ -420,11 +412,12 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     }
   });
 
-  router.post("/companies/:id/publish", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/companies/:id/publish", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const tid = getAdminTenantId(req);
     const cid = Number(req.params.id);
     if (!cid || cid < 1) return res.status(400).json({ error: "Invalid id" });
-    const row = db.prepare("SELECT * FROM companies WHERE id = ? AND tenant_id = ?").get(cid, tid);
+    const pool = getPgPool();
+    const row = await companiesRepo.getByIdAndTenantId(pool, cid, tid);
     if (!row) return res.status(404).json({ error: "Company not found" });
 
     const d = (req.body && req.body.company) || {};
@@ -441,14 +434,15 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
       if (catId != null && Number.isNaN(catId)) catId = null;
     }
     if (catId) {
-      const okCat = db.prepare("SELECT id FROM categories WHERE id = ? AND tenant_id = ?").get(catId, tid);
+      const okCat = await categoriesRepo.getByIdAndTenantId(pool, catId, tid);
       if (!okCat) return res.status(400).json({ error: "Invalid category for this tenant." });
     }
 
-    const tenantSlugRowUp = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    const trPub = await tenantsRepo.getById(pool, tid);
+    const tenantZmCheck = trPub && String(trPub.slug || "") === "zm";
     const phoneVal = d.phone !== undefined ? String(d.phone).trim() : row.phone;
     const fpVal = d.featured_cta_phone !== undefined ? String(d.featured_cta_phone).trim() : row.featured_cta_phone;
-    if (tenantSlugRowUp && tenantSlugRowUp.slug === "zm") {
+    if (tenantZmCheck) {
       if (phoneVal && !isValidPhoneForTenant("zm", phoneVal)) {
         return res.status(400).json({ error: "Phone must be a Zambian number: 0 followed by 9 digits (10 digits total)." });
       }
@@ -474,67 +468,30 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     );
 
     try {
-      db.transaction(() => {
-        db.prepare(
-          `
-          UPDATE companies
-          SET
-            subdomain = ?,
-            name = ?,
-            category_id = ?,
-            headline = ?,
-            about = ?,
-            services = ?,
-            phone = ?,
-            email = ?,
-            location = ?,
-            featured_cta_label = ?,
-            featured_cta_phone = ?,
-            years_experience = ?,
-            service_areas = ?,
-            hours_text = ?,
-            gallery_json = ?,
-            logo_url = ?,
-            updated_at = datetime('now')
-          WHERE id = ? AND tenant_id = ?
-          `
-        ).run(
-          cleanSubdomain,
-          cleanName,
-          catId,
-          d.headline !== undefined ? String(d.headline).trim() : row.headline,
-          d.about !== undefined ? String(d.about).trim() : row.about,
-          d.services !== undefined ? String(d.services).trim() : row.services,
-          phoneVal,
-          d.email !== undefined ? String(d.email).trim() : row.email,
-          d.location !== undefined ? String(d.location).trim() : row.location,
-          d.featured_cta_label !== undefined
-            ? String(d.featured_cta_label).trim() || "Call us"
-            : row.featured_cta_label,
-          fpVal,
-          yearsExpUp,
-          d.service_areas !== undefined ? String(d.service_areas).trim() : row.service_areas,
-          d.hours_text !== undefined ? String(d.hours_text).trim() : row.hours_text,
-          galleryJsonUp,
-          d.logo_url !== undefined ? String(d.logo_url).trim() : row.logo_url,
-          cid,
-          tid
-        );
-      })();
-
-      const saved = db
-        .prepare(
-          `
-          SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-          FROM companies c
-          LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-          WHERE c.id = ? AND c.tenant_id = ?
-          `
-        )
-        .get(cid, tid);
-      const reviewsOut = db
-        .prepare(`SELECT id, rating, body, author_name, created_at FROM reviews WHERE company_id = ? ORDER BY datetime(created_at) DESC`)
-        .all(cid);
+      const updated = await companiesRepo.updateFullByIdAndTenantId(pool, {
+        id: cid,
+        tenantId: tid,
+        subdomain: cleanSubdomain,
+        name: cleanName,
+        categoryId: catId,
+        headline: d.headline !== undefined ? String(d.headline).trim() : row.headline,
+        about: d.about !== undefined ? String(d.about).trim() : row.about,
+        services: d.services !== undefined ? String(d.services).trim() : row.services,
+        phone: phoneVal,
+        email: d.email !== undefined ? String(d.email).trim() : row.email,
+        location: d.location !== undefined ? String(d.location).trim() : row.location,
+        featuredCtaLabel:
+          d.featured_cta_label !== undefined ? String(d.featured_cta_label).trim() || "Call us" : row.featured_cta_label,
+        featuredCtaPhone: fpVal,
+        yearsExperience: yearsExpUp,
+        serviceAreas: d.service_areas !== undefined ? String(d.service_areas).trim() : row.service_areas,
+        hoursText: d.hours_text !== undefined ? String(d.hours_text).trim() : row.hours_text,
+        galleryJson: galleryJsonUp,
+        logoUrl: d.logo_url !== undefined ? String(d.logo_url).trim() : row.logo_url,
+      });
+      if (!updated) return res.status(404).json({ error: "Company not found" });
+      const saved = await companiesRepo.getWithCategoryByIdAndTenantId(pool, cid, tid);
+      const reviewsOut = await reviewsRepo.listForCompanyAdminOrderByCreatedDesc(pool, cid);
       const galleryAdminTextOut = galleryToAdminText(parseGalleryJson(saved.gallery_json));
       return res.json({ ok: true, company: saved, reviews: reviewsOut, galleryAdminText: galleryAdminTextOut });
     } catch (e) {
@@ -542,7 +499,7 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     }
   });
 
-  router.post("/companies", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/companies", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const {
       name = "",
       subdomain = "",
@@ -569,13 +526,15 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
 
     const catId = category_id ? Number(category_id) : null;
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     if (catId) {
-      const okCat = db.prepare("SELECT id FROM categories WHERE id = ? AND tenant_id = ?").get(catId, tid);
+      const okCat = await categoriesRepo.getByIdAndTenantId(pool, catId, tid);
       if (!okCat) return res.status(400).send("Invalid category for this tenant.");
     }
 
-    const tenantSlugRow = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
-    if (tenantSlugRow && tenantSlugRow.slug === "zm") {
+    const trCreate = await tenantsRepo.getById(pool, tid);
+    const tenantZmCheckHtmlCreate = trCreate && String(trCreate.slug || "") === "zm";
+    if (tenantZmCheckHtmlCreate) {
       const p = String(phone || "").trim();
       const fp = String(featured_cta_phone || "").trim();
       if (p && !isValidPhoneForTenant("zm", p)) {
@@ -598,34 +557,25 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     const galleryJson = JSON.stringify(parseGalleryAdminText(gallery_text));
 
     try {
-      db.prepare(
-        `
-        INSERT INTO companies
-          (subdomain, name, category_id, headline, about, services, phone, email, location, featured_cta_label, featured_cta_phone, tenant_id, updated_at,
-           years_experience, service_areas, hours_text, gallery_json, logo_url)
-        VALUES
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'),
-           ?, ?, ?, ?, ?)
-        `
-      ).run(
-        cleanSubdomain,
-        cleanName,
-        catId,
-        String(headline || "").trim(),
-        String(about || "").trim(),
-        String(services || "").trim(),
-        String(phone || "").trim(),
-        String(email || "").trim(),
-        String(location || "").trim(),
-        String(featured_cta_label || "").trim() || "Call us",
-        String(featured_cta_phone || "").trim(),
-        tid,
-        yearsExp,
-        String(service_areas || "").trim(),
-        String(hours_text || "").trim(),
+      await companiesRepo.insertFull(pool, {
+        tenantId: tid,
+        subdomain: cleanSubdomain,
+        name: cleanName,
+        categoryId: catId,
+        headline: String(headline || "").trim(),
+        about: String(about || "").trim(),
+        services: String(services || "").trim(),
+        phone: String(phone || "").trim(),
+        email: String(email || "").trim(),
+        location: String(location || "").trim(),
+        featuredCtaLabel: String(featured_cta_label || "").trim() || "Call us",
+        featuredCtaPhone: String(featured_cta_phone || "").trim(),
+        yearsExperience: yearsExp,
+        serviceAreas: String(service_areas || "").trim(),
+        hoursText: String(hours_text || "").trim(),
         galleryJson,
-        String(logo_url || "").trim()
-      );
+        logoUrl: String(logo_url || "").trim(),
+      });
       return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1&saved=1"));
     } catch (e) {
       return res.status(400).send(`Could not create company: ${e.message}`);
@@ -636,7 +586,7 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     return res.redirect(redirectWithEmbed(req, `/admin/companies/${encodeURIComponent(req.params.id)}/workspace`));
   });
 
-  router.post("/companies/:id", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/companies/:id", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const {
       name = "",
       subdomain = "",
@@ -663,13 +613,18 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
 
     const catId = category_id ? Number(category_id) : null;
     const tid = getAdminTenantId(req);
+    const cid = Number(req.params.id);
+    if (!cid || cid < 1) return res.status(400).send("Invalid id");
+
+    const pool = getPgPool();
     if (catId) {
-      const okCat = db.prepare("SELECT id FROM categories WHERE id = ? AND tenant_id = ?").get(catId, tid);
+      const okCat = await categoriesRepo.getByIdAndTenantId(pool, catId, tid);
       if (!okCat) return res.status(400).send("Invalid category for this tenant.");
     }
 
-    const tenantSlugRowUp = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
-    if (tenantSlugRowUp && tenantSlugRowUp.slug === "zm") {
+    const trUp = await tenantsRepo.getById(pool, tid);
+    const tenantZmCheckHtmlUpdate = trUp && String(trUp.slug || "") === "zm";
+    if (tenantZmCheckHtmlUpdate) {
       const p = String(phone || "").trim();
       const fp = String(featured_cta_phone || "").trim();
       if (p && !isValidPhoneForTenant("zm", p)) {
@@ -692,63 +647,62 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     const galleryJsonUp = JSON.stringify(parseGalleryAdminText(gallery_text));
 
     try {
-      const r = db.prepare(
-        `
-        UPDATE companies
-        SET
-          subdomain = ?,
-          name = ?,
-          category_id = ?,
-          headline = ?,
-          about = ?,
-          services = ?,
-          phone = ?,
-          email = ?,
-          location = ?,
-          featured_cta_label = ?,
-          featured_cta_phone = ?,
-          years_experience = ?,
-          service_areas = ?,
-          hours_text = ?,
-          gallery_json = ?,
-          logo_url = ?,
-          updated_at = datetime('now')
-        WHERE id = ? AND tenant_id = ?
-        `
-      ).run(
-        cleanSubdomain,
-        cleanName,
-        catId,
-        String(headline || "").trim(),
-        String(about || "").trim(),
-        String(services || "").trim(),
-        String(phone || "").trim(),
-        String(email || "").trim(),
-        String(location || "").trim(),
-        String(featured_cta_label || "").trim() || "Call us",
-        String(featured_cta_phone || "").trim(),
-        yearsExpUp,
-        String(service_areas || "").trim(),
-        String(hours_text || "").trim(),
-        galleryJsonUp,
-        String(logo_url || "").trim(),
-        req.params.id,
-        tid
-      );
-      if (r.changes === 0) return res.status(404).send("Company not found");
+      const updated = await companiesRepo.updateFullByIdAndTenantId(pool, {
+        id: cid,
+        tenantId: tid,
+        subdomain: cleanSubdomain,
+        name: cleanName,
+        categoryId: catId,
+        headline: String(headline || "").trim(),
+        about: String(about || "").trim(),
+        services: String(services || "").trim(),
+        phone: String(phone || "").trim(),
+        email: String(email || "").trim(),
+        location: String(location || "").trim(),
+        featuredCtaLabel: String(featured_cta_label || "").trim() || "Call us",
+        featuredCtaPhone: String(featured_cta_phone || "").trim(),
+        yearsExperience: yearsExpUp,
+        serviceAreas: String(service_areas || "").trim(),
+        hoursText: String(hours_text || "").trim(),
+        galleryJson: galleryJsonUp,
+        logoUrl: String(logo_url || "").trim(),
+      });
+      if (!updated) return res.status(404).send("Company not found");
       return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1&saved=1"));
     } catch (e) {
       return res.status(400).send(`Could not update company: ${e.message}`);
     }
   });
 
-  router.post("/companies/:id/delete", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/companies/:id/delete", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const companyId = Number(req.params.id);
     if (!companyId) return res.status(400).send("Invalid id");
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     try {
-      db.prepare("DELETE FROM leads WHERE company_id = ? AND tenant_id = ?").run(companyId, tid);
-      db.prepare("DELETE FROM companies WHERE id = ? AND tenant_id = ?").run(companyId, tid);
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        await client.query(`DELETE FROM public.leads WHERE company_id = $1 AND tenant_id = $2`, [companyId, tid]);
+        const del = await client.query(`DELETE FROM public.companies WHERE id = $1 AND tenant_id = $2 RETURNING id`, [
+          companyId,
+          tid,
+        ]);
+        if (del.rowCount === 0) {
+          await client.query("ROLLBACK");
+          return res.status(404).send("Company not found");
+        }
+        await client.query("COMMIT");
+      } catch (e) {
+        try {
+          await client.query("ROLLBACK");
+        } catch (_) {
+          /* ignore */
+        }
+        throw e;
+      } finally {
+        client.release();
+      }
       return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1"));
     } catch (e) {
       return res.status(400).send(`Could not delete company: ${e.message}`);
@@ -756,108 +710,50 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
   });
 
   /** Company leads: optional `company_id` filter is an explicit admin choice, not inferred from category/city. */
-  router.get("/leads", (req, res) => {
-    const tid = getAdminTenantId(req);
+  router.get("/leads", async (req, res, next) => {
+    try {
+      const tid = getAdminTenantId(req);
 
-    let leads = [];
-    let companies = [];
-    let selectedCompanyId = null;
-    const companyId = req.query.company_id ? Number(req.query.company_id) : null;
-    selectedCompanyId = companyId;
-    companies = db
-      .prepare("SELECT id, name, subdomain FROM companies WHERE tenant_id = ? ORDER BY name ASC")
-      .all(tid);
+      let leads = [];
+      let companies = [];
+      let selectedCompanyId = null;
+      const companyId = req.query.company_id ? Number(req.query.company_id) : null;
+      selectedCompanyId = companyId;
+      const pool = getPgPool();
+      companies = await companiesRepo.listIdNameSubdomainForTenant(pool, tid);
 
-    if (companyId) {
-      leads = db
-        .prepare(
-          `
-          SELECT ${ADMIN_COMPANY_LEAD_SELECT}
-          FROM leads l
-          INNER JOIN companies c ON c.id = l.company_id
-          WHERE l.company_id = ? AND l.tenant_id = ? AND c.tenant_id = ?
-          ORDER BY l.created_at DESC
-          `
-        )
-        .all(companyId, tid, tid)
-        .map(mapAdminCompanyLeadRow)
-        .filter(Boolean);
-    } else {
-      leads = db
-        .prepare(
-          `
-          SELECT ${ADMIN_COMPANY_LEAD_SELECT}
-          FROM leads l
-          INNER JOIN companies c ON c.id = l.company_id
-          WHERE l.tenant_id = ?
-          ORDER BY l.created_at DESC
-          LIMIT 200
-          `
-        )
-        .all(tid)
-        .map(mapAdminCompanyLeadRow)
-        .filter(Boolean);
+      if (companyId) {
+        leads = await leadsRepo.listForAdminByCompany(pool, companyId, tid);
+      } else {
+        leads = await leadsRepo.listForAdminByTenant(pool, tid, 200);
+      }
+
+      const partnerCallbacks = await callbacksRepo.listForAdminByTenantId(pool, tid, 200);
+      const partnerSignups = await professionalSignupsRepo.listByTenantId(pool, tid, 200);
+
+      return res.render("admin/leads", {
+        leads,
+        companies,
+        selectedCompanyId,
+        partnerCallbacks,
+        partnerSignups,
+        role: req.session.adminUser.role,
+        isViewer: isTenantViewer(req.session.adminUser.role),
+        leadStatusLabel,
+      });
+    } catch (e) {
+      next(e);
     }
-
-    const partnerCallbacks = db
-      .prepare(
-        `
-        SELECT id, phone, name, context, interest_label, created_at
-        FROM callback_interests
-        WHERE tenant_id = ?
-        ORDER BY created_at DESC
-        LIMIT 200
-        `
-      )
-      .all(tid);
-
-    const partnerSignups = db
-      .prepare(
-        `
-        SELECT id, profession, city, name, phone, vat_or_pacra, created_at,
-               COALESCE(converted_company_id, 0) AS converted_company_id
-        FROM professional_signups
-        WHERE tenant_id = ?
-        ORDER BY created_at DESC
-        LIMIT 200
-        `
-      )
-      .all(tid);
-
-    return res.render("admin/leads", {
-      leads,
-      companies,
-      selectedCompanyId,
-      partnerCallbacks,
-      partnerSignups,
-      role: req.session.adminUser.role,
-      isViewer: isTenantViewer(req.session.adminUser.role),
-      leadStatusLabel,
-    });
   });
 
-  router.get("/leads/:id/edit", requireDirectoryEditor, (req, res) => {
+  router.get("/leads/:id/edit", requireDirectoryEditor, async (req, res) => {
     const tid = getAdminTenantId(req);
     const id = Number(req.params.id);
     if (!id || id < 1) return res.status(400).send("Invalid id");
-    const lead = mapAdminCompanyLeadRow(
-      db
-        .prepare(
-          `
-          SELECT ${ADMIN_COMPANY_LEAD_SELECT}
-          FROM leads l
-          INNER JOIN companies c ON c.id = l.company_id
-          WHERE l.id = ? AND l.tenant_id = ? AND c.tenant_id = ?
-          `
-        )
-        .get(id, tid, tid)
-    );
+    const pool = getPgPool();
+    const lead = await leadsRepo.getForAdminById(pool, id, tid);
+    const comments = await leadsRepo.listCommentsByLeadId(pool, id);
     if (!lead) return res.status(404).send("Lead not found");
-    const comments = db
-      .prepare(
-        `SELECT id, body, created_at FROM lead_comments WHERE lead_id = ? ORDER BY datetime(created_at) ASC, id ASC`
-      )
-      .all(id);
     const saved = req.query.saved === "1" || req.query.saved === "true";
     return res.render("admin/lead_edit", {
       lead,
@@ -869,46 +765,45 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     });
   });
 
-  router.post("/leads/:id", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/leads/:id", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const tid = getAdminTenantId(req);
     const id = Number(req.params.id);
     if (!id || id < 1) return res.status(400).send("Invalid id");
-    const row = db.prepare("SELECT id FROM leads WHERE id = ? AND tenant_id = ?").get(id, tid);
-    if (!row) return res.status(404).send("Lead not found");
-
+    const pool = getPgPool();
     const status = normalizeLeadStatus(req.body && req.body.status);
     const comment = String((req.body && req.body.comment) || "").trim();
 
     try {
-      db.transaction(() => {
-        db.prepare(`UPDATE leads SET status = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`).run(
-          status,
-          id,
-          tid
-        );
-        if (comment) {
-          db.prepare(`INSERT INTO lead_comments (lead_id, body) VALUES (?, ?)`).run(id, comment.slice(0, 4000));
-        }
-      })();
+      const exists = await leadsRepo.existsByIdAndTenantId(pool, id, tid);
+      if (!exists) return res.status(404).send("Lead not found");
+      const result = await leadsRepo.updateStatusWithOptionalComment(pool, {
+        tenantId: tid,
+        leadId: id,
+        status,
+        comment,
+      });
+      if (!result.ok) return res.status(404).send("Lead not found");
     } catch (e) {
       return res.status(400).send(e.message || "Could not save");
     }
     return res.redirect(redirectWithEmbed(req, `/admin/leads/${id}/edit?saved=1`));
   });
 
-  router.get("/partner-signups/:id", requireDirectoryEditor, (req, res) => {
+  router.get("/partner-signups/:id", requireDirectoryEditor, async (req, res) => {
     const tid = getAdminTenantId(req);
     const id = Number(req.params.id);
     if (!id || id < 1) return res.status(400).send("Invalid id");
-    const signup = db.prepare("SELECT * FROM professional_signups WHERE id = ? AND tenant_id = ?").get(id, tid);
+    const pool = getPgPool();
+    const signup = await professionalSignupsRepo.getByIdAndTenantId(pool, id, tid);
     if (!signup) return res.status(404).send("Join signup not found.");
     const conv = signup.converted_company_id != null ? Number(signup.converted_company_id) : 0;
     let convertedCompany = null;
     if (conv > 0) {
-      convertedCompany = db.prepare("SELECT id, name, subdomain FROM companies WHERE id = ? AND tenant_id = ?").get(conv, tid);
+      const r = await companiesRepo.getByIdAndTenantId(pool, conv, tid);
+      convertedCompany = r ? { id: r.id, name: r.name, subdomain: r.subdomain } : null;
     }
-    const categories = getCategoriesForSelect(db, tid);
-    const defaultSub = uniqueCompanySubdomainForTenant(db, tid, signup.name || signup.profession || "listing");
+    const categories = await getCategoriesForSelectAsync(db, tid);
+    const defaultSub = await uniqueCompanySubdomainForTenantAsync(tid, signup.name || signup.profession || "listing");
     return res.render("admin/partner_signup_convert", {
       signup,
       categories,
@@ -918,11 +813,12 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     });
   });
 
-  router.post("/partner-signups/:id/convert-to-company", requireDirectoryEditor, requireNotViewer, (req, res) => {
+  router.post("/partner-signups/:id/convert-to-company", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const tid = getAdminTenantId(req);
     const id = Number(req.params.id);
     if (!id || id < 1) return res.status(400).send("Invalid id");
-    const signup = db.prepare("SELECT * FROM professional_signups WHERE id = ? AND tenant_id = ?").get(id, tid);
+    const pool = getPgPool();
+    const signup = await professionalSignupsRepo.getByIdAndTenantId(pool, id, tid);
     if (!signup) return res.status(404).send("Join signup not found.");
     const conv = signup.converted_company_id != null ? Number(signup.converted_company_id) : 0;
     if (conv > 0) return res.status(400).send("This signup was already converted.");
@@ -931,12 +827,12 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     const cleanName = String(body.name || signup.name || "").trim();
     let cleanSubdomain = String(body.subdomain || "").trim().toLowerCase();
     if (!cleanName) return res.status(400).send("Company name is required.");
-    if (!cleanSubdomain) cleanSubdomain = uniqueCompanySubdomainForTenant(db, tid, cleanName);
+    if (!cleanSubdomain) cleanSubdomain = await uniqueCompanySubdomainForTenantAsync(tid, cleanName);
     else cleanSubdomain = slugify(cleanSubdomain, { lower: true, strict: true, trim: true }).slice(0, 80);
 
     const catId = body.category_id ? Number(body.category_id) : null;
     if (catId) {
-      const okCat = db.prepare("SELECT id FROM categories WHERE id = ? AND tenant_id = ?").get(catId, tid);
+      const okCat = await categoriesRepo.getByIdAndTenantId(pool, catId, tid);
       if (!okCat) return res.status(400).send("Invalid category for this tenant.");
     }
 
@@ -953,8 +849,9 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     const logo_url = String(body.logo_url || "").trim();
     const gallery_text = String(body.gallery_text || "").trim();
 
-    const tenantSlugRow = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
-    if (tenantSlugRow && tenantSlugRow.slug === "zm") {
+    const trConv = await tenantsRepo.getById(pool, tid);
+    const tenantZmCheckConvert = trConv && String(trConv.slug || "") === "zm";
+    if (tenantZmCheckConvert) {
       if (phone && !isValidPhoneForTenant("zm", phone)) {
         return res.status(400).send("Phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
       }
@@ -970,52 +867,32 @@ module.exports = function registerAdminDirectoryRoutes(router, deps) {
     }
 
     const galleryJson = JSON.stringify(parseGalleryAdminText(gallery_text));
-    const dup = db.prepare("SELECT 1 FROM companies WHERE tenant_id = ? AND subdomain = ?").get(tid, cleanSubdomain);
+    const dup = await companiesRepo.existsSubdomainForTenant(pool, tid, cleanSubdomain);
     if (dup) return res.status(400).send("That mini-site slug is already in use for this region.");
 
     let newCompanyId = null;
     try {
-      db.transaction(() => {
-        const r = db
-          .prepare(
-            `
-            INSERT INTO companies
-              (subdomain, name, category_id, headline, about, services, phone, email, location, featured_cta_label, featured_cta_phone, tenant_id, updated_at,
-               years_experience, service_areas, hours_text, gallery_json, logo_url)
-            VALUES
-              (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'),
-               ?, ?, ?, ?, ?)
-            `
-          )
-          .run(
-            cleanSubdomain,
-            cleanName,
-            catId,
-            headline,
-            about,
-            services,
-            phone,
-            email,
-            location,
-            featured_cta_label,
-            featured_cta_phone,
-            tid,
-            yearsExp,
-            service_areas,
-            hours_text,
-            galleryJson,
-            logo_url
-          );
-        newCompanyId = Number(r.lastInsertRowid);
-        const hasConv = db.prepare("PRAGMA table_info(professional_signups)").all().some((c) => c.name === "converted_company_id");
-        if (hasConv) {
-          db.prepare("UPDATE professional_signups SET converted_company_id = ? WHERE id = ? AND tenant_id = ?").run(
-            newCompanyId,
-            id,
-            tid
-          );
-        }
-      })();
+      const raw = await companiesRepo.insertFull(pool, {
+        tenantId: tid,
+        subdomain: cleanSubdomain,
+        name: cleanName,
+        categoryId: catId,
+        headline,
+        about,
+        services,
+        phone,
+        email,
+        location,
+        featuredCtaLabel: featured_cta_label,
+        featuredCtaPhone: featured_cta_phone,
+        yearsExperience: yearsExp,
+        serviceAreas: service_areas,
+        hoursText: hours_text,
+        galleryJson,
+        logoUrl: logo_url,
+      });
+      newCompanyId = raw.id;
+      await professionalSignupsRepo.setConvertedCompanyId(pool, id, tid, newCompanyId);
     } catch (e) {
       return res.status(400).send(e.message || "Could not create company");
     }

@@ -12,28 +12,38 @@ const {
   requireClientProjectIntakeMutate,
 } = require("../../auth");
 const {
-  buildIntakeProjectStatusList,
+  buildIntakeProjectStatusListWithStore,
   summarizeAssignmentStatuses,
   sortToggleHref,
   buildProjectStatusHref,
 } = require("../../intake/adminIntakeProjectStatus");
 const { assignmentStatusLabelForPortal } = require("../../intake/intakeProjectCompanyViewModel");
-const { getTenantCitiesForClient } = require("../../tenants/tenantCities");
+const { getTenantCitiesForClientAsync } = require("../../tenants/tenantCities");
 const clientIntake = require("../../intake/clientProjectIntake");
 const {
-  validateIntakeProjectForPublish,
+  validateIntakeProjectForPublishAsync,
   INTAKE_PROJECT_PUBLISHABLE_STATUSES,
-  getCategoryResponseWindowHours,
+  getCategoryResponseWindowHoursAsync,
 } = require("../../intake/intakeProjectPublishValidation");
 const intakeProjectAllocation = require("../../intake/intakeProjectAllocation");
 const { isValidPhoneForTenant } = require("../../tenants");
 const { redirectWithEmbed, getAdminTenantId } = require("./adminShared");
+const { getPgPool } = require("../../db/pg");
+const categoriesRepo = require("../../db/pg/categoriesRepo");
+const companiesRepo = require("../../db/pg/companiesRepo");
+const companyPersonnelUsersRepo = require("../../db/pg/companyPersonnelUsersRepo");
+const tenantsRepo = require("../../db/pg/tenantsRepo");
+const intakeClientsRepo = require("../../db/pg/intakeClientsRepo");
+const intakeClientProjectsRepo = require("../../db/pg/intakeClientProjectsRepo");
+const intakeProjectImagesRepo = require("../../db/pg/intakeProjectImagesRepo");
+const intakePhoneOtpRepo = require("../../db/pg/intakePhoneOtpRepo");
+const intakeAssignmentsRepo = require("../../db/pg/intakeAssignmentsRepo");
 
 module.exports = function registerAdminIntakeRoutes(router, deps) {
-  const { db, projectIntakeUpload } = deps;
+  const { projectIntakeUpload } = deps;
   // —— Client / project intake (“New Project”) ——
-  function intakeCityAllowed(dbConn, tenantId, cityName) {
-    const names = getTenantCitiesForClient(dbConn, tenantId).map((c) => String(c.name).trim());
+  async function intakeCityAllowed(pool, tenantId, cityName) {
+    const names = (await getTenantCitiesForClientAsync(pool, tenantId)).map((c) => String(c.name).trim());
     const c = String(cityName || "").trim();
     return names.includes(c);
   }
@@ -86,15 +96,16 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     });
   }
 
-  router.get("/project-intake", requireClientProjectIntakeAccess, (req, res) => {
+  router.get("/project-intake", requireClientProjectIntakeAccess, async (req, res) => {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const phone = String((req.query && req.query.phone) || "").trim();
     const nrz = String((req.query && req.query.nrz) || "").trim();
     let foundClient = null;
     let searched = false;
     if (phone || nrz) {
       searched = true;
-      foundClient = clientIntake.findClientBySearch(db, tid, { phone, nrz });
+      foundClient = await clientIntake.findClientBySearchWithStore(pool, tid, { phone, nrz });
     }
     return renderProjectIntakeSearch(req, res, {
       phone,
@@ -107,15 +118,16 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
   });
 
   /** POST search: same tenant-scoped lookup as GET; does not require mutation (viewers may search). */
-  router.post("/project-intake/search", requireClientProjectIntakeAccess, (req, res) => {
+  router.post("/project-intake/search", requireClientProjectIntakeAccess, async (req, res) => {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const b = req.body || {};
     const phone = String(b.phone || "").trim();
     const nrz = String(b.nrz || "").trim();
     let foundClient = null;
     const searched = !!(phone || nrz);
     if (searched) {
-      foundClient = clientIntake.findClientBySearch(db, tid, { phone, nrz });
+      foundClient = await clientIntake.findClientBySearchWithStore(pool, tid, { phone, nrz });
     }
     return renderProjectIntakeSearch(req, res, {
       phone,
@@ -149,8 +161,9 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     });
   });
 
-  router.post("/project-intake/clients", requireClientProjectIntakeAccess, requireClientProjectIntakeMutate, (req, res) => {
+  router.post("/project-intake/clients", requireClientProjectIntakeAccess, requireClientProjectIntakeMutate, async (req, res) => {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const uid = req.session.adminUser.id;
     const b = req.body || {};
     const external_client_reference = String(b.external_client_reference || "").trim().slice(0, 120);
@@ -168,7 +181,7 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     if (!full_name) {
       return res.redirect(redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent("Name is required.")));
     }
-    const pv = clientIntake.validatePhonesForTenant(db, tid, phone, whatsapp_phone);
+    const pv = await clientIntake.validatePhonesForTenantWithStore(pool, tid, phone, whatsapp_phone);
     if (!pv.ok) {
       return res.redirect(redirectWithEmbed(req, "/admin/project-intake/clients/new?error=" + encodeURIComponent(pv.error)));
     }
@@ -181,7 +194,7 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     const phoneNorm = clientIntake.normalizeDigits(phone);
     const nrzNorm = nrzCheck.value;
 
-    const duplicateClient = clientIntake.findClientBySearch(db, tid, { phone, nrz: nrzRaw });
+    const duplicateClient = await clientIntake.findClientBySearchWithStore(pool, tid, { phone, nrz: nrzRaw });
     if (duplicateClient) {
       return res.redirect(
         redirectWithEmbed(
@@ -196,37 +209,33 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
 
     let client_code;
     try {
-      client_code = clientIntake.nextSequentialCode(db, tid, "client");
+      client_code = await clientIntake.nextSequentialCodeWithStore(pool, tid, "client");
     } catch (e) {
       return res.status(400).send(e.message || "Could not allocate client code.");
     }
 
+    let newClientId;
     try {
-      db.prepare(
-        `INSERT INTO intake_clients (
-          tenant_id, client_code, external_client_reference, full_name, phone, phone_normalized, whatsapp_phone,
-          nrz_number, nrz_normalized, address_street, address_house_number, address_apartment_number,
-          updated_by_admin_user_id, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
-      ).run(
-        tid,
-        client_code,
-        external_client_reference,
-        full_name,
+      newClientId = await intakeClientsRepo.insertClient(pool, {
+        tenantId: tid,
+        clientCode: client_code,
+        externalClientReference: external_client_reference || null,
+        fullName: full_name,
         phone,
-        phoneNorm,
-        whatsapp_phone,
-        nrzRaw,
-        nrzNorm,
-        address_street,
-        address_house_number,
-        address_apartment_number,
-        uid
-      );
+        phoneNormalized: phoneNorm,
+        whatsappPhone: whatsapp_phone,
+        nrzNumber: nrzRaw,
+        nrzNormalized: nrzNorm,
+        addressStreet: address_street,
+        addressHouseNumber: address_house_number,
+        addressApartmentNumber: address_apartment_number,
+        updatedByAdminUserId: uid,
+      });
     } catch (e) {
       const msg = String(e.message || "");
-      if (msg.includes("UNIQUE")) {
-        const again = clientIntake.findClientBySearch(db, tid, { phone, nrz: nrzRaw });
+      const uniquePg = e.code === "23505";
+      if (msg.includes("UNIQUE") || uniquePg) {
+        const again = await clientIntake.findClientBySearchWithStore(pool, tid, { phone, nrz: nrzRaw });
         if (again) {
           return res.redirect(
             redirectWithEmbed(
@@ -239,11 +248,7 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
           );
         }
         if (external_client_reference) {
-          const extDup = db
-            .prepare(
-              "SELECT client_code FROM intake_clients WHERE tenant_id = ? AND external_client_reference = ? LIMIT 1"
-            )
-            .get(tid, external_client_reference);
+          const extDup = await intakeClientsRepo.findClientCodeByExtRef(pool, tid, external_client_reference);
           const dupMsg = extDup
             ? `That external reference is already used by client ${extDup.client_code} in this region. Enter a different reference or search by phone/NRZ to open that client.`
             : "That external client reference is already in use in this region. Use a different reference or search for the existing client.";
@@ -258,12 +263,10 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
       return res.status(400).send(msg || "Could not create client.");
     }
 
-    const row = db
-      .prepare("SELECT id FROM intake_clients WHERE tenant_id = ? AND client_code = ?")
-      .get(tid, client_code);
+    if (!newClientId) return res.status(400).send("Could not create client.");
 
     if (send_otp_after && phoneNorm) {
-      const recent = clientIntake.countRecentOtpSends(db, tid, phoneNorm);
+      const recent = await clientIntake.countRecentOtpSendsWithStore(pool, tid, phoneNorm);
       let otpNotice = "";
       let otpOk = "0";
       if (recent >= 5) {
@@ -274,11 +277,13 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
         const code = clientIntake.generateOtpDigits();
         const send = clientIntake.sendOtpPlaceholder({ phoneDisplay: phone, code });
         if (send.sent) {
-          const exp = db.prepare(`SELECT datetime('now', '+10 minutes') AS e`).get().e;
-          db.prepare(
-            `INSERT INTO intake_phone_otp (tenant_id, client_id, phone_normalized, code_hash, purpose, expires_at, max_attempts)
-             VALUES (?, ?, ?, ?, 'phone_verify', ?, 5)`
-          ).run(tid, row.id, phoneNorm, clientIntake.hashOtpCode(code, tid, phoneNorm), exp);
+          await intakePhoneOtpRepo.insertOtp(pool, {
+            tenantId: tid,
+            clientId: newClientId,
+            phoneNormalized: phoneNorm,
+            codeHash: clientIntake.hashOtpCode(code, tid, phoneNorm),
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+          });
           if (send.devMode) {
             otpNotice =
               "OTP issued successfully. This environment does not send SMS — check the server log for the verification code, then enter it below.";
@@ -295,14 +300,14 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
         }
       }
       const otpQ = "&otp_notice=" + encodeURIComponent(otpNotice) + "&otp_ok=" + otpOk;
-      return res.redirect(redirectWithEmbed(req, `/admin/project-intake/project/new?clientId=${row.id}${otpQ}`));
+      return res.redirect(redirectWithEmbed(req, `/admin/project-intake/project/new?clientId=${newClientId}${otpQ}`));
     }
 
     if (send_otp_after && !phoneNorm) {
       return res.redirect(
         redirectWithEmbed(
           req,
-          `/admin/project-intake/project/new?clientId=${row.id}&otp_notice=` +
+          `/admin/project-intake/project/new?clientId=${newClientId}&otp_notice=` +
             encodeURIComponent(
               "We could not send an OTP: the phone number could not be normalized. The client was saved — fix the number and use Send OTP on the project page."
             ) +
@@ -311,22 +316,24 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
       );
     }
 
-    return res.redirect(redirectWithEmbed(req, `/admin/project-intake/project/new?clientId=${row.id}`));
+    return res.redirect(redirectWithEmbed(req, `/admin/project-intake/project/new?clientId=${newClientId}`));
   });
 
-  router.get("/project-intake/project/new", requireClientProjectIntakeAccess, (req, res) => {
+  router.get("/project-intake/project/new", requireClientProjectIntakeAccess, async (req, res) => {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const clientId = Number(req.query.clientId);
     if (!clientId || clientId < 1) {
       return res.redirect(redirectWithEmbed(req, "/admin/project-intake?error=" + encodeURIComponent("Missing client.")));
     }
-    const client = db.prepare("SELECT * FROM intake_clients WHERE id = ? AND tenant_id = ?").get(clientId, tid);
+    const client = await intakeClientsRepo.getByIdAndTenant(pool, clientId, tid);
     if (!client) return res.status(404).send("Client not found.");
-    const cities = getTenantCitiesForClient(db, tid);
-    const intakeCategories = db
-      .prepare(`SELECT id, name FROM categories WHERE tenant_id = ? ORDER BY name COLLATE NOCASE ASC`)
-      .all(tid);
-    const budget = clientIntake.getBudgetMetaForTenant(db, tid);
+    const cities = await getTenantCitiesForClientAsync(pool, tid);
+    const catRows = await categoriesRepo.listByTenantId(pool, tid);
+    const intakeCategories = catRows
+      .map((r) => ({ id: r.id, name: r.name }))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }));
+    const budget = await clientIntake.getBudgetMetaForTenantWithStore(pool, tid);
     return res.render("admin/project_intake_project", {
       activeNav: "project_intake",
       navTitle: "New project",
@@ -350,13 +357,14 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     intakeMulterProjectImages,
     async (req, res) => {
       const tid = getAdminTenantId(req);
+      const pool = getPgPool();
       const b = req.body || {};
       const clientId = Number(b.client_id);
-      const client = db.prepare("SELECT * FROM intake_clients WHERE id = ? AND tenant_id = ?").get(clientId, tid);
+      const client = await intakeClientsRepo.getByIdAndTenant(pool, clientId, tid);
       if (!client) return res.status(404).send("Client not found.");
 
       const city = String(b.city || "").trim();
-      if (!city || !intakeCityAllowed(db, tid, city)) {
+      if (!city || !(await intakeCityAllowed(pool, tid, city))) {
         return res.redirect(
           redirectWithEmbed(
             req,
@@ -390,7 +398,7 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
           )
         );
       }
-      const catOk = db.prepare(`SELECT id FROM categories WHERE id = ? AND tenant_id = ?`).get(intakeCategoryId, tid);
+      const catOk = await categoriesRepo.getByIdAndTenantId(pool, intakeCategoryId, tid);
       if (!catOk) {
         return res.redirect(
           redirectWithEmbed(
@@ -399,68 +407,50 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
           )
         );
       }
-      const budgetMeta = clientIntake.getBudgetMetaForTenant(db, tid);
+      const budgetMeta = await clientIntake.getBudgetMetaForTenantWithStore(pool, tid);
       const uid = req.session.adminUser.id;
 
       let project_code;
       try {
-        project_code = clientIntake.nextSequentialCode(db, tid, "project");
+        project_code = await clientIntake.nextSequentialCodeWithStore(pool, tid, "project");
       } catch (e) {
         return res.status(400).send(e.message || "Could not allocate project code.");
       }
 
       let projectId;
       try {
-        const info = db
-          .prepare(
-            `INSERT INTO intake_client_projects (
-              tenant_id, client_id, project_code,
-              client_full_name_snapshot, client_phone_snapshot,
-              city, neighborhood, street_name, house_number, apartment_number,
-              client_address_street, client_address_house_number, client_address_apartment_number,
-              estimated_budget_value, estimated_budget_currency, intake_category_id, status,
-              created_by_admin_user_id, updated_by_admin_user_id, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, datetime('now'))`
-          )
-          .run(
-            tid,
-            clientId,
-            project_code,
-            String(client.full_name || ""),
-            String(client.phone || ""),
-            city,
-            neighborhood,
-            street_name,
-            house_number,
-            apartment_number,
-            client_address_street,
-            client_address_house_number,
-            client_address_apartment_number,
-            budgetVal,
-            budgetMeta.code,
-            intakeCategoryId,
-            uid,
-            uid
-          );
-        projectId = Number(info.lastInsertRowid);
+        projectId = await intakeClientProjectsRepo.insertDraftProject(pool, {
+          tenantId: tid,
+          clientId,
+          projectCode: project_code,
+          clientFullNameSnapshot: String(client.full_name || ""),
+          clientPhoneSnapshot: String(client.phone || ""),
+          city,
+          neighborhood,
+          streetName: street_name,
+          houseNumber: house_number,
+          apartmentNumber: apartment_number,
+          clientAddressStreet: client_address_street,
+          clientAddressHouseNumber: client_address_house_number,
+          clientAddressApartmentNumber: client_address_apartment_number,
+          estimatedBudgetValue: budgetVal,
+          estimatedBudgetCurrency: budgetMeta.code,
+          intakeCategoryId,
+          adminUserId: uid,
+        });
       } catch (e) {
         return res.status(400).send(e.message || "Could not save project.");
       }
 
       try {
-        db.prepare(
-          `UPDATE intake_clients SET
-            address_street = ?, address_house_number = ?, address_apartment_number = ?,
-            updated_by_admin_user_id = ?, updated_at = datetime('now')
-           WHERE id = ? AND tenant_id = ?`
-        ).run(
-          client_address_street,
-          client_address_house_number,
-          client_address_apartment_number,
-          uid,
+        await intakeClientsRepo.updateAddressFromProjectForm(pool, {
+          street: client_address_street,
+          houseNumber: client_address_house_number,
+          apartmentNumber: client_address_apartment_number,
+          updatedByAdminUserId: uid,
           clientId,
-          tid
-        );
+          tenantId: tid,
+        });
       } catch (e) {
         return res.status(400).send(e.message || "Could not update client address.");
       }
@@ -477,12 +467,9 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
 
       try {
         const relPaths = await clientIntake.processAndSaveProjectImages(tid, projectId, files);
-        const ins = db.prepare(
-          `INSERT INTO intake_project_images (tenant_id, project_id, image_path, sort_order) VALUES (?, ?, ?, ?)`
-        );
         let ord = 0;
         for (const rel of relPaths) {
-          ins.run(tid, projectId, rel, ord++);
+          await intakeProjectImagesRepo.insertImage(pool, tid, projectId, rel, ord++);
         }
       } catch (e) {
         return res.redirect(
@@ -494,16 +481,11 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
         );
       }
 
-      const imgCountRow = db
-        .prepare(`SELECT COUNT(*) AS c FROM intake_project_images WHERE tenant_id = ? AND project_id = ?`)
-        .get(tid, projectId);
-      const imageCount = Number(imgCountRow && imgCountRow.c) || 0;
-      const savedProject = db.prepare(`SELECT * FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(projectId, tid);
-      const pubVal = validateIntakeProjectForPublish(db, tid, savedProject, imageCount);
+      const imageCount = await intakeProjectImagesRepo.countByProject(pool, tid, projectId);
+      const savedProject = await intakeClientProjectsRepo.getByIdAndTenant(pool, projectId, tid);
+      const pubVal = await validateIntakeProjectForPublishAsync(pool, tid, savedProject, imageCount);
       const nextLifecycle = pubVal.ok ? "ready_to_publish" : "needs_review";
-      db.prepare(
-        `UPDATE intake_client_projects SET status = ?, updated_by_admin_user_id = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
-      ).run(nextLifecycle, uid, projectId, tid);
+      await intakeClientProjectsRepo.updateStatus(pool, { status: nextLifecycle, adminUserId: uid, projectId, tenantId: tid });
 
       return res.redirect(redirectWithEmbed(req, `/admin/project-intake/success?projectId=${projectId}`));
     }
@@ -513,13 +495,14 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     "/projects/:id/intake-quick-edit",
     requireClientProjectIntakeAccess,
     requireClientProjectIntakeMutate,
-    (req, res) => {
+    async (req, res) => {
       const tid = getAdminTenantId(req);
+      const pool = getPgPool();
       const pid = Number(req.params.id);
       const uid = req.session.adminUser.id;
       const b = req.body || {};
       if (!pid || pid < 1) return res.status(400).send("Invalid project.");
-      const project = db.prepare(`SELECT id, status FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
+      const project = await intakeClientProjectsRepo.getIdAndStatus(pool, pid, tid);
       if (!project) return res.status(404).send("Project not found.");
       const st = String(project.status || "").trim().toLowerCase();
       if (!INTAKE_PROJECT_PUBLISHABLE_STATUSES.has(st)) {
@@ -537,23 +520,20 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
           redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent("Budget must be a non-negative number."))
         );
       }
-      db.prepare(
-        `UPDATE intake_client_projects SET
-          neighborhood = ?, street_name = ?, house_number = ?,
-          estimated_budget_value = ?,
-          updated_by_admin_user_id = ?, updated_at = datetime('now')
-         WHERE id = ? AND tenant_id = ?`
-      ).run(neighborhood, street_name, house_number, budgetVal, uid, pid, tid);
-      const full = db.prepare(`SELECT * FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
-      const imgCountRow = db
-        .prepare(`SELECT COUNT(*) AS c FROM intake_project_images WHERE tenant_id = ? AND project_id = ?`)
-        .get(tid, pid);
-      const imageCount = Number(imgCountRow && imgCountRow.c) || 0;
-      const pubVal = validateIntakeProjectForPublish(db, tid, full, imageCount);
+      await intakeClientProjectsRepo.updateQuickEdit(pool, {
+        neighborhood,
+        streetName: street_name,
+        houseNumber: house_number,
+        budgetVal,
+        adminUserId: uid,
+        projectId: pid,
+        tenantId: tid,
+      });
+      const full = await intakeClientProjectsRepo.getByIdAndTenant(pool, pid, tid);
+      const imageCount = await intakeProjectImagesRepo.countByProject(pool, tid, pid);
+      const pubVal = await validateIntakeProjectForPublishAsync(pool, tid, full, imageCount);
       const nextLifecycle = pubVal.ok ? "ready_to_publish" : "needs_review";
-      db.prepare(
-        `UPDATE intake_client_projects SET status = ?, updated_by_admin_user_id = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
-      ).run(nextLifecycle, uid, pid, tid);
+      await intakeClientProjectsRepo.updateStatus(pool, { status: nextLifecycle, adminUserId: uid, projectId: pid, tenantId: tid });
       return res.redirect(
         redirectWithEmbed(req, `/admin/projects/${pid}?notice=` + encodeURIComponent("Project details updated."))
       );
@@ -564,12 +544,13 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     "/project-intake/projects/:id/publish",
     requireClientProjectIntakeAccess,
     requireClientProjectIntakeMutate,
-    (req, res) => {
+    async (req, res) => {
       const tid = getAdminTenantId(req);
+      const pool = getPgPool();
       const pid = Number(req.params.id);
       const uid = req.session.adminUser.id;
       if (!pid || pid < 1) return res.status(400).send("Invalid project.");
-      const project = db.prepare(`SELECT * FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
+      const project = await intakeClientProjectsRepo.getByIdAndTenant(pool, pid, tid);
       if (!project) return res.status(404).send("Project not found.");
       const st = String(project.status || "").trim().toLowerCase();
       if (st === "published" || st === "closed") {
@@ -582,52 +563,31 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
           redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent("This project cannot be published from its current state."))
         );
       }
-      const imgCountRow = db
-        .prepare(`SELECT COUNT(*) AS c FROM intake_project_images WHERE tenant_id = ? AND project_id = ?`)
-        .get(tid, pid);
-      const imageCount = Number(imgCountRow && imgCountRow.c) || 0;
-      const pubVal = validateIntakeProjectForPublish(db, tid, project, imageCount);
+      const imageCount = await intakeProjectImagesRepo.countByProject(pool, tid, pid);
+      const pubVal = await validateIntakeProjectForPublishAsync(pool, tid, project, imageCount);
       if (!pubVal.ok) {
         const msg = pubVal.errors.map((e) => e.message).join(" ");
         return res.redirect(redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent(msg || "Project is not ready to publish.")));
       }
-      const txn = db.transaction(() => {
-        db.prepare(
-          `UPDATE intake_client_projects SET status = 'published', updated_by_admin_user_id = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
-        ).run(uid, pid, tid);
-        intakeProjectAllocation.onProjectPublished(db, tid, pid, uid);
-      });
-      txn();
+      await intakeClientProjectsRepo.updatePublished(pool, uid, pid, tid);
+      await intakeProjectAllocation.onProjectPublished(pool, tid, pid, uid);
       return res.redirect(
         redirectWithEmbed(req, `/admin/projects/${pid}?notice=` + encodeURIComponent("Project published. Eligible providers are assigned per allocation rules; companies see leads in the portal when assigned."))
       );
     }
   );
 
-  router.get("/project-intake/success", requireClientProjectIntakeAccess, (req, res) => {
+  router.get("/project-intake/success", requireClientProjectIntakeAccess, async (req, res) => {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const projectId = Number(req.query.projectId);
     if (!projectId || projectId < 1) return res.redirect(redirectWithEmbed(req, "/admin/project-intake"));
-    const project = db
-      .prepare(
-        `SELECT p.*, c.client_code,
-            COALESCE(NULLIF(trim(p.client_full_name_snapshot), ''), c.full_name) AS client_name,
-            COALESCE(NULLIF(trim(p.client_phone_snapshot), ''), c.phone) AS client_phone,
-            c.external_client_reference
-         FROM intake_client_projects p
-         JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
-         WHERE p.id = ? AND p.tenant_id = ?`
-      )
-      .get(projectId, tid);
+    const project = await intakeClientProjectsRepo.getSuccessView(pool, projectId, tid);
+    const images = await intakeProjectImagesRepo.listByProject(pool, tid, projectId);
     if (!project) return res.status(404).send("Project not found.");
-    const images = db
-      .prepare(
-        `SELECT id, image_path, sort_order FROM intake_project_images WHERE tenant_id = ? AND project_id = ? ORDER BY sort_order ASC, id ASC`
-      )
-      .all(tid, projectId);
-    const budget = clientIntake.getBudgetMetaForTenant(db, tid);
+    const budget = await clientIntake.getBudgetMetaForTenantWithStore(pool, tid);
     const imageCount = images.length;
-    const publishValidation = validateIntakeProjectForPublish(db, tid, project, imageCount);
+    const publishValidation = await validateIntakeProjectForPublishAsync(pool, tid, project, imageCount);
     const lifecycle = String(project.status || "").trim().toLowerCase();
     const showPublishOnSuccess = INTAKE_PROJECT_PUBLISHABLE_STATUSES.has(lifecycle);
     return res.render("admin/project_intake_success", {
@@ -643,27 +603,29 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     });
   });
 
-  router.get("/project-intake/files/:id", requireClientProjectIntakeAccess, (req, res) => {
+  router.get("/project-intake/files/:id", requireClientProjectIntakeAccess, async (req, res) => {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const id = Number(req.params.id);
     if (!id || id < 1) return res.status(400).send("Invalid id.");
-    const row = db.prepare("SELECT * FROM intake_project_images WHERE id = ? AND tenant_id = ?").get(id, tid);
+    const row = await intakeProjectImagesRepo.getByIdAndTenant(pool, id, tid);
     if (!row) return res.status(404).send("Not found.");
     const abs = clientIntake.safeAbsoluteImagePath(row.image_path);
     if (!abs || !fs.existsSync(abs)) return res.status(404).send("File missing.");
     return res.type("jpeg").sendFile(path.resolve(abs));
   });
 
-  router.post("/project-intake/otp/send", requireClientProjectIntakeAccess, requireClientProjectIntakeMutate, (req, res) => {
+  router.post("/project-intake/otp/send", requireClientProjectIntakeAccess, requireClientProjectIntakeMutate, async (req, res) => {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const clientId = Number((req.body && req.body.client_id) || 0);
     if (!clientId || clientId < 1) return res.status(400).send("Invalid client.");
-    const client = db.prepare("SELECT * FROM intake_clients WHERE id = ? AND tenant_id = ?").get(clientId, tid);
+    const client = await intakeClientsRepo.getByIdAndTenant(pool, clientId, tid);
     if (!client) return res.status(404).send("Client not found.");
     const phoneNorm = String(client.phone_normalized || "").trim();
     if (!phoneNorm) return res.status(400).send("Client has no phone on file.");
 
-    const recent = clientIntake.countRecentOtpSends(db, tid, phoneNorm);
+    const recent = await clientIntake.countRecentOtpSendsWithStore(pool, tid, phoneNorm);
     if (recent >= 5) {
       return res.redirect(
         redirectWithEmbed(
@@ -692,11 +654,13 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
         "&otp_ok=0";
       return res.redirect(redirectWithEmbed(req, next));
     }
-    const exp = db.prepare(`SELECT datetime('now', '+10 minutes') AS e`).get().e;
-    db.prepare(
-      `INSERT INTO intake_phone_otp (tenant_id, client_id, phone_normalized, code_hash, purpose, expires_at, max_attempts)
-       VALUES (?, ?, ?, ?, 'phone_verify', ?, 5)`
-    ).run(tid, clientId, phoneNorm, clientIntake.hashOtpCode(code, tid, phoneNorm), exp);
+    await intakePhoneOtpRepo.insertOtp(pool, {
+      tenantId: tid,
+      clientId,
+      phoneNormalized: phoneNorm,
+      codeHash: clientIntake.hashOtpCode(code, tid, phoneNorm),
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    });
 
     const okMsg = send.devMode
       ? "OTP issued successfully. This environment does not send SMS — check the server log for the code, then enter it below."
@@ -710,8 +674,9 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     return res.redirect(redirectWithEmbed(req, next));
   });
 
-  router.post("/project-intake/otp/verify", requireClientProjectIntakeAccess, requireClientProjectIntakeMutate, (req, res) => {
+  router.post("/project-intake/otp/verify", requireClientProjectIntakeAccess, requireClientProjectIntakeMutate, async (req, res) => {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const uid = req.session.adminUser.id;
     const clientId = Number((req.body && req.body.client_id) || 0);
     const code = String((req.body && req.body.otp_code) || "").trim();
@@ -725,18 +690,11 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
         )
       );
     }
-    const client = db.prepare("SELECT * FROM intake_clients WHERE id = ? AND tenant_id = ?").get(clientId, tid);
+    const client = await intakeClientsRepo.getByIdAndTenant(pool, clientId, tid);
     if (!client) return res.status(404).send("Client not found.");
     const phoneNorm = String(client.phone_normalized || "").trim();
 
-    const row = db
-      .prepare(
-        `SELECT * FROM intake_phone_otp
-         WHERE tenant_id = ? AND client_id = ? AND phone_normalized = ? AND verified_at IS NULL
-         AND datetime(expires_at) > datetime('now')
-         ORDER BY id DESC LIMIT 1`
-      )
-      .get(tid, clientId, phoneNorm);
+    const row = await intakePhoneOtpRepo.getActiveOtpForClientPhone(pool, tid, clientId, phoneNorm);
     if (!row) {
       return res.redirect(
         redirectWithEmbed(
@@ -770,7 +728,7 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     }
     const ok = clientIntake.verifyOtpCodeHash(code, row.code_hash, tid, row.phone_normalized);
     if (!ok) {
-      db.prepare(`UPDATE intake_phone_otp SET attempts = ? WHERE id = ? AND tenant_id = ?`).run(attempts, row.id, tid);
+      await intakePhoneOtpRepo.updateAttempts(pool, attempts, row.id, tid);
       return res.redirect(
         redirectWithEmbed(
           req,
@@ -780,14 +738,8 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
         )
       );
     }
-    db.prepare(`UPDATE intake_phone_otp SET attempts = ?, verified_at = datetime('now') WHERE id = ? AND tenant_id = ?`).run(
-      attempts,
-      row.id,
-      tid
-    );
-    db.prepare(
-      `UPDATE intake_clients SET phone_verified_at = datetime('now'), updated_by_admin_user_id = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
-    ).run(uid, clientId, tid);
+    await intakePhoneOtpRepo.markVerified(pool, attempts, row.id, tid);
+    await intakeClientsRepo.setPhoneVerified(pool, uid, clientId, tid);
     return res.redirect(
       redirectWithEmbed(
         req,
@@ -798,33 +750,11 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     );
   });
 
-  router.get("/projects", requireClientProjectIntakeAccess, (req, res) => {
+  router.get("/projects", requireClientProjectIntakeAccess, async (req, res) => {
     const tid = getAdminTenantId(req);
-    const projects = db
-      .prepare(
-        `SELECT
-          p.id,
-          p.project_code,
-          p.client_id,
-          c.client_code,
-          COALESCE(NULLIF(trim(p.client_full_name_snapshot), ''), c.full_name) AS client_display_name,
-          COALESCE(NULLIF(trim(p.client_phone_snapshot), ''), c.phone) AS client_display_phone,
-          p.city,
-          p.neighborhood,
-          p.estimated_budget_value,
-          p.estimated_budget_currency,
-          p.status,
-          p.created_at,
-          p.updated_at,
-          (SELECT COUNT(*) FROM intake_project_assignments a WHERE a.tenant_id = p.tenant_id AND a.project_id = p.id) AS assignment_count
-        FROM intake_client_projects p
-        INNER JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
-        WHERE p.tenant_id = ?
-        ORDER BY datetime(p.created_at) DESC
-        LIMIT 400`
-      )
-      .all(tid);
-    const budget = clientIntake.getBudgetMetaForTenant(db, tid);
+    const pool = getPgPool();
+    const projects = await intakeClientProjectsRepo.listForAdminProjectsPage(pool, tid, 400);
+    const budget = await clientIntake.getBudgetMetaForTenantWithStore(pool, tid);
     return res.render("admin/projects_list", {
       activeNav: "projects",
       navTitle: "Intake projects",
@@ -834,50 +764,26 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     });
   });
 
-  router.get("/projects/:id", requireClientProjectIntakeAccess, (req, res) => {
+  router.get("/projects/:id", requireClientProjectIntakeAccess, async (req, res) => {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const pid = Number(req.params.id);
     if (!pid || pid < 1) return res.status(400).send("Invalid id.");
-    const project = db
-      .prepare(
-        `SELECT p.*, c.client_code, c.full_name AS client_live_name, c.phone AS client_live_phone, c.external_client_reference,
-            cat.name AS intake_category_name
-         FROM intake_client_projects p
-         INNER JOIN intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
-         LEFT JOIN categories cat ON cat.id = p.intake_category_id AND cat.tenant_id = p.tenant_id
-         WHERE p.id = ? AND p.tenant_id = ?`
-      )
-      .get(pid, tid);
+    const project = await intakeClientProjectsRepo.getDetailWithJoins(pool, pid, tid);
     if (!project) return res.status(404).send("Project not found.");
     const lifecycle = String(project.status || "").trim().toLowerCase();
     if (lifecycle === "published") {
-      intakeProjectAllocation.processPublishedProjectAllocation(db, tid, pid);
+      await intakeProjectAllocation.processPublishedProjectAllocation(pool, tid, pid);
     }
-    const images = db
-      .prepare(
-        `SELECT id, image_path, sort_order FROM intake_project_images WHERE tenant_id = ? AND project_id = ? ORDER BY sort_order ASC, id ASC`
-      )
-      .all(tid, pid);
+    const images = await intakeProjectImagesRepo.listByProject(pool, tid, pid);
     const imageCount = images.length;
-    const publishValidation = validateIntakeProjectForPublish(db, tid, project, imageCount);
+    const publishValidation = await validateIntakeProjectForPublishAsync(pool, tid, project, imageCount);
     const showPublishOnDetail = INTAKE_PROJECT_PUBLISHABLE_STATUSES.has(lifecycle);
-    const assignments = db
-      .prepare(
-        `SELECT a.id, a.company_id, a.status, a.created_at, a.responded_at, a.response_note,
-            a.response_deadline_at, a.allocation_source, a.allocation_wave,
-            c.name AS company_name, c.subdomain AS company_subdomain
-         FROM intake_project_assignments a
-         INNER JOIN companies c ON c.id = a.company_id AND c.tenant_id = a.tenant_id
-         WHERE a.project_id = ? AND a.tenant_id = ?
-         ORDER BY datetime(a.created_at) DESC`
-      )
-      .all(pid, tid);
-    const companies = db
-      .prepare(`SELECT id, name, subdomain FROM companies WHERE tenant_id = ? ORDER BY name ASC`)
-      .all(tid);
+    const assignments = await intakeAssignmentsRepo.listDetailForProject(pool, pid, tid);
+    const companies = await companiesRepo.listIdNameSubdomainForTenant(pool, tid);
     const assignedIds = new Set(assignments.map((a) => Number(a.company_id)));
     const assignableCompanies = companies.filter((c) => !assignedIds.has(Number(c.id)));
-    const budget = clientIntake.getBudgetMetaForTenant(db, tid);
+    const budget = await clientIntake.getBudgetMetaForTenantWithStore(pool, tid);
     const error = String((req.query && req.query.error) || "").trim().slice(0, 400);
     const notice = String((req.query && req.query.notice) || "").trim().slice(0, 400);
     return res.render("admin/intake_project_detail", {
@@ -903,42 +809,46 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     "/projects/:id/assignments",
     requireClientProjectIntakeAccess,
     requireClientProjectIntakeMutate,
-    (req, res) => {
+    async (req, res) => {
       const tid = getAdminTenantId(req);
+      const pool = getPgPool();
       const pid = Number(req.params.id);
       const companyId = Number((req.body && req.body.company_id) || 0);
       const uid = req.session.adminUser.id;
       if (!pid || pid < 1 || !companyId || companyId < 1) {
         return res.redirect(`/admin/projects/${pid}?error=` + encodeURIComponent("Choose a company."));
       }
-      const project = db.prepare("SELECT id FROM intake_client_projects WHERE id = ? AND tenant_id = ?").get(pid, tid);
-      if (!project) return res.status(404).send("Project not found.");
-      const company = db.prepare("SELECT id FROM companies WHERE id = ? AND tenant_id = ?").get(companyId, tid);
+      const projectOk = await intakeClientProjectsRepo.existsByIdAndTenant(pool, pid, tid);
+      if (!projectOk) return res.status(404).send("Project not found.");
+      const company = await companiesRepo.getByIdAndTenantId(pool, companyId, tid);
       if (!company) {
         return res.redirect(`/admin/projects/${pid}?error=` + encodeURIComponent("Company not in this region."));
       }
-      const projRow = db
-        .prepare(`SELECT status, intake_category_id FROM intake_client_projects WHERE id = ? AND tenant_id = ?`)
-        .get(pid, tid);
+      const projRow = await intakeClientProjectsRepo.getStatusAndCategory(pool, pid, tid);
       const stPub = String((projRow && projRow.status) || "")
         .trim()
         .toLowerCase();
       let responseDeadline = null;
       if (stPub === "published" && projRow && projRow.intake_category_id) {
-        const h = getCategoryResponseWindowHours(db, tid, Number(projRow.intake_category_id));
-        const drow = db.prepare(`SELECT datetime('now', '+' || ? || ' hours') AS d`).get(String(Math.max(1, Math.floor(Number(h) || 72))));
-        responseDeadline = drow && drow.d ? String(drow.d) : null;
+        const h = await getCategoryResponseWindowHoursAsync(pool, tid, Number(projRow.intake_category_id));
+        const hrs = Math.max(1, Math.floor(Number(h) || 72));
+        const dr = await pool.query(`SELECT (now() + ($1::int * interval '1 hour')) AS d`, [hrs]);
+        const d = dr.rows[0].d;
+        responseDeadline =
+          d instanceof Date ? d.toISOString().replace("T", " ").slice(0, 19) : d != null ? String(d) : null;
       }
       try {
-        db.prepare(
-          `INSERT INTO intake_project_assignments (
-            tenant_id, project_id, company_id, assigned_by_admin_user_id, status,
-            response_deadline_at, allocation_source, allocation_wave, updated_at
-          ) VALUES (?, ?, ?, ?, 'pending', ?, 'manual', 0, datetime('now'))`
-        ).run(tid, pid, companyId, uid, responseDeadline);
+        await intakeAssignmentsRepo.insertPendingManual(pool, {
+          tenantId: tid,
+          projectId: pid,
+          companyId,
+          adminUserId: uid,
+          responseDeadlineAt: responseDeadline,
+        });
       } catch (e) {
         const msg = String(e.message || "");
-        if (msg.includes("UNIQUE")) {
+        const uniquePg = e.code === "23505";
+        if (msg.includes("UNIQUE") || uniquePg) {
           return res.redirect(`/admin/projects/${pid}?error=` + encodeURIComponent("That company is already assigned."));
         }
         return res.status(400).send(msg || "Could not assign.");
@@ -951,36 +861,32 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     "/projects/:id/assignments/:assignmentId/delete",
     requireClientProjectIntakeAccess,
     requireClientProjectIntakeMutate,
-    (req, res) => {
+    async (req, res) => {
       const tid = getAdminTenantId(req);
+      const pool = getPgPool();
       const pid = Number(req.params.id);
       const aid = Number(req.params.assignmentId);
-      const row = db
-        .prepare(`SELECT id FROM intake_project_assignments WHERE id = ? AND tenant_id = ? AND project_id = ?`)
-        .get(aid, tid, pid);
+      const row = await intakeAssignmentsRepo.getByIdProjectTenant(pool, aid, tid, pid);
       if (!row) return res.status(404).send("Assignment not found.");
-      db.prepare(`DELETE FROM intake_project_assignments WHERE id = ? AND tenant_id = ?`).run(aid, tid);
+      await intakeAssignmentsRepo.deleteById(pool, aid, tid);
       return res.redirect(`/admin/projects/${pid}?notice=` + encodeURIComponent("Assignment removed."));
     }
   );
 
-  router.get("/companies/:id/portal-users", requireDirectoryEditor, (req, res) => {
+  router.get("/companies/:id/portal-users", requireDirectoryEditor, async (req, res) => {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const cid = Number(req.params.id);
-    const company = db.prepare("SELECT id, name, subdomain FROM companies WHERE id = ? AND tenant_id = ?").get(cid, tid);
+    const company = await companiesRepo.getByIdAndTenantId(pool, cid, tid);
     if (!company) return res.status(404).send("Company not found.");
-    const tenantRow = db.prepare("SELECT slug, name FROM tenants WHERE id = ?").get(tid);
-    const users = db
-      .prepare(
-        `SELECT id, full_name, username, phone_normalized, nrz_number, is_active, created_at FROM company_personnel_users WHERE tenant_id = ? AND company_id = ? ORDER BY id ASC`
-      )
-      .all(tid, cid);
+    const tenantRow = await tenantsRepo.getById(pool, tid);
+    const users = await companyPersonnelUsersRepo.listForAdminByTenantAndCompany(pool, tid, cid);
     const error = String((req.query && req.query.error) || "").trim().slice(0, 400);
     const notice = String((req.query && req.query.notice) || "").trim().slice(0, 400);
     return res.render("admin/company_portal_users", {
       activeNav: "companies",
       navTitle: "Portal users",
-      company,
+      company: { id: company.id, name: company.name, subdomain: company.subdomain },
       tenantRegionLabel: tenantRow
         ? `${String(tenantRow.name || "").trim() || "Region"} (${String(tenantRow.slug || "").trim()})`
         : "",
@@ -992,8 +898,9 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
 
   router.post("/companies/:id/portal-users", requireDirectoryEditor, requireNotViewer, async (req, res) => {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const cid = Number(req.params.id);
-    const company = db.prepare("SELECT id FROM companies WHERE id = ? AND tenant_id = ?").get(cid, tid);
+    const company = await companiesRepo.getByIdAndTenantId(pool, cid, tid);
     if (!company) return res.status(404).send("Company not found.");
     const full_name = String((req.body && req.body.full_name) || "").trim().slice(0, 200);
     let username = String((req.body && req.body.username) || "").trim().toLowerCase().slice(0, 60);
@@ -1007,7 +914,7 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     if (!nrzCheck.ok) {
       return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent(nrzCheck.error));
     }
-    const tsRow = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(tid);
+    const tsRow = await tenantsRepo.getById(pool, tid);
     const slug = tsRow ? String(tsRow.slug) : "zm";
     if (!full_name || !password) {
       return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("Name and password are required."));
@@ -1020,11 +927,7 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
       return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("Invalid phone for this region."));
     }
     if (nrzCheck.value) {
-      const nrzDup = db
-        .prepare(
-          `SELECT id FROM company_personnel_users WHERE tenant_id = ? AND length(trim(nrz_number)) > 0 AND upper(trim(nrz_number)) = ? LIMIT 1`
-        )
-        .get(tid, nrzCheck.value);
+      const nrzDup = await companyPersonnelUsersRepo.findIdByTenantAndNrzUpper(pool, tid, nrzCheck.value);
       if (nrzDup) {
         return res.redirect(
           `/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("That NRZ number is already used by another portal user in this region.")
@@ -1038,12 +941,17 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
       return res.status(500).send("Could not hash password.");
     }
     try {
-      db.prepare(
-        `INSERT INTO company_personnel_users (tenant_id, company_id, full_name, username, phone_normalized, nrz_number, password_hash, is_active, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))`
-      ).run(tid, cid, full_name, username || "", phoneNorm, nrzCheck.value || "", passwordHash);
+      await companyPersonnelUsersRepo.insertPortalUserAdmin(pool, {
+        tenantId: tid,
+        companyId: cid,
+        fullName: full_name,
+        username: username || "",
+        phoneNormalized: phoneNorm,
+        nrzNumber: nrzCheck.value || "",
+        passwordHash: passwordHash,
+      });
     } catch (e) {
-      if (String(e.message || "").includes("UNIQUE")) {
+      if (e.code === "23505" || String(e.message || "").includes("UNIQUE")) {
         return res.redirect(
           `/admin/companies/${cid}/portal-users?error=` +
             encodeURIComponent("That phone or username is already registered for portal login in this region.")
@@ -1054,11 +962,12 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     return res.redirect(`/admin/companies/${cid}/portal-users?notice=` + encodeURIComponent("Portal user created."));
   });
 
-  function renderClientLeadStatus(req, res) {
+  async function renderClientLeadStatus(req, res) {
     const tid = getAdminTenantId(req);
+    const pool = getPgPool();
     const q = req.query || {};
-    const list = buildIntakeProjectStatusList(db, tid, q);
-    const budget = clientIntake.getBudgetMetaForTenant(db, tid);
+    const list = await buildIntakeProjectStatusListWithStore(pool, tid, q);
+    const budget = await clientIntake.getBudgetMetaForTenantWithStore(pool, tid);
     const rowsView = list.rows.map((r) => ({
       ...r,
       assign_summary: summarizeAssignmentStatuses(r.assign_statuses_raw),

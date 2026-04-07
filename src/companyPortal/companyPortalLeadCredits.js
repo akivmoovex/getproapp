@@ -3,7 +3,7 @@
  * Threshold applies only where tenant budget currency is ZMW (Zambia).
  */
 
-const { getBudgetMetaForTenant } = require("../intake/clientProjectIntake");
+const { getBudgetMetaForTenantWithStore } = require("../intake/clientProjectIntake");
 
 /** Below this balance (ZMW), providers cannot accept leads (interested / callback). */
 const PORTAL_LEAD_CREDIT_BLOCK_THRESHOLD_ZMW = -200;
@@ -20,24 +20,24 @@ function normalizePortalLeadCreditsBalance(raw) {
 }
 
 /**
- * @param {import("better-sqlite3").Database} db
- * @param {number} tenantId
- */
-function tenantUsesZmwLeadCredits(db, tenantId) {
-  const meta = getBudgetMetaForTenant(db, Number(tenantId));
-  return meta && String(meta.code || "").toUpperCase() === "ZMW";
-}
-
-/**
- * When true, Interested / Request callback must be disabled server- and client-side.
- * @param {import("better-sqlite3").Database} db
+ * @param {import("pg").Pool} pool
  * @param {number} tenantId
  * @param {unknown} portalLeadCreditsBalance
  */
-function isLeadAcceptanceBlockedByCredit(db, tenantId, portalLeadCreditsBalance) {
-  if (!tenantUsesZmwLeadCredits(db, tenantId)) return false;
+async function isLeadAcceptanceBlockedByCreditWithStore(pool, tenantId, portalLeadCreditsBalance) {
+  const meta = await getBudgetMetaForTenantWithStore(pool, tenantId);
+  if (!meta || String(meta.code || "").toUpperCase() !== "ZMW") return false;
   const b = normalizePortalLeadCreditsBalance(portalLeadCreditsBalance);
   return b < PORTAL_LEAD_CREDIT_BLOCK_THRESHOLD_ZMW;
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ */
+async function tenantUsesZmwLeadCreditsWithStore(pool, tenantId) {
+  const meta = await getBudgetMetaForTenantWithStore(pool, Number(tenantId));
+  return !!(meta && String(meta.code || "").toUpperCase() === "ZMW");
 }
 
 /**
@@ -50,7 +50,7 @@ function isLeadAcceptanceAction(action) {
 module.exports = {
   PORTAL_LEAD_CREDIT_BLOCK_THRESHOLD_ZMW,
   normalizePortalLeadCreditsBalance,
-  tenantUsesZmwLeadCredits,
-  isLeadAcceptanceBlockedByCredit,
+  tenantUsesZmwLeadCreditsWithStore,
+  isLeadAcceptanceBlockedByCreditWithStore,
   isLeadAcceptanceAction,
 };

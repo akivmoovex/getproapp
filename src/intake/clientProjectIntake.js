@@ -12,6 +12,10 @@ const path = require("path");
 const fs = require("fs");
 const sharp = require("sharp");
 const { isValidPhoneForTenant } = require("../tenants");
+const tenantsRepo = require("../db/pg/tenantsRepo");
+const intakeCodeSequencesRepo = require("../db/pg/intakeCodeSequencesRepo");
+const intakeClientsRepo = require("../db/pg/intakeClientsRepo");
+const intakePhoneOtpRepo = require("../db/pg/intakePhoneOtpRepo");
 
 const UPLOAD_ROOT = path.join(__dirname, "..", "..", "data", "uploads", "intake");
 
@@ -27,23 +31,16 @@ function normalizeNrz(input) {
   return String(input || "").trim().toUpperCase().replace(/\s+/g, "");
 }
 
-function getTenantSlug(db, tenantId) {
-  const row = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(Number(tenantId));
-  return row ? String(row.slug) : "";
-}
-
-/**
- * Budget display for the project form: Zambia → K; Demo → ProCoin; other tenants → slug-based label.
- */
-function getBudgetMetaForTenant(db, tenantId) {
-  const slug = getTenantSlug(db, tenantId);
+function budgetMetaFromSlug(slug) {
   if (slug === "zm") {
     return { code: "ZMW", displayPrefix: "K", label: "Zambian Kwacha (prefix: K)" };
   }
   if (slug === "demo") {
     return { code: "PROC", displayPrefix: "ProCoin", label: "ProCoin (demo tenant)" };
   }
-  const up = slug.replace(/[^a-z0-9]/gi, "").toUpperCase() || "CUR";
+  const up = String(slug || "")
+    .replace(/[^a-z0-9]/gi, "")
+    .toUpperCase() || "CUR";
   return { code: up, displayPrefix: up, label: `Budget (${slug})` };
 }
 
@@ -53,61 +50,14 @@ function slugToPrefix(slug) {
 }
 
 /**
- * Prefix for public client/project codes: tenants.intake_code_prefix (trimmed, A–Z/0–9, max 6) when set;
- * otherwise derived from slug. Empty DB column means “use slug fallback”.
+ * @param {{ slug?: unknown, intake_code_prefix?: unknown }} row
  */
-function getIntakeCodePrefix(db, tenantId) {
-  let row;
-  try {
-    row = db.prepare("SELECT slug, intake_code_prefix FROM tenants WHERE id = ?").get(Number(tenantId));
-  } catch {
-    row = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(Number(tenantId));
-  }
+function intakePrefixFromTenantRow(row) {
   if (!row) throw new Error("Tenant not found");
   const configured = row.intake_code_prefix != null ? String(row.intake_code_prefix) : "";
   const cleaned = configured.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (cleaned.length > 0) return cleaned.slice(0, 6);
   return slugToPrefix(row.slug);
-}
-
-function nextSequentialCode(db, tenantId, scope) {
-  const prefix = getIntakeCodePrefix(db, tenantId);
-  const seq = db.transaction(() => {
-    const cur = db.prepare("SELECT next_seq FROM intake_code_sequences WHERE tenant_id = ? AND scope = ?").get(
-      tenantId,
-      scope
-    );
-    if (!cur) {
-      db.prepare("INSERT INTO intake_code_sequences (tenant_id, scope, next_seq) VALUES (?, ?, 2)").run(
-        tenantId,
-        scope
-      );
-      return 1;
-    }
-    const n = cur.next_seq;
-    db.prepare("UPDATE intake_code_sequences SET next_seq = next_seq + 1 WHERE tenant_id = ? AND scope = ?").run(
-      tenantId,
-      scope
-    );
-    return n;
-  })();
-  return `${prefix}-${String(seq).padStart(6, "0")}`;
-}
-
-function findClientBySearch(db, tenantId, { phone, nrz }) {
-  const tid = Number(tenantId);
-  const p = normalizeDigits(phone);
-  const n = normalizeNrz(nrz);
-  if (!p && !n) return null;
-  if (p) {
-    const byPhone = db.prepare("SELECT * FROM intake_clients WHERE tenant_id = ? AND phone_normalized = ?").get(tid, p);
-    if (byPhone) return byPhone;
-  }
-  if (n) {
-    const byNrz = db.prepare("SELECT * FROM intake_clients WHERE tenant_id = ? AND nrz_normalized = ?").get(tid, n);
-    if (byNrz) return byNrz;
-  }
-  return null;
 }
 
 function validateNrz(nrz) {
@@ -136,16 +86,6 @@ function verifyOtpCodeHash(code, storedHash, tenantId, phoneNormalized) {
 
 function generateOtpDigits() {
   return String(crypto.randomInt(100000, 1000000));
-}
-
-function countRecentOtpSends(db, tenantId, phoneNorm) {
-  return db
-    .prepare(
-      `SELECT COUNT(*) AS c FROM intake_phone_otp
-       WHERE tenant_id = ? AND phone_normalized = ?
-       AND datetime(created_at) > datetime('now', '-1 hour')`
-    )
-    .get(tenantId, phoneNorm).c;
 }
 
 /**
@@ -177,14 +117,48 @@ function sendOtpPlaceholder({ phoneDisplay, code }) {
   };
 }
 
-function validatePhonesForTenant(db, tenantId, phone, whatsapp) {
-  const slug = getTenantSlug(db, tenantId);
+async function nextSequentialCodeWithStore(pool, tenantId, scope) {
+  const tid = Number(tenantId);
+  const row = await tenantsRepo.getById(pool, tid);
+  const prefix = intakePrefixFromTenantRow(row);
+  const n = await intakeCodeSequencesRepo.bumpAndReturnSeq(pool, tid, scope);
+  return `${prefix}-${String(n).padStart(6, "0")}`;
+}
+
+async function findClientBySearchWithStore(pool, tenantId, { phone, nrz }) {
+  const tid = Number(tenantId);
+  const p = normalizeDigits(phone);
+  const n = normalizeNrz(nrz);
+  if (!p && !n) return null;
+  if (p) {
+    const byPhone = await intakeClientsRepo.findByPhoneNorm(pool, tid, p);
+    if (byPhone) return byPhone;
+  }
+  if (n) {
+    return intakeClientsRepo.findByNrzNorm(pool, tid, n);
+  }
+  return null;
+}
+
+async function countRecentOtpSendsWithStore(pool, tenantId, phoneNorm) {
+  return intakePhoneOtpRepo.countRecentSends(pool, Number(tenantId), phoneNorm);
+}
+
+async function validatePhonesForTenantWithStore(pool, tenantId, phone, whatsapp) {
+  const row = await tenantsRepo.getById(pool, Number(tenantId));
+  const slug = row ? String(row.slug) : "";
   const p = String(phone || "").trim();
   const w = String(whatsapp || "").trim();
   if (!p) return { ok: false, error: "Phone number is required." };
   if (!isValidPhoneForTenant(slug, p)) return { ok: false, error: "Phone number does not match the expected format for this region." };
   if (w && !isValidPhoneForTenant(slug, w)) return { ok: false, error: "WhatsApp number does not match the expected format for this region." };
   return { ok: true, phone: p, whatsapp: w };
+}
+
+async function getBudgetMetaForTenantWithStore(pool, tenantId) {
+  const row = await tenantsRepo.getById(pool, Number(tenantId));
+  const slug = row ? String(row.slug) : "";
+  return budgetMetaFromSlug(slug);
 }
 
 /**
@@ -270,18 +244,16 @@ module.exports = {
   ensureUploadRoot,
   normalizeDigits,
   normalizeNrz,
-  getTenantSlug,
-  getBudgetMetaForTenant,
-  nextSequentialCode,
-  getIntakeCodePrefix,
-  findClientBySearch,
+  getBudgetMetaForTenantWithStore,
+  nextSequentialCodeWithStore,
+  findClientBySearchWithStore,
   validateNrz,
   hashOtpCode,
   verifyOtpCodeHash,
   generateOtpDigits,
-  countRecentOtpSends,
+  countRecentOtpSendsWithStore,
   sendOtpPlaceholder,
-  validatePhonesForTenant,
+  validatePhonesForTenantWithStore,
   safeAbsoluteImagePath,
   processAndSaveProjectImages,
   MAX_IMAGE_BYTES,

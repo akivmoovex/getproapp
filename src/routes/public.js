@@ -1,29 +1,24 @@
 const path = require("path");
 const fs = require("fs");
 const express = require("express");
-const { getTenantById, DEFAULT_TENANT_SLUG } = require("../tenants");
+const { getTenantByIdAsync, DEFAULT_TENANT_SLUG } = require("../tenants");
 const { TENANT_ZM } = require("../tenants/tenantIds");
-const { getTenantCitiesForClient, getJoinCityWatermarkRotate } = require("../tenants/tenantCities");
+const {
+  getTenantCitiesForClientAsync,
+  getJoinCityWatermarkRotateAsync,
+} = require("../tenants/tenantCities");
 const { israelComingSoonEnabled } = require("../tenants/israelComingSoon");
 const { attachReviewStatsToCompanies } = require("../companies/reviewStats");
 const { buildCompanyPageLocals } = require("../companies/companyPageRender");
-const { getTenantContactSupport } = require("../tenants/tenantContactSupport");
-const {
-  formatBodyToHtml,
-  listPublishedByKind,
-  getBySlug,
-  getRowBySlug,
-  canonicalUrlForTenant,
-  absolutePublicUrl,
-  escapeHtml,
-} = require("../content/contentPages");
+const { getTenantContactSupportAsync } = require("../tenants/tenantContactSupport");
+const { formatBodyToHtml, canonicalUrlForTenant, absolutePublicUrl, escapeHtml } = require("../content/contentPages");
 const { buildSitemapXml, buildRobotsTxt } = require("../companies/seoPublic");
 const { canPreviewDraft } = require("../content/adminPreview");
 const { PRODUCT_NAME } = require("../platform/branding");
-const {
-  buildCompanyDirectoryFtsMatch,
-  companySearchFtsReady,
-} = require("../companies/companySearchFts");
+const { getPgPool } = require("../db/pg");
+const categoriesRepo = require("../db/pg/categoriesRepo");
+const companiesRepo = require("../db/pg/companiesRepo");
+const contentPagesRepo = require("../db/pg/contentPagesRepo");
 
 function loadSearchLists() {
   const p = path.join(__dirname, "../../public/data/search-lists.json");
@@ -105,21 +100,27 @@ const MINI_SITE_RESERVED_SEGMENTS = new Set([
   "na",
 ]);
 
-module.exports = function publicRoutes({ db }) {
+module.exports = function publicRoutes() {
   const router = express.Router();
+
+  async function loadCategoriesList(tenantId) {
+    const pool = getPgPool();
+    return categoriesRepo.listByTenantId(pool, tenantId);
+  }
 
   // PERF: Tiny in-process cache for homepage query results to reduce TTFB.
   // Safe: short TTL, per-tenant, caches only public lists (not user-specific).
   const HOME_CACHE_TTL_MS = 60 * 1000;
   const homeCache = new Map(); // tenantId -> { ts, categories, contentArticles, contentGuides, contentFaqs }
 
-  function platformSupport(req) {
+  async function platformSupportAsync(req) {
     const tid = req.tenant && req.tenant.id;
-    return getTenantContactSupport(db, tid);
+    const pool = getPgPool();
+    return getTenantContactSupportAsync(pool, tid);
   }
 
   async function renderCompanyPage(req, res, company) {
-    const locals = await buildCompanyPageLocals(req, db, company);
+    const locals = await buildCompanyPageLocals(req, company);
     const canonicalUrl = canonicalUrlForTenant(req, `/company/${company.id}`);
     const seoTitle = `${company.name} | ${locals.category ? locals.category.name + " · " : ""}${PRODUCT_NAME}`;
     const seoDescription = `${(company.headline || company.name || "").replace(/"/g, "")} · Verified directory listing on ${PRODUCT_NAME}.`;
@@ -165,7 +166,7 @@ module.exports = function publicRoutes({ db }) {
     };
   }
 
-  router.use((req, res, next) => {
+  router.use(async (req, res, next) => {
     if (israelComingSoonEnabled() && req.tenant && req.tenant.slug === "il") {
       const scheme = process.env.PUBLIC_SCHEME || "https";
       const base = (process.env.BASE_DOMAIN || "").trim();
@@ -174,20 +175,21 @@ module.exports = function publicRoutes({ db }) {
         ...tenantLocals(req),
         apexUrl,
         apexHostLabel: base || "Home",
-        ...platformSupport(req),
+        ...(await platformSupportAsync(req)),
       });
     }
     next();
   });
 
-  function resolveContentRow(req, kind, slug) {
+  async function resolveContentRowAsync(req, kind, slug) {
     const tenantId = req.tenant.id;
     const preview =
       (req.query.preview === "1" || req.query.preview === "true") && canPreviewDraft(req, tenantId);
+    const pool = getPgPool();
     if (preview) {
-      return getRowBySlug(db, tenantId, kind, slug) || null;
+      return (await contentPagesRepo.getRowBySlug(pool, tenantId, kind, slug)) || null;
     }
-    return getBySlug(db, tenantId, kind, slug) || null;
+    return (await contentPagesRepo.getBySlugPublished(pool, tenantId, kind, slug)) || null;
   }
 
   router.get("/", async (req, res) => {
@@ -195,14 +197,18 @@ module.exports = function publicRoutes({ db }) {
     const now = Date.now();
     let cached = homeCache.get(tenantId);
     if (!cached || now - cached.ts > HOME_CACHE_TTL_MS) {
+      const pool = getPgPool();
+      const [contentArticles, contentGuides, contentFaqs] = await Promise.all([
+        contentPagesRepo.listPublishedByKind(pool, tenantId, "article"),
+        contentPagesRepo.listPublishedByKind(pool, tenantId, "guide"),
+        contentPagesRepo.listPublishedByKind(pool, tenantId, "faq"),
+      ]);
       cached = {
         ts: now,
-        categories: db
-          .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
-          .all(tenantId),
-        contentArticles: listPublishedByKind(db, tenantId, "article"),
-        contentGuides: listPublishedByKind(db, tenantId, "guide"),
-        contentFaqs: listPublishedByKind(db, tenantId, "faq"),
+        categories: await loadCategoriesList(tenantId),
+        contentArticles,
+        contentGuides,
+        contentFaqs,
       };
       homeCache.set(tenantId, cached);
     }
@@ -231,16 +237,14 @@ module.exports = function publicRoutes({ db }) {
       contentGuides: cached.contentGuides,
       contentFaqs: cached.contentFaqs,
       ...tenantLocals(req),
-      ...platformSupport(req),
+      ...(await platformSupportAsync(req)),
       showRegionPickerUi: false,
     });
   });
 
   router.get("/directory", async (req, res) => {
     const tenantId = req.tenant.id;
-    const categories = db
-      .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
-      .all(tenantId);
+    const categories = await loadCategoriesList(tenantId);
 
     const selected = req.query.category ? String(req.query.category) : null;
     const searchRaw = req.query.q ? String(req.query.q).trim() : "";
@@ -250,88 +254,21 @@ module.exports = function publicRoutes({ db }) {
     const searchQ = searchOk ? searchRaw.replace(/[%_\\]/g, "") : "";
     const cityQ = cityOk ? cityRaw.replace(/[%_\\]/g, "") : "";
 
+    const pool = getPgPool();
+
     let companies = [];
     if (selected) {
-      let sql = `
-        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-        FROM companies c
-        INNER JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-        WHERE cat.slug = ? AND c.tenant_id = ?
-      `;
-      const params = [selected, tenantId];
-      if (cityQ) {
-        sql += ` AND c.location LIKE ? COLLATE NOCASE`;
-        params.push(`%${cityQ}%`);
-      }
-      sql += ` ORDER BY c.name ASC`;
-      companies = db.prepare(sql).all(...params);
+      const cityLike = cityQ ? `%${cityQ}%` : null;
+      companies = await companiesRepo.listDirectoryByCategorySlug(pool, tenantId, selected, cityLike);
     } else if (searchQ || cityQ) {
-      const ftsReady = companySearchFtsReady(db);
-      const ftsMatch = ftsReady && searchQ ? buildCompanyDirectoryFtsMatch(searchQ) : null;
-      const useFts = Boolean(ftsMatch);
-
-      function runDirectorySearch(useFtsInner) {
-        const parts = [`c.tenant_id = ?`];
-        const params = [tenantId];
-        if (searchQ) {
-          if (useFtsInner) {
-            parts.push(`companies_fts MATCH ?`);
-            params.push(ftsMatch);
-          } else {
-            parts.push(
-              `(c.name LIKE ? COLLATE NOCASE OR c.headline LIKE ? COLLATE NOCASE OR c.about LIKE ? COLLATE NOCASE)`
-            );
-            const p = `%${searchQ}%`;
-            params.push(p, p, p);
-          }
-        }
-        if (cityQ) {
-          parts.push(`c.location LIKE ? COLLATE NOCASE`);
-          params.push(`%${cityQ}%`);
-        }
-        const where = parts.join(" AND ");
-        const joinFts = useFtsInner ? `INNER JOIN companies_fts ON companies_fts.rowid = c.id` : "";
-        const orderSql = useFtsInner ? `ORDER BY bm25(companies_fts) ASC, c.name ASC` : `ORDER BY c.name ASC`;
-        return db
-          .prepare(
-            `
-          SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-          FROM companies c
-          ${joinFts}
-          LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-          WHERE ${where}
-          ${orderSql}
-          LIMIT 48
-          `
-          )
-          .all(...params);
-      }
-
-      try {
-        companies = runDirectorySearch(useFts);
-      } catch (err) {
-        if (useFts && searchQ) {
-          companies = runDirectorySearch(false);
-        } else {
-          throw err;
-        }
-      }
+      const searchPattern = searchQ ? `%${searchQ}%` : null;
+      const cityPattern = cityQ ? `%${cityQ}%` : null;
+      companies = await companiesRepo.listDirectorySearchIlike(pool, tenantId, searchPattern, cityPattern, 48);
     } else {
-      companies = db
-        .prepare(
-          `
-          SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-          FROM companies c
-          LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-          WHERE c.tenant_id = ?
-          ORDER BY c.updated_at DESC
-          LIMIT 24
-          `
-        )
-        .all(tenantId);
+      companies = await companiesRepo.listDirectoryDefault(pool, tenantId, 24);
     }
 
-    companies = attachReviewStatsToCompanies(db, companies);
+    companies = await attachReviewStatsToCompanies(companies);
 
     const canonicalUrl = canonicalUrlForTenant(req, "/directory");
     let seoTitle = `Directory | ${req.tenant.name || PRODUCT_NAME}`;
@@ -362,43 +299,30 @@ module.exports = function publicRoutes({ db }) {
       ogUrl: canonicalUrl,
       ...buildEmptyStateSuggestions(categories, selected, cityOk ? cityRaw : ""),
       ...tenantLocals(req),
-      ...platformSupport(req),
+      ...(await platformSupportAsync(req)),
     });
   });
 
   router.get("/category/:categorySlug", async (req, res) => {
     const tenantId = req.tenant.id;
     const categorySlug = req.params.categorySlug;
-    const category = db
-      .prepare("SELECT * FROM categories WHERE slug = ? AND tenant_id = ?")
-      .get(categorySlug, tenantId);
+    const pool = getPgPool();
+    const category = await categoriesRepo.getBySlugAndTenantId(pool, categorySlug, tenantId);
     if (!category) {
       res.status(404);
       return res.render("not_found", {
         slug: categorySlug,
         kind: "category",
         ...tenantLocals(req),
-        ...platformSupport(req),
+        ...(await platformSupportAsync(req)),
       });
     }
 
-    const companies = db
-      .prepare(
-        `
-        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-        FROM companies c
-        INNER JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-        WHERE c.category_id = ? AND c.tenant_id = ?
-        ORDER BY c.name ASC
-        `
-      )
-      .all(category.id, tenantId);
+    const companies = await companiesRepo.listDirectoryByCategorySlug(pool, tenantId, categorySlug, null);
 
-    const companiesWithReviews = attachReviewStatsToCompanies(db, companies);
+    const companiesWithReviews = await attachReviewStatsToCompanies(companies);
 
-    const categories = db
-      .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
-      .all(tenantId);
+    const categories = await loadCategoriesList(tenantId);
 
     const canonicalUrl = canonicalUrlForTenant(req, `/category/${category.slug}`);
     const seoTitle = `${category.name} · Directory | ${req.tenant.name || PRODUCT_NAME}`;
@@ -416,7 +340,7 @@ module.exports = function publicRoutes({ db }) {
       ogUrl: canonicalUrl,
       ...buildEmptyStateSuggestions(categories, category.slug, ""),
       ...tenantLocals(req),
-      ...platformSupport(req),
+      ...(await platformSupportAsync(req)),
     });
   });
 
@@ -430,26 +354,18 @@ module.exports = function publicRoutes({ db }) {
           slug: String(req.params.id || ""),
           kind: "company",
           ...tenantLocals(req),
-          ...platformSupport(req),
+          ...(await platformSupportAsync(req)),
         });
       }
-      const company = db
-        .prepare(
-          `
-        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-        FROM companies c
-        LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-        WHERE c.id = ? AND c.tenant_id = ?
-        `
-        )
-        .get(id, tenantId);
+      const pool = getPgPool();
+      const company = await companiesRepo.getWithCategoryByIdAndTenantId(pool, id, tenantId);
       if (!company) {
         res.status(404);
         return res.render("not_found", {
           slug: String(id),
           kind: "company",
           ...tenantLocals(req),
-          ...platformSupport(req),
+          ...(await platformSupportAsync(req)),
         });
       }
       return await renderCompanyPage(req, res, company);
@@ -458,10 +374,11 @@ module.exports = function publicRoutes({ db }) {
     }
   });
 
-  router.get("/join", (req, res) => {
+  router.get("/join", async (req, res) => {
     const tenantId = req.tenant.id;
-    const joinTenantCities = getTenantCitiesForClient(db, tenantId);
-    const joinCityWatermarkRotate = getJoinCityWatermarkRotate(db, tenantId);
+    const pool = getPgPool();
+    const joinTenantCities = await getTenantCitiesForClientAsync(pool, tenantId);
+    const joinCityWatermarkRotate = await getJoinCityWatermarkRotateAsync(pool, tenantId);
     const canonicalUrl = canonicalUrlForTenant(req, "/join");
     return res.render("join", {
       baseDomain: process.env.BASE_DOMAIN || "",
@@ -472,13 +389,13 @@ module.exports = function publicRoutes({ db }) {
       canonicalUrl,
       ogUrl: canonicalUrl,
       ...tenantLocals(req),
-      ...platformSupport(req),
+      ...(await platformSupportAsync(req)),
     });
   });
 
   // Internal UI component pattern library (dev reference).
   // Intentionally not linked in public navigation.
-  router.get("/ui-demo", (req, res) => {
+  router.get("/ui-demo", async (req, res) => {
     const canonicalUrl = canonicalUrlForTenant(req, "/ui-demo");
     return res.render("ui_demo", {
       seoTitle: `UI Demo · ${req.tenant.name || PRODUCT_NAME}`,
@@ -486,12 +403,12 @@ module.exports = function publicRoutes({ db }) {
       canonicalUrl,
       ogUrl: canonicalUrl,
       ...tenantLocals(req),
-      ...platformSupport(req),
+      ...(await platformSupportAsync(req)),
     });
   });
 
   /** Internal design-system playground (Storybook-style); not product UI. */
-  router.get("/ui", (req, res) => {
+  router.get("/ui", async (req, res) => {
     const canonicalUrl = canonicalUrlForTenant(req, "/ui");
     return res.render("ui_docs", {
       seoTitle: `Design system · ${req.tenant.name || PRODUCT_NAME}`,
@@ -505,13 +422,13 @@ module.exports = function publicRoutes({ db }) {
         { slug: "electrical", name: "Electrical" },
       ],
       ...tenantLocals(req),
-      ...platformSupport(req),
+      ...(await platformSupportAsync(req)),
     });
   });
 
-  router.get("/sitemap.xml", (req, res) => {
+  router.get("/sitemap.xml", async (req, res) => {
     res.type("application/xml");
-    res.send(buildSitemapXml(req, db));
+    res.send(await buildSitemapXml(req));
   });
 
   router.get("/robots.txt", (req, res) => {
@@ -519,9 +436,10 @@ module.exports = function publicRoutes({ db }) {
     res.send(buildRobotsTxt(req));
   });
 
-  function renderContentIndex(req, res, kind, label) {
+  async function renderContentIndex(req, res, kind, label) {
     const tenantId = req.tenant.id;
-    const items = listPublishedByKind(db, tenantId, kind);
+    const pool = getPgPool();
+    const items = await contentPagesRepo.listPublishedByKind(pool, tenantId, kind);
     const seg = kind === "article" ? "articles" : kind === "guide" ? "guides" : "answers";
     const canonicalUrl = canonicalUrlForTenant(req, `/${seg}`);
     const seoTitle = `${label} | ${req.tenant.name || PRODUCT_NAME}`;
@@ -536,13 +454,31 @@ module.exports = function publicRoutes({ db }) {
       canonicalUrl,
       ogUrl: canonicalUrl,
       ...tenantLocals(req),
-      ...platformSupport(req),
+      ...(await platformSupportAsync(req)),
     });
   }
 
-  router.get("/articles", (req, res) => renderContentIndex(req, res, "article", "Articles & topics"));
-  router.get("/guides", (req, res) => renderContentIndex(req, res, "guide", "Pro guides"));
-  router.get("/answers", (req, res) => renderContentIndex(req, res, "faq", "Questions & answers"));
+  router.get("/articles", async (req, res, next) => {
+    try {
+      await renderContentIndex(req, res, "article", "Articles & topics");
+    } catch (e) {
+      next(e);
+    }
+  });
+  router.get("/guides", async (req, res, next) => {
+    try {
+      await renderContentIndex(req, res, "guide", "Pro guides");
+    } catch (e) {
+      next(e);
+    }
+  });
+  router.get("/answers", async (req, res, next) => {
+    try {
+      await renderContentIndex(req, res, "faq", "Questions & answers");
+    } catch (e) {
+      next(e);
+    }
+  });
 
   function absoluteMediaUrl(req, raw) {
     const u = String(raw || "").trim();
@@ -551,17 +487,17 @@ module.exports = function publicRoutes({ db }) {
     return absolutePublicUrl(req, u.startsWith("/") ? u : `/${u}`);
   }
 
-  router.get("/articles/:slug", (req, res) => {
+  router.get("/articles/:slug", async (req, res) => {
     const tenantId = req.tenant.id;
     const slug = String(req.params.slug || "").trim();
-    const row = resolveContentRow(req, "article", slug);
+    const row = await resolveContentRowAsync(req, "article", slug);
     if (!row) {
       res.status(404);
       return res.render("not_found", {
         slug,
         kind: "article",
         ...tenantLocals(req),
-        ...platformSupport(req),
+        ...(await platformSupportAsync(req)),
       });
     }
     const preview =
@@ -593,21 +529,21 @@ module.exports = function publicRoutes({ db }) {
       jsonLdArticle: JSON.stringify(articleJsonLd),
       previewBanner: !!(preview && !row.published),
       ...tenantLocals(req),
-      ...platformSupport(req),
+      ...(await platformSupportAsync(req)),
     });
   });
 
-  router.get("/guides/:slug", (req, res) => {
+  router.get("/guides/:slug", async (req, res) => {
     const tenantId = req.tenant.id;
     const slug = String(req.params.slug || "").trim();
-    const row = resolveContentRow(req, "guide", slug);
+    const row = await resolveContentRowAsync(req, "guide", slug);
     if (!row) {
       res.status(404);
       return res.render("not_found", {
         slug,
         kind: "guide",
         ...tenantLocals(req),
-        ...platformSupport(req),
+        ...(await platformSupportAsync(req)),
       });
     }
     const preview =
@@ -639,21 +575,21 @@ module.exports = function publicRoutes({ db }) {
       jsonLdArticle: JSON.stringify(guideJsonLd),
       previewBanner: !!(preview && !row.published),
       ...tenantLocals(req),
-      ...platformSupport(req),
+      ...(await platformSupportAsync(req)),
     });
   });
 
-  router.get("/answers/:slug", (req, res) => {
+  router.get("/answers/:slug", async (req, res) => {
     const tenantId = req.tenant.id;
     const slug = String(req.params.slug || "").trim();
-    const row = resolveContentRow(req, "faq", slug);
+    const row = await resolveContentRowAsync(req, "faq", slug);
     if (!row) {
       res.status(404);
       return res.render("not_found", {
         slug,
         kind: "faq",
         ...tenantLocals(req),
-        ...platformSupport(req),
+        ...(await platformSupportAsync(req)),
       });
     }
     const preview =
@@ -682,7 +618,7 @@ module.exports = function publicRoutes({ db }) {
       jsonLdFaq: JSON.stringify(faqJsonLd),
       previewBanner: !!(preview && !row.published),
       ...tenantLocals(req),
-      ...platformSupport(req),
+      ...(await platformSupportAsync(req)),
     });
   });
 
@@ -697,23 +633,15 @@ module.exports = function publicRoutes({ db }) {
         return next();
       }
       const tenantId = req.tenant.id;
-      const company = db
-        .prepare(
-          `
-        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-        FROM companies c
-        LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-        WHERE c.subdomain = ? AND c.tenant_id = ?
-        `
-        )
-        .get(seg, tenantId);
+      const pool = getPgPool();
+      const company = await companiesRepo.getWithCategoryBySubdomainAndTenantId(pool, seg, tenantId);
       if (!company) {
         res.status(404);
         return res.render("not_found", {
           slug: seg,
           kind: "mini-site",
           ...tenantLocals(req),
-          ...platformSupport(req),
+          ...(await platformSupportAsync(req)),
         });
       }
       return await renderCompanyPage(req, res, company);
@@ -723,29 +651,23 @@ module.exports = function publicRoutes({ db }) {
   });
 
   async function renderCompanyHome(req, res) {
-    const company = db
-      .prepare(
-        `
-        SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-        FROM companies c
-        LEFT JOIN categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-        WHERE c.subdomain = ?
-        `
-      )
-      .get(req.subdomain);
+    const pool = getPgPool();
+    const company = await companiesRepo.getWithCategoryBySubdomain(pool, req.subdomain);
 
     if (!company) {
       res.status(404);
       const scheme = process.env.PUBLIC_SCHEME || "https";
       const base = (process.env.BASE_DOMAIN || "").trim();
       const tp = base ? `${scheme}://zm.${base}` : "";
+      const tenant = await getTenantByIdAsync(pool, TENANT_ZM);
+      const supportLocals = await getTenantContactSupportAsync(pool, TENANT_ZM);
       return res.render("not_found", {
         subdomain: req.subdomain,
-        tenant: getTenantById(TENANT_ZM, db),
+        tenant,
         tenantUrlPrefix: tp,
         tenantHomeHref: tenantHomeHrefFromPrefix(tp),
         regionChoices: req.regionChoices || [],
-        ...getTenantContactSupport(db, TENANT_ZM),
+        ...supportLocals,
       });
     }
 

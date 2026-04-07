@@ -23,44 +23,30 @@ function normalizePaymentMethod(v) {
   return PAYMENT_METHOD_SET.has(s) ? s : null;
 }
 
-/**
- * @param {import("better-sqlite3").Database} db
- * @param {number} tenantId
- * @param {number} companyId
- * @returns {number} account id
- */
-function ensureCreditAccount(db, tenantId, companyId) {
-  const tid = Number(tenantId);
-  const cid = Number(companyId);
-  const existing = db
-    .prepare(`SELECT id FROM company_portal_credit_accounts WHERE tenant_id = ? AND company_id = ?`)
-    .get(tid, cid);
-  if (existing && existing.id != null) return Number(existing.id);
-  db.prepare(
-    `INSERT INTO company_portal_credit_accounts (tenant_id, company_id) VALUES (?, ?)`
-  ).run(tid, cid);
-  const row = db.prepare(`SELECT id FROM company_portal_credit_accounts WHERE tenant_id = ? AND company_id = ?`).get(tid, cid);
-  return row ? Number(row.id) : 0;
+function serializeLedgerRow(row) {
+  if (!row) return row;
+  const o = { ...row };
+  if (o.created_at instanceof Date) {
+    o.created_at = o.created_at.toISOString().replace("T", " ").slice(0, 19);
+  }
+  return o;
 }
 
 /**
- * @param {import("better-sqlite3").Database} db
- * @param {number} tenantId
- * @param {number} companyId
- * @param {number} limit
+ * @param {import("pg").Pool} pool
  */
-function listRecentLedgerEntries(db, tenantId, companyId, limit) {
+async function listRecentLedgerEntriesAsync(pool, tenantId, companyId, limit) {
   const lim = Math.min(100, Math.max(1, Math.floor(Number(limit) || 25)));
-  return db
-    .prepare(
-      `SELECT id, amount_zmw, payment_method, transaction_reference, payment_date, approver_name,
-              recorded_by_admin_user_id, notes, created_at
-       FROM company_portal_credit_ledger_entries
-       WHERE tenant_id = ? AND company_id = ?
-       ORDER BY id DESC
-       LIMIT ?`
-    )
-    .all(Number(tenantId), Number(companyId), lim);
+  const r = await pool.query(
+    `SELECT id, amount_zmw, payment_method, transaction_reference, payment_date, approver_name,
+            recorded_by_admin_user_id, notes, created_at
+     FROM public.company_portal_credit_ledger_entries
+     WHERE tenant_id = $1 AND company_id = $2
+     ORDER BY id DESC
+     LIMIT $3`,
+    [Number(tenantId), Number(companyId), lim]
+  );
+  return r.rows.map(serializeLedgerRow);
 }
 
 /**
@@ -77,11 +63,11 @@ function listRecentLedgerEntries(db, tenantId, companyId, limit) {
  */
 
 /**
- * @param {import("better-sqlite3").Database} db
+ * @param {import("pg").Pool} pool
  * @param {RecordAdminPaymentInput} input
- * @returns {{ ok: true, newBalance: number, ledgerId: number } | { ok: false, error: string }}
+ * @returns {Promise<{ ok: true, newBalance: number, ledgerId: number } | { ok: false, error: string }>}
  */
-function recordAdminPaymentCredit(db, input) {
+async function recordAdminPaymentCreditAsync(pool, input) {
   const tid = Number(input.tenantId);
   const cid = Number(input.companyId);
   const uid = input.adminUserId != null && Number.isFinite(Number(input.adminUserId)) ? Number(input.adminUserId) : null;
@@ -99,32 +85,59 @@ function recordAdminPaymentCredit(db, input) {
   if (!approver) return { ok: false, error: "Approver name is required." };
   const notes = String(input.notes || "").trim().slice(0, 2000);
 
-  const co = db.prepare(`SELECT id FROM companies WHERE id = ? AND tenant_id = ?`).get(cid, tid);
-  if (!co) return { ok: false, error: "Company not found in this region." };
-
-  const run = db.transaction(() => {
-    const accountId = ensureCreditAccount(db, tid, cid);
-    const ins = db
-      .prepare(
-        `INSERT INTO company_portal_credit_ledger_entries (
-          tenant_id, company_id, credit_account_id, amount_zmw, payment_method,
-          transaction_reference, payment_date, approver_name, recorded_by_admin_user_id, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(tid, cid, accountId, amount, method, ref, payDate, approver, uid, notes);
-    db.prepare(
-      `UPDATE companies SET portal_lead_credits_balance = portal_lead_credits_balance + ?, updated_at = datetime('now')
-       WHERE id = ? AND tenant_id = ?`
-    ).run(amount, cid, tid);
-    const balRow = db.prepare(`SELECT portal_lead_credits_balance FROM companies WHERE id = ? AND tenant_id = ?`).get(cid, tid);
-    return { ledgerId: Number(ins.lastInsertRowid), newBalance: Number(balRow && balRow.portal_lead_credits_balance) || 0 };
-  });
-
+  const client = await pool.connect();
   try {
-    const out = run();
-    return { ok: true, newBalance: out.newBalance, ledgerId: out.ledgerId };
+    await client.query("BEGIN");
+    const co = await client.query(`SELECT id FROM public.companies WHERE id = $1 AND tenant_id = $2`, [cid, tid]);
+    if (co.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "Company not found in this region." };
+    }
+
+    let acc = await client.query(
+      `SELECT id FROM public.company_portal_credit_accounts WHERE tenant_id = $1 AND company_id = $2`,
+      [tid, cid]
+    );
+    let accountId;
+    if (acc.rows.length === 0) {
+      const insA = await client.query(
+        `INSERT INTO public.company_portal_credit_accounts (tenant_id, company_id) VALUES ($1, $2) RETURNING id`,
+        [tid, cid]
+      );
+      accountId = Number(insA.rows[0].id);
+    } else {
+      accountId = Number(acc.rows[0].id);
+    }
+
+    const ins = await client.query(
+      `INSERT INTO public.company_portal_credit_ledger_entries (
+        tenant_id, company_id, credit_account_id, amount_zmw, payment_method,
+        transaction_reference, payment_date, approver_name, recorded_by_admin_user_id, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING id`,
+      [tid, cid, accountId, amount, method, ref, payDate, approver, uid, notes]
+    );
+    await client.query(
+      `UPDATE public.companies SET portal_lead_credits_balance = portal_lead_credits_balance + $1, updated_at = now()
+       WHERE id = $2 AND tenant_id = $3`,
+      [amount, cid, tid]
+    );
+    const balRow = await client.query(
+      `SELECT portal_lead_credits_balance FROM public.companies WHERE id = $1 AND tenant_id = $2`,
+      [cid, tid]
+    );
+    await client.query("COMMIT");
+    const newBalance = Number(balRow.rows[0] && balRow.rows[0].portal_lead_credits_balance) || 0;
+    return { ok: true, newBalance, ledgerId: Number(ins.rows[0].id) };
   } catch (e) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (_) {
+      /* ignore */
+    }
     return { ok: false, error: String(e && e.message) || "Could not record payment." };
+  } finally {
+    client.release();
   }
 }
 
@@ -143,8 +156,7 @@ function paymentMethodLabel(code) {
 module.exports = {
   PAYMENT_METHODS,
   normalizePaymentMethod,
-  ensureCreditAccount,
-  listRecentLedgerEntries,
-  recordAdminPaymentCredit,
+  listRecentLedgerEntriesAsync,
+  recordAdminPaymentCreditAsync,
   paymentMethodLabel,
 };

@@ -11,7 +11,10 @@ const {
   parseGalleryJson,
   galleryToAdminText,
 } = require("../../companies/companyProfile");
-const { enrichCompanyWithCategory } = require("../../companies/companyPageRender");
+const { enrichCompanyWithCategoryAsync } = require("../../companies/companyPageRender");
+const { getPgPool } = require("../../db/pg");
+const categoriesRepo = require("../../db/pg/categoriesRepo");
+const companiesRepo = require("../../db/pg/companiesRepo");
 
 /** True when the admin view is embedded (Settings hub iframe or super-admin inline panel). Preserved via hidden `embed` on POST. */
 function isEmbedRequest(req) {
@@ -45,18 +48,28 @@ function getAdminTenantId(req) {
   return t != null && Number(t) > 0 ? Number(t) : TENANT_ZM;
 }
 
-function getCategoriesForSelect(db, tenantId) {
-  return db
-    .prepare("SELECT id, slug, name FROM categories WHERE tenant_id = ? ORDER BY sort ASC, name ASC")
-    .all(tenantId);
+/**
+ * @param {number} tenantId
+ * @returns {Promise<{ id: number, slug: string, name: string }[]>}
+ */
+async function getCategoriesForSelectAsync(tenantId) {
+  const pool = getPgPool();
+  const rows = await categoriesRepo.listByTenantId(pool, tenantId);
+  return rows.map((c) => ({ id: c.id, slug: c.slug, name: c.name }));
 }
 
-function uniqueCompanySubdomainForTenant(dbConn, desiredTenantId, desiredSlug) {
+/**
+ * @param {number} desiredTenantId
+ * @param {string} desiredSlug
+ */
+async function uniqueCompanySubdomainForTenantAsync(desiredTenantId, desiredSlug) {
   const tid = Number(desiredTenantId);
   let base = slugify(String(desiredSlug || "listing"), { lower: true, strict: true, trim: true }).slice(0, 60) || "listing";
   let sub = base;
   let n = 1;
-  while (dbConn.prepare("SELECT 1 FROM companies WHERE tenant_id = ? AND subdomain = ?").get(tid, sub)) {
+  const pool = getPgPool();
+  // eslint-disable-next-line no-await-in-loop
+  while (await companiesRepo.existsSubdomainForTenant(pool, tid, sub)) {
     sub = `${base}-${n++}`.slice(0, 80);
   }
   return sub;
@@ -77,7 +90,12 @@ function filterSuffixFromQuery(req) {
   return s ? `&${s}` : "";
 }
 
-function mergeDraftCompanyForPreview(db, baseRow, draft) {
+/**
+ * @param {import("pg").Pool} pool
+ * @param {object} baseRow
+ * @param {Record<string, unknown>} [draft]
+ */
+async function mergeDraftCompanyForPreviewAsync(pool, baseRow, draft) {
   const d = draft || {};
   const gallerySource =
     d.gallery_text !== undefined ? String(d.gallery_text) : galleryToAdminText(parseGalleryJson(baseRow.gallery_json));
@@ -120,7 +138,7 @@ function mergeDraftCompanyForPreview(db, baseRow, draft) {
     logo_url: d.logo_url !== undefined ? String(d.logo_url).trim() : baseRow.logo_url,
     gallery_json: JSON.stringify(parseGalleryAdminText(gallerySource)),
   };
-  return enrichCompanyWithCategory(db, merged);
+  return enrichCompanyWithCategoryAsync(pool, merged);
 }
 
 function requireManageUsers(req, res, next) {
@@ -162,11 +180,11 @@ module.exports = {
   isEmbedRequest,
   redirectWithEmbed,
   getAdminTenantId,
-  getCategoriesForSelect,
-  uniqueCompanySubdomainForTenant,
+  getCategoriesForSelectAsync,
+  uniqueCompanySubdomainForTenantAsync,
+  mergeDraftCompanyForPreviewAsync,
   parseEditMode,
   filterSuffixFromQuery,
-  mergeDraftCompanyForPreview,
   requireManageUsers,
   normalizeCrmAttachmentUrl,
   safeCrmRedirect,

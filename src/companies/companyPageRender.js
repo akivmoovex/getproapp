@@ -1,13 +1,16 @@
 const QRCode = require("qrcode");
-const { getTenantById, DEFAULT_TENANT_SLUG } = require("../tenants");
+const { getTenantByIdAsync, DEFAULT_TENANT_SLUG } = require("../tenants");
 const { TENANT_ZM } = require("../tenants/tenantIds");
-const { getTenantContactSupport } = require("../tenants/tenantContactSupport");
+const { getTenantContactSupportAsync } = require("../tenants/tenantContactSupport");
 const {
   parseGalleryJson,
   formatReviewDateLabel,
   buildCompanyMiniSiteUrl,
   companyMiniSiteLabel,
 } = require("./companyProfile");
+const { getPgPool } = require("../db/pg");
+const reviewsRepo = require("../db/pg/reviewsRepo");
+const categoriesRepo = require("../db/pg/categoriesRepo");
 
 function tenantHomeHrefFromPrefix(prefix) {
   if (!prefix) return "/";
@@ -88,20 +91,13 @@ function computeReviewStatsFromRows(reviewsRaw) {
   };
 }
 
-function loadCompanyProfileExtrasFromDb(db, company) {
-  const cid = company.id;
-  const reviewsRaw = db
-    .prepare(
-      `
-      SELECT id, rating, body, author_name, created_at
-      FROM reviews
-      WHERE company_id = ?
-      ORDER BY datetime(created_at) DESC
-      LIMIT 60
-      `
-    )
-    .all(cid);
-
+/**
+ * Same rows as legacy SQLite query (newest first, limit 60); averages still computed in JS via computeReviewStatsFromRows.
+ * @param {import("pg").Pool} pool
+ * @param {object} company
+ */
+async function loadCompanyProfileExtrasFromPg(pool, company) {
+  const reviewsRaw = await reviewsRepo.listForCompanyProfile(pool, company.id, 60);
   const stats = computeReviewStatsFromRows(reviewsRaw);
   const { galleryItems, mediaCarouselItems } = buildMediaCarouselItems(company);
   return {
@@ -131,10 +127,14 @@ function loadCompanyProfileExtrasFromOverride(company, reviewOverride) {
   };
 }
 
-function enrichCompanyWithCategory(db, company) {
+/**
+ * @param {import("pg").Pool} pool
+ */
+async function enrichCompanyWithCategoryAsync(pool, company) {
+  if (!company) return company;
   const tid = company.tenant_id;
   const cat = company.category_id
-    ? db.prepare("SELECT slug, name FROM categories WHERE id = ? AND tenant_id = ?").get(company.category_id, tid)
+    ? await categoriesRepo.getByIdAndTenantId(pool, company.category_id, tid)
     : null;
   return {
     ...company,
@@ -144,10 +144,10 @@ function enrichCompanyWithCategory(db, company) {
 }
 
 /**
- * Async locals for views/company.ejs (public pages + admin preview).
+ * Async locals for views/company.ejs (public pages + admin preview + company portal minisite).
  * @param {object} [options.reviewOverride] - if set, use instead of DB reviews
  */
-async function buildCompanyPageLocals(req, db, company, options = {}) {
+async function buildCompanyPageLocals(req, company, options = {}) {
   const {
     reviewOverride,
     companyPortalReadOnly,
@@ -156,15 +156,18 @@ async function buildCompanyPageLocals(req, db, company, options = {}) {
     activeCompanyNav,
     providerPortalBasePath,
   } = options;
-  const tenant = getTenantById(company.tenant_id, db) || getTenantById(TENANT_ZM, db);
+  const pool = getPgPool();
+  const co = await enrichCompanyWithCategoryAsync(pool, company);
+  const tenant =
+    (await getTenantByIdAsync(pool, co.tenant_id)) || (await getTenantByIdAsync(pool, TENANT_ZM));
   const tenantUrlPrefix = platformTenantPrefixForSlug(tenant.slug);
   const extras = reviewOverride
     ? loadCompanyProfileExtrasFromOverride(company, reviewOverride)
-    : loadCompanyProfileExtrasFromDb(db, company);
+    : await loadCompanyProfileExtrasFromPg(pool, company);
 
   const baseDomain = process.env.BASE_DOMAIN || "";
-  const companyUrl = buildCompanyMiniSiteUrl(tenant.slug, company.subdomain, baseDomain);
-  const miniSiteLabel = companyMiniSiteLabel(tenant.slug, company.subdomain, baseDomain);
+  const companyUrl = buildCompanyMiniSiteUrl(tenant.slug, co.subdomain, baseDomain);
+  const miniSiteLabel = companyMiniSiteLabel(tenant.slug, co.subdomain, baseDomain);
 
   const miniQrTarget = companyUrl && companyUrl !== "#" ? toAbsoluteUrl(req, companyUrl) : "";
 
@@ -179,9 +182,11 @@ async function buildCompanyPageLocals(req, db, company, options = {}) {
     console.error("[getpro] QR generation failed:", e.message);
   }
 
+  const supportLocals = await getTenantContactSupportAsync(pool, co.tenant_id);
+
   return {
-    company,
-    category: company.category_slug ? { slug: company.category_slug, name: company.category_name } : null,
+    company: co,
+    category: co.category_slug ? { slug: co.category_slug, name: co.category_name } : null,
     ...extras,
     baseDomain,
     companyUrl,
@@ -192,7 +197,7 @@ async function buildCompanyPageLocals(req, db, company, options = {}) {
     tenantUrlPrefix,
     tenantHomeHref: tenantHomeHrefFromPrefix(tenantUrlPrefix),
     regionChoices: req.regionChoices || [],
-    ...getTenantContactSupport(db, company.tenant_id),
+    ...supportLocals,
     companyPortalReadOnly: !!companyPortalReadOnly,
     companyPortalLayout: !!companyPortalLayout,
     companyPortalPersonnel: companyPortalPersonnel || null,
@@ -203,8 +208,6 @@ async function buildCompanyPageLocals(req, db, company, options = {}) {
 
 module.exports = {
   buildCompanyPageLocals,
-  enrichCompanyWithCategory,
-  loadCompanyProfileExtrasFromDb,
-  tenantHomeHrefFromPrefix,
+  enrichCompanyWithCategoryAsync,
   platformTenantPrefixForSlug,
 };

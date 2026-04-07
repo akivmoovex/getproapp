@@ -1,19 +1,16 @@
 /**
- * @param {import("better-sqlite3").Database} db
+ * Thin async wrapper for CRM audit inserts via PostgreSQL (`crmAuditRepo.insertAuditLog`).
+ * Primary CRM writes use `insertAuditLog` inside `crmTasksRepo` transactions.
  */
-function insertCrmAudit(db, { tenantId, taskId, userId, actionType, details }) {
-  db.prepare(
-    `
-    INSERT INTO crm_audit_logs (tenant_id, task_id, user_id, action_type, details)
-    VALUES (?, ?, ?, ?, ?)
-    `
-  ).run(
-    tenantId,
-    taskId,
-    userId != null && Number(userId) > 0 ? Number(userId) : null,
-    String(actionType || "unknown").slice(0, 64),
-    String(details || "").slice(0, 2000)
-  );
+
+const { insertAuditLog } = require("../db/pg/crmAuditRepo");
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {{ tenantId: number, taskId: number, userId?: number | null, actionType: string, details?: string }} payload
+ */
+async function insertCrmAuditWithStore(pool, payload) {
+  await insertAuditLog(pool, payload);
 }
 
-module.exports = { insertCrmAudit };
+module.exports = { insertCrmAuditWithStore };

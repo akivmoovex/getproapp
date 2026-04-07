@@ -1,6 +1,6 @@
 # GetPro (getproapp.org)
 
-Node + Express directory app using SQLite via `better-sqlite3`.
+Node + Express directory app: **PostgreSQL is required** (`DATABASE_URL` or `GETPRO_DATABASE_URL`). Application data and **sessions** use the same Postgres pool (`connect-pg-simple`, table `public.session`). **`better-sqlite3` is not a dependency** (it existed only for removed SQLite tooling). There is **no hybrid SQLite/Postgres runtime** and **`npm run rebuild-sqlite`** does not exist. See **`docs/SQLITE_RUNTIME_CUTOVER.md`**.
 
 ## Git / CI deployment (Hostinger Node.js, etc.)
 
@@ -60,30 +60,14 @@ If you get **JSON** but `resolvedHost` is wrong (e.g. `127.0.0.1` or an internal
 
 **Israel “coming soon” only:** set `ISRAEL_COMING_SOON=true` to show the static coming-soon page on `il.*` and block Israel-only API paths. Omit it (default) for the same directory/join experience as Zambia (separate `tenant_id` data).
 
-## Hostinger / Linux: `invalid ELF header` on `better_sqlite3.node`
-
-That error means the **native addon was built for another OS** (e.g. macOS/Windows) and was deployed to **Linux**. Common causes:
-
-1. **`node_modules` was uploaded or committed** from your laptop — don’t do that.
-2. The host ran **no install** on Linux, or an old `node_modules` folder overwrote a good one.
-
-**Fix:**
-
-1. Ensure **`node_modules` is not in Git** (see `.gitignore`) and not in your deployment ZIP/FTP upload.
-2. On Hostinger, use a **build/install step on the server** (or their CI) so dependencies install **on Linux**:
-   - Typical build command: `npm install` or `npm ci`
-   - If a bad binary is still there, run once: `npm run rebuild-sqlite` (or `npm rebuild better-sqlite3`).
-3. Redeploy so **`npm install` runs on Hostinger’s Linux environment** after upload.
-
-`better-sqlite3` includes a platform-specific `.node` file; it must match the server OS and Node version.
-
 ## Local development
 
 Create a `.env` file in the project root (this file is gitignored). Example:
 
 ```bash
-# Required for first boot
+# Required
 ADMIN_PASSWORD=your-secure-password
+DATABASE_URL=postgresql://...   # or GETPRO_DATABASE_URL
 
 # Recommended
 NODE_ENV=development
@@ -94,7 +78,11 @@ npm install
 npm start
 ```
 
-**Database:** Schema changes, migrations, and built-in demo data run **automatically** on startup via `src/db/index.js` (required as `./src/db`; no separate `seed` script). Use `SQLITE_PATH` if the database file lives outside `data/`. Only **`data/getpro.sqlite`** is used by default — extra `*.sqlite` / `*.db` files (e.g. copied from other projects) are ignored unless `SQLITE_PATH` points at them; see `data/README.md`.
+**Database:** The server **exits** if **`DATABASE_URL` / `GETPRO_DATABASE_URL`** is unset. Apply **`db/postgres/000_full_schema.sql`** (and follow-ups) to Postgres; application access is via **`src/db/pg/*`**. There is **no** SQLite database opened on Express startup — **`src/db/index.js`** is a guard/stub. **SQLite → Postgres bulk copy scripts are not shipped** in this repo (retired; **`docs/SQLITE_TO_PG_DATA_MIGRATION.md`** is historical only). An optional local **`data/getpro.sqlite`** file is **not** used by the server; see **`data/README.md`**.
+
+**PostgreSQL / Supabase:** **`docs/SUPABASE_ENV.md`**. Verify pool: **`npm run test:pg`**. After schema apply, optional: **`npm run test:pg:repos`**. SQL layout: **`db/postgres/`** (`db/postgres/README.md`). Prisma is not used.
+
+**Callbacks (`callback_interests`):** Runtime uses PostgreSQL when the DB URL is set. **`docs/SUPABASE_SLICE1_CALLBACKS.md`**, **`docs/SUPABASE_MIGRATION_BACKLOG.md`**.
 
 **Admin UI:** Layout tokens and patterns for grids, cards, tables, and modals are documented in [`docs/ADMIN_UI.md`](docs/ADMIN_UI.md).
 
@@ -104,7 +92,7 @@ npm start
 
 **Apex + Zambia visitors:** If **`CF-IPCountry`** is **`ZM`** (Cloudflare passes this to the origin), the apex host serves the **Zambia** tenant home (same content as **`zm.{BASE_DOMAIN}`**), with links pointing at the regional host. For local testing without Cloudflare, set **`GETPRO_FORCE_CLIENT_COUNTRY=ZM`**. Other regions are unchanged; only **`zm`** enforces a national phone format (**0** + **9** digits).
 
-**Multi-tenant data:** Categories, companies, leads, and admin access are scoped by **`tenant_id`**. Super admin can **create, edit, and delete** regions (except **global**); a one-time boot migration may remove tenant rows that are not in the canonical slug list (see `docs/DATA_MODEL.md`).
+**Multi-tenant data:** Categories, companies, leads, and admin access are scoped by **`tenant_id`**. Super admin can **create, edit, and delete** regions (except **global**). For historical SQLite migration behavior around non-canonical tenants, see **`docs/DATA_MODEL.md`** and **Git history** for deleted **`src/db/migrations/`** (not present on current branches; not run by **`server.js`**).
 
 ### Admin roles & tenant stages
 
@@ -151,12 +139,10 @@ The animated “typing” hint is set with `data-watermark-text` on the `.pro-ac
 
 ## Environment
 
-**Common variables:** `ADMIN_PASSWORD` (required), `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `SQLITE_PATH`, `SESSION_DIR`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, `GETPRO_STYLES_V`, `SEED_BUILTIN_USERS` (`0` to skip demo admin seeding), `SEED_MANAGER_USERS` (`0` to skip martin/faith/daisy multi-tenant seed), **`GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG`** (optional: force super admin’s initial tenant scope, e.g. `zm` or `demo`).
+**Common variables:** `ADMIN_PASSWORD` (required), **`DATABASE_URL` or `GETPRO_DATABASE_URL` (required)** — `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, `GETPRO_STYLES_V`, `SEED_BUILTIN_USERS` (`0` to skip demo admin seeding), `SEED_MANAGER_USERS` (`0` to skip martin/faith/daisy multi-tenant seed), **`GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG`**, **`GETPRO_PG_POOL_MAX`**, **`GETPRO_PG_IDLE_MS`**, **`GETPRO_PG_CONNECT_TIMEOUT_MS`**.
 
 **Production:** set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). Optional: `DEBUG_HOST=1` temporarily for `/healthz` and `/api/debug/host`; `ISRAEL_COMING_SOON=true` to lock Israel to coming-soon; `TRUST_PROXY=0` only if Node is exposed directly without a reverse proxy (Hostinger usually needs the default trust proxy). On hosts that don’t deploy `.env`, set the same keys in the panel’s environment variables.
 
-Default SQLite path is **`data/getpro.sqlite`**. Point `SQLITE_PATH` at your file if you keep the database elsewhere.
-
-**Regional tenant lock (first boot):** A one-time migration sets every tenant except **`global`** and **`zm`** (Zambia) to **`Disabled`**. Another one-time migration then **enables `demo`** and **disables `za`** (South Africa). To skip the regional lock on a fresh database, set **`GETPRO_SKIP_TENANT_REGION_LOCK=1`** before the first run. After boot, you can still change stages in **Super admin**.
+**Regional tenant lock:** Legacy SQLite migration **`04-tenant-defaults-and-demo-companies`** (removed from tree; see **Git history**) applied when **replaying** old migrations on a `.sqlite` file, not when starting **`server.js`**. In production, manage tenant **stage** in **Super admin** (and Postgres data).
 
 **Super admin — all users:** Open **`/admin/super/users`** to list **Global & Zambia** accounts and **all** admin users across tenants, with create / edit / delete / enable / disable and password change. Passwords are never stored in plain text (only bcrypt hashes).

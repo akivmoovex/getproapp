@@ -4,12 +4,11 @@
 const { isSuperAdmin } = require("../../auth");
 const { canAccessCrm, canMutateCrm, canClaimCrmTasks } = require("../../auth/roles");
 const { CRM_TASK_STATUSES, normalizeCrmTaskStatus, crmTaskStatusLabel } = require("../../crm/crmTaskStatuses");
-const { insertCrmAudit } = require("../../crm/crmAudit");
-const { adminUserIsInTenant } = require("../../auth/adminUserTenants");
 const { getAdminTenantId, normalizeCrmAttachmentUrl, safeCrmRedirect } = require("./adminShared");
+const { getPgPool } = require("../../db/pg");
+const crmTasksRepo = require("../../db/pg/crmTasksRepo");
 
-module.exports = function registerAdminCrmRoutes(router, deps) {
-  const { db } = deps;
+module.exports = function registerAdminCrmRoutes(router) {
   function requireCrmAccess(req, res, next) {
     if (!req.session.adminUser) return res.redirect("/admin/login");
     if (!canAccessCrm(req.session.adminUser.role)) {
@@ -18,37 +17,15 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
     return next();
   }
 
-  function getTenantUsersForCrm(dbConn, tenantId) {
-    const tid = Number(tenantId);
-    return dbConn
-      .prepare(
-        `SELECT DISTINCT u.id, u.username
-         FROM admin_users u
-         LEFT JOIN admin_user_tenant_roles m ON m.admin_user_id = u.id AND m.tenant_id = ?
-         WHERE COALESCE(u.enabled, 1) = 1 AND (m.tenant_id IS NOT NULL OR u.tenant_id = ?)
-         ORDER BY u.username COLLATE NOCASE ASC`
-      )
-      .all(tid, tid);
-  }
-
-  function loadCrmTaskDetailData(req, rawId) {
+  async function loadCrmTaskDetailData(req, rawId) {
+    const pool = getPgPool();
     const tid = getAdminTenantId(req);
     const uid = req.session.adminUser.id;
     const role = req.session.adminUser.role;
     const superU = isSuperAdmin(role);
     const id = Number(rawId);
     if (!id || id < 1) return null;
-    const task = db
-      .prepare(
-        `
-        SELECT t.*, o.username AS owner_username, c.username AS creator_username
-        FROM crm_tasks t
-        LEFT JOIN admin_users o ON o.id = t.owner_id
-        LEFT JOIN admin_users c ON c.id = t.created_by_id
-        WHERE t.id = ? AND t.tenant_id = ?
-        `
-      )
-      .get(id, tid);
+    const task = await crmTasksRepo.getTaskByIdAndTenant(pool, id, tid);
     if (!task) return null;
     const isOwner = task.owner_id != null && Number(task.owner_id) === Number(uid);
     const canEdit = canMutateCrm(role) && (isOwner || superU);
@@ -57,31 +34,9 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
       task.owner_id == null &&
       normalizeCrmTaskStatus(task.status) === "new";
 
-    const comments = db
-      .prepare(
-        `
-        SELECT c.*, u.username AS author_username
-        FROM crm_task_comments c
-        LEFT JOIN admin_users u ON u.id = c.user_id
-        WHERE c.task_id = ? AND c.tenant_id = ?
-        ORDER BY datetime(c.created_at) ASC, c.id ASC
-        `
-      )
-      .all(id, tid);
-
-    const tenantUsersForReassign = superU ? getTenantUsersForCrm(db, tid) : [];
-
-    const auditLogs = db
-      .prepare(
-        `
-        SELECT a.*, u.username AS actor_username
-        FROM crm_audit_logs a
-        LEFT JOIN admin_users u ON u.id = a.user_id
-        WHERE a.task_id = ? AND a.tenant_id = ?
-        ORDER BY datetime(a.created_at) DESC, a.id DESC
-        `
-      )
-      .all(id, tid);
+    const comments = await crmTasksRepo.listCommentsForTask(pool, id, tid);
+    const tenantUsersForReassign = superU ? await crmTasksRepo.listTenantUsersForCrm(pool, tid) : [];
+    const auditLogs = await crmTasksRepo.listAuditForTask(pool, id, tid);
 
     return {
       activeNav: "crm",
@@ -101,23 +56,14 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
     };
   }
 
-  router.get("/crm", requireCrmAccess, (req, res) => {
+  router.get("/crm", requireCrmAccess, async (req, res) => {
     const tid = getAdminTenantId(req);
     const uid = req.session.adminUser.id;
     const role = req.session.adminUser.role;
     const superU = isSuperAdmin(role);
 
-    const rows = db
-      .prepare(
-        `
-        SELECT t.*, u.username AS owner_username
-        FROM crm_tasks t
-        LEFT JOIN admin_users u ON u.id = t.owner_id
-        WHERE t.tenant_id = ?
-        ORDER BY datetime(t.updated_at) DESC
-        `
-      )
-      .all(tid);
+    const pool = getPgPool();
+    const rows = await crmTasksRepo.listTasksForBoard(pool, tid);
 
     for (const t of rows) {
       t.canDrag =
@@ -134,7 +80,7 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
       if (tasksByStatus[st]) tasksByStatus[st].push(t);
     }
 
-    let crmTenantUsers = getTenantUsersForCrm(db, tid);
+    let crmTenantUsers = await crmTasksRepo.listTenantUsersForCrm(pool, tid);
     if (!crmTenantUsers.length) {
       const uname = req.session.adminUser.username || "You";
       crmTenantUsers = [{ id: uid, username: uname }];
@@ -159,19 +105,19 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
     });
   });
 
-  router.get("/crm/tasks/:id/panel", requireCrmAccess, (req, res) => {
-    const data = loadCrmTaskDetailData(req, req.params.id);
+  router.get("/crm/tasks/:id/panel", requireCrmAccess, async (req, res) => {
+    const data = await loadCrmTaskDetailData(req, req.params.id);
     if (!data) return res.status(404).type("text").send("Not found");
     return res.render("admin/crm_task_panel", { ...data, overlayMode: true });
   });
 
-  router.get("/crm/tasks/:id", requireCrmAccess, (req, res) => {
-    const data = loadCrmTaskDetailData(req, req.params.id);
+  router.get("/crm/tasks/:id", requireCrmAccess, async (req, res) => {
+    const data = await loadCrmTaskDetailData(req, req.params.id);
     if (!data) return res.status(404).send("Task not found");
     return res.render("admin/crm_task_detail", { ...data, overlayMode: false });
   });
 
-  router.post("/crm/tasks", requireCrmAccess, (req, res) => {
+  router.post("/crm/tasks", requireCrmAccess, async (req, res) => {
     if (!canMutateCrm(req.session.adminUser.role)) return res.status(403).type("text").send("Read-only access.");
     const tid = getAdminTenantId(req);
     const uid = req.session.adminUser.id;
@@ -186,49 +132,38 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
       const n = Number(rawOwner);
       if (n && n > 0) ownerId = n;
     }
+    const pool = getPgPool();
     if (ownerId != null) {
-      if (!adminUserIsInTenant(db, ownerId, tid)) return res.status(400).send("Invalid assignee.");
+      if (!(await crmTasksRepo.userIsInTenant(pool, null, ownerId, tid))) {
+        return res.status(400).send("Invalid assignee.");
+      }
     }
     const status = ownerId != null ? "in_progress" : "new";
 
-    let taskId;
     try {
-      db.transaction(() => {
-        const r = db
-          .prepare(
-            `
-            INSERT INTO crm_tasks (tenant_id, title, description, status, owner_id, created_by_id, attachment_url, source_type, source_ref_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', NULL)
-            `
-          )
-          .run(tid, title, description, status, ownerId, uid, attachment_url);
-        taskId = Number(r.lastInsertRowid);
-        insertCrmAudit(db, {
-          tenantId: tid,
-          taskId,
-          userId: uid,
-          actionType: "task_created",
-          details: JSON.stringify({
-            title,
-            attachment_url: attachment_url || undefined,
-            owner_id: ownerId,
-            status,
-          }),
-        });
-      })();
+      await crmTasksRepo.createTaskWithAudit(pool, {
+        tenantId: tid,
+        title,
+        description,
+        status,
+        ownerId,
+        createdById: uid,
+        attachmentUrl: attachment_url,
+      });
     } catch (e) {
       return res.status(400).send(e.message || "Could not create task");
     }
     return res.redirect("/admin/crm");
   });
 
-  router.post("/crm/tasks/:id/fields", requireCrmAccess, (req, res) => {
+  router.post("/crm/tasks/:id/fields", requireCrmAccess, async (req, res) => {
     if (!canMutateCrm(req.session.adminUser.role)) return res.status(403).type("text").send("Read-only access.");
     const tid = getAdminTenantId(req);
     const uid = req.session.adminUser.id;
     const id = Number(req.params.id);
     if (!id || id < 1) return res.status(400).send("Invalid id.");
-    const task = db.prepare("SELECT * FROM crm_tasks WHERE id = ? AND tenant_id = ?").get(id, tid);
+    const pool = getPgPool();
+    const task = await crmTasksRepo.getTaskByIdAndTenant(pool, id, tid);
     if (!task) return res.status(404).send("Not found.");
     const role = req.session.adminUser.role;
     const superU = isSuperAdmin(role);
@@ -239,25 +174,22 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
     const attachment_url = normalizeCrmAttachmentUrl(req.body && req.body.attachment_url);
     if (!title) return res.status(400).send("Title is required.");
     try {
-      db.transaction(() => {
-        db.prepare(
-          `UPDATE crm_tasks SET title = ?, description = ?, attachment_url = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
-        ).run(title, description, attachment_url, id, tid);
-        insertCrmAudit(db, {
-          tenantId: tid,
-          taskId: id,
-          userId: uid,
-          actionType: "task_fields_updated",
-          details: JSON.stringify({ title }),
-        });
-      })();
+      const ok = await crmTasksRepo.updateTaskFieldsWithAudit(pool, {
+        tenantId: tid,
+        taskId: id,
+        userId: uid,
+        title,
+        description,
+        attachmentUrl: attachment_url,
+      });
+      if (!ok) return res.status(404).send("Not found.");
     } catch (e) {
       return res.status(400).send(e.message || "Could not save");
     }
     return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${id}`));
   });
 
-  router.post("/crm/tasks/:id/claim", requireCrmAccess, (req, res) => {
+  router.post("/crm/tasks/:id/claim", requireCrmAccess, async (req, res) => {
     if (!canClaimCrmTasks(req.session.adminUser.role)) {
       return res.status(403).type("text").send("You cannot claim tasks.");
     }
@@ -265,38 +197,27 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
     const uid = req.session.adminUser.id;
     const id = Number(req.params.id);
     if (!id || id < 1) return res.status(400).send("Invalid id");
-    const task = db.prepare("SELECT * FROM crm_tasks WHERE id = ? AND tenant_id = ?").get(id, tid);
+    const pool = getPgPool();
+    const task = await crmTasksRepo.getTaskByIdAndTenant(pool, id, tid);
     if (!task) return res.status(404).send("Not found");
     if (task.owner_id != null) return res.status(400).send("Task already assigned.");
     try {
-      db.transaction(() => {
-        db.prepare(
-          `
-          UPDATE crm_tasks SET owner_id = ?, status = 'in_progress', updated_at = datetime('now')
-          WHERE id = ? AND tenant_id = ?
-          `
-        ).run(uid, id, tid);
-        insertCrmAudit(db, {
-          tenantId: tid,
-          taskId: id,
-          userId: uid,
-          actionType: "assignment",
-          details: JSON.stringify({ owner_id: uid, action: "claim" }),
-        });
-      })();
+      const ok = await crmTasksRepo.claimTaskWithAudit(pool, { tenantId: tid, taskId: id, userId: uid });
+      if (!ok) return res.status(400).send("Could not claim");
     } catch (e) {
       return res.status(400).send(e.message || "Could not claim");
     }
     return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${id}`));
   });
 
-  router.post("/crm/tasks/:id/status", requireCrmAccess, (req, res) => {
+  router.post("/crm/tasks/:id/status", requireCrmAccess, async (req, res) => {
     if (!canMutateCrm(req.session.adminUser.role)) return res.status(403).type("text").send("Read-only access.");
     const tid = getAdminTenantId(req);
     const uid = req.session.adminUser.id;
     const id = Number(req.params.id);
     const status = normalizeCrmTaskStatus(req.body && req.body.status);
-    const task = db.prepare("SELECT * FROM crm_tasks WHERE id = ? AND tenant_id = ?").get(id, tid);
+    const pool = getPgPool();
+    const task = await crmTasksRepo.getTaskByIdAndTenant(pool, id, tid);
     if (!task) return res.status(404).send("Not found");
     if (task.owner_id == null || Number(task.owner_id) !== Number(uid)) {
       if (!isSuperAdmin(req.session.adminUser.role)) {
@@ -305,25 +226,21 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
     }
     const prev = task.status;
     try {
-      db.transaction(() => {
-        db.prepare(
-          `UPDATE crm_tasks SET status = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
-        ).run(status, id, tid);
-        insertCrmAudit(db, {
-          tenantId: tid,
-          taskId: id,
-          userId: uid,
-          actionType: "status_change",
-          details: JSON.stringify({ from: prev, to: status }),
-        });
-      })();
+      const ok = await crmTasksRepo.updateTaskStatusWithAudit(pool, {
+        tenantId: tid,
+        taskId: id,
+        userId: uid,
+        status,
+        prevStatus: prev,
+      });
+      if (!ok) return res.status(404).send("Not found");
     } catch (e) {
       return res.status(400).send(e.message || "Could not update");
     }
     return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${id}`));
   });
 
-  router.post("/crm/tasks/:id/move", requireCrmAccess, (req, res) => {
+  router.post("/crm/tasks/:id/move", requireCrmAccess, async (req, res) => {
     if (!canMutateCrm(req.session.adminUser.role)) {
       return res.status(403).json({ error: "Read-only access." });
     }
@@ -335,7 +252,8 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
     const newStatus = normalizeCrmTaskStatus(req.body && req.body.status);
     if (!id || id < 1) return res.status(400).json({ error: "Invalid id" });
 
-    const task = db.prepare("SELECT * FROM crm_tasks WHERE id = ? AND tenant_id = ?").get(id, tid);
+    const pool = getPgPool();
+    const task = await crmTasksRepo.getTaskByIdAndTenant(pool, id, tid);
     if (!task) return res.status(404).json({ error: "Not found" });
 
     const prev = normalizeCrmTaskStatus(task.status);
@@ -363,43 +281,22 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
     }
 
     try {
-      db.transaction(() => {
-        db.prepare(
-          `UPDATE crm_tasks SET status = ?, owner_id = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
-        ).run(newStatus, nextOwnerId, id, tid);
-        insertCrmAudit(db, {
-          tenantId: tid,
-          taskId: id,
-          userId: uid,
-          actionType: "status_change",
-          details: JSON.stringify({ from: prev, to: newStatus, via: "kanban" }),
-        });
-        if (!task.owner_id && nextOwnerId) {
-          insertCrmAudit(db, {
-            tenantId: tid,
-            taskId: id,
-            userId: uid,
-            actionType: "assignment",
-            details: JSON.stringify({ owner_id: nextOwnerId, action: "claim_kanban" }),
-          });
-        }
-        if (task.owner_id && nextOwnerId == null) {
-          insertCrmAudit(db, {
-            tenantId: tid,
-            taskId: id,
-            userId: uid,
-            actionType: "assignment",
-            details: JSON.stringify({ from_owner_id: task.owner_id, action: "unassign_kanban" }),
-          });
-        }
-      })();
+      await crmTasksRepo.moveKanbanWithAudit(pool, {
+        tenantId: tid,
+        taskId: id,
+        userId: uid,
+        newStatus,
+        prevStatus: prev,
+        task,
+        nextOwnerId,
+      });
     } catch (e) {
       return res.status(400).json({ error: e.message || "Could not move" });
     }
     return res.json({ ok: true });
   });
 
-  router.post("/crm/tasks/:id/reassign", requireCrmAccess, (req, res) => {
+  router.post("/crm/tasks/:id/reassign", requireCrmAccess, async (req, res) => {
     if (!isSuperAdmin(req.session.adminUser.role)) {
       return res.status(403).type("text").send("Only super admin can reassign.");
     }
@@ -414,11 +311,14 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
       return res.status(400).send("Invalid user.");
     }
 
-    const task = db.prepare("SELECT * FROM crm_tasks WHERE id = ? AND tenant_id = ?").get(id, tid);
+    const pool = getPgPool();
+    const task = await crmTasksRepo.getTaskByIdAndTenant(pool, id, tid);
     if (!task) return res.status(404).send("Not found");
 
     if (newOwnerId != null) {
-      if (!adminUserIsInTenant(db, newOwnerId, tid)) return res.status(400).send("User not in this tenant.");
+      if (!(await crmTasksRepo.userIsInTenant(pool, null, newOwnerId, tid))) {
+        return res.status(400).send("User not in this tenant.");
+      }
     }
 
     const prevOwner = task.owner_id;
@@ -430,25 +330,22 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
     }
 
     try {
-      db.transaction(() => {
-        db.prepare(
-          `UPDATE crm_tasks SET owner_id = ?, status = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`
-        ).run(newOwnerId, nextStatus, id, tid);
-        insertCrmAudit(db, {
-          tenantId: tid,
-          taskId: id,
-          userId: uid,
-          actionType: "assignment",
-          details: JSON.stringify({ from_owner_id: prevOwner, to_owner_id: newOwnerId }),
-        });
-      })();
+      const ok = await crmTasksRepo.reassignTaskWithAudit(pool, {
+        tenantId: tid,
+        taskId: id,
+        userId: uid,
+        newOwnerId,
+        nextStatus,
+        prevOwner,
+      });
+      if (!ok) return res.status(404).send("Not found");
     } catch (e) {
       return res.status(400).send(e.message || "Could not reassign");
     }
     return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${id}`));
   });
 
-  router.post("/crm/tasks/:id/comments", requireCrmAccess, (req, res) => {
+  router.post("/crm/tasks/:id/comments", requireCrmAccess, async (req, res) => {
     if (!canMutateCrm(req.session.adminUser.role)) {
       return res.status(403).type("text").send("Read-only access.");
     }
@@ -459,19 +356,16 @@ module.exports = function registerAdminCrmRoutes(router, deps) {
     if (!id || id < 1) return res.status(400).send("Invalid id");
     if (!body) return res.status(400).send("Comment is required.");
 
-    const task = db.prepare("SELECT id FROM crm_tasks WHERE id = ? AND tenant_id = ?").get(id, tid);
+    const pool = getPgPool();
+    const task = await crmTasksRepo.getTaskByIdAndTenant(pool, id, tid);
     if (!task) return res.status(404).send("Not found");
 
     try {
-      db.prepare(
-        `INSERT INTO crm_task_comments (tenant_id, task_id, user_id, body) VALUES (?, ?, ?, ?)`
-      ).run(tid, id, uid, body);
-      insertCrmAudit(db, {
+      await crmTasksRepo.insertCommentWithAudit(pool, {
         tenantId: tid,
         taskId: id,
         userId: uid,
-        actionType: "comment",
-        details: JSON.stringify({ length: body.length }),
+        body,
       });
     } catch (e) {
       return res.status(400).send(e.message || "Could not save comment");

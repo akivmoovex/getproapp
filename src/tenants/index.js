@@ -1,6 +1,8 @@
 const { resolveHostname, getClientCountryCode } = require("../platform/host");
 const { STAGES } = require("./tenantStages");
-const { getOrSet, metaTtlMs, stageTtlMs } = require("./tenantMetadataCache");
+const { getOrSet, getOrSetAsync, metaTtlMs, stageTtlMs } = require("./tenantMetadataCache");
+const { getPgPool } = require("../db/pg");
+const tenantsRepo = require("../db/pg/tenantsRepo");
 
 /**
  * Static display metadata (theme + flag). DB `tenants` row supplies id, name, stage.
@@ -88,25 +90,40 @@ function getTenantBySlug(slug) {
   return TENANTS[s] || null;
 }
 
-function getTenantById(id, db) {
+/** Static platform tenants only; use {@link getTenantByIdAsync} for DB-backed ids. */
+function getTenantById(id) {
+  const n = Number(id);
+  if (!n) return null;
+  return Object.values(TENANTS).find((t) => t.id === n) || null;
+}
+
+/**
+ * PostgreSQL-backed tenant resolution by id (Wave 2 public reads). Same merged shape as `getTenantById`.
+ * @param {import("pg").Pool} pool
+ */
+async function getTenantByIdAsync(pool, id) {
   const n = Number(id);
   if (!n) return null;
   const fromStatic = Object.values(TENANTS).find((t) => t.id === n);
   if (fromStatic) return fromStatic;
-  if (db) {
-    const row = getOrSet(`tenant:slug-by-id:${n}`, metaTtlMs(), () =>
-      db.prepare("SELECT slug FROM tenants WHERE id = ?").get(n)
-    );
-    if (row && row.slug) return getTenantRowMerged(row.slug, db);
-  }
-  return null;
+  if (!pool) return null;
+  const slugRow = await getOrSetAsync(`tenant:slug-by-id:${n}`, metaTtlMs(), async () =>
+    tenantsRepo.getIdSlugById(pool, n)
+  );
+  if (!slugRow || !slugRow.slug) return null;
+  return getTenantRowMergedAsync(pool, slugRow.slug);
 }
 
-/** Merge DB row with static theme/flag when present. */
-function getTenantRowMerged(slug, db) {
+/**
+ * PostgreSQL-backed merge (Wave 1 cutover). Same shape as `getTenantRowMerged`.
+ * @param {import("pg").Pool} pool
+ * @param {string} slug
+ * @returns {Promise<object>}
+ */
+async function getTenantRowMergedAsync(pool, slug) {
   const s = String(slug || "").toLowerCase().trim();
-  return getOrSet(`tenant:merged:${s}`, metaTtlMs(), () => {
-    const row = db.prepare("SELECT id, slug, name FROM tenants WHERE slug = ?").get(s);
+  return getOrSetAsync(`tenant:merged:${s}`, metaTtlMs(), async () => {
+    const row = await tenantsRepo.getBySlug(pool, s);
     if (!row) return getTenantBySlug(s);
     const meta = TENANTS[row.slug];
     return {
@@ -120,20 +137,16 @@ function getTenantRowMerged(slug, db) {
   });
 }
 
-function buildRegionChoicesFromDb(db, base, scheme) {
+/**
+ * Region picker rows from PostgreSQL (Wave 1).
+ * @param {import("pg").Pool} pool
+ */
+async function buildRegionChoicesFromDbAsync(pool, base, scheme) {
   if (!base) return [];
   const b = String(base).trim().toLowerCase();
   const sch = String(scheme || "https");
-  return getOrSet(`tenant:region-choices:${b}:${sch}`, metaTtlMs(), () => {
-    const rows = db
-      .prepare(
-        `
-        SELECT slug, name FROM tenants
-        WHERE stage = ? AND slug != 'global' AND slug != 'demo'
-        ORDER BY id ASC
-        `
-      )
-      .all(STAGES.ENABLED);
+  return getOrSetAsync(`tenant:region-choices:${b}:${sch}`, metaTtlMs(), async () => {
+    const rows = await tenantsRepo.listEnabledRegionRows(pool, STAGES.ENABLED);
     return rows.map((row) => {
       const meta = TENANTS[row.slug];
       return {
@@ -146,23 +159,25 @@ function buildRegionChoicesFromDb(db, base, scheme) {
   });
 }
 
-/** Cached SELECT stage BY id — short TTL; used for enabled-gate only. */
-function getCachedTenantStageById(db, tenantId) {
+/**
+ * @param {import("pg").Pool} pool
+ */
+async function getCachedTenantStageByIdAsync(pool, tenantId) {
   const n = Number(tenantId);
   if (!n) return null;
-  return getOrSet(`tenant:stage:id:${n}`, stageTtlMs(), () =>
-    db.prepare("SELECT stage FROM tenants WHERE id = ?").get(n)
-  );
+  return getOrSetAsync(`tenant:stage:id:${n}`, stageTtlMs(), async () => {
+    const r = await pool.query(`SELECT stage FROM public.tenants WHERE id = $1`, [n]);
+    return r.rows[0] ?? null;
+  });
 }
 
-/** Cached slug existence for platform vs company subdomain routing. */
-function getCachedTenantSlugExists(db, slug) {
+/**
+ * @param {import("pg").Pool} pool
+ */
+async function getCachedTenantSlugExistsAsync(pool, slug) {
   const s = String(slug || "").toLowerCase().trim();
   if (!s) return false;
-  return getOrSet(`tenant:exists:${s}`, metaTtlMs(), () => {
-    const row = db.prepare("SELECT 1 FROM tenants WHERE slug = ?").get(s);
-    return !!row;
-  });
+  return getOrSetAsync(`tenant:exists:${s}`, metaTtlMs(), async () => tenantsRepo.slugExists(pool, s));
 }
 
 function attachTenant(slug, options = {}) {
@@ -194,100 +209,102 @@ function isValidPhoneForTenant(tenantSlug, raw) {
   return true;
 }
 
-function createAttachTenantByHost(db) {
-  return function attachTenantByHost(req, res, next) {
-    const scheme = process.env.PUBLIC_SCHEME || "https";
-    const base = (process.env.BASE_DOMAIN || "").toLowerCase().trim();
-    const host = resolveHostname(req);
+/**
+ * Apex home tenant selection when PostgreSQL is the source of truth (Wave 1).
+ * @param {import("pg").Pool} pool
+ */
+async function setApexTenantPg(pool, req, res) {
+  const scheme = process.env.PUBLIC_SCHEME || "https";
+  const base = (process.env.BASE_DOMAIN || "").toLowerCase().trim();
+  const globalRow = await getOrSetAsync("tenant:stage:slug:global", stageTtlMs(), async () => {
+    const r = await pool.query(`SELECT stage FROM public.tenants WHERE slug = $1`, ["global"]);
+    return r.rows[0] ?? null;
+  });
+  const zmRow = await getOrSetAsync("tenant:stage:slug:zm", stageTtlMs(), async () => {
+    const r = await pool.query(`SELECT stage FROM public.tenants WHERE slug = $1`, ["zm"]);
+    return r.rows[0] ?? null;
+  });
+  const country = getClientCountryCode(req);
 
-    const sub = req.subdomain;
-    if (sub && !req.isPlatformTenant) {
-      return next();
-    }
+  let slug = DEFAULT_TENANT_SLUG;
+  let zambiaGeoHome = false;
 
-    const isLocal =
-      !host || host === "localhost" || host === "127.0.0.1" || host.startsWith("localhost:");
-
-    function setApexTenant() {
-      const globalRow = getOrSet("tenant:stage:slug:global", stageTtlMs(), () =>
-        db.prepare("SELECT stage FROM tenants WHERE slug = ?").get("global")
-      );
-      const zmRow = getOrSet("tenant:stage:slug:zm", stageTtlMs(), () =>
-        db.prepare("SELECT stage FROM tenants WHERE slug = ?").get("zm")
-      );
-      const country = getClientCountryCode(req);
-
-      let slug = DEFAULT_TENANT_SLUG;
-      let zambiaGeoHome = false;
-
-      if (country === "ZM" && zmRow && zmRow.stage === STAGES.ENABLED) {
-        slug = "zm";
-        zambiaGeoHome = true;
-      } else if (globalRow && globalRow.stage === STAGES.ENABLED) {
-        slug = "global";
-      } else if (!zmRow || zmRow.stage !== STAGES.ENABLED) {
-        const first = getOrSet("tenant:first-enabled-non-demo", metaTtlMs(), () =>
-          db
-            .prepare(
-              `
-            SELECT slug FROM tenants
-            WHERE stage = ? AND slug != 'global' AND slug != 'demo'
-            ORDER BY id ASC LIMIT 1
-            `
-            )
-            .get(STAGES.ENABLED)
-        );
-        if (first && first.slug) slug = first.slug;
-      } else {
-        slug = "zm";
-      }
-
-      const t = getTenantRowMerged(slug, db);
-      req.tenant = t;
-      req.tenantSlug = t.slug;
-
-      if (zambiaGeoHome) {
-        req.tenantUrlPrefix = base ? `${scheme}://zm.${base}` : "";
-        req.isApexHost = false;
-      } else {
-        req.tenantUrlPrefix = "";
-        req.isApexHost = true;
-      }
-
-      res.locals.tenant = t;
-      res.locals.tenantUrlPrefix = req.tenantUrlPrefix;
-      res.locals.isApexHost = req.isApexHost;
-    }
-
-    if (!base || isLocal) {
-      setApexTenant();
-      return next();
-    }
-
-    const isApex = host === base || host === `www.${base}`;
-    if (isApex) {
-      setApexTenant();
-      return next();
-    }
-
-    const rows = getOrSet("tenant:slugs:ordered", metaTtlMs(), () =>
-      db.prepare("SELECT slug FROM tenants ORDER BY id").all()
+  if (country === "ZM" && zmRow && zmRow.stage === STAGES.ENABLED) {
+    slug = "zm";
+    zambiaGeoHome = true;
+  } else if (globalRow && globalRow.stage === STAGES.ENABLED) {
+    slug = "global";
+  } else if (!zmRow || zmRow.stage !== STAGES.ENABLED) {
+    const first = await getOrSetAsync("tenant:first-enabled-non-demo", metaTtlMs(), async () =>
+      tenantsRepo.firstEnabledNonDemoSlug(pool, STAGES.ENABLED)
     );
-    for (const { slug } of rows) {
-      if (sub === slug || host === `${slug}.${base}`) {
-        const t = getTenantRowMerged(slug, db);
-        req.tenant = t;
-        req.tenantSlug = t.slug;
-        req.tenantUrlPrefix = "";
-        req.isApexHost = false;
-        res.locals.tenant = t;
-        res.locals.tenantUrlPrefix = "";
-        res.locals.isApexHost = false;
+    if (first && first.slug) slug = first.slug;
+  } else {
+    slug = "zm";
+  }
+
+  const t = await getTenantRowMergedAsync(pool, slug);
+  req.tenant = t;
+  req.tenantSlug = t.slug;
+
+  if (zambiaGeoHome) {
+    req.tenantUrlPrefix = base ? `${scheme}://zm.${base}` : "";
+    req.isApexHost = false;
+  } else {
+    req.tenantUrlPrefix = "";
+    req.isApexHost = true;
+  }
+
+  res.locals.tenant = t;
+  res.locals.tenantUrlPrefix = req.tenantUrlPrefix;
+  res.locals.isApexHost = req.isApexHost;
+}
+
+function createAttachTenantByHost() {
+  return async function attachTenantByHost(req, res, next) {
+    try {
+      const scheme = process.env.PUBLIC_SCHEME || "https";
+      const base = (process.env.BASE_DOMAIN || "").toLowerCase().trim();
+      const host = resolveHostname(req);
+
+      const sub = req.subdomain;
+      if (sub && !req.isPlatformTenant) {
         return next();
       }
-    }
 
-    return next();
+      const isLocal =
+        !host || host === "localhost" || host === "127.0.0.1" || host.startsWith("localhost:");
+
+      const pool = getPgPool();
+      if (!base || isLocal) {
+        await setApexTenantPg(pool, req, res);
+        return next();
+      }
+      const isApex = host === base || host === `www.${base}`;
+      if (isApex) {
+        await setApexTenantPg(pool, req, res);
+        return next();
+      }
+      const rows = await getOrSetAsync("tenant:slugs:ordered", metaTtlMs(), async () =>
+        tenantsRepo.listSlugsOrdered(pool)
+      );
+      for (const { slug } of rows) {
+        if (sub === slug || host === `${slug}.${base}`) {
+          const t = await getTenantRowMergedAsync(pool, slug);
+          req.tenant = t;
+          req.tenantSlug = t.slug;
+          req.tenantUrlPrefix = "";
+          req.isApexHost = false;
+          res.locals.tenant = t;
+          res.locals.tenantUrlPrefix = "";
+          res.locals.isApexHost = false;
+          return next();
+        }
+      }
+      return next();
+    } catch (e) {
+      return next(e);
+    }
   };
 }
 
@@ -298,10 +315,10 @@ module.exports = {
   RESERVED_PLATFORM_SUBDOMAINS,
   getTenantBySlug,
   getTenantById,
-  getTenantRowMerged,
-  buildRegionChoicesFromDb,
-  getCachedTenantStageById,
-  getCachedTenantSlugExists,
+  getTenantByIdAsync,
+  buildRegionChoicesFromDbAsync,
+  getCachedTenantStageByIdAsync,
+  getCachedTenantSlugExistsAsync,
   attachTenant,
   createAttachTenantByHost,
   isValidZambiaPhoneLocal,

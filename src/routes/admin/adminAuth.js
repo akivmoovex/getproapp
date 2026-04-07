@@ -7,19 +7,38 @@ const {
 } = require("../../auth");
 const { ROLES } = require("../../auth/roles");
 const { STAGES } = require("../../tenants/tenantStages");
-const { resolveSessionAfterLogin } = require("../../auth/adminUserTenants");
+const { resolveSessionAfterLoginAsync } = require("../../auth/adminUserTenants");
 const { adminLoginLimiter } = require("../../middleware/authRateLimit");
+const { getPgPool } = require("../../db/pg");
+const tenantsRepo = require("../../db/pg/tenantsRepo");
 
-module.exports = function registerAdminAuthRoutes(router, deps) {
-  const { db } = deps;
+/**
+ * Super-admin default directory scope after login (env slug → demo → global → zm), enabled tenants only.
+ * @param {import("pg").Pool} pool
+ */
+async function pickSuperAdminInitialTenantScope(pool) {
+  const envSlug = (process.env.GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG || "").trim().toLowerCase();
+  const trySlugs = [];
+  if (envSlug) trySlugs.push(envSlug);
+  trySlugs.push("demo", "global", "zm");
+
+  for (const s of trySlugs) {
+    const row = await tenantsRepo.getIdBySlugAndStage(pool, s, STAGES.ENABLED);
+    if (row && row.id) return row.id;
+  }
+  return null;
+}
+
+module.exports = function registerAdminAuthRoutes(router) {
   router.get("/login", (req, res) => {
     if (req.session && req.session.adminUser) return res.redirect("/admin/dashboard");
     return res.render("admin/login", { error: null, cancelHref: "/getpro-admin" });
   });
 
   router.post("/login", adminLoginLimiter, async (req, res) => {
+    const pool = getPgPool();
     const { username = "", password = "" } = req.body || {};
-    const user = await authenticateAdmin({ db, username, password });
+    const user = await authenticateAdmin({ pool, username, password });
     if (!user) return res.render("admin/login", { error: "Invalid username or password.", cancelHref: "/getpro-admin" });
 
     req.session.adminTenantScope = null;
@@ -32,7 +51,7 @@ module.exports = function registerAdminAuthRoutes(router, deps) {
         tenantId: user.tenant_id,
       };
     } else {
-      const resolved = resolveSessionAfterLogin(db, user);
+      const resolved = await resolveSessionAfterLoginAsync(pool, user);
       req.session.adminUser = {
         id: user.id,
         username: user.username,
@@ -42,23 +61,9 @@ module.exports = function registerAdminAuthRoutes(router, deps) {
       req.session.adminTenantMemberships = resolved.memberships;
     }
     if (isSuperAdmin(user.role)) {
-      /** Default region for directory tools: env override → demo → global → zm. Global is apex-only and usually has no listings — demo holds sample data. */
-      const envSlug = (process.env.GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG || "").trim().toLowerCase();
-      let scopeRow = null;
-      if (envSlug) {
-        scopeRow = db.prepare("SELECT id FROM tenants WHERE slug = ? AND stage = ?").get(envSlug, STAGES.ENABLED);
-      }
-      if (!scopeRow) {
-        scopeRow = db.prepare("SELECT id FROM tenants WHERE slug = 'demo' AND stage = ?").get(STAGES.ENABLED);
-      }
-      if (!scopeRow) {
-        scopeRow = db.prepare("SELECT id FROM tenants WHERE slug = 'global' AND stage = ?").get(STAGES.ENABLED);
-      }
-      if (!scopeRow) {
-        scopeRow = db.prepare("SELECT id FROM tenants WHERE slug = 'zm' AND stage = ?").get(STAGES.ENABLED);
-      }
-      if (scopeRow && scopeRow.id) {
-        req.session.adminTenantScope = scopeRow.id;
+      const scopeId = await pickSuperAdminInitialTenantScope(pool);
+      if (scopeId) {
+        req.session.adminTenantScope = scopeId;
         return res.redirect("/admin/dashboard");
       }
       return res.redirect("/admin/super");

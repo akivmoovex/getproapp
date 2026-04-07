@@ -48,6 +48,28 @@ function getOrSet(key, ttlMs, compute) {
 }
 
 /**
+ * Async variant for PostgreSQL-backed tenant metadata (middleware must await).
+ * @template T
+ * @param {string} key
+ * @param {number} ttlMs
+ * @param {() => Promise<T>} compute
+ * @returns {Promise<T>}
+ */
+async function getOrSetAsync(key, ttlMs, compute) {
+  if (ttlMs === 0) return compute();
+  const now = Date.now();
+  const hit = store.get(key);
+  if (hit && hit.expires > now) {
+    return /** @type {T} */ (hit.value);
+  }
+  if (hit) store.delete(key);
+  const value = await compute();
+  evictIfNeeded();
+  store.set(key, { value, expires: now + ttlMs });
+  return value;
+}
+
+/**
  * Exposed for tests / debugging only.
  */
 function __resetTenantMetadataCacheForTests() {
@@ -58,5 +80,6 @@ module.exports = {
   metaTtlMs,
   stageTtlMs,
   getOrSet,
+  getOrSetAsync,
   __resetTenantMetadataCacheForTests,
 };

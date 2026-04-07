@@ -10,12 +10,19 @@ const {
   canMutateClientProjectIntake,
 } = require("./roles");
 const { TENANT_ZM } = require("../tenants/tenantIds");
-const { upsertMembership } = require("./adminUserTenants");
+const { upsertMembershipAsync } = require("./adminUserTenants");
+const adminUsersRepo = require("../db/pg/adminUsersRepo");
 
-async function ensureAdminUser({ db }) {
+function adminRowDisabled(admin) {
+  if (!admin) return true;
+  if (admin.enabled === false) return true;
+  return Number(admin.enabled) === 0;
+}
+
+async function ensureAdminUser({ pool }) {
   const username = (process.env.ADMIN_USERNAME || "admin").toLowerCase();
-  const admin = db.prepare("SELECT * FROM admin_users WHERE username = ?").get(username);
-  if (admin) return;
+  const existing = await adminUsersRepo.getByUsernameLower(pool, username);
+  if (existing) return;
 
   const password = process.env.ADMIN_PASSWORD;
   if (!password) {
@@ -35,15 +42,16 @@ async function ensureAdminUser({ db }) {
       : ROLES.SUPER_ADMIN;
   const tenantId = role === ROLES.SUPER_ADMIN ? null : Number(process.env.ADMIN_TENANT_ID) || TENANT_ZM;
 
-  const info = db.prepare("INSERT INTO admin_users (username, password_hash, role, tenant_id, enabled) VALUES (?, ?, ?, ?, 1)").run(
+  const id = await adminUsersRepo.insertUser(pool, {
     username,
     passwordHash,
     role,
-    tenantId
-  );
+    tenantId,
+    displayName: "",
+  });
   if (role !== ROLES.SUPER_ADMIN && tenantId != null && Number(tenantId) > 0) {
     try {
-      upsertMembership(db, Number(info.lastInsertRowid), Number(tenantId), role);
+      await upsertMembershipAsync(pool, id, Number(tenantId), role);
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("[getpro] ensureAdminUser membership:", e.message);
@@ -101,10 +109,13 @@ function requireClientProjectIntakeMutate(req, res, next) {
   return next();
 }
 
-async function authenticateAdmin({ db, username, password }) {
-  const admin = db.prepare("SELECT * FROM admin_users WHERE username = ?").get(username.toLowerCase());
+async function authenticateAdmin({ pool, username, password }) {
+  const uname = String(username || "").toLowerCase();
+  if (!pool) return null;
+  const admin = await adminUsersRepo.getByUsernameLower(pool, uname);
+
   if (!admin) return null;
-  if (Number(admin.enabled) === 0) return null;
+  if (adminRowDisabled(admin)) return null;
   const ok = await bcrypt.compare(password, admin.password_hash);
   if (!ok) return null;
   return admin;

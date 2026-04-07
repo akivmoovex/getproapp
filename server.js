@@ -3,9 +3,6 @@ const express = require("express");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const session = require("express-session");
-const BetterSqlite3 = require("better-sqlite3");
-const SqliteSessionStore = require("better-sqlite3-session-store")(session);
-const fs = require("fs");
 
 // Load .env from the app root (next to server.js), not process.cwd() — Hostinger often uses another cwd.
 const envPath = path.join(__dirname, ".env");
@@ -21,36 +18,40 @@ console.log(
 const { ensureAdminUser } = require("./src/auth");
 const { seedBuiltinUsers } = require("./src/seeds/seedBuiltinUsers");
 const { seedManagerUsers } = require("./src/seeds/seedManagerUsers");
-const { seedContentPages } = require("./src/seeds/seedContentPages");
 const { getSubdomain, resolveHostname } = require("./src/platform/host");
 
-let db;
-try {
-  ({ db } = require("./src/db"));
-} catch (err) {
+const { getPgPool, isPgConfigured } = require("./src/db/pg");
+if (!isPgConfigured()) {
   // eslint-disable-next-line no-console
-  console.error("[getpro] Failed to open app SQLite (check SQLITE_PATH / disk permissions):", err.message);
-  // eslint-disable-next-line no-console
-  console.error(err.stack);
+  console.error(
+    "[getpro] FATAL: DATABASE_URL or GETPRO_DATABASE_URL must be set. This server requires PostgreSQL."
+  );
   process.exit(1);
 }
 
+const { db, verifyProductionPgOnlyRuntime } = require("./src/db");
+verifyProductionPgOnlyRuntime();
+// eslint-disable-next-line no-console
+console.log("[getpro] PostgreSQL data store (DATABASE_URL / GETPRO_DATABASE_URL is set).");
+
 const {
   createAttachTenantByHost,
-  buildRegionChoicesFromDb,
-  getCachedTenantStageById,
-  getCachedTenantSlugExists,
+  buildRegionChoicesFromDbAsync,
+  getCachedTenantStageByIdAsync,
+  getCachedTenantSlugExistsAsync,
 } = require("./src/tenants");
 const { STAGES } = require("./src/tenants/tenantStages");
 const { eventTimeParts } = require("./src/lib/eventTime");
 const branding = require("./src/platform/branding");
 const { createAssetUrl } = require("./src/platform/assetUrls");
-const publicModule = require("./src/routes/public")({ db });
+const publicModule = require("./src/routes/public")();
 const adminRoutes = require("./src/routes/admin");
 const companyPortalRoutes = require("./src/routes/companyPortal");
 const clientPortalRoutes = require("./src/routes/clientPortal");
 const apiRoutes = require("./src/routes/api");
 const { runProductionStartupChecks } = require("./src/startup/productionStartupChecks");
+const companiesRepo = require("./src/db/pg/companiesRepo");
+const tenantsRepo = require("./src/db/pg/tenantsRepo");
 
 const app = express();
 
@@ -141,23 +142,18 @@ if (process.env.NODE_ENV === "production") {
   runProductionStartupChecks();
 }
 const sessionSecret = process.env.SESSION_SECRET || "dev_secret_change_me";
-const sessionDir = process.env.SESSION_DIR || path.join(__dirname, "data");
-const sessionDbPath = process.env.SESSION_DB_PATH || path.join(sessionDir, "sessions.db");
 
-let sessionDb;
-try {
-  fs.mkdirSync(sessionDir, { recursive: true });
-  sessionDb = new BetterSqlite3(sessionDbPath);
-} catch (err) {
-  // eslint-disable-next-line no-console
-  console.error(
-    "[getpro] Failed to create session store SQLite (set SESSION_DIR to a writable folder, e.g. /tmp/getpro):",
-    err.message
-  );
-  // eslint-disable-next-line no-console
-  console.error(err.stack);
-  process.exit(1);
-}
+/** Session persistence: PostgreSQL only (same pool as app data). */
+const connectPgSimple = require("connect-pg-simple");
+const PgSession = connectPgSimple(session);
+const sessionPool = getPgPool();
+const sessionStore = new PgSession({
+  pool: sessionPool,
+  tableName: "session",
+  createTableIfMissing: true,
+});
+// eslint-disable-next-line no-console
+console.log("[getpro] Session store: PostgreSQL (public.session via connect-pg-simple)");
 
 app.use(
   session({
@@ -165,14 +161,7 @@ app.use(
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    store: new SqliteSessionStore({
-      client: sessionDb,
-      expired: {
-        clear: true,
-        // Cleanup expired sessions every ~15 minutes
-        intervalMs: 15 * 60 * 1000,
-      },
-    }),
+    store: sessionStore,
     cookie: {
       httpOnly: true,
       sameSite: "lax",
@@ -189,13 +178,18 @@ app.use((req, res, next) => {
 });
 
 // Subdomain is a platform tenant (row in `tenants`) vs a company marketing subdomain
-app.use((req, res, next) => {
-  req.isPlatformTenant = false;
-  const sub = req.subdomain;
-  if (sub) {
-    req.isPlatformTenant = getCachedTenantSlugExists(db, sub);
+app.use(async (req, res, next) => {
+  try {
+    req.isPlatformTenant = false;
+    const sub = req.subdomain;
+    if (sub) {
+      const pool = getPgPool();
+      req.isPlatformTenant = await getCachedTenantSlugExistsAsync(pool, sub);
+    }
+    next();
+  } catch (e) {
+    next(e);
   }
-  next();
 });
 
 // Legacy host zam.{BASE} → zm.{BASE} (Zambia uses ISO alpha-2 subdomain)
@@ -214,7 +208,7 @@ app.use((req, res, next) => {
 });
 
 // API and admin before tenant catch-alls so /api and /admin are not handled by public router
-app.use("/api", apiRoutes({ db }));
+app.use("/api", apiRoutes());
 app.use("/admin", adminRoutes({ db }));
 
 // Healthcheck (with DEBUG_HOST=1, see also /api/debug/host)
@@ -243,24 +237,27 @@ app.use((req, res, next) => {
 });
 
 // Legacy company hosts (e.g. demo-lusaka-spark.getproapp.org/) → regional path mini-site (demo.getproapp.org/demo-lusaka-spark)
-app.get("/", (req, res, next) => {
+app.get("/", async (req, res, next) => {
   if (req.subdomain && !req.isPlatformTenant) {
-    const company = db
-      .prepare("SELECT tenant_id, subdomain FROM companies WHERE subdomain = ?")
-      .get(req.subdomain);
-    if (!company) {
-      return res.status(404).type("text").send("Not found");
+    try {
+      const pool = getPgPool();
+      const company = await companiesRepo.getTenantIdAndSubdomainBySubdomain(pool, req.subdomain);
+      if (!company) {
+        return res.status(404).type("text").send("Not found");
+      }
+      const t = await tenantsRepo.getById(pool, company.tenant_id);
+      if (!t || !t.slug) {
+        return res.status(404).type("text").send("Not found");
+      }
+      const base = (process.env.BASE_DOMAIN || "").trim();
+      const scheme = process.env.PUBLIC_SCHEME || "https";
+      if (base) {
+        return res.redirect(301, `${scheme}://${t.slug}.${base}/${company.subdomain}`);
+      }
+      return publicModule.renderCompanyHome(req, res).catch(next);
+    } catch (e) {
+      return next(e);
     }
-    const t = db.prepare("SELECT slug FROM tenants WHERE id = ?").get(company.tenant_id);
-    if (!t || !t.slug) {
-      return res.status(404).type("text").send("Not found");
-    }
-    const base = (process.env.BASE_DOMAIN || "").trim();
-    const scheme = process.env.PUBLIC_SCHEME || "https";
-    if (base) {
-      return res.redirect(301, `${scheme}://${t.slug}.${base}/${company.subdomain}`);
-    }
-    return publicModule.renderCompanyHome(req, res).catch(next);
   }
   next();
 });
@@ -291,18 +288,23 @@ app.use("/za", (req, res) => redirectPathToTenantHost(req, res, "/za", "za"));
 app.use("/na", (req, res) => redirectPathToTenantHost(req, res, "/na", "na"));
 
 // Host-based tenants: apex + regional subdomains
-app.use(createAttachTenantByHost(db));
+app.use(createAttachTenantByHost());
 
-app.use((req, res, next) => {
-  const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
-  const scheme = process.env.PUBLIC_SCHEME || "https";
-  req.regionChoices = buildRegionChoicesFromDb(db, base, scheme);
-  res.locals.regionChoices = req.regionChoices;
-  req.regionZmUrl = base ? `${scheme}://zm.${base}` : "";
-  req.regionIlUrl = base ? `${scheme}://il.${base}` : "";
-  res.locals.regionZmUrl = req.regionZmUrl;
-  res.locals.regionIlUrl = req.regionIlUrl;
-  next();
+app.use(async (req, res, next) => {
+  try {
+    const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
+    const scheme = process.env.PUBLIC_SCHEME || "https";
+    const pool = getPgPool();
+    req.regionChoices = await buildRegionChoicesFromDbAsync(pool, base, scheme);
+    res.locals.regionChoices = req.regionChoices;
+    req.regionZmUrl = base ? `${scheme}://zm.${base}` : "";
+    req.regionIlUrl = base ? `${scheme}://il.${base}` : "";
+    res.locals.regionZmUrl = req.regionZmUrl;
+    res.locals.regionIlUrl = req.regionIlUrl;
+    next();
+  } catch (e) {
+    next(e);
+  }
 });
 
 function tenantHomeHrefFromPrefix(prefix) {
@@ -333,13 +335,18 @@ app.get("/getpro-admin", (req, res) => {
 });
 
 // Only `Enabled` tenants are served publicly (subdomain + apex content)
-app.use((req, res, next) => {
-  if (!req.tenant || !req.tenant.slug) return next();
-  const row = getCachedTenantStageById(db, req.tenant.id);
-  if (!row || row.stage !== STAGES.ENABLED) {
-    return res.status(503).type("text").send("This region is not available.");
+app.use(async (req, res, next) => {
+  try {
+    if (!req.tenant || !req.tenant.slug) return next();
+    const pool = getPgPool();
+    const row = await getCachedTenantStageByIdAsync(pool, req.tenant.id);
+    if (!row || row.stage !== STAGES.ENABLED) {
+      return res.status(503).type("text").send("This region is not available.");
+    }
+    next();
+  } catch (e) {
+    next(e);
   }
-  next();
 });
 
 /** Shared sign-in hub (tenant must be enabled — same gate as public site). */
@@ -357,16 +364,17 @@ app.get("/login", (req, res) => {
 
 /** Role-separated portals: client (foundation), provider + legacy company path, same router. */
 app.use("/client", clientPortalRoutes());
-app.use("/company", companyPortalRoutes({ db }));
-app.use("/provider", companyPortalRoutes({ db }));
+app.use("/company", companyPortalRoutes());
+app.use("/provider", companyPortalRoutes());
 
 app.use("/", publicModule.router);
 
-ensureAdminUser({ db })
-  .then(() => {
-    seedBuiltinUsers(db);
-    seedManagerUsers(db);
-    seedContentPages(db);
+const pgPoolForBoot = getPgPool();
+
+ensureAdminUser({ pool: pgPoolForBoot })
+  .then(async () => {
+    await seedBuiltinUsers(pgPoolForBoot);
+    await seedManagerUsers(pgPoolForBoot);
     app.listen(port, host, () => {
       // eslint-disable-next-line no-console
       console.log(`GetPro listening on ${host}:${port}`);

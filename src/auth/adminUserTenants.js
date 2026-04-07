@@ -1,4 +1,5 @@
 const { ROLES } = require("./roles");
+const adminUserTenantRolesRepo = require("../db/pg/adminUserTenantRolesRepo");
 
 /**
  * Per-tenant roles for admin users (see `admin_user_tenant_roles` table).
@@ -6,25 +7,25 @@ const { ROLES } = require("./roles");
  * effective tenant for a session comes from membership + chosen scope.
  */
 
-function getMembershipsForUser(db, userId) {
-  return db
-    .prepare("SELECT tenant_id, role FROM admin_user_tenant_roles WHERE admin_user_id = ? ORDER BY tenant_id ASC")
-    .all(userId);
-}
-
-function upsertMembership(db, userId, tenantId, role) {
-  db.prepare(
-    `INSERT INTO admin_user_tenant_roles (admin_user_id, tenant_id, role) VALUES (?, ?, ?)
-     ON CONFLICT(admin_user_id, tenant_id) DO UPDATE SET role = excluded.role`
-  ).run(userId, tenantId, role);
+/**
+ * @param {import("pg").Pool} pool
+ */
+async function getMembershipsForUserAsync(pool, userId) {
+  return adminUserTenantRolesRepo.listByAdminUserId(pool, userId);
 }
 
 /**
- * Build session fields after successful password login.
+ * @param {import("pg").Pool} pool
+ */
+async function upsertMembershipAsync(pool, userId, tenantId, role) {
+  await adminUserTenantRolesRepo.upsert(pool, userId, tenantId, role);
+}
+
+/**
+ * @param {Array<{ tenant_id: number, role: string }>} mems
  * @returns {{ tenantId: number|null, role: string, memberships: Array<{ tenantId: number, role: string }> }}
  */
-function resolveSessionAfterLogin(db, userRow) {
-  const mems = getMembershipsForUser(db, userRow.id);
+function resolveSessionFromMemberships(userRow, mems) {
   if (mems.length === 0) {
     return {
       tenantId: userRow.tenant_id != null ? Number(userRow.tenant_id) : null,
@@ -49,28 +50,18 @@ function resolveSessionAfterLogin(db, userRow) {
   };
 }
 
-/** True if this admin user may act in tenantId (home row or membership). */
-function adminUserIsInTenant(db, userId, tenantId) {
-  const tid = Number(tenantId);
-  const uid = Number(userId);
-  if (!Number.isFinite(tid) || tid <= 0 || !Number.isFinite(uid) || uid <= 0) return false;
-  const row = db
-    .prepare(
-      `SELECT 1 AS ok FROM admin_users u
-       WHERE u.id = ? AND COALESCE(u.enabled, 1) = 1
-         AND (
-           u.tenant_id = ?
-           OR EXISTS (SELECT 1 FROM admin_user_tenant_roles m WHERE m.admin_user_id = u.id AND m.tenant_id = ?)
-         )
-       LIMIT 1`
-    )
-    .get(uid, tid, tid);
-  return !!row;
+/**
+ * PostgreSQL memberships after login.
+ * @param {import("pg").Pool} pool
+ * @returns {Promise<{ tenantId: number|null, role: string, memberships: Array<{ tenantId: number, role: string }> }>}
+ */
+async function resolveSessionAfterLoginAsync(pool, userRow) {
+  const mems = await getMembershipsForUserAsync(pool, userRow.id);
+  return resolveSessionFromMemberships(userRow, mems);
 }
 
 module.exports = {
-  getMembershipsForUser,
-  upsertMembership,
-  resolveSessionAfterLogin,
-  adminUserIsInTenant,
+  getMembershipsForUserAsync,
+  upsertMembershipAsync,
+  resolveSessionAfterLoginAsync,
 };

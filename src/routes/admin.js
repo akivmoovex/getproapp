@@ -21,6 +21,8 @@ const {
   canMutateClientProjectIntake,
 } = require("../auth/roles");
 const { getAdminTenantId } = require("./admin/adminShared");
+const { getPgPool } = require("../db/pg");
+const tenantsRepo = require("../db/pg/tenantsRepo");
 const clientIntake = require("../intake/clientProjectIntake");
 
 const registerAdminAuthRoutes = require("./admin/adminAuth");
@@ -56,7 +58,7 @@ module.exports = function adminRoutes({ db }) {
     next();
   });
 
-  registerAdminAuthRoutes(router, { db });
+  registerAdminAuthRoutes(router);
 
   router.use((req, res, next) => {
     if (!req.path.startsWith("/login")) return requireAdmin(req, res, next);
@@ -114,71 +116,81 @@ module.exports = function adminRoutes({ db }) {
     return next();
   });
 
-  router.use((req, res, next) => {
-    if (!req.session.adminUser) {
-      return next();
-    }
-    const u = req.session.adminUser;
-    const tid = getAdminTenantId(req);
-    res.locals.adminNav = {
-      role: u.role,
-      isViewer: isTenantViewer(u.role),
-      isSuper: isSuperAdmin(u.role),
-      canEditDirectory: canEditDirectoryData(u.role),
-      canManageUsers: canManageTenantUsers(u.role),
-      tenantScoped: tid != null,
-      canAccessCrm: canAccessCrm(u.role),
-      canMutateCrm: canMutateCrm(u.role),
-      canClaimCrmTasks: canClaimCrmTasks(u.role),
-      canAccessTenantSettings: canAccessTenantSettings(u.role),
-      canAccessSettingsHub: canAccessSettingsHub(u.role),
-      canAccessProjectIntake: canAccessClientProjectIntake(u.role),
-      canMutateProjectIntake: canMutateClientProjectIntake(u.role),
-    };
-    if (isSuperAdmin(u.role)) {
-      const tn = db.prepare("SELECT id, slug, name FROM tenants WHERE id = ?").get(tid);
-      res.locals.adminScopeTenant = tn || null;
-      res.locals.adminScopeIsSession =
-        req.session.adminTenantScope != null && Number(req.session.adminTenantScope) > 0;
-      res.locals.adminRegionSwitch = null;
-    } else {
-      res.locals.adminScopeTenant = null;
-      res.locals.adminScopeIsSession = false;
-      const mems = req.session.adminTenantMemberships || [];
-      if (mems.length > 1) {
-        const ids = [...new Set(mems.map((m) => Number(m.tenantId)))].filter((n) => Number.isFinite(n) && n > 0);
-        if (ids.length > 0) {
-          const ph = ids.map(() => "?").join(",");
-          const rows = db.prepare(`SELECT id, slug, name FROM tenants WHERE id IN (${ph})`).all(...ids);
-          const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
-          res.locals.adminRegionSwitch = {
-            currentId: Number(u.tenantId),
-            options: mems.map((m) => {
-              const id = Number(m.tenantId);
-              const r = byId[id];
-              return {
-                id,
-                name: r ? r.name : `Region ${id}`,
-                slug: r ? r.slug : "",
-              };
-            }),
-          };
+  router.use(async (req, res, next) => {
+    try {
+      if (!req.session.adminUser) {
+        return next();
+      }
+      const u = req.session.adminUser;
+      const tid = getAdminTenantId(req);
+      res.locals.adminNav = {
+        role: u.role,
+        isViewer: isTenantViewer(u.role),
+        isSuper: isSuperAdmin(u.role),
+        canEditDirectory: canEditDirectoryData(u.role),
+        canManageUsers: canManageTenantUsers(u.role),
+        tenantScoped: tid != null,
+        canAccessCrm: canAccessCrm(u.role),
+        canMutateCrm: canMutateCrm(u.role),
+        canClaimCrmTasks: canClaimCrmTasks(u.role),
+        canAccessTenantSettings: canAccessTenantSettings(u.role),
+        canAccessSettingsHub: canAccessSettingsHub(u.role),
+        canAccessProjectIntake: canAccessClientProjectIntake(u.role),
+        canMutateProjectIntake: canMutateClientProjectIntake(u.role),
+      };
+      const pool = getPgPool();
+      if (isSuperAdmin(u.role)) {
+        let adminScopeTenant = null;
+        if (tid != null && Number.isFinite(Number(tid)) && Number(tid) > 0) {
+          const row = await tenantsRepo.getById(pool, Number(tid));
+          if (row) {
+            adminScopeTenant = { id: row.id, slug: row.slug, name: row.name };
+          }
+        }
+        res.locals.adminScopeTenant = adminScopeTenant;
+        res.locals.adminScopeIsSession =
+          req.session.adminTenantScope != null && Number(req.session.adminTenantScope) > 0;
+        res.locals.adminRegionSwitch = null;
+      } else {
+        res.locals.adminScopeTenant = null;
+        res.locals.adminScopeIsSession = false;
+        const mems = req.session.adminTenantMemberships || [];
+        if (mems.length > 1) {
+          const ids = [...new Set(mems.map((m) => Number(m.tenantId)))].filter((n) => Number.isFinite(n) && n > 0);
+          if (ids.length > 0) {
+            const rows = await tenantsRepo.listIdSlugNameByIds(pool, ids);
+            const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
+            res.locals.adminRegionSwitch = {
+              currentId: Number(u.tenantId),
+              options: mems.map((m) => {
+                const id = Number(m.tenantId);
+                const r = byId[id];
+                return {
+                  id,
+                  name: r ? r.name : `Region ${id}`,
+                  slug: r ? r.slug : "",
+                };
+              }),
+            };
+          } else {
+            res.locals.adminRegionSwitch = null;
+          }
         } else {
           res.locals.adminRegionSwitch = null;
         }
-      } else {
-        res.locals.adminRegionSwitch = null;
       }
+      return next();
+    } catch (e) {
+      return next(e);
     }
-    return next();
   });
 
-  registerAdminSuperRoutes(router, { db });
+  registerAdminSuperRoutes(router);
   registerAdminTenantUsersRoutes(router, { db });
-  registerAdminDashboardContentRoutes(router, { db });
-  registerAdminDirectoryRoutes(router, { db });
-  registerAdminCrmRoutes(router, { db });
-  registerAdminIntakeRoutes(router, { db, projectIntakeUpload });
+  registerAdminDashboardContentRoutes(router);
+  registerAdminDirectoryRoutes(router);
+  registerAdminCrmRoutes(router);
+  registerAdminIntakeRoutes(router, { projectIntakeUpload });
 
   return router;
 };

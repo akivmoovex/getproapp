@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const clientIntake = require("../intake/clientProjectIntake");
+const companyPersonnelUsersRepo = require("../db/pg/companyPersonnelUsersRepo");
 
 const SESSION_KEY = "companyPersonnel";
 
@@ -102,7 +103,7 @@ function requireCompanyPersonnelAuth(req, res, next) {
  * identifier contains a letter, otherwise try phone digits first.
  * @returns {Promise<object|null>} user row joined to company (no password_hash in return) or null
  */
-async function authenticateCompanyPersonnel(db, tenantId, identifierRaw, password) {
+async function authenticateCompanyPersonnel(pool, tenantId, identifierRaw, password) {
   const ident = String(identifierRaw || "").trim();
   if (!ident || !String(password || "")) return null;
   const tid = Number(tenantId);
@@ -112,28 +113,10 @@ async function authenticateCompanyPersonnel(db, tenantId, identifierRaw, passwor
   let row = null;
   if (hasLetter) {
     const u = ident.toLowerCase().slice(0, 80);
-    row = db
-      .prepare(
-        `
-        SELECT cpu.id, cpu.company_id, cpu.full_name, cpu.password_hash, cpu.is_active
-        FROM company_personnel_users cpu
-        INNER JOIN companies c ON c.id = cpu.company_id AND c.tenant_id = cpu.tenant_id
-        WHERE cpu.tenant_id = ? AND length(trim(cpu.username)) > 0 AND lower(trim(cpu.username)) = ?
-        `
-      )
-      .get(tid, u);
+    row = await companyPersonnelUsersRepo.findForAuthByUsername(pool, tid, u);
   }
   if (!row && phoneNorm.length > 0) {
-    row = db
-      .prepare(
-        `
-        SELECT cpu.id, cpu.company_id, cpu.full_name, cpu.password_hash, cpu.is_active
-        FROM company_personnel_users cpu
-        INNER JOIN companies c ON c.id = cpu.company_id AND c.tenant_id = cpu.tenant_id
-        WHERE cpu.tenant_id = ? AND cpu.phone_normalized = ?
-        `
-      )
-      .get(tid, phoneNorm);
+    row = await companyPersonnelUsersRepo.findForAuthByPhoneNormalized(pool, tid, phoneNorm);
   }
   if (!row || Number(row.is_active) !== 1) return null;
   const ok = await bcrypt.compare(String(password), String(row.password_hash));

@@ -1,4 +1,8 @@
 const { absolutePublicUrl } = require("../content/contentPages");
+const { getPgPool } = require("../db/pg");
+const categoriesRepo = require("../db/pg/categoriesRepo");
+const companiesRepo = require("../db/pg/companiesRepo");
+const contentPagesRepo = require("../db/pg/contentPagesRepo");
 
 function escapeXml(s) {
   return String(s || "")
@@ -11,9 +15,8 @@ function escapeXml(s) {
 
 /**
  * @param {import('express').Request} req
- * @param {import('better-sqlite3').Database} db
  */
-function buildSitemapXml(req, db) {
+async function buildSitemapXml(req) {
   const tenantId = req.tenant && req.tenant.id;
   if (!tenantId) return "";
   const base = absolutePublicUrl(req, "/").replace(/\/$/, "");
@@ -26,21 +29,18 @@ function buildSitemapXml(req, db) {
   urls.push({ loc: `${base}/guides`, changefreq: "weekly", priority: "0.75" });
   urls.push({ loc: `${base}/answers`, changefreq: "weekly", priority: "0.7" });
 
-  const cats = db.prepare("SELECT slug FROM categories WHERE tenant_id = ?").all(tenantId);
-  for (const c of cats) {
-    urls.push({ loc: `${base}/category/${encodeURIComponent(c.slug)}`, changefreq: "weekly", priority: "0.8" });
+  const pool = getPgPool();
+  const catSlugs = await categoriesRepo.listSlugsForSitemap(pool, tenantId);
+  const companyIds = await companiesRepo.listIdsForSitemap(pool, tenantId, 500);
+  for (const slug of catSlugs) {
+    urls.push({ loc: `${base}/category/${encodeURIComponent(slug)}`, changefreq: "weekly", priority: "0.8" });
   }
 
-  const companies = db.prepare("SELECT id FROM companies WHERE tenant_id = ? ORDER BY updated_at DESC LIMIT 500").all(tenantId);
-  for (const co of companies) {
+  for (const co of companyIds) {
     urls.push({ loc: `${base}/company/${co.id}`, changefreq: "weekly", priority: "0.7" });
   }
 
-  const contentRows = db
-    .prepare(
-      "SELECT kind, slug FROM content_pages WHERE tenant_id = ? AND published = 1"
-    )
-    .all(tenantId);
+  const contentRows = await contentPagesRepo.listPublishedKindSlugForSitemap(pool, tenantId);
   for (const row of contentRows) {
     const seg = row.kind === "article" ? "articles" : row.kind === "guide" ? "guides" : "answers";
     urls.push({

@@ -1,8 +1,12 @@
 # Data directory
 
-- **`getpro.sqlite`** — default SQLite database for GetPro (unless overridden with `SQLITE_PATH`).
-- **`sessions.db`** — session store used by the app when `SESSION_DIR` / `SESSION_DB_PATH` point here (see `server.js`).
+**Runtime:** The Express app **requires PostgreSQL** (`DATABASE_URL` / `GETPRO_DATABASE_URL`) and does **not** open SQLite for requests. **`src/db/index.js`** is a guard/stub only.
 
-**Not used by this app:** Stray databases such as `netraz.sqlite`, `pronline.sqlite` (or similar names) are **not** referenced in code. SQLite may also create **`*.sqlite-wal`** and **`*.sqlite-shm`** next to any DB file when WAL mode is active — delete those together when removing an unused database.
+**Local files (optional / legacy):**
 
-Only set **`SQLITE_PATH`** if you intentionally use a different main DB file than `data/getpro.sqlite`.
+- **`getpro.sqlite`** — not used by `server.js`. May exist from old workflows or external tools; safe to omit on new setups.
+- **`sessions.db`** — **not used** by current `server.js` (sessions are **`connect-pg-simple`** → **`public.session`**). Mentioned here only for archaeology if you inspect very old revisions.
+
+**Other:** Stray `*.sqlite` names are not referenced by this codebase. WAL sidecars (`*.sqlite-wal`, `*.sqlite-shm`) may appear next to any SQLite file you create manually.
+
+`SQLITE_PATH` is irrelevant to production boot unless you run **external** SQLite tooling yourself.

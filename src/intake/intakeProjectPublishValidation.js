@@ -3,6 +3,9 @@
  * Tenant-scoped settings in intake_allocation_settings / intake_category_lead_settings.
  */
 
+const intakeSettingsRepo = require("../db/pg/intakeSettingsRepo");
+const categoriesRepo = require("../db/pg/categoriesRepo");
+
 /** Canonical lifecycle values stored in intake_client_projects.status */
 const INTAKE_PROJECT_LIFECYCLE_STATUSES = [
   "draft",
@@ -16,70 +19,18 @@ const INTAKE_PROJECT_PUBLISHABLE_STATUSES = new Set(["draft", "needs_review", "r
 
 const DEFAULT_RESPONSE_HOURS = 72;
 
-/**
- * @param {import("better-sqlite3").Database} db
- * @param {number} tenantId
- */
-function getAllocationSettings(db, tenantId) {
-  const tid = Number(tenantId);
-  const row = db.prepare(`SELECT * FROM intake_allocation_settings WHERE tenant_id = ?`).get(tid);
-  const n = (v, d) => (v != null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : d);
-  const flag = (v, defaultTrue) => (v === 0 || v === false ? false : defaultTrue);
-  if (!row) {
-    return {
-      established_min_rating: 3.0,
-      established_min_review_count: 5,
-      provisional_min_rating: 2.0,
-      provisional_max_review_count: 4,
-      initial_allocation_count: 3,
-      target_positive_responses: 2,
-      require_category_for_publish: true,
-      require_budget_for_publish: true,
-      require_min_images_for_publish: true,
-      min_images_for_publish: 1,
-    };
-  }
-  return {
-    established_min_rating: n(row.established_min_rating, 3.0),
-    established_min_review_count: n(row.established_min_review_count, 5),
-    provisional_min_rating: n(row.provisional_min_rating, 2.0),
-    provisional_max_review_count: n(row.provisional_max_review_count, 4),
-    initial_allocation_count: n(row.initial_allocation_count, 3),
-    target_positive_responses: n(row.target_positive_responses, 2),
-    require_category_for_publish: flag(row.require_category_for_publish, true),
-    require_budget_for_publish: flag(row.require_budget_for_publish, true),
-    require_min_images_for_publish: flag(row.require_min_images_for_publish, true),
-    min_images_for_publish: Math.max(0, Math.floor(n(row.min_images_for_publish, 1))),
-  };
+async function getAllocationSettingsAsync(pool, tenantId) {
+  return intakeSettingsRepo.getAllocationSettings(pool, Number(tenantId));
 }
 
-/**
- * Response SLA window (hours) for a category; default when no row.
- * @param {import("better-sqlite3").Database} db
- * @param {number} tenantId
- * @param {number} categoryId
- */
-function getCategoryResponseWindowHours(db, tenantId, categoryId) {
-  const tid = Number(tenantId);
-  const cid = Number(categoryId);
-  if (!cid || cid < 1) return DEFAULT_RESPONSE_HOURS;
-  const row = db
-    .prepare(`SELECT response_window_hours FROM intake_category_lead_settings WHERE tenant_id = ? AND category_id = ?`)
-    .get(tid, cid);
-  if (!row || row.response_window_hours == null) return DEFAULT_RESPONSE_HOURS;
-  const h = Number(row.response_window_hours);
-  return Number.isFinite(h) && h > 0 ? h : DEFAULT_RESPONSE_HOURS;
+async function getCategoryResponseWindowHoursAsync(pool, tenantId, categoryId) {
+  return intakeSettingsRepo.getCategoryResponseWindowHours(pool, Number(tenantId), categoryId);
 }
 
-/**
- * @param {Record<string, unknown>} projectRow intake_client_projects row
- * @param {number} imageCount
- * @returns {{ ok: boolean, errors: { code: string, message: string }[], warnings: { code: string, message: string }[] }}
- */
-function validateIntakeProjectForPublish(db, tenantId, projectRow, imageCount) {
+async function validateIntakeProjectForPublishAsync(pool, tenantId, projectRow, imageCount) {
   const errors = [];
   const warnings = [];
-  const settings = getAllocationSettings(db, tenantId);
+  const settings = await getAllocationSettingsAsync(pool, tenantId);
   const p = projectRow || {};
 
   if (settings.require_category_for_publish) {
@@ -87,7 +38,7 @@ function validateIntakeProjectForPublish(db, tenantId, projectRow, imageCount) {
     if (!cid || cid < 1) {
       errors.push({ code: "category", message: "A profession / category is required before publishing." });
     } else {
-      const cat = db.prepare(`SELECT id FROM categories WHERE id = ? AND tenant_id = ?`).get(cid, Number(tenantId));
+      const cat = await categoriesRepo.getByIdAndTenantId(pool, cid, Number(tenantId));
       if (!cat) {
         errors.push({ code: "category", message: "Selected category is invalid for this region." });
       }
@@ -133,7 +84,7 @@ module.exports = {
   INTAKE_PROJECT_LIFECYCLE_STATUSES,
   INTAKE_PROJECT_PUBLISHABLE_STATUSES,
   DEFAULT_RESPONSE_HOURS,
-  getAllocationSettings,
-  getCategoryResponseWindowHours,
-  validateIntakeProjectForPublish,
+  getAllocationSettingsAsync,
+  getCategoryResponseWindowHoursAsync,
+  validateIntakeProjectForPublishAsync,
 };

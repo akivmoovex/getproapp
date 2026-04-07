@@ -1,5 +1,6 @@
 /**
- * Editorial content (articles, guides, FAQ) — tenant-scoped.
+ * Editorial content helpers (formatting, URL builders).
+ * Data access is PostgreSQL: `src/db/pg/contentPagesRepo.js`.
  */
 
 function escapeHtml(s) {
@@ -31,35 +32,6 @@ function formatBodyToHtml(raw) {
   return parts.join("\n");
 }
 
-function listPublishedByKind(db, tenantId, kind) {
-  return db
-    .prepare(
-      `
-      SELECT id, slug, title, excerpt, sort_order, updated_at, hero_image_url, hero_image_alt,
-             substr(body, 1, 320) AS body_preview
-      FROM content_pages
-      WHERE tenant_id = ? AND kind = ? AND published = 1
-      ORDER BY sort_order ASC, title ASC
-      `
-    )
-    .all(tenantId, kind);
-}
-
-function getBySlug(db, tenantId, kind, slug, opts = {}) {
-  const { allowDraft = false } = opts;
-  const row = db
-    .prepare(
-      `
-      SELECT * FROM content_pages
-      WHERE tenant_id = ? AND kind = ? AND slug = ?
-      `
-    )
-    .get(tenantId, kind, slug);
-  if (!row) return null;
-  if (!allowDraft && !row.published) return null;
-  return row;
-}
-
 function absolutePublicUrl(req, path) {
   const proto = String(req.headers["x-forwarded-proto"] || req.protocol || "https")
     .split(",")[0]
@@ -82,35 +54,9 @@ function canonicalUrlForTenant(req, path) {
   return absolutePublicUrl(req, p);
 }
 
-function listAllByKind(db, tenantId, kind) {
-  return db
-    .prepare(
-      `
-      SELECT * FROM content_pages
-      WHERE tenant_id = ? AND kind = ?
-      ORDER BY sort_order ASC, title ASC
-      `
-    )
-    .all(tenantId, kind);
-}
-
-function getById(db, tenantId, id) {
-  return db.prepare("SELECT * FROM content_pages WHERE id = ? AND tenant_id = ?").get(id, tenantId);
-}
-
-/** Raw row by slug (includes drafts). */
-function getRowBySlug(db, tenantId, kind, slug) {
-  return db.prepare("SELECT * FROM content_pages WHERE tenant_id = ? AND kind = ? AND slug = ?").get(tenantId, kind, slug);
-}
-
 module.exports = {
   escapeHtml,
   formatBodyToHtml,
-  listPublishedByKind,
-  listAllByKind,
-  getBySlug,
-  getById,
-  getRowBySlug,
   absolutePublicUrl,
   canonicalUrlForTenant,
 };

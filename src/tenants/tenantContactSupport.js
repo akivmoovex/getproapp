@@ -45,31 +45,27 @@ function telHref(phone) {
   return d ? `tel:${d}` : "";
 }
 
+const tenantsRepo = require("../db/pg/tenantsRepo");
+
 /**
- * @param {import("better-sqlite3").Database} db
+ * @param {import("pg").Pool} pool
  * @param {number|null|undefined} tenantId
  */
-function getTenantContactSupport(db, tenantId) {
+async function getTenantContactSupportAsync(pool, tenantId) {
   const envPhone = process.env.CALL_CENTER_PHONE || "";
   const envEmail = process.env.GETPRO_EMAIL || "";
   const envAddr = process.env.GETPRO_ADDRESS || "";
 
   let row = null;
-  if (db && tenantId != null && Number(tenantId) > 0) {
+  if (pool && tenantId != null && Number(tenantId) > 0) {
     try {
-      row = db
-        .prepare(
-          "SELECT callcenter_phone, support_help_phone, whatsapp_phone, callcenter_email FROM tenants WHERE id = ?"
-        )
-        .get(Number(tenantId));
+      row = await tenantsRepo.getContactFieldsById(pool, Number(tenantId));
     } catch {
       row = null;
     }
   }
 
-  /** Customer default / listing line on company details + footers */
   const phone = pickPhone(row ? row.callcenter_phone : "", envPhone);
-  /** GetPro support helpline (company page support block) */
   const supportPhone = pickSupportPhone(
     row && row.support_help_phone != null ? row.support_help_phone : "",
     row ? row.callcenter_phone : "",
@@ -100,6 +96,5 @@ module.exports = {
   DEFAULT_SUPPORT_HELP_PHONE,
   DEFAULT_WHATSAPP_PHONE,
   DEFAULT_CALLCENTER_EMAIL,
-  telHref,
-  getTenantContactSupport,
+  getTenantContactSupportAsync,
 };

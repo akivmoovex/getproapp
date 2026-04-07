@@ -25,8 +25,8 @@
     "test:ui:update": "playwright test --update-snapshots",
     "inline-ds-framework": "node scripts/inline-ds-framework.js",
     "sync-inlined-theme": "node scripts/sync-inlined-theme.js",
-    "rebuild-sqlite": "npm rebuild better-sqlite3",
-    "rebuild-company-fts": "node scripts/rebuild-company-fts.js",
+    "test:pg": "node scripts/test-pg-connection.js",
+    "test:pg:repos": "node scripts/test-pg-repos.js",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build -o storybook-static"
   },
@@ -36,8 +36,7 @@
   "description": "Pro-online — professional directory for self-employed and small businesses",
   "dependencies": {
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^11.10.0",
-    "better-sqlite3-session-store": "^0.1.0",
+    "connect-pg-simple": "^10.0.0",
     "dotenv": "^17.3.1",
     "ejs": "^5.0.1",
     "express": "^5.2.1",
@@ -46,6 +45,7 @@
     "helmet": "^8.1.0",
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
+    "pg": "^8.20.0",
     "qrcode": "^1.5.4",
     "sharp": "^0.34.5",
     "slugify": "^1.6.8",

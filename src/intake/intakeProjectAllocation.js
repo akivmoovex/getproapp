@@ -4,10 +4,13 @@
  */
 
 const {
-  getAllocationSettings,
-  getCategoryResponseWindowHours,
+  getAllocationSettingsAsync,
+  getCategoryResponseWindowHoursAsync,
   DEFAULT_RESPONSE_HOURS,
 } = require("./intakeProjectPublishValidation");
+const reviewsRepo = require("../db/pg/reviewsRepo");
+const intakeClientProjectsRepo = require("../db/pg/intakeClientProjectsRepo");
+const intakeAssignmentsRepo = require("../db/pg/intakeAssignmentsRepo");
 
 const PENDING_RESPONSE_STATUSES = ["allocated", "viewed", "pending"];
 
@@ -49,7 +52,7 @@ function pickWithoutReplacement(sortedPool, count, seed) {
 /**
  * @param {number|null|undefined} avgRating
  * @param {number} reviewCount
- * @param {ReturnType<typeof getAllocationSettings>} settings
+ * @param {object} settings normalized allocation settings (same shape as getAllocationSettingsAsync / intakeSettingsRepo)
  */
 function isCompanyEligibleForIntakeAllocation(avgRating, reviewCount, settings) {
   const rc = Math.max(0, Math.floor(Number(reviewCount) || 0));
@@ -65,25 +68,18 @@ function isCompanyEligibleForIntakeAllocation(avgRating, reviewCount, settings) 
 }
 
 /**
- * @param {import("better-sqlite3").Database} db
+ * Eligible companies for intake allocation (aggregates from `public.reviews`).
+ * @param {import("pg").Pool} pool
  * @param {number} tenantId
  * @param {number} categoryId
- * @param {ReturnType<typeof getAllocationSettings>} settings
- * @returns {number[]}
+ * @param {object} settings normalized allocation settings (same shape as getAllocationSettingsAsync / intakeSettingsRepo)
+ * @returns {Promise<number[]>}
  */
-function listEligibleCompanyIds(db, tenantId, categoryId, settings) {
+async function listEligibleCompanyIdsAsync(pool, tenantId, categoryId, settings) {
   const tid = Number(tenantId);
   const cid = Number(categoryId);
   if (!cid || cid < 1) return [];
-  const rows = db
-    .prepare(
-      `SELECT c.id AS company_id,
-        (SELECT AVG(rating) FROM reviews r WHERE r.company_id = c.id) AS avg_rating,
-        (SELECT COUNT(*) FROM reviews r WHERE r.company_id = c.id) AS review_count
-       FROM companies c
-       WHERE c.tenant_id = ? AND c.category_id = ?`
-    )
-    .all(tid, cid);
+  const rows = await reviewsRepo.listAvgCountByTenantAndCategory(pool, tid, cid);
   const out = [];
   for (const r of rows) {
     if (isCompanyEligibleForIntakeAllocation(r.avg_rating, r.review_count, settings)) {
@@ -94,341 +90,284 @@ function listEligibleCompanyIds(db, tenantId, categoryId, settings) {
 }
 
 /**
- * @param {import("better-sqlite3").Database} db
- * @param {number} tenantId
- * @param {number} projectId
- * @returns {Set<number>}
+ * @param {import("pg").Pool} pool
+ * @param {number} hours
  */
-function assignedCompanyIdSet(db, tenantId, projectId) {
-  const rows = db
-    .prepare(`SELECT company_id FROM intake_project_assignments WHERE tenant_id = ? AND project_id = ?`)
-    .all(Number(tenantId), Number(projectId));
-  return new Set(rows.map((r) => Number(r.company_id)));
+async function deadlineAfterHours(pool, hours) {
+  const h = Math.max(1, Math.floor(Number(hours) || DEFAULT_RESPONSE_HOURS));
+  const r = await pool.query(`SELECT (now() + ($1::int * interval '1 hour')) AS d`, [h]);
+  const d = r.rows[0].d;
+  if (d instanceof Date) return d.toISOString().replace("T", " ").slice(0, 19);
+  return String(d);
 }
 
-/**
- * @param {import("better-sqlite3").Database} db
- * @param {number} tenantId
- * @param {number} projectId
- */
-function countPositiveResponses(db, tenantId, projectId) {
-  const row = db
-    .prepare(
-      `SELECT COUNT(*) AS c FROM intake_project_assignments
-       WHERE tenant_id = ? AND project_id = ? AND lower(trim(status)) IN ('interested','callback_requested')`
-    )
-    .get(Number(tenantId), Number(projectId));
-  return Math.max(0, Math.floor(Number(row && row.c) || 0));
+async function assignedCompanyIdSetAsync(pool, tid, pid) {
+  const ids = await intakeAssignmentsRepo.listCompanyIdsByProject(pool, tid, pid);
+  return new Set(ids);
 }
 
-/**
- * @param {import("better-sqlite3").Database} db
- * @param {number} tenantId
- * @param {number} projectId
- * @param {ReturnType<typeof getAllocationSettings>} settings
- */
-function refreshPausedIfTargetMet(db, tenantId, projectId, settings) {
-  const tid = Number(tenantId);
-  const pid = Number(projectId);
-  if (countPositiveResponses(db, tid, pid) >= settings.target_positive_responses) {
-    db.prepare(`UPDATE intake_client_projects SET intake_auto_allocation_paused = 1 WHERE id = ? AND tenant_id = ?`).run(pid, tid);
+async function countPositiveResponsesAsync(pool, tid, pid) {
+  return intakeAssignmentsRepo.countPositiveResponses(pool, tid, pid);
+}
+
+async function refreshPausedIfTargetMetAsync(pool, tid, pid, settings) {
+  const positive = await countPositiveResponsesAsync(pool, tid, pid);
+  if (positive >= settings.target_positive_responses) {
+    await intakeClientProjectsRepo.updateAllocationPaused(pool, pid, tid);
   }
 }
 
 /**
- * @param {import("better-sqlite3").Database} db
+ * @param {import("pg").Pool} pool
  * @param {number} tenantId
  * @param {number} projectId
- * @param {ReturnType<typeof getAllocationSettings>} settings
+ * @param {object} settings allocation settings row (same shape as getAllocationSettingsAsync / intakeSettingsRepo)
  * @param {number} responseHours
  * @param {number} categoryId
  * @param {number} seed
- * @returns {boolean} true if a row was inserted
+ * @returns {Promise<boolean>} true if a row was inserted
  */
-function tryAllocateOneReplacement(db, tenantId, projectId, settings, responseHours, categoryId, seed) {
+async function tryAllocateOneReplacement(pool, tenantId, projectId, settings, responseHours, categoryId, seed) {
   const tid = Number(tenantId);
   const pid = Number(projectId);
   const catId = Number(categoryId);
-  const proj = db
-    .prepare(
-      `SELECT intake_auto_allocation_paused FROM intake_client_projects WHERE id = ? AND tenant_id = ?`
-    )
-    .get(pid, tid);
+  let proj = await intakeClientProjectsRepo.getPausedFlag(pool, pid, tid);
   if (!proj || proj.intake_auto_allocation_paused) return false;
 
-  if (countPositiveResponses(db, tid, pid) >= settings.target_positive_responses) {
-    db.prepare(`UPDATE intake_client_projects SET intake_auto_allocation_paused = 1 WHERE id = ? AND tenant_id = ?`).run(pid, tid);
+  const pos = await countPositiveResponsesAsync(pool, tid, pid);
+  if (pos >= settings.target_positive_responses) {
+    await intakeClientProjectsRepo.updateAllocationPaused(pool, pid, tid);
     return false;
   }
 
-  const eligible = listEligibleCompanyIds(db, tid, catId, settings);
-  const taken = assignedCompanyIdSet(db, tid, pid);
-  const pool = eligible.filter((id) => !taken.has(id));
-  if (pool.length === 0) {
-    db.prepare(`UPDATE intake_client_projects SET intake_auto_allocation_paused = 1 WHERE id = ? AND tenant_id = ?`).run(pid, tid);
+  const eligible = await listEligibleCompanyIdsAsync(pool, tid, catId, settings);
+  const taken = await assignedCompanyIdSetAsync(pool, tid, pid);
+  const freeIds = eligible.filter((id) => !taken.has(id));
+  if (freeIds.length === 0) {
+    await intakeClientProjectsRepo.updateAllocationPaused(pool, pid, tid);
     return false;
   }
 
-  const waveRow = db.prepare(`SELECT intake_allocation_wave_number FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
+  const waveRow = await intakeClientProjectsRepo.getIntakeAllocationWaveNumber(pool, pid, tid);
   const waveNum = Math.max(1, Math.floor(Number(waveRow && waveRow.intake_allocation_wave_number) || 1));
-  const cidPick = pickWithoutReplacement(pool, 1, seed)[0];
-  const hours = Math.max(1, Math.floor(Number(responseHours) || DEFAULT_RESPONSE_HOURS));
-  const deadlineRow = db.prepare(`SELECT datetime('now', '+' || ? || ' hours') AS d`).get(String(hours));
-  const deadline = deadlineRow && deadlineRow.d ? String(deadlineRow.d) : null;
+  const cidPick = pickWithoutReplacement(freeIds, 1, seed)[0];
+  const deadline = await deadlineAfterHours(pool, responseHours);
 
-  db.prepare(
-    `INSERT INTO intake_project_assignments (
-      tenant_id, project_id, company_id, assigned_by_admin_user_id, status,
-      response_deadline_at, allocation_source, allocation_wave, updated_at
-    ) VALUES (?, ?, ?, NULL, 'allocated', ?, 'auto', ?, datetime('now'))`
-  ).run(tid, pid, cidPick, deadline, waveNum);
+  await intakeAssignmentsRepo.insertAllocated(pool, {
+    tenantId: tid,
+    projectId: pid,
+    companyId: cidPick,
+    assignedByAdminUserId: null,
+    responseDeadlineAt: deadline,
+    allocationSource: "auto",
+    allocationWave: waveNum,
+  });
   return true;
 }
 
 /**
- * @param {import("better-sqlite3").Database} db
+ * @param {import("pg").Pool} pool
  * @param {number} tenantId
  * @param {number} projectId
  * @param {Record<string, unknown>} project
- * @param {ReturnType<typeof getAllocationSettings>} settings
+ * @param {object} settings allocation settings row (same shape as getAllocationSettingsAsync / intakeSettingsRepo)
  * @param {number} responseHours
  * @param {number} categoryId
  */
-function maybeTopUpAfterWave(db, tenantId, projectId, project, settings, responseHours, categoryId) {
+async function maybeTopUpAfterWave(pool, tenantId, projectId, project, settings, responseHours, categoryId) {
   const tid = Number(tenantId);
   const pid = Number(projectId);
   const catId = Number(categoryId);
   const wdead = project.intake_allocation_wave_deadline_at;
   if (!wdead || !String(wdead).trim()) return;
 
-  const due = db
-    .prepare(`SELECT CASE WHEN datetime(?) <= datetime('now') THEN 1 ELSE 0 END AS due`)
-    .get(String(wdead));
-  if (!due || !due.due) return;
+  const dueR = await pool.query(`SELECT ($1::timestamptz <= now()) AS due`, [wdead]);
+  const dueOk = !!(dueR.rows[0] && dueR.rows[0].due);
+  if (!dueOk) return;
 
-  const projRow = db.prepare(`SELECT intake_auto_allocation_paused FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
+  let projRow = await intakeClientProjectsRepo.getPausedFlag(pool, pid, tid);
   if (!projRow || projRow.intake_auto_allocation_paused) return;
 
-  const positive = countPositiveResponses(db, tid, pid);
+  const positive = await countPositiveResponsesAsync(pool, tid, pid);
   if (positive >= settings.target_positive_responses) {
-    db.prepare(`UPDATE intake_client_projects SET intake_auto_allocation_paused = 1 WHERE id = ? AND tenant_id = ?`).run(pid, tid);
+    await intakeClientProjectsRepo.updateAllocationPaused(pool, pid, tid);
     return;
   }
 
   const gap = Math.max(0, settings.target_positive_responses - positive);
   const batch = Math.min(settings.initial_allocation_count, gap);
-  const eligible = listEligibleCompanyIds(db, tid, catId, settings);
-  const taken = assignedCompanyIdSet(db, tid, pid);
-  const pool = eligible.filter((id) => !taken.has(id));
+  const eligible = await listEligibleCompanyIdsAsync(pool, tid, catId, settings);
+  const taken = await assignedCompanyIdSetAsync(pool, tid, pid);
+  const candidates = eligible.filter((id) => !taken.has(id));
   const waveNum = Math.max(1, Math.floor(Number(project.intake_allocation_wave_number) || 1)) + 1;
   const seed = allocationSeedFromString(`${tid}:${pid}:wave:${waveNum}`);
-  const picks = pickWithoutReplacement(pool, batch, seed);
-
-  const hours = Math.max(1, Math.floor(Number(responseHours) || DEFAULT_RESPONSE_HOURS));
-  const waveEndRow = db.prepare(`SELECT datetime('now', '+' || ? || ' hours') AS d`).get(String(hours));
-  const waveEnd = waveEndRow && waveEndRow.d ? String(waveEndRow.d) : null;
-
-  const ins = db.prepare(
-    `INSERT INTO intake_project_assignments (
-      tenant_id, project_id, company_id, assigned_by_admin_user_id, status,
-      response_deadline_at, allocation_source, allocation_wave, updated_at
-    ) VALUES (?, ?, ?, NULL, 'allocated', ?, 'auto', ?, datetime('now'))`
-  );
+  const picks = pickWithoutReplacement(candidates, batch, seed);
+  const waveEnd = await deadlineAfterHours(pool, responseHours);
 
   for (const cid of picks) {
-    ins.run(tid, pid, cid, waveEnd, waveNum);
+    await intakeAssignmentsRepo.insertAllocated(pool, {
+      tenantId: tid,
+      projectId: pid,
+      companyId: cid,
+      assignedByAdminUserId: null,
+      responseDeadlineAt: waveEnd,
+      allocationSource: "auto",
+      allocationWave: waveNum,
+    });
   }
 
   if (picks.length === 0) {
-    db.prepare(`UPDATE intake_client_projects SET intake_auto_allocation_paused = 1 WHERE id = ? AND tenant_id = ?`).run(pid, tid);
+    await intakeClientProjectsRepo.updateAllocationPaused(pool, pid, tid);
     return;
   }
 
-  db.prepare(
-    `UPDATE intake_client_projects SET intake_allocation_wave_deadline_at = ?, intake_allocation_wave_number = ? WHERE id = ? AND tenant_id = ?`
-  ).run(waveEnd, waveNum, pid, tid);
+  await intakeClientProjectsRepo.updateWaveDeadlineAndNumber(pool, {
+    waveDeadlineAt: waveEnd,
+    waveNumber: waveNum,
+    projectId: pid,
+    tenantId: tid,
+  });
 }
 
 /**
  * Run timeouts, replacements, wave top-up, and target checks for one published project.
- * Safe to call frequently (admin detail, company lead detail).
- * @param {import("better-sqlite3").Database} db
+ * @param {import("pg").Pool} pool
  * @param {number} tenantId
  * @param {number} projectId
  */
-function processPublishedProjectAllocation(db, tenantId, projectId) {
+async function processPublishedProjectAllocation(pool, tenantId, projectId) {
   const tid = Number(tenantId);
   const pid = Number(projectId);
-  const project = db.prepare(`SELECT * FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
+  let project = await intakeClientProjectsRepo.getByIdAndTenant(pool, pid, tid);
   if (!project) return;
   if (String(project.status || "").trim().toLowerCase() !== "published") return;
 
   const catId = Number(project.intake_category_id);
-  const settings = getAllocationSettings(db, tid);
-  const hours = catId ? getCategoryResponseWindowHours(db, tid, catId) : DEFAULT_RESPONSE_HOURS;
+  const settings = await getAllocationSettingsAsync(pool, tid);
+  const hours = catId ? await getCategoryResponseWindowHoursAsync(pool, tid, catId) : DEFAULT_RESPONSE_HOURS;
 
-  const run = db.transaction(() => {
-    refreshPausedIfTargetMet(db, tid, pid, settings);
-    let proj = db.prepare(`SELECT * FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
+  await refreshPausedIfTargetMetAsync(pool, tid, pid, settings);
+  let proj = await intakeClientProjectsRepo.getByIdAndTenant(pool, pid, tid);
 
-    const stPlace = PENDING_RESPONSE_STATUSES.map(() => "?").join(", ");
-    const overdue = db
-      .prepare(
-        `SELECT id FROM intake_project_assignments
-         WHERE tenant_id = ? AND project_id = ? AND lower(trim(status)) IN (${stPlace})
-           AND response_deadline_at IS NOT NULL AND length(trim(response_deadline_at)) > 0
-           AND datetime(response_deadline_at) <= datetime('now')`
-      )
-      .all(tid, pid, ...PENDING_RESPONSE_STATUSES);
+  const overdue = await intakeAssignmentsRepo.listOverduePendingAssignments(pool, tid, pid);
 
-    for (const row of overdue) {
-      const aid = Number(row.id);
-      db.prepare(`UPDATE intake_project_assignments SET status = 'timed_out', updated_at = datetime('now') WHERE id = ? AND tenant_id = ?`).run(aid, tid);
-      if (catId) {
-        const seed = allocationSeedFromString(`${tid}:${pid}:timeout:${aid}`);
-        tryAllocateOneReplacement(db, tid, pid, settings, hours, catId, seed);
-      }
+  for (const row of overdue) {
+    const aid = Number(row.id);
+    await intakeAssignmentsRepo.markTimedOut(pool, aid, tid);
+    if (catId) {
+      const seed = allocationSeedFromString(`${tid}:${pid}:timeout:${aid}`);
+      await tryAllocateOneReplacement(pool, tid, pid, settings, hours, catId, seed);
     }
+  }
 
-    refreshPausedIfTargetMet(db, tid, pid, settings);
-    proj = db.prepare(`SELECT * FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
-    if (proj && !proj.intake_auto_allocation_paused && catId) {
-      maybeTopUpAfterWave(db, tid, pid, proj, settings, hours, catId);
-    }
+  await refreshPausedIfTargetMetAsync(pool, tid, pid, settings);
+  proj = await intakeClientProjectsRepo.getByIdAndTenant(pool, pid, tid);
+  if (proj && !proj.intake_auto_allocation_paused && catId) {
+    await maybeTopUpAfterWave(pool, tid, pid, proj, settings, hours, catId);
+  }
 
-    refreshPausedIfTargetMet(db, tid, pid, settings);
-  });
-
-  run();
+  await refreshPausedIfTargetMetAsync(pool, tid, pid, settings);
 }
 
 /**
- * Initial auto-allocation when a project becomes published (call inside same DB transaction as status flip).
- * @param {import("better-sqlite3").Database} db
+ * Initial auto-allocation when a project becomes published (after status flip).
+ * @param {import("pg").Pool} pool
  * @param {number} tenantId
  * @param {number} projectId
  * @param {number|null|undefined} publishingAdminUserId
  */
-function onProjectPublished(db, tenantId, projectId, publishingAdminUserId) {
+async function onProjectPublished(pool, tenantId, projectId, publishingAdminUserId) {
   const tid = Number(tenantId);
   const pid = Number(projectId);
   const uid = publishingAdminUserId != null && Number.isFinite(Number(publishingAdminUserId)) ? Number(publishingAdminUserId) : null;
 
-  const project = db.prepare(`SELECT * FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
+  let project = await intakeClientProjectsRepo.getByIdAndTenant(pool, pid, tid);
   if (!project) return;
   if (Number(project.intake_auto_allocation_seeded)) return;
 
   const catId = Number(project.intake_category_id);
-  const settings = getAllocationSettings(db, tid);
+  const settings = await getAllocationSettingsAsync(pool, tid);
 
   if (!catId || catId < 1) {
-    db.prepare(
-      `UPDATE intake_client_projects SET intake_auto_allocation_seeded = 1, intake_auto_allocation_paused = 1 WHERE id = ? AND tenant_id = ?`
-    ).run(pid, tid);
+    await intakeClientProjectsRepo.markSeededAndPaused(pool, pid, tid);
     return;
   }
 
-  const hours = getCategoryResponseWindowHours(db, tid, catId);
-  const eligible = listEligibleCompanyIds(db, tid, catId, settings);
-  const taken = assignedCompanyIdSet(db, tid, pid);
-  const pool = eligible.filter((id) => !taken.has(id));
+  const hours = await getCategoryResponseWindowHoursAsync(pool, tid, catId);
+  const eligible = await listEligibleCompanyIdsAsync(pool, tid, catId, settings);
+  const taken = await assignedCompanyIdSetAsync(pool, tid, pid);
+  const candidates = eligible.filter((id) => !taken.has(id));
   const seed = allocationSeedFromString(`${tid}:${pid}:wave:1`);
-  const picks = pickWithoutReplacement(pool, settings.initial_allocation_count, seed);
+  const picks = pickWithoutReplacement(candidates, settings.initial_allocation_count, seed);
 
   if (picks.length === 0) {
-    db.prepare(
-      `UPDATE intake_client_projects SET
-        intake_allocation_wave_deadline_at = NULL,
-        intake_allocation_wave_number = 0,
-        intake_auto_allocation_seeded = 1,
-        intake_auto_allocation_paused = 1
-       WHERE id = ? AND tenant_id = ?`
-    ).run(pid, tid);
-    refreshPausedIfTargetMet(db, tid, pid, settings);
+    await intakeClientProjectsRepo.updateAllocationSeededPausedNullWave(pool, pid, tid);
+    await refreshPausedIfTargetMetAsync(pool, tid, pid, settings);
     return;
   }
 
-  const waveEndRow = db.prepare(`SELECT datetime('now', '+' || ? || ' hours') AS d`).get(String(Math.max(1, Math.floor(Number(hours) || DEFAULT_RESPONSE_HOURS))));
-  const waveEnd = waveEndRow && waveEndRow.d ? String(waveEndRow.d) : null;
-
-  const ins = db.prepare(
-    `INSERT INTO intake_project_assignments (
-      tenant_id, project_id, company_id, assigned_by_admin_user_id, status,
-      response_deadline_at, allocation_source, allocation_wave, updated_at
-    ) VALUES (?, ?, ?, ?, 'allocated', ?, 'auto', 1, datetime('now'))`
-  );
+  const waveEnd = await deadlineAfterHours(pool, hours);
 
   for (const cid of picks) {
-    ins.run(tid, pid, cid, uid, waveEnd);
+    await intakeAssignmentsRepo.insertAllocated(pool, {
+      tenantId: tid,
+      projectId: pid,
+      companyId: cid,
+      assignedByAdminUserId: uid,
+      responseDeadlineAt: waveEnd,
+      allocationSource: "auto",
+      allocationWave: 1,
+    });
   }
+  await intakeClientProjectsRepo.updateAfterInitialAllocation(pool, {
+    waveDeadlineAt: waveEnd,
+    projectId: pid,
+    tenantId: tid,
+  });
 
-  db.prepare(
-    `UPDATE intake_client_projects SET
-      intake_allocation_wave_deadline_at = ?,
-      intake_allocation_wave_number = 1,
-      intake_auto_allocation_seeded = 1,
-      intake_auto_allocation_paused = 0
-     WHERE id = ? AND tenant_id = ?`
-  ).run(waveEnd, pid, tid);
-
-  refreshPausedIfTargetMet(db, tid, pid, settings);
+  await refreshPausedIfTargetMetAsync(pool, tid, pid, settings);
 }
 
 /**
  * After a provider declines (assignment row already updated to declined).
- * @param {import("better-sqlite3").Database} db
+ * @param {import("pg").Pool} pool
  * @param {number} tenantId
  * @param {number} assignmentId
  */
-function onAssignmentDeclinedByProvider(db, tenantId, assignmentId) {
+async function onAssignmentDeclinedByProvider(pool, tenantId, assignmentId) {
   const tid = Number(tenantId);
   const aid = Number(assignmentId);
-  const row = db
-    .prepare(
-      `SELECT a.project_id, p.intake_category_id
-       FROM intake_project_assignments a
-       INNER JOIN intake_client_projects p ON p.id = a.project_id AND p.tenant_id = a.tenant_id
-       WHERE a.id = ? AND a.tenant_id = ?`
-    )
-    .get(aid, tid);
+  const row = await intakeAssignmentsRepo.getProjectIdAndCategoryForAssignment(pool, aid, tid);
   if (!row) return;
   const pid = Number(row.project_id);
   const catId = Number(row.intake_category_id);
   if (!catId) return;
 
-  const run = db.transaction(() => {
-    const settings = getAllocationSettings(db, tid);
-    refreshPausedIfTargetMet(db, tid, pid, settings);
-    const proj = db.prepare(`SELECT intake_auto_allocation_paused FROM intake_client_projects WHERE id = ? AND tenant_id = ?`).get(pid, tid);
-    if (!proj || proj.intake_auto_allocation_paused) return;
-    const hours = getCategoryResponseWindowHours(db, tid, catId);
-    const seed = allocationSeedFromString(`${tid}:${pid}:decl:${aid}`);
-    tryAllocateOneReplacement(db, tid, pid, settings, hours, catId, seed);
-    refreshPausedIfTargetMet(db, tid, pid, settings);
-  });
-  run();
+  const settings = await getAllocationSettingsAsync(pool, tid);
+  await refreshPausedIfTargetMetAsync(pool, tid, pid, settings);
+  let proj = await intakeClientProjectsRepo.getPausedFlag(pool, pid, tid);
+  if (!proj || proj.intake_auto_allocation_paused) return;
+  const hours = await getCategoryResponseWindowHoursAsync(pool, tid, catId);
+  const seed = allocationSeedFromString(`${tid}:${pid}:decl:${aid}`);
+  await tryAllocateOneReplacement(pool, tid, pid, settings, hours, catId, seed);
+  await refreshPausedIfTargetMetAsync(pool, tid, pid, settings);
 }
 
 /**
  * Mark allocated → viewed on first open (tenant + company scoped).
- * @param {import("better-sqlite3").Database} db
+ * @param {import("pg").Pool} pool
  * @param {number} tenantId
  * @param {number} companyId
  * @param {number} assignmentId
  */
-function markAssignmentViewedIfAllocated(db, tenantId, companyId, assignmentId) {
-  db.prepare(
-    `UPDATE intake_project_assignments SET status = 'viewed', updated_at = datetime('now')
-     WHERE id = ? AND tenant_id = ? AND company_id = ? AND lower(trim(status)) = 'allocated'`
-  ).run(Number(assignmentId), Number(tenantId), Number(companyId));
+async function markAssignmentViewedIfAllocated(pool, tenantId, companyId, assignmentId) {
+  await intakeAssignmentsRepo.markViewedIfAllocated(pool, tenantId, companyId, assignmentId);
 }
 
 module.exports = {
   PENDING_RESPONSE_STATUSES,
   isCompanyEligibleForIntakeAllocation,
-  listEligibleCompanyIds,
-  assignedCompanyIdSet,
-  countPositiveResponses,
+  listEligibleCompanyIdsAsync,
   processPublishedProjectAllocation,
   onProjectPublished,
   onAssignmentDeclinedByProvider,
