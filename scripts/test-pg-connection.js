@@ -33,5 +33,11 @@ async function main() {
 main().catch((err) => {
   // eslint-disable-next-line no-console
   console.error("[getpro] PostgreSQL: FAILED —", err.message);
+  if (/SSL|self-signed|certificate|ECONNREFUSED|timeout|password authentication/i.test(String(err.message))) {
+    // eslint-disable-next-line no-console
+    console.error(
+      "→ Hints: confirm Supabase URI (pooler :6543 vs direct :5432), `?sslmode=require`, GETPRO_PG_SSL, and that the DB password is correct."
+    );
+  }
   closePgPool().finally(() => process.exit(1));
 });

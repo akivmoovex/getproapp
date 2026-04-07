@@ -53,6 +53,6 @@ Demo tenant sample reviews are seeded once (`reviews_seed_demo_v1` in `_getpro_m
 ## Global / shared tables
 
 - **`tenants`** — region definitions and lifecycle stage  
-- **`sessions`** (if using SQLite session store) — separate file under `data/sessions.db` by default  
+- **`session`** — Express sessions (`connect-pg-simple`), table in PostgreSQL when the app is configured with a Postgres URL  
 
-There is **not** a separate physical database per tenant: isolation is by **`tenant_id`** columns in SQLite.
+There is **not** a separate physical database per tenant: isolation is by **`tenant_id`** columns in PostgreSQL.

@@ -2,11 +2,9 @@
 
 This app uses **one stylesheet** (`public/styles.css`) for both the public site and the admin UI. **Design tokens** live in [`theme.css`](../public/theme.css) and [`design-system.css`](../public/design-system.css); see [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md). Admin layout is scoped with `.admin-app`, `.admin-main`, and **CSS variables** under `:root` with the `--admin-*` prefix so grids, cards, tables, and modals stay consistent. **Material Design 3** spacing, elevation, and surfaces use the `--md-sys-*` tokens (see [`MATERIAL_DESIGN_3.md`](./MATERIAL_DESIGN_3.md)).
 
-## Database files (`data/`)
+## Database (PostgreSQL)
 
-The app opens **only** the path from `SQLITE_PATH` or the default **`data/getpro.sqlite`** (see `src/db/index.js`).
-
-If you see files like **`netraz.sqlite`**, **`pronline.sqlite`**, or other extra `*.sqlite` / `*.db` names in `data/`, they are **not** referenced by GetPro unless `SQLITE_PATH` points at them. Remove the matching **`-wal`** and **`-shm`** files when deleting an unused database. Keep a backup first if unsure.
+Runtime uses **PostgreSQL only** (`DATABASE_URL` / `GETPRO_DATABASE_URL`). **`src/db/index.js`** does not open SQLite; it is a guard for legacy imports. Optional files under **`data/`** are not used by `server.js` for the app database — see **`data/README.md`** and **`docs/SQLITE_RUNTIME_CUTOVER.md`**.
 
 ## Tokens (see `:root` in `theme.css` / `design-system.css`, imported by `styles.css`)
 

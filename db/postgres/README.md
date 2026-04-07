@@ -1,6 +1,6 @@
 # PostgreSQL / Supabase schema (incremental)
 
-Apply SQL files manually in Supabase (**SQL** → **New query**) or via `psql "$DATABASE_URL" -f ...`.
+Apply SQL files manually in Supabase (**SQL** → **New query**) or via `psql "$DATABASE_URL" -f ...`. After applying `000_full_schema.sql`, verify from your repo with **`npm run check:pg`** (core tables + connection).
 
 | File | Purpose |
 |------|---------|

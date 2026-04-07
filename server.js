@@ -9,18 +9,7 @@ const envPath = path.join(__dirname, ".env");
 const dotenvResult = require("dotenv").config({ path: envPath, quiet: true });
 const dotenvKeyCount = Object.keys(dotenvResult.parsed || {}).length;
 
-// One-line diagnostics (no secrets). Hosting env vars exist before Node runs; .env only adds keys if the file exists.
-// eslint-disable-next-line no-console
-console.log(
-  `[getpro] cwd=${process.cwd()} | .env file keys=${dotenvKeyCount} (${envPath}) | ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? "set" : "MISSING"} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"}`
-);
-
-const { ensureAdminUser } = require("./src/auth");
-const { seedBuiltinUsers } = require("./src/seeds/seedBuiltinUsers");
-const { seedManagerUsers } = require("./src/seeds/seedManagerUsers");
-const { getSubdomain, resolveHostname } = require("./src/platform/host");
-
-const { getPgPool, isPgConfigured } = require("./src/db/pg");
+const { getPgPool, isPgConfigured, logPgStartupDiagnostics, getDatabaseUrlEnvName } = require("./src/db/pg");
 if (!isPgConfigured()) {
   // eslint-disable-next-line no-console
   console.error(
@@ -31,8 +20,18 @@ if (!isPgConfigured()) {
 
 const { db, verifyProductionPgOnlyRuntime } = require("./src/db");
 verifyProductionPgOnlyRuntime();
+logPgStartupDiagnostics();
+
+// One-line diagnostics (no secrets). Hosting env vars exist before Node runs; .env only adds keys if the file exists.
 // eslint-disable-next-line no-console
-console.log("[getpro] PostgreSQL data store (DATABASE_URL / GETPRO_DATABASE_URL is set).");
+console.log(
+  `[getpro] cwd=${process.cwd()} | .env file keys=${dotenvKeyCount} (${envPath}) | databaseUrl=${getDatabaseUrlEnvName()} | ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? "set" : "MISSING"} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"} | HOST=${process.env.HOST || "(default 0.0.0.0)"}`
+);
+
+const { ensureAdminUser } = require("./src/auth");
+const { seedBuiltinUsers } = require("./src/seeds/seedBuiltinUsers");
+const { seedManagerUsers } = require("./src/seeds/seedManagerUsers");
+const { getSubdomain, resolveHostname } = require("./src/platform/host");
 
 const {
   createAttachTenantByHost,

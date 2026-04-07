@@ -62,25 +62,39 @@ If you get **JSON** but `resolvedHost` is wrong (e.g. `127.0.0.1` or an internal
 
 ## Local development
 
-Create a `.env` file in the project root (this file is gitignored). Example:
-
-```bash
-# Required
-ADMIN_PASSWORD=your-secure-password
-DATABASE_URL=postgresql://...   # or GETPRO_DATABASE_URL
-
-# Recommended
-NODE_ENV=development
-SESSION_SECRET=use-a-long-random-string-in-production
-BASE_DOMAIN=
-
-npm install
-npm start
-```
+1. **`cp .env.example .env`** and set **`DATABASE_URL`** (preferred) or **`GETPRO_DATABASE_URL`** from Supabase (**Project Settings → Database → Connection string → URI**) plus **`ADMIN_PASSWORD`**. See **`.env.example`** for all optional keys.
+2. In Supabase **SQL Editor**, run **`db/postgres/000_full_schema.sql`** once.
+3. From the repo root: **`npm install`**, then **`npm run test:pg`** (connectivity) and **`npm run check:pg`** (core tables exist).
+4. **`npm run build`** (or `npm run build:assets` only) if you want Vite output under `public/build/`; then **`npm start`** (or **`npm run dev`**).
 
 **Database:** The server **exits** if **`DATABASE_URL` / `GETPRO_DATABASE_URL`** is unset. Apply **`db/postgres/000_full_schema.sql`** (and follow-ups) to Postgres; application access is via **`src/db/pg/*`**. There is **no** SQLite database opened on Express startup — **`src/db/index.js`** is a guard/stub. **SQLite → Postgres bulk copy scripts are not shipped** in this repo (retired; **`docs/SQLITE_TO_PG_DATA_MIGRATION.md`** is historical only). An optional local **`data/getpro.sqlite`** file is **not** used by the server; see **`data/README.md`**.
 
-**PostgreSQL / Supabase:** **`docs/SUPABASE_ENV.md`**. Verify pool: **`npm run test:pg`**. After schema apply, optional: **`npm run test:pg:repos`**. SQL layout: **`db/postgres/`** (`db/postgres/README.md`). Prisma is not used.
+### Supabase (connection string, schema, checks)
+
+1. **Connection string:** In Supabase: **Project Settings → Database → Connection string → URI**. Prefer **`DATABASE_URL`** in `.env` or Hostinger env (see **`.env.example`**). If both `DATABASE_URL` and `GETPRO_DATABASE_URL` are set, **`DATABASE_URL` wins**. Set **`GETPRO_PG_SSL=no-verify`** on Hostinger if you see **`self-signed certificate in certificate chain`** (some proxies / Node builds verify the chain strictly; **`strict`** enforces full verification; **`off`** is for local Postgres without TLS). When **`GETPRO_PG_SSL` is unset**, Supabase-style hosts default to **no-verify**; see **`docs/SUPABASE_ENV.md`**.
+2. **Apply schema:** In **Supabase → SQL Editor**, paste the contents of **`db/postgres/000_full_schema.sql`** and run it once on an empty `public` schema (or after dropping conflicting objects). Details: **`db/postgres/README.md`**.
+3. **Verify from your machine:**  
+   - `npm run test:pg` — quick connectivity (`SELECT current_database()`).  
+   - `npm run check:pg` — connectivity plus **core tables** exist (actionable message if schema was not applied).  
+   - `npm run test:pg:repos` — optional repository smoke tests after schema apply.
+4. **Startup logs:** On boot, the server logs **which env var** holds the DB URL (`DATABASE_URL` vs `GETPRO_DATABASE_URL`), **`NODE_ENV`**, pool limits, and **SSL mode** — **never** the password or full URI.
+5. **Opt-in HTTP check:** Set **`GETPRO_PG_HEALTH_ROUTE=1`** and `GET /api/debug/pg-ping` for JSON connectivity (off by default).
+
+**PostgreSQL / Supabase reference:** **`docs/SUPABASE_ENV.md`**. SQL layout: **`db/postgres/`** (`db/postgres/README.md`). Prisma is not used.
+
+### Hostinger env (Supabase)
+
+Set at least: **`DATABASE_URL`** (or **`GETPRO_DATABASE_URL`**), **`GETPRO_PG_SSL=no-verify`** (recommended for Supabase from Node on shared hosting unless you need **`GETPRO_PG_SSL=strict`**), **`ADMIN_PASSWORD`**, **`SESSION_SECRET`** (long random string), **`NODE_ENV=production`**, **`BASE_DOMAIN`**, **`PUBLIC_SCHEME=https`**, **`PORT`** (if the panel does not inject it). Add **`npm run build`** (or `build:assets`) to the deploy pipeline so **`public/build/asset-map.json`** exists. **`TRUST_PROXY`** defaults to proxy-friendly behavior; see the Hostinger section above. If the app exits on boot, check panel logs for **`FATAL: DATABASE_URL`** or PostgreSQL errors (SSL, wrong password, missing schema — run **`npm run check:pg`** locally with the same URI).
+
+### Debugging DB issues (no secrets in logs)
+
+| Symptom | What to check |
+|--------|----------------|
+| `password authentication failed` | Reset DB password in Supabase; update the URI in Hostinger env. |
+| `self-signed certificate in certificate chain` / SSL errors | Set **`GETPRO_PG_SSL=no-verify`** in Hostinger env. Use **`strict`** only if full certificate verification succeeds. See **`docs/SUPABASE_ENV.md`**. |
+| `relation "…" does not exist` | Schema not applied — run **`db/postgres/000_full_schema.sql`** in Supabase SQL Editor; verify with **`npm run check:pg`**. |
+| `ECONNREFUSED` / timeout | Wrong host/port; try pooler **:6543** vs direct **:5432**; confirm Supabase project is up. |
+| Sessions not sticking | **`SESSION_SECRET`** set and stable; **`NODE_ENV=production`** so cookies are `secure`; same DB for all app instances. |
 
 **Callbacks (`callback_interests`):** Runtime uses PostgreSQL when the DB URL is set. **`docs/SUPABASE_SLICE1_CALLBACKS.md`**, **`docs/SUPABASE_MIGRATION_BACKLOG.md`**.
 
@@ -139,7 +153,7 @@ The animated “typing” hint is set with `data-watermark-text` on the `.pro-ac
 
 ## Environment
 
-**Common variables:** `ADMIN_PASSWORD` (required), **`DATABASE_URL` or `GETPRO_DATABASE_URL` (required)** — `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, `GETPRO_STYLES_V`, `SEED_BUILTIN_USERS` (`0` to skip demo admin seeding), `SEED_MANAGER_USERS` (`0` to skip martin/faith/daisy multi-tenant seed), **`GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG`**, **`GETPRO_PG_POOL_MAX`**, **`GETPRO_PG_IDLE_MS`**, **`GETPRO_PG_CONNECT_TIMEOUT_MS`**.
+**Common variables:** `ADMIN_PASSWORD` (required), **`DATABASE_URL` or `GETPRO_DATABASE_URL` (required)** — `SESSION_SECRET`, `NODE_ENV`, `BASE_DOMAIN`, `PORT`, `HOST`, `PUBLIC_SCHEME`, **`GETPRO_PG_SSL`** (`strict` / `no-verify` / `off`), `GETPRO_EMAIL`, `GETPRO_ADDRESS`, `CALL_CENTER_PHONE`, `GETPRO_STYLES_V`, `SEED_BUILTIN_USERS` (`0` to skip demo admin seeding), `SEED_MANAGER_USERS` (`0` to skip martin/faith/daisy multi-tenant seed), **`GETPRO_SUPER_ADMIN_DEFAULT_TENANT_SLUG`**, **`GETPRO_PG_POOL_MAX`**, **`GETPRO_PG_IDLE_MS`**, **`GETPRO_PG_CONNECT_TIMEOUT_MS`**.
 
 **Production:** set `BASE_DOMAIN=getproapp.org` (and `PUBLIC_SCHEME=https` if needed). Optional: `DEBUG_HOST=1` temporarily for `/healthz` and `/api/debug/host`; `ISRAEL_COMING_SOON=true` to lock Israel to coming-soon; `TRUST_PROXY=0` only if Node is exposed directly without a reverse proxy (Hostinger usually needs the default trust proxy). On hosts that don’t deploy `.env`, set the same keys in the panel’s environment variables.
 

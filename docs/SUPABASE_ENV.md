@@ -1,23 +1,35 @@
 # Supabase / PostgreSQL environment variables
 
-The app uses **SQLite** for the main app database (`src/db`) and **PostgreSQL** for migrated features when a connection string is set. **Sessions** use PostgreSQL by default when `DATABASE_URL` is set (`connect-pg-simple`); otherwise they use a local SQLite file. See **`docs/SQLITE_RUNTIME_CUTOVER.md`**. Secrets are never hardcoded.
+The app is **PostgreSQL-only** at runtime (`server.js` exits if no connection string). Application data and **sessions** use the same pool (`connect-pg-simple`, table `public.session`). There is **no** SQLite session store or hybrid mode. See **`docs/SQLITE_RUNTIME_CUTOVER.md`**.
 
-## Connection string (required for any PG feature)
-
-| Variable | Description |
-|----------|-------------|
-| **`DATABASE_URL`** | Primary. Postgres connection URI. In Supabase: **Project Settings → Database → Connection string → URI** (direct `5432` or pooler `6543`). Include password; use `?sslmode=require` if the host requires SSL. |
-| **`GETPRO_DATABASE_URL`** | Alternative name; used if `DATABASE_URL` is unset. Same format. |
-
-Do **not** commit these values. Set them in `.env` locally and in your host’s environment panel in production.
-
-## Sessions (when Postgres is configured)
+## Connection string (required)
 
 | Variable | Description |
 |----------|-------------|
-| **`GETPRO_SESSION_STORE`** | Unset: use **Postgres** sessions if `DATABASE_URL` is set, else SQLite file. `pg`: force Postgres (requires URL). `sqlite`: force SQLite `sessions.db` even when Postgres is configured (e.g. local debugging). |
+| **`DATABASE_URL`** | **Preferred.** Postgres URI. In Supabase: **Project Settings → Database → Connection string → URI** (direct port **5432** or pooler **6543**). The dashboard string often includes `?sslmode=require`. |
+| **`GETPRO_DATABASE_URL`** | Fallback if `DATABASE_URL` is unset. Same format. |
 
-Table: **`public.session`** (created automatically if missing when using Postgres).
+If both are set, **`DATABASE_URL` wins**. Do **not** commit these values; use `.env` locally (see `.env.example`) and the host panel in production.
+
+## SSL / TLS (`GETPRO_PG_SSL`)
+
+Supabase uses TLS. Node’s `pg` driver plus **`sslmode=require`** in the URI can verify the server certificate strictly; on some hosts (e.g. **Hostinger**) you may see **`self-signed certificate in certificate chain`**. Control behavior with **`GETPRO_PG_SSL`** (same pool for app data, sessions, and admin bootstrap):
+
+| Value | Pool behavior |
+|-------|----------------|
+| **`strict`** | `ssl: { rejectUnauthorized: true }` — full verification. |
+| **`no-verify`** | `ssl: { rejectUnauthorized: false }` — encrypted, but hostname/chain not verified (typical fix for the error above). |
+| **`off`** | No TLS (`ssl: false`) — local Postgres without SSL only. |
+
+When **`GETPRO_PG_SSL` is unset**:
+
+- **Supabase-style hostnames** (e.g. `*.supabase.co`, pooler hostnames): default to **`no-verify`** (same as explicit `GETPRO_PG_SSL=no-verify`).
+- **Localhost**: no pool-level SSL; driver follows the URI.
+- **Other remote hosts**: no pool-level SSL; URI / driver defaults apply.
+
+When **`GETPRO_PG_SSL` is set to `strict`, `no-verify`, or `off`**, `sslmode` / `ssl` **query parameters are removed** from the connection string before creating the pool so the URI does not imply verify-full while the pool sets a different `ssl` object.
+
+Legacy aliases: `require` / `true` / `1` → **`strict`**; `0` / `false` / `disable` → **`off`**.
 
 ## Pool tuning (optional)
 
@@ -27,19 +39,21 @@ Table: **`public.session`** (created automatically if missing when using Postgre
 | `GETPRO_PG_IDLE_MS` | `30000` | `idleTimeoutMillis`. |
 | `GETPRO_PG_CONNECT_TIMEOUT_MS` | `10000` | `connectionTimeoutMillis`. |
 
-## Connectivity checks (no app data migration)
+## Connectivity and schema checks
 
 | Mechanism | How |
-|-------------|-----|
-| **CLI** | `npm run test:pg` — runs `SELECT current_database()`; exits `0` with a skip message if no URL is set (safe for CI). |
-| **HTTP (opt-in)** | Set **`GETPRO_PG_HEALTH_ROUTE=1`**, then `GET /api/debug/pg-ping` returns JSON with `ok`, `database`, `schema` or an error. **Disabled by default** so production does not expose this route accidentally. |
+|-----------|-----|
+| **CLI** | `npm run test:pg` — `SELECT current_database()`; exits `0` with a skip message if no URL (CI-safe). |
+| **Schema / tables** | `npm run check:pg` — connects and verifies core tables exist; hints to run `db/postgres/000_full_schema.sql` if not. |
+| **Repos (optional)** | `npm run test:pg:repos` — smoke-test repositories after schema apply. |
+| **HTTP (opt-in)** | Set **`GETPRO_PG_HEALTH_ROUTE=1`**, then **`GET /api/debug/pg-ping`** returns JSON with `ok`, `database`, `schema` or an error. **Disabled by default** so production does not expose this accidentally. |
 
-## Callback interests (PostgreSQL primary when connected)
+## Callback interests
 
-When **`DATABASE_URL`** / **`GETPRO_DATABASE_URL`** is set and **`public.callback_interests`** exists, **`POST /api/callback-interest`** and admin **Leads** partner callbacks read/write Postgres (not SQLite for those rows). No extra env flag.
+When **`public.callback_interests`** exists, **`POST /api/callback-interest`** and admin **Leads** read/write PostgreSQL. No extra env flag.
 
 ## Code location
 
-- Pool: `src/db/pg/pool.js` (`getPgPool`, `isPgConfigured`, `closePgPool`)
+- Pool: `src/db/pg/pool.js` (`getPgPool`, `isPgConfigured`, `closePgPool`, `logPgStartupDiagnostics`)
 - Re-export: `src/db/pg/index.js`
 - Callbacks: `src/db/pg/callbacksRepo.js`
