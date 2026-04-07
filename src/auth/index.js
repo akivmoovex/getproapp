@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const {
   ROLES,
-  normalizeRole,
+  ALL_ROLES,
   isSuperAdmin,
   isTenantViewer,
   canEditDirectoryData,
@@ -12,6 +12,7 @@ const {
 const { TENANT_ZM } = require("../tenants/tenantIds");
 const { upsertMembershipAsync } = require("./adminUserTenants");
 const adminUsersRepo = require("../db/pg/adminUsersRepo");
+const tenantsRepo = require("../db/pg/tenantsRepo");
 
 function adminRowDisabled(admin) {
   if (!admin) return true;
@@ -20,9 +21,15 @@ function adminRowDisabled(admin) {
 }
 
 async function ensureAdminUser({ pool }) {
+  await tenantsRepo.ensureCanonicalTenantsIfMissing(pool);
+
   const username = (process.env.ADMIN_USERNAME || "admin").toLowerCase();
   const existing = await adminUsersRepo.getByUsernameLower(pool, username);
-  if (existing) return;
+  if (existing) {
+    // eslint-disable-next-line no-console
+    console.log(`[getpro] Admin user already exists: ${username}`);
+    return;
+  }
 
   const password = process.env.ADMIN_PASSWORD;
   if (!password) {
@@ -32,7 +39,8 @@ async function ensureAdminUser({ pool }) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const envRole = normalizeRole(process.env.ADMIN_ROLE);
+  const raw = String(process.env.ADMIN_ROLE || "").trim().toLowerCase();
+  const envRole = !raw || !ALL_ROLES.includes(raw) ? ROLES.SUPER_ADMIN : raw;
   const role =
     envRole === ROLES.TENANT_MANAGER ||
     envRole === ROLES.TENANT_EDITOR ||
@@ -58,7 +66,7 @@ async function ensureAdminUser({ pool }) {
     }
   }
   // eslint-disable-next-line no-console
-  console.log(`Admin user created: ${username} (${role})`);
+  console.log(`[getpro] Admin user created: ${username} (${role})`);
 }
 
 function requireAdmin(req, res, next) {

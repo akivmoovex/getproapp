@@ -1,5 +1,7 @@
 "use strict";
 
+const { STAGES } = require("../../tenants/tenantStages");
+
 /**
  * PostgreSQL access for public.tenants (read helpers for a future cutover).
  * All functions take a pg Pool as the first argument.
@@ -222,6 +224,43 @@ async function getNextTenantId(pool) {
 }
 
 /**
+ * Idempotent: insert canonical region rows (ids 1–8) if missing. Required for FK on admin_users.tenant_id
+ * and for tenant-scoped bootstrap when ADMIN_ROLE is a tenant role. Safe on already-initialized DBs.
+ * @param {import("pg").Pool} pool
+ * @returns {Promise<number>} number of rows inserted (0–8)
+ */
+async function ensureCanonicalTenantsIfMissing(pool) {
+  const rows = [
+    [1, "global", "Global", STAGES.ENABLED],
+    [2, "demo", "Demo", STAGES.ENABLED],
+    [3, "il", "Israel", STAGES.ENABLED],
+    [4, "zm", "Zambia", STAGES.ENABLED],
+    [5, "zw", "Zimbabwe", STAGES.ENABLED],
+    [6, "bw", "Botswana", STAGES.ENABLED],
+    [7, "za", "South Africa", STAGES.DISABLED],
+    [8, "na", "Namibia", STAGES.ENABLED],
+  ];
+  let inserted = 0;
+  for (const [id, slug, name, stage] of rows) {
+    const r = await pool.query(
+      `INSERT INTO public.tenants (id, slug, name, stage)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO NOTHING`,
+      [id, slug, name, stage]
+    );
+    inserted += r.rowCount;
+  }
+  if (inserted > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`[getpro] Canonical tenants: created ${inserted} missing row(s) (ids 1–8, idempotent)`);
+  } else {
+    // eslint-disable-next-line no-console
+    console.log("[getpro] Canonical tenants: already present (bootstrap skipped)");
+  }
+  return inserted;
+}
+
+/**
  * Super-admin create region (explicit id, matches SQLite tenant bootstrap).
  * @param {import("pg").Pool} pool
  * @param {{ id: number, slug: string, name: string, stage: string, callcenter_phone: string, support_help_phone: string, whatsapp_phone: string, callcenter_email: string }} row
@@ -305,6 +344,7 @@ module.exports = {
   listSlugsOrdered,
   listEnabledRegionRows,
   getNextTenantId,
+  ensureCanonicalTenantsIfMissing,
   insertWithExplicitId,
   updateSuperTenantForm,
   updateStageById,
