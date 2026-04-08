@@ -252,7 +252,7 @@
     <script>
       window.__GETPRO_TENANT_SLUG__ = "<%= tenant.slug %>";
       window.__GETPRO_TENANT_ID__ = <%= tenant.id %>;
-      window.__GETPRO_HOME__ = "<%= tenantHomeHref %>";
+      window.__GETPRO_HOME__ = "<%= typeof fieldAgentExitHomeHref !== 'undefined' ? fieldAgentExitHomeHref : '/login' %>";
       window.__GETPRO_TENANT_CITIES__ = <%- JSON.stringify(typeof joinTenantCities !== 'undefined' ? joinTenantCities : []) %>;
       window.__FA_CHECK_PHONE_URL__ = <%- JSON.stringify((tenantUrlPrefix || '') + '/field-agent/api/check-phone') %>;
       window.__GETPRO_PHONE_RULES__ = <%- JSON.stringify(typeof phoneRulesPublic !== 'undefined' ? phoneRulesPublic : { slug: tenant.slug, strict: false, regex: null, normalizationMode: 'generic_digits', regexBroken: false }) %>;

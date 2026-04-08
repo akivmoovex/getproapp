@@ -39,6 +39,8 @@ function renderLocals(req, res, extra) {
     tenant,
     tenantUrlPrefix: prefix,
     tenantHomeHref: tenantHomeHrefFromPrefix(prefix),
+    /** Public marketing home can 503 when tenant is not Enabled; use sign-in hub for safe navigation. */
+    fieldAgentExitHomeHref: "/login",
     asset: res.locals.asset,
     brandProductName: res.locals.brandProductName,
     brandPublicTagline: res.locals.brandPublicTagline,
@@ -85,8 +87,8 @@ module.exports = function fieldAgentRoutes() {
     if (!username || username.length < 2) {
       return res.status(400).render("field_agent/signup", renderLocals(req, res, { error: "Username is required." }));
     }
-    if (!password || password.length < 8) {
-      return res.status(400).render("field_agent/signup", renderLocals(req, res, { error: "Password must be at least 8 characters." }));
+    if (!password || password.length < 4) {
+      return res.status(400).render("field_agent/signup", renderLocals(req, res, { error: "Password must be at least 4 characters." }));
     }
     const existing = await fieldAgentsRepo.getByUsernameAndTenant(pool, username, tid);
     if (existing) {

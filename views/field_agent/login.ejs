@@ -1,42 +1,30 @@
 <!doctype html>
-<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
 <html lang="en">
   <head>
     <%- include('../partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <%- include('../partials/theme_boot') %>
     <title>Field agent sign in | <%= _bn %></title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-gate-page <%= tenant.themeClass %>">
     <div class="container admin-gate-wrap">
       <div class="card admin-gate-card">
-        <a href="<%= tenantHomeHref %>" class="admin-gate-brand">
+        <a href="/login" class="admin-gate-brand">
           <div class="logo" aria-hidden="true"></div>
           <div>
-            <div class="admin-gate-brand__title">Field agent</div>
+            <div class="admin-gate-brand__title"><%= _bn %> · Field agent</div>
             <div class="admin-gate-brand__subtitle">Sign in to submit leads and view your dashboard.</div>
           </div>
         </a>
-        <% if (typeof error !== 'undefined' && error) { %>
-          <p class="admin-gate-error" role="alert"><%= error %></p>
-        <% } %>
-        <form method="post" action="<%= tenantUrlPrefix %>/field-agent/login" class="admin-gate-form">
-          <label class="input-field">
-            <span class="input-field__label">Username</span>
-            <input class="input-field__control" name="username" type="text" autocomplete="username" required />
-          </label>
-          <label class="input-field">
-            <span class="input-field__label">Password</span>
-            <input class="input-field__control" name="password" type="password" autocomplete="current-password" required />
-          </label>
-          <div class="admin-gate-actions">
-            <button type="submit" class="c-button c-button--primary">Sign in</button>
-            <a class="c-button c-button--secondary" href="<%= tenantUrlPrefix %>/field-agent/signup">Create account</a>
-          </div>
-        </form>
+        <%- include('../partials/admin_gate_form', {
+          formAction: (typeof tenantUrlPrefix !== 'undefined' && tenantUrlPrefix ? String(tenantUrlPrefix) : '') + '/field-agent/login',
+          error: typeof error !== 'undefined' ? error : null,
+          cancelHref: '/login',
+        }) %>
         <p class="muted admin-gate-alt" style="margin:0.75rem 0 0;font-size:0.9rem;">
-          <a href="/login">Other sign-in options</a> · <a href="<%= tenantHomeHref %>">Back to site</a>
+          <a href="<%= (typeof tenantUrlPrefix !== 'undefined' && tenantUrlPrefix ? String(tenantUrlPrefix) : '') %>/field-agent/signup">Create account</a>
         </p>
       </div>
     </div>

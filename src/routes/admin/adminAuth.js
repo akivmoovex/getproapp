@@ -32,14 +32,14 @@ async function pickSuperAdminInitialTenantScope(pool) {
 module.exports = function registerAdminAuthRoutes(router) {
   router.get("/login", (req, res) => {
     if (req.session && req.session.adminUser) return res.redirect("/admin/dashboard");
-    return res.render("admin/login", { error: null, cancelHref: "/getpro-admin" });
+    return res.render("admin/login", { error: null, cancelHref: "/login" });
   });
 
   router.post("/login", adminLoginLimiter, async (req, res) => {
     const pool = getPgPool();
     const { username = "", password = "" } = req.body || {};
     const user = await authenticateAdmin({ pool, username, password });
-    if (!user) return res.render("admin/login", { error: "Invalid username or password.", cancelHref: "/getpro-admin" });
+    if (!user) return res.render("admin/login", { error: "Invalid username or password.", cancelHref: "/login" });
 
     req.session.adminTenantScope = null;
     req.session.adminTenantMemberships = undefined;

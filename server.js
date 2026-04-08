@@ -31,6 +31,8 @@ console.log(
 const { ensureAdminUser } = require("./src/auth");
 const { seedBuiltinUsers } = require("./src/seeds/seedBuiltinUsers");
 const { seedManagerUsers } = require("./src/seeds/seedManagerUsers");
+const { seedFieldAgentUser } = require("./src/seeds/seedFieldAgentUser");
+const { ensureFieldAgentSchema } = require("./src/db/pg/ensureFieldAgentSchema");
 const { getSubdomain, resolveHostname } = require("./src/platform/host");
 
 const {
@@ -106,6 +108,10 @@ app.use((req, res, next) => {
   res.locals.brandProductName = branding.PRODUCT_NAME;
   res.locals.brandProductNameGetPro = branding.PRODUCT_NAME_GETPRO;
   res.locals.brandPublicTagline = branding.PUBLIC_TAGLINE;
+  // EJS `include('partials/brand_resolve')` does not hoist `var` into the parent template; views that use `_bn` without defining it need locals.
+  res.locals._bn = typeof res.locals.brandProductName !== "undefined" ? res.locals.brandProductName : "Pro-online";
+  res.locals._bnGetPro =
+    typeof res.locals.brandProductNameGetPro !== "undefined" ? res.locals.brandProductNameGetPro : "GetPro";
   next();
 });
 
@@ -334,6 +340,24 @@ app.get("/getpro-admin", (req, res) => {
   });
 });
 
+/**
+ * Sign-in hub + field agent portal run *before* the "region enabled" gate so staff can authenticate
+ * when a tenant is staged/disabled (Cancel / Back links must not land on a 503 home).
+ */
+app.get("/login", (req, res) => {
+  if (!req.tenant || !req.tenant.id) {
+    return res.status(404).type("text").send("Region not found.");
+  }
+  const prefix = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
+  return res.render("portal_login_hub", {
+    tenant: req.tenant,
+    tenantUrlPrefix: prefix,
+    tenantHomeHref: tenantHomeHrefFromPrefix(prefix),
+  });
+});
+
+app.use(fieldAgentRoutes());
+
 // Only `Enabled` tenants are served publicly (subdomain + apex content)
 app.use(async (req, res, next) => {
   try {
@@ -349,22 +373,6 @@ app.use(async (req, res, next) => {
   }
 });
 
-/** Field agent portal (tenant must be enabled — same gate as public site). */
-app.use(fieldAgentRoutes());
-
-/** Shared sign-in hub (tenant must be enabled — same gate as public site). */
-app.get("/login", (req, res) => {
-  if (!req.tenant || !req.tenant.id) {
-    return res.status(404).type("text").send("Region not found.");
-  }
-  const prefix = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
-  return res.render("portal_login_hub", {
-    tenant: req.tenant,
-    tenantUrlPrefix: prefix,
-    tenantHomeHref: tenantHomeHrefFromPrefix(prefix),
-  });
-});
-
 /** Role-separated portals: client (foundation), provider + legacy company path, same router. */
 app.use("/client", clientPortalRoutes());
 app.use("/company", companyPortalRoutes());
@@ -376,8 +384,10 @@ const pgPoolForBoot = getPgPool();
 
 ensureAdminUser({ pool: pgPoolForBoot })
   .then(async () => {
+    await ensureFieldAgentSchema(pgPoolForBoot);
     await seedBuiltinUsers(pgPoolForBoot);
     await seedManagerUsers(pgPoolForBoot);
+    await seedFieldAgentUser(pgPoolForBoot);
     app.listen(port, host, () => {
       // eslint-disable-next-line no-console
       console.log(`GetPro listening on ${host}:${port}`);

@@ -4,22 +4,23 @@
     <%- include('../partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <%- include('../partials/theme_boot') %>
     <title>Admin Login | <%= _bn %></title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-gate-page">
     <div class="container admin-gate-wrap">
       <div class="card admin-gate-card">
-        <a href="/" class="admin-gate-brand">
+        <a href="/login" class="admin-gate-brand">
           <div class="logo" aria-hidden="true"></div>
           <div>
             <div class="admin-gate-brand__title"><%= _bn %> Admin</div>
             <div class="admin-gate-brand__subtitle">Sign in to manage categories, listings, and leads.</div>
           </div>
         </a>
-        <p class="muted admin-gate-alt" style="margin:0 0 0.75rem;font-size:0.9rem;"><a href="/login">Other sign-in options</a> (provider, client)</p>
-        <%- include('../partials/admin_gate_form', { formAction: '/admin/login', error: error, cancelHref: typeof cancelHref !== 'undefined' ? cancelHref : '/getpro-admin' }) %>
+        <%- include('../partials/admin_gate_form', { formAction: '/admin/login', error: error, cancelHref: typeof cancelHref !== 'undefined' ? cancelHref : '/login' }) %>
       </div>
     </div>
+    <%- include('../partials/theme_prefs') %>
   </body>
 </html>

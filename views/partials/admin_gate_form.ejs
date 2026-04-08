@@ -1,7 +1,8 @@
-<% var _cancel = typeof cancelHref !== 'undefined' ? cancelHref : '/'; %>
+<% var _cancel = typeof cancelHref !== 'undefined' && cancelHref != null && String(cancelHref).trim() !== '' ? cancelHref : '/login'; %>
 <% var _action = typeof formAction !== 'undefined' ? formAction : '/admin/login'; %>
-<% if (typeof error !== 'undefined' && error) { %>
-  <div class="flash" role="alert"><%= error %></div>
+<% var _gateErr = typeof error !== 'undefined' && error != null && String(error).trim() !== '' ? String(error).trim() : ''; %>
+<% if (_gateErr) { %>
+  <div class="flash" role="alert"><%= _gateErr %></div>
 <% } %>
 <form method="post" action="<%= _action %>" class="form admin-gate-form">
   <div class="form-step form-step--admin">
