@@ -11,7 +11,7 @@
   <body class="admin-gate-page">
     <div class="container admin-gate-wrap">
       <div class="card admin-gate-card">
-        <a href="/login" class="admin-gate-brand">
+        <a href="<%= typeof opsHref === 'function' ? opsHref('/login') : '/login' %>" class="admin-gate-brand">
           <div class="logo" aria-hidden="true"></div>
           <div>
             <div class="admin-gate-brand__title"><%= _bn %> Admin</div>

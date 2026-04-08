@@ -8,8 +8,9 @@
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <% var _cb = typeof clientPortalBasePath !== 'undefined' && clientPortalBasePath ? String(clientPortalBasePath).replace(/\/$/, '') : '/client'; %>
+  <% var _hub = typeof opsHref === 'function' ? opsHref('/login') : '/login'; %>
   <body class="client-portal-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
-    <p class="client-portal-back muted"><%- include('partials/components/button', { variant: 'text', href: '/login', label: '← All sign-in options' }) %></p>
+    <p class="client-portal-back muted"><%- include('partials/components/button', { variant: 'text', href: _hub, label: '← All sign-in options' }) %></p>
     <%- include('partials/client_portal_shell_start', { clientPortalBasePath: _cb }) %>
       <div class="card client-login-card">
         <h1 class="client-login-card__title">Client area</h1>

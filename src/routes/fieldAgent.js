@@ -19,6 +19,7 @@ const { saveJpegImages, MAX_IMAGE_BYTES } = require("../fieldAgent/fieldAgentUpl
 const { notifyProviderSubmissionToCrm, notifyCallbackLeadToCrm } = require("../fieldAgent/fieldAgentCrm");
 const { fieldAgentLoginLimiter } = require("../middleware/authRateLimit");
 const { getTenantCitiesForClientAsync, getJoinCityWatermarkRotateAsync } = require("../tenants/tenantCities");
+const { FIELD_AGENT_DASHBOARD } = require("../auth/postLoginDestinations");
 
 function tenantPrefix(req) {
   return req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
@@ -40,7 +41,8 @@ function renderLocals(req, res, extra) {
     tenantUrlPrefix: prefix,
     tenantHomeHref: tenantHomeHrefFromPrefix(prefix),
     /** Public marketing home can 503 when tenant is not Enabled; use sign-in hub for safe navigation. */
-    fieldAgentExitHomeHref: "/login",
+    fieldAgentExitHomeHref:
+      typeof res.locals.opsHref === "function" ? res.locals.opsHref("/login") : "/login",
     asset: res.locals.asset,
     brandProductName: res.locals.brandProductName,
     brandPublicTagline: res.locals.brandPublicTagline,
@@ -71,7 +73,7 @@ module.exports = function fieldAgentRoutes() {
 
   router.get("/field-agent/signup", (req, res) => {
     if (getFieldAgentSession(req)) {
-      return res.redirect(302, `${tenantPrefix(req)}/field-agent/dashboard`);
+      return res.redirect(302, `${tenantPrefix(req)}${FIELD_AGENT_DASHBOARD}`);
     }
     return res.render("field_agent/signup", renderLocals(req, res, { error: null }));
   });
@@ -103,12 +105,12 @@ module.exports = function fieldAgentRoutes() {
       phone: "",
     });
     setFieldAgentSession(req, { id, tenantId: tid, username, displayName });
-    req.session.save(() => res.redirect(302, `${tenantPrefix(req)}/field-agent/dashboard`));
+    req.session.save(() => res.redirect(302, `${tenantPrefix(req)}${FIELD_AGENT_DASHBOARD}`));
   });
 
   router.get("/field-agent/login", (req, res) => {
     if (getFieldAgentSession(req)) {
-      return res.redirect(302, `${tenantPrefix(req)}/field-agent/dashboard`);
+      return res.redirect(302, `${tenantPrefix(req)}${FIELD_AGENT_DASHBOARD}`);
     }
     return res.render("field_agent/login", renderLocals(req, res, { error: null }));
   });
@@ -128,7 +130,7 @@ module.exports = function fieldAgentRoutes() {
       username: user.username,
       displayName: user.display_name || "",
     });
-    req.session.save(() => res.redirect(302, `${tenantPrefix(req)}/field-agent/dashboard`));
+    req.session.save(() => res.redirect(302, `${tenantPrefix(req)}${FIELD_AGENT_DASHBOARD}`));
   });
 
   router.post("/field-agent/logout", (req, res) => {
@@ -324,7 +326,7 @@ module.exports = function fieldAgentRoutes() {
         console.error("[getpro] field-agent CRM notify:", e.message);
       }
 
-      return res.redirect(302, `${tenantPrefix(req)}/field-agent/dashboard?submitted=1`);
+      return res.redirect(302, `${tenantPrefix(req)}${FIELD_AGENT_DASHBOARD}?submitted=1`);
     }
   );
 
@@ -369,7 +371,7 @@ module.exports = function fieldAgentRoutes() {
       // eslint-disable-next-line no-console
       console.error("[getpro] field-agent callback CRM:", e.message);
     }
-    return res.redirect(302, `${tenantPrefix(req)}/field-agent/dashboard?callback=1`);
+    return res.redirect(302, `${tenantPrefix(req)}${FIELD_AGENT_DASHBOARD}?callback=1`);
   });
 
   router.get("/field-agent/faq", requireFieldAgent, (req, res) => {

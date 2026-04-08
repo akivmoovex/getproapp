@@ -36,6 +36,7 @@ const { ensureFieldAgentSchema } = require("./src/db/pg/ensureFieldAgentSchema")
 const { ensureTenantPhoneRulesSchema } = require("./src/db/pg/ensureTenantPhoneRulesSchema");
 const { ensureContentLocaleSchema } = require("./src/db/pg/ensureContentLocaleSchema");
 const { tenantHomeHrefFromPrefix } = require("./src/lib/tenantHomeHref");
+const { opsHrefMiddleware, marketingApexLoginRedirectTarget } = require("./src/lib/marketingOperationalUrls");
 const { getSubdomain, resolveHostname } = require("./src/platform/host");
 
 const {
@@ -236,6 +237,8 @@ app.use(async (req, res, next) => {
   }
 });
 
+app.use(opsHrefMiddleware);
+
 // API and admin before tenant catch-alls so /api and /admin are not handled by public router
 app.use("/api", apiRoutes());
 app.use("/admin", adminRoutes({ db }));
@@ -343,6 +346,10 @@ app.get("/getpro-admin", (req, res) => {
 app.get("/login", (req, res) => {
   if (!req.tenant || !req.tenant.id) {
     return res.status(404).type("text").send("Region not found.");
+  }
+  const loginRedirect = marketingApexLoginRedirectTarget(req);
+  if (loginRedirect) {
+    return res.redirect(302, loginRedirect);
   }
   const prefix = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
   return res.render("portal_login_hub", {

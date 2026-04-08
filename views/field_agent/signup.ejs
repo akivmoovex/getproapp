@@ -9,9 +9,10 @@
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-gate-page <%= tenant.themeClass %>">
+    <% var _hub = typeof opsHref === 'function' ? opsHref('/login') : '/login'; %>
     <div class="container admin-gate-wrap">
       <div class="card admin-gate-card">
-        <a href="/login" class="admin-gate-brand">
+        <a href="<%= _hub %>" class="admin-gate-brand">
           <div class="logo" aria-hidden="true"></div>
           <div>
             <div class="admin-gate-brand__title"><%= _bn %> · Field agent</div>
@@ -58,7 +59,7 @@
           </div>
         </form>
         <p class="muted admin-gate-alt" style="margin:0.75rem 0 0;font-size:0.9rem;">
-          <a href="/login">Sign-in hub</a>
+          <a href="<%= _hub %>">Sign-in hub</a>
         </p>
       </div>
     </div>

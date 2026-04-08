@@ -11,7 +11,7 @@
   <body class="admin-gate-page <%= tenant.themeClass %>">
     <div class="container admin-gate-wrap">
       <div class="card admin-gate-card">
-        <a href="/login" class="admin-gate-brand">
+        <a href="<%= typeof opsHref === 'function' ? opsHref('/login') : '/login' %>" class="admin-gate-brand">
           <div class="logo" aria-hidden="true"></div>
           <div>
             <div class="admin-gate-brand__title"><%= _bn %> · Field agent</div>
@@ -21,7 +21,7 @@
         <%- include('../partials/admin_gate_form', {
           formAction: (typeof tenantUrlPrefix !== 'undefined' && tenantUrlPrefix ? String(tenantUrlPrefix) : '') + '/field-agent/login',
           error: typeof error !== 'undefined' ? error : null,
-          cancelHref: '/login',
+          cancelHref: typeof opsHref === 'function' ? opsHref('/login') : '/login',
         }) %>
         <p class="muted admin-gate-alt" style="margin:0.75rem 0 0;font-size:0.9rem;">
           <a href="<%= (typeof tenantUrlPrefix !== 'undefined' && tenantUrlPrefix ? String(tenantUrlPrefix) : '') %>/field-agent/signup">Create account</a>

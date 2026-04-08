@@ -7991,6 +7991,11 @@ a.pro-directory-empty__chip:hover {
   border-bottom: var(--border-width-hairline) solid var(--border-strong);
 }
 
+/* Join Us iframe popup: top brand row hidden — tighten hero top padding */
+.join-page--embed-modal .join-hero {
+  padding-top: clamp(var(--space-4), 6vw, var(--space-7));
+}
+
 .join-hero h1 {
   margin: 0 0 var(--space-2);
   font-size: clamp(var(--space-3-5), 4vw, var(--space-5));

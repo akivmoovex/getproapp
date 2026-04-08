@@ -1,11 +1,12 @@
 <% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<% var _op = typeof opsHref === 'function' ? opsHref : function (p) { return (tp || '') + p; }; %>
 <footer class="wf-footer" id="footer-terms">
   <div class="wf-footer-cta">
     <div class="ds-container wf-footer-cta-inner">
       <h2 class="wf-footer-cta-title">Find the right professional in one place</h2>
       <p class="wf-footer-cta-lead">Search the directory, filter by category, and reach businesses through clear one-page profiles.</p>
-      <%- include('components/button', { variant: 'default', href: tp + '/directory', label: 'Open directory', className: 'btn-footer-solid' }) %>
+      <%- include('components/button', { variant: 'default', href: _op('/directory'), label: 'Open directory', className: 'btn-footer-solid' }) %>
     </div>
   </div>
   <div class="wf-footer-main">
@@ -20,9 +21,9 @@
       <div class="pro-footer-col">
         <strong>Directory</strong>
         <ul>
-          <li><a href="<%= tp %>/directory">Browse professionals</a></li>
-          <li><a href="<%= tp %>/join">List your business</a></li>
-          <li><a href="<%= tp %>/answers">Help &amp; answers</a></li>
+          <li><a href="<%= _op('/directory') %>">Browse professionals</a></li>
+          <li><a href="<%= _op('/join') %>">List your business</a></li>
+          <li><a href="<%= _op('/answers') %>">Help &amp; answers</a></li>
         </ul>
       </div>
       <div class="pro-footer-col">

@@ -400,6 +400,7 @@ module.exports = function publicRoutes() {
     const canonicalUrl = canonicalUrlForTenant(req, "/join");
     return res.render("join", {
       baseDomain: process.env.BASE_DOMAIN || "",
+      joinEmbedModal: req.query.embed === "1" || req.query.embed === "true",
       joinTenantCities,
       joinCityWatermarkRotate,
       phoneRulesPublic,

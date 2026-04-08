@@ -8,9 +8,10 @@
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <% var _pb = typeof providerPortalBasePath !== 'undefined' && providerPortalBasePath ? String(providerPortalBasePath).replace(/\/$/, '') : '/company'; %>
+  <% var _hub = typeof opsHref === 'function' ? opsHref('/login') : '/login'; %>
   <body class="company-login-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
     <main class="company-login-main">
-      <p class="company-login-back muted"><%- include('partials/components/button', { variant: 'text', href: '/login', label: '← All sign-in options' }) %></p>
+      <p class="company-login-back muted"><%- include('partials/components/button', { variant: 'text', href: _hub, label: '← All sign-in options' }) %></p>
       <div class="card company-login-card">
         <h1 class="company-login-card__title">Provider portal</h1>
         <p class="muted company-login-card__lead">Sign in with your phone number or portal username and password (as set by your administrator).</p>

@@ -13,10 +13,12 @@
     }) %>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
-  <body class="join-page <%= tenant.themeClass %>" data-screen-role="support">
+  <body class="join-page <%= tenant.themeClass %><%= typeof joinEmbedModal !== 'undefined' && joinEmbedModal ? ' join-page--embed-modal' : '' %>" data-screen-role="support">
+    <% if (!(typeof joinEmbedModal !== 'undefined' && joinEmbedModal)) { %>
     <div class="join-topbar-row">
       <%- include('partials/brand_lockup_getpro', { tenant, brandLockupVariant: 'join', brandLockupHref: tenantHomeHref }) %>
     </div>
+    <% } %>
 
     <section class="join-hero" id="join-hero">
       <div class="ds-container join-hero-inner">

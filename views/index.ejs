@@ -76,6 +76,7 @@
                 <%- include('partials/pro_search_form', {
                   variant: 'home',
                   tenantUrlPrefix,
+                  formAction: typeof opsHref !== 'undefined' ? opsHref('/directory') : undefined,
                   showCategoryFilter: false,
                 }) %>
               </div>

@@ -12,6 +12,7 @@ const { adminLoginLimiter } = require("../../middleware/authRateLimit");
 const { getPgPool } = require("../../db/pg");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
 const { tenantHomeHrefFromPrefix } = require("../../lib/tenantHomeHref");
+const { ADMIN_DASHBOARD, ADMIN_SUPER } = require("../../auth/postLoginDestinations");
 
 /**
  * Super-admin default directory scope after login (env slug → demo → global → zm), enabled tenants only.
@@ -36,13 +37,13 @@ module.exports = function registerAdminAuthRoutes(router) {
     const embed =
       req.query && (req.query.embed === "1" || req.query.embed === "true") ? "?embed=1" : "";
     if (req.session && req.session.adminUser) {
-      return res.redirect(302, `/admin/dashboard${embed}`);
+      return res.redirect(302, `${ADMIN_DASHBOARD}${embed}`);
     }
     return res.redirect(302, `/admin/login${embed}`);
   });
 
   router.get("/login", (req, res) => {
-    if (req.session && req.session.adminUser) return res.redirect("/admin/dashboard");
+    if (req.session && req.session.adminUser) return res.redirect(ADMIN_DASHBOARD);
     const prefix = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
     const cancelHref = tenantHomeHrefFromPrefix(prefix);
     return res.render("admin/login", { error: null, cancelHref });
@@ -81,11 +82,11 @@ module.exports = function registerAdminAuthRoutes(router) {
       const scopeId = await pickSuperAdminInitialTenantScope(pool);
       if (scopeId) {
         req.session.adminTenantScope = scopeId;
-        return res.redirect("/admin/dashboard");
+        return res.redirect(ADMIN_DASHBOARD);
       }
-      return res.redirect("/admin/super");
+      return res.redirect(ADMIN_SUPER);
     }
-    return res.redirect("/admin/dashboard");
+    return res.redirect(ADMIN_DASHBOARD);
   });
 
   router.post("/logout", (req, res) => {

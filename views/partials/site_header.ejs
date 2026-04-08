@@ -1,6 +1,6 @@
 <% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var tpHome = tp ? tp + '/' : '/'; %>
-<% var _joinModalSrc = (tp ? String(tp).replace(/\/$/, '') : '') + '/join'; %>
+<% var _joinModalSrc = typeof opsHref !== 'undefined' ? opsHref('/join?embed=1') : ((tp ? String(tp).replace(/\/$/, '') : '') + '/join?embed=1'); %>
 <% var _bnHeader = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
 <% var ten = typeof tenant !== 'undefined' ? tenant : null; %>
 <% var _renderRegionPickerTrigger = typeof renderRegionPickerTrigger !== 'undefined' ? !!renderRegionPickerTrigger : false; %>
