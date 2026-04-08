@@ -54,7 +54,7 @@
       <tbody>
         <% rows.forEach(function (r) { %>
         <tr>
-          <td class="muted"><%- include('partials/event_time', { at: r.created_at }) %></td>
+          <td class="muted"><%- include('event_time', { at: r.created_at }) %></td>
           <td><%= r.amount_zmw %></td>
           <td><%= r.payment_method_label || r.payment_method %></td>
           <td><%= r.transaction_reference %></td>

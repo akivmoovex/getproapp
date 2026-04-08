@@ -108,5 +108,11 @@
     </div>
   </div>
 </header>
-<%- include('partials/field_agent_login_modal') %>
+<% try { %>
+<%- include('field_agent_login_modal') %>
+<% } catch (includeErr) { %>
+  <% if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') { %>
+  <!-- EJS include failed: field_agent_login_modal — <%= String(includeErr && includeErr.message ? includeErr.message : includeErr) %> -->
+  <% } %>
+<% } %>
 <script src="<%= asset('field-agent-modal') %>" defer></script>

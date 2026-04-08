@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: EJS include paths (static partial resolution)
+        run: npm run check:ejs-partials
+
       - name: Front-end production bundle (Vite)
         run: npm run build:assets
 
