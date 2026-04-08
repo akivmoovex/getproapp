@@ -11,7 +11,7 @@ const {
   companyMiniSiteLabel,
   absoluteCompanyProfileUrl,
 } = require("../../companies/companyProfile");
-const { isValidPhoneForTenant } = require("../../tenants");
+const phoneRulesService = require("../../phone/phoneRulesService");
 const { LEAD_STATUSES, normalizeLeadStatus, leadStatusLabel } = require("../../crm/leadStatuses");
 const { buildCompanyPageLocals } = require("../../companies/companyPageRender");
 const {
@@ -438,17 +438,15 @@ module.exports = function registerAdminDirectoryRoutes(router) {
       if (!okCat) return res.status(400).json({ error: "Invalid category for this tenant." });
     }
 
-    const trPub = await tenantsRepo.getById(pool, tid);
-    const tenantZmCheck = trPub && String(trPub.slug || "") === "zm";
     const phoneVal = d.phone !== undefined ? String(d.phone).trim() : row.phone;
     const fpVal = d.featured_cta_phone !== undefined ? String(d.featured_cta_phone).trim() : row.featured_cta_phone;
-    if (tenantZmCheck) {
-      if (phoneVal && !isValidPhoneForTenant("zm", phoneVal)) {
-        return res.status(400).json({ error: "Phone must be a Zambian number: 0 followed by 9 digits (10 digits total)." });
-      }
-      if (fpVal && !isValidPhoneForTenant("zm", fpVal)) {
-        return res.status(400).json({ error: "CTA phone must be a Zambian number: 0 followed by 9 digits (10 digits total)." });
-      }
+    if (phoneVal) {
+      const vp = await phoneRulesService.validatePhoneForTenant(pool, tid, phoneVal, "phone");
+      if (!vp.ok) return res.status(400).json({ error: vp.error || "Invalid phone." });
+    }
+    if (fpVal) {
+      const vf = await phoneRulesService.validatePhoneForTenant(pool, tid, fpVal, "phone");
+      if (!vf.ok) return res.status(400).json({ error: vf.error || "Invalid CTA phone." });
     }
 
     let yearsExpUp = row.years_experience;
@@ -532,21 +530,15 @@ module.exports = function registerAdminDirectoryRoutes(router) {
       if (!okCat) return res.status(400).send("Invalid category for this tenant.");
     }
 
-    const trCreate = await tenantsRepo.getById(pool, tid);
-    const tenantZmCheckHtmlCreate = trCreate && String(trCreate.slug || "") === "zm";
-    if (tenantZmCheckHtmlCreate) {
-      const p = String(phone || "").trim();
-      const fp = String(featured_cta_phone || "").trim();
-      if (p && !isValidPhoneForTenant("zm", p)) {
-        return res
-          .status(400)
-          .send("Phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
-      }
-      if (fp && !isValidPhoneForTenant("zm", fp)) {
-        return res
-          .status(400)
-          .send("CTA phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
-      }
+    const p = String(phone || "").trim();
+    const fp = String(featured_cta_phone || "").trim();
+    if (p) {
+      const vp = await phoneRulesService.validatePhoneForTenant(pool, tid, p, "phone");
+      if (!vp.ok) return res.status(400).send(vp.error || "Invalid phone.");
+    }
+    if (fp) {
+      const vf = await phoneRulesService.validatePhoneForTenant(pool, tid, fp, "phone");
+      if (!vf.ok) return res.status(400).send(vf.error || "Invalid CTA phone.");
     }
 
     const yoeRaw = String(years_experience || "").trim();
@@ -622,21 +614,15 @@ module.exports = function registerAdminDirectoryRoutes(router) {
       if (!okCat) return res.status(400).send("Invalid category for this tenant.");
     }
 
-    const trUp = await tenantsRepo.getById(pool, tid);
-    const tenantZmCheckHtmlUpdate = trUp && String(trUp.slug || "") === "zm";
-    if (tenantZmCheckHtmlUpdate) {
-      const p = String(phone || "").trim();
-      const fp = String(featured_cta_phone || "").trim();
-      if (p && !isValidPhoneForTenant("zm", p)) {
-        return res
-          .status(400)
-          .send("Phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
-      }
-      if (fp && !isValidPhoneForTenant("zm", fp)) {
-        return res
-          .status(400)
-          .send("CTA phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
-      }
+    const p = String(phone || "").trim();
+    const fp = String(featured_cta_phone || "").trim();
+    if (p) {
+      const vp = await phoneRulesService.validatePhoneForTenant(pool, tid, p, "phone");
+      if (!vp.ok) return res.status(400).send(vp.error || "Invalid phone.");
+    }
+    if (fp) {
+      const vf = await phoneRulesService.validatePhoneForTenant(pool, tid, fp, "phone");
+      if (!vf.ok) return res.status(400).send(vf.error || "Invalid CTA phone.");
     }
 
     const yoeRawUp = String(years_experience || "").trim();
@@ -849,15 +835,13 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     const logo_url = String(body.logo_url || "").trim();
     const gallery_text = String(body.gallery_text || "").trim();
 
-    const trConv = await tenantsRepo.getById(pool, tid);
-    const tenantZmCheckConvert = trConv && String(trConv.slug || "") === "zm";
-    if (tenantZmCheckConvert) {
-      if (phone && !isValidPhoneForTenant("zm", phone)) {
-        return res.status(400).send("Phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
-      }
-      if (featured_cta_phone && !isValidPhoneForTenant("zm", featured_cta_phone)) {
-        return res.status(400).send("CTA phone must be a Zambian number: 0 followed by 9 digits (10 digits total).");
-      }
+    if (phone) {
+      const vp = await phoneRulesService.validatePhoneForTenant(pool, tid, phone, "phone");
+      if (!vp.ok) return res.status(400).send(vp.error || "Invalid phone.");
+    }
+    if (featured_cta_phone) {
+      const vf = await phoneRulesService.validatePhoneForTenant(pool, tid, featured_cta_phone, "phone");
+      if (!vf.ok) return res.status(400).send(vf.error || "Invalid CTA phone.");
     }
 
     const yoeRaw = String(body.years_experience || "").trim();

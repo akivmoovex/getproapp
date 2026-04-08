@@ -17,21 +17,38 @@
     return t.length >= 3 && /^[a-zA-Z\s]+$/.test(t);
   }
 
-  function isValidPhoneZm(raw) {
-    const d = String(raw || "").replace(/\D/g, "");
-    return d.length === 10 && /^0\d{9}$/.test(d);
+  function phoneRules() {
+    const r = window.__GETPRO_PHONE_RULES__;
+    return r && typeof r === "object"
+      ? r
+      : { strict: false, regex: null, normalizationMode: "generic_digits", regexBroken: false };
   }
 
   function isValidPhoneForTenant(slug, raw) {
-    if (slug === "zm") return isValidPhoneZm(raw);
-    return !!String(raw || "").trim();
+    const r = phoneRules();
+    const t = String(raw || "").trim();
+    if (!t) return false;
+    const digits = t.replace(/\D/g, "");
+    if (r.regexBroken) return digits.length >= 5;
+    if (r.strict && r.regex) {
+      try {
+        return new RegExp(r.regex).test(t);
+      } catch {
+        return digits.length >= 5;
+      }
+    }
+    if (!r.strict) {
+      return digits.length >= 5;
+    }
+    return digits.length >= 5;
   }
 
-  function phoneErrorHint(slug) {
-    if (slug === "zm") {
-      return "Use a Zambian mobile number: 0 and 9 digits (10 digits total, e.g. 0977123456).";
+  function phoneErrorHint() {
+    const r = phoneRules();
+    if (r.strict && r.regex && !r.regexBroken) {
+      return "Enter a phone number in the format required for this region.";
     }
-    return "Enter a valid phone number.";
+    return "Enter a valid phone number (at least 5 digits).";
   }
 
   const form = document.getElementById("directory-empty-callback-form");
@@ -74,18 +91,17 @@
       return;
     }
     if (!isValidPhoneForTenant(slug, phoneVal)) {
-      errEl.textContent = phoneErrorHint(slug);
+      errEl.textContent = phoneErrorHint();
       errEl.hidden = false;
       phoneInput.focus();
       return;
     }
 
-    const digits = phoneVal.replace(/\D/g, "").slice(0, 20);
     const payload = {
       tenantId,
       tenantSlug: slug,
       name: nameVal,
-      phone: digits,
+      phone: phoneVal.slice(0, 40),
       context: ctxInput ? String(ctxInput.value || "").trim().slice(0, 120) : "directory_no_results",
       interest_label: labelInput ? String(labelInput.value || "").trim().slice(0, 120) : "Directory — no match",
     };

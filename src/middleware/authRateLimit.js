@@ -5,6 +5,7 @@ const rateLimit = require("express-rate-limit");
 const WINDOW_MS = Number(process.env.GETPRO_LOGIN_RATE_WINDOW_MS) || 15 * 60 * 1000;
 const ADMIN_MAX = Number(process.env.GETPRO_ADMIN_LOGIN_RATE_MAX) || 25;
 const COMPANY_MAX = Number(process.env.GETPRO_COMPANY_LOGIN_RATE_MAX) || 30;
+const FIELD_AGENT_MAX = Number(process.env.GETPRO_FIELD_AGENT_LOGIN_RATE_MAX) || 30;
 
 const base = {
   windowMs: WINDOW_MS,
@@ -47,7 +48,20 @@ const companyPortalLoginLimiter = rateLimit({
   },
 });
 
+/**
+ * POST /field-agent/login and /field-agent/signup — same window as admin login limiter.
+ */
+const fieldAgentLoginLimiter = rateLimit({
+  ...base,
+  limit: FIELD_AGENT_MAX,
+  handler: (req, res) => {
+    const msg = "Too many attempts from this network. Please wait a few minutes and try again.\n";
+    return res.status(429).type("text").send(msg);
+  },
+});
+
 module.exports = {
   adminLoginLimiter,
   companyPortalLoginLimiter,
+  fieldAgentLoginLimiter,
 };

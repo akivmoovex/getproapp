@@ -28,6 +28,7 @@
     "test:pg": "node scripts/test-pg-connection.js",
     "test:pg:repos": "node scripts/test-pg-repos.js",
     "check:pg": "node scripts/check-pg-readiness.js",
+    "test": "node --test tests",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build -o storybook-static"
   },

@@ -44,6 +44,7 @@ const { eventTimeParts } = require("./src/lib/eventTime");
 const branding = require("./src/platform/branding");
 const { createAssetUrl } = require("./src/platform/assetUrls");
 const publicModule = require("./src/routes/public")();
+const fieldAgentRoutes = require("./src/routes/fieldAgent");
 const adminRoutes = require("./src/routes/admin");
 const companyPortalRoutes = require("./src/routes/companyPortal");
 const clientPortalRoutes = require("./src/routes/clientPortal");
@@ -347,6 +348,9 @@ app.use(async (req, res, next) => {
     next(e);
   }
 });
+
+/** Field agent portal (tenant must be enabled — same gate as public site). */
+app.use(fieldAgentRoutes());
 
 /** Shared sign-in hub (tenant must be enabled — same gate as public site). */
 app.get("/login", (req, res) => {

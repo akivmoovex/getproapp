@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS public.tenants (
   callcenter_email TEXT NOT NULL DEFAULT 'info@getproapp.org',
   support_help_phone TEXT NOT NULL DEFAULT '+260211000101',
   intake_code_prefix TEXT NOT NULL DEFAULT '',
+  phone_strict_validation BOOLEAN NOT NULL DEFAULT false,
+  phone_regex TEXT NOT NULL DEFAULT '',
+  phone_default_country_code TEXT NOT NULL DEFAULT '',
+  phone_normalization_mode TEXT NOT NULL DEFAULT 'generic_digits',
   created_at TIMESTAMPTZ NOT NULL DEFAULT (now())
 );
 

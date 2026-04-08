@@ -24,6 +24,8 @@ const entryInputs = {
   "admin-settings-hub": path.join(frontendRoot, "entries", "admin-settings-hub.js"),
   "admin-form-edit-mode": path.join(frontendRoot, "entries", "admin-form-edit-mode.js"),
   "admin-tenant-settings-list": path.join(frontendRoot, "entries", "admin-tenant-settings-list.js"),
+  "field-agent-modal": path.join(frontendRoot, "entries", "field-agent-modal.js"),
+  "field-agent-contact": path.join(frontendRoot, "entries", "field-agent-contact.js"),
 };
 
 function relToFrontend(abs) {

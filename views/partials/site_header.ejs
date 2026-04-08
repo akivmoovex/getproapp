@@ -54,6 +54,15 @@
         extraAttrs: 'target="_blank" rel="noopener noreferrer"',
       }) %>
 
+      <%- include('components/button', {
+        variant: 'text',
+        type: 'button',
+        label: 'Agent login',
+        id: 'wf-field-agent-open',
+        className: 'app-top-app-bar__join wf-field-agent-login-trigger',
+        extraAttrs: 'aria-haspopup="dialog" aria-controls="wf-field-agent-modal"',
+      }) %>
+
       <button
         type="button"
         class="app-menu-toggle"
@@ -99,3 +108,5 @@
     </div>
   </div>
 </header>
+<%- include('partials/field_agent_login_modal') %>
+<script src="<%= asset('field-agent-modal') %>" defer></script>

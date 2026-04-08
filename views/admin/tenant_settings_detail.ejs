@@ -98,6 +98,56 @@
             </form>
           </div>
         </div>
+
+        <% var _ps = typeof tenant.phone_strict_validation !== 'undefined' ? !!tenant.phone_strict_validation : false; %>
+        <% var _prx = typeof tenant.phone_regex !== 'undefined' && tenant.phone_regex ? String(tenant.phone_regex) : ''; %>
+        <% var _pcc = typeof tenant.phone_default_country_code !== 'undefined' && tenant.phone_default_country_code ? String(tenant.phone_default_country_code) : ''; %>
+        <% var _pnm = typeof tenant.phone_normalization_mode !== 'undefined' && tenant.phone_normalization_mode ? String(tenant.phone_normalization_mode) : 'generic_digits'; %>
+        <div class="card admin-form-card card--max-720 u-mt-lg">
+          <h2 class="section-title section-title--flush">Phone rules (directory &amp; leads)</h2>
+          <p class="muted admin-intro u-mb-md">
+            Validation and canonical storage for phone numbers in this region. Zambia uses strict regex and <code class="kbd">zm_e164</code> normalization; Demo defaults are permissive.
+          </p>
+          <div class="admin-form-shell is-read-mode" data-admin-form-edit>
+            <div class="admin-form-shell__toolbar">
+              <p class="admin-form-shell__unsaved" hidden>Unsaved changes</p>
+              <div class="admin-form-shell__toolbar-end">
+                <%- include('../partials/components/button', { variant: 'primary', type: 'button', label: 'Done', hidden: true, className: 'admin-form-shell__btn--done' }) %>
+                <%- include('../partials/components/button', { variant: 'text', type: 'button', label: 'Cancel', hidden: true, className: 'admin-form-shell__btn--cancel' }) %>
+                <%- include('../partials/components/button', { variant: 'default', type: 'button', label: 'Edit', className: 'admin-form-shell__btn--edit' }) %>
+              </div>
+            </div>
+            <form method="post" action="/admin/settings/tenant/<%= tenant.id %>" class="form">
+              <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+              <input type="hidden" name="callcenter_phone" value="<%= tenant.callcenter_phone ? tenant.callcenter_phone : '' %>" />
+              <input type="hidden" name="support_help_phone" value="<%= tenant.support_help_phone ? tenant.support_help_phone : '' %>" />
+              <input type="hidden" name="whatsapp_phone" value="<%= tenant.whatsapp_phone ? tenant.whatsapp_phone : '' %>" />
+              <input type="hidden" name="callcenter_email" value="<%= tenant.callcenter_email ? tenant.callcenter_email : '' %>" />
+              <div class="u-mb-md">
+                <label class="admin-checkbox-row">
+                  <input type="checkbox" name="phone_strict_validation" value="1" <%= _ps ? 'checked' : '' %> />
+                  <span>Strict validation (enforce regex when set)</span>
+                </label>
+              </div>
+              <div>
+                <label for="ts_prx">Phone regex (ECMAScript; empty = none)</label>
+                <textarea id="ts_prx" name="phone_regex" rows="2" class="input-field__control" placeholder="^(?:\+?260|0)(?:95|96|97|76|77)\d{7}$"><%= _prx %></textarea>
+              </div>
+              <div>
+                <label for="ts_pcc">Default country code (optional)</label>
+                <input id="ts_pcc" name="phone_default_country_code" type="text" value="<%= _pcc %>" placeholder="260" autocomplete="off" />
+              </div>
+              <div>
+                <label for="ts_pnm">Normalization mode</label>
+                <select id="ts_pnm" name="phone_normalization_mode">
+                  <option value="generic_digits" <%= _pnm === 'generic_digits' ? 'selected' : '' %>>generic_digits (digits only, max 20)</option>
+                  <option value="zm_e164" <%= _pnm === 'zm_e164' ? 'selected' : '' %>>zm_e164 (Zambia → 260… canonical)</option>
+                </select>
+              </div>
+              <p class="muted" style="font-size:0.85rem;margin-top:0.75rem;">Invalid regex is rejected on save. At runtime, a broken stored regex disables strict matching safely.</p>
+            </form>
+          </div>
+        </div>
         <% } %>
       </div>
     </main>

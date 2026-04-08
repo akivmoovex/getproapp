@@ -3,6 +3,7 @@ const { STAGES } = require("./tenantStages");
 const { getOrSet, getOrSetAsync, metaTtlMs, stageTtlMs } = require("./tenantMetadataCache");
 const { getPgPool } = require("../db/pg");
 const tenantsRepo = require("../db/pg/tenantsRepo");
+const phoneRulesService = require("../phone/phoneRulesService");
 
 /**
  * Static display metadata (theme + flag). DB `tenants` row supplies id, name, stage.
@@ -197,16 +198,21 @@ function attachTenant(slug, options = {}) {
   };
 }
 
-/** Zambian national format: leading 0 plus nine digits (10 digits total). */
-function isValidZambiaPhoneLocal(raw) {
-  const d = String(raw || "").replace(/\D/g, "");
-  return d.length === 10 && /^0\d{9}$/.test(d);
-}
-
-/** Only Zambia (`zm`) enforces a phone pattern; all other tenants accept any non-empty string the UI sends. */
+/**
+ * Sync validation using **synthetic** per-slug defaults (matches seeded `003_tenant_phone_rules.sql`).
+ * Prefer `phoneRulesService.validatePhoneForTenant(pool, tenantId, raw)` when the DB row should win.
+ */
 function isValidPhoneForTenant(tenantSlug, raw) {
-  if (tenantSlug === "zm") return isValidZambiaPhoneLocal(raw);
-  return true;
+  const slug = String(tenantSlug || "").toLowerCase().trim();
+  const syntheticRow = {
+    slug,
+    phone_strict_validation: slug === "zm",
+    phone_regex: slug === "zm" ? phoneRulesService.DEFAULT_ZM_PHONE_REGEX : "",
+    phone_default_country_code: slug === "zm" ? "260" : "",
+    phone_normalization_mode: slug === "zm" ? "zm_e164" : "generic_digits",
+  };
+  const rules = phoneRulesService.compileRules(syntheticRow);
+  return phoneRulesService.validateWithRules(rules, raw, "phone").ok;
 }
 
 /**
@@ -321,6 +327,5 @@ module.exports = {
   getCachedTenantSlugExistsAsync,
   attachTenant,
   createAttachTenantByHost,
-  isValidZambiaPhoneLocal,
   isValidPhoneForTenant,
 };

@@ -2,7 +2,7 @@ const express = require("express");
 const { resolveHostname } = require("../platform/host");
 const { israelComingSoonEnabled } = require("../tenants/israelComingSoon");
 const { TENANT_IL } = require("../tenants/tenantIds");
-const { isValidPhoneForTenant } = require("../tenants");
+const phoneRulesService = require("../phone/phoneRulesService");
 const { createCrmTaskFromEvent } = require("../crm/crmAutoTasks");
 const { getPgPool, isPgConfigured } = require("../db/pg");
 const callbacksRepo = require("../db/pg/callbacksRepo");
@@ -46,11 +46,12 @@ module.exports = function apiRoutes() {
       return res.status(403).json({ error: "This region is not accepting leads yet." });
     }
 
-    const tr = await tenantsRepo.getById(pool, company.tenant_id);
-    const tenantSlugStr = tr && tr.slug ? String(tr.slug) : null;
     const phoneStr = String(phone || "").trim();
-    if (tenantSlugStr === "zm" && phoneStr && !isValidPhoneForTenant("zm", phoneStr)) {
-      return res.status(400).json({ error: "Invalid phone number for this region." });
+    if (phoneStr) {
+      const v = await phoneRulesService.validatePhoneForTenant(pool, company.tenant_id, phoneStr, "phone");
+      if (!v.ok) {
+        return res.status(400).json({ error: v.error || "Invalid phone number for this region." });
+      }
     }
 
     const leadId = await leadsRepo.insertPublicLead(pool, {
@@ -96,10 +97,9 @@ module.exports = function apiRoutes() {
     }
 
     const pool = getPgPool();
-    const ts = await tenantsRepo.getById(pool, tenantId);
-    const zmCheckSlug = ts && ts.slug ? String(ts.slug) : null;
-    if (zmCheckSlug === "zm" && !isValidPhoneForTenant("zm", phone)) {
-      return res.status(400).json({ error: "Invalid phone number for this region." });
+    const v = await phoneRulesService.validatePhoneForTenant(pool, tenantId, phone, "phone");
+    if (!v.ok) {
+      return res.status(400).json({ error: v.error || "Invalid phone number for this region." });
     }
 
     const signupId = await professionalSignupsRepo.insertSignup(pool, {
@@ -182,10 +182,11 @@ module.exports = function apiRoutes() {
     const contextFinal = context || "join_exit";
 
     const pool = getPgPool();
-    const ts = await tenantsRepo.getById(pool, tenantId);
-    const zmSlug = ts && ts.slug ? String(ts.slug) : null;
-    if (zmSlug === "zm" && phone && !isValidPhoneForTenant("zm", phone)) {
-      return res.status(400).json({ error: "Invalid phone number for this region." });
+    if (phone) {
+      const v = await phoneRulesService.validatePhoneForTenant(pool, tenantId, phone, "phone");
+      if (!v.ok) {
+        return res.status(400).json({ error: v.error || "Invalid phone number for this region." });
+      }
     }
 
     let cbId;

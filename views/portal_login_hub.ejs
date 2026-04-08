@@ -31,6 +31,13 @@
               <span class="portal-login-hub-card__desc muted">Project updates (preview — sign-in not enabled)</span>
             </a>
           </li>
+          <li>
+            <% var _fap = typeof tenantUrlPrefix !== 'undefined' && tenantUrlPrefix ? String(tenantUrlPrefix) : ''; %>
+            <a class="card portal-login-hub-card portal-login-hub-card--provider" href="<%= _fap %>/field-agent/login">
+              <span class="portal-login-hub-card__label">Field agent</span>
+              <span class="portal-login-hub-card__desc muted">Submit directory leads in the field</span>
+            </a>
+          </li>
         </ul>
         <p class="muted portal-login-hub-foot">
           <% var th = typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/'; %>

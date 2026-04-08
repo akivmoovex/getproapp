@@ -24,6 +24,8 @@ const {
 const { LEAD_STATUSES, normalizeLeadStatus, leadStatusLabel } = require("../../crm/leadStatuses");
 const { platformTenantPrefixForSlug } = require("../../companies/companyPageRender");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
+const phoneRulesRepo = require("../../db/pg/phoneRulesRepo");
+const phoneRulesService = require("../../phone/phoneRulesService");
 const contentPagesRepo = require("../../db/pg/contentPagesRepo");
 const { CRM_TASK_STATUSES, normalizeCrmTaskStatus, crmTaskStatusLabel } = require("../../crm/crmTaskStatuses");
 const {
@@ -419,6 +421,31 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
       const whatsapp_phone = String(req.body.whatsapp_phone || "").trim() || DEFAULT_WHATSAPP_PHONE;
       const callcenter_email = String(req.body.callcenter_email || "").trim() || DEFAULT_CALLCENTER_EMAIL;
 
+      const hasPhoneRulesSection =
+        req.body &&
+        (Object.prototype.hasOwnProperty.call(req.body, "phone_regex") ||
+          Object.prototype.hasOwnProperty.call(req.body, "phone_normalization_mode"));
+
+      let phonePatch = null;
+      if (hasPhoneRulesSection) {
+        const phone_regex = String(req.body.phone_regex ?? "").trim();
+        const cr = phoneRulesService.safeCompileRegex(phone_regex);
+        if (phone_regex && !cr.ok) {
+          return res.status(400).send("Invalid phone regex — fix the pattern or clear the field.");
+        }
+        const phone_strict_validation = ["1", "on", "true"].includes(
+          String(req.body.phone_strict_validation || "").toLowerCase()
+        );
+        const phone_default_country_code = String(req.body.phone_default_country_code ?? "").trim();
+        const phone_normalization_mode = String(req.body.phone_normalization_mode || "generic_digits").trim() || "generic_digits";
+        phonePatch = {
+          phone_strict_validation,
+          phone_regex,
+          phone_default_country_code,
+          phone_normalization_mode,
+        };
+      }
+
       try {
         const ok = await tenantsRepo.updateContactSupportFields(pool, id, {
           callcenter_phone,
@@ -427,6 +454,10 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
           callcenter_email,
         });
         if (!ok) return res.status(404).send("Region not found.");
+        if (phonePatch) {
+          const okPr = await phoneRulesRepo.updatePhoneRules(pool, id, phonePatch);
+          if (!okPr) return res.status(404).send("Region not found.");
+        }
       } catch (e) {
         return res.status(400).send(e.message || "Could not save");
       }

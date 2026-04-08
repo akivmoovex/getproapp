@@ -11,7 +11,7 @@ const crypto = require("crypto");
 const path = require("path");
 const fs = require("fs");
 const sharp = require("sharp");
-const { isValidPhoneForTenant } = require("../tenants");
+const phoneRulesService = require("../phone/phoneRulesService");
 const tenantsRepo = require("../db/pg/tenantsRepo");
 const intakeCodeSequencesRepo = require("../db/pg/intakeCodeSequencesRepo");
 const intakeClientsRepo = require("../db/pg/intakeClientsRepo");
@@ -145,13 +145,16 @@ async function countRecentOtpSendsWithStore(pool, tenantId, phoneNorm) {
 }
 
 async function validatePhonesForTenantWithStore(pool, tenantId, phone, whatsapp) {
-  const row = await tenantsRepo.getById(pool, Number(tenantId));
-  const slug = row ? String(row.slug) : "";
+  const tid = Number(tenantId);
   const p = String(phone || "").trim();
   const w = String(whatsapp || "").trim();
   if (!p) return { ok: false, error: "Phone number is required." };
-  if (!isValidPhoneForTenant(slug, p)) return { ok: false, error: "Phone number does not match the expected format for this region." };
-  if (w && !isValidPhoneForTenant(slug, w)) return { ok: false, error: "WhatsApp number does not match the expected format for this region." };
+  const vp = await phoneRulesService.validatePhoneForTenant(pool, tid, p, "phone");
+  if (!vp.ok) return { ok: false, error: vp.error || "Phone number does not match the expected format for this region." };
+  if (w) {
+    const vw = await phoneRulesService.validatePhoneForTenant(pool, tid, w, "whatsapp");
+    if (!vw.ok) return { ok: false, error: vw.error || "WhatsApp number does not match the expected format for this region." };
+  }
   return { ok: true, phone: p, whatsapp: w };
 }
 

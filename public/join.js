@@ -20,25 +20,39 @@
     return (typeof window.__GETPRO_HOME__ === "string" && window.__GETPRO_HOME__) || "/";
   }
 
-  /** Zambia: 0 followed by nine digits (10 digits total). */
-  function isValidPhoneZm(raw) {
-    const d = String(raw || "").replace(/\D/g, "");
-    return d.length === 10 && /^0\d{9}$/.test(d);
+  function phoneRules() {
+    const r = window.__GETPRO_PHONE_RULES__;
+    return r && typeof r === "object"
+      ? r
+      : { strict: false, regex: null, normalizationMode: "generic_digits", regexBroken: false };
   }
 
-  /** Only Zambia enforces a phone pattern; other regions do not. */
+  /** Mirrors server `phoneRulesService` UX hints (backend is authoritative). */
   function isValidPhoneForTenant(raw) {
-    const slug = tenantSlug();
-    if (slug === "zm") return isValidPhoneZm(raw);
-    return true;
+    const r = phoneRules();
+    const t = String(raw || "").trim();
+    if (!t) return false;
+    const digits = t.replace(/\D/g, "");
+    if (r.regexBroken) return digits.length >= 5;
+    if (r.strict && r.regex) {
+      try {
+        return new RegExp(r.regex).test(t);
+      } catch {
+        return digits.length >= 5;
+      }
+    }
+    if (!r.strict) {
+      return digits.length >= 5;
+    }
+    return digits.length >= 5;
   }
 
   function phoneErrorHint() {
-    const slug = tenantSlug();
-    if (slug === "zm") {
-      return "Use a Zambian mobile number: 0 and 9 digits (10 digits total, e.g. 0977123456).";
+    const r = phoneRules();
+    if (r.strict && r.regex && !r.regexBroken) {
+      return "Enter a phone number in the format required for this region.";
     }
-    return "Enter a valid phone number.";
+    return "Enter a valid phone number (at least 5 digits).";
   }
 
   const wizardFrame = document.getElementById("join-wizard-frame");

@@ -26,7 +26,7 @@ const {
   getCategoryResponseWindowHoursAsync,
 } = require("../../intake/intakeProjectPublishValidation");
 const intakeProjectAllocation = require("../../intake/intakeProjectAllocation");
-const { isValidPhoneForTenant } = require("../../tenants");
+const phoneRulesService = require("../../phone/phoneRulesService");
 const { redirectWithEmbed, getAdminTenantId } = require("./adminShared");
 const { getPgPool } = require("../../db/pg");
 const categoriesRepo = require("../../db/pg/categoriesRepo");
@@ -914,8 +914,6 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     if (!nrzCheck.ok) {
       return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent(nrzCheck.error));
     }
-    const tsRow = await tenantsRepo.getById(pool, tid);
-    const slug = tsRow ? String(tsRow.slug) : "zm";
     if (!full_name || !password) {
       return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("Name and password are required."));
     }
@@ -923,8 +921,11 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     if (!username && !phoneNorm) {
       return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("Enter a phone number or a username."));
     }
-    if (phoneNorm && !isValidPhoneForTenant(slug, phone)) {
-      return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent("Invalid phone for this region."));
+    if (phoneNorm) {
+      const vp = await phoneRulesService.validatePhoneForTenant(pool, tid, phone, "phone");
+      if (!vp.ok) {
+        return res.redirect(`/admin/companies/${cid}/portal-users?error=` + encodeURIComponent(vp.error || "Invalid phone for this region."));
+      }
     }
     if (nrzCheck.value) {
       const nrzDup = await companyPersonnelUsersRepo.findIdByTenantAndNrzUpper(pool, tid, nrzCheck.value);

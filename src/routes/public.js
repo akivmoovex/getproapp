@@ -16,6 +16,7 @@ const { buildSitemapXml, buildRobotsTxt } = require("../companies/seoPublic");
 const { canPreviewDraft } = require("../content/adminPreview");
 const { PRODUCT_NAME } = require("../platform/branding");
 const { getPgPool } = require("../db/pg");
+const phoneRulesService = require("../phone/phoneRulesService");
 const categoriesRepo = require("../db/pg/categoriesRepo");
 const companiesRepo = require("../db/pg/companiesRepo");
 const contentPagesRepo = require("../db/pg/contentPagesRepo");
@@ -98,6 +99,7 @@ const MINI_SITE_RESERVED_SEGMENTS = new Set([
   "bw",
   "za",
   "na",
+  "field-agent",
 ]);
 
 module.exports = function publicRoutes() {
@@ -268,6 +270,8 @@ module.exports = function publicRoutes() {
       companies = await companiesRepo.listDirectoryDefault(pool, tenantId, 24);
     }
 
+    const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, tenantId);
+
     companies = await attachReviewStatsToCompanies(companies);
 
     const canonicalUrl = canonicalUrlForTenant(req, "/directory");
@@ -286,6 +290,7 @@ module.exports = function publicRoutes() {
 
     return res.render("directory", {
       categories,
+      phoneRulesPublic,
       selectedCategory: selected,
       /* When filtering by category, show raw q in the field (e.g. category name from home) even if not in service whitelist — SQL uses category slug only. */
       searchQuery: selected ? searchRaw : searchOk ? searchRaw : "",
@@ -328,9 +333,12 @@ module.exports = function publicRoutes() {
     const seoTitle = `${category.name} · Directory | ${req.tenant.name || PRODUCT_NAME}`;
     const seoDescription = `Browse ${category.name} professionals — verified listings, profiles, and direct contact on ${PRODUCT_NAME}.`;
 
+    const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, tenantId);
+
     return res.render("category", {
       category,
       categories,
+      phoneRulesPublic,
       companies: companiesWithReviews,
       baseDomain: process.env.BASE_DOMAIN || "",
       companyMiniSiteHref: (sub) => `/${encodeURIComponent(String(sub || "").trim())}`,
@@ -379,11 +387,13 @@ module.exports = function publicRoutes() {
     const pool = getPgPool();
     const joinTenantCities = await getTenantCitiesForClientAsync(pool, tenantId);
     const joinCityWatermarkRotate = await getJoinCityWatermarkRotateAsync(pool, tenantId);
+    const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, tenantId);
     const canonicalUrl = canonicalUrlForTenant(req, "/join");
     return res.render("join", {
       baseDomain: process.env.BASE_DOMAIN || "",
       joinTenantCities,
       joinCityWatermarkRotate,
+      phoneRulesPublic,
       seoTitle: `List your business | ${req.tenant.name || PRODUCT_NAME}`,
       seoDescription: `Create a verified profile on ${PRODUCT_NAME} so customers can find your services, view your details, and send lead requests.`,
       canonicalUrl,

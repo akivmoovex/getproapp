@@ -1,0 +1,49 @@
+<!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Field agent registration | <%= _bn %></title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-gate-page <%= tenant.themeClass %>">
+    <div class="container admin-gate-wrap">
+      <div class="card admin-gate-card">
+        <a href="<%= tenantHomeHref %>" class="admin-gate-brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <div class="admin-gate-brand__title">Field agent</div>
+            <div class="admin-gate-brand__subtitle">Create an account to submit verified directory leads.</div>
+          </div>
+        </a>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <p class="admin-gate-error" role="alert"><%= error %></p>
+        <% } %>
+        <form method="post" action="<%= tenantUrlPrefix %>/field-agent/signup" class="admin-gate-form">
+          <label class="input-field">
+            <span class="input-field__label">Username</span>
+            <input class="input-field__control" name="username" type="text" autocomplete="username" required minlength="2" />
+          </label>
+          <label class="input-field">
+            <span class="input-field__label">Display name (optional)</span>
+            <input class="input-field__control" name="display_name" type="text" autocomplete="name" />
+          </label>
+          <label class="input-field">
+            <span class="input-field__label">Password</span>
+            <input class="input-field__control" name="password" type="password" autocomplete="new-password" required minlength="8" />
+          </label>
+          <div class="admin-gate-actions">
+            <button type="submit" class="c-button c-button--primary">Create account</button>
+            <a class="c-button c-button--secondary" href="<%= tenantUrlPrefix %>/field-agent/login">Sign in</a>
+          </div>
+        </form>
+        <p class="muted admin-gate-alt" style="margin:0.75rem 0 0;font-size:0.9rem;">
+          <a href="<%= tenantHomeHref %>">Back to site</a>
+        </p>
+      </div>
+    </div>
+    <%- include('../partials/theme_prefs') %>
+  </body>
+</html>

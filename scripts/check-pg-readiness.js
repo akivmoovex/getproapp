@@ -23,6 +23,9 @@ const REQUIRED_TABLES = [
   "companies",
   "leads",
   "callback_interests",
+  "field_agents",
+  "field_agent_provider_submissions",
+  "field_agent_callback_leads",
 ];
 
 async function main() {

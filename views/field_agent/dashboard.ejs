@@ -1,0 +1,82 @@
+<!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Field agent dashboard | <%= _bn %></title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="<%= tenant.themeClass %>" data-screen-role="support">
+    <div class="app-layout">
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix }) %>
+
+      <div class="app-layout__main">
+        <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
+        <p class="muted field-agent-subnav" style="margin:0 0 1rem;">
+          <a href="<%= tenantUrlPrefix %>/field-agent/dashboard">Dashboard</a>
+          · <a href="<%= tenantUrlPrefix %>/field-agent/add-contact">Add contact</a>
+          · <a href="<%= tenantUrlPrefix %>/field-agent/call-me-back">Call me back</a>
+          · <a href="<%= tenantUrlPrefix %>/field-agent/faq">FAQ</a>
+          ·
+          <form method="post" action="<%= tenantUrlPrefix %>/field-agent/logout" style="display:inline;">
+            <button type="submit" class="c-button c-button--text" style="padding:0;min-height:auto;font:inherit;">Sign out</button>
+          </form>
+        </p>
+
+        <% if (typeof submitted !== 'undefined' && submitted) { %>
+          <p class="admin-gate-success" role="status">Submission received.</p>
+        <% } %>
+        <% if (typeof callback !== 'undefined' && callback) { %>
+          <p class="admin-gate-success" role="status">Call-me-back lead sent.</p>
+        <% } %>
+
+        <h1 class="gp-home-story__title" style="margin-top:0;">Hello, <%= fieldAgent.displayName || fieldAgent.username %></h1>
+
+        <div class="field-agent-metrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin:1rem 0 1.5rem;">
+          <div class="card" style="padding:1rem;">
+            <div class="muted" style="font-size:0.85rem;">Pending</div>
+            <div style="font-size:1.5rem;font-weight:800;"><%= typeof metricPending !== 'undefined' ? metricPending : 0 %></div>
+          </div>
+          <div class="card" style="padding:1rem;">
+            <div class="muted" style="font-size:0.85rem;">Approved</div>
+            <div style="font-size:1.5rem;font-weight:800;"><%= typeof metricApproved !== 'undefined' ? metricApproved : 0 %></div>
+          </div>
+          <div class="card" style="padding:1rem;">
+            <div class="muted" style="font-size:0.85rem;">Rejected</div>
+            <div style="font-size:1.5rem;font-weight:800;"><%= typeof metricRejected !== 'undefined' ? metricRejected : 0 %></div>
+          </div>
+          <div class="card" style="padding:1rem;">
+            <div class="muted" style="font-size:0.85rem;">Commission (30d)</div>
+            <div style="font-size:1.5rem;font-weight:800;"><%= typeof revenue30 !== 'undefined' ? revenue30 : 0 %></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:1rem;">
+          <h2 class="form-step__title" style="margin-top:0;">Recent rejections</h2>
+          <% if (typeof rejectedRows !== 'undefined' && rejectedRows.length) { %>
+            <ul class="field-agent-reject-list" style="margin:0;padding-left:1.25rem;">
+              <% rejectedRows.forEach(function (row) { %>
+                <li style="margin-bottom:0.5rem;">
+                  <strong><%= row.first_name %> <%= row.last_name %></strong>
+                  — <%= row.phone_raw %>
+                  <% if (row.rejection_reason) { %>
+                    <span class="muted">(<%= row.rejection_reason %>)</span>
+                  <% } %>
+                </li>
+              <% }); %>
+            </ul>
+          <% } else { %>
+            <p class="muted" style="margin:0;">No rejected submissions yet.</p>
+          <% } %>
+        </div>
+
+        <%- include('../partials/site_footer', { tenantUrlPrefix }) %>
+        <%- include('../partials/components/container_close') %>
+      </div>
+    </div>
+    <script src="<%= asset('scripts') %>" defer></script>
+    <%- include('../partials/theme_prefs') %>
+  </body>
+</html>

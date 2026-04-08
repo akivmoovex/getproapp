@@ -76,6 +76,9 @@
     <%- include('partials/theme_prefs') %>
     <%- include('partials/autocomplete_defer_bootstrap') %>
     <% if ((companies || []).length === 0) { %>
+    <script>
+      window.__GETPRO_PHONE_RULES__ = <%- JSON.stringify(typeof phoneRulesPublic !== 'undefined' ? phoneRulesPublic : { strict: false, regex: null, normalizationMode: 'generic_digits', regexBroken: false }) %>;
+    </script>
     <script src="<%= asset('directory-empty-callback') %>" defer></script>
     <% } %>
   </body>

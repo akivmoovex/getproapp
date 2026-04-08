@@ -416,6 +416,7 @@
       window.__GETPRO_TENANT_ID__ = <%= tenant.id %>;
       window.__GETPRO_HOME__ = "<%= tenantHomeHref %>";
       window.__GETPRO_TENANT_CITIES__ = <%- JSON.stringify(joinTenantCities || []) %>;
+      window.__GETPRO_PHONE_RULES__ = <%- JSON.stringify(typeof phoneRulesPublic !== 'undefined' ? phoneRulesPublic : { slug: tenant.slug, strict: false, regex: null, normalizationMode: 'generic_digits', regexBroken: false }) %>;
     </script>
     <script src="<%= asset('autocomplete') %>" defer></script>
     <script src="<%= asset('join') %>" defer></script>

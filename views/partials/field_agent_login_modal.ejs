@@ -1,0 +1,55 @@
+<% var tp = typeof tenantUrlPrefix !== 'undefined' ? String(tenantUrlPrefix || '') : ''; %>
+<div
+  class="m3-modal-overlay join-modal-layer"
+  id="wf-field-agent-modal"
+  hidden
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="wf-field-agent-modal-title"
+>
+  <div class="m3-modal-overlay__backdrop" id="wf-field-agent-modal-backdrop" tabindex="-1"></div>
+  <div class="m3-modal m3-modal--join join-modal">
+    <header class="m3-modal__header">
+      <h2 class="m3-modal__title join-modal-title" id="wf-field-agent-modal-title">Field agent sign in</h2>
+      <button type="button" class="m3-modal__close" id="wf-field-agent-modal-x" aria-label="Close">×</button>
+    </header>
+    <div class="m3-modal__body join-modal__scroll">
+      <form method="post" action="<%= tp %>/field-agent/login" class="form-step">
+        <div class="form-step__body">
+          <div class="join-field input-field">
+            <label class="input-field__label" for="wf-field-agent-user">Username</label>
+            <input
+              id="wf-field-agent-user"
+              name="username"
+              class="input-field__control"
+              type="text"
+              autocomplete="username"
+              required
+            />
+          </div>
+          <div class="join-field input-field">
+            <label class="input-field__label" for="wf-field-agent-pass">Password</label>
+            <input
+              id="wf-field-agent-pass"
+              name="password"
+              class="input-field__control"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+          <p class="muted" style="margin:0;font-size:0.9rem;">
+            <a href="<%= tp %>/field-agent/signup">Create a field agent account</a>
+          </p>
+        </div>
+        <div class="form-step__actions">
+          <div class="join-wizard-actions join-wizard-actions--split">
+            <%- include('components/button', { variant: 'primary', type: 'submit', label: 'Sign in' }) %>
+            <%- include('components/button', { variant: 'secondary', type: 'button', label: 'Cancel', id: 'wf-field-agent-cancel' }) %>
+          </div>
+        </div>
+      </form>
+    </div>
+    <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
+  </div>
+</div>
