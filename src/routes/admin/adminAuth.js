@@ -30,6 +30,16 @@ async function pickSuperAdminInitialTenantScope(pool) {
 }
 
 module.exports = function registerAdminAuthRoutes(router) {
+  /** Host-level paths often link to `/admin` with no trailing segment; Express has no implicit index route. */
+  router.get("/", (req, res) => {
+    const embed =
+      req.query && (req.query.embed === "1" || req.query.embed === "true") ? "?embed=1" : "";
+    if (req.session && req.session.adminUser) {
+      return res.redirect(302, `/admin/dashboard${embed}`);
+    }
+    return res.redirect(302, `/admin/login${embed}`);
+  });
+
   router.get("/login", (req, res) => {
     if (req.session && req.session.adminUser) return res.redirect("/admin/dashboard");
     return res.render("admin/login", { error: null, cancelHref: "/login" });
