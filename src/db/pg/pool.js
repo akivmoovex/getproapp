@@ -19,14 +19,24 @@ let startupLogged = false;
 /** Cached so startup log and Pool() use identical ssl + connection string. Cleared in closePgPool. */
 let resolvedPoolOptions = null;
 
-function connectionStringFromEnv() {
-  const raw = process.env.DATABASE_URL || process.env.GETPRO_DATABASE_URL || "";
-  return typeof raw === "string" ? raw.trim() : "";
-}
-
 /** Non-empty string check (same semantics as {@link connectionStringFromEnv}). */
 function envStringIsSet(value) {
   return value != null && String(value).trim() !== "";
+}
+
+/**
+ * Single source for the Postgres connection string (never log the return value).
+ * Prefer DATABASE_URL, then GETPRO_DATABASE_URL.
+ * @returns {string}
+ */
+function getDatabaseUrl() {
+  if (envStringIsSet(process.env.DATABASE_URL)) return String(process.env.DATABASE_URL).trim();
+  if (envStringIsSet(process.env.GETPRO_DATABASE_URL)) return String(process.env.GETPRO_DATABASE_URL).trim();
+  return "";
+}
+
+function connectionStringFromEnv() {
+  return getDatabaseUrl();
 }
 
 /**
@@ -211,7 +221,7 @@ function logPgStartupDiagnostics(dotenvInfo) {
   const cto = Number(process.env.GETPRO_PG_CONNECT_TIMEOUT_MS) || 10000;
   // eslint-disable-next-line no-console
   console.log(
-    `[getpro] PostgreSQL: ${urlName} is set | NODE_ENV=${nodeEnv} (mode=${mode}) | pool max=${max} idleTimeoutMs=${idle} connectionTimeoutMs=${cto} | ssl=${sslLabel}`
+    `[getpro] PostgreSQL: connection string from ${urlName} (value not logged) | NODE_ENV=${nodeEnv} (mode=${mode}) | pool max=${max} idleTimeoutMs=${idle} connectionTimeoutMs=${cto} | ssl=${sslLabel}`
   );
   // eslint-disable-next-line no-console
   console.log(
@@ -272,6 +282,7 @@ module.exports = {
   closePgPool,
   logPgStartupDiagnostics,
   logDatabaseEnvMissingDiagnostics,
+  getDatabaseUrl,
   getDatabaseUrlEnvName,
   summarizeDatabaseUrlEnv,
   getStartupProcessSnapshot,

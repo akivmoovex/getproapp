@@ -27,8 +27,27 @@ if (!isPgConfigured()) {
   });
   // eslint-disable-next-line no-console
   console.error(
-    "[getpro] FATAL: DATABASE_URL or GETPRO_DATABASE_URL must be set. This server requires PostgreSQL."
+    "[getpro] FATAL: Environment variables are missing in this process. PostgreSQL requires DATABASE_URL or GETPRO_DATABASE_URL. This is likely a hosting/restart configuration issue (panel env not applied to all workers, wrong cwd, or the process was started outside the app root so .env was not loaded). This misconfigured process will exit; fix env injection so every instance receives the database URL."
   );
+  const exitDelayMs = Math.min(
+    Math.max(Number(process.env.GETPRO_DB_MISSING_EXIT_DELAY_MS ?? 1500), 0),
+    60000
+  );
+  if (exitDelayMs > 0) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `[getpro] Pausing ${exitDelayMs}ms before exit (GETPRO_DB_MISSING_EXIT_DELAY_MS) to reduce rapid restart storms; set to 0 for immediate exit.`
+    );
+    // Synchronous wait so we never bootstrap HTTP/PostgreSQL without a URL (async setTimeout would fall through).
+    try {
+      const buf = new SharedArrayBuffer(4);
+      const arr = new Int32Array(buf);
+      Atomics.wait(arr, 0, 0, exitDelayMs);
+    } catch {
+      const end = Date.now() + exitDelayMs;
+      while (Date.now() < end) {}
+    }
+  }
   process.exit(1);
 }
 
@@ -58,6 +77,7 @@ const {
   buildRegionChoicesFromDbAsync,
   getCachedTenantStageByIdAsync,
   getCachedTenantSlugExistsAsync,
+  RESERVED_PLATFORM_SUBDOMAINS,
 } = require("./src/tenants");
 const { STAGES } = require("./src/tenants/tenantStages");
 const { eventTimeParts } = require("./src/lib/eventTime");
@@ -201,14 +221,18 @@ app.use((req, res, next) => {
   next();
 });
 
-// Subdomain is a platform tenant (row in `tenants`) vs a company marketing subdomain
+// Subdomain is a platform tenant (reserved region slugs + rows in `tenants`) vs a company marketing subdomain
 app.use(async (req, res, next) => {
   try {
     req.isPlatformTenant = false;
     const sub = req.subdomain;
     if (sub) {
-      const pool = getPgPool();
-      req.isPlatformTenant = await getCachedTenantSlugExistsAsync(pool, sub);
+      if (RESERVED_PLATFORM_SUBDOMAINS.has(sub)) {
+        req.isPlatformTenant = true;
+      } else {
+        const pool = getPgPool();
+        req.isPlatformTenant = await getCachedTenantSlugExistsAsync(pool, sub);
+      }
     }
     next();
   } catch (e) {
@@ -220,7 +244,7 @@ app.use(async (req, res, next) => {
 app.use((req, res, next) => {
   const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
   if (!base) return next();
-  const host = (req.get("host") || "").split(":")[0].toLowerCase();
+  const host = resolveHostname(req);
   if (host === `zam.${base}`) {
     const proto =
       (req.headers["x-forwarded-proto"] && String(req.headers["x-forwarded-proto"]).split(",")[0].trim()) ||
@@ -233,6 +257,20 @@ app.use((req, res, next) => {
 
 // Tenant + region context before /api and /admin so staff routes can compute tenant-aware links (e.g. Cancel → regional home).
 app.use(createAttachTenantByHost());
+
+if (process.env.GETPRO_DEBUG_ROUTING === "1" || process.env.DEBUG_HOST === "1") {
+  app.use((req, res, next) => {
+    const rawHost = req.get("host") || "(none)";
+    const resolved = resolveHostname(req);
+    const sub = req.subdomain != null ? req.subdomain : "(none)";
+    const tenantSlug = req.tenant ? req.tenant.slug : "(none)";
+    // eslint-disable-next-line no-console
+    console.log(`[routing] incoming host header: ${rawHost}`);
+    // eslint-disable-next-line no-console
+    console.log(`[routing] Host: ${resolved} → subdomain: ${sub} → tenant: ${tenantSlug}`);
+    next();
+  });
+}
 
 app.use(async (req, res, next) => {
   try {

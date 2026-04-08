@@ -307,6 +307,21 @@ function createAttachTenantByHost() {
           return next();
         }
       }
+      // Reserved platform subdomains (e.g. demo.*) must resolve even if a row is missing from `public.tenants`
+      // (merged row still comes from static TENANTS + optional DB overlay).
+      if (sub && RESERVED_PLATFORM_SUBDOMAINS.has(sub)) {
+        const t = await getTenantRowMergedAsync(pool, sub);
+        if (t) {
+          req.tenant = t;
+          req.tenantSlug = t.slug;
+          req.tenantUrlPrefix = "";
+          req.isApexHost = false;
+          res.locals.tenant = t;
+          res.locals.tenantUrlPrefix = "";
+          res.locals.isApexHost = false;
+          return next();
+        }
+      }
       return next();
     } catch (e) {
       return next(e);

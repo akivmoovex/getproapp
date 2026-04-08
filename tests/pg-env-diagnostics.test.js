@@ -3,7 +3,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { summarizeDatabaseUrlEnv } = require("../src/db/pg/pool");
+const { summarizeDatabaseUrlEnv, getDatabaseUrl } = require("../src/db/pg/pool");
 
 test("summarizeDatabaseUrlEnv: neither set", () => {
   const prev = { d: process.env.DATABASE_URL, g: process.env.GETPRO_DATABASE_URL };
@@ -49,6 +49,48 @@ test("summarizeDatabaseUrlEnv: only GETPRO_DATABASE_URL", () => {
     assert.equal(s.hasDatabaseUrl, false);
     assert.equal(s.hasGetproDatabaseUrl, true);
     assert.equal(s.effectiveSource, "GETPRO_DATABASE_URL");
+  } finally {
+    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
+    else delete process.env.DATABASE_URL;
+    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
+    else delete process.env.GETPRO_DATABASE_URL;
+  }
+});
+
+test("getDatabaseUrl: prefers DATABASE_URL over GETPRO_DATABASE_URL", () => {
+  const prev = { d: process.env.DATABASE_URL, g: process.env.GETPRO_DATABASE_URL };
+  process.env.DATABASE_URL = "postgres://a/a";
+  process.env.GETPRO_DATABASE_URL = "postgres://b/b";
+  try {
+    assert.equal(getDatabaseUrl(), "postgres://a/a");
+  } finally {
+    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
+    else delete process.env.DATABASE_URL;
+    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
+    else delete process.env.GETPRO_DATABASE_URL;
+  }
+});
+
+test("getDatabaseUrl: falls back to GETPRO_DATABASE_URL", () => {
+  const prev = { d: process.env.DATABASE_URL, g: process.env.GETPRO_DATABASE_URL };
+  delete process.env.DATABASE_URL;
+  process.env.GETPRO_DATABASE_URL = "postgres://only/this";
+  try {
+    assert.equal(getDatabaseUrl(), "postgres://only/this");
+  } finally {
+    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
+    else delete process.env.DATABASE_URL;
+    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
+    else delete process.env.GETPRO_DATABASE_URL;
+  }
+});
+
+test("getDatabaseUrl: empty when both unset", () => {
+  const prev = { d: process.env.DATABASE_URL, g: process.env.GETPRO_DATABASE_URL };
+  delete process.env.DATABASE_URL;
+  delete process.env.GETPRO_DATABASE_URL;
+  try {
+    assert.equal(getDatabaseUrl(), "");
   } finally {
     if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
     else delete process.env.DATABASE_URL;
