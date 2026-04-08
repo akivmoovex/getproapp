@@ -10,9 +10,10 @@
  */
 
 const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, "..", ".env"), quiet: true });
+const dotenvPath = path.join(__dirname, "..", ".env");
+const dotenvResult = require("dotenv").config({ path: dotenvPath, quiet: true });
 
-const { getPgPool, isPgConfigured, closePgPool } = require("../src/db/pg");
+const { getPgPool, isPgConfigured, closePgPool, logDatabaseEnvMissingDiagnostics } = require("../src/db/pg");
 
 /** Minimal set the app expects after applying 000_full_schema.sql */
 const REQUIRED_TABLES = [
@@ -30,6 +31,12 @@ const REQUIRED_TABLES = [
 
 async function main() {
   if (!isPgConfigured()) {
+    logDatabaseEnvMissingDiagnostics({
+      label: "check:pg",
+      envPath: dotenvPath,
+      dotenvKeyCount: Object.keys(dotenvResult.parsed || {}).length,
+      dotenvErrorMessage: dotenvResult.error ? String(dotenvResult.error.message || dotenvResult.error) : null,
+    });
     // eslint-disable-next-line no-console
     console.error(
       "[getpro] check:pg — FAILED: set DATABASE_URL or GETPRO_DATABASE_URL (same as server.js)."

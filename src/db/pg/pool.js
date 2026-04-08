@@ -1,5 +1,7 @@
 "use strict";
 
+const os = require("os");
+
 /**
  * Lazy PostgreSQL connection pool for Supabase (or any Postgres).
  * Used by repositories and by server.js (connect-pg-simple). The HTTP server requires a connection string at boot.
@@ -22,13 +24,29 @@ function connectionStringFromEnv() {
   return typeof raw === "string" ? raw.trim() : "";
 }
 
+/** Non-empty string check (same semantics as {@link connectionStringFromEnv}). */
+function envStringIsSet(value) {
+  return value != null && String(value).trim() !== "";
+}
+
+/**
+ * Safe booleans for diagnostics — never log connection string values.
+ * @returns {{ hasDatabaseUrl: boolean, hasGetproDatabaseUrl: boolean, effectiveSource: string }}
+ */
+function summarizeDatabaseUrlEnv() {
+  const hasDatabaseUrl = envStringIsSet(process.env.DATABASE_URL);
+  const hasGetproDatabaseUrl = envStringIsSet(process.env.GETPRO_DATABASE_URL);
+  const effectiveSource = hasDatabaseUrl
+    ? "DATABASE_URL"
+    : hasGetproDatabaseUrl
+      ? "GETPRO_DATABASE_URL"
+      : "(none)";
+  return { hasDatabaseUrl, hasGetproDatabaseUrl, effectiveSource };
+}
+
 /** Which env var supplies the URL (DATABASE_URL wins when both are set). Never log the value. */
 function getDatabaseUrlEnvName() {
-  const d = process.env.DATABASE_URL;
-  if (d != null && String(d).trim() !== "") return "DATABASE_URL";
-  const g = process.env.GETPRO_DATABASE_URL;
-  if (g != null && String(g).trim() !== "") return "GETPRO_DATABASE_URL";
-  return "(none)";
+  return summarizeDatabaseUrlEnv().effectiveSource;
 }
 
 function parsePgHost(connectionString) {
@@ -123,11 +141,69 @@ function getPoolConnectionOptions() {
   return resolvedPoolOptions;
 }
 
-function logPgStartupDiagnostics() {
+/**
+ * Process / host context for correlating logs when env injection differs between restarts.
+ * @returns {{ pid: number, ppid: number|null, hostname: string, cwd: string, nodeEnv: string }}
+ */
+function getStartupProcessSnapshot() {
+  return {
+    pid: process.pid,
+    ppid: typeof process.ppid === "number" ? process.ppid : null,
+    hostname: os.hostname(),
+    cwd: process.cwd(),
+    nodeEnv: process.env.NODE_ENV || "(unset)",
+  };
+}
+
+/**
+ * When DATABASE_URL / GETPRO_DATABASE_URL are absent, print safe diagnostics (no secrets).
+ * @param {{ label?: string, envPath?: string, dotenvKeyCount?: number, dotenvErrorMessage?: string|null }} [opts]
+ */
+function logDatabaseEnvMissingDiagnostics(opts = {}) {
+  const label = opts.label != null ? String(opts.label) : "server";
+  const snap = getStartupProcessSnapshot();
+  const { hasDatabaseUrl, hasGetproDatabaseUrl, effectiveSource } = summarizeDatabaseUrlEnv();
+  const envPath = opts.envPath != null ? String(opts.envPath) : "(unknown)";
+  const dk = opts.dotenvKeyCount;
+  const dotenvKeyLabel = dk != null && Number.isFinite(Number(dk)) ? String(Number(dk)) : "(unknown)";
+  const dotenvErr =
+    opts.dotenvErrorMessage != null && String(opts.dotenvErrorMessage).trim() !== ""
+      ? String(opts.dotenvErrorMessage).trim().slice(0, 240)
+      : null;
+
+  const lines = [
+    `[getpro] PostgreSQL: configuration missing (${label})`,
+    `  DATABASE_URL present: ${hasDatabaseUrl ? "yes" : "no"}`,
+    `  GETPRO_DATABASE_URL present: ${hasGetproDatabaseUrl ? "yes" : "no"}`,
+    `  Effective DB env source (would be): ${effectiveSource}`,
+    `  pid: ${snap.pid} | ppid: ${snap.ppid != null ? snap.ppid : "(unavailable)"} | hostname: ${snap.hostname}`,
+    `  cwd: ${snap.cwd}`,
+    `  NODE_ENV: ${snap.nodeEnv}`,
+    `  .env path: ${envPath}`,
+    `  .env keys loaded: ${dotenvKeyLabel}`,
+  ];
+  if (dotenvErr) {
+    lines.push(`  dotenv: ${dotenvErr}`);
+  }
+  lines.push(
+    `  Note: If only some restarts lack DATABASE_URL, the supervisor/host often failed to inject env for that process (new cwd, worker fork, or panel env not applied to all instances).`
+  );
+  for (const line of lines) {
+    // eslint-disable-next-line no-console
+    console.error(line);
+  }
+}
+
+/**
+ * @param {{ envPath?: string, dotenvKeyCount?: number }} [dotenvInfo] — optional; from server.js dotenv.config next to server.js
+ */
+function logPgStartupDiagnostics(dotenvInfo) {
   if (startupLogged || !isPgConfigured()) return;
   startupLogged = true;
   const { sslLabel } = getPoolConnectionOptions();
   const urlName = getDatabaseUrlEnvName();
+  const { hasDatabaseUrl, hasGetproDatabaseUrl } = summarizeDatabaseUrlEnv();
+  const snap = getStartupProcessSnapshot();
   const nodeEnv = process.env.NODE_ENV || "(unset)";
   const mode = process.env.NODE_ENV === "production" ? "production" : "development";
   const max = Number(process.env.GETPRO_PG_POOL_MAX) || 10;
@@ -137,6 +213,18 @@ function logPgStartupDiagnostics() {
   console.log(
     `[getpro] PostgreSQL: ${urlName} is set | NODE_ENV=${nodeEnv} (mode=${mode}) | pool max=${max} idleTimeoutMs=${idle} connectionTimeoutMs=${cto} | ssl=${sslLabel}`
   );
+  // eslint-disable-next-line no-console
+  console.log(
+    `[getpro] PostgreSQL env flags: DATABASE_URL=${hasDatabaseUrl ? "yes" : "no"} GETPRO_DATABASE_URL=${hasGetproDatabaseUrl ? "yes" : "no"} | effective=${urlName} | pid=${snap.pid} ppid=${snap.ppid != null ? snap.ppid : "n/a"} host=${snap.hostname}`
+  );
+  // eslint-disable-next-line no-console
+  console.log(`[getpro] Process: cwd=${snap.cwd}`);
+  if (dotenvInfo && (dotenvInfo.envPath != null || dotenvInfo.dotenvKeyCount != null)) {
+    const ep = dotenvInfo.envPath != null ? String(dotenvInfo.envPath) : "(unknown)";
+    const kc = dotenvInfo.dotenvKeyCount != null ? String(dotenvInfo.dotenvKeyCount) : "(unknown)";
+    // eslint-disable-next-line no-console
+    console.log(`[getpro] dotenv: path=${ep} keysLoaded=${kc} (file is optional; production often uses host-injected env only)`);
+  }
 }
 
 function isPgConfigured() {
@@ -183,5 +271,8 @@ module.exports = {
   isPgConfigured,
   closePgPool,
   logPgStartupDiagnostics,
+  logDatabaseEnvMissingDiagnostics,
   getDatabaseUrlEnvName,
+  summarizeDatabaseUrlEnv,
+  getStartupProcessSnapshot,
 };

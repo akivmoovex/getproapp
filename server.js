@@ -9,8 +9,22 @@ const envPath = path.join(__dirname, ".env");
 const dotenvResult = require("dotenv").config({ path: envPath, quiet: true });
 const dotenvKeyCount = Object.keys(dotenvResult.parsed || {}).length;
 
-const { getPgPool, isPgConfigured, logPgStartupDiagnostics, getDatabaseUrlEnvName } = require("./src/db/pg");
+const {
+  getPgPool,
+  isPgConfigured,
+  logPgStartupDiagnostics,
+  logDatabaseEnvMissingDiagnostics,
+  getDatabaseUrlEnvName,
+} = require("./src/db/pg");
 if (!isPgConfigured()) {
+  // Inconsistent env across restarts (missing vars on some boots) is usually a deployment/supervisor issue:
+  // wrong cwd, forked workers without panel env, or .env not loaded because the process was started outside the app root.
+  logDatabaseEnvMissingDiagnostics({
+    label: "server",
+    envPath,
+    dotenvKeyCount,
+    dotenvErrorMessage: dotenvResult.error ? String(dotenvResult.error.message || dotenvResult.error) : null,
+  });
   // eslint-disable-next-line no-console
   console.error(
     "[getpro] FATAL: DATABASE_URL or GETPRO_DATABASE_URL must be set. This server requires PostgreSQL."
@@ -20,7 +34,7 @@ if (!isPgConfigured()) {
 
 const { db, verifyProductionPgOnlyRuntime } = require("./src/db");
 verifyProductionPgOnlyRuntime();
-logPgStartupDiagnostics();
+logPgStartupDiagnostics({ envPath, dotenvKeyCount });
 
 // One-line diagnostics (no secrets). Hosting env vars exist before Node runs; .env only adds keys if the file exists.
 // eslint-disable-next-line no-console

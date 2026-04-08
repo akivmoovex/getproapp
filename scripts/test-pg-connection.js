@@ -9,10 +9,20 @@
  * Requires: DATABASE_URL or GETPRO_DATABASE_URL when you want an actual test.
  */
 
-const { getPgPool, isPgConfigured, closePgPool } = require("../src/db/pg");
+const path = require("path");
+const dotenvPath = path.join(__dirname, "..", ".env");
+const dotenvResult = require("dotenv").config({ path: dotenvPath, quiet: true });
+
+const { getPgPool, isPgConfigured, closePgPool, logDatabaseEnvMissingDiagnostics } = require("../src/db/pg");
 
 async function main() {
   if (!isPgConfigured()) {
+    logDatabaseEnvMissingDiagnostics({
+      label: "test:pg",
+      envPath: dotenvPath,
+      dotenvKeyCount: Object.keys(dotenvResult.parsed || {}).length,
+      dotenvErrorMessage: dotenvResult.error ? String(dotenvResult.error.message || dotenvResult.error) : null,
+    });
     // eslint-disable-next-line no-console
     console.log(
       "[getpro] PostgreSQL: skip (set DATABASE_URL or GETPRO_DATABASE_URL to test Supabase/Postgres connectivity)."

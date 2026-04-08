@@ -9,12 +9,26 @@
  */
 
 const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, "..", ".env"), quiet: true });
+const dotenvPath = path.join(__dirname, "..", ".env");
+const dotenvResult = require("dotenv").config({ path: dotenvPath, quiet: true });
 
-const { getPgPool, isPgConfigured, closePgPool, tenantsRepo, categoriesRepo } = require("../src/db/pg");
+const {
+  getPgPool,
+  isPgConfigured,
+  closePgPool,
+  logDatabaseEnvMissingDiagnostics,
+  tenantsRepo,
+  categoriesRepo,
+} = require("../src/db/pg");
 
 async function main() {
   if (!isPgConfigured()) {
+    logDatabaseEnvMissingDiagnostics({
+      label: "test:pg:repos",
+      envPath: dotenvPath,
+      dotenvKeyCount: Object.keys(dotenvResult.parsed || {}).length,
+      dotenvErrorMessage: dotenvResult.error ? String(dotenvResult.error.message || dotenvResult.error) : null,
+    });
     // eslint-disable-next-line no-console
     console.log(
       "[getpro] test:pg:repos — skip (set DATABASE_URL or GETPRO_DATABASE_URL to exercise repositories)."
