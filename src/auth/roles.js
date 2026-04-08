@@ -5,6 +5,8 @@ const ROLES = {
   TENANT_EDITOR: "tenant_editor",
   TENANT_AGENT: "tenant_agent",
   TENANT_VIEWER: "tenant_viewer",
+  /** Read-only demo / end-user console (same effective permissions as tenant_viewer). */
+  END_USER: "end_user",
 };
 
 const ALL_ROLES = Object.values(ROLES);
@@ -21,7 +23,14 @@ function isSuperAdmin(role) {
 
 /** Viewer: read-only reports (dashboard + leads). */
 function isTenantViewer(role) {
-  return normalizeRole(role) === ROLES.TENANT_VIEWER;
+  const n = normalizeRole(role);
+  return n === ROLES.TENANT_VIEWER || n === ROLES.END_USER;
+}
+
+/** Create/update/delete articles (and other managed content): super admin + tenant admin only. */
+function canManageArticles(role) {
+  const n = normalizeRole(role);
+  return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER;
 }
 
 /** Can edit directory data (categories, companies, leads actions). */
@@ -118,6 +127,7 @@ module.exports = {
   normalizeRole,
   isSuperAdmin,
   isTenantViewer,
+  canManageArticles,
   canEditDirectoryData,
   canManageTenantUsers,
   canAccessSuperConsole,

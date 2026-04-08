@@ -1,5 +1,7 @@
 <% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var tpHome = tp ? tp + '/' : '/'; %>
+<% var _joinModalSrc = (tp ? String(tp).replace(/\/$/, '') : '') + '/join'; %>
+<% var _bnHeader = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
 <% var ten = typeof tenant !== 'undefined' ? tenant : null; %>
 <% var _renderRegionPickerTrigger = typeof renderRegionPickerTrigger !== 'undefined' ? !!renderRegionPickerTrigger : false; %>
 <% var _showRegionPickerUi = typeof showRegionPickerUi !== 'undefined' ? !!showRegionPickerUi : false; %>
@@ -48,10 +50,10 @@
 
       <%- include('components/button', {
         variant: 'secondary',
-        href: 'https://getproapp.org/join',
         text: 'Join Us',
         className: 'app-top-app-bar__join',
-        extraAttrs: 'target="_blank" rel="noopener noreferrer"',
+        id: 'wf-join-us-header',
+        extraAttrs: 'type="button" data-wf-join-us-open aria-haspopup="dialog" aria-controls="wf-join-us-modal"',
       }) %>
 
       <button
@@ -99,3 +101,28 @@
     </div>
   </div>
 </header>
+
+<div
+  id="wf-join-us-modal"
+  class="m3-modal-overlay wf-join-us-modal"
+  hidden
+  aria-hidden="true"
+  data-join-src="<%= _joinModalSrc %>"
+>
+  <div class="m3-modal-overlay__backdrop" data-wf-join-us-dismiss tabindex="-1"></div>
+  <div
+    class="m3-modal m3-modal--settings-iframe wf-join-us-modal__dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="wf-join-us-title"
+  >
+    <header class="m3-modal__header">
+      <h2 id="wf-join-us-title" class="m3-modal__title">List your business</h2>
+      <button type="button" class="m3-modal__close" data-wf-join-us-dismiss aria-label="Close">×</button>
+    </header>
+    <div class="m3-modal__body m3-modal__body--iframe wf-join-us-modal__body">
+      <iframe id="wf-join-us-iframe" title="<%= _bnHeader %> — join" src="about:blank"></iframe>
+    </div>
+    <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
+  </div>
+</div>

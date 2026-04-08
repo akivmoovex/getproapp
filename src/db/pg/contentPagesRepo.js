@@ -25,7 +25,7 @@ async function listAllByKindAdmin(pool, tenantId, kind) {
   const r = await pool.query(
     `SELECT * FROM public.content_pages
      WHERE tenant_id = $1 AND kind = $2
-     ORDER BY sort_order ASC, title ASC`,
+     ORDER BY locale ASC, sort_order ASC, title ASC`,
     [tenantId, kind]
   );
   return r.rows.map(serializeContentRow);
@@ -39,11 +39,12 @@ async function getByIdAndTenantAdmin(pool, id, tenantId) {
 
 async function insertForAdmin(pool, p) {
   const published = p.published === 1 || p.published === true;
+  const locale = p.locale != null && String(p.locale).trim() !== "" ? String(p.locale).trim() : "en";
   const ins = await pool.query(
     `INSERT INTO public.content_pages (
       tenant_id, kind, slug, title, excerpt, body, hero_image_url, hero_image_alt,
-      seo_title, seo_description, published, sort_order, updated_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())
+      seo_title, seo_description, published, sort_order, locale, updated_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())
     RETURNING id`,
     [
       p.tenantId,
@@ -58,6 +59,7 @@ async function insertForAdmin(pool, p) {
       p.seoDescription,
       published,
       p.sortOrder,
+      locale,
     ]
   );
   return Number(ins.rows[0].id);
@@ -65,11 +67,12 @@ async function insertForAdmin(pool, p) {
 
 async function updateForAdmin(pool, p) {
   const published = p.published === 1 || p.published === true;
+  const locale = p.locale != null && String(p.locale).trim() !== "" ? String(p.locale).trim() : "en";
   const u = await pool.query(
     `UPDATE public.content_pages SET
       slug = $1, title = $2, excerpt = $3, body = $4, hero_image_url = $5, hero_image_alt = $6,
-      seo_title = $7, seo_description = $8, published = $9, sort_order = $10, updated_at = now()
-     WHERE id = $11 AND tenant_id = $12`,
+      seo_title = $7, seo_description = $8, published = $9, sort_order = $10, locale = $11, updated_at = now()
+     WHERE id = $12 AND tenant_id = $13`,
     [
       p.slug,
       p.title,
@@ -81,6 +84,7 @@ async function updateForAdmin(pool, p) {
       p.seoDescription,
       published,
       p.sortOrder,
+      locale,
       p.id,
       p.tenantId,
     ]
@@ -105,17 +109,19 @@ async function deleteByIdAndTenantAdmin(pool, id, tenantId) {
  * @param {import("pg").Pool} pool
  * @param {number} tenantId
  * @param {string} kind
+ * @param {string} locale BCP 47-ish tag, e.g. en, he-IL
  */
-async function listPublishedByKind(pool, tenantId, kind) {
+async function listPublishedByKind(pool, tenantId, kind, locale) {
+  const loc = locale != null && String(locale).trim() !== "" ? String(locale).trim() : "en";
   const r = await pool.query(
     `
     SELECT id, slug, title, excerpt, sort_order, updated_at, hero_image_url, hero_image_alt,
-           LEFT(body::text, 320) AS body_preview
+           LEFT(body::text, 320) AS body_preview, locale
     FROM public.content_pages
-    WHERE tenant_id = $1 AND kind = $2 AND published = true
+    WHERE tenant_id = $1 AND kind = $2 AND published = true AND locale = $3
     ORDER BY sort_order ASC, title ASC
     `,
-    [tenantId, kind]
+    [tenantId, kind, loc]
   );
   return r.rows.map(serializeContentRow);
 }
@@ -124,10 +130,11 @@ async function listPublishedByKind(pool, tenantId, kind) {
  * @param {import("pg").Pool} pool
  * @param {number} tenantId
  */
-async function listPublishedKindSlugForSitemap(pool, tenantId) {
+async function listPublishedKindSlugForSitemap(pool, tenantId, locale) {
+  const loc = locale != null && String(locale).trim() !== "" ? String(locale).trim() : "en";
   const r = await pool.query(
-    `SELECT kind, slug FROM public.content_pages WHERE tenant_id = $1 AND published = true`,
-    [tenantId]
+    `SELECT kind, slug FROM public.content_pages WHERE tenant_id = $1 AND published = true AND locale = $2`,
+    [tenantId, loc]
   );
   return r.rows;
 }
@@ -138,11 +145,13 @@ async function listPublishedKindSlugForSitemap(pool, tenantId) {
  * @param {number} tenantId
  * @param {string} kind
  * @param {string} slug
+ * @param {string} [locale]
  */
-async function getBySlugPublished(pool, tenantId, kind, slug) {
+async function getBySlugPublished(pool, tenantId, kind, slug, locale) {
+  const loc = locale != null && String(locale).trim() !== "" ? String(locale).trim() : "en";
   const r = await pool.query(
-    `SELECT * FROM public.content_pages WHERE tenant_id = $1 AND kind = $2 AND slug = $3`,
-    [tenantId, kind, slug]
+    `SELECT * FROM public.content_pages WHERE tenant_id = $1 AND kind = $2 AND slug = $3 AND locale = $4`,
+    [tenantId, kind, slug, loc]
   );
   const row = r.rows[0];
   if (!row) return null;
@@ -157,11 +166,13 @@ async function getBySlugPublished(pool, tenantId, kind, slug) {
  * @param {number} tenantId
  * @param {string} kind
  * @param {string} slug
+ * @param {string} [locale]
  */
-async function getRowBySlug(pool, tenantId, kind, slug) {
+async function getRowBySlug(pool, tenantId, kind, slug, locale) {
+  const loc = locale != null && String(locale).trim() !== "" ? String(locale).trim() : "en";
   const r = await pool.query(
-    `SELECT * FROM public.content_pages WHERE tenant_id = $1 AND kind = $2 AND slug = $3`,
-    [tenantId, kind, slug]
+    `SELECT * FROM public.content_pages WHERE tenant_id = $1 AND kind = $2 AND slug = $3 AND locale = $4`,
+    [tenantId, kind, slug, loc]
   );
   const row = r.rows[0];
   return row ? serializeContentRow(row) : null;

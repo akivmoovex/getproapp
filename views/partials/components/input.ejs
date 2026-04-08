@@ -13,13 +13,24 @@
   var _name = typeof name !== 'undefined' && name ? String(name) : '';
   var _type = typeof type !== 'undefined' && type ? String(type) : 'text';
   var _label = typeof label !== 'undefined' && label ? String(label) : '';
-  var _placeholder = typeof placeholder !== 'undefined' ? String(placeholder) : '';
+  var _placeholder = '';
+  if (typeof placeholder !== 'undefined' && placeholder != null && String(placeholder).trim() !== '') {
+    _placeholder = String(placeholder);
+  }
   var _value = typeof value !== 'undefined' && value !== null ? String(value) : '';
   var _required = typeof required !== 'undefined' && !!required;
   var _disabled = typeof disabled !== 'undefined' && !!disabled;
-  var _autocomplete = typeof autocomplete !== 'undefined' ? String(autocomplete) : '';
-  var _helperRaw = typeof helperText !== 'undefined' && helperText ? String(helperText) : (typeof helper !== 'undefined' ? String(helper) : '');
-  var _error = typeof error !== 'undefined' ? String(error) : '';
+  var _autocomplete = typeof autocomplete !== 'undefined' && autocomplete != null ? String(autocomplete) : '';
+  var _helperRaw = '';
+  if (typeof helperText !== 'undefined' && helperText != null && String(helperText).trim() !== '') {
+    _helperRaw = String(helperText);
+  } else if (typeof helper !== 'undefined' && helper != null && String(helper).trim() !== '') {
+    _helperRaw = String(helper);
+  }
+  var _error = '';
+  if (typeof error !== 'undefined' && error != null && String(error).trim() !== '') {
+    _error = String(error);
+  }
   var _wrapperClass = typeof wrapperClass !== 'undefined' && wrapperClass ? String(wrapperClass) : '';
   var _controlClass = typeof controlClass !== 'undefined' && controlClass ? String(controlClass) : '';
   var _className = typeof className !== 'undefined' && className ? String(className) : '';

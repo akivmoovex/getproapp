@@ -13,25 +13,28 @@ const { TENANT_ZM } = require("../tenants/tenantIds");
 async function seedFieldAgentUser(pool) {
   if (process.env.SEED_FIELD_AGENT_USER === "0") return;
 
-  const username = "field_user";
-  const password = "1234";
-  const existing = await fieldAgentsRepo.getByUsernameAndTenant(pool, username, TENANT_ZM);
-  if (existing) return;
-
-  try {
-    const passwordHash = await bcrypt.hash(password, 12);
-    await fieldAgentsRepo.insertAgent(pool, {
-      tenantId: TENANT_ZM,
-      username,
-      passwordHash,
-      displayName: "Field user",
-      phone: "",
-    });
-    // eslint-disable-next-line no-console
-    console.log("[getpro] Seeded field agent user: field_user (field user / Zambia)");
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error("[getpro] seedFieldAgentUser:", e && e.message ? e.message : e);
+  const agents = [
+    { username: "field_user", displayName: "Field user" },
+    { username: "field_agent", displayName: "Field agent" },
+  ];
+  for (const a of agents) {
+    const existing = await fieldAgentsRepo.getByUsernameAndTenant(pool, a.username, TENANT_ZM);
+    if (existing) continue;
+    try {
+      const passwordHash = await bcrypt.hash("1234", 12);
+      await fieldAgentsRepo.insertAgent(pool, {
+        tenantId: TENANT_ZM,
+        username: a.username,
+        passwordHash,
+        displayName: a.displayName,
+        phone: "",
+      });
+      // eslint-disable-next-line no-console
+      console.log(`[getpro] Seeded field agent user: ${a.username} (Zambia)`);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[getpro] seedFieldAgentUser:", e && e.message ? e.message : e);
+    }
   }
 }
 

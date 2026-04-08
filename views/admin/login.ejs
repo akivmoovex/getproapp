@@ -18,7 +18,7 @@
             <div class="admin-gate-brand__subtitle">Sign in to manage categories, listings, and leads.</div>
           </div>
         </a>
-        <%- include('../partials/admin_gate_form', { formAction: '/admin/login', error: error, cancelHref: typeof cancelHref !== 'undefined' ? cancelHref : '/login' }) %>
+        <%- include('../partials/admin_gate_form', { formAction: '/admin/login', error: error, cancelHref: typeof cancelHref !== 'undefined' ? cancelHref : '/' }) %>
       </div>
     </div>
     <%- include('../partials/theme_prefs') %>

@@ -43,6 +43,7 @@ async function seedBuiltinUsers(pool) {
 
   await ensure("tenantmanager", "1234", ROLES.TENANT_MANAGER, TENANT_ZM);
   await ensure("crmagent", "1234", ROLES.TENANT_AGENT, TENANT_ZM);
+  await ensure("end_user", "1234", ROLES.END_USER, TENANT_ZM);
   await ensure("superadmin", "1234", ROLES.SUPER_ADMIN, null);
 }
 

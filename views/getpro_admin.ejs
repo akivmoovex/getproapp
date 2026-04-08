@@ -18,7 +18,7 @@
             <div class="admin-gate-brand__subtitle">Sign in to manage directory data and leads.</div>
           </div>
         </a>
-        <%- include('partials/admin_gate_form', { formAction: '/admin/login', error: typeof error !== 'undefined' ? error : null, cancelHref: '/login' }) %>
+        <%- include('partials/admin_gate_form', { formAction: '/admin/login', error: typeof error !== 'undefined' ? error : null, cancelHref: typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/' }) %>
       </div>
     </div>
     <%- include('partials/theme_prefs') %>

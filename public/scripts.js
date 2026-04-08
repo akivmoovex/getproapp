@@ -271,6 +271,77 @@ function initRegionPickerLazyOnMobile() {
   openBtn.addEventListener("click", onClickCapture, true);
 }
 
+/** Tenant join flow in an iframe (header “Join Us”, nav “List your business”, home CTA). */
+function initJoinUsModal() {
+  const modal = document.getElementById("wf-join-us-modal");
+  const iframe = document.getElementById("wf-join-us-iframe");
+  if (!modal || !iframe) return;
+
+  const joinSrc = modal.getAttribute("data-join-src") || "/join";
+  const triggers = document.querySelectorAll("[data-wf-join-us-open]");
+
+  let lastFocus = null;
+
+  function finishClose() {
+    iframe.src = "about:blank";
+    modal.setAttribute("hidden", "");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    if (lastFocus && typeof lastFocus.focus === "function") {
+      lastFocus.focus();
+    }
+    lastFocus = null;
+  }
+
+  function closeModal() {
+    modal.classList.remove("m3-modal-overlay--open");
+    let done = false;
+    function onEnd(e) {
+      if (e.target !== modal || e.propertyName !== "opacity") return;
+      if (done) return;
+      done = true;
+      modal.removeEventListener("transitionend", onEnd);
+      finishClose();
+    }
+    modal.addEventListener("transitionend", onEnd);
+    window.setTimeout(() => {
+      if (done) return;
+      done = true;
+      modal.removeEventListener("transitionend", onEnd);
+      finishClose();
+    }, 320);
+  }
+
+  function openModal() {
+    lastFocus = document.activeElement;
+    modal.removeAttribute("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    void modal.offsetWidth;
+    modal.classList.add("m3-modal-overlay--open");
+    iframe.src = joinSrc;
+    document.body.style.overflow = "hidden";
+    const closeBtn = modal.querySelector("[data-wf-join-us-dismiss].m3-modal__close");
+    if (closeBtn) closeBtn.focus();
+  }
+
+  triggers.forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      openModal();
+    });
+  });
+
+  modal.addEventListener("click", (e) => {
+    if (e.target.closest(".m3-modal-overlay__backdrop") || e.target.closest("[data-wf-join-us-dismiss]")) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.hasAttribute("hidden")) closeModal();
+  });
+}
+
 function initRefineSearchFab() {
   document.querySelectorAll(".pro-refine-search-fab[data-refine-target]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -371,5 +442,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   if (document.querySelector("[data-avatar-hue]")) initDirectoryAvatarHueDeferredOnMobile();
   if (document.querySelector(".pro-refine-search-fab[data-refine-target]")) initRefineSearchFab();
+  if (document.getElementById("wf-join-us-modal")) initJoinUsModal();
   initAppNavDrawerLazyOnMobile();
 });

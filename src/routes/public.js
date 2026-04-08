@@ -113,7 +113,13 @@ module.exports = function publicRoutes() {
   // PERF: Tiny in-process cache for homepage query results to reduce TTFB.
   // Safe: short TTL, per-tenant, caches only public lists (not user-specific).
   const HOME_CACHE_TTL_MS = 60 * 1000;
-  const homeCache = new Map(); // tenantId -> { ts, categories, contentArticles, contentGuides, contentFaqs }
+  const homeCache = new Map(); // `${tenantId}:${locale}` -> { ts, categories, contentArticles, contentGuides, contentFaqs }
+
+  function contentLocale(req) {
+    const t = req.tenant;
+    if (t && t.defaultLocale) return String(t.defaultLocale);
+    return "en";
+  }
 
   async function platformSupportAsync(req) {
     const tid = req.tenant && req.tenant.id;
@@ -185,25 +191,28 @@ module.exports = function publicRoutes() {
 
   async function resolveContentRowAsync(req, kind, slug) {
     const tenantId = req.tenant.id;
+    const loc = contentLocale(req);
     const preview =
       (req.query.preview === "1" || req.query.preview === "true") && canPreviewDraft(req, tenantId);
     const pool = getPgPool();
     if (preview) {
-      return (await contentPagesRepo.getRowBySlug(pool, tenantId, kind, slug)) || null;
+      return (await contentPagesRepo.getRowBySlug(pool, tenantId, kind, slug, loc)) || null;
     }
-    return (await contentPagesRepo.getBySlugPublished(pool, tenantId, kind, slug)) || null;
+    return (await contentPagesRepo.getBySlugPublished(pool, tenantId, kind, slug, loc)) || null;
   }
 
   router.get("/", async (req, res) => {
     const tenantId = req.tenant.id;
+    const loc = contentLocale(req);
+    const cacheKey = `${tenantId}:${loc}`;
     const now = Date.now();
-    let cached = homeCache.get(tenantId);
+    let cached = homeCache.get(cacheKey);
     if (!cached || now - cached.ts > HOME_CACHE_TTL_MS) {
       const pool = getPgPool();
       const [contentArticles, contentGuides, contentFaqs] = await Promise.all([
-        contentPagesRepo.listPublishedByKind(pool, tenantId, "article"),
-        contentPagesRepo.listPublishedByKind(pool, tenantId, "guide"),
-        contentPagesRepo.listPublishedByKind(pool, tenantId, "faq"),
+        contentPagesRepo.listPublishedByKind(pool, tenantId, "article", loc),
+        contentPagesRepo.listPublishedByKind(pool, tenantId, "guide", loc),
+        contentPagesRepo.listPublishedByKind(pool, tenantId, "faq", loc),
       ]);
       cached = {
         ts: now,
@@ -212,7 +221,7 @@ module.exports = function publicRoutes() {
         contentGuides,
         contentFaqs,
       };
-      homeCache.set(tenantId, cached);
+      homeCache.set(cacheKey, cached);
     }
 
     const canonicalUrl = canonicalUrlForTenant(req, "/");
@@ -449,7 +458,7 @@ module.exports = function publicRoutes() {
   async function renderContentIndex(req, res, kind, label) {
     const tenantId = req.tenant.id;
     const pool = getPgPool();
-    const items = await contentPagesRepo.listPublishedByKind(pool, tenantId, kind);
+    const items = await contentPagesRepo.listPublishedByKind(pool, tenantId, kind, contentLocale(req));
     const seg = kind === "article" ? "articles" : kind === "guide" ? "guides" : "answers";
     const canonicalUrl = canonicalUrlForTenant(req, `/${seg}`);
     const seoTitle = `${label} | ${req.tenant.name || PRODUCT_NAME}`;

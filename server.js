@@ -33,6 +33,8 @@ const { seedBuiltinUsers } = require("./src/seeds/seedBuiltinUsers");
 const { seedManagerUsers } = require("./src/seeds/seedManagerUsers");
 const { seedFieldAgentUser } = require("./src/seeds/seedFieldAgentUser");
 const { ensureFieldAgentSchema } = require("./src/db/pg/ensureFieldAgentSchema");
+const { ensureContentLocaleSchema } = require("./src/db/pg/ensureContentLocaleSchema");
+const { tenantHomeHrefFromPrefix } = require("./src/lib/tenantHomeHref");
 const { getSubdomain, resolveHostname } = require("./src/platform/host");
 
 const {
@@ -213,6 +215,26 @@ app.use((req, res, next) => {
   next();
 });
 
+// Tenant + region context before /api and /admin so staff routes can compute tenant-aware links (e.g. Cancel → regional home).
+app.use(createAttachTenantByHost());
+
+app.use(async (req, res, next) => {
+  try {
+    const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
+    const scheme = process.env.PUBLIC_SCHEME || "https";
+    const pool = getPgPool();
+    req.regionChoices = await buildRegionChoicesFromDbAsync(pool, base, scheme);
+    res.locals.regionChoices = req.regionChoices;
+    req.regionZmUrl = base ? `${scheme}://zm.${base}` : "";
+    req.regionIlUrl = base ? `${scheme}://il.${base}` : "";
+    res.locals.regionZmUrl = req.regionZmUrl;
+    res.locals.regionIlUrl = req.regionIlUrl;
+    next();
+  } catch (e) {
+    next(e);
+  }
+});
+
 // API and admin before tenant catch-alls so /api and /admin are not handled by public router
 app.use("/api", apiRoutes());
 app.use("/admin", adminRoutes({ db }));
@@ -293,33 +315,6 @@ app.use("/zw", (req, res) => redirectPathToTenantHost(req, res, "/zw", "zw"));
 app.use("/za", (req, res) => redirectPathToTenantHost(req, res, "/za", "za"));
 app.use("/na", (req, res) => redirectPathToTenantHost(req, res, "/na", "na"));
 
-// Host-based tenants: apex + regional subdomains
-app.use(createAttachTenantByHost());
-
-app.use(async (req, res, next) => {
-  try {
-    const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
-    const scheme = process.env.PUBLIC_SCHEME || "https";
-    const pool = getPgPool();
-    req.regionChoices = await buildRegionChoicesFromDbAsync(pool, base, scheme);
-    res.locals.regionChoices = req.regionChoices;
-    req.regionZmUrl = base ? `${scheme}://zm.${base}` : "";
-    req.regionIlUrl = base ? `${scheme}://il.${base}` : "";
-    res.locals.regionZmUrl = req.regionZmUrl;
-    res.locals.regionIlUrl = req.regionIlUrl;
-    next();
-  } catch (e) {
-    next(e);
-  }
-});
-
-function tenantHomeHrefFromPrefix(prefix) {
-  if (prefix === "" || prefix == null) return "/";
-  const ps = String(prefix);
-  if (ps.startsWith("http")) return `${ps.replace(/\/$/, "")}/`;
-  return `${ps}/`;
-}
-
 /** Public entry to admin login (same form as `/admin/login`, with Cancel). */
 app.get("/getpro-admin", (req, res) => {
   const scheme = process.env.PUBLIC_SCHEME || "https";
@@ -385,6 +380,7 @@ const pgPoolForBoot = getPgPool();
 ensureAdminUser({ pool: pgPoolForBoot })
   .then(async () => {
     await ensureFieldAgentSchema(pgPoolForBoot);
+    await ensureContentLocaleSchema(pgPoolForBoot);
     await seedBuiltinUsers(pgPoolForBoot);
     await seedManagerUsers(pgPoolForBoot);
     await seedFieldAgentUser(pgPoolForBoot);

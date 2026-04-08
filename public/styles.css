@@ -1739,6 +1739,15 @@ select.input-field__control:focus-visible {
   padding: 0 var(--space-2) var(--space-2);
 }
 
+/* Site header “Join Us” iframe (site_header.ejs) */
+.wf-join-us-modal.m3-modal-overlay {
+  z-index: 10045;
+}
+
+.wf-join-us-modal .m3-modal__body--iframe iframe {
+  min-height: min(72vh, 560px);
+}
+
 /* Join page modals (join.ejs) */
 .join-modal-layer.m3-modal-overlay {
   z-index: 10050;

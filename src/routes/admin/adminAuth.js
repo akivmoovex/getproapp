@@ -11,6 +11,7 @@ const { resolveSessionAfterLoginAsync } = require("../../auth/adminUserTenants")
 const { adminLoginLimiter } = require("../../middleware/authRateLimit");
 const { getPgPool } = require("../../db/pg");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
+const { tenantHomeHrefFromPrefix } = require("../../lib/tenantHomeHref");
 
 /**
  * Super-admin default directory scope after login (env slug → demo → global → zm), enabled tenants only.
@@ -42,14 +43,20 @@ module.exports = function registerAdminAuthRoutes(router) {
 
   router.get("/login", (req, res) => {
     if (req.session && req.session.adminUser) return res.redirect("/admin/dashboard");
-    return res.render("admin/login", { error: null, cancelHref: "/login" });
+    const prefix = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
+    const cancelHref = tenantHomeHrefFromPrefix(prefix);
+    return res.render("admin/login", { error: null, cancelHref });
   });
 
   router.post("/login", adminLoginLimiter, async (req, res) => {
     const pool = getPgPool();
     const { username = "", password = "" } = req.body || {};
     const user = await authenticateAdmin({ pool, username, password });
-    if (!user) return res.render("admin/login", { error: "Invalid username or password.", cancelHref: "/login" });
+    if (!user) {
+      const prefix = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
+      const cancelHref = tenantHomeHrefFromPrefix(prefix);
+      return res.render("admin/login", { error: "Invalid username or password.", cancelHref });
+    }
 
     req.session.adminTenantScope = null;
     req.session.adminTenantMemberships = undefined;

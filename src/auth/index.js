@@ -8,6 +8,7 @@ const {
   canAccessSuperConsole,
   canAccessClientProjectIntake,
   canMutateClientProjectIntake,
+  canManageArticles,
 } = require("./roles");
 const { TENANT_ZM } = require("../tenants/tenantIds");
 const { upsertMembershipAsync } = require("./adminUserTenants");
@@ -100,6 +101,15 @@ function requireNotViewer(req, res, next) {
   return next();
 }
 
+/** Articles / managed content writes: super admin and tenant manager only (enforced server-side). */
+function requireContentManager(req, res, next) {
+  if (!req.session || !req.session.adminUser) return res.redirect("/admin/login");
+  if (!canManageArticles(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("You do not have permission to create or edit this content.");
+  }
+  return next();
+}
+
 function requireClientProjectIntakeAccess(req, res, next) {
   if (!req.session || !req.session.adminUser) return res.redirect("/admin/login");
   if (!canAccessClientProjectIntake(req.session.adminUser.role)) {
@@ -135,9 +145,11 @@ module.exports = {
   requireSuperAdmin,
   requireDirectoryEditor,
   requireNotViewer,
+  requireContentManager,
   requireClientProjectIntakeAccess,
   requireClientProjectIntakeMutate,
   authenticateAdmin,
   isSuperAdmin,
   isTenantViewer,
+  canManageArticles,
 };

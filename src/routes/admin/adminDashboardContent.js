@@ -3,8 +3,10 @@
  */
 const slugify = require("slugify");
 const {
+  requireAdmin,
   requireDirectoryEditor,
   requireNotViewer,
+  requireContentManager,
   isSuperAdmin,
   isTenantViewer,
 } = require("../../auth");
@@ -14,6 +16,7 @@ const {
   canManageTenantUsers,
   canAccessTenantSettings,
   canAccessSettingsHub,
+  canManageArticles,
 } = require("../../auth/roles");
 const {
   DEFAULT_CALLCENTER_PHONE,
@@ -151,6 +154,10 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
     return "Articles";
   }
 
+  function contentLocaleDefault(req) {
+    return req.tenant && req.tenant.defaultLocale ? String(req.tenant.defaultLocale) : "en";
+  }
+
   async function tenantPublicPrefixForAdmin(req, pool) {
     const tid = getAdminTenantId(req);
     const t = await tenantsRepo.getIdSlugById(pool, tid);
@@ -163,21 +170,22 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
     return `/${seg}/${encodeURIComponent(slug)}?preview=1`;
   }
 
-  router.get("/content/new", requireDirectoryEditor, (req, res) => {
+  router.get("/content/new", requireContentManager, (req, res) => {
     const kind = String(req.query.kind || "article").toLowerCase();
     if (!["article", "guide", "faq"].includes(kind)) return res.status(400).send("Invalid kind.");
     return res.render("admin/content_form", {
-      activeNav: "settings",
+      activeNav: kind === "article" ? "articles" : "settings",
       kind,
       kindLabel: contentKindLabel(kind),
       row: null,
       editMode: true,
       embed: isEmbedRequest(req),
       publicPreviewUrl: "",
+      contentLocaleDefault: contentLocaleDefault(req),
     });
   });
 
-  router.get("/content", requireDirectoryEditor, async (req, res, next) => {
+  router.get("/content", requireAdmin, async (req, res, next) => {
     try {
       const kind = String(req.query.kind || "article").toLowerCase();
       if (!["article", "guide", "faq"].includes(kind)) return res.status(400).send("Invalid kind.");
@@ -185,22 +193,28 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
       const pool = getPgPool();
       const items = await contentPagesRepo.listAllByKindAdmin(pool, tid, kind);
       return res.render("admin/content_list", {
-        activeNav: "settings",
+        activeNav: kind === "article" ? "articles" : "settings",
         kind,
         kindLabel: contentKindLabel(kind),
         items,
         editMode: parseEditMode(req),
         embed: isEmbedRequest(req),
+        contentLocaleDefault: contentLocaleDefault(req),
       });
     } catch (e) {
       next(e);
     }
   });
 
-  router.get("/content/:id", requireDirectoryEditor, async (req, res, next) => {
+  router.get("/content/:id", requireAdmin, async (req, res, next) => {
     try {
       const id = Number(req.params.id);
       if (!id || id < 1) return res.status(400).send("Invalid id.");
+      let editMode = parseEditMode(req);
+      const u = req.session && req.session.adminUser;
+      if (editMode && u && !canManageArticles(u.role)) {
+        return res.redirect(redirectWithEmbed(req, `/admin/content/${id}`));
+      }
       const tid = getAdminTenantId(req);
       const pool = getPgPool();
       const row = await contentPagesRepo.getByIdAndTenantAdmin(pool, id, tid);
@@ -209,20 +223,21 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
       const previewPath = contentPreviewPath(row.kind, row.slug);
       const publicPreviewUrl = prefix ? `${String(prefix).replace(/\/$/, "")}${previewPath}` : previewPath;
       return res.render("admin/content_form", {
-        activeNav: "settings",
+        activeNav: row.kind === "article" ? "articles" : "settings",
         kind: row.kind,
         kindLabel: contentKindLabel(row.kind),
         row,
-        editMode: parseEditMode(req),
+        editMode,
         embed: isEmbedRequest(req),
         publicPreviewUrl,
+        contentLocaleDefault: contentLocaleDefault(req),
       });
     } catch (e) {
       next(e);
     }
   });
 
-  router.post("/content", requireDirectoryEditor, requireNotViewer, async (req, res, next) => {
+  router.post("/content", requireContentManager, async (req, res, next) => {
     const kind = String(req.body.kind || "").toLowerCase();
     if (!["article", "guide", "faq"].includes(kind)) return res.status(400).send("Invalid kind.");
     const title = String(req.body.title || "").trim();
@@ -237,6 +252,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
     const seo_description = String(req.body.seo_description || "").trim();
     const sort_order = Number(req.body.sort_order || 0) || 0;
     const published = req.body.published === "1" || req.body.published === "on" ? 1 : 0;
+    const locale = String(req.body.locale || "en").trim().slice(0, 32) || "en";
     const tid = getAdminTenantId(req);
     const pool = getPgPool();
     try {
@@ -253,6 +269,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
         seoDescription: seo_description || excerpt,
         published,
         sortOrder: sort_order,
+        locale,
       });
       return res.redirect(redirectWithEmbed(req, `/admin/content/${newId}?edit=1`));
     } catch (e) {
@@ -265,7 +282,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
     }
   });
 
-  router.post("/content/:id", requireDirectoryEditor, requireNotViewer, async (req, res, next) => {
+  router.post("/content/:id", requireContentManager, async (req, res, next) => {
     try {
       const id = Number(req.params.id);
       if (!id || id < 1) return res.status(400).send("Invalid id.");
@@ -285,6 +302,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
       const seo_description = String(req.body.seo_description || "").trim();
       const sort_order = Number(req.body.sort_order || 0) || 0;
       const published = req.body.published === "1" || req.body.published === "on" ? 1 : 0;
+      const locale = String(req.body.locale || "en").trim().slice(0, 32) || "en";
       try {
         const ok = await contentPagesRepo.updateForAdmin(pool, {
           id,
@@ -299,6 +317,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
           seoDescription: seo_description || excerpt,
           published,
           sortOrder: sort_order,
+          locale,
         });
         if (!ok) return res.status(404).send("Not found.");
         return res.redirect(redirectWithEmbed(req, `/admin/content/${id}?edit=1`));
@@ -315,7 +334,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
     }
   });
 
-  router.post("/content/:id/publish", requireDirectoryEditor, requireNotViewer, async (req, res, next) => {
+  router.post("/content/:id/publish", requireContentManager, async (req, res, next) => {
     try {
       const id = Number(req.params.id);
       if (!id || id < 1) return res.status(400).send("Invalid id.");
@@ -332,7 +351,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
     }
   });
 
-  router.post("/content/:id/delete", requireDirectoryEditor, requireNotViewer, async (req, res, next) => {
+  router.post("/content/:id/delete", requireContentManager, async (req, res, next) => {
     try {
       const id = Number(req.params.id);
       if (!id || id < 1) return res.status(400).send("Invalid id.");

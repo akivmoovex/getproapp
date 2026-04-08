@@ -12,6 +12,7 @@ const {
 const {
   canEditDirectoryData,
   canManageTenantUsers,
+  canManageArticles,
   canAccessCrm,
   canMutateCrm,
   canClaimCrmTasks,
@@ -129,6 +130,7 @@ module.exports = function adminRoutes({ db }) {
         isSuper: isSuperAdmin(u.role),
         canEditDirectory: canEditDirectoryData(u.role),
         canManageUsers: canManageTenantUsers(u.role),
+        canManageArticles: canManageArticles(u.role),
         tenantScoped: tid != null,
         canAccessCrm: canAccessCrm(u.role),
         canMutateCrm: canMutateCrm(u.role),

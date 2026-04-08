@@ -1,4 +1,6 @@
 <!doctype html>
+<% var _canArt = typeof adminNav !== 'undefined' && adminNav && adminNav.canManageArticles; %>
+<% var _locDef = typeof contentLocaleDefault !== 'undefined' && contentLocaleDefault ? String(contentLocaleDefault) : 'en'; %>
 <html lang="en">
   <head>
     <%- include('../partials/brand_resolve') %>
@@ -8,20 +10,20 @@
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../partials/admin_nav', { navTitle: row ? row.title : 'New content', activeNav: 'settings' }) %>
+    <%- include('../partials/admin_nav', { navTitle: row ? row.title : 'New content', activeNav: typeof activeNav !== 'undefined' ? activeNav : 'settings' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
         <div class="admin-super-users__topbar" style="flex-wrap: wrap; gap: 0.5rem">
           <%- include('../partials/components/button', { variant: 'default', href: '/admin/content?kind=' + kind + (editMode ? '&edit=1' : '') + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: '← List' }) %>
-          <% if (!editMode && row) { %>
+          <% if (!editMode && row && _canArt) { %>
           <%- include('../partials/components/button', { variant: 'primary', href: '/admin/content/' + row.id + '?edit=1' + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: 'Edit' }) %>
-          <% } else if (editMode && row) { %>
+          <% } else if (editMode && row && _canArt) { %>
           <%- include('../partials/components/button', { variant: 'default', href: '/admin/content/' + row.id + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'View' }) %>
           <% } %>
           <% if (row && publicPreviewUrl) { %>
           <%- include('../partials/components/button', { variant: 'default', href: publicPreviewUrl, label: 'Preview', extraAttrs: 'target="_blank" rel="noopener noreferrer"' }) %>
           <% } %>
-          <% if (row && editMode) { %>
+          <% if (row && editMode && _canArt) { %>
           <form method="post" action="/admin/content/<%= row.id %>/publish<%= typeof embed !== 'undefined' && embed ? '?embed=1' : '' %>" style="display: inline">
             <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
             <%- include('../partials/components/button', { variant: 'default', type: 'submit', label: row.published ? 'Unpublish' : 'Publish' }) %>
@@ -50,11 +52,12 @@
             <% } %>
             <dt>SEO title</dt><dd><%= row.seo_title || '—' %></dd>
             <dt>SEO description</dt><dd><%= row.seo_description || '—' %></dd>
+            <dt>Locale</dt><dd><code><%= row.locale || _locDef %></code></dd>
             <dt>Sort</dt><dd><%= row.sort_order %></dd>
             <dt>Updated</dt><dd><%= row.updated_at || '—' %></dd>
           </dl>
         </div>
-        <% } else { %>
+        <% } else if (editMode && _canArt) { %>
         <form method="post" action="<%= row ? '/admin/content/' + row.id : '/admin/content' %>" class="card" style="padding: 1rem">
           <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
           <input type="hidden" name="kind" value="<%= kind %>" />
@@ -66,6 +69,11 @@
           <div class="form-group">
             <label for="slug">Slug</label>
             <input id="slug" name="slug" type="text" value="<%= row ? row.slug : '' %>" placeholder="auto from title if empty" />
+          </div>
+          <div class="form-group">
+            <label for="locale">Locale</label>
+            <input id="locale" name="locale" type="text" value="<%= row && row.locale ? row.locale : _locDef %>" placeholder="e.g. en, he-IL" maxlength="32" />
+            <p class="muted" style="margin: 0.35rem 0 0; font-size: 0.875rem">Language/locale for this page (must be unique per slug and content type in this region).</p>
           </div>
           <% if (kind !== 'faq') { %>
           <div class="form-group">
@@ -109,7 +117,7 @@
             <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save' }) %>
           </div>
         </form>
-        <% if (row && editMode) { %>
+        <% if (row && editMode && _canArt) { %>
         <form method="post" action="/admin/content/<%= row.id %>/delete" class="card" style="padding: 1rem; margin-top: 1rem" onsubmit="return confirm('Delete this item?');">
           <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
           <input type="hidden" name="kind" value="<%= kind %>" />

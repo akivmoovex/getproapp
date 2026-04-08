@@ -40,7 +40,8 @@ async function buildSitemapXml(req) {
     urls.push({ loc: `${base}/company/${co.id}`, changefreq: "weekly", priority: "0.7" });
   }
 
-  const contentRows = await contentPagesRepo.listPublishedKindSlugForSitemap(pool, tenantId);
+  const defaultLoc = req.tenant && req.tenant.defaultLocale ? String(req.tenant.defaultLocale) : "en";
+  const contentRows = await contentPagesRepo.listPublishedKindSlugForSitemap(pool, tenantId, defaultLoc);
   for (const row of contentRows) {
     const seg = row.kind === "article" ? "articles" : row.kind === "guide" ? "guides" : "answers";
     urls.push({

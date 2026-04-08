@@ -1,4 +1,5 @@
 <!doctype html>
+<% var _canArt = typeof adminNav !== 'undefined' && adminNav && adminNav.canManageArticles; %>
 <html lang="en">
   <head>
     <%- include('../partials/brand_resolve') %>
@@ -8,14 +9,16 @@
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-app admin-settings-hub-page<%- bodyEmbedClass %>">
-    <%- include('../partials/admin_nav', { navTitle: kindLabel, activeNav: 'settings' }) %>
+    <%- include('../partials/admin_nav', { navTitle: kindLabel, activeNav: typeof activeNav !== 'undefined' ? activeNav : 'settings' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
         <div class="admin-super-users__topbar">
+          <% if (_canArt) { %>
           <% if (!editMode) { %>
           <%- include('../partials/components/button', { variant: 'primary', href: '/admin/content?kind=' + kind + '&edit=1' + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: 'Edit' }) %>
           <% } else { %>
           <%- include('../partials/components/button', { variant: 'default', href: '/admin/content?kind=' + kind + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: 'Done' }) %>
+          <% } %>
           <% } %>
         </div>
 
@@ -24,10 +27,12 @@
         <p class="admin-intro admin-intro--tight-top muted">Editorial pages for this region. Opens from Settings → Content.</p>
         <% } %>
 
-        <% if (editMode) { %>
+        <% if (editMode && _canArt) { %>
         <div class="admin-toolbar">
           <%- include('../partials/components/button', { variant: 'primary', href: '/admin/content/new?kind=' + kind + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: 'New entry' }) %>
         </div>
+        <% } else if (!_canArt) { %>
+        <p class="admin-intro">View-only. Only region admins can add or change items.</p>
         <% } else { %>
         <p class="admin-intro">View-only. Choose <strong>Edit</strong> to add or change items.</p>
         <% } %>
@@ -42,13 +47,13 @@
           >
             <span class="admin-settings-hub__card-icon" aria-hidden="true"><%= it.published ? '✓' : '◌' %></span>
             <span class="admin-settings-hub__card-title"><%= it.title %></span>
-            <span class="admin-settings-hub__card-desc muted"><%= it.slug %><% if (!it.published) { %> · draft<% } %></span>
+            <span class="admin-settings-hub__card-desc muted"><%= it.slug %><% if (it.locale) { %> · <%= it.locale %><% } %><% if (!it.published) { %> · draft<% } %></span>
           </button>
           <% } else { %>
           <a class="admin-settings-hub__card" href="/admin/content/<%= it.id %>" style="text-decoration: none; color: inherit">
             <span class="admin-settings-hub__card-icon" aria-hidden="true"><%= it.published ? '✓' : '◌' %></span>
             <span class="admin-settings-hub__card-title"><%= it.title %></span>
-            <span class="admin-settings-hub__card-desc muted"><%= it.slug %><% if (!it.published) { %> · draft<% } %></span>
+            <span class="admin-settings-hub__card-desc muted"><%= it.slug %><% if (it.locale) { %> · <%= it.locale %><% } %><% if (!it.published) { %> · draft<% } %></span>
           </a>
           <% } %>
           <% }); %>
