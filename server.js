@@ -33,6 +33,7 @@ const { seedBuiltinUsers } = require("./src/seeds/seedBuiltinUsers");
 const { seedManagerUsers } = require("./src/seeds/seedManagerUsers");
 const { seedFieldAgentUser } = require("./src/seeds/seedFieldAgentUser");
 const { ensureFieldAgentSchema } = require("./src/db/pg/ensureFieldAgentSchema");
+const { ensureTenantPhoneRulesSchema } = require("./src/db/pg/ensureTenantPhoneRulesSchema");
 const { ensureContentLocaleSchema } = require("./src/db/pg/ensureContentLocaleSchema");
 const { tenantHomeHrefFromPrefix } = require("./src/lib/tenantHomeHref");
 const { getSubdomain, resolveHostname } = require("./src/platform/host");
@@ -380,6 +381,7 @@ const pgPoolForBoot = getPgPool();
 ensureAdminUser({ pool: pgPoolForBoot })
   .then(async () => {
     await ensureFieldAgentSchema(pgPoolForBoot);
+    await ensureTenantPhoneRulesSchema(pgPoolForBoot);
     await ensureContentLocaleSchema(pgPoolForBoot);
     await seedBuiltinUsers(pgPoolForBoot);
     await seedManagerUsers(pgPoolForBoot);

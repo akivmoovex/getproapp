@@ -148,7 +148,23 @@ function validateWithRules(rules, raw, _type) {
 }
 
 async function loadRules(pool, tenantId) {
-  const row = await phoneRulesRepo.getPhoneRulesByTenantId(pool, tenantId);
+  let row;
+  try {
+    row = await phoneRulesRepo.getPhoneRulesByTenantId(pool, tenantId);
+  } catch (e) {
+    const code = e && e.code;
+    const msg = String((e && e.message) || e);
+    // 42703 = undefined_column — tolerate until migration has been applied (rolling deploys).
+    if (code === "42703" || /column .* does not exist/i.test(msg)) {
+      // eslint-disable-next-line no-console
+      console.error(
+        "[getpro] tenants.phone_* columns missing; ensureTenantPhoneRulesSchema / 003_tenant_phone_rules.sql.",
+        msg
+      );
+      return compileRules(null);
+    }
+    throw e;
+  }
   return compileRules(row);
 }
 
@@ -166,8 +182,7 @@ async function validatePhoneForTenant(pool, tenantId, raw, type) {
  * For client-side UX: non-sensitive subset (regex pattern string optional).
  */
 async function getPublicPhoneRulesForTenant(pool, tenantId) {
-  const row = await phoneRulesRepo.getPhoneRulesByTenantId(pool, tenantId);
-  const rules = compileRules(row);
+  const rules = await loadRules(pool, tenantId);
   return {
     slug: rules.slug,
     strict: rules.strict,
