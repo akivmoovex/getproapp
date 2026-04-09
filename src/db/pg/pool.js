@@ -173,7 +173,7 @@ function getStartupProcessSnapshot(extra = {}) {
 
 /**
  * When DATABASE_URL / GETPRO_DATABASE_URL are absent, print safe diagnostics (no secrets).
- * @param {{ label?: string, envPath?: string, dotenvKeyCount?: number, dotenvErrorMessage?: string|null, startupEntry?: string }} [opts]
+ * @param {{ label?: string, envPath?: string, dotenvKeyCount?: number, dotenvErrorMessage?: string|null, startupEntry?: string, beforeDbSnapshot?: { DATABASE_URL: boolean, GETPRO_DATABASE_URL: boolean }, envFileExists?: boolean, dotenvSkipped?: boolean, dbProvenanceLogLine?: string, liteSpeedLsnode?: boolean }} [opts]
  */
 function logDatabaseEnvMissingDiagnostics(opts = {}) {
   const label = opts.label != null ? String(opts.label) : "server";
@@ -186,25 +186,49 @@ function logDatabaseEnvMissingDiagnostics(opts = {}) {
     opts.dotenvErrorMessage != null && String(opts.dotenvErrorMessage).trim() !== ""
       ? String(opts.dotenvErrorMessage).trim().slice(0, 240)
       : null;
+  const before = opts.beforeDbSnapshot;
+  const hostBeforeLine =
+    before && typeof before === "object"
+      ? `  Host env BEFORE dotenv merge: DATABASE_URL=${before.DATABASE_URL ? "yes" : "no"} GETPRO_DATABASE_URL=${before.GETPRO_DATABASE_URL ? "yes" : "no"}`
+      : null;
+  const envFileLine =
+    opts.envFileExists !== undefined ? `  .env file exists at app root: ${opts.envFileExists ? "yes" : "no"}` : null;
+  const skipLine =
+    opts.dotenvSkipped !== undefined ? `  GETPRO_SKIP_DOTENV (dotenv not merged): ${opts.dotenvSkipped ? "yes" : "no"}` : null;
+  const lsLine =
+    opts.liteSpeedLsnode !== undefined
+      ? `  LiteSpeed lsnode wrapper entry: ${opts.liteSpeedLsnode ? "yes (fcgi-bin/lsnode.js is normal)" : "no"}`
+      : null;
+  const provLine =
+    opts.dbProvenanceLogLine != null && String(opts.dbProvenanceLogLine).trim() !== ""
+      ? `  ${String(opts.dbProvenanceLogLine).trim()}`
+      : null;
 
   const lines = [
-    `[getpro] PostgreSQL: MISCONFIGURED PROCESS — no database URL in this Node process (${label})`,
+    `[getpro] PostgreSQL: MISCONFIGURED WORKER — no database URL in this Node process (${label})`,
     `  (Other workers may still be healthy if the host injected DATABASE_URL/GETPRO_DATABASE_URL only for some instances.)`,
-    `  DATABASE_URL present: ${hasDatabaseUrl ? "yes" : "no"}`,
-    `  GETPRO_DATABASE_URL present: ${hasGetproDatabaseUrl ? "yes" : "no"}`,
+    `  DATABASE_URL present (after bootstrap): ${hasDatabaseUrl ? "yes" : "no"}`,
+    `  GETPRO_DATABASE_URL present (after bootstrap): ${hasGetproDatabaseUrl ? "yes" : "no"}`,
     `  Effective DB env source (would be): ${effectiveSource}`,
+  ];
+  if (hostBeforeLine) lines.push(hostBeforeLine);
+  if (envFileLine) lines.push(envFileLine);
+  if (skipLine) lines.push(skipLine);
+  if (lsLine) lines.push(lsLine);
+  if (provLine) lines.push(provLine);
+  lines.push(
     `  pid: ${snap.pid} | ppid: ${snap.ppid != null ? snap.ppid : "(unavailable)"} | hostname (OS): ${snap.hostname}`,
     `  cwd: ${snap.cwd}`,
     `  NODE_ENV: ${snap.nodeEnv}`,
     `  startup entry: ${snap.startupEntry}`,
-    `  .env path: ${envPath}`,
-    `  .env keys loaded: ${dotenvKeyLabel}`,
-  ];
+    `  .env path (app root): ${envPath}`,
+    `  .env keys merged: ${dotenvKeyLabel}`,
+  );
   if (dotenvErr) {
     lines.push(`  dotenv: ${dotenvErr}`);
   }
   lines.push(
-    `  Note: If only some restarts lack DATABASE_URL, the supervisor/host often failed to inject env for that process (new cwd, worker fork, or panel env not applied to all instances).`
+    `  Note: LiteSpeed/lsnode may spawn workers without panel env — deploy .env beside server.js with DATABASE_URL (dotenv fills missing keys; it does not override host-injected vars).`
   );
   for (const line of lines) {
     // eslint-disable-next-line no-console
@@ -213,7 +237,7 @@ function logDatabaseEnvMissingDiagnostics(opts = {}) {
 }
 
 /**
- * @param {{ envPath?: string, dotenvKeyCount?: number, startupEntry?: string }} [dotenvInfo] — optional; from loadAppDotenv + entry path
+ * @param {{ envPath?: string, dotenvKeyCount?: number, startupEntry?: string, dbProvenanceLogLine?: string }} [dotenvInfo] — from runBootstrap()
  */
 function logPgStartupDiagnostics(dotenvInfo) {
   if (startupLogged || !isPgConfigured()) return;
@@ -227,17 +251,25 @@ function logPgStartupDiagnostics(dotenvInfo) {
   const max = Number(process.env.GETPRO_PG_POOL_MAX) || 10;
   const idle = Number(process.env.GETPRO_PG_IDLE_MS) || 30000;
   const cto = Number(process.env.GETPRO_PG_CONNECT_TIMEOUT_MS) || 10000;
+  const prov =
+    dotenvInfo && dotenvInfo.dbProvenanceLogLine != null && String(dotenvInfo.dbProvenanceLogLine).trim() !== ""
+      ? String(dotenvInfo.dbProvenanceLogLine).trim()
+      : null;
   // eslint-disable-next-line no-console
   console.log(
     `[getpro] PostgreSQL: connection string from ${urlName} (value not logged) | NODE_ENV=${nodeEnv} (mode=${mode}) | pool max=${max} idleTimeoutMs=${idle} connectionTimeoutMs=${cto} | ssl=${sslLabel}`
   );
+  if (prov) {
+    // eslint-disable-next-line no-console
+    console.log(`[getpro] ${prov}`);
+  }
   // eslint-disable-next-line no-console
   console.log(
     `[getpro] PostgreSQL env flags: DATABASE_URL=${hasDatabaseUrl ? "yes" : "no"} GETPRO_DATABASE_URL=${hasGetproDatabaseUrl ? "yes" : "no"} | effective=${urlName} | pid=${snap.pid} ppid=${snap.ppid != null ? snap.ppid : "n/a"} host=${snap.hostname}`
   );
   // eslint-disable-next-line no-console
   console.log(
-    `[getpro] Healthy process: DB URL env present in this worker | startup entry=${snap.startupEntry} | cwd=${snap.cwd}`
+    `[getpro] Healthy worker: DB URL available after bootstrap | startup entry=${snap.startupEntry} | cwd=${snap.cwd}`
   );
   if (dotenvInfo && (dotenvInfo.envPath != null || dotenvInfo.dotenvKeyCount != null)) {
     const ep = dotenvInfo.envPath != null ? String(dotenvInfo.envPath) : "(unknown)";

@@ -1,13 +1,13 @@
 const path = require("path");
+
+const { runBootstrap, logBootstrapMarker } = require("./src/startup/bootstrap");
+const boot = runBootstrap();
+logBootstrapMarker(boot);
+
 const express = require("express");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const session = require("express-session");
-
-const { loadAppDotenv, getStartupEntryLabel } = require("./src/startup/envBootstrap");
-const dotenvInfo = loadAppDotenv();
-const { envPath, dotenvKeyCount, dotenvErrorMessage } = dotenvInfo;
-const startupEntry = getStartupEntryLabel();
 
 const {
   getPgPool,
@@ -21,14 +21,19 @@ if (!isPgConfigured()) {
   // wrong cwd, forked workers without panel env, or .env not loaded because the process was started outside the app root.
   logDatabaseEnvMissingDiagnostics({
     label: "server.js (HTTP)",
-    envPath,
-    dotenvKeyCount,
-    dotenvErrorMessage,
-    startupEntry,
+    envPath: boot.envPath,
+    dotenvKeyCount: boot.dotenvKeyCount,
+    dotenvErrorMessage: boot.dotenvErrorMessage,
+    startupEntry: boot.startupEntry,
+    beforeDbSnapshot: boot.beforeDb,
+    envFileExists: boot.envFileExists,
+    dotenvSkipped: boot.skipDotenv,
+    dbProvenanceLogLine: boot.dbProvenance.logLine,
+    liteSpeedLsnode: boot.liteSpeedLsnode,
   });
   // eslint-disable-next-line no-console
   console.error(
-    "[getpro] FATAL: MISCONFIGURED PROCESS — DATABASE_URL and GETPRO_DATABASE_URL are both missing in this Node process. PostgreSQL is mandatory; this worker cannot start. Fix host env injection for every worker (panel env for all instances, correct cwd, or ensure .env is beside server.js when using file-based config). Healthy workers on the same host will still log \"Healthy process: DB URL env present\"."
+    "[getpro] FATAL: MISCONFIGURED WORKER — DATABASE_URL and GETPRO_DATABASE_URL are both missing after bootstrap. PostgreSQL is mandatory; this process exits. Fix: deploy `.env` beside server.js with DATABASE_URL for LiteSpeed workers without panel env, and/or fix host env for all lsnode workers. Healthy workers log \"Healthy worker: DB URL available after bootstrap\"."
   );
   const exitDelayMs = Math.min(
     Math.max(Number(process.env.GETPRO_DB_MISSING_EXIT_DELAY_MS ?? 1500), 0),
@@ -54,12 +59,17 @@ if (!isPgConfigured()) {
 
 const { db, verifyProductionPgOnlyRuntime } = require("./src/db");
 verifyProductionPgOnlyRuntime();
-logPgStartupDiagnostics({ envPath, dotenvKeyCount, startupEntry });
+logPgStartupDiagnostics({
+  envPath: boot.envPath,
+  dotenvKeyCount: boot.dotenvKeyCount,
+  startupEntry: boot.startupEntry,
+  dbProvenanceLogLine: boot.dbProvenance.logLine,
+});
 
 // One-line diagnostics (no secrets). Hosting env vars exist before Node runs; .env only adds keys if the file exists.
 // eslint-disable-next-line no-console
 console.log(
-  `[getpro] cwd=${process.cwd()} | startup entry=${startupEntry} | .env file keys=${dotenvKeyCount} (${envPath}) | databaseUrl=${getDatabaseUrlEnvName()} | ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? "set" : "MISSING"} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"} | HOST=${process.env.HOST || "(default 0.0.0.0)"}`
+  `[getpro] cwd=${process.cwd()} | startup entry=${boot.startupEntry} | .env file keys=${boot.dotenvKeyCount} (${boot.envPath}) | databaseUrl=${getDatabaseUrlEnvName()} | ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? "set" : "MISSING"} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"} | HOST=${process.env.HOST || "(default 0.0.0.0)"}`
 );
 
 const { ensureAdminUser } = require("./src/auth");

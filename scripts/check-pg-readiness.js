@@ -9,9 +9,8 @@
  * Env: DATABASE_URL or GETPRO_DATABASE_URL (required for a real check).
  */
 
-const { loadAppDotenv, getStartupEntryLabel } = require("../src/startup/envBootstrap");
-const { envPath, dotenvKeyCount, dotenvErrorMessage } = loadAppDotenv();
-const startupEntry = getStartupEntryLabel();
+const { runBootstrap } = require("../src/startup/bootstrap");
+const boot = runBootstrap();
 
 const { getPgPool, isPgConfigured, closePgPool, logDatabaseEnvMissingDiagnostics } = require("../src/db/pg");
 
@@ -33,10 +32,15 @@ async function main() {
   if (!isPgConfigured()) {
     logDatabaseEnvMissingDiagnostics({
       label: "scripts/check-pg-readiness.js",
-      envPath,
-      dotenvKeyCount,
-      dotenvErrorMessage,
-      startupEntry,
+      envPath: boot.envPath,
+      dotenvKeyCount: boot.dotenvKeyCount,
+      dotenvErrorMessage: boot.dotenvErrorMessage,
+      startupEntry: boot.startupEntry,
+      beforeDbSnapshot: boot.beforeDb,
+      envFileExists: boot.envFileExists,
+      dotenvSkipped: boot.skipDotenv,
+      dbProvenanceLogLine: boot.dbProvenance.logLine,
+      liteSpeedLsnode: boot.liteSpeedLsnode,
     });
     // eslint-disable-next-line no-console
     console.error(
