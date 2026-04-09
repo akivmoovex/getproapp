@@ -3,6 +3,9 @@
 /**
  * High-signal worker identity and env presence tracing (no secrets).
  * Used to compare env at earliest bootstrap vs after merge — application code does not mutate DATABASE_*.
+ *
+ * Temporary diagnostic: **DBURL_TEST** — set a dummy name/value in Hostinger (e.g. `yes`) to see if only
+ * `DATABASE_URL` is mishandled vs general worker env propagation. Never a secret; presence only.
  */
 
 const os = require("os");
@@ -12,12 +15,13 @@ function envKeyPresent(key) {
 }
 
 /**
- * @returns {{ DATABASE_URL: string, GETPRO_DATABASE_URL: string, SESSION_SECRET: string, BASE_DOMAIN: string }}
+ * @returns {{ DATABASE_URL: string, GETPRO_DATABASE_URL: string, DBURL_TEST: string, SESSION_SECRET: string, BASE_DOMAIN: string }}
  */
 function snapshotEnvPresenceYesNo() {
   return {
     DATABASE_URL: envKeyPresent("DATABASE_URL") ? "yes" : "no",
     GETPRO_DATABASE_URL: envKeyPresent("GETPRO_DATABASE_URL") ? "yes" : "no",
+    DBURL_TEST: envKeyPresent("DBURL_TEST") ? "yes" : "no",
     SESSION_SECRET: envKeyPresent("SESSION_SECRET") ? "yes" : "no",
     BASE_DOMAIN: envKeyPresent("BASE_DOMAIN") ? "yes" : "no",
   };
@@ -34,7 +38,23 @@ function logEnvTracePhase(phase, opts) {
   const nodeEnv = process.env.NODE_ENV || "(unset)";
   // eslint-disable-next-line no-console
   console.log(
-    `[getpro] envTrace phase=${phase} pid=${process.pid} ppid=${ppid} startupEntry=${entry} cwd=${process.cwd()} osHostname=${os.hostname()} NODE_ENV=${nodeEnv} DATABASE_URL=${s.DATABASE_URL} GETPRO_DATABASE_URL=${s.GETPRO_DATABASE_URL} SESSION_SECRET=${s.SESSION_SECRET} BASE_DOMAIN=${s.BASE_DOMAIN}`
+    `[getpro] envTrace phase=${phase} pid=${process.pid} ppid=${ppid} startupEntry=${entry} cwd=${process.cwd()} osHostname=${os.hostname()} NODE_ENV=${nodeEnv} DATABASE_URL=${s.DATABASE_URL} GETPRO_DATABASE_URL=${s.GETPRO_DATABASE_URL} DBURL_TEST=${s.DBURL_TEST} SESSION_SECRET=${s.SESSION_SECRET} BASE_DOMAIN=${s.BASE_DOMAIN}`
+  );
+}
+
+/**
+ * Temporary Hostinger diagnostic: single greppable line at earliest bootstrap (presence only).
+ * @param {{ startupEntry: string }} opts
+ */
+function logEnvPresenceDiagnosticLine(opts) {
+  const entry = opts.startupEntry != null ? String(opts.startupEntry) : "(unknown)";
+  const label = buildWorkerLabel(entry);
+  const s = snapshotEnvPresenceYesNo();
+  const hasDb = s.DATABASE_URL === "yes" || s.GETPRO_DATABASE_URL === "yes";
+  const classification = hasDb ? "HEALTHY_WORKER" : "MISCONFIGURED_WORKER";
+  // eslint-disable-next-line no-console
+  console.log(
+    `[getpro] envPresence workerLabel=${label} pid=${process.pid} classification=${classification} DATABASE_URL=${s.DATABASE_URL} GETPRO_DATABASE_URL=${s.GETPRO_DATABASE_URL} DBURL_TEST=${s.DBURL_TEST} SESSION_SECRET=${s.SESSION_SECRET} BASE_DOMAIN=${s.BASE_DOMAIN}`
   );
 }
 
@@ -71,7 +91,7 @@ function logWorkerIdentityLine(opts) {
  * @param {ReturnType<typeof snapshotEnvPresenceYesNo>} final
  */
 function logEnvPresenceLostIfAny(earliest, final) {
-  const keys = ["DATABASE_URL", "GETPRO_DATABASE_URL", "SESSION_SECRET", "BASE_DOMAIN"];
+  const keys = ["DATABASE_URL", "GETPRO_DATABASE_URL", "DBURL_TEST", "SESSION_SECRET", "BASE_DOMAIN"];
   const lost = keys.filter((k) => earliest[k] === "yes" && final[k] === "no");
   if (lost.length === 0) return;
   // eslint-disable-next-line no-console
@@ -85,6 +105,7 @@ function logEnvPresenceLostIfAny(earliest, final) {
 module.exports = {
   snapshotEnvPresenceYesNo,
   logEnvTracePhase,
+  logEnvPresenceDiagnosticLine,
   buildWorkerLabel,
   logWorkerIdentityLine,
   logEnvPresenceLostIfAny,

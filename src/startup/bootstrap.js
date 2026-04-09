@@ -15,6 +15,7 @@ const path = require("path");
 const {
   snapshotEnvPresenceYesNo,
   logEnvTracePhase,
+  logEnvPresenceDiagnosticLine,
   logWorkerIdentityLine,
   logEnvPresenceLostIfAny,
   buildWorkerLabel,
@@ -102,6 +103,7 @@ function runBootstrap() {
   const startupEntry = getStartupEntryLabel();
   const envPresenceEarliest = snapshotEnvPresenceYesNo();
   logEnvTracePhase("earliest", { startupEntry });
+  logEnvPresenceDiagnosticLine({ startupEntry });
 
   const appRoot = getAppRootFromBootstrap();
   const envPath = getEnvFilePath();
