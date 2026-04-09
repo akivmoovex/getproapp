@@ -224,22 +224,28 @@ async function getNextTenantId(pool) {
 }
 
 /**
+ * Canonical tenant seed rows (ids 1–8). Single source for bootstrap + tests.
+ * @type {ReadonlyArray<readonly [number, string, string, string]>}
+ */
+const CANONICAL_TENANT_SEED_ROWS = Object.freeze([
+  [1, "global", "Global", STAGES.ENABLED],
+  [2, "demo", "Demo", STAGES.ENABLED],
+  [3, "il", "Israel", STAGES.ENABLED],
+  [4, "zm", "Zambia", STAGES.ENABLED],
+  [5, "zw", "Zimbabwe", STAGES.ENABLED],
+  [6, "bw", "Botswana", STAGES.ENABLED],
+  [7, "za", "South Africa", STAGES.DISABLED],
+  [8, "na", "Namibia", STAGES.ENABLED],
+]);
+
+/**
  * Idempotent: insert canonical region rows (ids 1–8) if missing. Required for FK on admin_users.tenant_id
  * and for tenant-scoped bootstrap when ADMIN_ROLE is a tenant role. Safe on already-initialized DBs.
  * @param {import("pg").Pool} pool
  * @returns {Promise<number>} number of rows inserted (0–8)
  */
 async function ensureCanonicalTenantsIfMissing(pool) {
-  const rows = [
-    [1, "global", "Global", STAGES.ENABLED],
-    [2, "demo", "Demo", STAGES.ENABLED],
-    [3, "il", "Israel", STAGES.ENABLED],
-    [4, "zm", "Zambia", STAGES.ENABLED],
-    [5, "zw", "Zimbabwe", STAGES.ENABLED],
-    [6, "bw", "Botswana", STAGES.ENABLED],
-    [7, "za", "South Africa", STAGES.DISABLED],
-    [8, "na", "Namibia", STAGES.ENABLED],
-  ];
+  const rows = CANONICAL_TENANT_SEED_ROWS;
   let inserted = 0;
   for (const [id, slug, name, stage] of rows) {
     const r = await pool.query(
@@ -325,6 +331,7 @@ async function slugExistsExcludingId(pool, slug, excludeId) {
 }
 
 module.exports = {
+  CANONICAL_TENANT_SEED_ROWS,
   serializeTenantRow,
   getById,
   getByIdForAdminSettings,

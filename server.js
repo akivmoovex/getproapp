@@ -4,10 +4,10 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const session = require("express-session");
 
-// Load .env from the app root (next to server.js), not process.cwd() — Hostinger often uses another cwd.
-const envPath = path.join(__dirname, ".env");
-const dotenvResult = require("dotenv").config({ path: envPath, quiet: true });
-const dotenvKeyCount = Object.keys(dotenvResult.parsed || {}).length;
+const { loadAppDotenv, getStartupEntryLabel } = require("./src/startup/envBootstrap");
+const dotenvInfo = loadAppDotenv();
+const { envPath, dotenvKeyCount, dotenvErrorMessage } = dotenvInfo;
+const startupEntry = getStartupEntryLabel();
 
 const {
   getPgPool,
@@ -20,14 +20,15 @@ if (!isPgConfigured()) {
   // Inconsistent env across restarts (missing vars on some boots) is usually a deployment/supervisor issue:
   // wrong cwd, forked workers without panel env, or .env not loaded because the process was started outside the app root.
   logDatabaseEnvMissingDiagnostics({
-    label: "server",
+    label: "server.js (HTTP)",
     envPath,
     dotenvKeyCount,
-    dotenvErrorMessage: dotenvResult.error ? String(dotenvResult.error.message || dotenvResult.error) : null,
+    dotenvErrorMessage,
+    startupEntry,
   });
   // eslint-disable-next-line no-console
   console.error(
-    "[getpro] FATAL: Environment variables are missing in this process. PostgreSQL requires DATABASE_URL or GETPRO_DATABASE_URL. This is likely a hosting/restart configuration issue (panel env not applied to all workers, wrong cwd, or the process was started outside the app root so .env was not loaded). This misconfigured process will exit; fix env injection so every instance receives the database URL."
+    "[getpro] FATAL: MISCONFIGURED PROCESS — DATABASE_URL and GETPRO_DATABASE_URL are both missing in this Node process. PostgreSQL is mandatory; this worker cannot start. Fix host env injection for every worker (panel env for all instances, correct cwd, or ensure .env is beside server.js when using file-based config). Healthy workers on the same host will still log \"Healthy process: DB URL env present\"."
   );
   const exitDelayMs = Math.min(
     Math.max(Number(process.env.GETPRO_DB_MISSING_EXIT_DELAY_MS ?? 1500), 0),
@@ -53,12 +54,12 @@ if (!isPgConfigured()) {
 
 const { db, verifyProductionPgOnlyRuntime } = require("./src/db");
 verifyProductionPgOnlyRuntime();
-logPgStartupDiagnostics({ envPath, dotenvKeyCount });
+logPgStartupDiagnostics({ envPath, dotenvKeyCount, startupEntry });
 
 // One-line diagnostics (no secrets). Hosting env vars exist before Node runs; .env only adds keys if the file exists.
 // eslint-disable-next-line no-console
 console.log(
-  `[getpro] cwd=${process.cwd()} | .env file keys=${dotenvKeyCount} (${envPath}) | databaseUrl=${getDatabaseUrlEnvName()} | ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? "set" : "MISSING"} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"} | HOST=${process.env.HOST || "(default 0.0.0.0)"}`
+  `[getpro] cwd=${process.cwd()} | startup entry=${startupEntry} | .env file keys=${dotenvKeyCount} (${envPath}) | databaseUrl=${getDatabaseUrlEnvName()} | ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? "set" : "MISSING"} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"} | HOST=${process.env.HOST || "(default 0.0.0.0)"}`
 );
 
 const { ensureAdminUser } = require("./src/auth");
@@ -71,6 +72,7 @@ const { ensureContentLocaleSchema } = require("./src/db/pg/ensureContentLocaleSc
 const { tenantHomeHrefFromPrefix } = require("./src/lib/tenantHomeHref");
 const { opsHrefMiddleware, marketingApexLoginRedirectTarget } = require("./src/lib/marketingOperationalUrls");
 const { getSubdomain, resolveHostname } = require("./src/platform/host");
+const { formatHostTenantDebugLine, listExplicitRegionalHostExamples } = require("./src/platform/tenantHostRouting");
 
 const {
   createAttachTenantByHost,
@@ -258,16 +260,21 @@ app.use((req, res, next) => {
 // Tenant + region context before /api and /admin so staff routes can compute tenant-aware links (e.g. Cancel → regional home).
 app.use(createAttachTenantByHost());
 
-if (process.env.GETPRO_DEBUG_ROUTING === "1" || process.env.DEBUG_HOST === "1") {
+if (
+  process.env.GETPRO_DEBUG_ROUTING === "1" ||
+  process.env.DEBUG_HOST === "1" ||
+  process.env.GETPRO_LOG_HOST_TENANT === "1"
+) {
   app.use((req, res, next) => {
     const rawHost = req.get("host") || "(none)";
     const resolved = resolveHostname(req);
     const sub = req.subdomain != null ? req.subdomain : "(none)";
-    const tenantSlug = req.tenant ? req.tenant.slug : "(none)";
     // eslint-disable-next-line no-console
     console.log(`[routing] incoming host header: ${rawHost}`);
     // eslint-disable-next-line no-console
-    console.log(`[routing] Host: ${resolved} → subdomain: ${sub} → tenant: ${tenantSlug}`);
+    console.log(`[routing] Host: ${resolved} → subdomain: ${sub}`);
+    // eslint-disable-next-line no-console
+    console.log(`[getpro] ${formatHostTenantDebugLine(req, req.tenant)}`);
     next();
   });
 }
@@ -450,9 +457,10 @@ ensureAdminUser({ pool: pgPoolForBoot })
       console.log(`GetPro listening on ${host}:${port}`);
       const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
       if (base) {
+        const examples = listExplicitRegionalHostExamples(base);
         // eslint-disable-next-line no-console
         console.log(
-          `[getpro] Subdomain routing: zm.${base} → Zambia (tenant zm), il.${base} → Israel (tenant il). Requires reverse proxy to forward Host unchanged.`
+          `[getpro] Subdomain routing (platform tenants): demo.${base}→tenant demo, zm.${base}→tenant zm, il.${base}→tenant il. Examples: ${examples.join(", ")}. Requires reverse proxy to forward Host / X-Forwarded-Host unchanged.`
         );
       }
     });

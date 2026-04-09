@@ -8,9 +8,9 @@
  * Usage: npm run test:pg:repos
  */
 
-const path = require("path");
-const dotenvPath = path.join(__dirname, "..", ".env");
-const dotenvResult = require("dotenv").config({ path: dotenvPath, quiet: true });
+const { loadAppDotenv, getStartupEntryLabel } = require("../src/startup/envBootstrap");
+const { envPath, dotenvKeyCount, dotenvErrorMessage } = loadAppDotenv();
+const startupEntry = getStartupEntryLabel();
 
 const {
   getPgPool,
@@ -24,10 +24,11 @@ const {
 async function main() {
   if (!isPgConfigured()) {
     logDatabaseEnvMissingDiagnostics({
-      label: "test:pg:repos",
-      envPath: dotenvPath,
-      dotenvKeyCount: Object.keys(dotenvResult.parsed || {}).length,
-      dotenvErrorMessage: dotenvResult.error ? String(dotenvResult.error.message || dotenvResult.error) : null,
+      label: "scripts/test-pg-repos.js",
+      envPath,
+      dotenvKeyCount,
+      dotenvErrorMessage,
+      startupEntry,
     });
     // eslint-disable-next-line no-console
     console.log(

@@ -3,7 +3,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { summarizeDatabaseUrlEnv, getDatabaseUrl } = require("../src/db/pg/pool");
+const { summarizeDatabaseUrlEnv, getDatabaseUrl, getStartupProcessSnapshot } = require("../src/db/pg/pool");
 
 test("summarizeDatabaseUrlEnv: neither set", () => {
   const prev = { d: process.env.DATABASE_URL, g: process.env.GETPRO_DATABASE_URL };
@@ -97,6 +97,12 @@ test("getDatabaseUrl: empty when both unset", () => {
     if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
     else delete process.env.GETPRO_DATABASE_URL;
   }
+});
+
+test("getStartupProcessSnapshot: includes startupEntry when provided", () => {
+  const snap = getStartupProcessSnapshot({ startupEntry: "/app/server.js" });
+  assert.equal(snap.startupEntry, "/app/server.js");
+  assert.ok(Number.isFinite(snap.pid));
 });
 
 test("summarizeDatabaseUrlEnv: whitespace-only counts as unset", () => {

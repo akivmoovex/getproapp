@@ -153,25 +153,31 @@ function getPoolConnectionOptions() {
 
 /**
  * Process / host context for correlating logs when env injection differs between restarts.
- * @returns {{ pid: number, ppid: number|null, hostname: string, cwd: string, nodeEnv: string }}
+ * @param {{ startupEntry?: string }} [extra]
+ * @returns {{ pid: number, ppid: number|null, hostname: string, cwd: string, nodeEnv: string, startupEntry: string }}
  */
-function getStartupProcessSnapshot() {
+function getStartupProcessSnapshot(extra = {}) {
+  const startupEntry =
+    extra.startupEntry != null && String(extra.startupEntry).trim() !== ""
+      ? String(extra.startupEntry).trim()
+      : "(unknown)";
   return {
     pid: process.pid,
     ppid: typeof process.ppid === "number" ? process.ppid : null,
     hostname: os.hostname(),
     cwd: process.cwd(),
     nodeEnv: process.env.NODE_ENV || "(unset)",
+    startupEntry,
   };
 }
 
 /**
  * When DATABASE_URL / GETPRO_DATABASE_URL are absent, print safe diagnostics (no secrets).
- * @param {{ label?: string, envPath?: string, dotenvKeyCount?: number, dotenvErrorMessage?: string|null }} [opts]
+ * @param {{ label?: string, envPath?: string, dotenvKeyCount?: number, dotenvErrorMessage?: string|null, startupEntry?: string }} [opts]
  */
 function logDatabaseEnvMissingDiagnostics(opts = {}) {
   const label = opts.label != null ? String(opts.label) : "server";
-  const snap = getStartupProcessSnapshot();
+  const snap = getStartupProcessSnapshot({ startupEntry: opts.startupEntry });
   const { hasDatabaseUrl, hasGetproDatabaseUrl, effectiveSource } = summarizeDatabaseUrlEnv();
   const envPath = opts.envPath != null ? String(opts.envPath) : "(unknown)";
   const dk = opts.dotenvKeyCount;
@@ -182,13 +188,15 @@ function logDatabaseEnvMissingDiagnostics(opts = {}) {
       : null;
 
   const lines = [
-    `[getpro] PostgreSQL: configuration missing (${label})`,
+    `[getpro] PostgreSQL: MISCONFIGURED PROCESS — no database URL in this Node process (${label})`,
+    `  (Other workers may still be healthy if the host injected DATABASE_URL/GETPRO_DATABASE_URL only for some instances.)`,
     `  DATABASE_URL present: ${hasDatabaseUrl ? "yes" : "no"}`,
     `  GETPRO_DATABASE_URL present: ${hasGetproDatabaseUrl ? "yes" : "no"}`,
     `  Effective DB env source (would be): ${effectiveSource}`,
-    `  pid: ${snap.pid} | ppid: ${snap.ppid != null ? snap.ppid : "(unavailable)"} | hostname: ${snap.hostname}`,
+    `  pid: ${snap.pid} | ppid: ${snap.ppid != null ? snap.ppid : "(unavailable)"} | hostname (OS): ${snap.hostname}`,
     `  cwd: ${snap.cwd}`,
     `  NODE_ENV: ${snap.nodeEnv}`,
+    `  startup entry: ${snap.startupEntry}`,
     `  .env path: ${envPath}`,
     `  .env keys loaded: ${dotenvKeyLabel}`,
   ];
@@ -205,7 +213,7 @@ function logDatabaseEnvMissingDiagnostics(opts = {}) {
 }
 
 /**
- * @param {{ envPath?: string, dotenvKeyCount?: number }} [dotenvInfo] — optional; from server.js dotenv.config next to server.js
+ * @param {{ envPath?: string, dotenvKeyCount?: number, startupEntry?: string }} [dotenvInfo] — optional; from loadAppDotenv + entry path
  */
 function logPgStartupDiagnostics(dotenvInfo) {
   if (startupLogged || !isPgConfigured()) return;
@@ -213,7 +221,7 @@ function logPgStartupDiagnostics(dotenvInfo) {
   const { sslLabel } = getPoolConnectionOptions();
   const urlName = getDatabaseUrlEnvName();
   const { hasDatabaseUrl, hasGetproDatabaseUrl } = summarizeDatabaseUrlEnv();
-  const snap = getStartupProcessSnapshot();
+  const snap = getStartupProcessSnapshot({ startupEntry: dotenvInfo && dotenvInfo.startupEntry });
   const nodeEnv = process.env.NODE_ENV || "(unset)";
   const mode = process.env.NODE_ENV === "production" ? "production" : "development";
   const max = Number(process.env.GETPRO_PG_POOL_MAX) || 10;
@@ -228,7 +236,9 @@ function logPgStartupDiagnostics(dotenvInfo) {
     `[getpro] PostgreSQL env flags: DATABASE_URL=${hasDatabaseUrl ? "yes" : "no"} GETPRO_DATABASE_URL=${hasGetproDatabaseUrl ? "yes" : "no"} | effective=${urlName} | pid=${snap.pid} ppid=${snap.ppid != null ? snap.ppid : "n/a"} host=${snap.hostname}`
   );
   // eslint-disable-next-line no-console
-  console.log(`[getpro] Process: cwd=${snap.cwd}`);
+  console.log(
+    `[getpro] Healthy process: DB URL env present in this worker | startup entry=${snap.startupEntry} | cwd=${snap.cwd}`
+  );
   if (dotenvInfo && (dotenvInfo.envPath != null || dotenvInfo.dotenvKeyCount != null)) {
     const ep = dotenvInfo.envPath != null ? String(dotenvInfo.envPath) : "(unknown)";
     const kc = dotenvInfo.dotenvKeyCount != null ? String(dotenvInfo.dotenvKeyCount) : "(unknown)";

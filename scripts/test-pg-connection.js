@@ -9,19 +9,20 @@
  * Requires: DATABASE_URL or GETPRO_DATABASE_URL when you want an actual test.
  */
 
-const path = require("path");
-const dotenvPath = path.join(__dirname, "..", ".env");
-const dotenvResult = require("dotenv").config({ path: dotenvPath, quiet: true });
+const { loadAppDotenv, getStartupEntryLabel } = require("../src/startup/envBootstrap");
+const { envPath, dotenvKeyCount, dotenvErrorMessage } = loadAppDotenv();
+const startupEntry = getStartupEntryLabel();
 
 const { getPgPool, isPgConfigured, closePgPool, logDatabaseEnvMissingDiagnostics } = require("../src/db/pg");
 
 async function main() {
   if (!isPgConfigured()) {
     logDatabaseEnvMissingDiagnostics({
-      label: "test:pg",
-      envPath: dotenvPath,
-      dotenvKeyCount: Object.keys(dotenvResult.parsed || {}).length,
-      dotenvErrorMessage: dotenvResult.error ? String(dotenvResult.error.message || dotenvResult.error) : null,
+      label: "scripts/test-pg-connection.js",
+      envPath,
+      dotenvKeyCount,
+      dotenvErrorMessage,
+      startupEntry,
     });
     // eslint-disable-next-line no-console
     console.log(
