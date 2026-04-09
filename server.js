@@ -34,7 +34,7 @@ if (!isPgConfigured()) {
   });
   // eslint-disable-next-line no-console
   console.error(
-    "[getpro] FATAL: MISCONFIGURED WORKER — DATABASE_URL and GETPRO_DATABASE_URL are both missing. PostgreSQL is mandatory; this process exits. Fix: set DATABASE_URL (or GETPRO_DATABASE_URL) in Hostinger → Website → Environment variables for **every** Node worker. In production the app does not load a `.env` file. Healthy workers log \"Healthy worker: DB URL available after bootstrap\"."
+    "[getpro] FATAL: MISCONFIGURED WORKER — DATABASE_URL and GETPRO_DATABASE_URL are both missing. PostgreSQL is mandatory; this process exits. Fix: set DATABASE_URL (or GETPRO_DATABASE_URL) in Hostinger → Environment variables for **every** Node worker and/or the Hostinger-recommended `.env.production` (see bootstrap log `productionEnvFile`; missing keys only; injected env wins). Healthy workers log \"Healthy worker: DB URL available after bootstrap\"."
   );
   const exitDelayMs = Math.min(
     Math.max(Number(process.env.GETPRO_DB_MISSING_EXIT_DELAY_MS ?? 1500), 0),
@@ -70,7 +70,7 @@ logPgStartupDiagnostics({
 const { assertProductionRequiredEnvOrExit } = require("./src/startup/productionEnvGate");
 assertProductionRequiredEnvOrExit(boot);
 
-// One-line diagnostics (no secrets). In production, variables come from Hostinger only; locally, `.env` may be merged when NODE_ENV is not production.
+// One-line diagnostics (no secrets). In production, Hostinger env first; optional production `.env.production` fills missing keys; locally, repo `.env` may be merged when NODE_ENV is not production.
 // eslint-disable-next-line no-console
 console.log(
   `[getpro] cwd=${process.cwd()} | startup entry=${boot.startupEntry} | dotenvKeysMerged=${boot.dotenvKeyCount} (${boot.envPath}) | databaseUrl=${getDatabaseUrlEnvName()} | ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? "set" : "MISSING"} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"} | HOST=${process.env.HOST || "(default 0.0.0.0)"}`

@@ -233,7 +233,7 @@ function logDatabaseEnvMissingDiagnostics(opts = {}) {
     lines.push(`  dotenv: ${dotenvErr}`);
   }
   lines.push(
-    `  Note: Ensure DATABASE_URL is set in Hostinger → Environment variables for every Node worker. In production (NODE_ENV=production) the app does not load .env — use panel env only.`
+    `  Note: Ensure DATABASE_URL is set in Hostinger → Environment variables for every Node worker and/or the Hostinger-recommended production .env file (bootstrap log productionEnvFile; missing keys only).`
   );
   for (const line of lines) {
     // eslint-disable-next-line no-console
@@ -281,7 +281,7 @@ function logPgStartupDiagnostics(dotenvInfo) {
     const kc = dotenvInfo.dotenvKeyCount != null ? String(dotenvInfo.dotenvKeyCount) : "(unknown)";
     // eslint-disable-next-line no-console
     console.log(
-      `[getpro] dotenv: path=${ep} keysLoaded=${kc} (non-production only; NODE_ENV=production skips .env — use Hostinger env)`
+      `[getpro] dotenv: path=${ep} keysLoaded=${kc} (repo .env merged when not production; production uses Hostinger env + optional productionEnvFile — see bootstrap logs)`
     );
   }
 }

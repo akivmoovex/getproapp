@@ -102,10 +102,30 @@ function logEnvPresenceLostIfAny(earliest, final) {
   );
 }
 
+/**
+ * Production-only: Hostinger-recommended `.env.production` merge (override:false). No values.
+ * @param {{ startupEntry: string, path: string, exists: boolean, loaded: boolean, mergeSkipped?: boolean, filledKeys: string[], error: string|null, presence: { DATABASE_URL: string, GETPRO_DATABASE_URL: string, SESSION_SECRET: string, BASE_DOMAIN: string } }} opts
+ */
+function logProductionEnvFileFallback(opts) {
+  const label = buildWorkerLabel(opts.startupEntry);
+  const filled = opts.filledKeys && opts.filledKeys.length ? opts.filledKeys.join(",") : "none";
+  const err = opts.error != null && String(opts.error).trim() !== "" ? String(opts.error).trim().slice(0, 200) : null;
+  const mergeSkipped = opts.mergeSkipped === true ? "yes" : "no";
+  // eslint-disable-next-line no-console
+  console.log(
+    `[getpro] productionEnvFile path=${opts.path} exists=${opts.exists ? "yes" : "no"} loaded=${opts.loaded ? "yes" : "no"} mergeSkipped=${mergeSkipped} filledKeys=${filled} workerLabel=${label} pid=${process.pid} DATABASE_URL=${opts.presence.DATABASE_URL} GETPRO_DATABASE_URL=${opts.presence.GETPRO_DATABASE_URL} SESSION_SECRET=${opts.presence.SESSION_SECRET} BASE_DOMAIN=${opts.presence.BASE_DOMAIN}`
+  );
+  if (err) {
+    // eslint-disable-next-line no-console
+    console.warn(`[getpro] productionEnvFile: read/parse issue (message truncated, no values): ${err}`);
+  }
+}
+
 module.exports = {
   snapshotEnvPresenceYesNo,
   logEnvTracePhase,
   logEnvPresenceDiagnosticLine,
+  logProductionEnvFileFallback,
   buildWorkerLabel,
   logWorkerIdentityLine,
   logEnvPresenceLostIfAny,

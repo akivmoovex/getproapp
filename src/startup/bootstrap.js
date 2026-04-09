@@ -2,10 +2,12 @@
 
 /**
  * Single shared bootstrap for server.js and CLI scripts.
- * - **Production (`NODE_ENV=production`):** does **not** load `.env` — use Hostinger / `process.env` only.
+ * - **Production (`NODE_ENV=production`):** does **not** load repo-root `.env` — Hostinger-injected `process.env` first.
+ *   Then, if present, merges **only missing keys** from the Hostinger-recommended production file
+ *   (`GETPRO_PRODUCTION_ENV_FILE_FALLBACK` or default path) with `override: false` (injected env wins).
  * - **Non-production:** loads `.env` from app root (path from this file, not `cwd`) unless `GETPRO_SKIP_DOTENV=1`.
- * - Snapshots DB-related env before optional dotenv merge (dev) for provenance logging.
- * - `dotenv` does not override existing process.env keys (default).
+ * - Snapshots DB-related env before any file merge for provenance logging.
+ * - `dotenv` does not override existing process.env keys (`override: false`).
  *
  * LiteSpeed may set `require.main.filename` to `.../lsnode.js` — expected; app paths still resolve from this repo.
  */
@@ -16,10 +18,15 @@ const {
   snapshotEnvPresenceYesNo,
   logEnvTracePhase,
   logEnvPresenceDiagnosticLine,
+  logProductionEnvFileFallback,
   logWorkerIdentityLine,
   logEnvPresenceLostIfAny,
   buildWorkerLabel,
 } = require("./workerEnvTrace");
+
+/** Hostinger-recommended path; fills missing keys only (`override: false`). Override with GETPRO_PRODUCTION_ENV_FILE_FALLBACK. */
+const DEFAULT_PRODUCTION_ENV_FILE_FALLBACK =
+  "/home/u549637099/domains/pronline.org/nodejs/.env.production";
 
 /** @type {object | null} */
 let _bootstrapSingleton = null;
@@ -33,6 +40,12 @@ function snapshotDbEnvPresence() {
     DATABASE_URL: envStringIsSet(process.env.DATABASE_URL),
     GETPRO_DATABASE_URL: envStringIsSet(process.env.GETPRO_DATABASE_URL),
   };
+}
+
+/** True if Hostinger (or prior env) already has all vars the production file is allowed to rescue. */
+function hostHasAllProductionRescueVars() {
+  const hasDb = envStringIsSet(process.env.DATABASE_URL) || envStringIsSet(process.env.GETPRO_DATABASE_URL);
+  return hasDb && envStringIsSet(process.env.SESSION_SECRET) && envStringIsSet(process.env.BASE_DOMAIN);
 }
 
 function getAppRootFromBootstrap() {
@@ -65,12 +78,14 @@ function isLiteSpeedLsnodeEntry(entry) {
 /**
  * Classify where the effective Postgres URL came from (never log the value).
  * @param {{ DATABASE_URL: boolean, GETPRO_DATABASE_URL: boolean }} before
- * @param {string[]} parsedDotenvKeys — keys dotenv read from the `.env` file
+ * @param {string[]} parsedDotenvKeys — keys dotenv read from repo `.env` (non-production)
  * @param {string} effectiveVarName — from pool.getDatabaseUrlEnvName()
+ * @param {{ productionFileKeys?: string[] }} [opts]
  * @returns {{ kind: string, logLine: string }}
  */
-function computeDbUrlProvenance(before, parsedDotenvKeys, effectiveVarName) {
+function computeDbUrlProvenance(before, parsedDotenvKeys, effectiveVarName, opts) {
   const parsed = new Set(parsedDotenvKeys);
+  const parsedProd = new Set((opts && opts.productionFileKeys) || []);
   if (effectiveVarName === "(none)") {
     return {
       kind: "none",
@@ -82,18 +97,24 @@ function computeDbUrlProvenance(before, parsedDotenvKeys, effectiveVarName) {
   if (hostHad) {
     return {
       kind: "host",
-      logLine: `dbUrlSource=host-injected var=${key} (present before dotenv merge; dotenv does not override existing keys)`,
+      logLine: `dbUrlSource=host-injected var=${key} (present before file merge; existing env is never overwritten)`,
     };
   }
   if (parsed.has(key)) {
     return {
       kind: "dotenv",
-      logLine: `dbUrlSource=dotenv-file var=${key} (local .env only; not used when NODE_ENV=production)`,
+      logLine: `dbUrlSource=dotenv-file var=${key} (repo .env; non-production)`,
+    };
+  }
+  if (parsedProd.has(key)) {
+    return {
+      kind: "production-file",
+      logLine: `dbUrlSource=production-env-file var=${key} (Hostinger .env.production path; override=false; missing keys only)`,
     };
   }
   return {
     kind: "unknown",
-    logLine: `dbUrlSource=unknown var=${key} (not in pre-dotenv snapshot or .env key list; check inherited env)`,
+    logLine: `dbUrlSource=unknown var=${key} (not in host snapshot or known file key lists; check inherited env)`,
   };
 }
 
@@ -115,7 +136,7 @@ function runBootstrap() {
   const isProduction = process.env.NODE_ENV === "production";
   const skipDotenvExplicit =
     process.env.GETPRO_SKIP_DOTENV === "1" || String(process.env.GETPRO_SKIP_DOTENV || "").toLowerCase() === "true";
-  /** In production, never merge `.env` — deployments must use panel/host env only. */
+  /** In production, never merge repo-root `.env` — use Hostinger env + optional production file path. */
   const skipDotenv = isProduction || skipDotenvExplicit;
   let dotenvKeyCount = 0;
   let dotenvErrorMessage = null;
@@ -129,6 +150,58 @@ function runBootstrap() {
     dotenvErrorMessage = dotenvResult.error ? String(dotenvResult.error.message || dotenvResult.error) : null;
   }
 
+  /** @type {string|null} */
+  let productionEnvFilePath = null;
+  let productionFileExists = false;
+  let productionFileLoaded = false;
+  /** @type {string[]} */
+  let productionFileParsedKeys = [];
+  /** @type {string[]} */
+  let productionFileFilledKeys = [];
+  /** @type {string|null} */
+  let productionFileError = null;
+  /** merge skipped: host already had DB URL + SESSION_SECRET + BASE_DOMAIN (optional DBURL_TEST only fills when merge runs). */
+  let productionFileMergeSkipped = false;
+
+  if (isProduction) {
+    const rawPath = String(process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK || "").trim();
+    productionEnvFilePath = rawPath || DEFAULT_PRODUCTION_ENV_FILE_FALLBACK;
+    productionFileExists = fs.existsSync(productionEnvFilePath);
+    const snapBeforeProdFile = snapshotEnvPresenceYesNo();
+    const needsRescueFromFile = !hostHasAllProductionRescueVars();
+    if (productionFileExists && needsRescueFromFile) {
+      const dotenvProd = require("dotenv").config({
+        path: productionEnvFilePath,
+        override: false,
+        quiet: true,
+      });
+      productionFileParsedKeys = Object.keys(dotenvProd.parsed || {});
+      productionFileError = dotenvProd.error ? String(dotenvProd.error.message || dotenvProd.error) : null;
+      productionFileLoaded = !dotenvProd.error;
+      const snapAfter = snapshotEnvPresenceYesNo();
+      const rescueKeys = ["DATABASE_URL", "GETPRO_DATABASE_URL", "SESSION_SECRET", "BASE_DOMAIN", "DBURL_TEST"];
+      productionFileFilledKeys = rescueKeys.filter((k) => snapBeforeProdFile[k] === "no" && snapAfter[k] === "yes");
+    } else if (productionFileExists && !needsRescueFromFile) {
+      productionFileMergeSkipped = true;
+    }
+    const fin = snapshotEnvPresenceYesNo();
+    logProductionEnvFileFallback({
+      startupEntry,
+      path: productionEnvFilePath,
+      exists: productionFileExists,
+      loaded: productionFileLoaded,
+      mergeSkipped: productionFileMergeSkipped,
+      filledKeys: productionFileFilledKeys,
+      error: productionFileError,
+      presence: {
+        DATABASE_URL: fin.DATABASE_URL,
+        GETPRO_DATABASE_URL: fin.GETPRO_DATABASE_URL,
+        SESSION_SECRET: fin.SESSION_SECRET,
+        BASE_DOMAIN: fin.BASE_DOMAIN,
+      },
+    });
+  }
+
   logEnvTracePhase("after_dotenv_merge", { startupEntry });
 
   const envFileExists = fs.existsSync(envPath);
@@ -136,7 +209,9 @@ function runBootstrap() {
   // Pool reads merged process.env; load after dotenv (read-only — does not mutate process.env).
   const { getDatabaseUrlEnvName } = require("../db/pg/pool");
   const effectiveVarName = getDatabaseUrlEnvName();
-  const dbProvenance = computeDbUrlProvenance(beforeDb, parsedDotenvKeys, effectiveVarName);
+  const dbProvenance = computeDbUrlProvenance(beforeDb, parsedDotenvKeys, effectiveVarName, {
+    productionFileKeys: productionFileParsedKeys,
+  });
 
   const envPresenceFinal = snapshotEnvPresenceYesNo();
   logEnvTracePhase("bootstrap_complete", { startupEntry });
@@ -166,6 +241,13 @@ function runBootstrap() {
     workerLabel: buildWorkerLabel(startupEntry),
     envPresenceEarliest,
     envPresenceFinal,
+    productionEnvFilePath,
+    productionFileExists,
+    productionFileLoaded,
+    productionFileParsedKeys,
+    productionFileFilledKeys,
+    productionFileError,
+    productionFileMergeSkipped,
   };
   return _bootstrapSingleton;
 }
@@ -178,13 +260,17 @@ function logBootstrapMarker(boot) {
   };
   const ls = boot.liteSpeedLsnode ? "yes (HTTP app still loaded from project; see serverJs path)" : "no";
   const dotenvWhy = boot.dotenvSkippedForProduction
-    ? "skipped (NODE_ENV=production; Hostinger env only)"
+    ? "skipped repo .env (NODE_ENV=production)"
     : boot.skipDotenv
       ? "skipped (GETPRO_SKIP_DOTENV)"
       : `merged (${boot.dotenvKeyCount} keys from .env)`;
+  const prodFileWhy =
+    boot.productionEnvFilePath != null
+      ? ` | productionEnvFile path=${boot.productionEnvFilePath} exists=${boot.productionFileExists ? "yes" : "no"} loaded=${boot.productionFileLoaded ? "yes" : "no"} mergeSkipped=${boot.productionFileMergeSkipped ? "yes" : "no"} filled=${boot.productionFileFilledKeys && boot.productionFileFilledKeys.length ? boot.productionFileFilledKeys.join(",") : "none"}`
+      : "";
   // eslint-disable-next-line no-console
   console.log(
-    `[getpro] bootstrap: appRoot=${boot.appRoot} | serverJs=${boot.serverJsPath} | bootstrapModule=${boot.bootstrapModulePath} | startupEntry=${boot.startupEntry} | liteSpeedLsnode=${ls} | pid=${snap.pid} | cwd=${snap.cwd} | envFileExists=${boot.envFileExists ? "yes" : "no"} | dotenv=${dotenvWhy} | ${boot.dbProvenance.logLine}`
+    `[getpro] bootstrap: appRoot=${boot.appRoot} | serverJs=${boot.serverJsPath} | bootstrapModule=${boot.bootstrapModulePath} | startupEntry=${boot.startupEntry} | liteSpeedLsnode=${ls} | pid=${snap.pid} | cwd=${snap.cwd} | envFileExists=${boot.envFileExists ? "yes" : "no"} | dotenv=${dotenvWhy}${prodFileWhy} | ${boot.dbProvenance.logLine}`
   );
 }
 
@@ -198,6 +284,7 @@ module.exports = {
   logBootstrapMarker,
   computeDbUrlProvenance,
   snapshotDbEnvPresence,
+  hostHasAllProductionRescueVars,
   getAppRootFromBootstrap,
   getEnvFilePath,
   getServerJsPath,
@@ -205,4 +292,5 @@ module.exports = {
   getStartupEntryLabel,
   isLiteSpeedLsnodeEntry,
   resetBootstrapForTests,
+  DEFAULT_PRODUCTION_ENV_FILE_FALLBACK,
 };

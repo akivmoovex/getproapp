@@ -52,6 +52,17 @@ test("computeDbUrlProvenance: none", () => {
   assert.equal(p.kind, "none");
 });
 
+test("computeDbUrlProvenance: production-env-file DATABASE_URL", () => {
+  const p = computeDbUrlProvenance(
+    { DATABASE_URL: false, GETPRO_DATABASE_URL: false },
+    [],
+    "DATABASE_URL",
+    { productionFileKeys: ["DATABASE_URL"] }
+  );
+  assert.equal(p.kind, "production-file");
+  assert.match(p.logLine, /production-env-file/);
+});
+
 test("isLiteSpeedLsnodeEntry detects LiteSpeed wrapper path", () => {
   assert.equal(isLiteSpeedLsnodeEntry("/usr/local/lsws/fcgi-bin/lsnode.js"), true);
   assert.equal(isLiteSpeedLsnodeEntry("/home/app/server.js"), false);

@@ -44,7 +44,7 @@ function logProductionEnvDiagnostics(boot) {
   const s = summarizeProductionEnvPresence();
   const entry = boot && boot.startupEntry != null ? String(boot.startupEntry) : "(unknown)";
   const lines = [
-    "[getpro] Production env check (Hostinger / process.env only — .env file is not loaded in production):",
+    "[getpro] Production env check (Hostinger first; repo .env not merged; optional Hostinger-recommended .env.production fills missing keys only):",
     `  NODE_ENV: production`,
     `  pid: ${process.pid} | ppid: ${typeof process.ppid === "number" ? process.ppid : "n/a"} | hostname (OS): ${os.hostname()}`,
     `  cwd: ${process.cwd()}`,
@@ -73,7 +73,7 @@ function assertProductionRequiredEnvOrExit(boot) {
   console.error(
     `[getpro] FATAL: MISCONFIGURED WORKER — production is missing required environment variable(s): ${missing.join(
       ", "
-    )}. Set them in Hostinger → Website → Settings & Redeploy (Environment variables) for every Node worker. Do not rely on a .env file in production.`
+    )}. Set them in Hostinger → Environment variables for every Node worker, and/or place missing keys in the Hostinger-recommended production env file (see bootstrap log: productionEnvFile; override=false — injected env wins).`
   );
   process.exit(1);
 }
