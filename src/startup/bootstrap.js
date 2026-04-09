@@ -2,13 +2,12 @@
 
 /**
  * Single shared bootstrap for server.js and CLI scripts.
- * - Snapshots DB-related env *before* optional dotenv merge (host-injected vs file).
- * - Loads `.env` from app root (path derived from this file, never `process.cwd()` alone).
- * - `dotenv` does not override existing process.env keys (default), so healthy LiteSpeed workers
- *   keep host DATABASE_URL; workers without host injection can pick up DATABASE_URL from `.env`.
+ * - **Production (`NODE_ENV=production`):** does **not** load `.env` — use Hostinger / `process.env` only.
+ * - **Non-production:** loads `.env` from app root (path from this file, not `cwd`) unless `GETPRO_SKIP_DOTENV=1`.
+ * - Snapshots DB-related env before optional dotenv merge (dev) for provenance logging.
+ * - `dotenv` does not override existing process.env keys (default).
  *
- * LiteSpeed often sets `require.main.filename` to `/usr/local/lsws/fcgi-bin/lsnode.js` — that is expected;
- * app root for `.env` is still resolved from this module location beside `server.js`.
+ * LiteSpeed may set `require.main.filename` to `.../lsnode.js` — expected; app paths still resolve from this repo.
  */
 
 const fs = require("fs");
@@ -81,7 +80,7 @@ function computeDbUrlProvenance(before, parsedDotenvKeys, effectiveVarName) {
   if (parsed.has(key)) {
     return {
       kind: "dotenv",
-      logLine: `dbUrlSource=dotenv-file var=${key} (.env beside app root; host did not inject this var in this worker)`,
+      logLine: `dbUrlSource=dotenv-file var=${key} (local .env only; not used when NODE_ENV=production)`,
     };
   }
   return {
@@ -101,8 +100,11 @@ function runBootstrap() {
   const liteSpeedLsnode = isLiteSpeedLsnodeEntry(startupEntry);
 
   const beforeDb = snapshotDbEnvPresence();
-  const skipDotenv =
+  const isProduction = process.env.NODE_ENV === "production";
+  const skipDotenvExplicit =
     process.env.GETPRO_SKIP_DOTENV === "1" || String(process.env.GETPRO_SKIP_DOTENV || "").toLowerCase() === "true";
+  /** In production, never merge `.env` — deployments must use panel/host env only. */
+  const skipDotenv = isProduction || skipDotenvExplicit;
   let dotenvKeyCount = 0;
   let dotenvErrorMessage = null;
   /** @type {string[]} */
@@ -131,6 +133,7 @@ function runBootstrap() {
     liteSpeedLsnode,
     beforeDb,
     skipDotenv,
+    dotenvSkippedForProduction: isProduction,
     dotenvKeyCount,
     dotenvErrorMessage,
     parsedDotenvKeys,
@@ -148,9 +151,14 @@ function logBootstrapMarker(boot) {
     cwd: process.cwd(),
   };
   const ls = boot.liteSpeedLsnode ? "yes (HTTP app still loaded from project; see serverJs path)" : "no";
+  const dotenvWhy = boot.dotenvSkippedForProduction
+    ? "skipped (NODE_ENV=production; Hostinger env only)"
+    : boot.skipDotenv
+      ? "skipped (GETPRO_SKIP_DOTENV)"
+      : `merged (${boot.dotenvKeyCount} keys from .env)`;
   // eslint-disable-next-line no-console
   console.log(
-    `[getpro] bootstrap: appRoot=${boot.appRoot} | serverJs=${boot.serverJsPath} | bootstrapModule=${boot.bootstrapModulePath} | startupEntry=${boot.startupEntry} | liteSpeedLsnode=${ls} | pid=${snap.pid} | cwd=${snap.cwd} | envFileExists=${boot.envFileExists ? "yes" : "no"} | dotenvSkipped=${boot.skipDotenv ? "yes" : "no"} | dotenvKeysLoaded=${boot.dotenvKeyCount} | ${boot.dbProvenance.logLine}`
+    `[getpro] bootstrap: appRoot=${boot.appRoot} | serverJs=${boot.serverJsPath} | bootstrapModule=${boot.bootstrapModulePath} | startupEntry=${boot.startupEntry} | liteSpeedLsnode=${ls} | pid=${snap.pid} | cwd=${snap.cwd} | envFileExists=${boot.envFileExists ? "yes" : "no"} | dotenv=${dotenvWhy} | ${boot.dbProvenance.logLine}`
   );
 }
 

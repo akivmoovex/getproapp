@@ -228,7 +228,7 @@ function logDatabaseEnvMissingDiagnostics(opts = {}) {
     lines.push(`  dotenv: ${dotenvErr}`);
   }
   lines.push(
-    `  Note: LiteSpeed/lsnode may spawn workers without panel env — deploy .env beside server.js with DATABASE_URL (dotenv fills missing keys; it does not override host-injected vars).`
+    `  Note: Ensure DATABASE_URL is set in Hostinger → Environment variables for every Node worker. In production (NODE_ENV=production) the app does not load .env — use panel env only.`
   );
   for (const line of lines) {
     // eslint-disable-next-line no-console
@@ -275,7 +275,9 @@ function logPgStartupDiagnostics(dotenvInfo) {
     const ep = dotenvInfo.envPath != null ? String(dotenvInfo.envPath) : "(unknown)";
     const kc = dotenvInfo.dotenvKeyCount != null ? String(dotenvInfo.dotenvKeyCount) : "(unknown)";
     // eslint-disable-next-line no-console
-    console.log(`[getpro] dotenv: path=${ep} keysLoaded=${kc} (file is optional; production often uses host-injected env only)`);
+    console.log(
+      `[getpro] dotenv: path=${ep} keysLoaded=${kc} (non-production only; NODE_ENV=production skips .env — use Hostinger env)`
+    );
   }
 }
 

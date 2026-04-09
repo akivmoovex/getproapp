@@ -33,7 +33,7 @@ if (!isPgConfigured()) {
   });
   // eslint-disable-next-line no-console
   console.error(
-    "[getpro] FATAL: MISCONFIGURED WORKER — DATABASE_URL and GETPRO_DATABASE_URL are both missing after bootstrap. PostgreSQL is mandatory; this process exits. Fix: deploy `.env` beside server.js with DATABASE_URL for LiteSpeed workers without panel env, and/or fix host env for all lsnode workers. Healthy workers log \"Healthy worker: DB URL available after bootstrap\"."
+    "[getpro] FATAL: MISCONFIGURED WORKER — DATABASE_URL and GETPRO_DATABASE_URL are both missing. PostgreSQL is mandatory; this process exits. Fix: set DATABASE_URL (or GETPRO_DATABASE_URL) in Hostinger → Website → Environment variables for **every** Node worker. In production the app does not load a `.env` file. Healthy workers log \"Healthy worker: DB URL available after bootstrap\"."
   );
   const exitDelayMs = Math.min(
     Math.max(Number(process.env.GETPRO_DB_MISSING_EXIT_DELAY_MS ?? 1500), 0),
@@ -66,10 +66,13 @@ logPgStartupDiagnostics({
   dbProvenanceLogLine: boot.dbProvenance.logLine,
 });
 
-// One-line diagnostics (no secrets). Hosting env vars exist before Node runs; .env only adds keys if the file exists.
+const { assertProductionRequiredEnvOrExit } = require("./src/startup/productionEnvGate");
+assertProductionRequiredEnvOrExit(boot);
+
+// One-line diagnostics (no secrets). In production, variables come from Hostinger only; locally, `.env` may be merged when NODE_ENV is not production.
 // eslint-disable-next-line no-console
 console.log(
-  `[getpro] cwd=${process.cwd()} | startup entry=${boot.startupEntry} | .env file keys=${boot.dotenvKeyCount} (${boot.envPath}) | databaseUrl=${getDatabaseUrlEnvName()} | ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? "set" : "MISSING"} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"} | HOST=${process.env.HOST || "(default 0.0.0.0)"}`
+  `[getpro] cwd=${process.cwd()} | startup entry=${boot.startupEntry} | dotenvKeysMerged=${boot.dotenvKeyCount} (${boot.envPath}) | databaseUrl=${getDatabaseUrlEnvName()} | ADMIN_PASSWORD=${process.env.ADMIN_PASSWORD ? "set" : "MISSING"} | NODE_ENV=${process.env.NODE_ENV || "(unset)"} | PORT=${process.env.PORT || "(default 3000)"} | HOST=${process.env.HOST || "(default 0.0.0.0)"}`
 );
 
 const { ensureAdminUser } = require("./src/auth");
@@ -187,14 +190,6 @@ app.use(
 );
 
 if (process.env.NODE_ENV === "production") {
-  const raw = process.env.SESSION_SECRET;
-  if (raw == null || String(raw).trim() === "") {
-    // eslint-disable-next-line no-console
-    console.error(
-      "[getpro] FATAL: SESSION_SECRET must be set to a non-empty string in production (hosting env / panel). Use a long random value; do not commit it."
-    );
-    process.exit(1);
-  }
   runProductionStartupChecks();
 }
 const sessionSecret = process.env.SESSION_SECRET || "dev_secret_change_me";

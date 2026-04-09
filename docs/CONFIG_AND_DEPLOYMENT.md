@@ -1,81 +1,70 @@
 # Configuration and deployment
 
-This document lists **runtime environment variables** used by the GetPro Node server, how they behave in **development vs production**, and **Hostinger / LiteSpeed** notes. It does not replace `README.md`; it focuses on config separation for **pronline.org** (dev/staging) vs **getproapp.org** (production).
+This document lists **runtime environment variables** for the GetPro Node server, **development vs production** behavior, and **Hostinger** notes.
 
-## Hostinger checklist
+## Production policy (Hostinger)
 
-1. **Persistent env vars:** Website dashboard → **Settings & Redeploy** (or **Advanced → Environment variables**, depending on plan). Changes usually require **redeploy** or app restart.
-2. **Build vs start:** `BUILD_COMMAND` (e.g. `npm run build`) produces `public/build/*`. `START_COMMAND` (e.g. `npm start`) runs `node server.js`.
-3. **LiteSpeed / lsnode:** Some worker processes may **not** receive panel-injected variables. If logs show **misconfigured workers** without `DATABASE_URL`, add a **server-only** `.env` file in the **application root next to `server.js`** containing at least `DATABASE_URL`. The app loads that file via `src/startup/bootstrap.js`; dotenv **does not override** variables already set by the host.
+1. **Use panel environment variables only.** Set variables under **Website → Settings & Redeploy** (or **Advanced → Environment variables**). Production runs with **`NODE_ENV=production`** and **does not load a `.env` file** from the app directory (`src/startup/bootstrap.js`).
+2. **Do not rely on** committing or uploading a `.env` file for production — deployment or workers may not see it consistently.
+3. **Every Node / LiteSpeed worker** must receive the same variables from the host. If some workers lack `DATABASE_URL`, fix Hostinger configuration; do not depend on file-based fallback in production.
+4. **Local development:** copy `.env.example` to `.env` and set values; with `NODE_ENV` not equal to `production`, the app **merges** `.env` into `process.env` for convenience.
+
+## Required in production (`NODE_ENV=production`)
+
+| Variable | Notes |
+|----------|--------|
+| **DATABASE_URL** or **GETPRO_DATABASE_URL** | PostgreSQL URI — app exits if both missing. |
+| **SESSION_SECRET** | Non-empty; long random string. Checked at startup (see `productionEnvGate.js`). |
+| **BASE_DOMAIN** | Apex domain without scheme (e.g. `getproapp.org`). Required for correct regional routing — checked at startup. |
+
+**Strongly recommended:** **PUBLIC_SCHEME** (defaults to `https` in code if unset), **ADMIN_PASSWORD** (first admin bootstrap), **GETPRO_PG_SSL** (e.g. `no-verify` for Supabase), **TRUST_PROXY** (`1` behind reverse proxy).
 
 ## Environment files in the repo
 
 | File | Purpose |
 |------|---------|
-| `.env.example` | Neutral template; copy to `.env` locally |
-| `.env.development.example` | Suggested values for **pronline.org** / dev-staging |
-| `.env.production.example` | Suggested values for **getproapp.org** |
+| `.env.example` | Template for local use |
+| `.env.development.example` | Suggested dev/staging values |
+| `.env.production.example` | Suggested production values (reference only — set real values in Hostinger) |
 
 Real `.env` files are **gitignored**. Never commit secrets.
 
-## Core variables (audit summary)
+## Core variables (summary)
 
-| Variable | Used | Required | Typical dev | Typical prod | Notes |
-|----------|------|----------|-------------|--------------|-------|
-| **DATABASE_URL** | Yes (`src/db/pg/pool.js`, bootstrap) | **Yes** (runtime) | Supabase/dev DB URI | Prod DB URI | Prefer this; `GETPRO_DATABASE_URL` is fallback name only |
-| **GETPRO_DATABASE_URL** | Yes | If `DATABASE_URL` unset | Same | Same | Alternate name only |
-| **GETPRO_PG_SSL** | Yes (`pool.js`) | Optional | `no-verify` with Supabase | Often `no-verify` | `strict` \| `no-verify` \| `off` |
-| **GETPRO_PG_POOL_MAX** / **IDLE** / **CONNECT_TIMEOUT** | Yes (`pool.js`) | Optional | Defaults 10 / 30s / 10s | Tune for traffic | |
-| **GETPRO_SKIP_DOTENV** | Yes (`bootstrap.js`) | Optional | `0` | `0` | Set `1` to ignore `.env` file (host-only) |
-| **NODE_ENV** | Yes (many files) | **Strongly recommended** | `development` | `production` | Affects cookies, sessions, logging, checks |
-| **BASE_DOMAIN** | Yes (host routing, URLs) | **Yes** for multi-tenant hosts | `pronline.org` | `getproapp.org` | No `https://`; lowercase |
-| **PUBLIC_SCHEME** | Yes | Optional (default `https`) | `https` | `https` | |
-| **PORT** / **HOST** | Yes (`server.js`) | Optional | `3000` / `0.0.0.0` | Panel may set `PORT` | |
-| **TRUST_PROXY** | Yes (`server.js`, checks) | Optional | `1` behind proxy | `1` | Required for correct `req.hostname` / `X-Forwarded-Host` |
-| **SESSION_SECRET** | Yes (`server.js`) | **Required when `NODE_ENV=production`** | Long random string | Long random string | Fails startup in prod if empty |
-| **ADMIN_PASSWORD** | Yes (`src/auth/index.js`, checks) | **Required for first admin user** | Strong password | Strong password | Also checked in `productionStartupChecks.js` |
-| **ADMIN_USERNAME** | Yes | Optional | `admin` | Custom | |
-| **ADMIN_ROLE** / **ADMIN_TENANT_ID** | Yes (`src/auth/index.js`) | Optional | | | |
-| **APP_BRAND** | **Not read by Node** | — | `proonline` (panel) | `getpro` (panel) | Use **GETPRO_PRODUCT_NAME** for UI copy |
+| Variable | Required prod | Notes |
+|----------|---------------|--------|
+| **DATABASE_URL** / **GETPRO_DATABASE_URL** | Yes | Prefer `DATABASE_URL` |
+| **GETPRO_PG_SSL** | Optional | `strict` \| `no-verify` \| `off` |
+| **NODE_ENV** | Set `production` on live sites | Controls dotenv, cookies, checks |
+| **BASE_DOMAIN** | **Yes** (enforced when production) | No `https://` |
+| **PUBLIC_SCHEME** | Optional | Defaults to `https` |
+| **SESSION_SECRET** | **Yes** (enforced when production) | |
+| **ADMIN_PASSWORD** | For admin bootstrap | Warned if missing (`productionStartupChecks.js`) |
+| **GETPRO_SKIP_DOTENV** | Optional | Force skip `.env` even in dev (e.g. tests) |
 
-### Branding (actual app)
+### Branding
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| **GETPRO_PRODUCT_NAME** | `Pro-online` | Primary product name in UI |
-| **GETPRO_PRODUCT_NAME_GETPRO** | `GetPro` | Secondary lockup |
-| **GETPRO_PUBLIC_TAGLINE** | `My Trusted Professional` | Tagline |
+**GETPRO_PRODUCT_NAME**, **GETPRO_PRODUCT_NAME_GETPRO**, **GETPRO_PUBLIC_TAGLINE** — see `src/platform/branding.js`. **APP_BRAND** is not read by Node (panel label only).
 
-### Other variables (selected)
+### Other variables
 
-- **GETPRO_STYLES_V** — cache-bust query for static assets (`server.js`).
-- **GETPRO_USE_BUILD_ASSETS** — force on/off Vite build assets; default follows `NODE_ENV` (`src/platform/assetUrls.js`).
-- **GETPRO_MARKETING_OPERATIONS_SLUG** — default `zm` (`src/lib/marketingOperationalUrls.js`).
-- **GETPRO_DB_MISSING_EXIT_DELAY_MS** — delay before exit when DB URL missing (`server.js`).
-- **GETPRO_DEBUG_ROUTING** / **DEBUG_HOST** / **GETPRO_LOG_HOST_TENANT** — diagnostics.
-- **SEED_BUILTIN_USERS** / **SEED_MANAGER_USERS** / **SEED_FIELD_AGENT_USER** — disable seeds with `0`.
-- **ISRAEL_COMING_SOON** — gates Israel tenant (`src/tenants/israelComingSoon.js`).
-- Intake / OTP: **GETPRO_OTP_PEPPER**, **GETPRO_SMS_***, etc. (`src/intake/clientProjectIntake.js`).
+See `README.md` and `.env.example` for **GETPRO_STYLES_V**, **GETPRO_USE_BUILD_ASSETS**, seeds, **ISRAEL_COMING_SOON**, intake/OTP, etc.
 
-## NODE_ENV: development vs production on pronline.org
+## NODE_ENV: development vs production
 
-The app does **not** tie `NODE_ENV` to a domain. You choose per deployment.
+| `NODE_ENV=production` | Not production |
+|------------------------|----------------|
+| No `.env` file merge | `.env` merged from app root (unless `GETPRO_SKIP_DOTENV=1`) |
+| `SESSION_SECRET`, `BASE_DOMAIN` enforced at startup | Defaults / dev session secret allowed |
 
-| If `NODE_ENV=production` | If `NODE_ENV=development` |
-|----------------------------|---------------------------|
-| Secure session cookies, `SESSION_SECRET` enforced, production startup checks, combined access logs | `SESSION_SECRET` may fall back to dev default if unset (unsafe if exposed), verbose dev-style logs possible |
-| Stricter behavior for intake OTP in production paths | More permissive logging paths in some modules |
+## Build and start
 
-**Risk:** Setting **`NODE_ENV=development`** on a **public** pronline.org host weakens session security and skips some production checks — only do this for **private** staging or with full understanding. For a **public** staging site that should behave like production, use **`NODE_ENV=production`** with **`BASE_DOMAIN=pronline.org`** and separate DB/secrets from production.
-
-## Build and start (package.json)
-
-- **`npm run build`** — `vite build` + `build-search-lists`; required before production if you rely on `/build/*` assets.
+- **`npm run build`** — Vite + search lists; needed for `public/build/*` in production if using hashed assets.
 - **`npm start`** — `node server.js` (Hostinger **START_COMMAND**).
 
 ## Related code
 
-- `src/startup/bootstrap.js` — dotenv path, DB URL provenance logging  
-- `src/db/pg/pool.js` — Postgres connection string and SSL  
-- `src/startup/productionStartupChecks.js` — production warnings  
-- `server.js` — trust proxy, sessions, port, routing  
+- `src/startup/bootstrap.js` — when dotenv runs
+- `src/startup/productionEnvGate.js` — production required vars + diagnostics
+- `src/db/pg/pool.js` — Postgres URL and SSL
+- `src/startup/productionStartupChecks.js` — additional production warnings
