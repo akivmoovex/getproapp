@@ -279,10 +279,18 @@ if (
     const rawHost = req.get("host") || "(none)";
     const resolved = resolveHostname(req);
     const sub = req.subdomain != null ? req.subdomain : "(none)";
+    const reqHostname = req.hostname != null ? String(req.hostname) : "(none)";
+    const xfhRaw = req.headers["x-forwarded-host"];
+    const xfhFirst =
+      xfhRaw != null && String(xfhRaw).trim() !== ""
+        ? String(xfhRaw).split(",")[0].trim().split(":")[0]
+        : "(none)";
     // eslint-disable-next-line no-console
-    console.log(`[routing] incoming host header: ${rawHost}`);
+    console.log(`[routing] Host header: ${rawHost}`);
     // eslint-disable-next-line no-console
-    console.log(`[routing] Host: ${resolved} → subdomain: ${sub}`);
+    console.log(`[routing] req.hostname: ${reqHostname} | x-forwarded-host (first): ${xfhFirst}`);
+    // eslint-disable-next-line no-console
+    console.log(`[routing] resolveHostname: ${resolved} | subdomain label: ${sub}`);
     // eslint-disable-next-line no-console
     console.log(`[getpro] ${formatHostTenantDebugLine(req, req.tenant)}`);
     next();

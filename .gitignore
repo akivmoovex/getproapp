@@ -5,6 +5,8 @@ node_modules/
 .env
 .env.*
 !.env.example
+!.env.development.example
+!.env.production.example
 
 data/*.sqlite
 data/*.sqlite-wal

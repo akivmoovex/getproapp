@@ -62,7 +62,7 @@ If you get **JSON** but `resolvedHost` is wrong (e.g. `127.0.0.1` or an internal
 
 ## Local development
 
-1. **`cp .env.example .env`** and set **`DATABASE_URL`** (preferred) or **`GETPRO_DATABASE_URL`** from Supabase (**Project Settings → Database → Connection string → URI**) plus **`ADMIN_PASSWORD`**. See **`.env.example`** for all optional keys.
+1. **`cp .env.example .env`** and set **`DATABASE_URL`** (preferred) or **`GETPRO_DATABASE_URL`** from Supabase (**Project Settings → Database → Connection string → URI**) plus **`ADMIN_PASSWORD`**. See **`.env.example`** for optional keys; for **pronline.org vs getproapp.org** split templates see **`.env.development.example`** / **`.env.production.example`** and **`docs/CONFIG_AND_DEPLOYMENT.md`**.
 2. In Supabase **SQL Editor**, run **`db/postgres/000_full_schema.sql`** once.
 3. From the repo root: **`npm install`**, then **`npm run test:pg`** (connectivity) and **`npm run check:pg`** (core tables exist).
 4. **`npm run build`** (or `npm run build:assets` only) if you want Vite output under `public/build/`; then **`npm start`** (or **`npm run dev`**).
