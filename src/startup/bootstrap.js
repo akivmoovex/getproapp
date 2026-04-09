@@ -12,6 +12,13 @@
 
 const fs = require("fs");
 const path = require("path");
+const {
+  snapshotEnvPresenceYesNo,
+  logEnvTracePhase,
+  logWorkerIdentityLine,
+  logEnvPresenceLostIfAny,
+  buildWorkerLabel,
+} = require("./workerEnvTrace");
 
 /** @type {object | null} */
 let _bootstrapSingleton = null;
@@ -92,11 +99,14 @@ function computeDbUrlProvenance(before, parsedDotenvKeys, effectiveVarName) {
 function runBootstrap() {
   if (_bootstrapSingleton) return _bootstrapSingleton;
 
+  const startupEntry = getStartupEntryLabel();
+  const envPresenceEarliest = snapshotEnvPresenceYesNo();
+  logEnvTracePhase("earliest", { startupEntry });
+
   const appRoot = getAppRootFromBootstrap();
   const envPath = getEnvFilePath();
   const serverJsPath = getServerJsPath();
   const bootstrapModulePath = __filename;
-  const startupEntry = getStartupEntryLabel();
   const liteSpeedLsnode = isLiteSpeedLsnodeEntry(startupEntry);
 
   const beforeDb = snapshotDbEnvPresence();
@@ -117,12 +127,23 @@ function runBootstrap() {
     dotenvErrorMessage = dotenvResult.error ? String(dotenvResult.error.message || dotenvResult.error) : null;
   }
 
+  logEnvTracePhase("after_dotenv_merge", { startupEntry });
+
   const envFileExists = fs.existsSync(envPath);
 
-  // Pool reads merged process.env; load after dotenv.
+  // Pool reads merged process.env; load after dotenv (read-only — does not mutate process.env).
   const { getDatabaseUrlEnvName } = require("../db/pg/pool");
   const effectiveVarName = getDatabaseUrlEnvName();
   const dbProvenance = computeDbUrlProvenance(beforeDb, parsedDotenvKeys, effectiveVarName);
+
+  const envPresenceFinal = snapshotEnvPresenceYesNo();
+  logEnvTracePhase("bootstrap_complete", { startupEntry });
+  logEnvPresenceLostIfAny(envPresenceEarliest, envPresenceFinal);
+  logWorkerIdentityLine({
+    startupEntry,
+    skipDotenv,
+    dotenvSkippedForProduction: isProduction,
+  });
 
   _bootstrapSingleton = {
     appRoot,
@@ -140,6 +161,9 @@ function runBootstrap() {
     envFileExists,
     effectiveVarName,
     dbProvenance,
+    workerLabel: buildWorkerLabel(startupEntry),
+    envPresenceEarliest,
+    envPresenceFinal,
   };
   return _bootstrapSingleton;
 }

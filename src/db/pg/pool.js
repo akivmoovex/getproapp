@@ -173,7 +173,7 @@ function getStartupProcessSnapshot(extra = {}) {
 
 /**
  * When DATABASE_URL / GETPRO_DATABASE_URL are absent, print safe diagnostics (no secrets).
- * @param {{ label?: string, envPath?: string, dotenvKeyCount?: number, dotenvErrorMessage?: string|null, startupEntry?: string, beforeDbSnapshot?: { DATABASE_URL: boolean, GETPRO_DATABASE_URL: boolean }, envFileExists?: boolean, dotenvSkipped?: boolean, dbProvenanceLogLine?: string, liteSpeedLsnode?: boolean }} [opts]
+ * @param {{ label?: string, envPath?: string, dotenvKeyCount?: number, dotenvErrorMessage?: string|null, startupEntry?: string, beforeDbSnapshot?: { DATABASE_URL: boolean, GETPRO_DATABASE_URL: boolean }, envFileExists?: boolean, dotenvSkipped?: boolean, dbProvenanceLogLine?: string, liteSpeedLsnode?: boolean, workerLabel?: string }} [opts]
  */
 function logDatabaseEnvMissingDiagnostics(opts = {}) {
   const label = opts.label != null ? String(opts.label) : "server";
@@ -204,8 +204,13 @@ function logDatabaseEnvMissingDiagnostics(opts = {}) {
       ? `  ${String(opts.dbProvenanceLogLine).trim()}`
       : null;
 
+  const wl =
+    opts.workerLabel != null && String(opts.workerLabel).trim() !== ""
+      ? ` workerLabel=${String(opts.workerLabel).trim()}`
+      : "";
   const lines = [
-    `[getpro] PostgreSQL: MISCONFIGURED WORKER — no database URL in this Node process (${label})`,
+    `[getpro] PostgreSQL: MISCONFIGURED WORKER — no database URL in this Node process (${label})${wl}`,
+    `  (Compare envTrace phase=earliest vs bootstrap_complete — both should show DATABASE_URL=no if the host omitted vars before Node started.)`,
     `  (Other workers may still be healthy if the host injected DATABASE_URL/GETPRO_DATABASE_URL only for some instances.)`,
     `  DATABASE_URL present (after bootstrap): ${hasDatabaseUrl ? "yes" : "no"}`,
     `  GETPRO_DATABASE_URL present (after bootstrap): ${hasGetproDatabaseUrl ? "yes" : "no"}`,

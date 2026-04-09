@@ -30,6 +30,7 @@ if (!isPgConfigured()) {
     dotenvSkipped: boot.skipDotenv,
     dbProvenanceLogLine: boot.dbProvenance.logLine,
     liteSpeedLsnode: boot.liteSpeedLsnode,
+    workerLabel: boot.workerLabel,
   });
   // eslint-disable-next-line no-console
   console.error(
