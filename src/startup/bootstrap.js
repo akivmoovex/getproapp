@@ -3,8 +3,9 @@
 /**
  * Single shared bootstrap for server.js and CLI scripts.
  * - **Production (`NODE_ENV=production`):** does **not** load repo-root `.env` — Hostinger-injected `process.env` first.
- *   Then, if present, merges **only missing keys** from the Hostinger-recommended production file
- *   (`GETPRO_PRODUCTION_ENV_FILE_FALLBACK` or default path) with `override: false` (injected env wins).
+ *   An **early** merge from `GETPRO_PRODUCTION_ENV_FILE_FALLBACK` (or default path) runs before any env snapshot
+ *   so LiteSpeed workers missing panel env still see `DATABASE_URL` when the file exists (`override: false`).
+ *   A later conditional merge from the same path remains for logging / filled-key diagnostics (idempotent).
  * - **Non-production:** loads `.env` from app root (path from this file, not `cwd`) unless `GETPRO_SKIP_DOTENV=1`.
  * - Snapshots DB-related env before any file merge for provenance logging.
  * - `dotenv` does not override existing process.env keys (`override: false`).
@@ -24,9 +25,8 @@ const {
   buildWorkerLabel,
 } = require("./workerEnvTrace");
 
-/** Hostinger-recommended path; fills missing keys only (`override: false`). Override with GETPRO_PRODUCTION_ENV_FILE_FALLBACK. */
-const DEFAULT_PRODUCTION_ENV_FILE_FALLBACK =
-  "/home/u549637099/domains/pronline.org/nodejs/.env.production";
+/** Default production fallback path; fills missing keys only (`override: false`). Override with GETPRO_PRODUCTION_ENV_FILE_FALLBACK. */
+const DEFAULT_PRODUCTION_ENV_FILE_FALLBACK = "/home/u549637099/.env.production";
 
 /** @type {object | null} */
 let _bootstrapSingleton = null;
@@ -122,6 +122,34 @@ function runBootstrap() {
   if (_bootstrapSingleton) return _bootstrapSingleton;
 
   const startupEntry = getStartupEntryLabel();
+  /** Host-only DB presence before any production file merge (provenance). */
+  const beforeDb = snapshotDbEnvPresence();
+
+  let earlyProductionEnvPath = null;
+  let earlyProductionEnvExists = false;
+  let earlyProductionEnvLoaded = false;
+  /** @type {string[]} */
+  let earlyProductionFileParsedKeys = [];
+
+  if (process.env.NODE_ENV === "production") {
+    const rawEarly = String(process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK || "").trim();
+    earlyProductionEnvPath = rawEarly || DEFAULT_PRODUCTION_ENV_FILE_FALLBACK;
+    earlyProductionEnvExists = fs.existsSync(earlyProductionEnvPath);
+    if (earlyProductionEnvExists) {
+      const earlyDotenv = require("dotenv").config({
+        path: earlyProductionEnvPath,
+        override: false,
+        quiet: true,
+      });
+      earlyProductionEnvLoaded = !earlyDotenv.error;
+      earlyProductionFileParsedKeys = Object.keys(earlyDotenv.parsed || {});
+    }
+    // eslint-disable-next-line no-console
+    console.log(
+      `[getpro] earlyProductionEnvFile path=${earlyProductionEnvPath} exists=${earlyProductionEnvExists ? "yes" : "no"} loaded=${earlyProductionEnvLoaded ? "yes" : "no"}`
+    );
+  }
+
   const envPresenceEarliest = snapshotEnvPresenceYesNo();
   logEnvTracePhase("earliest", { startupEntry });
   logEnvPresenceDiagnosticLine({ startupEntry });
@@ -132,7 +160,6 @@ function runBootstrap() {
   const bootstrapModulePath = __filename;
   const liteSpeedLsnode = isLiteSpeedLsnodeEntry(startupEntry);
 
-  const beforeDb = snapshotDbEnvPresence();
   const isProduction = process.env.NODE_ENV === "production";
   const skipDotenvExplicit =
     process.env.GETPRO_SKIP_DOTENV === "1" || String(process.env.GETPRO_SKIP_DOTENV || "").toLowerCase() === "true";
@@ -209,8 +236,9 @@ function runBootstrap() {
   // Pool reads merged process.env; load after dotenv (read-only — does not mutate process.env).
   const { getDatabaseUrlEnvName } = require("../db/pg/pool");
   const effectiveVarName = getDatabaseUrlEnvName();
+  const productionFileKeysCombined = [...new Set([...earlyProductionFileParsedKeys, ...productionFileParsedKeys])];
   const dbProvenance = computeDbUrlProvenance(beforeDb, parsedDotenvKeys, effectiveVarName, {
-    productionFileKeys: productionFileParsedKeys,
+    productionFileKeys: productionFileKeysCombined,
   });
 
   const envPresenceFinal = snapshotEnvPresenceYesNo();
@@ -248,6 +276,10 @@ function runBootstrap() {
     productionFileFilledKeys,
     productionFileError,
     productionFileMergeSkipped,
+    earlyProductionEnvPath,
+    earlyProductionEnvExists,
+    earlyProductionEnvLoaded,
+    earlyProductionFileParsedKeys,
   };
   return _bootstrapSingleton;
 }

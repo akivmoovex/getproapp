@@ -24,8 +24,8 @@ test("production: merges DATABASE_URL from GETPRO_PRODUCTION_ENV_FILE_FALLBACK (
   resetBootstrapForTests();
   try {
     const b = runBootstrap();
-    assert.equal(b.productionFileLoaded, true);
-    assert.ok(b.productionFileFilledKeys.includes("DATABASE_URL"));
+    assert.equal(b.earlyProductionEnvLoaded, true);
+    assert.ok(b.earlyProductionFileParsedKeys.includes("DATABASE_URL"));
     assert.equal(b.effectiveVarName, "DATABASE_URL");
     assert.equal(b.dbProvenance.kind, "production-file");
   } finally {
