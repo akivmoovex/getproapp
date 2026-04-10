@@ -168,6 +168,7 @@ app.use((req, res, next) => {
   res.locals.brandProductName = branding.PRODUCT_NAME;
   res.locals.brandProductNameGetPro = branding.PRODUCT_NAME_GETPRO;
   res.locals.brandPublicTagline = branding.PUBLIC_TAGLINE;
+  res.locals.brandHtmlDataBrand = branding.HTML_DATA_BRAND;
   // EJS `include('partials/brand_resolve')` does not hoist `var` into the parent template; views that use `_bn` without defining it need locals.
   res.locals._bn = typeof res.locals.brandProductName !== "undefined" ? res.locals.brandProductName : "Pro-online";
   res.locals._bnGetPro =

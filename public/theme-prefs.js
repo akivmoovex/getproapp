@@ -15,7 +15,10 @@
       else if (th === "light") d.setAttribute("data-theme", "light");
       else d.removeAttribute("data-theme");
 
-      if (br === "getpro") d.setAttribute("data-brand", "getpro");
+      var srvBr = window.__GETPRO_SERVER_BRAND__;
+      if (srvBr === "getpro" || srvBr === "proonline") {
+        d.setAttribute("data-brand", srvBr);
+      } else if (br === "getpro") d.setAttribute("data-brand", "getpro");
       else if (br === "proonline") d.setAttribute("data-brand", "proonline");
       else d.removeAttribute("data-brand");
     } catch (e) {

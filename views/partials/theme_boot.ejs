@@ -1,7 +1,11 @@
 <%# Apply persisted theme/brand before first paint (pairs with public/theme-prefs.js). Keys: gp-theme, gp-brand. -%>
+<% var _srvBrand = typeof brandHtmlDataBrand !== 'undefined' ? String(brandHtmlDataBrand).trim() : ''; %>
+<% var _srvBrandOk = _srvBrand === 'getpro' || _srvBrand === 'proonline'; %>
 <script>
 (function () {
   var d = document.documentElement;
+  var srv = <%- JSON.stringify(_srvBrandOk ? _srvBrand : '') %>;
+  window.__GETPRO_SERVER_BRAND__ = srv || '';
   try {
     var t = localStorage.getItem("gp-theme");
     var b = localStorage.getItem("gp-brand");
@@ -9,12 +13,18 @@
     else if (t === "light") d.setAttribute("data-theme", "light");
     else d.removeAttribute("data-theme");
 
-    if (b === "getpro") d.setAttribute("data-brand", "getpro");
+    if (window.__GETPRO_SERVER_BRAND__ === "getpro" || window.__GETPRO_SERVER_BRAND__ === "proonline") {
+      d.setAttribute("data-brand", window.__GETPRO_SERVER_BRAND__);
+    } else if (b === "getpro") d.setAttribute("data-brand", "getpro");
     else if (b === "proonline") d.setAttribute("data-brand", "proonline");
     else d.removeAttribute("data-brand");
   } catch (e) {
     d.removeAttribute("data-theme");
-    d.removeAttribute("data-brand");
+    if (window.__GETPRO_SERVER_BRAND__ === "getpro" || window.__GETPRO_SERVER_BRAND__ === "proonline") {
+      d.setAttribute("data-brand", window.__GETPRO_SERVER_BRAND__);
+    } else {
+      d.removeAttribute("data-brand");
+    }
   }
 })();
 </script>

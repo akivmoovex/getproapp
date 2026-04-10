@@ -1,0 +1,41 @@
+<!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <%- include('partials/seo_meta', { seoTitle, seoDescription, canonicalUrl, ogUrl, ogType: 'website' }) %>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="page-support-content <%= tenant.themeClass %>" data-screen-role="support">
+    <div class="app-layout">
+      <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
+      <%- include('partials/app_navigation', { tenantUrlPrefix }) %>
+
+      <div class="app-layout__main">
+        <main class="ds-container content-faq-page">
+      <nav class="pro-company-profile__breadcrumb" aria-label="Breadcrumb" style="margin-bottom: 1rem">
+        <a href="<%= tenantHomeHref %>">Home</a>
+        <span class="pro-company-profile__bc-sep" aria-hidden="true">/</span>
+        <span class="pro-company-profile__bc-current">About</span>
+      </nav>
+
+      <article class="content-prose">
+        <h1 class="section-title section-title--flush" style="font-size: 1.5rem">About <%= _bn %></h1>
+        <p>
+          <%= _bn %> connects people with trusted local professionals. Browse the directory, compare providers, and get in touch when you are ready.
+        </p>
+        <%# Display only: appVersion from res.locals (getAppVersion → package.json); do not hardcode. %>
+        <p class="muted" style="font-size: 0.8125rem; margin-top: 1.5rem">
+          Version <%= typeof appVersion !== 'undefined' ? appVersion : '—' %>
+        </p>
+      </article>
+        </main>
+
+        <%- include('partials/site_footer', { tenantUrlPrefix }) %>
+      </div>
+    </div>
+    <script src="<%= asset('scripts') %>" defer></script>
+    <%- include('partials/theme_prefs') %>
+  </body>
+</html>

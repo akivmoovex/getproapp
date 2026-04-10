@@ -44,7 +44,7 @@ Real `.env` files are **gitignored**. Never commit secrets.
 
 ### Branding
 
-**GETPRO_PRODUCT_NAME**, **GETPRO_PRODUCT_NAME_GETPRO**, **GETPRO_PUBLIC_TAGLINE** — see `src/platform/branding.js`. **GETPRO_HTML_DATA_BRAND** (`getpro` \| `proonline`) sets the default visible lockup line and theme tokens; optional alias **APP_BRAND** (same values). Omitted: client `gp-brand` / default styling applies.
+**GETPRO_PRODUCT_NAME**, **GETPRO_PRODUCT_NAME_GETPRO**, **GETPRO_PUBLIC_TAGLINE** — see `src/platform/branding.js`. **APP_BRAND** is not read by Node (panel label only).
 
 ### Other variables
 

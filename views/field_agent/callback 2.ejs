@@ -1,0 +1,53 @@
+<!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Call me back | Field agent | <%= _bn %></title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="<%= tenant.themeClass %>" data-screen-role="support">
+    <div class="app-layout">
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: 'callback', faIncludeFaq: false }) %>
+      <div class="app-layout__main">
+        <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
+        <h1 class="gp-home-story__title" style="margin-top:0;">Call me back lead</h1>
+        <p class="join-lead">Capture interest so our team can follow up. This creates a CRM task (unassigned).</p>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <p class="admin-gate-error" role="alert"><%= error %></p>
+        <% } %>
+        <form method="post" action="<%= tenantUrlPrefix %>/field-agent/call-me-back" class="card" style="padding:1rem;max-width:32rem;">
+          <label class="input-field">
+            <span class="input-field__label">First name</span>
+            <input class="input-field__control" name="first_name" type="text" required />
+          </label>
+          <label class="input-field">
+            <span class="input-field__label">Last name</span>
+            <input class="input-field__control" name="last_name" type="text" required />
+          </label>
+          <label class="input-field">
+            <span class="input-field__label">Phone</span>
+            <input class="input-field__control" name="phone" type="tel" required />
+          </label>
+          <label class="input-field">
+            <span class="input-field__label">Email</span>
+            <input class="input-field__control" name="email" type="email" required />
+          </label>
+          <label class="input-field">
+            <span class="input-field__label">Location (city)</span>
+            <input class="input-field__control" name="location_city" type="text" required />
+          </label>
+          <div style="margin-top:1rem;">
+            <button type="submit" class="c-button c-button--primary">Send to CRM</button>
+          </div>
+        </form>
+        <%- include('../partials/site_footer', { tenantUrlPrefix }) %>
+        <%- include('../partials/components/container_close') %>
+      </div>
+    </div>
+    <script src="<%= asset('scripts') %>" defer></script>
+    <%- include('../partials/theme_prefs') %>
+  </body>
+</html>
