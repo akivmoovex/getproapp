@@ -1,27 +1,41 @@
 <!doctype html>
+<%# Client portal: same admin-gate layout as views/admin/login.ejs; content is informational until client auth ships. %>
 <html lang="en">
   <head>
     <%- include('partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <%- include('partials/theme_boot') %>
     <title>Client portal | <%= _bn %></title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
-  <% var _cb = typeof clientPortalBasePath !== 'undefined' && clientPortalBasePath ? String(clientPortalBasePath).replace(/\/$/, '') : '/client'; %>
   <% var _hub = typeof opsHref === 'function' ? opsHref('/login') : '/login'; %>
-  <body class="client-portal-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
-    <p class="client-portal-back muted"><%- include('partials/components/button', { variant: 'text', href: _hub, label: '← All sign-in options' }) %></p>
-    <%- include('partials/client_portal_shell_start', { clientPortalBasePath: _cb }) %>
-      <div class="card client-login-card">
-        <h1 class="client-login-card__title">Client area</h1>
+  <body class="admin-gate-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : '' %>">
+    <div class="container admin-gate-wrap">
+      <div class="card admin-gate-card">
+        <a href="<%= _hub %>" class="admin-gate-brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <div class="admin-gate-brand__title"><%= _bn %> Client</div>
+            <div class="admin-gate-brand__subtitle">Client area — preview and foundation only.</div>
+          </div>
+        </a>
         <% if (typeof notice !== 'undefined' && notice) { %>
         <div class="flash flash--success" role="status"><%= notice %></div>
         <% } %>
-        <p class="muted client-login-card__lead">
-          End-client sign-in is <strong>not enabled</strong> in this release. This route exists only as a foundation for a future client experience. No credentials are accepted here yet.
-        </p>
-        <p class="muted client-login-card__lead">When available, clients will use a separate layout and session from staff and providers.</p>
+        <div class="form-step form-step--admin">
+          <div class="form-step__body">
+            <p class="muted" style="margin:0;">
+              End-client sign-in is <strong>not enabled</strong> in this release. This route exists only as a foundation for a future client experience. No credentials are accepted here yet.
+            </p>
+            <p class="muted" style="margin:0.75rem 0 0;">When available, clients will use a separate layout and session from staff and providers.</p>
+          </div>
+          <div class="form-step__actions admin-gate-actions">
+            <%- include('partials/components/button', { variant: 'text', href: _hub, label: 'Cancel' }) %>
+          </div>
+        </div>
       </div>
-    <%- include('partials/client_portal_shell_end') %>
+    </div>
+    <%- include('partials/theme_prefs') %>
   </body>
 </html>

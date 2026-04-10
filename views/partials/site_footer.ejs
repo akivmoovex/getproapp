@@ -1,6 +1,10 @@
 <% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
 <% var _op = typeof opsHref === 'function' ? opsHref : function (p) { return (tp || '') + p; }; %>
+<%# Optional contact locals (getproPhone, getproEmail, getproAddress) are not passed by every parent view. Normalize here so missing vars never throw at render time. %>
+<% var _gpPhone = typeof getproPhone !== 'undefined' ? String(getproPhone || '').trim() : ''; %>
+<% var _gpEmail = typeof getproEmail !== 'undefined' ? String(getproEmail || '').trim() : ''; %>
+<% var _gpAddr = typeof getproAddress !== 'undefined' ? String(getproAddress || '').trim() : ''; %>
 <footer class="wf-footer" id="footer-terms">
   <div class="wf-footer-cta">
     <div class="ds-container wf-footer-cta-inner">
@@ -29,11 +33,11 @@
       <div class="pro-footer-col">
         <strong>Contact</strong>
         <ul>
-          <% if (getproPhone) { %>
-            <li><a href="tel:<%= getproPhone %>"><%= getproPhone %></a></li>
+          <% if (_gpPhone) { %>
+            <li><a href="tel:<%= _gpPhone %>"><%= _gpPhone %></a></li>
           <% } %>
-          <% if (getproEmail) { %>
-            <li><a href="mailto:<%= getproEmail %>"><%= getproEmail %></a></li>
+          <% if (_gpEmail) { %>
+            <li><a href="mailto:<%= _gpEmail %>"><%= _gpEmail %></a></li>
           <% } %>
           <% if (typeof getproWhatsapp !== 'undefined' && getproWhatsapp) { %>
             <li>
@@ -44,10 +48,10 @@
               <% } %>
             </li>
           <% } %>
-          <% if (getproAddress) { %>
-            <li><%= getproAddress %></li>
+          <% if (_gpAddr) { %>
+            <li><%= _gpAddr %></li>
           <% } %>
-          <% if (!getproPhone && !getproEmail && !getproAddress && !(typeof getproWhatsapp !== 'undefined' && getproWhatsapp)) { %>
+          <% if (!_gpPhone && !_gpEmail && !_gpAddr && !(typeof getproWhatsapp !== 'undefined' && getproWhatsapp)) { %>
             <li class="pro-footer-col__placeholder">Configure contact details via environment variables.</li>
           <% } %>
         </ul>

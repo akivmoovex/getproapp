@@ -23,9 +23,6 @@
           error: typeof error !== 'undefined' ? error : null,
           cancelHref: typeof opsHref === 'function' ? opsHref('/login') : '/login',
         }) %>
-        <p class="muted admin-gate-alt" style="margin:0.75rem 0 0;font-size:0.9rem;">
-          <a href="<%= (typeof tenantUrlPrefix !== 'undefined' && tenantUrlPrefix ? String(tenantUrlPrefix) : '') %>/field-agent/signup">Create account</a>
-        </p>
       </div>
     </div>
     <%- include('../partials/theme_prefs') %>

@@ -1,4 +1,5 @@
 <!doctype html>
+<%# Sign-in hub: same M3 + join-modal shell as join.ejs modals (overlay, backdrop, header + close, join-modal__scroll). Inline script dismisses to tenantHomeHref; no join.js. %>
 <html lang="en">
   <head>
     <%- include('partials/brand_resolve') %>
@@ -7,25 +8,27 @@
     <title>Sign in | <%= _bn %></title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
-  <body class="portal-login-hub-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
+  <% var _home = typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/'; %>
+  <body class="portal-login-hub-page join-modal-open <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
     <div
-      class="m3-modal-overlay m3-modal-overlay--open portal-login-hub-overlay"
-      role="presentation"
+      class="m3-modal-overlay join-modal-layer m3-modal-overlay--open"
+      id="portal-login-hub-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="portal-login-hub-title"
     >
-      <div class="m3-modal-overlay__backdrop" aria-hidden="true"></div>
-      <div
-        class="m3-modal portal-login-hub-m3-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="portal-login-hub-title"
-      >
-        <div class="m3-modal__body portal-login-hub-inner">
-          <h1 class="portal-login-hub-title" id="portal-login-hub-title">Sign in</h1>
-          <p class="muted portal-login-hub-lead">Choose your account type. Each area uses a separate session and menu — they are not combined.</p>
+      <div class="m3-modal-overlay__backdrop" id="portal-login-hub-backdrop" aria-hidden="true"></div>
+      <div class="m3-modal m3-modal--join join-modal join-modal--wide portal-login-hub-m3-modal">
+        <header class="m3-modal__header">
+          <h2 class="m3-modal__title join-modal-title" id="portal-login-hub-title">Sign in</h2>
+          <button type="button" class="m3-modal__close" id="portal-login-hub-x" aria-label="Close">×</button>
+        </header>
+        <div class="m3-modal__body join-modal__scroll">
+          <p class="muted portal-login-hub-lead" style="margin-top:0;">Choose your account type. Each area uses a separate session and menu — they are not combined.</p>
           <ul class="portal-login-hub-cards" role="list">
             <li>
               <a class="card portal-login-hub-card portal-login-hub-card--client" href="<%= typeof opsHref === 'function' ? opsHref('/client/login') : '/client/login' %>">
-                <span class="portal-login-hub-card__label">Client</span>
+                <span class="portal-login-hub-card__label">Clients</span>
                 <span class="portal-login-hub-card__desc muted">Place orders, get quotes from trusted service providers</span>
               </a>
             </li>
@@ -37,7 +40,7 @@
             </li>
             <li>
               <a class="card portal-login-hub-card portal-login-hub-card--field" href="<%= typeof opsHref === 'function' ? opsHref('/field-agent/login') : '/field-agent/login' %>">
-                <span class="portal-login-hub-card__label">Field agent</span>
+                <span class="portal-login-hub-card__label">Field Agents</span>
                 <span class="portal-login-hub-card__desc muted">Capture new leads and support your clients.</span>
               </a>
             </li>
@@ -49,7 +52,21 @@
             </li>
           </ul>
         </div>
+        <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
       </div>
     </div>
+    <script>
+      (function () {
+        var home = <%- JSON.stringify(_home) %>;
+        var modal = document.getElementById("portal-login-hub-modal");
+        function goHome() {
+          window.location.href = home;
+        }
+        document.getElementById("portal-login-hub-x")?.addEventListener("click", goHome);
+        modal?.addEventListener("click", function (e) {
+          if (e.target.closest(".m3-modal-overlay__backdrop")) goHome();
+        });
+      })();
+    </script>
   </body>
 </html>
