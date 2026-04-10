@@ -19,6 +19,13 @@
         </header>
 
         <div class="admin-settings-hub__grid">
+          <% if (typeof isSuper !== 'undefined' && isSuper) { %>
+          <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/db?embed=1">
+            <span class="admin-settings-hub__card-icon" aria-hidden="true">🗄️</span>
+            <span class="admin-settings-hub__card-title">DB</span>
+            <span class="admin-settings-hub__card-desc muted">Seed / clear seeded test data only (super-admin)</span>
+          </button>
+          <% } %>
           <% if (typeof canEditDirectory !== 'undefined' && canEditDirectory) { %>
           <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/content?kind=article&embed=1">
             <span class="admin-settings-hub__card-icon" aria-hidden="true">📰</span>

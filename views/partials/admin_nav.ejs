@@ -61,6 +61,7 @@
       <% if (isSuper) { %>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'super' ? 'admin-nav__link--active' : '' %>" href="/admin/super">Super</a>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'super_users' ? 'admin-nav__link--active' : '' %>" href="/admin/super/users">All users</a>
+        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'db' ? 'admin-nav__link--active' : '' %>" href="/admin/db">DB</a>
       <% } %>
       <% if (scoped) { %>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'dashboard' ? 'admin-nav__link--active' : '' %>" href="/admin/dashboard">Dashboard</a>

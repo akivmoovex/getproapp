@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>DB tools | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'DB tools', activeNav: 'db' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">DB tools</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Create or remove <strong>seeded test data only</strong> for the <strong>current directory region (tenant-scoped)</strong>. Does not change roles, billing, or core tenant settings. <strong>Not available in production</strong> (actions are disabled; API returns 403).
+            </p>
+          </div>
+        </header>
+
+        <% if (typeof tenantContext !== 'undefined' && tenantContext && tenantContext.slug) { %>
+        <p class="flash flash--info" role="status">
+          Current region: <strong><%= tenantContext.name || '—' %></strong>
+          <span class="muted">(<%= tenantContext.slug %>)</span>
+          <% if (typeof adminScopeIsSession !== 'undefined' && !adminScopeIsSession && typeof adminNav !== 'undefined' && adminNav.isSuper) { %>
+            <span class="muted"> — default scope; use <a href="/admin/super#act-as-region">Super admin</a> to switch.</span>
+          <% } %>
+        </p>
+        <% } %>
+
+        <p class="flash flash--info" role="status">
+          <strong>Warning:</strong> “Create test data” inserts labeled fixture rows. “Clear seeded data” removes <em>only</em> rows registered by this tool’s seed runs for <strong>this tenant</strong> — not your whole database, not other regions, not roles or billing.
+        </p>
+
+        <% if (typeof dbToolsDisabled !== 'undefined' && dbToolsDisabled) { %>
+        <div class="flash" role="alert" style="border: 2px solid currentColor; font-weight: 500;">
+          <strong>Production mode (<code>NODE_ENV=production</code>):</strong> seeded test-data actions are <strong>disabled</strong> here. The API rejects create/clear with HTTP 403. This page is read-only.
+        </div>
+        <% } %>
+
+        <div id="db_tools_feedback" class="db-tools-feedback" role="region" aria-live="polite" aria-atomic="true"></div>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Actions</h2>
+          <div class="db-tools-actions">
+            <p class="muted" style="margin-top: 0">Seed providers, field agents, reviews, and related rows for testing.</p>
+            <div class="db-tools-actions__row">
+              <button type="button" class="c-button btn btn--primary" id="db_tools_btn_seed" <%= dbToolsDisabled ? 'disabled' : '' %>>
+                Create test data
+              </button>
+            </div>
+            <p class="muted" style="margin-top: 1.25rem">Remove seeded test data for this tenant only (requires typing the region slug). Unavailable in production.</p>
+            <div class="db-tools-actions__row">
+              <button type="button" class="c-button btn btn--danger-outline" id="db_tools_btn_clear_open" <%= dbToolsDisabled ? 'disabled' : '' %>>
+                Clear seeded data
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Last result</h2>
+          <div id="db_tools_summary" class="db-tools-summary muted">No action yet.</div>
+        </section>
+      </div>
+    </main>
+
+    <div
+      id="db_tools_clear_modal"
+      class="m3-modal-overlay admin-db-tools-modal"
+      hidden
+      aria-hidden="true"
+    >
+      <div class="m3-modal-overlay__backdrop" data-db-tools-modal-close tabindex="-1"></div>
+      <div class="m3-modal m3-modal--workspace-confirm" role="dialog" aria-modal="true" aria-labelledby="db_tools_clear_modal_title">
+        <header class="m3-modal__header">
+          <h2 id="db_tools_clear_modal_title" class="m3-modal__title">Clear seeded test data?</h2>
+          <button type="button" class="m3-modal__close" data-db-tools-modal-close aria-label="Close dialog">×</button>
+        </header>
+        <div class="m3-modal__body">
+          <p class="muted">
+            Tenant: <strong><%= typeof tenantContext !== 'undefined' && tenantContext ? tenantContext.name : '' %></strong>
+            (<code><%= typeof tenantContext !== 'undefined' && tenantContext ? tenantContext.slug : '' %></code>). Only <strong>tracked seeded rows</strong> for this tenant will be removed — not the whole DB, not other tenants.
+          </p>
+          <% var prev = typeof clearPreview !== 'undefined' ? clearPreview : null; %>
+          <% if (prev && prev.batchCount != null) { %>
+          <div class="muted" style="font-size: 0.9rem; margin: 0.75rem 0; padding: 0.75rem; border: 1px solid var(--color-outline, #ccc); border-radius: var(--radius-medium, 8px); background: var(--color-surface-variant, rgba(0,0,0,0.04));">
+            <p style="margin: 0 0 0.5rem 0;"><strong>Clear preview</strong> (registry only)</p>
+            <p style="margin: 0 0 0.35rem 0;">Seed batches for this tenant: <strong><%= prev.batchCount %></strong>. Tracked rows: <strong><%= prev.totalTrackedRows != null ? prev.totalTrackedRows : 0 %></strong>.</p>
+            <% if (prev.byTable && prev.byTable.length) { %>
+            <p style="margin: 0 0 0.25rem 0;">Estimated by table (tracked IDs to delete):</p>
+            <ul style="margin: 0; padding-left: 1.25rem;">
+              <% prev.byTable.forEach(function (row) { %>
+              <li><code><%= row.table_name %></code>: <%= row.count %></li>
+              <% }); %>
+            </ul>
+            <% } else { %>
+            <p style="margin: 0;">No tracked seed rows in the registry for this tenant.</p>
+            <% } %>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem;">Reviews are removed when their company is deleted (not listed separately).</p>
+          </div>
+          <% } %>
+          <p class="muted">Type the region slug below to confirm.</p>
+          <div class="input-field">
+            <label class="input-field__label" for="db_tools_clear_slug">Region slug</label>
+            <input
+              id="db_tools_clear_slug"
+              type="text"
+              class="input-field__control"
+              autocomplete="off"
+              placeholder="e.g. zm"
+            />
+          </div>
+        </div>
+        <div class="m3-modal__footer">
+          <button type="button" class="c-button btn" data-db-tools-modal-close>Cancel</button>
+          <button type="button" class="c-button btn btn--danger-outline" id="db_tools_btn_clear_confirm" disabled>
+            Clear seeded data
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="application/json" id="db-tools-config">
+<%- JSON.stringify({
+  confirmSlug: typeof tenantContext !== 'undefined' && tenantContext ? tenantContext.slug : '',
+  disabled: !!dbToolsDisabled,
+}) %>
+    </script>
+    <script src="<%= asset('admin-db-tools') %>"></script>
+  </body>
+</html>

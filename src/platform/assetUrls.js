@@ -20,6 +20,7 @@ const LEGACY_HREF = {
   "admin-crm-kanban": "/admin-crm-kanban.js",
   "admin-company-workspace": "/admin-company-workspace.js",
   "admin-settings-hub": "/admin-settings-hub.js",
+  "admin-db-tools": "/admin-db-tools.js",
   "admin-form-edit-mode": "/admin-form-edit-mode.js",
   "admin-tenant-settings-list": "/admin-tenant-settings-list.js",
   "field-agent-modal": "/field-agent-modal.js",

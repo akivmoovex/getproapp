@@ -22,6 +22,7 @@ const entryInputs = {
   "admin-crm-kanban": path.join(frontendRoot, "entries", "admin-crm-kanban.js"),
   "admin-company-workspace": path.join(frontendRoot, "entries", "admin-company-workspace.js"),
   "admin-settings-hub": path.join(frontendRoot, "entries", "admin-settings-hub.js"),
+  "admin-db-tools": path.join(frontendRoot, "entries", "admin-db-tools.js"),
   "admin-form-edit-mode": path.join(frontendRoot, "entries", "admin-form-edit-mode.js"),
   "admin-tenant-settings-list": path.join(frontendRoot, "entries", "admin-tenant-settings-list.js"),
   "field-agent-modal": path.join(frontendRoot, "entries", "field-agent-modal.js"),

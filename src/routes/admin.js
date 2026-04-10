@@ -34,6 +34,7 @@ const registerAdminDirectoryRoutes = require("./admin/adminDirectory");
 const registerAdminCrmRoutes = require("./admin/adminCrm");
 const registerAdminFieldAgentAnalyticsRoutes = require("./admin/adminFieldAgentAnalytics");
 const registerAdminIntakeRoutes = require("./admin/adminIntake");
+const registerAdminDbToolsRoutes = require("./admin/adminDbTools");
 
 module.exports = function adminRoutes({ db }) {
   const router = express.Router();
@@ -196,6 +197,7 @@ module.exports = function adminRoutes({ db }) {
   registerAdminCrmRoutes(router);
   registerAdminFieldAgentAnalyticsRoutes(router);
   registerAdminIntakeRoutes(router, { projectIntakeUpload });
+  registerAdminDbToolsRoutes(router);
 
   return router;
 };

@@ -169,6 +169,26 @@ async function getBatchDirectoryStatsMap(pool, companyIds) {
   return out;
 }
 
+/**
+ * @param {import("pg").Pool} pool
+ * @param {{ companyId: number, rating: number, body: string, authorName: string }} p
+ * @returns {Promise<number>} new review id
+ */
+async function insertOne(pool, p) {
+  const r = await pool.query(
+    `INSERT INTO public.reviews (company_id, rating, body, author_name)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id`,
+    [
+      p.companyId,
+      Number(p.rating),
+      String(p.body || "").slice(0, 8000),
+      String(p.authorName || "Customer").slice(0, 120),
+    ]
+  );
+  return Number(r.rows[0].id);
+}
+
 module.exports = {
   getAverageAndCountForCompany,
   listForCompanyProfile,
@@ -176,4 +196,5 @@ module.exports = {
   listAvgCountByTenantAndCategory,
   getBatchDirectoryStatsMap,
   serializeReviewRow,
+  insertOne,
 };

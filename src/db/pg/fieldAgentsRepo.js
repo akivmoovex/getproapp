@@ -27,8 +27,19 @@ async function insertAgent(pool, { tenantId, username, passwordHash, displayName
   return Number(r.rows[0].id);
 }
 
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} id
+ * @param {number} tenantId
+ */
+async function deleteByIdAndTenantId(pool, id, tenantId) {
+  const r = await pool.query(`DELETE FROM public.field_agents WHERE id = $1 AND tenant_id = $2`, [id, tenantId]);
+  return r.rowCount > 0;
+}
+
 module.exports = {
   getById,
   getByUsernameAndTenant,
   insertAgent,
+  deleteByIdAndTenantId,
 };
