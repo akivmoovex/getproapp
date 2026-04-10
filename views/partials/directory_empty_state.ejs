@@ -68,7 +68,7 @@
       to change your filters.
     </p>
 
-    <% if (_hasAltCats || _hasAltCities) { %>
+    <% if (_mode === 'category' && (_hasAltCats || _hasAltCities)) { %>
     <div class="pro-directory-empty__suggestions" aria-label="Suggested searches">
       <p class="pro-directory-empty__suggestions-label muted">Try also</p>
       <div class="pro-directory-empty__suggestion-chips">
@@ -153,19 +153,16 @@
       <div class="pro-directory-empty__callback-success state-block state-block--success" id="directory-empty-callback-success" hidden role="status" tabindex="-1">
         <h2 class="pro-directory-empty__title pro-directory-empty__callback-success-title state-block__title">Request received</h2>
         <p class="pro-directory-empty__callback-success-lead state-block__body">Thanks—we&rsquo;ve received your details.</p>
-        <p class="pro-directory-empty__callback-success-muted state-block__body state-block__body--muted muted">We&rsquo;ll use your details to help connect you with a suitable professional.</p>
+        <p class="pro-directory-empty__callback-success-muted state-block__body state-block__body--muted muted">We shall call back, soon</p>
       </div>
     </form>
     <% } %>
 
+    <% if (_mode === 'category') { %>
     <div class="pro-directory-empty__actions" id="directory-empty-footer-actions">
-      <% if (_mode === 'directory') { %>
-        <%- include('components/button', { variant: 'text', href: _tp + '/directory', label: 'Clear all filters' }) %>
-        <%- include('components/button', { variant: 'secondary', href: '#' + _toolbarId, label: 'Adjust search' }) %>
-      <% } else { %>
-        <%- include('components/button', { variant: 'text', href: _tp + '/directory', label: 'All categories' }) %>
-        <%- include('components/button', { variant: 'secondary', href: '#' + _toolbarId, label: 'Refine search' }) %>
-      <% } %>
+      <%- include('components/button', { variant: 'text', href: _tp + '/directory', label: 'All categories' }) %>
+      <%- include('components/button', { variant: 'secondary', href: '#' + _toolbarId, label: 'Refine search' }) %>
     </div>
+    <% } %>
   </div>
 </div>
