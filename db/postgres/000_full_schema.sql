@@ -227,7 +227,7 @@ CREATE TABLE IF NOT EXISTS public.content_pages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT (now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT (now()),
   UNIQUE (tenant_id, kind, slug),
-  CHECK (kind IN ('article', 'guide', 'faq'))
+  CHECK (kind IN ('article', 'guide', 'faq', 'eula'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_content_pages_tenant_kind ON public.content_pages (tenant_id, kind);

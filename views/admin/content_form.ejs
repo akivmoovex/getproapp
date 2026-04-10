@@ -46,7 +46,7 @@
             <dt>Excerpt</dt><dd><%= row.excerpt || '—' %></dd>
             <% } %>
             <dt>Body</dt><dd style="white-space: pre-wrap"><%= row.body %></dd>
-            <% if (kind !== 'faq') { %>
+            <% if (kind !== 'faq' && kind !== 'eula') { %>
             <dt>Hero image URL</dt><dd><%= row.hero_image_url || '—' %></dd>
             <dt>Hero alt</dt><dd><%= row.hero_image_alt || '—' %></dd>
             <% } %>
@@ -82,10 +82,10 @@
           </div>
           <% } %>
           <div class="form-group">
-            <label for="body"><%= kind === 'faq' ? 'Answer' : 'Body' %></label>
+            <label for="body"><%= kind === 'faq' ? 'Answer' : kind === 'eula' ? 'EULA text' : 'Body' %></label>
             <textarea id="body" name="body" rows="14" required><%= row ? row.body : '' %></textarea>
           </div>
-          <% if (kind !== 'faq') { %>
+          <% if (kind !== 'faq' && kind !== 'eula') { %>
           <div class="form-group">
             <label for="hero_image_url">Hero image URL</label>
             <input id="hero_image_url" name="hero_image_url" type="text" value="<%= row ? row.hero_image_url : '' %>" />

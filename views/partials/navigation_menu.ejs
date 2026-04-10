@@ -7,7 +7,6 @@
 
 <nav class="wf-home-sidebar-nav wf-home-sidebar-nav--primary" aria-label="Primary">
   <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/directory') %>">Search directory</a>
-  <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/directory') %>#directory-toolbar">Categories</a>
   <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/join') %>" data-wf-join-us-open>List your business</a>
   <a class="wf-home-nav-btn wf-home-nav-btn--ghost wf-home-nav-btn--my-getpro" href="<%= _op('/login') %>">
     <span class="wf-home-nav-btn__text">My <%= _bn %></span>
@@ -19,7 +18,7 @@
   <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/about') %>">About</a>
   <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/answers') %>">Help &amp; answers</a>
   <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/articles') %>">Articles &amp; tips</a>
-  <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="#footer-terms">Terms</a>
+  <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/terms') %>">Terms</a>
   <% if (showAdmin) { %>
     <a class="wf-home-nav-btn wf-home-nav-btn--ghost app-nav-menu__admin" href="<%= _op('/getpro-admin') %>"><%= _bn %> Admin</a>
   <% } %>

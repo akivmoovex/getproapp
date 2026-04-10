@@ -125,6 +125,7 @@ module.exports = function adminRoutes({ db }) {
       }
       const u = req.session.adminUser;
       const tid = getAdminTenantId(req);
+      res.locals.adminSettingsTenantId = tid != null && Number(tid) > 0 ? Number(tid) : null;
       res.locals.adminNav = {
         role: u.role,
         isViewer: isTenantViewer(u.role),

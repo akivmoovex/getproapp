@@ -24,12 +24,16 @@
 
         <h1 class="section-title section-title--flush"><%= kindLabel %></h1>
         <% if (!(typeof embed !== 'undefined' && embed)) { %>
+        <% if (kind === 'article') { %>
+        <p class="admin-intro admin-intro--tight-top muted">Articles for this region. Published items appear on the public <strong>Articles</strong> page. Use <strong>Edit</strong> in the toolbar to create, change, or remove articles.</p>
+        <% } else { %>
         <p class="admin-intro admin-intro--tight-top muted">Editorial pages for this region. Opens from Settings → Content.</p>
         <% } %>
+        <% } %>
 
-        <% if (editMode && _canArt) { %>
+        <% if (editMode && _canArt && !(kind === 'eula' && items && items.length >= 1)) { %>
         <div class="admin-toolbar">
-          <%- include('../partials/components/button', { variant: 'primary', href: '/admin/content/new?kind=' + kind + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: 'New entry' }) %>
+          <%- include('../partials/components/button', { variant: 'primary', href: '/admin/content/new?kind=' + kind + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: kind === 'article' ? 'Create article' : 'New entry' }) %>
         </div>
         <% } else if (!_canArt) { %>
         <p class="admin-intro">View-only. Only region admins can add or change items.</p>
@@ -37,6 +41,55 @@
         <p class="admin-intro">View-only. Choose <strong>Edit</strong> to add or change items.</p>
         <% } %>
 
+        <% if (kind === 'article') { %>
+        <% var _embedQ = typeof embed !== 'undefined' && embed ? '?embed=1' : ''; %>
+        <% var _editEmb = typeof embed !== 'undefined' && embed ? '?edit=1&embed=1' : '?edit=1'; %>
+        <div class="card" style="margin-top: 1rem">
+          <div class="table-wrap">
+            <table class="table<%= editMode ? '' : ' table--readonly' %>">
+              <thead>
+                <tr>
+                  <th>Article</th>
+                  <th>Slug</th>
+                  <th>Status</th>
+                  <th>Locale</th>
+                  <th>Updated</th>
+                  <% if (editMode && _canArt) { %><th>Actions</th><% } %>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!items || items.length === 0) { %>
+                <tr>
+                  <td colspan="<%= editMode && _canArt ? 6 : 5 %>" class="admin-table-empty-cell muted">No articles yet.<% if (editMode && _canArt) { %> Use <strong>Create article</strong> above.<% } %></td>
+                </tr>
+                <% } %>
+                <% (items || []).forEach(function (it) { %>
+                <tr>
+                  <td class="table__strong-800"><a href="/admin/content/<%= it.id %><%= _embedQ %>"><%= it.title %></a></td>
+                  <td class="muted"><code><%= it.slug %></code></td>
+                  <td><%= it.published ? 'Published' : 'Draft' %></td>
+                  <td><%= it.locale || '—' %></td>
+                  <td class="muted"><%= it.updated_at || '—' %></td>
+                  <% if (editMode && _canArt) { %>
+                  <td>
+                    <div class="flex-row-wrap" style="gap: 0.35rem; align-items: center">
+                      <%- include('../partials/components/button', { variant: 'text', href: '/admin/content/' + it.id + _embedQ, label: 'View', size: 'sm' }) %>
+                      <%- include('../partials/components/button', { variant: 'default', href: '/admin/content/' + it.id + _editEmb, label: 'Edit', size: 'sm' }) %>
+                      <form method="post" action="/admin/content/<%= it.id %>/delete" style="display: inline" onsubmit="return confirm('Delete this article?');">
+                        <input type="hidden" name="kind" value="article" />
+                        <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+                        <%- include('../partials/components/button', { variant: 'default', type: 'submit', label: 'Delete', size: 'sm' }) %>
+                      </form>
+                    </div>
+                  </td>
+                  <% } %>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <% } else { %>
         <div class="admin-settings-hub__grid" style="margin-top: 1rem">
           <% (items || []).forEach(function (it) { %>
           <% if (typeof embed !== 'undefined' && embed) { %>
@@ -61,6 +114,7 @@
           <p class="muted">No items yet.<% if (editMode) { %> Use <strong>New entry</strong>.<% } %></p>
           <% } %>
         </div>
+        <% } %>
       </div>
     </main>
 

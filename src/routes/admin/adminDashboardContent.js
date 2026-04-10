@@ -145,12 +145,14 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
       canEditDirectory: canEditDirectoryData(u.role),
       canManageUsers: canManageTenantUsers(u.role),
       canAccessTenantSettings: canAccessTenantSettings(u.role),
+      canManageArticles: canManageArticles(u.role),
     });
   });
 
   function contentKindLabel(kind) {
     if (kind === "guide") return "Pro guides";
     if (kind === "faq") return "Questions & answers";
+    if (kind === "eula") return "Terms of use (EULA)";
     return "Articles";
   }
 
@@ -166,13 +168,14 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
   }
 
   function contentPreviewPath(kind, slug) {
+    if (kind === "eula") return `/terms?preview=1`;
     const seg = kind === "article" ? "articles" : kind === "guide" ? "guides" : "answers";
     return `/${seg}/${encodeURIComponent(slug)}?preview=1`;
   }
 
   router.get("/content/new", requireContentManager, (req, res) => {
     const kind = String(req.query.kind || "article").toLowerCase();
-    if (!["article", "guide", "faq"].includes(kind)) return res.status(400).send("Invalid kind.");
+    if (!["article", "guide", "faq", "eula"].includes(kind)) return res.status(400).send("Invalid kind.");
     return res.render("admin/content_form", {
       activeNav: kind === "article" ? "articles" : "settings",
       kind,
@@ -188,7 +191,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
   router.get("/content", requireAdmin, async (req, res, next) => {
     try {
       const kind = String(req.query.kind || "article").toLowerCase();
-      if (!["article", "guide", "faq"].includes(kind)) return res.status(400).send("Invalid kind.");
+      if (!["article", "guide", "faq", "eula"].includes(kind)) return res.status(400).send("Invalid kind.");
       const tid = getAdminTenantId(req);
       const pool = getPgPool();
       const items = await contentPagesRepo.listAllByKindAdmin(pool, tid, kind);
@@ -239,11 +242,15 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
 
   router.post("/content", requireContentManager, async (req, res, next) => {
     const kind = String(req.body.kind || "").toLowerCase();
-    if (!["article", "guide", "faq"].includes(kind)) return res.status(400).send("Invalid kind.");
+    if (!["article", "guide", "faq", "eula"].includes(kind)) return res.status(400).send("Invalid kind.");
     const title = String(req.body.title || "").trim();
     if (!title) return res.status(400).send("Title is required.");
     let slug = String(req.body.slug || "").trim().toLowerCase();
-    if (!slug) slug = slugify(title, { lower: true, strict: true });
+    if (kind === "eula") {
+      slug = "eula";
+    } else if (!slug) {
+      slug = slugify(title, { lower: true, strict: true });
+    }
     const excerpt = String(req.body.excerpt || "").trim();
     const body = String(req.body.body || "").trim();
     const hero_image_url = String(req.body.hero_image_url || "").trim();
@@ -293,7 +300,11 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
       const title = String(req.body.title || "").trim();
       if (!title) return res.status(400).send("Title is required.");
       let slug = String(req.body.slug || "").trim().toLowerCase();
-      if (!slug) slug = slugify(title, { lower: true, strict: true });
+      if (existing.kind === "eula") {
+        slug = "eula";
+      } else if (!slug) {
+        slug = slugify(title, { lower: true, strict: true });
+      }
       const excerpt = String(req.body.excerpt || "").trim();
       const body = String(req.body.body || "").trim();
       const hero_image_url = String(req.body.hero_image_url || "").trim();
@@ -360,7 +371,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
       const deleted = await contentPagesRepo.deleteByIdAndTenantAdmin(pool, id, tid);
       if (!deleted) return res.status(404).send("Not found.");
       const kind = String(req.body.kind || "article").toLowerCase();
-      const k = ["article", "guide", "faq"].includes(kind) ? kind : "article";
+      const k = ["article", "guide", "faq", "eula"].includes(kind) ? kind : "article";
       return res.redirect(redirectWithEmbed(req, `/admin/content?kind=${encodeURIComponent(k)}&edit=1`));
     } catch (e) {
       next(e);
@@ -408,7 +419,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
       if (!tenant) return res.status(404).send("Region not found.");
       const saved = req.query.saved === "1" || req.query.saved === "true";
       return res.render("admin/tenant_settings_detail", {
-        activeNav: "settings",
+        activeNav: "tenant_contact",
         tenant,
         isSuper: isSuperAdmin(u.role),
         saved,

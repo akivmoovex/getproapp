@@ -91,6 +91,7 @@ const MINI_SITE_RESERVED_SEGMENTS = new Set([
   "guides",
   "answers",
   "about",
+  "terms",
   "getpro-admin",
   "global",
   "demo",
@@ -467,6 +468,39 @@ module.exports = function publicRoutes() {
         seoDescription,
         canonicalUrl,
         ogUrl: canonicalUrl,
+        ...tenantLocals(req),
+        ...(await platformSupportAsync(req)),
+      });
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  router.get("/terms", async (req, res, next) => {
+    try {
+      const tenantId = req.tenant.id;
+      const row = await resolveContentRowAsync(req, "eula", "eula");
+      const canonicalUrl = canonicalUrlForTenant(req, "/terms");
+      let bodyHtml = "";
+      let seoTitle = `Terms of use | ${req.tenant.name || PRODUCT_NAME}`;
+      let seoDescription = `Terms of use and end-user license for ${req.tenant.name || PRODUCT_NAME}.`;
+      let previewBanner = false;
+      if (row) {
+        bodyHtml = formatBodyToHtml(row.body);
+        seoTitle = row.seo_title || row.title || seoTitle;
+        seoDescription = row.seo_description || row.excerpt || seoDescription;
+        const preview =
+          (req.query.preview === "1" || req.query.preview === "true") && canPreviewDraft(req, tenantId);
+        previewBanner = !!(preview && !row.published);
+      }
+      return res.render("terms", {
+        row: row || null,
+        bodyHtml,
+        seoTitle,
+        seoDescription,
+        canonicalUrl,
+        ogUrl: canonicalUrl,
+        previewBanner,
         ...tenantLocals(req),
         ...(await platformSupportAsync(req)),
       });

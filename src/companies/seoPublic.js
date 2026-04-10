@@ -42,7 +42,14 @@ async function buildSitemapXml(req) {
 
   const defaultLoc = req.tenant && req.tenant.defaultLocale ? String(req.tenant.defaultLocale) : "en";
   const contentRows = await contentPagesRepo.listPublishedKindSlugForSitemap(pool, tenantId, defaultLoc);
+  let termsInSitemap = false;
   for (const row of contentRows) {
+    if (row.kind === "eula") {
+      if (termsInSitemap) continue;
+      termsInSitemap = true;
+      urls.push({ loc: `${base}/terms`, changefreq: "yearly", priority: "0.5" });
+      continue;
+    }
     const seg = row.kind === "article" ? "articles" : row.kind === "guide" ? "guides" : "answers";
     urls.push({
       loc: `${base}/${seg}/${encodeURIComponent(row.slug)}`,

@@ -8,7 +8,9 @@
   const canCrm = !!nav.canAccessCrm;
   const canProjectIntake = !!nav.canAccessProjectIntake;
   const canSettings = !!nav.canAccessTenantSettings;
+  const contactTenantId = typeof adminSettingsTenantId !== 'undefined' && adminSettingsTenantId ? Number(adminSettingsTenantId) : 0;
   const canHub = !!nav.canAccessSettingsHub;
+  const canManageArticles = !!nav.canManageArticles;
   const scoped = !!nav.tenantScoped;
   const title = typeof navTitle !== 'undefined' ? navTitle : '';
   const scopeTenant = typeof adminScopeTenant !== 'undefined' && adminScopeTenant ? adminScopeTenant : null;
@@ -74,8 +76,11 @@
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'crm' ? 'admin-nav__link--active' : '' %>" href="/admin/crm">CRM</a>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'field_agent_analytics' ? 'admin-nav__link--active' : '' %>" href="/admin/field-agent-analytics">Field agents</a>
         <% } %>
-        <% if (scoped) { %>
+        <% if (scoped && canManageArticles) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'articles' ? 'admin-nav__link--active' : '' %>" href="/admin/content?kind=article&edit=1">Articles</a>
+        <% } %>
+        <% if (canSettings && contactTenantId > 0) { %>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'tenant_contact' ? 'admin-nav__link--active' : '' %>" href="/admin/settings/tenant/<%= contactTenantId %>">Contact</a>
         <% } %>
         <% if (canHub) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'settings' ? 'admin-nav__link--active' : '' %>" href="/admin/settings">Settings</a>

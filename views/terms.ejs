@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <%- include('partials/seo_meta', { seoTitle, seoDescription, canonicalUrl, ogUrl, ogType: 'website' }) %>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="page-support-content <%= tenant.themeClass %>" data-screen-role="support">
+    <div class="app-layout">
+      <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
+      <%- include('partials/app_navigation', { tenantUrlPrefix }) %>
+
+      <div class="app-layout__main">
+        <main class="ds-container content-faq-page">
+      <% if (typeof previewBanner !== 'undefined' && previewBanner) { %>
+        <p class="card" style="padding: 0.75rem 1rem; margin-bottom: 1rem; background: var(--color-surface-container-high, #eee)">
+          <strong>Draft preview</strong> — this page is not published to the public yet.
+        </p>
+      <% } %>
+      <nav class="pro-company-profile__breadcrumb" aria-label="Breadcrumb" style="margin-bottom: 1rem">
+        <a href="<%= tenantHomeHref %>">Home</a>
+        <span class="pro-company-profile__bc-sep" aria-hidden="true">/</span>
+        <span class="pro-company-profile__bc-current">Terms of use</span>
+      </nav>
+
+      <article class="content-prose">
+        <h1 class="section-title section-title--flush" style="font-size: 1.5rem">Terms of use (EULA)</h1>
+        <% if (row && row.excerpt) { %>
+          <p class="lead muted" style="font-size: 1.05rem; margin-bottom: 1.25rem"><%= row.excerpt %></p>
+        <% } %>
+        <% if (bodyHtml) { %>
+          <div class="content-prose__body"><%- bodyHtml %></div>
+        <% } else { %>
+          <p class="muted">Terms of use have not been published for this region yet.</p>
+        <% } %>
+      </article>
+        </main>
+
+        <%- include('partials/site_footer', { tenantUrlPrefix }) %>
+      </div>
+    </div>
+    <script src="<%= asset('scripts') %>" defer></script>
+    <%- include('partials/theme_prefs') %>
+  </body>
+</html>

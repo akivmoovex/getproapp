@@ -83,6 +83,7 @@ const { seedFieldAgentUser } = require("./src/seeds/seedFieldAgentUser");
 const { ensureFieldAgentSchema } = require("./src/db/pg/ensureFieldAgentSchema");
 const { ensureTenantPhoneRulesSchema } = require("./src/db/pg/ensureTenantPhoneRulesSchema");
 const { ensureContentLocaleSchema } = require("./src/db/pg/ensureContentLocaleSchema");
+const { ensureEulaKindSchema } = require("./src/db/pg/ensureEulaKindSchema");
 const { tenantHomeHrefFromPrefix } = require("./src/lib/tenantHomeHref");
 const { opsHrefMiddleware, marketingApexLoginRedirectTarget } = require("./src/lib/marketingOperationalUrls");
 const { getSubdomain, resolveHostname } = require("./src/platform/host");
@@ -469,6 +470,7 @@ ensureAdminUser({ pool: pgPoolForBoot })
     await ensureFieldAgentSchema(pgPoolForBoot);
     await ensureTenantPhoneRulesSchema(pgPoolForBoot);
     await ensureContentLocaleSchema(pgPoolForBoot);
+    await ensureEulaKindSchema(pgPoolForBoot);
     await seedBuiltinUsers(pgPoolForBoot);
     await seedManagerUsers(pgPoolForBoot);
     await seedFieldAgentUser(pgPoolForBoot);
