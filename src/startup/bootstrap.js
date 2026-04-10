@@ -4,7 +4,8 @@
  * Single shared bootstrap for server.js and CLI scripts.
  * - **Production (`NODE_ENV=production`):** does **not** load repo-root `.env` — Hostinger-injected `process.env` first.
  *   An **early** merge runs before any env snapshot: try `GETPRO_PRODUCTION_ENV_FILE_FALLBACK` first if set, else
- *   deterministic paths under `/home/u549637099/` (`.env.production.pronline` / `.getpro` / generic) from `appRoot`+`cwd`+`startupEntry` hints — so workers missing the env var still find the rescue file (`override: false`).
+ *   deterministic paths under `/home/u549637099/` — folder-scoped `pronline/.env.production` / `getpro/.env.production`
+ *   from path hints, then legacy suffixed files, then generic `.env.production` (`override: false`).
  *   A later conditional merge from the **same resolved path** remains for filled-key diagnostics (idempotent).
  * - **Non-production:** loads `.env` from app root (path from this file, not `cwd`) unless `GETPRO_SKIP_DOTENV=1`.
  * - Snapshots DB-related env before any file merge for provenance logging.
@@ -32,15 +33,21 @@ const DEFAULT_PRODUCTION_ENV_FILE_FALLBACK = "/home/u549637099/.env.production";
 const PRODUCTION_FALLBACK_HOME = "/home/u549637099";
 
 /**
- * Ordered paths: explicit env first (if set), then domain-hinted files, then generic. Deduped.
+ * Ordered paths: explicit env first (if set), then domain-hinted folder files, legacy suffixed files, generic. Deduped.
  * Does not depend on Hostinger for the built-in list — only optional GETPRO_PRODUCTION_ENV_FILE_FALLBACK when injected.
  */
 function buildProductionFallbackCandidates(appRoot, cwd, startupEntry) {
   const explicit = String(process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK || "").trim();
   const hay = `${String(appRoot)}\n${String(cwd)}\n${String(startupEntry)}`.toLowerCase();
   const deterministic = [];
-  if (hay.includes("pronline")) deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.pronline`);
-  if (hay.includes("getproapp")) deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.getpro`);
+  if (hay.includes("pronline")) {
+    deterministic.push(`${PRODUCTION_FALLBACK_HOME}/pronline/.env.production`);
+    deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.pronline`);
+  }
+  if (hay.includes("getproapp")) {
+    deterministic.push(`${PRODUCTION_FALLBACK_HOME}/getpro/.env.production`);
+    deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.getpro`);
+  }
   deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production`);
   const ordered = [];
   if (explicit) ordered.push(explicit);
