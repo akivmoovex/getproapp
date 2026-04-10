@@ -14,11 +14,7 @@
 
       <div class="app-layout__main">
         <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
-        <p class="muted field-agent-subnav" style="margin:0 0 1rem;">
-          <a href="<%= tenantUrlPrefix %>/field-agent/dashboard">Dashboard</a>
-          · <a href="<%= tenantUrlPrefix %>/field-agent/add-contact">Add contact</a>
-          · <a href="<%= tenantUrlPrefix %>/field-agent/call-me-back">Call me back</a>
-        </p>
+        <%- include('../partials/field_agent_console_nav', { tenantUrlPrefix, faActiveNav: 'add_contact', faIncludeFaq: false }) %>
 
         <section class="join-hero" style="padding-top:0;">
           <div class="ds-container join-hero-inner">

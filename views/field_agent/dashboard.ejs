@@ -14,16 +14,7 @@
 
       <div class="app-layout__main">
         <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
-        <p class="muted field-agent-subnav" style="margin:0 0 1rem;">
-          <a href="<%= tenantUrlPrefix %>/field-agent/dashboard">Dashboard</a>
-          · <a href="<%= tenantUrlPrefix %>/field-agent/add-contact">Add contact</a>
-          · <a href="<%= tenantUrlPrefix %>/field-agent/call-me-back">Call me back</a>
-          · <a href="<%= tenantUrlPrefix %>/field-agent/faq">FAQ</a>
-          ·
-          <form method="post" action="<%= tenantUrlPrefix %>/field-agent/logout" style="display:inline;">
-            <button type="submit" class="c-button c-button--text" style="padding:0;min-height:auto;font:inherit;">Sign out</button>
-          </form>
-        </p>
+        <%- include('../partials/field_agent_console_nav', { tenantUrlPrefix, faActiveNav: 'dashboard', faIncludeFaq: true }) %>
 
         <% if (typeof submitted !== 'undefined' && submitted) { %>
           <p class="admin-gate-success" role="status">Submission received.</p>
