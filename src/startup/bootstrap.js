@@ -3,9 +3,9 @@
 /**
  * Single shared bootstrap for server.js and CLI scripts.
  * - **Production (`NODE_ENV=production`):** does **not** load repo-root `.env` — Hostinger-injected `process.env` first.
- *   An **early** merge from `GETPRO_PRODUCTION_ENV_FILE_FALLBACK` (or default path) runs before any env snapshot
- *   so LiteSpeed workers missing panel env still see `DATABASE_URL` when the file exists (`override: false`).
- *   A later conditional merge from the same path remains for logging / filled-key diagnostics (idempotent).
+ *   An **early** merge runs before any env snapshot: try `GETPRO_PRODUCTION_ENV_FILE_FALLBACK` first if set, else
+ *   deterministic paths under `/home/u549637099/` (`.env.production.pronline` / `.getpro` / generic) from `appRoot`+`cwd`+`startupEntry` hints — so workers missing the env var still find the rescue file (`override: false`).
+ *   A later conditional merge from the **same resolved path** remains for filled-key diagnostics (idempotent).
  * - **Non-production:** loads `.env` from app root (path from this file, not `cwd`) unless `GETPRO_SKIP_DOTENV=1`.
  * - Snapshots DB-related env before any file merge for provenance logging.
  * - `dotenv` does not override existing process.env keys (`override: false`).
@@ -19,14 +19,74 @@ const {
   snapshotEnvPresenceYesNo,
   logEnvTracePhase,
   logEnvPresenceDiagnosticLine,
+  logEarlyProductionEnvFileResolution,
   logProductionEnvFileFallback,
   logWorkerIdentityLine,
   logEnvPresenceLostIfAny,
   buildWorkerLabel,
 } = require("./workerEnvTrace");
 
-/** Default production fallback path; fills missing keys only (`override: false`). Override with GETPRO_PRODUCTION_ENV_FILE_FALLBACK. */
+/** Generic deterministic fallback (last resort in built-in list). */
 const DEFAULT_PRODUCTION_ENV_FILE_FALLBACK = "/home/u549637099/.env.production";
+
+const PRODUCTION_FALLBACK_HOME = "/home/u549637099";
+
+/**
+ * Ordered paths: explicit env first (if set), then domain-hinted files, then generic. Deduped.
+ * Does not depend on Hostinger for the built-in list — only optional GETPRO_PRODUCTION_ENV_FILE_FALLBACK when injected.
+ */
+function buildProductionFallbackCandidates(appRoot, cwd, startupEntry) {
+  const explicit = String(process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK || "").trim();
+  const hay = `${String(appRoot)}\n${String(cwd)}\n${String(startupEntry)}`.toLowerCase();
+  const deterministic = [];
+  if (hay.includes("pronline")) deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.pronline`);
+  if (hay.includes("getproapp")) deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.getpro`);
+  deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production`);
+  const ordered = [];
+  if (explicit) ordered.push(explicit);
+  for (const p of deterministic) {
+    if (!ordered.includes(p)) ordered.push(p);
+  }
+  return ordered;
+}
+
+/**
+ * Per-path exists summary + load first existing file successfully (override:false). On parse error, try next path.
+ * @returns {{ candidatesOrdered: string[], candidatesExistsSummary: string, selectedPath: string|null, loaded: boolean, parsedKeys: string[], loadError: string|null }}
+ */
+function tryLoadFirstExistingProductionFallback(orderedPaths) {
+  const existsParts = orderedPaths.map((p) => `${p}=${fs.existsSync(p) ? "yes" : "no"}`);
+  let selectedPath = null;
+  let loaded = false;
+  /** @type {string[]} */
+  let parsedKeys = [];
+  let loadError = null;
+  for (const p of orderedPaths) {
+    if (!fs.existsSync(p)) continue;
+    const r = require("dotenv").config({
+      path: p,
+      override: false,
+      quiet: true,
+    });
+    if (r.error) {
+      loadError = String(r.error.message || r.error);
+      continue;
+    }
+    selectedPath = p;
+    loaded = true;
+    parsedKeys = Object.keys(r.parsed || {});
+    loadError = null;
+    break;
+  }
+  return {
+    candidatesOrdered: orderedPaths,
+    candidatesExistsSummary: existsParts.join(";"),
+    selectedPath,
+    loaded,
+    parsedKeys,
+    loadError,
+  };
+}
 
 /** @type {object | null} */
 let _bootstrapSingleton = null;
@@ -124,37 +184,49 @@ function runBootstrap() {
   const startupEntry = getStartupEntryLabel();
   /** Host-only DB presence before any production file merge (provenance). */
   const beforeDb = snapshotDbEnvPresence();
+  const appRoot = getAppRootFromBootstrap();
 
   let earlyProductionEnvPath = null;
   let earlyProductionEnvExists = false;
   let earlyProductionEnvLoaded = false;
   /** @type {string[]} */
   let earlyProductionFileParsedKeys = [];
+  /** @type {string[]} */
+  let productionFallbackCandidatesOrdered = [];
+  let productionFallbackCandidatesExistsSummary = "";
+  let earlyProductionLoadError = null;
 
   if (process.env.NODE_ENV === "production") {
-    const rawEarly = String(process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK || "").trim();
-    earlyProductionEnvPath = rawEarly || DEFAULT_PRODUCTION_ENV_FILE_FALLBACK;
-    earlyProductionEnvExists = fs.existsSync(earlyProductionEnvPath);
-    if (earlyProductionEnvExists) {
-      const earlyDotenv = require("dotenv").config({
-        path: earlyProductionEnvPath,
-        override: false,
-        quiet: true,
-      });
-      earlyProductionEnvLoaded = !earlyDotenv.error;
-      earlyProductionFileParsedKeys = Object.keys(earlyDotenv.parsed || {});
+    const ordered = buildProductionFallbackCandidates(appRoot, process.cwd(), startupEntry);
+    const res = tryLoadFirstExistingProductionFallback(ordered);
+    productionFallbackCandidatesOrdered = res.candidatesOrdered;
+    productionFallbackCandidatesExistsSummary = res.candidatesExistsSummary;
+    earlyProductionEnvPath = res.selectedPath;
+    earlyProductionEnvExists = res.selectedPath != null && fs.existsSync(res.selectedPath);
+    earlyProductionEnvLoaded = res.loaded;
+    earlyProductionFileParsedKeys = res.parsedKeys;
+    earlyProductionLoadError = res.loadError;
+    logEarlyProductionEnvFileResolution({
+      startupEntry,
+      candidatesOrdered: res.candidatesOrdered,
+      candidatesExistsSummary: res.candidatesExistsSummary,
+      selectedPath: res.selectedPath,
+      loaded: res.loaded,
+    });
+    if (earlyProductionLoadError != null && !res.loaded) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[getpro] earlyProductionEnvFile: no file loaded successfully (last parse error truncated, no values): ${String(
+          earlyProductionLoadError
+        ).slice(0, 200)}`
+      );
     }
-    // eslint-disable-next-line no-console
-    console.log(
-      `[getpro] earlyProductionEnvFile path=${earlyProductionEnvPath} exists=${earlyProductionEnvExists ? "yes" : "no"} loaded=${earlyProductionEnvLoaded ? "yes" : "no"}`
-    );
   }
 
   const envPresenceEarliest = snapshotEnvPresenceYesNo();
   logEnvTracePhase("earliest", { startupEntry });
   logEnvPresenceDiagnosticLine({ startupEntry });
 
-  const appRoot = getAppRootFromBootstrap();
   const envPath = getEnvFilePath();
   const serverJsPath = getServerJsPath();
   const bootstrapModulePath = __filename;
@@ -191,9 +263,8 @@ function runBootstrap() {
   let productionFileMergeSkipped = false;
 
   if (isProduction) {
-    const rawPath = String(process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK || "").trim();
-    productionEnvFilePath = rawPath || DEFAULT_PRODUCTION_ENV_FILE_FALLBACK;
-    productionFileExists = fs.existsSync(productionEnvFilePath);
+    productionEnvFilePath = earlyProductionEnvPath;
+    productionFileExists = productionEnvFilePath != null && fs.existsSync(productionEnvFilePath);
     const snapBeforeProdFile = snapshotEnvPresenceYesNo();
     const needsRescueFromFile = !hostHasAllProductionRescueVars();
     if (productionFileExists && needsRescueFromFile) {
@@ -280,6 +351,9 @@ function runBootstrap() {
     earlyProductionEnvExists,
     earlyProductionEnvLoaded,
     earlyProductionFileParsedKeys,
+    productionFallbackCandidatesOrdered,
+    productionFallbackCandidatesExistsSummary,
+    earlyProductionLoadError,
   };
   return _bootstrapSingleton;
 }
@@ -325,4 +399,7 @@ module.exports = {
   isLiteSpeedLsnodeEntry,
   resetBootstrapForTests,
   DEFAULT_PRODUCTION_ENV_FILE_FALLBACK,
+  buildProductionFallbackCandidates,
+  tryLoadFirstExistingProductionFallback,
+  PRODUCTION_FALLBACK_HOME,
 };

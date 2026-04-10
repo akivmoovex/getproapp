@@ -108,12 +108,13 @@ function logEnvPresenceLostIfAny(earliest, final) {
  */
 function logProductionEnvFileFallback(opts) {
   const label = buildWorkerLabel(opts.startupEntry);
+  const pathLabel = opts.path != null && String(opts.path).trim() !== "" ? String(opts.path) : "(none)";
   const filled = opts.filledKeys && opts.filledKeys.length ? opts.filledKeys.join(",") : "none";
   const err = opts.error != null && String(opts.error).trim() !== "" ? String(opts.error).trim().slice(0, 200) : null;
   const mergeSkipped = opts.mergeSkipped === true ? "yes" : "no";
   // eslint-disable-next-line no-console
   console.log(
-    `[getpro] productionEnvFile path=${opts.path} exists=${opts.exists ? "yes" : "no"} loaded=${opts.loaded ? "yes" : "no"} mergeSkipped=${mergeSkipped} filledKeys=${filled} workerLabel=${label} pid=${process.pid} DATABASE_URL=${opts.presence.DATABASE_URL} GETPRO_DATABASE_URL=${opts.presence.GETPRO_DATABASE_URL} SESSION_SECRET=${opts.presence.SESSION_SECRET} BASE_DOMAIN=${opts.presence.BASE_DOMAIN}`
+    `[getpro] productionEnvFile path=${pathLabel} exists=${opts.exists ? "yes" : "no"} loaded=${opts.loaded ? "yes" : "no"} mergeSkipped=${mergeSkipped} filledKeys=${filled} workerLabel=${label} pid=${process.pid} DATABASE_URL=${opts.presence.DATABASE_URL} GETPRO_DATABASE_URL=${opts.presence.GETPRO_DATABASE_URL} SESSION_SECRET=${opts.presence.SESSION_SECRET} BASE_DOMAIN=${opts.presence.BASE_DOMAIN}`
   );
   if (err) {
     // eslint-disable-next-line no-console
@@ -121,10 +122,25 @@ function logProductionEnvFileFallback(opts) {
   }
 }
 
+/**
+ * Early production fallback: ordered candidates, per-path exists, selected path, load result (no values).
+ * @param {{ startupEntry: string, candidatesOrdered: string[], candidatesExistsSummary: string, selectedPath: string|null, loaded: boolean }} opts
+ */
+function logEarlyProductionEnvFileResolution(opts) {
+  const label = buildWorkerLabel(opts.startupEntry);
+  const cand = opts.candidatesOrdered.length ? opts.candidatesOrdered.join("|") : "(none)";
+  const selected = opts.selectedPath != null ? opts.selectedPath : "(none)";
+  // eslint-disable-next-line no-console
+  console.log(
+    `[getpro] earlyProductionEnvFile candidates=${cand} candidatesExists=${opts.candidatesExistsSummary} selected=${selected} loaded=${opts.loaded ? "yes" : "no"} workerLabel=${label} pid=${process.pid}`
+  );
+}
+
 module.exports = {
   snapshotEnvPresenceYesNo,
   logEnvTracePhase,
   logEnvPresenceDiagnosticLine,
+  logEarlyProductionEnvFileResolution,
   logProductionEnvFileFallback,
   buildWorkerLabel,
   logWorkerIdentityLine,
