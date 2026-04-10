@@ -10691,6 +10691,11 @@ body[class*="tenant-"] {
   font-size: 0.875rem;
 }
 
+/* Sign-in hub: full-viewport M3 overlay + dialog (reuses m3-modal.css tokens) */
+.portal-login-hub-page .portal-login-hub-m3-modal.m3-modal {
+  width: min(100%, 36rem);
+}
+
 .client-portal-page {
   min-height: 100vh;
   padding: var(--space-2);

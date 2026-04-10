@@ -90,6 +90,8 @@ module.exports = function registerAdminAuthRoutes(router) {
   });
 
   router.post("/logout", (req, res) => {
-    req.session.destroy(() => res.redirect("/admin/login"));
+    const prefix = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
+    const home = tenantHomeHrefFromPrefix(prefix);
+    req.session.destroy(() => res.redirect(302, home));
   });
 };

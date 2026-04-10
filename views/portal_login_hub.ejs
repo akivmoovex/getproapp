@@ -8,42 +8,48 @@
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="portal-login-hub-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
-    <main class="portal-login-hub-main">
-      <div class="portal-login-hub-inner">
-        <h1 class="portal-login-hub-title">Sign in</h1>
-        <p class="muted portal-login-hub-lead">Choose your account type. Each area uses a separate session and menu — they are not combined.</p>
-        <ul class="portal-login-hub-cards" role="list">
-          <li>
-            <a class="card portal-login-hub-card portal-login-hub-card--admin" href="<%= typeof opsHref === 'function' ? opsHref('/admin/login') : '/admin/login' %>">
-              <span class="portal-login-hub-card__label"><%= _bn %> staff</span>
-              <span class="portal-login-hub-card__desc muted">Customer service and admin console</span>
-            </a>
-          </li>
-          <li>
-            <a class="card portal-login-hub-card portal-login-hub-card--provider" href="<%= typeof opsHref === 'function' ? opsHref('/provider/login') : '/provider/login' %>">
-              <span class="portal-login-hub-card__label">Service provider</span>
-              <span class="portal-login-hub-card__desc muted">Directory businesses — leads and minisite</span>
-            </a>
-          </li>
-          <li>
-            <a class="card portal-login-hub-card portal-login-hub-card--field" href="<%= typeof opsHref === 'function' ? opsHref('/field-agent/login') : '/field-agent/login' %>">
-              <span class="portal-login-hub-card__label">Field agent</span>
-              <span class="portal-login-hub-card__desc muted">Capture leads and submissions in the field</span>
-            </a>
-          </li>
-          <li>
-            <a class="card portal-login-hub-card portal-login-hub-card--client" href="<%= typeof opsHref === 'function' ? opsHref('/client/login') : '/client/login' %>">
-              <span class="portal-login-hub-card__label">Client / end user</span>
-              <span class="portal-login-hub-card__desc muted">Project updates and client portal (preview)</span>
-            </a>
-          </li>
-        </ul>
-        <p class="muted portal-login-hub-foot">
-          <% var th = typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/'; %>
-          <a href="<%= th %>">← Back to site</a>
-          · <a href="<%= typeof opsHref === 'function' ? opsHref('/getpro-admin') : '/getpro-admin' %>">Staff sign-in (alternate page)</a>
-        </p>
+    <div
+      class="m3-modal-overlay m3-modal-overlay--open portal-login-hub-overlay"
+      role="presentation"
+    >
+      <div class="m3-modal-overlay__backdrop" aria-hidden="true"></div>
+      <div
+        class="m3-modal portal-login-hub-m3-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="portal-login-hub-title"
+      >
+        <div class="m3-modal__body portal-login-hub-inner">
+          <h1 class="portal-login-hub-title" id="portal-login-hub-title">Sign in</h1>
+          <p class="muted portal-login-hub-lead">Choose your account type. Each area uses a separate session and menu — they are not combined.</p>
+          <ul class="portal-login-hub-cards" role="list">
+            <li>
+              <a class="card portal-login-hub-card portal-login-hub-card--client" href="<%= typeof opsHref === 'function' ? opsHref('/client/login') : '/client/login' %>">
+                <span class="portal-login-hub-card__label">Client</span>
+                <span class="portal-login-hub-card__desc muted">Place orders, get quotes from trusted service providers</span>
+              </a>
+            </li>
+            <li>
+              <a class="card portal-login-hub-card portal-login-hub-card--provider" href="<%= typeof opsHref === 'function' ? opsHref('/provider/login') : '/provider/login' %>">
+                <span class="portal-login-hub-card__label">Service Providers</span>
+                <span class="portal-login-hub-card__desc muted">See quality leads, improve your business.</span>
+              </a>
+            </li>
+            <li>
+              <a class="card portal-login-hub-card portal-login-hub-card--field" href="<%= typeof opsHref === 'function' ? opsHref('/field-agent/login') : '/field-agent/login' %>">
+                <span class="portal-login-hub-card__label">Field agent</span>
+                <span class="portal-login-hub-card__desc muted">Capture new leads and support your clients.</span>
+              </a>
+            </li>
+            <li>
+              <a class="card portal-login-hub-card portal-login-hub-card--admin" href="<%= typeof opsHref === 'function' ? opsHref('/admin/login') : '/admin/login' %>">
+                <span class="portal-login-hub-card__label">Others</span>
+                <span class="portal-login-hub-card__desc muted">Access internal tools and support functions.</span>
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
-    </main>
+    </div>
   </body>
 </html>
