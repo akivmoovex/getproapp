@@ -90,6 +90,7 @@ const MINI_SITE_RESERVED_SEGMENTS = new Set([
   "articles",
   "guides",
   "answers",
+  "about",
   "getpro-admin",
   "global",
   "demo",
@@ -454,6 +455,24 @@ module.exports = function publicRoutes() {
   router.get("/robots.txt", (req, res) => {
     res.type("text/plain");
     res.send(buildRobotsTxt(req));
+  });
+
+  router.get("/about", async (req, res, next) => {
+    try {
+      const canonicalUrl = canonicalUrlForTenant(req, "/about");
+      const seoTitle = `About | ${req.tenant.name || PRODUCT_NAME}`;
+      const seoDescription = `About ${PRODUCT_NAME} — directory platform.`;
+      return res.render("about", {
+        seoTitle,
+        seoDescription,
+        canonicalUrl,
+        ogUrl: canonicalUrl,
+        ...tenantLocals(req),
+        ...(await platformSupportAsync(req)),
+      });
+    } catch (e) {
+      next(e);
+    }
   });
 
   async function renderContentIndex(req, res, kind, label) {

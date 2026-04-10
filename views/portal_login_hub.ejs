@@ -1,15 +1,94 @@
 <!doctype html>
-<%# Sign-in hub: same M3 + join-modal shell as join.ejs modals (overlay, backdrop, header + close, join-modal__scroll). Inline script dismisses to tenantHomeHref; no join.js. %>
+<%# Sign-in hub: home shell (hero) under the modal; same M3 overlay/backdrop pattern as join modal. %>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
 <html lang="en">
   <head>
-    <%- include('partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>Sign in | <%= _bn %></title>
+    <%- include('partials/seo_meta', {
+      seoTitle: 'Sign in | ' + _bn,
+      seoDescription: 'Choose how you want to sign in — clients, service providers, field agents, or internal tools.',
+      canonicalUrl: '',
+      ogUrl: '',
+      ogType: 'website'
+    }) %>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <% var _home = typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/'; %>
-  <body class="portal-login-hub-page join-modal-open <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>">
+  <body class="home-page home-page--launcher wf-home-layout portal-login-hub-page portal-login-hub-page--overlay-home join-modal-open <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>" data-screen-role="launcher">
+    <div class="app-layout">
+      <%- include('partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
+      <%- include('partials/app_navigation', { tenantUrlPrefix }) %>
+
+      <div class="app-layout__main">
+    <% if (typeof showRegionPickerUi !== 'undefined' && showRegionPickerUi) { %>
+    <div id="wf-region-m3-root" class="m3-modal-overlay wf-region-m3" hidden aria-hidden="true">
+      <div class="m3-modal-overlay__backdrop" id="wf-region-overlay"></div>
+      <div
+        id="wf-region-sheet"
+        class="m3-modal wf-region-sheet wf-region-sheet--picker"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wf-region-title"
+      >
+        <header class="m3-modal__header wf-region-sheet__header">
+          <h2 id="wf-region-title" class="m3-modal__title wf-region-title wf-region-title--picker">Choose region</h2>
+          <button type="button" class="m3-modal__close wf-region-close-x" id="wf-region-close-x" aria-label="Close">×</button>
+        </header>
+        <div class="m3-modal__body wf-region-sheet__body">
+          <div class="wf-region-actions wf-region-actions--grid">
+        <% if (typeof regionChoices !== 'undefined' && regionChoices && regionChoices.length) { %>
+          <% regionChoices.forEach(function (r) { %>
+            <a class="wf-region-btn" href="<%= r.href %>">
+              <span class="wf-region-btn-label" <%= r.slug === 'il' ? 'dir="rtl"' : '' %>><%= r.slug === 'il' ? 'ישראל' : r.name %></span>
+              <span class="wf-region-btn-flag" aria-hidden="true"><%= r.flag %></span>
+            </a>
+          <% }); %>
+        <% } else { %>
+        <a class="wf-region-btn" href="<%= regionZmUrl || tenantHomeHref %>">
+          <span class="wf-region-btn-label">Zambia</span>
+          <span class="wf-region-btn-flag" aria-hidden="true">🇿🇲</span>
+        </a>
+        <% if (regionIlUrl) { %>
+        <a class="wf-region-btn" href="<%= regionIlUrl %>">
+          <span class="wf-region-btn-label" dir="rtl">ישראל</span>
+          <span class="wf-region-btn-flag" aria-hidden="true">🇮🇱</span>
+        </a>
+        <% } %>
+        <% } %>
+          </div>
+        </div>
+        <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
+      </div>
+    </div>
+    <% } %>
+
+    <main class="gp-home" role="main">
+      <div class="gp-home-top-stack">
+      <section class="gp-home-hero" aria-labelledby="gp-home-hero-title">
+        <%- include('partials/components/container_start') %>
+          <h1 id="gp-home-hero-title" class="visually-hidden"><%= _bn %> — professional directory</h1>
+          <div class="gp-home-hero__top">
+            <div class="gp-home-hero__search-shell">
+              <div id="site-search-bar" class="c-search-bar-shell gp-home-search gp-home-search-card" aria-label="Project search">
+                <%- include('partials/pro_search_form', {
+                  variant: 'home',
+                  tenantUrlPrefix,
+                  formAction: typeof opsHref !== 'undefined' ? opsHref('/directory') : undefined,
+                  showCategoryFilter: false,
+                }) %>
+              </div>
+            </div>
+          </div>
+        <%- include('partials/components/container_close') %>
+      </section>
+      </div>
+    </main>
+
+        <%- include('partials/site_footer', { tenantUrlPrefix }) %>
+      </div>
+    </div>
+
     <div
       class="m3-modal-overlay join-modal-layer m3-modal-overlay--open"
       id="portal-login-hub-modal"
@@ -55,6 +134,10 @@
         <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
       </div>
     </div>
+
+    <script src="<%= asset('scripts') %>" defer></script>
+    <%- include('partials/theme_prefs') %>
+    <%- include('partials/autocomplete_defer_bootstrap') %>
     <script>
       (function () {
         var home = <%- JSON.stringify(_home) %>;

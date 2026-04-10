@@ -99,6 +99,7 @@ const { STAGES } = require("./src/tenants/tenantStages");
 const { eventTimeParts } = require("./src/lib/eventTime");
 const branding = require("./src/platform/branding");
 const { createAssetUrl } = require("./src/platform/assetUrls");
+const { getAppVersion } = require("./src/lib/appVersion");
 const publicModule = require("./src/routes/public")();
 const fieldAgentRoutes = require("./src/routes/fieldAgent");
 const adminRoutes = require("./src/routes/admin");
@@ -152,8 +153,12 @@ if (isProduction) {
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+// App version: single source is getAppVersion() (package.json). stylesVersion feeds createAssetUrl for ?v= on legacy /public assets; do not duplicate version strings in templates.
 app.use((req, res, next) => {
-  const stylesVersion = process.env.GETPRO_STYLES_V || "20260331-home-search-fix-final";
+  const appVersion = getAppVersion();
+  const stylesStamp = process.env.GETPRO_STYLES_V || "20260331-home-search-fix-final";
+  const stylesVersion = `${appVersion}-${stylesStamp}`;
+  res.locals.appVersion = appVersion;
   res.locals.stylesVersion = stylesVersion;
   res.locals.asset = createAssetUrl(stylesVersion);
   res.locals.encodeURIComponent = encodeURIComponent;
@@ -429,6 +434,7 @@ app.get("/login", (req, res) => {
     tenant: req.tenant,
     tenantUrlPrefix: prefix,
     tenantHomeHref: tenantHomeHrefFromPrefix(prefix),
+    showRegionPickerUi: !!req.isApexHost || (!!req.tenant && req.tenant.slug === "global"),
   });
 });
 

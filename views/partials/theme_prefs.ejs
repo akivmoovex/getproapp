@@ -2,3 +2,16 @@
 <% if (typeof showUiGuard !== 'undefined' && showUiGuard) { %>
 <script src="<%= asset('ui-guard') %>" defer></script>
 <% } %>
+<%# Client refresh: reload once when inlined appVersion differs from sessionStorage (same token as server); not CDN-specific. %>
+<script>
+(function () {
+  try {
+    var v = <%- JSON.stringify(typeof appVersion !== 'undefined' ? appVersion : '') %>;
+    if (!v) return;
+    var k = 'getpro_app_v';
+    var prev = sessionStorage.getItem(k);
+    sessionStorage.setItem(k, v);
+    if (prev && prev !== v) location.reload();
+  } catch (e) {}
+})();
+</script>

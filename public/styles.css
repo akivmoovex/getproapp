@@ -10629,6 +10629,12 @@ body[class*="tenant-"] {
   background: color-mix(in srgb, var(--surface) 94%, var(--wf-primary) 6%);
 }
 
+/* /login overlay-home: real gp-home hero under join-style m3-modal (translucent backdrop); avoid opaque page fill */
+.portal-login-hub-page.portal-login-hub-page--overlay-home {
+  padding: 0;
+  background: transparent;
+}
+
 .portal-login-hub-main {
   display: flex;
   justify-content: center;
