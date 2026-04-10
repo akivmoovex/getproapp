@@ -64,7 +64,8 @@ See `README.md` and `.env.example` for **GETPRO_STYLES_V**, **GETPRO_USE_BUILD_A
 
 ## Related code
 
-- `src/startup/bootstrap.js` — when dotenv runs
+- `src/startup/bootstrap.js` — when dotenv runs; production may merge **`.env.production`** from well-known paths when host env is incomplete (see file header and logs — exact paths depend on deployment home directory)
 - `src/startup/productionEnvGate.js` — production required vars + diagnostics
 - `src/db/pg/pool.js` — Postgres URL and SSL
 - `src/startup/productionStartupChecks.js` — additional production warnings
+- Field Agent moderation (tables, CRM linkage): **`docs/field-agent-moderation.md`**

@@ -67,6 +67,7 @@
     "postcss-selector-parser": "^7.1.1",
     "storybook": "^8.6.18",
     "stylelint": "^16.26.1",
-    "stylelint-config-standard": "^39.0.1"
+    "stylelint-config-standard": "^39.0.1",
+    "supertest": "^7.2.2"
   }
 }

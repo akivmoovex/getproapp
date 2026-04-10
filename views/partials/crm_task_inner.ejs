@@ -41,6 +41,74 @@
         <% } %>
       </section>
 
+      <% if (typeof fieldAgentProviderSubmission !== 'undefined' && fieldAgentProviderSubmission) { %>
+      <% var _fas = fieldAgentProviderSubmission; %>
+      <section class="crm-task-section card crm-task-section--field-agent" data-field-agent-submission="<%= _fas.id %>">
+        <h2 class="crm-task-section__h">Field agent provider submission</h2>
+        <p class="muted crm-task-hero__meta">
+          Submission #<%= _fas.id %> · Status: <strong><%= _fas.status %></strong>
+          <% if (_fas.field_agent_username) { %> · Agent: <strong><%= _fas.field_agent_username %></strong><% } %>
+        </p>
+        <div class="crm-task-prose crm-task-fa-summary">
+          <p><strong>Name:</strong> <%= _fas.first_name %> <%= _fas.last_name %></p>
+          <p><strong>Profession:</strong> <%= _fas.profession %></p>
+          <p><strong>City:</strong> <%= _fas.city %></p>
+          <p><strong>Phone:</strong> <%= _fas.phone_raw %></p>
+          <p><strong>WhatsApp:</strong> <%= _fas.whatsapp_raw || '—' %></p>
+          <p><strong>PACRA:</strong> <%= _fas.pacra || '—' %></p>
+          <p><strong>Commission recorded:</strong> <%= _fas.commission_amount != null ? _fas.commission_amount : '—' %></p>
+          <% if (_fas.status === 'rejected' && _fas.rejection_reason) { %>
+          <p><strong>Rejection reason:</strong> <%= _fas.rejection_reason %></p>
+          <% } %>
+        </div>
+        <% if (canMutateCrm) { %>
+          <% if (_fas.status === 'pending') { %>
+          <div class="crm-task-fa-actions">
+            <form method="post" action="/admin/crm/tasks/<%= task.id %>/field-agent-submission/approve" class="form crm-task-form crm-task-form--inline">
+              <% if (_ov) { %>
+              <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
+              <% } %>
+              <div class="input-field">
+                <label for="fa_approve_commission" class="input-field__label">Commission on approve (optional)</label>
+                <input id="fa_approve_commission" name="commission_amount" type="number" min="0" step="0.01" class="input-field__control" placeholder="0.00" />
+              </div>
+              <div class="crm-task-form__actions">
+                <%- include('components/button', { variant: 'primary', type: 'submit', label: 'Approve submission' }) %>
+              </div>
+            </form>
+            <form method="post" action="/admin/crm/tasks/<%= task.id %>/field-agent-submission/reject" class="form crm-task-form">
+              <% if (_ov) { %>
+              <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
+              <% } %>
+              <div class="input-field">
+                <label for="fa_reject_reason" class="input-field__label">Reject — reason (required)</label>
+                <textarea id="fa_reject_reason" name="rejection_reason" class="input-field__control" rows="2" required maxlength="4000" placeholder="Why this submission is rejected…"></textarea>
+              </div>
+              <div class="crm-task-form__actions">
+                <%- include('components/button', { variant: 'secondary', type: 'submit', label: 'Reject submission' }) %>
+              </div>
+            </form>
+          </div>
+          <% } else if (_fas.status === 'approved') { %>
+          <form method="post" action="/admin/crm/tasks/<%= task.id %>/field-agent-submission/commission" class="form crm-task-form">
+            <% if (_ov) { %>
+            <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
+            <% } %>
+            <div class="input-field">
+              <label for="fa_commission_edit" class="input-field__label">Commission amount</label>
+              <input id="fa_commission_edit" name="commission_amount" type="number" min="0" step="0.01" class="input-field__control" required value="<%= _fas.commission_amount != null ? _fas.commission_amount : 0 %>" />
+            </div>
+            <div class="crm-task-form__actions">
+              <%- include('components/button', { variant: 'primary', type: 'submit', label: 'Update commission' }) %>
+            </div>
+          </form>
+          <% } %>
+        <% } else { %>
+          <p class="muted crm-task-empty">Read-only — moderation actions require CRM edit access.</p>
+        <% } %>
+      </section>
+      <% } %>
+
       <% if (canEdit) { %>
       <section class="crm-task-section card crm-task-section--form">
         <h2 class="crm-task-section__h">Edit task</h2>

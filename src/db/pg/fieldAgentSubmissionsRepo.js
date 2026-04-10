@@ -1,5 +1,126 @@
 "use strict";
 
+/**
+ * Full submission row for admin CRM (tenant-scoped). Includes submitting field agent identity.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} submissionId
+ */
+async function getSubmissionByIdForAdmin(pool, tenantId, submissionId) {
+  const sid = Number(submissionId);
+  const tid = Number(tenantId);
+  if (!Number.isFinite(sid) || sid < 1 || !Number.isFinite(tid) || tid < 1) return null;
+  const r = await pool.query(
+    `
+    SELECT s.*,
+           fa.username AS field_agent_username,
+           fa.display_name AS field_agent_display_name
+    FROM public.field_agent_provider_submissions s
+    INNER JOIN public.field_agents fa ON fa.id = s.field_agent_id AND fa.tenant_id = s.tenant_id
+    WHERE s.id = $1 AND s.tenant_id = $2
+    `,
+    [sid, tid]
+  );
+  return r.rows[0] ?? null;
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {{ limit?: number }} [opts]
+ */
+async function listFieldAgentSubmissionsForAdmin(pool, tenantId, opts) {
+  const tid = Number(tenantId);
+  const limit = Math.min(Math.max(Number((opts && opts.limit) || 100), 1), 500);
+  if (!Number.isFinite(tid) || tid < 1) return [];
+  const r = await pool.query(
+    `
+    SELECT s.*,
+           fa.username AS field_agent_username,
+           fa.display_name AS field_agent_display_name
+    FROM public.field_agent_provider_submissions s
+    INNER JOIN public.field_agents fa ON fa.id = s.field_agent_id AND fa.tenant_id = s.tenant_id
+    WHERE s.tenant_id = $1
+    ORDER BY s.updated_at DESC
+    LIMIT $2
+    `,
+    [tid, limit]
+  );
+  return r.rows;
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {{ tenantId: number, submissionId: number, commissionAmount?: number }} p
+ * @returns {Promise<boolean>}
+ */
+async function approveFieldAgentSubmission(pool, p) {
+  const tid = Number(p.tenantId);
+  const sid = Number(p.submissionId);
+  const commission = p.commissionAmount != null && Number.isFinite(Number(p.commissionAmount)) ? Number(p.commissionAmount) : 0;
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+  const r = await pool.query(
+    `
+    UPDATE public.field_agent_provider_submissions
+    SET status = 'approved',
+        rejection_reason = '',
+        commission_amount = $3::numeric,
+        updated_at = now()
+    WHERE id = $1 AND tenant_id = $2 AND status = 'pending'
+    `,
+    [sid, tid, commission]
+  );
+  return r.rowCount === 1;
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {{ tenantId: number, submissionId: number, rejectionReason: string }} p
+ * @returns {Promise<boolean>}
+ */
+async function rejectFieldAgentSubmission(pool, p) {
+  const tid = Number(p.tenantId);
+  const sid = Number(p.submissionId);
+  const reason = String(p.rejectionReason || "").trim();
+  if (!reason) return false;
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+  const r = await pool.query(
+    `
+    UPDATE public.field_agent_provider_submissions
+    SET status = 'rejected',
+        rejection_reason = $3,
+        commission_amount = 0,
+        updated_at = now()
+    WHERE id = $1 AND tenant_id = $2 AND status = 'pending'
+    `,
+    [sid, tid, reason.slice(0, 4000)]
+  );
+  return r.rowCount === 1;
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {{ tenantId: number, submissionId: number, commissionAmount: number }} p
+ * @returns {Promise<boolean>}
+ */
+async function updateFieldAgentSubmissionCommission(pool, p) {
+  const tid = Number(p.tenantId);
+  const sid = Number(p.submissionId);
+  const amt = Number(p.commissionAmount);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+  if (!Number.isFinite(amt) || amt < 0) return false;
+  const r = await pool.query(
+    `
+    UPDATE public.field_agent_provider_submissions
+    SET commission_amount = $3::numeric,
+        updated_at = now()
+    WHERE id = $1 AND tenant_id = $2 AND status = 'approved'
+    `,
+    [sid, tid, amt]
+  );
+  return r.rowCount === 1;
+}
+
 async function countByAgentAndStatus(pool, fieldAgentId, status) {
   const r = await pool.query(
     `SELECT COUNT(*)::int AS c FROM public.field_agent_provider_submissions
@@ -125,6 +246,11 @@ async function updatePhotosAfterUpload(pool, client, { submissionId, tenantId, p
 }
 
 module.exports = {
+  getSubmissionByIdForAdmin,
+  listFieldAgentSubmissionsForAdmin,
+  approveFieldAgentSubmission,
+  rejectFieldAgentSubmission,
+  updateFieldAgentSubmissionCommission,
   countByAgentAndStatus,
   sumCommissionLastDays,
   listRejectedWithReason,

@@ -39,6 +39,16 @@ These tables hold **one row set per tenant** (filter with `WHERE tenant_id = ?`)
 - **`tenant_cities`** — per-region city names for Join autocomplete; `enabled` (normal sign-up vs waitlist popup), `big_city` (rotating watermark hints on Join step 2 when also enabled)  
 - **`admin_users`** — admin accounts; `tenant_id` is **NULL** only for `super_admin`. Optional **`display_name`** for UI. Effective per-region roles for users attached to multiple tenants live in **`admin_user_tenant_roles`** (`admin_user_id`, `tenant_id`, `role`, primary key on `(admin_user_id, tenant_id)`).
 
+### Field agent tables (CRM-linked moderation)
+
+These tables are scoped by **`tenant_id`** (see `db/postgres/002_field_agent.sql`):
+
+- **`field_agents`** — field agent login accounts.
+- **`field_agent_provider_submissions`** — provider applications; **authoritative** for moderation (`pending` / `approved` / `rejected`), `commission_amount`, `rejection_reason`.
+- **`field_agent_callback_leads`** — callback leads (separate from provider moderation).
+
+CRM tasks (**`crm_tasks`**) may reference a submission via **`source_type`** / **`source_ref_id`**; they do **not** store moderation state. Append-only **`crm_task_comments`** / **`crm_audit_logs`** can record informational notes. See **`docs/field-agent-moderation.md`**.
+
 ## Reviews
 
 **`reviews`** rows belong to a **`companies`** row (`company_id`, `ON DELETE CASCADE`). Fields include **`rating`** (1–5), **`body`**, **`author_name`**, **`created_at`**.

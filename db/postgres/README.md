@@ -6,7 +6,7 @@ Apply SQL files manually in Supabase (**SQL** → **New query**) or via `psql "$
 |------|---------|
 | `000_full_schema.sql` | **Full app schema** (all tables) for a new PostgreSQL database. |
 | `001_callback_interests.sql` | Legacy: single table for `callback_interests` only. Superseded by `000_full_schema.sql` for greenfield setups. |
-| `002_field_agent.sql` | Field agent accounts, provider submissions (pending/approved/rejected), and “call me back” leads. Apply after `000_full_schema.sql`. |
+| `002_field_agent.sql` | Field agent accounts, provider submissions (pending/approved/rejected), and “call me back” leads. Apply after `000_full_schema.sql`. Moderation behavior and CRM linkage: **`docs/field-agent-moderation.md`**. |
 | `003_tenant_phone_rules.sql` | Per-tenant phone validation/normalization columns on `tenants` + seeds for `zm` / `demo`. Apply after `000` (and after `002` if you use field agents). The Node server also runs this idempotently at startup (`ensureTenantPhoneRulesSchema` in `server.js`) so production DBs are not missing `phone_*` columns. |
 
 The **Express** app **requires** `DATABASE_URL` / `GETPRO_DATABASE_URL`; application I/O is PostgreSQL-only.

@@ -72,6 +72,7 @@
         <% } %>
         <% if (canCrm) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'crm' ? 'admin-nav__link--active' : '' %>" href="/admin/crm">CRM</a>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'field_agent_analytics' ? 'admin-nav__link--active' : '' %>" href="/admin/field-agent-analytics">Field agents</a>
         <% } %>
         <% if (scoped) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'articles' ? 'admin-nav__link--active' : '' %>" href="/admin/content?kind=article&edit=1">Articles</a>

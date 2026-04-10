@@ -7,6 +7,7 @@ const { CRM_TASK_STATUSES, normalizeCrmTaskStatus, crmTaskStatusLabel } = requir
 const { getAdminTenantId, normalizeCrmAttachmentUrl, safeCrmRedirect } = require("./adminShared");
 const { getPgPool } = require("../../db/pg");
 const crmTasksRepo = require("../../db/pg/crmTasksRepo");
+const fieldAgentSubmissionsRepo = require("../../db/pg/fieldAgentSubmissionsRepo");
 
 module.exports = function registerAdminCrmRoutes(router) {
   function requireCrmAccess(req, res, next) {
@@ -38,9 +39,18 @@ module.exports = function registerAdminCrmRoutes(router) {
     const tenantUsersForReassign = superU ? await crmTasksRepo.listTenantUsersForCrm(pool, tid) : [];
     const auditLogs = await crmTasksRepo.listAuditForTask(pool, id, tid);
 
+    let fieldAgentProviderSubmission = null;
+    if (String(task.source_type || "").trim() === "field_agent_provider" && task.source_ref_id != null) {
+      const refId = Number(task.source_ref_id);
+      if (Number.isFinite(refId) && refId > 0) {
+        fieldAgentProviderSubmission = await fieldAgentSubmissionsRepo.getSubmissionByIdForAdmin(pool, tid, refId);
+      }
+    }
+
     return {
       activeNav: "crm",
       task,
+      fieldAgentProviderSubmission,
       comments,
       auditLogs,
       crmTaskStatusLabel,
@@ -343,6 +353,113 @@ module.exports = function registerAdminCrmRoutes(router) {
       return res.status(400).send(e.message || "Could not reassign");
     }
     return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${id}`));
+  });
+
+  async function loadFieldAgentProviderContext(req, taskIdRaw) {
+    const pool = getPgPool();
+    const tid = getAdminTenantId(req);
+    const taskId = Number(taskIdRaw);
+    if (!taskId || taskId < 1) return { error: "Invalid task.", status: 400 };
+    const task = await crmTasksRepo.getTaskByIdAndTenant(pool, taskId, tid);
+    if (!task) return { error: "Not found.", status: 404 };
+    if (String(task.source_type || "").trim() !== "field_agent_provider" || task.source_ref_id == null) {
+      return { error: "This task is not linked to a field agent provider submission.", status: 400 };
+    }
+    const refId = Number(task.source_ref_id);
+    if (!Number.isFinite(refId) || refId < 1) return { error: "Invalid submission reference.", status: 400 };
+    const submission = await fieldAgentSubmissionsRepo.getSubmissionByIdForAdmin(pool, tid, refId);
+    if (!submission) return { error: "Submission not found.", status: 404 };
+    if (Number(submission.id) !== refId) return { error: "Submission reference mismatch.", status: 400 };
+    return { pool, tid, taskId, task, submission };
+  }
+
+  router.post("/crm/tasks/:id/field-agent-submission/approve", requireCrmAccess, async (req, res) => {
+    if (!canMutateCrm(req.session.adminUser.role)) return res.status(403).type("text").send("Read-only access.");
+    const ctx = await loadFieldAgentProviderContext(req, req.params.id);
+    if (ctx.error) return res.status(ctx.status).type("text").send(ctx.error);
+    const rawCommission = (req.body && req.body.commission_amount) ?? "";
+    let commission = 0;
+    if (String(rawCommission).trim() !== "") {
+      commission = Number(rawCommission);
+      if (!Number.isFinite(commission) || commission < 0) {
+        return res.status(400).type("text").send("Invalid commission amount.");
+      }
+    }
+    const ok = await fieldAgentSubmissionsRepo.approveFieldAgentSubmission(ctx.pool, {
+      tenantId: ctx.tid,
+      submissionId: ctx.submission.id,
+      commissionAmount: commission,
+    });
+    if (!ok) {
+      return res.status(400).type("text").send("Could not approve — submission may already be decided.");
+    }
+    try {
+      let note = `Field agent provider submission #${Number(ctx.submission.id)} approved.`;
+      if (String(rawCommission).trim() !== "") {
+        note += ` Commission on approve (informational): ${commission}.`;
+      }
+      await crmTasksRepo.insertCommentWithAudit(ctx.pool, {
+        tenantId: ctx.tid,
+        taskId: ctx.taskId,
+        userId: req.session.adminUser.id,
+        body: note.slice(0, 4000),
+      });
+    } catch {
+      /* informational note only; moderation already succeeded */
+    }
+    return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${ctx.taskId}`));
+  });
+
+  router.post("/crm/tasks/:id/field-agent-submission/reject", requireCrmAccess, async (req, res) => {
+    if (!canMutateCrm(req.session.adminUser.role)) return res.status(403).type("text").send("Read-only access.");
+    const ctx = await loadFieldAgentProviderContext(req, req.params.id);
+    if (ctx.error) return res.status(ctx.status).type("text").send(ctx.error);
+    const reason = String((req.body && req.body.rejection_reason) || "").trim();
+    if (!reason) return res.status(400).type("text").send("Rejection reason is required.");
+    const ok = await fieldAgentSubmissionsRepo.rejectFieldAgentSubmission(ctx.pool, {
+      tenantId: ctx.tid,
+      submissionId: ctx.submission.id,
+      rejectionReason: reason,
+    });
+    if (!ok) {
+      return res.status(400).type("text").send("Could not reject — submission may already be decided.");
+    }
+    try {
+      let note = `Field agent provider submission #${Number(ctx.submission.id)} rejected.`;
+      const snippet = reason.slice(0, 200);
+      if (snippet) {
+        note += ` Reason (informational): ${snippet}`;
+        if (reason.length > 200) note += "…";
+      }
+      await crmTasksRepo.insertCommentWithAudit(ctx.pool, {
+        tenantId: ctx.tid,
+        taskId: ctx.taskId,
+        userId: req.session.adminUser.id,
+        body: note.slice(0, 4000),
+      });
+    } catch {
+      /* informational note only; moderation already succeeded */
+    }
+    return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${ctx.taskId}`));
+  });
+
+  router.post("/crm/tasks/:id/field-agent-submission/commission", requireCrmAccess, async (req, res) => {
+    if (!canMutateCrm(req.session.adminUser.role)) return res.status(403).type("text").send("Read-only access.");
+    const ctx = await loadFieldAgentProviderContext(req, req.params.id);
+    if (ctx.error) return res.status(ctx.status).type("text").send(ctx.error);
+    const amt = Number((req.body && req.body.commission_amount) ?? "");
+    if (!Number.isFinite(amt) || amt < 0) {
+      return res.status(400).type("text").send("Invalid commission amount.");
+    }
+    const ok = await fieldAgentSubmissionsRepo.updateFieldAgentSubmissionCommission(ctx.pool, {
+      tenantId: ctx.tid,
+      submissionId: ctx.submission.id,
+      commissionAmount: amt,
+    });
+    if (!ok) {
+      return res.status(400).type("text").send("Could not update commission — submission must be approved.");
+    }
+    return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${ctx.taskId}`));
   });
 
   router.post("/crm/tasks/:id/comments", requireCrmAccess, async (req, res) => {

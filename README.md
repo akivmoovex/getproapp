@@ -131,6 +131,8 @@ Set at least: **`DATABASE_URL`** (or **`GETPRO_DATABASE_URL`**), **`GETPRO_PG_SS
 
 **Data model:** See [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) for which **tenants** exist by default and which **tables** are scoped by `tenant_id`. The **`global`** tenant powers the **apex** home when enabled; super admins default to that tenant scope on login when it is `Enabled`.
 
+**Field Agent provider moderation:** Admins moderate provider submissions from **linked CRM tasks** (`source_type = field_agent_provider`, `source_ref_id = submission id`). Moderation state is stored only in **`field_agent_provider_submissions`**; `crm_tasks` remains the workflow queue. Informational notes on approve/reject use existing CRM comments + audit. Read-only **Field agent analytics** (tenant-scoped aggregates): **`/admin/field-agent-analytics`**. Full detail: **[`docs/field-agent-moderation.md`](docs/field-agent-moderation.md)**.
+
 **All tenants (reference):** Open the Super admin screen (`/admin/super`) — the table lists **ID**, **Name**, **Short** (subdomain slug), **stage**, and actions. Join / callback APIs require a **`tenantId`** from the page (and `tenantSlug` must match) so data is never stored under the wrong region.
 
 **Join “Call me”:** Saves `name`, `phone`, and `interest_label` (`Potential Partner`) into **`callback_interests`** with the **`tenant_id`** of the Join page you’re on; admin **Leads** shows that tenant’s rows only.

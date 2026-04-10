@@ -22,7 +22,7 @@ Runtime uses **PostgreSQL only** (`DATABASE_URL` / `GETPRO_DATABASE_URL`). **`sr
 
 - **Dashboard:** `.admin-dashboard__kpis`, `.admin-dashboard-panel`, `.admin-dash-bars` / `.admin-dash-status` — overview metrics, 7-day lead bars, status distribution (see `views/admin/dashboard.ejs`).
 - **Grids:** `.admin-settings-hub__grid`, `.admin-filter-form__grid` — use `repeat(auto-fill, minmax(...))` and `--admin-gap`.
-- **Cards:** `.admin-main .card` — shared border-radius and padding via tokens; CRM uses `.crm-task-section` for task-specific density.
+- **Cards:** `.admin-main .card` — shared border-radius and padding via tokens; CRM uses `.crm-task-section` for task-specific density. **Field agent provider** submissions may appear as a section on the CRM task detail (`views/partials/crm_task_inner.ejs`). Moderation rules and data ownership: [`field-agent-moderation.md`](./field-agent-moderation.md).
 - **Tables:** `.table`, `.table-wrap`, `.admin-settings-tenant-table` — keep cell padding aligned with `--admin-table-cell-padding` where overridden.
 - **Popups:** `.admin-settings-modal__dialog` — size driven by `--admin-modal-*`; **header row** (`.admin-settings-modal__header`) holds title + close; iframe fills the area **below** (no overlapping ×). See [`MODALS.md`](./MODALS.md).
 
