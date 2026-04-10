@@ -9,12 +9,11 @@
   </head>
   <body class="join-page <%= tenant.themeClass %>" data-screen-role="support">
     <div class="app-layout">
-      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
-      <%- include('../partials/app_navigation', { tenantUrlPrefix }) %>
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: 'add_contact', faIncludeFaq: false }) %>
 
       <div class="app-layout__main">
         <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
-        <%- include('../partials/field_agent_console_nav', { tenantUrlPrefix, faActiveNav: 'add_contact', faIncludeFaq: false }) %>
 
         <section class="join-hero" style="padding-top:0;">
           <div class="ds-container join-hero-inner">

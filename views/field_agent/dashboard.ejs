@@ -9,12 +9,11 @@
   </head>
   <body class="<%= tenant.themeClass %>" data-screen-role="support">
     <div class="app-layout">
-      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
-      <%- include('../partials/app_navigation', { tenantUrlPrefix }) %>
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: 'dashboard', faIncludeFaq: true }) %>
 
       <div class="app-layout__main">
         <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
-        <%- include('../partials/field_agent_console_nav', { tenantUrlPrefix, faActiveNav: 'dashboard', faIncludeFaq: true }) %>
 
         <% if (typeof submitted !== 'undefined' && submitted) { %>
           <p class="admin-gate-success" role="status">Submission received.</p>

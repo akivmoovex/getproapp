@@ -5,6 +5,7 @@
 <% var ten = typeof tenant !== 'undefined' ? tenant : null; %>
 <% var _renderRegionPickerTrigger = typeof renderRegionPickerTrigger !== 'undefined' ? !!renderRegionPickerTrigger : false; %>
 <% var _showRegionPickerUi = typeof showRegionPickerUi !== 'undefined' ? !!showRegionPickerUi : false; %>
+<% var _faConsole = typeof isFieldAgentConsole !== 'undefined' && isFieldAgentConsole; %>
 <% var _regionBtnLabel = 'Region'; %>
 <% var _regionAria = 'Choose region'; %>
 <% if (ten && ten.slug === 'global') { _regionBtnLabel = 'Select region'; _regionAria = 'Select region'; } else if (ten && String(ten.name || '').trim()) { _regionBtnLabel = String(ten.name).trim(); _regionAria = 'Region: ' + _regionBtnLabel; } %>
@@ -48,6 +49,7 @@
       </button>
       <% } %>
 
+      <% if (!_faConsole) { %>
       <%- include('components/button', {
         variant: 'secondary',
         text: 'Join Us',
@@ -98,10 +100,12 @@
           <path d="m6 6 12 12" />
         </svg>
       </button>
+      <% } %>
     </div>
   </div>
 </header>
 
+<% if (!_faConsole) { %>
 <div
   id="wf-join-us-modal"
   class="m3-modal-overlay wf-join-us-modal"
@@ -126,3 +130,4 @@
     <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
   </div>
 </div>
+<% } %>

@@ -1,3 +1,13 @@
+<% var _faConsole = typeof isFieldAgentConsole !== 'undefined' && isFieldAgentConsole; %>
+<% if (_faConsole) { %>
+<div class="ds-container field-agent-console-app-band">
+  <%- include('field_agent_console_nav', {
+    tenantUrlPrefix,
+    faActiveNav: typeof faActiveNav !== 'undefined' ? faActiveNav : '',
+    faIncludeFaq: typeof faIncludeFaq !== 'undefined' && faIncludeFaq,
+  }) %>
+</div>
+<% } else { %>
 <aside class="app-nav-rail" aria-label="Main navigation rail">
   <%- include('navigation_menu', { tenantUrlPrefix, showAdmin: true }) %>
 </aside>
@@ -28,4 +38,4 @@
     <%- include('navigation_menu', { tenantUrlPrefix, showAdmin: false }) %>
   </div>
 </aside>
-
+<% } %>
