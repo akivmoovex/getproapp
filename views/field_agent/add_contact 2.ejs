@@ -113,7 +113,7 @@
                               <div
                                 class="pro-ac join-pro-ac input-field__control"
                                 data-ac-list="service"
-                                data-watermark-rotate="Search: Electrician|Search: Plumber|Search: Carpenter"
+                                data-watermark-rotate="<%= typeof joinProfessionWatermarkRotate !== 'undefined' ? joinProfessionWatermarkRotate : 'Search:' %>"
                               >
                                 <input
                                   id="fa-profession"
@@ -132,7 +132,7 @@
                               <div
                                 class="pro-ac join-pro-ac input-field__control"
                                 data-ac-list="city"
-                                data-watermark-rotate="<%= typeof joinCityWatermarkRotate !== 'undefined' ? joinCityWatermarkRotate : 'Search: Lusaka|Search: Kitwe' %>"
+                                data-watermark-rotate="<%= typeof joinCityWatermarkRotate !== 'undefined' ? joinCityWatermarkRotate : 'Search:' %>"
                               >
                                 <input
                                   id="fa-city"

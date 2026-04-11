@@ -134,7 +134,7 @@
                         <div
                           class="pro-ac join-pro-ac input-field__control"
                           data-ac-list="service"
-                          data-watermark-rotate="Search: Electrician|Search: Plumber|Search: Carpenter"
+                          data-watermark-rotate="<%= typeof joinProfessionWatermarkRotate !== 'undefined' && joinProfessionWatermarkRotate ? joinProfessionWatermarkRotate : 'Search:' %>"
                         >
                           <input
                             id="join-profession"

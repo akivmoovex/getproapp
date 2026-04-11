@@ -11,18 +11,8 @@ const fieldAgentsRepo = require("../db/pg/fieldAgentsRepo");
 const fieldAgentSubmissionsRepo = require("../db/pg/fieldAgentSubmissionsRepo");
 const seedRunsRepo = require("../db/pg/seedRunsRepo");
 const tenantsRepo = require("../db/pg/tenantsRepo");
+const tenantCitiesRepo = require("../db/pg/tenantCitiesRepo");
 
-const PROFESSIONS = [
-  "Electrician",
-  "Plumber",
-  "Carpenter",
-  "Painter",
-  "HVAC technician",
-  "Landscaper",
-  "Cleaner",
-  "Locksmith",
-];
-const CITIES = ["Lusaka", "Ndola", "Kitwe", "Livingstone", "Chipata", "Solwezi", "Chingola", "Kabwe"];
 const AUTHORS = ["Mwansa K.", "Chanda P.", "Banda T.", "Mulenga R.", "Sakala J."];
 
 /**
@@ -170,6 +160,11 @@ async function createTestData(pool, p) {
 
   const categories = await categoriesRepo.listByTenantId(pool, tenantId);
   const categoryId = categories.length > 0 ? Number(categories[0].id) : null;
+  const cityRows = await tenantCitiesRepo.listByTenantIdOrderByName(pool, tenantId);
+  const cityNames = cityRows.map((r) => String(r.name || "").trim()).filter(Boolean);
+  const professionNames = categories.map((c) => String(c.name || "").trim()).filter(Boolean);
+  const professionPool = professionNames.length ? professionNames : ["Service"];
+  const cityPool = cityNames.length ? cityNames : ["City"];
 
   const batchUuid = crypto.randomUUID();
   const batchShort = batchUuid.replace(/-/g, "").slice(0, 12);
@@ -213,16 +208,16 @@ async function createTestData(pool, p) {
         subdomain: sub,
         name,
         categoryId,
-        headline: `Trusted ${PROFESSIONS[i % PROFESSIONS.length].toLowerCase()} — ${CITIES[i % CITIES.length]}`,
-        about: `Full profile text for testing search and detail pages. Established provider ${i + 1} serving ${CITIES[i % CITIES.length]} and nearby areas.`,
-        services: `${PROFESSIONS[i % PROFESSIONS.length]}, maintenance, installations, call-outs.`,
+        headline: `Trusted ${professionPool[i % professionPool.length].toLowerCase()} — ${cityPool[i % cityPool.length]}`,
+        about: `Full profile text for testing search and detail pages. Established provider ${i + 1} serving ${cityPool[i % cityPool.length]} and nearby areas.`,
+        services: `${professionPool[i % professionPool.length]}, maintenance, installations, call-outs.`,
         phone,
         email: `seed-${batchShort}-${i}@example.test`,
-        location: `${CITIES[i % CITIES.length]}, Zambia`,
+        location: `${cityPool[i % cityPool.length]}, Zambia`,
         featuredCtaLabel: "Call us",
         featuredCtaPhone: phone,
         yearsExperience: 3 + (i % 15),
-        serviceAreas: `${CITIES[i % CITIES.length]}, surrounding`,
+        serviceAreas: `${cityPool[i % cityPool.length]}, surrounding`,
         hoursText: "Mon–Sat 08:00–18:00",
         galleryJson: "[]",
         logoUrl: "",
@@ -235,7 +230,7 @@ async function createTestData(pool, p) {
         const rid = await reviewsRepo.insertOne(client, {
           companyId,
           rating: 3 + ((i + r) % 3),
-          body: `Quality work and fair pricing. Would recommend for ${PROFESSIONS[i % PROFESSIONS.length].toLowerCase()} jobs.`,
+          body: `Quality work and fair pricing. Would recommend for ${professionPool[i % professionPool.length].toLowerCase()} jobs.`,
           authorName: AUTHORS[(i + r) % AUTHORS.length],
         });
         await recordItem(client, { runId, tableName: "reviews", entityId: rid });
@@ -306,13 +301,13 @@ async function createTestData(pool, p) {
         whatsappNorm: waNorm,
         firstName: "Seed",
         lastName: `Provider${i}`,
-        profession: PROFESSIONS[i % PROFESSIONS.length],
-        city: CITIES[i % CITIES.length],
+        profession: professionPool[i % professionPool.length],
+        city: cityPool[i % cityPool.length],
         pacra: "",
         addressStreet: `${10 + i} Test Rd`,
         addressLandmarks: "Near central market",
         addressNeighbourhood: "Riverside",
-        addressCity: CITIES[i % CITIES.length],
+        addressCity: cityPool[i % cityPool.length],
         nrcNumber: "",
         photoProfileUrl: "",
         workPhotosJson: "[]",
@@ -334,7 +329,7 @@ async function createTestData(pool, p) {
           `Lead${c}`,
           `+26093${String(5000000 + c).slice(-7)}`,
           `cb-${batchShort}-${c}@example.test`,
-          CITIES[c % CITIES.length],
+          cityPool[c % cityPool.length],
         ]
       );
       const cid = Number(r.rows[0].id);

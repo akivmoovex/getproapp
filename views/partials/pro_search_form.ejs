@@ -8,11 +8,10 @@
   the <form> wrapper must stay paired with the bar.
 
   Placeholder contract (do not blur without an intentional product change):
-  - Universal hero copy is DOUBLE-GATED: (1) approvedMarketingHeroPlaceholders === primitive true ONLY on
-    views/index.ejs, AND (2) form action URL contains home_featured= (homepage featured-directory contract).
-  - Portal/directory/category/docs/demo: omit approvedMarketingHeroPlaceholders; always ctaVoice placeholders.
-  - Do not pass approvedMarketingHeroPlaceholders from new includes without product approval; a second hero
-    requires updating the allowlist below (action check + comment).
+  - Universal hero copy is enabled ONLY by explicit approvedMarketingHeroPlaceholders === primitive true on an
+    approved caller (currently sole surface: views/index.ejs). Not inferred from form action URL or query shape.
+  - A second marketing hero: add the same prop on a new template only with product approval; do not infer from URLs.
+  - Portal/directory/category/docs/demo: omit approvedMarketingHeroPlaceholders → ctaVoice placeholders always.
   - Booleans: primitive true only; typeof must be boolean. "true", 1, new Boolean(true), undefined, null → off.
 
   Props (pass through to SearchBar + used for form):
@@ -37,14 +36,11 @@
     _submitLabel = (_formSearch && _formSearch.primary) ? String(_formSearch.primary) : ((_hpSearch && _hpSearch.primary_search) ? String(_hpSearch.primary_search) : '');
   }
   var _sr = typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.searchRefinement ? ctaVoice.searchRefinement : null;
-  /* Hero copy: primitive boolean true only (see header). new Boolean(true) is typeof object → rejected. */
-  var _heroBool =
+  /* Hero placeholders: sole activation path is explicit approvedMarketingHeroPlaceholders (primitive true). Not URL-derived. */
+  var _useHomePh =
     typeof approvedMarketingHeroPlaceholders !== 'undefined' &&
     typeof approvedMarketingHeroPlaceholders === 'boolean' &&
     approvedMarketingHeroPlaceholders === true;
-  /* Allowlist: homepage hero posts to featured directory; portal/other heroes use different actions. */
-  var _heroActionOk = /[?&]home_featured=/.test(String(_action || ''));
-  var _useHomePh = _heroBool && _heroActionOk;
   var _svcPh;
   var _cityPh;
   if (_useHomePh) {
@@ -55,7 +51,7 @@
     _cityPh = (_sr && _sr.city_placeholder) ? String(_sr.city_placeholder) : '';
   }
   var _tenantForMeta = (typeof tenant !== 'undefined' && tenant && tenant.slug) ? String(tenant.slug) : 'global';
-  var _metaPopular = (_sr && _sr.popular && _sr.popular.length) ? _sr.popular : ['Electrician', 'Plumber', 'Tutor', 'Cleaner', 'Mechanic'];
+  var _metaPopular = (_sr && _sr.popular && _sr.popular.length) ? _sr.popular : [];
   var _metaRecentLabel = (_sr && _sr.recent_label) ? String(_sr.recent_label) : 'Recent searches';
   var _metaTrendingLabel = (_sr && _sr.trending_label) ? String(_sr.trending_label) : 'Trending categories';
   var _metaPopularLabel = (_sr && _sr.popular_label) ? String(_sr.popular_label) : 'Popular searches';

@@ -1,6 +1,6 @@
 /**
- * Generates public/data/search-lists.json — Zambia district seats + notable places,
- * and professional service labels for autocomplete.
+ * Generates public/data/search-lists.json — legacy bootstrap input for one-time DB seed
+ * (`ensureTenantDirectoryOptionLists`). Runtime search/join lists come from PostgreSQL.
  */
 const fs = require("fs");
 const path = require("path");

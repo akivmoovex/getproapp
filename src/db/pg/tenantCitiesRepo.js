@@ -65,9 +65,29 @@ async function deleteByIdAndTenantId(pool, id, tenantId) {
   return r.rowCount > 0;
 }
 
+/**
+ * Copy all city rows from src tenant when dest has none (idempotent).
+ * @param {import("pg").Pool} pool
+ * @param {number} destTenantId
+ * @param {number} srcTenantId
+ */
+async function copyFromTenantIfDestEmpty(pool, destTenantId, srcTenantId) {
+  const { rows } = await pool.query(`SELECT COUNT(*)::int AS n FROM public.tenant_cities WHERE tenant_id = $1`, [
+    destTenantId,
+  ]);
+  if ((rows[0]?.n ?? 0) > 0) return 0;
+  const ins = await pool.query(
+    `INSERT INTO public.tenant_cities (tenant_id, name, enabled, big_city)
+     SELECT $1, name, enabled, big_city FROM public.tenant_cities WHERE tenant_id = $2 ORDER BY id`,
+    [destTenantId, srcTenantId]
+  );
+  return ins.rowCount ?? 0;
+}
+
 module.exports = {
   listByTenantIdOrderByName,
   insert,
   updateByIdAndTenantId,
   deleteByIdAndTenantId,
+  copyFromTenantIfDestEmpty,
 };

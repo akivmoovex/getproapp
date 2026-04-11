@@ -1,5 +1,3 @@
-const path = require("path");
-const fs = require("fs");
 const express = require("express");
 const { getTenantByIdAsync, DEFAULT_TENANT_SLUG } = require("../tenants");
 const { TENANT_ZM } = require("../tenants/tenantIds");
@@ -32,72 +30,19 @@ const {
   mergeCityNamesForLanding,
   buildServicesExploreLinks,
 } = require("../lib/servicesLanding");
+const {
+  cityNamesAll,
+  loadTenantSearchOptionLists,
+  pickExploreCityNames,
+  isWhitelistedService,
+  isWhitelistedCity,
+  buildEmptyStateSuggestions,
+} = require("../lib/tenantOptionLists");
 const { getSeoLocale, regionLabelForSeo, buildHreflangAlternates } = require("../seo/seoLocale");
 const { getSeoVoiceProfile } = require("../seo/seoVoice");
 const { getCtaVoiceProfile } = require("../seo/ctaVoice");
 const seoCopy = require("../seo/seoCopy");
 const { applySeasonalTrendingBoost, resolveGeoRulesSourceLabel } = require("../config/seasonalCategoryBoosts");
-
-function loadSearchLists() {
-  const p = path.join(__dirname, "../../public/data/search-lists.json");
-  return JSON.parse(fs.readFileSync(p, "utf8"));
-}
-
-/**
- * Merge static autocomplete labels with tenant category names (dedupe, case-insensitive; static list order first).
- * @param {string[]} staticServices
- * @param {string[]} categoryNames
- * @returns {string[]}
- */
-function mergeSearchServiceLists(staticServices, categoryNames) {
-  const base = Array.isArray(staticServices) ? staticServices : [];
-  const out = base.slice();
-  const seen = new Set(out.map((s) => String(s).trim().toLowerCase()).filter(Boolean));
-  for (const raw of categoryNames || []) {
-    const n = String(raw || "").trim();
-    if (!n) continue;
-    const k = n.toLowerCase();
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(n);
-  }
-  return out;
-}
-
-/**
- * @param {string} value
- * @param {string[]|undefined} tenantCategoryNames optional names from `public.categories` for this tenant
- */
-function isWhitelistedService(value, tenantCategoryNames) {
-  if (!value) return true;
-  const v = String(value).trim().toLowerCase();
-  if (loadSearchLists().services.some((s) => s.toLowerCase() === v)) return true;
-  if (Array.isArray(tenantCategoryNames) && tenantCategoryNames.some((n) => String(n).trim().toLowerCase() === v)) {
-    return true;
-  }
-  return false;
-}
-
-function isWhitelistedCity(value) {
-  if (!value) return true;
-  const v = String(value).trim().toLowerCase();
-  return loadSearchLists().cities.some((c) => c.toLowerCase() === v);
-}
-
-/** Suggested chips for empty directory / category states (no duplicate city; exclude selected category). */
-function buildEmptyStateSuggestions(categories, selectedSlug, cityQ) {
-  const lists = loadSearchLists();
-  const norm = (s) => String(s || "").trim().toLowerCase();
-  const cityNorm = norm(cityQ);
-  const selected = String(selectedSlug || "").trim();
-  const emptyAltCategories = (categories || [])
-    .filter((c) => c && c.slug && c.slug !== selected)
-    .slice(0, 5);
-  const emptyAltCities = (lists.cities || [])
-    .filter((c) => !cityNorm || norm(c) !== cityNorm)
-    .slice(0, 5);
-  return { emptyAltCategories, emptyAltCities };
-}
 
 function absoluteMediaUrl(req, raw) {
   const u = String(raw || "").trim();
@@ -284,14 +229,23 @@ module.exports = function publicRoutes() {
     let cached = homeCache.get(cacheKey);
     if (!cached || now - cached.ts > HOME_CACHE_TTL_MS) {
       const pool = getPgPool();
-      const [contentArticles, contentGuides, contentFaqs] = await Promise.all([
+      const [contentArticles, contentGuides, contentFaqs, joinCities] = await Promise.all([
         contentPagesRepo.listPublishedByKind(pool, tenantId, "article", loc),
         contentPagesRepo.listPublishedByKind(pool, tenantId, "guide", loc),
         contentPagesRepo.listPublishedByKind(pool, tenantId, "faq", loc),
+        getTenantCitiesForClientAsync(pool, tenantId),
       ]);
+      const exploreCityNames = pickExploreCityNames(
+        (joinCities || []).map((r) => ({
+          name: r.name,
+          enabled: r.enabled === 1 || r.enabled === true,
+          bigCity: r.bigCity === 1 || r.bigCity === true,
+        }))
+      );
       cached = {
         ts: now,
         categories: await loadCategoriesList(tenantId),
+        exploreCityNames,
         contentArticles,
         contentGuides,
         contentFaqs,
@@ -336,7 +290,11 @@ module.exports = function publicRoutes() {
       contentFaqs: cached.contentFaqs,
       /** Homepage-only; other routes do not pass this — use opsHref in shared partials. */
       homepageOpsHref: (p) => homepageOperationalHref(req, p),
-      servicesExploreLinks: buildServicesExploreLinks(cached.categories, _tenantLocals.tenantUrlPrefix),
+      servicesExploreLinks: buildServicesExploreLinks(
+        cached.categories,
+        _tenantLocals.tenantUrlPrefix,
+        cached.exploreCityNames || []
+      ),
       ...geoLocals,
       ..._tenantLocals,
       ...(await platformSupportAsync(req)),
@@ -353,25 +311,23 @@ module.exports = function publicRoutes() {
     return `${base}${p}`;
   }
 
-  /** Tenant-scoped service labels for autocomplete: static JSON + DB category names + trending categories (by listing count). */
+  /** Tenant-scoped service + city labels for autocomplete (DB) + trending categories (by listing count). */
   router.get("/data/tenant-search-lists.json", async (req, res, next) => {
     try {
       const tenantId = req.tenant && req.tenant.id;
-      const base = loadSearchLists();
       if (!tenantId) {
         res
           .type("application/json")
           .set("Cache-Control", "public, max-age=300")
-          .send(JSON.stringify({ ...base, trendingCategories: [] }));
+          .send(JSON.stringify({ services: [], cities: [], popular: [], trendingCategories: [] }));
         return;
       }
       const pool = getPgPool();
-      const [categories, topCatCandidates] = await Promise.all([
-        categoriesRepo.listByTenantId(pool, tenantId),
+      const [lists, topCatCandidates] = await Promise.all([
+        loadTenantSearchOptionLists(pool, tenantId),
         categoriesRepo.listTopByCompanyCount(pool, tenantId, 20),
       ]);
-      const names = (categories || []).map((c) => c.name).filter(Boolean);
-      const services = mergeSearchServiceLists(base.services, names);
+      const services = lists.services;
       const trendingDebug =
         req.query && String(req.query.trending_debug || "") === "1" && process.env.NODE_ENV !== "production";
       const boosted = applySeasonalTrendingBoost(topCatCandidates || [], {
@@ -387,7 +343,12 @@ module.exports = function publicRoutes() {
         url: publicTenantPathForSuggestions(req, `/category/${encodeURIComponent(c.slug)}`),
       }));
       /** @type {Record<string, unknown>} */
-      const payload = { services, cities: base.cities, trendingCategories };
+      const payload = {
+        services,
+        cities: lists.cities,
+        popular: lists.popular,
+        trendingCategories,
+      };
       if (trendingDebug) {
         const ccDbg = getClientCountryCode(req) || "";
         payload.trendingBoostContext = {
@@ -449,12 +410,14 @@ module.exports = function publicRoutes() {
     const pool = getPgPool();
     const categories = await loadCategoriesList(tenantId);
     const tenantCategoryNames = (categories || []).map((c) => c.name).filter(Boolean);
+    const tenantCitiesRows = await getTenantCitiesForClientAsync(pool, tenantId);
+    const cityWhitelist = cityNamesAll(tenantCitiesRows.map((r) => ({ name: r.name })));
 
     const selected = req.query.category ? String(req.query.category) : null;
     const searchRaw = req.query.q ? String(req.query.q).trim() : "";
     const cityRaw = req.query.city ? String(req.query.city).trim() : "";
     const searchOk = !searchRaw || isWhitelistedService(searchRaw, tenantCategoryNames);
-    const cityOk = !cityRaw || isWhitelistedCity(cityRaw);
+    const cityOk = !cityRaw || isWhitelistedCity(cityRaw, cityWhitelist);
     const searchQ = searchOk ? searchRaw.replace(/[%_\\]/g, "") : "";
     const cityQ = cityOk ? cityRaw.replace(/[%_\\]/g, "") : "";
     const homeFeatured =
@@ -462,7 +425,7 @@ module.exports = function publicRoutes() {
 
     let mergedCityNamesForServices = null;
     if (!homeFeatured && selected && cityQ && !searchQ) {
-      mergedCityNamesForServices = mergeCityNamesForLanding(await getTenantCitiesForClientAsync(pool, tenantId));
+      mergedCityNamesForServices = mergeCityNamesForLanding(tenantCitiesRows);
       const cityLabel = resolveCitySlugToLabel(slugifySegment(cityRaw), mergedCityNamesForServices);
       if (cityLabel && categories.some((c) => c.slug === selected)) {
         return res.redirect(
@@ -522,9 +485,7 @@ module.exports = function publicRoutes() {
       canonicalUrl = canonicalUrlForTenant(req, "/directory");
       noindex = true;
     } else if (selected && cityQ && !searchQ) {
-      const namesForCanon =
-        mergedCityNamesForServices ||
-        mergeCityNamesForLanding(await getTenantCitiesForClientAsync(pool, tenantId));
+      const namesForCanon = mergedCityNamesForServices || mergeCityNamesForLanding(tenantCitiesRows);
       const resolvedCanon = resolveCitySlugToLabel(slugifySegment(cityRaw), namesForCanon);
       if (resolvedCanon) {
         canonicalUrl = canonicalUrlForTenant(
@@ -623,7 +584,7 @@ module.exports = function publicRoutes() {
       ogType: "website",
       noindex,
       jsonLdDirectory,
-      ...buildEmptyStateSuggestions(categories, selected, cityOk ? cityRaw : ""),
+      ...buildEmptyStateSuggestions(categories, selected, cityOk ? cityRaw : "", cityWhitelist),
       directoryFeaturedOnly: homeFeatured,
       directoryPageH1,
       ...geoLocals,
@@ -663,6 +624,7 @@ module.exports = function publicRoutes() {
         });
       }
       const tenantCities = await getTenantCitiesForClientAsync(pool, tenantId);
+      const cityWhitelist = cityNamesAll(tenantCities.map((r) => ({ name: r.name })));
       const cityNames = mergeCityNamesForLanding(tenantCities);
       const cityLabel = resolveCitySlugToLabel(citySlug, cityNames);
       if (!cityLabel) {
@@ -717,7 +679,7 @@ module.exports = function publicRoutes() {
         noindex: false,
         jsonLdDirectory,
         directoryPageH1: landingSeo.h1,
-        ...buildEmptyStateSuggestions(categories, category.slug, cityLabel),
+        ...buildEmptyStateSuggestions(categories, category.slug, cityLabel, cityWhitelist),
         directoryFeaturedOnly: false,
         ...geoLocals,
         ...tenantLocals(req),
@@ -761,6 +723,8 @@ module.exports = function publicRoutes() {
     const seoDescription = catSeo.description;
 
     const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, tenantId);
+    const tenantCitiesForEmpty = await getTenantCitiesForClientAsync(pool, tenantId);
+    const cityWhitelistCategory = cityNamesAll(tenantCitiesForEmpty.map((r) => ({ name: r.name })));
 
     return res.render("category", {
       category,
@@ -773,7 +737,7 @@ module.exports = function publicRoutes() {
       seoDescription,
       canonicalUrl,
       ogUrl: canonicalUrl,
-      ...buildEmptyStateSuggestions(categories, category.slug, ""),
+      ...buildEmptyStateSuggestions(categories, category.slug, "", cityWhitelistCategory),
       ...tenantLocals(req),
       ...(await platformSupportAsync(req)),
     });
@@ -814,6 +778,12 @@ module.exports = function publicRoutes() {
     const pool = getPgPool();
     const joinTenantCities = await getTenantCitiesForClientAsync(pool, tenantId);
     const joinCityWatermarkRotate = await getJoinCityWatermarkRotateAsync(pool, tenantId);
+    const catRows = await categoriesRepo.listByTenantId(pool, tenantId);
+    const joinProfessionWatermarkRotate =
+      (catRows || [])
+        .slice(0, 3)
+        .map((c) => `Search: ${c.name}`)
+        .join("|") || "Search:";
     const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, tenantId);
     const canonicalUrl = canonicalUrlForTenant(req, "/join");
     return res.render("join", {
@@ -821,6 +791,7 @@ module.exports = function publicRoutes() {
       joinEmbedModal: req.query.embed === "1" || req.query.embed === "true",
       joinTenantCities,
       joinCityWatermarkRotate,
+      joinProfessionWatermarkRotate,
       phoneRulesPublic,
       seoTitle: `List your business | ${req.tenant.name || PRODUCT_NAME}`,
       seoDescription: `Create a verified profile on ${PRODUCT_NAME} so customers can find your services, view your details, and send lead requests.`,

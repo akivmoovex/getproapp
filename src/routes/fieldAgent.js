@@ -19,6 +19,7 @@ const { saveJpegImages, MAX_IMAGE_BYTES } = require("../fieldAgent/fieldAgentUpl
 const { notifyProviderSubmissionToCrm, notifyCallbackLeadToCrm } = require("../fieldAgent/fieldAgentCrm");
 const { fieldAgentLoginLimiter } = require("../middleware/authRateLimit");
 const { getTenantCitiesForClientAsync, getJoinCityWatermarkRotateAsync } = require("../tenants/tenantCities");
+const categoriesRepo = require("../db/pg/categoriesRepo");
 const { FIELD_AGENT_DASHBOARD } = require("../auth/postLoginDestinations");
 
 function tenantPrefix(req) {
@@ -161,12 +162,20 @@ module.exports = function fieldAgentRoutes() {
 
   router.get("/field-agent/add-contact", requireFieldAgent, async (req, res) => {
     const pool = getPgPool();
-    const joinTenantCities = await getTenantCitiesForClientAsync(pool, req.tenant.id);
-    const joinCityWatermarkRotate = await getJoinCityWatermarkRotateAsync(pool, req.tenant.id);
-    const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, req.tenant.id);
+    const tid = req.tenant.id;
+    const joinTenantCities = await getTenantCitiesForClientAsync(pool, tid);
+    const joinCityWatermarkRotate = await getJoinCityWatermarkRotateAsync(pool, tid);
+    const catRows = await categoriesRepo.listByTenantId(pool, tid);
+    const joinProfessionWatermarkRotate =
+      (catRows || [])
+        .slice(0, 3)
+        .map((c) => `Search: ${c.name}`)
+        .join("|") || "Search:";
+    const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, tid);
     return res.render("field_agent/add_contact", renderLocals(req, res, {
       joinTenantCities,
       joinCityWatermarkRotate,
+      joinProfessionWatermarkRotate,
       phoneRulesPublic,
     }));
   });

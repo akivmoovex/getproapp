@@ -1,0 +1,4 @@
+-- Tenant directory option lists (categories + tenant_cities) are seeded at application boot
+-- when tables are empty — see `src/db/pg/ensureTenantDirectoryOptionLists.js`.
+-- Schema for these tables lives in `000_full_schema.sql`.
+-- This file documents the rollout; no DDL required beyond existing `categories` and `tenant_cities`.

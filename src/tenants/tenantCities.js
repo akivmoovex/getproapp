@@ -28,10 +28,13 @@ async function getTenantCitiesForClientAsync(pool, tenantId) {
 async function getJoinCityWatermarkRotateAsync(pool, tenantId) {
   const rows = await tenantCitiesRepo.listByTenantIdOrderByName(pool, Number(tenantId));
   const filtered = rows.filter((r) => r.enabled && r.big_city);
-  if (!filtered.length) {
-    return "Search: Lusaka|Search: Kitwe|Search: Ndola";
+  if (filtered.length) {
+    return filtered.map((r) => `Search: ${r.name}`).join("|");
   }
-  return filtered.map((r) => `Search: ${r.name}`).join("|");
+  const enabledOnly = rows.filter((r) => r.enabled);
+  const pick = enabledOnly.length ? enabledOnly.slice(0, 3) : rows.slice(0, 3);
+  if (!pick.length) return "Search:";
+  return pick.map((r) => `Search: ${r.name}`).join("|");
 }
 
 module.exports = {

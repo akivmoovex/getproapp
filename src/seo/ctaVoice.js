@@ -94,10 +94,10 @@ const ctaVoiceProfiles = {
       recent_label: "Recent searches",
       trending_label: "Trending categories",
       popular_label: "Popular searches",
-      popular: ["Electrician", "Plumber", "Tutor", "Cleaner", "Mechanic"],
+      popular: [],
       suggestions: {
         title: "Try searching for:",
-        examples: ["Electrician", "Plumber", "Tutor"],
+        examples: [],
       },
       refinement_hints: [
         "Try a different category",
@@ -191,10 +191,10 @@ const ctaVoiceProfiles = {
       recent_label: "Recent searches",
       trending_label: "Trending categories",
       popular_label: "Popular searches",
-      popular: ["Electrician", "Hair Stylist", "Home Cleaning", "Tutor", "Photographer"],
+      popular: [],
       suggestions: {
         title: "Popular searches:",
-        examples: ["Electrician", "Hair Stylist", "Cleaning Service"],
+        examples: [],
       },
       refinement_hints: [
         "Try another keyword",

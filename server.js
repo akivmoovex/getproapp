@@ -88,6 +88,7 @@ const { ensureCrmCsrFifoSchema } = require("./src/db/pg/ensureCrmCsrFifoSchema")
 const { ensureIntakeAssignmentDealFeeSchema } = require("./src/db/pg/ensureIntakeAssignmentDealFeeSchema");
 const { ensureTenantCommerceSettingsSchema } = require("./src/db/pg/ensureTenantCommerceSettingsSchema");
 const { ensureCompaniesDirectoryFlagsSchema } = require("./src/db/pg/ensureCompaniesDirectoryFlagsSchema");
+const { ensureTenantDirectoryOptionLists } = require("./src/db/pg/ensureTenantDirectoryOptionLists");
 const { tenantHomeHrefFromPrefix } = require("./src/lib/tenantHomeHref");
 const { opsHrefMiddleware, marketingApexLoginRedirectTarget } = require("./src/lib/marketingOperationalUrls");
 const { getSubdomain, resolveHostname } = require("./src/platform/host");
@@ -488,6 +489,7 @@ ensureAdminUser({ pool: pgPoolForBoot })
     await ensureIntakeAssignmentDealFeeSchema(pgPoolForBoot);
     await ensureTenantCommerceSettingsSchema(pgPoolForBoot);
     await ensureCompaniesDirectoryFlagsSchema(pgPoolForBoot);
+    await ensureTenantDirectoryOptionLists(pgPoolForBoot);
     await seedBuiltinUsers(pgPoolForBoot);
     await seedManagerUsers(pgPoolForBoot);
     await seedFieldAgentUser(pgPoolForBoot);

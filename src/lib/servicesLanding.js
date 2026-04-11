@@ -1,11 +1,6 @@
 "use strict";
 
-const loadSearchLists = () => {
-  const path = require("path");
-  const fs = require("fs");
-  const p = path.join(__dirname, "../../public/data/search-lists.json");
-  return JSON.parse(fs.readFileSync(p, "utf8"));
-};
+const { mergeCityNamesForLanding } = require("./tenantOptionLists");
 
 /**
  * URL segment slug (lowercase, hyphens). Matches directory city filter when reversed.
@@ -23,7 +18,7 @@ function slugifySegment(label) {
 
 /**
  * @param {string} citySlug
- * @param {string[]} cityNames — static list + tenant city names (deduped)
+ * @param {string[]} cityNames — canonical display names for SQL ILIKE, or null
  * @returns {string|null} canonical display name for SQL ILIKE, or null
  */
 function resolveCitySlugToLabel(citySlug, cityNames) {
@@ -42,36 +37,6 @@ function resolveCitySlugToLabel(citySlug, cityNames) {
 }
 
 /**
- * Merge static search-lists cities with enabled tenant city names (dedupe, case-insensitive).
- * @param {{ name: string, enabled?: number }[]} tenantCityRows
- * @returns {string[]}
- */
-function mergeCityNamesForLanding(tenantCityRows) {
-  const lists = loadSearchLists();
-  const staticCities = Array.isArray(lists.cities) ? lists.cities : [];
-  const out = [];
-  const seen = new Set();
-  for (const c of staticCities) {
-    const n = String(c || "").trim();
-    if (!n) continue;
-    const k = n.toLowerCase();
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(n);
-  }
-  for (const row of tenantCityRows || []) {
-    if (row && row.enabled === 0) continue;
-    const n = String(row && row.name ? row.name : "").trim();
-    if (!n) continue;
-    const k = n.toLowerCase();
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(n);
-  }
-  return out;
-}
-
-/**
  * Join tenant URL prefix (path or absolute) with a path segment.
  * @param {string} tenantUrlPrefix
  * @param {string} path — e.g. /services/plumber/lusaka
@@ -85,12 +50,15 @@ function hrefWithTenantPrefix(tenantUrlPrefix, path) {
 }
 
 /**
- * A few internal links for homepage/footer (category slugs that exist + static cities).
+ * A few internal links for homepage/footer (category slugs that exist + explore cities from DB).
  * @param {{ slug: string, name: string }[]} categories
+ * @param {string} tenantUrlPrefix
+ * @param {string[]} exploreCityNames — typically 1–2 enabled cities from `tenant_cities`
  */
-function buildServicesExploreLinks(categories, tenantUrlPrefix) {
+function buildServicesExploreLinks(categories, tenantUrlPrefix, exploreCityNames) {
   const prefs = ["electrician", "plumber", "plumbers", "hvac-technician", "painter"];
-  const cities = ["Lusaka", "Ndola"];
+  const cities = Array.isArray(exploreCityNames) ? exploreCityNames.filter(Boolean).slice(0, 2) : [];
+  if (!cities.length) return [];
   const cats = categories || [];
   const out = [];
   for (const slug of prefs) {
@@ -113,7 +81,6 @@ module.exports = {
   slugifySegment,
   resolveCitySlugToLabel,
   mergeCityNamesForLanding,
-  loadSearchLists,
   hrefWithTenantPrefix,
   buildServicesExploreLinks,
 };

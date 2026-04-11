@@ -1,9 +1,9 @@
 /**
  * Combobox autocomplete from first character; optional typewriter watermark on empty fields.
- * Service list: GET /data/tenant-search-lists.json (static base list + tenant category names + trending categories).
+ * Service/city lists: GET /data/tenant-search-lists.json (DB-backed per tenant + trending categories).
  */
 (function () {
-  const LIST_URL = "/data/tenant-search-lists.json?v=20260411d";
+  const LIST_URL = "/data/tenant-search-lists.json?v=20260412a";
   const TYPEAHEAD_URL = "/data/search-suggestions.json";
   const TYPEAHEAD_MIN_LEN = 2;
   const TYPEAHEAD_DEBOUNCE_MS = 200;
@@ -576,7 +576,7 @@
           trending: "Trending categories",
           popular: "Popular searches",
         },
-        popular: ["Electrician", "Plumber", "Tutor", "Cleaner", "Mechanic"],
+        popular: [],
       };
       const tenantSlug = meta.tenantSlug || "global";
       const recents = loadRecentEntries(tenantSlug).filter(
@@ -584,7 +584,13 @@
           String(e.q || "").trim() || String(e.city || "").trim() || String(e.category || "").trim()
       );
       const trending = Array.isArray(lists.trendingCategories) ? lists.trendingCategories : [];
-      const popular = Array.isArray(meta.popular) ? meta.popular : [];
+      const popularFromMeta = Array.isArray(meta.popular) ? meta.popular : [];
+      const popular =
+        popularFromMeta.length > 0
+          ? popularFromMeta
+          : Array.isArray(lists.services)
+            ? lists.services.slice(0, 5)
+            : [];
       const labels = meta.labels || {};
 
       dropdown.innerHTML = "";
