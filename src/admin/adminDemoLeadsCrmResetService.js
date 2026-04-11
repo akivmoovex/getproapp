@@ -1,6 +1,7 @@
 /**
  * Admin DB tools: delete approved demo-tenant activity rows only (super-admin, fixture-gated at route).
- * Scope: CRM, leads, reviews (for demo companies), callbacks, professional signups, field agents (+ CASCADE submissions/callback leads).
+ * Scope: CRM, leads, reviews (for demo companies), callbacks, professional signups,
+ * field-agent submissions + FA callback leads — not field_agents (login identity rows required for sessions).
  */
 "use strict";
 
@@ -40,7 +41,12 @@ async function resetDemoLeadsAndCrm(pool, p) {
     );
     const r5 = await client.query(`DELETE FROM public.callback_interests WHERE tenant_id = $1`, [TENANT_DEMO]);
     const r6 = await client.query(`DELETE FROM public.professional_signups WHERE tenant_id = $1`, [TENANT_DEMO]);
-    const r7 = await client.query(`DELETE FROM public.field_agents WHERE tenant_id = $1`, [TENANT_DEMO]);
+    const r7 = await client.query(`DELETE FROM public.field_agent_provider_submissions WHERE tenant_id = $1`, [
+      TENANT_DEMO,
+    ]);
+    const r8 = await client.query(`DELETE FROM public.field_agent_callback_leads WHERE tenant_id = $1`, [
+      TENANT_DEMO,
+    ]);
 
     await client.query("COMMIT");
 
@@ -51,7 +57,8 @@ async function resetDemoLeadsAndCrm(pool, p) {
       reviews: r4.rowCount ?? 0,
       callback_interests: r5.rowCount ?? 0,
       professional_signups: r6.rowCount ?? 0,
-      field_agents: r7.rowCount ?? 0,
+      field_agent_provider_submissions: r7.rowCount ?? 0,
+      field_agent_callback_leads: r8.rowCount ?? 0,
     };
 
     // eslint-disable-next-line no-console
@@ -72,7 +79,8 @@ async function resetDemoLeadsAndCrm(pool, p) {
         "reviews",
         "callback_interests",
         "professional_signups",
-        "field_agents",
+        "field_agent_provider_submissions",
+        "field_agent_callback_leads",
       ],
     };
   } catch (e) {

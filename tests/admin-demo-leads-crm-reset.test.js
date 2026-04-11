@@ -222,7 +222,8 @@ test("reset demo Leads + CRM (HTTP + DB)", { skip: !isPgConfigured() }, async ()
     assert.equal(typeof del.reviews, "number");
     assert.equal(typeof del.callback_interests, "number");
     assert.equal(typeof del.professional_signups, "number");
-    assert.equal(typeof del.field_agents, "number");
+    assert.equal(typeof del.field_agent_provider_submissions, "number");
+    assert.equal(typeof del.field_agent_callback_leads, "number");
 
     assert.equal(await countTable(pool, "crm_tasks", TENANT_DEMO), 0);
     assert.ok((await countTable(pool, "crm_tasks", TENANT_ZM)) >= 1);
@@ -245,14 +246,18 @@ test("reset demo Leads + CRM (HTTP + DB)", { skip: !isPgConfigured() }, async ()
     assert.equal(await countTable(pool, "professional_signups", TENANT_ZM), 1);
     assert.equal(await countReviewsForDemoCompanies(pool, TENANT_DEMO), 0);
     assert.ok((await countReviewsForDemoCompanies(pool, TENANT_ZM)) >= 1);
-    assert.equal(await countTable(pool, "field_agents", TENANT_DEMO), 0);
+    assert.ok((await countTable(pool, "field_agents", TENANT_DEMO)) >= 1);
     assert.ok((await countTable(pool, "field_agents", TENANT_ZM)) >= 1);
   } finally {
     try {
       for (const id of taskIds) {
         await pool.query(`DELETE FROM public.crm_tasks WHERE id = $1`, [id]).catch(() => {});
       }
-      await pool.query(`DELETE FROM public.field_agents WHERE tenant_id = $1 AND username LIKE $2`, [
+      await pool.query(`DELETE FROM public.field_agents WHERE tenant_id = $1 AND username = $2`, [
+        TENANT_DEMO,
+        `fa_d_${suffix}`,
+      ]).catch(() => {});
+      await pool.query(`DELETE FROM public.field_agents WHERE tenant_id = $1 AND username = $2`, [
         TENANT_ZM,
         `fa_z_${suffix}`,
       ]).catch(() => {});

@@ -84,7 +84,8 @@
         typeof d.reviews === "number" &&
         typeof d.callback_interests === "number" &&
         typeof d.professional_signups === "number" &&
-        typeof d.field_agents === "number"
+        typeof d.field_agent_provider_submissions === "number" &&
+        typeof d.field_agent_callback_leads === "number"
       ) {
         return (
           "Summary: Removed " +
@@ -100,8 +101,10 @@
           " callback interest(s), " +
           d.professional_signups +
           " signup(s), " +
-          d.field_agents +
-          " field agent account(s) (submissions/callback leads cascade; lead/CRM comments/audit not counted separately)."
+          d.field_agent_provider_submissions +
+          " field agent submission(s), " +
+          d.field_agent_callback_leads +
+          " field-agent callback lead(s) (lead/CRM comments/audit not counted separately; field agent accounts preserved)."
         );
       }
       var parts2 = [];
