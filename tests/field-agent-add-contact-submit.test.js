@@ -17,7 +17,7 @@ const { getPgPool, isPgConfigured } = require("../src/db/pg/pool");
 const fieldAgentRoutes = require("../src/routes/fieldAgent");
 const fieldAgentsRepo = require("../src/db/pg/fieldAgentsRepo");
 const { setFieldAgentSession } = require("../src/auth/fieldAgentAuth");
-const { TENANT_ZM } = require("../src/tenants/tenantIds");
+const { TENANT_ZM, TENANT_IL } = require("../src/tenants/tenantIds");
 
 function makePhoneNorm() {
   const tail = String(Math.floor(Math.random() * 1e8)).padStart(8, "0");
@@ -105,6 +105,68 @@ test(
     assert.equal(row.work_photos_json, "[]");
 
     await pool.query(`DELETE FROM public.field_agent_provider_submissions WHERE id = $1`, [subId]);
+    await pool.query(`DELETE FROM public.field_agents WHERE id = $1`, [agentId]);
+  }
+);
+
+test(
+  "field-agent add-contact submit: session id with no field_agents row returns 401 (no FK insert)",
+  { skip: !isPgConfigured() },
+  async () => {
+    const app = createTestApp(999999999);
+    const res = await request(app)
+      .post("/field-agent/add-contact/submit")
+      .field("phone", "+2609712345678")
+      .field("whatsapp", "")
+      .field("first_name", "X")
+      .field("last_name", "Y")
+      .field("profession", "Z")
+      .field("pacra", "")
+      .field("address_street", "")
+      .field("address_landmarks", "")
+      .field("address_neighbourhood", "")
+      .field("address_city", "Lusaka")
+      .field("nrc_number", "123456/78/9")
+      .redirects(0);
+
+    assert.equal(res.status, 401);
+    assert.equal(res.text || "", "Session expired. Please sign in again.");
+  }
+);
+
+test(
+  "field-agent add-contact submit: agent row for another tenant returns 401 (tenant isolation)",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    const agentId = await fieldAgentsRepo.insertAgent(pool, {
+      tenantId: TENANT_IL,
+      username: `fa_ac_il_${Date.now()}`,
+      passwordHash: "x",
+      displayName: "",
+      phone: "",
+    });
+
+    const app = createTestApp(agentId);
+
+    const res = await request(app)
+      .post("/field-agent/add-contact/submit")
+      .field("phone", "+2609712345678")
+      .field("whatsapp", "")
+      .field("first_name", "X")
+      .field("last_name", "Y")
+      .field("profession", "Z")
+      .field("pacra", "")
+      .field("address_street", "")
+      .field("address_landmarks", "")
+      .field("address_neighbourhood", "")
+      .field("address_city", "Lusaka")
+      .field("nrc_number", "123456/78/9")
+      .redirects(0);
+
+    assert.equal(res.status, 401);
+    assert.equal(res.text || "", "Session expired. Please sign in again.");
+
     await pool.query(`DELETE FROM public.field_agents WHERE id = $1`, [agentId]);
   }
 );

@@ -216,6 +216,12 @@ module.exports = function fieldAgentRoutes() {
       const pool = getPgPool();
       const s = getFieldAgentSession(req);
       const tid = req.tenant.id;
+      const agentRow = await fieldAgentsRepo.getByIdAndTenant(pool, s.id, tid);
+      if (!agentRow) {
+        clearFieldAgentSession(req);
+        return res.status(401).type("text").send("Session expired. Please sign in again.");
+      }
+      const fieldAgentDbId = Number(agentRow.id);
       const b = req.body || {};
       const phoneRaw = String(b.phone || "").trim();
       const whatsappRaw = String(b.whatsapp || "").trim();
@@ -270,7 +276,7 @@ module.exports = function fieldAgentRoutes() {
         await client.query("BEGIN");
         submissionId = await fieldAgentSubmissionsRepo.insertSubmission(pool, client, {
           tenantId: tid,
-          fieldAgentId: s.id,
+          fieldAgentId: fieldAgentDbId,
           phoneRaw,
           phoneNorm: pNorm,
           whatsappRaw,
@@ -347,6 +353,12 @@ module.exports = function fieldAgentRoutes() {
     const pool = getPgPool();
     const s = getFieldAgentSession(req);
     const tid = req.tenant.id;
+    const agentRow = await fieldAgentsRepo.getByIdAndTenant(pool, s.id, tid);
+    if (!agentRow) {
+      clearFieldAgentSession(req);
+      return res.status(401).type("text").send("Session expired. Please sign in again.");
+    }
+    const fieldAgentDbId = Number(agentRow.id);
     const b = req.body || {};
     const firstName = String(b.first_name || "").trim().slice(0, 120);
     const lastName = String(b.last_name || "").trim().slice(0, 120);
@@ -362,7 +374,7 @@ module.exports = function fieldAgentRoutes() {
     }
     const leadId = await fieldAgentCallbackLeadsRepo.insertCallbackLead(pool, null, {
       tenantId: tid,
-      fieldAgentId: s.id,
+      fieldAgentId: fieldAgentDbId,
       firstName,
       lastName,
       phone,

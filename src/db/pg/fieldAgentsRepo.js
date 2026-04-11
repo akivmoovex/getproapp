@@ -9,6 +9,19 @@ async function getById(pool, id) {
   return r.rows[0] ?? null;
 }
 
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} id
+ * @param {number} tenantId
+ */
+async function getByIdAndTenant(pool, id, tenantId) {
+  const r = await pool.query(
+    `SELECT * FROM public.field_agents WHERE id = $1 AND tenant_id = $2 LIMIT 1`,
+    [id, tenantId]
+  );
+  return r.rows[0] ?? null;
+}
+
 async function getByUsernameAndTenant(pool, usernameLower, tenantId) {
   const r = await pool.query(
     `SELECT * FROM public.field_agents WHERE tenant_id = $1 AND lower(username) = lower($2) LIMIT 1`,
@@ -39,6 +52,7 @@ async function deleteByIdAndTenantId(pool, id, tenantId) {
 
 module.exports = {
   getById,
+  getByIdAndTenant,
   getByUsernameAndTenant,
   insertAgent,
   deleteByIdAndTenantId,

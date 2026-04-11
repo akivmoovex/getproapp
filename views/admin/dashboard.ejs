@@ -28,7 +28,7 @@
         <% var dashNav = typeof adminNav !== 'undefined' ? adminNav : {}; var dashDir = !!dashNav.canEditDirectory; var dashSpCat = !!dashNav.canManageServiceProviderCategories; %>
         <section class="admin-dashboard__kpis" aria-label="Key metrics">
           <% if (dashSpCat) { %>
-          <a class="admin-dashboard-kpi admin-dashboard-kpi--link" href="/admin/categories">
+          <a class="admin-dashboard-kpi admin-dashboard-kpi--link" href="/admin/companies">
           <% } else { %>
           <article class="admin-dashboard-kpi">
           <% } %>
@@ -37,7 +37,7 @@
             </div>
             <div class="admin-dashboard-kpi__body">
               <span class="admin-dashboard-kpi__label">Service providers</span>
-              <span class="admin-dashboard-kpi__value"><%= categoriesCount %></span>
+              <span class="admin-dashboard-kpi__value"><%= companiesCount %></span>
             </div>
           <% if (dashSpCat) { %>
           </a>
