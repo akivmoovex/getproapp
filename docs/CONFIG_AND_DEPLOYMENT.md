@@ -29,6 +29,29 @@ This document lists **runtime environment variables** for the GetPro Node server
 
 Real `.env` files are **gitignored**. Never commit secrets.
 
+## Admin > DB Tools Environment Policy
+
+**Admin → DB tools** (“Create test data” / “Clear seeded data”) are **restricted by environment**. They are designed to **prevent accidental data manipulation** on live production and are controlled via **`NODE_ENV`** and **explicit fixture flags** (see `src/admin/dbFixturesEnv.js`).
+
+| Environment | Domain | DB tools status | Notes |
+|-------------|--------|-----------------|-------|
+| Test / Demo | pronline.org | Allowed only when explicitly enabled | Requires both fixture flags if `NODE_ENV=production` |
+| Production | getproapp.org | Always blocked by default | Never enable fixture flags in real production |
+
+**Demo / test hosts (e.g. pronline.org):** DB tools can be enabled in either of these ways:
+
+- Use **`NODE_ENV` not equal to `production`** (e.g. `development`), **or**
+- Set **`NODE_ENV=production`** and **both** of the following to exactly **`1`**:
+  - `GETPRO_ALLOW_DB_FIXTURES=1`
+  - `GETPRO_ALLOW_DB_FIXTURES_IN_PRODUCTION=1`
+
+**Real production (getproapp.org):** DB tools must **remain disabled**. Do **not** set:
+
+- `GETPRO_ALLOW_DB_FIXTURES`
+- `GETPRO_ALLOW_DB_FIXTURES_IN_PRODUCTION`
+
+**Safety:** DB tools are **super-admin only**, **tenant-scoped**, and limited to **tracked seeded data** (`seed_runs` / `seed_run_items`). They are **not** intended for use on live production customer data. See **`.env.development.example`** / **`.env.production.example`** for host-specific guidance.
+
 ## Core variables (summary)
 
 | Variable | Required prod | Notes |
@@ -64,6 +87,7 @@ See `README.md` and `.env.example` for **GETPRO_STYLES_V**, **GETPRO_USE_BUILD_A
 
 ## Related code
 
+- `src/admin/dbFixturesEnv.js` — Admin → DB tools enabled/disabled (see **Admin > DB Tools Environment Policy** above)
 - `src/startup/bootstrap.js` — when dotenv runs; production may merge **`.env.production`** from well-known paths when host env is incomplete (see file header and logs — exact paths depend on deployment home directory)
 - `src/startup/productionEnvGate.js` — production required vars + diagnostics
 - `src/db/pg/pool.js` — Postgres URL and SSL

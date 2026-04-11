@@ -15,7 +15,8 @@
           <div>
             <h1 class="admin-dashboard__title">DB tools</h1>
             <p class="admin-dashboard__subtitle muted">
-              Create or remove <strong>seeded test data only</strong> for the <strong>current directory region (tenant-scoped)</strong>. Does not change roles, billing, or core tenant settings. <strong>Not available in production</strong> (actions are disabled; API returns 403).
+              <strong>Super-admin only.</strong> <strong>Tenant-scoped:</strong> create or remove <strong>seeded test data only</strong> for the <strong>current directory region</strong> — not other tenants, not tenant-wide wipes, not <code>TRUNCATE</code>. Does not change roles, billing, or core tenant settings.
+              Unavailable by default when <code>NODE_ENV=production</code> unless both fixture flags are set for a <strong>production-like demo host</strong> (e.g. pronline.org). Real production (getproapp.org) should leave those flags unset. When disabled: actions off, POST returns 403.
             </p>
           </div>
         </header>
@@ -31,12 +32,16 @@
         <% } %>
 
         <p class="flash flash--info" role="status">
-          <strong>Warning:</strong> “Create test data” inserts labeled fixture rows. “Clear seeded data” removes <em>only</em> rows registered by this tool’s seed runs for <strong>this tenant</strong> — not your whole database, not other regions, not roles or billing.
+          <strong>Warning:</strong> “Create test data” inserts labeled fixture rows. “Clear seeded data” deletes <em>only</em> <strong>tracked</strong> seeded records (via <code>seed_runs</code> / <code>seed_run_items</code>) for <strong>this tenant</strong> — not your whole database, not other regions, not roles or billing. Clear requires typing the region slug to match (<code>confirmSlug</code>).
+        </p>
+
+        <p class="muted" style="font-size: 0.9rem; margin: 0 0 1rem 0">
+          PostgreSQL must have migration <code>db/postgres/005_seed_runs.sql</code> applied (<code>seed_runs</code>, <code>seed_run_items</code>). If missing, seed/clear will error — check server logs and apply the migration.
         </p>
 
         <% if (typeof dbToolsDisabled !== 'undefined' && dbToolsDisabled) { %>
         <div class="flash" role="alert" style="border: 2px solid currentColor; font-weight: 500;">
-          <strong>Production mode (<code>NODE_ENV=production</code>):</strong> seeded test-data actions are <strong>disabled</strong> here. The API rejects create/clear with HTTP 403. This page is read-only.
+          <strong>Fixture tools disabled in this environment:</strong> typical when <code>NODE_ENV=production</code> without both <code>GETPRO_ALLOW_DB_FIXTURES=1</code> and <code>GETPRO_ALLOW_DB_FIXTURES_IN_PRODUCTION=1</code> (the intended posture for getproapp.org). Create/clear API calls return HTTP 403; this page is read-only.
         </div>
         <% } %>
 
@@ -51,7 +56,7 @@
                 Create test data
               </button>
             </div>
-            <p class="muted" style="margin-top: 1.25rem">Remove seeded test data for this tenant only (requires typing the region slug). Unavailable in production.</p>
+            <p class="muted" style="margin-top: 1.25rem">Remove seeded test data for this tenant only (requires typing the region slug). Blocked when fixture tools are disabled for this host (e.g. real production without the two-flag demo override).</p>
             <div class="db-tools-actions__row">
               <button type="button" class="c-button btn btn--danger-outline" id="db_tools_btn_clear_open" <%= dbToolsDisabled ? 'disabled' : '' %>>
                 Clear seeded data

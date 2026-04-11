@@ -1,5 +1,6 @@
 /**
- * Admin test-data seed / clear: GET page + JSON API (super-admin only; POST blocked in production).
+ * Admin test-data seed / clear: GET page + JSON API (super-admin only).
+ * Enable/disable: `areAdminDbFixturesEnabled()` in `src/admin/dbFixturesEnv.js` only (no NODE_ENV-only bypass here).
  */
 "use strict";
 
@@ -9,13 +10,14 @@ const { getAdminTenantId } = require("./adminShared");
 const { getPgPool } = require("../../db/pg");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
 const adminTestDataService = require("../../admin/adminTestDataService");
+const { areAdminDbFixturesEnabled } = require("../../admin/dbFixturesEnv");
 
-function blockProductionDbTools(req, res, next) {
-  if (process.env.NODE_ENV === "production") {
+function blockWhenDbFixturesDisabled(req, res, next) {
+  if (!areAdminDbFixturesEnabled()) {
     return res.status(403).json({
       ok: false,
       error: "forbidden",
-      message: "DB test-data tools are disabled in production.",
+      message: "DB test-data tools are disabled in this environment.",
     });
   }
   return next();
@@ -49,7 +51,7 @@ module.exports = function registerAdminDbToolsRoutes(router) {
         activeNav: "db",
         navTitle: "DB tools",
         tenantContext: { id: tid, slug, name },
-        dbToolsDisabled: process.env.NODE_ENV === "production",
+        dbToolsDisabled: !areAdminDbFixturesEnabled(),
         clearPreview,
       });
     } catch (e) {
@@ -57,7 +59,7 @@ module.exports = function registerAdminDbToolsRoutes(router) {
     }
   });
 
-  router.post("/db/seed", blockProductionDbTools, requireSuperAdminJson, async (req, res) => {
+  router.post("/db/seed", blockWhenDbFixturesDisabled, requireSuperAdminJson, async (req, res) => {
     try {
       const pool = getPgPool();
       const tenantId = getAdminTenantId(req);
@@ -71,7 +73,7 @@ module.exports = function registerAdminDbToolsRoutes(router) {
     }
   });
 
-  router.post("/db/clear", blockProductionDbTools, requireSuperAdminJson, async (req, res) => {
+  router.post("/db/clear", blockWhenDbFixturesDisabled, requireSuperAdminJson, async (req, res) => {
     try {
       const pool = getPgPool();
       const tenantId = getAdminTenantId(req);

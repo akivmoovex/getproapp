@@ -1,4 +1,4 @@
--- Test fixture registry for Admin > DB seed/clear (non-production only).
+-- Test fixture registry for Admin > DB seed/clear (runtime gated by src/admin/dbFixturesEnv.js).
 -- Apply after 000_full_schema.sql and field_agent DDL.
 
 BEGIN;
