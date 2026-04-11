@@ -5,7 +5,6 @@ const boot = runBootstrap();
 logBootstrapMarker(boot);
 
 const express = require("express");
-const helmet = require("helmet");
 const morgan = require("morgan");
 const session = require("express-session");
 
@@ -100,6 +99,7 @@ const {
   getCachedTenantSlugExistsAsync,
   RESERVED_PLATFORM_SUBDOMAINS,
 } = require("./src/tenants");
+const { createJoinEmbedHelmetMiddleware } = require("./src/http/joinEmbedHelmet");
 const { STAGES } = require("./src/tenants/tenantStages");
 const { eventTimeParts } = require("./src/lib/eventTime");
 const branding = require("./src/platform/branding");
@@ -130,7 +130,8 @@ if (process.env.TRUST_PROXY === "0" || process.env.TRUST_PROXY === "false") {
 } else {
   app.set("trust proxy", 1);
 }
-app.use(helmet());
+
+app.use(createJoinEmbedHelmetMiddleware());
 
 const isProduction = process.env.NODE_ENV === "production";
 /** Omit query strings from access logs (tokens, PII in URLs). */
