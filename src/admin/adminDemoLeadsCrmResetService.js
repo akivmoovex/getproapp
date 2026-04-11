@@ -1,5 +1,6 @@
 /**
- * Admin DB tools: delete Leads + CRM rows for the demo tenant only (super-admin, fixture-gated at route).
+ * Admin DB tools: delete approved demo-tenant activity rows only (super-admin, fixture-gated at route).
+ * Scope: CRM, leads, reviews (for demo companies), callbacks, professional signups, field agents (+ CASCADE submissions/callback leads).
  */
 "use strict";
 
@@ -33,6 +34,13 @@ async function resetDemoLeadsAndCrm(pool, p) {
     const r1 = await client.query(`DELETE FROM public.crm_tasks WHERE tenant_id = $1`, [TENANT_DEMO]);
     const r2 = await client.query(`DELETE FROM public.crm_csr_fifo_state WHERE tenant_id = $1`, [TENANT_DEMO]);
     const r3 = await client.query(`DELETE FROM public.leads WHERE tenant_id = $1`, [TENANT_DEMO]);
+    const r4 = await client.query(
+      `DELETE FROM public.reviews WHERE company_id IN (SELECT id FROM public.companies WHERE tenant_id = $1)`,
+      [TENANT_DEMO]
+    );
+    const r5 = await client.query(`DELETE FROM public.callback_interests WHERE tenant_id = $1`, [TENANT_DEMO]);
+    const r6 = await client.query(`DELETE FROM public.professional_signups WHERE tenant_id = $1`, [TENANT_DEMO]);
+    const r7 = await client.query(`DELETE FROM public.field_agents WHERE tenant_id = $1`, [TENANT_DEMO]);
 
     await client.query("COMMIT");
 
@@ -40,6 +48,10 @@ async function resetDemoLeadsAndCrm(pool, p) {
       crm_tasks: r1.rowCount ?? 0,
       crm_csr_fifo_state: r2.rowCount ?? 0,
       leads: r3.rowCount ?? 0,
+      reviews: r4.rowCount ?? 0,
+      callback_interests: r5.rowCount ?? 0,
+      professional_signups: r6.rowCount ?? 0,
+      field_agents: r7.rowCount ?? 0,
     };
 
     // eslint-disable-next-line no-console
@@ -53,7 +65,15 @@ async function resetDemoLeadsAndCrm(pool, p) {
         created: {},
         deleted,
       },
-      tablesTouched: ["crm_tasks", "crm_csr_fifo_state", "leads"],
+      tablesTouched: [
+        "crm_tasks",
+        "crm_csr_fifo_state",
+        "leads",
+        "reviews",
+        "callback_interests",
+        "professional_signups",
+        "field_agents",
+      ],
     };
   } catch (e) {
     try {

@@ -80,7 +80,11 @@
       if (
         typeof d.crm_tasks === "number" &&
         typeof d.crm_csr_fifo_state === "number" &&
-        typeof d.leads === "number"
+        typeof d.leads === "number" &&
+        typeof d.reviews === "number" &&
+        typeof d.callback_interests === "number" &&
+        typeof d.professional_signups === "number" &&
+        typeof d.field_agents === "number"
       ) {
         return (
           "Summary: Removed " +
@@ -89,7 +93,15 @@
           d.crm_csr_fifo_state +
           " CSR FIFO row(s), " +
           d.leads +
-          " lead(s) (demo tenant only; cascaded comments/audit not counted separately)."
+          " lead(s), " +
+          d.reviews +
+          " review(s) (demo companies), " +
+          d.callback_interests +
+          " callback interest(s), " +
+          d.professional_signups +
+          " signup(s), " +
+          d.field_agents +
+          " field agent account(s) (submissions/callback leads cascade; lead/CRM comments/audit not counted separately)."
         );
       }
       var parts2 = [];
@@ -339,7 +351,7 @@
       setBusy(false);
       closeDemoModal();
       if (data.ok) {
-        showFeedback("ok", "Demo Leads + CRM reset.");
+        showFeedback("ok", "Demo directory activity reset.");
         renderSummary(data);
       } else {
         var msg2 = data.message || data.error || "Request failed.";

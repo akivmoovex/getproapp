@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Admin DB tools: POST /admin/db/reset-demo-leads-crm (demo tenant Leads + CRM reset).
+ * Admin DB tools: POST /admin/db/reset-demo-leads-crm (demo tenant directory activity reset).
  * Skips when DATABASE_URL / GETPRO_DATABASE_URL is unset.
  */
 
@@ -78,6 +78,15 @@ async function countTable(pool, table, tenantId) {
   return r.rows[0].c;
 }
 
+async function countReviewsForDemoCompanies(pool, tenantId) {
+  const r = await pool.query(
+    `SELECT COUNT(*)::int AS c FROM public.reviews r
+     INNER JOIN public.companies c ON c.id = r.company_id WHERE c.tenant_id = $1`,
+    [tenantId]
+  );
+  return r.rows[0].c;
+}
+
 test("reset demo Leads + CRM (HTTP + DB)", { skip: !isPgConfigured() }, async () => {
   runBootstrap();
   const pool = getPgPool();
@@ -141,6 +150,46 @@ test("reset demo Leads + CRM (HTTP + DB)", { skip: !isPgConfigured() }, async ()
       leadZmId = Number(lr.rows[0].id);
     }
 
+    await pool.query(
+      `INSERT INTO public.callback_interests (tenant_id, phone, name, context) VALUES ($1, $2, 'cb', 'ctx')`,
+      [TENANT_DEMO, `26097${suffix.slice(0, 8)}1`]
+    );
+    await pool.query(
+      `INSERT INTO public.callback_interests (tenant_id, phone, name, context) VALUES ($1, $2, 'cb', 'ctx')`,
+      [TENANT_ZM, `26097${suffix.slice(0, 8)}2`]
+    );
+
+    await pool.query(
+      `INSERT INTO public.professional_signups (tenant_id, profession, city, name, phone, vat_or_pacra)
+       VALUES ($1, 'p', 'city', 'n', '260991', '')`,
+      [TENANT_DEMO]
+    );
+    await pool.query(
+      `INSERT INTO public.professional_signups (tenant_id, profession, city, name, phone, vat_or_pacra)
+       VALUES ($1, 'p', 'city', 'n', '260992', '')`,
+      [TENANT_ZM]
+    );
+
+    if (coDemo.rows[0]) {
+      await pool.query(`INSERT INTO public.reviews (company_id, rating, body, author_name) VALUES ($1, 4, 't', 'a')`, [
+        coDemo.rows[0].id,
+      ]);
+    }
+    if (coZm.rows[0]) {
+      await pool.query(`INSERT INTO public.reviews (company_id, rating, body, author_name) VALUES ($1, 4, 't', 'a')`, [
+        coZm.rows[0].id,
+      ]);
+    }
+
+    await pool.query(
+      `INSERT INTO public.field_agents (tenant_id, username, password_hash, display_name, phone) VALUES ($1, $2, $3, 'fa', '')`,
+      [TENANT_DEMO, `fa_d_${suffix}`, hash]
+    );
+    await pool.query(
+      `INSERT INTO public.field_agents (tenant_id, username, password_hash, display_name, phone) VALUES ($1, $2, $3, 'fa', '')`,
+      [TENANT_ZM, `fa_z_${suffix}`, hash]
+    );
+
     const superAgent = await adminLoginJsonAgent(app, supName, pw);
     const mgrAgent = await adminLoginJsonAgent(app, mgrName, pw);
 
@@ -169,6 +218,11 @@ test("reset demo Leads + CRM (HTTP + DB)", { skip: !isPgConfigured() }, async ()
     assert.equal(ok.body.tenantId, TENANT_DEMO);
     assert.equal(ok.body.tenantSlug, "demo");
     assert.ok(ok.body.counts && ok.body.counts.deleted);
+    const del = ok.body.counts.deleted;
+    assert.equal(typeof del.reviews, "number");
+    assert.equal(typeof del.callback_interests, "number");
+    assert.equal(typeof del.professional_signups, "number");
+    assert.equal(typeof del.field_agents, "number");
 
     assert.equal(await countTable(pool, "crm_tasks", TENANT_DEMO), 0);
     assert.ok((await countTable(pool, "crm_tasks", TENANT_ZM)) >= 1);
@@ -184,11 +238,32 @@ test("reset demo Leads + CRM (HTTP + DB)", { skip: !isPgConfigured() }, async ()
 
     const fifo = await pool.query(`SELECT 1 FROM public.crm_csr_fifo_state WHERE tenant_id = $1`, [TENANT_DEMO]);
     assert.equal(fifo.rows.length, 0);
+
+    assert.equal(await countTable(pool, "callback_interests", TENANT_DEMO), 0);
+    assert.equal(await countTable(pool, "callback_interests", TENANT_ZM), 1);
+    assert.equal(await countTable(pool, "professional_signups", TENANT_DEMO), 0);
+    assert.equal(await countTable(pool, "professional_signups", TENANT_ZM), 1);
+    assert.equal(await countReviewsForDemoCompanies(pool, TENANT_DEMO), 0);
+    assert.ok((await countReviewsForDemoCompanies(pool, TENANT_ZM)) >= 1);
+    assert.equal(await countTable(pool, "field_agents", TENANT_DEMO), 0);
+    assert.ok((await countTable(pool, "field_agents", TENANT_ZM)) >= 1);
   } finally {
     try {
       for (const id of taskIds) {
         await pool.query(`DELETE FROM public.crm_tasks WHERE id = $1`, [id]).catch(() => {});
       }
+      await pool.query(`DELETE FROM public.field_agents WHERE tenant_id = $1 AND username LIKE $2`, [
+        TENANT_ZM,
+        `fa_z_${suffix}`,
+      ]).catch(() => {});
+      await pool.query(`DELETE FROM public.callback_interests WHERE tenant_id = $1 AND phone LIKE $2`, [
+        TENANT_ZM,
+        `26097${suffix.slice(0, 8)}2`,
+      ]).catch(() => {});
+      await pool.query(`DELETE FROM public.professional_signups WHERE tenant_id = $1 AND phone = $2`, [
+        TENANT_ZM,
+        "260992",
+      ]).catch(() => {});
       if (superId) await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [superId]).catch(() => {});
       if (mgrId) await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [mgrId]).catch(() => {});
     } catch {

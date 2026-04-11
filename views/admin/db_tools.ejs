@@ -32,7 +32,7 @@
         <% } %>
 
         <p class="flash flash--info" role="status">
-          <strong>Warning:</strong> “Create test data” inserts labeled fixture rows. “Clear seeded data” deletes <em>only</em> <strong>tracked</strong> seeded records (via <code>seed_runs</code> / <code>seed_run_items</code>) for <strong>this tenant</strong> — not your whole database, not other regions, not roles or billing. Clear requires typing the region slug to match (<code>confirmSlug</code>). “Reset demo Leads + CRM” affects only the <strong>demo</strong> tenant (<code>tenant_id</code> for slug <code>demo</code>), not your current region scope; type <code>demo</code> to confirm.
+          <strong>Warning:</strong> “Create test data” inserts labeled fixture rows. “Clear seeded data” deletes <em>only</em> <strong>tracked</strong> seeded records (via <code>seed_runs</code> / <code>seed_run_items</code>) for <strong>this tenant</strong> — not your whole database, not other regions, not roles or billing. Clear requires typing the region slug to match (<code>confirmSlug</code>). “Reset demo activity” affects only the <strong>demo</strong> tenant (slug <code>demo</code>), not your current region scope; type <code>demo</code> to confirm. It does not remove directory listings (<code>companies</code>), categories, or seed registry rows.
         </p>
 
         <p class="muted" style="font-size: 0.9rem; margin: 0 0 1rem 0">
@@ -63,11 +63,11 @@
               </button>
             </div>
             <p class="muted" style="margin-top: 1.25rem">
-              Remove <strong>Leads</strong> and <strong>CRM</strong> data for the <strong>demo</strong> tenant only (<code>crm_tasks</code>, <code>crm_csr_fifo_state</code>, <code>leads</code> — child rows cascade). Does not use “current region”; other tenants are unchanged. Requires typing <code>demo</code> to confirm.
+              Remove <strong>demo</strong>-tenant activity only: leads, CRM (<code>crm_tasks</code>, <code>crm_csr_fifo_state</code>), <strong>reviews</strong> on demo listings, <strong>callback</strong> interests, <strong>professional signups</strong>, and <strong>field agents</strong> (including submissions and field-agent callback leads via cascade). Does not delete <code>companies</code> or categories. Does not use “current region”; other tenants are unchanged. Requires typing <code>demo</code> to confirm.
             </p>
             <div class="db-tools-actions__row">
               <button type="button" class="c-button btn btn--danger-outline" id="db_tools_btn_demo_reset_open" <%= dbToolsDisabled ? 'disabled' : '' %>>
-                Reset demo Leads + CRM
+                Reset demo Leads, CRM, reviews, callbacks, signups &amp; field agents
               </button>
             </div>
           </div>
@@ -145,12 +145,12 @@
       <div class="m3-modal-overlay__backdrop" data-db-tools-demo-modal-close tabindex="-1"></div>
       <div class="m3-modal m3-modal--workspace-confirm" role="dialog" aria-modal="true" aria-labelledby="db_tools_demo_reset_modal_title">
         <header class="m3-modal__header">
-          <h2 id="db_tools_demo_reset_modal_title" class="m3-modal__title">Reset demo Leads + CRM?</h2>
+          <h2 id="db_tools_demo_reset_modal_title" class="m3-modal__title">Reset demo directory activity?</h2>
           <button type="button" class="m3-modal__close" data-db-tools-demo-modal-close aria-label="Close dialog">×</button>
         </header>
         <div class="m3-modal__body">
           <p class="muted">
-            This deletes <strong>only</strong> <code>crm_tasks</code>, <code>crm_csr_fifo_state</code>, and <code>leads</code> for the <strong>demo</strong> tenant (slug <code>demo</code>). Related comments/audit rows cascade from CRM tasks and leads. It does <strong>not</strong> change your current directory region, other tenants, companies, categories, intake, field agents, or seed registry data.
+            This deletes <strong>only</strong> for the <strong>demo</strong> tenant: <code>crm_tasks</code>, <code>crm_csr_fifo_state</code>, <code>leads</code> (and cascading lead comments); <code>reviews</code> rows for demo <code>companies</code> only (listings stay); <code>callback_interests</code>; <code>professional_signups</code>; <code>field_agents</code> and (by cascade) <code>field_agent_provider_submissions</code> and <code>field_agent_callback_leads</code>. It does <strong>not</strong> remove provider listings (<code>companies</code>), categories, cities, intake, seed registry, other tenants, or your current directory scope.
           </p>
           <p class="muted">Type <code>demo</code> below to confirm.</p>
           <div class="input-field">
@@ -167,7 +167,7 @@
         <div class="m3-modal__footer">
           <button type="button" class="c-button btn" data-db-tools-demo-modal-close>Cancel</button>
           <button type="button" class="c-button btn btn--danger-outline" id="db_tools_btn_demo_reset_confirm" disabled>
-            Reset demo Leads + CRM
+            Reset demo activity
           </button>
         </div>
       </div>
