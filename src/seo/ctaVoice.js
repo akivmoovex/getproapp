@@ -88,7 +88,7 @@ const ctaVoiceProfiles = {
       callback_loading: "Sending request…",
     },
     searchRefinement: {
-      service_placeholder: "Search for a service (e.g. electrician, tutor)",
+      service_placeholder: "Search for a service (e.g electrician, tutor)",
       city_placeholder: "City or town",
       helper: "Find trusted providers by service, category, or location",
       recent_label: "Recent searches",

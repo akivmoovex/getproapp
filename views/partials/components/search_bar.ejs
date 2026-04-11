@@ -16,7 +16,6 @@
   - idPrefix             : override field id prefix (sanitized)
   - searchQuery, cityQuery : controlled input values
   - servicePlaceholder, cityPlaceholder : optional native placeholders (from ctaVoice.searchRefinement)
-  - serviceWatermarkRotate : optional pipe-separated rotate phrases for service field (defaults if empty)
   Form shell props (pro_search_form only): formAction, formId
 -%>
 <%
@@ -33,9 +32,6 @@
   var _submitBtn = typeof submitLabel !== 'undefined' && String(submitLabel || '').trim() ? String(submitLabel).trim() : 'Search';
   var _svcPh = typeof servicePlaceholder !== 'undefined' ? String(servicePlaceholder || '') : '';
   var _cityPh = typeof cityPlaceholder !== 'undefined' ? String(cityPlaceholder || '') : '';
-  var _wmSvc = typeof serviceWatermarkRotate !== 'undefined' && String(serviceWatermarkRotate || '').trim()
-    ? String(serviceWatermarkRotate).trim()
-    : 'Electrician|Plumber|Carpenter';
 %>
 <% if (_showCat && _cats && _cats.length) { %>
   <div class="pro-search-form__category input-field">
@@ -54,12 +50,11 @@
   <div class="pro-search-form__toolbar-row">
     <div class="pro-search-form__fields">
       <div class="pro-search-form__field input-field input-field--search">
-        <label class="pro-search-form__label input-field__label" for="<%= _pre %>-search-q">Service or profession</label>
+        <label class="pro-search-form__label input-field__label visually-hidden" for="<%= _pre %>-search-q">Service or profession</label>
         <div
           class="pro-ac"
           data-ac-list="service"
           data-ac-typeahead="1"
-          data-watermark-rotate="<%= _wmSvc %>"
         >
           <input
             id="<%= _pre %>-search-q"
@@ -79,11 +74,10 @@
         </div>
       </div>
       <div class="pro-search-form__field input-field input-field--search">
-        <label class="pro-search-form__label input-field__label" for="<%= _pre %>-search-city">City</label>
+        <label class="pro-search-form__label input-field__label visually-hidden" for="<%= _pre %>-search-city">City</label>
         <div
           class="pro-ac"
           data-ac-list="city"
-          data-watermark-rotate="Lusaka|Ndola|Kitwe"
         >
           <input
             id="<%= _pre %>-search-city"

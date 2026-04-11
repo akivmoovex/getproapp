@@ -6395,7 +6395,7 @@ textarea {
 @media (min-width: 768px) {
   .c-search-bar .pro-search-form__toolbar-row {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 148px;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr) minmax(236px, auto);
     gap: var(--gp-search-toolbar-gap, var(--space-1-5));
     align-items: end;
   }
@@ -6406,6 +6406,14 @@ textarea {
 
   .c-search-bar .pro-search-form__toolbar-row > * {
     min-width: 0;
+  }
+}
+
+/* Slightly more field width on small laptops; button column still fits CTA text. */
+@media (min-width: 768px) and (max-width: 900px) {
+  .c-search-bar .pro-search-form__toolbar-row {
+    grid-template-columns: minmax(0, 1.42fr) minmax(0, 0.88fr) minmax(220px, auto);
+    gap: var(--space-1-25);
   }
 }
 
@@ -6573,9 +6581,9 @@ textarea {
 
 @media (min-width: 768px) {
   .c-search-bar .pro-search-form__submit.btn {
-    width: 148px;
-    min-width: 148px;
-    max-width: 148px;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
     align-self: end;
     background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
     color: var(--color-on-primary);

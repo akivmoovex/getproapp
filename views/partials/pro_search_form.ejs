@@ -7,10 +7,19 @@
   partials/components/search_bar (or components/search_bar from partials/) directly;
   the <form> wrapper must stay paired with the bar.
 
+  Placeholder contract (do not blur without an intentional product change):
+  - Universal hero copy is DOUBLE-GATED: (1) approvedMarketingHeroPlaceholders === primitive true ONLY on
+    views/index.ejs, AND (2) form action URL contains home_featured= (homepage featured-directory contract).
+  - Portal/directory/category/docs/demo: omit approvedMarketingHeroPlaceholders; always ctaVoice placeholders.
+  - Do not pass approvedMarketingHeroPlaceholders from new includes without product approval; a second hero
+    requires updating the allowlist below (action check + comment).
+  - Booleans: primitive true only; typeof must be boolean. "true", 1, new Boolean(true), undefined, null → off.
+
   Props (pass through to SearchBar + used for form):
   - variant, tenantUrlPrefix, formAction, formId, searchQuery, cityQuery,
     showCategoryFilter, selectedCategory, categories, ariaLabel, idPrefix, formExtraAttrs,
     preserveDirectoryFeatured — when true, adds hidden home_featured=1 (keep featured-only directory searches)
+  - approvedMarketingHeroPlaceholders — optional; omit everywhere except approved index hero (see contract)
   ============================================================================
 -%>
 <%
@@ -28,11 +37,22 @@
     _submitLabel = (_formSearch && _formSearch.primary) ? String(_formSearch.primary) : ((_hpSearch && _hpSearch.primary_search) ? String(_hpSearch.primary_search) : '');
   }
   var _sr = typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.searchRefinement ? ctaVoice.searchRefinement : null;
-  var _svcPh = (_sr && _sr.service_placeholder) ? String(_sr.service_placeholder) : '';
-  var _cityPh = (_sr && _sr.city_placeholder) ? String(_sr.city_placeholder) : '';
-  var _wmSvc = '';
-  if (_sr && _sr.suggestions && _sr.suggestions.examples && _sr.suggestions.examples.length) {
-    _wmSvc = _sr.suggestions.examples.map(function (x) { return String(x || '').trim(); }).filter(Boolean).join('|');
+  /* Hero copy: primitive boolean true only (see header). new Boolean(true) is typeof object → rejected. */
+  var _heroBool =
+    typeof approvedMarketingHeroPlaceholders !== 'undefined' &&
+    typeof approvedMarketingHeroPlaceholders === 'boolean' &&
+    approvedMarketingHeroPlaceholders === true;
+  /* Allowlist: homepage hero posts to featured directory; portal/other heroes use different actions. */
+  var _heroActionOk = /[?&]home_featured=/.test(String(_action || ''));
+  var _useHomePh = _heroBool && _heroActionOk;
+  var _svcPh;
+  var _cityPh;
+  if (_useHomePh) {
+    _svcPh = 'Search for a service (e.g electrician, tutor)';
+    _cityPh = 'City or town';
+  } else {
+    _svcPh = (_sr && _sr.service_placeholder) ? String(_sr.service_placeholder) : '';
+    _cityPh = (_sr && _sr.city_placeholder) ? String(_sr.city_placeholder) : '';
   }
   var _tenantForMeta = (typeof tenant !== 'undefined' && tenant && tenant.slug) ? String(tenant.slug) : 'global';
   var _metaPopular = (_sr && _sr.popular && _sr.popular.length) ? _sr.popular : ['Electrician', 'Plumber', 'Tutor', 'Cleaner', 'Mechanic'];
@@ -71,7 +91,6 @@
   submitLabel: _submitLabel,
   servicePlaceholder: _svcPh,
   cityPlaceholder: _cityPh,
-  serviceWatermarkRotate: _wmSvc,
 }) %>
 <% if (_sr && _sr.helper) { %>
 <p class="pro-search-form__helper muted" role="note"><%= _sr.helper %></p>

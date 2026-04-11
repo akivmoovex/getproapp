@@ -75,11 +75,13 @@
           <div class="gp-home-hero__top">
             <div class="gp-home-hero__search-shell">
               <div id="site-search-bar" class="c-search-bar-shell gp-home-search gp-home-search-card" aria-label="Project search">
+                <%# Sole approved marketing hero: pass approvedMarketingHeroPlaceholders true only here + featured formAction. %>
                 <%- include('partials/pro_search_form', {
                   variant: 'home',
                   tenantUrlPrefix,
                   formAction: typeof homepageOpsHref === 'function' ? homepageOpsHref('/directory?home_featured=1') : (typeof opsHref !== 'undefined' ? opsHref('/directory?home_featured=1') : undefined),
                   showCategoryFilter: false,
+                  approvedMarketingHeroPlaceholders: true,
                 }) %>
               </div>
             </div>

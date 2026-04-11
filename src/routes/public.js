@@ -8,7 +8,10 @@ const {
   getJoinCityWatermarkRotateAsync,
 } = require("../tenants/tenantCities");
 const { israelComingSoonEnabled } = require("../tenants/israelComingSoon");
-const { attachReviewStatsToCompanies } = require("../companies/reviewStats");
+const {
+  attachReviewStatsToCompanies,
+  sortDirectoryCompaniesByRating,
+} = require("../companies/reviewStats");
 const { buildCompanyPageLocals } = require("../companies/companyPageRender");
 const { getTenantContactSupportAsync } = require("../tenants/tenantContactSupport");
 const { formatBodyToHtml, canonicalUrlForTenant, absolutePublicUrl, escapeHtml } = require("../content/contentPages");
@@ -502,6 +505,9 @@ module.exports = function publicRoutes() {
     const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, tenantId);
 
     companies = await attachReviewStatsToCompanies(companies);
+    if (!homeFeatured) {
+      companies = sortDirectoryCompaniesByRating(companies);
+    }
 
     const platformName = req.tenant.name || PRODUCT_NAME;
     const ccDir = getClientCountryCode(req) || "XX";
@@ -672,6 +678,7 @@ module.exports = function publicRoutes() {
       let companies = await companiesRepo.listDirectoryByCategorySlug(pool, tenantId, category.slug, cityLike);
       const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, tenantId);
       companies = await attachReviewStatsToCompanies(companies);
+      companies = sortDirectoryCompaniesByRating(companies);
       const categories = await loadCategoriesList(tenantId);
       const platformName = req.tenant.name || PRODUCT_NAME;
       const seoLocale = getSeoLocale(req);
@@ -736,9 +743,10 @@ module.exports = function publicRoutes() {
       });
     }
 
-    const companies = await companiesRepo.listDirectoryByCategorySlug(pool, tenantId, categorySlug, null);
+    let companies = await companiesRepo.listDirectoryByCategorySlug(pool, tenantId, categorySlug, null);
 
-    const companiesWithReviews = await attachReviewStatsToCompanies(companies);
+    companies = await attachReviewStatsToCompanies(companies);
+    companies = sortDirectoryCompaniesByRating(companies);
 
     const categories = await loadCategoriesList(tenantId);
 
@@ -758,7 +766,7 @@ module.exports = function publicRoutes() {
       category,
       categories,
       phoneRulesPublic,
-      companies: companiesWithReviews,
+      companies,
       baseDomain: process.env.BASE_DOMAIN || "",
       companyMiniSiteHref: (sub) => `/${encodeURIComponent(String(sub || "").trim())}`,
       seoTitle,

@@ -31,4 +31,24 @@ async function attachReviewStatsToCompanies(companies) {
   });
 }
 
-module.exports = { attachReviewStatsToCompanies };
+/**
+ * Highest average rating first; missing ratings last. Tie-break: review count desc, then name asc.
+ * @param {object[]} companies
+ * @returns {object[]}
+ */
+function sortDirectoryCompaniesByRating(companies) {
+  if (!companies || companies.length === 0) return companies;
+  return [...companies].sort((a, b) => {
+    const ar = a.avg_rating != null ? Number(a.avg_rating) : null;
+    const br = b.avg_rating != null ? Number(b.avg_rating) : null;
+    if (ar != null && br != null && ar !== br) return br - ar;
+    if (ar != null && br == null) return -1;
+    if (ar == null && br != null) return 1;
+    const ac = a.review_count != null ? Number(a.review_count) : 0;
+    const bc = b.review_count != null ? Number(b.review_count) : 0;
+    if (bc !== ac) return bc - ac;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
+}
+
+module.exports = { attachReviewStatsToCompanies, sortDirectoryCompaniesByRating };
