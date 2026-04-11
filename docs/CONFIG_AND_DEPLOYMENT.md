@@ -83,7 +83,7 @@ See `README.md` and `.env.example` for **GETPRO_STYLES_V**, **GETPRO_USE_BUILD_A
 ## Build and start
 
 - **`npm run build`** — Vite + search lists; needed for `public/build/*` in production if using hashed assets.
-- **`npm start`** — `node server.js` (Hostinger **START_COMMAND**).
+- **`npm start`** — `node index.js` (loads `server.js`; Hostinger **START_COMMAND**).
 
 ## Related code
 
