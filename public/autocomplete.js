@@ -941,6 +941,19 @@
             initAc(w, listsForJoin, { startDelayMs: 120 });
           });
         }
+        const faForm = document.getElementById("fa-submit-form");
+        if (faForm) {
+          const tcFa =
+            typeof window !== "undefined" && window.__GETPRO_TENANT_CITIES__;
+          const listsForFa = { ...lists };
+          if (tcFa && Array.isArray(tcFa) && tcFa.length > 0) {
+            listsForFa.cities = tcFa
+              .map((c) => c.name)
+              .filter(Boolean)
+              .sort((a, b) => a.localeCompare(b, "en"));
+          }
+          resolveForm(faForm, listsForFa);
+        }
       })
       .catch(() => {
         // eslint-disable-next-line no-console

@@ -2568,6 +2568,12 @@ a:hover {
 }
 
 /* Field agent console (tenant public shell): top tabs + right Sign out; mobile burger drawer */
+.field-agent-page .fa-req-asterisk {
+  color: var(--color-error);
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
 .field-agent-console {
   margin: 0 0 var(--space-2-25);
 }

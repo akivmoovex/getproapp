@@ -146,22 +146,14 @@
       document.getElementById("fa-profession") &&
       document.getElementById("fa-profession").value &&
       document.getElementById("fa-profession").value.trim();
-    var city =
-      document.getElementById("fa-city") &&
-      document.getElementById("fa-city").value &&
-      document.getElementById("fa-city").value.trim();
-    var street =
-      document.getElementById("fa-address-street") &&
-      document.getElementById("fa-address-street").value &&
-      document.getElementById("fa-address-street").value.trim();
     var acity =
       document.getElementById("fa-address-city") &&
       document.getElementById("fa-address-city").value &&
       document.getElementById("fa-address-city").value.trim();
     var err3 = document.getElementById("fa-error-3");
-    if (!prof || !city || !street || !acity) {
+    if (!prof || !acity) {
       if (err3) {
-        err3.textContent = "Please complete profession, city, street address, and address city.";
+        err3.textContent = "Please complete profession and address city.";
         err3.hidden = false;
       }
       return;
@@ -175,10 +167,8 @@
   });
   document.getElementById("fa-next-4").addEventListener("click", function () {
     var nrc = document.getElementById("fa-nrc");
-    var prof = document.getElementById("fa-profile");
     var nrcv = nrc && nrc.value ? nrc.value.trim() : "";
     if (!nrcv) return;
-    if (!prof || !prof.files || prof.files.length < 1) return;
     showStep(5);
   });
 
@@ -195,11 +185,12 @@
   if (formEl) {
     formEl.addEventListener("submit", function (e) {
       var works = document.getElementById("fa-works");
-      if (!works || !works.files || works.files.length < 2 || works.files.length > 10) {
+      var n = works && works.files ? works.files.length : 0;
+      if (n > 10) {
         e.preventDefault();
         var err5 = document.getElementById("fa-error-5");
         if (err5) {
-          err5.textContent = "Please upload between 2 and 10 work photos.";
+          err5.textContent = "Please upload at most 10 work photos.";
           err5.hidden = false;
         }
       }

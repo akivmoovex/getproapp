@@ -222,12 +222,13 @@ module.exports = function fieldAgentRoutes() {
       const firstName = String(b.first_name || "").trim().slice(0, 120);
       const lastName = String(b.last_name || "").trim().slice(0, 120);
       const profession = String(b.profession || "").trim().slice(0, 200);
-      const city = String(b.city || "").trim().slice(0, 120);
       const pacra = String(b.pacra || "").trim().slice(0, 200);
       const addressStreet = String(b.address_street || "").trim().slice(0, 300);
       const addressLandmarks = String(b.address_landmarks || "").trim().slice(0, 300);
       const addressNeighbourhood = String(b.address_neighbourhood || "").trim().slice(0, 200);
       const addressCity = String(b.address_city || "").trim().slice(0, 120);
+      /** Listing / CRM city: primary city field removed from UI; mirror address_city so CRM never shows an empty city. */
+      const city = addressCity;
       const nrcNumber = String(b.nrc_number || "").trim().slice(0, 80);
 
       const vPhone = await phoneRulesService.validatePhoneForTenant(pool, tid, phoneRaw, "phone");
@@ -244,16 +245,13 @@ module.exports = function fieldAgentRoutes() {
       const pNorm = await phoneRulesService.normalizePhoneForTenant(pool, tid, phoneRaw);
       const wNorm = whatsappRaw ? await phoneRulesService.normalizePhoneForTenant(pool, tid, whatsappRaw) : "";
 
-      if (!pNorm || !firstName || !lastName || !profession || !city || !nrcNumber) {
+      if (!pNorm || !firstName || !lastName || !profession || !addressCity || !nrcNumber) {
         return res.status(400).type("text").send("Missing required fields.");
       }
       const profileFiles = (req.files && req.files.profile) || [];
       const workFiles = (req.files && req.files.works) || [];
-      if (profileFiles.length < 1) {
-        return res.status(400).type("text").send("Profile photo is required.");
-      }
-      if (workFiles.length < 2 || workFiles.length > 10) {
-        return res.status(400).type("text").send("Please upload between 2 and 10 work photos.");
+      if (workFiles.length > 10) {
+        return res.status(400).type("text").send("Please upload at most 10 work photos.");
       }
 
       const dupS = await fieldAgentSubmissionsRepo.duplicateExistsAgainstSubmissions(pool, tid, pNorm, wNorm, null);
@@ -291,8 +289,10 @@ module.exports = function fieldAgentRoutes() {
           workPhotosJson: "[]",
         });
 
-        const profileUrls = await saveJpegImages(tid, submissionId, profileFiles, { maxFiles: 1 });
-        const workUrls = await saveJpegImages(tid, submissionId, workFiles, { maxFiles: 10 });
+        const profileUrls =
+          profileFiles.length > 0 ? await saveJpegImages(tid, submissionId, profileFiles, { maxFiles: 1 }) : [];
+        const workUrls =
+          workFiles.length > 0 ? await saveJpegImages(tid, submissionId, workFiles, { maxFiles: 10 }) : [];
         const profileUrl = profileUrls[0] || "";
         await fieldAgentSubmissionsRepo.updatePhotosAfterUpload(pool, client, {
           submissionId,

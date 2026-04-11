@@ -47,7 +47,9 @@
                           </div>
                           <div class="form-step__body">
                             <div class="join-field input-field">
-                              <label class="input-field__label" for="fa-phone">Phone</label>
+                              <label class="input-field__label" for="fa-phone"
+                                >Phone <span class="fa-req-asterisk" aria-hidden="true">*</span></label
+                              >
                               <input
                                 id="fa-phone"
                                 name="phone"
@@ -76,15 +78,19 @@
                           </div>
                           <div class="form-step__body">
                             <div class="join-field input-field">
-                              <label class="input-field__label" for="fa-first-name">First name</label>
+                              <label class="input-field__label" for="fa-first-name"
+                                >First name <span class="fa-req-asterisk" aria-hidden="true">*</span></label
+                              >
                               <input id="fa-first-name" name="first_name" class="input-field__control" type="text" required />
                             </div>
                             <div class="join-field input-field">
-                              <label class="input-field__label" for="fa-last-name">Last name</label>
+                              <label class="input-field__label" for="fa-last-name"
+                                >Last name <span class="fa-req-asterisk" aria-hidden="true">*</span></label
+                              >
                               <input id="fa-last-name" name="last_name" class="input-field__control" type="text" required />
                             </div>
                             <div class="join-field input-field">
-                              <label class="input-field__label" for="fa-whatsapp">WhatsApp number</label>
+                              <label class="input-field__label" for="fa-whatsapp">WhatsApp number (optional)</label>
                               <input id="fa-whatsapp" name="whatsapp" class="input-field__control" type="tel" autocomplete="tel" />
                             </div>
                             <p>
@@ -109,7 +115,9 @@
                           </div>
                           <div class="form-step__body">
                             <div class="join-field join-field--ac input-field input-field--search">
-                              <label for="fa-profession" class="input-field__label">Service or profession</label>
+                              <label for="fa-profession" class="input-field__label"
+                                >Service or profession <span class="fa-req-asterisk" aria-hidden="true">*</span></label
+                              >
                               <div
                                 class="pro-ac join-pro-ac input-field__control"
                                 data-ac-list="service"
@@ -125,25 +133,7 @@
                                 />
                                 <input type="hidden" class="pro-ac-hidden" id="fa-profession-hid" value="" />
                                 <ul class="pro-ac-dropdown" role="listbox" hidden></ul>
-                              </div>
-                            </div>
-                            <div class="join-field join-field--ac input-field input-field--search">
-                              <label for="fa-city" class="input-field__label">Primary city</label>
-                              <div
-                                class="pro-ac join-pro-ac input-field__control"
-                                data-ac-list="city"
-                                data-watermark-rotate="<%= typeof joinCityWatermarkRotate !== 'undefined' ? joinCityWatermarkRotate : 'Search:' %>"
-                              >
-                                <input
-                                  id="fa-city"
-                                  name="city"
-                                  class="pro-ac-input input-field__control"
-                                  type="text"
-                                  autocomplete="off"
-                                  required
-                                />
-                                <input type="hidden" class="pro-ac-hidden" id="fa-city-hid" value="" />
-                                <ul class="pro-ac-dropdown" role="listbox" hidden></ul>
+                                <p class="pro-ac-msg input-field__error" id="fa-profession-msg" hidden></p>
                               </div>
                             </div>
                             <div class="join-field input-field">
@@ -151,20 +141,38 @@
                               <input id="fa-pacra" name="pacra" class="input-field__control" type="text" />
                             </div>
                             <div class="join-field input-field">
-                              <label class="input-field__label" for="fa-address-street">Street address</label>
-                              <input id="fa-address-street" name="address_street" class="input-field__control" type="text" required />
+                              <label class="input-field__label" for="fa-address-street">Street address (optional)</label>
+                              <input id="fa-address-street" name="address_street" class="input-field__control" type="text" />
                             </div>
                             <div class="join-field input-field">
-                              <label class="input-field__label" for="fa-address-landmarks">Landmarks</label>
+                              <label class="input-field__label" for="fa-address-landmarks">Landmarks (optional)</label>
                               <input id="fa-address-landmarks" name="address_landmarks" class="input-field__control" type="text" />
                             </div>
                             <div class="join-field input-field">
-                              <label class="input-field__label" for="fa-address-neighbourhood">Neighbourhood</label>
+                              <label class="input-field__label" for="fa-address-neighbourhood">Neighbourhood (optional)</label>
                               <input id="fa-address-neighbourhood" name="address_neighbourhood" class="input-field__control" type="text" />
                             </div>
-                            <div class="join-field input-field">
-                              <label class="input-field__label" for="fa-address-city">Address city</label>
-                              <input id="fa-address-city" name="address_city" class="input-field__control" type="text" required />
+                            <div class="join-field join-field--ac input-field input-field--search">
+                              <label for="fa-address-city" class="input-field__label"
+                                >Address city <span class="fa-req-asterisk" aria-hidden="true">*</span></label
+                              >
+                              <div
+                                class="pro-ac join-pro-ac input-field__control"
+                                data-ac-list="city"
+                                data-watermark-rotate="<%= typeof joinCityWatermarkRotate !== 'undefined' ? joinCityWatermarkRotate : 'Search:' %>"
+                              >
+                                <input
+                                  id="fa-address-city"
+                                  name="address_city"
+                                  class="pro-ac-input input-field__control"
+                                  type="text"
+                                  autocomplete="off"
+                                  required
+                                />
+                                <input type="hidden" class="pro-ac-hidden" id="fa-address-city-hid" value="" />
+                                <ul class="pro-ac-dropdown" role="listbox" hidden></ul>
+                                <p class="pro-ac-msg input-field__error" id="fa-address-city-msg" hidden></p>
+                              </div>
                             </div>
                           </div>
                           <div class="form-step__actions">
@@ -181,16 +189,18 @@
                         <div class="form-step">
                           <div class="form-step__header">
                             <h2 class="form-step__title">NRC and profile photo</h2>
-                            <p class="form-step__subtitle">Upload one clear profile image (JPEG/PNG/WebP).</p>
+                            <p class="form-step__subtitle">Optional: upload one clear profile image (JPEG/PNG/WebP).</p>
                           </div>
                           <div class="form-step__body">
                             <div class="join-field input-field">
-                              <label class="input-field__label" for="fa-nrc">NRC number</label>
+                              <label class="input-field__label" for="fa-nrc"
+                                >NRC number <span class="fa-req-asterisk" aria-hidden="true">*</span></label
+                              >
                               <input id="fa-nrc" name="nrc_number" class="input-field__control" type="text" required />
                             </div>
                             <div class="join-field input-field">
-                              <label class="input-field__label" for="fa-profile">Profile photo</label>
-                              <input id="fa-profile" name="profile" class="input-field__control" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required />
+                              <label class="input-field__label" for="fa-profile">Profile photo (optional)</label>
+                              <input id="fa-profile" name="profile" class="input-field__control" type="file" accept="image/jpeg,image/png,image/webp,image/gif" />
                             </div>
                           </div>
                           <div class="form-step__actions">
@@ -206,11 +216,11 @@
                         <div class="form-step">
                           <div class="form-step__header">
                             <h2 class="form-step__title">Work photos</h2>
-                            <p class="form-step__subtitle">Upload between 2 and 10 images of completed work.</p>
+                            <p class="form-step__subtitle">Optional: upload up to 10 images of completed work.</p>
                           </div>
                           <div class="form-step__body">
                             <div class="join-field input-field">
-                              <label class="input-field__label" for="fa-works">Work photos</label>
+                              <label class="input-field__label" for="fa-works">Work photos (optional)</label>
                               <input
                                 id="fa-works"
                                 name="works"
@@ -218,7 +228,6 @@
                                 type="file"
                                 accept="image/jpeg,image/png,image/webp,image/gif"
                                 multiple
-                                required
                               />
                             </div>
                           </div>
