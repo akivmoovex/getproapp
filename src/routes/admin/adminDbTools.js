@@ -10,6 +10,7 @@ const { getAdminTenantId } = require("./adminShared");
 const { getPgPool } = require("../../db/pg");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
 const adminTestDataService = require("../../admin/adminTestDataService");
+const adminDemoLeadsCrmResetService = require("../../admin/adminDemoLeadsCrmResetService");
 const { areAdminDbFixturesEnabled } = require("../../admin/dbFixturesEnv");
 
 function blockWhenDbFixturesDisabled(req, res, next) {
@@ -83,6 +84,20 @@ module.exports = function registerAdminDbToolsRoutes(router) {
       const batchUuid =
         batchUuidRaw != null && String(batchUuidRaw).trim() !== "" ? String(batchUuidRaw).trim() : undefined;
       const result = await adminTestDataService.clearTestData(pool, { tenantId, confirmSlug, batchUuid });
+      const status = result.ok ? 200 : result.error === "validation" ? 400 : 500;
+      return res.status(status).json(result);
+    } catch (e) {
+      const msg = e && e.message ? String(e.message) : "Error";
+      return res.status(500).json({ ok: false, error: "server", message: msg });
+    }
+  });
+
+  router.post("/db/reset-demo-leads-crm", blockWhenDbFixturesDisabled, requireSuperAdminJson, async (req, res) => {
+    try {
+      const pool = getPgPool();
+      const body = req.body || {};
+      const confirmSlug = String(body.confirmSlug || body.confirm_slug || "").trim();
+      const result = await adminDemoLeadsCrmResetService.resetDemoLeadsAndCrm(pool, { confirmSlug });
       const status = result.ok ? 200 : result.error === "validation" ? 400 : 500;
       return res.status(status).json(result);
     } catch (e) {

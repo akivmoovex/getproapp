@@ -32,7 +32,7 @@
         <% } %>
 
         <p class="flash flash--info" role="status">
-          <strong>Warning:</strong> “Create test data” inserts labeled fixture rows. “Clear seeded data” deletes <em>only</em> <strong>tracked</strong> seeded records (via <code>seed_runs</code> / <code>seed_run_items</code>) for <strong>this tenant</strong> — not your whole database, not other regions, not roles or billing. Clear requires typing the region slug to match (<code>confirmSlug</code>).
+          <strong>Warning:</strong> “Create test data” inserts labeled fixture rows. “Clear seeded data” deletes <em>only</em> <strong>tracked</strong> seeded records (via <code>seed_runs</code> / <code>seed_run_items</code>) for <strong>this tenant</strong> — not your whole database, not other regions, not roles or billing. Clear requires typing the region slug to match (<code>confirmSlug</code>). “Reset demo Leads + CRM” affects only the <strong>demo</strong> tenant (<code>tenant_id</code> for slug <code>demo</code>), not your current region scope; type <code>demo</code> to confirm.
         </p>
 
         <p class="muted" style="font-size: 0.9rem; margin: 0 0 1rem 0">
@@ -41,7 +41,7 @@
 
         <% if (typeof dbToolsDisabled !== 'undefined' && dbToolsDisabled) { %>
         <div class="flash" role="alert" style="border: 2px solid currentColor; font-weight: 500;">
-          <strong>Fixture tools disabled in this environment:</strong> typical when <code>NODE_ENV=production</code> without both <code>GETPRO_ALLOW_DB_FIXTURES=1</code> and <code>GETPRO_ALLOW_DB_FIXTURES_IN_PRODUCTION=1</code> (the intended posture for getproapp.org). Create/clear API calls return HTTP 403; this page is read-only.
+          <strong>Fixture tools disabled in this environment:</strong> typical when <code>NODE_ENV=production</code> without both <code>GETPRO_ALLOW_DB_FIXTURES=1</code> and <code>GETPRO_ALLOW_DB_FIXTURES_IN_PRODUCTION=1</code> (the intended posture for getproapp.org). Create/clear/demo-reset API calls return HTTP 403; this page is read-only.
         </div>
         <% } %>
 
@@ -60,6 +60,14 @@
             <div class="db-tools-actions__row">
               <button type="button" class="c-button btn btn--danger-outline" id="db_tools_btn_clear_open" <%= dbToolsDisabled ? 'disabled' : '' %>>
                 Clear seeded data
+              </button>
+            </div>
+            <p class="muted" style="margin-top: 1.25rem">
+              Remove <strong>Leads</strong> and <strong>CRM</strong> data for the <strong>demo</strong> tenant only (<code>crm_tasks</code>, <code>crm_csr_fifo_state</code>, <code>leads</code> — child rows cascade). Does not use “current region”; other tenants are unchanged. Requires typing <code>demo</code> to confirm.
+            </p>
+            <div class="db-tools-actions__row">
+              <button type="button" class="c-button btn btn--danger-outline" id="db_tools_btn_demo_reset_open" <%= dbToolsDisabled ? 'disabled' : '' %>>
+                Reset demo Leads + CRM
               </button>
             </div>
           </div>
@@ -128,9 +136,47 @@
       </div>
     </div>
 
+    <div
+      id="db_tools_demo_reset_modal"
+      class="m3-modal-overlay admin-db-tools-modal"
+      hidden
+      aria-hidden="true"
+    >
+      <div class="m3-modal-overlay__backdrop" data-db-tools-demo-modal-close tabindex="-1"></div>
+      <div class="m3-modal m3-modal--workspace-confirm" role="dialog" aria-modal="true" aria-labelledby="db_tools_demo_reset_modal_title">
+        <header class="m3-modal__header">
+          <h2 id="db_tools_demo_reset_modal_title" class="m3-modal__title">Reset demo Leads + CRM?</h2>
+          <button type="button" class="m3-modal__close" data-db-tools-demo-modal-close aria-label="Close dialog">×</button>
+        </header>
+        <div class="m3-modal__body">
+          <p class="muted">
+            This deletes <strong>only</strong> <code>crm_tasks</code>, <code>crm_csr_fifo_state</code>, and <code>leads</code> for the <strong>demo</strong> tenant (slug <code>demo</code>). Related comments/audit rows cascade from CRM tasks and leads. It does <strong>not</strong> change your current directory region, other tenants, companies, categories, intake, field agents, or seed registry data.
+          </p>
+          <p class="muted">Type <code>demo</code> below to confirm.</p>
+          <div class="input-field">
+            <label class="input-field__label" for="db_tools_demo_reset_slug">Confirmation</label>
+            <input
+              id="db_tools_demo_reset_slug"
+              type="text"
+              class="input-field__control"
+              autocomplete="off"
+              placeholder="demo"
+            />
+          </div>
+        </div>
+        <div class="m3-modal__footer">
+          <button type="button" class="c-button btn" data-db-tools-demo-modal-close>Cancel</button>
+          <button type="button" class="c-button btn btn--danger-outline" id="db_tools_btn_demo_reset_confirm" disabled>
+            Reset demo Leads + CRM
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script type="application/json" id="db-tools-config">
 <%- JSON.stringify({
   confirmSlug: typeof tenantContext !== 'undefined' && tenantContext ? tenantContext.slug : '',
+  demoResetConfirmSlug: 'demo',
   disabled: !!dbToolsDisabled,
 }) %>
     </script>

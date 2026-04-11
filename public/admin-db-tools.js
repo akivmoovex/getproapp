@@ -7,6 +7,10 @@
   var btnClearConfirm = document.getElementById("db_tools_btn_clear_confirm");
   var slugInput = document.getElementById("db_tools_clear_slug");
   var modal = document.getElementById("db_tools_clear_modal");
+  var btnDemoResetOpen = document.getElementById("db_tools_btn_demo_reset_open");
+  var btnDemoResetConfirm = document.getElementById("db_tools_btn_demo_reset_confirm");
+  var demoSlugInput = document.getElementById("db_tools_demo_reset_slug");
+  var demoModal = document.getElementById("db_tools_demo_reset_modal");
 
   if (!cfgEl || !summary) return;
 
@@ -14,10 +18,11 @@
   try {
     cfg = JSON.parse(cfgEl.textContent || "{}");
   } catch (e) {
-    cfg = { confirmSlug: "", disabled: true };
+    cfg = { confirmSlug: "", demoResetConfirmSlug: "demo", disabled: true };
   }
 
   var expectedSlug = String(cfg.confirmSlug || "").trim();
+  var demoExpectedSlug = String(cfg.demoResetConfirmSlug || "demo").trim();
   var busy = false;
 
   function setBusy(on) {
@@ -29,6 +34,10 @@
     if (btnClearOpen) btnClearOpen.disabled = busy || cfg.disabled;
     if (btnClearConfirm)
       btnClearConfirm.disabled = busy || cfg.disabled || !slugInput || String(slugInput.value || "").trim() !== expectedSlug;
+    if (btnDemoResetOpen) btnDemoResetOpen.disabled = busy || cfg.disabled;
+    if (btnDemoResetConfirm)
+      btnDemoResetConfirm.disabled =
+        busy || cfg.disabled || !demoSlugInput || String(demoSlugInput.value || "").trim() !== demoExpectedSlug;
   }
 
   function showFeedback(kind, message) {
@@ -68,6 +77,21 @@
     }
     if (c.deleted && typeof c.deleted === "object") {
       var d = c.deleted;
+      if (
+        typeof d.crm_tasks === "number" &&
+        typeof d.crm_csr_fifo_state === "number" &&
+        typeof d.leads === "number"
+      ) {
+        return (
+          "Summary: Removed " +
+          d.crm_tasks +
+          " CRM task(s), " +
+          d.crm_csr_fifo_state +
+          " CSR FIFO row(s), " +
+          d.leads +
+          " lead(s) (demo tenant only; cascaded comments/audit not counted separately)."
+        );
+      }
       var parts2 = [];
       if (d.leads) parts2.push(d.leads + " lead(s)");
       if (d.field_agent_callback_leads) parts2.push(d.field_agent_callback_leads + " callback lead(s)");
@@ -201,6 +225,28 @@
     }, 320);
   }
 
+  function openDemoModal() {
+    if (!demoModal || cfg.disabled) return;
+    if (demoSlugInput) demoSlugInput.value = "";
+    if (btnDemoResetConfirm) btnDemoResetConfirm.disabled = true;
+    demoModal.removeAttribute("hidden");
+    demoModal.setAttribute("aria-hidden", "false");
+    void demoModal.offsetWidth;
+    demoModal.classList.add("m3-modal-overlay--open");
+    document.body.style.overflow = "hidden";
+    if (demoSlugInput) demoSlugInput.focus();
+  }
+
+  function closeDemoModal() {
+    if (!demoModal) return;
+    demoModal.classList.remove("m3-modal-overlay--open");
+    window.setTimeout(function () {
+      demoModal.setAttribute("hidden", "hidden");
+      demoModal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+    }, 320);
+  }
+
   if (btnClearOpen) {
     btnClearOpen.addEventListener("click", function () {
       if (busy || cfg.disabled) return;
@@ -224,7 +270,9 @@
   }
 
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && modal && !modal.hasAttribute("hidden")) closeModal();
+    if (e.key !== "Escape") return;
+    if (modal && !modal.hasAttribute("hidden")) closeModal();
+    if (demoModal && !demoModal.hasAttribute("hidden")) closeDemoModal();
   });
 
   if (btnClearConfirm) {
@@ -248,6 +296,54 @@
       } else {
         var msg = data.message || data.error || "Request failed.";
         showFeedback("err", msg);
+        renderSummary(data);
+      }
+    });
+  }
+
+  if (btnDemoResetOpen) {
+    btnDemoResetOpen.addEventListener("click", function () {
+      if (busy || cfg.disabled) return;
+      openDemoModal();
+    });
+  }
+
+  if (demoSlugInput && btnDemoResetConfirm) {
+    demoSlugInput.addEventListener("input", function () {
+      var ok = String(demoSlugInput.value || "").trim() === demoExpectedSlug;
+      btnDemoResetConfirm.disabled = busy || cfg.disabled || !ok;
+    });
+  }
+
+  if (demoModal) {
+    demoModal.addEventListener("click", function (e) {
+      if (e.target.closest("[data-db-tools-demo-modal-close]") || e.target.closest(".m3-modal-overlay__backdrop")) {
+        closeDemoModal();
+      }
+    });
+  }
+
+  if (btnDemoResetConfirm) {
+    btnDemoResetConfirm.addEventListener("click", async function () {
+      if (busy || cfg.disabled) return;
+      if (String(demoSlugInput && demoSlugInput.value).trim() !== demoExpectedSlug) return;
+      showFeedback("", "");
+      setBusy(true);
+      showFeedback("loading", "Working…");
+      var data;
+      try {
+        data = await postJson("/admin/db/reset-demo-leads-crm", { confirmSlug: demoExpectedSlug });
+      } catch (e) {
+        data = { ok: false, message: e && e.message ? String(e.message) : "Network error." };
+      }
+      setBusy(false);
+      closeDemoModal();
+      if (data.ok) {
+        showFeedback("ok", "Demo Leads + CRM reset.");
+        renderSummary(data);
+      } else {
+        var msg2 = data.message || data.error || "Request failed.";
+        showFeedback("err", msg2);
         renderSummary(data);
       }
     });
