@@ -104,6 +104,15 @@ function requireServiceProviderCategoryAdmin(req, res, next) {
   return next();
 }
 
+/** Directory featured / premium flags on companies: same role gate as categories; CSR and tenant_editor cannot POST. */
+function requireManageDirectoryFeaturedFlags(req, res, next) {
+  if (!req.session || !req.session.adminUser) return res.redirect("/admin/login");
+  if (!canManageServiceProviderCategories(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Only super admin or tenant manager can change directory featured or premium flags.");
+  }
+  return next();
+}
+
 /** Block viewers from any POST in admin (except logout). */
 function requireNotViewer(req, res, next) {
   if (!req.session || !req.session.adminUser) return res.redirect("/admin/login");
@@ -157,6 +166,7 @@ module.exports = {
   requireSuperAdmin,
   requireDirectoryEditor,
   requireServiceProviderCategoryAdmin,
+  requireManageDirectoryFeaturedFlags,
   requireNotViewer,
   requireContentManager,
   requireClientProjectIntakeAccess,

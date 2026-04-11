@@ -36,6 +36,7 @@
             showCategoryFilter: false,
             selectedCategory: typeof selectedCategory !== 'undefined' ? selectedCategory : '',
             categories: typeof categories !== 'undefined' ? categories : [],
+            preserveDirectoryFeatured: typeof directoryFeaturedOnly !== 'undefined' && directoryFeaturedOnly,
           }) %>
           </div>
           <div class="pro-directory-toolbar__meta" aria-live="polite">
@@ -72,6 +73,7 @@
             tenantUrlPrefix,
             tenant,
             emptyStateMode: 'directory',
+            directoryFeaturedOnly: typeof directoryFeaturedOnly !== 'undefined' && directoryFeaturedOnly,
             searchQuery: typeof searchQuery !== 'undefined' ? searchQuery : '',
             cityQuery: typeof cityQuery !== 'undefined' ? cityQuery : '',
             selectedCategory: typeof selectedCategory !== 'undefined' ? selectedCategory : '',

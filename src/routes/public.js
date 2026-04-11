@@ -331,15 +331,31 @@ module.exports = function publicRoutes() {
     const pool = getPgPool();
 
     let companies = [];
-    if (selected) {
+    /** Homepage Search + footer Start Search use `home_featured=1` — must stay featured-only even with category/q/city (see listDirectoryFeatured*). */
+    if (homeFeatured) {
+      const cityLike = cityQ ? `%${cityQ}%` : null;
+      const searchPattern = searchQ ? `%${searchQ}%` : null;
+      const cityPattern = cityQ ? `%${cityQ}%` : null;
+      if (selected) {
+        companies = await companiesRepo.listDirectoryFeaturedByCategorySlug(pool, tenantId, selected, cityLike);
+      } else if (searchQ || cityQ) {
+        companies = await companiesRepo.listDirectoryFeaturedSearchIlike(
+          pool,
+          tenantId,
+          searchPattern,
+          cityPattern,
+          48
+        );
+      } else {
+        companies = await companiesRepo.listDirectoryHomeFeatured(pool, tenantId, 48);
+      }
+    } else if (selected) {
       const cityLike = cityQ ? `%${cityQ}%` : null;
       companies = await companiesRepo.listDirectoryByCategorySlug(pool, tenantId, selected, cityLike);
     } else if (searchQ || cityQ) {
       const searchPattern = searchQ ? `%${searchQ}%` : null;
       const cityPattern = cityQ ? `%${cityQ}%` : null;
       companies = await companiesRepo.listDirectorySearchIlike(pool, tenantId, searchPattern, cityPattern, 48);
-    } else if (homeFeatured) {
-      companies = await companiesRepo.listDirectoryHomeFeatured(pool, tenantId, 10);
     } else {
       companies = await companiesRepo.listDirectoryDefault(pool, tenantId, 24);
     }
@@ -361,6 +377,9 @@ module.exports = function publicRoutes() {
       seoTitle = `Search results · Directory | ${req.tenant.name || PRODUCT_NAME}`;
       seoDescription = `Directory search for services and professionals${cityQ ? ` in ${cityQ}` : ""}.`;
     }
+    if (homeFeatured && (!companies || companies.length === 0)) {
+      seoDescription = `Featured service providers in ${req.tenant.name || PRODUCT_NAME}. None match yet — try different filters or check back soon.`;
+    }
 
     const geoLocals = buildPublicGeoLocals(req);
     logPublicGeoDebug(req, geoLocals);
@@ -380,6 +399,7 @@ module.exports = function publicRoutes() {
       canonicalUrl,
       ogUrl: canonicalUrl,
       ...buildEmptyStateSuggestions(categories, selected, cityOk ? cityRaw : ""),
+      directoryFeaturedOnly: homeFeatured,
       ...geoLocals,
       ...tenantLocals(req),
       ...(await platformSupportAsync(req)),

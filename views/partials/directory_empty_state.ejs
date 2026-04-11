@@ -1,5 +1,6 @@
 <% var _tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var _mode = typeof emptyStateMode !== 'undefined' ? emptyStateMode : 'directory'; %>
+<% var _dirFeatOnly = typeof directoryFeaturedOnly !== 'undefined' && directoryFeaturedOnly; %>
 <% var _toolbarId = typeof toolbarAnchorId !== 'undefined' && toolbarAnchorId ? String(toolbarAnchorId) : 'directory-toolbar'; %>
 <% var _hasAltCats = typeof emptyAltCategories !== 'undefined' && emptyAltCategories && emptyAltCategories.length; %>
 <% var _hasAltCities = typeof emptyAltCities !== 'undefined' && emptyAltCities && emptyAltCities.length; %>
@@ -37,7 +38,12 @@
 <div class="card pro-directory-empty pro-directory-empty--rich" role="status">
   <div class="pro-directory-empty__inner">
     <div id="directory-empty-message-block">
-    <% if (_mode === 'category') { %>
+    <% if (_dirFeatOnly && _mode === 'directory') { %>
+      <h2 class="pro-directory-empty__title">No featured service providers match</h2>
+      <p class="pro-directory-empty__hint muted">
+        There are no featured listings yet, or none match these filters. A <strong>super admin</strong> or <strong>tenant manager</strong> can mark providers as featured under <strong>Admin → Settings → Service providers</strong>. Try different search terms or check back later.
+      </p>
+    <% } else if (_mode === 'category') { %>
       <h2 class="pro-directory-empty__title">
         <% if (_catName) { %>
           No <%= _catName %> listings yet
@@ -59,9 +65,11 @@
       <h2 class="pro-directory-empty__title">No professionals found for your search</h2>
     <% } %>
 
+    <% if (!_dirFeatOnly) { %>
     <p class="pro-directory-empty__hint muted">
       Leave your details and we&rsquo;ll help connect you with a suitable professional.
     </p>
+    <% } %>
 
     <p class="pro-directory-empty__edit-search muted">
       <a class="pro-directory-empty__edit-search-link" href="#<%= _toolbarId %>">Jump to search</a>

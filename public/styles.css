@@ -10963,6 +10963,13 @@ body[class*="tenant-"] {
   line-height: 1.35;
 }
 
+/* Narrow viewports: hide "Others" (admin) sign-in card; 900px+ keeps all four options (matches app layout breakpoint). */
+@media (max-width: 899px) {
+  .portal-login-hub-card-wrap--others {
+    display: none;
+  }
+}
+
 .portal-login-hub-foot {
   margin: var(--space-2) 0 0;
   font-size: 0.875rem;
@@ -11411,7 +11418,7 @@ body[class*="tenant-"] {
 .gp-home .gp-home-story-panel {
   position: absolute;
   inset: 0;
-  display: none;
+  display: flex;
   width: 100%;
   max-width: 100%;
   margin: 0;
@@ -11421,11 +11428,33 @@ body[class*="tenant-"] {
   justify-content: center;
   box-sizing: border-box;
   background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  transform: scale(0.88) translateY(22px);
+  filter: brightness(0.92);
+  transition:
+    opacity 0.55s ease,
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.45s ease;
+}
+
+/* Next slide peeking beneath the active card (deck / stacked feel). */
+.gp-home .gp-home-story-panel.is-stack-behind {
+  opacity: 0.42;
+  pointer-events: none;
+  z-index: 2;
+  transform: scale(0.91) translateY(12px);
+  filter: brightness(0.88);
 }
 
 .gp-home .gp-home-story-panel.is-active {
-  display: flex;
-  animation: gp-home-story-slide 2s ease;
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 4;
+  transform: scale(1) translateY(0);
+  filter: brightness(1);
+  animation: gp-home-story-slide 2s ease both;
 }
 
 .gp-home .gp-home-story__visual-frame {
@@ -11470,13 +11499,13 @@ body[class*="tenant-"] {
 
 @keyframes gp-home-story-slide {
   from {
-    opacity: 0.92;
-    transform: translateX(-32px);
+    opacity: 0.88;
+    transform: translate3d(-28px, 10px, 0) scale(0.96);
   }
 
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
@@ -11896,8 +11925,20 @@ body[class*="tenant-"] {
     transition: none;
   }
 
+  .gp-home .gp-home-story-panel {
+    transition: none;
+  }
+
+  .gp-home .gp-home-story-panel.is-stack-behind {
+    opacity: 0;
+    transform: none;
+    filter: none;
+  }
+
   .gp-home .gp-home-story-panel.is-active {
     animation: none;
+    transform: none;
+    filter: none;
   }
 
   .gp-home .gp-home-story__dot {

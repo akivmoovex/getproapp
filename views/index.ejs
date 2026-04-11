@@ -323,6 +323,7 @@
   var panels = root.querySelectorAll('[data-story-panel]');
   var dots = root.querySelectorAll('[data-story-dot]');
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var slideCount = slides.length;
   var i = 0;
   var timer;
 
@@ -335,7 +336,9 @@
 
     panels.forEach(function (p, idx) {
       var on = idx === i;
+      var behind = idx === (i + 1) % slideCount;
       p.classList.toggle('is-active', on);
+      p.classList.toggle('is-stack-behind', behind && !on);
       p.setAttribute('aria-hidden', on ? 'false' : 'true');
     });
 

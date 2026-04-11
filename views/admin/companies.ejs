@@ -70,6 +70,8 @@
               <th>Mini-site</th>
               <th>Category</th>
               <th>Directory profile</th>
+              <th>Directory featured</th>
+              <th>Premium</th>
               <% if (typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive) { %>
               <th>Portal credit</th>
               <% } %>
@@ -79,7 +81,7 @@
           </thead>
           <tbody>
             <% var _pcCol = typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive ? 1 : 0; %>
-            <% var _emptyCols = (editMode ? 6 : 5) + _pcCol; %>
+            <% var _emptyCols = (editMode ? 8 : 7) + _pcCol; %>
             <% if (!companies || companies.length === 0) { %>
               <tr>
                 <td colspan="<%= _emptyCols %>" class="admin-table-empty-cell">
@@ -93,7 +95,13 @@
             <% } %>
             <% (companies || []).forEach(function(c) { %>
               <tr>
-                <td class="table__strong-800"><%= c.name %></td>
+                <td class="table__strong-800">
+                  <% if (c.miniSitePublicUrl) { %>
+                    <a href="<%= c.miniSitePublicUrl %>" target="_blank" rel="noopener noreferrer"><%= c.name %></a>
+                  <% } else { %>
+                    <%= c.name %>
+                  <% } %>
+                </td>
                 <td class="muted muted--caption">
                   <% if (baseDomain && typeof adminTenantSlug !== 'undefined' && adminTenantSlug) { %>
                     <span class="kbd"><%= adminTenantSlug %>.<%= baseDomain %>/<%= c.subdomain %></span>
@@ -112,6 +120,23 @@
                     <span class="muted" title="Set BASE_DOMAIN">—</span>
                   <% } %>
                 </td>
+                <td><% if (editMode && typeof canManageFeaturedPremium !== 'undefined' && canManageFeaturedPremium) { %>
+                  <form id="dirflags-<%= c.id %>" method="post" action="/admin/companies/<%= c.id %>/directory-flags<%= _embed ? '?embed=1' : '' %>" class="admin-companies-flags-form">
+                    <% if (_embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+                    <% if (typeof filterQueryForSave !== 'undefined' && filterQueryForSave) { %>
+                    <input type="hidden" name="return_query" value="<%= filterQueryForSave.replace(/"/g, '&quot;') %>" />
+                    <% } %>
+                  </form>
+                  <label class="admin-companies-flag-label"><input type="checkbox" name="directory_featured" value="1" form="dirflags-<%= c.id %>" <%= c.directory_featured ? 'checked' : '' %> title="Show in homepage/footer featured directory search" /> List</label>
+                <% } else { %>
+                  <span class="muted"><%= c.directory_featured ? 'Yes' : 'No' %></span>
+                <% } %></td>
+                <td><% if (editMode && typeof canManageFeaturedPremium !== 'undefined' && canManageFeaturedPremium) { %>
+                  <label class="admin-companies-flag-label"><input type="checkbox" name="is_premium" value="1" form="dirflags-<%= c.id %>" <%= c.is_premium ? 'checked' : '' %> title="Premium provider (directory)" /> Yes</label>
+                  <button type="submit" class="btn btn--sm" form="dirflags-<%= c.id %>">Save</button>
+                <% } else { %>
+                  <span class="muted"><%= c.is_premium ? 'Yes' : 'No' %></span>
+                <% } %></td>
                 <% if (typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive) { %>
                 <td>
                   <% if (c.portal_credit_blocked) { %>

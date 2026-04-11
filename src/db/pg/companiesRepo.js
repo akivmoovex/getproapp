@@ -207,6 +207,30 @@ async function listDirectoryByCategorySlug(pool, tenantId, categorySlug, cityLik
 }
 
 /**
+ * Like {@link listDirectoryByCategorySlug} but only companies marked `directory_featured` (homepage search with category).
+ */
+async function listDirectoryFeaturedByCategorySlug(pool, tenantId, categorySlug, cityLike) {
+  const params = [tenantId, categorySlug];
+  let cityClause = "";
+  if (cityLike) {
+    cityClause = ` AND c.location ILIKE $3`;
+    params.push(cityLike);
+  }
+  const r = await pool.query(
+    `
+    SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+    FROM public.companies c
+    INNER JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+    WHERE cat.slug = $2 AND c.tenant_id = $1 AND c.directory_featured = true
+    ${cityClause}
+    ORDER BY c.name ASC
+    `,
+    params
+  );
+  return mapRows(r.rows);
+}
+
+/**
  * Default directory listing (no search/category filter).
  * @param {import("pg").Pool} pool
  * @param {number} tenantId
@@ -228,36 +252,54 @@ async function listDirectoryDefault(pool, tenantId, limit = 24) {
 }
 
 /**
- * Homepage directory landing: best-rated company per category (distinct fields), then top N by rating.
- * Reuses review aggregates (AVG/COUNT) consistent with directory batch stats.
+ * Homepage / footer “featured” directory: admin-curated (`directory_featured`), tenant-scoped.
  */
-async function listDirectoryHomeFeatured(pool, tenantId, limit = 10) {
+async function listDirectoryHomeFeatured(pool, tenantId, limit = 48) {
   const r = await pool.query(
     `
-    WITH best_per_cat AS (
-      SELECT DISTINCT ON (COALESCE(c.category_id, -1))
-        c.id AS company_id,
-        ra.avg_rating,
-        ra.review_count
-      FROM public.companies c
-      LEFT JOIN (
-        SELECT company_id,
-          ROUND(AVG(rating)::numeric, 2)::float8 AS avg_rating,
-          COUNT(*)::int AS review_count
-        FROM public.reviews
-        GROUP BY company_id
-      ) ra ON ra.company_id = c.id
-      WHERE c.tenant_id = $1
-      ORDER BY COALESCE(c.category_id, -1), ra.avg_rating DESC NULLS LAST, ra.review_count DESC NULLS LAST, c.id ASC
-    )
     SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
-    FROM best_per_cat b
-    JOIN public.companies c ON c.id = b.company_id
+    FROM public.companies c
     LEFT JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-    ORDER BY b.avg_rating DESC NULLS LAST, b.review_count DESC NULLS LAST, c.id ASC
+    WHERE c.tenant_id = $1 AND c.directory_featured = true
+    ORDER BY c.updated_at DESC, c.name ASC
     LIMIT $2
     `,
     [tenantId, limit]
+  );
+  return mapRows(r.rows);
+}
+
+/**
+ * Same as {@link listDirectorySearchIlike} but only companies marked `directory_featured` (homepage search with q/city).
+ */
+async function listDirectoryFeaturedSearchIlike(pool, tenantId, searchPattern, cityPattern, limit = 48) {
+  const parts = [`c.tenant_id = $1`, `c.directory_featured = true`];
+  const params = [tenantId];
+  let i = 2;
+  if (searchPattern) {
+    parts.push(
+      `(c.name ILIKE $${i} OR c.headline ILIKE $${i + 1} OR c.about ILIKE $${i + 2})`
+    );
+    params.push(searchPattern, searchPattern, searchPattern);
+    i += 3;
+  }
+  if (cityPattern) {
+    parts.push(`c.location ILIKE $${i}`);
+    params.push(cityPattern);
+    i += 1;
+  }
+  const where = parts.join(" AND ");
+  params.push(limit);
+  const r = await pool.query(
+    `
+    SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+    FROM public.companies c
+    LEFT JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+    WHERE ${where}
+    ORDER BY c.name ASC
+    LIMIT $${i}
+    `,
+    params
   );
   return mapRows(r.rows);
 }
@@ -466,6 +508,26 @@ async function deleteByIdAndTenantId(pool, id, tenantId) {
   return r.rowCount > 0;
 }
 
+/**
+ * @param {import("pg").Pool} pool
+ * @param {{ id: number, tenantId: number, directoryFeatured: boolean, isPremium: boolean }} fields
+ */
+async function updateDirectoryFlagsByIdAndTenantId(pool, fields) {
+  const { id, tenantId, directoryFeatured, isPremium } = fields;
+  const r = await pool.query(
+    `
+    UPDATE public.companies SET
+      directory_featured = $3,
+      is_premium = $4,
+      updated_at = now()
+    WHERE id = $1 AND tenant_id = $2
+    RETURNING id
+    `,
+    [id, tenantId, !!directoryFeatured, !!isPremium]
+  );
+  return (r.rows[0] && r.rows[0].id) || null;
+}
+
 module.exports = {
   serializeCompanyRow,
   getById,
@@ -480,10 +542,13 @@ module.exports = {
   countForTenant,
   listIdNameSubdomainForTenant,
   listDirectoryByCategorySlug,
+  listDirectoryFeaturedByCategorySlug,
   listDirectoryDefault,
   listDirectoryHomeFeatured,
+  listDirectoryFeaturedSearchIlike,
   listDirectorySearchIlike,
   existsSubdomainForTenant,
+  updateDirectoryFlagsByIdAndTenantId,
   insertFull,
   updateFullByIdAndTenantId,
   deleteByIdAndTenantId,

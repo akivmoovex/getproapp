@@ -6,6 +6,7 @@ const {
   requireDirectoryEditor,
   requireNotViewer,
   requireServiceProviderCategoryAdmin,
+  requireManageDirectoryFeaturedFlags,
   isTenantViewer,
 } = require("../../auth");
 const {
@@ -48,6 +49,7 @@ const tenantCitiesRepo = require("../../db/pg/tenantCitiesRepo");
 const professionalSignupsRepo = require("../../db/pg/professionalSignupsRepo");
 const reviewsRepo = require("../../db/pg/reviewsRepo");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
+const { canManageServiceProviderCategories } = require("../../auth/roles");
 
 module.exports = function registerAdminDirectoryRoutes(router) {
   router.get("/categories", requireServiceProviderCategoryAdmin, async (req, res) => {
@@ -260,6 +262,8 @@ module.exports = function registerAdminDirectoryRoutes(router) {
       })
     );
     const saved = req.query.saved === "1" || req.query.saved === "true";
+    const canManageFeaturedPremium = canManageServiceProviderCategories(req.session.adminUser.role);
+    const filterQueryForSave = req.originalUrl.includes("?") ? `?${req.originalUrl.split("?")[1]}` : "";
     return res.render("admin/companies", {
       companies: companiesWithUrls,
       baseDomain,
@@ -268,6 +272,8 @@ module.exports = function registerAdminDirectoryRoutes(router) {
       filterSuffix,
       saved,
       portalCreditUiActive,
+      canManageFeaturedPremium,
+      filterQueryForSave,
       filters: {
         q_name: req.query.q_name || "",
         q_subdomain: req.query.q_subdomain || "",
@@ -276,6 +282,36 @@ module.exports = function registerAdminDirectoryRoutes(router) {
       },
     });
   });
+
+  router.post(
+    "/companies/:id/directory-flags",
+    requireManageDirectoryFeaturedFlags,
+    requireNotViewer,
+    async (req, res) => {
+      const tid = getAdminTenantId(req);
+      const cid = Number(req.params.id);
+      if (!Number.isFinite(cid) || cid <= 0) return res.status(400).send("Invalid company.");
+      const featured = req.body.directory_featured === "1" || req.body.directory_featured === "on";
+      const premium = req.body.is_premium === "1" || req.body.is_premium === "on";
+      const pool = getPgPool();
+      const row = await companiesRepo.updateDirectoryFlagsByIdAndTenantId(pool, {
+        id: cid,
+        tenantId: tid,
+        directoryFeatured: featured,
+        isPremium: premium,
+      });
+      if (!row) return res.status(404).send("Company not found.");
+      const returnQuery = String(req.body.return_query || "").trim();
+      let back = "/admin/companies?edit=1&saved=1";
+      if (returnQuery.startsWith("?")) {
+        const sp = new URLSearchParams(returnQuery.slice(1));
+        sp.set("edit", "1");
+        sp.set("saved", "1");
+        back = `/admin/companies?${sp.toString()}`;
+      }
+      return res.redirect(redirectWithEmbed(req, back));
+    }
+  );
 
   router.get("/companies/new", requireDirectoryEditor, async (req, res) => {
     const tid = getAdminTenantId(req);

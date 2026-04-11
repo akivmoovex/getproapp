@@ -83,6 +83,8 @@ CREATE TABLE IF NOT EXISTS public.companies (
   gallery_json TEXT NOT NULL DEFAULT '[]',
   logo_url TEXT NOT NULL DEFAULT '',
   portal_lead_credits_balance DOUBLE PRECISION NOT NULL DEFAULT 0,
+  directory_featured BOOLEAN NOT NULL DEFAULT false,
+  is_premium BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT (now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT (now())
 );
