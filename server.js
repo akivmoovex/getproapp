@@ -84,6 +84,10 @@ const { ensureFieldAgentSchema } = require("./src/db/pg/ensureFieldAgentSchema")
 const { ensureTenantPhoneRulesSchema } = require("./src/db/pg/ensureTenantPhoneRulesSchema");
 const { ensureContentLocaleSchema } = require("./src/db/pg/ensureContentLocaleSchema");
 const { ensureEulaKindSchema } = require("./src/db/pg/ensureEulaKindSchema");
+const { ensureIntakeDealSchema } = require("./src/db/pg/ensureIntakeDealSchema");
+const { ensureCrmCsrFifoSchema } = require("./src/db/pg/ensureCrmCsrFifoSchema");
+const { ensureIntakeAssignmentDealFeeSchema } = require("./src/db/pg/ensureIntakeAssignmentDealFeeSchema");
+const { ensureTenantCommerceSettingsSchema } = require("./src/db/pg/ensureTenantCommerceSettingsSchema");
 const { tenantHomeHrefFromPrefix } = require("./src/lib/tenantHomeHref");
 const { opsHrefMiddleware, marketingApexLoginRedirectTarget } = require("./src/lib/marketingOperationalUrls");
 const { getSubdomain, resolveHostname } = require("./src/platform/host");
@@ -472,6 +476,10 @@ ensureAdminUser({ pool: pgPoolForBoot })
     await ensureTenantPhoneRulesSchema(pgPoolForBoot);
     await ensureContentLocaleSchema(pgPoolForBoot);
     await ensureEulaKindSchema(pgPoolForBoot);
+    await ensureIntakeDealSchema(pgPoolForBoot);
+    await ensureCrmCsrFifoSchema(pgPoolForBoot);
+    await ensureIntakeAssignmentDealFeeSchema(pgPoolForBoot);
+    await ensureTenantCommerceSettingsSchema(pgPoolForBoot);
     await seedBuiltinUsers(pgPoolForBoot);
     await seedManagerUsers(pgPoolForBoot);
     await seedFieldAgentUser(pgPoolForBoot);

@@ -12,8 +12,13 @@
     <main class="admin-main">
       <div class="container admin-main__pad">
         <h1 class="section-title admin-crm-page__title">CRM — board</h1>
+        <% var _csrBoard = typeof crmCsrScopedBoard !== 'undefined' && crmCsrScopedBoard; %>
         <p class="admin-intro muted">
-          Drag tasks between columns to update status. Click a card to open details. New tasks can include an assignee; unassigned tasks stay in <strong>New</strong>.
+          <% if (_csrBoard) { %>
+            Showing <strong>your assigned</strong> tasks and any <strong>unassigned</strong> items you can claim. Inbound leads are assigned to CSRs in round-robin (FIFO rotation). Oldest tasks appear first within each column.
+          <% } else { %>
+            Drag tasks between columns to update status. Click a card to open details. New tasks can include an assignee; unassigned tasks stay in <strong>New</strong>. Tenant admins see the full pipeline for this region.
+          <% } %>
         </p>
 
         <div class="admin-crm-top">

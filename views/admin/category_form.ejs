@@ -4,15 +4,15 @@
     <%- include('../partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title><%= category ? 'Edit' : 'New' %> profession | <%= _bn %> Admin</title>
+    <title><%= typeof navTitle !== 'undefined' && navTitle ? navTitle : (category ? 'Edit category' : 'New category') %> | <%= _bn %> Admin</title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../partials/admin_nav', { navTitle: category ? 'Edit profession' : 'New profession', activeNav: 'categories' }) %>
+    <%- include('../partials/admin_nav', { navTitle: typeof navTitle !== 'undefined' && navTitle ? navTitle : (category ? 'Edit category' : 'New category'), activeNav: 'settings' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
       <div class="admin-toolbar">
-        <%- include('../partials/components/button', { variant: 'default', href: '/admin/categories?edit=1' + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: '← All professions' }) %>
+        <%- include('../partials/components/button', { variant: 'default', href: '/admin/categories?edit=1' + (typeof embed !== 'undefined' && embed ? '&embed=1' : ''), label: '← All categories' }) %>
       </div>
 
       <div class="card admin-form-card">

@@ -96,6 +96,14 @@
               </select>
               <p class="input-field__help muted">Required for publishing; used for lead routing settings per category.</p>
             </div>
+            <div class="input-field">
+              <label class="input-field__label" for="urgency">Urgency</label>
+              <select id="urgency" name="urgency" class="input-field__control">
+                <% (typeof urgencyOptions !== 'undefined' ? urgencyOptions : []).forEach(function (uo) { %>
+                  <option value="<%= uo.value %>"><%= uo.label %></option>
+                <% }); %>
+              </select>
+            </div>
             <h3 class="input-field__label" style="margin-top:1rem;">Project location</h3>
             <div class="input-field">
               <label class="input-field__label" for="city">City</label>
@@ -122,11 +130,14 @@
               <label class="input-field__label" for="apartment_number">Apartment number</label>
               <input id="apartment_number" name="apartment_number" class="input-field__control" maxlength="40" />
             </div>
+            <% var _showPricePI = typeof adminNav !== 'undefined' && adminNav.canViewIntakePriceEstimation; %>
+            <% if (_showPricePI) { %>
             <div class="input-field">
               <label class="input-field__label" for="estimated_budget">Estimated budget (<%= budget.displayPrefix %>)</label>
               <input id="estimated_budget" name="estimated_budget" class="input-field__control" inputmode="decimal" />
               <p class="input-field__help muted"><%= budget.label %> · stored currency code <%= budget.code %></p>
             </div>
+            <% } %>
             <div class="input-field">
               <label class="input-field__label" for="images">Pictures</label>
               <input id="images" name="images" type="file" class="input-field__control" accept="image/jpeg,image/png,image/webp,image/gif" multiple />

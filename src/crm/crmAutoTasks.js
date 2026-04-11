@@ -5,6 +5,7 @@
 
 const { getPgPool } = require("../db/pg");
 const crmTasksRepo = require("../db/pg/crmTasksRepo");
+const { tryAssignInboundCrmTaskToCsrFifo } = require("./crmCsrFifoAssignment");
 
 /**
  * @param {{ tenantId: number, title: string, description: string, sourceType: string, sourceRefId: number | null }} payload
@@ -12,13 +13,17 @@ const crmTasksRepo = require("../db/pg/crmTasksRepo");
  */
 async function createCrmTaskFromEvent({ tenantId, title, description, sourceType, sourceRefId }) {
   const pool = getPgPool();
-  return crmTasksRepo.insertFromInboundEvent(pool, {
+  const taskId = await crmTasksRepo.insertFromInboundEvent(pool, {
     tenantId,
     title,
     description,
     sourceType,
     sourceRefId,
   });
+  if (taskId != null) {
+    await tryAssignInboundCrmTaskToCsrFifo(pool, tenantId, taskId);
+  }
+  return taskId;
 }
 
 module.exports = { createCrmTaskFromEvent };

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <%- include('partials/theme_boot') %>
+    <title>Request received | <%= _bn %> Client</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <% var _hub = typeof opsHref === 'function' ? opsHref('/login') : '/login'; %>
+  <body class="admin-gate-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : '' %>">
+    <div class="container admin-gate-wrap">
+      <div class="card admin-gate-card" style="max-width: 32rem;">
+        <a href="<%= _hub %>" class="admin-gate-brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <div class="admin-gate-brand__title"><%= _bn %> Client</div>
+            <div class="admin-gate-brand__subtitle">Request received</div>
+          </div>
+        </a>
+        <div class="form-step form-step--admin">
+          <div class="form-step__body">
+            <p style="margin:0;">Thank you. Your request was saved as project <strong><%= projectCode %></strong>.</p>
+            <p class="muted" style="margin:0.75rem 0 0;">Our team will review it and contact you. Pricing shown to staff internally is not displayed here.</p>
+          </div>
+          <div class="form-step__actions admin-gate-actions">
+            <%- include('partials/components/button', { variant: 'text', href: _hub, label: 'Home' }) %>
+          </div>
+        </div>
+      </div>
+    </div>
+    <%- include('partials/theme_prefs') %>
+  </body>
+</html>

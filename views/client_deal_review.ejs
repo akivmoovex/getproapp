@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <%- include('partials/theme_boot') %>
+    <title>Rate your service provider | <%= _bn %> Client</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <% var _hub = typeof opsHref === 'function' ? opsHref('/login') : '/login'; %>
+  <body class="admin-gate-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : '' %>">
+    <div class="container admin-gate-wrap">
+      <div class="card admin-gate-card" style="max-width: 36rem;">
+        <a href="<%= _hub %>" class="admin-gate-brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <div class="admin-gate-brand__title"><%= _bn %> Client</div>
+            <div class="admin-gate-brand__subtitle">After work is completed</div>
+          </div>
+        </a>
+        <% if (typeof notice !== 'undefined' && notice) { %>
+        <div class="flash flash--success" role="status"><%= notice %></div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error) { %>
+        <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+        <p class="muted" style="margin-top:0;">Reviews are available only after the project is marked <strong>closed</strong> by <%= _bn %> staff. Use the project code from your messages and the phone number on your request.</p>
+        <form method="post" action="<%= clientPortalBasePath %>/review" class="form">
+          <div class="input-field">
+            <label class="input-field__label" for="project_code">Project code</label>
+            <input id="project_code" name="project_code" class="input-field__control" required maxlength="64" value="<%= typeof project_code !== 'undefined' ? project_code : '' %>" autocomplete="off" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="phone">Phone (same as on your request)</label>
+            <input id="phone" name="phone" class="input-field__control" required value="<%= typeof phone !== 'undefined' ? phone : '' %>" autocomplete="tel" />
+          </div>
+          <% var _rows = typeof interestedRows !== 'undefined' && interestedRows ? interestedRows : null; %>
+          <% if (_rows && _rows.length > 1) { %>
+          <div class="input-field">
+            <label class="input-field__label" for="assignment_id">Which provider?</label>
+            <select id="assignment_id" name="assignment_id" class="input-field__control" required>
+              <option value="">Select…</option>
+              <% _rows.forEach(function (row) { %>
+              <option value="<%= row.assignment_id %>"<%= typeof assignment_id !== 'undefined' && String(assignment_id) === String(row.assignment_id) ? ' selected' : '' %>><%= row.company_name %> (@<%= row.company_subdomain %>)</option>
+              <% }); %>
+            </select>
+          </div>
+          <% } %>
+          <div class="input-field">
+            <label class="input-field__label" for="rating">Rating</label>
+            <select id="rating" name="rating" class="input-field__control" required>
+              <option value="" <%= typeof rating === 'undefined' || !rating ? 'selected' : '' %> disabled>Choose…</option>
+              <option value="5" <%= String(rating) === '5' ? 'selected' : '' %>>5 — Excellent</option>
+              <option value="4" <%= String(rating) === '4' ? 'selected' : '' %>>4</option>
+              <option value="3" <%= String(rating) === '3' ? 'selected' : '' %>>3</option>
+              <option value="2" <%= String(rating) === '2' ? 'selected' : '' %>>2</option>
+              <option value="1" <%= String(rating) === '1' ? 'selected' : '' %>>1 — Poor</option>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="body">Comment (optional)</label>
+            <textarea id="body" name="body" class="input-field__control" rows="3" maxlength="4000"><%= typeof body !== 'undefined' ? body : '' %></textarea>
+          </div>
+          <%- include('partials/components/button', { variant: 'primary', type: 'submit', label: 'Submit review' }) %>
+        </form>
+      </div>
+    </div>
+    <%- include('partials/theme_prefs') %>
+  </body>
+</html>

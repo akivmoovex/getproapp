@@ -4,11 +4,11 @@
     <%- include('../partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Categories | <%= _bn %> Admin</title>
+    <title><%= typeof navTitle !== 'undefined' && navTitle ? navTitle : 'Service providers' %> | <%= _bn %> Admin</title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../partials/admin_nav', { navTitle: 'Categories', activeNav: 'categories' }) %>
+    <%- include('../partials/admin_nav', { navTitle: typeof navTitle !== 'undefined' && navTitle ? navTitle : 'Service providers', activeNav: 'settings' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
       <div class="admin-super-users__topbar">
@@ -20,17 +20,17 @@
         <% } %>
       </div>
 
-      <h1 class="section-title section-title--flush">Categories</h1>
+      <h1 class="section-title section-title--flush">Service providers</h1>
       <% if (!(typeof embed !== 'undefined' && embed)) { %>
       <p class="admin-intro admin-intro--tight-top">
-        Each region has its own category list in the database. Add or edit here only affects this region
+        Each region has its own service provider category list in the database. Add or edit here only affects this region
         <% if (typeof adminScopeTenant !== 'undefined' && adminScopeTenant) { %>
           (<strong><%= adminScopeTenant.name %></strong>)
         <% } %>
         — not other tenants. Super admins: switch region under <a href="/admin/super#act-as-region">Super admin → Act as region</a>.
       </p>
       <% } else { %>
-      <p class="admin-intro admin-intro--embed muted admin-intro--embed-tight">Categories for this region. Filters and table below.</p>
+      <p class="admin-intro admin-intro--embed muted admin-intro--embed-tight">Service provider categories for this region. Filters and table below.</p>
       <% } %>
       <% var f = typeof filters !== 'undefined' ? filters : {}; %>
       <form method="get" action="/admin/categories" class="admin-filter-form">

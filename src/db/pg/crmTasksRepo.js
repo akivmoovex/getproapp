@@ -100,6 +100,64 @@ async function listTasksForBoard(pool, tenantId) {
 }
 
 /**
+ * CSR scope: assigned to the CSR or still unassigned (claim / FIFO leftovers).
+ * Order: oldest task first within the board (FIFO visibility).
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} csrUserId
+ */
+async function listTasksForBoardCsrScope(pool, tenantId, csrUserId) {
+  const r = await pool.query(
+    `
+    SELECT t.*, u.username AS owner_username
+    FROM public.crm_tasks t
+    LEFT JOIN public.admin_users u ON u.id = t.owner_id
+    WHERE t.tenant_id = $1
+      AND (t.owner_id = $2 OR t.owner_id IS NULL)
+    ORDER BY t.created_at ASC, t.id ASC
+    `,
+    [tenantId, csrUserId]
+  );
+  return r.rows.map(serializeTaskRow);
+}
+
+/**
+ * Admin users with tenant-effective role `csr`, stable id order (for FIFO round-robin).
+ * @param {import("pg").Pool | import("pg").PoolClient} poolOrClient
+ */
+async function listCsrUserIdsForTenantOrdered(poolOrClient, tenantId) {
+  const r = await poolOrClient.query(
+    `
+    SELECT DISTINCT u.id
+    FROM public.admin_users u
+    LEFT JOIN public.admin_user_tenant_roles m ON m.admin_user_id = u.id AND m.tenant_id = $1
+    WHERE COALESCE(u.enabled, TRUE) = TRUE
+      AND (m.tenant_id IS NOT NULL OR u.tenant_id = $1)
+      AND lower(trim(COALESCE(m.role, u.role))) = 'csr'
+    ORDER BY u.id ASC
+    `,
+    [tenantId]
+  );
+  return r.rows.map((row) => Number(row.id));
+}
+
+/**
+ * CRM dashboard snapshot for CSR (same tasks visible as CSR board).
+ * @param {import("pg").Pool} pool
+ */
+async function countGroupedByStatusForCsrScope(pool, tenantId, csrUserId) {
+  const r = await pool.query(
+    `
+    SELECT status, COUNT(*)::int AS c FROM public.crm_tasks
+    WHERE tenant_id = $1 AND (owner_id = $2 OR owner_id IS NULL)
+    GROUP BY status
+    `,
+    [tenantId, csrUserId]
+  );
+  return r.rows;
+}
+
+/**
  * Dashboard: CRM task counts by raw status (normalized in route via normalizeCrmTaskStatus).
  * @returns {Promise<{ status: string, c: number }[]>}
  */
@@ -412,6 +470,9 @@ module.exports = {
   userIsInTenant,
   listTenantUsersForCrm,
   listTasksForBoard,
+  listTasksForBoardCsrScope,
+  listCsrUserIdsForTenantOrdered,
+  countGroupedByStatusForCsrScope,
   countGroupedByStatusForTenant,
   getTaskByIdAndTenant,
   listCommentsForTask,

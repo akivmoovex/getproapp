@@ -24,12 +24,32 @@ const BASE_FROM = `
   WHERE a.tenant_id = $1 AND a.company_id = $2 AND lower(trim(p.status)) = 'published'
 `;
 
+/** Published or closed (read-only detail + reviews for completed work). */
+const BASE_FROM_DETAIL = `
+  FROM public.intake_project_assignments a
+  INNER JOIN public.intake_client_projects p ON p.id = a.project_id AND p.tenant_id = a.tenant_id
+  WHERE a.tenant_id = $1 AND a.company_id = $2 AND lower(trim(p.status)) IN ('published', 'closed')
+`;
+
 /**
- * @param {"active" | "declined"} mode
+ * @param {"active" | "declined" | "completed"} mode
  */
 async function listAssignmentsForPortal(pool, tenantId, companyId, mode) {
   let filterSql;
   const params = [tenantId, companyId];
+  if (mode === "completed") {
+    const sql = `
+      SELECT ${COMPANY_PORTAL_ASSIGNMENT_LIST_SELECT}
+      FROM public.intake_project_assignments a
+      INNER JOIN public.intake_client_projects p ON p.id = a.project_id AND p.tenant_id = a.tenant_id
+      WHERE a.tenant_id = $1 AND a.company_id = $2
+        AND lower(trim(p.status)) = 'closed'
+        AND lower(trim(a.status)) = 'interested'
+      ORDER BY a.responded_at DESC NULLS LAST, a.id DESC
+    `;
+    const r = await pool.query(sql, params);
+    return r.rows.map(serializePortalAssignmentRow);
+  }
   if (mode === "active") {
     params.push(COMPANY_PORTAL_ACTIVE_ASSIGNMENT_STATUSES);
     filterSql = ` AND a.status = ANY($3::text[])`;
@@ -52,7 +72,7 @@ async function listAssignmentsForPortal(pool, tenantId, companyId, mode) {
 async function getDetailForPortal(pool, assignmentId, tenantId, companyId) {
   const sql = `
     SELECT ${COMPANY_PORTAL_ASSIGNMENT_LIST_SELECT}
-    ${BASE_FROM}
+    ${BASE_FROM_DETAIL}
       AND a.id = $3
     LIMIT 1
   `;
@@ -100,12 +120,79 @@ async function hasActiveAssignmentForProjectImages(pool, tenantId, companyId, pr
      FROM public.intake_project_assignments a
      INNER JOIN public.intake_client_projects p ON p.id = a.project_id AND p.tenant_id = a.tenant_id
      WHERE a.tenant_id = $1 AND a.company_id = $2 AND a.project_id = $3
-       AND a.status = ANY($4::text[])
-       AND lower(trim(p.status)) = 'published'
+       AND (
+         (a.status = ANY($4::text[]) AND lower(trim(p.status)) = 'published')
+         OR (lower(trim(p.status)) = 'closed' AND lower(trim(a.status)) = 'interested')
+       )
      LIMIT 1`,
     [tenantId, companyId, projectId, COMPANY_PORTAL_ACTIVE_ASSIGNMENT_STATUSES]
   );
   return r.rows.length > 0;
+}
+
+/**
+ * Accepted (interested) deals with client contact — scoped query; not used for generic lead cards.
+ * @returns {Promise<Array<{ project_code: string, responded_at: string | null, client_name: string, client_phone: string }>>}
+ */
+/**
+ * Worst-case deal fee among this company’s active workflow rows on published projects (credit gate on list views).
+ */
+async function getMaxDealPriceForCompanyPublishedActiveAssignments(pool, tenantId, companyId) {
+  const r = await pool.query(
+    `SELECT COALESCE(MAX(p.deal_price::double precision), 0) AS m
+     FROM public.intake_project_assignments a
+     INNER JOIN public.intake_client_projects p ON p.id = a.project_id AND p.tenant_id = a.tenant_id
+     WHERE a.tenant_id = $1 AND a.company_id = $2
+       AND lower(trim(p.status)) = 'published'
+       AND a.status = ANY($3::text[])`,
+    [tenantId, companyId, COMPANY_PORTAL_ACTIVE_ASSIGNMENT_STATUSES]
+  );
+  const m = r.rows[0] && r.rows[0].m;
+  return m != null && Number.isFinite(Number(m)) ? Number(m) : 0;
+}
+
+/**
+ * @returns {Promise<number|null>}
+ */
+async function getPublishedDealPriceForCompanyAssignment(pool, assignmentId, tenantId, companyId) {
+  const r = await pool.query(
+    `SELECT p.deal_price
+     FROM public.intake_project_assignments a
+     INNER JOIN public.intake_client_projects p ON p.id = a.project_id AND p.tenant_id = a.tenant_id
+     WHERE a.id = $1 AND a.tenant_id = $2 AND a.company_id = $3
+       AND lower(trim(p.status)) = 'published'
+     LIMIT 1`,
+    [assignmentId, tenantId, companyId]
+  );
+  const v = r.rows[0] && r.rows[0].deal_price;
+  return v != null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : null;
+}
+
+async function listAcceptedDealsWithClientContact(pool, tenantId, companyId) {
+  const r = await pool.query(
+    `
+    SELECT
+      p.project_code,
+      a.responded_at,
+      COALESCE(NULLIF(trim(c.full_name), ''), NULLIF(trim(p.client_full_name_snapshot), ''), '') AS client_name,
+      COALESCE(NULLIF(trim(c.phone), ''), NULLIF(trim(p.client_phone_snapshot), ''), '') AS client_phone
+    FROM public.intake_project_assignments a
+    INNER JOIN public.intake_client_projects p ON p.id = a.project_id AND p.tenant_id = a.tenant_id
+    INNER JOIN public.intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
+    WHERE a.tenant_id = $1 AND a.company_id = $2
+      AND lower(trim(a.status)) = 'interested'
+      AND lower(trim(p.status)) IN ('published', 'closed')
+    ORDER BY a.responded_at DESC NULLS LAST, a.id DESC
+    `,
+    [tenantId, companyId]
+  );
+  return (r.rows || []).map((row) => {
+    const o = { ...row };
+    if (o.responded_at instanceof Date) {
+      o.responded_at = o.responded_at.toISOString().replace("T", " ").slice(0, 19);
+    }
+    return o;
+  });
 }
 
 module.exports = {
@@ -114,4 +201,7 @@ module.exports = {
   getIdAndStatusForCompanyAction,
   updateStatusFromCompanyUser,
   hasActiveAssignmentForProjectImages,
+  getMaxDealPriceForCompanyPublishedActiveAssignments,
+  getPublishedDealPriceForCompanyAssignment,
+  listAcceptedDealsWithClientContact,
 };

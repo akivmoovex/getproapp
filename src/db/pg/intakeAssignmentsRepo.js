@@ -123,6 +123,17 @@ async function listDetailForProject(pool, projectId, tenantId) {
   return r.rows.map(serializeAssignmentRow);
 }
 
+async function countByProjectAndAllocationSource(pool, tenantId, projectId, allocationSource) {
+  const src = String(allocationSource || "").trim();
+  if (!src) return 0;
+  const r = await pool.query(
+    `SELECT COUNT(*)::int AS c FROM public.intake_project_assignments
+     WHERE tenant_id = $1 AND project_id = $2 AND lower(trim(allocation_source)) = lower(trim($3))`,
+    [tenantId, projectId, src]
+  );
+  return Math.max(0, Number(r.rows[0].c) || 0);
+}
+
 module.exports = {
   PENDING_RESPONSE_STATUSES,
   listCompanyIdsByProject,
@@ -136,4 +147,5 @@ module.exports = {
   getByIdProjectTenant,
   deleteById,
   listDetailForProject,
+  countByProjectAndAllocationSource,
 };

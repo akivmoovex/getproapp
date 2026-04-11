@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <title>
       <% var _sc = typeof scope !== 'undefined' ? scope : 'active'; %>
-      <% if (_sc === 'declined') { %>Declined leads<% } else if (_sc === 'all') { %>All leads<% } else { %>Active leads<% } %> | Company portal
+      <% if (_sc === 'declined') { %>Declined leads<% } else if (_sc === 'all') { %>All leads<% } else if (_sc === 'completed') { %>Completed jobs<% } else { %>Active leads<% } %> | Company portal
     </title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
@@ -21,10 +21,19 @@
       <% var sc = typeof scope !== 'undefined' ? scope : 'active'; %>
       <% var act = typeof activeLeadCards !== 'undefined' ? activeLeadCards : []; %>
       <% var dec = typeof declinedLeadCards !== 'undefined' ? declinedLeadCards : []; %>
+      <% var comp = typeof completedLeadCards !== 'undefined' ? completedLeadCards : []; %>
       <% var bc = typeof blocked_credit !== 'undefined' && blocked_credit; %>
+      <% var pcd = typeof portal_credit_balance_display !== 'undefined' ? portal_credit_balance_display : ''; %>
+      <% var acc = typeof acceptedDeals !== 'undefined' && acceptedDeals ? acceptedDeals : []; %>
       <h1 class="company-portal-page-title">
-        <% if (sc === 'declined') { %>Declined leads<% } else if (sc === 'all') { %>Leads<% } else { %>Active leads<% } %>
+        <% if (sc === 'declined') { %>Declined leads<% } else if (sc === 'all') { %>Leads<% } else if (sc === 'completed') { %>Completed jobs<% } else { %>Active leads<% } %>
       </h1>
+      <% if (pcd) { %>
+      <p class="company-portal-sp-credit" role="status">
+        <strong>SP credit balance:</strong>
+        <span class="company-portal-sp-credit__value"><%= pcd %></span>
+      </p>
+      <% } %>
       <% if (bc) { %>
       <p id="company-portal-credit-hold-notice" class="company-portal-credit-hold flash" role="status">
         <strong>Credit hold.</strong> Your account balance is below the allowed threshold. You can open leads to review summaries, but you cannot mark <strong>Interested</strong> or <strong>Request callback</strong> until your balance improves. You may still <strong>Decline</strong> if you do not want a lead.
@@ -32,19 +41,50 @@
       <% } %>
       <p class="muted company-portal-intro">
         <% if (sc === 'active') { %>
-          Allocated projects appear as cards (estimated budget top-right). Declined assignments are hidden here — use <strong>Declined</strong> or <strong>All</strong> for history. Client identity is never shown.
+          Allocated projects appear as cards. Budget estimates are not shown to service providers. Declined assignments are hidden here — use <strong>Declined</strong> or <strong>All</strong> for history. Client name and phone appear only under <strong>Accepted deals</strong> below.
         <% } else if (sc === 'declined') { %>
           Assignments your company declined or that timed out. Open a card for the same summary as active leads.
+        <% } else if (sc === 'completed') { %>
+          Jobs marked <strong>closed</strong> by ops where you were <strong>Interested</strong>. Open a card to leave or view your post-job review of the client.
         <% } else { %>
-          Active leads first, then declined. Client identity is not shown.
+          Active leads first, then declined. For accepted leads, client contact appears under <strong>Accepted deals</strong>.
         <% } %>
       </p>
+      <% if (acc.length) { %>
+      <section class="company-portal-accepted-deals" aria-labelledby="company-portal-accepted-deals-heading">
+        <h2 id="company-portal-accepted-deals-heading" class="company-leads-section__title">Accepted deals</h2>
+        <div class="company-portal-accepted-deals__scroll">
+          <table class="company-portal-accepted-deals__table">
+            <thead>
+              <tr>
+                <th scope="col">Client</th>
+                <th scope="col">Phone</th>
+                <th scope="col">Project</th>
+                <th scope="col">Accepted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% acc.forEach(function (d) { %>
+              <tr>
+                <td><%= d.client_name ? String(d.client_name).slice(0, 200) : '—' %></td>
+                <td><%= d.client_phone ? String(d.client_phone).slice(0, 80) : '—' %></td>
+                <td><%= d.project_code ? String(d.project_code).slice(0, 64) : '—' %></td>
+                <td><%= d.responded_at ? String(d.responded_at).slice(0, 32) : '—' %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <% } %>
       <nav class="company-leads-scope" aria-label="Lead list scope">
         <a class="company-leads-scope__link <%= sc === 'active' ? 'company-leads-scope__link--active' : '' %>" href="<%= _pb %>/leads?scope=active">Active</a>
         <span class="company-leads-scope__sep" aria-hidden="true">·</span>
         <a class="company-leads-scope__link <%= sc === 'declined' ? 'company-leads-scope__link--active' : '' %>" href="<%= _pb %>/leads?scope=declined">Declined</a>
         <span class="company-leads-scope__sep" aria-hidden="true">·</span>
         <a class="company-leads-scope__link <%= sc === 'all' ? 'company-leads-scope__link--active' : '' %>" href="<%= _pb %>/leads?scope=all">All</a>
+        <span class="company-leads-scope__sep" aria-hidden="true">·</span>
+        <a class="company-leads-scope__link <%= sc === 'completed' ? 'company-leads-scope__link--active' : '' %>" href="<%= _pb %>/leads?scope=completed">Completed</a>
       </nav>
 
       <% if (sc === 'active') { %>
@@ -63,6 +103,16 @@
         <% } else { %>
           <ul class="company-lead-cards company-portal-lead-card-grid" role="list">
             <% dec.forEach(function (a) { %>
+              <%- include('partials/company_portal_lead_card', { card: a, dimForCreditBlock: false, assignmentStatusLabelForPortal: assignmentStatusLabelForPortal, providerPortalBasePath: _pb }) %>
+            <% }); %>
+          </ul>
+        <% } %>
+      <% } else if (sc === 'completed') { %>
+        <% if (!comp.length) { %>
+          <p class="muted">No completed jobs yet. When an intake project is marked <strong>closed</strong> after work finishes, it appears here.</p>
+        <% } else { %>
+          <ul class="company-lead-cards company-portal-lead-card-grid" role="list">
+            <% comp.forEach(function (a) { %>
               <%- include('partials/company_portal_lead_card', { card: a, dimForCreditBlock: false, assignmentStatusLabelForPortal: assignmentStatusLabelForPortal, providerPortalBasePath: _pb }) %>
             <% }); %>
           </ul>

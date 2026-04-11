@@ -26,10 +26,39 @@ function loadSearchLists() {
   return JSON.parse(fs.readFileSync(p, "utf8"));
 }
 
-function isWhitelistedService(value) {
+/**
+ * Merge static autocomplete labels with tenant category names (dedupe, case-insensitive; static list order first).
+ * @param {string[]} staticServices
+ * @param {string[]} categoryNames
+ * @returns {string[]}
+ */
+function mergeSearchServiceLists(staticServices, categoryNames) {
+  const base = Array.isArray(staticServices) ? staticServices : [];
+  const out = base.slice();
+  const seen = new Set(out.map((s) => String(s).trim().toLowerCase()).filter(Boolean));
+  for (const raw of categoryNames || []) {
+    const n = String(raw || "").trim();
+    if (!n) continue;
+    const k = n.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(n);
+  }
+  return out;
+}
+
+/**
+ * @param {string} value
+ * @param {string[]|undefined} tenantCategoryNames optional names from `public.categories` for this tenant
+ */
+function isWhitelistedService(value, tenantCategoryNames) {
   if (!value) return true;
   const v = String(value).trim().toLowerCase();
-  return loadSearchLists().services.some((s) => s.toLowerCase() === v);
+  if (loadSearchLists().services.some((s) => s.toLowerCase() === v)) return true;
+  if (Array.isArray(tenantCategoryNames) && tenantCategoryNames.some((n) => String(n).trim().toLowerCase() === v)) {
+    return true;
+  }
+  return false;
 }
 
 function isWhitelistedCity(value) {
@@ -255,14 +284,34 @@ module.exports = function publicRoutes() {
     });
   });
 
+  /** Tenant-scoped service labels for autocomplete: static JSON + DB category names. */
+  router.get("/data/tenant-search-lists.json", async (req, res, next) => {
+    try {
+      const tenantId = req.tenant && req.tenant.id;
+      const base = loadSearchLists();
+      if (!tenantId) {
+        res.type("application/json").send(JSON.stringify(base));
+        return;
+      }
+      const pool = getPgPool();
+      const categories = await categoriesRepo.listByTenantId(pool, tenantId);
+      const names = (categories || []).map((c) => c.name).filter(Boolean);
+      const services = mergeSearchServiceLists(base.services, names);
+      res.type("application/json").send(JSON.stringify({ services, cities: base.cities }));
+    } catch (e) {
+      next(e);
+    }
+  });
+
   router.get("/directory", async (req, res) => {
     const tenantId = req.tenant.id;
     const categories = await loadCategoriesList(tenantId);
+    const tenantCategoryNames = (categories || []).map((c) => c.name).filter(Boolean);
 
     const selected = req.query.category ? String(req.query.category) : null;
     const searchRaw = req.query.q ? String(req.query.q).trim() : "";
     const cityRaw = req.query.city ? String(req.query.city).trim() : "";
-    const searchOk = !searchRaw || isWhitelistedService(searchRaw);
+    const searchOk = !searchRaw || isWhitelistedService(searchRaw, tenantCategoryNames);
     const cityOk = !cityRaw || isWhitelistedCity(cityRaw);
     const searchQ = searchOk ? searchRaw.replace(/[%_\\]/g, "") : "";
     const cityQ = cityOk ? cityRaw.replace(/[%_\\]/g, "") : "";
@@ -430,22 +479,28 @@ module.exports = function publicRoutes() {
   });
 
   /** Internal design-system playground (Storybook-style); not product UI. */
-  router.get("/ui", async (req, res) => {
-    const canonicalUrl = canonicalUrlForTenant(req, "/ui");
-    return res.render("ui_docs", {
-      seoTitle: `Design system · ${req.tenant.name || PRODUCT_NAME}`,
-      seoDescription: "Internal UI playground for components, states, and theme validation.",
-      canonicalUrl,
-      ogUrl: canonicalUrl,
-      noindex: true,
-      docsSearchCategories: [
-        { slug: "builders", name: "Builders" },
-        { slug: "plumbing", name: "Plumbing" },
-        { slug: "electrical", name: "Electrical" },
-      ],
-      ...tenantLocals(req),
-      ...(await platformSupportAsync(req)),
-    });
+  router.get("/ui", async (req, res, next) => {
+    try {
+      const tenantId = req.tenant && req.tenant.id;
+      let docsSearchCategories = [];
+      if (tenantId) {
+        const cats = await loadCategoriesList(tenantId);
+        docsSearchCategories = (cats || []).map((c) => ({ slug: c.slug, name: c.name }));
+      }
+      const canonicalUrl = canonicalUrlForTenant(req, "/ui");
+      return res.render("ui_docs", {
+        seoTitle: `Design system · ${req.tenant.name || PRODUCT_NAME}`,
+        seoDescription: "Internal UI playground for components, states, and theme validation.",
+        canonicalUrl,
+        ogUrl: canonicalUrl,
+        noindex: true,
+        docsSearchCategories,
+        ...tenantLocals(req),
+        ...(await platformSupportAsync(req)),
+      });
+    } catch (e) {
+      next(e);
+    }
   });
 
   router.get("/sitemap.xml", async (req, res) => {

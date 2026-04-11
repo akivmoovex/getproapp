@@ -25,7 +25,8 @@
           <p style="margin-top:0.75rem;"><strong><%= project.client_name %></strong></p>
           <p class="muted">External ref: <%= project.external_client_reference %> · Phone: <%= project.client_phone %> (snapshot from save)</p>
           <p><span class="muted">Project status:</span> <strong><%= typeof projectStatusLabel !== 'undefined' ? projectStatusLabel : project.status %></strong><% if (typeof projectStatusLabel !== 'undefined' && projectStatusLabel !== project.status) { %> <span class="muted">(<%= project.status %>)</span><% } %></p>
-          <p>City: <strong><%= project.city %></strong> · Budget: <% if (project.estimated_budget_value != null) { %><%= budget.displayPrefix %> <%= project.estimated_budget_value %><% } else { %>—<% } %></p>
+          <% var _showPriceSucc = typeof adminNav !== 'undefined' && adminNav.canViewIntakePriceEstimation; %>
+          <p>City: <strong><%= project.city %></strong><% if (_showPriceSucc) { %> · Budget: <% if (project.estimated_budget_value != null) { %><%= budget.displayPrefix %> <%= project.estimated_budget_value %><% } else { %>—<% } %><% } %></p>
         </div>
 
         <% var _pv = typeof publishValidation !== 'undefined' && publishValidation ? publishValidation : { ok: true, errors: [], warnings: [] }; %>

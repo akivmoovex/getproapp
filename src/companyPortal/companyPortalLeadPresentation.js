@@ -19,12 +19,17 @@ function formatLeadPriceDisplay(assignment, budgetMeta) {
   return cur ? `${left} ${cur}` : left;
 }
 
+/** Provider portal: never expose estimated budget to company users. */
+function formatLeadPriceDisplayForProviderPortal() {
+  return "—";
+}
+
 /**
  * Card row for list templates (no client PII).
  * @param {Record<string, unknown>|null|undefined} assignment
  * @param {{ displayPrefix?: string, code?: string }|null|undefined} budgetMeta
  */
-function buildCompanyPortalLeadCardVm(assignment, budgetMeta) {
+function buildCompanyPortalLeadCardVm(assignment, _budgetMeta) {
   const a = assignment || {};
   return {
     assignment_id: a.assignment_id,
@@ -32,7 +37,7 @@ function buildCompanyPortalLeadCardVm(assignment, budgetMeta) {
     assignment_status: a.assignment_status,
     city: a.city,
     neighborhood: a.neighborhood,
-    lead_price_display: formatLeadPriceDisplay(a, budgetMeta),
+    lead_price_display: formatLeadPriceDisplayForProviderPortal(),
   };
 }
 
@@ -41,7 +46,7 @@ function buildCompanyPortalLeadCardVm(assignment, budgetMeta) {
  * @param {Record<string, unknown>|null|undefined} assignment
  * @param {{ displayPrefix?: string, code?: string }|null|undefined} budgetMeta
  */
-function buildCompanyPortalLeadDetailVm(assignment, budgetMeta) {
+function buildCompanyPortalLeadDetailVm(assignment, _budgetMeta) {
   const a = assignment || {};
   if (a.assignment_id == null) return null;
   return {
@@ -56,7 +61,7 @@ function buildCompanyPortalLeadDetailVm(assignment, budgetMeta) {
     neighborhood: a.neighborhood,
     project_status: a.project_status,
     project_created_at: a.project_created_at,
-    lead_price_display: formatLeadPriceDisplay(a, budgetMeta),
+    lead_price_display: formatLeadPriceDisplayForProviderPortal(),
   };
 }
 

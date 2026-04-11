@@ -50,12 +50,14 @@
             <span class="admin-settings-hub__card-desc muted">Legal text on the public terms page</span>
           </button>
           <% } %>
-          <% if (typeof canEditDirectory !== 'undefined' && canEditDirectory) { %>
+          <% if (typeof canManageServiceProviderCategories !== 'undefined' && canManageServiceProviderCategories) { %>
           <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/categories?embed=1">
             <span class="admin-settings-hub__card-icon" aria-hidden="true">📋</span>
-            <span class="admin-settings-hub__card-title">Categories</span>
-            <span class="admin-settings-hub__card-desc muted">Directory categories and filters</span>
+            <span class="admin-settings-hub__card-title">Service providers</span>
+            <span class="admin-settings-hub__card-desc muted">Category list for directory and profiles (this region)</span>
           </button>
+          <% } %>
+          <% if (typeof canEditDirectory !== 'undefined' && canEditDirectory) { %>
           <button type="button" class="admin-settings-hub__card" data-settings-embed-url="/admin/companies?embed=1">
             <span class="admin-settings-hub__card-icon" aria-hidden="true">🏢</span>
             <span class="admin-settings-hub__card-title">Companies</span>

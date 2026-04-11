@@ -10490,6 +10490,57 @@ body[class*="tenant-"] {
   font-size: var(--typo-body-medium-size, 0.9375rem);
 }
 
+.company-portal-sp-credit {
+  margin: 0 0 var(--space-1);
+  font-size: var(--typo-body-medium-size, 0.9375rem);
+}
+
+.company-portal-sp-credit__value {
+  font-weight: 700;
+  margin-left: 0.35rem;
+}
+
+.company-portal-accepted-deals {
+  margin: 0 0 var(--space-2);
+}
+
+.company-portal-accepted-deals__scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.company-portal-accepted-deals__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--typo-body-medium-size, 0.9375rem);
+}
+
+.company-portal-accepted-deals__table th,
+.company-portal-accepted-deals__table td {
+  text-align: left;
+  padding: var(--space-0-75) var(--space-1) var(--space-0-75) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border, #e5e7eb) 80%, transparent);
+  vertical-align: top;
+}
+
+.company-portal-accepted-deals__table th {
+  font-weight: 700;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.company-portal-deal-review {
+  margin-top: var(--space-2);
+}
+
+.company-portal-deal-review__form {
+  max-width: 28rem;
+}
+
+.company-portal-deal-review__client-note {
+  margin-top: var(--space-1);
+}
+
 .company-lead-detail__masthead {
   display: flex;
   flex-wrap: wrap;

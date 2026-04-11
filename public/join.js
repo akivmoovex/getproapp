@@ -2,7 +2,7 @@
   /* PERF: join.js is route-scoped to /join; exits if #join-wizard is missing — do not include in global layout. */
   if (!document.getElementById("join-wizard")) return;
 
-  const LIST_URL = "/data/search-lists.json?v=20260329e";
+  const LIST_URL = "/data/tenant-search-lists.json?v=20260411a";
 
   function tenantSlug() {
     if (typeof window.__GETPRO_TENANT_SLUG__ === "string" && window.__GETPRO_TENANT_SLUG__) {

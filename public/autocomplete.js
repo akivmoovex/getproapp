@@ -1,9 +1,9 @@
 /**
  * Combobox autocomplete from first character; optional typewriter watermark on empty fields.
- * Values must match search-lists.json on submit.
+ * Service list: GET /data/tenant-search-lists.json (static base list + tenant category names).
  */
 (function () {
-  const LIST_URL = "/data/search-lists.json?v=20260329e";
+  const LIST_URL = "/data/tenant-search-lists.json?v=20260411a";
 
   const TYPE_MS = 95;
   const PAUSE_END_MS = 1600;

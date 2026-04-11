@@ -1,5 +1,7 @@
 "use strict";
 
+const { getDefaultPortalLeadCreditsBalanceForNewCompany } = require("../../companyPortal/companyPortalLeadCredits");
+
 /**
  * PostgreSQL access for public.companies (tenant-scoped, joins with categories).
  */
@@ -303,14 +305,22 @@ async function insertFull(pool, row) {
     hoursText,
     galleryJson,
     logoUrl,
+    portalLeadCreditsBalance,
   } = row;
+  let balance = portalLeadCreditsBalance;
+  if (balance === undefined || balance === null) {
+    balance = await getDefaultPortalLeadCreditsBalanceForNewCompany(pool, Number(tenantId));
+  }
+  const b = Number(balance);
+  const portalBalance = Number.isFinite(b) ? b : 0;
   const r = await pool.query(
     `
     INSERT INTO public.companies (
       tenant_id, subdomain, name, category_id, headline, about, services, phone, email, location,
-      featured_cta_label, featured_cta_phone, years_experience, service_areas, hours_text, gallery_json, logo_url
+      featured_cta_label, featured_cta_phone, years_experience, service_areas, hours_text, gallery_json, logo_url,
+      portal_lead_credits_balance
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
     )
     RETURNING *
     `,
@@ -332,9 +342,10 @@ async function insertFull(pool, row) {
       hoursText,
       galleryJson,
       logoUrl,
+      portalBalance,
     ]
   );
-  return r.rows[0];
+  return serializeCompanyRow(r.rows[0]);
 }
 
 /**

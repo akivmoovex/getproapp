@@ -15,7 +15,9 @@
           <%- include('../partials/components/button', { variant: 'default', href: '/admin/project-intake', label: 'New project intake' }) %>
         </div>
         <h1 class="section-title section-title--flush">Intake projects</h1>
-        <p class="muted admin-intro">Tenant-scoped list. Assign companies from each project’s detail page (explicit assignment only).</p>
+        <% var _showPricePL = typeof adminNav !== 'undefined' && adminNav.canViewIntakePriceEstimation; %>
+        <% var _twProg = typeof adminNav !== 'undefined' && adminNav.canViewTenantWideLeadProgress; %>
+        <p class="muted admin-intro">Tenant-scoped list. Assign companies from each project’s detail page (explicit assignment only).<% if (_twProg) { %> <strong>Tenant-wide</strong> intake pipeline for this region.<% } %></p>
         <div class="table-wrap card">
           <table class="table">
             <thead>
@@ -25,6 +27,8 @@
                 <th>Phone</th>
                 <th>City</th>
                 <th>Area</th>
+                <th>Urgency</th>
+                <th>Deal validation</th>
                 <th>Budget</th>
                 <th>Status</th>
                 <th>Assigned</th>
@@ -34,7 +38,7 @@
             </thead>
             <tbody>
               <% if (!projects || projects.length === 0) { %>
-                <tr><td colspan="10" class="muted">No intake projects yet.</td></tr>
+                <tr><td colspan="12" class="muted">No intake projects yet.</td></tr>
               <% } %>
               <% (projects || []).forEach(function (p) { %>
                 <tr>
@@ -43,10 +47,17 @@
                   <td><%= p.client_display_phone %></td>
                   <td><%= p.city || '—' %></td>
                   <td><%= p.neighborhood || '—' %></td>
+                  <td><%= typeof urgencyLabel === 'function' ? urgencyLabel(p.urgency) : (p.urgency || '—') %></td>
                   <td>
-                    <% if (p.estimated_budget_value != null && p.estimated_budget_value !== '') { %>
-                      <%= typeof budget !== 'undefined' && budget ? budget.displayPrefix + ' ' : '' %><%= p.estimated_budget_value %> <%= p.estimated_budget_currency || '' %>
-                    <% } else { %>—<% } %>
+                    <% var _dvl = String(p.deal_validation_status || '').trim().toLowerCase(); %>
+                    <%= _dvl === 'validated' ? 'Validated' : (_dvl === 'rejected' ? 'Rejected' : 'Pending') %>
+                  </td>
+                  <td>
+                    <% if (_showPricePL) { %>
+                      <% if (p.estimated_budget_value != null && p.estimated_budget_value !== '') { %>
+                        <%= typeof budget !== 'undefined' && budget ? budget.displayPrefix + ' ' : '' %><%= p.estimated_budget_value %> <%= p.estimated_budget_currency || '' %>
+                      <% } else { %>—<% } %>
+                    <% } else { %><span class="muted">—</span><% } %>
                   </td>
                   <td><%= typeof intakeProjectStatusLabel === 'function' ? intakeProjectStatusLabel(p.status) : p.status %></td>
                   <td><%= p.assignment_count != null ? p.assignment_count : 0 %></td>

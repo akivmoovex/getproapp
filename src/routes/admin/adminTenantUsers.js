@@ -43,7 +43,9 @@ module.exports = function registerAdminTenantUsersRoutes(router, _deps) {
     ) {
       return res.status(400).send("Invalid role for this action.");
     }
-    if (![ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER].includes(role)) {
+    if (
+      ![ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER, ROLES.CSR].includes(role)
+    ) {
       return res.status(400).send("Invalid role.");
     }
     const hash = await bcrypt.hash(password, 12);
@@ -108,7 +110,9 @@ module.exports = function registerAdminTenantUsersRoutes(router, _deps) {
     ) {
       return res.status(400).send("Invalid role for this action.");
     }
-    if (![ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER].includes(role)) {
+    if (
+      ![ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER, ROLES.CSR].includes(role)
+    ) {
       return res.status(400).send("Invalid role.");
     }
     if (target.id === req.session.adminUser.id && enabled === 0) {

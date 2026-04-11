@@ -198,7 +198,7 @@ module.exports = function registerAdminSuperRoutes(router) {
       return res.render("admin/super_user_form", {
         error: null,
         tenants,
-        roles: [ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER],
+        roles: [ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.CSR, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER],
       });
     } catch (e) {
       return next(e);
@@ -294,7 +294,7 @@ module.exports = function registerAdminSuperRoutes(router) {
         error: null,
         saved,
         tenants,
-        roles: [ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER],
+        roles: [ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.CSR, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER],
         currentUserId: req.session.adminUser.id,
         currentTenantLabel,
       });

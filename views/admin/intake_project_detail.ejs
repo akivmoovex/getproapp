@@ -40,18 +40,79 @@
           <table class="admin-workspace__table">
             <tbody>
               <tr><th scope="row">Profession / category</th><td><%= project.intake_category_name && String(project.intake_category_name).trim() ? project.intake_category_name : '—' %></td></tr>
+              <tr><th scope="row">Urgency</th><td><%= typeof urgencyLabel === 'function' ? urgencyLabel(project.urgency) : (project.urgency || '—') %></td></tr>
               <tr><th scope="row">City</th><td><%= project.city || '—' %></td></tr>
               <tr><th scope="row">Neighborhood</th><td><%= project.neighborhood || '—' %></td></tr>
               <tr><th scope="row">Street / house / unit</th><td><%= [project.street_name, project.house_number, project.apartment_number].filter(Boolean).join(', ') || '—' %></td></tr>
               <tr><th scope="row">Client address (on file)</th><td><%= [project.client_address_street, project.client_address_house_number, project.client_address_apartment_number].filter(Boolean).join(', ') || '—' %></td></tr>
+              <% var _showPriceIPD = typeof adminNav !== 'undefined' && adminNav.canViewIntakePriceEstimation; %>
               <tr><th scope="row">Budget</th><td>
-                <% if (project.estimated_budget_value != null && project.estimated_budget_value !== '') { %>
-                  <%= typeof budget !== 'undefined' && budget ? budget.displayPrefix + ' ' : '' %><%= project.estimated_budget_value %> <%= project.estimated_budget_currency || '' %>
-                <% } else { %>—<% } %>
+                <% if (_showPriceIPD) { %>
+                  <% if (project.estimated_budget_value != null && project.estimated_budget_value !== '') { %>
+                    <%= typeof budget !== 'undefined' && budget ? budget.displayPrefix + ' ' : '' %><%= project.estimated_budget_value %> <%= project.estimated_budget_currency || '' %>
+                  <% } else { %>—<% } %>
+                <% } else { %><span class="muted">Hidden</span><% } %>
               </td></tr>
             </tbody>
           </table>
         </div>
+
+        <% var _dvs = String(project.deal_validation_status || '').trim().toLowerCase(); %>
+        <% var _dealValLabel = _dvs === 'validated' ? 'Validated' : (_dvs === 'rejected' ? 'Rejected' : 'Pending validation'); %>
+        <div class="card admin-form-card card--mb-block">
+          <h2 class="admin-form-card__title">Deal validation</h2>
+          <table class="admin-workspace__table">
+            <tbody>
+              <tr><th scope="row">Status</th><td><%= _dealValLabel %></td></tr>
+              <tr><th scope="row">Validated at</th><td><%= project.validated_at ? project.validated_at : '—' %></td></tr>
+              <tr><th scope="row">Validated by</th><td><%= project.validated_by_admin_user_id ? (project.deal_validated_by_label || ('User #' + project.validated_by_admin_user_id)) : '—' %></td></tr>
+            </tbody>
+          </table>
+          <% var _canDealVal = typeof adminNav !== 'undefined' && adminNav.canValidateDeals && adminNav.canMutateProjectIntake; %>
+          <% if (_canDealVal) { %>
+          <form method="post" action="/admin/projects/<%= project.id %>/deal-validation" class="form" style="margin-top:0.75rem;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <input type="hidden" name="validation_action" value="validated" />
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Mark validated' }) %>
+          </form>
+          <form method="post" action="/admin/projects/<%= project.id %>/deal-validation" class="form" style="margin-top:0.35rem;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <input type="hidden" name="validation_action" value="rejected" />
+            <%- include('../partials/components/button', { variant: 'default', type: 'submit', label: 'Mark rejected' }) %>
+          </form>
+          <form method="post" action="/admin/projects/<%= project.id %>/deal-validation" class="form" style="margin-top:0.35rem;">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <input type="hidden" name="validation_action" value="pending" />
+            <%- include('../partials/components/button', { variant: 'text', type: 'submit', label: 'Reset to pending' }) %>
+          </form>
+          <% } %>
+        </div>
+
+        <% var _showInternalDealPrice = typeof adminNav !== 'undefined' && adminNav.canViewIntakePriceEstimation; %>
+        <% if (_showInternalDealPrice) { %>
+        <% var _dpct = (typeof commerce !== 'undefined' && commerce && commerce.deal_price_percentage != null) ? Number(commerce.deal_price_percentage) : 3; %>
+        <div class="card admin-form-card card--mb-block">
+          <h2 class="admin-form-card__title">Internal price estimation</h2>
+          <p class="muted" style="margin-top:0;">Not shown to clients or service providers. Deal price is <%= _dpct %>% of the estimation (tenant setting under Region settings).</p>
+          <table class="admin-workspace__table">
+            <tbody>
+              <tr><th scope="row">Price estimation</th><td><%= project.price_estimation != null && project.price_estimation !== '' ? project.price_estimation : '—' %></td></tr>
+              <tr><th scope="row">Deal price (<%= _dpct %>%)</th><td><%= project.deal_price != null && project.deal_price !== '' ? project.deal_price : '—' %></td></tr>
+            </tbody>
+          </table>
+          <% var _canPrice = typeof adminNav !== 'undefined' && adminNav.canMutateProjectIntake; %>
+          <% if (_canPrice) { %>
+          <form method="post" action="/admin/projects/<%= project.id %>/deal-pricing" class="form" style="margin-top:0.75rem;">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <div class="input-field" style="max-width:16rem;">
+              <label class="input-field__label" for="price_estimation">Price estimation</label>
+              <input id="price_estimation" name="price_estimation" class="input-field__control" inputmode="decimal" value="<%= project.price_estimation != null && project.price_estimation !== '' ? project.price_estimation : '' %>" placeholder="Leave blank to clear" />
+            </div>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save internal pricing' }) %>
+          </form>
+          <% } %>
+        </div>
+        <% } %>
 
         <% var _pvD = typeof publishValidation !== 'undefined' && publishValidation ? publishValidation : { ok: true, errors: [] }; %>
         <% var _showPubD = typeof showPublishOnDetail !== 'undefined' && showPublishOnDetail; %>
@@ -74,7 +135,7 @@
               <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Publish project', disabled: !_pvD.ok, extraAttrs: !_pvD.ok ? 'aria-disabled="true"' : '' }) %>
             </form>
             <h3 class="input-field__label" style="margin-top:1.25rem;">Quick edit (before publish)</h3>
-            <p class="muted input-field__help">Adjust site detail and budget. Photos cannot be changed here yet.</p>
+            <p class="muted input-field__help">Adjust site detail<% if (_showPriceIPD) { %> and budget<% } %>. Photos cannot be changed here yet.</p>
             <form method="post" action="/admin/projects/<%= project.id %>/intake-quick-edit" class="form">
               <div class="input-field">
                 <label class="input-field__label" for="qe_neighborhood">Neighborhood</label>
@@ -89,9 +150,19 @@
                 <input id="qe_house" name="house_number" class="input-field__control" maxlength="40" value="<%= project.house_number || '' %>" />
               </div>
               <div class="input-field">
+                <label class="input-field__label" for="qe_urgency">Urgency</label>
+                <select id="qe_urgency" name="urgency" class="input-field__control">
+                  <% (typeof urgencyOptions !== 'undefined' ? urgencyOptions : []).forEach(function (uo) { %>
+                    <option value="<%= uo.value %>"<%= String(project.urgency || '') === String(uo.value) ? ' selected' : '' %>><%= uo.label %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <% if (_showPriceIPD) { %>
+              <div class="input-field">
                 <label class="input-field__label" for="qe_budget">Estimated budget (<%= typeof budget !== 'undefined' && budget ? budget.displayPrefix : '' %>)</label>
                 <input id="qe_budget" name="estimated_budget" class="input-field__control" inputmode="decimal" value="<%= project.estimated_budget_value != null && project.estimated_budget_value !== '' ? project.estimated_budget_value : '' %>" />
               </div>
+              <% } %>
               <%- include('../partials/components/button', { variant: 'default', type: 'submit', label: 'Save & re-check' }) %>
             </form>
           <% } %>
@@ -185,6 +256,57 @@
             <p class="muted u-mt-note">All companies in this region are already assigned, or there are no listings.</p>
           <% } %>
         </div>
+
+        <% var _dealReviews = typeof dealReviews !== 'undefined' && dealReviews ? dealReviews : []; %>
+        <div class="card admin-form-card card--mb-block">
+          <h2 class="admin-form-card__title">Post-completion reviews</h2>
+          <p class="muted" style="margin-top:0;">Shown when the project is <strong>closed</strong> and each party submits at most one review per assignment (provider rates client; client rates company — client reviews also appear on the public listing).</p>
+          <% if (!_dealReviews.length) { %>
+            <p class="muted">No deal reviews yet.</p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Company</th>
+                    <th scope="col">Reviewer</th>
+                    <th scope="col">Rating</th>
+                    <th scope="col">Comment</th>
+                    <th scope="col">When</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% _dealReviews.forEach(function (r) { %>
+                  <tr>
+                    <td><%= r.company_name %> <span class="muted">@<%= r.company_subdomain %></span></td>
+                    <td><%= r.reviewer_role === 'client' ? 'Client → company' : 'Provider → client' %></td>
+                    <td><%= r.rating != null ? Number(r.rating).toFixed(0) : '—' %></td>
+                    <td class="admin-status-summary"><%= r.body && String(r.body).trim() ? String(r.body).slice(0, 240) : '—' %></td>
+                    <td class="muted"><%= r.created_at ? String(r.created_at).slice(0, 19) : '—' %></td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+
+        <% if (typeof showCloseProject !== 'undefined' && showCloseProject) { %>
+        <div class="card admin-form-card card--mb-block">
+          <h2 class="admin-form-card__title">Mark work completed</h2>
+          <p class="muted" style="margin-top:0;">Sets project status to <strong>closed</strong> so eligible providers and clients can submit post-job reviews. Use when work is finished.</p>
+          <% if (typeof embed !== 'undefined' && embed) { %>
+          <form method="post" action="/admin/projects/<%= project.id %>/close" class="form">
+            <input type="hidden" name="embed" value="1" />
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Mark project closed (completed)' }) %>
+          </form>
+          <% } else { %>
+          <form method="post" action="/admin/projects/<%= project.id %>/close" class="form">
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Mark project closed (completed)' }) %>
+          </form>
+          <% } %>
+        </div>
+        <% } %>
       </div>
     </main>
   </body>

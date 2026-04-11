@@ -20,6 +20,10 @@ const {
   canAccessSettingsHub,
   canAccessClientProjectIntake,
   canMutateClientProjectIntake,
+  canManageServiceProviderCategories,
+  canViewIntakePriceEstimation,
+  canValidateDeals,
+  canViewTenantWideLeadProgress,
 } = require("../auth/roles");
 const { getAdminTenantId } = require("./admin/adminShared");
 const { getPgPool } = require("../db/pg");
@@ -142,6 +146,10 @@ module.exports = function adminRoutes({ db }) {
         canAccessSettingsHub: canAccessSettingsHub(u.role),
         canAccessProjectIntake: canAccessClientProjectIntake(u.role),
         canMutateProjectIntake: canMutateClientProjectIntake(u.role),
+        canManageServiceProviderCategories: canManageServiceProviderCategories(u.role),
+        canViewIntakePriceEstimation: canViewIntakePriceEstimation(u.role),
+        canValidateDeals: canValidateDeals(u.role),
+        canViewTenantWideLeadProgress: canViewTenantWideLeadProgress(u.role),
       };
       const pool = getPgPool();
       if (isSuperAdmin(u.role)) {

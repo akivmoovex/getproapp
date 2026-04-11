@@ -9,6 +9,7 @@ const {
   canAccessClientProjectIntake,
   canMutateClientProjectIntake,
   canManageArticles,
+  canManageServiceProviderCategories,
 } = require("./roles");
 const { TENANT_ZM } = require("../tenants/tenantIds");
 const { upsertMembershipAsync } = require("./adminUserTenants");
@@ -46,7 +47,9 @@ async function ensureAdminUser({ pool }) {
     envRole === ROLES.TENANT_MANAGER ||
     envRole === ROLES.TENANT_EDITOR ||
     envRole === ROLES.TENANT_AGENT ||
-    envRole === ROLES.TENANT_VIEWER
+    envRole === ROLES.TENANT_VIEWER ||
+    envRole === ROLES.CSR ||
+    envRole === ROLES.END_USER
       ? envRole
       : ROLES.SUPER_ADMIN;
   const tenantId = role === ROLES.SUPER_ADMIN ? null : Number(process.env.ADMIN_TENANT_ID) || TENANT_ZM;
@@ -88,6 +91,15 @@ function requireDirectoryEditor(req, res, next) {
   if (!req.session || !req.session.adminUser) return res.redirect("/admin/login");
   if (!canEditDirectoryData(req.session.adminUser.role)) {
     return res.status(403).type("text").send("You do not have permission to change directory data.");
+  }
+  return next();
+}
+
+/** Service provider category list CRUD (admin): super admin + tenant manager only. */
+function requireServiceProviderCategoryAdmin(req, res, next) {
+  if (!req.session || !req.session.adminUser) return res.redirect("/admin/login");
+  if (!canManageServiceProviderCategories(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("You do not have permission to manage service provider categories.");
   }
   return next();
 }
@@ -144,6 +156,7 @@ module.exports = {
   requireAdmin,
   requireSuperAdmin,
   requireDirectoryEditor,
+  requireServiceProviderCategoryAdmin,
   requireNotViewer,
   requireContentManager,
   requireClientProjectIntakeAccess,

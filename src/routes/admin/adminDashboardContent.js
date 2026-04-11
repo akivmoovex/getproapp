@@ -17,6 +17,9 @@ const {
   canAccessTenantSettings,
   canAccessSettingsHub,
   canManageArticles,
+  canManageServiceProviderCategories,
+  ROLES,
+  normalizeRole,
 } = require("../../auth/roles");
 const {
   DEFAULT_CALLCENTER_PHONE,
@@ -40,6 +43,8 @@ const {
 const { getPgPool } = require("../../db/pg");
 const categoriesRepo = require("../../db/pg/categoriesRepo");
 const companiesRepo = require("../../db/pg/companiesRepo");
+const tenantCommerceSettingsRepo = require("../../db/pg/tenantCommerceSettingsRepo");
+const { normalizeCommerceRow } = require("../../tenants/tenantCommerceSettings");
 const leadsRepo = require("../../db/pg/leadsRepo");
 const crmTasksRepo = require("../../db/pg/crmTasksRepo");
 
@@ -96,7 +101,10 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
 
       let crmSnapshot = null;
       if (canAccessCrm(u.role)) {
-        const crmRaw = await crmTasksRepo.countGroupedByStatusForTenant(pool, tid);
+        const crmRaw =
+          normalizeRole(u.role) === ROLES.CSR
+            ? await crmTasksRepo.countGroupedByStatusForCsrScope(pool, tid, u.id)
+            : await crmTasksRepo.countGroupedByStatusForTenant(pool, tid);
         const crmMerged = {};
         for (const row of crmRaw) {
           const st = normalizeCrmTaskStatus(row.status);
@@ -125,6 +133,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
         role: u.role,
         isViewer: isTenantViewer(u.role),
         canAccessCrm: canAccessCrm(u.role),
+        canManageServiceProviderCategories: canManageServiceProviderCategories(u.role),
       });
     } catch (e) {
       next(e);
@@ -146,6 +155,7 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
       canManageUsers: canManageTenantUsers(u.role),
       canAccessTenantSettings: canAccessTenantSettings(u.role),
       canManageArticles: canManageArticles(u.role),
+      canManageServiceProviderCategories: canManageServiceProviderCategories(u.role),
     });
   });
 
@@ -417,10 +427,13 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
       const pool = getPgPool();
       const tenant = await tenantsRepo.getByIdForAdminSettings(pool, id);
       if (!tenant) return res.status(404).send("Region not found.");
+      const commerceRaw = await tenantCommerceSettingsRepo.getByTenantId(pool, id);
+      const commerce = normalizeCommerceRow(commerceRaw);
       const saved = req.query.saved === "1" || req.query.saved === "true";
       return res.render("admin/tenant_settings_detail", {
         activeNav: "tenant_contact",
         tenant,
+        commerce,
         isSuper: isSuperAdmin(u.role),
         saved,
       });
@@ -487,6 +500,21 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
         if (phonePatch) {
           const okPr = await phoneRulesRepo.updatePhoneRules(pool, id, phonePatch);
           if (!okPr) return res.status(404).send("Region not found.");
+        }
+        const hasCommerceSection = req.body && String(req.body.commerce_section || "").trim() === "1";
+        if (hasCommerceSection) {
+          const currency = String(req.body.commerce_currency || "").trim().slice(0, 12) || "ZMW";
+          const deal_price_percentage = Number(req.body.commerce_deal_price_percentage);
+          const minimum_credit_balance = Number(req.body.commerce_minimum_credit_balance);
+          const starting_credit_balance = Number(req.body.commerce_starting_credit_balance);
+          const minimum_review_rating = Number(req.body.commerce_minimum_review_rating);
+          await tenantCommerceSettingsRepo.upsert(pool, id, {
+            currency,
+            deal_price_percentage,
+            minimum_credit_balance,
+            starting_credit_balance,
+            minimum_review_rating,
+          });
         }
       } catch (e) {
         return res.status(400).send(e.message || "Could not save");

@@ -2,7 +2,13 @@
  * CRM tasks.
  */
 const { isSuperAdmin } = require("../../auth");
-const { canAccessCrm, canMutateCrm, canClaimCrmTasks } = require("../../auth/roles");
+const {
+  ROLES,
+  normalizeRole,
+  canAccessCrm,
+  canMutateCrm,
+  canClaimCrmTasks,
+} = require("../../auth/roles");
 const { CRM_TASK_STATUSES, normalizeCrmTaskStatus, crmTaskStatusLabel } = require("../../crm/crmTaskStatuses");
 const { getAdminTenantId, normalizeCrmAttachmentUrl, safeCrmRedirect } = require("./adminShared");
 const { getPgPool } = require("../../db/pg");
@@ -28,6 +34,12 @@ module.exports = function registerAdminCrmRoutes(router) {
     if (!id || id < 1) return null;
     const task = await crmTasksRepo.getTaskByIdAndTenant(pool, id, tid);
     if (!task) return null;
+    if (normalizeRole(role) === ROLES.CSR) {
+      const st = normalizeCrmTaskStatus(task.status);
+      const unassigned = task.owner_id == null && st === "new";
+      const isMine = task.owner_id != null && Number(task.owner_id) === Number(uid);
+      if (!unassigned && !isMine) return null;
+    }
     const isOwner = task.owner_id != null && Number(task.owner_id) === Number(uid);
     const canEdit = canMutateCrm(role) && (isOwner || superU);
     const showClaim =
@@ -73,7 +85,10 @@ module.exports = function registerAdminCrmRoutes(router) {
     const superU = isSuperAdmin(role);
 
     const pool = getPgPool();
-    const rows = await crmTasksRepo.listTasksForBoard(pool, tid);
+    const csrBoard = normalizeRole(role) === ROLES.CSR;
+    const rows = csrBoard
+      ? await crmTasksRepo.listTasksForBoardCsrScope(pool, tid, uid)
+      : await crmTasksRepo.listTasksForBoard(pool, tid);
 
     for (const t of rows) {
       t.canDrag =
@@ -112,6 +127,7 @@ module.exports = function registerAdminCrmRoutes(router) {
       currentUserId: uid,
       currentUsername: req.session.adminUser.username || "",
       crmTenantUsers,
+      crmCsrScopedBoard: csrBoard,
     });
   });
 
@@ -476,6 +492,12 @@ module.exports = function registerAdminCrmRoutes(router) {
     const pool = getPgPool();
     const task = await crmTasksRepo.getTaskByIdAndTenant(pool, id, tid);
     if (!task) return res.status(404).send("Not found");
+    if (normalizeRole(req.session.adminUser.role) === ROLES.CSR) {
+      const st = normalizeCrmTaskStatus(task.status);
+      const unassigned = task.owner_id == null && st === "new";
+      const isMine = task.owner_id != null && Number(task.owner_id) === Number(uid);
+      if (!unassigned && !isMine) return res.status(403).type("text").send("Forbidden.");
+    }
 
     try {
       await crmTasksRepo.insertCommentWithAudit(pool, {

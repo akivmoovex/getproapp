@@ -2,6 +2,8 @@
 const ROLES = {
   SUPER_ADMIN: "super_admin",
   TENANT_MANAGER: "tenant_manager",
+  /** Customer support: CRM + intake + directory validation; sees price estimates (with tenant admin / super admin). */
+  CSR: "csr",
   TENANT_EDITOR: "tenant_editor",
   TENANT_AGENT: "tenant_agent",
   TENANT_VIEWER: "tenant_viewer",
@@ -39,12 +41,19 @@ function canEditDirectoryData(role) {
   return (
     n === ROLES.SUPER_ADMIN ||
     n === ROLES.TENANT_MANAGER ||
+    n === ROLES.CSR ||
     n === ROLES.TENANT_EDITOR
   );
 }
 
 /** Can create/update/delete admin users for a tenant. */
 function canManageTenantUsers(role) {
+  const n = normalizeRole(role);
+  return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER;
+}
+
+/** Directory service-provider categories (tenant-scoped CRUD in admin). Super admin + tenant admin only. */
+function canManageServiceProviderCategories(role) {
   const n = normalizeRole(role);
   return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER;
 }
@@ -60,6 +69,7 @@ function canAccessCrm(role) {
   return (
     n === ROLES.SUPER_ADMIN ||
     n === ROLES.TENANT_MANAGER ||
+    n === ROLES.CSR ||
     n === ROLES.TENANT_EDITOR ||
     n === ROLES.TENANT_AGENT ||
     n === ROLES.TENANT_VIEWER
@@ -72,6 +82,7 @@ function canMutateCrm(role) {
   return (
     n === ROLES.SUPER_ADMIN ||
     n === ROLES.TENANT_MANAGER ||
+    n === ROLES.CSR ||
     n === ROLES.TENANT_EDITOR ||
     n === ROLES.TENANT_AGENT
   );
@@ -83,6 +94,7 @@ function canClaimCrmTasks(role) {
   return (
     n === ROLES.SUPER_ADMIN ||
     n === ROLES.TENANT_MANAGER ||
+    n === ROLES.CSR ||
     n === ROLES.TENANT_EDITOR ||
     n === ROLES.TENANT_AGENT
   );
@@ -101,9 +113,30 @@ function canAccessSettingsHub(role) {
   return (
     n === ROLES.SUPER_ADMIN ||
     n === ROLES.TENANT_MANAGER ||
+    n === ROLES.CSR ||
     n === ROLES.TENANT_EDITOR ||
     n === ROLES.TENANT_AGENT
   );
+}
+
+/**
+ * Intake estimated budget / price line (admin + API-derived displays). Not for service provider portal or end-client views.
+ * CSR, tenant admin (manager), and super admin only.
+ */
+function canViewIntakePriceEstimation(role) {
+  const n = normalizeRole(role);
+  return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER || n === ROLES.CSR;
+}
+
+/** Internal deal pricing + CSR-style validation actions (same role set as price estimation). */
+function canValidateDeals(role) {
+  return canViewIntakePriceEstimation(role);
+}
+
+/** Tenant manager (or super admin): emphasize tenant-wide intake / lead pipeline visibility. */
+function canViewTenantWideLeadProgress(role) {
+  const n = normalizeRole(role);
+  return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER;
 }
 
 /**
@@ -138,4 +171,8 @@ module.exports = {
   canAccessSettingsHub,
   canAccessClientProjectIntake,
   canMutateClientProjectIntake,
+  canManageServiceProviderCategories,
+  canViewIntakePriceEstimation,
+  canValidateDeals,
+  canViewTenantWideLeadProgress,
 };

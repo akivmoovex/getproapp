@@ -15,7 +15,9 @@
           <%- include('../partials/components/button', { variant: 'default', href: '/admin/projects', label: 'Intake projects (CRM)' }) %>
         </div>
         <h1 class="section-title section-title--flush">Client Lead Status</h1>
-        <p class="muted admin-intro">Intake projects (client leads), company assignments, and portal response summary for this region. Sorting, filters, and pagination use the query string only.</p>
+        <% var _showPriceSt = typeof adminNav !== 'undefined' && adminNav.canViewIntakePriceEstimation; %>
+        <% var _twLead = typeof adminNav !== 'undefined' && adminNav.canViewTenantWideLeadProgress; %>
+        <p class="muted admin-intro">Intake projects (client leads), company assignments, and portal response summary for this region. Sorting, filters, and pagination use the query string only.<% if (_twLead) { %> <strong>Tenant-wide</strong> lead progress for administrators.<% } %></p>
 
         <% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
         <% var hasFilters = !!(f.q || f.project_status || f.assignment_status || f.city || f.company_id || f.date_from || f.date_to); %>
@@ -104,7 +106,7 @@
                 <th>Client name</th>
                 <th><a href="<%= sortToggleHref('city') %>" class="admin-status-sort">City<% if (sort === 'city') { %> <span class="muted"><%= dir %></span><% } %></a></th>
                 <th>Neighborhood</th>
-                <th><a href="<%= sortToggleHref('estimated_budget_value') %>" class="admin-status-sort">Budget<% if (sort === 'estimated_budget_value') { %> <span class="muted"><%= dir %></span><% } %></a></th>
+                <th><% if (_showPriceSt) { %><a href="<%= sortToggleHref('estimated_budget_value') %>" class="admin-status-sort">Budget<% if (sort === 'estimated_budget_value') { %> <span class="muted"><%= dir %></span><% } %></a><% } else { %>Budget<% } %></th>
                 <th><a href="<%= sortToggleHref('status') %>" class="admin-status-sort">Project status<% if (sort === 'status') { %> <span class="muted"><%= dir %></span><% } %></a></th>
                 <th>Company responses</th>
                 <th>Assigned #</th>
@@ -125,9 +127,11 @@
                   <td><%= r.city || '—' %></td>
                   <td><%= r.neighborhood || '—' %></td>
                   <td>
-                    <% if (r.estimated_budget_value != null && r.estimated_budget_value !== '') { %>
-                      <%= typeof budget !== 'undefined' && budget ? budget.displayPrefix + ' ' : '' %><%= r.estimated_budget_value %> <%= r.estimated_budget_currency || '' %>
-                    <% } else { %>—<% } %>
+                    <% if (_showPriceSt) { %>
+                      <% if (r.estimated_budget_value != null && r.estimated_budget_value !== '') { %>
+                        <%= typeof budget !== 'undefined' && budget ? budget.displayPrefix + ' ' : '' %><%= r.estimated_budget_value %> <%= r.estimated_budget_currency || '' %>
+                      <% } else { %>—<% } %>
+                    <% } else { %><span class="muted">—</span><% } %>
                   </td>
                   <td><%= typeof intakeProjectStatusLabel === 'function' ? intakeProjectStatusLabel(r.project_status) : r.project_status %></td>
                   <td class="muted admin-status-summary"><%= r.assign_summary %></td>

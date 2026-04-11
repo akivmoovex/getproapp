@@ -2,7 +2,12 @@
  * Categories, cities, companies, leads, partner signups.
  */
 const slugify = require("slugify");
-const { requireDirectoryEditor, requireNotViewer, isTenantViewer } = require("../../auth");
+const {
+  requireDirectoryEditor,
+  requireNotViewer,
+  requireServiceProviderCategoryAdmin,
+  isTenantViewer,
+} = require("../../auth");
 const {
   parseGalleryAdminText,
   parseGalleryJson,
@@ -24,6 +29,7 @@ const {
   paymentMethodLabel,
   PAYMENT_METHODS,
 } = require("../../companyPortal/companyPortalCreditLedger");
+const companyPortalLeadsRepo = require("../../db/pg/companyPortalLeadsRepo");
 const {
   redirectWithEmbed,
   getAdminTenantId,
@@ -44,7 +50,7 @@ const reviewsRepo = require("../../db/pg/reviewsRepo");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
 
 module.exports = function registerAdminDirectoryRoutes(router) {
-  router.get("/categories", requireDirectoryEditor, async (req, res) => {
+  router.get("/categories", requireServiceProviderCategoryAdmin, async (req, res) => {
     const tid = getAdminTenantId(req);
     const pool = getPgPool();
     const allCategories = await categoriesRepo.listByTenantId(pool, tid);
@@ -61,6 +67,7 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     const editMode = parseEditMode(req);
     const filterSuffix = filterSuffixFromQuery(req);
     return res.render("admin/categories", {
+      navTitle: "Service providers",
       categories,
       totalCategoryCount: allCategories.length,
       hasActiveFilters,
@@ -74,11 +81,11 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     });
   });
 
-  router.get("/categories/new", requireDirectoryEditor, (req, res) => {
-    return res.render("admin/category_form", { category: null });
+  router.get("/categories/new", requireServiceProviderCategoryAdmin, (req, res) => {
+    return res.render("admin/category_form", { category: null, navTitle: "New service provider category" });
   });
 
-  router.post("/categories", requireDirectoryEditor, requireNotViewer, async (req, res) => {
+  router.post("/categories", requireServiceProviderCategoryAdmin, requireNotViewer, async (req, res) => {
     const { name = "", slug = "" } = req.body || {};
     const cleanName = String(name).trim();
     const cleanSlug = String(slug || "").trim() ? String(slug).trim().toLowerCase() : slugify(cleanName);
@@ -96,15 +103,15 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     }
   });
 
-  router.get("/categories/:id/edit", requireDirectoryEditor, async (req, res) => {
+  router.get("/categories/:id/edit", requireServiceProviderCategoryAdmin, async (req, res) => {
     const tid = getAdminTenantId(req);
     const pool = getPgPool();
     const category = await categoriesRepo.getByIdAndTenantId(pool, req.params.id, tid);
     if (!category) return res.status(404).send("Category not found");
-    return res.render("admin/category_form", { category });
+    return res.render("admin/category_form", { category, navTitle: "Edit service provider category" });
   });
 
-  router.post("/categories/:id", requireDirectoryEditor, requireNotViewer, async (req, res) => {
+  router.post("/categories/:id", requireServiceProviderCategoryAdmin, requireNotViewer, async (req, res) => {
     const { name = "", slug = "" } = req.body || {};
     const cleanName = String(name).trim();
     const cleanSlug = String(slug || "").trim() ? String(slug).trim().toLowerCase() : slugify(cleanName);
@@ -128,7 +135,7 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     }
   });
 
-  router.post("/categories/:id/delete", requireDirectoryEditor, requireNotViewer, async (req, res) => {
+  router.post("/categories/:id/delete", requireServiceProviderCategoryAdmin, requireNotViewer, async (req, res) => {
     const catId = Number(req.params.id);
     if (!catId) return res.status(400).send("Invalid id");
     const tid = getAdminTenantId(req);
@@ -238,10 +245,16 @@ module.exports = function registerAdminDirectoryRoutes(router) {
           baseDomain && tenantSlug && sub
             ? `${scheme}://${tenantSlug}.${baseDomain}/${encodeURIComponent(sub)}`
             : "";
+        const maxDeal = await companyPortalLeadsRepo.getMaxDealPriceForCompanyPublishedActiveAssignments(
+          pool,
+          tid,
+          Number(c.id)
+        );
         const portal_credit_blocked = await isLeadAcceptanceBlockedByCreditWithStore(
           pool,
           tid,
-          c.portal_lead_credits_balance
+          c.portal_lead_credits_balance,
+          maxDeal
         );
         return { ...c, miniSitePublicUrl, portal_credit_blocked };
       })
@@ -303,10 +316,12 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     const miniSiteLabel = companyMiniSiteLabel(tenantSlug, company.subdomain, baseForUrls);
     const directoryProfileUrl = absoluteCompanyProfileUrl(tenantSlug, company.id);
     const portalCreditUiActive = await tenantUsesZmwLeadCreditsWithStore(pool, tid);
+    const maxDeal = await companyPortalLeadsRepo.getMaxDealPriceForCompanyPublishedActiveAssignments(pool, tid, cid);
     const portalCreditBlocked = await isLeadAcceptanceBlockedByCreditWithStore(
       pool,
       tid,
-      company.portal_lead_credits_balance
+      company.portal_lead_credits_balance,
+      maxDeal
     );
     const recentLedgerRaw = portalCreditUiActive ? await listRecentLedgerEntriesAsync(pool, tid, cid, 25) : [];
     const recentLedgerEntries = recentLedgerRaw.map((r) => ({
@@ -359,7 +374,7 @@ module.exports = function registerAdminDirectoryRoutes(router) {
         notes: req.body && req.body.notes,
       };
       if (!(await tenantUsesZmwLeadCreditsWithStore(pool, tid))) {
-        return res.status(400).send("Credit ledger applies only in ZMW (Zambia) regions.");
+        return res.status(400).send("Credit ledger is not available for this region.");
       }
       const result = await recordAdminPaymentCreditAsync(pool, payload);
       if (!result.ok) {

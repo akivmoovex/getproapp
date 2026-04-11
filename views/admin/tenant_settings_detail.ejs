@@ -100,6 +100,52 @@
           </div>
         </div>
 
+        <% var _co = typeof commerce !== 'undefined' && commerce ? commerce : {}; %>
+        <div class="card admin-form-card card--max-720 u-mt-lg">
+          <h2 class="section-title section-title--flush">Commerce &amp; lead credits</h2>
+          <p class="muted admin-intro u-mb-md">
+            Display currency, deal fee percentage, credit floors, and minimum review for lead offers. New service providers receive the starting balance; acceptance is blocked when balance minus deal price would fall below the minimum.
+          </p>
+          <div class="admin-form-shell is-read-mode" data-admin-form-edit>
+            <div class="admin-form-shell__toolbar">
+              <p class="admin-form-shell__unsaved" hidden>Unsaved changes</p>
+              <div class="admin-form-shell__toolbar-end">
+                <%- include('../partials/components/button', { variant: 'primary', type: 'button', label: 'Done', hidden: true, className: 'admin-form-shell__btn--done' }) %>
+                <%- include('../partials/components/button', { variant: 'text', type: 'button', label: 'Cancel', hidden: true, className: 'admin-form-shell__btn--cancel' }) %>
+                <%- include('../partials/components/button', { variant: 'default', type: 'button', label: 'Edit', className: 'admin-form-shell__btn--edit' }) %>
+              </div>
+            </div>
+            <form method="post" action="/admin/settings/tenant/<%= tenant.id %>" class="form">
+              <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+              <input type="hidden" name="commerce_section" value="1" />
+              <input type="hidden" name="callcenter_phone" value="<%= tenant.callcenter_phone ? tenant.callcenter_phone : '' %>" />
+              <input type="hidden" name="support_help_phone" value="<%= tenant.support_help_phone ? tenant.support_help_phone : '' %>" />
+              <input type="hidden" name="whatsapp_phone" value="<%= tenant.whatsapp_phone ? tenant.whatsapp_phone : '' %>" />
+              <input type="hidden" name="callcenter_email" value="<%= tenant.callcenter_email ? tenant.callcenter_email : '' %>" />
+              <div>
+                <label for="ts_cur">Currency code (display)</label>
+                <input id="ts_cur" name="commerce_currency" type="text" value="<%= _co.currency != null ? String(_co.currency) : 'ZMW' %>" maxlength="12" placeholder="ZMW" autocomplete="off" />
+              </div>
+              <div>
+                <label for="ts_dpp">Deal price (% of internal price estimation)</label>
+                <input id="ts_dpp" name="commerce_deal_price_percentage" type="number" step="0.0001" min="0" max="100" value="<%= _co.deal_price_percentage != null ? _co.deal_price_percentage : 3 %>" />
+              </div>
+              <div>
+                <label for="ts_minc">Minimum credit balance (floor after deal)</label>
+                <input id="ts_minc" name="commerce_minimum_credit_balance" type="number" step="1" value="<%= _co.minimum_credit_balance != null ? _co.minimum_credit_balance : 0 %>" />
+              </div>
+              <div>
+                <label for="ts_start">Starting credit balance (new providers)</label>
+                <input id="ts_start" name="commerce_starting_credit_balance" type="number" step="1" value="<%= _co.starting_credit_balance != null ? _co.starting_credit_balance : 250 %>" />
+              </div>
+              <div>
+                <label for="ts_minr">Minimum review rating (for offers)</label>
+                <input id="ts_minr" name="commerce_minimum_review_rating" type="number" step="0.1" min="1" max="5" value="<%= _co.minimum_review_rating != null ? _co.minimum_review_rating : 3 %>" />
+              </div>
+            </form>
+          </div>
+        </div>
+
         <% var _ps = typeof tenant.phone_strict_validation !== 'undefined' ? !!tenant.phone_strict_validation : false; %>
         <% var _prx = typeof tenant.phone_regex !== 'undefined' && tenant.phone_regex ? String(tenant.phone_regex) : ''; %>
         <% var _pcc = typeof tenant.phone_default_country_code !== 'undefined' && tenant.phone_default_country_code ? String(tenant.phone_default_country_code) : ''; %>

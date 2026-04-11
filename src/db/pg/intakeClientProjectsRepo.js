@@ -9,7 +9,7 @@ function normalizeIntakeProjectRow(row) {
   if (o.intake_auto_allocation_paused != null) {
     o.intake_auto_allocation_paused = o.intake_auto_allocation_paused === true || o.intake_auto_allocation_paused === 1 ? 1 : 0;
   }
-  for (const k of ["created_at", "updated_at", "intake_allocation_wave_deadline_at"]) {
+  for (const k of ["created_at", "updated_at", "validated_at", "intake_allocation_wave_deadline_at"]) {
     if (o[k] instanceof Date) o[k] = o[k].toISOString().replace("T", " ").slice(0, 19);
   }
   return o;
@@ -40,9 +40,9 @@ async function insertDraftProject(pool, p) {
       client_full_name_snapshot, client_phone_snapshot,
       city, neighborhood, street_name, house_number, apartment_number,
       client_address_street, client_address_house_number, client_address_apartment_number,
-      estimated_budget_value, estimated_budget_currency, intake_category_id, status,
+      estimated_budget_value, estimated_budget_currency, intake_category_id, urgency, status,
       created_by_admin_user_id, updated_by_admin_user_id, updated_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'draft', $17, $17, now())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'draft', $18, $18, now())
     RETURNING id`,
     [
       p.tenantId,
@@ -61,6 +61,7 @@ async function insertDraftProject(pool, p) {
       p.estimatedBudgetValue,
       p.estimatedBudgetCurrency,
       p.intakeCategoryId,
+      p.urgency,
       p.adminUserId,
     ]
   );
@@ -72,17 +73,46 @@ async function updateQuickEdit(pool, p) {
     `UPDATE public.intake_client_projects SET
       neighborhood = $1, street_name = $2, house_number = $3,
       estimated_budget_value = $4,
-      updated_by_admin_user_id = $5, updated_at = now()
-     WHERE id = $6 AND tenant_id = $7`,
+      urgency = $5,
+      updated_by_admin_user_id = $6, updated_at = now()
+     WHERE id = $7 AND tenant_id = $8`,
     [
       p.neighborhood,
       p.streetName,
       p.houseNumber,
       p.budgetVal,
+      p.urgency,
       p.adminUserId,
       p.projectId,
       p.tenantId,
     ]
+  );
+}
+
+async function updatePriceEstimationInternal(pool, p) {
+  await pool.query(
+    `UPDATE public.intake_client_projects SET
+      price_estimation = $1,
+      deal_price = $2,
+      updated_by_admin_user_id = $3,
+      updated_at = now()
+     WHERE id = $4 AND tenant_id = $5`,
+    [p.priceEstimation, p.dealPrice, p.adminUserId, p.projectId, p.tenantId]
+  );
+}
+
+async function updateDealValidationStatus(pool, p) {
+  const st = String(p.status || "").trim().toLowerCase();
+  const pending = st === "pending";
+  await pool.query(
+    `UPDATE public.intake_client_projects SET
+      deal_validation_status = $1,
+      validated_by_admin_user_id = CASE WHEN $2 THEN NULL ELSE $3 END,
+      validated_at = CASE WHEN $2 THEN NULL ELSE now() END,
+      updated_by_admin_user_id = $4,
+      updated_at = now()
+     WHERE id = $5 AND tenant_id = $6`,
+    [st, pending, p.adminUserId, p.adminUserId, p.projectId, p.tenantId]
   );
 }
 
@@ -176,10 +206,12 @@ async function existsByIdAndTenant(pool, id, tenantId) {
 async function getDetailWithJoins(pool, projectId, tenantId) {
   const r = await pool.query(
     `SELECT p.*, c.client_code, c.full_name AS client_live_name, c.phone AS client_live_phone, c.external_client_reference,
-            cat.name AS intake_category_name
+            cat.name AS intake_category_name,
+            COALESCE(NULLIF(trim(v.display_name), ''), v.username, '') AS deal_validated_by_label
      FROM public.intake_client_projects p
      INNER JOIN public.intake_clients c ON c.id = p.client_id AND c.tenant_id = p.tenant_id
      LEFT JOIN public.categories cat ON cat.id = p.intake_category_id AND cat.tenant_id = p.tenant_id
+     LEFT JOIN public.admin_users v ON v.id = p.validated_by_admin_user_id
      WHERE p.id = $1 AND p.tenant_id = $2`,
     [projectId, tenantId]
   );
@@ -213,6 +245,8 @@ async function listForAdminProjectsPage(pool, tenantId, limit = 400) {
       p.neighborhood,
       p.estimated_budget_value,
       p.estimated_budget_currency,
+      p.urgency,
+      p.deal_validation_status,
       p.status,
       p.created_at,
       p.updated_at,
@@ -240,6 +274,8 @@ module.exports = {
   getStatusAndCategory,
   insertDraftProject,
   updateQuickEdit,
+  updatePriceEstimationInternal,
+  updateDealValidationStatus,
   updateStatus,
   updatePublished,
   updateAllocationPaused,

@@ -31,7 +31,7 @@
       <% } %>
       <header class="company-lead-detail__masthead">
         <h1 class="company-portal-page-title company-lead-detail__title">Project <%= detail.project_code %></h1>
-        <p class="company-lead-detail__lead-price" aria-label="Estimated project budget"><%= detail.lead_price_display %></p>
+        <p class="company-lead-detail__lead-price muted" aria-label="Budget estimate not shown to providers"><%= detail.lead_price_display %></p>
       </header>
       <div class="card company-lead-detail-card">
         <dl class="company-lead-detail-dl">
@@ -50,9 +50,10 @@
       </div>
 
       <% var _st = String(detail.assignment_status || '').toLowerCase(); %>
-      <% var _canInt = _accept && (_st === 'pending' || _st === 'allocated' || _st === 'viewed'); %>
-      <% var _canDecl = _st === 'pending' || _st === 'allocated' || _st === 'viewed' || _st === 'interested' || _st === 'callback_requested'; %>
-      <% var _canCb = _accept && (_st === 'pending' || _st === 'allocated' || _st === 'viewed' || _st === 'interested'); %>
+      <% var _projClosed = String(detail.project_status || '').toLowerCase() === 'closed'; %>
+      <% var _canInt = _accept && !_projClosed && (_st === 'pending' || _st === 'allocated' || _st === 'viewed'); %>
+      <% var _canDecl = !_projClosed && (_st === 'pending' || _st === 'allocated' || _st === 'viewed' || _st === 'interested' || _st === 'callback_requested'); %>
+      <% var _canCb = _accept && !_projClosed && (_st === 'pending' || _st === 'allocated' || _st === 'viewed' || _st === 'interested'); %>
       <% if (_canInt || _canDecl || _canCb) { %>
       <div class="card company-lead-actions card--mb-block">
         <h2 class="company-lead-detail__h2">Your actions</h2>
@@ -88,6 +89,43 @@
             </li>
           <% }); %>
         </ul>
+      <% } %>
+
+      <% var _elig = typeof deal_review_eligible !== 'undefined' && deal_review_eligible; %>
+      <% var _prDone = typeof provider_review_submitted !== 'undefined' && provider_review_submitted; %>
+      <% var _crDone = typeof client_review_submitted !== 'undefined' && client_review_submitted; %>
+      <% if (_elig || _prDone || _crDone) { %>
+      <section class="company-portal-deal-review card card--mb-block" aria-labelledby="company-deal-review-heading">
+        <h2 id="company-deal-review-heading" class="company-lead-detail__h2">After the job</h2>
+        <% if (_elig && !_prDone) { %>
+        <p class="muted">The project is <strong>closed</strong>. Share a quick rating and optional comment about your experience with the client (1–5).</p>
+        <form method="post" action="<%= _pb %>/leads/<%= detail.assignment_id %>/review" class="form company-portal-deal-review__form">
+          <div class="input-field">
+            <label class="input-field__label" for="deal_review_rating">Rating</label>
+            <select id="deal_review_rating" name="rating" class="input-field__control" required>
+              <option value="" disabled selected>Choose…</option>
+              <option value="5">5 — Excellent</option>
+              <option value="4">4</option>
+              <option value="3">3</option>
+              <option value="2">2</option>
+              <option value="1">1 — Poor</option>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="deal_review_body">Comment (optional)</label>
+            <textarea id="deal_review_body" name="body" class="input-field__control" rows="3" maxlength="4000" placeholder="Optional feedback"></textarea>
+          </div>
+          <%- include('partials/components/button', { variant: 'primary', type: 'submit', label: 'Submit review' }) %>
+        </form>
+        <% } else if (_prDone) { %>
+        <p class="muted">Thank you — you submitted your review for this job.</p>
+        <% } %>
+        <% if (_crDone) { %>
+        <p class="muted company-portal-deal-review__client-note" role="status">The client has submitted their public review of your company.</p>
+        <% } else if (_elig && _prDone) { %>
+        <p class="muted">Waiting for the client to review your company (they use the project link and phone).</p>
+        <% } %>
+      </section>
       <% } %>
     </main>
     <%- include('partials/company_portal_shell_end') %>

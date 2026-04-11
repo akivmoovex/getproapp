@@ -1,12 +1,17 @@
 /**
- * Company (provider) portal: lead credit / balance rules.
- * Threshold applies only where tenant budget currency is ZMW (Zambia).
+ * Company (provider) portal: lead credit / balance rules (tenant commerce settings).
  */
 
-const { getBudgetMetaForTenantWithStore } = require("../intake/clientProjectIntake");
+const {
+  getCommerceSettingsForTenant,
+  creditBalanceOkForDealOffer,
+} = require("../tenants/tenantCommerceSettings");
 
-/** Below this balance (ZMW), providers cannot accept leads (interested / callback). */
+/** @deprecated Legacy constant; use tenant commerce `minimum_credit_balance`. */
 const PORTAL_LEAD_CREDIT_BLOCK_THRESHOLD_ZMW = -200;
+
+/** @deprecated Legacy constant; use tenant commerce `starting_credit_balance`. */
+const DEFAULT_SP_CREDIT_START_ZMW = -200;
 
 const ACCEPT_ACTIONS = new Set(["interested", "callback"]);
 
@@ -23,21 +28,37 @@ function normalizePortalLeadCreditsBalance(raw) {
  * @param {import("pg").Pool} pool
  * @param {number} tenantId
  * @param {unknown} portalLeadCreditsBalance
+ * @param {number|null|undefined} [dealPrice] for this lead (or worst-case for list views)
  */
-async function isLeadAcceptanceBlockedByCreditWithStore(pool, tenantId, portalLeadCreditsBalance) {
-  const meta = await getBudgetMetaForTenantWithStore(pool, tenantId);
-  if (!meta || String(meta.code || "").toUpperCase() !== "ZMW") return false;
+async function isLeadAcceptanceBlockedByCreditWithStore(pool, tenantId, portalLeadCreditsBalance, dealPrice) {
+  const cs = await getCommerceSettingsForTenant(pool, Number(tenantId));
   const b = normalizePortalLeadCreditsBalance(portalLeadCreditsBalance);
-  return b < PORTAL_LEAD_CREDIT_BLOCK_THRESHOLD_ZMW;
+  const dp = dealPrice != null && Number.isFinite(Number(dealPrice)) ? Number(dealPrice) : 0;
+  return !creditBalanceOkForDealOffer(b, dp, cs.minimum_credit_balance);
 }
 
 /**
+ * Portal credit / balance UI applies when the tenant has commerce settings (all regions after migration).
  * @param {import("pg").Pool} pool
  * @param {number} tenantId
  */
-async function tenantUsesZmwLeadCreditsWithStore(pool, tenantId) {
-  const meta = await getBudgetMetaForTenantWithStore(pool, Number(tenantId));
-  return !!(meta && String(meta.code || "").toUpperCase() === "ZMW");
+async function tenantUsesPortalLeadCreditsWithStore(pool, tenantId) {
+  await getCommerceSettingsForTenant(pool, Number(tenantId));
+  return true;
+}
+
+/** @deprecated Use {@link tenantUsesPortalLeadCreditsWithStore}. */
+const tenantUsesZmwLeadCreditsWithStore = tenantUsesPortalLeadCreditsWithStore;
+
+/**
+ * Initial `companies.portal_lead_credits_balance` for a newly created listing.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @returns {Promise<number>}
+ */
+async function getDefaultPortalLeadCreditsBalanceForNewCompany(pool, tenantId) {
+  const cs = await getCommerceSettingsForTenant(pool, Number(tenantId));
+  return cs.starting_credit_balance;
 }
 
 /**
@@ -49,8 +70,11 @@ function isLeadAcceptanceAction(action) {
 
 module.exports = {
   PORTAL_LEAD_CREDIT_BLOCK_THRESHOLD_ZMW,
+  DEFAULT_SP_CREDIT_START_ZMW,
   normalizePortalLeadCreditsBalance,
+  tenantUsesPortalLeadCreditsWithStore,
   tenantUsesZmwLeadCreditsWithStore,
+  getDefaultPortalLeadCreditsBalanceForNewCompany,
   isLeadAcceptanceBlockedByCreditWithStore,
   isLeadAcceptanceAction,
 };

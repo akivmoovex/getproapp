@@ -14,6 +14,7 @@ const {
 const { companyPortalLoginLimiter } = require("../middleware/authRateLimit");
 const { buildCompanyPageLocals } = require("../companies/companyPageRender");
 const clientIntake = require("../intake/clientProjectIntake");
+const { getBudgetDisplayMetaForTenant } = require("../tenants/tenantCommerceSettings");
 const {
   mapCompanyPortalAssignmentSummary,
   mapCompanyPortalAssignmentDetail,
@@ -24,7 +25,9 @@ const intakeProjectAllocation = require("../intake/intakeProjectAllocation");
 const {
   isLeadAcceptanceBlockedByCreditWithStore,
   isLeadAcceptanceAction,
+  normalizePortalLeadCreditsBalance,
 } = require("../companyPortal/companyPortalLeadCredits");
+const { applyDealPriceDebitOnInterestedIfNeeded } = require("../intake/intakeDealAcceptanceDebit");
 const {
   buildCompanyPortalLeadCardVm,
   buildCompanyPortalLeadDetailVm,
@@ -33,8 +36,9 @@ const { getPgPool } = require("../db/pg");
 const companiesRepo = require("../db/pg/companiesRepo");
 const companyPortalLeadsRepo = require("../db/pg/companyPortalLeadsRepo");
 const intakeProjectImagesRepo = require("../db/pg/intakeProjectImagesRepo");
+const intakeDealReviewsRepo = require("../db/pg/intakeDealReviewsRepo");
 
-const COMPANY_LEADS_SCOPES = new Set(["active", "declined", "all"]);
+const COMPANY_LEADS_SCOPES = new Set(["active", "declined", "all", "completed"]);
 
 function tenantUrlPrefixFromReq(req) {
   const p = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
@@ -124,6 +128,7 @@ module.exports = function companyPortalRoutes() {
 
     let activeAssignments = [];
     let declinedAssignments = [];
+    let completedAssignments = [];
 
     if (scope === "active" || scope === "all") {
       const activeRows = await companyPortalLeadsRepo.listAssignmentsForPortal(pool, tid, cid, "active");
@@ -133,15 +138,29 @@ module.exports = function companyPortalRoutes() {
       const declinedRows = await companyPortalLeadsRepo.listAssignmentsForPortal(pool, tid, cid, "declined");
       declinedAssignments = declinedRows.map(mapCompanyPortalAssignmentSummary).filter(Boolean);
     }
+    if (scope === "completed") {
+      const completedRows = await companyPortalLeadsRepo.listAssignmentsForPortal(pool, tid, cid, "completed");
+      completedAssignments = completedRows.map(mapCompanyPortalAssignmentSummary).filter(Boolean);
+    }
     const company = await companiesRepo.getPortalLeadCreditFields(pool, cid, tid);
-    const budget = await clientIntake.getBudgetMetaForTenantWithStore(pool, tid);
+    const budget = await getBudgetDisplayMetaForTenant(pool, tid);
+    const maxDeal = await companyPortalLeadsRepo.getMaxDealPriceForCompanyPublishedActiveAssignments(pool, tid, cid);
     const blocked_credit = await isLeadAcceptanceBlockedByCreditWithStore(
       pool,
       tid,
-      company && company.portal_lead_credits_balance
+      company && company.portal_lead_credits_balance,
+      maxDeal
     );
+    const portal_credit_balance = normalizePortalLeadCreditsBalance(company && company.portal_lead_credits_balance);
+    const pref = budget && budget.displayPrefix ? String(budget.displayPrefix).trim() : "";
+    const code = budget && budget.code ? String(budget.code).trim() : "";
+    const portal_credit_balance_display = [pref ? `${pref} ${portal_credit_balance}` : String(portal_credit_balance), code]
+      .filter(Boolean)
+      .join(" ");
+    const acceptedDeals = await companyPortalLeadsRepo.listAcceptedDealsWithClientContact(pool, tid, cid);
     const activeLeadCards = activeAssignments.map((a) => buildCompanyPortalLeadCardVm(a, budget));
     const declinedLeadCards = declinedAssignments.map((a) => buildCompanyPortalLeadCardVm(a, budget));
+    const completedLeadCards = completedAssignments.map((a) => buildCompanyPortalLeadCardVm(a, budget));
     return res.render("company_leads", {
       tenant: req.tenant,
       tenantUrlPrefix: tenantUrlPrefixFromReq(req),
@@ -150,8 +169,12 @@ module.exports = function companyPortalRoutes() {
       companyName: company ? company.name : "",
       scope,
       blocked_credit,
+      portal_credit_balance,
+      portal_credit_balance_display,
+      acceptedDeals,
       activeLeadCards,
       declinedLeadCards,
+      completedLeadCards,
       assignmentStatusLabelForPortal,
       activeCompanyNav: "leads",
     });
@@ -171,22 +194,36 @@ module.exports = function companyPortalRoutes() {
     const row = await companyPortalLeadsRepo.getDetailForPortal(pool, assignmentId, tid, cid);
     const detail = mapCompanyPortalAssignmentDetail(row);
     if (!detail) return res.status(404).send("Lead not found.");
-    await intakeProjectAllocation.processPublishedProjectAllocation(pool, tid, detail.project_id);
-    await intakeProjectAllocation.markAssignmentViewedIfAllocated(pool, tid, cid, assignmentId);
+    const pst = String(detail.project_status || "").trim().toLowerCase();
+    if (pst === "published") {
+      await intakeProjectAllocation.processPublishedProjectAllocation(pool, tid, detail.project_id);
+      await intakeProjectAllocation.markAssignmentViewedIfAllocated(pool, tid, cid, assignmentId);
+    }
     const rowAfter = await companyPortalLeadsRepo.getDetailForPortal(pool, assignmentId, tid, cid);
     const detailFresh = mapCompanyPortalAssignmentDetail(rowAfter);
     const detailForView = detailFresh || detail;
     const imgRows = await intakeProjectImagesRepo.listByProject(pool, tid, detailForView.project_id);
     const images = imgRows.map((im) => ({ id: im.id, sort_order: im.sort_order }));
     const company = await companiesRepo.getPortalLeadCreditFields(pool, cid, tid);
-    const budget = await clientIntake.getBudgetMetaForTenantWithStore(pool, tid);
+    const budget = await getBudgetDisplayMetaForTenant(pool, tid);
+    const dealForCredit =
+      detailForView && detailForView.project_deal_price != null && Number.isFinite(Number(detailForView.project_deal_price))
+        ? Number(detailForView.project_deal_price)
+        : null;
     const blocked_credit = await isLeadAcceptanceBlockedByCreditWithStore(
       pool,
       tid,
-      company && company.portal_lead_credits_balance
+      company && company.portal_lead_credits_balance,
+      dealForCredit
     );
     const detailVm = buildCompanyPortalLeadDetailVm(detailForView, budget);
     if (!detailVm) return res.status(404).send("Lead not found.");
+    const reviewPair = await intakeDealReviewsRepo.getPairByAssignment(pool, tid, assignmentId);
+    const projectSt = String(detailForView.project_status || "").trim().toLowerCase();
+    const assignSt = String(detailForView.assignment_status || "").trim().toLowerCase();
+    const deal_review_eligible = projectSt === "closed" && assignSt === "interested";
+    const provider_review_submitted = !!(reviewPair && reviewPair.provider);
+    const client_review_submitted = !!(reviewPair && reviewPair.client);
     const notice = String((req.query && req.query.notice) || "").trim().slice(0, 400);
     const error = String((req.query && req.query.error) || "").trim().slice(0, 400);
     return res.render("company_lead_detail", {
@@ -203,11 +240,42 @@ module.exports = function companyPortalRoutes() {
       can_accept_lead_actions: !blocked_credit,
       notice: notice || null,
       error: error || null,
+      deal_review_eligible,
+      provider_review_submitted,
+      client_review_submitted,
       activeCompanyNav: "leads",
     });
     } catch (e) {
       next(e);
     }
+  });
+
+  router.post("/leads/:id/review", requirePublicTenant, requireCompanyPersonnelAuth, async (req, res) => {
+    const tid = req.tenant.id;
+    const cid = req.companyPersonnel.companyId;
+    const pb = providerBasePath(req);
+    const assignmentId = Number(req.params.id);
+    const rating = Number((req.body && req.body.rating) || 0);
+    const body = String((req.body && req.body.body) || "").trim().slice(0, 4000);
+    if (!assignmentId || assignmentId < 1) return res.status(400).send("Invalid id.");
+    const pool = getPgPool();
+    const result = await intakeDealReviewsRepo.insertProviderReview(pool, {
+      tenantId: tid,
+      assignmentId,
+      companyId: cid,
+      rating,
+      body,
+    });
+    if (!result.ok) {
+      const msg =
+        result.code === "duplicate"
+          ? "You already submitted a review for this job."
+          : result.code === "not_eligible"
+            ? "Reviews are only available after the job is marked closed and you were marked interested."
+            : "Could not save your review.";
+      return res.redirect(`${pb}/leads/${assignmentId}?error=` + encodeURIComponent(msg));
+    }
+    return res.redirect(`${pb}/leads/${assignmentId}?notice=` + encodeURIComponent("Thank you — your review was saved."));
   });
 
   router.post("/leads/:id/action", requirePublicTenant, requireCompanyPersonnelAuth, async (req, res) => {
@@ -223,9 +291,15 @@ module.exports = function companyPortalRoutes() {
     const row = await companyPortalLeadsRepo.getIdAndStatusForCompanyAction(pool, assignmentId, tid, cid);
     if (!row) return res.status(404).send("Not found.");
     const coCredit = await companiesRepo.getPortalLeadCreditFields(pool, cid, tid);
+    const dealPrice = await companyPortalLeadsRepo.getPublishedDealPriceForCompanyAssignment(pool, assignmentId, tid, cid);
     if (
       isLeadAcceptanceAction(action) &&
-      (await isLeadAcceptanceBlockedByCreditWithStore(pool, tid, coCredit && coCredit.portal_lead_credits_balance))
+      (await isLeadAcceptanceBlockedByCreditWithStore(
+        pool,
+        tid,
+        coCredit && coCredit.portal_lead_credits_balance,
+        dealPrice
+      ))
     ) {
       return res.redirect(
         `${pb}/leads/${assignmentId}?error=` +
@@ -248,6 +322,14 @@ module.exports = function companyPortalRoutes() {
       tenantId: tid,
       companyId: cid,
     });
+    if (nextStatus === "interested") {
+      try {
+        await applyDealPriceDebitOnInterestedIfNeeded(pool, tid, assignmentId, cid);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error("[getpro] deal price debit on interested:", e && e.message ? e.message : e);
+      }
+    }
     if (nextStatus === "declined") {
       await intakeProjectAllocation.onAssignmentDeclinedByProvider(pool, tid, assignmentId);
     }

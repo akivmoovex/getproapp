@@ -38,6 +38,12 @@ const intakeClientProjectsRepo = require("../../db/pg/intakeClientProjectsRepo")
 const intakeProjectImagesRepo = require("../../db/pg/intakeProjectImagesRepo");
 const intakePhoneOtpRepo = require("../../db/pg/intakePhoneOtpRepo");
 const intakeAssignmentsRepo = require("../../db/pg/intakeAssignmentsRepo");
+const intakeDealReviewsRepo = require("../../db/pg/intakeDealReviewsRepo");
+const { canViewIntakePriceEstimation, canValidateDeals, canMutateClientProjectIntake } = require("../../auth/roles");
+const { normalizeUrgency, listUrgencySelectOptions, urgencyLabel } = require("../../intake/dealUrgency");
+const { computeDealPriceFromEstimation } = require("../../intake/dealPricing");
+const { runDealValidatedOfferAllocation } = require("../../intake/intakeDealValidatedAllocation");
+const { getCommerceSettingsForTenant } = require("../../tenants/tenantCommerceSettings");
 
 module.exports = function registerAdminIntakeRoutes(router, deps) {
   const { projectIntakeUpload } = deps;
@@ -340,6 +346,7 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
       client,
       cities,
       intakeCategories,
+      urgencyOptions: listUrgencySelectOptions(),
       budget,
       error: String((req.query && req.query.error) || "").trim().slice(0, 500),
       otp_notice: String((req.query && req.query.otp_notice) || "").trim().slice(0, 500),
@@ -379,15 +386,19 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
       const client_address_street = String(b.client_address_street || "").trim().slice(0, 200);
       const client_address_house_number = String(b.client_address_house_number || "").trim().slice(0, 40);
       const client_address_apartment_number = String(b.client_address_apartment_number || "").trim().slice(0, 40);
-      const budgetRaw = String(b.estimated_budget || "").trim();
-      const budgetVal = budgetRaw === "" ? null : Number(budgetRaw);
-      if (budgetRaw !== "" && (Number.isNaN(budgetVal) || budgetVal < 0)) {
-        return res.redirect(
-          redirectWithEmbed(
-            req,
-            `/admin/project-intake/project/new?clientId=${clientId}&error=` + encodeURIComponent("Budget must be a non-negative number.")
-          )
-        );
+      const adminRole = req.session.adminUser && req.session.adminUser.role;
+      let budgetVal = null;
+      if (canViewIntakePriceEstimation(adminRole)) {
+        const budgetRaw = String(b.estimated_budget || "").trim();
+        budgetVal = budgetRaw === "" ? null : Number(budgetRaw);
+        if (budgetRaw !== "" && (Number.isNaN(budgetVal) || budgetVal < 0)) {
+          return res.redirect(
+            redirectWithEmbed(
+              req,
+              `/admin/project-intake/project/new?clientId=${clientId}&error=` + encodeURIComponent("Budget must be a non-negative number.")
+            )
+          );
+        }
       }
       const intakeCategoryId = Number(b.intake_category_id);
       if (!intakeCategoryId || intakeCategoryId < 1) {
@@ -407,6 +418,7 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
           )
         );
       }
+      const urgency = normalizeUrgency(b.urgency);
       const budgetMeta = await clientIntake.getBudgetMetaForTenantWithStore(pool, tid);
       const uid = req.session.adminUser.id;
 
@@ -436,6 +448,7 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
           estimatedBudgetValue: budgetVal,
           estimatedBudgetCurrency: budgetMeta.code,
           intakeCategoryId,
+          urgency,
           adminUserId: uid,
         });
       } catch (e) {
@@ -502,9 +515,9 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
       const uid = req.session.adminUser.id;
       const b = req.body || {};
       if (!pid || pid < 1) return res.status(400).send("Invalid project.");
-      const project = await intakeClientProjectsRepo.getIdAndStatus(pool, pid, tid);
-      if (!project) return res.status(404).send("Project not found.");
-      const st = String(project.status || "").trim().toLowerCase();
+      const fullRow = await intakeClientProjectsRepo.getByIdAndTenant(pool, pid, tid);
+      if (!fullRow) return res.status(404).send("Project not found.");
+      const st = String(fullRow.status || "").trim().toLowerCase();
       if (!INTAKE_PROJECT_PUBLISHABLE_STATUSES.has(st)) {
         return res.redirect(
           redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent("Quick edit is only allowed before publish."))
@@ -513,18 +526,25 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
       const neighborhood = String(b.neighborhood || "").trim().slice(0, 120);
       const street_name = String(b.street_name || "").trim().slice(0, 200);
       const house_number = String(b.house_number || "").trim().slice(0, 40);
-      const budgetRaw = String(b.estimated_budget || "").trim();
-      const budgetVal = budgetRaw === "" ? null : Number(budgetRaw);
-      if (budgetRaw !== "" && (Number.isNaN(budgetVal) || budgetVal < 0)) {
-        return res.redirect(
-          redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent("Budget must be a non-negative number."))
-        );
+      const adminRole = req.session.adminUser && req.session.adminUser.role;
+      let budgetVal = fullRow.estimated_budget_value;
+      if (canViewIntakePriceEstimation(adminRole)) {
+        const budgetRaw = String(b.estimated_budget || "").trim();
+        const parsed = budgetRaw === "" ? null : Number(budgetRaw);
+        if (budgetRaw !== "" && (Number.isNaN(parsed) || parsed < 0)) {
+          return res.redirect(
+            redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent("Budget must be a non-negative number."))
+          );
+        }
+        budgetVal = parsed;
       }
+      const urgency = normalizeUrgency(b.urgency != null && b.urgency !== "" ? b.urgency : fullRow.urgency);
       await intakeClientProjectsRepo.updateQuickEdit(pool, {
         neighborhood,
         streetName: street_name,
         houseNumber: house_number,
         budgetVal,
+        urgency,
         adminUserId: uid,
         projectId: pid,
         tenantId: tid,
@@ -536,6 +556,95 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
       await intakeClientProjectsRepo.updateStatus(pool, { status: nextLifecycle, adminUserId: uid, projectId: pid, tenantId: tid });
       return res.redirect(
         redirectWithEmbed(req, `/admin/projects/${pid}?notice=` + encodeURIComponent("Project details updated."))
+      );
+    }
+  );
+
+  router.post(
+    "/projects/:id/deal-pricing",
+    requireClientProjectIntakeAccess,
+    requireClientProjectIntakeMutate,
+    async (req, res) => {
+      const adminRole = req.session.adminUser && req.session.adminUser.role;
+      if (!canViewIntakePriceEstimation(adminRole)) {
+        return res.status(403).send("Forbidden.");
+      }
+      const tid = getAdminTenantId(req);
+      const pool = getPgPool();
+      const pid = Number(req.params.id);
+      const uid = req.session.adminUser.id;
+      if (!pid || pid < 1) return res.status(400).send("Invalid project.");
+      const b = req.body || {};
+      const raw = String(b.price_estimation || "").trim();
+      let priceEst = null;
+      if (raw !== "") {
+        priceEst = Number(raw);
+        if (Number.isNaN(priceEst) || priceEst < 0) {
+          return res.redirect(
+            redirectWithEmbed(
+              req,
+              `/admin/projects/${pid}?error=` + encodeURIComponent("Price estimation must be empty or a non-negative number.")
+            )
+          );
+        }
+      }
+      const commerce = await getCommerceSettingsForTenant(pool, tid);
+      const dealPrice = computeDealPriceFromEstimation(priceEst, commerce.deal_price_percentage);
+      await intakeClientProjectsRepo.updatePriceEstimationInternal(pool, {
+        priceEstimation: priceEst,
+        dealPrice,
+        adminUserId: uid,
+        projectId: pid,
+        tenantId: tid,
+      });
+      return res.redirect(
+        redirectWithEmbed(req, `/admin/projects/${pid}?notice=` + encodeURIComponent("Internal pricing updated."))
+      );
+    }
+  );
+
+  router.post(
+    "/projects/:id/deal-validation",
+    requireClientProjectIntakeAccess,
+    requireClientProjectIntakeMutate,
+    async (req, res) => {
+      const adminRole = req.session.adminUser && req.session.adminUser.role;
+      if (!canValidateDeals(adminRole)) {
+        return res.status(403).send("Forbidden.");
+      }
+      const tid = getAdminTenantId(req);
+      const pool = getPgPool();
+      const pid = Number(req.params.id);
+      const uid = req.session.adminUser.id;
+      if (!pid || pid < 1) return res.status(400).send("Invalid project.");
+      const action = String((req.body && req.body.validation_action) || "")
+        .trim()
+        .toLowerCase();
+      let st = "pending";
+      if (action === "validate" || action === "validated") st = "validated";
+      else if (action === "reject" || action === "rejected") st = "rejected";
+      else if (action === "pending" || action === "reset") st = "pending";
+      else {
+        return res.redirect(
+          redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent("Invalid validation action."))
+        );
+      }
+      await intakeClientProjectsRepo.updateDealValidationStatus(pool, {
+        status: st,
+        adminUserId: uid,
+        projectId: pid,
+        tenantId: tid,
+      });
+      if (st === "validated") {
+        try {
+          await runDealValidatedOfferAllocation(pool, tid, pid);
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error("[getpro] deal validated offer allocation:", e && e.message ? e.message : e);
+        }
+      }
+      return res.redirect(
+        redirectWithEmbed(req, `/admin/projects/${pid}?notice=` + encodeURIComponent("Deal validation updated."))
       );
     }
   );
@@ -761,6 +870,7 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
       projects,
       budget,
       intakeProjectStatusLabel: clientIntake.intakeProjectStatusLabel,
+      urgencyLabel,
     });
   });
 
@@ -784,8 +894,12 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
     const assignedIds = new Set(assignments.map((a) => Number(a.company_id)));
     const assignableCompanies = companies.filter((c) => !assignedIds.has(Number(c.id)));
     const budget = await clientIntake.getBudgetMetaForTenantWithStore(pool, tid);
+    const commerce = await getCommerceSettingsForTenant(pool, tid);
     const error = String((req.query && req.query.error) || "").trim().slice(0, 400);
     const notice = String((req.query && req.query.notice) || "").trim().slice(0, 400);
+    const dealReviews = await intakeDealReviewsRepo.listForProject(pool, tid, pid);
+    const adminRole = req.session.adminUser && req.session.adminUser.role;
+    const showCloseProject = lifecycle === "published" && canMutateClientProjectIntake(adminRole);
     return res.render("admin/intake_project_detail", {
       activeNav: "projects",
       navTitle: `Project ${project.project_code}`,
@@ -797,13 +911,51 @@ module.exports = function registerAdminIntakeRoutes(router, deps) {
       assignments,
       assignableCompanies,
       budget,
+      commerce,
       projectStatusLabel: clientIntake.intakeProjectStatusLabel(project.status),
       assignmentStatusLabelForPortal,
+      dealReviews,
+      showCloseProject,
       error: error || null,
       notice: notice || null,
       intakeFileBase: "/admin/project-intake/files/",
+      urgencyLabel,
+      urgencyOptions: listUrgencySelectOptions(),
     });
   });
+
+  router.post(
+    "/projects/:id/close",
+    requireClientProjectIntakeAccess,
+    requireClientProjectIntakeMutate,
+    async (req, res) => {
+      const tid = getAdminTenantId(req);
+      const pool = getPgPool();
+      const pid = Number(req.params.id);
+      const uid = req.session.adminUser.id;
+      if (!pid || pid < 1) return res.status(400).send("Invalid project.");
+      const project = await intakeClientProjectsRepo.getByIdAndTenant(pool, pid, tid);
+      if (!project) return res.status(404).send("Project not found.");
+      const st = String(project.status || "").trim().toLowerCase();
+      if (st !== "published") {
+        return res.redirect(
+          redirectWithEmbed(req, `/admin/projects/${pid}?error=` + encodeURIComponent("Only published projects can be marked closed."))
+        );
+      }
+      await intakeClientProjectsRepo.updateStatus(pool, {
+        status: "closed",
+        adminUserId: uid,
+        projectId: pid,
+        tenantId: tid,
+      });
+      return res.redirect(
+        redirectWithEmbed(
+          req,
+          `/admin/projects/${pid}?notice=` + encodeURIComponent("Project marked closed. Eligible parties can submit post-completion reviews.")
+        )
+      );
+    }
+  );
 
   router.post(
     "/projects/:id/assignments",

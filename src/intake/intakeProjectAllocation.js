@@ -11,6 +11,10 @@ const {
 const reviewsRepo = require("../db/pg/reviewsRepo");
 const intakeClientProjectsRepo = require("../db/pg/intakeClientProjectsRepo");
 const intakeAssignmentsRepo = require("../db/pg/intakeAssignmentsRepo");
+const {
+  getCommerceSettingsForTenant,
+  passesMinimumReviewRatingForAllocation,
+} = require("../tenants/tenantCommerceSettings");
 
 const PENDING_RESPONSE_STATUSES = ["allocated", "viewed", "pending"];
 
@@ -79,12 +83,14 @@ async function listEligibleCompanyIdsAsync(pool, tenantId, categoryId, settings)
   const tid = Number(tenantId);
   const cid = Number(categoryId);
   if (!cid || cid < 1) return [];
+  const commerce = await getCommerceSettingsForTenant(pool, tid);
   const rows = await reviewsRepo.listAvgCountByTenantAndCategory(pool, tid, cid);
   const out = [];
   for (const r of rows) {
-    if (isCompanyEligibleForIntakeAllocation(r.avg_rating, r.review_count, settings)) {
-      out.push(Number(r.company_id));
-    }
+    const avg = r.avg_rating != null && Number.isFinite(Number(r.avg_rating)) ? Number(r.avg_rating) : null;
+    if (!isCompanyEligibleForIntakeAllocation(avg, r.review_count, settings)) continue;
+    if (!passesMinimumReviewRatingForAllocation(avg, commerce.minimum_review_rating)) continue;
+    out.push(Number(r.company_id));
   }
   return out.sort((a, b) => a - b);
 }
