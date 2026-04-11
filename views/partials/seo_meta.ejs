@@ -11,6 +11,11 @@
 <% if (_canon) { %>
 <link rel="canonical" href="<%= _canon %>" />
 <% } %>
+<% if (typeof hreflangAlternates !== 'undefined' && hreflangAlternates && hreflangAlternates.length) { %>
+  <% hreflangAlternates.forEach(function (a) { %>
+<link rel="alternate" hreflang="<%= a.hreflang %>" href="<%= a.href %>" />
+  <% }); %>
+<% } %>
 <% if (typeof noindex !== 'undefined' && noindex) { %>
 <meta name="robots" content="noindex, nofollow" />
 <% } %>

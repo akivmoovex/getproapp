@@ -24,20 +24,23 @@ async function buildSitemapXml(req) {
 
   urls.push({ loc: `${base}/`, changefreq: "weekly", priority: "1.0" });
   urls.push({ loc: `${base}/directory`, changefreq: "daily", priority: "0.9" });
-  urls.push({ loc: `${base}/join`, changefreq: "monthly", priority: "0.6" });
   urls.push({ loc: `${base}/articles`, changefreq: "weekly", priority: "0.75" });
   urls.push({ loc: `${base}/guides`, changefreq: "weekly", priority: "0.75" });
   urls.push({ loc: `${base}/answers`, changefreq: "weekly", priority: "0.7" });
 
   const pool = getPgPool();
   const catSlugs = await categoriesRepo.listSlugsForSitemap(pool, tenantId);
-  const companyIds = await companiesRepo.listIdsForSitemap(pool, tenantId, 500);
+  const companyRows = await companiesRepo.listIdsForSitemap(pool, tenantId, 500);
   for (const slug of catSlugs) {
     urls.push({ loc: `${base}/category/${encodeURIComponent(slug)}`, changefreq: "weekly", priority: "0.8" });
   }
 
-  for (const co of companyIds) {
+  for (const co of companyRows) {
     urls.push({ loc: `${base}/company/${co.id}`, changefreq: "weekly", priority: "0.7" });
+    const sub = co.subdomain && String(co.subdomain).trim();
+    if (sub) {
+      urls.push({ loc: `${base}/${encodeURIComponent(sub)}`, changefreq: "weekly", priority: "0.7" });
+    }
   }
 
   const defaultLoc = req.tenant && req.tenant.defaultLocale ? String(req.tenant.defaultLocale) : "en";
@@ -81,6 +84,7 @@ function buildRobotsTxt(req) {
     "Allow: /",
     "Disallow: /admin/",
     "Disallow: /api/",
+    "Disallow: /join",
     "",
     `Sitemap: ${sitemapUrl}`,
     "",

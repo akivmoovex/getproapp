@@ -10,7 +10,7 @@
     <div class="ds-container wf-footer-cta-inner">
       <h2 class="wf-footer-cta-title">Find the right professional in one place</h2>
       <p class="wf-footer-cta-lead">Search the directory, filter by category, and reach businesses through clear one-page profiles.</p>
-      <%- include('components/button', { variant: 'default', href: _op('/directory?home_featured=1'), label: 'Start Search', className: 'btn-footer-solid' }) %>
+      <%- include('components/button', { variant: 'default', href: _op('/directory?home_featured=1'), label: (typeof ctaVoice !== 'undefined' && ctaVoice.homepage && ctaVoice.homepage.footer_search) ? ctaVoice.homepage.footer_search : 'Start Search', className: 'btn-footer-solid' }) %>
     </div>
   </div>
   <div class="wf-footer-main">
@@ -26,7 +26,7 @@
         <strong>Directory</strong>
         <ul>
           <li><a href="<%= _op('/directory') %>">Browse professionals</a></li>
-          <li><a href="<%= _op('/join') %>">List your business</a></li>
+          <li><a href="<%= _op('/join') %>"><%= (typeof ctaVoice !== 'undefined' && ctaVoice.homepage && ctaVoice.homepage.footer_list_business) ? ctaVoice.homepage.footer_list_business : 'List your business' %></a></li>
           <li><a href="<%= _op('/answers') %>">Help &amp; answers</a></li>
         </ul>
       </div>
@@ -61,6 +61,11 @@
         <ul>
           <li><a href="<%= _op('/directory') %>">Browse by category</a></li>
           <li><a href="<%= _op('/articles') %>">Articles &amp; tips</a></li>
+          <% if (typeof servicesExploreLinks !== 'undefined' && servicesExploreLinks && servicesExploreLinks.length) { %>
+            <% servicesExploreLinks.forEach(function (l) { %>
+              <li><a href="<%= l.href %>"><%= l.label %></a></li>
+            <% }); %>
+          <% } %>
         </ul>
       </div>
     </div>

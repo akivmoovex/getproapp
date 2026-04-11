@@ -21,6 +21,29 @@
   var _aria = typeof ariaLabel !== 'undefined' ? String(ariaLabel) : 'Search by service and city';
   var _formExtra = typeof formExtraAttrs !== 'undefined' && formExtraAttrs ? String(formExtraAttrs) : '';
   var _preserveFeat = typeof preserveDirectoryFeatured !== 'undefined' && preserveDirectoryFeatured;
+  var _submitLabel = typeof submitLabel !== 'undefined' && submitLabel ? String(submitLabel).trim() : '';
+  if (!_submitLabel) {
+    var _formSearch = typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.form && ctaVoice.form.search ? ctaVoice.form.search : null;
+    var _hpSearch = typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.homepage ? ctaVoice.homepage : null;
+    _submitLabel = (_formSearch && _formSearch.primary) ? String(_formSearch.primary) : ((_hpSearch && _hpSearch.primary_search) ? String(_hpSearch.primary_search) : '');
+  }
+  var _sr = typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.searchRefinement ? ctaVoice.searchRefinement : null;
+  var _svcPh = (_sr && _sr.service_placeholder) ? String(_sr.service_placeholder) : '';
+  var _cityPh = (_sr && _sr.city_placeholder) ? String(_sr.city_placeholder) : '';
+  var _wmSvc = '';
+  if (_sr && _sr.suggestions && _sr.suggestions.examples && _sr.suggestions.examples.length) {
+    _wmSvc = _sr.suggestions.examples.map(function (x) { return String(x || '').trim(); }).filter(Boolean).join('|');
+  }
+  var _tenantForMeta = (typeof tenant !== 'undefined' && tenant && tenant.slug) ? String(tenant.slug) : 'global';
+  var _metaPopular = (_sr && _sr.popular && _sr.popular.length) ? _sr.popular : ['Electrician', 'Plumber', 'Tutor', 'Cleaner', 'Mechanic'];
+  var _metaRecentLabel = (_sr && _sr.recent_label) ? String(_sr.recent_label) : 'Recent searches';
+  var _metaTrendingLabel = (_sr && _sr.trending_label) ? String(_sr.trending_label) : 'Trending categories';
+  var _metaPopularLabel = (_sr && _sr.popular_label) ? String(_sr.popular_label) : 'Popular searches';
+  var _searchMetaJson = JSON.stringify({
+    tenantSlug: _tenantForMeta,
+    labels: { recent: _metaRecentLabel, trending: _metaTrendingLabel, popular: _metaPopularLabel },
+    popular: _metaPopular,
+  });
 %>
 <form
   <% if (_fid) { %>id="<%= _fid %>"<% } %>
@@ -29,6 +52,7 @@
   method="get"
   role="search"
   aria-label="<%= _aria %>"
+  data-search-meta="<%= encodeURIComponent(_searchMetaJson) %>"
   <%- _formExtra %>
 >
 <% if (_preserveFeat) { %>
@@ -44,5 +68,12 @@
   idPrefix: typeof idPrefix !== 'undefined' ? idPrefix : '',
   searchQuery: typeof searchQuery !== 'undefined' ? searchQuery : '',
   cityQuery: typeof cityQuery !== 'undefined' ? cityQuery : '',
+  submitLabel: _submitLabel,
+  servicePlaceholder: _svcPh,
+  cityPlaceholder: _cityPh,
+  serviceWatermarkRotate: _wmSvc,
 }) %>
+<% if (_sr && _sr.helper) { %>
+<p class="pro-search-form__helper muted" role="note"><%= _sr.helper %></p>
+<% } %>
 </form>

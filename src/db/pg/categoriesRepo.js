@@ -134,6 +134,59 @@ async function deleteByIdAndTenantId(pool, id, tenantId) {
  * @param {number} destTenantId
  * @param {number} srcTenantId
  */
+/**
+ * Public search typeahead: category names matching term (tenant-scoped).
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {string} term — raw user fragment (sanitized before call)
+ * @param {number} limit
+ * @returns {Promise<{ slug: string, name: string }[]>}
+ */
+async function suggestByNameIlike(pool, tenantId, term, limit = 5) {
+  const t = String(term || "")
+    .trim()
+    .replace(/[%_\\]/g, "");
+  if (t.length < 2) return [];
+  const like = `%${t}%`;
+  const prefix = `${t}%`;
+  const { rows } = await pool.query(
+    `SELECT slug, name
+     FROM public.categories
+     WHERE tenant_id = $1 AND name ILIKE $2
+     ORDER BY (name ILIKE $3) DESC, name ASC
+     LIMIT $4`,
+    [tenantId, like, prefix, limit]
+  );
+  return rows.map((r) => ({ slug: r.slug, name: r.name }));
+}
+
+/**
+ * Categories with the most public directory listings (company count), tenant-scoped.
+ * Lightweight proxy for "trending" without separate analytics tables.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} limit
+ * @returns {Promise<{ slug: string, name: string, listing_count: number }[]>}
+ */
+async function listTopByCompanyCount(pool, tenantId, limit = 5) {
+  const lim = Math.min(Math.max(Number(limit) || 5, 1), 20);
+  const { rows } = await pool.query(
+    `SELECT cat.slug, cat.name, COUNT(c.id)::int AS listing_count
+     FROM public.companies c
+     INNER JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+     WHERE c.tenant_id = $1
+     GROUP BY cat.id, cat.slug, cat.name
+     ORDER BY listing_count DESC, cat.name ASC
+     LIMIT $2`,
+    [tenantId, lim]
+  );
+  return rows.map((r) => ({
+    slug: r.slug,
+    name: r.name,
+    listing_count: r.listing_count != null ? Number(r.listing_count) : 0,
+  }));
+}
+
 async function copyFromTenantIfDestEmpty(pool, destTenantId, srcTenantId) {
   const { rows } = await pool.query(`SELECT COUNT(*)::int AS n FROM public.categories WHERE tenant_id = $1`, [
     destTenantId,
@@ -157,4 +210,6 @@ module.exports = {
   update,
   deleteByIdAndTenantId,
   copyFromTenantIfDestEmpty,
+  suggestByNameIlike,
+  listTopByCompanyCount,
 };

@@ -327,6 +327,10 @@ app.use(opsHrefMiddleware);
 
 // API and admin before tenant catch-alls so /api and /admin are not handled by public router
 app.use("/api", apiRoutes());
+app.use("/admin", (req, res, next) => {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  next();
+});
 app.use("/admin", adminRoutes({ db }));
 
 // Healthcheck (with DEBUG_HOST=1, see also /api/debug/host)
@@ -407,6 +411,7 @@ app.use("/na", (req, res) => redirectPathToTenantHost(req, res, "/na", "na"));
 
 /** Public entry to admin login (same form as `/admin/login`, with Cancel). */
 app.get("/getpro-admin", (req, res) => {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
   const scheme = process.env.PUBLIC_SCHEME || "https";
   const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
   if (req.subdomain && !req.isPlatformTenant) {

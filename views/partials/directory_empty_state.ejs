@@ -16,6 +16,62 @@
   var _tid = _tenant && _tenant.id ? Number(_tenant.id) : 0;
   var _tslug = _tenant && _tenant.slug ? String(_tenant.slug) : '';
 %>
+<% var _es = (typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.emptyState) ? ctaVoice.emptyState : {}; %>
+<% var _sr = (typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.searchRefinement) ? ctaVoice.searchRefinement : null; %>
+<% var _fcb = (typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.form && ctaVoice.form.contact && ctaVoice.form.contact.sending_loading) ? ctaVoice.form.contact.sending_loading : ((_es.callback_loading) ? _es.callback_loading : 'Sending request…'); %>
+<% 
+  var _title = '';
+  var _body = '';
+  var _ctaLabel = '';
+  var _ctaHref = _tp + '/directory';
+  var _showInlineCta = false;
+  if (_dirFeatOnly && _mode === 'directory') {
+    _title = (_es.no_featured && _es.no_featured.title) ? _es.no_featured.title : 'No featured service providers match';
+    _body = (_es.no_featured && _es.no_featured.body) ? _es.no_featured.body : '';
+    _ctaLabel = (_es.no_featured && _es.no_featured.cta) ? _es.no_featured.cta : '';
+    _showInlineCta = !!_ctaLabel;
+  } else if (_mode === 'category') {
+    _title = (_es.no_category_results && _es.no_category_results.title) ? _es.no_category_results.title : 'No listings in this category yet';
+    _body = (_es.no_category_results && _es.no_category_results.body) ? _es.no_category_results.body : '';
+  } else if (q && city) {
+    var _tic = (_es.no_service_in_city && _es.no_service_in_city.title) ? _es.no_service_in_city.title : 'No {service} found in {city}';
+    _title = String(_tic).replace(/\{service\}/g, q).replace(/\{city\}/g, city);
+    _body = (_es.no_results && _es.no_results.body) ? _es.no_results.body : '';
+    _ctaLabel = (_es.no_results && _es.no_results.cta) ? _es.no_results.cta : '';
+    _showInlineCta = !!_ctaLabel;
+  } else if (q && !city) {
+    var _tso = (_es.no_service_only && _es.no_service_only.title) ? _es.no_service_only.title : 'No results for {service}';
+    _title = String(_tso).replace(/\{service\}/g, q);
+    _body = (_es.no_results && _es.no_results.body) ? _es.no_results.body : '';
+    _ctaLabel = (_es.no_results && _es.no_results.cta) ? _es.no_results.cta : '';
+    _showInlineCta = !!_ctaLabel;
+  } else if (!q && city && catLabel) {
+    var _tcc = (_es.no_category_city && _es.no_category_city.title) ? _es.no_category_city.title : 'No {category} found in {city}';
+    _title = String(_tcc).replace(/\{category\}/g, catLabel).replace(/\{city\}/g, city);
+    _body = (_es.no_category_city && _es.no_category_city.body) ? _es.no_category_city.body : '';
+    _ctaLabel = (_es.no_category_city && _es.no_category_city.cta) ? _es.no_category_city.cta : '';
+    _showInlineCta = !!_ctaLabel;
+  } else if (!q && city && !catLabel) {
+    _title = (_es.no_city_results && _es.no_city_results.title) ? _es.no_city_results.title : 'No professionals found in ' + city;
+    _body = (_es.no_city_results && _es.no_city_results.body) ? _es.no_city_results.body : '';
+    _ctaLabel = (_es.no_city_results && _es.no_city_results.cta) ? _es.no_city_results.cta : '';
+    _ctaHref = '#' + _toolbarId;
+    _showInlineCta = !!_ctaLabel;
+  } else if (!q && !city && catLabel) {
+    var _twn = (_es.no_category_results && _es.no_category_results.title_with_name) ? _es.no_category_results.title_with_name : '';
+    _title = _twn
+      ? String(_twn).replace(/\{category\}/g, catLabel)
+      : ((_es.no_category_results && _es.no_category_results.title) ? _es.no_category_results.title : ('No ' + catLabel + ' listings yet'));
+    _body = (_es.no_category_results && _es.no_category_results.body) ? _es.no_category_results.body : '';
+    _ctaLabel = (_es.no_category_results && _es.no_category_results.cta) ? _es.no_category_results.cta : '';
+    _showInlineCta = !!_ctaLabel;
+  } else {
+    _title = (_es.no_results && _es.no_results.title) ? _es.no_results.title : 'No professionals found for your search';
+    _body = (_es.no_results && _es.no_results.body) ? _es.no_results.body : '';
+    _ctaLabel = (_es.no_results && _es.no_results.cta) ? _es.no_results.cta : '';
+    _showInlineCta = !!_ctaLabel;
+  }
+%>
 <% 
   var ctxParts = ['dir_nores'];
   if (_mode === 'category' && _catName) ctxParts.push('cat:' + _catName.replace(/\|/g, ' '));
@@ -38,43 +94,44 @@
 <div class="card pro-directory-empty pro-directory-empty--rich" role="status">
   <div class="pro-directory-empty__inner">
     <div id="directory-empty-message-block">
-    <% if (_dirFeatOnly && _mode === 'directory') { %>
-      <h2 class="pro-directory-empty__title">No featured service providers match</h2>
-      <p class="pro-directory-empty__hint muted">
-        There are no featured listings yet, or none match these filters. A <strong>super admin</strong> or <strong>tenant manager</strong> can mark providers as featured under <strong>Admin → Settings → Service providers</strong>. Try different search terms or check back later.
-      </p>
-    <% } else if (_mode === 'category') { %>
-      <h2 class="pro-directory-empty__title">
-        <% if (_catName) { %>
-          No <%= _catName %> listings yet
-        <% } else { %>
-          No listings in this category yet
-        <% } %>
-      </h2>
-    <% } else if (q && city) { %>
-      <h2 class="pro-directory-empty__title">No <%= q %> found in <%= city %></h2>
-    <% } else if (q && !city) { %>
-      <h2 class="pro-directory-empty__title">No results for <%= q %></h2>
-    <% } else if (!q && city && catLabel) { %>
-      <h2 class="pro-directory-empty__title">No <%= catLabel %> in <%= city %></h2>
-    <% } else if (!q && city && !catLabel) { %>
-      <h2 class="pro-directory-empty__title">No professionals found in <%= city %></h2>
-    <% } else if (!q && !city && catLabel) { %>
-      <h2 class="pro-directory-empty__title">No <%= catLabel %> listings yet</h2>
-    <% } else { %>
-      <h2 class="pro-directory-empty__title">No professionals found for your search</h2>
+      <h2 class="pro-directory-empty__title"><%= _title %></h2>
+
+    <% if (_body) { %>
+      <p class="pro-directory-empty__hint pro-directory-empty__body muted"><%= _body %></p>
     <% } %>
 
     <% if (!_dirFeatOnly) { %>
-    <p class="pro-directory-empty__hint muted">
-      Leave your details and we&rsquo;ll help connect you with a suitable professional.
+    <p class="pro-directory-empty__hint muted"><%= (_es.lead_capture_hint) ? _es.lead_capture_hint : 'Leave your details and we&rsquo;ll help connect you with a suitable professional.' %></p>
+    <% } %>
+
+    <% if (_mode === 'directory' && _showInlineCta && _ctaLabel) { %>
+    <p class="pro-directory-empty__primary-cta muted">
+      <a href="<%= _ctaHref %>" class="pro-directory-empty__cta-link"><%= _ctaLabel %></a>
     </p>
     <% } %>
 
     <p class="pro-directory-empty__edit-search muted">
-      <a class="pro-directory-empty__edit-search-link" href="#<%= _toolbarId %>">Jump to search</a>
-      to change your filters.
+      <a class="pro-directory-empty__edit-search-link" href="#<%= _toolbarId %>"><%= (_es.jump_to_search) ? _es.jump_to_search : 'Jump to search' %></a>
+      <%= (_es.jump_to_search_suffix) ? _es.jump_to_search_suffix : 'to change your filters.' %>
     </p>
+
+    <% if (_sr && _sr.suggestions && _sr.suggestions.title && _sr.suggestions.examples && _sr.suggestions.examples.length) { %>
+    <div class="pro-directory-empty__refine-suggestions muted" aria-label="Search ideas">
+      <p class="pro-directory-empty__refine-suggestions-title"><%= _sr.suggestions.title %></p>
+      <ul class="pro-directory-empty__refine-suggestions-list">
+        <% _sr.suggestions.examples.forEach(function (ex) { %>
+        <li><a href="<%= _tp %>/directory?q=<%= encodeURIComponent(ex) %>"><%= ex %></a></li>
+        <% }); %>
+      </ul>
+    </div>
+    <% } %>
+    <% if (_sr && _sr.refinement_hints && _sr.refinement_hints.length) { %>
+    <ul class="pro-directory-empty__refine-hints muted" aria-label="Refinement tips">
+      <% _sr.refinement_hints.forEach(function (h) { %>
+      <li><%= h %></li>
+      <% }); %>
+    </ul>
+    <% } %>
 
     <% if (_mode === 'category' && (_hasAltCats || _hasAltCities)) { %>
     <div class="pro-directory-empty__suggestions" aria-label="Suggested searches">
@@ -120,7 +177,7 @@
       <div class="pro-directory-empty__callback-panel" id="directory-empty-callback-panel">
         <%- include('components/loading_block', {
           id: 'directory-empty-callback-loading',
-          message: 'Sending request…',
+          message: _fcb,
           hidden: true,
           compact: true,
           extraClass: 'pro-directory-empty__callback-loading'
@@ -168,8 +225,8 @@
 
     <% if (_mode === 'category') { %>
     <div class="pro-directory-empty__actions" id="directory-empty-footer-actions">
-      <%- include('components/button', { variant: 'text', href: _tp + '/directory', label: 'All categories' }) %>
-      <%- include('components/button', { variant: 'secondary', href: '#' + _toolbarId, label: 'Refine search' }) %>
+      <%- include('components/button', { variant: 'text', href: _tp + '/directory', label: ((_es.no_category_results && _es.no_category_results.cta) ? _es.no_category_results.cta : 'All categories') }) %>
+      <%- include('components/button', { variant: 'secondary', href: '#' + _toolbarId, label: (_es.refine_search) ? _es.refine_search : 'Refine search' }) %>
     </div>
     <% } %>
   </div>

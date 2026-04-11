@@ -6,8 +6,8 @@
 %>
 
 <nav class="wf-home-sidebar-nav wf-home-sidebar-nav--primary" aria-label="Primary">
-  <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/directory?home_featured=1') %>">Search directory</a>
-  <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/join') %>" data-wf-join-us-open>List your business</a>
+  <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/directory?home_featured=1') %>"><%= (typeof ctaVoice !== 'undefined' && ctaVoice.homepage && ctaVoice.homepage.nav_drawer_search) ? ctaVoice.homepage.nav_drawer_search : 'Search directory' %></a>
+  <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/join') %>" data-wf-join-us-open><%= (typeof ctaVoice !== 'undefined' && ctaVoice.homepage && ctaVoice.homepage.nav_drawer_join) ? ctaVoice.homepage.nav_drawer_join : 'List your business' %></a>
   <a class="wf-home-nav-btn wf-home-nav-btn--ghost wf-home-nav-btn--my-getpro" href="<%= _op('/login') %>">
     <span class="wf-home-nav-btn__text">My <%= _bn %></span>
     <span class="wf-home-nav-btn__sub">Enter your account.</span>

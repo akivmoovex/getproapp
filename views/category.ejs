@@ -1,6 +1,6 @@
 <!doctype html>
 <% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
-<html lang="en">
+<html lang="<%= typeof htmlLang !== 'undefined' ? htmlLang : 'en' %>" dir="<%= typeof htmlDir !== 'undefined' ? htmlDir : 'ltr' %>">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -9,7 +9,8 @@
       seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : ('Browse ' + category.name + ' professionals on ' + _bn + '.'),
       canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
       ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
-      ogType: 'website'
+      ogType: 'website',
+      hreflangAlternates: typeof hreflangAlternates !== 'undefined' ? hreflangAlternates : []
     }) %>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>

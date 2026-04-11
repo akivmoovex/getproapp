@@ -1,6 +1,6 @@
 <!doctype html>
 <% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
-<html lang="en">
+<html lang="<%= typeof htmlLang !== 'undefined' ? htmlLang : 'en' %>" dir="<%= typeof htmlDir !== 'undefined' ? htmlDir : 'ltr' %>">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -9,8 +9,14 @@
       seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : ('Browse verified professionals on ' + _bn + '.'),
       canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
       ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
-      ogType: 'website'
+      ogImage: typeof ogImage !== 'undefined' ? ogImage : '',
+      ogType: typeof ogType !== 'undefined' && ogType ? ogType : 'website',
+      noindex: typeof noindex !== 'undefined' && noindex,
+      hreflangAlternates: typeof hreflangAlternates !== 'undefined' ? hreflangAlternates : []
     }) %>
+    <% if (typeof jsonLdDirectory !== 'undefined' && jsonLdDirectory) { %>
+    <script type="application/ld+json"><%- jsonLdDirectory %></script>
+    <% } %>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="<%= tenant.themeClass %>" data-screen-role="results">
@@ -21,6 +27,9 @@
       <div class="app-layout__main">
         <%- include('partials/unsupported_country_banner') %>
         <%- include('partials/components/container_start', { extraClass: 'directory-page directory-page-toolbar' }) %>
+      <% if (typeof directoryPageH1 !== 'undefined' && directoryPageH1) { %>
+        <h1 class="section-title section-title--flush" style="margin-bottom: 0.75rem; font-size: clamp(1.25rem, 2.5vw, 1.5rem)"><%= directoryPageH1 %></h1>
+      <% } %>
       <% var activeCatLabel = ''; %>
       <% if (typeof selectedCategory !== 'undefined' && selectedCategory) { %>
         <% (categories || []).forEach(function(c) { if (c.slug === selectedCategory) activeCatLabel = c.name; }); %>

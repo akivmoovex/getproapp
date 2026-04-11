@@ -1,9 +1,12 @@
 /**
  * Combobox autocomplete from first character; optional typewriter watermark on empty fields.
- * Service list: GET /data/tenant-search-lists.json (static base list + tenant category names).
+ * Service list: GET /data/tenant-search-lists.json (static base list + tenant category names + trending categories).
  */
 (function () {
-  const LIST_URL = "/data/tenant-search-lists.json?v=20260411a";
+  const LIST_URL = "/data/tenant-search-lists.json?v=20260411d";
+  const TYPEAHEAD_URL = "/data/search-suggestions.json";
+  const TYPEAHEAD_MIN_LEN = 2;
+  const TYPEAHEAD_DEBOUNCE_MS = 200;
 
   const TYPE_MS = 95;
   const PAUSE_END_MS = 1600;
@@ -33,6 +36,123 @@
       if (norm(pool[i]) === n) return pool[i];
     }
     return null;
+  }
+
+  /** Best canonical value from pool for a typed fragment (exact, else first prefix match). */
+  function pickFromPool(pool, raw) {
+    const t = String(raw || "").trim();
+    if (!t) return "";
+    const ex = exactMatch(pool, t);
+    if (ex) return ex;
+    const f = filterPool(pool, t);
+    if (f.length >= 1) return f[0];
+    return "";
+  }
+
+  const RECENT_KEY_PREFIX = "getpro:recentSearch:v1:";
+
+  function recentStorageKey(tenantSlug) {
+    return RECENT_KEY_PREFIX + (tenantSlug || "global");
+  }
+
+  function loadRecentEntries(tenantSlug) {
+    try {
+      const raw = localStorage.getItem(recentStorageKey(tenantSlug));
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveRecentEntries(tenantSlug, entries) {
+    try {
+      localStorage.setItem(recentStorageKey(tenantSlug), JSON.stringify(entries));
+    } catch {
+      /* quota / private mode */
+    }
+  }
+
+  function pushRecentEntry(tenantSlug, entry) {
+    const q = String(entry.q || "").trim();
+    const city = String(entry.city || "").trim();
+    const category = String(entry.category || "").trim();
+    if (!q && !city && !category) return;
+    let list = loadRecentEntries(tenantSlug);
+    list = list.filter(
+      (x) =>
+        !(
+          norm(x.q) === norm(q) &&
+          norm(x.city) === norm(city) &&
+          String(x.category || "").trim() === category
+        )
+    );
+    list.unshift({ q, city, category });
+    list = list.slice(0, 5);
+    saveRecentEntries(tenantSlug, list);
+  }
+
+  function readSearchMeta(form) {
+    const raw = form && form.getAttribute("data-search-meta");
+    if (!raw) return null;
+    try {
+      return JSON.parse(decodeURIComponent(raw));
+    } catch {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  function getCategoryFromForm(form) {
+    const sel = form.querySelector('select[name="category"]');
+    if (sel) return String(sel.value || "").trim();
+    const hid = form.querySelector('input[type="hidden"][name="category"]');
+    return hid ? String(hid.value || "").trim() : "";
+  }
+
+  function saveRecentFromForm(form) {
+    const meta = readSearchMeta(form);
+    if (!meta) return;
+    const tenantSlug = meta.tenantSlug || "global";
+    const sWrap = form.querySelector('.pro-ac[data-ac-list="service"]');
+    const cWrap = form.querySelector('.pro-ac[data-ac-list="city"]');
+    const sIn = sWrap ? sWrap.querySelector(".pro-ac-input") : null;
+    const cIn = cWrap ? cWrap.querySelector(".pro-ac-input") : null;
+    const q = sIn ? sIn.value.trim() : "";
+    const city = cIn ? cIn.value.trim() : "";
+    const category = getCategoryFromForm(form);
+    pushRecentEntry(tenantSlug, { q, city, category });
+  }
+
+  function escapeHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  /** Highlight first case-insensitive match of q in text (for typeahead rows). */
+  function highlightMatch(text, qRaw) {
+    const t = String(text || "");
+    const q = String(qRaw || "").trim();
+    const nq = norm(q);
+    if (!nq) return escapeHtml(t);
+    const lower = t.toLowerCase();
+    const idx = lower.indexOf(nq);
+    if (idx < 0) return escapeHtml(t);
+    const len = q.length;
+    return (
+      escapeHtml(t.slice(0, idx)) +
+      '<mark class="pro-ac-mark">' +
+      escapeHtml(t.slice(idx, idx + len)) +
+      "</mark>" +
+      escapeHtml(t.slice(idx + len))
+    );
   }
 
   function initTypewriterWatermark(wrap, input, hidden, phrase, startDelayMs) {
@@ -252,6 +372,8 @@
     const msg = wrap.querySelector(".pro-ac-msg");
     if (!input || !hidden || !dropdown) return;
 
+    const useTypeahead = kind === "service" && wrap.getAttribute("data-ac-typeahead") === "1";
+
     const rotateRaw = wrap.getAttribute("data-watermark-rotate");
     const rotatePhrases = rotateRaw
       ? rotateRaw
@@ -276,6 +398,14 @@
     let open = false;
     let items = [];
     let activeIndex = -1;
+    /** @type {'pool' | 'typeahead' | 'empty'} */
+    let dropdownMode = "pool";
+    /** @type {{ url: string }[]} */
+    let typeaheadNav = [];
+    /** @type {HTMLElement[]} */
+    let emptyNavEls = [];
+    let typeaheadGen = 0;
+    let typeaheadTimer = null;
 
     function setMsg(text) {
       if (!msg) return;
@@ -294,11 +424,19 @@
     }
 
     function closeDropdown() {
+      if (typeaheadTimer) {
+        clearTimeout(typeaheadTimer);
+        typeaheadTimer = null;
+      }
+      typeaheadGen += 1;
       dropdown.innerHTML = "";
       dropdown.hidden = true;
       open = false;
       activeIndex = -1;
       items = [];
+      typeaheadNav = [];
+      emptyNavEls = [];
+      dropdownMode = "pool";
       input.setAttribute("aria-expanded", "false");
     }
 
@@ -320,7 +458,277 @@
       });
       dropdown.hidden = items.length === 0;
       open = items.length > 0;
+      dropdownMode = "pool";
       input.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    function renderTypeaheadRows(cats, provs, q) {
+      dropdown.innerHTML = "";
+      typeaheadNav = [];
+      let navIdx = 0;
+
+      function appendGroup(label) {
+        const g = document.createElement("li");
+        g.className = "pro-ac-group";
+        g.setAttribute("role", "presentation");
+        g.textContent = label;
+        dropdown.appendChild(g);
+      }
+
+      function appendNavRow(url, htmlInner) {
+        const li = document.createElement("li");
+        const isActive = navIdx === activeIndex;
+        li.className = "pro-ac-option pro-ac-option--nav" + (isActive ? " is-active" : "");
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-selected", isActive ? "true" : "false");
+        li.dataset.navUrl = url;
+        li.innerHTML = htmlInner;
+        li.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+        });
+        li.addEventListener("click", () => {
+          window.location.assign(url);
+        });
+        typeaheadNav.push({ url });
+        dropdown.appendChild(li);
+        navIdx += 1;
+      }
+
+      if (cats && cats.length) {
+        appendGroup("Categories");
+        cats.forEach((c) => {
+          const lab = c.label || c.name || "";
+          appendNavRow(c.url, highlightMatch(lab, q));
+        });
+      }
+      if (provs && provs.length) {
+        appendGroup("Providers");
+        provs.forEach((c) => {
+          const lab = c.name || "";
+          appendNavRow(c.url, highlightMatch(lab, q));
+        });
+      }
+
+      dropdown.hidden = typeaheadNav.length === 0;
+      open = typeaheadNav.length > 0;
+      dropdownMode = "typeahead";
+      input.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    function refreshTypeaheadActive() {
+      const opts = dropdown.querySelectorAll(".pro-ac-option--nav");
+      opts.forEach((el, i) => {
+        const on = i === activeIndex;
+        el.classList.toggle("is-active", on);
+        el.setAttribute("aria-selected", on ? "true" : "false");
+      });
+    }
+
+    function runTypeaheadFetch(q) {
+      const myGen = ++typeaheadGen;
+      fetch(TYPEAHEAD_URL + "?q=" + encodeURIComponent(q))
+        .then((r) => {
+          if (!r.ok) throw new Error(String(r.status));
+          return r.json();
+        })
+        .then((data) => {
+          if (myGen !== typeaheadGen) return;
+          const cats = data.categories || [];
+          const provs = data.providers || [];
+          if (cats.length === 0 && provs.length === 0) {
+            items = filterPool(pool, q);
+            activeIndex = items.length > 0 ? 0 : -1;
+            renderItems();
+            return;
+          }
+          activeIndex = 0;
+          renderTypeaheadRows(cats, provs, q);
+        })
+        .catch(() => {
+          if (myGen !== typeaheadGen) return;
+          items = filterPool(pool, q);
+          activeIndex = items.length > 0 ? 0 : -1;
+          renderItems();
+        });
+    }
+
+    function refreshEmptyActive() {
+      emptyNavEls.forEach((el, i) => {
+        const on = i === activeIndex;
+        el.classList.toggle("is-active", on);
+        el.setAttribute("aria-selected", on ? "true" : "false");
+      });
+    }
+
+    function renderEmptyPanel() {
+      if (!useTypeahead) return;
+      typeaheadGen += 1;
+      if (typeaheadTimer) {
+        clearTimeout(typeaheadTimer);
+        typeaheadTimer = null;
+      }
+      const form = wrap.closest("form");
+      if (!form) return;
+      const meta = readSearchMeta(form) || {
+        tenantSlug: "global",
+        labels: {
+          recent: "Recent searches",
+          trending: "Trending categories",
+          popular: "Popular searches",
+        },
+        popular: ["Electrician", "Plumber", "Tutor", "Cleaner", "Mechanic"],
+      };
+      const tenantSlug = meta.tenantSlug || "global";
+      const recents = loadRecentEntries(tenantSlug).filter(
+        (e) =>
+          String(e.q || "").trim() || String(e.city || "").trim() || String(e.category || "").trim()
+      );
+      const trending = Array.isArray(lists.trendingCategories) ? lists.trendingCategories : [];
+      const popular = Array.isArray(meta.popular) ? meta.popular : [];
+      const labels = meta.labels || {};
+
+      dropdown.innerHTML = "";
+      emptyNavEls = [];
+      typeaheadNav = [];
+      items = [];
+      activeIndex = 0;
+
+      function appendGroup(label) {
+        const g = document.createElement("li");
+        g.className = "pro-ac-group";
+        g.setAttribute("role", "presentation");
+        g.textContent = label;
+        dropdown.appendChild(g);
+      }
+
+      function appendRow(text, onActivate) {
+        const li = document.createElement("li");
+        const idx = emptyNavEls.length;
+        const isActive = idx === activeIndex;
+        li.className = "pro-ac-option pro-ac-option--empty" + (isActive ? " is-active" : "");
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-selected", isActive ? "true" : "false");
+        li.textContent = text;
+        li.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+        });
+        li.addEventListener("click", onActivate);
+        emptyNavEls.push(li);
+        dropdown.appendChild(li);
+      }
+
+      function appendTrendingNavRow(name, url) {
+        const li = document.createElement("li");
+        const idx = emptyNavEls.length;
+        const isActive = idx === activeIndex;
+        li.className = "pro-ac-option pro-ac-option--nav" + (isActive ? " is-active" : "");
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-selected", isActive ? "true" : "false");
+        li.textContent = name;
+        li.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+        });
+        li.addEventListener("click", () => {
+          window.location.assign(url);
+        });
+        emptyNavEls.push(li);
+        dropdown.appendChild(li);
+      }
+
+      function applyEntry(entry) {
+        const sWrap = form.querySelector('.pro-ac[data-ac-list="service"]');
+        const cWrap = form.querySelector('.pro-ac[data-ac-list="city"]');
+        const sIn = sWrap ? sWrap.querySelector(".pro-ac-input") : null;
+        const sHid = sWrap ? sWrap.querySelector(".pro-ac-hidden") : null;
+        const cIn = cWrap ? cWrap.querySelector(".pro-ac-input") : null;
+        const cHid = cWrap ? cWrap.querySelector(".pro-ac-hidden") : null;
+        const catSel = form.querySelector('select[name="category"]');
+        const catHid = form.querySelector('input[type="hidden"][name="category"]');
+
+        const qRaw = String(entry.q || "").trim();
+        const cityRaw = String(entry.city || "").trim();
+        const catRaw = String(entry.category || "").trim();
+
+        const svcPick = pickFromPool(lists.services, qRaw);
+        if (sIn && sHid) {
+          if (svcPick) {
+            sIn.value = svcPick;
+            sHid.value = svcPick;
+            sHid.dataset.valid = "1";
+          } else if (qRaw) {
+            sIn.value = qRaw;
+            sHid.value = "";
+            delete sHid.dataset.valid;
+          } else {
+            sIn.value = "";
+            sHid.value = "";
+            delete sHid.dataset.valid;
+          }
+        }
+
+        const cityPick = pickFromPool(lists.cities, cityRaw);
+        if (cIn && cHid) {
+          if (cityPick) {
+            cIn.value = cityPick;
+            cHid.value = cityPick;
+            cHid.dataset.valid = "1";
+          } else if (!cityRaw) {
+            cIn.value = "";
+            cHid.value = "";
+            delete cHid.dataset.valid;
+          } else {
+            cIn.value = cityRaw;
+            cHid.value = "";
+            delete cHid.dataset.valid;
+          }
+        }
+
+        if (catSel) catSel.value = catRaw || "";
+        if (catHid && !catSel) catHid.value = catRaw || "";
+
+        closeDropdown();
+        form.submit();
+      }
+
+      if (recents.length) {
+        appendGroup(labels.recent || "Recent searches");
+        recents.forEach((r) => {
+          const parts = [];
+          if (String(r.q || "").trim()) parts.push(String(r.q).trim());
+          if (String(r.city || "").trim()) parts.push(String(r.city).trim());
+          if (String(r.category || "").trim()) parts.push(String(r.category).trim());
+          const label = parts.join(" · ") || String(r.q || "").trim();
+          appendRow(label, () => applyEntry(r));
+        });
+      }
+
+      if (trending.length) {
+        appendGroup(labels.trending || "Trending categories");
+        trending.forEach((t) => {
+          const name = String((t && t.name) || "").trim();
+          const url = String((t && t.url) || "").trim();
+          if (!name || !url) return;
+          appendTrendingNavRow(name, url);
+        });
+      } else if (popular.length) {
+        appendGroup(labels.popular || "Popular searches");
+        popular.forEach((p) => {
+          const lab = String(p || "").trim();
+          if (!lab) return;
+          appendRow(lab, () => applyEntry({ q: lab, city: "", category: "" }));
+        });
+      }
+
+      if (emptyNavEls.length === 0) {
+        closeDropdown();
+        return;
+      }
+
+      dropdown.hidden = false;
+      open = true;
+      dropdownMode = "empty";
+      input.setAttribute("aria-expanded", "true");
+      refreshEmptyActive();
     }
 
     function select(text) {
@@ -337,7 +745,19 @@
       setMsg("");
       const q = input.value;
       if (q.length < 1) {
-        closeDropdown();
+        if (useTypeahead && document.activeElement === input) {
+          renderEmptyPanel();
+        } else {
+          closeDropdown();
+        }
+        return;
+      }
+      if (useTypeahead && q.length >= TYPEAHEAD_MIN_LEN) {
+        if (typeaheadTimer) clearTimeout(typeaheadTimer);
+        typeaheadTimer = setTimeout(() => {
+          typeaheadTimer = null;
+          runTypeaheadFetch(q);
+        }, TYPEAHEAD_DEBOUNCE_MS);
         return;
       }
       items = filterPool(pool, q);
@@ -345,12 +765,61 @@
       renderItems();
     });
 
+    input.addEventListener("focus", () => {
+      if (useTypeahead && !String(input.value || "").trim()) {
+        renderEmptyPanel();
+      }
+    });
+
     input.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         closeDropdown();
         return;
       }
-      if (!open || items.length === 0) {
+
+      if (useTypeahead && dropdownMode === "typeahead" && typeaheadNav.length > 0 && open) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          activeIndex = (activeIndex + 1) % typeaheadNav.length;
+          refreshTypeaheadActive();
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          activeIndex = (activeIndex - 1 + typeaheadNav.length) % typeaheadNav.length;
+          refreshTypeaheadActive();
+          return;
+        }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const t = typeaheadNav[activeIndex];
+          if (t && t.url) window.location.assign(t.url);
+          return;
+        }
+      }
+
+      if (useTypeahead && dropdownMode === "empty" && emptyNavEls.length > 0 && open) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          activeIndex = (activeIndex + 1) % emptyNavEls.length;
+          refreshEmptyActive();
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          activeIndex = (activeIndex - 1 + emptyNavEls.length) % emptyNavEls.length;
+          refreshEmptyActive();
+          return;
+        }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const li = emptyNavEls[activeIndex];
+          if (li) li.click();
+          return;
+        }
+      }
+
+      if (!open || (dropdownMode === "pool" && items.length === 0)) {
         if (e.key === "ArrowDown" || e.key === "ArrowUp") {
           if (input.value.length >= 1) {
             items = filterPool(pool, input.value);
@@ -360,6 +829,8 @@
         }
         return;
       }
+      if (dropdownMode !== "pool") return;
+
       if (e.key === "ArrowDown") {
         e.preventDefault();
         activeIndex = (activeIndex + 1) % items.length;
@@ -433,6 +904,7 @@
         e.preventDefault();
         return;
       }
+      saveRecentFromForm(form);
     });
   }
 

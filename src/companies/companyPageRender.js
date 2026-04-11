@@ -2,6 +2,13 @@ const QRCode = require("qrcode");
 const { getTenantByIdAsync, DEFAULT_TENANT_SLUG } = require("../tenants");
 const { TENANT_ZM } = require("../tenants/tenantIds");
 const { getTenantContactSupportAsync } = require("../tenants/tenantContactSupport");
+const { getClientCountryCode } = require("../platform/host");
+const { PRODUCT_NAME } = require("../platform/branding");
+const { buildProviderMiniSiteSeo } = require("./providerSeoFallback");
+const { getSeoLocale } = require("../seo/seoLocale");
+const { getSeoVoiceProfile } = require("../seo/seoVoice");
+const { getCtaVoiceProfile } = require("../seo/ctaVoice");
+const { buildCompanyJsonLd } = require("./companyJsonLd");
 const {
   parseGalleryJson,
   formatReviewDateLabel,
@@ -184,9 +191,23 @@ async function buildCompanyPageLocals(req, company, options = {}) {
 
   const supportLocals = await getTenantContactSupportAsync(pool, co.tenant_id);
 
-  return {
+  const categoryObj = co.category_slug ? { slug: co.category_slug, name: co.category_name } : null;
+  const providerSeo = buildProviderMiniSiteSeo({
     company: co,
-    category: co.category_slug ? { slug: co.category_slug, name: co.category_name } : null,
+    category: categoryObj,
+    tenantName: tenant.name,
+    productName: PRODUCT_NAME,
+    reviewCount: extras.review_count,
+    avgRating: extras.avg_rating,
+    clientCountryCode: getClientCountryCode(req),
+    seoLocale: getSeoLocale(req),
+    seoVoice: getSeoVoiceProfile(req),
+    ctaVoice: getCtaVoiceProfile(req),
+  });
+
+  const pageLocals = {
+    company: co,
+    category: categoryObj,
     ...extras,
     baseDomain,
     companyUrl,
@@ -203,7 +224,15 @@ async function buildCompanyPageLocals(req, company, options = {}) {
     companyPortalPersonnel: companyPortalPersonnel || null,
     activeCompanyNav: activeCompanyNav || "",
     providerPortalBasePath: providerPortalBasePath || "/company",
+    seoTitle: providerSeo.seoTitle,
+    seoDescription: providerSeo.seoDescription,
+    showProviderSeoIntro: providerSeo.showProviderSeoIntro,
+    providerSeoIntro: providerSeo.providerSeoIntro,
+    providerSchemaDescription: providerSeo.providerSchemaDescription,
+    providerSeoUsedAuto: providerSeo.providerSeoUsedAuto,
   };
+  pageLocals.jsonLdCompany = buildCompanyJsonLd(req, pageLocals);
+  return pageLocals;
 }
 
 module.exports = {

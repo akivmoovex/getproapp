@@ -1,6 +1,6 @@
 <!doctype html>
 <% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
-<html lang="en">
+<html lang="<%= typeof htmlLang !== 'undefined' ? htmlLang : 'en' %>" dir="<%= typeof htmlDir !== 'undefined' ? htmlDir : 'ltr' %>">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -10,7 +10,8 @@
       canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
       ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
       ogImage: typeof ogImage !== 'undefined' ? ogImage : '',
-      ogType: 'website'
+      ogType: typeof ogType !== 'undefined' && ogType ? ogType : 'website',
+      hreflangAlternates: typeof hreflangAlternates !== 'undefined' ? hreflangAlternates : []
     }) %>
     <% if (typeof orgJsonLd !== 'undefined' && orgJsonLd) { %>
     <script type="application/ld+json"><%- orgJsonLd %></script>
@@ -99,7 +100,7 @@
               <span class="gp-home-story__eyebrow">WHY USE PRO-ONLINE</span>
               <h2 id="gp-home-story-title" class="gp-home-story__title">Find the right local pro</h2>
               <p class="gp-home-story__desc">
-                Search by service and city to discover relevant providers near you and contact the best fit faster.
+                <%= (typeof ctaVoice !== 'undefined' && ctaVoice.homepage && ctaVoice.homepage.story_helper) ? ctaVoice.homepage.story_helper : 'Search by service and city to discover relevant providers near you and contact the best fit faster.' %>
               </p>
             </div>
 
@@ -264,7 +265,7 @@
               <div class="gp-home-provider__actions">
                 <%- include('partials/components/button', {
                   variant: 'secondary',
-                  text: 'Join as a provider',
+                  text: (typeof ctaVoice !== 'undefined' && ctaVoice.homepage && ctaVoice.homepage.secondary_join) ? ctaVoice.homepage.secondary_join : 'Join as a provider',
                   className: '',
                   extraAttrs: 'type="button" data-wf-join-us-open',
                 }) %>
@@ -294,7 +295,7 @@
     {
       theme: 1,
       title: 'Find the right local pro',
-      text: 'Search by service and city to discover relevant providers near you and contact the best fit faster.'
+      text: <%- JSON.stringify((typeof ctaVoice !== 'undefined' && ctaVoice.homepage && ctaVoice.homepage.story_helper) ? ctaVoice.homepage.story_helper : 'Search by service and city to discover relevant providers near you and contact the best fit faster.') %>
     },
     {
       theme: 2,

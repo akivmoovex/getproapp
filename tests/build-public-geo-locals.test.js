@@ -74,10 +74,18 @@ test("E2: res.render(\"directory\" block does not assign homepageOpsHref", () =>
   assert.ok(!slice.includes("homepageOpsHref"), "directory render must not inject homepageOpsHref");
 });
 
-test("F: GET /directory handler has no country-based redirect", () => {
+test("F: GET /directory handler does not redirect on visitor country/geo", () => {
   const s = fs.readFileSync(path.join(__dirname, "../src/routes/public.js"), "utf8");
   const m = s.match(/router\.get\("\/directory"[\s\S]*?^\s*\}\);/m);
   assert.ok(m, "expected router.get(\"/directory\") block");
   const block = m[0];
-  assert.ok(!/redirect\s*\(/i.test(block), "directory must not redirect on geo");
+  const redir = block.match(/return\s+res\.redirect\s*\([\s\S]*?\)\s*;/g);
+  if (redir) {
+    for (const r of redir) {
+      assert.ok(
+        !/getClientCountryCode|isApexHost|unsupported_country|regionChoices/i.test(r),
+        "directory redirect must not be driven by geo/region locals"
+      );
+    }
+  }
 });

@@ -23,6 +23,17 @@ const contentPagesRepo = require("../db/pg/contentPagesRepo");
 const { homepageOperationalHref } = require("../lib/marketingOperationalUrls");
 const { getClientCountryCode } = require("../platform/host");
 const { buildPublicGeoLocals, logPublicGeoDebug } = require("../lib/buildPublicGeoLocals");
+const {
+  slugifySegment,
+  resolveCitySlugToLabel,
+  mergeCityNamesForLanding,
+  buildServicesExploreLinks,
+} = require("../lib/servicesLanding");
+const { getSeoLocale, regionLabelForSeo, buildHreflangAlternates } = require("../seo/seoLocale");
+const { getSeoVoiceProfile } = require("../seo/seoVoice");
+const { getCtaVoiceProfile } = require("../seo/ctaVoice");
+const seoCopy = require("../seo/seoCopy");
+const { applySeasonalTrendingBoost, resolveGeoRulesSourceLabel } = require("../config/seasonalCategoryBoosts");
 
 function loadSearchLists() {
   const p = path.join(__dirname, "../../public/data/search-lists.json");
@@ -85,6 +96,33 @@ function buildEmptyStateSuggestions(categories, selectedSlug, cityQ) {
   return { emptyAltCategories, emptyAltCities };
 }
 
+function absoluteMediaUrl(req, raw) {
+  const u = String(raw || "").trim();
+  if (!u) return "";
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  return absolutePublicUrl(req, u.startsWith("/") ? u : `/${u}`);
+}
+
+function buildDirectoryItemListJsonLd(req, companies) {
+  const list = (companies || []).slice(0, 24);
+  if (!list.length) return "";
+  const itemListElement = list.map((c, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    item: {
+      "@type": "LocalBusiness",
+      name: c.name,
+      url: canonicalUrlForTenant(req, `/company/${c.id}`),
+    },
+  }));
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    numberOfItems: list.length,
+    itemListElement,
+  });
+}
+
 function tenantHomeHrefFromPrefix(prefix) {
   if (!prefix) return "/";
   const p = String(prefix);
@@ -134,6 +172,7 @@ const MINI_SITE_RESERVED_SEGMENTS = new Set([
   "za",
   "na",
   "field-agent",
+  "services",
 ]);
 
 module.exports = function publicRoutes() {
@@ -163,28 +202,16 @@ module.exports = function publicRoutes() {
 
   async function renderCompanyPage(req, res, company) {
     const locals = await buildCompanyPageLocals(req, company);
-    const canonicalUrl = canonicalUrlForTenant(req, `/company/${company.id}`);
-    const seoTitle = `${company.name} | ${locals.category ? locals.category.name + " · " : ""}${PRODUCT_NAME}`;
-    const seoDescription = `${(company.headline || company.name || "").replace(/"/g, "")} · Verified directory listing on ${PRODUCT_NAME}.`;
-    const lb = {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      name: company.name,
-      url: canonicalUrl,
-    };
-    if (company.headline) lb.description = company.headline;
-    if (company.phone) lb.telephone = company.phone;
-    if (company.email) lb.email = company.email;
-    if (company.location) {
-      lb.address = { "@type": "PostalAddress", streetAddress: company.location };
-    }
+    const co = locals.company;
+    const canonicalUrl = canonicalUrlForTenant(req, `/company/${co.id}`);
+    const logoU = co.logo_url && String(co.logo_url).trim();
+    const ogImage = logoU ? absoluteMediaUrl(req, logoU) : "";
     return res.render("company", {
       ...locals,
+      ...tenantLocals(req),
       canonicalUrl,
-      seoTitle,
-      seoDescription,
       ogUrl: canonicalUrl,
-      jsonLdCompany: JSON.stringify(lb),
+      ogImage,
     });
   }
 
@@ -196,6 +223,9 @@ module.exports = function publicRoutes() {
         : `/${t.slug}`;
     const showRegionPickerUi =
       !!req.isApexHost || (t && t.slug === "global");
+    const seoLocale = getSeoLocale(req);
+    const seoVoice = getSeoVoiceProfile(req);
+    const ctaVoice = getCtaVoiceProfile(req);
     return {
       tenant: t,
       tenantUrlPrefix: prefix,
@@ -205,6 +235,12 @@ module.exports = function publicRoutes() {
       regionZmUrl: req.regionZmUrl || "",
       regionIlUrl: req.regionIlUrl || "",
       regionChoices: req.regionChoices || [],
+      seoLocale,
+      seoVoice,
+      ctaVoice,
+      htmlLang: seoLocale === "he" ? "he" : "en",
+      htmlDir: seoLocale === "he" ? "rtl" : "ltr",
+      hreflangAlternates: buildHreflangAlternates(req, req.path || "/"),
     };
   }
 
@@ -239,7 +275,8 @@ module.exports = function publicRoutes() {
     const tenantId = req.tenant.id;
     const loc = contentLocale(req);
     const cc = getClientCountryCode(req) || "XX";
-    const cacheKey = `${tenantId}:${loc}:${cc}`;
+    const seoLocale = getSeoLocale(req);
+    const cacheKey = `${tenantId}:${loc}:${cc}:${seoLocale}`;
     const now = Date.now();
     let cached = homeCache.get(cacheKey);
     if (!cached || now - cached.ts > HOME_CACHE_TTL_MS) {
@@ -260,19 +297,27 @@ module.exports = function publicRoutes() {
     }
 
     const canonicalUrl = canonicalUrlForTenant(req, "/");
-    const seoTitle = `${req.tenant.name || PRODUCT_NAME} · Trusted professional directory`;
-    const seoDescription =
-      "Find trusted professionals near you. Search by service and city, compare profiles, and contact the right business quickly.";
+    const platformName = req.tenant.name || PRODUCT_NAME;
+    const countryLabelSeo = regionLabelForSeo(cc, seoLocale);
+    const voice = getSeoVoiceProfile(req);
+    const homeSeo = seoCopy.homePage(seoLocale, {
+      brandName: platformName,
+      countryOrTenant: countryLabelSeo || "",
+      voice,
+    });
+    const seoTitle = homeSeo.title;
+    const seoDescription = homeSeo.description;
     const orgJsonLd = {
       "@context": "https://schema.org",
       "@type": "Organization",
-      name: req.tenant.name || PRODUCT_NAME,
+      name: platformName,
       url: canonicalUrl,
     };
 
     const geoLocals = buildPublicGeoLocals(req);
     logPublicGeoDebug(req, geoLocals);
 
+    const _tenantLocals = tenantLocals(req);
     return res.render("index", {
       categories: cached.categories,
       baseDomain: process.env.BASE_DOMAIN || "",
@@ -280,6 +325,7 @@ module.exports = function publicRoutes() {
       seoDescription,
       canonicalUrl,
       ogUrl: canonicalUrl,
+      ogType: "website",
       ogImage: absolutePublicUrl(req, "/images/hero/home-hero-960.webp"),
       orgJsonLd: JSON.stringify(orgJsonLd),
       contentArticles: cached.contentArticles,
@@ -287,27 +333,109 @@ module.exports = function publicRoutes() {
       contentFaqs: cached.contentFaqs,
       /** Homepage-only; other routes do not pass this — use opsHref in shared partials. */
       homepageOpsHref: (p) => homepageOperationalHref(req, p),
+      servicesExploreLinks: buildServicesExploreLinks(cached.categories, _tenantLocals.tenantUrlPrefix),
       ...geoLocals,
-      ...tenantLocals(req),
+      ..._tenantLocals,
       ...(await platformSupportAsync(req)),
       showRegionPickerUi: false,
     });
   });
 
-  /** Tenant-scoped service labels for autocomplete: static JSON + DB category names. */
+  /** Public search typeahead: categories + providers with mini-site (tenant-scoped, no auth). */
+  function publicTenantPathForSuggestions(req, relPath) {
+    const p = relPath.startsWith("/") ? relPath : `/${relPath}`;
+    const base = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix).replace(/\/$/, "") : "";
+    if (!base) return p;
+    if (base.startsWith("http")) return `${base}${p}`;
+    return `${base}${p}`;
+  }
+
+  /** Tenant-scoped service labels for autocomplete: static JSON + DB category names + trending categories (by listing count). */
   router.get("/data/tenant-search-lists.json", async (req, res, next) => {
     try {
       const tenantId = req.tenant && req.tenant.id;
       const base = loadSearchLists();
       if (!tenantId) {
-        res.type("application/json").send(JSON.stringify(base));
+        res
+          .type("application/json")
+          .set("Cache-Control", "public, max-age=300")
+          .send(JSON.stringify({ ...base, trendingCategories: [] }));
         return;
       }
       const pool = getPgPool();
-      const categories = await categoriesRepo.listByTenantId(pool, tenantId);
+      const [categories, topCatCandidates] = await Promise.all([
+        categoriesRepo.listByTenantId(pool, tenantId),
+        categoriesRepo.listTopByCompanyCount(pool, tenantId, 20),
+      ]);
       const names = (categories || []).map((c) => c.name).filter(Boolean);
       const services = mergeSearchServiceLists(base.services, names);
-      res.type("application/json").send(JSON.stringify({ services, cities: base.cities }));
+      const trendingDebug =
+        req.query && String(req.query.trending_debug || "") === "1" && process.env.NODE_ENV !== "production";
+      const boosted = applySeasonalTrendingBoost(topCatCandidates || [], {
+        tenantSlug: req.tenant && req.tenant.slug,
+        countryCode: getClientCountryCode(req) || "",
+        month: new Date().getMonth() + 1,
+        debug: trendingDebug,
+      });
+      const trendingTop = boosted.slice(0, 5);
+      const trendingCategories = trendingTop.map((c) => ({
+        name: c.name,
+        slug: c.slug,
+        url: publicTenantPathForSuggestions(req, `/category/${encodeURIComponent(c.slug)}`),
+      }));
+      /** @type {Record<string, unknown>} */
+      const payload = { services, cities: base.cities, trendingCategories };
+      if (trendingDebug) {
+        const ccDbg = getClientCountryCode(req) || "";
+        payload.trendingBoostContext = {
+          month: new Date().getMonth() + 1,
+          country_code: ccDbg || "XX",
+          geo_rules_source: resolveGeoRulesSourceLabel(req.tenant && req.tenant.slug, ccDbg),
+        };
+        payload.trendingCategoriesDebug = boosted.map((c) => ({
+          slug: c.slug,
+          name: c.name,
+          country: ccDbg || "XX",
+          base_score: c.listing_count,
+          geo_seasonal_boost: c.geo_seasonal_boost,
+          fallback_seasonal_boost: c.fallback_seasonal_boost,
+          seasonal_boost: c.seasonal_boost,
+          final_score: c.final_score,
+        }));
+      }
+      res.type("application/json").set("Cache-Control", "public, max-age=120").send(JSON.stringify(payload));
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  router.get("/data/search-suggestions.json", async (req, res, next) => {
+    try {
+      const tenantId = req.tenant && req.tenant.id;
+      const raw = req.query.q != null ? String(req.query.q) : "";
+      const term = raw.trim().replace(/[%_\\]/g, "");
+      if (!tenantId || term.length < 2) {
+        res.type("application/json").set("Cache-Control", "no-store");
+        res.send(JSON.stringify({ categories: [], providers: [] }));
+        return;
+      }
+      const pool = getPgPool();
+      const [catRows, provRows] = await Promise.all([
+        categoriesRepo.suggestByNameIlike(pool, tenantId, term, 5),
+        companiesRepo.suggestByNameForPublicSearch(pool, tenantId, term, 5),
+      ]);
+      const categories = catRows.map((c) => ({
+        label: c.name,
+        slug: c.slug,
+        url: publicTenantPathForSuggestions(req, `/category/${encodeURIComponent(c.slug)}`),
+      }));
+      const providers = provRows.map((c) => ({
+        name: c.name,
+        slug: c.subdomain,
+        url: publicTenantPathForSuggestions(req, `/${encodeURIComponent(c.subdomain)}`),
+      }));
+      res.type("application/json").set("Cache-Control", "no-store");
+      res.send(JSON.stringify({ categories, providers }));
     } catch (e) {
       next(e);
     }
@@ -315,6 +443,7 @@ module.exports = function publicRoutes() {
 
   router.get("/directory", async (req, res) => {
     const tenantId = req.tenant.id;
+    const pool = getPgPool();
     const categories = await loadCategoriesList(tenantId);
     const tenantCategoryNames = (categories || []).map((c) => c.name).filter(Boolean);
 
@@ -328,7 +457,17 @@ module.exports = function publicRoutes() {
     const homeFeatured =
       req.query.home_featured === "1" || String(req.query.home_featured || "").toLowerCase() === "true";
 
-    const pool = getPgPool();
+    let mergedCityNamesForServices = null;
+    if (!homeFeatured && selected && cityQ && !searchQ) {
+      mergedCityNamesForServices = mergeCityNamesForLanding(await getTenantCitiesForClientAsync(pool, tenantId));
+      const cityLabel = resolveCitySlugToLabel(slugifySegment(cityRaw), mergedCityNamesForServices);
+      if (cityLabel && categories.some((c) => c.slug === selected)) {
+        return res.redirect(
+          301,
+          `/services/${encodeURIComponent(selected)}/${encodeURIComponent(slugifySegment(cityLabel))}`
+        );
+      }
+    }
 
     let companies = [];
     /** Homepage Search + footer Start Search use `home_featured=1` — must stay featured-only even with category/q/city (see listDirectoryFeatured*). */
@@ -364,22 +503,98 @@ module.exports = function publicRoutes() {
 
     companies = await attachReviewStatsToCompanies(companies);
 
-    const canonicalUrl = canonicalUrlForTenant(req, "/directory");
-    let seoTitle = `Directory | ${req.tenant.name || PRODUCT_NAME}`;
-    let seoDescription = `Browse verified professionals in ${req.tenant.name || PRODUCT_NAME}. Search by service and city or explore categories.`;
-    if (selected) {
+    const platformName = req.tenant.name || PRODUCT_NAME;
+    const ccDir = getClientCountryCode(req) || "XX";
+    const seoLocale = getSeoLocale(req);
+    const voice = getSeoVoiceProfile(req);
+    const countryLabelSeo = regionLabelForSeo(ccDir, seoLocale);
+    const locationLabel = cityQ || countryLabelSeo || platformName;
+
+    let canonicalUrl;
+    let noindex = false;
+    if (homeFeatured) {
+      canonicalUrl = canonicalUrlForTenant(req, "/directory");
+      noindex = true;
+    } else if (selected && cityQ && !searchQ) {
+      const namesForCanon =
+        mergedCityNamesForServices ||
+        mergeCityNamesForLanding(await getTenantCitiesForClientAsync(pool, tenantId));
+      const resolvedCanon = resolveCitySlugToLabel(slugifySegment(cityRaw), namesForCanon);
+      if (resolvedCanon) {
+        canonicalUrl = canonicalUrlForTenant(
+          req,
+          `/services/${encodeURIComponent(selected)}/${encodeURIComponent(slugifySegment(resolvedCanon))}`
+        );
+      } else {
+        canonicalUrl = canonicalUrlForTenant(req, `/category/${encodeURIComponent(selected)}`);
+      }
+    } else if (selected) {
+      canonicalUrl = canonicalUrlForTenant(req, `/category/${encodeURIComponent(selected)}`);
+    } else if (searchQ || cityQ) {
+      canonicalUrl = canonicalUrlForTenant(req, "/directory");
+      noindex = true;
+    } else {
+      canonicalUrl = canonicalUrlForTenant(req, "/directory");
+    }
+
+    let seoTitle;
+    let seoDescription;
+    let directoryPageH1;
+    if (homeFeatured) {
+      const catRow = selected ? (categories || []).find((c) => c.slug === selected) : null;
+      const featuredCatName = catRow ? catRow.name : "";
+      const featuredOpts = {
+        categoryName: selected && featuredCatName ? featuredCatName : "",
+        city: cityQ || "",
+        voice,
+      };
+      const featuredSeo =
+        companies && companies.length
+          ? seoCopy.directoryFeatured(seoLocale, platformName, featuredOpts)
+          : seoCopy.directoryFeaturedEmpty(seoLocale, platformName, featuredOpts);
+      seoTitle = featuredSeo.title;
+      seoDescription = featuredSeo.description;
+    } else if (selected) {
       const catRow = (categories || []).find((c) => c.slug === selected);
-      if (catRow) {
-        seoTitle = `${catRow.name} · Directory | ${req.tenant.name || PRODUCT_NAME}`;
-        seoDescription = `Find ${String(catRow.name).toLowerCase()} and related professionals. Compare profiles and contact businesses in the directory.`;
+      const catName = catRow ? catRow.name : selected;
+      if (cityQ && !searchQ) {
+        const d = seoCopy.directoryCategoryCity(seoLocale, {
+          catName,
+          cityQ,
+          platformName,
+          voice,
+        });
+        seoTitle = d.title;
+        seoDescription = d.description;
+        directoryPageH1 = d.h1;
+      } else {
+        const d = seoCopy.directoryCategoryOnly(seoLocale, {
+          catName,
+          platformName,
+          voice,
+        });
+        seoTitle = d.title;
+        seoDescription = d.description;
       }
     } else if (searchQ || cityQ) {
-      seoTitle = `Search results · Directory | ${req.tenant.name || PRODUCT_NAME}`;
-      seoDescription = `Directory search for services and professionals${cityQ ? ` in ${cityQ}` : ""}.`;
+      if (!searchQ && cityQ) {
+        const d = seoCopy.directoryCityPage(seoLocale, { city: cityQ, brandName: platformName, voice });
+        seoTitle = d.title;
+        seoDescription = d.description;
+      } else {
+        const qPart = searchQ ? String(searchQ) : "services";
+        const d = seoCopy.directorySearch(seoLocale, { qPart, platformName, cityQ, locationLabel, voice });
+        seoTitle = d.title;
+        seoDescription = d.description;
+      }
+    } else {
+      const d = seoCopy.directoryMain(seoLocale, platformName, voice);
+      seoTitle = d.title;
+      seoDescription = d.description;
     }
-    if (homeFeatured && (!companies || companies.length === 0)) {
-      seoDescription = `Featured service providers in ${req.tenant.name || PRODUCT_NAME}. None match yet — try different filters or check back soon.`;
-    }
+
+    const jsonLdDirectory = !noindex ? buildDirectoryItemListJsonLd(req, companies) : "";
+    const defaultOg = absolutePublicUrl(req, "/images/hero/home-hero-960.webp");
 
     const geoLocals = buildPublicGeoLocals(req);
     logPublicGeoDebug(req, geoLocals);
@@ -398,12 +613,112 @@ module.exports = function publicRoutes() {
       seoDescription,
       canonicalUrl,
       ogUrl: canonicalUrl,
+      ogImage: defaultOg,
+      ogType: "website",
+      noindex,
+      jsonLdDirectory,
       ...buildEmptyStateSuggestions(categories, selected, cityOk ? cityRaw : ""),
       directoryFeaturedOnly: homeFeatured,
+      directoryPageH1,
       ...geoLocals,
       ...tenantLocals(req),
       ...(await platformSupportAsync(req)),
     });
+  });
+
+  router.get("/services/:categorySlug/:citySlug", async (req, res, next) => {
+    try {
+      const tenantId = req.tenant.id;
+      const categorySlug = String(req.params.categorySlug || "").trim().toLowerCase();
+      const citySlug = String(req.params.citySlug || "").trim().toLowerCase();
+      if (
+        !categorySlug ||
+        !citySlug ||
+        !/^[a-z0-9-]+$/.test(categorySlug) ||
+        !/^[a-z0-9-]+$/.test(citySlug)
+      ) {
+        res.status(404);
+        return res.render("not_found", {
+          slug: `${categorySlug}/${citySlug}`,
+          kind: "services",
+          ...tenantLocals(req),
+          ...(await platformSupportAsync(req)),
+        });
+      }
+      const pool = getPgPool();
+      const category = await categoriesRepo.getBySlugAndTenantId(pool, categorySlug, tenantId);
+      if (!category) {
+        res.status(404);
+        return res.render("not_found", {
+          slug: categorySlug,
+          kind: "category",
+          ...tenantLocals(req),
+          ...(await platformSupportAsync(req)),
+        });
+      }
+      const tenantCities = await getTenantCitiesForClientAsync(pool, tenantId);
+      const cityNames = mergeCityNamesForLanding(tenantCities);
+      const cityLabel = resolveCitySlugToLabel(citySlug, cityNames);
+      if (!cityLabel) {
+        res.status(404);
+        return res.render("not_found", {
+          slug: citySlug,
+          kind: "city",
+          ...tenantLocals(req),
+          ...(await platformSupportAsync(req)),
+        });
+      }
+      const cityLike = `%${cityLabel.replace(/[%_\\]/g, "")}%`;
+      let companies = await companiesRepo.listDirectoryByCategorySlug(pool, tenantId, category.slug, cityLike);
+      const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, tenantId);
+      companies = await attachReviewStatsToCompanies(companies);
+      const categories = await loadCategoriesList(tenantId);
+      const platformName = req.tenant.name || PRODUCT_NAME;
+      const seoLocale = getSeoLocale(req);
+      const voice = getSeoVoiceProfile(req);
+      const landingSeo = seoCopy.servicesLanding(seoLocale, {
+        categoryName: category.name,
+        city: cityLabel,
+        brandName: platformName,
+        voice,
+      });
+      const seoTitle = landingSeo.title;
+      const seoDescription = landingSeo.description;
+      const canonicalUrl = canonicalUrlForTenant(
+        req,
+        `/services/${encodeURIComponent(category.slug)}/${encodeURIComponent(slugifySegment(cityLabel))}`
+      );
+      const defaultOg = absolutePublicUrl(req, "/images/hero/home-hero-960.webp");
+      const jsonLdDirectory = buildDirectoryItemListJsonLd(req, companies);
+      const geoLocals = buildPublicGeoLocals(req);
+      logPublicGeoDebug(req, geoLocals);
+      return res.render("directory", {
+        categories,
+        phoneRulesPublic,
+        selectedCategory: category.slug,
+        searchQuery: "",
+        cityQuery: cityLabel,
+        companies,
+        baseDomain: process.env.BASE_DOMAIN || "",
+        companyMiniSiteHref: (sub) => `/${encodeURIComponent(String(sub || "").trim())}`,
+        seoTitle,
+        seoDescription,
+        canonicalUrl,
+        ogUrl: canonicalUrl,
+        ogImage: defaultOg,
+        ogType: "website",
+        noindex: false,
+        jsonLdDirectory,
+        directoryPageH1: landingSeo.h1,
+        ...buildEmptyStateSuggestions(categories, category.slug, cityLabel),
+        directoryFeaturedOnly: false,
+        ...geoLocals,
+        ...tenantLocals(req),
+        ...(await platformSupportAsync(req)),
+      });
+    } catch (e) {
+      next(e);
+    }
   });
 
   router.get("/category/:categorySlug", async (req, res) => {
@@ -428,8 +743,14 @@ module.exports = function publicRoutes() {
     const categories = await loadCategoriesList(tenantId);
 
     const canonicalUrl = canonicalUrlForTenant(req, `/category/${category.slug}`);
-    const seoTitle = `${category.name} · Directory | ${req.tenant.name || PRODUCT_NAME}`;
-    const seoDescription = `Browse ${category.name} professionals — verified listings, profiles, and direct contact on ${PRODUCT_NAME}.`;
+    const platformName = req.tenant.name || PRODUCT_NAME;
+    const catSeo = seoCopy.categoryPage(getSeoLocale(req), {
+      categoryName: category.name,
+      brandName: platformName,
+      voice: getSeoVoiceProfile(req),
+    });
+    const seoTitle = catSeo.title;
+    const seoDescription = catSeo.description;
 
     const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, tenantId);
 
@@ -497,6 +818,8 @@ module.exports = function publicRoutes() {
       seoDescription: `Create a verified profile on ${PRODUCT_NAME} so customers can find your services, view your details, and send lead requests.`,
       canonicalUrl,
       ogUrl: canonicalUrl,
+      ogType: "website",
+      noindex: true,
       ...tenantLocals(req),
       ...(await platformSupportAsync(req)),
     });
@@ -646,13 +969,6 @@ module.exports = function publicRoutes() {
     }
   });
 
-  function absoluteMediaUrl(req, raw) {
-    const u = String(raw || "").trim();
-    if (!u) return "";
-    if (u.startsWith("http://") || u.startsWith("https://")) return u;
-    return absolutePublicUrl(req, u.startsWith("/") ? u : `/${u}`);
-  }
-
   router.get("/articles/:slug", async (req, res) => {
     const tenantId = req.tenant.id;
     const slug = String(req.params.slug || "").trim();
@@ -670,13 +986,16 @@ module.exports = function publicRoutes() {
       (req.query.preview === "1" || req.query.preview === "true") && canPreviewDraft(req, tenantId);
     const canonicalUrl = canonicalUrlForTenant(req, `/articles/${encodeURIComponent(row.slug)}`);
     const bodyHtml = formatBodyToHtml(row.body);
-    const seoTitle = row.seo_title || row.title;
-    const seoDescription = row.seo_description || row.excerpt || "";
+    const brandName = req.tenant.name || PRODUCT_NAME;
+    const articleSeo = seoCopy.articlePage(getSeoLocale(req), { articleTitle: row.title, brandName });
+    const seoTitle = articleSeo.title;
+    const seoDescription = articleSeo.description;
     const hero = row.hero_image_url || "/images/hero/home-hero-960.webp";
     const articleJsonLd = {
       "@context": "https://schema.org",
       "@type": "Article",
       headline: row.title,
+      url: canonicalUrl,
       dateModified: row.updated_at,
       author: { "@type": "Organization", name: req.tenant.name || PRODUCT_NAME },
     };
@@ -716,13 +1035,16 @@ module.exports = function publicRoutes() {
       (req.query.preview === "1" || req.query.preview === "true") && canPreviewDraft(req, tenantId);
     const canonicalUrl = canonicalUrlForTenant(req, `/guides/${encodeURIComponent(row.slug)}`);
     const bodyHtml = formatBodyToHtml(row.body);
-    const seoTitle = row.seo_title || row.title;
-    const seoDescription = row.seo_description || row.excerpt || "";
+    const brandName = req.tenant.name || PRODUCT_NAME;
+    const guideSeo = seoCopy.articlePage(getSeoLocale(req), { articleTitle: row.title, brandName });
+    const seoTitle = guideSeo.title;
+    const seoDescription = guideSeo.description;
     const hero = row.hero_image_url || "/images/hero/home-hero-960.webp";
     const guideJsonLd = {
       "@context": "https://schema.org",
       "@type": "Article",
       headline: row.title,
+      url: canonicalUrl,
       dateModified: row.updated_at,
       author: { "@type": "Organization", name: req.tenant.name || PRODUCT_NAME },
     };

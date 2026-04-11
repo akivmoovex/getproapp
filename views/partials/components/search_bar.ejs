@@ -15,6 +15,8 @@
   - ariaLabel            : consumed by pro_search_form on <form> (passed through; unused here)
   - idPrefix             : override field id prefix (sanitized)
   - searchQuery, cityQuery : controlled input values
+  - servicePlaceholder, cityPlaceholder : optional native placeholders (from ctaVoice.searchRefinement)
+  - serviceWatermarkRotate : optional pipe-separated rotate phrases for service field (defaults if empty)
   Form shell props (pro_search_form only): formAction, formId
 -%>
 <%
@@ -28,6 +30,12 @@
   var _showCat = typeof showCategoryFilter !== 'undefined' && showCategoryFilter;
   var _selCat = typeof selectedCategory !== 'undefined' ? String(selectedCategory || '').trim() : '';
   var _cats = typeof categories !== 'undefined' && categories ? categories : [];
+  var _submitBtn = typeof submitLabel !== 'undefined' && String(submitLabel || '').trim() ? String(submitLabel).trim() : 'Search';
+  var _svcPh = typeof servicePlaceholder !== 'undefined' ? String(servicePlaceholder || '') : '';
+  var _cityPh = typeof cityPlaceholder !== 'undefined' ? String(cityPlaceholder || '') : '';
+  var _wmSvc = typeof serviceWatermarkRotate !== 'undefined' && String(serviceWatermarkRotate || '').trim()
+    ? String(serviceWatermarkRotate).trim()
+    : 'Electrician|Plumber|Carpenter';
 %>
 <% if (_showCat && _cats && _cats.length) { %>
   <div class="pro-search-form__category input-field">
@@ -50,14 +58,15 @@
         <div
           class="pro-ac"
           data-ac-list="service"
-          data-watermark-rotate="Electrician|Plumber|Carpenter"
+          data-ac-typeahead="1"
+          data-watermark-rotate="<%= _wmSvc %>"
         >
           <input
             id="<%= _pre %>-search-q"
             class="pro-ac-input input-field__control"
             type="text"
             value="<%= _q %>"
-            placeholder=""
+            placeholder="<%= _svcPh %>"
             autocomplete="off"
             role="combobox"
             aria-autocomplete="list"
@@ -81,7 +90,7 @@
             class="pro-ac-input input-field__control"
             type="text"
             value="<%= _city %>"
-            placeholder=""
+            placeholder="<%= _cityPh %>"
             autocomplete="off"
             role="combobox"
             aria-autocomplete="list"
@@ -97,7 +106,7 @@
     <%- include('button', {
       variant: 'primary',
       type: 'submit',
-      text: 'Search',
+      text: _submitBtn,
       icon: 'search',
       className: 'pro-search-form__submit',
     }) %>

@@ -9,6 +9,7 @@ const intakeProjectImagesRepo = require("../db/pg/intakeProjectImagesRepo");
 const { getTenantCitiesForClientAsync } = require("../tenants/tenantCities");
 const { normalizeUrgency, listUrgencySelectOptions } = require("../intake/dealUrgency");
 const { validateIntakeProjectForPublishAsync } = require("../intake/intakeProjectPublishValidation");
+const { getCtaVoiceProfile } = require("../seo/ctaVoice");
 const intakeDealReviewsRepo = require("../db/pg/intakeDealReviewsRepo");
 
 function requirePublicTenant(req, res, next) {
@@ -86,6 +87,7 @@ module.exports = function clientPortalRoutes() {
       urgencyOptions: listUrgencySelectOptions(),
       form: {},
       error: String((req.query && req.query.error) || "").trim().slice(0, 500) || null,
+      ctaVoice: getCtaVoiceProfile(req),
     });
   });
 

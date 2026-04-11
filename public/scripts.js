@@ -18,7 +18,12 @@ async function submitLeadForm(e) {
   const submitBtn = form.querySelector("button[type=submit]");
 
   if (submitBtn) submitBtn.disabled = true;
-  setLeadStatus(statusEl, "Sending request…", "loading");
+  var leadLoading =
+    (typeof document !== "undefined" &&
+      document.body &&
+      document.body.getAttribute("data-cta-lead-sending")) ||
+    "Sending request…";
+  setLeadStatus(statusEl, leadLoading, "loading");
 
   const payload = Object.fromEntries(new FormData(form).entries());
 

@@ -26,6 +26,10 @@
             No company with mini-site path <span class="kbd">/<%= slug %></span> in this region.
           <% } else if (typeof kind !== 'undefined' && kind === 'company' && typeof slug !== 'undefined' && slug) { %>
             No company profile in this region for id <span class="kbd"><%= slug %></span>.
+          <% } else if (typeof kind !== 'undefined' && kind === 'services' && typeof slug !== 'undefined' && slug) { %>
+            No services landing page for <span class="kbd"><%= slug %></span>.
+          <% } else if (typeof kind !== 'undefined' && kind === 'city' && typeof slug !== 'undefined' && slug) { %>
+            City or area <span class="kbd"><%= slug %></span> is not available for directory landing pages.
           <% } else if (typeof slug !== 'undefined' && slug) { %>
             The <span class="kbd"><%= slug %></span> category does not exist.
           <% } %>

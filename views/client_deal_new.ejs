@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <% var _hub = typeof opsHref === 'function' ? opsHref('/login') : '/login'; %>
+  <% var _genDeal = typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.form && ctaVoice.form.generic ? ctaVoice.form.generic : {}; %>
   <body class="admin-gate-page <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : '' %>">
     <div class="container admin-gate-wrap">
       <div class="card admin-gate-card" style="max-width: 36rem;">
@@ -94,7 +95,7 @@
             <p class="input-field__help muted">Up to 5 images, 5 MB each.</p>
           </div>
           <div class="form-step__actions admin-gate-actions">
-            <%- include('partials/components/button', { variant: 'primary', type: 'submit', label: 'Submit request' }) %>
+            <%- include('partials/components/button', { variant: 'primary', type: 'submit', label: (_genDeal.submit || 'Submit request') }) %>
             <%- include('partials/components/button', { variant: 'text', href: clientPortalBasePath + '/login', label: 'Cancel' }) %>
           </div>
         </form>

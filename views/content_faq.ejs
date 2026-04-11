@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="<%= typeof htmlLang !== 'undefined' ? htmlLang : 'en' %>" dir="<%= typeof htmlDir !== 'undefined' ? htmlDir : 'ltr' %>">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <%- include('partials/seo_meta', { seoTitle, seoDescription, canonicalUrl, ogUrl, ogType: 'website' }) %>
+    <%- include('partials/seo_meta', { seoTitle, seoDescription, canonicalUrl, ogUrl, ogType: 'website', hreflangAlternates: typeof hreflangAlternates !== 'undefined' ? hreflangAlternates : [] }) %>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
     <% if (typeof jsonLdFaq !== 'undefined' && jsonLdFaq) { %>
     <script type="application/ld+json"><%- jsonLdFaq %></script>

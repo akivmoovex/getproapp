@@ -1,6 +1,9 @@
 <!doctype html>
 <% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
-<html lang="en">
+<% var _f = typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.form ? ctaVoice.form : null; %>
+<% var _onb = _f && _f.onboarding ? _f.onboarding : {}; %>
+<% var _gen = _f && _f.generic ? _f.generic : {}; %>
+<html lang="<%= typeof htmlLang !== 'undefined' ? htmlLang : 'en' %>" dir="<%= typeof htmlDir !== 'undefined' ? htmlDir : 'ltr' %>">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -9,7 +12,9 @@
       seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : ('Become a ' + _bn + ' Partner — list your professional services and grow your business with a clear profile.'),
       canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
       ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
-      ogType: 'website'
+      ogType: typeof ogType !== 'undefined' && ogType ? ogType : 'website',
+      noindex: typeof noindex !== 'undefined' && noindex,
+      hreflangAlternates: typeof hreflangAlternates !== 'undefined' ? hreflangAlternates : []
     }) %>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
@@ -102,7 +107,7 @@
           </div>
         </div>
 
-        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Get Started', id: 'join-get-started', className: 'join-get-started' }) %>
+        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: (_onb.start || 'Get Started'), id: 'join-get-started', className: 'join-get-started' }) %>
 
         <div class="join-wizard-frame" id="join-wizard-frame" hidden>
           <section class="join-wizard join-wizard--hidden" id="join-wizard" aria-hidden="true">
@@ -151,7 +156,7 @@
                     </div>
                     <div class="form-step__actions">
                       <div class="join-wizard-actions join-wizard-actions--split">
-                        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Continue', id: 'join-next-1' }) %>
+                        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: (_onb.continue || 'Continue'), id: 'join-next-1' }) %>
                         <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Cancel', id: 'join-cancel-1' }) %>
                       </div>
                     </div>
@@ -193,7 +198,7 @@
                     </div>
                     <div class="form-step__actions">
                       <div class="join-wizard-actions join-wizard-actions--split">
-                        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Continue', id: 'join-next-2' }) %>
+                        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: (_onb.continue || 'Continue'), id: 'join-next-2' }) %>
                         <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Back', id: 'join-back-2' }) %>
                       </div>
                     </div>
@@ -235,7 +240,7 @@
                     </div>
                     <div class="form-step__actions">
                       <div class="join-wizard-actions join-wizard-actions--split">
-                        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Send application', id: 'join-submit' }) %>
+                        <%- include('partials/components/button', { variant: 'primary', type: 'button', label: (_onb.submit || 'Send application'), id: 'join-submit' }) %>
                         <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Back', id: 'join-back-3' }) %>
                       </div>
                     </div>
@@ -322,7 +327,7 @@
               </div>
               <div class="form-step__actions">
                 <div class="join-modal-actions join-modal-actions--split">
-                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Submit', id: 'join-disabled-city-submit', disabled: true }) %>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: (_gen.submit || 'Submit'), id: 'join-disabled-city-submit', disabled: true }) %>
                   <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Cancel', id: 'join-disabled-city-dismiss', disabled: true }) %>
                 </div>
               </div>
@@ -402,7 +407,7 @@
               </div>
               <div class="form-step__actions">
                 <div class="join-modal-actions join-modal-actions--split">
-                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: 'Submit', id: 'join-exit-modal-submit' }) %>
+                  <%- include('partials/components/button', { variant: 'primary', type: 'button', label: (_gen.submit || 'Submit'), id: 'join-exit-modal-submit' }) %>
                   <%- include('partials/components/button', { variant: 'secondary', type: 'button', label: 'Back', id: 'join-exit-modal-back' }) %>
                 </div>
               </div>

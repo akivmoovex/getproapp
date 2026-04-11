@@ -1,6 +1,6 @@
 <!doctype html>
 <% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
-<html lang="en">
+<html lang="<%= typeof htmlLang !== 'undefined' ? htmlLang : 'en' %>" dir="<%= typeof htmlDir !== 'undefined' ? htmlDir : 'ltr' %>">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -9,16 +9,20 @@
       seoDescription: typeof seoDescription !== 'undefined' ? seoDescription : ((company.headline || company.name || '').replace(/"/g, '') + ' · Verified directory listing on ' + _bn + '.'),
       canonicalUrl: typeof canonicalUrl !== 'undefined' ? canonicalUrl : '',
       ogUrl: typeof ogUrl !== 'undefined' ? ogUrl : '',
-      ogType: 'website'
+      ogImage: typeof ogImage !== 'undefined' ? ogImage : '',
+      ogType: 'website',
+      hreflangAlternates: typeof hreflangAlternates !== 'undefined' ? hreflangAlternates : []
     }) %>
     <% if (typeof jsonLdCompany !== 'undefined' && jsonLdCompany) { %>
     <script type="application/ld+json"><%- jsonLdCompany %></script>
     <% } %>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
+  <% var _formC = typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.form && ctaVoice.form.contact ? ctaVoice.form.contact : null; %>
+  <% var _leadSendingEsc = (_formC && _formC.sending_loading) ? String(_formC.sending_loading).replace(/"/g, '&quot;') : 'Sending request…'; %>
   <% var _cpPortal = typeof companyPortalLayout !== 'undefined' && companyPortalLayout; %>
   <% var _cpReadOnly = typeof companyPortalReadOnly !== 'undefined' && companyPortalReadOnly; %>
-  <body class="page-company-profile <%= _cpPortal ? 'company-portal' : '' %> <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>" data-screen-role="<%= _cpPortal ? 'company-portal' : 'profile' %>">
+  <body class="page-company-profile <%= _cpPortal ? 'company-portal' : '' %> <%= typeof tenant !== 'undefined' && tenant ? tenant.themeClass : 'tenant-zm' %>" data-screen-role="<%= _cpPortal ? 'company-portal' : 'profile' %>" data-cta-lead-sending="<%= _leadSendingEsc %>">
     <% if (_cpPortal) { %>
     <%- include('partials/company_portal_shell_start', {
       activeCompanyNav: typeof activeCompanyNav !== 'undefined' ? activeCompanyNav : 'minisite',
@@ -53,13 +57,17 @@
         <% var _showBizPhone = _bizPhone && _bizD !== _gpD; %>
         <% var _primaryD = _primaryCall.replace(/\D/g, ''); %>
         <% var _showBizPhoneRow = _showBizPhone && _bizD !== _primaryD; %>
+        <% var _ctaP = typeof ctaVoice !== 'undefined' && ctaVoice && ctaVoice.provider ? ctaVoice.provider : null; %>
+        <% var _leadBtn = (_formC && _formC.send) ? _formC.send : (_ctaP && _ctaP.primary_lead ? _ctaP.primary_lead : 'Send request'); %>
+        <% var _contactPrimaryLabel = _ctaP && _ctaP.primary_contact ? _ctaP.primary_contact : ('Call ' + _primaryCall); %>
+        <% var _profileLinkLabel = _ctaP && _ctaP.secondary_profile ? _ctaP.secondary_profile : ((typeof miniSiteLabel !== 'undefined' && miniSiteLabel) ? miniSiteLabel : companyUrl); %>
         <nav class="pro-company-profile__breadcrumb" aria-label="Breadcrumb">
           <a href="<%= typeof tenantHomeHref !== 'undefined' ? tenantHomeHref : '/' %>">Home</a>
           <span class="pro-company-profile__bc-sep" aria-hidden="true">/</span>
           <a href="<%= typeof directoryHref !== 'undefined' ? directoryHref : '/directory' %>">Directory</a>
           <% if (category && category.slug) { %>
             <span class="pro-company-profile__bc-sep" aria-hidden="true">/</span>
-            <a href="<%= typeof tenantUrlPrefix !== 'undefined' && tenantUrlPrefix ? (tenantUrlPrefix.toString().replace(/\/$/, '') + '/directory?category=' + category.slug) : '/directory?category=' + category.slug %>"><%= category.name %></a>
+            <a href="<%= typeof tenantUrlPrefix !== 'undefined' && tenantUrlPrefix ? (tenantUrlPrefix.toString().replace(/\/$/, '') + '/category/' + encodeURIComponent(category.slug)) : '/category/' + encodeURIComponent(category.slug) %>"><%= category.name %></a>
           <% } %>
           <span class="pro-company-profile__bc-sep" aria-hidden="true">/</span>
           <span class="pro-company-profile__bc-current"><%= company.name %></span>
@@ -110,6 +118,13 @@
 
         <div class="pro-company-profile__grid">
           <div class="pro-company-profile__primary">
+
+            <% if (typeof showProviderSeoIntro !== 'undefined' && showProviderSeoIntro && typeof providerSeoIntro !== 'undefined' && providerSeoIntro) { %>
+              <section class="pro-company-profile__section" aria-labelledby="provider-seo-intro-heading">
+                <h2 id="provider-seo-intro-heading" class="pro-company-profile__h2">Overview</h2>
+                <div class="pro-company-profile__prose"><%= providerSeoIntro %></div>
+              </section>
+            <% } %>
 
             <% if (company.about && String(company.about).trim()) { %>
               <section class="pro-company-profile__section" aria-labelledby="about-heading">
@@ -246,7 +261,7 @@
                     </div>
                     <div class="form-step__actions">
                       <div class="card__actions">
-                        <%- include('partials/components/button', { variant: 'primary', type: 'submit', label: 'Send request' }) %>
+                        <%- include('partials/components/button', { variant: 'primary', type: 'submit', label: _leadBtn }) %>
                       </div>
                     </div>
                   </div>
@@ -259,7 +274,7 @@
           <aside class="pro-company-profile__aside card">
             <h2 class="pro-company-profile__aside-title">Contact</h2>
             <% if (_primaryTelHref) { %>
-              <%- include('partials/components/button', { variant: 'primary', href: _primaryTelHref, label: 'Call ' + _primaryCall, ariaLabel: 'Call ' + _primaryCall, className: 'pro-company-profile__cta' }) %>
+              <%- include('partials/components/button', { variant: 'primary', href: _primaryTelHref, label: _contactPrimaryLabel, ariaLabel: _contactPrimaryLabel, className: 'pro-company-profile__cta' }) %>
             <% } %>
             <ul class="pro-company-profile__contact-list">
               <% if (_showBizPhoneRow) { %>
@@ -286,7 +301,7 @@
             <% if (typeof companyUrl !== 'undefined' && companyUrl && companyUrl !== '#') { %>
               <p class="muted pro-company-profile__mini-hint">Mini-site URL</p>
               <p class="pro-company-profile__mini-url">
-                <%- include('partials/components/button', { variant: 'text', href: companyUrl, label: (typeof miniSiteLabel !== 'undefined' && miniSiteLabel ? miniSiteLabel : companyUrl) }) %>
+                <%- include('partials/components/button', { variant: 'text', href: companyUrl, label: _profileLinkLabel, ariaLabel: _profileLinkLabel }) %>
               </p>
             <% } %>
 
@@ -326,7 +341,7 @@
     <% if (!_cpReadOnly && (_primaryTelHref || _gpWa)) { %>
     <div class="pro-company-sticky-cta" role="region" aria-label="Quick contact">
       <% if (_primaryTelHref) { %>
-      <%- include('partials/components/button', { variant: 'primary', href: _primaryTelHref, label: 'Call ' + _primaryCall, ariaLabel: 'Call ' + _primaryCall, className: 'pro-company-sticky-cta__btn pro-company-sticky-cta__btn--call' }) %>
+      <%- include('partials/components/button', { variant: 'primary', href: _primaryTelHref, label: _contactPrimaryLabel, ariaLabel: _contactPrimaryLabel, className: 'pro-company-sticky-cta__btn pro-company-sticky-cta__btn--call' }) %>
       <% } %>
       <% if (_gpWa) { %>
       <%- include('partials/components/button', { variant: 'secondary', href: _gpWa, label: 'WhatsApp', className: 'pro-company-sticky-cta__btn', extraAttrs: 'rel="noopener noreferrer" target="_blank"' }) %>

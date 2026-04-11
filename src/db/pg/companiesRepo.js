@@ -149,9 +149,10 @@ async function listAdminWithCategory(pool, tenantId) {
  * @param {number} tenantId
  * @param {number} limit
  */
+/** @returns {{ id: number, subdomain: string | null }[]} */
 async function listIdsForSitemap(pool, tenantId, limit = 500) {
   const r = await pool.query(
-    `SELECT id FROM public.companies WHERE tenant_id = $1 ORDER BY updated_at DESC LIMIT $2`,
+    `SELECT id, subdomain FROM public.companies WHERE tenant_id = $1 ORDER BY updated_at DESC LIMIT $2`,
     [tenantId, limit]
   );
   return r.rows;
@@ -344,6 +345,37 @@ async function listDirectorySearchIlike(pool, tenantId, searchPattern, cityPatte
     params
   );
   return mapRows(r.rows);
+}
+
+/**
+ * Public search typeahead: company names with mini-site subdomain (tenant-scoped).
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {string} term
+ * @param {number} limit
+ * @returns {Promise<{ name: string, subdomain: string }[]>}
+ */
+async function suggestByNameForPublicSearch(pool, tenantId, term, limit = 5) {
+  const t = String(term || "")
+    .trim()
+    .replace(/[%_\\]/g, "");
+  if (t.length < 2) return [];
+  const like = `%${t}%`;
+  const prefix = `${t}%`;
+  const { rows } = await pool.query(
+    `
+    SELECT c.name, c.subdomain
+    FROM public.companies c
+    WHERE c.tenant_id = $1
+      AND c.subdomain IS NOT NULL
+      AND TRIM(c.subdomain) <> ''
+      AND c.name ILIKE $2
+    ORDER BY (c.name ILIKE $3) DESC, c.name ASC
+    LIMIT $4
+    `,
+    [tenantId, like, prefix, limit]
+  );
+  return rows.map((r) => ({ name: r.name, subdomain: String(r.subdomain || "").trim() }));
 }
 
 /**
@@ -547,6 +579,7 @@ module.exports = {
   listDirectoryHomeFeatured,
   listDirectoryFeaturedSearchIlike,
   listDirectorySearchIlike,
+  suggestByNameForPublicSearch,
   existsSubdomainForTenant,
   updateDirectoryFlagsByIdAndTenantId,
   insertFull,

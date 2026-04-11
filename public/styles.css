@@ -6367,6 +6367,12 @@ textarea {
   min-width: 0;
 }
 
+.c-search-bar .pro-search-form__helper {
+  margin: var(--space-0-75) 0 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .c-search-bar .pro-search-form__toolbar-row .pro-search-form__fields {
   display: flex;
   flex-direction: column;
@@ -6492,6 +6498,25 @@ textarea {
 .pro-ac-option.is-active {
   background: var(--primary-softer-bg);
   color: var(--wf-primary-dark);
+}
+
+.pro-ac-group {
+  padding: var(--space-0-5) var(--space-1-75) var(--space-0-25);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gp-hp-eyebrow, var(--text-muted));
+  cursor: default;
+  list-style: none;
+}
+
+.pro-ac-option--nav .pro-ac-mark {
+  background: color-mix(in srgb, var(--wf-primary) 18%, transparent);
+  color: inherit;
+  font-weight: 700;
+  padding: 0 0.1em;
+  border-radius: 2px;
 }
 
 .pro-ac-msg {
@@ -7288,6 +7313,37 @@ textarea {
   color: var(--wf-primary);
   text-decoration: underline;
   text-underline-offset: 0.12em;
+}
+
+.pro-directory-empty__refine-suggestions {
+  margin: 0 0 var(--space-2);
+}
+
+.pro-directory-empty__refine-suggestions-title {
+  margin: 0 0 var(--space-0-75);
+  font-size: var(--space-1-5);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pro-directory-empty__refine-suggestions-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  line-height: 1.5;
+}
+
+.pro-directory-empty__refine-suggestions-list a {
+  color: var(--wf-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.pro-directory-empty__refine-hints {
+  margin: 0 0 var(--space-2);
+  padding-left: 1.25rem;
+  line-height: 1.45;
+  list-style: disc;
 }
 
 .pro-directory-empty__suggestions {

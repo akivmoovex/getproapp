@@ -53,7 +53,7 @@
       <% if (!_faConsole) { %>
       <%- include('components/button', {
         variant: 'secondary',
-        text: 'Join Us',
+        text: (typeof ctaVoice !== 'undefined' && ctaVoice.homepage && ctaVoice.homepage.nav_join) ? ctaVoice.homepage.nav_join : 'Join Us',
         className: 'app-top-app-bar__join',
         id: 'wf-join-us-header',
         extraAttrs: 'type="button" data-wf-join-us-open aria-haspopup="dialog" aria-controls="wf-join-us-modal"',
