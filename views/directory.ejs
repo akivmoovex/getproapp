@@ -19,6 +19,7 @@
       <%- include('partials/app_navigation', { tenantUrlPrefix }) %>
 
       <div class="app-layout__main">
+        <%- include('partials/unsupported_country_banner') %>
         <%- include('partials/components/container_start', { extraClass: 'directory-page directory-page-toolbar' }) %>
       <% var activeCatLabel = ''; %>
       <% if (typeof selectedCategory !== 'undefined' && selectedCategory) { %>

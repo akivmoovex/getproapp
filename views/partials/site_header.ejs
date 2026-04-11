@@ -1,6 +1,7 @@
 <% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var tpHome = tp ? tp + '/' : '/'; %>
-<% var _joinModalSrc = typeof opsHref !== 'undefined' ? opsHref('/join?embed=1') : ((tp ? String(tp).replace(/\/$/, '') : '') + '/join?embed=1'); %>
+<%# Join iframe src precedence (do not reorder): (1) joinModalEmbedSrc — only set with unsupported-country banner on global apex (ZM embed). (2) homepageOpsHref — only passed from GET `/` (homepage geo CTAs). (3) opsHref — res.locals from all routes. (4) tenant URL prefix fallback. %>
+<% var _joinModalSrc = (typeof joinModalEmbedSrc !== 'undefined' && joinModalEmbedSrc) ? joinModalEmbedSrc : (typeof homepageOpsHref === 'function' ? homepageOpsHref('/join?embed=1') : (typeof opsHref !== 'undefined' ? opsHref('/join?embed=1') : ((tp ? String(tp).replace(/\/$/, '') : '') + '/join?embed=1'))); %>
 <% var _bnHeader = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
 <% var ten = typeof tenant !== 'undefined' ? tenant : null; %>
 <% var _renderRegionPickerTrigger = typeof renderRegionPickerTrigger !== 'undefined' ? !!renderRegionPickerTrigger : false; %>

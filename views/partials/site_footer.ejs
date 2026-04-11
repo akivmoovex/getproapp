@@ -1,6 +1,6 @@
 <% var tp = typeof tenantUrlPrefix !== 'undefined' ? tenantUrlPrefix : ''; %>
 <% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
-<% var _op = typeof opsHref === 'function' ? opsHref : function (p) { return (tp || '') + p; }; %>
+<% var _op = typeof homepageOpsHref === 'function' ? homepageOpsHref : (typeof opsHref === 'function' ? opsHref : function (p) { return (tp || '') + p; }); %>
 <%# Optional contact locals (getproPhone, getproEmail, getproAddress) are not passed by every parent view. Normalize here so missing vars never throw at render time. %>
 <% var _gpPhone = typeof getproPhone !== 'undefined' ? String(getproPhone || '').trim() : ''; %>
 <% var _gpEmail = typeof getproEmail !== 'undefined' ? String(getproEmail || '').trim() : ''; %>
@@ -10,7 +10,7 @@
     <div class="ds-container wf-footer-cta-inner">
       <h2 class="wf-footer-cta-title">Find the right professional in one place</h2>
       <p class="wf-footer-cta-lead">Search the directory, filter by category, and reach businesses through clear one-page profiles.</p>
-      <%- include('components/button', { variant: 'default', href: _op('/directory'), label: 'Start Search', className: 'btn-footer-solid' }) %>
+      <%- include('components/button', { variant: 'default', href: _op('/directory?home_featured=1'), label: 'Start Search', className: 'btn-footer-solid' }) %>
     </div>
   </div>
   <div class="wf-footer-main">
@@ -59,14 +59,14 @@
       <div class="pro-footer-col">
         <strong>Learn more</strong>
         <ul>
-          <li><a href="<%= tp %>/directory">Browse by category</a></li>
-          <li><a href="<%= tp %>/articles">Articles &amp; tips</a></li>
+          <li><a href="<%= _op('/directory') %>">Browse by category</a></li>
+          <li><a href="<%= _op('/articles') %>">Articles &amp; tips</a></li>
         </ul>
       </div>
     </div>
     <div class="pro-footer-bottom" id="footer-terms">
       <span>© <%= new Date().getFullYear() %> <%= _bn %> · getproapp.org</span>
-      <span><a href="<%= _op('/terms') %>">Terms of use</a> · <a href="#">Accessibility</a> · <a href="<%= tp %>/directory">Site map</a></span>
+      <span><a href="<%= _op('/terms') %>">Terms of use</a> · <a href="#">Accessibility</a> · <a href="<%= _op('/directory') %>">Site map</a></span>
     </div>
   </div>
   </div>

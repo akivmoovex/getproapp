@@ -9,7 +9,7 @@
 
   Props (pass through to SearchBar + used for form):
   - variant, tenantUrlPrefix, formAction, formId, searchQuery, cityQuery,
-    showCategoryFilter, selectedCategory, categories, ariaLabel, idPrefix
+    showCategoryFilter, selectedCategory, categories, ariaLabel, idPrefix, formExtraAttrs
   ============================================================================
 -%>
 <%
@@ -18,6 +18,7 @@
   var _action = typeof formAction !== 'undefined' && formAction ? String(formAction) : (_tp.replace(/\/$/, '') + '/directory');
   var _fid = typeof formId !== 'undefined' ? String(formId || '') : (_v === 'directory' ? 'directory-toolbar' : '');
   var _aria = typeof ariaLabel !== 'undefined' ? String(ariaLabel) : 'Search by service and city';
+  var _formExtra = typeof formExtraAttrs !== 'undefined' && formExtraAttrs ? String(formExtraAttrs) : '';
 %>
 <form
   <% if (_fid) { %>id="<%= _fid %>"<% } %>
@@ -26,6 +27,7 @@
   method="get"
   role="search"
   aria-label="<%= _aria %>"
+  <%- _formExtra %>
 >
 <%- include('components/search_bar', {
   variant: typeof variant !== 'undefined' ? variant : 'directory',

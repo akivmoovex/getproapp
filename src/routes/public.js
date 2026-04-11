@@ -20,6 +20,9 @@ const phoneRulesService = require("../phone/phoneRulesService");
 const categoriesRepo = require("../db/pg/categoriesRepo");
 const companiesRepo = require("../db/pg/companiesRepo");
 const contentPagesRepo = require("../db/pg/contentPagesRepo");
+const { homepageOperationalHref } = require("../lib/marketingOperationalUrls");
+const { getClientCountryCode } = require("../platform/host");
+const { buildPublicGeoLocals, logPublicGeoDebug } = require("../lib/buildPublicGeoLocals");
 
 function loadSearchLists() {
   const p = path.join(__dirname, "../../public/data/search-lists.json");
@@ -235,7 +238,8 @@ module.exports = function publicRoutes() {
   router.get("/", async (req, res) => {
     const tenantId = req.tenant.id;
     const loc = contentLocale(req);
-    const cacheKey = `${tenantId}:${loc}`;
+    const cc = getClientCountryCode(req) || "XX";
+    const cacheKey = `${tenantId}:${loc}:${cc}`;
     const now = Date.now();
     let cached = homeCache.get(cacheKey);
     if (!cached || now - cached.ts > HOME_CACHE_TTL_MS) {
@@ -266,6 +270,9 @@ module.exports = function publicRoutes() {
       url: canonicalUrl,
     };
 
+    const geoLocals = buildPublicGeoLocals(req);
+    logPublicGeoDebug(req, geoLocals);
+
     return res.render("index", {
       categories: cached.categories,
       baseDomain: process.env.BASE_DOMAIN || "",
@@ -278,6 +285,9 @@ module.exports = function publicRoutes() {
       contentArticles: cached.contentArticles,
       contentGuides: cached.contentGuides,
       contentFaqs: cached.contentFaqs,
+      /** Homepage-only; other routes do not pass this — use opsHref in shared partials. */
+      homepageOpsHref: (p) => homepageOperationalHref(req, p),
+      ...geoLocals,
       ...tenantLocals(req),
       ...(await platformSupportAsync(req)),
       showRegionPickerUi: false,
@@ -315,6 +325,8 @@ module.exports = function publicRoutes() {
     const cityOk = !cityRaw || isWhitelistedCity(cityRaw);
     const searchQ = searchOk ? searchRaw.replace(/[%_\\]/g, "") : "";
     const cityQ = cityOk ? cityRaw.replace(/[%_\\]/g, "") : "";
+    const homeFeatured =
+      req.query.home_featured === "1" || String(req.query.home_featured || "").toLowerCase() === "true";
 
     const pool = getPgPool();
 
@@ -326,6 +338,8 @@ module.exports = function publicRoutes() {
       const searchPattern = searchQ ? `%${searchQ}%` : null;
       const cityPattern = cityQ ? `%${cityQ}%` : null;
       companies = await companiesRepo.listDirectorySearchIlike(pool, tenantId, searchPattern, cityPattern, 48);
+    } else if (homeFeatured) {
+      companies = await companiesRepo.listDirectoryHomeFeatured(pool, tenantId, 10);
     } else {
       companies = await companiesRepo.listDirectoryDefault(pool, tenantId, 24);
     }
@@ -348,6 +362,9 @@ module.exports = function publicRoutes() {
       seoDescription = `Directory search for services and professionals${cityQ ? ` in ${cityQ}` : ""}.`;
     }
 
+    const geoLocals = buildPublicGeoLocals(req);
+    logPublicGeoDebug(req, geoLocals);
+
     return res.render("directory", {
       categories,
       phoneRulesPublic,
@@ -363,6 +380,7 @@ module.exports = function publicRoutes() {
       canonicalUrl,
       ogUrl: canonicalUrl,
       ...buildEmptyStateSuggestions(categories, selected, cityOk ? cityRaw : ""),
+      ...geoLocals,
       ...tenantLocals(req),
       ...(await platformSupportAsync(req)),
     });

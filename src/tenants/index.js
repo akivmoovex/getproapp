@@ -4,6 +4,7 @@ const { getOrSet, getOrSetAsync, metaTtlMs, stageTtlMs } = require("./tenantMeta
 const { getPgPool } = require("../db/pg");
 const tenantsRepo = require("../db/pg/tenantsRepo");
 const phoneRulesService = require("../phone/phoneRulesService");
+const { israelComingSoonEnabled } = require("./israelComingSoon");
 
 /**
  * Static display metadata (theme + flag). DB `tenants` row supplies id, name, stage.
@@ -230,14 +231,27 @@ async function setApexTenantPg(pool, req, res) {
     const r = await pool.query(`SELECT stage FROM public.tenants WHERE slug = $1`, ["zm"]);
     return r.rows[0] ?? null;
   });
+  const ilRow = await getOrSetAsync("tenant:stage:slug:il", stageTtlMs(), async () => {
+    const r = await pool.query(`SELECT stage FROM public.tenants WHERE slug = $1`, ["il"]);
+    return r.rows[0] ?? null;
+  });
   const country = getClientCountryCode(req);
 
   let slug = DEFAULT_TENANT_SLUG;
-  let zambiaGeoHome = false;
+  /** @type {string|null} */
+  let regionalGeoSlug = null;
 
   if (country === "ZM" && zmRow && zmRow.stage === STAGES.ENABLED) {
     slug = "zm";
-    zambiaGeoHome = true;
+    regionalGeoSlug = "zm";
+  } else if (
+    country === "IL" &&
+    ilRow &&
+    ilRow.stage === STAGES.ENABLED &&
+    !israelComingSoonEnabled()
+  ) {
+    slug = "il";
+    regionalGeoSlug = "il";
   } else if (globalRow && globalRow.stage === STAGES.ENABLED) {
     slug = "global";
   } else if (!zmRow || zmRow.stage !== STAGES.ENABLED) {
@@ -253,8 +267,8 @@ async function setApexTenantPg(pool, req, res) {
   req.tenant = t;
   req.tenantSlug = t.slug;
 
-  if (zambiaGeoHome) {
-    req.tenantUrlPrefix = base ? `${scheme}://zm.${base}` : "";
+  if (regionalGeoSlug) {
+    req.tenantUrlPrefix = base ? `${scheme}://${regionalGeoSlug}.${base}` : "";
     req.isApexHost = false;
   } else {
     req.tenantUrlPrefix = "";

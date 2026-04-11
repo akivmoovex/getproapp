@@ -68,11 +68,11 @@
   --color-primary-rgb: 108, 92, 231;
 
   /* Homepage story carousel (opaque marketing backdrops — tokens so styles stay semantic) */
-  --color-home-story-bg-1: #f97316;
-  --color-home-story-bg-2: #ea580c;
-  --color-home-story-bg-3: #dc2626;
-  --color-home-story-bg-4: #b91c1c;
-  --color-home-story-bg-5: #7c3aed;
+  --color-home-story-bg-1: #f35b04;
+  --color-home-story-bg-2: #f18701;
+  --color-home-story-bg-3: #f7b801;
+  --color-home-story-bg-4: #7678ed;
+  --color-home-story-bg-5: #3d348b;
 
   /* Misc palette (marketing / tenant themes — single reference, avoids hex in styles.css) */
   --color-slate-100: #f1f5f9;

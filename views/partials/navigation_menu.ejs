@@ -2,15 +2,15 @@
   var tp = typeof tenantUrlPrefix !== 'undefined' ? String(tenantUrlPrefix || '') : '';
   var showAdmin = typeof showAdmin !== 'undefined' ? !!showAdmin : false;
   var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online';
-  var _op = typeof opsHref === 'function' ? opsHref : function (p) { return (tp || '') + p; };
+  var _op = typeof homepageOpsHref === 'function' ? homepageOpsHref : (typeof opsHref === 'function' ? opsHref : function (p) { return (tp || '') + p; });
 %>
 
 <nav class="wf-home-sidebar-nav wf-home-sidebar-nav--primary" aria-label="Primary">
-  <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/directory') %>">Search directory</a>
+  <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/directory?home_featured=1') %>">Search directory</a>
   <a class="wf-home-nav-btn wf-home-nav-btn--ghost" href="<%= _op('/join') %>" data-wf-join-us-open>List your business</a>
   <a class="wf-home-nav-btn wf-home-nav-btn--ghost wf-home-nav-btn--my-getpro" href="<%= _op('/login') %>">
     <span class="wf-home-nav-btn__text">My <%= _bn %></span>
-    <span class="wf-home-nav-btn__sub">Admin console</span>
+    <span class="wf-home-nav-btn__sub">Enter your account.</span>
   </a>
 </nav>
 

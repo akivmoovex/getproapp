@@ -228,6 +228,41 @@ async function listDirectoryDefault(pool, tenantId, limit = 24) {
 }
 
 /**
+ * Homepage directory landing: best-rated company per category (distinct fields), then top N by rating.
+ * Reuses review aggregates (AVG/COUNT) consistent with directory batch stats.
+ */
+async function listDirectoryHomeFeatured(pool, tenantId, limit = 10) {
+  const r = await pool.query(
+    `
+    WITH best_per_cat AS (
+      SELECT DISTINCT ON (COALESCE(c.category_id, -1))
+        c.id AS company_id,
+        ra.avg_rating,
+        ra.review_count
+      FROM public.companies c
+      LEFT JOIN (
+        SELECT company_id,
+          ROUND(AVG(rating)::numeric, 2)::float8 AS avg_rating,
+          COUNT(*)::int AS review_count
+        FROM public.reviews
+        GROUP BY company_id
+      ) ra ON ra.company_id = c.id
+      WHERE c.tenant_id = $1
+      ORDER BY COALESCE(c.category_id, -1), ra.avg_rating DESC NULLS LAST, ra.review_count DESC NULLS LAST, c.id ASC
+    )
+    SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
+    FROM best_per_cat b
+    JOIN public.companies c ON c.id = b.company_id
+    LEFT JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+    ORDER BY b.avg_rating DESC NULLS LAST, b.review_count DESC NULLS LAST, c.id ASC
+    LIMIT $2
+    `,
+    [tenantId, limit]
+  );
+  return mapRows(r.rows);
+}
+
+/**
  * Directory text search (PostgreSQL): case-insensitive substring match on name, headline, about;
  * optional city filter on location; tenant-scoped; `ORDER BY c.name ASC`.
  * Matches SQLite local-dev path in `src/routes/public.js` (LIKE … COLLATE NOCASE).
@@ -446,6 +481,7 @@ module.exports = {
   listIdNameSubdomainForTenant,
   listDirectoryByCategorySlug,
   listDirectoryDefault,
+  listDirectoryHomeFeatured,
   listDirectorySearchIlike,
   existsSubdomainForTenant,
   insertFull,

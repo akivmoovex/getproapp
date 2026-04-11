@@ -66,6 +66,7 @@
     <% } %>
 
     <main class="gp-home" role="main">
+      <%- include('partials/unsupported_country_banner') %>
       <div class="gp-home-top-stack">
       <section class="gp-home-hero" aria-labelledby="gp-home-hero-title">
         <%- include('partials/components/container_start') %>
@@ -76,7 +77,7 @@
                 <%- include('partials/pro_search_form', {
                   variant: 'home',
                   tenantUrlPrefix,
-                  formAction: typeof opsHref !== 'undefined' ? opsHref('/directory') : undefined,
+                  formAction: typeof homepageOpsHref === 'function' ? homepageOpsHref('/directory?home_featured=1') : (typeof opsHref !== 'undefined' ? opsHref('/directory?home_featured=1') : undefined),
                   showCategoryFilter: false,
                 }) %>
               </div>
@@ -352,7 +353,7 @@
   function arm() {
     if (reduced) return;
     if (timer) window.clearInterval(timer);
-    timer = window.setInterval(next, 4500);
+    timer = window.setInterval(next, 6000);
   }
 
   function disarm() {

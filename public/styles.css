@@ -78,11 +78,11 @@
   --color-primary-rgb: 108, 92, 231;
 
   /* Homepage story carousel (opaque marketing backdrops — tokens so styles stay semantic) */
-  --color-home-story-bg-1: #f97316;
-  --color-home-story-bg-2: #ea580c;
-  --color-home-story-bg-3: #dc2626;
-  --color-home-story-bg-4: #b91c1c;
-  --color-home-story-bg-5: #7c3aed;
+  --color-home-story-bg-1: #f35b04;
+  --color-home-story-bg-2: #f18701;
+  --color-home-story-bg-3: #f7b801;
+  --color-home-story-bg-4: #7678ed;
+  --color-home-story-bg-5: #3d348b;
 
   /* Misc palette (marketing / tenant themes — single reference, avoids hex in styles.css) */
   --color-slate-100: #f1f5f9;
@@ -11295,6 +11295,34 @@ body[class*="tenant-"] {
   transform: translateY(-1px);
 }
 
+/* Unsupported-country notice (homepage + directory; ZM join via shared modal) */
+.gp-geo-coming-soon-banner {
+  width: 100%;
+  background: var(--base-surface-muted);
+  border-bottom: 1px solid var(--base-outline);
+  padding: 12px 0;
+}
+
+.gp-geo-coming-soon-banner__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  justify-content: space-between;
+}
+
+.gp-geo-coming-soon-banner__text {
+  margin: 0;
+  flex: 1 1 240px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--color-text-primary);
+}
+
+.gp-geo-coming-soon-banner__join {
+  flex-shrink: 0;
+}
+
 /* ---------- Auto-advancing story (top half) ---------- */
 .gp-home .gp-home-story {
   position: relative;
@@ -11306,7 +11334,7 @@ body[class*="tenant-"] {
   padding: calc(40px + var(--gp-home-story-overlap)) 0 64px;
   margin-top: 0;
   color: var(--color-on-primary);
-  transition: background-color 0.4s ease;
+  transition: background-color 0.5s ease;
 }
 
 .gp-home .gp-home-story[data-story="t1"] {
@@ -11397,7 +11425,7 @@ body[class*="tenant-"] {
 
 .gp-home .gp-home-story-panel.is-active {
   display: flex;
-  animation: gp-home-story-fade 0.4s ease;
+  animation: gp-home-story-slide 0.5s ease;
 }
 
 .gp-home .gp-home-story__visual-frame {
@@ -11440,13 +11468,15 @@ body[class*="tenant-"] {
   pointer-events: auto;
 }
 
-@keyframes gp-home-story-fade {
+@keyframes gp-home-story-slide {
   from {
-    opacity: 0;
+    opacity: 0.92;
+    transform: translateX(-32px);
   }
 
   to {
     opacity: 1;
+    transform: translateX(0);
   }
 }
 

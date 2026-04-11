@@ -1,5 +1,8 @@
 "use strict";
 
+const { getClientCountryCode } = require("../platform/host");
+const { israelComingSoonEnabled } = require("../tenants/israelComingSoon");
+
 /**
  * When the marketing apex (global tenant on www / naked BASE_DOMAIN) serves the homepage,
  * operational directory/login/join flows should target the default regional host (zm.* by default).
@@ -9,6 +12,48 @@
  */
 
 const DEFAULT_OPS_SLUG = (process.env.GETPRO_MARKETING_OPERATIONS_SLUG || "zm").trim().toLowerCase();
+
+/**
+ * Regional subdomain for marketing-apex links when the request is still on the global tenant
+ * (e.g. visitor country is IL but Israel is in coming-soon mode so tenant stays global).
+ * Uses CF-IPCountry / x-country-code / GETPRO_FORCE_CLIENT_COUNTRY (see getClientCountryCode).
+ *
+ * IL + ISRAEL_COMING_SOON: never return "il" here — send users to DEFAULT_OPS_SLUG (typically zm.*)
+ * so homepage CTAs do not deep-link to il.* while Israel is intentionally gated (see coming_soon_il).
+ */
+function marketingApexOpsSlugFromRequest(req) {
+  const cc = getClientCountryCode(req);
+  if (cc === "ZM") return "zm";
+  if (cc === "IL") {
+    if (israelComingSoonEnabled()) return DEFAULT_OPS_SLUG;
+    return "il";
+  }
+  return DEFAULT_OPS_SLUG;
+}
+
+/** Absolute ZM join URL for embed modal (same host as operational hub). */
+function zmJoinEmbedAbsoluteUrl() {
+  const scheme = process.env.PUBLIC_SCHEME || "https";
+  const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
+  return base ? `${scheme}://zm.${base}/join?embed=1` : "/join?embed=1";
+}
+
+/**
+ * Homepage-only geo CTA URLs on marketing apex (getproapp.org / pronline.org with global tenant).
+ * Do not use for non-home routes — shared partials fall back to opsHref when homepageOpsHref is absent.
+ * Delegates to {@link operationalHref} when not global-on-apex (zm.* / il.* / geo-resolved tenant).
+ */
+function homepageOperationalHref(req, pathAndQuery) {
+  const raw = String(pathAndQuery || "/");
+  const path = raw.startsWith("/") ? raw : `/${raw}`;
+  const scheme = process.env.PUBLIC_SCHEME || "https";
+  const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
+  if (!base || !req.isApexHost || !req.tenant || req.tenant.slug !== "global") {
+    return operationalHref(req, pathAndQuery);
+  }
+  const slug = marketingApexOpsSlugFromRequest(req);
+  return `${scheme}://${slug}.${base}${path}`;
+}
 
 /**
  * @param {import('express').Request} req
@@ -61,6 +106,9 @@ function marketingApexLoginRedirectTarget(req) {
 
 module.exports = {
   operationalHref,
+  homepageOperationalHref,
+  marketingApexOpsSlugFromRequest,
+  zmJoinEmbedAbsoluteUrl,
   opsHrefMiddleware,
   marketingApexLoginRedirectTarget,
   DEFAULT_OPS_SLUG,
