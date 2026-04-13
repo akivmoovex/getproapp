@@ -5,6 +5,11 @@
  * where account_manager_field_agent_id matches. Not for bonuses/payouts in this module.
  */
 
+/** Postgres undefined_table — optional intake_deal_reviews may be absent on older DBs. */
+function isMissingIntakeDealReviewsRelationError(e) {
+  return !!(e && e.code === "42P01");
+}
+
 /**
  * Average client review rating in the rolling window, or null if none.
  * @param {import("pg").Pool} pool
@@ -18,8 +23,10 @@ async function getAvgRatingLastDaysForAccountManagerFieldAgent(pool, tenantId, f
   const fid = Number(fieldAgentId);
   const d = Math.min(Math.max(Math.floor(Number(days) || 30), 1), 366);
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(fid) || fid < 1) return null;
-  const r = await pool.query(
-    `
+  let r;
+  try {
+    r = await pool.query(
+      `
     SELECT AVG(idr.rating)::numeric AS avg_rating
     FROM public.intake_deal_reviews idr
     INNER JOIN public.intake_project_assignments a ON a.id = idr.assignment_id AND a.tenant_id = idr.tenant_id
@@ -29,8 +36,12 @@ async function getAvgRatingLastDaysForAccountManagerFieldAgent(pool, tenantId, f
       AND c.account_manager_field_agent_id = $2
       AND idr.created_at >= (now() - ($3::int * interval '1 day'))
     `,
-    [tid, fid, d]
-  );
+      [tid, fid, d]
+    );
+  } catch (e) {
+    if (isMissingIntakeDealReviewsRelationError(e)) return null;
+    throw e;
+  }
   const v = r.rows[0] && r.rows[0].avg_rating;
   if (v == null) return null;
   const n = Number(v);
@@ -50,8 +61,10 @@ async function listRecentClientReviewsForAccountManagerFieldAgent(pool, tenantId
   const d = Math.min(Math.max(Math.floor(Number(opts.days != null ? opts.days : 30) || 30), 1), 366);
   const lim = Math.min(Math.max(Math.floor(Number(opts.limit != null ? opts.limit : 75) || 75), 1), 100);
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(fid) || fid < 1) return [];
-  const r = await pool.query(
-    `
+  let r;
+  try {
+    r = await pool.query(
+      `
     SELECT
       c.name AS company_name,
       idr.rating::double precision AS rating,
@@ -69,8 +82,12 @@ async function listRecentClientReviewsForAccountManagerFieldAgent(pool, tenantId
     ORDER BY idr.created_at DESC NULLS LAST, idr.id DESC
     LIMIT $4
     `,
-    [tid, fid, d, lim]
-  );
+      [tid, fid, d, lim]
+    );
+  } catch (e) {
+    if (isMissingIntakeDealReviewsRelationError(e)) return [];
+    throw e;
+  }
   return r.rows;
 }
 

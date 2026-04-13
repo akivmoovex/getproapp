@@ -81,8 +81,10 @@ async function getAvgRatingInPeriodForAccountManagerFieldAgent(pool, tenantId, f
   const tid = Number(tenantId);
   const fid = Number(fieldAgentId);
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(fid) || fid < 1) return null;
-  const r = await pool.query(
-    `
+  let r;
+  try {
+    r = await pool.query(
+      `
     SELECT AVG(idr.rating)::numeric AS avg_rating
     FROM public.intake_deal_reviews idr
     INNER JOIN public.intake_project_assignments a ON a.id = idr.assignment_id AND a.tenant_id = idr.tenant_id
@@ -93,8 +95,12 @@ async function getAvgRatingInPeriodForAccountManagerFieldAgent(pool, tenantId, f
       AND idr.created_at >= $3::timestamptz
       AND idr.created_at <= $4::timestamptz
     `,
-    [tid, fid, periodStart, periodEnd]
-  );
+      [tid, fid, periodStart, periodEnd]
+    );
+  } catch (e) {
+    if (e && e.code === "42P01") return null;
+    throw e;
+  }
   const v = r.rows[0] && r.rows[0].avg_rating;
   if (v == null) return null;
   const n = Number(v);
