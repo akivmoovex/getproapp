@@ -1,0 +1,62 @@
+<!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Adjustments | <%= _bn %></title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="<%= tenant.themeClass %>" data-screen-role="support" data-tenant-prefix="<%= tenantUrlPrefix %>">
+    <div class="app-layout">
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: typeof faActiveNav !== 'undefined' ? faActiveNav : 'adjustments', faIncludeFaq: true }) %>
+
+      <div class="app-layout__main">
+        <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
+
+        <h1 class="gp-home-story__title" style="margin-top:0;">Adjustments</h1>
+        <p class="muted" style="max-width:40rem;line-height:1.5;">
+          Correction applied separately. Your original monthly statement totals are unchanged.</p>
+        <p class="muted" style="max-width:40rem;font-size:0.9rem;">Will be included in a future statement if applicable, when your organization processes carry-forward payouts.</p>
+
+        <% if (!adjustments || !adjustments.length) { %>
+          <p class="muted">You have no adjustments recorded yet.</p>
+        <% } else { %>
+          <div class="admin-table-wrap" style="overflow-x:auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Period</th>
+                  <th>Adjustment</th>
+                  <th>Reason</th>
+                  <th>Date</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% adjustments.forEach(function (a) { %>
+                <tr>
+                  <td><%= a.periodLabel %></td>
+                  <td><strong><%= a.amountDisplay %></strong></td>
+                  <td><%= String(a.reason || '').slice(0, 120) %><%= String(a.reason || '').length > 120 ? '…' : '' %></td>
+                  <td class="muted"><%= a.created_at ? new Date(a.created_at).toLocaleString() : '—' %></td>
+                  <td class="muted" style="font-size:0.85rem;max-width:14rem;">
+                    <% if (a.applied_in_pay_run_id) { %>Applied in next statement<% } else { %>—<% } %>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+
+        <p style="margin-top:1.5rem;">
+          <a href="<%= tenantUrlPrefix %>/field-agent/statements">← Monthly statements</a>
+        </p>
+
+        <%- include('../partials/components/container_close') %>
+      </div>
+    </div>
+  </body>
+</html>

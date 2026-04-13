@@ -338,6 +338,36 @@ async function duplicateExistsAgainstSubmissions(pool, tenantId, phoneNorm, what
 }
 
 /**
+ * Directory duplicates: companies / professional_signups phone match (canonical + legacy-expanded norms).
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {number} tenantId
+ * @param {string[]} normCandidates digit strings (canonical + legacy-expanded)
+ */
+async function duplicateExistsCompaniesOrSignups(pool, tenantId, normCandidates) {
+  const tid = Number(tenantId);
+  if (!Number.isFinite(tid) || tid < 1) return { duplicate: false };
+  const uniq = [...new Set((normCandidates || []).map((x) => String(x || "").replace(/\D/g, "")).filter(Boolean))];
+  for (const d of uniq) {
+    const c = await pool.query(
+      `SELECT 1 FROM public.companies WHERE tenant_id = $1 AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = $2 LIMIT 1`,
+      [tid, d]
+    );
+    if (c.rows.length) return { duplicate: true, source: "company_phone" };
+    const p = await pool.query(
+      `SELECT 1 FROM public.professional_signups WHERE tenant_id = $1 AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = $2 LIMIT 1`,
+      [tid, d]
+    );
+    if (p.rows.length) return { duplicate: true, source: "professional_signup_phone" };
+    const feat = await pool.query(
+      `SELECT 1 FROM public.companies WHERE tenant_id = $1 AND regexp_replace(COALESCE(featured_cta_phone, ''), '\\D', '', 'g') = $2 LIMIT 1`,
+      [tid, d]
+    );
+    if (feat.rows.length) return { duplicate: true, source: "company_featured_phone" };
+  }
+  return { duplicate: false };
+}
+
+/**
  * @param {import("pg").Pool|import("pg").PoolClient} pool
  * @param {import("pg").PoolClient|null} client
  */
@@ -408,6 +438,7 @@ module.exports = {
   getSubmissionByIdForAdminLinkage,
   getSubmissionByIdForFieldAgent,
   duplicateExistsAgainstSubmissions,
+  duplicateExistsCompaniesOrSignups,
   insertSubmission,
   updatePhotosAfterUpload,
 };

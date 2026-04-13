@@ -1,0 +1,109 @@
+<!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Monthly statement | <%= _bn %></title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+    <style>
+      .fa-statement-doc__title { font-size: 1.125rem; margin: 0 0 0.75rem; }
+      .fa-statement-doc__meta { margin: 0.35rem 0; }
+      .fa-statement-doc__muted { margin: 0.25rem 0; color: #555; font-size: 0.875rem; }
+      .fa-statement-doc__disclaimer { margin: 1rem 0; padding: 0.75rem; background: #f5f5f5; border-radius: 4px; font-size: 0.9rem; }
+      .fa-statement-doc__h2 { font-size: 1rem; margin: 1rem 0 0.5rem; }
+      .fa-statement-doc__dl { margin: 0; }
+      .fa-statement-doc__row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid #eee; flex-wrap: wrap; }
+      .fa-statement-doc__row dt { margin: 0; font-weight: 500; color: #444; }
+      .fa-statement-doc__row dd { margin: 0; font-weight: 600; text-align: right; }
+      .fa-statement-doc__row--total { border-bottom: none; margin-top: 0.25rem; padding-top: 0.5rem; border-top: 2px solid #ccc; }
+    </style>
+  </head>
+  <body class="<%= tenant.themeClass %>" data-screen-role="support" data-tenant-prefix="<%= tenantUrlPrefix %>">
+    <div class="app-layout">
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: typeof faActiveNav !== 'undefined' ? faActiveNav : 'statements', faIncludeFaq: true }) %>
+
+      <div class="app-layout__main">
+        <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
+
+        <h1 class="gp-home-story__title" style="margin-top:0;">Monthly statement</h1>
+        <% if (typeof disputeSubmitted !== 'undefined' && disputeSubmitted) { %>
+          <p class="admin-gate-success" role="status">Your dispute has been submitted for review.</p>
+        <% } %>
+        <p class="muted" style="margin-top:0;max-width:40rem;line-height:1.5;">
+          <a href="<%= tenantUrlPrefix %>/field-agent/statements/<%= detail.payRunId %>/download" target="_blank" rel="noopener">Print / save as PDF</a>
+          <span class="muted"> — opens a printable page (use your browser’s print dialog).</span>
+        </p>
+
+        <% if (typeof activeDispute !== 'undefined' && activeDispute) { %>
+        <section class="card" style="padding:1rem;margin-top:0.75rem;">
+          <h2 class="form-step__title" style="margin-top:0;font-size:1.05rem;">Dispute status</h2>
+          <p style="margin:0;">
+            <% if (activeDispute.status === 'open') { %><strong>Open</strong> — we have received your dispute.<% } else if (activeDispute.status === 'under_review') { %><strong>Under review</strong><% } else { %><%= activeDispute.status %><% } %>
+          </p>
+          <p class="muted" style="margin:0.5rem 0 0;font-size:0.875rem;">Submitting a dispute does not change your statement. Adjustments, if any, will be handled separately.</p>
+        </section>
+        <% } %>
+
+        <% if (typeof detail !== 'undefined' && detail) { %>
+        <section class="card" style="padding:1rem;margin-top:0.5rem;">
+          <%- include('../partials/field_agent_monthly_statement_body', {
+            detail,
+            tenantRegionLabel: typeof tenantRegionLabel !== 'undefined' ? tenantRegionLabel : '',
+            showTenantLine: typeof showTenantLine !== 'undefined' ? showTenantLine : false,
+            omitDocumentTitle: true,
+          }) %>
+        </section>
+        <% } %>
+
+        <% if (typeof statementAdjustments !== 'undefined' && statementAdjustments && statementAdjustments.length) { %>
+        <section class="card" style="padding:1rem;margin-top:0.75rem;">
+          <h2 class="form-step__title" style="margin-top:0;font-size:1.05rem;">Adjustments</h2>
+          <p class="muted" style="margin:0 0 0.75rem;font-size:0.9rem;">Correction applied separately. Original statement line totals above are unchanged.</p>
+          <ul style="margin:0;padding-left:1.25rem;">
+            <% statementAdjustments.forEach(function (adj) { %>
+            <li style="margin-bottom:0.5rem;">
+              <strong><%= adj.amountDisplay %></strong> — <%= adj.reason %>
+              <span class="muted" style="font-size:0.85rem;"> · <%= adj.created_at ? new Date(adj.created_at).toLocaleDateString() : '' %></span>
+              <% if (adj.appliedLabel) { %>
+                <br /><span class="muted" style="font-size:0.85rem;"><%= adj.appliedLabel %></span>
+              <% } else { %>
+                <br /><span class="muted" style="font-size:0.85rem;">Will be included in a future statement if applicable.</span>
+              <% } %>
+            </li>
+            <% }); %>
+          </ul>
+        </section>
+        <% } %>
+
+        <% if (typeof canRaiseDispute !== 'undefined' && canRaiseDispute && typeof payRunItemId !== 'undefined' && payRunItemId) { %>
+        <section class="card" style="padding:1rem;margin-top:0.75rem;">
+          <h2 class="form-step__title" style="margin-top:0;font-size:1.05rem;">Raise dispute</h2>
+          <p class="muted" style="margin:0 0 0.75rem;font-size:0.9rem;">Submitting a dispute does not change your statement. Adjustments, if any, will be handled separately.</p>
+          <form method="post" action="<%= tenantUrlPrefix %>/field-agent/statements/<%= detail.payRunId %>/disputes">
+            <input type="hidden" name="pay_run_item_id" value="<%= payRunItemId %>" />
+            <div class="input-field" style="margin-bottom:0.75rem;">
+              <label class="input-field__label" for="dispute_reason">Reason (required)</label>
+              <input class="input-field__control" id="dispute_reason" name="dispute_reason" type="text" required maxlength="4000" placeholder="Brief summary" />
+            </div>
+            <div class="input-field" style="margin-bottom:0.75rem;">
+              <label class="input-field__label" for="dispute_notes">Notes (optional)</label>
+              <textarea class="input-field__control" id="dispute_notes" name="dispute_notes" rows="3" maxlength="8000" placeholder="Additional detail"></textarea>
+            </div>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Raise dispute' }) %>
+          </form>
+        </section>
+        <% } %>
+
+        <p style="margin-top:1.5rem;">
+          <a href="<%= tenantUrlPrefix %>/field-agent/statements">← All statements</a>
+          · <a href="<%= tenantUrlPrefix %>/field-agent/disputes">Your disputes</a>
+          · <a href="<%= tenantUrlPrefix %>/field-agent/adjustments">Adjustments</a>
+        </p>
+
+        <%- include('../partials/components/container_close') %>
+      </div>
+    </div>
+  </body>
+</html>

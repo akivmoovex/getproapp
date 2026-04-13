@@ -1,0 +1,58 @@
+<!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Your disputes | <%= _bn %></title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="<%= tenant.themeClass %>" data-screen-role="support" data-tenant-prefix="<%= tenantUrlPrefix %>">
+    <div class="app-layout">
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: typeof faActiveNav !== 'undefined' ? faActiveNav : 'disputes', faIncludeFaq: true }) %>
+
+      <div class="app-layout__main">
+        <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
+
+        <h1 class="gp-home-story__title" style="margin-top:0;">Your disputes</h1>
+        <p class="muted" style="max-width:40rem;">Submitting a dispute does not change your statement. Adjustments, if any, will be handled separately.</p>
+
+        <% if (!disputes || !disputes.length) { %>
+          <p class="muted">You have no disputes yet.</p>
+        <% } else { %>
+          <div class="admin-table-wrap" style="overflow-x:auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Period</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% disputes.forEach(function (d) { %>
+                <tr>
+                  <td><%= d.periodLabel %></td>
+                  <td>
+                    <% if (d.status === 'open') { %>Open<% } else if (d.status === 'under_review') { %>Under review<% } else if (d.status === 'resolved') { %>Resolved<% } else if (d.status === 'rejected') { %>Rejected<% } else { %><%= d.status %><% } %>
+                  </td>
+                  <td><%= String(d.dispute_reason || '').slice(0, 80) %><%= String(d.dispute_reason || '').length > 80 ? '…' : '' %></td>
+                  <td class="muted"><%= d.created_at ? new Date(d.created_at).toLocaleString() : '—' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+
+        <p style="margin-top:1.5rem;">
+          <a href="<%= tenantUrlPrefix %>/field-agent/statements">← Monthly statements</a>
+        </p>
+
+        <%- include('../partials/components/container_close') %>
+      </div>
+    </div>
+  </body>
+</html>

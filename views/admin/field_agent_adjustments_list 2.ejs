@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Field agent adjustments | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Adjustments', activeNav: 'field_agent_adjustments' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <% var _listQs = []; if (typeof embed !== 'undefined' && embed) _listQs.push('embed=1'); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') _listQs.push('tenant_id=' + tenantId); %>
+        <p><a href="/admin/field-agent-pay-runs<% if (_listQs.length) { %>?<%= _listQs.join('&') %><% } %>">← Pay runs</a></p>
+
+        <header class="admin-dashboard__header">
+          <h1 class="admin-dashboard__title">Field agent adjustments</h1>
+          <p class="admin-dashboard__subtitle muted">Ledger entries only — original pay-run snapshots are not modified.</p>
+        </header>
+
+        <% if (typeof flashCreated !== 'undefined' && flashCreated) { %>
+          <p class="admin-gate-success" role="status">Adjustment recorded.</p>
+        <% } %>
+
+        <% if (typeof isSuper !== 'undefined' && isSuper && typeof tenants !== 'undefined' && tenants.length) { %>
+        <form method="get" action="/admin/field-agent-adjustments" class="card card--mb-xl" style="padding:1rem;">
+          <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+          <div class="input-field" style="max-width:24rem;">
+            <label class="input-field__label" for="tenant_scope">Region</label>
+            <select id="tenant_scope" class="input-field__control" name="tenant_id" onchange="this.form.submit()">
+              <% tenants.forEach(function (t) { %>
+                <option value="<%= t.id %>" <%= Number(tenantId) === Number(t.id) ? 'selected' : '' %>><%= t.name %> (<%= t.slug %>)</option>
+              <% }); %>
+            </select>
+          </div>
+        </form>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <h2 class="section-title section-title--flush">Filter</h2>
+          <form method="get" action="/admin/field-agent-adjustments" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <% if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') { %><input type="hidden" name="tenant_id" value="<%= tenantId %>" /><% } %>
+            <div class="input-field">
+              <label class="input-field__label" for="f_fa">Field agent id</label>
+              <input class="input-field__control" id="f_fa" name="field_agent_id" type="text" value="<%= typeof filterFieldAgentId !== 'undefined' ? filterFieldAgentId : '' %>" placeholder="optional" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="f_run">Original pay run id</label>
+              <input class="input-field__control" id="f_run" name="original_pay_run_id" type="text" value="<%= typeof filterOriginalPayRunId !== 'undefined' ? filterOriginalPayRunId : '' %>" placeholder="optional" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="f_disp">Dispute id</label>
+              <input class="input-field__control" id="f_disp" name="dispute_id" type="text" value="<%= typeof filterDisputeId !== 'undefined' ? filterDisputeId : '' %>" placeholder="optional" />
+            </div>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply' }) %>
+          </form>
+        </section>
+
+        <section class="card">
+          <div class="admin-table-wrap" style="overflow-x:auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Id</th>
+                  <th>Agent</th>
+                  <th>Amount</th>
+                  <th>Type</th>
+                  <th>Reason</th>
+                  <th>Original run</th>
+                  <th>Dispute</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (adjustments || []).forEach(function (a) { %>
+                <tr>
+                  <td><%= a.id %></td>
+                  <td><%= a.field_agent_label_snapshot || '—' %></td>
+                  <td><%= a.adjustment_amount %></td>
+                  <td><%= a.adjustment_type %></td>
+                  <td><%= String(a.reason || '').slice(0, 60) %><%= String(a.reason || '').length > 60 ? '…' : '' %></td>
+                  <td><%= a.original_pay_run_id %></td>
+                  <td><%= a.dispute_id != null ? a.dispute_id : '—' %></td>
+                  <td class="muted"><%= a.created_at ? new Date(a.created_at).toLocaleString() : '—' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+            <% if (!(adjustments||[]).length) { %><p class="muted">No adjustments match.</p><% } %>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

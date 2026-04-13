@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Monthly statement — <%= typeof detail !== 'undefined' && detail && detail.periodLabel ? detail.periodLabel : _bn %></title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        line-height: 1.45;
+        color: #1a1a1a;
+        max-width: 40rem;
+        margin: 0 auto;
+        padding: 1rem 1.25rem 2rem;
+      }
+      .fa-statement-print-actions {
+        margin-bottom: 1rem;
+      }
+      .fa-statement-doc__title {
+        font-size: 1.35rem;
+        margin: 0 0 1rem;
+      }
+      .fa-statement-doc__meta {
+        margin: 0.35rem 0;
+      }
+      .fa-statement-doc__muted {
+        margin: 0.25rem 0;
+        color: #555;
+        font-size: 0.9rem;
+      }
+      .fa-statement-doc__disclaimer {
+        margin: 1rem 0;
+        padding: 0.75rem;
+        background: #f5f5f5;
+        border-radius: 4px;
+        font-size: 0.9rem;
+      }
+      .fa-statement-doc__h2 {
+        font-size: 1rem;
+        margin: 1.25rem 0 0.5rem;
+      }
+      .fa-statement-doc__dl {
+        margin: 0;
+      }
+      .fa-statement-doc__row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.35rem 0;
+        border-bottom: 1px solid #eee;
+      }
+      .fa-statement-doc__row dt {
+        margin: 0;
+        font-weight: 500;
+        color: #444;
+      }
+      .fa-statement-doc__row dd {
+        margin: 0;
+        font-weight: 600;
+        text-align: right;
+      }
+      .fa-statement-doc__row--total {
+        border-bottom: none;
+        margin-top: 0.25rem;
+        padding-top: 0.5rem;
+        border-top: 2px solid #ccc;
+      }
+      @media print {
+        .fa-statement-print-actions {
+          display: none !important;
+        }
+        body {
+          padding: 0;
+          max-width: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="fa-statement-print-actions no-print">
+      <button type="button" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+    <%- include('../partials/field_agent_monthly_statement_body', {
+      detail: typeof detail !== 'undefined' ? detail : null,
+      tenantRegionLabel: typeof tenantRegionLabel !== 'undefined' ? tenantRegionLabel : '',
+      showTenantLine: typeof showTenantLine !== 'undefined' ? showTenantLine : false,
+      omitDocumentTitle: false,
+    }) %>
+  </body>
+</html>
