@@ -104,7 +104,7 @@
         <div class="card admin-form-card card--max-720 u-mt-lg">
           <h2 class="section-title section-title--flush">Commerce &amp; lead credits</h2>
           <p class="muted admin-intro u-mb-md">
-            Display currency, deal fee percentage, credit floors, and minimum review for lead offers. New service providers receive the starting balance; acceptance is blocked when balance minus deal price would fall below the minimum.
+            Currency code and optional display name/symbol, deal fee percentage, credit floors, and minimum review for lead offers. New service providers receive the starting balance; acceptance is blocked when balance minus deal price would fall below the minimum.
           </p>
           <div class="admin-form-shell is-read-mode" data-admin-form-edit>
             <div class="admin-form-shell__toolbar">
@@ -127,6 +127,14 @@
                 <input id="ts_cur" name="commerce_currency" type="text" value="<%= _co.currency != null ? String(_co.currency) : 'ZMW' %>" maxlength="12" placeholder="ZMW" autocomplete="off" />
               </div>
               <div>
+                <label for="ts_cname">Currency name (optional)</label>
+                <input id="ts_cname" name="commerce_currency_name" type="text" value="<%= _co.currency_name != null ? String(_co.currency_name) : '' %>" maxlength="80" placeholder="e.g. Zambian Kwacha" autocomplete="off" />
+              </div>
+              <div>
+                <label for="ts_csym">Currency symbol (optional)</label>
+                <input id="ts_csym" name="commerce_currency_symbol" type="text" value="<%= _co.currency_symbol != null ? String(_co.currency_symbol) : '' %>" maxlength="16" placeholder="e.g. K or $" autocomplete="off" />
+              </div>
+              <div>
                 <label for="ts_dpp">Deal price (% of internal price estimation)</label>
                 <input id="ts_dpp" name="commerce_deal_price_percentage" type="number" step="0.0001" min="0" max="100" value="<%= _co.deal_price_percentage != null ? _co.deal_price_percentage : 3 %>" />
               </div>
@@ -141,6 +149,86 @@
               <div>
                 <label for="ts_minr">Minimum review rating (for offers)</label>
                 <input id="ts_minr" name="commerce_minimum_review_rating" type="number" step="0.1" min="1" max="5" value="<%= _co.minimum_review_rating != null ? _co.minimum_review_rating : 3 %>" />
+              </div>
+              <div>
+                <label for="ts_fasp">Field agent SP commission (% of collected lead fees)</label>
+                <input
+                  id="ts_fasp"
+                  name="commerce_field_agent_sp_commission_percent"
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  max="100"
+                  placeholder="Not set"
+                  value="<%= _co.field_agent_sp_commission_percent != null && _co.field_agent_sp_commission_percent !== '' ? _co.field_agent_sp_commission_percent : '' %>"
+                />
+                <p class="muted" style="margin:0.35rem 0 0;font-size:0.875rem;">
+                  Optional. Reporting only: percent of provider lead fees (charged assignments) attributed to the account-manager field agent. Leave empty for 0% until configured.
+                </p>
+              </div>
+              <div>
+                <label for="ts_fasp_low">Field agent SP low rating threshold</label>
+                <input
+                  id="ts_fasp_low"
+                  name="commerce_field_agent_sp_rating_low_threshold"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="5"
+                  placeholder="Default 2.5"
+                  value="<%= _co.field_agent_sp_rating_low_threshold != null && _co.field_agent_sp_rating_low_threshold !== '' ? _co.field_agent_sp_rating_low_threshold : '' %>"
+                />
+                <p class="muted" style="margin:0.35rem 0 0;font-size:0.875rem;">
+                  Below this rolling SP_Rating (30d), the dashboard uses the low band and estimated payable SP commission may be withheld (reporting only). Leave empty for platform default (2.5). Must be ≤ high threshold.
+                </p>
+              </div>
+              <div>
+                <label for="ts_fasp_high">Field agent SP high rating threshold</label>
+                <input
+                  id="ts_fasp_high"
+                  name="commerce_field_agent_sp_rating_high_threshold"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="5"
+                  placeholder="Default 4.0"
+                  value="<%= _co.field_agent_sp_rating_high_threshold != null && _co.field_agent_sp_rating_high_threshold !== '' ? _co.field_agent_sp_rating_high_threshold : '' %>"
+                />
+                <p class="muted" style="margin:0.35rem 0 0;font-size:0.875rem;">
+                  At or above this rolling SP_Rating (30d), the dashboard uses the high band and high-rating bonus may apply (if configured). Leave empty for platform default (4.0). Must be ≥ low threshold.
+                </p>
+              </div>
+              <div>
+                <label for="ts_faspbonus">Field agent SP high-rating bonus (% of earned SP commission)</label>
+                <input
+                  id="ts_faspbonus"
+                  name="commerce_field_agent_sp_high_rating_bonus_percent"
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  max="100"
+                  placeholder="Not set"
+                  value="<%= _co.field_agent_sp_high_rating_bonus_percent != null && _co.field_agent_sp_high_rating_bonus_percent !== '' ? _co.field_agent_sp_high_rating_bonus_percent : '' %>"
+                />
+                <p class="muted" style="margin:0.35rem 0 0;font-size:0.875rem;">
+                  Optional. Reporting only: when rolling SP_Rating (30d) is at or above the high rating threshold, bonus percent applied to earned SP commission (30d) in the payable estimate. Leave empty for 0%.
+                </p>
+              </div>
+              <div>
+                <label for="ts_faec">Field agent EC commission (% of qualifying project deal value)</label>
+                <input
+                  id="ts_faec"
+                  name="commerce_field_agent_ec_commission_percent"
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  max="100"
+                  placeholder="Not set"
+                  value="<%= _co.field_agent_ec_commission_percent != null && _co.field_agent_ec_commission_percent !== '' ? _co.field_agent_ec_commission_percent : '' %>"
+                />
+                <p class="muted" style="margin:0.35rem 0 0;font-size:0.875rem;">
+                  Optional. Read-only metric: percent applied to the sum of distinct qualifying client project <code class="kbd">deal_price</code> values in the last 30 days (assignment to your linked companies). Not collected revenue. Leave empty for 0% until configured.
+                </p>
               </div>
             </form>
           </div>

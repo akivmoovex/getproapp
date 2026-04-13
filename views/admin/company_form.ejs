@@ -166,6 +166,28 @@
                   <input id="featured_cta_phone" name="featured_cta_phone" class="input-field__control" value="<%= company ? company.featured_cta_phone : '' %>" />
                 </div>
               </div>
+
+              <% if (typeof canMutateCompanyFieldAgentLinkage !== 'undefined' && canMutateCompanyFieldAgentLinkage) { %>
+              <div class="input-field">
+                <label for="source_field_agent_submission_id" class="input-field__label">Field-agent submission (optional)</label>
+                <select id="source_field_agent_submission_id" name="source_field_agent_submission_id" class="input-field__control">
+                  <option value="">— None —</option>
+                  <% (approvedSubmissionsForLinkage || []).forEach(function (s) { %>
+                    <option value="<%= s.id %>">#<%= s.id %> · <%= s.first_name %> <%= s.last_name %></option>
+                  <% }); %>
+                </select>
+                <p class="input-field__help muted">Approved submissions only. Sets the default account manager from the submission.</p>
+              </div>
+              <div class="input-field">
+                <label for="account_manager_field_agent_id" class="input-field__label">Account manager (optional)</label>
+                <select id="account_manager_field_agent_id" name="account_manager_field_agent_id" class="input-field__control">
+                  <option value="">— None —</option>
+                  <% (fieldAgentsForLinkage || []).forEach(function (fa) { %>
+                    <option value="<%= fa.id %>"><%= fa.display_name || fa.username %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <% } %>
             </div>
             <div class="form-step__actions admin-gate-actions">
               <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save' }) %>

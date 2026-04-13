@@ -24,6 +24,7 @@ const {
   tenantUsesZmwLeadCreditsWithStore,
   isLeadAcceptanceBlockedByCreditWithStore,
 } = require("../../companyPortal/companyPortalLeadCredits");
+const { getCommerceSettingsForTenant, commerceCurrencyCodeUpper } = require("../../tenants/tenantCommerceSettings");
 const {
   listRecentLedgerEntriesAsync,
   recordAdminPaymentCreditAsync,
@@ -49,7 +50,10 @@ const tenantCitiesRepo = require("../../db/pg/tenantCitiesRepo");
 const professionalSignupsRepo = require("../../db/pg/professionalSignupsRepo");
 const reviewsRepo = require("../../db/pg/reviewsRepo");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
-const { canManageServiceProviderCategories } = require("../../auth/roles");
+const { canManageServiceProviderCategories, canMutateCompanyFieldAgentLinkage } = require("../../auth/roles");
+const { resolveCompanyFieldAgentLinkage } = require("../../companies/companyFieldAgentLinkage");
+const fieldAgentsRepo = require("../../db/pg/fieldAgentsRepo");
+const fieldAgentSubmissionsRepo = require("../../db/pg/fieldAgentSubmissionsRepo");
 
 module.exports = function registerAdminDirectoryRoutes(router) {
   router.get("/categories", requireServiceProviderCategoryAdmin, async (req, res) => {
@@ -221,10 +225,12 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     const tid = getAdminTenantId(req);
     const pool = getPgPool();
     let companies = await companiesRepo.listAdminWithCategory(pool, tid);
+    companies = await companiesRepo.enrichCompaniesWithAccountManagerLabels(pool, tid, companies);
     const qn = String(req.query.q_name || "").trim().toLowerCase();
     const qs = String(req.query.q_subdomain || "").trim().toLowerCase();
     const qc = String(req.query.q_category || "").trim().toLowerCase();
     const qu = String(req.query.q_updated || "").trim().toLowerCase();
+    const qFaLinked = String(req.query.q_fa_linked || "").trim().toLowerCase();
     if (qn) companies = companies.filter((c) => c.name.toLowerCase().includes(qn));
     if (qs) companies = companies.filter((c) => (c.subdomain || "").toLowerCase().includes(qs));
     if (qc) {
@@ -233,6 +239,9 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     if (qu) {
       companies = companies.filter((c) => String(c.updated_at || "").toLowerCase().includes(qu));
     }
+    if (qFaLinked === "1" || qFaLinked === "yes" || qFaLinked === "true") {
+      companies = companies.filter((c) => c.account_manager_field_agent_id != null);
+    }
     const editMode = parseEditMode(req);
     const filterSuffix = filterSuffixFromQuery(req);
     const baseDomain = (process.env.BASE_DOMAIN || "").trim();
@@ -240,6 +249,8 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     const tr = await tenantsRepo.getById(pool, tid);
     const tenantSlug = tr && tr.slug ? String(tr.slug) : "";
     const portalCreditUiActive = await tenantUsesZmwLeadCreditsWithStore(pool, tid);
+    const portalCreditCs = portalCreditUiActive ? await getCommerceSettingsForTenant(pool, tid) : null;
+    const portalCreditCurrencyCode = portalCreditCs ? commerceCurrencyCodeUpper(portalCreditCs) : "ZMW";
     const companiesWithUrls = await Promise.all(
       companies.map(async (c) => {
         const sub = String(c.subdomain || "").trim();
@@ -272,6 +283,7 @@ module.exports = function registerAdminDirectoryRoutes(router) {
       filterSuffix,
       saved,
       portalCreditUiActive,
+      portalCreditCurrencyCode,
       canManageFeaturedPremium,
       filterQueryForSave,
       filters: {
@@ -279,6 +291,7 @@ module.exports = function registerAdminDirectoryRoutes(router) {
         q_subdomain: req.query.q_subdomain || "",
         q_category: req.query.q_category || "",
         q_updated: req.query.q_updated || "",
+        q_fa_linked: req.query.q_fa_linked || "",
       },
     });
   });
@@ -321,6 +334,13 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     const tenantSlug = tr && tr.slug ? String(tr.slug) : "";
     const baseForUrls = (process.env.BASE_DOMAIN || "").trim() || "getproapp.org";
     const saved = req.query.saved === "1" || req.query.saved === "true";
+    const canL = req.session.adminUser && canMutateCompanyFieldAgentLinkage(req.session.adminUser.role);
+    let fieldAgentsForLinkage = [];
+    let approvedSubmissionsForLinkage = [];
+    if (canL) {
+      fieldAgentsForLinkage = await fieldAgentsRepo.listForTenantSelect(pool, tid);
+      approvedSubmissionsForLinkage = await fieldAgentSubmissionsRepo.listApprovedForCompanyLinkageSelect(pool, tid, null);
+    }
     return res.render("admin/company_form", {
       company: null,
       categories,
@@ -333,6 +353,9 @@ module.exports = function registerAdminDirectoryRoutes(router) {
       miniSiteExampleLabel: tenantSlug ? companyMiniSiteLabel(tenantSlug, "your-company-slug", baseForUrls) : "",
       error: null,
       saved,
+      canMutateCompanyFieldAgentLinkage: !!canL,
+      fieldAgentsForLinkage,
+      approvedSubmissionsForLinkage,
     });
   });
 
@@ -368,6 +391,33 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     const defaultPaymentDate = new Date().toISOString().slice(0, 10);
     const portalCreditNotice = String(req.query.credit_notice || "").trim().slice(0, 500) || null;
     const portalCreditError = String(req.query.credit_error || "").trim().slice(0, 500) || null;
+    const portalCreditCs = portalCreditUiActive ? await getCommerceSettingsForTenant(pool, tid) : null;
+    const portalCreditCurrencyCode = portalCreditCs ? commerceCurrencyCodeUpper(portalCreditCs) : "ZMW";
+    const portalCreditMinBalance =
+      portalCreditCs != null && Number.isFinite(Number(portalCreditCs.minimum_credit_balance))
+        ? Number(portalCreditCs.minimum_credit_balance)
+        : 0;
+    const canL = req.session.adminUser && canMutateCompanyFieldAgentLinkage(req.session.adminUser.role);
+    let fieldAgentsForLinkage = [];
+    let approvedSubmissionsForLinkage = [];
+    if (canL) {
+      fieldAgentsForLinkage = await fieldAgentsRepo.listForTenantSelect(pool, tid);
+      approvedSubmissionsForLinkage = await fieldAgentSubmissionsRepo.listApprovedForCompanyLinkageSelect(pool, tid, cid);
+    }
+    let accountManagerFieldAgentDisplay = "";
+    let sourceFieldAgentSubmissionDisplay = "";
+    if (company.account_manager_field_agent_id) {
+      const faRow = await fieldAgentsRepo.getByIdAndTenant(pool, Number(company.account_manager_field_agent_id), tid);
+      accountManagerFieldAgentDisplay = faRow
+        ? String(faRow.display_name || "").trim() || String(faRow.username || "").trim() || `Agent #${faRow.id}`
+        : "";
+    }
+    if (company.source_field_agent_submission_id) {
+      const subRow = await fieldAgentSubmissionsRepo.getSubmissionByIdForAdmin(pool, tid, Number(company.source_field_agent_submission_id));
+      sourceFieldAgentSubmissionDisplay = subRow
+        ? `#${subRow.id} · ${String(subRow.first_name || "").trim()} ${String(subRow.last_name || "").trim()} · ${String(subRow.phone_raw || "").trim()}`
+        : "";
+    }
     return res.render("admin/company_workspace", {
       company,
       categories,
@@ -381,11 +431,18 @@ module.exports = function registerAdminDirectoryRoutes(router) {
       portalCreditUiActive,
       portalCreditBlocked,
       portalCreditBalance: Number(company.portal_lead_credits_balance) || 0,
+      portalCreditCurrencyCode,
+      portalCreditMinBalance,
       recentLedgerEntries,
       paymentMethodOptions,
       defaultPaymentDate,
       portalCreditNotice,
       portalCreditError,
+      canMutateCompanyFieldAgentLinkage: !!canL,
+      fieldAgentsForLinkage,
+      approvedSubmissionsForLinkage,
+      accountManagerFieldAgentDisplay,
+      sourceFieldAgentSubmissionDisplay,
     });
   });
 
@@ -418,11 +475,12 @@ module.exports = function registerAdminDirectoryRoutes(router) {
           redirectWithEmbed(req, `/admin/companies/${cid}/workspace?credit_error=` + encodeURIComponent(result.error))
         );
       }
+      const unit = result.currencyUnit || "ZMW";
       return res.redirect(
         redirectWithEmbed(
           req,
           `/admin/companies/${cid}/workspace?credit_notice=` +
-            encodeURIComponent(`Payment recorded. New balance: ${result.newBalance} ZMW.`)
+            encodeURIComponent(`Payment recorded. New balance: ${result.newBalance} ${unit}.`)
         )
       );
     }
@@ -516,6 +574,18 @@ module.exports = function registerAdminDirectoryRoutes(router) {
       parseGalleryAdminText(d.gallery_text !== undefined ? String(d.gallery_text) : galleryToAdminText(parseGalleryJson(row.gallery_json)))
     );
 
+    const canL = req.session.adminUser && canMutateCompanyFieldAgentLinkage(req.session.adminUser.role);
+    const linkRes = await resolveCompanyFieldAgentLinkage(pool, {
+      tenantId: tid,
+      companyId: cid,
+      canMutate: !!canL,
+      existingRow: row,
+      body: canL ? d : {},
+    });
+    if (!linkRes.ok) {
+      return res.status(400).json({ error: linkRes.error });
+    }
+
     try {
       const updated = await companiesRepo.updateFullByIdAndTenantId(pool, {
         id: cid,
@@ -537,6 +607,8 @@ module.exports = function registerAdminDirectoryRoutes(router) {
         hoursText: d.hours_text !== undefined ? String(d.hours_text).trim() : row.hours_text,
         galleryJson: galleryJsonUp,
         logoUrl: d.logo_url !== undefined ? String(d.logo_url).trim() : row.logo_url,
+        accountManagerFieldAgentId: linkRes.accountManagerFieldAgentId,
+        sourceFieldAgentSubmissionId: linkRes.sourceFieldAgentSubmissionId,
       });
       if (!updated) return res.status(404).json({ error: "Company not found" });
       const saved = await companiesRepo.getWithCategoryByIdAndTenantId(pool, cid, tid);
@@ -599,6 +671,18 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     }
     const galleryJson = JSON.stringify(parseGalleryAdminText(gallery_text));
 
+    const canL = req.session.adminUser && canMutateCompanyFieldAgentLinkage(req.session.adminUser.role);
+    const linkRes = await resolveCompanyFieldAgentLinkage(pool, {
+      tenantId: tid,
+      companyId: null,
+      canMutate: !!canL,
+      existingRow: null,
+      body: req.body || {},
+    });
+    if (!linkRes.ok) {
+      return res.status(400).send(linkRes.error);
+    }
+
     try {
       await companiesRepo.insertFull(pool, {
         tenantId: tid,
@@ -618,6 +702,8 @@ module.exports = function registerAdminDirectoryRoutes(router) {
         hoursText: String(hours_text || "").trim(),
         galleryJson,
         logoUrl: String(logo_url || "").trim(),
+        accountManagerFieldAgentId: linkRes.accountManagerFieldAgentId,
+        sourceFieldAgentSubmissionId: linkRes.sourceFieldAgentSubmissionId,
       });
       return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1&saved=1"));
     } catch (e) {
@@ -683,6 +769,20 @@ module.exports = function registerAdminDirectoryRoutes(router) {
     }
     const galleryJsonUp = JSON.stringify(parseGalleryAdminText(gallery_text));
 
+    const existing = await companiesRepo.getByIdAndTenantId(pool, cid, tid);
+    if (!existing) return res.status(404).send("Company not found");
+    const canL = req.session.adminUser && canMutateCompanyFieldAgentLinkage(req.session.adminUser.role);
+    const linkRes = await resolveCompanyFieldAgentLinkage(pool, {
+      tenantId: tid,
+      companyId: cid,
+      canMutate: !!canL,
+      existingRow: existing,
+      body: req.body || {},
+    });
+    if (!linkRes.ok) {
+      return res.status(400).send(linkRes.error);
+    }
+
     try {
       const updated = await companiesRepo.updateFullByIdAndTenantId(pool, {
         id: cid,
@@ -703,6 +803,8 @@ module.exports = function registerAdminDirectoryRoutes(router) {
         hoursText: String(hours_text || "").trim(),
         galleryJson: galleryJsonUp,
         logoUrl: String(logo_url || "").trim(),
+        accountManagerFieldAgentId: linkRes.accountManagerFieldAgentId,
+        sourceFieldAgentSubmissionId: linkRes.sourceFieldAgentSubmissionId,
       });
       if (!updated) return res.status(404).send("Company not found");
       return res.redirect(redirectWithEmbed(req, "/admin/companies?edit=1&saved=1"));

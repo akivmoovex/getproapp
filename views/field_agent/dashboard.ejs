@@ -7,7 +7,7 @@
     <title>Field agent dashboard | <%= _bn %></title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
-  <body class="<%= tenant.themeClass %>" data-screen-role="support">
+  <body class="<%= tenant.themeClass %>" data-screen-role="support" data-tenant-prefix="<%= tenantUrlPrefix %>">
     <div class="app-layout">
       <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
       <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: 'dashboard', faIncludeFaq: true }) %>
@@ -23,25 +23,177 @@
         <% } %>
 
         <h1 class="gp-home-story__title" style="margin-top:0;">Hello, <%= fieldAgent.displayName || fieldAgent.username %></h1>
+        <p class="muted" style="margin:-0.25rem 0 1rem;font-size:0.9375rem;max-width:42rem;line-height:1.5;">
+          <a href="<%= tenantUrlPrefix %>/field-agent/statements">Monthly statements</a>
+          <span class="muted"> — frozen pay-run snapshots (not rolling estimates).</span>
+        </p>
 
-        <div class="field-agent-metrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin:1rem 0 1.5rem;">
-          <div class="card" style="padding:1rem;">
-            <div class="muted" style="font-size:0.85rem;">Pending</div>
-            <div style="font-size:1.5rem;font-weight:800;"><%= typeof metricPending !== 'undefined' ? metricPending : 0 %></div>
+        <div class="field-agent-metrics" aria-label="Submission and performance metrics">
+          <div
+            class="card field-agent-metric-card field-agent-metric-card--clickable"
+            data-status="pending"
+          >
+            <div class="field-agent-metric-card__label muted">Pending</div>
+            <div class="field-agent-metric-card__value"><%= typeof metricPending !== 'undefined' ? metricPending : 0 %></div>
           </div>
-          <div class="card" style="padding:1rem;">
-            <div class="muted" style="font-size:0.85rem;">Approved</div>
-            <div style="font-size:1.5rem;font-weight:800;"><%= typeof metricApproved !== 'undefined' ? metricApproved : 0 %></div>
+          <div
+            class="card field-agent-metric-card field-agent-metric-card--clickable"
+            data-status="info_needed"
+          >
+            <div class="field-agent-metric-card__label muted">Info needed</div>
+            <div class="field-agent-metric-card__value"><%= typeof metricInfoNeeded !== 'undefined' ? metricInfoNeeded : 0 %></div>
           </div>
-          <div class="card" style="padding:1rem;">
-            <div class="muted" style="font-size:0.85rem;">Rejected</div>
-            <div style="font-size:1.5rem;font-weight:800;"><%= typeof metricRejected !== 'undefined' ? metricRejected : 0 %></div>
+          <div
+            class="card field-agent-metric-card field-agent-metric-card--clickable"
+            data-status="approved"
+          >
+            <div class="field-agent-metric-card__label muted">Approved</div>
+            <div class="field-agent-metric-card__value"><%= typeof metricApproved !== 'undefined' ? metricApproved : 0 %></div>
           </div>
-          <div class="card" style="padding:1rem;">
-            <div class="muted" style="font-size:0.85rem;">Commission (30d)</div>
-            <div style="font-size:1.5rem;font-weight:800;"><%= typeof revenue30 !== 'undefined' ? revenue30 : 0 %></div>
+          <div
+            class="card field-agent-metric-card field-agent-metric-card--clickable"
+            data-status="rejected"
+          >
+            <div class="field-agent-metric-card__label muted">Rejected</div>
+            <div class="field-agent-metric-card__value"><%= typeof metricRejected !== 'undefined' ? metricRejected : 0 %></div>
+          </div>
+          <div
+            class="card field-agent-metric-card field-agent-metric-card--clickable"
+            data-status="appealed"
+          >
+            <div class="field-agent-metric-card__label muted">Appealed</div>
+            <div class="field-agent-metric-card__value"><%= typeof metricAppealed !== 'undefined' ? metricAppealed : 0 %></div>
+          </div>
+          <div
+            class="card field-agent-metric-card field-agent-metric-card--clickable"
+            data-metric="linked_service_providers"
+            title="Companies where you are the account manager"
+          >
+            <div class="field-agent-metric-card__label muted">My service providers</div>
+            <div class="field-agent-metric-card__value"><%= typeof metricLinkedSpCount !== 'undefined' ? metricLinkedSpCount : 0 %></div>
+          </div>
+          <div
+            class="card field-agent-metric-card field-agent-metric-card--kpi field-agent-metric-card--clickable"
+            data-metric="sp_commission_30d"
+            title="View lead-fee charges in the last 30 days"
+          >
+            <div class="field-agent-metric-card__label muted">SP_Commission (30d)</div>
+            <div class="field-agent-metric-card__value"><%= typeof metricSpCommission30 !== 'undefined' ? metricSpCommission30 : 0 %></div>
+          </div>
+          <div
+            class="card field-agent-metric-card field-agent-metric-card--kpi"
+            data-metric="recruitment_commission_30d"
+          >
+            <div class="field-agent-metric-card__label muted">Recruitment commission (30d)</div>
+            <div class="field-agent-metric-card__value"><%= typeof recruitmentCommission30 !== 'undefined' ? recruitmentCommission30 : 0 %></div>
+          </div>
+          <div
+            class="card field-agent-metric-card field-agent-metric-card--kpi field-agent-metric-card--clickable"
+            data-metric="ec_commission_30d"
+            title="View qualifying projects in the last 30 days"
+          >
+            <div class="field-agent-metric-card__label muted">EC Commission (30d)</div>
+            <div class="field-agent-metric-card__value"><%= typeof metricEcCommission30 !== 'undefined' ? metricEcCommission30 : 0 %></div>
+          </div>
+          <div
+            class="card field-agent-metric-card field-agent-metric-card--kpi field-agent-metric-card--clickable field-agent-metric-card--rating-<%= typeof metricSpRating30Band !== 'undefined' ? metricSpRating30Band : 'neutral' %>"
+            data-metric="sp_rating_30d"
+            title="View client reviews in the last 30 days"
+          >
+            <div class="field-agent-metric-card__label muted">SP_Rating (30d)</div>
+            <div class="field-agent-metric-card__value field-agent-metric-card__value--rating"><%= typeof metricSpRating30Display !== 'undefined' ? metricSpRating30Display : '—' %></div>
+            <div class="field-agent-metric-card__hint muted">Based on client reviews (last 30 days)</div>
           </div>
         </div>
+
+        <% if (typeof spQualityPayableDisplay !== 'undefined' && spQualityPayableDisplay) { %>
+        <div
+          class="card field-agent-sp-payable-summary field-agent-sp-payable-summary--clickable"
+          style="padding:1rem;margin-top:1rem;cursor:pointer;"
+          data-metric="sp_payable_breakdown"
+          title="View payable SP commission breakdown"
+        >
+          <h2 class="form-step__title" style="margin-top:0;font-size:1.125rem;">Estimated payable SP commission (30d)</h2>
+          <p class="muted" style="margin:0 0 0.75rem;font-size:0.875rem;line-height:1.45;">
+            Reporting estimate only — not payroll, settlement, or a payment promise. Same rolling 30-day SP_Rating as above; thresholds <%= typeof spRatingThresholdHighDisplay !== 'undefined' ? spRatingThresholdHighDisplay : '4.0' %> (high) and <%= typeof spRatingThresholdLowDisplay !== 'undefined' ? spRatingThresholdLowDisplay : '2.5' %> (low) for display only. High-rating bonus uses the tenant setting when SP_Rating (30d) ≥ <%= typeof spRatingThresholdHighDisplay !== 'undefined' ? spRatingThresholdHighDisplay : '4.0' %>.
+          </p>
+          <dl class="field-agent-sp-payable-summary__dl" style="margin:0;display:grid;gap:0.5rem;">
+            <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:baseline;">
+              <dt class="muted" style="margin:0;">Earned SP commission (30d)</dt>
+              <dd style="margin:0;font-weight:600;"><%= spQualityPayableDisplay.earnedDisplay %></dd>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:baseline;">
+              <dt class="muted" style="margin:0;">High-rating bonus (est.)</dt>
+              <dd style="margin:0;font-weight:600;"><%= spQualityPayableDisplay.bonusDisplay %></dd>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:baseline;">
+              <dt class="muted" style="margin:0;">Quality adjustment</dt>
+              <dd style="margin:0;font-weight:600;"><%= spQualityPayableDisplay.adjustmentDisplay %></dd>
+            </div>
+            <% if (spQualityPayableDisplay.withheldSpCommission30 > 0) { %>
+            <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:baseline;">
+              <dt class="muted" style="margin:0;">Withheld pending quality</dt>
+              <dd style="margin:0;font-weight:600;"><%= spQualityPayableDisplay.withheldDisplay %></dd>
+            </div>
+            <% } %>
+            <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:baseline;padding-top:0.25rem;border-top:1px solid rgba(0,0,0,0.08);">
+              <dt style="margin:0;font-weight:600;">Payable SP commission (30d)</dt>
+              <dd style="margin:0;font-weight:700;font-size:1.125rem;"><%= spQualityPayableDisplay.payableDisplay %></dd>
+            </div>
+          </dl>
+          <p class="muted" style="margin:0.75rem 0 0;font-size:0.875rem;">
+            <strong>Status:</strong> <%= spQualityPayableDisplay.qualityEligibilityLabel %>
+            <% if (typeof faCurrencyCode !== 'undefined' && faCurrencyCode) { %>
+              <span class="muted" style="margin-left:0.35rem;">(<%= faCurrencyCode %>)</span>
+            <% } %>
+            <% if (typeof spQualityPayableDisplay.highRatingBonusSpCommission30 !== 'undefined' && spQualityPayableDisplay.highRatingBonusSpCommission30 > 0) { %>
+              <span class="muted" style="display:block;margin-top:0.35rem;">High-rating bonus applied.</span>
+            <% } %>
+          </p>
+        </div>
+        <% if (typeof spPayableBreakdownPayload !== 'undefined' && spPayableBreakdownPayload) { %>
+        <script type="application/json" id="fa-sp-payable-breakdown-data"><%- JSON.stringify(spPayableBreakdownPayload) %></script>
+        <% } %>
+        <% } %>
+
+        <% if (typeof ecQualityPayableDisplay !== 'undefined' && ecQualityPayableDisplay) { %>
+        <div
+          class="card field-agent-ec-payable-summary field-agent-ec-payable-summary--clickable"
+          style="padding:1rem;margin-top:1rem;cursor:pointer;"
+          data-metric="ec_payable_breakdown"
+          title="View payable EC commission breakdown"
+        >
+          <h2 class="form-step__title" style="margin-top:0;font-size:1.125rem;">Estimated payable EC commission (30d)</h2>
+          <p class="muted" style="margin:0 0 0.75rem;font-size:0.875rem;line-height:1.45;">
+            Reporting estimate only — not payroll, settlement, or a payment promise. Based on SP_Rating (30d) and tenant thresholds (low <%= typeof spRatingThresholdLowDisplay !== 'undefined' ? spRatingThresholdLowDisplay : '2.5' %>, high <%= typeof spRatingThresholdHighDisplay !== 'undefined' ? spRatingThresholdHighDisplay : '4.0' %> for display). Holdback only — no EC bonus in this view.
+          </p>
+          <dl class="field-agent-ec-payable-summary__dl" style="margin:0;display:grid;gap:0.5rem;">
+            <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:baseline;">
+              <dt class="muted" style="margin:0;">Earned EC commission (30d)</dt>
+              <dd style="margin:0;font-weight:600;"><%= ecQualityPayableDisplay.earnedDisplay %></dd>
+            </div>
+            <% if (ecQualityPayableDisplay.withheldEcCommission30 > 0) { %>
+            <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:baseline;">
+              <dt class="muted" style="margin:0;">Withheld pending quality</dt>
+              <dd style="margin:0;font-weight:600;"><%= ecQualityPayableDisplay.withheldDisplay %></dd>
+            </div>
+            <% } %>
+            <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:baseline;padding-top:0.25rem;border-top:1px solid rgba(0,0,0,0.08);">
+              <dt style="margin:0;font-weight:600;">Payable EC commission (30d)</dt>
+              <dd style="margin:0;font-weight:700;font-size:1.125rem;"><%= ecQualityPayableDisplay.payableDisplay %></dd>
+            </div>
+          </dl>
+          <p class="muted" style="margin:0.75rem 0 0;font-size:0.875rem;">
+            <strong>Status:</strong> <%= ecQualityPayableDisplay.qualityEligibilityLabel %>
+            <% if (typeof faCurrencyCode !== 'undefined' && faCurrencyCode) { %>
+              <span class="muted" style="margin-left:0.35rem;">(<%= faCurrencyCode %>)</span>
+            <% } %>
+          </p>
+        </div>
+        <% if (typeof ecPayableBreakdownPayload !== 'undefined' && ecPayableBreakdownPayload) { %>
+        <script type="application/json" id="fa-ec-payable-breakdown-data"><%- JSON.stringify(ecPayableBreakdownPayload) %></script>
+        <% } %>
+        <% } %>
 
         <div class="card" style="padding:1rem;">
           <h2 class="form-step__title" style="margin-top:0;">Recent rejections</h2>
@@ -66,7 +218,53 @@
         <%- include('../partials/components/container_close') %>
       </div>
     </div>
+
+    <div
+      id="fa-dash-modal-list"
+      class="m3-modal-overlay field-agent-dash-modal"
+      hidden
+      aria-hidden="true"
+    >
+      <div class="m3-modal-overlay__backdrop" data-fa-dash-dismiss tabindex="-1"></div>
+      <div
+        class="m3-modal m3-modal--join join-modal join-modal--wide field-agent-dash-modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fa-dash-list-title"
+      >
+        <header class="m3-modal__header">
+          <h2 id="fa-dash-list-title" class="m3-modal__title">Submissions</h2>
+          <button type="button" class="m3-modal__close" data-fa-dash-dismiss aria-label="Close">×</button>
+        </header>
+        <div class="m3-modal__body join-modal__scroll field-agent-dash-modal__body" id="fa-dash-list-body"></div>
+        <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
+      </div>
+    </div>
+
+    <div
+      id="fa-dash-modal-detail"
+      class="m3-modal-overlay field-agent-dash-modal"
+      hidden
+      aria-hidden="true"
+    >
+      <div class="m3-modal-overlay__backdrop" data-fa-dash-dismiss tabindex="-1"></div>
+      <div
+        class="m3-modal m3-modal--join join-modal join-modal--wide field-agent-dash-modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fa-dash-detail-title"
+      >
+        <header class="m3-modal__header">
+          <h2 id="fa-dash-detail-title" class="m3-modal__title">Submission</h2>
+          <button type="button" class="m3-modal__close" data-fa-dash-dismiss aria-label="Close">×</button>
+        </header>
+        <div class="m3-modal__body join-modal__scroll field-agent-dash-modal__body" id="fa-dash-detail-body"></div>
+        <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
+      </div>
+    </div>
+
     <script src="<%= asset('scripts') %>" defer></script>
+    <script src="<%= asset('field-agent-dashboard') %>" defer></script>
     <%- include('../partials/theme_prefs') %>
   </body>
 </html>

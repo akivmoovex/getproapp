@@ -17,6 +17,18 @@
         class="admin-nav__link <%= _active === 'dashboard' ? 'admin-nav__link--active' : '' %>"
       >Dashboard</a>
       <a
+        href="<%= _tp %>/field-agent/statements"
+        class="admin-nav__link <%= _active === 'statements' ? 'admin-nav__link--active' : '' %>"
+      >Statements</a>
+      <a
+        href="<%= _tp %>/field-agent/disputes"
+        class="admin-nav__link <%= _active === 'disputes' ? 'admin-nav__link--active' : '' %>"
+      >Disputes</a>
+      <a
+        href="<%= _tp %>/field-agent/adjustments"
+        class="admin-nav__link <%= _active === 'adjustments' ? 'admin-nav__link--active' : '' %>"
+      >Adjustments</a>
+      <a
         href="<%= _tp %>/field-agent/add-contact"
         class="admin-nav__link <%= _active === 'add_contact' ? 'admin-nav__link--active' : '' %>"
       >Add contact</a>
@@ -45,6 +57,9 @@
     </div>
     <nav class="field-agent-console__drawer-nav" aria-label="Field agent console">
       <a href="<%= _tp %>/field-agent/dashboard" class="field-agent-console__drawer-link <%= _active === 'dashboard' ? 'is-active' : '' %>">Dashboard</a>
+      <a href="<%= _tp %>/field-agent/statements" class="field-agent-console__drawer-link <%= _active === 'statements' ? 'is-active' : '' %>">Statements</a>
+      <a href="<%= _tp %>/field-agent/disputes" class="field-agent-console__drawer-link <%= _active === 'disputes' ? 'is-active' : '' %>">Disputes</a>
+      <a href="<%= _tp %>/field-agent/adjustments" class="field-agent-console__drawer-link <%= _active === 'adjustments' ? 'is-active' : '' %>">Adjustments</a>
       <a href="<%= _tp %>/field-agent/add-contact" class="field-agent-console__drawer-link <%= _active === 'add_contact' ? 'is-active' : '' %>">Add contact</a>
       <a href="<%= _tp %>/field-agent/call-me-back" class="field-agent-console__drawer-link <%= _active === 'callback' ? 'is-active' : '' %>">Call me back</a>
       <% if (_faq) { %>

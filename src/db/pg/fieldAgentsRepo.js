@@ -50,10 +50,31 @@ async function deleteByIdAndTenantId(pool, id, tenantId) {
   return r.rowCount > 0;
 }
 
+/**
+ * Admin dropdown: field agents for a tenant.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ */
+async function listForTenantSelect(pool, tenantId) {
+  const tid = Number(tenantId);
+  if (!Number.isFinite(tid) || tid < 1) return [];
+  const r = await pool.query(
+    `
+    SELECT id, username, display_name
+    FROM public.field_agents
+    WHERE tenant_id = $1
+    ORDER BY lower(username) ASC
+    `,
+    [tid]
+  );
+  return r.rows;
+}
+
 module.exports = {
   getById,
   getByIdAndTenant,
   getByUsernameAndTenant,
   insertAgent,
   deleteByIdAndTenantId,
+  listForTenantSelect,
 };

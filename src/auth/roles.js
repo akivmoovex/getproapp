@@ -139,6 +139,12 @@ function canViewTenantWideLeadProgress(role) {
   return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER;
 }
 
+/** Account manager + field-agent submission linkage on companies (admin-only; tenant manager + super admin). */
+function canMutateCompanyFieldAgentLinkage(role) {
+  const n = normalizeRole(role);
+  return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER;
+}
+
 /**
  * “New Project” intake (admin): search clients, create clients, create projects.
  * GET access mirrors CRM (all tenant roles incl. viewer). Mutations use canMutateCrm (excludes tenant_viewer).
@@ -175,4 +181,5 @@ module.exports = {
   canViewIntakePriceEstimation,
   canValidateDeals,
   canViewTenantWideLeadProgress,
+  canMutateCompanyFieldAgentLinkage,
 };

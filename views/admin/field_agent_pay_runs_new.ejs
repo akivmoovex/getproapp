@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>New draft pay-run snapshot | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'New pay run', activeNav: 'field_agent_pay_runs' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Preview draft pay-run snapshot</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Uses explicit calendar dates (not rolling 30 days). Based on current linkage, settings, and recorded events as of preview or snapshot creation.
+              <strong>Not final approval or payment.</strong> Dashboard rolling estimates remain separate.
+            </p>
+          </div>
+        </header>
+
+        <p><a href="/admin/field-agent-pay-runs<% if (typeof embed !== 'undefined' && embed) { %>?embed=1<% } %>">← Back to list</a></p>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Period &amp; region</h2>
+          <form method="post" action="/admin/field-agent-pay-runs/preview" class="admin-filter-form admin-filter-form__grid">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <% if (typeof isSuper !== 'undefined' && isSuper && tenants && tenants.length) { %>
+            <div class="input-field">
+              <label class="input-field__label" for="prn_tenant">Region</label>
+              <select id="prn_tenant" name="tenant_id" class="input-field__control">
+                <% tenants.forEach(function (t) { %>
+                <option value="<%= t.id %>" <%= Number(formTenantId) === Number(t.id) ? 'selected' : '' %>><%= t.name %> (<%= t.slug %>)</option>
+                <% }); %>
+              </select>
+            </div>
+            <% } %>
+            <div class="input-field">
+              <label class="input-field__label" for="prn_start">Period start</label>
+              <input id="prn_start" name="period_start" type="date" class="input-field__control" required value="<%= typeof periodStart !== 'undefined' ? periodStart : '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="prn_end">Period end</label>
+              <input id="prn_end" name="period_end" type="date" class="input-field__control" required value="<%= typeof periodEnd !== 'undefined' ? periodEnd : '' %>" />
+            </div>
+            <div class="input-field input-field--actions">
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Run preview' }) %>
+            </div>
+          </form>
+          <% if (typeof previewError !== 'undefined' && previewError) { %>
+            <p class="admin-gate-error" role="alert"><%= previewError %></p>
+          <% } %>
+        </section>
+
+        <% if (typeof preview !== 'undefined' && preview && preview.rows) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Preview (read-only)</h2>
+          <p class="muted" style="margin-bottom: 0.75rem;">Unapplied adjustments are ledger corrections not yet attached to a pay run; they will be frozen onto this draft when you create it (same tenant / field agent).</p>
+          <p class="muted" style="margin-bottom: 0.75rem;">
+            Settings used: SP <%= preview.settingsUsed && preview.settingsUsed.spPercent != null ? preview.settingsUsed.spPercent : '—' %>%, EC <%= preview.settingsUsed && preview.settingsUsed.ecPercent != null ? preview.settingsUsed.ecPercent : '—' %>%,
+            bonus <%= preview.settingsUsed && preview.settingsUsed.bonusPercent != null ? preview.settingsUsed.bonusPercent : '—' %>%,
+            thresholds low <%= preview.settingsUsed && preview.settingsUsed.lowThreshold != null ? preview.settingsUsed.lowThreshold : '—' %> / high <%= preview.settingsUsed && preview.settingsUsed.highThreshold != null ? preview.settingsUsed.highThreshold : '—' %>.
+          </p>
+          <div class="admin-table-wrap" style="overflow-x: auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Agent</th>
+                  <th>Rating</th>
+                  <th>Earned SP</th>
+                  <th>SP bonus</th>
+                  <th>SP withheld</th>
+                  <th>SP payable</th>
+                  <th>Earned EC</th>
+                  <th>EC withheld</th>
+                  <th>EC payable</th>
+                  <th>Recruitment</th>
+                  <th>Base payable</th>
+                  <th>Unapplied adj.</th>
+                  <th>Net (projected)</th>
+                  <th>SP status</th>
+                  <th>EC status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% preview.rows.forEach(function (row) { %>
+                <tr>
+                  <td><%= row.fieldAgentLabel %></td>
+                  <td><%= row.spRatingValue != null ? Number(row.spRatingValue).toFixed(2) : '—' %></td>
+                  <td><%= row.earnedSpCommission %></td>
+                  <td><%= row.spBonusAmount %></td>
+                  <td><%= row.spWithheldAmount %></td>
+                  <td><%= row.spPayableAmount %></td>
+                  <td><%= row.earnedEcCommission %></td>
+                  <td><%= row.ecWithheldAmount %></td>
+                  <td><%= row.ecPayableAmount %></td>
+                  <td><%= row.recruitmentCommissionAmount %></td>
+                  <td><%= row.basePayableTotal != null ? row.basePayableTotal : '—' %></td>
+                  <td><%= row.unappliedAdjustmentsTotal != null ? row.unappliedAdjustmentsTotal : '—' %></td>
+                  <td><strong><%= row.projectedNetPayable != null ? row.projectedNetPayable : '—' %></strong></td>
+                  <td class="muted"><%= row.qualityStatusLabelSp %></td>
+                  <td class="muted"><%= row.qualityStatusLabelEc %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 class="section-title" style="margin-top: 1.5rem;">Save as draft snapshot</h3>
+          <p class="muted" style="margin-bottom: 0.75rem;">
+            One draft per region and period is enforced. If a run already exists for these exact timestamps, creation returns an error.
+          </p>
+          <form method="post" action="/admin/field-agent-pay-runs" class="admin-filter-form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <% if (typeof isSuper !== 'undefined' && isSuper && tenants && tenants.length) { %>
+            <input type="hidden" name="tenant_id" value="<%= formTenantId %>" />
+            <% } %>
+            <input type="hidden" name="period_start" value="<%= periodStart %>" />
+            <input type="hidden" name="period_end" value="<%= periodEnd %>" />
+            <div class="input-field" style="max-width: 36rem;">
+              <label class="input-field__label" for="prn_notes">Notes (optional)</label>
+              <textarea id="prn_notes" name="notes" class="input-field__control" rows="2" maxlength="2000" placeholder="Internal note for this draft"></textarea>
+            </div>
+            <div class="input-field input-field--actions">
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Create draft snapshot' }) %>
+            </div>
+          </form>
+        </section>
+        <% } %>
+      </div>
+    </main>
+  </body>
+</html>

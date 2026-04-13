@@ -21,6 +21,12 @@ function serializeCompanyRow(row) {
   if (out.portal_lead_credits_balance != null) {
     out.portal_lead_credits_balance = Number(out.portal_lead_credits_balance);
   }
+  if (out.account_manager_field_agent_id != null) {
+    out.account_manager_field_agent_id = Number(out.account_manager_field_agent_id);
+  }
+  if (out.source_field_agent_submission_id != null) {
+    out.source_field_agent_submission_id = Number(out.source_field_agent_submission_id);
+  }
   return out;
 }
 
@@ -142,6 +148,92 @@ async function listAdminWithCategory(pool, tenantId) {
     [tenantId]
   );
   return mapRows(r.rows);
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} fieldAgentId
+ */
+async function countCompaniesByAccountManagerFieldAgent(pool, tenantId, fieldAgentId) {
+  const r = await pool.query(
+    `
+    SELECT COUNT(*)::int AS c
+    FROM public.companies
+    WHERE tenant_id = $1 AND account_manager_field_agent_id = $2
+    `,
+    [tenantId, fieldAgentId]
+  );
+  return Number(r.rows[0]?.c ?? 0);
+}
+
+/**
+ * Dashboard / reporting: companies where this field agent is the account manager (read-only).
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} fieldAgentId
+ * @param {{ limit?: number }} [opts]
+ */
+async function listCompaniesByAccountManagerFieldAgent(pool, tenantId, fieldAgentId, opts) {
+  const limit = Math.min(Math.max(Number((opts && opts.limit) || 100), 1), 200);
+  const r = await pool.query(
+    `
+    SELECT
+      c.id,
+      c.name,
+      c.phone,
+      c.email,
+      c.services,
+      c.location,
+      c.subdomain,
+      c.created_at,
+      c.updated_at,
+      c.directory_featured,
+      c.is_premium,
+      cat.name AS category_name,
+      c.source_field_agent_submission_id
+    FROM public.companies c
+    LEFT JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
+    WHERE c.tenant_id = $1 AND c.account_manager_field_agent_id = $2
+    ORDER BY c.updated_at DESC
+    LIMIT $3
+    `,
+    [tenantId, fieldAgentId, limit]
+  );
+  return mapRows(r.rows);
+}
+
+/**
+ * Admin list: add display label for account_manager_field_agent_id (batch).
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {object[]} companies
+ */
+async function enrichCompaniesWithAccountManagerLabels(pool, tenantId, companies) {
+  const rows = companies || [];
+  const ids = [...new Set(rows.map((c) => c.account_manager_field_agent_id).filter((id) => id != null))];
+  if (ids.length === 0) {
+    return rows.map((c) => ({ ...c, account_manager_field_agent_label: null }));
+  }
+  const r = await pool.query(
+    `
+    SELECT id, username, display_name
+    FROM public.field_agents
+    WHERE tenant_id = $1 AND id = ANY($2::int[])
+    `,
+    [tenantId, ids]
+  );
+  const map = new Map(
+    r.rows.map((x) => {
+      const label = String(x.display_name || "").trim() || String(x.username || "").trim() || `Agent #${x.id}`;
+      return [Number(x.id), label];
+    })
+  );
+  return rows.map((c) => ({
+    ...c,
+    account_manager_field_agent_label:
+      c.account_manager_field_agent_id != null ? map.get(Number(c.account_manager_field_agent_id)) || null : null,
+  }));
 }
 
 /**
@@ -392,6 +484,31 @@ async function existsSubdomainForTenant(pool, tenantId, subdomain) {
 }
 
 /**
+ * Another company (same tenant) already uses this source submission id.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} submissionId
+ * @param {number | null} excludeCompanyId
+ * @returns {Promise<number | null>} blocking company id or null
+ */
+async function findCompanyIdBySourceSubmissionExcluding(pool, tenantId, submissionId, excludeCompanyId) {
+  const tid = Number(tenantId);
+  const sid = Number(submissionId);
+  const ex = excludeCompanyId != null && Number.isFinite(Number(excludeCompanyId)) ? Number(excludeCompanyId) : null;
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return null;
+  const r = await pool.query(
+    `
+    SELECT id FROM public.companies
+    WHERE tenant_id = $1 AND source_field_agent_submission_id = $2
+      AND ($3::int IS NULL OR id <> $3)
+    LIMIT 1
+    `,
+    [tid, sid, ex]
+  );
+  return r.rows[0] ? Number(r.rows[0].id) : null;
+}
+
+/**
  * @param {import("pg").Pool} pool
  * @param {object} row — fields matching INSERT
  */
@@ -415,6 +532,8 @@ async function insertFull(pool, row) {
     galleryJson,
     logoUrl,
     portalLeadCreditsBalance,
+    accountManagerFieldAgentId,
+    sourceFieldAgentSubmissionId,
   } = row;
   let balance = portalLeadCreditsBalance;
   if (balance === undefined || balance === null) {
@@ -422,14 +541,24 @@ async function insertFull(pool, row) {
   }
   const b = Number(balance);
   const portalBalance = Number.isFinite(b) ? b : 0;
+  const am =
+    accountManagerFieldAgentId != null && Number.isFinite(Number(accountManagerFieldAgentId))
+      ? Number(accountManagerFieldAgentId)
+      : null;
+  const src =
+    sourceFieldAgentSubmissionId != null && Number.isFinite(Number(sourceFieldAgentSubmissionId))
+      ? Number(sourceFieldAgentSubmissionId)
+      : null;
+
   const r = await pool.query(
     `
     INSERT INTO public.companies (
       tenant_id, subdomain, name, category_id, headline, about, services, phone, email, location,
       featured_cta_label, featured_cta_phone, years_experience, service_areas, hours_text, gallery_json, logo_url,
-      portal_lead_credits_balance
+      portal_lead_credits_balance,
+      account_manager_field_agent_id, source_field_agent_submission_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
     )
     RETURNING *
     `,
@@ -452,6 +581,8 @@ async function insertFull(pool, row) {
       galleryJson,
       logoUrl,
       portalBalance,
+      am,
+      src,
     ]
   );
   return serializeCompanyRow(r.rows[0]);
@@ -482,7 +613,17 @@ async function updateFullByIdAndTenantId(pool, row) {
     hoursText,
     galleryJson,
     logoUrl,
+    accountManagerFieldAgentId,
+    sourceFieldAgentSubmissionId,
   } = row;
+  const am =
+    accountManagerFieldAgentId != null && Number.isFinite(Number(accountManagerFieldAgentId))
+      ? Number(accountManagerFieldAgentId)
+      : null;
+  const src =
+    sourceFieldAgentSubmissionId != null && Number.isFinite(Number(sourceFieldAgentSubmissionId))
+      ? Number(sourceFieldAgentSubmissionId)
+      : null;
   const r = await pool.query(
     `
     UPDATE public.companies SET
@@ -502,6 +643,8 @@ async function updateFullByIdAndTenantId(pool, row) {
       hours_text = $16,
       gallery_json = $17,
       logo_url = $18,
+      account_manager_field_agent_id = $19,
+      source_field_agent_submission_id = $20,
       updated_at = now()
     WHERE id = $1 AND tenant_id = $2
     RETURNING *
@@ -525,6 +668,8 @@ async function updateFullByIdAndTenantId(pool, row) {
       hoursText,
       galleryJson,
       logoUrl,
+      am,
+      src,
     ]
   );
   return r.rows[0] ?? null;
@@ -570,6 +715,9 @@ module.exports = {
   getWithCategoryBySubdomain,
   getTenantIdAndSubdomainBySubdomain,
   listAdminWithCategory,
+  countCompaniesByAccountManagerFieldAgent,
+  listCompaniesByAccountManagerFieldAgent,
+  enrichCompaniesWithAccountManagerLabels,
   listIdsForSitemap,
   countForTenant,
   listIdNameSubdomainForTenant,
@@ -581,6 +729,7 @@ module.exports = {
   listDirectorySearchIlike,
   suggestByNameForPublicSearch,
   existsSubdomainForTenant,
+  findCompanyIdBySourceSubmissionExcluding,
   updateDirectoryFlagsByIdAndTenantId,
   insertFull,
   updateFullByIdAndTenantId,

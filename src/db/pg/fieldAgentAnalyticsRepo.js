@@ -64,8 +64,10 @@ async function getSubmissionSummaryForTenant(pool, tenantId, opts) {
     return {
       total: 0,
       pending: 0,
+      info_needed: 0,
       approved: 0,
       rejected: 0,
+      appealed: 0,
       total_commission: 0,
       avg_commission: 0,
       callback_leads: 0,
@@ -80,8 +82,10 @@ async function getSubmissionSummaryForTenant(pool, tenantId, opts) {
     SELECT
       COUNT(*)::int AS total,
       COUNT(*) FILTER (WHERE s.status = 'pending')::int AS pending,
+      COUNT(*) FILTER (WHERE s.status = 'info_needed')::int AS info_needed,
       COUNT(*) FILTER (WHERE s.status = 'approved')::int AS approved,
       COUNT(*) FILTER (WHERE s.status = 'rejected')::int AS rejected,
+      COUNT(*) FILTER (WHERE s.status = 'appealed')::int AS appealed,
       COALESCE(SUM(s.commission_amount) FILTER (WHERE s.status = 'approved'), 0)::numeric AS total_commission,
       COALESCE(AVG(s.commission_amount) FILTER (WHERE s.status = 'approved'), 0)::numeric AS avg_commission
     FROM public.field_agent_provider_submissions s
@@ -109,8 +113,10 @@ async function getSubmissionSummaryForTenant(pool, tenantId, opts) {
   return {
     total: Number(row.total) || 0,
     pending: Number(row.pending) || 0,
+    info_needed: Number(row.info_needed) || 0,
     approved: Number(row.approved) || 0,
     rejected: Number(row.rejected) || 0,
+    appealed: Number(row.appealed) || 0,
     total_commission: Number(row.total_commission) || 0,
     avg_commission: Number(row.avg_commission) || 0,
     callback_leads: Number(cb.rows[0].c) || 0,
@@ -136,8 +142,10 @@ async function getPerAgentBreakdown(pool, tenantId, opts) {
       fa.display_name,
       COUNT(s.id)::int AS total,
       COUNT(s.id) FILTER (WHERE s.status = 'pending')::int AS pending,
+      COUNT(s.id) FILTER (WHERE s.status = 'info_needed')::int AS info_needed,
       COUNT(s.id) FILTER (WHERE s.status = 'approved')::int AS approved,
       COUNT(s.id) FILTER (WHERE s.status = 'rejected')::int AS rejected,
+      COUNT(s.id) FILTER (WHERE s.status = 'appealed')::int AS appealed,
       COALESCE(SUM(s.commission_amount) FILTER (WHERE s.status = 'approved'), 0)::numeric AS total_commission,
       COALESCE(AVG(s.commission_amount) FILTER (WHERE s.status = 'approved'), 0)::numeric AS avg_commission
     FROM public.field_agents fa
@@ -177,8 +185,10 @@ async function getPerAgentBreakdown(pool, tenantId, opts) {
       display_name: row.display_name || "",
       total,
       pending: Number(row.pending) || 0,
+      info_needed: Number(row.info_needed) || 0,
       approved,
       rejected,
+      appealed: Number(row.appealed) || 0,
       total_commission: Number(row.total_commission) || 0,
       avg_commission: Number(row.avg_commission) || 0,
       callback_leads: cbByAgent[id] || 0,

@@ -504,16 +504,45 @@ module.exports = function registerAdminDashboardContentRoutes(router) {
         const hasCommerceSection = req.body && String(req.body.commerce_section || "").trim() === "1";
         if (hasCommerceSection) {
           const currency = String(req.body.commerce_currency || "").trim().slice(0, 12) || "ZMW";
+          const currency_name = String(req.body.commerce_currency_name ?? "").trim().slice(0, 80);
+          const currency_symbol = String(req.body.commerce_currency_symbol ?? "").trim().slice(0, 16);
           const deal_price_percentage = Number(req.body.commerce_deal_price_percentage);
           const minimum_credit_balance = Number(req.body.commerce_minimum_credit_balance);
           const starting_credit_balance = Number(req.body.commerce_starting_credit_balance);
           const minimum_review_rating = Number(req.body.commerce_minimum_review_rating);
+          const commerce_field_agent_sp_commission_percent =
+            req.body && Object.prototype.hasOwnProperty.call(req.body, "commerce_field_agent_sp_commission_percent")
+              ? req.body.commerce_field_agent_sp_commission_percent
+              : undefined;
+          const commerce_field_agent_ec_commission_percent =
+            req.body && Object.prototype.hasOwnProperty.call(req.body, "commerce_field_agent_ec_commission_percent")
+              ? req.body.commerce_field_agent_ec_commission_percent
+              : undefined;
+          const commerce_field_agent_sp_high_rating_bonus_percent =
+            req.body && Object.prototype.hasOwnProperty.call(req.body, "commerce_field_agent_sp_high_rating_bonus_percent")
+              ? req.body.commerce_field_agent_sp_high_rating_bonus_percent
+              : undefined;
+          const commerce_field_agent_sp_rating_low_threshold =
+            req.body && Object.prototype.hasOwnProperty.call(req.body, "commerce_field_agent_sp_rating_low_threshold")
+              ? req.body.commerce_field_agent_sp_rating_low_threshold
+              : undefined;
+          const commerce_field_agent_sp_rating_high_threshold =
+            req.body && Object.prototype.hasOwnProperty.call(req.body, "commerce_field_agent_sp_rating_high_threshold")
+              ? req.body.commerce_field_agent_sp_rating_high_threshold
+              : undefined;
           await tenantCommerceSettingsRepo.upsert(pool, id, {
             currency,
+            currency_name,
+            currency_symbol,
             deal_price_percentage,
             minimum_credit_balance,
             starting_credit_balance,
             minimum_review_rating,
+            field_agent_sp_commission_percent: commerce_field_agent_sp_commission_percent,
+            field_agent_ec_commission_percent: commerce_field_agent_ec_commission_percent,
+            field_agent_sp_high_rating_bonus_percent: commerce_field_agent_sp_high_rating_bonus_percent,
+            field_agent_sp_rating_low_threshold: commerce_field_agent_sp_rating_low_threshold,
+            field_agent_sp_rating_high_threshold: commerce_field_agent_sp_rating_high_threshold,
           });
         }
       } catch (e) {

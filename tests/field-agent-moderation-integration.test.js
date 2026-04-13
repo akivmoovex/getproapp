@@ -26,6 +26,7 @@ const adminUsersRepo = require("../src/db/pg/adminUsersRepo");
 const fieldAgentsRepo = require("../src/db/pg/fieldAgentsRepo");
 const fieldAgentSubmissionsRepo = require("../src/db/pg/fieldAgentSubmissionsRepo");
 const fieldAgentCallbackLeadsRepo = require("../src/db/pg/fieldAgentCallbackLeadsRepo");
+const { ensureFieldAgentSchema } = require("../src/db/pg/ensureFieldAgentSchema");
 const { createCrmTaskFromEvent } = require("../src/crm/crmAutoTasks");
 const { authenticateFieldAgent } = require("../src/auth/fieldAgentAuth");
 const { TENANT_ZM, TENANT_IL } = require("../src/tenants/tenantIds");
@@ -122,6 +123,7 @@ async function insertProviderSubmission(pool, { tenantId, fieldAgentId, phoneNor
 test("field agent moderation lifecycle (repos + CRM link + auth)", { skip: !isPgConfigured() }, async () => {
   runBootstrap();
   const pool = getPgPool();
+  await ensureFieldAgentSchema(pool);
   const tenantId = TENANT_ZM;
   const wrongTenantId = 3;
   const suffix = uniq();
@@ -408,6 +410,7 @@ test("field agent moderation lifecycle (repos + CRM link + auth)", { skip: !isPg
 test("field agent moderation HTTP (admin CRM routes)", { skip: !isPgConfigured() }, async () => {
   runBootstrap();
   const pool = getPgPool();
+  await ensureFieldAgentSchema(pool);
   const app = createModerationHttpApp();
   const tenantId = TENANT_ZM;
   const suffix = uniq();
@@ -796,6 +799,213 @@ test("field agent moderation HTTP (admin CRM routes)", { skip: !isPgConfigured()
       for (const aid of [mutAdminId, viewAdminId, superAdminId].filter(Boolean)) {
         await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [aid]);
       }
+    } catch {
+      /* ignore */
+    }
+    resetBootstrapForTests();
+  }
+});
+
+test("field agent extended statuses: info_needed, appealed, open-pipeline duplicate", { skip: !isPgConfigured() }, async () => {
+  runBootstrap();
+  const pool = getPgPool();
+  await ensureFieldAgentSchema(pool);
+  const tenantId = TENANT_ZM;
+  const suffix = uniq();
+  const hash = await bcrypt.hash("t1", 4);
+  let agentId;
+  let subInfo;
+  let subRejAppeal;
+  let taskInfo;
+  let taskRej;
+  let taskHttpInf;
+  let subHttp;
+  let mutAdminIdHttp;
+
+  try {
+    agentId = await fieldAgentsRepo.insertAgent(pool, {
+      tenantId,
+      username: `fa_ext_${suffix}`,
+      passwordHash: hash,
+      displayName: "Ext status",
+      phone: "",
+    });
+
+    const phoneInfo = makePhoneNorm(`${suffix}_info`);
+    subInfo = await fieldAgentSubmissionsRepo.insertSubmission(pool, null, {
+      tenantId,
+      fieldAgentId: agentId,
+      phoneRaw: phoneInfo,
+      phoneNorm: phoneInfo,
+      whatsappRaw: "",
+      whatsappNorm: "",
+      firstName: "Info",
+      lastName: "Needed",
+      profession: "X",
+      city: "C",
+      pacra: "P",
+      addressStreet: "S",
+      addressLandmarks: "",
+      addressNeighbourhood: "",
+      addressCity: "C",
+      nrcNumber: "N",
+      photoProfileUrl: "",
+      workPhotosJson: "[]",
+    });
+
+    assert.equal(
+      await fieldAgentSubmissionsRepo.markFieldAgentSubmissionInfoNeeded(pool, {
+        tenantId,
+        submissionId: subInfo,
+      }),
+      true
+    );
+    assert.equal(
+      (await fieldAgentSubmissionsRepo.getSubmissionByIdForAdmin(pool, tenantId, subInfo)).status,
+      "info_needed"
+    );
+
+    let dupErr = null;
+    try {
+      await fieldAgentSubmissionsRepo.insertSubmission(pool, null, {
+        tenantId,
+        fieldAgentId: agentId,
+        phoneRaw: phoneInfo,
+        phoneNorm: phoneInfo,
+        whatsappRaw: "",
+        whatsappNorm: "",
+        firstName: "Dup",
+        lastName: "Two",
+        profession: "Y",
+        city: "C",
+        pacra: "P",
+        addressStreet: "S",
+        addressLandmarks: "",
+        addressNeighbourhood: "",
+        addressCity: "C",
+        nrcNumber: "N2",
+        photoProfileUrl: "",
+        workPhotosJson: "[]",
+      });
+    } catch (e) {
+      dupErr = e;
+    }
+    assert.ok(dupErr);
+    assert.equal(dupErr.code, "23505");
+
+    assert.equal(
+      await fieldAgentSubmissionsRepo.approveFieldAgentSubmission(pool, {
+        tenantId,
+        submissionId: subInfo,
+        commissionAmount: 1,
+      }),
+      true
+    );
+
+    const phoneRA = makePhoneNorm(`${suffix}_rejapp`);
+    subRejAppeal = await fieldAgentSubmissionsRepo.insertSubmission(pool, null, {
+      tenantId,
+      fieldAgentId: agentId,
+      phoneRaw: phoneRA,
+      phoneNorm: phoneRA,
+      whatsappRaw: "",
+      whatsappNorm: "",
+      firstName: "Rej",
+      lastName: "App",
+      profession: "X",
+      city: "C",
+      pacra: "P",
+      addressStreet: "S",
+      addressLandmarks: "",
+      addressNeighbourhood: "",
+      addressCity: "C",
+      nrcNumber: "N",
+      photoProfileUrl: "",
+      workPhotosJson: "[]",
+    });
+
+    taskInfo = await createCrmTaskFromEvent({
+      tenantId,
+      title: `ext info ${subInfo}`,
+      description: "d",
+      sourceType: "field_agent_provider",
+      sourceRefId: subInfo,
+    });
+    taskRej = await createCrmTaskFromEvent({
+      tenantId,
+      title: `ext rej ${subRejAppeal}`,
+      description: "d",
+      sourceType: "field_agent_provider",
+      sourceRefId: subRejAppeal,
+    });
+
+    assert.equal(
+      await fieldAgentSubmissionsRepo.rejectFieldAgentSubmission(pool, {
+        tenantId,
+        submissionId: subRejAppeal,
+        rejectionReason: "Not yet",
+      }),
+      true
+    );
+
+    assert.equal(
+      await fieldAgentSubmissionsRepo.markFieldAgentSubmissionAppealed(pool, {
+        tenantId,
+        submissionId: subRejAppeal,
+      }),
+      true
+    );
+    assert.equal(
+      (await fieldAgentSubmissionsRepo.getSubmissionByIdForAdmin(pool, tenantId, subRejAppeal)).status,
+      "appealed"
+    );
+
+    assert.equal(
+      await fieldAgentSubmissionsRepo.approveFieldAgentSubmission(pool, {
+        tenantId,
+        submissionId: subRejAppeal,
+        commissionAmount: 0,
+      }),
+      true
+    );
+
+    const app = createModerationHttpApp();
+    const mutName = `fa_ext_http_${suffix}`;
+    const pw = "HttpExt1!";
+    const h2 = await bcrypt.hash(pw, 4);
+    mutAdminIdHttp = await adminUsersRepo.insertUser(pool, {
+      username: mutName,
+      passwordHash: h2,
+      role: ROLES.TENANT_MANAGER,
+      tenantId,
+      displayName: "",
+    });
+    const agentMut = await adminLoginAgent(app, mutName, pw);
+    const pHttp = makePhoneNorm(`${suffix}_httpinf`);
+    subHttp = await insertProviderSubmission(pool, { tenantId, fieldAgentId: agentId, phoneNorm: pHttp });
+    taskHttpInf = await createCrmTaskFromEvent({
+      tenantId,
+      title: `http inf ${subHttp}`,
+      description: "d",
+      sourceType: "field_agent_provider",
+      sourceRefId: subHttp,
+    });
+    const resInf = await agentMut.post(`/admin/crm/tasks/${taskHttpInf}/field-agent-submission/info-needed`).type("form").send({});
+    assert.equal(resInf.status, 302);
+    assert.equal(
+      (await fieldAgentSubmissionsRepo.getSubmissionByIdForAdmin(pool, tenantId, subHttp)).status,
+      "info_needed"
+    );
+  } finally {
+    try {
+      if (taskHttpInf) await pool.query(`DELETE FROM public.crm_tasks WHERE id = $1`, [taskHttpInf]);
+      if (subHttp) await pool.query(`DELETE FROM public.field_agent_provider_submissions WHERE id = $1`, [subHttp]);
+      if (mutAdminIdHttp) await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [mutAdminIdHttp]);
+      if (taskInfo) await pool.query(`DELETE FROM public.crm_tasks WHERE id = $1`, [taskInfo]);
+      if (taskRej) await pool.query(`DELETE FROM public.crm_tasks WHERE id = $1`, [taskRej]);
+      if (subInfo) await pool.query(`DELETE FROM public.field_agent_provider_submissions WHERE id = $1`, [subInfo]);
+      if (subRejAppeal) await pool.query(`DELETE FROM public.field_agent_provider_submissions WHERE id = $1`, [subRejAppeal]);
+      if (agentId) await pool.query(`DELETE FROM public.field_agents WHERE id = $1`, [agentId]);
     } catch {
       /* ignore */
     }

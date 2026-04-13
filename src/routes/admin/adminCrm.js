@@ -407,7 +407,7 @@ module.exports = function registerAdminCrmRoutes(router) {
       commissionAmount: commission,
     });
     if (!ok) {
-      return res.status(400).type("text").send("Could not approve — submission may already be decided.");
+      return res.status(400).type("text").send("Could not approve — submission is not awaiting a decision.");
     }
     try {
       let note = `Field agent provider submission #${Number(ctx.submission.id)} approved.`;
@@ -438,7 +438,7 @@ module.exports = function registerAdminCrmRoutes(router) {
       rejectionReason: reason,
     });
     if (!ok) {
-      return res.status(400).type("text").send("Could not reject — submission may already be decided.");
+      return res.status(400).type("text").send("Could not reject — submission is not awaiting a decision.");
     }
     try {
       let note = `Field agent provider submission #${Number(ctx.submission.id)} rejected.`;
@@ -455,6 +455,57 @@ module.exports = function registerAdminCrmRoutes(router) {
       });
     } catch {
       /* informational note only; moderation already succeeded */
+    }
+    return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${ctx.taskId}`));
+  });
+
+  router.post("/crm/tasks/:id/field-agent-submission/info-needed", requireCrmAccess, async (req, res) => {
+    if (!canMutateCrm(req.session.adminUser.role)) return res.status(403).type("text").send("Read-only access.");
+    const ctx = await loadFieldAgentProviderContext(req, req.params.id);
+    if (ctx.error) return res.status(ctx.status).type("text").send(ctx.error);
+    const ok = await fieldAgentSubmissionsRepo.markFieldAgentSubmissionInfoNeeded(ctx.pool, {
+      tenantId: ctx.tid,
+      submissionId: ctx.submission.id,
+    });
+    if (!ok) {
+      return res.status(400).type("text").send("Could not mark info needed — use pending or appealed submissions.");
+    }
+    try {
+      await crmTasksRepo.insertCommentWithAudit(ctx.pool, {
+        tenantId: ctx.tid,
+        taskId: ctx.taskId,
+        userId: req.session.adminUser.id,
+        body: `Field agent provider submission #${Number(ctx.submission.id)} marked as info needed.`.slice(0, 4000),
+      });
+    } catch {
+      /* informational */
+    }
+    return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${ctx.taskId}`));
+  });
+
+  router.post("/crm/tasks/:id/field-agent-submission/appeal", requireCrmAccess, async (req, res) => {
+    if (!canMutateCrm(req.session.adminUser.role)) return res.status(403).type("text").send("Read-only access.");
+    const ctx = await loadFieldAgentProviderContext(req, req.params.id);
+    if (ctx.error) return res.status(ctx.status).type("text").send(ctx.error);
+    const ok = await fieldAgentSubmissionsRepo.markFieldAgentSubmissionAppealed(ctx.pool, {
+      tenantId: ctx.tid,
+      submissionId: ctx.submission.id,
+    });
+    if (!ok) {
+      return res.status(400).type("text").send("Could not mark appealed — submission must be rejected.");
+    }
+    try {
+      await crmTasksRepo.insertCommentWithAudit(ctx.pool, {
+        tenantId: ctx.tid,
+        taskId: ctx.taskId,
+        userId: req.session.adminUser.id,
+        body: `Field agent provider submission #${Number(ctx.submission.id)} marked as appealed (reopened for review).`.slice(
+          0,
+          4000
+        ),
+      });
+    } catch {
+      /* informational */
     }
     return res.redirect(safeCrmRedirect(req, `/admin/crm/tasks/${ctx.taskId}`));
   });

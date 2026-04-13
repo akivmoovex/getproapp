@@ -9,9 +9,12 @@ const path = require("path");
  * @param {import("pg").Pool} pool
  */
 async function ensureFieldAgentSchema(pool) {
-  const sqlPath = path.join(__dirname, "../../../db/postgres/002_field_agent.sql");
-  const sql = fs.readFileSync(sqlPath, "utf8");
-  await pool.query(sql);
+  const base = path.join(__dirname, "../../../db/postgres");
+  const files = ["002_field_agent.sql", "014_field_agent_submission_statuses.sql"];
+  for (const f of files) {
+    const sql = fs.readFileSync(path.join(base, f), "utf8");
+    await pool.query(sql);
+  }
 }
 
 module.exports = { ensureFieldAgentSchema };

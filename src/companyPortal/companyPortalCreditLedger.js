@@ -3,6 +3,8 @@
  * All writes are tenant-scoped; ledger rows are the auditable source for admin payments.
  */
 
+const { getCommerceSettingsForTenant, commerceCurrencyCodeUpper } = require("../tenants/tenantCommerceSettings");
+
 const PAYMENT_METHODS = /** @type {const} */ ([
   "bank_transfer",
   "mobile_money",
@@ -65,15 +67,17 @@ async function listRecentLedgerEntriesAsync(pool, tenantId, companyId, limit) {
 /**
  * @param {import("pg").Pool} pool
  * @param {RecordAdminPaymentInput} input
- * @returns {Promise<{ ok: true, newBalance: number, ledgerId: number } | { ok: false, error: string }>}
+ * @returns {Promise<{ ok: true, newBalance: number, ledgerId: number, currencyUnit: string } | { ok: false, error: string }>}
  */
 async function recordAdminPaymentCreditAsync(pool, input) {
   const tid = Number(input.tenantId);
   const cid = Number(input.companyId);
   const uid = input.adminUserId != null && Number.isFinite(Number(input.adminUserId)) ? Number(input.adminUserId) : null;
+  const cs = await getCommerceSettingsForTenant(pool, tid);
+  const currencyUnit = commerceCurrencyCodeUpper(cs);
   const amount = Number(input.amountZmw);
   if (!Number.isFinite(amount) || amount <= 0 || amount > 1e9) {
-    return { ok: false, error: "Enter a valid payment amount (ZMW)." };
+    return { ok: false, error: `Enter a valid payment amount (${currencyUnit}).` };
   }
   const method = normalizePaymentMethod(input.paymentMethod);
   if (!method) return { ok: false, error: "Choose a payment method." };
@@ -128,7 +132,7 @@ async function recordAdminPaymentCreditAsync(pool, input) {
     );
     await client.query("COMMIT");
     const newBalance = Number(balRow.rows[0] && balRow.rows[0].portal_lead_credits_balance) || 0;
-    return { ok: true, newBalance, ledgerId: Number(ins.rows[0].id) };
+    return { ok: true, newBalance, ledgerId: Number(ins.rows[0].id), currencyUnit };
   } catch (e) {
     try {
       await client.query("ROLLBACK");

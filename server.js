@@ -87,6 +87,7 @@ const { ensureIntakeDealSchema } = require("./src/db/pg/ensureIntakeDealSchema")
 const { ensureCrmCsrFifoSchema } = require("./src/db/pg/ensureCrmCsrFifoSchema");
 const { ensureIntakeAssignmentDealFeeSchema } = require("./src/db/pg/ensureIntakeAssignmentDealFeeSchema");
 const { ensureTenantCommerceSettingsSchema } = require("./src/db/pg/ensureTenantCommerceSettingsSchema");
+const { ensureFieldAgentPayRunsSchema } = require("./src/db/pg/ensureFieldAgentPayRunsSchema");
 const { ensureCompaniesDirectoryFlagsSchema } = require("./src/db/pg/ensureCompaniesDirectoryFlagsSchema");
 const { ensureTenantDirectoryOptionLists } = require("./src/db/pg/ensureTenantDirectoryOptionLists");
 const { tenantHomeHrefFromPrefix } = require("./src/lib/tenantHomeHref");
@@ -488,6 +489,7 @@ ensureAdminUser({ pool: pgPoolForBoot })
     await ensureCrmCsrFifoSchema(pgPoolForBoot);
     await ensureIntakeAssignmentDealFeeSchema(pgPoolForBoot);
     await ensureTenantCommerceSettingsSchema(pgPoolForBoot);
+    await ensureFieldAgentPayRunsSchema(pgPoolForBoot);
     await ensureCompaniesDirectoryFlagsSchema(pgPoolForBoot);
     await ensureTenantDirectoryOptionLists(pgPoolForBoot);
     await seedBuiltinUsers(pgPoolForBoot);

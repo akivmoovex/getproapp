@@ -20,6 +20,22 @@ const { notifyProviderSubmissionToCrm, notifyCallbackLeadToCrm } = require("../f
 const { fieldAgentLoginLimiter } = require("../middleware/authRateLimit");
 const { getTenantCitiesForClientAsync, getJoinCityWatermarkRotateAsync } = require("../tenants/tenantCities");
 const categoriesRepo = require("../db/pg/categoriesRepo");
+const companiesRepo = require("../db/pg/companiesRepo");
+const fieldAgentLeadFeeCommissionRepo = require("../db/pg/fieldAgentLeadFeeCommissionRepo");
+const fieldAgentEcCommissionRepo = require("../db/pg/fieldAgentEcCommissionRepo");
+const fieldAgentSpRatingRepo = require("../db/pg/fieldAgentSpRatingRepo");
+const fieldAgentPayRunRepo = require("../db/pg/fieldAgentPayRunRepo");
+const fieldAgentPayRunDisputesRepo = require("../db/pg/fieldAgentPayRunDisputesRepo");
+const fieldAgentPayRunAdjustmentsRepo = require("../db/pg/fieldAgentPayRunAdjustmentsRepo");
+const tenantsRepo = require("../db/pg/tenantsRepo");
+const { getCommerceSettingsForTenant, commerceCurrencyCodeUpper } = require("../tenants/tenantCommerceSettings");
+const { buildStatementDetailFromSnapshotRow } = require("../fieldAgent/fieldAgentStatementPayload");
+const {
+  computeSpCommissionQualityPayable,
+  formatFieldAgentMoneyAmount,
+} = require("../fieldAgent/fieldAgentSpCommissionQualityPayable");
+const { computeEcCommissionQualityPayableHoldbackOnly } = require("../fieldAgent/fieldAgentEcCommissionQualityPayable");
+const { normalizeSpRatingThresholdsForTenant } = require("../fieldAgent/normalizeSpRatingThresholds");
 const { FIELD_AGENT_DASHBOARD } = require("../auth/postLoginDestinations");
 
 function tenantPrefix(req) {
@@ -31,6 +47,24 @@ function tenantHomeHrefFromPrefix(prefix) {
   const ps = String(prefix);
   if (ps.startsWith("http")) return `${ps.replace(/\/$/, "")}/`;
   return `${ps}/`;
+}
+
+function formatStatementMoney(amount, currencySymbol, currencyCode) {
+  return formatFieldAgentMoneyAmount(amount, currencySymbol, currencyCode);
+}
+
+async function verifyPayRunItemEligibleForDispute(pool, { tenantId, payRunId, payRunItemId, fieldAgentId }) {
+  const r = await pool.query(
+    `
+    SELECT i.id
+    FROM public.field_agent_pay_run_items i
+    INNER JOIN public.field_agent_pay_runs pr ON pr.id = i.pay_run_id AND pr.tenant_id = i.tenant_id
+    WHERE i.id = $1 AND i.tenant_id = $2 AND i.field_agent_id = $3 AND i.pay_run_id = $4
+      AND pr.status IN ('approved', 'paid')
+    `,
+    [payRunItemId, tenantId, fieldAgentId, payRunId]
+  );
+  return r.rows[0] ?? null;
 }
 
 function renderLocals(req, res, extra) {
@@ -142,22 +176,544 @@ module.exports = function fieldAgentRoutes() {
   router.get("/field-agent/dashboard", requireFieldAgent, async (req, res) => {
     const pool = getPgPool();
     const s = getFieldAgentSession(req);
-    const created = await fieldAgentSubmissionsRepo.countByAgentAndStatus(pool, s.id, "pending");
-    const approved = await fieldAgentSubmissionsRepo.countByAgentAndStatus(pool, s.id, "approved");
-    const rejected = await fieldAgentSubmissionsRepo.countByAgentAndStatus(pool, s.id, "rejected");
-    const revenue30 = await fieldAgentSubmissionsRepo.sumCommissionLastDays(pool, s.id, 30);
+    const tid = req.tenant.id;
+    const metricPending = await fieldAgentSubmissionsRepo.countByAgentAndStatus(pool, s.id, "pending");
+    const metricInfoNeeded = await fieldAgentSubmissionsRepo.countByAgentAndStatus(pool, s.id, "info_needed");
+    const metricApproved = await fieldAgentSubmissionsRepo.countByAgentAndStatus(pool, s.id, "approved");
+    const metricRejected = await fieldAgentSubmissionsRepo.countByAgentAndStatus(pool, s.id, "rejected");
+    const metricAppealed = await fieldAgentSubmissionsRepo.countByAgentAndStatus(pool, s.id, "appealed");
+    const recruitmentCommission30 = await fieldAgentSubmissionsRepo.sumCommissionLastDays(pool, s.id, 30);
+    const commerce = await getCommerceSettingsForTenant(pool, tid);
+    const faPctRaw = commerce && commerce.field_agent_sp_commission_percent;
+    const faPct =
+      faPctRaw != null && Number.isFinite(Number(faPctRaw)) ? Math.min(100, Math.max(0, Number(faPctRaw))) : 0;
+    const ecPctRaw = commerce && commerce.field_agent_ec_commission_percent;
+    const ecPct =
+      ecPctRaw != null && Number.isFinite(Number(ecPctRaw)) ? Math.min(100, Math.max(0, Number(ecPctRaw))) : 0;
+    const sumLeadFees30 = await fieldAgentLeadFeeCommissionRepo.sumDealPriceCollectedLastDaysForAccountManagerFieldAgent(
+      pool,
+      tid,
+      s.id,
+      30
+    );
+    const metricSpCommission30 = Math.round(sumLeadFees30 * (faPct / 100) * 100) / 100;
+    const sumEcBase30 =
+      await fieldAgentEcCommissionRepo.sumDistinctDealPriceProjectCreatedLastDaysForAccountManagerFieldAgent(
+        pool,
+        tid,
+        s.id,
+        30
+      );
+    const metricEcCommission30 = Math.round(sumEcBase30 * (ecPct / 100) * 100) / 100;
+    const metricLinkedSpCount = await companiesRepo.countCompaniesByAccountManagerFieldAgent(pool, tid, s.id);
+    const rawSpRating30 = await fieldAgentSpRatingRepo.getAvgRatingLastDaysForAccountManagerFieldAgent(pool, tid, s.id, 30);
+    const spRatingThresholds = normalizeSpRatingThresholdsForTenant(commerce);
+    let metricSpRating30Display = "—";
+    let metricSpRating30Band = "neutral";
+    if (rawSpRating30 != null && Number.isFinite(Number(rawSpRating30))) {
+      const v = Number(rawSpRating30);
+      metricSpRating30Display = v.toFixed(1);
+      if (v >= spRatingThresholds.high) metricSpRating30Band = "high";
+      else if (v < spRatingThresholds.low) metricSpRating30Band = "low";
+      else metricSpRating30Band = "neutral";
+    }
+    const bonusPctRaw = commerce && commerce.field_agent_sp_high_rating_bonus_percent;
+    const spQualityPayable = computeSpCommissionQualityPayable({
+      earnedSpCommission30: metricSpCommission30,
+      avgRating30: rawSpRating30,
+      bonusPercent: bonusPctRaw,
+      lowThreshold: spRatingThresholds.low,
+      highThreshold: spRatingThresholds.high,
+    });
+    const ecQualityPayable = computeEcCommissionQualityPayableHoldbackOnly({
+      earnedEcCommission30: metricEcCommission30,
+      avgRating30: rawSpRating30,
+      lowThreshold: spRatingThresholds.low,
+    });
+    const faCurrencyCode = commerceCurrencyCodeUpper(commerce);
+    const faCurrencySymbol =
+      commerce && commerce.currency_symbol != null && String(commerce.currency_symbol).trim()
+        ? String(commerce.currency_symbol).trim().slice(0, 16)
+        : "";
+    const spQualityPayableDisplay = {
+      earnedDisplay: formatFieldAgentMoneyAmount(
+        spQualityPayable.earnedSpCommission30,
+        faCurrencySymbol,
+        faCurrencyCode
+      ),
+      bonusDisplay: formatFieldAgentMoneyAmount(
+        spQualityPayable.highRatingBonusSpCommission30,
+        faCurrencySymbol,
+        faCurrencyCode
+      ),
+      payableDisplay: formatFieldAgentMoneyAmount(
+        spQualityPayable.payableSpCommission30,
+        faCurrencySymbol,
+        faCurrencyCode
+      ),
+      adjustmentDisplay: formatFieldAgentMoneyAmount(
+        spQualityPayable.qualityAdjustmentSpCommission30,
+        faCurrencySymbol,
+        faCurrencyCode
+      ),
+      withheldDisplay: formatFieldAgentMoneyAmount(
+        spQualityPayable.withheldSpCommission30,
+        faCurrencySymbol,
+        faCurrencyCode
+      ),
+      ...spQualityPayable,
+    };
+    const spRatingThresholdLowDisplay = spRatingThresholds.low.toFixed(1);
+    const spRatingThresholdHighDisplay = spRatingThresholds.high.toFixed(1);
+    const spPayableBreakdownPayload = {
+      spRatingDisplay: metricSpRating30Display,
+      lowThresholdDisplay: spRatingThresholdLowDisplay,
+      highThresholdDisplay: spRatingThresholdHighDisplay,
+      earnedDisplay: spQualityPayableDisplay.earnedDisplay,
+      bonusDisplay: spQualityPayableDisplay.bonusDisplay,
+      adjustmentDisplay: spQualityPayableDisplay.adjustmentDisplay,
+      withheldDisplay: spQualityPayableDisplay.withheldDisplay,
+      payableDisplay: spQualityPayableDisplay.payableDisplay,
+      qualityEligibilityLabel: spQualityPayableDisplay.qualityEligibilityLabel,
+      faCurrencyCode: faCurrencyCode || "",
+      withheldSpCommission30: spQualityPayable.withheldSpCommission30,
+      highRatingBonusSpCommission30: spQualityPayable.highRatingBonusSpCommission30,
+    };
+    const ecQualityPayableDisplay = {
+      earnedDisplay: formatFieldAgentMoneyAmount(
+        ecQualityPayable.earnedEcCommission30,
+        faCurrencySymbol,
+        faCurrencyCode
+      ),
+      payableDisplay: formatFieldAgentMoneyAmount(
+        ecQualityPayable.payableEcCommission30,
+        faCurrencySymbol,
+        faCurrencyCode
+      ),
+      withheldDisplay: formatFieldAgentMoneyAmount(
+        ecQualityPayable.withheldEcCommission30,
+        faCurrencySymbol,
+        faCurrencyCode
+      ),
+      ...ecQualityPayable,
+    };
+    const ecPayableBreakdownPayload = {
+      spRatingDisplay: metricSpRating30Display,
+      lowThresholdDisplay: spRatingThresholdLowDisplay,
+      highThresholdDisplay: spRatingThresholdHighDisplay,
+      earnedDisplay: ecQualityPayableDisplay.earnedDisplay,
+      withheldDisplay: ecQualityPayableDisplay.withheldDisplay,
+      payableDisplay: ecQualityPayableDisplay.payableDisplay,
+      qualityEligibilityLabel: ecQualityPayableDisplay.qualityEligibilityLabel,
+      faCurrencyCode: faCurrencyCode || "",
+      withheldEcCommission30: ecQualityPayable.withheldEcCommission30,
+    };
     const rejectedRows = await fieldAgentSubmissionsRepo.listRejectedWithReason(pool, s.id, 20);
+    const metricTotal = metricPending + metricInfoNeeded + metricApproved + metricRejected + metricAppealed;
     return res.render("field_agent/dashboard", renderLocals(req, res, {
       fieldAgent: s,
-      metricPending: created,
-      metricApproved: approved,
-      metricRejected: rejected,
-      metricTotal: created + approved + rejected,
-      revenue30,
+      metricPending,
+      metricInfoNeeded,
+      metricApproved,
+      metricRejected,
+      metricAppealed,
+      metricTotal,
+      recruitmentCommission30,
+      metricSpCommission30,
+      metricEcCommission30,
+      metricLinkedSpCount,
+      metricSpRating30Display,
+      metricSpRating30Band,
+      spQualityPayableDisplay,
+      faCurrencyCode,
+      spRatingThresholdLowDisplay,
+      spRatingThresholdHighDisplay,
+      spPayableBreakdownPayload,
+      ecQualityPayableDisplay,
+      ecPayableBreakdownPayload,
       rejectedRows,
       submitted: req.query && req.query.submitted === "1",
       callback: req.query && req.query.callback === "1",
     }));
+  });
+
+  router.get("/field-agent/statements/:payRunId/download", requireFieldAgent, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const payRunId = Number(req.params.payRunId);
+      if (!Number.isFinite(payRunId) || payRunId < 1) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      const row = await fieldAgentPayRunRepo.getVisiblePayRunItemDetailForFieldAgent(pool, tid, s.id, payRunId);
+      if (!row) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      const commerce = await getCommerceSettingsForTenant(pool, tid);
+      const detail = buildStatementDetailFromSnapshotRow(row, commerce);
+      const tenantRow = await tenantsRepo.getById(pool, tid);
+      const tenantRegionLabel = tenantRow
+        ? `${String(tenantRow.name || "").trim() || tenantRow.slug} (${tenantRow.slug})`
+        : "";
+      return res.render("field_agent/statement_print", {
+        detail,
+        brandProductName: res.locals.brandProductName || "Pro-online",
+        tenantRegionLabel,
+        showTenantLine: true,
+      });
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.get("/field-agent/adjustments", requireFieldAgent, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const commerce = await getCommerceSettingsForTenant(pool, tid);
+      const faCurrencyCode = commerceCurrencyCodeUpper(commerce);
+      const faCurrencySymbol =
+        commerce && commerce.currency_symbol != null && String(commerce.currency_symbol).trim()
+          ? String(commerce.currency_symbol).trim().slice(0, 16)
+          : "";
+      const rows = await fieldAgentPayRunAdjustmentsRepo.listAdjustmentsForFieldAgent(pool, tid, s.id, 100);
+      const adjustments = rows.map((a) => ({
+        ...a,
+        periodLabel:
+          a.original_period_start && a.original_period_end
+            ? `${new Date(a.original_period_start).toISOString().slice(0, 10)} – ${new Date(a.original_period_end).toISOString().slice(0, 10)}`
+            : "—",
+        amountDisplay: formatStatementMoney(a.adjustment_amount, faCurrencySymbol, faCurrencyCode),
+      }));
+      return res.render(
+        "field_agent/adjustments",
+        renderLocals(req, res, {
+          fieldAgent: s,
+          adjustments,
+          faCurrencyCode,
+          faCurrencySymbol,
+          faActiveNav: "adjustments",
+        })
+      );
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.get("/field-agent/disputes", requireFieldAgent, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const rows = await fieldAgentPayRunDisputesRepo.listDisputesForFieldAgent(pool, tid, s.id, 80);
+      const disputes = rows.map((d) => ({
+        ...d,
+        periodLabel:
+          d.period_start && d.period_end
+            ? `${new Date(d.period_start).toISOString().slice(0, 10)} – ${new Date(d.period_end).toISOString().slice(0, 10)}`
+            : "—",
+      }));
+      return res.render(
+        "field_agent/disputes",
+        renderLocals(req, res, {
+          fieldAgent: s,
+          disputes,
+          faActiveNav: "disputes",
+        })
+      );
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.post("/field-agent/statements/:payRunId/disputes", requireFieldAgent, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const payRunId = Number(req.params.payRunId);
+      const body = req.body || {};
+      const payRunItemId = Number(body.pay_run_item_id);
+      const disputeReason = String(body.dispute_reason || "").trim();
+      const disputeNotes = body.dispute_notes != null && String(body.dispute_notes).trim() !== "" ? String(body.dispute_notes).trim() : null;
+      if (!Number.isFinite(payRunId) || payRunId < 1 || !Number.isFinite(payRunItemId) || payRunItemId < 1) {
+        return res.status(400).type("text").send("Invalid request.");
+      }
+      if (!disputeReason) {
+        return res.status(400).type("text").send("Reason is required.");
+      }
+      const eligible = await verifyPayRunItemEligibleForDispute(pool, {
+        tenantId: tid,
+        payRunId,
+        payRunItemId,
+        fieldAgentId: s.id,
+      });
+      if (!eligible) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      const active = await fieldAgentPayRunDisputesRepo.getActiveDisputeForPayRunItem(pool, tid, payRunItemId);
+      if (active) {
+        return res.status(409).type("text").send("A dispute is already in progress for this statement.");
+      }
+      let created;
+      try {
+        created = await fieldAgentPayRunDisputesRepo.createDispute(pool, {
+          tenantId: tid,
+          payRunId,
+          payRunItemId,
+          fieldAgentId: s.id,
+          disputeReason,
+          disputeNotes,
+        });
+      } catch (e) {
+        if (e && e.code === "23505") {
+          return res.status(409).type("text").send("A dispute is already in progress for this statement.");
+        }
+        throw e;
+      }
+      if (created.error || !created.dispute) {
+        return res.status(400).type("text").send("Could not submit dispute.");
+      }
+      const q = new URLSearchParams();
+      q.set("dispute_submitted", "1");
+      return res.redirect(302, `${tenantPrefix(req)}/field-agent/statements/${payRunId}?${q.toString()}`);
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.get("/field-agent/statements", requireFieldAgent, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const rows = await fieldAgentPayRunRepo.listVisiblePayRunItemsForFieldAgent(pool, tid, s.id, { limit: 50 });
+      const commerce = await getCommerceSettingsForTenant(pool, tid);
+      const faCurrencyCode = commerceCurrencyCodeUpper(commerce);
+      const faCurrencySymbol =
+        commerce && commerce.currency_symbol != null && String(commerce.currency_symbol).trim()
+          ? String(commerce.currency_symbol).trim().slice(0, 16)
+          : "";
+      const statements = rows.map((row) => ({
+        ...row,
+        totalPayableDisplay: formatStatementMoney(row.total_payable, faCurrencySymbol, faCurrencyCode),
+        periodLabel:
+          row.period_start && row.period_end
+            ? `${new Date(row.period_start).toISOString().slice(0, 10)} – ${new Date(row.period_end).toISOString().slice(0, 10)}`
+            : "—",
+      }));
+      return res.render(
+        "field_agent/statements",
+        renderLocals(req, res, {
+          fieldAgent: s,
+          statements,
+          faCurrencyCode,
+          faCurrencySymbol,
+          faActiveNav: "statements",
+        })
+      );
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.get("/field-agent/statements/:payRunId", requireFieldAgent, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const payRunId = Number(req.params.payRunId);
+      if (!Number.isFinite(payRunId) || payRunId < 1) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      const row = await fieldAgentPayRunRepo.getVisiblePayRunItemDetailForFieldAgent(pool, tid, s.id, payRunId);
+      if (!row) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      const commerce = await getCommerceSettingsForTenant(pool, tid);
+      const detail = buildStatementDetailFromSnapshotRow(row, commerce);
+      const faCurrencyCode = detail.faCurrencyCode;
+      const faCurrencySymbol = detail.faCurrencySymbol;
+      const tenantRow = await tenantsRepo.getById(pool, tid);
+      const tenantRegionLabel = tenantRow
+        ? `${String(tenantRow.name || "").trim() || tenantRow.slug} (${tenantRow.slug})`
+        : "";
+      const activeDispute = await fieldAgentPayRunDisputesRepo.getActiveDisputeForPayRunItem(pool, tid, row.item_id);
+      const canRaiseDispute = !activeDispute && (row.status === "approved" || row.status === "paid");
+      const adjustmentRows = await fieldAgentPayRunAdjustmentsRepo.getAdjustmentsForPayRunItem(pool, tid, row.item_id);
+      const statementAdjustments = adjustmentRows.map((a) => ({
+        ...a,
+        amountDisplay: formatStatementMoney(a.adjustment_amount, faCurrencySymbol, faCurrencyCode),
+        appliedLabel:
+          a.applied_in_pay_run_id != null && a.applied_period_start && a.applied_period_end
+            ? `Applied in statement ${new Date(a.applied_period_start).toISOString().slice(0, 10)} – ${new Date(a.applied_period_end).toISOString().slice(0, 10)}`
+            : null,
+      }));
+      return res.render(
+        "field_agent/statement_detail",
+        renderLocals(req, res, {
+          fieldAgent: s,
+          detail,
+          payRunItemId: row.item_id,
+          activeDispute,
+          canRaiseDispute,
+          disputeSubmitted: req.query.dispute_submitted === "1",
+          statementAdjustments,
+          tenantRegionLabel,
+          showTenantLine: true,
+          faCurrencyCode,
+          faCurrencySymbol,
+          faActiveNav: "statements",
+        })
+      );
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  /** JSON: lead-fee charge rows for SP_Commission (30d) drill-down (read-only). */
+  router.get("/field-agent/api/sp-commission-charges", requireFieldAgent, async (req, res) => {
+    const pool = getPgPool();
+    const s = getFieldAgentSession(req);
+    const tid = req.tenant.id;
+    const rows = await fieldAgentLeadFeeCommissionRepo.listDealFeeChargesForAccountManagerFieldAgent(pool, tid, s.id, {
+      days: 30,
+      limit: 100,
+    });
+    const cs = await getCommerceSettingsForTenant(pool, tid);
+    const currency_code = commerceCurrencyCodeUpper(cs);
+    const currency_symbol =
+      cs && cs.currency_symbol != null && String(cs.currency_symbol).trim()
+        ? String(cs.currency_symbol).trim().slice(0, 16)
+        : "";
+    const items = rows.map((row) => {
+      const ca = row.charged_at;
+      let charge_timestamp = null;
+      if (ca instanceof Date) {
+        charge_timestamp = ca.toISOString();
+      } else if (ca != null) {
+        charge_timestamp = String(ca);
+      }
+      return {
+        assignment_id: Number(row.assignment_id),
+        company_name: row.company_name != null ? String(row.company_name) : "",
+        category_name: row.category_name != null && String(row.category_name).trim() ? String(row.category_name) : null,
+        deal_price: row.deal_price != null && Number.isFinite(Number(row.deal_price)) ? Number(row.deal_price) : 0,
+        charge_timestamp,
+        project_id: Number(row.project_id),
+        subdomain: row.subdomain != null && String(row.subdomain).trim() ? String(row.subdomain).trim() : null,
+        location: row.location != null && String(row.location).trim() ? String(row.location).trim() : null,
+      };
+    });
+    return res.json({ ok: true, currency_code, currency_symbol, items });
+  });
+
+  /** JSON: distinct qualifying EC lead projects for EC_Commission (30d) drill-down (read-only). */
+  router.get("/field-agent/api/ec-commission-projects", requireFieldAgent, async (req, res) => {
+    const pool = getPgPool();
+    const s = getFieldAgentSession(req);
+    const tid = req.tenant.id;
+    const cs = await getCommerceSettingsForTenant(pool, tid);
+    const currency_code = commerceCurrencyCodeUpper(cs);
+    const currency_symbol =
+      cs && cs.currency_symbol != null && String(cs.currency_symbol).trim()
+        ? String(cs.currency_symbol).trim().slice(0, 16)
+        : "";
+    const rows = await fieldAgentEcCommissionRepo.listDistinctEcCommissionProjectsForAccountManagerFieldAgent(
+      pool,
+      tid,
+      s.id,
+      30
+    );
+    const items = rows.map((row) => {
+      const ca = row.created_at;
+      let created_at = null;
+      if (ca instanceof Date) {
+        created_at = ca.toISOString();
+      } else if (ca != null) {
+        created_at = String(ca);
+      }
+      return {
+        project_id: Number(row.project_id),
+        project_code: row.project_code != null ? String(row.project_code) : "",
+        deal_price: row.deal_price != null && Number.isFinite(Number(row.deal_price)) ? Number(row.deal_price) : 0,
+        created_at,
+        assignment_count:
+          row.assignment_count != null && Number.isFinite(Number(row.assignment_count))
+            ? Number(row.assignment_count)
+            : 0,
+      };
+    });
+    return res.json({ ok: true, currency_code, currency_symbol, items });
+  });
+
+  /** JSON: client→SP reviews + average for SP_Rating (30d) drill-down (read-only). */
+  router.get("/field-agent/api/sp-rating-reviews", requireFieldAgent, async (req, res) => {
+    const pool = getPgPool();
+    const s = getFieldAgentSession(req);
+    const tid = req.tenant.id;
+    const avgRating = await fieldAgentSpRatingRepo.getAvgRatingLastDaysForAccountManagerFieldAgent(pool, tid, s.id, 30);
+    const rows = await fieldAgentSpRatingRepo.listRecentClientReviewsForAccountManagerFieldAgent(pool, tid, s.id, {
+      days: 30,
+      limit: 100,
+    });
+    const items = rows.map((row) => {
+      const ca = row.created_at;
+      let created_at = null;
+      if (ca instanceof Date) {
+        created_at = ca.toISOString();
+      } else if (ca != null) {
+        created_at = String(ca);
+      }
+      return {
+        company_name: row.company_name != null ? String(row.company_name) : "",
+        rating: row.rating != null && Number.isFinite(Number(row.rating)) ? Number(row.rating) : 0,
+        created_at,
+        project_id: row.project_id != null ? Number(row.project_id) : null,
+        project_code: row.project_code != null && String(row.project_code).trim() ? String(row.project_code).trim() : null,
+      };
+    });
+    return res.json({
+      ok: true,
+      avg_rating: avgRating != null && Number.isFinite(Number(avgRating)) ? Number(avgRating) : null,
+      items,
+    });
+  });
+
+  /** JSON: service provider companies linked to this field agent as account manager (read-only). */
+  router.get("/field-agent/api/linked-companies", requireFieldAgent, async (req, res) => {
+    const pool = getPgPool();
+    const s = getFieldAgentSession(req);
+    const tid = req.tenant.id;
+    const rows = await companiesRepo.listCompaniesByAccountManagerFieldAgent(pool, tid, s.id, { limit: 100 });
+    return res.json({ ok: true, items: rows });
+  });
+
+  /** JSON: submissions for the logged-in field agent only, by status (dashboard drill-down). */
+  router.get("/field-agent/api/submissions", requireFieldAgent, async (req, res) => {
+    const pool = getPgPool();
+    const s = getFieldAgentSession(req);
+    const status = String((req.query && req.query.status) || "").trim();
+    const rows = await fieldAgentSubmissionsRepo.listSubmissionsForFieldAgentByStatus(pool, s.id, status, 100);
+    return res.json({ ok: true, items: rows });
+  });
+
+  /** JSON: single submission row if it belongs to the logged-in field agent (same tenant). */
+  router.get("/field-agent/api/submissions/:id", requireFieldAgent, async (req, res) => {
+    const pool = getPgPool();
+    const s = getFieldAgentSession(req);
+    const tid = req.tenant.id;
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id < 1) {
+      return res.status(404).json({ ok: false, error: "Not found." });
+    }
+    const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+    if (!row) {
+      return res.status(404).json({ ok: false, error: "Not found." });
+    }
+    return res.json({ ok: true, submission: row });
   });
 
   router.get("/field-agent/add-contact", requireFieldAgent, async (req, res) => {

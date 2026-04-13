@@ -47,6 +47,14 @@
             <input id="q_updated" name="q_updated" type="search" value="<%= f.q_updated || '' %>" placeholder="Filter…" autocomplete="off" />
           </div>
         </div>
+        <div class="admin-filter-form__grid" style="margin-top:0.5rem;">
+          <div style="grid-column:1/-1;">
+            <label class="admin-filter-form__label" style="display:inline-flex;align-items:center;gap:0.5rem;font-weight:normal;">
+              <input type="checkbox" name="q_fa_linked" value="1" <%= f.q_fa_linked ? 'checked' : '' %> />
+              Only companies with a field-agent account manager
+            </label>
+          </div>
+        </div>
         <div class="admin-filter-form__actions">
           <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply filters' }) %>
           <%- include('../partials/components/button', { variant: 'default', href: '/admin/companies' + (editMode ? '?edit=1' : '') + (editMode && _embed ? '&embed=1' : (!editMode && _embed ? '?embed=1' : '')), label: 'Clear' }) %>
@@ -69,6 +77,8 @@
               <th>Name</th>
               <th>Mini-site</th>
               <th>Category</th>
+              <th>FA account mgr</th>
+              <th>FA source submission</th>
               <th>Directory profile</th>
               <th>Directory featured</th>
               <th>Premium</th>
@@ -81,7 +91,7 @@
           </thead>
           <tbody>
             <% var _pcCol = typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive ? 1 : 0; %>
-            <% var _emptyCols = (editMode ? 8 : 7) + _pcCol; %>
+            <% var _emptyCols = (editMode ? 10 : 9) + _pcCol; %>
             <% if (!companies || companies.length === 0) { %>
               <tr>
                 <td colspan="<%= _emptyCols %>" class="admin-table-empty-cell">
@@ -113,6 +123,8 @@
                   <% } %>
                 </td>
                 <td><%= c.category_name || '—' %></td>
+                <td class="muted muted--caption"><%= typeof c.account_manager_field_agent_label !== 'undefined' && c.account_manager_field_agent_label ? c.account_manager_field_agent_label : '—' %></td>
+                <td class="muted muted--caption"><%= c.source_field_agent_submission_id != null ? ('#' + c.source_field_agent_submission_id) : '—' %></td>
                 <td>
                   <% if (baseDomain && typeof adminTenantSlug !== 'undefined' && adminTenantSlug) { %>
                     <a href="https://<%= adminTenantSlug %>.<%= baseDomain %>/company/<%= c.id %>" target="_blank" rel="noopener noreferrer">Open</a>
@@ -142,7 +154,7 @@
                   <% if (c.portal_credit_blocked) { %>
                   <span class="admin-credit-blocked-badge">Blocked</span>
                   <% } %>
-                  <span class="muted admin-companies-credit-balance"><%= c.portal_lead_credits_balance != null ? c.portal_lead_credits_balance : '0' %> ZMW</span>
+                  <span class="muted admin-companies-credit-balance"><%= c.portal_lead_credits_balance != null ? c.portal_lead_credits_balance : '0' %> <%= typeof portalCreditCurrencyCode !== 'undefined' && portalCreditCurrencyCode ? portalCreditCurrencyCode : 'ZMW' %></span>
                 </td>
                 <% } %>
                 <td class="muted"><%- include('../partials/event_time', { at: c.updated_at }) %></td>

@@ -27,11 +27,26 @@
           </div>
         </div>
 
+        <div class="card admin-form-card u-mt-md">
+          <h2 class="form-step__title" style="margin-top:0;">Field agent linkage</h2>
+          <p class="muted" style="margin:0 0 0.75rem;">Optional link to an approved field-agent submission and account manager. Only tenant managers (and super admins) can change these fields.</p>
+          <dl class="admin-fa-linkage-readonly" style="margin:0;">
+            <div style="display:grid;grid-template-columns:12rem 1fr;gap:0.5rem 1rem;align-items:start;">
+              <dt class="muted" style="margin:0;">Source submission</dt>
+              <dd style="margin:0;"><%= typeof sourceFieldAgentSubmissionDisplay !== 'undefined' && sourceFieldAgentSubmissionDisplay ? sourceFieldAgentSubmissionDisplay : '—' %></dd>
+              <dt class="muted" style="margin:0;">Account manager</dt>
+              <dd style="margin:0;"><%= typeof accountManagerFieldAgentDisplay !== 'undefined' && accountManagerFieldAgentDisplay ? accountManagerFieldAgentDisplay : '—' %></dd>
+            </div>
+          </dl>
+        </div>
+
         <% if (typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive) { %>
         <%- include('../partials/admin_company_portal_credits', {
           company,
           portalCreditBlocked,
           portalCreditBalance,
+          portalCreditCurrencyCode,
+          portalCreditMinBalance,
           recentLedgerEntries,
           paymentMethodOptions,
           defaultPaymentDate,
@@ -130,6 +145,32 @@
                     <th scope="row">CTA phone</th>
                     <td><input type="text" class="input-grow" data-f="featured_cta_phone" /></td>
                   </tr>
+                  <% if (typeof canMutateCompanyFieldAgentLinkage !== 'undefined' && canMutateCompanyFieldAgentLinkage) { %>
+                  <tr>
+                    <th scope="row">Field-agent submission</th>
+                    <td>
+                      <select data-f="source_field_agent_submission_id" class="input-grow">
+                        <option value="">— None —</option>
+                        <% (approvedSubmissionsForLinkage || []).forEach(function (s) { %>
+                          <option value="<%= s.id %>" <%= company.source_field_agent_submission_id != null && Number(company.source_field_agent_submission_id) === Number(s.id) ? 'selected' : '' %>>#<%= s.id %> · <%= s.first_name %> <%= s.last_name %> · <%= s.phone_raw %></option>
+                        <% }); %>
+                      </select>
+                      <div class="muted admin-workspace__form-hint">Approved submissions only. Linking sets the default account manager from the submission.</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Account manager</th>
+                    <td>
+                      <select data-f="account_manager_field_agent_id" class="input-grow">
+                        <option value="">— None —</option>
+                        <% (fieldAgentsForLinkage || []).forEach(function (fa) { %>
+                          <option value="<%= fa.id %>" <%= company.account_manager_field_agent_id != null && Number(company.account_manager_field_agent_id) === Number(fa.id) ? 'selected' : '' %>><%= fa.display_name || fa.username %> (<%= fa.username %>)</option>
+                        <% }); %>
+                      </select>
+                      <div class="muted admin-workspace__form-hint">Override the introducing field agent if needed.</div>
+                    </td>
+                  </tr>
+                  <% } %>
                   <tr>
                     <th scope="row">Pictures (URLs)</th>
                     <td>
@@ -204,6 +245,8 @@
         featured_cta_label: company.featured_cta_label,
         featured_cta_phone: company.featured_cta_phone,
         logo_url: company.logo_url,
+        source_field_agent_submission_id: company.source_field_agent_submission_id,
+        account_manager_field_agent_id: company.account_manager_field_agent_id,
       };
       var __wsBoot = {
         companyId: company.id,

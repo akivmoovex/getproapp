@@ -61,6 +61,11 @@
         inp.value = c.category_id != null && c.category_id !== "" ? String(c.category_id) : "";
         return;
       }
+      if (key === "source_field_agent_submission_id" || key === "account_manager_field_agent_id") {
+        inp.value =
+          c[key] != null && c[key] !== "" ? String(c[key]) : "";
+        return;
+      }
       if (key === "years_experience") {
         inp.value =
           c.years_experience != null && c.years_experience !== "" ? String(c.years_experience) : "";
@@ -79,6 +84,11 @@
       if (key === "category_id") {
         var cv = inp.value.trim();
         c.category_id = cv === "" ? "" : cv;
+        return;
+      }
+      if (key === "source_field_agent_submission_id" || key === "account_manager_field_agent_id") {
+        var lv = inp.value.trim();
+        c[key] = lv === "" ? "" : lv;
         return;
       }
       if (key === "years_experience") {

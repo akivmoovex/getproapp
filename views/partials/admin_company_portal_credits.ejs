@@ -4,11 +4,13 @@
 <% var rows = typeof recentLedgerEntries !== 'undefined' ? recentLedgerEntries : []; %>
 <% var pmOpts = typeof paymentMethodOptions !== 'undefined' ? paymentMethodOptions : []; %>
 <% var defDate = typeof defaultPaymentDate !== 'undefined' ? defaultPaymentDate : ''; %>
+<% var _ccode = typeof portalCreditCurrencyCode !== 'undefined' && portalCreditCurrencyCode ? String(portalCreditCurrencyCode) : 'ZMW'; %>
+<% var _cmin = typeof portalCreditMinBalance !== 'undefined' && portalCreditMinBalance != null && String(portalCreditMinBalance).trim() !== '' ? portalCreditMinBalance : 0; %>
 <div class="card admin-company-credit-card">
   <div class="admin-company-credit-card__head">
     <h2 class="admin-form-card__title admin-company-credit-card__title">Provider portal credits</h2>
     <div class="admin-company-credit-card__balance">
-      <span class="muted admin-company-credit-card__balance-label">Balance (ZMW)</span>
+      <span class="muted admin-company-credit-card__balance-label">Balance (<%= _ccode %>)</span>
       <strong class="admin-company-credit-card__balance-value"><%= bal %></strong>
       <% if (blocked) { %>
       <span class="admin-credit-blocked-badge" title="Lead acceptance blocked in provider portal">Credit blocked</span>
@@ -24,7 +26,7 @@
   <p class="flash admin-company-credit-card__flash" role="alert"><%= portalCreditError %></p>
   <% } %>
   <p class="muted admin-company-credit-card__lead">
-    When balance is below <strong>−200 ZMW</strong>, this provider cannot mark leads as interested or request callbacks until a payment is recorded here. Ledger entries are append-only.
+    Lead acceptance is blocked when balance minus the lead&rsquo;s deal price would fall below the region minimum (<strong><%= _cmin %></strong> <%= _ccode %>). Record a payment here to increase balance. Ledger entries are append-only.
   </p>
   <% if (blocked) { %>
   <p class="admin-company-credit-card__actions">
@@ -79,7 +81,7 @@
     <h2 id="admin-credit-dialog-title" class="admin-credit-dialog__title">Record payment</h2>
     <p class="muted admin-credit-dialog__lead">Creates a ledger entry and increases the provider balance. Required for audit.</p>
     <div class="input-field">
-      <label class="input-field__label" for="cc_amount_zmw">Amount credited (ZMW)</label>
+      <label class="input-field__label" for="cc_amount_zmw">Amount credited (<%= _ccode %>)</label>
       <input id="cc_amount_zmw" name="amount_zmw" class="input-field__control" type="number" inputmode="decimal" min="0.01" step="any" required />
     </div>
     <div class="input-field">

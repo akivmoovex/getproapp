@@ -25,6 +25,7 @@ const LEGACY_HREF = {
   "admin-tenant-settings-list": "/admin-tenant-settings-list.js",
   "field-agent-modal": "/field-agent-modal.js",
   "field-agent-contact": "/field-agent-contact.js",
+  "field-agent-dashboard": "/field-agent-dashboard.js",
 };
 
 let cachedMap = null;

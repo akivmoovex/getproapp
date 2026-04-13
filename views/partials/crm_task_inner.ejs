@@ -45,8 +45,10 @@
       <% var _fas = fieldAgentProviderSubmission; %>
       <section class="crm-task-section card crm-task-section--field-agent" data-field-agent-submission="<%= _fas.id %>">
         <h2 class="crm-task-section__h">Field agent provider submission</h2>
+        <% var _faSt = String(_fas.status || '');
+           var _faLbl = _faSt === 'info_needed' ? 'Info needed' : (_faSt === 'appealed' ? 'Appealed' : _faSt); %>
         <p class="muted crm-task-hero__meta">
-          Submission #<%= _fas.id %> · Status: <strong><%= _fas.status %></strong>
+          Submission #<%= _fas.id %> · Status: <strong><%= _faLbl %></strong>
           <% if (_fas.field_agent_username) { %> · Agent: <strong><%= _fas.field_agent_username %></strong><% } %>
         </p>
         <div class="crm-task-prose crm-task-fa-summary">
@@ -57,12 +59,12 @@
           <p><strong>WhatsApp:</strong> <%= _fas.whatsapp_raw || '—' %></p>
           <p><strong>PACRA:</strong> <%= _fas.pacra || '—' %></p>
           <p><strong>Commission recorded:</strong> <%= _fas.commission_amount != null ? _fas.commission_amount : '—' %></p>
-          <% if (_fas.status === 'rejected' && _fas.rejection_reason) { %>
-          <p><strong>Rejection reason:</strong> <%= _fas.rejection_reason %></p>
+          <% if (_fas.rejection_reason && String(_fas.rejection_reason).trim() && (_fas.status === 'rejected' || _fas.status === 'appealed' || _fas.status === 'info_needed')) { %>
+          <p><strong>Rejection / notes:</strong> <%= _fas.rejection_reason %></p>
           <% } %>
         </div>
         <% if (canMutateCrm) { %>
-          <% if (_fas.status === 'pending') { %>
+          <% if (_fas.status === 'pending' || _fas.status === 'info_needed' || _fas.status === 'appealed') { %>
           <div class="crm-task-fa-actions">
             <form method="post" action="/admin/crm/tasks/<%= task.id %>/field-agent-submission/approve" class="form crm-task-form crm-task-form--inline">
               <% if (_ov) { %>
@@ -86,6 +88,27 @@
               </div>
               <div class="crm-task-form__actions">
                 <%- include('components/button', { variant: 'secondary', type: 'submit', label: 'Reject submission' }) %>
+              </div>
+            </form>
+            <% if (_fas.status === 'pending' || _fas.status === 'appealed') { %>
+            <form method="post" action="/admin/crm/tasks/<%= task.id %>/field-agent-submission/info-needed" class="form crm-task-form crm-task-form--inline">
+              <% if (_ov) { %>
+              <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
+              <% } %>
+              <div class="crm-task-form__actions">
+                <%- include('components/button', { variant: 'default', type: 'submit', label: _fas.status === 'appealed' ? 'Request more info' : 'Mark info needed' }) %>
+              </div>
+            </form>
+            <% } %>
+          </div>
+          <% } else if (_fas.status === 'rejected') { %>
+          <div class="crm-task-fa-actions">
+            <form method="post" action="/admin/crm/tasks/<%= task.id %>/field-agent-submission/appeal" class="form crm-task-form crm-task-form--inline">
+              <% if (_ov) { %>
+              <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
+              <% } %>
+              <div class="crm-task-form__actions">
+                <%- include('components/button', { variant: 'default', type: 'submit', label: 'Mark as appealed (reopen)' }) %>
               </div>
             </form>
           </div>

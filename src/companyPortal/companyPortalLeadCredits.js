@@ -7,11 +7,11 @@ const {
   creditBalanceOkForDealOffer,
 } = require("../tenants/tenantCommerceSettings");
 
-/** @deprecated Legacy constant; use tenant commerce `minimum_credit_balance`. */
-const PORTAL_LEAD_CREDIT_BLOCK_THRESHOLD_ZMW = -200;
+/** @deprecated Legacy constant; use tenant commerce `minimum_credit_balance` (see {@link getCommerceSettingsForTenant}). */
+const PORTAL_LEAD_CREDIT_BLOCK_THRESHOLD_ZMW = 0;
 
 /** @deprecated Legacy constant; use tenant commerce `starting_credit_balance`. */
-const DEFAULT_SP_CREDIT_START_ZMW = -200;
+const DEFAULT_SP_CREDIT_START_ZMW = 250;
 
 const ACCEPT_ACTIONS = new Set(["interested", "callback"]);
 

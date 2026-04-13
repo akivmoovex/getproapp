@@ -73,6 +73,12 @@
           </article>
           <article class="admin-dashboard-kpi">
             <div class="admin-dashboard-kpi__body">
+              <span class="admin-dashboard-kpi__label">Info needed</span>
+              <span class="admin-dashboard-kpi__value"><%= s.info_needed != null ? s.info_needed : 0 %></span>
+            </div>
+          </article>
+          <article class="admin-dashboard-kpi">
+            <div class="admin-dashboard-kpi__body">
               <span class="admin-dashboard-kpi__label">Approved</span>
               <span class="admin-dashboard-kpi__value"><%= s.approved != null ? s.approved : 0 %></span>
             </div>
@@ -81,6 +87,12 @@
             <div class="admin-dashboard-kpi__body">
               <span class="admin-dashboard-kpi__label">Rejected</span>
               <span class="admin-dashboard-kpi__value"><%= s.rejected != null ? s.rejected : 0 %></span>
+            </div>
+          </article>
+          <article class="admin-dashboard-kpi">
+            <div class="admin-dashboard-kpi__body">
+              <span class="admin-dashboard-kpi__label">Appealed</span>
+              <span class="admin-dashboard-kpi__value"><%= s.appealed != null ? s.appealed : 0 %></span>
             </div>
           </article>
           <article class="admin-dashboard-kpi">
@@ -125,8 +137,10 @@
                   <th>Display name</th>
                   <th>Submissions</th>
                   <th>Pending</th>
+                  <th>Info needed</th>
                   <th>Approved</th>
                   <th>Rejected</th>
+                  <th>Appealed</th>
                   <th>Approval % (decided)</th>
                   <th>Total commission</th>
                   <th>Callbacks</th>
@@ -139,8 +153,10 @@
                   <td><%= row.display_name || '—' %></td>
                   <td><%= row.total %></td>
                   <td><%= row.pending %></td>
+                  <td><%= row.info_needed != null ? row.info_needed : 0 %></td>
                   <td><%= row.approved %></td>
                   <td><%= row.rejected %></td>
+                  <td><%= row.appealed != null ? row.appealed : 0 %></td>
                   <td><%= typeof row.approval_rate_decided === 'number' ? (row.approval_rate_decided * 100).toFixed(1) + '%' : '—' %></td>
                   <td><%= Number(row.total_commission || 0).toFixed(2) %></td>
                   <td><%= row.callback_leads %></td>
