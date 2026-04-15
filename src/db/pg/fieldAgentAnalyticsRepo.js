@@ -1,4 +1,5 @@
 "use strict";
+const faAnalyticsObs = require("../../lib/fieldAgentAnalyticsObservability");
 
 /**
  * Read-only aggregates for Field Agent reporting (tenant-scoped).
@@ -34,17 +35,20 @@ function normalizeDateRange(from, to) {
  * @param {import("pg").Pool} pool
  * @param {number} tenantId
  */
-async function listFieldAgentsForTenant(pool, tenantId) {
+async function listFieldAgentsForTenant(pool, tenantId, opts) {
   const tid = Number(tenantId);
   if (!Number.isFinite(tid) || tid < 1) return [];
-  const r = await pool.query(
-    `
+  const obs = opts && opts._obs ? opts._obs : null;
+  const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentAnalytics.listFieldAgentsForTenant" }, () =>
+    pool.query(
+      `
     SELECT id, username, display_name
     FROM public.field_agents
     WHERE tenant_id = $1
     ORDER BY lower(username) ASC
     `,
-    [tid]
+      [tid]
+    )
   );
   return r.rows.map((row) => ({
     id: Number(row.id),
@@ -252,6 +256,380 @@ async function getCallbackLeadsPerDay(pool, tenantId, days, fieldAgentId) {
   return r.rows.map((row) => ({ day: String(row.day), count: Number(row.c) || 0 }));
 }
 
+/**
+ * Drill-down list rows for submission-backed KPI cards (FIFO).
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {{
+ *   fieldAgentId?: number|null,
+ *   from?: string|null,
+ *   to?: string|null,
+ *   status?: string|null,
+ *   decidedOnly?: boolean,
+ *   q?: string|null,
+ *   limit?: number
+ * }} [opts]
+ */
+async function listSubmissionDrilldownRows(pool, tenantId, opts) {
+  const tid = Number(tenantId);
+  if (!Number.isFinite(tid) || tid < 1) return [];
+  const agentId =
+    opts && opts.fieldAgentId != null && Number(opts.fieldAgentId) > 0 ? Number(opts.fieldAgentId) : null;
+  const { from, to } = normalizeDateRange(opts && opts.from, opts && opts.to);
+  const status = opts && opts.status != null && String(opts.status).trim() !== "" ? String(opts.status).trim() : null;
+  const decidedOnly = Boolean(opts && opts.decidedOnly);
+  const qRaw = opts && opts.q != null ? String(opts.q).trim() : "";
+  const q = qRaw ? `%${qRaw}%` : null;
+  const limit = Math.min(Math.max(Number((opts && opts.limit) || 200), 1), 500);
+  const offset = Math.max(Number((opts && opts.offset) || 0), 0);
+  const where = ["s.tenant_id = $1"];
+  const params = [tid];
+  let i = 2;
+  if (agentId != null) {
+    where.push(`s.field_agent_id = $${i++}`);
+    params.push(agentId);
+  }
+  if (status != null) {
+    where.push(`s.status = $${i++}`);
+    params.push(status);
+  }
+  if (decidedOnly) {
+    where.push("s.status IN ('approved', 'rejected')");
+  }
+  if (from != null) {
+    where.push(`s.created_at >= $${i++}`);
+    params.push(from);
+  }
+  if (to != null) {
+    where.push(`s.created_at <= $${i++}`);
+    params.push(to);
+  }
+  if (q != null) {
+    where.push(`(
+      concat_ws(' ', s.first_name, s.last_name) ILIKE $${i}
+      OR s.phone_raw ILIKE $${i}
+      OR s.whatsapp_raw ILIKE $${i}
+      OR s.profession ILIKE $${i}
+      OR s.city ILIKE $${i}
+      OR s.pacra ILIKE $${i}
+    )`);
+    params.push(q);
+    i += 1;
+  }
+  params.push(limit);
+  const limitIdx = i++;
+  params.push(offset);
+  const offsetIdx = i++;
+  const obs = opts && opts._obs ? opts._obs : null;
+  const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentAnalytics.listSubmissionDrilldownRows" }, () =>
+    pool.query(
+      `
+    SELECT
+      s.id,
+      s.created_at,
+      s.updated_at,
+      s.status,
+      s.first_name,
+      s.last_name,
+      s.profession,
+      s.city,
+      s.phone_raw,
+      s.whatsapp_raw,
+      s.commission_amount,
+      s.rejection_reason,
+      fa.username AS field_agent_username,
+      fa.display_name AS field_agent_display_name
+    FROM public.field_agent_provider_submissions s
+    INNER JOIN public.field_agents fa ON fa.id = s.field_agent_id AND fa.tenant_id = s.tenant_id
+    WHERE ${where.join(" AND ")}
+    ORDER BY s.created_at ASC, s.id ASC
+    LIMIT $${limitIdx}
+    OFFSET $${offsetIdx}
+    `,
+      params
+    )
+  );
+  return r.rows;
+}
+
+/**
+ * Count rows for submission drill-down filters.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {{ fieldAgentId?: number|null, from?: string|null, to?: string|null, status?: string|null, decidedOnly?: boolean, q?: string|null }} [opts]
+ */
+async function countSubmissionDrilldownRows(pool, tenantId, opts) {
+  const tid = Number(tenantId);
+  if (!Number.isFinite(tid) || tid < 1) return 0;
+  const agentId =
+    opts && opts.fieldAgentId != null && Number(opts.fieldAgentId) > 0 ? Number(opts.fieldAgentId) : null;
+  const { from, to } = normalizeDateRange(opts && opts.from, opts && opts.to);
+  const status = opts && opts.status != null && String(opts.status).trim() !== "" ? String(opts.status).trim() : null;
+  const decidedOnly = Boolean(opts && opts.decidedOnly);
+  const qRaw = opts && opts.q != null ? String(opts.q).trim() : "";
+  const q = qRaw ? `%${qRaw}%` : null;
+  const where = ["s.tenant_id = $1"];
+  const params = [tid];
+  let i = 2;
+  if (agentId != null) {
+    where.push(`s.field_agent_id = $${i++}`);
+    params.push(agentId);
+  }
+  if (status != null) {
+    where.push(`s.status = $${i++}`);
+    params.push(status);
+  }
+  if (decidedOnly) {
+    where.push("s.status IN ('approved', 'rejected')");
+  }
+  if (from != null) {
+    where.push(`s.created_at >= $${i++}`);
+    params.push(from);
+  }
+  if (to != null) {
+    where.push(`s.created_at <= $${i++}`);
+    params.push(to);
+  }
+  if (q != null) {
+    where.push(`(
+      concat_ws(' ', s.first_name, s.last_name) ILIKE $${i}
+      OR s.phone_raw ILIKE $${i}
+      OR s.whatsapp_raw ILIKE $${i}
+      OR s.profession ILIKE $${i}
+      OR s.city ILIKE $${i}
+      OR s.pacra ILIKE $${i}
+    )`);
+    params.push(q);
+    i += 1;
+  }
+  const obs = opts && opts._obs ? opts._obs : null;
+  const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentAnalytics.countSubmissionDrilldownRows" }, () =>
+    pool.query(
+      `
+    SELECT COUNT(*)::int AS c
+    FROM public.field_agent_provider_submissions s
+    WHERE ${where.join(" AND ")}
+    `,
+      params
+    )
+  );
+  return Number(r.rows[0] && r.rows[0].c) || 0;
+}
+
+/**
+ * Drill-down list rows for callback-lead KPI card (FIFO).
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {{
+ *   fieldAgentId?: number|null,
+ *   from?: string|null,
+ *   to?: string|null,
+ *   q?: string|null,
+ *   limit?: number
+ * }} [opts]
+ */
+async function listCallbackLeadDrilldownRows(pool, tenantId, opts) {
+  const tid = Number(tenantId);
+  if (!Number.isFinite(tid) || tid < 1) return [];
+  const agentId =
+    opts && opts.fieldAgentId != null && Number(opts.fieldAgentId) > 0 ? Number(opts.fieldAgentId) : null;
+  const { from, to } = normalizeDateRange(opts && opts.from, opts && opts.to);
+  const qRaw = opts && opts.q != null ? String(opts.q).trim() : "";
+  const q = qRaw ? `%${qRaw}%` : null;
+  const limit = Math.min(Math.max(Number((opts && opts.limit) || 200), 1), 500);
+  const offset = Math.max(Number((opts && opts.offset) || 0), 0);
+  const where = ["c.tenant_id = $1"];
+  const params = [tid];
+  let i = 2;
+  if (agentId != null) {
+    where.push(`c.field_agent_id = $${i++}`);
+    params.push(agentId);
+  }
+  if (from != null) {
+    where.push(`c.created_at >= $${i++}`);
+    params.push(from);
+  }
+  if (to != null) {
+    where.push(`c.created_at <= $${i++}`);
+    params.push(to);
+  }
+  if (q != null) {
+    where.push(`(
+      concat_ws(' ', c.first_name, c.last_name) ILIKE $${i}
+      OR c.phone ILIKE $${i}
+      OR c.email ILIKE $${i}
+      OR c.location_city ILIKE $${i}
+    )`);
+    params.push(q);
+    i += 1;
+  }
+  params.push(limit);
+  const limitIdx = i++;
+  params.push(offset);
+  const offsetIdx = i++;
+  const obs = opts && opts._obs ? opts._obs : null;
+  const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentAnalytics.listCallbackLeadDrilldownRows" }, () =>
+    pool.query(
+      `
+    SELECT
+      c.id,
+      c.created_at,
+      c.first_name,
+      c.last_name,
+      c.phone,
+      c.email,
+      c.location_city,
+      fa.username AS field_agent_username,
+      fa.display_name AS field_agent_display_name
+    FROM public.field_agent_callback_leads c
+    INNER JOIN public.field_agents fa ON fa.id = c.field_agent_id AND fa.tenant_id = c.tenant_id
+    WHERE ${where.join(" AND ")}
+    ORDER BY c.created_at ASC, c.id ASC
+    LIMIT $${limitIdx}
+    OFFSET $${offsetIdx}
+    `,
+      params
+    )
+  );
+  return r.rows;
+}
+
+/**
+ * Count rows for callback-lead drill-down filters.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {{ fieldAgentId?: number|null, from?: string|null, to?: string|null, q?: string|null }} [opts]
+ */
+async function countCallbackLeadDrilldownRows(pool, tenantId, opts) {
+  const tid = Number(tenantId);
+  if (!Number.isFinite(tid) || tid < 1) return 0;
+  const agentId =
+    opts && opts.fieldAgentId != null && Number(opts.fieldAgentId) > 0 ? Number(opts.fieldAgentId) : null;
+  const { from, to } = normalizeDateRange(opts && opts.from, opts && opts.to);
+  const qRaw = opts && opts.q != null ? String(opts.q).trim() : "";
+  const q = qRaw ? `%${qRaw}%` : null;
+  const where = ["c.tenant_id = $1"];
+  const params = [tid];
+  let i = 2;
+  if (agentId != null) {
+    where.push(`c.field_agent_id = $${i++}`);
+    params.push(agentId);
+  }
+  if (from != null) {
+    where.push(`c.created_at >= $${i++}`);
+    params.push(from);
+  }
+  if (to != null) {
+    where.push(`c.created_at <= $${i++}`);
+    params.push(to);
+  }
+  if (q != null) {
+    where.push(`(
+      concat_ws(' ', c.first_name, c.last_name) ILIKE $${i}
+      OR c.phone ILIKE $${i}
+      OR c.email ILIKE $${i}
+      OR c.location_city ILIKE $${i}
+    )`);
+    params.push(q);
+    i += 1;
+  }
+  const obs = opts && opts._obs ? opts._obs : null;
+  const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentAnalytics.countCallbackLeadDrilldownRows" }, () =>
+    pool.query(
+      `
+    SELECT COUNT(*)::int AS c
+    FROM public.field_agent_callback_leads c
+    WHERE ${where.join(" AND ")}
+    `,
+      params
+    )
+  );
+  return Number(r.rows[0] && r.rows[0].c) || 0;
+}
+
+/**
+ * Tenant-scoped submission detail for analytics drill-down panel.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} submissionId
+ */
+async function getSubmissionDrilldownDetailById(pool, tenantId, submissionId, obs) {
+  const tid = Number(tenantId);
+  const sid = Number(submissionId);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return null;
+  const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentAnalytics.getSubmissionDrilldownDetailById" }, () =>
+    pool.query(
+      `
+    SELECT
+      s.id,
+      s.created_at,
+      s.updated_at,
+      s.status,
+      s.first_name,
+      s.last_name,
+      s.profession,
+      s.city,
+      s.phone_raw,
+      s.whatsapp_raw,
+      s.pacra,
+      s.address_street,
+      s.address_landmarks,
+      s.address_neighbourhood,
+      s.address_city,
+      s.nrc_number,
+      s.commission_amount,
+      s.rejection_reason,
+      s.photo_profile_url,
+      s.work_photos_json,
+      fa.id AS field_agent_id,
+      fa.username AS field_agent_username,
+      fa.display_name AS field_agent_display_name
+    FROM public.field_agent_provider_submissions s
+    INNER JOIN public.field_agents fa ON fa.id = s.field_agent_id AND fa.tenant_id = s.tenant_id
+    WHERE s.tenant_id = $1 AND s.id = $2
+    LIMIT 1
+    `,
+      [tid, sid]
+    )
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Tenant-scoped callback lead detail for analytics drill-down panel.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} callbackLeadId
+ */
+async function getCallbackLeadDrilldownDetailById(pool, tenantId, callbackLeadId, obs) {
+  const tid = Number(tenantId);
+  const cid = Number(callbackLeadId);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(cid) || cid < 1) return null;
+  const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentAnalytics.getCallbackLeadDrilldownDetailById" }, () =>
+    pool.query(
+      `
+    SELECT
+      c.id,
+      c.created_at,
+      c.first_name,
+      c.last_name,
+      c.phone,
+      c.email,
+      c.location_city,
+      fa.id AS field_agent_id,
+      fa.username AS field_agent_username,
+      fa.display_name AS field_agent_display_name
+    FROM public.field_agent_callback_leads c
+    INNER JOIN public.field_agents fa ON fa.id = c.field_agent_id AND fa.tenant_id = c.tenant_id
+    WHERE c.tenant_id = $1 AND c.id = $2
+    LIMIT 1
+    `,
+      [tid, cid]
+    )
+  );
+  return r.rows[0] || null;
+}
+
 module.exports = {
   normalizeDateRange,
   listFieldAgentsForTenant,
@@ -259,4 +637,10 @@ module.exports = {
   getPerAgentBreakdown,
   getSubmissionsPerDay,
   getCallbackLeadsPerDay,
+  listSubmissionDrilldownRows,
+  countSubmissionDrilldownRows,
+  listCallbackLeadDrilldownRows,
+  countCallbackLeadDrilldownRows,
+  getSubmissionDrilldownDetailById,
+  getCallbackLeadDrilldownDetailById,
 };

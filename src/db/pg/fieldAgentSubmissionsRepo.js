@@ -1,6 +1,7 @@
 "use strict";
 
 const { OPEN_PIPELINE_STATUSES, normalizeStatus } = require("../../fieldAgent/fieldAgentSubmissionStatuses");
+const faAnalyticsObs = require("../../lib/fieldAgentAnalyticsObservability");
 
 /**
  * Full submission row for admin CRM (tenant-scoped). Includes submitting field agent identity.
@@ -24,6 +25,27 @@ async function getSubmissionByIdForAdmin(pool, tenantId, submissionId) {
     [sid, tid]
   );
   return r.rows[0] ?? null;
+}
+
+/**
+ * Tenant-scoped submission rows by id set for admin operations.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number[]} submissionIds
+ */
+async function listSubmissionsByIdsForAdmin(pool, tenantId, submissionIds) {
+  const tid = Number(tenantId);
+  const ids = [...new Set((Array.isArray(submissionIds) ? submissionIds : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0))];
+  if (!Number.isFinite(tid) || tid < 1 || ids.length === 0) return [];
+  const r = await pool.query(
+    `
+    SELECT id, status
+    FROM public.field_agent_provider_submissions
+    WHERE tenant_id = $1 AND id = ANY($2::int[])
+    `,
+    [tid, ids]
+  );
+  return r.rows;
 }
 
 /**
@@ -62,8 +84,10 @@ async function approveFieldAgentSubmission(pool, p) {
   const sid = Number(p.submissionId);
   const commission = p.commissionAmount != null && Number.isFinite(Number(p.commissionAmount)) ? Number(p.commissionAmount) : 0;
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
-  const r = await pool.query(
-    `
+  const obs = p && p._obs ? p._obs : null;
+  const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.approveFieldAgentSubmission" }, () =>
+    pool.query(
+      `
     UPDATE public.field_agent_provider_submissions
     SET status = 'approved',
         rejection_reason = '',
@@ -72,7 +96,8 @@ async function approveFieldAgentSubmission(pool, p) {
     WHERE id = $1 AND tenant_id = $2
       AND status IN ('pending', 'info_needed', 'appealed')
     `,
-    [sid, tid, commission]
+      [sid, tid, commission]
+    )
   );
   return r.rowCount === 1;
 }
@@ -89,8 +114,10 @@ async function rejectFieldAgentSubmission(pool, p) {
   const reason = String(p.rejectionReason || "").trim();
   if (!reason) return false;
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
-  const r = await pool.query(
-    `
+  const obs = p && p._obs ? p._obs : null;
+  const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.rejectFieldAgentSubmission" }, () =>
+    pool.query(
+      `
     UPDATE public.field_agent_provider_submissions
     SET status = 'rejected',
         rejection_reason = $3,
@@ -99,7 +126,8 @@ async function rejectFieldAgentSubmission(pool, p) {
     WHERE id = $1 AND tenant_id = $2
       AND status IN ('pending', 'info_needed', 'appealed')
     `,
-    [sid, tid, reason.slice(0, 4000)]
+      [sid, tid, reason.slice(0, 4000)]
+    )
   );
   return r.rowCount === 1;
 }
@@ -114,15 +142,18 @@ async function markFieldAgentSubmissionInfoNeeded(pool, p) {
   const tid = Number(p.tenantId);
   const sid = Number(p.submissionId);
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
-  const r = await pool.query(
-    `
+  const obs = p && p._obs ? p._obs : null;
+  const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.markFieldAgentSubmissionInfoNeeded" }, () =>
+    pool.query(
+      `
     UPDATE public.field_agent_provider_submissions
     SET status = 'info_needed',
         updated_at = now()
     WHERE id = $1 AND tenant_id = $2
       AND status IN ('pending', 'appealed')
     `,
-    [sid, tid]
+      [sid, tid]
+    )
   );
   return r.rowCount === 1;
 }
@@ -137,14 +168,17 @@ async function markFieldAgentSubmissionAppealed(pool, p) {
   const tid = Number(p.tenantId);
   const sid = Number(p.submissionId);
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
-  const r = await pool.query(
-    `
+  const obs = p && p._obs ? p._obs : null;
+  const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.markFieldAgentSubmissionAppealed" }, () =>
+    pool.query(
+      `
     UPDATE public.field_agent_provider_submissions
     SET status = 'appealed',
         updated_at = now()
     WHERE id = $1 AND tenant_id = $2 AND status = 'rejected'
     `,
-    [sid, tid]
+      [sid, tid]
+    )
   );
   return r.rowCount === 1;
 }
@@ -421,8 +455,147 @@ async function updatePhotosAfterUpload(pool, client, { submissionId, tenantId, p
   );
 }
 
+/**
+ * Bulk moderation wrapper for tenant-scoped submission ids.
+ * Reuses the same single-item transition helpers and does not bypass transition rules.
+ *
+ * @param {import("pg").Pool} pool
+ * @param {{
+ *   tenantId: number,
+ *   action: "approve"|"reject"|"info_needed"|"appeal",
+ *   ids: number[],
+ *   rejectionReason?: string,
+ *   commissionAmount?: number
+ * }} p
+ */
+async function applyBulkSubmissionAction(pool, p) {
+  const tid = Number(p.tenantId);
+  if (!Number.isFinite(tid) || tid < 1) {
+    return {
+      ok: false,
+      error: "Invalid tenant.",
+      action: String(p.action || ""),
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      results: [],
+    };
+  }
+  const action = String(p.action || "").trim();
+  const allowed = ["approve", "reject", "info_needed", "appeal"];
+  if (!allowed.includes(action)) {
+    return {
+      ok: false,
+      error: "Invalid action.",
+      action,
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      results: [],
+    };
+  }
+  const ids = [...new Set((Array.isArray(p.ids) ? p.ids : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0))].slice(
+    0,
+    500
+  );
+  if (ids.length === 0) {
+    return {
+      ok: false,
+      error: "No valid ids supplied.",
+      action,
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      results: [],
+    };
+  }
+  const rejectionReason = String(p.rejectionReason || "").trim();
+  if (action === "reject" && !rejectionReason) {
+    return {
+      ok: false,
+      error: "Rejection reason is required.",
+      action,
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      results: [],
+    };
+  }
+  const commission =
+    p.commissionAmount != null && Number.isFinite(Number(p.commissionAmount)) && Number(p.commissionAmount) >= 0
+      ? Number(p.commissionAmount)
+      : 0;
+
+  const results = [];
+  const existing = await faAnalyticsObs.observeQuery(
+    {
+      obs: p && p._obs ? p._obs : null,
+      query: "fieldAgentSubmissions.listSubmissionsByIdsForAdmin",
+    },
+    () => listSubmissionsByIdsForAdmin(pool, tid, ids)
+  );
+  const byId = new Map(existing.map((row) => [Number(row.id), String(row.status || "")]));
+  for (const id of ids) {
+    const currentStatus = byId.get(Number(id));
+    if (!currentStatus) {
+      results.push({ id, ok: false, error: "Not found in this tenant." });
+      continue;
+    }
+    let ok = false;
+    if (action === "approve") {
+      ok = await approveFieldAgentSubmission(pool, {
+        tenantId: tid,
+        submissionId: id,
+        commissionAmount: commission,
+        _obs: p && p._obs ? p._obs : null,
+      });
+    } else if (action === "reject") {
+      ok = await rejectFieldAgentSubmission(pool, {
+        tenantId: tid,
+        submissionId: id,
+        rejectionReason,
+        _obs: p && p._obs ? p._obs : null,
+      });
+    } else if (action === "info_needed") {
+      ok = await markFieldAgentSubmissionInfoNeeded(pool, {
+        tenantId: tid,
+        submissionId: id,
+        _obs: p && p._obs ? p._obs : null,
+      });
+    } else if (action === "appeal") {
+      ok = await markFieldAgentSubmissionAppealed(pool, {
+        tenantId: tid,
+        submissionId: id,
+        _obs: p && p._obs ? p._obs : null,
+      });
+    }
+    if (ok) {
+      results.push({ id, ok: true });
+    } else {
+      let reason = "Invalid state transition.";
+      if (action === "approve") reason = `Cannot approve from status "${currentStatus}".`;
+      if (action === "reject") reason = `Cannot reject from status "${currentStatus}".`;
+      if (action === "info_needed") reason = `Cannot mark info needed from status "${currentStatus}".`;
+      if (action === "appeal") reason = `Cannot appeal from status "${currentStatus}".`;
+      results.push({ id, ok: false, error: reason });
+    }
+  }
+
+  const succeeded = results.filter((r) => r.ok).length;
+  const failed = results.length - succeeded;
+  return {
+    ok: true,
+    action,
+    processed: results.length,
+    succeeded,
+    failed,
+    results,
+  };
+}
+
 module.exports = {
   getSubmissionByIdForAdmin,
+  listSubmissionsByIdsForAdmin,
   listFieldAgentSubmissionsForAdmin,
   approveFieldAgentSubmission,
   rejectFieldAgentSubmission,
@@ -441,4 +614,5 @@ module.exports = {
   duplicateExistsCompaniesOrSignups,
   insertSubmission,
   updatePhotosAfterUpload,
+  applyBulkSubmissionAction,
 };

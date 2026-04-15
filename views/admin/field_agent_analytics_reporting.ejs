@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Field agent reporting center | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Field agent analytics', activeNav: activeNav }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Field agent reporting center</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Export CSV datasets using the same tenant-scoped analytics filters and bucket semantics as drill-down exports.
+            </p>
+          </div>
+          <div class="admin-dashboard__header-actions">
+            <a class="btn btn--default" href="/admin/field-agent-analytics">Back to analytics</a>
+          </div>
+        </header>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Export dataset</h2>
+          <form method="get" action="/admin/field-agent-analytics/reporting/export" class="admin-filter-form admin-filter-form__grid">
+            <div class="input-field">
+              <label class="input-field__label" for="faa_reporting_record_type">Record type</label>
+              <select id="faa_reporting_record_type" name="record_type" class="input-field__control">
+                <option value="submissions" <%= selected.recordType === 'submissions' ? 'selected' : '' %>>Submissions</option>
+                <option value="callback_leads" <%= selected.recordType === 'callback_leads' ? 'selected' : '' %>>Callback leads</option>
+              </select>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="faa_reporting_bucket">Dataset</label>
+              <select id="faa_reporting_bucket" name="bucket" class="input-field__control">
+                <% (datasets || []).forEach(function (d) { %>
+                  <option value="<%= d.bucket %>" data-record-type="<%= d.record_type %>" <%= (selected.recordType === d.record_type && selected.bucket === d.bucket) ? 'selected' : '' %>><%= d.label %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="faa_reporting_q">Search</label>
+              <input id="faa_reporting_q" name="q" type="text" class="input-field__control" value="<%= filters.q || '' %>" placeholder="Name, phone, trade, city..." />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="faa_reporting_status">Status (submissions only)</label>
+              <select id="faa_reporting_status" name="status" class="input-field__control">
+                <option value="">Default for selected dataset</option>
+                <option value="pending" <%= filters.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                <option value="info_needed" <%= filters.status === 'info_needed' ? 'selected' : '' %>>Info needed</option>
+                <option value="approved" <%= filters.status === 'approved' ? 'selected' : '' %>>Approved</option>
+                <option value="rejected" <%= filters.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
+                <option value="appealed" <%= filters.status === 'appealed' ? 'selected' : '' %>>Appealed</option>
+              </select>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="faa_reporting_from">From</label>
+              <input id="faa_reporting_from" name="from" type="date" class="input-field__control" value="<%= filters.from || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="faa_reporting_to">To</label>
+              <input id="faa_reporting_to" name="to" type="date" class="input-field__control" value="<%= filters.to || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="faa_reporting_agent">Field agent</label>
+              <select id="faa_reporting_agent" name="agent" class="input-field__control">
+                <option value="">All agents</option>
+                <% (agents || []).forEach(function (a) { %>
+                <option value="<%= a.id %>" <%= Number(filters.agent) === Number(a.id) ? 'selected' : '' %>><%= a.username %><% if (a.display_name) { %> — <%= a.display_name %><% } %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="faa_reporting_preset">Apply saved preset (optional)</label>
+              <select id="faa_reporting_preset" class="input-field__control" data-faa-reporting-preset>
+                <option value="">Select saved preset</option>
+                <% (presets || []).forEach(function (p) { %>
+                  <option
+                    value="<%= p.id %>"
+                    data-record-type="<%= p.record_type %>"
+                    data-bucket="<%= p.bucket %>"
+                    data-filters="<%= encodeURIComponent(JSON.stringify(p.filters || {})) %>"><%= p.name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="input-field input-field--actions">
+              <button type="button" class="btn btn--default" data-faa-reporting-apply-preset>Apply saved preset</button>
+            </div>
+            <div class="input-field input-field--actions">
+              <button type="submit" class="btn btn--primary">Export CSV</button>
+            </div>
+          </form>
+          <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">
+            Mapped datasets export their underlying row set. Example: approval-rate and commission exports map to decided/approved submission rows.
+          </p>
+        </section>
+      </div>
+    </main>
+    <script>
+      (function () {
+        var recordType = document.getElementById("faa_reporting_record_type");
+        var bucket = document.getElementById("faa_reporting_bucket");
+        var status = document.getElementById("faa_reporting_status");
+        var preset = document.querySelector("[data-faa-reporting-preset]");
+        var applyPreset = document.querySelector("[data-faa-reporting-apply-preset]");
+        function syncBuckets() {
+          if (!recordType || !bucket) return;
+          var rt = recordType.value || "submissions";
+          var firstVisible = "";
+          Array.prototype.forEach.call(bucket.options || [], function (opt) {
+            var visible = String(opt.getAttribute("data-record-type") || "") === rt;
+            opt.hidden = !visible;
+            if (visible && !firstVisible) firstVisible = opt.value;
+          });
+          if (bucket.selectedOptions.length < 1 || bucket.selectedOptions[0].hidden) {
+            bucket.value = firstVisible || "";
+          }
+          if (status) status.disabled = rt !== "submissions";
+        }
+        if (recordType) recordType.addEventListener("change", syncBuckets);
+        syncBuckets();
+        if (applyPreset && preset) {
+          applyPreset.addEventListener("click", function () {
+            var opt = preset.options[preset.selectedIndex];
+            if (!opt || !opt.value) return;
+            var rt = opt.getAttribute("data-record-type") || "submissions";
+            var b = opt.getAttribute("data-bucket") || "";
+            var raw = opt.getAttribute("data-filters") || "";
+            var f = {};
+            try { f = JSON.parse(decodeURIComponent(raw)); } catch (_) { f = {}; }
+            recordType.value = rt;
+            syncBuckets();
+            bucket.value = b;
+            var elQ = document.getElementById("faa_reporting_q");
+            var elStatus = document.getElementById("faa_reporting_status");
+            var elFrom = document.getElementById("faa_reporting_from");
+            var elTo = document.getElementById("faa_reporting_to");
+            var elAgent = document.getElementById("faa_reporting_agent");
+            if (elQ) elQ.value = f.q || "";
+            if (elStatus) elStatus.value = f.status || "";
+            if (elFrom) elFrom.value = f.from || "";
+            if (elTo) elTo.value = f.to || "";
+            if (elAgent) elAgent.value = f.agent || "";
+            syncBuckets();
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

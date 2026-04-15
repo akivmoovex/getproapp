@@ -1,0 +1,213 @@
+<div class="card">
+  <h3 id="faa_drilldown_list_title" class="admin-dashboard-panel__title" tabindex="-1" style="margin-bottom:0.75rem;"><%= title %></h3>
+  <% var _f = typeof filters !== 'undefined' && filters ? filters : { q: '', status: '', from: '', to: '', agent: '' }; %>
+  <% var _agents = typeof agents !== 'undefined' && agents ? agents : []; %>
+  <% var _isSubs = kind === 'submissions'; %>
+  <% var _exportUrl = typeof exportUrl !== 'undefined' && exportUrl ? exportUrl : ''; %>
+  <% var _p = typeof pagination !== 'undefined' && pagination ? pagination : { page: 1, page_size: 50, total_results: (rows || []).length, total_pages: 1, has_prev: false, has_next: false }; %>
+  <% var _presets = typeof presets !== 'undefined' && presets ? presets : []; %>
+  <form class="admin-filter-form admin-filter-form__grid card card--mb-md" data-faa-filter-form="1" data-faa-kind="<%= kind %>" data-faa-bucket="<%= bucket %>" style="padding:0.85rem;">
+    <div class="input-field">
+      <label class="input-field__label" for="faa_modal_q">Search</label>
+      <input id="faa_modal_q" name="q" type="text" class="input-field__control" value="<%= _f.q || '' %>" placeholder="Name, phone, trade, city..." />
+    </div>
+    <% if (_isSubs) { %>
+    <div class="input-field">
+      <label class="input-field__label" for="faa_modal_status">Status</label>
+      <select id="faa_modal_status" name="status" class="input-field__control">
+        <option value="">Default for this card</option>
+        <option value="pending" <%= _f.status === 'pending' ? 'selected' : '' %>>Pending</option>
+        <option value="info_needed" <%= _f.status === 'info_needed' ? 'selected' : '' %>>Info needed</option>
+        <option value="approved" <%= _f.status === 'approved' ? 'selected' : '' %>>Approved</option>
+        <option value="rejected" <%= _f.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
+        <option value="appealed" <%= _f.status === 'appealed' ? 'selected' : '' %>>Appealed</option>
+      </select>
+    </div>
+    <% } %>
+    <div class="input-field">
+      <label class="input-field__label" for="faa_modal_from">From</label>
+      <input id="faa_modal_from" name="from" type="date" class="input-field__control" value="<%= _f.from || '' %>" />
+    </div>
+    <div class="input-field">
+      <label class="input-field__label" for="faa_modal_to">To</label>
+      <input id="faa_modal_to" name="to" type="date" class="input-field__control" value="<%= _f.to || '' %>" />
+    </div>
+    <div class="input-field">
+      <label class="input-field__label" for="faa_modal_agent">Field agent</label>
+      <select id="faa_modal_agent" name="agent" class="input-field__control">
+        <option value="">All agents</option>
+        <% _agents.forEach(function (a) { %>
+        <option value="<%= a.id %>" <%= Number(_f.agent) === Number(a.id) ? 'selected' : '' %>><%= a.username %><% if (a.display_name) { %> — <%= a.display_name %><% } %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="input-field input-field--actions">
+      <button type="button" class="btn btn--default" data-faa-clear-filters="1">Clear filters</button>
+    </div>
+    <% if (_exportUrl) { %>
+    <div class="input-field input-field--actions">
+      <a class="btn btn--default" href="<%= _exportUrl %>" target="_blank" rel="noopener" data-faa-export-csv="1">Export CSV</a>
+    </div>
+    <% } %>
+  </form>
+  <div class="card card--mb-md" style="padding:0.75rem;">
+    <div class="admin-filter-form admin-filter-form__grid" style="align-items:end;">
+      <div class="input-field">
+        <label class="input-field__label" for="faa_modal_saved_view">Saved views</label>
+        <select id="faa_modal_saved_view" class="input-field__control" data-faa-preset-select="1">
+          <option value="">Select saved view</option>
+          <% _presets.forEach(function (p) { %>
+            <option
+              value="<%= p.id %>"
+              data-faa-preset-id="<%= p.id %>"
+              data-faa-preset-name="<%= p.name %>"
+              data-faa-preset-record-type="<%= p.record_type %>"
+              data-faa-preset-bucket="<%= p.bucket %>"
+              data-faa-preset-filters="<%= encodeURIComponent(JSON.stringify(p.filters || {})) %>"><%= p.name %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="input-field input-field--actions">
+        <button type="button" class="btn btn--default" data-faa-preset-save="1">Save current filters</button>
+      </div>
+      <div class="input-field input-field--actions">
+        <button type="button" class="btn btn--default" data-faa-preset-apply="1">Apply saved view</button>
+      </div>
+      <div class="input-field input-field--actions">
+        <button type="button" class="btn btn--default" data-faa-preset-rename="1">Rename saved view</button>
+      </div>
+      <div class="input-field input-field--actions">
+        <button type="button" class="btn btn--default" data-faa-preset-delete="1">Delete saved view</button>
+      </div>
+    </div>
+  </div>
+  <% if (_isSubs) { %>
+  <div class="card card--mb-md" data-faa-bulk-toolbar="1" style="padding:0.75rem;" hidden>
+    <div class="admin-filter-form admin-filter-form__grid" style="align-items:end;">
+      <div class="input-field">
+        <span class="input-field__label">Selected</span>
+        <div id="faa_bulk_selected_count" class="input-field__control" style="display:flex;align-items:center;">0 selected</div>
+      </div>
+      <div class="input-field input-field--actions">
+        <button type="button" class="btn btn--default" data-faa-bulk-action="approve">Approve selected</button>
+      </div>
+      <div class="input-field input-field--actions">
+        <button type="button" class="btn btn--default" data-faa-bulk-action="info_needed">Info needed</button>
+      </div>
+      <div class="input-field input-field--actions">
+        <button type="button" class="btn btn--default" data-faa-bulk-action="reject">Reject selected</button>
+      </div>
+      <div class="input-field input-field--actions">
+        <button type="button" class="btn btn--default" data-faa-bulk-action="appeal">Appeal selected</button>
+      </div>
+    </div>
+  </div>
+  <% } %>
+  <div class="table-wrap">
+    <% if (_isSubs) { %>
+    <table class="table" aria-labelledby="faa_drilldown_list_title">
+      <thead>
+        <tr>
+          <th>
+            <input type="checkbox" data-faa-select-all="1" aria-label="Select all visible submissions" />
+          </th>
+          <th>ID</th>
+          <th>Created</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Profession</th>
+          <th>City</th>
+          <th>Phone</th>
+          <th>Field agent</th>
+          <th>Commission</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rows || rows.length === 0) { %>
+        <tr><td colspan="10" class="muted faa-drilldown-empty"><%= hasActiveFilters ? 'No results match your filters.' : 'No records for this filter.' %></td></tr>
+        <% } %>
+        <% (rows || []).forEach(function (r) { %>
+        <tr class="faa-drilldown-row" data-faa-open-detail="1" data-faa-kind="submissions" data-faa-id="<%= r.id %>">
+          <td>
+            <input type="checkbox" data-faa-select-row="1" data-faa-no-detail="1" value="<%= r.id %>" aria-label="Select submission #<%= r.id %>" />
+          </td>
+          <td>
+            <button type="button" class="faa-drilldown-row__button" data-faa-open-detail="1" data-faa-kind="submissions" data-faa-id="<%= r.id %>" aria-label="Open submission #<%= r.id %> details">
+              <%= r.id %>
+            </button>
+          </td>
+          <td class="muted"><%- include('../partials/event_time', { at: r.created_at }) %></td>
+          <td><%= r.first_name %> <%= r.last_name %></td>
+          <td><%= r.status %></td>
+          <td><%= r.profession || '—' %></td>
+          <td><%= r.city || '—' %></td>
+          <td><%= r.phone_raw || '—' %></td>
+          <td><%= r.field_agent_display_name || r.field_agent_username || '—' %></td>
+          <td><%= Number(r.commission_amount || 0).toFixed(2) %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+    <% } else { %>
+    <table class="table" aria-labelledby="faa_drilldown_list_title">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Created</th>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>City</th>
+          <th>Field agent</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rows || rows.length === 0) { %>
+        <tr><td colspan="7" class="muted faa-drilldown-empty"><%= hasActiveFilters ? 'No results match your filters.' : 'No records for this filter.' %></td></tr>
+        <% } %>
+        <% (rows || []).forEach(function (r) { %>
+        <tr class="faa-drilldown-row" data-faa-open-detail="1" data-faa-kind="callback-leads" data-faa-id="<%= r.id %>">
+          <td>
+            <button type="button" class="faa-drilldown-row__button" data-faa-open-detail="1" data-faa-kind="callback-leads" data-faa-id="<%= r.id %>" aria-label="Open callback lead #<%= r.id %> details">
+              <%= r.id %>
+            </button>
+          </td>
+          <td class="muted"><%- include('../partials/event_time', { at: r.created_at }) %></td>
+          <td><%= r.first_name %> <%= r.last_name %></td>
+          <td><%= r.phone || '—' %></td>
+          <td><%= r.email || '—' %></td>
+          <td><%= r.location_city || '—' %></td>
+          <td><%= r.field_agent_display_name || r.field_agent_username || '—' %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+  <div class="card card--mb-md" style="padding:0.75rem;">
+    <div class="admin-filter-form admin-filter-form__grid" style="align-items:end;">
+      <div class="input-field">
+        <span class="input-field__label">Results</span>
+        <div class="input-field__control" style="display:flex;align-items:center;"><%= Number(_p.total_results || 0) %> total</div>
+      </div>
+      <div class="input-field">
+        <span class="input-field__label">Page</span>
+        <div class="input-field__control" style="display:flex;align-items:center;"><%= Number(_p.page || 1) %> / <%= Number(_p.total_pages || 1) %></div>
+      </div>
+      <div class="input-field">
+        <label class="input-field__label" for="faa_modal_page_size">Page size</label>
+        <select id="faa_modal_page_size" name="page_size" class="input-field__control" data-faa-page-size="1">
+          <% [25, 50, 100].forEach(function (s) { %>
+            <option value="<%= s %>" <%= Number(_p.page_size) === Number(s) ? 'selected' : '' %>><%= s %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="input-field input-field--actions">
+        <button type="button" class="btn btn--default" data-faa-page-nav="prev" <%= _p.has_prev ? '' : 'disabled' %>>Previous</button>
+      </div>
+      <div class="input-field input-field--actions">
+        <button type="button" class="btn btn--default" data-faa-page-nav="next" <%= _p.has_next ? '' : 'disabled' %>>Next</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -18,6 +18,7 @@ const LEGACY_HREF = {
   "company-portal": "/company-portal.js",
   "admin-dashboard": "/admin-dashboard.js",
   "admin-crm-kanban": "/admin-crm-kanban.js",
+  "admin-field-agent-analytics": "/admin-field-agent-analytics.js",
   "admin-company-workspace": "/admin-company-workspace.js",
   "admin-settings-hub": "/admin-settings-hub.js",
   "admin-db-tools": "/admin-db-tools.js",

@@ -1,0 +1,40 @@
+<div class="card faa-detail-panel">
+  <h3 id="faa_detail_title" class="admin-dashboard-panel__title" tabindex="-1" style="margin-bottom:0.35rem;">Submission #<%= row.id %></h3>
+  <p class="muted faa-detail-panel__hint">Read-only drill-down detail.</p>
+  <dl class="admin-fa-linkage-readonly" style="margin:0;">
+    <div style="display:grid;grid-template-columns:14rem 1fr;gap:0.5rem 1rem;align-items:start;">
+      <dt class="muted" style="margin:0;">Created</dt>
+      <dd style="margin:0;"><%- include('../partials/event_time', { at: row.created_at }) %></dd>
+      <dt class="muted" style="margin:0;">Updated</dt>
+      <dd style="margin:0;"><%- include('../partials/event_time', { at: row.updated_at }) %></dd>
+      <dt class="muted" style="margin:0;">Status</dt>
+      <dd style="margin:0;"><%= row.status %></dd>
+      <dt class="muted" style="margin:0;">Field agent</dt>
+      <dd style="margin:0;"><%= row.field_agent_display_name || row.field_agent_username || '—' %></dd>
+      <dt class="muted" style="margin:0;">Contact name</dt>
+      <dd style="margin:0;"><%= row.first_name %> <%= row.last_name %></dd>
+      <dt class="muted" style="margin:0;">Phone</dt>
+      <dd style="margin:0;"><%= row.phone_raw || '—' %></dd>
+      <dt class="muted" style="margin:0;">WhatsApp</dt>
+      <dd style="margin:0;"><%= row.whatsapp_raw || '—' %></dd>
+      <dt class="muted" style="margin:0;">Trade / category</dt>
+      <dd style="margin:0;"><%= row.profession || '—' %></dd>
+      <dt class="muted" style="margin:0;">City</dt>
+      <dd style="margin:0;"><%= row.city || row.address_city || '—' %></dd>
+      <dt class="muted" style="margin:0;">Address</dt>
+      <dd style="margin:0;">
+        <%= [row.address_street, row.address_neighbourhood, row.address_landmarks].filter(Boolean).join(', ') || '—' %>
+      </dd>
+      <dt class="muted" style="margin:0;">PACRA</dt>
+      <dd style="margin:0;"><%= row.pacra || '—' %></dd>
+      <dt class="muted" style="margin:0;">NRC</dt>
+      <dd style="margin:0;"><%= row.nrc_number || '—' %></dd>
+      <dt class="muted" style="margin:0;">Commission amount</dt>
+      <dd style="margin:0;"><%= Number(row.commission_amount || 0).toFixed(2) %></dd>
+      <% if (row.rejection_reason && String(row.rejection_reason).trim()) { %>
+      <dt class="muted" style="margin:0;">Rejection reason / notes</dt>
+      <dd style="margin:0;"><%= row.rejection_reason %></dd>
+      <% } %>
+    </div>
+  </dl>
+</div>

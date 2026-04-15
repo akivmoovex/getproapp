@@ -18,6 +18,9 @@
               Aggregates from <strong>provider submissions</strong> and <strong>callback leads</strong> (same tenant as your admin scope). Not sourced from CRM tasks.
             </p>
           </div>
+          <div class="admin-dashboard__header-actions">
+            <a class="btn btn--default" href="/admin/field-agent-analytics/reporting">Reporting center</a>
+          </div>
         </header>
 
         <section class="card card--mb-xl">
@@ -59,37 +62,37 @@
 
         <% var s = typeof summary !== 'undefined' ? summary : {}; %>
         <section class="admin-dashboard__kpis" aria-label="Summary metrics">
-          <article class="admin-dashboard-kpi">
+          <article class="admin-dashboard-kpi admin-dashboard-kpi--link" role="button" tabindex="0" data-faa-open-drilldown="1" data-faa-kind="submissions" data-faa-bucket="total_submissions" aria-haspopup="dialog" aria-controls="faa_drilldown_overlay" aria-label="Open total submissions list">
             <div class="admin-dashboard-kpi__body">
               <span class="admin-dashboard-kpi__label">Total submissions</span>
               <span class="admin-dashboard-kpi__value"><%= s.total != null ? s.total : 0 %></span>
             </div>
           </article>
-          <article class="admin-dashboard-kpi">
+          <article class="admin-dashboard-kpi admin-dashboard-kpi--link" role="button" tabindex="0" data-faa-open-drilldown="1" data-faa-kind="submissions" data-faa-bucket="pending" aria-haspopup="dialog" aria-controls="faa_drilldown_overlay" aria-label="Open pending submissions list">
             <div class="admin-dashboard-kpi__body">
               <span class="admin-dashboard-kpi__label">Pending</span>
               <span class="admin-dashboard-kpi__value"><%= s.pending != null ? s.pending : 0 %></span>
             </div>
           </article>
-          <article class="admin-dashboard-kpi">
+          <article class="admin-dashboard-kpi admin-dashboard-kpi--link" role="button" tabindex="0" data-faa-open-drilldown="1" data-faa-kind="submissions" data-faa-bucket="info_needed" aria-haspopup="dialog" aria-controls="faa_drilldown_overlay" aria-label="Open info needed submissions list">
             <div class="admin-dashboard-kpi__body">
               <span class="admin-dashboard-kpi__label">Info needed</span>
               <span class="admin-dashboard-kpi__value"><%= s.info_needed != null ? s.info_needed : 0 %></span>
             </div>
           </article>
-          <article class="admin-dashboard-kpi">
+          <article class="admin-dashboard-kpi admin-dashboard-kpi--link" role="button" tabindex="0" data-faa-open-drilldown="1" data-faa-kind="submissions" data-faa-bucket="approved" aria-haspopup="dialog" aria-controls="faa_drilldown_overlay" aria-label="Open approved submissions list">
             <div class="admin-dashboard-kpi__body">
               <span class="admin-dashboard-kpi__label">Approved</span>
               <span class="admin-dashboard-kpi__value"><%= s.approved != null ? s.approved : 0 %></span>
             </div>
           </article>
-          <article class="admin-dashboard-kpi">
+          <article class="admin-dashboard-kpi admin-dashboard-kpi--link" role="button" tabindex="0" data-faa-open-drilldown="1" data-faa-kind="submissions" data-faa-bucket="rejected" aria-haspopup="dialog" aria-controls="faa_drilldown_overlay" aria-label="Open rejected submissions list">
             <div class="admin-dashboard-kpi__body">
               <span class="admin-dashboard-kpi__label">Rejected</span>
               <span class="admin-dashboard-kpi__value"><%= s.rejected != null ? s.rejected : 0 %></span>
             </div>
           </article>
-          <article class="admin-dashboard-kpi">
+          <article class="admin-dashboard-kpi admin-dashboard-kpi--link" role="button" tabindex="0" data-faa-open-drilldown="1" data-faa-kind="submissions" data-faa-bucket="appealed" aria-haspopup="dialog" aria-controls="faa_drilldown_overlay" aria-label="Open appealed submissions list">
             <div class="admin-dashboard-kpi__body">
               <span class="admin-dashboard-kpi__label">Appealed</span>
               <span class="admin-dashboard-kpi__value"><%= s.appealed != null ? s.appealed : 0 %></span>
@@ -107,19 +110,19 @@
               <span class="admin-dashboard-kpi__value"><%= typeof s.approval_rate_total === 'number' ? (s.approval_rate_total * 100).toFixed(1) + '%' : '—' %></span>
             </div>
           </article>
-          <article class="admin-dashboard-kpi">
+          <article class="admin-dashboard-kpi admin-dashboard-kpi--link" role="button" tabindex="0" data-faa-open-drilldown="1" data-faa-kind="submissions" data-faa-bucket="total_commission_approved" aria-haspopup="dialog" aria-controls="faa_drilldown_overlay" aria-label="Open approved submissions list for total commission">
             <div class="admin-dashboard-kpi__body">
-              <span class="admin-dashboard-kpi__label">Total commission (approved)</span>
+              <span class="admin-dashboard-kpi__label">Total commission (approved submissions)</span>
               <span class="admin-dashboard-kpi__value"><%= Number(s.total_commission || 0).toFixed(2) %></span>
             </div>
           </article>
-          <article class="admin-dashboard-kpi">
+          <article class="admin-dashboard-kpi admin-dashboard-kpi--link" role="button" tabindex="0" data-faa-open-drilldown="1" data-faa-kind="submissions" data-faa-bucket="avg_commission_approved" aria-haspopup="dialog" aria-controls="faa_drilldown_overlay" aria-label="Open approved submissions list for average commission">
             <div class="admin-dashboard-kpi__body">
-              <span class="admin-dashboard-kpi__label">Avg commission (approved)</span>
+              <span class="admin-dashboard-kpi__label">Avg commission (approved submissions)</span>
               <span class="admin-dashboard-kpi__value"><%= Number(s.avg_commission || 0).toFixed(2) %></span>
             </div>
           </article>
-          <article class="admin-dashboard-kpi">
+          <article class="admin-dashboard-kpi admin-dashboard-kpi--link" role="button" tabindex="0" data-faa-open-drilldown="1" data-faa-kind="callback-leads" data-faa-bucket="callback_leads" aria-haspopup="dialog" aria-controls="faa_drilldown_overlay" aria-label="Open callback leads list">
             <div class="admin-dashboard-kpi__body">
               <span class="admin-dashboard-kpi__label">Callback leads</span>
               <span class="admin-dashboard-kpi__value"><%= s.callback_leads != null ? s.callback_leads : 0 %></span>
@@ -207,5 +210,17 @@
         </div>
       </div>
     </main>
+    <div id="faa_drilldown_overlay" class="m3-modal-overlay admin-crm-overlay" aria-hidden="true" hidden>
+      <div class="m3-modal-overlay__backdrop" data-faa-close-overlay tabindex="-1"></div>
+      <div class="m3-modal m3-modal--crm-task" role="dialog" aria-modal="true" aria-labelledby="faa_drilldown_dialog_title">
+        <header class="m3-modal__header m3-modal__header--end">
+          <h2 id="faa_drilldown_dialog_title" class="visually-hidden">Field agent analytics drill-down</h2>
+          <button type="button" class="m3-modal__close" data-faa-close-overlay aria-label="Close analytics list">×</button>
+        </header>
+        <div class="m3-modal__body" id="faa_drilldown_overlay_body" tabindex="-1" aria-live="polite" aria-busy="false"></div>
+        <footer class="m3-modal__footer m3-modal__footer--empty" aria-hidden="true"></footer>
+      </div>
+    </div>
+    <script src="<%= asset('admin-field-agent-analytics') %>"></script>
   </body>
 </html>

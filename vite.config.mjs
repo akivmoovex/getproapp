@@ -20,6 +20,7 @@ const entryInputs = {
   "company-portal": path.join(frontendRoot, "entries", "company-portal.js"),
   "admin-dashboard": path.join(frontendRoot, "entries", "admin-dashboard.js"),
   "admin-crm-kanban": path.join(frontendRoot, "entries", "admin-crm-kanban.js"),
+  "admin-field-agent-analytics": path.join(frontendRoot, "entries", "admin-field-agent-analytics.js"),
   "admin-company-workspace": path.join(frontendRoot, "entries", "admin-company-workspace.js"),
   "admin-settings-hub": path.join(frontendRoot, "entries", "admin-settings-hub.js"),
   "admin-db-tools": path.join(frontendRoot, "entries", "admin-db-tools.js"),

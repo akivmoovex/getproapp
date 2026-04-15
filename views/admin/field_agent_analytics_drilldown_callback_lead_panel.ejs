@@ -1,0 +1,20 @@
+<div class="card faa-detail-panel">
+  <h3 id="faa_detail_title" class="admin-dashboard-panel__title" tabindex="-1" style="margin-bottom:0.35rem;">Callback lead #<%= row.id %></h3>
+  <p class="muted faa-detail-panel__hint">Read-only drill-down detail.</p>
+  <dl class="admin-fa-linkage-readonly" style="margin:0;">
+    <div style="display:grid;grid-template-columns:14rem 1fr;gap:0.5rem 1rem;align-items:start;">
+      <dt class="muted" style="margin:0;">Created</dt>
+      <dd style="margin:0;"><%- include('../partials/event_time', { at: row.created_at }) %></dd>
+      <dt class="muted" style="margin:0;">Field agent</dt>
+      <dd style="margin:0;"><%= row.field_agent_display_name || row.field_agent_username || '—' %></dd>
+      <dt class="muted" style="margin:0;">Contact name</dt>
+      <dd style="margin:0;"><%= row.first_name %> <%= row.last_name %></dd>
+      <dt class="muted" style="margin:0;">Phone</dt>
+      <dd style="margin:0;"><%= row.phone || '—' %></dd>
+      <dt class="muted" style="margin:0;">Email</dt>
+      <dd style="margin:0;"><%= row.email || '—' %></dd>
+      <dt class="muted" style="margin:0;">City</dt>
+      <dd style="margin:0;"><%= row.location_city || '—' %></dd>
+    </div>
+  </dl>
+</div>
