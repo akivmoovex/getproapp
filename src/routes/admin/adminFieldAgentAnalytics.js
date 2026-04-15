@@ -598,11 +598,28 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
       const action = body.action != null ? String(body.action).trim() : "";
       const ids = Array.isArray(body.ids) ? body.ids : [];
       const reason = body.reason != null ? String(body.reason) : "";
+      const infoRequest =
+        body.info_request != null
+          ? String(body.info_request)
+          : body.infoRequest != null
+            ? String(body.infoRequest)
+            : "";
       if (action === "reject" && String(reason || "").trim() === "") {
         return res.status(400).json({
           ok: false,
           action,
           error: "Rejection reason is required.",
+          processed: 0,
+          succeeded: 0,
+          failed: 0,
+          results: [],
+        });
+      }
+      if (action === "info_needed" && String(infoRequest || "").trim() === "") {
+        return res.status(400).json({
+          ok: false,
+          action,
+          error: "Info request message is required.",
           processed: 0,
           succeeded: 0,
           failed: 0,
@@ -616,6 +633,7 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
         action,
         ids,
         rejectionReason: reason,
+        infoRequest,
         commissionAmount: 0,
         maxIds: BULK_MAX_IDS,
         adminUserId: req.session.adminUser.id,

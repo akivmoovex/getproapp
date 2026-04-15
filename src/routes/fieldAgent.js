@@ -334,7 +334,35 @@ module.exports = function fieldAgentRoutes() {
       rejectedRows,
       submitted: req.query && req.query.submitted === "1",
       callback: req.query && req.query.callback === "1",
+      resubmitted: req.query && req.query.resubmitted === "1",
     }));
+  });
+
+  /** Update submission after admin requested more information (info_needed only). */
+  router.get("/field-agent/submissions/:id/edit", requireFieldAgent, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 1) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+      if (!row) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      if (String(row.status || "") !== "info_needed") {
+        return res.redirect(302, `${tenantPrefix(req)}/field-agent/dashboard`);
+      }
+      return res.render("field_agent/edit_submission", renderLocals(req, res, {
+        submission: row,
+        faActiveNav: "dashboard",
+        faIncludeFaq: true,
+      }));
+    } catch (e) {
+      return next(e);
+    }
   });
 
   router.get("/field-agent/statements/:payRunId/download", requireFieldAgent, async (req, res, next) => {
@@ -713,6 +741,128 @@ module.exports = function fieldAgentRoutes() {
     if (!row) {
       return res.status(404).json({ ok: false, error: "Not found." });
     }
+    return res.json({ ok: true, submission: row });
+  });
+
+  /** JSON: set reply text while submission is info_needed (no status change). */
+  router.patch("/field-agent/api/submissions/:id/reply", requireFieldAgent, async (req, res) => {
+    const pool = getPgPool();
+    const s = getFieldAgentSession(req);
+    const tid = req.tenant.id;
+    const id = Number(req.params.id);
+    const body = req.body || {};
+    const message = String(body.message != null ? body.message : body.field_agent_reply || "").trim();
+    if (!Number.isFinite(id) || id < 1) {
+      return res.status(400).json({ ok: false, error: "Invalid submission." });
+    }
+    if (!message) {
+      return res.status(400).json({ ok: false, error: "Message is required." });
+    }
+    const ok = await fieldAgentSubmissionsRepo.patchFieldAgentSubmissionReply(pool, {
+      tenantId: tid,
+      fieldAgentId: s.id,
+      submissionId: id,
+      message,
+    });
+    if (!ok) {
+      return res.status(400).json({ ok: false, error: "Could not save reply — submission must be yours in info needed status." });
+    }
+    const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+    return res.json({ ok: true, submission: row });
+  });
+
+  /** JSON: update submission fields and resubmit (info_needed → pending). */
+  router.post("/field-agent/api/submissions/:id/resubmit", requireFieldAgent, async (req, res) => {
+    const pool = getPgPool();
+    const s = getFieldAgentSession(req);
+    const tid = req.tenant.id;
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id < 1) {
+      return res.status(400).json({ ok: false, error: "Invalid submission." });
+    }
+    const existing = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+    if (!existing || String(existing.status || "") !== "info_needed") {
+      return res.status(400).json({ ok: false, error: "Submission is not awaiting your response." });
+    }
+    const b = req.body || {};
+    const phoneRaw = String(b.phone || "").trim();
+    const whatsappRaw = String(b.whatsapp || "").trim();
+    const firstName = String(b.first_name || "").trim().slice(0, 120);
+    const lastName = String(b.last_name || "").trim().slice(0, 120);
+    const profession = String(b.profession || "").trim().slice(0, 200);
+    const pacra = String(b.pacra || "").trim().slice(0, 200);
+    const addressStreet = String(b.address_street || "").trim().slice(0, 300);
+    const addressLandmarks = String(b.address_landmarks || "").trim().slice(0, 300);
+    const addressNeighbourhood = String(b.address_neighbourhood || "").trim().slice(0, 200);
+    const addressCity = String(b.address_city || "").trim().slice(0, 120);
+    const city = addressCity;
+    const nrcNumber = String(b.nrc_number || "").trim().slice(0, 80);
+    const photoProfileUrl = b.photo_profile_url != null ? String(b.photo_profile_url).trim().slice(0, 500) : String(existing.photo_profile_url || "").trim();
+    let workPhotosJson = "[]";
+    if (b.work_photos_json != null) {
+      const w = String(b.work_photos_json).trim();
+      workPhotosJson = w.length > 20000 ? w.slice(0, 20000) : w || "[]";
+    } else {
+      workPhotosJson = String(existing.work_photos_json || "[]");
+    }
+
+    const vPhone = await phoneRulesService.validatePhoneForTenant(pool, tid, phoneRaw, "phone");
+    if (!vPhone.ok) {
+      return res.status(400).json({ ok: false, error: vPhone.error || "Invalid phone." });
+    }
+    if (whatsappRaw) {
+      const vWa = await phoneRulesService.validatePhoneForTenant(pool, tid, whatsappRaw, "whatsapp");
+      if (!vWa.ok) {
+        return res.status(400).json({ ok: false, error: vWa.error || "Invalid WhatsApp number." });
+      }
+    }
+    const pNorm = await phoneRulesService.normalizePhoneForTenant(pool, tid, phoneRaw);
+    const wNorm = whatsappRaw ? await phoneRulesService.normalizePhoneForTenant(pool, tid, whatsappRaw) : "";
+    if (!pNorm || !firstName || !lastName || !profession || !addressCity || !nrcNumber) {
+      return res.status(400).json({ ok: false, error: "Missing required fields." });
+    }
+
+    const dupS = await fieldAgentSubmissionsRepo.duplicateExistsAgainstSubmissions(pool, tid, pNorm, wNorm, id);
+    if (dupS.duplicate) {
+      return res.status(400).json({ ok: false, error: "Service provider exists in system." });
+    }
+    const dupCandidates = await phoneRulesService.expandDuplicateNormsForTenant(pool, tid, pNorm, wNorm);
+    const dupC = await fieldAgentSubmissionsRepo.duplicateExistsCompaniesOrSignups(pool, tid, dupCandidates);
+    if (dupC.duplicate) {
+      return res.status(400).json({ ok: false, error: "Service provider exists in system." });
+    }
+
+    let fieldAgentReply = undefined;
+    if (Object.prototype.hasOwnProperty.call(b, "field_agent_reply")) {
+      fieldAgentReply = String(b.field_agent_reply).trim().slice(0, 4000);
+    }
+
+    const ok = await fieldAgentSubmissionsRepo.resubmitFieldAgentSubmissionFromInfoNeeded(pool, {
+      tenantId: tid,
+      fieldAgentId: s.id,
+      submissionId: id,
+      phoneRaw,
+      phoneNorm: pNorm,
+      whatsappRaw,
+      whatsappNorm: wNorm,
+      firstName,
+      lastName,
+      profession,
+      city,
+      pacra,
+      addressStreet,
+      addressLandmarks,
+      addressNeighbourhood,
+      addressCity,
+      nrcNumber,
+      photoProfileUrl,
+      workPhotosJson,
+      fieldAgentReply,
+    });
+    if (!ok) {
+      return res.status(400).json({ ok: false, error: "Could not resubmit — try again or contact support." });
+    }
+    const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
     return res.json({ ok: true, submission: row });
   });
 

@@ -468,20 +468,33 @@ module.exports = function registerAdminCrmRoutes(router) {
     if (!canMutateCrm(req.session.adminUser.role)) return res.status(403).type("text").send("Read-only access.");
     const ctx = await loadFieldAgentProviderContext(req, req.params.id);
     if (ctx.error) return res.status(ctx.status).type("text").send(ctx.error);
+    const b = req.body || {};
+    const adminInfoRequest = String(b.info_request != null ? b.info_request : b.admin_info_request != null ? b.admin_info_request : "")
+      .trim()
+      .slice(0, 4000);
+    if (!adminInfoRequest) {
+      return res.status(400).type("text").send("Info request message is required.");
+    }
     const ok = await fieldAgentSubmissionsRepo.markFieldAgentSubmissionInfoNeeded(ctx.pool, {
       tenantId: ctx.tid,
       submissionId: ctx.submission.id,
-      auditContext: { adminUserId: req.session.adminUser.id },
+      adminInfoRequest,
+      auditContext: {
+        adminUserId: req.session.adminUser.id,
+        metadata: { info_request: adminInfoRequest.slice(0, 500) },
+      },
     });
     if (!ok) {
       return res.status(400).type("text").send("Could not mark info needed — use pending or appealed submissions.");
     }
     try {
+      const head = `Field agent provider submission #${Number(ctx.submission.id)} marked as info needed.`;
+      const note = `${head}\n\n${adminInfoRequest}`.slice(0, 4000);
       await crmTasksRepo.insertCommentWithAudit(ctx.pool, {
         tenantId: ctx.tid,
         taskId: ctx.taskId,
         userId: req.session.adminUser.id,
-        body: `Field agent provider submission #${Number(ctx.submission.id)} marked as info needed.`.slice(0, 4000),
+        body: note,
       });
     } catch {
       /* informational */

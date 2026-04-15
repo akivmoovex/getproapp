@@ -119,6 +119,20 @@ test(
 );
 
 test(
+  "bulk actions: info_needed requires info_request",
+  { skip: !isPgConfigured() },
+  async () => {
+    const app = createApp(TENANT_ZM);
+    const res = await request(app)
+      .post("/admin/field-agent-analytics/drilldown/submissions/bulk-action")
+      .send({ action: "info_needed", ids: [1], info_request: "" })
+      .expect(400);
+    assert.equal(res.body.ok, false);
+    assert.match(String(res.body.error || ""), /Info request message is required/i);
+  }
+);
+
+test(
   "bulk actions: info_needed and appeal follow valid transitions",
   { skip: !isPgConfigured() },
   async () => {
@@ -151,7 +165,7 @@ test(
 
     const rInfo = await request(app)
       .post("/admin/field-agent-analytics/drilldown/submissions/bulk-action")
-      .send({ action: "info_needed", ids: [sPending, sRejected] })
+      .send({ action: "info_needed", ids: [sPending, sRejected], info_request: "Please add missing NRC." })
       .expect(200);
     assert.equal(rInfo.body.succeeded, 1);
     assert.equal(rInfo.body.failed, 1);

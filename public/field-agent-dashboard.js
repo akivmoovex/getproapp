@@ -1,7 +1,7 @@
 (function () {
   var STATUS_LABEL = {
     pending: "Pending",
-    info_needed: "Info needed",
+    info_needed: "More information needed",
     approved: "Approved",
     rejected: "Rejected",
     appealed: "Appealed",
@@ -323,6 +323,17 @@
             row.rejection_reason && String(row.rejection_reason).trim()
               ? '<p class="muted field-agent-dash-list-card__reason">' + escapeHtml(row.rejection_reason) + "</p>"
               : "";
+          var infoNeeded =
+            status === "info_needed"
+              ? '<div class="field-agent-dash-list-card__info-needed" style="font-size:0.875rem;margin-top:0.35rem;text-align:left;"><strong>Action required</strong>' +
+                (row.admin_info_request && String(row.admin_info_request).trim()
+                  ? '<span class="muted" style="display:block;margin-top:0.25rem;">Admin comment: ' +
+                    escapeHtml(String(row.admin_info_request).slice(0, 120)) +
+                    (String(row.admin_info_request).length > 120 ? "…" : "") +
+                    "</span>"
+                  : "") +
+                "</div>"
+              : "";
           return (
             '<li class="field-agent-dash-list__item">' +
             '<button type="button" class="field-agent-dash-list-card" data-submission-id="' +
@@ -341,6 +352,7 @@
             '<div class="field-agent-dash-list-card__status">' +
             escapeHtml(STATUS_LABEL[row.status] || row.status) +
             "</div>" +
+            infoNeeded +
             reason +
             "</button>" +
             "</li>"
@@ -363,6 +375,32 @@
       detailBody.innerHTML = '<p class="muted">Could not load submission.</p>';
       return;
     }
+    var callout = "";
+    if (sub.status === "info_needed") {
+      callout =
+        '<div class="field-agent-info-needed-callout card" style="padding:0.75rem 1rem;margin-bottom:1rem;border-left:4px solid rgba(180,120,0,0.45);">' +
+        '<div style="font-weight:600;margin-bottom:0.35rem;">More information needed</div>';
+      if (sub.admin_info_request && String(sub.admin_info_request).trim()) {
+        callout +=
+          '<div class="muted" style="font-size:0.85rem;margin-bottom:0.2rem;">Admin comment</div>' +
+          '<p style="margin:0;white-space:pre-wrap;">' +
+          escapeHtml(String(sub.admin_info_request)) +
+          "</p>";
+      }
+      if (sub.field_agent_reply && String(sub.field_agent_reply).trim()) {
+        callout +=
+          '<div class="muted" style="font-size:0.85rem;margin:0.65rem 0 0.2rem;">Reply to admin</div>' +
+          '<p style="margin:0;white-space:pre-wrap;">' +
+          escapeHtml(String(sub.field_agent_reply)) +
+          "</p>";
+      }
+      callout +=
+        '<p style="margin:0.75rem 0 0;">' +
+        '<a class="btn btn--primary" href="' +
+        escapeHtml(tenantPrefix() + "/field-agent/submissions/" + Number(sub.id) + "/edit") +
+        '">Update and resubmit</a>' +
+        "</p></div>";
+    }
     var rows = [
       ["Status", STATUS_LABEL[sub.status] || sub.status],
       ["Name", [sub.first_name, sub.last_name].filter(Boolean).join(" ")],
@@ -384,6 +422,7 @@
         .map(function (pair) {
           var v = pair[1];
           if (v === "" || v == null) return "";
+          if (pair[0] === "Rejection reason" && sub.status === "info_needed") return "";
           return (
             "<div class=\"field-agent-dash-detail__row\"><dt>" +
             escapeHtml(pair[0]) +
@@ -418,7 +457,7 @@
     } catch (e) {
       /* ignore */
     }
-    detailBody.innerHTML = dl + photos + works;
+    detailBody.innerHTML = callout + dl + photos + works;
   }
 
   function openList(status) {

@@ -32,6 +32,14 @@
       <dd style="margin:0;"><%= row.nrc_number || '—' %></dd>
       <dt class="muted" style="margin:0;">Commission amount</dt>
       <dd style="margin:0;"><%= Number(row.commission_amount || 0).toFixed(2) %></dd>
+      <% if (row.admin_info_request && String(row.admin_info_request).trim()) { %>
+      <dt class="muted" style="margin:0;">Admin comment</dt>
+      <dd style="margin:0;white-space:pre-wrap;"><%= row.admin_info_request %></dd>
+      <% } %>
+      <% if (row.field_agent_reply && String(row.field_agent_reply).trim()) { %>
+      <dt class="muted" style="margin:0;">Field agent reply</dt>
+      <dd style="margin:0;white-space:pre-wrap;"><%= row.field_agent_reply %></dd>
+      <% } %>
       <% if (row.rejection_reason && String(row.rejection_reason).trim()) { %>
       <dt class="muted" style="margin:0;">Rejection reason / notes</dt>
       <dd style="margin:0;"><%= row.rejection_reason %></dd>
@@ -97,6 +105,9 @@
         <% } %>
         <% if (a.metadata && a.metadata.reject_reason) { %>
         <div style="margin-top:0.35rem;font-size:0.9rem;">Reason: <%= a.metadata.reject_reason %></div>
+        <% } %>
+        <% if (a.metadata && a.metadata.info_request && String(a.action_type || '').trim() === 'info_needed') { %>
+        <div style="margin-top:0.35rem;font-size:0.9rem;">Admin comment: <%= a.metadata.info_request %></div>
         <% } %>
         <% if (a.metadata && a.metadata.commission_amount != null && a.metadata.commission_amount !== '') { %>
         <div class="muted" style="margin-top:0.25rem;font-size:0.85rem;">Commission (metadata): <%= a.metadata.commission_amount %></div>

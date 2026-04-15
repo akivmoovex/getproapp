@@ -21,6 +21,9 @@
         <% if (typeof callback !== 'undefined' && callback) { %>
           <p class="admin-gate-success" role="status">Call-me-back lead sent.</p>
         <% } %>
+        <% if (typeof resubmitted !== 'undefined' && resubmitted) { %>
+          <p class="admin-gate-success" role="status">Resubmitted. Your application is back in review.</p>
+        <% } %>
 
         <h1 class="gp-home-story__title" style="margin-top:0;">Hello, <%= fieldAgent.displayName || fieldAgent.username %></h1>
         <p class="muted" style="margin:-0.25rem 0 1rem;font-size:0.9375rem;max-width:42rem;line-height:1.5;">
@@ -40,7 +43,7 @@
             class="card field-agent-metric-card field-agent-metric-card--clickable"
             data-status="info_needed"
           >
-            <div class="field-agent-metric-card__label muted">Info needed</div>
+            <div class="field-agent-metric-card__label muted">More information needed</div>
             <div class="field-agent-metric-card__value"><%= typeof metricInfoNeeded !== 'undefined' ? metricInfoNeeded : 0 %></div>
           </div>
           <div

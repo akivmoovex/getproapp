@@ -135,6 +135,8 @@ async function approveFieldAgentSubmission(pool, p) {
     UPDATE public.field_agent_provider_submissions
     SET status = 'approved',
         rejection_reason = '',
+        admin_info_request = '',
+        field_agent_reply = '',
         commission_amount = $3::numeric,
         updated_at = now()
     WHERE id = $1 AND tenant_id = $2
@@ -186,6 +188,8 @@ async function rejectFieldAgentSubmission(pool, p) {
     UPDATE public.field_agent_provider_submissions
     SET status = 'rejected',
         rejection_reason = $3,
+        admin_info_request = '',
+        field_agent_reply = '',
         commission_amount = 0,
         updated_at = now()
     WHERE id = $1 AND tenant_id = $2
@@ -217,36 +221,42 @@ async function rejectFieldAgentSubmission(pool, p) {
 /**
  * pending | appealed → info_needed (moderator requests more information).
  * @param {import("pg").Pool} pool
- * @param {{ tenantId: number, submissionId: number }} p
+ * @param {{ tenantId: number, submissionId: number, adminInfoRequest: string }} p
  * @returns {Promise<boolean>}
  */
 async function markFieldAgentSubmissionInfoNeeded(pool, p) {
   const tid = Number(p.tenantId);
   const sid = Number(p.submissionId);
+  const adminMsg = String(p.adminInfoRequest || "").trim();
+  if (!adminMsg) return false;
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
   let prevForAudit = null;
   if (p.auditContext && Number(p.auditContext.adminUserId) > 0) {
     prevForAudit = await resolvePreviousStatusForAudit(pool, tid, sid, p.auditContext);
   }
   const obs = p && p._obs ? p._obs : null;
+  const stored = adminMsg.slice(0, 4000);
   const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.markFieldAgentSubmissionInfoNeeded" }, () =>
     pool.query(
       `
     UPDATE public.field_agent_provider_submissions
     SET status = 'info_needed',
+        admin_info_request = $3,
+        field_agent_reply = '',
         updated_at = now()
     WHERE id = $1 AND tenant_id = $2
       AND status IN ('pending', 'appealed')
     `,
-      [sid, tid]
+      [sid, tid, stored]
     )
   );
   const ok = r.rowCount === 1;
   if (ok && p.auditContext && Number(p.auditContext.adminUserId) > 0 && prevForAudit) {
     const meta =
       p.auditContext.metadata && typeof p.auditContext.metadata === "object" && !Array.isArray(p.auditContext.metadata)
-        ? p.auditContext.metadata
-        : null;
+        ? { ...p.auditContext.metadata }
+        : {};
+    meta.info_request = stored.slice(0, 500);
     await fieldAgentSubmissionAuditRepo.insertAuditRecord(pool, {
       tenantId: tid,
       submissionId: sid,
@@ -254,7 +264,7 @@ async function markFieldAgentSubmissionInfoNeeded(pool, p) {
       actionType: "info_needed",
       previousStatus: prevForAudit,
       newStatus: "info_needed",
-      metadata: meta,
+      metadata: Object.keys(meta).length ? meta : null,
     });
   }
   return ok;
@@ -372,6 +382,8 @@ async function correctFieldAgentSubmissionStatus(pool, p) {
         UPDATE public.field_agent_provider_submissions
         SET status = 'approved',
             rejection_reason = '',
+            admin_info_request = '',
+            field_agent_reply = '',
             commission_amount = $3::numeric,
             updated_at = now()
         WHERE id = $1 AND tenant_id = $2 AND status = $4
@@ -386,6 +398,8 @@ async function correctFieldAgentSubmissionStatus(pool, p) {
         UPDATE public.field_agent_provider_submissions
         SET status = 'rejected',
             rejection_reason = $3,
+            admin_info_request = '',
+            field_agent_reply = '',
             commission_amount = 0,
             updated_at = now()
         WHERE id = $1 AND tenant_id = $2 AND status = $4
@@ -399,10 +413,12 @@ async function correctFieldAgentSubmissionStatus(pool, p) {
         `
         UPDATE public.field_agent_provider_submissions
         SET status = 'info_needed',
+            admin_info_request = $4,
+            field_agent_reply = '',
             updated_at = now()
         WHERE id = $1 AND tenant_id = $2 AND status = $3
         `,
-        [sid, tid, current]
+        [sid, tid, current, reason.slice(0, 4000)]
       )
     );
   } else {
@@ -534,6 +550,7 @@ async function listSubmissionsForFieldAgentByStatus(pool, fieldAgentId, status, 
     `
     SELECT id, first_name, last_name, profession, city,
            phone_raw, whatsapp_raw, status, rejection_reason,
+           admin_info_request, field_agent_reply,
            created_at, updated_at
     FROM public.field_agent_provider_submissions
     WHERE field_agent_id = $1 AND status = $2
@@ -717,6 +734,135 @@ async function updatePhotosAfterUpload(pool, client, { submissionId, tenantId, p
 }
 
 /**
+ * Field agent: set reply while status is info_needed (no status change).
+ * @param {import("pg").Pool} pool
+ * @param {{ tenantId: number, fieldAgentId: number, submissionId: number, message: string }} p
+ */
+async function patchFieldAgentSubmissionReply(pool, p) {
+  const tid = Number(p.tenantId);
+  const aid = Number(p.fieldAgentId);
+  const sid = Number(p.submissionId);
+  const msg = String(p.message || "").trim();
+  if (!msg) return false;
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(aid) || aid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+  const r = await pool.query(
+    `
+    UPDATE public.field_agent_provider_submissions
+    SET field_agent_reply = $4,
+        updated_at = now()
+    WHERE id = $1 AND tenant_id = $2 AND field_agent_id = $3 AND status = 'info_needed'
+    `,
+    [sid, tid, aid, msg.slice(0, 4000)]
+  );
+  return r.rowCount === 1;
+}
+
+/**
+ * Field agent: update editable fields and resubmit (info_needed → pending).
+ * @param {import("pg").Pool} pool
+ * @param {{
+ *   tenantId: number,
+ *   fieldAgentId: number,
+ *   submissionId: number,
+ *   phoneRaw: string,
+ *   phoneNorm: string,
+ *   whatsappRaw: string,
+ *   whatsappNorm: string,
+ *   firstName: string,
+ *   lastName: string,
+ *   profession: string,
+ *   city: string,
+ *   pacra: string,
+ *   addressStreet: string,
+ *   addressLandmarks: string,
+ *   addressNeighbourhood: string,
+ *   addressCity: string,
+ *   nrcNumber: string,
+ *   photoProfileUrl: string,
+ *   workPhotosJson: string,
+ *   fieldAgentReply?: string | null,
+ * }} p
+ * @returns {Promise<boolean>}
+ */
+async function resubmitFieldAgentSubmissionFromInfoNeeded(pool, p) {
+  const tid = Number(p.tenantId);
+  const aid = Number(p.fieldAgentId);
+  const sid = Number(p.submissionId);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(aid) || aid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+
+  const phoneRaw = String(p.phoneRaw || "").trim();
+  const phoneNorm = String(p.phoneNorm || "").trim();
+  const whatsappRaw = String(p.whatsappRaw || "").trim();
+  const whatsappNorm = String(p.whatsappNorm || "").trim();
+  const firstName = String(p.firstName || "").trim().slice(0, 120);
+  const lastName = String(p.lastName || "").trim().slice(0, 120);
+  const profession = String(p.profession || "").trim().slice(0, 200);
+  const city = String(p.city || "").trim().slice(0, 120);
+  const pacra = String(p.pacra || "").trim().slice(0, 200);
+  const addressStreet = String(p.addressStreet || "").trim().slice(0, 300);
+  const addressLandmarks = String(p.addressLandmarks || "").trim().slice(0, 300);
+  const addressNeighbourhood = String(p.addressNeighbourhood || "").trim().slice(0, 200);
+  const addressCity = String(p.addressCity || "").trim().slice(0, 120);
+  const nrcNumber = String(p.nrcNumber || "").trim().slice(0, 80);
+  const photoProfileUrl = String(p.photoProfileUrl != null ? p.photoProfileUrl : "").trim().slice(0, 500);
+  const workPhotosJsonRaw = p.workPhotosJson != null ? String(p.workPhotosJson).trim() : "[]";
+  const workPhotosJson = workPhotosJsonRaw.length > 20000 ? workPhotosJsonRaw.slice(0, 20000) : workPhotosJsonRaw;
+
+  const replyParam = p.fieldAgentReply === undefined ? null : String(p.fieldAgentReply).trim().slice(0, 4000);
+
+  const r = await pool.query(
+    `
+    UPDATE public.field_agent_provider_submissions
+    SET
+      phone_raw = $4,
+      phone_norm = $5,
+      whatsapp_raw = $6,
+      whatsapp_norm = $7,
+      first_name = $8,
+      last_name = $9,
+      profession = $10,
+      city = $11,
+      pacra = $12,
+      address_street = $13,
+      address_landmarks = $14,
+      address_neighbourhood = $15,
+      address_city = $16,
+      nrc_number = $17,
+      photo_profile_url = $18,
+      work_photos_json = $19,
+      status = 'pending',
+      admin_info_request = '',
+      field_agent_reply = CASE WHEN $20::text IS NULL THEN field_agent_reply ELSE $20 END,
+      updated_at = now()
+    WHERE id = $1 AND tenant_id = $2 AND field_agent_id = $3 AND status = 'info_needed'
+    `,
+    [
+      sid,
+      tid,
+      aid,
+      phoneRaw,
+      phoneNorm,
+      whatsappRaw,
+      whatsappNorm,
+      firstName,
+      lastName,
+      profession,
+      city,
+      pacra,
+      addressStreet,
+      addressLandmarks,
+      addressNeighbourhood,
+      addressCity,
+      nrcNumber,
+      photoProfileUrl,
+      workPhotosJson,
+      replyParam,
+    ]
+  );
+  return r.rowCount === 1;
+}
+
+/**
  * Bulk moderation wrapper for tenant-scoped submission ids.
  * Reuses the same single-item transition helpers and does not bypass transition rules.
  *
@@ -726,6 +872,7 @@ async function updatePhotosAfterUpload(pool, client, { submissionId, tenantId, p
  *   action: "approve"|"reject"|"info_needed"|"appeal",
  *   ids: number[],
  *   rejectionReason?: string,
+ *   infoRequest?: string,
  *   commissionAmount?: number,
  *   adminUserId?: number|null
  * }} p
@@ -781,10 +928,22 @@ async function applyBulkSubmissionAction(pool, p) {
     };
   }
   const rejectionReason = String(p.rejectionReason || "").trim();
+  const infoRequest = String(p.infoRequest || "").trim();
   if (action === "reject" && !rejectionReason) {
     return {
       ok: false,
       error: "Rejection reason is required.",
+      action,
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      results: [],
+    };
+  }
+  if (action === "info_needed" && !infoRequest) {
+    return {
+      ok: false,
+      error: "Info request message is required.",
       action,
       processed: 0,
       succeeded: 0,
@@ -824,7 +983,9 @@ async function applyBulkSubmissionAction(pool, p) {
                 ? { reject_reason: rejectionReason.slice(0, 500) }
                 : action === "approve" && commission > 0
                   ? { commission_amount: commission }
-                  : undefined,
+                  : action === "info_needed"
+                    ? { info_request: infoRequest.slice(0, 500) }
+                    : undefined,
           }
         : undefined;
     if (action === "approve") {
@@ -847,6 +1008,7 @@ async function applyBulkSubmissionAction(pool, p) {
       ok = await markFieldAgentSubmissionInfoNeeded(pool, {
         tenantId: tid,
         submissionId: id,
+        adminInfoRequest: infoRequest,
         auditContext,
         _obs: p && p._obs ? p._obs : null,
       });
@@ -903,6 +1065,8 @@ module.exports = {
   duplicateExistsCompaniesOrSignups,
   insertSubmission,
   updatePhotosAfterUpload,
+  patchFieldAgentSubmissionReply,
+  resubmitFieldAgentSubmissionFromInfoNeeded,
   applyBulkSubmissionAction,
   correctFieldAgentSubmissionStatus,
 };

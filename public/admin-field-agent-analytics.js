@@ -548,6 +548,7 @@
     };
     var label = labels[action] || action;
     var reason = "";
+    var infoRequest = "";
     if (action === "reject") {
       var targetLabel = ids.length === 1 ? "submission" : "selected submissions";
       reason = window.prompt("Provide a rejection reason for " + targetLabel + ":", "");
@@ -555,6 +556,16 @@
       reason = String(reason).trim();
       if (!reason) {
         showFeedback("error", "Rejection reason is required.");
+        return;
+      }
+    }
+    if (action === "info_needed") {
+      var il = ids.length === 1 ? "submission" : "selected submissions";
+      infoRequest = window.prompt("What information is needed from the field agent (" + il + ")?", "");
+      if (infoRequest == null) return;
+      infoRequest = String(infoRequest).trim();
+      if (!infoRequest) {
+        showFeedback("error", "Info request message is required.");
         return;
       }
     }
@@ -578,6 +589,7 @@
         action: action,
         ids: ids,
         reason: reason,
+        info_request: infoRequest,
       }),
     })
       .then(function (r) {

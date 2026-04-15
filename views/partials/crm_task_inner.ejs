@@ -91,10 +91,14 @@
               </div>
             </form>
             <% if (_fas.status === 'pending' || _fas.status === 'appealed') { %>
-            <form method="post" action="/admin/crm/tasks/<%= task.id %>/field-agent-submission/info-needed" class="form crm-task-form crm-task-form--inline">
+            <form method="post" action="/admin/crm/tasks/<%= task.id %>/field-agent-submission/info-needed" class="form crm-task-form">
               <% if (_ov) { %>
               <input type="hidden" name="next" value="/admin/crm?openTask=<%= task.id %>" />
               <% } %>
+              <div class="input-field">
+                <label for="fa_info_request" class="input-field__label">Information needed from field agent (required)</label>
+                <textarea id="fa_info_request" name="info_request" class="input-field__control" rows="2" required maxlength="4000" placeholder="Describe what the field agent must provide or fix…"></textarea>
+              </div>
               <div class="crm-task-form__actions">
                 <%- include('components/button', { variant: 'default', type: 'submit', label: _fas.status === 'appealed' ? 'Request more info' : 'Mark info needed' }) %>
               </div>

@@ -1,0 +1,205 @@
+<!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<% var _sub = typeof submission !== 'undefined' ? submission : {}; %>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Update submission | Field agent | <%= _bn %></title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="<%= tenant.themeClass %>" data-screen-role="support" data-tenant-prefix="<%= tenantUrlPrefix %>">
+    <div class="app-layout">
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: typeof faActiveNav !== 'undefined' ? faActiveNav : 'dashboard', faIncludeFaq: typeof faIncludeFaq !== 'undefined' ? faIncludeFaq : true }) %>
+
+      <div class="app-layout__main">
+        <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
+
+        <h1 class="gp-home-story__title" style="margin-top:0;">More information needed</h1>
+        <p class="muted" style="max-width:40rem;line-height:1.5;margin:-0.25rem 0 1rem;">
+          The review team needs updates to this application. Edit the fields below, add a reply if helpful, then resubmit.
+        </p>
+
+        <div class="card" style="padding:1rem;margin-bottom:1rem;border-left:4px solid rgba(180,120,0,0.5);">
+          <h2 class="form-step__title" style="margin-top:0;font-size:1rem;">Admin comment</h2>
+          <p style="margin:0;white-space:pre-wrap;"><%= String(_sub.admin_info_request || '').trim() || '—' %></p>
+        </div>
+
+        <p class="input-field__error" id="fa-edit-error" hidden role="alert" style="margin-bottom:1rem;"></p>
+        <p class="admin-gate-success" id="fa-edit-success" role="status" hidden>Reply saved.</p>
+
+        <form id="fa-resubmit-form" class="card" style="padding:1rem;" data-submission-id="<%= _sub.id %>">
+          <h2 class="form-step__title" style="margin-top:0;font-size:1.125rem;">Reply to admin</h2>
+          <div class="input-field" style="margin-bottom:1rem;">
+            <label class="input-field__label" for="fa-reply-text">Reply to admin (optional before resubmit; required if you only save reply)</label>
+            <textarea id="fa-reply-text" name="field_agent_reply" class="input-field__control" rows="3" maxlength="4000" placeholder="Short note for the reviewer…"><%= String(_sub.field_agent_reply || '') %></textarea>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.25rem;">
+            <button type="button" class="btn btn--secondary" id="fa-save-reply-btn">Save reply</button>
+          </div>
+
+          <h2 class="form-step__title" style="font-size:1.125rem;">Application details</h2>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-phone">Phone <span class="fa-req-asterisk" aria-hidden="true">*</span></label>
+            <input id="fa-edit-phone" name="phone" class="input-field__control" type="tel" required value="<%= _sub.phone_raw || '' %>" autocomplete="tel" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-whatsapp">WhatsApp (optional)</label>
+            <input id="fa-edit-whatsapp" name="whatsapp" class="input-field__control" type="tel" value="<%= _sub.whatsapp_raw || '' %>" autocomplete="tel" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-first">First name <span class="fa-req-asterisk" aria-hidden="true">*</span></label>
+            <input id="fa-edit-first" name="first_name" class="input-field__control" type="text" required value="<%= _sub.first_name || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-last">Last name <span class="fa-req-asterisk" aria-hidden="true">*</span></label>
+            <input id="fa-edit-last" name="last_name" class="input-field__control" type="text" required value="<%= _sub.last_name || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-prof">Profession <span class="fa-req-asterisk" aria-hidden="true">*</span></label>
+            <input id="fa-edit-prof" name="profession" class="input-field__control" type="text" required value="<%= _sub.profession || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-pacra">PACRA</label>
+            <input id="fa-edit-pacra" name="pacra" class="input-field__control" type="text" value="<%= _sub.pacra || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-street">Street address</label>
+            <input id="fa-edit-street" name="address_street" class="input-field__control" type="text" value="<%= _sub.address_street || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-land">Landmarks</label>
+            <input id="fa-edit-land" name="address_landmarks" class="input-field__control" type="text" value="<%= _sub.address_landmarks || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-neigh">Neighbourhood</label>
+            <input id="fa-edit-neigh" name="address_neighbourhood" class="input-field__control" type="text" value="<%= _sub.address_neighbourhood || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-city">City <span class="fa-req-asterisk" aria-hidden="true">*</span></label>
+            <input id="fa-edit-city" name="address_city" class="input-field__control" type="text" required value="<%= _sub.address_city || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-nrc">NRC <span class="fa-req-asterisk" aria-hidden="true">*</span></label>
+            <input id="fa-edit-nrc" name="nrc_number" class="input-field__control" type="text" required value="<%= _sub.nrc_number || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-profile-url">Profile photo URL (optional)</label>
+            <input id="fa-edit-profile-url" name="photo_profile_url" class="input-field__control" type="url" value="<%= _sub.photo_profile_url || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="fa-edit-works-json">Work photos JSON (list of image URLs)</label>
+            <textarea id="fa-edit-works-json" name="work_photos_json" class="input-field__control" rows="3"><%= String(_sub.work_photos_json || '[]') %></textarea>
+          </div>
+
+          <div class="input-field input-field--actions" style="margin-top:1rem;">
+            <button type="submit" class="btn btn--primary" id="fa-resubmit-btn">Resubmit</button>
+            <a class="btn btn--secondary" href="<%= tenantUrlPrefix %>/field-agent/dashboard" style="margin-left:0.5rem;">Cancel</a>
+          </div>
+        </form>
+
+        <%- include('../partials/site_footer', { tenantUrlPrefix }) %>
+        <%- include('../partials/components/container_close') %>
+      </div>
+    </div>
+    <script src="<%= asset('scripts') %>" defer></script>
+    <script defer>
+      (function () {
+        var form = document.getElementById("fa-resubmit-form");
+        var errEl = document.getElementById("fa-edit-error");
+        var okEl = document.getElementById("fa-edit-success");
+        var saveBtn = document.getElementById("fa-save-reply-btn");
+        if (!form) return;
+        var sid = form.getAttribute("data-submission-id");
+        function prefix() {
+          var b = document.body;
+          return (b && b.getAttribute("data-tenant-prefix")) || "";
+        }
+        function api(path) {
+          return prefix() + path;
+        }
+        function showErr(msg) {
+          if (!errEl) return;
+          errEl.textContent = msg || "";
+          errEl.hidden = !msg;
+          if (okEl) okEl.hidden = true;
+        }
+        function showOk() {
+          if (okEl) okEl.hidden = false;
+          if (errEl) errEl.hidden = true;
+        }
+        function gatherPayload(includeReplyKey) {
+          var fd = new FormData(form);
+          var o = {};
+          fd.forEach(function (v, k) {
+            o[k] = typeof v === "string" ? v : String(v);
+          });
+          if (includeReplyKey) {
+            o.field_agent_reply = (document.getElementById("fa-reply-text") && document.getElementById("fa-reply-text").value) || "";
+          }
+          return o;
+        }
+        if (saveBtn) {
+          saveBtn.addEventListener("click", function () {
+            var msg = document.getElementById("fa-reply-text");
+            var t = msg ? String(msg.value || "").trim() : "";
+            if (!t) {
+              showErr("Enter a reply to save, or use Resubmit to send updates.");
+              return;
+            }
+            showErr("");
+            fetch(api("/field-agent/api/submissions/" + encodeURIComponent(sid) + "/reply"), {
+              method: "PATCH",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ message: t }),
+            })
+              .then(function (r) {
+                return r.json().then(function (j) {
+                  return { ok: r.ok, j: j };
+                });
+              })
+              .then(function (x) {
+                if (!x.ok || !x.j || x.j.ok !== true) {
+                  showErr((x.j && x.j.error) || "Could not save reply.");
+                  return;
+                }
+                showOk();
+              })
+              .catch(function () {
+                showErr("Could not save reply. Try again.");
+              });
+          });
+        }
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          showErr("");
+          var payload = gatherPayload(true);
+          fetch(api("/field-agent/api/submissions/" + encodeURIComponent(sid) + "/resubmit"), {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify(payload),
+          })
+            .then(function (r) {
+              return r.json().then(function (j) {
+                return { ok: r.ok, j: j };
+              });
+            })
+            .then(function (x) {
+              if (!x.ok || !x.j || x.j.ok !== true) {
+                showErr((x.j && x.j.error) || "Could not resubmit.");
+                return;
+              }
+              window.location.href = prefix() + "/field-agent/dashboard?resubmitted=1";
+            })
+            .catch(function () {
+              showErr("Could not resubmit. Try again.");
+            });
+        });
+      })();
+    </script>
+    <%- include('../partials/theme_prefs') %>
+  </body>
+</html>

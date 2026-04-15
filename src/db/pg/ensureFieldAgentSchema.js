@@ -10,7 +10,7 @@ const path = require("path");
  */
 async function ensureFieldAgentSchema(pool) {
   const base = path.join(__dirname, "../../../db/postgres");
-  const files = ["002_field_agent.sql", "014_field_agent_submission_statuses.sql"];
+  const files = ["002_field_agent.sql", "014_field_agent_submission_statuses.sql", "043_field_agent_submission_info_feedback.sql"];
   for (const f of files) {
     const sql = fs.readFileSync(path.join(base, f), "utf8");
     await pool.query(sql);

@@ -165,7 +165,7 @@ test(
 
     const infoRes = await request(app)
       .post("/admin/field-agent-analytics/drilldown/submissions/bulk-action")
-      .send({ action: "info_needed", ids: [pendingId] })
+      .send({ action: "info_needed", ids: [pendingId], info_request: "Need updated photos." })
       .expect(200);
     assert.equal(infoRes.body.succeeded, 1);
 

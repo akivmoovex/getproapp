@@ -857,6 +857,7 @@ test("field agent extended statuses: info_needed, appealed, open-pipeline duplic
       await fieldAgentSubmissionsRepo.markFieldAgentSubmissionInfoNeeded(pool, {
         tenantId,
         submissionId: subInfo,
+        adminInfoRequest: "Please upload clearer PACRA.",
       }),
       true
     );
@@ -990,7 +991,10 @@ test("field agent extended statuses: info_needed, appealed, open-pipeline duplic
       sourceType: "field_agent_provider",
       sourceRefId: subHttp,
     });
-    const resInf = await agentMut.post(`/admin/crm/tasks/${taskHttpInf}/field-agent-submission/info-needed`).type("form").send({});
+    const resInf = await agentMut
+      .post(`/admin/crm/tasks/${taskHttpInf}/field-agent-submission/info-needed`)
+      .type("form")
+      .send({ info_request: "Need clearer ID copy." });
     assert.equal(resInf.status, 302);
     assert.equal(
       (await fieldAgentSubmissionsRepo.getSubmissionByIdForAdmin(pool, tenantId, subHttp)).status,

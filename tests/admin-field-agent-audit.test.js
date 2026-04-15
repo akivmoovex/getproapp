@@ -183,6 +183,7 @@ test(
       await fieldAgentSubmissionsRepo.markFieldAgentSubmissionInfoNeeded(pool, {
         tenantId: TENANT_ZM,
         submissionId: s1,
+        adminInfoRequest: "Need more detail.",
         auditContext: { adminUserId: adminId },
       })
     );

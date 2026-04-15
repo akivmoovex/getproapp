@@ -584,6 +584,8 @@ async function getSubmissionDrilldownDetailById(pool, tenantId, submissionId, ob
       s.nrc_number,
       s.commission_amount,
       s.rejection_reason,
+      s.admin_info_request,
+      s.field_agent_reply,
       s.photo_profile_url,
       s.work_photos_json,
       fa.id AS field_agent_id,
