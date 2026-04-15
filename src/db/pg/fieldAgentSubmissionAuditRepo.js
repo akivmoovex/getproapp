@@ -59,8 +59,9 @@ async function listAuditBySubmission(pool, tenantId, submissionId, opts) {
   const sid = Number(submissionId);
   const limit = Math.min(Math.max(Number((opts && opts.limit) || 200), 1), 500);
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return [];
-  const r = await pool.query(
-    `
+  try {
+    const r = await pool.query(
+      `
     SELECT
       a.id,
       a.action_type,
@@ -77,19 +78,25 @@ async function listAuditBySubmission(pool, tenantId, submissionId, opts) {
     ORDER BY a.created_at DESC, a.id DESC
     LIMIT $3
     `,
-    [tid, sid, limit]
-  );
-  return r.rows.map((row) => ({
-    id: String(row.id),
-    action_type: String(row.action_type || ""),
-    previous_status: String(row.previous_status || ""),
-    new_status: String(row.new_status || ""),
-    metadata: row.metadata || null,
-    created_at: row.created_at,
-    admin_user_id: Number(row.admin_user_id),
-    admin_username: row.admin_username != null ? String(row.admin_username) : "",
-    admin_display_name: row.admin_display_name != null ? String(row.admin_display_name) : "",
-  }));
+      [tid, sid, limit]
+    );
+    return r.rows.map((row) => ({
+      id: String(row.id),
+      action_type: String(row.action_type || ""),
+      previous_status: String(row.previous_status || ""),
+      new_status: String(row.new_status || ""),
+      metadata: row.metadata || null,
+      created_at: row.created_at,
+      admin_user_id: Number(row.admin_user_id),
+      admin_username: row.admin_username != null ? String(row.admin_username) : "",
+      admin_display_name: row.admin_display_name != null ? String(row.admin_display_name) : "",
+    }));
+  } catch (err) {
+    if (err && err.code === "42P01") {
+      return [];
+    }
+    throw err;
+  }
 }
 
 module.exports = {
