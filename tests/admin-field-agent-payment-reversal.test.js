@@ -385,3 +385,146 @@ test(
     await deletePayRunBypassTriggersForTests(pool, created.payRunId);
   }
 );
+
+test(
+  "hard-closed pay run blocks add, reverse, and correct with PAY_RUN_CLOSED",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    await ensureFieldAgentPayRunsSchema(pool);
+    const created = await insertApprovedPayRunWithOneItem(pool, TENANT_ZM, 100);
+    if (!created) return;
+    const adminId = await getAnyAdminUserId(pool);
+    const add = await fieldAgentPayRunRepo.addPaymentForPayRun(pool, {
+      payRunId: created.payRunId,
+      tenantId: TENANT_ZM,
+      paymentDate: "2026-07-01",
+      amount: 30,
+      paymentMethod: "bank",
+      paymentReference: "P1",
+      notes: "",
+      createdByAdminUserId: adminId,
+    });
+    assert.equal(add.ok, true);
+    const payId = Number(add.payment.id);
+    const closed = await fieldAgentPayRunRepo.markPayRunSoftClosed(pool, created.payRunId, TENANT_ZM, adminId);
+    assert.ok(closed.ok);
+
+    const addBlocked = await fieldAgentPayRunRepo.addPaymentForPayRun(pool, {
+      payRunId: created.payRunId,
+      tenantId: TENANT_ZM,
+      paymentDate: "2026-07-02",
+      amount: 1,
+      paymentMethod: "bank",
+      paymentReference: "extra",
+      notes: "",
+      createdByAdminUserId: adminId,
+    });
+    assert.equal(addBlocked.ok, false);
+    assert.equal(addBlocked.error, fieldAgentPayRunRepo.PAY_RUN_CLOSED_ERROR);
+    assert.equal(addBlocked.message, fieldAgentPayRunRepo.PAY_RUN_CLOSED_MESSAGE);
+
+    const revBlocked = await fieldAgentPayRunRepo.reversePaymentForPayRun(pool, {
+      payRunId: created.payRunId,
+      tenantId: TENANT_ZM,
+      paymentId: payId,
+      reason: "nope",
+      paymentDate: "2026-07-03",
+      createdByAdminUserId: adminId,
+    });
+    assert.equal(revBlocked.ok, false);
+    assert.equal(revBlocked.error, fieldAgentPayRunRepo.PAY_RUN_CLOSED_ERROR);
+
+    const corBlocked = await fieldAgentPayRunRepo.correctPaymentForPayRun(pool, {
+      payRunId: created.payRunId,
+      tenantId: TENANT_ZM,
+      paymentId: payId,
+      reason: "nope",
+      newAmount: 40,
+      paymentDate: "2026-07-04",
+      paymentMethod: "bank",
+      paymentReference: "x",
+      createdByAdminUserId: adminId,
+    });
+    assert.equal(corBlocked.ok, false);
+    assert.equal(corBlocked.error, fieldAgentPayRunRepo.PAY_RUN_CLOSED_ERROR);
+
+    await deletePayRunBypassTriggersForTests(pool, created.payRunId);
+  }
+);
+
+test(
+  "reversal window: old original payment_date blocks reverse/correct; bypass allows",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    await ensureFieldAgentPayRunsSchema(pool);
+    const prev = process.env.FIELD_AGENT_PAY_RUN_REVERSAL_WINDOW_DAYS;
+    process.env.FIELD_AGENT_PAY_RUN_REVERSAL_WINDOW_DAYS = "7";
+    try {
+      const created = await insertApprovedPayRunWithOneItem(pool, TENANT_ZM, 80);
+      if (!created) return;
+      const adminId = await getAnyAdminUserId(pool);
+      const add = await fieldAgentPayRunRepo.addPaymentForPayRun(pool, {
+        payRunId: created.payRunId,
+        tenantId: TENANT_ZM,
+        paymentDate: "2026-08-01",
+        amount: 20,
+        paymentMethod: "bank",
+        paymentReference: "OLD",
+        notes: "",
+        createdByAdminUserId: adminId,
+      });
+      assert.equal(add.ok, true);
+      const payId = Number(add.payment.id);
+      await pool.query(`UPDATE public.field_agent_pay_run_payments SET payment_date = $1::date WHERE id = $2`, [
+        "2019-03-15",
+        payId,
+      ]);
+
+      const revFail = await fieldAgentPayRunRepo.reversePaymentForPayRun(pool, {
+        payRunId: created.payRunId,
+        tenantId: TENANT_ZM,
+        paymentId: payId,
+        reason: "too late",
+        paymentDate: "2026-08-02",
+        createdByAdminUserId: adminId,
+        bypassReversalWindow: false,
+      });
+      assert.equal(revFail.ok, false);
+      assert.equal(revFail.error, fieldAgentPayRunRepo.REVERSAL_WINDOW_EXPIRED_ERROR);
+      assert.equal(revFail.message, fieldAgentPayRunRepo.REVERSAL_WINDOW_EXPIRED_MESSAGE);
+
+      const corFail = await fieldAgentPayRunRepo.correctPaymentForPayRun(pool, {
+        payRunId: created.payRunId,
+        tenantId: TENANT_ZM,
+        paymentId: payId,
+        reason: "too late",
+        newAmount: 25,
+        paymentDate: "2026-08-02",
+        paymentMethod: "bank",
+        paymentReference: "x",
+        createdByAdminUserId: adminId,
+        bypassReversalWindow: false,
+      });
+      assert.equal(corFail.ok, false);
+      assert.equal(corFail.error, fieldAgentPayRunRepo.REVERSAL_WINDOW_EXPIRED_ERROR);
+
+      const revOk = await fieldAgentPayRunRepo.reversePaymentForPayRun(pool, {
+        payRunId: created.payRunId,
+        tenantId: TENANT_ZM,
+        paymentId: payId,
+        reason: "super bypass",
+        paymentDate: "2026-08-03",
+        createdByAdminUserId: adminId,
+        bypassReversalWindow: true,
+      });
+      assert.equal(revOk.ok, true);
+
+      await deletePayRunBypassTriggersForTests(pool, created.payRunId);
+    } finally {
+      if (prev === undefined) delete process.env.FIELD_AGENT_PAY_RUN_REVERSAL_WINDOW_DAYS;
+      else process.env.FIELD_AGENT_PAY_RUN_REVERSAL_WINDOW_DAYS = prev;
+    }
+  }
+);

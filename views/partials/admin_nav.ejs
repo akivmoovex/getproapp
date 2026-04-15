@@ -78,10 +78,13 @@
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'crm' ? 'admin-nav__link--active' : '' %>" href="/admin/crm">CRM</a>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'field_agent_analytics' ? 'admin-nav__link--active' : '' %>" href="/admin/field-agent-analytics">Field agents</a>
         <% } %>
-        <% if (scoped && canUsers) { %>
+        <% var canPayRunFinanceNav = typeof nav.canAccessPayRunSection !== 'undefined' && nav.canAccessPayRunSection; %>
+        <% if (scoped && (canUsers || canPayRunFinanceNav)) { %>
           <% var _payoutFinQs = []; if (typeof embed !== 'undefined' && embed) _payoutFinQs.push('embed=1'); if (isSuper && contactTenantId > 0) _payoutFinQs.push('tenant_id=' + contactTenantId); %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'field_agent_pay_runs' ? 'admin-nav__link--active' : '' %>" href="/admin/field-agent-pay-runs">Pay runs</a>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'field_agent_payout_finance' ? 'admin-nav__link--active' : '' %>" href="/admin/field-agent-pay-runs/finance-dashboard<% if (_payoutFinQs.length) { %>?<%= _payoutFinQs.join('&') %><% } %>" title="Read-only payout totals, ledger timeline, and status history">Payout review</a>
+        <% } %>
+        <% if (scoped && canUsers) { %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'field_agent_disputes' ? 'admin-nav__link--active' : '' %>" href="/admin/field-agent-disputes">Disputes</a>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'field_agent_adjustments' ? 'admin-nav__link--active' : '' %>" href="/admin/field-agent-adjustments">Adjustments</a>
         <% } %>

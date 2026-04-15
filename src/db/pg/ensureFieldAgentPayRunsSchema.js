@@ -19,6 +19,9 @@ async function ensureFieldAgentPayRunsSchema(pool) {
   await pool.query(fs.readFileSync(path.join(base, "031_field_agent_pay_run_payments_unique_linkage.sql"), "utf8"));
   await pool.query(fs.readFileSync(path.join(base, "032_field_agent_pay_run_payments_ledger_checks.sql"), "utf8"));
   await pool.query(fs.readFileSync(path.join(base, "033_field_agent_pay_run_status_history.sql"), "utf8"));
+  await pool.query(fs.readFileSync(path.join(base, "035_field_agent_pay_runs_soft_close.sql"), "utf8"));
+  await pool.query(fs.readFileSync(path.join(base, "036_accounting_periods.sql"), "utf8"));
+  await pool.query(fs.readFileSync(path.join(base, "037_finance_override_events.sql"), "utf8"));
 }
 
 module.exports = { ensureFieldAgentPayRunsSchema };

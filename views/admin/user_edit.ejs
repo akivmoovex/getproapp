@@ -50,6 +50,9 @@
                     <option value="tenant_editor" <%= user.role === 'tenant_editor' ? 'selected' : '' %>>tenant_editor</option>
                     <option value="tenant_agent" <%= user.role === 'tenant_agent' ? 'selected' : '' %>>tenant_agent</option>
                     <option value="tenant_viewer" <%= user.role === 'tenant_viewer' ? 'selected' : '' %>>tenant_viewer</option>
+                    <option value="finance_viewer" <%= user.role === 'finance_viewer' ? 'selected' : '' %>>finance_viewer</option>
+                    <option value="finance_operator" <%= user.role === 'finance_operator' ? 'selected' : '' %>>finance_operator</option>
+                    <option value="finance_manager" <%= user.role === 'finance_manager' ? 'selected' : '' %>>finance_manager</option>
                   </select>
                 </div>
                 <div class="input-field">

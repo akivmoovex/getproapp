@@ -49,7 +49,10 @@ async function ensureAdminUser({ pool }) {
     envRole === ROLES.TENANT_AGENT ||
     envRole === ROLES.TENANT_VIEWER ||
     envRole === ROLES.CSR ||
-    envRole === ROLES.END_USER
+    envRole === ROLES.END_USER ||
+    envRole === ROLES.FINANCE_VIEWER ||
+    envRole === ROLES.FINANCE_OPERATOR ||
+    envRole === ROLES.FINANCE_MANAGER
       ? envRole
       : ROLES.SUPER_ADMIN;
   const tenantId = role === ROLES.SUPER_ADMIN ? null : Number(process.env.ADMIN_TENANT_ID) || TENANT_ZM;

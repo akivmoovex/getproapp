@@ -44,7 +44,16 @@ module.exports = function registerAdminTenantUsersRoutes(router, _deps) {
       return res.status(400).send("Invalid role for this action.");
     }
     if (
-      ![ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER, ROLES.CSR].includes(role)
+      ![
+        ROLES.TENANT_MANAGER,
+        ROLES.TENANT_EDITOR,
+        ROLES.TENANT_AGENT,
+        ROLES.TENANT_VIEWER,
+        ROLES.CSR,
+        ROLES.FINANCE_VIEWER,
+        ROLES.FINANCE_OPERATOR,
+        ROLES.FINANCE_MANAGER,
+      ].includes(role)
     ) {
       return res.status(400).send("Invalid role.");
     }
@@ -111,7 +120,16 @@ module.exports = function registerAdminTenantUsersRoutes(router, _deps) {
       return res.status(400).send("Invalid role for this action.");
     }
     if (
-      ![ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER, ROLES.CSR].includes(role)
+      ![
+        ROLES.TENANT_MANAGER,
+        ROLES.TENANT_EDITOR,
+        ROLES.TENANT_AGENT,
+        ROLES.TENANT_VIEWER,
+        ROLES.CSR,
+        ROLES.FINANCE_VIEWER,
+        ROLES.FINANCE_OPERATOR,
+        ROLES.FINANCE_MANAGER,
+      ].includes(role)
     ) {
       return res.status(400).send("Invalid role.");
     }

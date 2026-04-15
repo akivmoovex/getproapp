@@ -1,5 +1,20 @@
 "use strict";
 
+const financeGuardService = require("../../finance/financeGuardService");
+const financeOverrideEventsRepo = require("./financeOverrideEventsRepo");
+
+const {
+  PAY_RUN_CLOSED_ERROR,
+  PAY_RUN_CLOSED_MESSAGE,
+  REVERSAL_WINDOW_EXPIRED_ERROR,
+  REVERSAL_WINDOW_EXPIRED_MESSAGE,
+  ACCOUNTING_PERIOD_LOCKED_ERROR,
+  ACCOUNTING_PERIOD_LOCKED_MESSAGE,
+  payRunIsHardClosed,
+  payRunAccountingPeriodKey,
+  paymentExceedsReversalWindowDays,
+} = financeGuardService;
+
 /**
  * Persist admin pay runs (frozen snapshot rows) with draft → locked → approved workflow.
  */
@@ -67,6 +82,8 @@ const PAY_RUN_STATUS_HISTORY_REASON = {
   REVERSAL_OR_CORRECTION_REOPENED: "reversal_or_correction_reopened",
   LEDGER_SETTLED: "ledger_settled",
 };
+
+/** Hard-close: {@link markPayRunSoftClosed} sets closed_at — ledger mutations must be blocked. */
 
 /** Index names from db/postgres/031_field_agent_pay_run_payments_unique_linkage.sql (pg reports these on unique_violation). */
 const UQ_FAPR_REVERSAL_PER_ORIGINAL_PAYMENT = "uq_fapr_reversal_per_original_payment";
@@ -138,6 +155,19 @@ async function insertPaymentLedgerRow(executor, p) {
   const date = new Date(`${paymentDateRaw}T00:00:00.000Z`);
   if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== paymentDateRaw) {
     throw new Error("INVALID_PAYMENT_DATE");
+  }
+
+  const payRunProbe = await executor.query(
+    `SELECT closed_at FROM public.field_agent_pay_runs WHERE id = $1 AND tenant_id = $2`,
+    [prid, tid]
+  );
+  if (!payRunProbe.rows[0]) {
+    throw new Error("INVALID_LEDGER_INSERT");
+  }
+  if (payRunIsHardClosed(payRunProbe.rows[0])) {
+    const err = new Error(PAY_RUN_CLOSED_MESSAGE);
+    err.code = PAY_RUN_CLOSED_ERROR;
+    throw err;
   }
 
   const r = await executor.query(
@@ -265,6 +295,9 @@ async function syncPayRunStatusWithLedger(pool, payRunId, tenantId, adminUserId,
       : null;
   const run = await getPayRunByIdForTenant(pool, pid, tid);
   if (!run) return { changed: false };
+  if (payRunIsHardClosed(run)) {
+    return { changed: false, run };
+  }
   const rec = await getPayRunReconciliationSummary(pool, pid, tid);
   if (!rec) return { changed: false };
   const payable = roundMoney2(Number(rec.run_payable_total || 0));
@@ -485,6 +518,12 @@ async function markPayRunApprovedAsPaid(pool, payRunId, tenantId, adminUserId, {
   const aid = adminUserId != null && Number.isFinite(Number(adminUserId)) && Number(adminUserId) > 0 ? Number(adminUserId) : null;
   const pref = payoutReference != null ? String(payoutReference).trim().slice(0, 2000) : "";
   const pnotes = payoutNotes != null ? String(payoutNotes).trim().slice(0, 4000) : "";
+  const probe = await getPayRunByIdForTenant(pool, pid, tid);
+  if (!probe) return { run: null, error: "INVALID_STATE" };
+  const markPaidGuards = await financeGuardService.assertHardCloseAndPeriodUnlocked(pool, tid, probe);
+  if (!markPaidGuards.ok) {
+    return { run: null, error: markPaidGuards.error };
+  }
   const r = await pool.query(
     `
     UPDATE public.field_agent_pay_runs
@@ -494,7 +533,7 @@ async function markPayRunApprovedAsPaid(pool, payRunId, tenantId, adminUserId, {
         payout_reference = NULLIF($4::text, ''),
         payout_notes = NULLIF($5::text, ''),
         updated_at = now()
-    WHERE id = $1 AND tenant_id = $2 AND status = 'approved'
+    WHERE id = $1 AND tenant_id = $2 AND status = 'approved' AND closed_at IS NULL
     RETURNING *
     `,
     [pid, tid, aid, pref, pnotes]
@@ -516,6 +555,9 @@ async function markPayRunApprovedAsPaidViaLedger(pool, payRunId, tenantId, admin
   if (!run || String(run.status || "") !== "approved") {
     return { run: null, error: "INVALID_STATE" };
   }
+  if (payRunIsHardClosed(run)) {
+    return { run: null, error: PAY_RUN_CLOSED_ERROR };
+  }
   const rec = await getPayRunReconciliationSummary(pool, pid, tid);
   if (!rec) return { run: null, error: "INVALID_STATE" };
   const outstanding = roundMoney2(rec.outstanding_amount);
@@ -533,7 +575,11 @@ async function markPayRunApprovedAsPaidViaLedger(pool, payRunId, tenantId, admin
     notes: payoutNotes,
     createdByAdminUserId: adminUserId,
   });
-  if (!add.ok) return { run: null, error: "INVALID_STATE" };
+  if (!add.ok) {
+    if (add.error === PAY_RUN_CLOSED_ERROR) return { run: null, error: PAY_RUN_CLOSED_ERROR };
+    if (add.error === ACCOUNTING_PERIOD_LOCKED_ERROR) return { run: null, error: ACCOUNTING_PERIOD_LOCKED_ERROR };
+    return { run: null, error: "INVALID_STATE" };
+  }
   const row = await getPayRunByIdForTenant(pool, pid, tid);
   if (!row || String(row.status || "") !== "paid") {
     return { run: null, error: "INVALID_STATE" };
@@ -692,16 +738,21 @@ async function addPaymentForPayRun(pool, p) {
     return { ok: false, error: "Invalid payment date." };
   }
 
-  const run = await getPayRunByIdForTenant(pool, pid, tid);
-  if (!run) return { ok: false, error: "Not found." };
-  const st = String(run.status || "");
-  if (st !== "approved" && st !== "paid") {
-    return { ok: false, error: "Payments can only be recorded for approved or paid runs." };
-  }
-
+  const client = await pool.connect();
   let payment;
   try {
-    payment = await insertPaymentLedgerRow(pool, {
+    await client.query("BEGIN");
+    const runLocked = await getPayRunByIdForTenantForUpdate(client, pid, tid);
+    if (!runLocked) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "Not found." };
+    }
+    const payGuards = await financeGuardService.assertPaymentRecordingGuards(client, tid, runLocked);
+    if (!payGuards.ok) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: payGuards.error, message: payGuards.message };
+    }
+    payment = await insertPaymentLedgerRow(client, {
       tenantId: tid,
       payRunId: pid,
       paymentDate: paymentDateRaw,
@@ -712,14 +763,27 @@ async function addPaymentForPayRun(pool, p) {
       createdByAdminUserId: adminId,
       metadata: { type: LEDGER_ENTRY_TYPE.PAYMENT },
     });
+    await client.query("COMMIT");
   } catch (e) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (_) {
+      /* ignore */
+    }
     const msg = e && e.message ? String(e.message) : "";
     if (msg.includes("INVALID_PAYMENT_DATE")) return { ok: false, error: "Invalid payment date." };
+    if (e && e.code === PAY_RUN_CLOSED_ERROR) {
+      return { ok: false, error: PAY_RUN_CLOSED_ERROR, message: PAY_RUN_CLOSED_MESSAGE };
+    }
     throw e;
+  } finally {
+    client.release();
   }
 
   const reconciliation = await getPayRunReconciliationSummary(pool, pid, tid);
+  const run = await getPayRunByIdForTenant(pool, pid, tid);
   let outRun = run;
+  const st = run ? String(run.status || "") : "";
   if (
     st === "approved" &&
     reconciliation &&
@@ -760,6 +824,7 @@ async function reversePaymentForPayRun(pool, p) {
   const paymentId = Number(p.paymentId);
   const payRunId = Number(p.payRunId);
   const tenantId = Number(p.tenantId);
+  const bypassReversalWindow = !!p.bypassReversalWindow;
   const adminId =
     p.createdByAdminUserId != null && Number.isFinite(Number(p.createdByAdminUserId)) && Number(p.createdByAdminUserId) > 0
       ? Number(p.createdByAdminUserId)
@@ -767,12 +832,14 @@ async function reversePaymentForPayRun(pool, p) {
 
   let payment;
   /** @type {object | undefined} */
+  let original;
+  /** @type {object | undefined} */
   let run;
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    const original = await getPaymentByIdForTenantForUpdate(client, paymentId, payRunId, tenantId);
+    original = await getPaymentByIdForTenantForUpdate(client, paymentId, payRunId, tenantId);
     if (!original) {
       await client.query("ROLLBACK");
       return { ok: false, error: "NOT_FOUND", message: "Payment not found." };
@@ -794,15 +861,21 @@ async function reversePaymentForPayRun(pool, p) {
       return { ok: false, error: "ALREADY_REVERSED", message: "This payment was already reversed." };
     }
 
-    run = await getPayRunByIdForTenant(client, payRunId, tenantId);
+    run = await getPayRunByIdForTenantForUpdate(client, payRunId, tenantId);
     if (!run) {
       await client.query("ROLLBACK");
       return { ok: false, error: "NOT_FOUND", message: "Pay run not found." };
     }
-    const st = String(run.status || "");
-    if (st !== "approved" && st !== "paid") {
+    const revGuards = await financeGuardService.assertReverseOrCorrectGuards(
+      client,
+      tenantId,
+      run,
+      original,
+      bypassReversalWindow
+    );
+    if (!revGuards.ok) {
       await client.query("ROLLBACK");
-      return { ok: false, error: "INVALID_STATE", message: "Ledger changes require an approved or paid pay run." };
+      return { ok: false, error: revGuards.error, message: revGuards.message };
     }
 
     let paymentDateRaw = String(p.paymentDate || "").trim();
@@ -834,6 +907,9 @@ async function reversePaymentForPayRun(pool, p) {
       });
     } catch (e) {
       await client.query("ROLLBACK");
+      if (e && e.code === PAY_RUN_CLOSED_ERROR) {
+        return { ok: false, error: PAY_RUN_CLOSED_ERROR, message: PAY_RUN_CLOSED_MESSAGE };
+      }
       const mapped = mapPaymentLedgerUniqueViolation(e);
       if (mapped) return { ok: false, error: mapped.error, message: mapped.message };
       throw e;
@@ -846,9 +922,31 @@ async function reversePaymentForPayRun(pool, p) {
     } catch (_) {
       /* ignore */
     }
+    if (e && e.code === PAY_RUN_CLOSED_ERROR) {
+      return { ok: false, error: PAY_RUN_CLOSED_ERROR, message: PAY_RUN_CLOSED_MESSAGE };
+    }
     throw e;
   } finally {
     client.release();
+  }
+
+  if (
+    bypassReversalWindow &&
+    original &&
+    paymentExceedsReversalWindowDays(original, financeGuardService.getConfiguredReversalWindowDays())
+  ) {
+    try {
+      await financeOverrideEventsRepo.insertFinanceOverrideEvent(pool, {
+        tenantId,
+        actionType: financeOverrideEventsRepo.ACTION_TYPES.REVERSE_OVERRIDE,
+        reason,
+        actorAdminUserId: adminId,
+        payRunId,
+        paymentId: Number(original.id),
+      });
+    } catch (auditErr) {
+      console.error("[finance_override_events] reverse_override", auditErr);
+    }
   }
 
   const sync = await syncPayRunStatusWithLedger(pool, payRunId, tenantId, adminId, {
@@ -877,6 +975,7 @@ async function correctPaymentForPayRun(pool, p) {
   const paymentId = Number(p.paymentId);
   const payRunId = Number(p.payRunId);
   const tenantId = Number(p.tenantId);
+  const bypassReversalWindow = !!p.bypassReversalWindow;
   const adminId =
     p.createdByAdminUserId != null && Number.isFinite(Number(p.createdByAdminUserId)) && Number(p.createdByAdminUserId) > 0
       ? Number(p.createdByAdminUserId)
@@ -888,12 +987,14 @@ async function correctPaymentForPayRun(pool, p) {
   let reversalRow;
   let paymentRow;
   /** @type {object | undefined} */
+  let original;
+  /** @type {object | undefined} */
   let run;
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    const original = await getPaymentByIdForTenantForUpdate(client, paymentId, payRunId, tenantId);
+    original = await getPaymentByIdForTenantForUpdate(client, paymentId, payRunId, tenantId);
     if (!original) {
       await client.query("ROLLBACK");
       return { ok: false, error: "NOT_FOUND", message: "Payment not found." };
@@ -915,15 +1016,21 @@ async function correctPaymentForPayRun(pool, p) {
       return { ok: false, error: "ALREADY_REVERSED", message: "This payment was already reversed or corrected." };
     }
 
-    run = await getPayRunByIdForTenant(client, payRunId, tenantId);
+    run = await getPayRunByIdForTenantForUpdate(client, payRunId, tenantId);
     if (!run) {
       await client.query("ROLLBACK");
       return { ok: false, error: "NOT_FOUND", message: "Pay run not found." };
     }
-    const st = String(run.status || "");
-    if (st !== "approved" && st !== "paid") {
+    const corGuards = await financeGuardService.assertReverseOrCorrectGuards(
+      client,
+      tenantId,
+      run,
+      original,
+      bypassReversalWindow
+    );
+    if (!corGuards.ok) {
       await client.query("ROLLBACK");
-      return { ok: false, error: "INVALID_STATE", message: "Ledger changes require an approved or paid pay run." };
+      return { ok: false, error: corGuards.error, message: corGuards.message };
     }
 
     let paymentDateRaw = String(p.paymentDate || "").trim();
@@ -977,6 +1084,9 @@ async function correctPaymentForPayRun(pool, p) {
     } catch (_) {
       /* ignore */
     }
+    if (e && e.code === PAY_RUN_CLOSED_ERROR) {
+      return { ok: false, error: PAY_RUN_CLOSED_ERROR, message: PAY_RUN_CLOSED_MESSAGE };
+    }
     const mapped = mapPaymentLedgerUniqueViolation(e);
     if (mapped) {
       return { ok: false, error: mapped.error, message: mapped.message };
@@ -984,6 +1094,25 @@ async function correctPaymentForPayRun(pool, p) {
     throw e;
   } finally {
     client.release();
+  }
+
+  if (
+    bypassReversalWindow &&
+    original &&
+    paymentExceedsReversalWindowDays(original, financeGuardService.getConfiguredReversalWindowDays())
+  ) {
+    try {
+      await financeOverrideEventsRepo.insertFinanceOverrideEvent(pool, {
+        tenantId,
+        actionType: financeOverrideEventsRepo.ACTION_TYPES.CORRECTION_OVERRIDE,
+        reason,
+        actorAdminUserId: adminId,
+        payRunId,
+        paymentId: Number(original.id),
+      });
+    } catch (auditErr) {
+      console.error("[finance_override_events] correction_override", auditErr);
+    }
   }
 
   const sync = await syncPayRunStatusWithLedger(pool, payRunId, tenantId, adminId, {
@@ -1046,9 +1175,9 @@ async function markPayRunSoftClosed(pool, payRunId, tenantId, adminUserId) {
   if (existing.closed_at) {
     return { ok: true, run: existing, alreadyClosed: true };
   }
-  const st = String(existing.status || "");
-  if (!["locked", "approved", "paid"].includes(st)) {
-    return { ok: false, error: "INVALID_STATUS_FOR_CLOSE" };
+  const softGuards = financeGuardService.assertSoftCloseStatusPreconditions(existing);
+  if (!softGuards.ok) {
+    return { ok: false, error: softGuards.error };
   }
   const r = await pool.query(
     `
@@ -1080,6 +1209,23 @@ async function getPayRunByIdForTenant(pool, payRunId, tenantId) {
   const r = await pool.query(
     `SELECT * FROM public.field_agent_pay_runs WHERE id = $1 AND tenant_id = $2 LIMIT 1`,
     [payRunId, tenantId]
+  );
+  return r.rows[0] ?? null;
+}
+
+/**
+ * Row lock for payment flows — use inside an open transaction with add/reverse/correct.
+ * @param {import("pg").Pool | import("pg").PoolClient} executor
+ */
+async function getPayRunByIdForTenantForUpdate(executor, payRunId, tenantId) {
+  const pid = Number(payRunId);
+  const tid = Number(tenantId);
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) {
+    return null;
+  }
+  const r = await executor.query(
+    `SELECT * FROM public.field_agent_pay_runs WHERE id = $1 AND tenant_id = $2 FOR UPDATE LIMIT 1`,
+    [pid, tid]
   );
   return r.rows[0] ?? null;
 }
@@ -1275,6 +1421,14 @@ async function createDraftPayRunWithCarryForward(pool, p) {
 
 module.exports = {
   LEDGER_ENTRY_TYPE,
+  PAY_RUN_CLOSED_ERROR,
+  PAY_RUN_CLOSED_MESSAGE,
+  REVERSAL_WINDOW_EXPIRED_ERROR,
+  REVERSAL_WINDOW_EXPIRED_MESSAGE,
+  ACCOUNTING_PERIOD_LOCKED_ERROR,
+  ACCOUNTING_PERIOD_LOCKED_MESSAGE,
+  payRunIsHardClosed,
+  payRunAccountingPeriodKey,
   insertPayRunDraft,
   insertPayRunItems,
   roundMoney2,
@@ -1291,6 +1445,7 @@ module.exports = {
   markPayRunSoftClosed,
   getPayRunById,
   getPayRunByIdForTenant,
+  getPayRunByIdForTenantForUpdate,
   getPaymentByIdForTenant,
   listItemsForPayRun,
   getPayRunReconciliationSummary,

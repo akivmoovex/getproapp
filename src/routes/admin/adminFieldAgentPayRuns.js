@@ -1,11 +1,28 @@
 "use strict";
 
-const { canManageTenantUsers } = require("../../auth/roles");
+const {
+  canAccessPayRunSection,
+  isPayRunFinanceViewerOnly,
+  canPayRunWorkflowWrite,
+  canPayRunReverseOrCorrect,
+  canManageAccountingPeriodLock,
+} = require("../../auth/roles");
 const { isSuperAdmin } = require("../../auth");
 const { getAdminTenantId, redirectWithEmbed } = require("./adminShared");
 const { getPgPool } = require("../../db/pg");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
 const fieldAgentPayRunRepo = require("../../db/pg/fieldAgentPayRunRepo");
+const {
+  PAY_RUN_CLOSED_ERROR,
+  PAY_RUN_CLOSED_MESSAGE,
+  REVERSAL_WINDOW_EXPIRED_ERROR,
+  REVERSAL_WINDOW_EXPIRED_MESSAGE,
+  ACCOUNTING_PERIOD_LOCKED_ERROR,
+  ACCOUNTING_PERIOD_LOCKED_MESSAGE,
+} = fieldAgentPayRunRepo;
+const accountingPeriodsRepo = require("../../db/pg/accountingPeriodsRepo");
+const financeOverrideEventsRepo = require("../../db/pg/financeOverrideEventsRepo");
+const financeGuardService = require("../../finance/financeGuardService");
 const fieldAgentPayRunSnapshotsRepo = require("../../db/pg/fieldAgentPayRunSnapshotsRepo");
 const financeCfoDashboardRepo = require("../../db/pg/financeCfoDashboardRepo");
 const fieldAgentPayRunAdjustmentsRepo = require("../../db/pg/fieldAgentPayRunAdjustmentsRepo");
@@ -16,12 +33,55 @@ const { buildPayRunItemsCsv, buildPayRunAccountingReconciliationCsv } = require(
 const { buildCfoPayRunSummaryCsv, buildCfoPayRunLedgerCsv } = require("../../admin/financeCfoExportCsv");
 const { buildStatementDetailFromSnapshotRow } = require("../../fieldAgent/fieldAgentStatementPayload");
 
-function requirePayRunAdmin(req, res, next) {
+function requirePayRunAccess(req, res, next) {
   if (!req.session.adminUser) return res.redirect("/admin/login");
-  if (!canManageTenantUsers(req.session.adminUser.role)) {
-    return res.status(403).type("text").send("Draft pay-run snapshots require tenant manager or super admin.");
+  if (!canAccessPayRunSection(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Pay runs require finance access or tenant administration.");
   }
-  return next();
+  next();
+}
+
+function requirePayRunBeyondFinanceViewer(req, res, next) {
+  if (!req.session.adminUser) return res.redirect("/admin/login");
+  if (!canAccessPayRunSection(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Pay runs require finance access or tenant administration.");
+  }
+  if (isPayRunFinanceViewerOnly(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Finance viewer access is limited to the finance dashboard and finance detail.");
+  }
+  next();
+}
+
+function requirePayRunWorkflowWrite(req, res, next) {
+  if (!req.session.adminUser) return res.redirect("/admin/login");
+  if (!canPayRunWorkflowWrite(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("This action requires tenant manager or super admin.");
+  }
+  next();
+}
+
+function requirePayRunReverseCorrect(req, res, next) {
+  if (!req.session.adminUser) return res.redirect("/admin/login");
+  if (!canPayRunReverseOrCorrect(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Payment reversal and correction require finance operator access or tenant administration.");
+  }
+  next();
+}
+
+function requirePayRunClose(req, res, next) {
+  if (!req.session.adminUser) return res.redirect("/admin/login");
+  if (!financeGuardService.softClosePermissionGrantedForRole(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Closing pay runs requires finance manager or tenant administration access.");
+  }
+  next();
+}
+
+function requireAccountingPeriodLockPrivilege(req, res, next) {
+  if (!req.session.adminUser) return res.redirect("/admin/login");
+  if (!canManageAccountingPeriodLock(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Locking or unlocking accounting periods requires finance manager or super admin.");
+  }
+  next();
 }
 
 function resolveTargetTenantId(req) {
@@ -157,7 +217,7 @@ function buildPayRunSnapshotVsCurrent(latestSnap, reconciliation, run, statusHis
 }
 
 module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
-  router.get("/field-agent-pay-runs", requirePayRunAdmin, async (req, res, next) => {
+  router.get("/field-agent-pay-runs", requirePayRunBeyondFinanceViewer, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const tid = resolveTargetTenantId(req);
@@ -181,7 +241,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.get("/field-agent-pay-runs/new", requirePayRunAdmin, async (req, res, next) => {
+  router.get("/field-agent-pay-runs/new", requirePayRunWorkflowWrite, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const tid = resolveTargetTenantId(req);
@@ -208,7 +268,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.get("/field-agent-pay-runs/finance-dashboard", requirePayRunAdmin, async (req, res, next) => {
+  router.get("/field-agent-pay-runs/finance-dashboard", requirePayRunAccess, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const tid = resolveTargetTenantId(req);
@@ -224,16 +284,18 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
       const financeExceptionPreset = financeCfoDashboardRepo.normalizeFinanceExceptionPreset(req.query.exception);
       const financeExceptionMeta = financeCfoDashboardRepo.getFinanceExceptionPresetMeta(financeExceptionPreset);
 
-      const [summary, recentRuns, reopenHistory, tenantLedgerAdj, tenantReopen] = await Promise.all([
-        financeCfoDashboardRepo.getFieldAgentPayoutDashboardSummary(pool, tid),
-        financeCfoDashboardRepo.listPayRunsForPayoutDashboard(pool, tid, {
-          limit: 25,
-          exceptionPreset: financeExceptionPreset,
-        }),
-        financeCfoDashboardRepo.listRecentPayRunReopenHistory(pool, tid, { limit: 15 }),
-        financeCfoDashboardRepo.getTenantLedgerHasReversalOrCorrection(pool, tid),
-        financeCfoDashboardRepo.getTenantHasPaidToApprovedHistory(pool, tid),
-      ]);
+      const [summary, recentRuns, reopenHistory, tenantLedgerAdj, tenantReopen, recentFinanceOverrideEvents] =
+        await Promise.all([
+          financeCfoDashboardRepo.getFieldAgentPayoutDashboardSummary(pool, tid),
+          financeCfoDashboardRepo.listPayRunsForPayoutDashboard(pool, tid, {
+            limit: 25,
+            exceptionPreset: financeExceptionPreset,
+          }),
+          financeCfoDashboardRepo.listRecentPayRunReopenHistory(pool, tid, { limit: 15 }),
+          financeCfoDashboardRepo.getTenantLedgerHasReversalOrCorrection(pool, tid),
+          financeCfoDashboardRepo.getTenantHasPaidToApprovedHistory(pool, tid),
+          financeOverrideEventsRepo.listRecentFinanceOverrideEventsForTenant(pool, tid, 8),
+        ]);
 
       const s =
         summary || {
@@ -254,12 +316,27 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         reopenState: tenantReopen ? "Reopened after payment" : null,
       };
 
+      const lockedAccountingPeriods = await accountingPeriodsRepo.listLockedPeriodsForTenant(pool, tid, 48);
+
+      const accountingPeriodLockFlash =
+        req.query && req.query.period_locked === "1"
+          ? "locked"
+          : req.query && req.query.period_unlocked === "1"
+            ? "unlocked"
+            : null;
+      const accountingPeriodLockFlashKey =
+        req.query && req.query.period != null ? String(req.query.period).trim().slice(0, 7) : "";
+
       return res.render("admin/field_agent_pay_run_finance_dashboard", {
         activeNav: "field_agent_payout_finance",
         tenantId: tid,
         tenant: tenantsRepo.serializeTenantRow(tenantRow),
         tenants,
         isSuper: isSuperAdmin(req.session.adminUser.role),
+        canManageAccountingPeriodLock: canManageAccountingPeriodLock(req.session.adminUser.role),
+        lockedAccountingPeriods,
+        accountingPeriodLockFlash,
+        accountingPeriodLockFlashKey,
         summary: s,
         reconciliationStrip,
         reconciliationStripTitle: "Region reconciliation",
@@ -267,12 +344,94 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         reopenHistory,
         financeExceptionPreset,
         financeExceptionMeta,
+        recentFinanceOverrideEvents,
         embed: !!res.locals.embed,
       });
     } catch (e) {
       return next(e);
     }
   });
+
+  router.post(
+    "/field-agent-pay-runs/accounting-periods/:periodKey/lock",
+    requirePayRunAccess,
+    requireAccountingPeriodLockPrivilege,
+    async (req, res, next) => {
+      try {
+        const pool = getPgPool();
+        const tid = resolveTargetTenantId(req);
+        if (!(await assertTenantAccessible(pool, req, tid))) {
+          return res.status(400).type("text").send("Invalid or inaccessible region.");
+        }
+        const pk = String(req.params.periodKey || "").trim();
+        if (!/^\d{4}-\d{2}$/.test(pk)) {
+          return res.status(400).type("text").send("Invalid period (use YYYY-MM).");
+        }
+        const adminId = req.session.adminUser && req.session.adminUser.id != null ? Number(req.session.adminUser.id) : null;
+        const r = await accountingPeriodsRepo.lockAccountingPeriod(pool, {
+          tenantId: tid,
+          periodId: pk,
+          adminUserId: adminId,
+        });
+        if (!r.ok) return res.status(400).type("text").send("Could not lock period.");
+        const q = new URLSearchParams();
+        if (res.locals.embed) q.set("embed", "1");
+        if (isSuperAdmin(req.session.adminUser.role)) q.set("tenant_id", String(tid));
+        q.set("period_locked", "1");
+        q.set("period", pk);
+        return res.redirect(302, `/admin/field-agent-pay-runs/finance-dashboard?${q.toString()}`);
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.post(
+    "/field-agent-pay-runs/accounting-periods/:periodKey/unlock",
+    requirePayRunAccess,
+    requireAccountingPeriodLockPrivilege,
+    async (req, res, next) => {
+      try {
+        const pool = getPgPool();
+        const tid = resolveTargetTenantId(req);
+        if (!(await assertTenantAccessible(pool, req, tid))) {
+          return res.status(400).type("text").send("Invalid or inaccessible region.");
+        }
+        const pk = String(req.params.periodKey || "").trim();
+        if (!/^\d{4}-\d{2}$/.test(pk)) {
+          return res.status(400).type("text").send("Invalid period (use YYYY-MM).");
+        }
+        const body = req.body || {};
+        const unlockReason = body.unlock_reason != null ? String(body.unlock_reason).trim() : "";
+        if (!unlockReason) {
+          return res.status(400).type("text").send("Reason is required.");
+        }
+        const r = await accountingPeriodsRepo.unlockAccountingPeriod(pool, { tenantId: tid, periodId: pk });
+        if (!r.ok) return res.status(400).type("text").send("Could not unlock period.");
+        const adminId = req.session.adminUser && req.session.adminUser.id != null ? Number(req.session.adminUser.id) : null;
+        try {
+          await financeOverrideEventsRepo.insertFinanceOverrideEvent(pool, {
+            tenantId: tid,
+            actionType: financeOverrideEventsRepo.ACTION_TYPES.UNLOCK_PERIOD,
+            reason: `[period ${pk}] ${unlockReason}`,
+            actorAdminUserId: adminId,
+            payRunId: null,
+            paymentId: null,
+          });
+        } catch (auditErr) {
+          console.error("[finance_override_events] unlock_period", auditErr);
+        }
+        const q = new URLSearchParams();
+        if (res.locals.embed) q.set("embed", "1");
+        if (isSuperAdmin(req.session.adminUser.role)) q.set("tenant_id", String(tid));
+        q.set("period_unlocked", "1");
+        q.set("period", pk);
+        return res.redirect(302, `/admin/field-agent-pay-runs/finance-dashboard?${q.toString()}`);
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
 
   async function handleCfoPayRunSummaryCsvExport(req, res, next) {
     try {
@@ -293,10 +452,10 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
   }
 
   /** CFO structured pack A: tenant pay-run summary (same CSV on both paths). */
-  router.get("/field-agent-pay-runs/cfo-exports/pay-run-summary.csv", requirePayRunAdmin, handleCfoPayRunSummaryCsvExport);
-  router.get("/field-agent-pay-runs/finance-dashboard/export.csv", requirePayRunAdmin, handleCfoPayRunSummaryCsvExport);
+  router.get("/field-agent-pay-runs/cfo-exports/pay-run-summary.csv", requirePayRunAccess, handleCfoPayRunSummaryCsvExport);
+  router.get("/field-agent-pay-runs/finance-dashboard/export.csv", requirePayRunAccess, handleCfoPayRunSummaryCsvExport);
 
-  router.post("/field-agent-pay-runs/preview", requirePayRunAdmin, async (req, res, next) => {
+  router.post("/field-agent-pay-runs/preview", requirePayRunWorkflowWrite, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const body = req.body || {};
@@ -345,7 +504,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.post("/field-agent-pay-runs", requirePayRunAdmin, async (req, res, next) => {
+  router.post("/field-agent-pay-runs", requirePayRunWorkflowWrite, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const body = req.body || {};
@@ -427,7 +586,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.get("/field-agent-pay-runs/:id/export", requirePayRunAdmin, async (req, res, next) => {
+  router.get("/field-agent-pay-runs/:id/export", requirePayRunBeyondFinanceViewer, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -456,7 +615,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.post("/field-agent-pay-runs/:id/mark-paid", requirePayRunAdmin, async (req, res, next) => {
+  router.post("/field-agent-pay-runs/:id/mark-paid", requirePayRunWorkflowWrite, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -475,6 +634,12 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         payoutReference,
         payoutNotes,
       });
+      if (result.error === PAY_RUN_CLOSED_ERROR) {
+        return res.status(409).type("text").send(PAY_RUN_CLOSED_MESSAGE);
+      }
+      if (result.error === ACCOUNTING_PERIOD_LOCKED_ERROR) {
+        return res.status(409).type("text").send(ACCOUNTING_PERIOD_LOCKED_MESSAGE);
+      }
       if (result.error === "INVALID_STATE" || !result.run) {
         return res.status(409).type("text").send("Invalid state transition: only approved runs can be marked as paid.");
       }
@@ -487,7 +652,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.post("/field-agent-pay-runs/:id/mark-closed", requirePayRunAdmin, async (req, res, next) => {
+  router.post("/field-agent-pay-runs/:id/mark-closed", requirePayRunClose, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -518,7 +683,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.get("/field-agent-pay-runs/:id/accounting-export.csv", requirePayRunAdmin, async (req, res, next) => {
+  router.get("/field-agent-pay-runs/:id/accounting-export.csv", requirePayRunBeyondFinanceViewer, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -545,7 +710,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.get("/field-agent-pay-runs/:id/month-close", requirePayRunAdmin, async (req, res, next) => {
+  router.get("/field-agent-pay-runs/:id/month-close", requirePayRunBeyondFinanceViewer, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -611,7 +776,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.post("/field-agent-pay-runs/:id/snapshot", requirePayRunAdmin, async (req, res, next) => {
+  router.post("/field-agent-pay-runs/:id/snapshot", requirePayRunWorkflowWrite, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -656,7 +821,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.get("/field-agent-pay-runs/:id/reconciliation", requirePayRunAdmin, async (req, res, next) => {
+  router.get("/field-agent-pay-runs/:id/reconciliation", requirePayRunBeyondFinanceViewer, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -675,7 +840,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.post("/field-agent-pay-runs/:id/payments/:paymentId/reverse", requirePayRunAdmin, async (req, res, next) => {
+  router.post("/field-agent-pay-runs/:id/payments/:paymentId/reverse", requirePayRunReverseCorrect, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -693,6 +858,9 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
       const reason = body.reason != null ? String(body.reason) : "";
       const paymentDate = body.payment_date != null ? String(body.payment_date).trim() : "";
       const adminId = req.session.adminUser && req.session.adminUser.id != null ? Number(req.session.adminUser.id) : null;
+      const bypassReversalWindow = financeGuardService.reversalWindowBypassGrantedForRole(
+        req.session.adminUser && req.session.adminUser.role
+      );
       const result = await fieldAgentPayRunRepo.reversePaymentForPayRun(pool, {
         payRunId: id,
         tenantId: tid,
@@ -700,15 +868,30 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         reason,
         paymentDate,
         createdByAdminUserId: adminId,
+        bypassReversalWindow,
       });
       if (!result.ok) {
         const code =
           result.error === "NOT_FOUND"
             ? 404
-            : result.error === "ALREADY_REVERSED" || result.error === "ALREADY_CORRECTED" || result.error === "INVALID_STATE"
+            : result.error === "ALREADY_REVERSED" ||
+                result.error === "ALREADY_CORRECTED" ||
+                result.error === "INVALID_STATE" ||
+                result.error === PAY_RUN_CLOSED_ERROR ||
+                result.error === REVERSAL_WINDOW_EXPIRED_ERROR ||
+                result.error === ACCOUNTING_PERIOD_LOCKED_ERROR
               ? 409
               : 400;
-        return res.status(code).type("text").send(result.message || result.error || "Could not reverse payment.");
+        return res
+          .status(code)
+          .type("text")
+          .send(
+            result.error === REVERSAL_WINDOW_EXPIRED_ERROR
+              ? REVERSAL_WINDOW_EXPIRED_MESSAGE
+              : result.error === ACCOUNTING_PERIOD_LOCKED_ERROR
+                ? ACCOUNTING_PERIOD_LOCKED_MESSAGE
+                : result.message || result.error || "Could not reverse payment."
+          );
       }
       const q = new URLSearchParams();
       if (res.locals.embed) q.set("embed", "1");
@@ -719,7 +902,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.post("/field-agent-pay-runs/:id/payments/:paymentId/correct", requirePayRunAdmin, async (req, res, next) => {
+  router.post("/field-agent-pay-runs/:id/payments/:paymentId/correct", requirePayRunReverseCorrect, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -740,6 +923,9 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
       const paymentMethod = body.payment_method != null ? String(body.payment_method) : "";
       const paymentReference = body.payment_reference != null ? String(body.payment_reference) : "";
       const adminId = req.session.adminUser && req.session.adminUser.id != null ? Number(req.session.adminUser.id) : null;
+      const bypassReversalWindow = financeGuardService.reversalWindowBypassGrantedForRole(
+        req.session.adminUser && req.session.adminUser.role
+      );
       const result = await fieldAgentPayRunRepo.correctPaymentForPayRun(pool, {
         payRunId: id,
         tenantId: tid,
@@ -750,15 +936,30 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         paymentMethod,
         paymentReference,
         createdByAdminUserId: adminId,
+        bypassReversalWindow,
       });
       if (!result.ok) {
         const code =
           result.error === "NOT_FOUND"
             ? 404
-            : result.error === "ALREADY_REVERSED" || result.error === "ALREADY_CORRECTED" || result.error === "INVALID_STATE"
+            : result.error === "ALREADY_REVERSED" ||
+                result.error === "ALREADY_CORRECTED" ||
+                result.error === "INVALID_STATE" ||
+                result.error === PAY_RUN_CLOSED_ERROR ||
+                result.error === REVERSAL_WINDOW_EXPIRED_ERROR ||
+                result.error === ACCOUNTING_PERIOD_LOCKED_ERROR
               ? 409
               : 400;
-        return res.status(code).type("text").send(result.message || result.error || "Could not correct payment.");
+        return res
+          .status(code)
+          .type("text")
+          .send(
+            result.error === REVERSAL_WINDOW_EXPIRED_ERROR
+              ? REVERSAL_WINDOW_EXPIRED_MESSAGE
+              : result.error === ACCOUNTING_PERIOD_LOCKED_ERROR
+                ? ACCOUNTING_PERIOD_LOCKED_MESSAGE
+                : result.message || result.error || "Could not correct payment."
+          );
       }
       const q = new URLSearchParams();
       if (res.locals.embed) q.set("embed", "1");
@@ -769,7 +970,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.post("/field-agent-pay-runs/:id/payments", requirePayRunAdmin, async (req, res, next) => {
+  router.post("/field-agent-pay-runs/:id/payments", requirePayRunWorkflowWrite, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -798,8 +999,16 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         createdByAdminUserId: adminId,
       });
       if (!result.ok) {
-        const msg = result.error || "Could not record payment.";
-        const code = /approved or paid/i.test(msg) ? 409 : 400;
+        const msg =
+          result.error === ACCOUNTING_PERIOD_LOCKED_ERROR
+            ? ACCOUNTING_PERIOD_LOCKED_MESSAGE
+            : result.message || result.error || "Could not record payment.";
+        const code =
+          result.error === PAY_RUN_CLOSED_ERROR ||
+          result.error === ACCOUNTING_PERIOD_LOCKED_ERROR ||
+          /approved or paid/i.test(String(result.error || ""))
+            ? 409
+            : 400;
         return res.status(code).type("text").send(msg);
       }
       const q = new URLSearchParams();
@@ -811,7 +1020,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.get("/field-agent-pay-runs/:id/statements/:fieldAgentId", requirePayRunAdmin, async (req, res, next) => {
+  router.get("/field-agent-pay-runs/:id/statements/:fieldAgentId", requirePayRunBeyondFinanceViewer, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const payRunId = Number(req.params.id);
@@ -846,7 +1055,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.get("/field-agent-pay-runs/:id/finance-detail", requirePayRunAdmin, async (req, res, next) => {
+  router.get("/field-agent-pay-runs/:id/finance-detail", requirePayRunAccess, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -956,10 +1165,10 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
   }
 
   /** CFO structured pack B: per-run ledger (same CSV on both paths). */
-  router.get("/field-agent-pay-runs/:id/cfo-exports/ledger.csv", requirePayRunAdmin, handleCfoPayRunLedgerCsvExport);
-  router.get("/field-agent-pay-runs/:id/finance-detail/export.csv", requirePayRunAdmin, handleCfoPayRunLedgerCsvExport);
+  router.get("/field-agent-pay-runs/:id/cfo-exports/ledger.csv", requirePayRunAccess, handleCfoPayRunLedgerCsvExport);
+  router.get("/field-agent-pay-runs/:id/finance-detail/export.csv", requirePayRunAccess, handleCfoPayRunLedgerCsvExport);
 
-  router.get("/field-agent-pay-runs/:id", requirePayRunAdmin, async (req, res, next) => {
+  router.get("/field-agent-pay-runs/:id", requirePayRunBeyondFinanceViewer, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -1041,7 +1250,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.post("/field-agent-pay-runs/:id/lock", requirePayRunAdmin, async (req, res, next) => {
+  router.post("/field-agent-pay-runs/:id/lock", requirePayRunWorkflowWrite, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -1069,7 +1278,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.post("/field-agent-pay-runs/:id/approve", requirePayRunAdmin, async (req, res, next) => {
+  router.post("/field-agent-pay-runs/:id/approve", requirePayRunWorkflowWrite, async (req, res, next) => {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);

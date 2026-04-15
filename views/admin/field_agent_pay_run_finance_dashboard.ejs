@@ -74,6 +74,71 @@
           </p>
         </section>
 
+        <% var _apHiddenPairs = []; if (typeof embed !== 'undefined' && embed) _apHiddenPairs.push(['embed', '1']); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') _apHiddenPairs.push(['tenant_id', String(tenantId)]); %>
+        <% var _apNow = new Date(); var _apCur = _apNow.getUTCFullYear() + '-' + ('0' + (_apNow.getUTCMonth() + 1)).slice(-2); %>
+        <section class="card card--mb-xl" style="padding:0.85rem;">
+          <h2 class="section-title section-title--flush">Accounting period lock</h2>
+          <p class="muted" style="margin-top:0;">Pay runs are tied to the UTC calendar month of <strong>period start</strong> (<code>YYYY-MM</code>). While a month is locked, new payments, reversals, and corrections are blocked for runs in that month.</p>
+          <% if (typeof accountingPeriodLockFlash !== 'undefined' && accountingPeriodLockFlash) { %>
+          <p class="admin-finance-notice" style="margin:0.75rem 0 0 0;padding:0.5rem 0.65rem;border-radius:0.35rem;background:rgba(0,100,180,0.08);font-size:0.9rem;">
+            <% if (accountingPeriodLockFlash === 'locked') { %>
+              Period <strong><%= typeof accountingPeriodLockFlashKey !== 'undefined' && accountingPeriodLockFlashKey ? accountingPeriodLockFlashKey : '—' %></strong> is now locked.
+            <% } else if (accountingPeriodLockFlash === 'unlocked') { %>
+              Period <strong><%= typeof accountingPeriodLockFlashKey !== 'undefined' && accountingPeriodLockFlashKey ? accountingPeriodLockFlashKey : '—' %></strong> is now unlocked.
+            <% } %>
+          </p>
+          <% } %>
+          <% var _laps = typeof lockedAccountingPeriods !== 'undefined' && lockedAccountingPeriods ? lockedAccountingPeriods : []; %>
+          <% if (_laps.length) { %>
+            <p style="margin:0.75rem 0 0.35rem 0;font-size:0.9rem;font-weight:600;">Locked periods</p>
+            <ul style="margin:0;padding-left:1.15rem;">
+              <% _laps.forEach(function (row) { %>
+              <li style="margin:0.25rem 0;">
+                <code><%= row.period_id %></code>
+                <% if (row.locked_at) { %>
+                  <span class="muted" style="font-size:0.85rem;"> — locked <%= new Date(row.locked_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></span>
+                <% } %>
+                <% if (typeof canManageAccountingPeriodLock !== 'undefined' && canManageAccountingPeriodLock) { %>
+                <form method="post" action="/admin/field-agent-pay-runs/accounting-periods/<%= encodeURIComponent(String(row.period_id)) %>/unlock" style="display:inline-flex;flex-wrap:wrap;align-items:center;gap:0.35rem;margin:0.25rem 0 0 0.35rem;vertical-align:middle;max-width:100%;">
+                  <% _apHiddenPairs.forEach(function (pair) { %><input type="hidden" name="<%= pair[0] %>" value="<%= pair[1] %>" /><% }); %>
+                  <input type="text" name="unlock_reason" required maxlength="4000" placeholder="Reason for unlock" title="Reason is required" class="input-field__control" style="min-width:10rem;max-width:18rem;font-size:0.8rem;padding:0.2rem 0.45rem;" autocomplete="off" />
+                  <button type="submit" class="button button--small" style="font-size:0.8rem;padding:0.2rem 0.5rem;">Unlock</button>
+                </form>
+                <% } %>
+              </li>
+              <% }); %>
+            </ul>
+          <% } else { %>
+            <p class="muted" style="margin:0.75rem 0 0 0;font-size:0.9rem;">No locked accounting periods for this region.</p>
+          <% } %>
+          <% if (typeof canManageAccountingPeriodLock !== 'undefined' && canManageAccountingPeriodLock) { %>
+          <form method="post" class="admin-filter-form" style="margin-top:0.85rem;align-items:flex-end;gap:0.65rem;flex-wrap:wrap;" action="#" onsubmit="(function(f){var i=f.querySelector('[name=period_key]');var v=(i&amp;&amp;i.value||'').trim();if(!/^\d{4}-\d{2}$/.test(v)){alert('Period must be YYYY-MM');return false;}f.action='/admin/field-agent-pay-runs/accounting-periods/'+encodeURIComponent(v)+'/lock';return true;})(this)">
+            <% _apHiddenPairs.forEach(function (pair) { %><input type="hidden" name="<%= pair[0] %>" value="<%= pair[1] %>" /><% }); %>
+            <div class="input-field" style="margin-bottom:0;">
+              <label class="input-field__label" for="ap_period_lock">Lock period (UTC month)</label>
+              <input id="ap_period_lock" name="period_key" type="text" class="input-field__control" style="max-width:9rem;" placeholder="2026-03" value="<%= _apCur %>" pattern="\d{4}-\d{2}" maxlength="7" autocomplete="off" />
+            </div>
+            <button type="submit" class="button">Lock period</button>
+          </form>
+          <% } %>
+          <% var _foe = typeof recentFinanceOverrideEvents !== 'undefined' && recentFinanceOverrideEvents ? recentFinanceOverrideEvents : []; %>
+          <% if (_foe.length) { %>
+          <div style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid rgba(0,0,0,0.08);">
+            <p style="margin:0 0 0.35rem 0;font-size:0.9rem;font-weight:600;">Recent finance overrides (audit)</p>
+            <ul style="margin:0;padding-left:1.1rem;font-size:0.85rem;list-style:disc;">
+              <% _foe.forEach(function (ev) { %>
+              <li style="margin:0.4rem 0;">
+                <code><%= ev.action_type %></code>
+                <span class="muted"> — <%= ev.created_at ? new Date(ev.created_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></span>
+                <% if (ev.pay_run_id) { %> · <a href="/admin/field-agent-pay-runs/<%= ev.pay_run_id %><% if (typeof embed !== 'undefined' && embed) { %>?embed=1<% } %>">Run #<%= ev.pay_run_id %></a><% } %>
+                <div class="muted" style="margin-top:0.15rem;word-break:break-word;"><%= String(ev.reason || '').slice(0, 280) %><%= String(ev.reason || '').length > 280 ? '…' : '' %></div>
+              </li>
+              <% }); %>
+            </ul>
+          </div>
+          <% } %>
+        </section>
+
         <% var _prQs = []; if (typeof embed !== 'undefined' && embed) _prQs.push('embed=1'); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') _prQs.push('tenant_id=' + tenantId); %>
         <p class="card card--mb-xl" style="padding:0.75rem 1rem;">
           <a href="/admin/field-agent-pay-runs<% if (_prQs.length) { %>?<%= _prQs.join('&') %><% } %>">← Pay runs (draft / workflow)</a>

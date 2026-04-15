@@ -198,7 +198,17 @@ module.exports = function registerAdminSuperRoutes(router) {
       return res.render("admin/super_user_form", {
         error: null,
         tenants,
-        roles: [ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.CSR, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER],
+        roles: [
+          ROLES.SUPER_ADMIN,
+          ROLES.TENANT_MANAGER,
+          ROLES.CSR,
+          ROLES.TENANT_EDITOR,
+          ROLES.TENANT_AGENT,
+          ROLES.TENANT_VIEWER,
+          ROLES.FINANCE_VIEWER,
+          ROLES.FINANCE_OPERATOR,
+          ROLES.FINANCE_MANAGER,
+        ],
       });
     } catch (e) {
       return next(e);
@@ -235,9 +245,17 @@ module.exports = function registerAdminSuperRoutes(router) {
     }
 
     if (
-      ![ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER].includes(
-        role
-      )
+      ![
+        ROLES.SUPER_ADMIN,
+        ROLES.TENANT_MANAGER,
+        ROLES.CSR,
+        ROLES.TENANT_EDITOR,
+        ROLES.TENANT_AGENT,
+        ROLES.TENANT_VIEWER,
+        ROLES.FINANCE_VIEWER,
+        ROLES.FINANCE_OPERATOR,
+        ROLES.FINANCE_MANAGER,
+      ].includes(role)
     ) {
       return res.status(400).send("Invalid role.");
     }
@@ -294,7 +312,17 @@ module.exports = function registerAdminSuperRoutes(router) {
         error: null,
         saved,
         tenants,
-        roles: [ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.CSR, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER],
+        roles: [
+          ROLES.SUPER_ADMIN,
+          ROLES.TENANT_MANAGER,
+          ROLES.CSR,
+          ROLES.TENANT_EDITOR,
+          ROLES.TENANT_AGENT,
+          ROLES.TENANT_VIEWER,
+          ROLES.FINANCE_VIEWER,
+          ROLES.FINANCE_OPERATOR,
+          ROLES.FINANCE_MANAGER,
+        ],
         currentUserId: req.session.adminUser.id,
         currentTenantLabel,
       });
@@ -333,9 +361,17 @@ module.exports = function registerAdminSuperRoutes(router) {
       if (!okTenant) return res.status(400).send("Invalid tenant.");
     }
     if (
-      ![ROLES.SUPER_ADMIN, ROLES.TENANT_MANAGER, ROLES.TENANT_EDITOR, ROLES.TENANT_AGENT, ROLES.TENANT_VIEWER].includes(
-        role
-      )
+      ![
+        ROLES.SUPER_ADMIN,
+        ROLES.TENANT_MANAGER,
+        ROLES.CSR,
+        ROLES.TENANT_EDITOR,
+        ROLES.TENANT_AGENT,
+        ROLES.TENANT_VIEWER,
+        ROLES.FINANCE_VIEWER,
+        ROLES.FINANCE_OPERATOR,
+        ROLES.FINANCE_MANAGER,
+      ].includes(role)
     ) {
       return res.status(400).send("Invalid role.");
     }

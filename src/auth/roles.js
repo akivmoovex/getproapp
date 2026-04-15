@@ -9,6 +9,12 @@ const ROLES = {
   TENANT_VIEWER: "tenant_viewer",
   /** Read-only demo / end-user console (same effective permissions as tenant_viewer). */
   END_USER: "end_user",
+  /** Pay-run finance: read-only (finance dashboard + finance detail). */
+  FINANCE_VIEWER: "finance_viewer",
+  /** Pay-run finance: reverse/correct payment ledger lines (policy + routes). */
+  FINANCE_OPERATOR: "finance_operator",
+  /** Pay-run finance: soft-close runs; reversal window override; includes operator-level actions. */
+  FINANCE_MANAGER: "finance_manager",
 };
 
 const ALL_ROLES = Object.values(ROLES);
@@ -151,6 +157,46 @@ function canCorrectFieldAgentSubmissions(role) {
   return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER;
 }
 
+/** Any pay-run finance UI (nav + gated routes): tenant managers / super admin, or finance_* roles. */
+function canAccessPayRunSection(role) {
+  if (canManageTenantUsers(role)) return true;
+  const n = normalizeRole(role);
+  return n === ROLES.FINANCE_VIEWER || n === ROLES.FINANCE_OPERATOR || n === ROLES.FINANCE_MANAGER;
+}
+
+function isPayRunFinanceViewerOnly(role) {
+  return normalizeRole(role) === ROLES.FINANCE_VIEWER;
+}
+
+/** Create/lock/approve pay runs, record payments, previews — tenant admin + super admin only. */
+function canPayRunWorkflowWrite(role) {
+  return canManageTenantUsers(role);
+}
+
+/** Reverse/correct ledger lines. */
+function canPayRunReverseOrCorrect(role) {
+  if (canManageTenantUsers(role)) return true;
+  const n = normalizeRole(role);
+  return n === ROLES.FINANCE_OPERATOR || n === ROLES.FINANCE_MANAGER;
+}
+
+/** Soft-close pay runs (mark closed). */
+function canPayRunCloseRun(role) {
+  if (canManageTenantUsers(role)) return true;
+  return normalizeRole(role) === ROLES.FINANCE_MANAGER;
+}
+
+/** Bypass reversal-age window (routes pass to repo). */
+function canPayRunOverrideReversalWindow(role) {
+  if (canManageTenantUsers(role)) return true;
+  return normalizeRole(role) === ROLES.FINANCE_MANAGER;
+}
+
+/** Lock/unlock accounting periods (month). */
+function canManageAccountingPeriodLock(role) {
+  return isSuperAdmin(role) || normalizeRole(role) === ROLES.FINANCE_MANAGER;
+}
+
 /**
  * “New Project” intake (admin): search clients, create clients, create projects.
  * GET access mirrors CRM (all tenant roles incl. viewer). Mutations use canMutateCrm (excludes tenant_viewer).
@@ -189,4 +235,11 @@ module.exports = {
   canViewTenantWideLeadProgress,
   canMutateCompanyFieldAgentLinkage,
   canCorrectFieldAgentSubmissions,
+  canAccessPayRunSection,
+  isPayRunFinanceViewerOnly,
+  canPayRunWorkflowWrite,
+  canPayRunReverseOrCorrect,
+  canPayRunCloseRun,
+  canPayRunOverrideReversalWindow,
+  canManageAccountingPeriodLock,
 };
