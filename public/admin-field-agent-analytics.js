@@ -8,10 +8,12 @@
   var lastListHtml = "";
   var lastDetailRequest = null;
   var activeListState = null;
+  var pendingFeedback = null;
   var searchDebounce = null;
   var DEBOUNCE_MS = 300;
   var BULK_ENDPOINT = "/admin/field-agent-analytics/drilldown/submissions/bulk-action";
   var PRESET_ENDPOINT = "/admin/field-agent-analytics/presets";
+  var BULK_CONFIRM_LARGE_THRESHOLD = 25;
 
   function getFilterQuery() {
     var p = new URLSearchParams(window.location.search || "");
@@ -59,6 +61,42 @@
     overlayBody.innerHTML = html;
     overlayBody.setAttribute("aria-busy", "false");
     focusInOverlay();
+  }
+
+  function feedbackEl() {
+    return overlayBody.querySelector("[data-faa-feedback='1']");
+  }
+
+  function clearFeedback() {
+    var el = feedbackEl();
+    if (!el) return;
+    el.hidden = true;
+    el.className = "card card--mb-md";
+    el.removeAttribute("role");
+    el.textContent = "";
+  }
+
+  function showFeedback(kind, message) {
+    var el = feedbackEl();
+    if (!el) return;
+    el.hidden = false;
+    el.className = "card card--mb-md";
+    if (kind === "error") {
+      el.classList.add("faa-state", "faa-state--error");
+      el.setAttribute("role", "alert");
+    } else {
+      el.classList.add("faa-state", "faa-state--success");
+      el.setAttribute("role", "status");
+    }
+    el.textContent = message;
+  }
+
+  function actionPastTense(action) {
+    if (action === "approve") return "approved";
+    if (action === "reject") return "rejected";
+    if (action === "appeal") return "appealed";
+    if (action === "info_needed") return "marked info needed";
+    return "updated";
   }
 
   function openOverlay() {
@@ -157,6 +195,11 @@
         lastListHtml = html;
         overlayBody.innerHTML = html;
         overlayBody.setAttribute("aria-busy", "false");
+        clearFeedback();
+        if (pendingFeedback && pendingFeedback.message) {
+          showFeedback(pendingFeedback.kind || "success", pendingFeedback.message);
+          pendingFeedback = null;
+        }
         syncBulkToolbar();
         focusInOverlay();
       })
@@ -187,6 +230,10 @@
       .then(function (html) {
         overlayBody.innerHTML = html;
         overlayBody.setAttribute("aria-busy", "false");
+        if (pendingFeedback && pendingFeedback.message) {
+          showFeedback(pendingFeedback.kind || "success", pendingFeedback.message);
+          pendingFeedback = null;
+        }
         focusInOverlay();
       })
       .catch(function () {
@@ -256,7 +303,15 @@
     var bulkAction = e.target && e.target.getAttribute ? e.target.getAttribute("data-faa-bulk-action") : null;
     if (bulkAction) {
       e.preventDefault();
-      runBulkAction(String(bulkAction));
+      runBulkAction(String(bulkAction), null);
+      return;
+    }
+    var inlineAction = e.target && e.target.getAttribute ? e.target.getAttribute("data-faa-inline-action") : null;
+    if (inlineAction) {
+      e.preventDefault();
+      var inlineId = Number(e.target.getAttribute("data-faa-id") || "0");
+      if (!Number.isFinite(inlineId) || inlineId < 1) return;
+      runBulkAction(String(inlineAction), [inlineId]);
       return;
     }
     if (e.target && e.target.getAttribute && e.target.getAttribute("data-faa-preset-save") === "1") {
@@ -394,6 +449,45 @@
 
   overlayBody.addEventListener("submit", function (e) {
     var form = e.target;
+    if (form && form.getAttribute && form.getAttribute("data-faa-correction-form") === "1") {
+      e.preventDefault();
+      var sid = form.getAttribute("data-faa-submission-id") || "";
+      var targetEl = form.querySelector("[name='target_status']");
+      var reasonEl = form.querySelector("[name='reason']");
+      var commEl = form.querySelector("[name='commission_amount']");
+      var target = targetEl ? String(targetEl.value || "").trim() : "";
+      var reason = reasonEl ? String(reasonEl.value || "").trim() : "";
+      if (!target || !reason) {
+        showFeedback("error", "Select a target status and enter a reason.");
+        return;
+      }
+      var body = { target_status: target, reason: reason };
+      if (commEl && String(commEl.value || "").trim() !== "" && target === "approved") {
+        var c = Number(commEl.value);
+        if (Number.isFinite(c) && c >= 0) body.commission_amount = c;
+      }
+      clearFeedback();
+      fetch("/admin/field-agent-analytics/drilldown/submissions/" + encodeURIComponent(sid) + "/correct", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(body),
+      })
+        .then(function (r) {
+          return r.json().then(function (j) {
+            if (!r.ok || !j.ok) throw new Error((j && j.error) || "Correction failed.");
+            return j;
+          });
+        })
+        .then(function () {
+          pendingFeedback = { kind: "success", message: "Correction applied." };
+          openDetail("submissions", sid);
+        })
+        .catch(function (err) {
+          showFeedback("error", err.message || "Correction failed.");
+        });
+      return;
+    }
     if (!form || !form.matches || !form.matches("[data-faa-filter-form='1']")) return;
     e.preventDefault();
     applyFiltersFromForm(form, true);
@@ -410,7 +504,7 @@
     var n = selected.length;
     bar.hidden = n < 1;
     var countEl = overlayBody.querySelector("#faa_bulk_selected_count");
-    if (countEl) countEl.textContent = n + " selected";
+    if (countEl) countEl.textContent = n + " submission" + (n === 1 ? "" : "s") + " selected";
     var selectAll = overlayBody.querySelector("[data-faa-select-all='1']");
     if (selectAll) {
       var rows = overlayBody.querySelectorAll("[data-faa-select-row='1']");
@@ -418,18 +512,33 @@
       selectAll.indeterminate = n > 0 && n < total;
       selectAll.checked = total > 0 && n === total;
     }
+    var labels = {
+      approve: n > 0 ? "Approve " + n + " submission" + (n === 1 ? "" : "s") : "Approve selected submissions",
+      info_needed: n > 0 ? "Mark " + n + " submission" + (n === 1 ? "" : "s") + " info needed" : "Mark info needed",
+      reject: n > 0 ? "Reject " + n + " submission" + (n === 1 ? "" : "s") : "Reject selected submissions",
+      appeal: n > 0 ? "Appeal " + n + " submission" + (n === 1 ? "" : "s") : "Appeal selected submissions",
+    };
+    Object.keys(labels).forEach(function (action) {
+      var btn = overlayBody.querySelector("[data-faa-bulk-action='" + action + "']");
+      if (!btn) return;
+      btn.textContent = labels[action];
+      btn.setAttribute("aria-label", labels[action]);
+    });
   }
 
-  function runBulkAction(action) {
+  function runBulkAction(action, explicitIds) {
     if (!activeListState || activeListState.kind !== "submissions") return;
-    var checked = selectedRowCheckboxes();
-    if (!checked.length) return;
-    var ids = checked.map(function (el) {
-      return Number(el.value);
-    }).filter(function (n) {
-      return Number.isFinite(n) && n > 0;
-    });
+    var ids = Array.isArray(explicitIds) && explicitIds.length
+      ? explicitIds.slice()
+      : selectedRowCheckboxes().map(function (el) { return Number(el.value); });
+    ids = ids.filter(function (n) { return Number.isFinite(n) && n > 0; });
     if (!ids.length) return;
+    var bar = overlayBody.querySelector("[data-faa-bulk-toolbar='1']");
+    var maxIds = bar ? Number(bar.getAttribute("data-faa-bulk-max-ids") || "0") : 0;
+    if (Number.isFinite(maxIds) && maxIds > 0 && ids.length > maxIds) {
+      showFeedback("error", "Too many selected rows for one bulk action. Select up to " + maxIds + " and try again.");
+      return;
+    }
 
     var labels = {
       approve: "Approve",
@@ -440,17 +549,23 @@
     var label = labels[action] || action;
     var reason = "";
     if (action === "reject") {
-      reason = window.prompt("Provide a rejection reason for selected submissions:", "");
+      var targetLabel = ids.length === 1 ? "submission" : "selected submissions";
+      reason = window.prompt("Provide a rejection reason for " + targetLabel + ":", "");
       if (reason == null) return;
       reason = String(reason).trim();
       if (!reason) {
-        window.alert("Rejection reason is required.");
+        showFeedback("error", "Rejection reason is required.");
         return;
       }
     }
-    var ok = window.confirm(label + " " + ids.length + " selected submissions?");
+    if (ids.length >= BULK_CONFIRM_LARGE_THRESHOLD) {
+      var largeOk = window.confirm("Large bulk action: " + ids.length + " submissions selected. Continue?");
+      if (!largeOk) return;
+    }
+    var ok = window.confirm(label + " " + ids.length + " submission" + (ids.length === 1 ? "" : "s") + "?");
     if (!ok) return;
 
+    clearFeedback();
     renderState("loading", "Applying bulk action...");
     fetch(BULK_ENDPOINT, {
       method: "POST",
@@ -477,19 +592,25 @@
         });
       })
       .then(function (j) {
-        var msg = "Processed " + j.processed + ". Succeeded: " + j.succeeded + ". Failed: " + j.failed + ".";
+        var msg = "";
+        if (j.failed === 0) {
+          msg = j.succeeded + " submission" + (j.succeeded === 1 ? "" : "s") + " " + actionPastTense(action) + ".";
+        } else {
+          msg = j.succeeded + " succeeded, " + j.failed + " failed.";
+        }
         if (j.failed > 0 && Array.isArray(j.results)) {
           var fails = j.results.filter(function (x) { return !x.ok; }).slice(0, 5);
           if (fails.length) {
-            msg += "\nExamples: " + fails.map(function (x) {
+            msg += " Failed examples: " + fails.map(function (x) {
               return "#" + x.id + " " + (x.error || "failed");
-            }).join("; ");
+            }).join(" | ");
           }
         }
-        window.alert(msg);
+        pendingFeedback = { kind: j.failed > 0 ? "error" : "success", message: msg };
         openDrilldown(activeListState.kind, activeListState.bucket, activeListState.filters);
       })
       .catch(function (err) {
+        showFeedback("error", err.message || "Bulk action failed.");
         renderState("error", err.message || "Bulk action failed.", { backToList: true });
       });
   }

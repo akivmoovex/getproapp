@@ -58,6 +58,9 @@
         <% if (typeof flashPaid !== 'undefined' && flashPaid) { %>
           <p class="admin-gate-success" role="status">Recorded as paid in this system (not a bank confirmation).</p>
         <% } %>
+        <% if (typeof flashPaymentRecorded !== 'undefined' && flashPaymentRecorded) { %>
+          <p class="admin-gate-success" role="status">Payment event recorded in reconciliation ledger.</p>
+        <% } %>
         <% if (typeof flashAdjustment !== 'undefined' && flashAdjustment) { %>
           <p class="admin-gate-success" role="status">Adjustment recorded. Original snapshot rows were not changed.</p>
         <% } %>
@@ -102,6 +105,101 @@
           <p class="muted"><strong>Last export:</strong> <%= new Date(run.export_generated_at).toLocaleString() %> <% if (run.export_format) { %>(<%= run.export_format %>)<% } %></p>
           <% } %>
           <% if (run.notes) { %><p><strong>Notes:</strong> <%= run.notes %></p><% } %>
+        </section>
+
+        <% var _rec = (typeof reconciliation !== 'undefined' && reconciliation) ? reconciliation : null; %>
+        <% var _payments = (typeof payments !== 'undefined' && payments) ? payments : []; %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Reconciliation ledger</h2>
+          <% if (_rec) { %>
+          <div class="admin-table-wrap" style="margin-bottom:0.75rem;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Frozen payable total</th>
+                  <th>Total paid</th>
+                  <th>Outstanding</th>
+                  <th>Reconciliation status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong><%= Number(_rec.run_payable_total || 0).toFixed(2) %></strong></td>
+                  <td><strong><%= Number(_rec.total_paid_amount || 0).toFixed(2) %></strong></td>
+                  <td><strong><%= Number(_rec.outstanding_amount || 0).toFixed(2) %></strong></td>
+                  <td><span style="font-weight:600;"><%= _rec.reconciliation_status %></span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <% } %>
+
+          <% if (run.status === 'approved' || run.status === 'paid') { %>
+          <details style="margin-bottom:0.9rem;">
+            <summary style="cursor:pointer;font-weight:600;">Record payment event</summary>
+            <form method="post" action="/admin/field-agent-pay-runs/<%= run.id %>/payments" style="margin-top:0.6rem;">
+              <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+              <div class="admin-filter-form admin-filter-form__grid">
+                <div class="input-field">
+                  <label class="input-field__label" for="payment_date">Payment date</label>
+                  <input id="payment_date" class="input-field__control" name="payment_date" type="date" required />
+                </div>
+                <div class="input-field">
+                  <label class="input-field__label" for="payment_amount">Amount</label>
+                  <input id="payment_amount" class="input-field__control" name="amount" type="number" min="0.01" step="0.01" required />
+                </div>
+                <div class="input-field">
+                  <label class="input-field__label" for="payment_method">Method</label>
+                  <input id="payment_method" class="input-field__control" name="payment_method" type="text" maxlength="200" placeholder="Bank transfer / cash / mobile money" />
+                </div>
+                <div class="input-field">
+                  <label class="input-field__label" for="payment_reference">Reference</label>
+                  <input id="payment_reference" class="input-field__control" name="payment_reference" type="text" maxlength="2000" placeholder="Transaction ID / batch reference" />
+                </div>
+              </div>
+              <div class="input-field" style="margin:0.5rem 0;">
+                <label class="input-field__label" for="payment_notes">Notes (optional)</label>
+                <textarea id="payment_notes" class="input-field__control" name="notes" rows="2" maxlength="4000"></textarea>
+              </div>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Add payment event' }) %>
+            </form>
+          </details>
+          <% } else { %>
+          <p class="muted" style="margin:0 0 0.75rem 0;">Payment events can be recorded only for approved or paid runs.</p>
+          <% } %>
+
+          <h3 class="section-title section-title--flush" style="font-size:1rem;">Payment history</h3>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Reference</th>
+                  <th>Notes</th>
+                  <th>Recorded by</th>
+                  <th>Created at</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!_payments.length) { %>
+                <tr><td colspan="7" class="muted">No payment events recorded.</td></tr>
+                <% } %>
+                <% _payments.forEach(function (p) { %>
+                <tr>
+                  <td><%= p.payment_date ? new Date(p.payment_date).toISOString().slice(0, 10) : '—' %></td>
+                  <td><strong><%= Number(p.amount || 0).toFixed(2) %></strong></td>
+                  <td><%= p.payment_method || '—' %></td>
+                  <td><%= p.payment_reference || '—' %></td>
+                  <td><%= p.notes || '—' %></td>
+                  <td><%= (p.created_by_admin_user_id && actorLabels && actorLabels[p.created_by_admin_user_id]) ? actorLabels[p.created_by_admin_user_id] : (p.created_by_admin_user_id ? ('#' + p.created_by_admin_user_id) : '—') %></td>
+                  <td><%= p.created_at ? new Date(p.created_at).toLocaleString() : '—' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <% if (run.status === 'draft' && items && items.length) { %>

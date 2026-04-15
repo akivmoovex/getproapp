@@ -405,6 +405,10 @@ module.exports = function registerAdminCrmRoutes(router) {
       tenantId: ctx.tid,
       submissionId: ctx.submission.id,
       commissionAmount: commission,
+      auditContext: {
+        adminUserId: req.session.adminUser.id,
+        metadata: String(rawCommission).trim() !== "" ? { commission_amount: commission } : undefined,
+      },
     });
     if (!ok) {
       return res.status(400).type("text").send("Could not approve — submission is not awaiting a decision.");
@@ -436,6 +440,7 @@ module.exports = function registerAdminCrmRoutes(router) {
       tenantId: ctx.tid,
       submissionId: ctx.submission.id,
       rejectionReason: reason,
+      auditContext: { adminUserId: req.session.adminUser.id },
     });
     if (!ok) {
       return res.status(400).type("text").send("Could not reject — submission is not awaiting a decision.");
@@ -466,6 +471,7 @@ module.exports = function registerAdminCrmRoutes(router) {
     const ok = await fieldAgentSubmissionsRepo.markFieldAgentSubmissionInfoNeeded(ctx.pool, {
       tenantId: ctx.tid,
       submissionId: ctx.submission.id,
+      auditContext: { adminUserId: req.session.adminUser.id },
     });
     if (!ok) {
       return res.status(400).type("text").send("Could not mark info needed — use pending or appealed submissions.");
@@ -490,6 +496,7 @@ module.exports = function registerAdminCrmRoutes(router) {
     const ok = await fieldAgentSubmissionsRepo.markFieldAgentSubmissionAppealed(ctx.pool, {
       tenantId: ctx.tid,
       submissionId: ctx.submission.id,
+      auditContext: { adminUserId: req.session.adminUser.id },
     });
     if (!ok) {
       return res.status(400).type("text").send("Could not mark appealed — submission must be rejected.");

@@ -42,7 +42,7 @@ async function assertTenantAccessible(pool, req, tenantId) {
   return Number(getAdminTenantId(req)) === tid;
 }
 
-async function loadActorLabels(pool, run) {
+async function loadActorLabels(pool, run, paymentRows) {
   if (!run) return {};
   const ids = [
     run.created_by_admin_user_id,
@@ -52,6 +52,12 @@ async function loadActorLabels(pool, run) {
   ]
     .map((x) => (x != null ? Number(x) : null))
     .filter((x) => x != null && Number.isFinite(x) && x > 0);
+  if (Array.isArray(paymentRows)) {
+    paymentRows.forEach((row) => {
+      const id = row && row.created_by_admin_user_id != null ? Number(row.created_by_admin_user_id) : null;
+      if (id != null && Number.isFinite(id) && id > 0) ids.push(id);
+    });
+  }
   const uniq = [...new Set(ids)];
   const labels = {};
   await Promise.all(
@@ -290,7 +296,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
       const body = req.body || {};
       const payoutReference = body.payout_reference;
       const payoutNotes = body.payout_notes;
-      const result = await fieldAgentPayRunRepo.markPayRunApprovedAsPaid(pool, id, tid, adminId, {
+      const result = await fieldAgentPayRunRepo.markPayRunApprovedAsPaidViaLedger(pool, id, tid, adminId, {
         payoutReference,
         payoutNotes,
       });
@@ -300,6 +306,67 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
       const q = new URLSearchParams();
       if (res.locals.embed) q.set("embed", "1");
       q.set("paid", "1");
+      return res.redirect(302, `/admin/field-agent-pay-runs/${id}?${q.toString()}`);
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.get("/field-agent-pay-runs/:id/reconciliation", requirePayRunAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 1) return res.status(404).type("text").send("Not found.");
+      const runProbe = await fieldAgentPayRunRepo.getPayRunById(pool, id);
+      if (!runProbe) return res.status(404).type("text").send("Not found.");
+      const tid = Number(runProbe.tenant_id);
+      if (!(await assertTenantAccessible(pool, req, tid))) {
+        return res.status(403).type("text").send("You do not have access to this pay run.");
+      }
+      const reconciliation = await fieldAgentPayRunRepo.getPayRunReconciliationSummary(pool, id, tid);
+      const payments = await fieldAgentPayRunRepo.listPaymentsForPayRun(pool, id, tid, 300);
+      return res.json({ ok: true, reconciliation, payments });
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.post("/field-agent-pay-runs/:id/payments", requirePayRunAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 1) return res.status(400).type("text").send("Invalid id.");
+      const runProbe = await fieldAgentPayRunRepo.getPayRunById(pool, id);
+      if (!runProbe) return res.status(404).type("text").send("Not found.");
+      const tid = Number(runProbe.tenant_id);
+      if (!(await assertTenantAccessible(pool, req, tid))) {
+        return res.status(403).type("text").send("You do not have access to this pay run.");
+      }
+      const body = req.body || {};
+      const amount = Number(body.amount);
+      const paymentDate = String(body.payment_date || "").trim();
+      const paymentMethod = body.payment_method != null ? String(body.payment_method) : "";
+      const paymentReference = body.payment_reference != null ? String(body.payment_reference) : "";
+      const notes = body.notes != null ? String(body.notes) : "";
+      const adminId = req.session.adminUser && req.session.adminUser.id != null ? Number(req.session.adminUser.id) : null;
+      const result = await fieldAgentPayRunRepo.addPaymentForPayRun(pool, {
+        payRunId: id,
+        tenantId: tid,
+        paymentDate,
+        amount,
+        paymentMethod,
+        paymentReference,
+        notes,
+        createdByAdminUserId: adminId,
+      });
+      if (!result.ok) {
+        const msg = result.error || "Could not record payment.";
+        const code = /approved or paid/i.test(msg) ? 409 : 400;
+        return res.status(code).type("text").send(msg);
+      }
+      const q = new URLSearchParams();
+      if (res.locals.embed) q.set("embed", "1");
+      q.set("payment_recorded", "1");
       return res.redirect(302, `/admin/field-agent-pay-runs/${id}?${q.toString()}`);
     } catch (e) {
       return next(e);
@@ -355,7 +422,9 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
       const run = await fieldAgentPayRunRepo.getPayRunByIdForTenant(pool, id, tid);
       if (!run) return res.status(404).type("text").send("Not found.");
       const items = await fieldAgentPayRunRepo.listItemsForPayRun(pool, id, tid);
-      const actorLabels = await loadActorLabels(pool, run);
+      const reconciliation = await fieldAgentPayRunRepo.getPayRunReconciliationSummary(pool, id, tid);
+      const payments = await fieldAgentPayRunRepo.listPaymentsForPayRun(pool, id, tid, 300);
+      const actorLabels = await loadActorLabels(pool, run, payments);
       const adjRows = await fieldAgentPayRunAdjustmentsRepo.listAdjustmentsForOriginalPayRun(pool, tid, id);
       const adjustmentsByItemId = {};
       for (const a of adjRows) {
@@ -375,6 +444,8 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         activeNav: "field_agent_pay_runs",
         run,
         items,
+        reconciliation,
+        payments,
         actorLabels,
         adjustmentsByItemId,
         carriedAdjustmentsByFieldAgentId,
@@ -384,6 +455,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         flashLocked: req.query.locked === "1",
         flashApproved: req.query.approved === "1",
         flashPaid: req.query.paid === "1",
+        flashPaymentRecorded: req.query.payment_recorded === "1",
         flashAdjustment: req.query.adjustment === "1",
         embed: !!res.locals.embed,
       });

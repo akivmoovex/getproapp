@@ -1,5 +1,6 @@
 "use strict";
 
+// In-memory timing + counters for /admin/field-agent-analytics only. Logs must stay PII-safe; see docs/field-agent-analytics-runbook.md §9.
 const SLOW_QUERY_MS = Math.max(Number(process.env.FA_ANALYTICS_SLOW_QUERY_MS || 200), 1);
 const SLOW_ENDPOINT_MS = Math.max(Number(process.env.FA_ANALYTICS_SLOW_ENDPOINT_MS || 500), 1);
 const LOG_PREFIX = "[FA_ANALYTICS]";
@@ -8,6 +9,8 @@ const counters = {
   endpointRequests: Object.create(null),
   slowQueries: 0,
   slowEndpoints: 0,
+  queryErrors: 0,
+  endpointErrors: 0,
 };
 
 function nowMs() {
@@ -15,6 +18,9 @@ function nowMs() {
 }
 
 function safeLog(level, payload) {
+  const t = payload && payload.type ? String(payload.type) : "";
+  if (t === "query_error") counters.queryErrors += 1;
+  if (t === "endpoint_error") counters.endpointErrors += 1;
   const fn = level === "error" ? console.error : level === "info" ? console.info : console.warn;
   fn(`${LOG_PREFIX} ${JSON.stringify(payload)}`);
 }
@@ -129,6 +135,8 @@ function getCounters() {
     endpointRequests: { ...counters.endpointRequests },
     slowQueries: counters.slowQueries,
     slowEndpoints: counters.slowEndpoints,
+    queryErrors: counters.queryErrors,
+    endpointErrors: counters.endpointErrors,
   };
 }
 

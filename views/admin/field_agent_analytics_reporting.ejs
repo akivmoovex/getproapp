@@ -96,6 +96,9 @@
           <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">
             Mapped datasets export their underlying row set. Example: approval-rate and commission exports map to decided/approved submission rows.
           </p>
+          <p class="muted" style="margin-top:0.35rem;font-size:0.9rem;">
+            Safety cap: exports are limited to <%= Number((exportGuard && exportGuard.max_rows) || 5000) %> rows per request. Narrow filters if needed.
+          </p>
         </section>
       </div>
     </main>

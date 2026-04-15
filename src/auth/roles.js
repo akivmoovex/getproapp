@@ -145,6 +145,12 @@ function canMutateCompanyFieldAgentLinkage(role) {
   return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER;
 }
 
+/** Manual status corrections / dispute resolution on field-agent submissions (analytics + audit). Manager or super admin only. */
+function canCorrectFieldAgentSubmissions(role) {
+  const n = normalizeRole(role);
+  return n === ROLES.SUPER_ADMIN || n === ROLES.TENANT_MANAGER;
+}
+
 /**
  * “New Project” intake (admin): search clients, create clients, create projects.
  * GET access mirrors CRM (all tenant roles incl. viewer). Mutations use canMutateCrm (excludes tenant_viewer).
@@ -182,4 +188,5 @@ module.exports = {
   canValidateDeals,
   canViewTenantWideLeadProgress,
   canMutateCompanyFieldAgentLinkage,
+  canCorrectFieldAgentSubmissions,
 };

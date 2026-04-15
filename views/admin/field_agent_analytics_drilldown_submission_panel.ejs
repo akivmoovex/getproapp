@@ -1,6 +1,7 @@
 <div class="card faa-detail-panel">
   <h3 id="faa_detail_title" class="admin-dashboard-panel__title" tabindex="-1" style="margin-bottom:0.35rem;">Submission #<%= row.id %></h3>
   <p class="muted faa-detail-panel__hint">Read-only drill-down detail.</p>
+  <div data-faa-feedback="1" role="status" aria-live="polite" style="margin:0.5rem 0;padding:0.5rem 0.65rem;border-radius:4px;" hidden></div>
   <dl class="admin-fa-linkage-readonly" style="margin:0;">
     <div style="display:grid;grid-template-columns:14rem 1fr;gap:0.5rem 1rem;align-items:start;">
       <dt class="muted" style="margin:0;">Created</dt>
@@ -37,4 +38,72 @@
       <% } %>
     </div>
   </dl>
+  <% var _canCorrect = typeof canCorrectSubmissions !== 'undefined' && canCorrectSubmissions; %>
+  <% if (_canCorrect) { %>
+  <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(0,0,0,0.08);">
+    <h4 class="admin-dashboard-panel__title" style="font-size:1rem;margin:0 0 0.35rem 0;">Correction / dispute resolution</h4>
+    <p class="muted" style="margin:0 0 0.75rem 0;font-size:0.85rem;">
+      Override status when a decision was wrong or disputed. Requires a reason; all corrections are appended to the audit trail.
+    </p>
+    <form data-faa-correction-form="1" data-faa-submission-id="<%= row.id %>" style="display:grid;gap:0.65rem;max-width:32rem;">
+      <div class="input-field">
+        <label class="input-field__label" for="faa_correct_target">New status</label>
+        <select id="faa_correct_target" name="target_status" class="input-field__control" required aria-required="true">
+          <option value="" disabled selected>Select target status</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="info_needed">Info needed</option>
+          <option value="appealed">Appealed (from rejected only)</option>
+        </select>
+      </div>
+      <div class="input-field">
+        <label class="input-field__label" for="faa_correct_commission">Commission if approving (optional)</label>
+        <input id="faa_correct_commission" name="commission_amount" type="number" class="input-field__control" min="0" step="0.01" placeholder="0" />
+      </div>
+      <div class="input-field">
+        <label class="input-field__label" for="faa_correct_reason">Reason (required)</label>
+        <textarea id="faa_correct_reason" name="reason" class="input-field__control" rows="3" required aria-required="true" placeholder="Explain the correction or dispute resolution…"></textarea>
+      </div>
+      <div class="input-field input-field--actions">
+        <button type="submit" class="btn btn--primary" data-faa-correction-submit="1">Apply correction</button>
+      </div>
+    </form>
+  </div>
+  <% } %>
+  <% var _ah = typeof auditHistory !== 'undefined' && auditHistory ? auditHistory : []; %>
+  <% if (_ah.length) { %>
+  <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(0,0,0,0.08);">
+    <h4 class="admin-dashboard-panel__title" style="font-size:1rem;margin:0 0 0.5rem 0;">Action history</h4>
+    <p class="muted" style="margin:0 0 0.75rem 0;font-size:0.85rem;">Recorded moderation actions for this submission (newest first).</p>
+    <ul class="faa-audit-history" style="list-style:none;margin:0;padding:0;">
+      <% _ah.forEach(function (a) { %>
+      <% var _corr = a.metadata && a.metadata.correction === true; %>
+      <li style="margin-bottom:0.65rem;padding-bottom:0.65rem;border-bottom:1px solid rgba(0,0,0,0.06);<%= _corr ? ' background:rgba(255,248,220,0.35);' : '' %>">
+        <div style="font-weight:600;">
+          <%= a.action_type %>
+          <span class="muted" style="font-weight:400;"> — <%= a.previous_status %> → <%= a.new_status %></span>
+          <% if (_corr) { %>
+          <span class="badge" style="margin-left:0.35rem;font-size:0.75rem;font-weight:600;">Correction applied</span>
+          <% } %>
+        </div>
+        <div class="muted" style="font-size:0.85rem;margin-top:0.2rem;">
+          <%- include('../partials/event_time', { at: a.created_at }) %>
+          <% var _al = (a.admin_display_name && String(a.admin_display_name).trim()) ? String(a.admin_display_name).trim() : ''; %>
+          <% var _au = a.admin_username ? String(a.admin_username) : ''; %>
+          · Admin: <%= _al ? _al + (_au ? ' (' + _au + ')' : '') : (_au || '—') %>
+        </div>
+        <% if (a.metadata && a.metadata.reason && _corr) { %>
+        <div style="margin-top:0.35rem;font-size:0.9rem;">Correction reason: <%= a.metadata.reason %></div>
+        <% } %>
+        <% if (a.metadata && a.metadata.reject_reason) { %>
+        <div style="margin-top:0.35rem;font-size:0.9rem;">Reason: <%= a.metadata.reject_reason %></div>
+        <% } %>
+        <% if (a.metadata && a.metadata.commission_amount != null && a.metadata.commission_amount !== '') { %>
+        <div class="muted" style="margin-top:0.25rem;font-size:0.85rem;">Commission (metadata): <%= a.metadata.commission_amount %></div>
+        <% } %>
+      </li>
+      <% }); %>
+    </ul>
+  </div>
+  <% } %>
 </div>

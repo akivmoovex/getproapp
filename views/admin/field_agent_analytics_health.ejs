@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Field agent analytics health | Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Field agent analytics', activeNav: activeNav }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Field agent analytics health</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Lightweight internal status summary from in-memory observability counters and configured guardrails.
+            </p>
+          </div>
+          <div class="admin-dashboard__header-actions">
+            <a class="btn btn--default" href="/admin/field-agent-analytics">Back to analytics</a>
+          </div>
+        </header>
+
+        <section class="card card--mb-md">
+          <h2 class="section-title section-title--flush">System status</h2>
+          <p>
+            <strong>Status:</strong>
+            <span class="muted"><%= health.label %></span>
+          </p>
+          <p class="muted"><%= health.reason %></p>
+        </section>
+
+        <section class="card card--mb-md">
+          <h2 class="section-title section-title--flush">Guardrails</h2>
+          <ul>
+            <li>Max page size: <strong><%= Number(guardrails.max_page_size || 0) %></strong></li>
+            <li>Export max rows: <strong><%= Number(guardrails.export_max_rows || 0) %></strong></li>
+            <li>Bulk action max ids: <strong><%= Number(guardrails.bulk_max_ids || 0) %></strong></li>
+          </ul>
+        </section>
+
+        <section class="card card--mb-md">
+          <h2 class="section-title section-title--flush">Performance signals (since process start)</h2>
+          <ul>
+            <li>Total analytics endpoint requests: <strong><%= Number(signals.total_requests || 0) %></strong></li>
+            <li>Slow queries: <strong><%= Number(signals.slow_queries || 0) %></strong> (threshold: <%= Number(thresholds.slow_query_ms || 0) %> ms)</li>
+            <li>Slow endpoints: <strong><%= Number(signals.slow_endpoints || 0) %></strong> (threshold: <%= Number(thresholds.slow_endpoint_ms || 0) %> ms)</li>
+            <li>Query errors: <strong><%= Number(signals.query_errors || 0) %></strong></li>
+            <li>Endpoint errors: <strong><%= Number(signals.endpoint_errors || 0) %></strong></li>
+          </ul>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Known limitations</h2>
+          <ul class="muted">
+            <li>Exports run synchronously; no background export jobs are configured.</li>
+            <li>Observability metrics are in-memory and reset on process restart.</li>
+            <li>Search uses ILIKE across multiple columns; no full-text/trigram pipeline is enabled by default.</li>
+            <li>No external monitoring dashboards are integrated in this admin view.</li>
+          </ul>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

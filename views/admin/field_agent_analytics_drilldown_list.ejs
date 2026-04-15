@@ -6,6 +6,9 @@
   <% var _exportUrl = typeof exportUrl !== 'undefined' && exportUrl ? exportUrl : ''; %>
   <% var _p = typeof pagination !== 'undefined' && pagination ? pagination : { page: 1, page_size: 50, total_results: (rows || []).length, total_pages: 1, has_prev: false, has_next: false }; %>
   <% var _presets = typeof presets !== 'undefined' && presets ? presets : []; %>
+  <% var _eg = typeof exportGuard !== 'undefined' && exportGuard ? exportGuard : { max_rows: 5000, too_large: false }; %>
+  <% var _bg = typeof bulkGuard !== 'undefined' && bulkGuard ? bulkGuard : { max_ids: 200 }; %>
+  <div class="card card--mb-md" data-faa-feedback="1" role="status" aria-live="polite" style="padding:0.75rem;" hidden></div>
   <form class="admin-filter-form admin-filter-form__grid card card--mb-md" data-faa-filter-form="1" data-faa-kind="<%= kind %>" data-faa-bucket="<%= bucket %>" style="padding:0.85rem;">
     <div class="input-field">
       <label class="input-field__label" for="faa_modal_q">Search</label>
@@ -46,10 +49,19 @@
     </div>
     <% if (_exportUrl) { %>
     <div class="input-field input-field--actions">
+      <% if (_eg.too_large) { %>
+      <button type="button" class="btn btn--default" disabled title="Export too large">Export CSV</button>
+      <% } else { %>
       <a class="btn btn--default" href="<%= _exportUrl %>" target="_blank" rel="noopener" data-faa-export-csv="1">Export CSV</a>
+      <% } %>
     </div>
     <% } %>
   </form>
+  <% if (_eg.too_large) { %>
+  <p class="muted" style="margin-top:-0.35rem;margin-bottom:0.75rem;">
+    This export is too large to run safely (<%= Number(_p.total_results || 0) %> rows). Narrow filters to <%= Number(_eg.max_rows || 5000) %> rows or fewer.
+  </p>
+  <% } %>
   <div class="card card--mb-md" style="padding:0.75rem;">
     <div class="admin-filter-form admin-filter-form__grid" style="align-items:end;">
       <div class="input-field">
@@ -82,25 +94,26 @@
     </div>
   </div>
   <% if (_isSubs) { %>
-  <div class="card card--mb-md" data-faa-bulk-toolbar="1" style="padding:0.75rem;" hidden>
+  <div class="card card--mb-md" data-faa-bulk-toolbar="1" data-faa-bulk-max-ids="<%= Number(_bg.max_ids || 200) %>" style="padding:0.75rem;" hidden>
     <div class="admin-filter-form admin-filter-form__grid" style="align-items:end;">
       <div class="input-field">
         <span class="input-field__label">Selected</span>
-        <div id="faa_bulk_selected_count" class="input-field__control" style="display:flex;align-items:center;">0 selected</div>
+        <div id="faa_bulk_selected_count" class="input-field__control" style="display:flex;align-items:center;">0 submissions selected</div>
       </div>
       <div class="input-field input-field--actions">
-        <button type="button" class="btn btn--default" data-faa-bulk-action="approve">Approve selected</button>
+        <button type="button" class="btn btn--default" data-faa-bulk-action="approve">Approve selected submissions</button>
       </div>
       <div class="input-field input-field--actions">
-        <button type="button" class="btn btn--default" data-faa-bulk-action="info_needed">Info needed</button>
+        <button type="button" class="btn btn--default" data-faa-bulk-action="info_needed">Mark info needed</button>
       </div>
       <div class="input-field input-field--actions">
-        <button type="button" class="btn btn--default" data-faa-bulk-action="reject">Reject selected</button>
+        <button type="button" class="btn btn--default" data-faa-bulk-action="reject">Reject selected submissions</button>
       </div>
       <div class="input-field input-field--actions">
-        <button type="button" class="btn btn--default" data-faa-bulk-action="appeal">Appeal selected</button>
+        <button type="button" class="btn btn--default" data-faa-bulk-action="appeal">Appeal selected submissions</button>
       </div>
     </div>
+    <p class="muted" style="margin-top:0.5rem;font-size:0.85rem;">Bulk actions support up to <%= Number(_bg.max_ids || 200) %> selected rows per request.</p>
   </div>
   <% } %>
   <div class="table-wrap">
@@ -120,11 +133,12 @@
           <th>Phone</th>
           <th>Field agent</th>
           <th>Commission</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <% if (!rows || rows.length === 0) { %>
-        <tr><td colspan="10" class="muted faa-drilldown-empty"><%= hasActiveFilters ? 'No results match your filters.' : 'No records for this filter.' %></td></tr>
+        <tr><td colspan="11" class="muted faa-drilldown-empty"><%= hasActiveFilters ? 'No results match your filters.' : 'No records for this filter.' %></td></tr>
         <% } %>
         <% (rows || []).forEach(function (r) { %>
         <tr class="faa-drilldown-row" data-faa-open-detail="1" data-faa-kind="submissions" data-faa-id="<%= r.id %>">
@@ -144,6 +158,14 @@
           <td><%= r.phone_raw || '—' %></td>
           <td><%= r.field_agent_display_name || r.field_agent_username || '—' %></td>
           <td><%= Number(r.commission_amount || 0).toFixed(2) %></td>
+          <td data-faa-no-detail="1">
+            <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+              <button type="button" class="btn btn--default" data-faa-no-detail="1" data-faa-inline-action="approve" data-faa-id="<%= r.id %>" aria-label="Approve submission #<%= r.id %>">Approve</button>
+              <button type="button" class="btn btn--default" data-faa-no-detail="1" data-faa-inline-action="info_needed" data-faa-id="<%= r.id %>" aria-label="Mark submission #<%= r.id %> info needed">Info needed</button>
+              <button type="button" class="btn btn--default" data-faa-no-detail="1" data-faa-inline-action="reject" data-faa-id="<%= r.id %>" aria-label="Reject submission #<%= r.id %>">Reject</button>
+              <button type="button" class="btn btn--default" data-faa-no-detail="1" data-faa-inline-action="appeal" data-faa-id="<%= r.id %>" aria-label="Appeal submission #<%= r.id %>">Appeal</button>
+            </div>
+          </td>
         </tr>
         <% }); %>
       </tbody>

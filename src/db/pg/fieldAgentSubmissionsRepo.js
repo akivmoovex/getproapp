@@ -2,6 +2,46 @@
 
 const { OPEN_PIPELINE_STATUSES, normalizeStatus } = require("../../fieldAgent/fieldAgentSubmissionStatuses");
 const faAnalyticsObs = require("../../lib/fieldAgentAnalyticsObservability");
+const fieldAgentSubmissionAuditRepo = require("./fieldAgentSubmissionAuditRepo");
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} submissionId
+ * @param {{ adminUserId?: number, previousStatus?: string|null }} [auditContext]
+ */
+const CORRECTION_TARGET_STATUSES = ["approved", "rejected", "info_needed", "appealed"];
+/** Allowed correction edges (current → target). Does not replace normal moderation rules when correction flag is off. */
+const CORRECTION_EDGES = {
+  pending: ["approved", "rejected", "info_needed"],
+  info_needed: ["approved", "rejected", "pending"],
+  appealed: ["approved", "rejected", "info_needed"],
+  approved: ["rejected", "info_needed", "pending"],
+  rejected: ["approved", "appealed", "info_needed", "pending"],
+};
+
+function isAllowedCorrection(currentStatus, targetStatus) {
+  const cur = String(currentStatus || "").trim();
+  const next = String(targetStatus || "").trim();
+  const row = CORRECTION_EDGES[cur];
+  if (!row || !row.includes(next)) return false;
+  if (next === "appealed" && cur !== "rejected") return false;
+  return true;
+}
+
+async function resolvePreviousStatusForAudit(pool, tenantId, submissionId, auditContext) {
+  if (!auditContext) return null;
+  const aid = Number(auditContext.adminUserId);
+  if (!Number.isFinite(aid) || aid < 1) return null;
+  if (auditContext.previousStatus != null && String(auditContext.previousStatus).trim() !== "") {
+    return String(auditContext.previousStatus).trim();
+  }
+  const r = await pool.query(
+    `SELECT status FROM public.field_agent_provider_submissions WHERE id = $1 AND tenant_id = $2`,
+    [submissionId, tenantId]
+  );
+  return r.rows[0] ? String(r.rows[0].status || "") : null;
+}
 
 /**
  * Full submission row for admin CRM (tenant-scoped). Includes submitting field agent identity.
@@ -84,6 +124,10 @@ async function approveFieldAgentSubmission(pool, p) {
   const sid = Number(p.submissionId);
   const commission = p.commissionAmount != null && Number.isFinite(Number(p.commissionAmount)) ? Number(p.commissionAmount) : 0;
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+  let prevForAudit = null;
+  if (p.auditContext && Number(p.auditContext.adminUserId) > 0) {
+    prevForAudit = await resolvePreviousStatusForAudit(pool, tid, sid, p.auditContext);
+  }
   const obs = p && p._obs ? p._obs : null;
   const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.approveFieldAgentSubmission" }, () =>
     pool.query(
@@ -99,7 +143,24 @@ async function approveFieldAgentSubmission(pool, p) {
       [sid, tid, commission]
     )
   );
-  return r.rowCount === 1;
+  const ok = r.rowCount === 1;
+  if (ok && p.auditContext && Number(p.auditContext.adminUserId) > 0 && prevForAudit) {
+    const meta =
+      p.auditContext.metadata && typeof p.auditContext.metadata === "object" && !Array.isArray(p.auditContext.metadata)
+        ? { ...p.auditContext.metadata }
+        : {};
+    if (commission > 0) meta.commission_amount = commission;
+    await fieldAgentSubmissionAuditRepo.insertAuditRecord(pool, {
+      tenantId: tid,
+      submissionId: sid,
+      adminUserId: Number(p.auditContext.adminUserId),
+      actionType: "approve",
+      previousStatus: prevForAudit,
+      newStatus: "approved",
+      metadata: Object.keys(meta).length ? meta : null,
+    });
+  }
+  return ok;
 }
 
 /**
@@ -114,6 +175,10 @@ async function rejectFieldAgentSubmission(pool, p) {
   const reason = String(p.rejectionReason || "").trim();
   if (!reason) return false;
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+  let prevForAudit = null;
+  if (p.auditContext && Number(p.auditContext.adminUserId) > 0) {
+    prevForAudit = await resolvePreviousStatusForAudit(pool, tid, sid, p.auditContext);
+  }
   const obs = p && p._obs ? p._obs : null;
   const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.rejectFieldAgentSubmission" }, () =>
     pool.query(
@@ -129,7 +194,24 @@ async function rejectFieldAgentSubmission(pool, p) {
       [sid, tid, reason.slice(0, 4000)]
     )
   );
-  return r.rowCount === 1;
+  const ok = r.rowCount === 1;
+  if (ok && p.auditContext && Number(p.auditContext.adminUserId) > 0 && prevForAudit) {
+    const meta =
+      p.auditContext.metadata && typeof p.auditContext.metadata === "object" && !Array.isArray(p.auditContext.metadata)
+        ? { ...p.auditContext.metadata }
+        : {};
+    meta.reject_reason = reason.slice(0, 500);
+    await fieldAgentSubmissionAuditRepo.insertAuditRecord(pool, {
+      tenantId: tid,
+      submissionId: sid,
+      adminUserId: Number(p.auditContext.adminUserId),
+      actionType: "reject",
+      previousStatus: prevForAudit,
+      newStatus: "rejected",
+      metadata: meta,
+    });
+  }
+  return ok;
 }
 
 /**
@@ -142,6 +224,10 @@ async function markFieldAgentSubmissionInfoNeeded(pool, p) {
   const tid = Number(p.tenantId);
   const sid = Number(p.submissionId);
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+  let prevForAudit = null;
+  if (p.auditContext && Number(p.auditContext.adminUserId) > 0) {
+    prevForAudit = await resolvePreviousStatusForAudit(pool, tid, sid, p.auditContext);
+  }
   const obs = p && p._obs ? p._obs : null;
   const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.markFieldAgentSubmissionInfoNeeded" }, () =>
     pool.query(
@@ -155,7 +241,23 @@ async function markFieldAgentSubmissionInfoNeeded(pool, p) {
       [sid, tid]
     )
   );
-  return r.rowCount === 1;
+  const ok = r.rowCount === 1;
+  if (ok && p.auditContext && Number(p.auditContext.adminUserId) > 0 && prevForAudit) {
+    const meta =
+      p.auditContext.metadata && typeof p.auditContext.metadata === "object" && !Array.isArray(p.auditContext.metadata)
+        ? p.auditContext.metadata
+        : null;
+    await fieldAgentSubmissionAuditRepo.insertAuditRecord(pool, {
+      tenantId: tid,
+      submissionId: sid,
+      adminUserId: Number(p.auditContext.adminUserId),
+      actionType: "info_needed",
+      previousStatus: prevForAudit,
+      newStatus: "info_needed",
+      metadata: meta,
+    });
+  }
+  return ok;
 }
 
 /**
@@ -168,6 +270,10 @@ async function markFieldAgentSubmissionAppealed(pool, p) {
   const tid = Number(p.tenantId);
   const sid = Number(p.submissionId);
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+  let prevForAudit = null;
+  if (p.auditContext && Number(p.auditContext.adminUserId) > 0) {
+    prevForAudit = await resolvePreviousStatusForAudit(pool, tid, sid, p.auditContext);
+  }
   const obs = p && p._obs ? p._obs : null;
   const r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.markFieldAgentSubmissionAppealed" }, () =>
     pool.query(
@@ -180,7 +286,23 @@ async function markFieldAgentSubmissionAppealed(pool, p) {
       [sid, tid]
     )
   );
-  return r.rowCount === 1;
+  const ok = r.rowCount === 1;
+  if (ok && p.auditContext && Number(p.auditContext.adminUserId) > 0 && prevForAudit) {
+    const meta =
+      p.auditContext.metadata && typeof p.auditContext.metadata === "object" && !Array.isArray(p.auditContext.metadata)
+        ? p.auditContext.metadata
+        : null;
+    await fieldAgentSubmissionAuditRepo.insertAuditRecord(pool, {
+      tenantId: tid,
+      submissionId: sid,
+      adminUserId: Number(p.auditContext.adminUserId),
+      actionType: "appeal",
+      previousStatus: prevForAudit,
+      newStatus: "appealed",
+      metadata: meta,
+    });
+  }
+  return ok;
 }
 
 /**
@@ -188,6 +310,145 @@ async function markFieldAgentSubmissionAppealed(pool, p) {
  * @param {{ tenantId: number, submissionId: number, commissionAmount: number }} p
  * @returns {Promise<boolean>}
  */
+/**
+ * Controlled status correction (dispute / mistake). Uses a dedicated UPDATE + append-only audit with correction metadata.
+ * Does not modify existing moderation helpers or their transition guards.
+ *
+ * @param {import("pg").Pool} pool
+ * @param {{
+ *   tenantId: number,
+ *   submissionId: number,
+ *   adminUserId: number,
+ *   targetStatus: 'approved'|'rejected'|'info_needed'|'appealed',
+ *   correctionReason: string,
+ *   commissionAmount?: number,
+ *   _obs?: object,
+ * }} p
+ * @returns {Promise<{ ok: boolean, error?: string }>}
+ */
+async function correctFieldAgentSubmissionStatus(pool, p) {
+  const tid = Number(p.tenantId);
+  const sid = Number(p.submissionId);
+  const adminUserId = Number(p.adminUserId);
+  const reason = String(p.correctionReason || "").trim();
+  const target = String(p.targetStatus || "").trim();
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) {
+    return { ok: false, error: "Invalid submission." };
+  }
+  if (!Number.isFinite(adminUserId) || adminUserId < 1) {
+    return { ok: false, error: "Invalid admin." };
+  }
+  if (!reason) {
+    return { ok: false, error: "Correction reason is required." };
+  }
+  if (!CORRECTION_TARGET_STATUSES.includes(target)) {
+    return { ok: false, error: "Invalid target status." };
+  }
+  const obs = p && p._obs ? p._obs : null;
+  const curRow = await faAnalyticsObs.observeQuery(
+    { obs, query: "fieldAgentSubmissions.correctFieldAgentSubmissionStatus.load" },
+    () => pool.query(`SELECT status FROM public.field_agent_provider_submissions WHERE id = $1 AND tenant_id = $2`, [sid, tid])
+  );
+  if (!curRow.rows[0]) {
+    return { ok: false, error: "Not found." };
+  }
+  const current = String(curRow.rows[0].status || "").trim();
+  if (current === target) {
+    return { ok: false, error: "Submission is already in this status." };
+  }
+  if (!isAllowedCorrection(current, target)) {
+    return { ok: false, error: "This status change is not allowed as a correction." };
+  }
+  const commission =
+    p.commissionAmount != null && Number.isFinite(Number(p.commissionAmount)) && Number(p.commissionAmount) >= 0
+      ? Number(p.commissionAmount)
+      : 0;
+
+  let r;
+  if (target === "approved") {
+    r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.correctFieldAgentSubmissionStatus.toApproved" }, () =>
+      pool.query(
+        `
+        UPDATE public.field_agent_provider_submissions
+        SET status = 'approved',
+            rejection_reason = '',
+            commission_amount = $3::numeric,
+            updated_at = now()
+        WHERE id = $1 AND tenant_id = $2 AND status = $4
+        `,
+        [sid, tid, commission, current]
+      )
+    );
+  } else if (target === "rejected") {
+    r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.correctFieldAgentSubmissionStatus.toRejected" }, () =>
+      pool.query(
+        `
+        UPDATE public.field_agent_provider_submissions
+        SET status = 'rejected',
+            rejection_reason = $3,
+            commission_amount = 0,
+            updated_at = now()
+        WHERE id = $1 AND tenant_id = $2 AND status = $4
+        `,
+        [sid, tid, reason.slice(0, 4000), current]
+      )
+    );
+  } else if (target === "info_needed") {
+    r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.correctFieldAgentSubmissionStatus.toInfoNeeded" }, () =>
+      pool.query(
+        `
+        UPDATE public.field_agent_provider_submissions
+        SET status = 'info_needed',
+            updated_at = now()
+        WHERE id = $1 AND tenant_id = $2 AND status = $3
+        `,
+        [sid, tid, current]
+      )
+    );
+  } else {
+    r = await faAnalyticsObs.observeQuery({ obs, query: "fieldAgentSubmissions.correctFieldAgentSubmissionStatus.toAppealed" }, () =>
+      pool.query(
+        `
+        UPDATE public.field_agent_provider_submissions
+        SET status = 'appealed',
+            updated_at = now()
+        WHERE id = $1 AND tenant_id = $2 AND status = 'rejected'
+        `,
+        [sid, tid]
+      )
+    );
+  }
+  if (r.rowCount !== 1) {
+    return { ok: false, error: "Update failed (record may have changed)." };
+  }
+
+  const actionType = target === "approved" ? "approve" : target === "rejected" ? "reject" : target === "info_needed" ? "info_needed" : "appeal";
+  const meta = {
+    correction: true,
+    reason: reason.slice(0, 1000),
+    previous_decision: current,
+    trigger: "manual_override",
+  };
+  if (target === "rejected") {
+    meta.reject_reason = reason.slice(0, 500);
+  }
+  if (target === "approved" && commission > 0) {
+    meta.commission_amount = commission;
+  }
+
+  await fieldAgentSubmissionAuditRepo.insertAuditRecord(pool, {
+    tenantId: tid,
+    submissionId: sid,
+    adminUserId,
+    actionType,
+    previousStatus: current,
+    newStatus: target,
+    metadata: meta,
+  });
+
+  return { ok: true };
+}
+
 async function updateFieldAgentSubmissionCommission(pool, p) {
   const tid = Number(p.tenantId);
   const sid = Number(p.submissionId);
@@ -465,7 +726,8 @@ async function updatePhotosAfterUpload(pool, client, { submissionId, tenantId, p
  *   action: "approve"|"reject"|"info_needed"|"appeal",
  *   ids: number[],
  *   rejectionReason?: string,
- *   commissionAmount?: number
+ *   commissionAmount?: number,
+ *   adminUserId?: number|null
  * }} p
  */
 async function applyBulkSubmissionAction(pool, p) {
@@ -494,10 +756,19 @@ async function applyBulkSubmissionAction(pool, p) {
       results: [],
     };
   }
-  const ids = [...new Set((Array.isArray(p.ids) ? p.ids : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0))].slice(
-    0,
-    500
-  );
+  const maxIds = Math.max(Number((p && p.maxIds) || 500), 1);
+  const ids = [...new Set((Array.isArray(p.ids) ? p.ids : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0))];
+  if (ids.length > maxIds) {
+    return {
+      ok: false,
+      error: `Too many ids supplied. Maximum ${maxIds} per bulk action.`,
+      action,
+      processed: 0,
+      succeeded: 0,
+      failed: 0,
+      results: [],
+    };
+  }
   if (ids.length === 0) {
     return {
       ok: false,
@@ -525,6 +796,7 @@ async function applyBulkSubmissionAction(pool, p) {
     p.commissionAmount != null && Number.isFinite(Number(p.commissionAmount)) && Number(p.commissionAmount) >= 0
       ? Number(p.commissionAmount)
       : 0;
+  const auditAdminId = p.adminUserId != null && Number(p.adminUserId) > 0 ? Number(p.adminUserId) : null;
 
   const results = [];
   const existing = await faAnalyticsObs.observeQuery(
@@ -542,11 +814,25 @@ async function applyBulkSubmissionAction(pool, p) {
       continue;
     }
     let ok = false;
+    const auditContext =
+      auditAdminId != null
+        ? {
+            adminUserId: auditAdminId,
+            previousStatus: currentStatus,
+            metadata:
+              action === "reject"
+                ? { reject_reason: rejectionReason.slice(0, 500) }
+                : action === "approve" && commission > 0
+                  ? { commission_amount: commission }
+                  : undefined,
+          }
+        : undefined;
     if (action === "approve") {
       ok = await approveFieldAgentSubmission(pool, {
         tenantId: tid,
         submissionId: id,
         commissionAmount: commission,
+        auditContext,
         _obs: p && p._obs ? p._obs : null,
       });
     } else if (action === "reject") {
@@ -554,18 +840,21 @@ async function applyBulkSubmissionAction(pool, p) {
         tenantId: tid,
         submissionId: id,
         rejectionReason,
+        auditContext,
         _obs: p && p._obs ? p._obs : null,
       });
     } else if (action === "info_needed") {
       ok = await markFieldAgentSubmissionInfoNeeded(pool, {
         tenantId: tid,
         submissionId: id,
+        auditContext,
         _obs: p && p._obs ? p._obs : null,
       });
     } else if (action === "appeal") {
       ok = await markFieldAgentSubmissionAppealed(pool, {
         tenantId: tid,
         submissionId: id,
+        auditContext,
         _obs: p && p._obs ? p._obs : null,
       });
     }
@@ -615,4 +904,5 @@ module.exports = {
   insertSubmission,
   updatePhotosAfterUpload,
   applyBulkSubmissionAction,
+  correctFieldAgentSubmissionStatus,
 };

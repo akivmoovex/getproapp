@@ -42,6 +42,19 @@ function roundMoney2(n) {
   return Math.round(x * 100) / 100;
 }
 
+function toMoneyFixed2(n) {
+  return roundMoney2(n).toFixed(2);
+}
+
+function computeReconciliationStatus(payable, paid) {
+  const p = roundMoney2(payable);
+  const x = roundMoney2(paid);
+  if (x <= 0) return "unpaid";
+  if (x < p) return "partial";
+  if (x === p) return "paid";
+  return "overpaid";
+}
+
 /**
  * @param {import("pg").Pool | import("pg").PoolClient} executor
  */
@@ -224,6 +237,44 @@ async function markPayRunApprovedAsPaid(pool, payRunId, tenantId, adminUserId, {
 }
 
 /**
+ * Backward-compatible shortcut: mark paid by recording one full-outstanding payment event.
+ */
+async function markPayRunApprovedAsPaidViaLedger(pool, payRunId, tenantId, adminUserId, { payoutReference, payoutNotes } = {}) {
+  const pid = Number(payRunId);
+  const tid = Number(tenantId);
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) {
+    return { run: null, error: "INVALID_STATE" };
+  }
+  const run = await getPayRunByIdForTenant(pool, pid, tid);
+  if (!run || String(run.status || "") !== "approved") {
+    return { run: null, error: "INVALID_STATE" };
+  }
+  const rec = await getPayRunReconciliationSummary(pool, pid, tid);
+  if (!rec) return { run: null, error: "INVALID_STATE" };
+  const outstanding = roundMoney2(rec.outstanding_amount);
+  if (outstanding <= 0) {
+    return markPayRunApprovedAsPaid(pool, pid, tid, adminUserId, { payoutReference, payoutNotes });
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const add = await addPaymentForPayRun(pool, {
+    payRunId: pid,
+    tenantId: tid,
+    paymentDate: today,
+    amount: outstanding,
+    paymentMethod: "manual",
+    paymentReference: payoutReference,
+    notes: payoutNotes,
+    createdByAdminUserId: adminUserId,
+  });
+  if (!add.ok) return { run: null, error: "INVALID_STATE" };
+  const row = await getPayRunByIdForTenant(pool, pid, tid);
+  if (!row || String(row.status || "") !== "paid") {
+    return { run: null, error: "INVALID_STATE" };
+  }
+  return { run: row, error: null };
+}
+
+/**
  * Record last CSV export (idempotent; safe to call on each download).
  */
 async function recordPayRunExportGenerated(pool, payRunId, tenantId) {
@@ -242,6 +293,146 @@ async function recordPayRunExportGenerated(pool, payRunId, tenantId) {
     [pid, tid]
   );
   return r.rows[0] ?? null;
+}
+
+/**
+ * Frozen payable total (from pay_run_items snapshot) versus payment ledger total.
+ * Does not mutate run state; safe for read paths.
+ */
+async function getPayRunReconciliationSummary(pool, payRunId, tenantId) {
+  const pid = Number(payRunId);
+  const tid = Number(tenantId);
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) return null;
+  const run = await getPayRunByIdForTenant(pool, pid, tid);
+  if (!run) return null;
+  const totals = await pool.query(
+    `
+    SELECT
+      COALESCE((
+        SELECT SUM(COALESCE(i.net_payable_amount, (
+          COALESCE(i.sp_payable_amount, 0)
+          + COALESCE(i.ec_payable_amount, 0)
+          + COALESCE(i.recruitment_commission_amount, 0)
+        )))::numeric
+        FROM public.field_agent_pay_run_items i
+        WHERE i.pay_run_id = $1 AND i.tenant_id = $2
+      ), 0)::numeric AS run_payable_total,
+      COALESCE((
+        SELECT SUM(p.amount)::numeric
+        FROM public.field_agent_pay_run_payments p
+        WHERE p.pay_run_id = $1 AND p.tenant_id = $2
+      ), 0)::numeric AS total_paid_amount
+    `,
+    [pid, tid]
+  );
+  const row = totals.rows[0] || {};
+  const payable = roundMoney2(Number(row.run_payable_total || 0));
+  const paid = roundMoney2(Number(row.total_paid_amount || 0));
+  const outstanding = roundMoney2(payable - paid);
+  const status = computeReconciliationStatus(payable, paid);
+  return {
+    run_id: pid,
+    tenant_id: tid,
+    run_status: String(run.status || ""),
+    run_payable_total: payable,
+    total_paid_amount: paid,
+    outstanding_amount: outstanding,
+    reconciliation_status: status,
+  };
+}
+
+async function listPaymentsForPayRun(pool, payRunId, tenantId, limit = 200) {
+  const pid = Number(payRunId);
+  const tid = Number(tenantId);
+  const lim = Math.min(Math.max(Number(limit) || 200, 1), 500);
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) return [];
+  const r = await pool.query(
+    `
+    SELECT
+      p.id,
+      p.tenant_id,
+      p.pay_run_id,
+      p.payment_date,
+      p.amount,
+      p.payment_method,
+      p.payment_reference,
+      p.notes,
+      p.created_at,
+      p.created_by_admin_user_id
+    FROM public.field_agent_pay_run_payments p
+    WHERE p.pay_run_id = $1 AND p.tenant_id = $2
+    ORDER BY p.payment_date DESC, p.id DESC
+    LIMIT $3
+    `,
+    [pid, tid, lim]
+  );
+  return r.rows;
+}
+
+/**
+ * Record one payment event for an approved/paid run.
+ * If an approved run reaches full settlement (paid >= payable), status is transitioned to paid.
+ */
+async function addPaymentForPayRun(pool, p) {
+  const pid = Number(p.payRunId);
+  const tid = Number(p.tenantId);
+  const adminId =
+    p.createdByAdminUserId != null && Number.isFinite(Number(p.createdByAdminUserId)) && Number(p.createdByAdminUserId) > 0
+      ? Number(p.createdByAdminUserId)
+      : null;
+  const amount = roundMoney2(p.amount);
+  const paymentDateRaw = String(p.paymentDate || "").trim();
+  const method = p.paymentMethod != null ? String(p.paymentMethod).trim().slice(0, 200) : "";
+  const reference = p.paymentReference != null ? String(p.paymentReference).trim().slice(0, 2000) : "";
+  const notes = p.notes != null ? String(p.notes).trim().slice(0, 4000) : "";
+
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) {
+    return { ok: false, error: "Invalid pay run." };
+  }
+  if (!(amount > 0)) {
+    return { ok: false, error: "Payment amount must be greater than 0." };
+  }
+  if (!paymentDateRaw) {
+    return { ok: false, error: "Payment date is required." };
+  }
+  const date = new Date(`${paymentDateRaw}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== paymentDateRaw) {
+    return { ok: false, error: "Invalid payment date." };
+  }
+
+  const run = await getPayRunByIdForTenant(pool, pid, tid);
+  if (!run) return { ok: false, error: "Not found." };
+  const st = String(run.status || "");
+  if (st !== "approved" && st !== "paid") {
+    return { ok: false, error: "Payments can only be recorded for approved or paid runs." };
+  }
+
+  const inserted = await pool.query(
+    `
+    INSERT INTO public.field_agent_pay_run_payments
+      (tenant_id, pay_run_id, payment_date, amount, payment_method, payment_reference, notes, created_by_admin_user_id)
+    VALUES
+      ($1, $2, $3::date, $4::numeric(12,2), NULLIF($5::text, ''), NULLIF($6::text, ''), NULLIF($7::text, ''), $8)
+    RETURNING *
+    `,
+    [tid, pid, paymentDateRaw, toMoneyFixed2(amount), method, reference, notes, adminId]
+  );
+  const payment = inserted.rows[0];
+  const reconciliation = await getPayRunReconciliationSummary(pool, pid, tid);
+  let outRun = run;
+  if (
+    st === "approved" &&
+    reconciliation &&
+    roundMoney2(reconciliation.total_paid_amount) >= roundMoney2(reconciliation.run_payable_total)
+  ) {
+    const mark = await markPayRunApprovedAsPaid(pool, pid, tid, adminId, {
+      payoutReference: reference || "reconciled via payment ledger",
+      payoutNotes: notes || "",
+    });
+    if (mark && mark.run) outRun = mark.run;
+  }
+
+  return { ok: true, payment, reconciliation, run: outRun };
 }
 
 async function listPayRunsForTenant(pool, tenantId, limit = 50) {
@@ -475,11 +666,15 @@ module.exports = {
   lockPayRunDraft,
   approvePayRunLocked,
   markPayRunApprovedAsPaid,
+  markPayRunApprovedAsPaidViaLedger,
   recordPayRunExportGenerated,
   listPayRunsForTenant,
   getPayRunById,
   getPayRunByIdForTenant,
   listItemsForPayRun,
+  getPayRunReconciliationSummary,
+  listPaymentsForPayRun,
+  addPaymentForPayRun,
   listVisiblePayRunItemsForFieldAgent,
   getVisiblePayRunItemDetailForFieldAgent,
   getPayRunStatementSnapshotForFieldAgent,

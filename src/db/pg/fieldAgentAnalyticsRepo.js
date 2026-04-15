@@ -267,7 +267,8 @@ async function getCallbackLeadsPerDay(pool, tenantId, days, fieldAgentId) {
  *   status?: string|null,
  *   decidedOnly?: boolean,
  *   q?: string|null,
- *   limit?: number
+ *   limit?: number,
+ *   maxLimit?: number
  * }} [opts]
  */
 async function listSubmissionDrilldownRows(pool, tenantId, opts) {
@@ -280,7 +281,8 @@ async function listSubmissionDrilldownRows(pool, tenantId, opts) {
   const decidedOnly = Boolean(opts && opts.decidedOnly);
   const qRaw = opts && opts.q != null ? String(opts.q).trim() : "";
   const q = qRaw ? `%${qRaw}%` : null;
-  const limit = Math.min(Math.max(Number((opts && opts.limit) || 200), 1), 500);
+  const maxLimit = Math.max(Number((opts && opts.maxLimit) || 500), 1);
+  const limit = Math.min(Math.max(Number((opts && opts.limit) || 200), 1), maxLimit);
   const offset = Math.max(Number((opts && opts.offset) || 0), 0);
   const where = ["s.tenant_id = $1"];
   const params = [tid];
@@ -305,6 +307,7 @@ async function listSubmissionDrilldownRows(pool, tenantId, opts) {
     params.push(to);
   }
   if (q != null) {
+    // Multi-column ILIKE OR: semantics preserved; btree indexes help less here than tenant/status/FIFO paths (see runbook §6–7).
     where.push(`(
       concat_ws(' ', s.first_name, s.last_name) ILIKE $${i}
       OR s.phone_raw ILIKE $${i}
@@ -425,7 +428,8 @@ async function countSubmissionDrilldownRows(pool, tenantId, opts) {
  *   from?: string|null,
  *   to?: string|null,
  *   q?: string|null,
- *   limit?: number
+ *   limit?: number,
+ *   maxLimit?: number
  * }} [opts]
  */
 async function listCallbackLeadDrilldownRows(pool, tenantId, opts) {
@@ -436,7 +440,8 @@ async function listCallbackLeadDrilldownRows(pool, tenantId, opts) {
   const { from, to } = normalizeDateRange(opts && opts.from, opts && opts.to);
   const qRaw = opts && opts.q != null ? String(opts.q).trim() : "";
   const q = qRaw ? `%${qRaw}%` : null;
-  const limit = Math.min(Math.max(Number((opts && opts.limit) || 200), 1), 500);
+  const maxLimit = Math.max(Number((opts && opts.maxLimit) || 500), 1);
+  const limit = Math.min(Math.max(Number((opts && opts.limit) || 200), 1), maxLimit);
   const offset = Math.max(Number((opts && opts.offset) || 0), 0);
   const where = ["c.tenant_id = $1"];
   const params = [tid];

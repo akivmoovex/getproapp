@@ -1,16 +1,19 @@
 /**
  * Field Agent analytics (read-only aggregates from submission / callback / agent tables).
  */
-const { canAccessCrm, canMutateCrm } = require("../../auth/roles");
+const { canAccessCrm, canMutateCrm, canCorrectFieldAgentSubmissions } = require("../../auth/roles");
 const { getAdminTenantId } = require("./adminShared");
 const { getPgPool } = require("../../db/pg");
 const fieldAgentAnalyticsRepo = require("../../db/pg/fieldAgentAnalyticsRepo");
 const fieldAgentSubmissionsRepo = require("../../db/pg/fieldAgentSubmissionsRepo");
+const fieldAgentSubmissionAuditRepo = require("../../db/pg/fieldAgentSubmissionAuditRepo");
 const analyticsPresetsRepo = require("../../db/pg/adminFieldAgentAnalyticsPresetsRepo");
 const faAnalyticsObs = require("../../lib/fieldAgentAnalyticsObservability");
 
 module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
-  const EXPORT_MAX_ROWS = 5000;
+  // Guardrails (override via FA_ANALYTICS_* env). See docs/field-agent-analytics-runbook.md §8.
+  const EXPORT_MAX_ROWS = Math.max(Number(process.env.FA_ANALYTICS_EXPORT_MAX_ROWS || 5000), 1);
+  const BULK_MAX_IDS = Math.max(Number(process.env.FA_ANALYTICS_BULK_MAX_IDS || 200), 1);
   const DEFAULT_PAGE_SIZE = 50;
   const MAX_PAGE_SIZE = 100;
   const PRESET_RECORD_TYPES = ["submissions", "callback_leads"];
@@ -27,6 +30,16 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
     if (!req.session.adminUser) return res.redirect("/admin/login");
     if (!canMutateCrm(req.session.adminUser.role)) {
       return res.status(403).type("text").send("Read-only access.");
+    }
+    return next();
+  }
+  function requireSubmissionCorrection(req, res, next) {
+    if (!req.session.adminUser) return res.redirect("/admin/login");
+    if (!canMutateCrm(req.session.adminUser.role)) {
+      return res.status(403).type("text").send("Read-only access.");
+    }
+    if (!canCorrectFieldAgentSubmissions(req.session.adminUser.role)) {
+      return res.status(403).type("text").send("Corrections are not available for your role.");
     }
     return next();
   }
@@ -125,6 +138,7 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
       title: "Approved submissions (source: Share approved of all)",
     },
   };
+  // Bucket → list semantics (status / decidedOnly) drive drill-down + export. KPI-mapped buckets often share the same row set; see docs/field-agent-analytics-runbook.md §4.
   const SUBMISSION_STATUSES = ["pending", "info_needed", "approved", "rejected", "appealed"];
 
   function csvSafeText(v) {
@@ -273,6 +287,62 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
     const validBucket = allowedBucketForRecordType(validRecordType, bucket) || (validRecordType === "callback_leads" ? "callback_leads" : "total_submissions");
     return { recordType: validRecordType, bucket: validBucket };
   }
+  function classifyHealth(counters) {
+    const c = counters || {};
+    const slowQueries = Number(c.slowQueries || 0);
+    const slowEndpoints = Number(c.slowEndpoints || 0);
+    const queryErrors = Number(c.queryErrors || 0);
+    const endpointErrors = Number(c.endpointErrors || 0);
+    const totalSignals = slowQueries + slowEndpoints + queryErrors + endpointErrors;
+    if (totalSignals === 0) {
+      return {
+        label: "Unknown",
+        tone: "muted",
+        reason: "No performance/error signals recorded yet since process start.",
+      };
+    }
+    if (queryErrors + endpointErrors >= 5 || slowQueries + slowEndpoints >= 50) {
+      return {
+        label: "Degraded",
+        tone: "warning",
+        reason: "High slow/error signal count since process start.",
+      };
+    }
+    return {
+      label: "Healthy",
+      tone: "success",
+      reason: "Signal counts are currently within expected range.",
+    };
+  }
+
+  router.get("/field-agent-analytics/health", requireCrmAccess, async (req, res, next) => {
+    try {
+      const counters = faAnalyticsObs.getCounters();
+      const cfg = faAnalyticsObs.getConfig();
+      const endpointRequests = counters.endpointRequests || {};
+      const totalRequests = Object.values(endpointRequests).reduce((sum, n) => sum + (Number(n) || 0), 0);
+      const health = classifyHealth(counters);
+      return res.render("admin/field_agent_analytics_health", {
+        activeNav: "field_agent_analytics",
+        health,
+        thresholds: cfg,
+        guardrails: {
+          max_page_size: MAX_PAGE_SIZE,
+          export_max_rows: EXPORT_MAX_ROWS,
+          bulk_max_ids: BULK_MAX_IDS,
+        },
+        signals: {
+          total_requests: totalRequests,
+          slow_queries: Number(counters.slowQueries || 0),
+          slow_endpoints: Number(counters.slowEndpoints || 0),
+          query_errors: Number(counters.queryErrors || 0),
+          endpoint_errors: Number(counters.endpointErrors || 0),
+        },
+      });
+    } catch (e) {
+      return next(e);
+    }
+  });
 
   router.get("/field-agent-analytics/drilldown/submissions", requireCrmAccess, async (req, res, next) => {
     try {
@@ -346,6 +416,13 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
           to: filters.to || "",
           agent: filters.fieldAgentId || "",
         }),
+        exportGuard: {
+          max_rows: EXPORT_MAX_ROWS,
+          too_large: totalResults > EXPORT_MAX_ROWS,
+        },
+        bulkGuard: {
+          max_ids: BULK_MAX_IDS,
+        },
         pagination: {
           page,
           page_size: pager.pageSize,
@@ -425,6 +502,13 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
           to: filters.to || "",
           agent: filters.fieldAgentId || "",
         }),
+        exportGuard: {
+          max_rows: EXPORT_MAX_ROWS,
+          too_large: totalResults > EXPORT_MAX_ROWS,
+        },
+        bulkGuard: {
+          max_ids: BULK_MAX_IDS,
+        },
         pagination: {
           page,
           page_size: pager.pageSize,
@@ -458,9 +542,51 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
       if (!row) {
         return res.status(404).type("text").send("Not found.");
       }
+      const auditHistory = await fieldAgentSubmissionAuditRepo.listAuditBySubmission(pool, tid, id);
       return res.render("admin/field_agent_analytics_drilldown_submission_panel", {
         row,
+        auditHistory,
+        canCorrectSubmissions: canCorrectFieldAgentSubmissions(req.session.adminUser.role),
       });
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.post("/field-agent-analytics/drilldown/submissions/:id/correct", requireSubmissionCorrection, async (req, res, next) => {
+    try {
+      const sid = Number(req.params.id);
+      if (!Number.isFinite(sid) || sid < 1) {
+        return res.status(400).json({ ok: false, error: "Invalid submission id." });
+      }
+      const body = req.body || {};
+      const targetStatus = body.target_status != null ? String(body.target_status).trim() : "";
+      const reason = body.reason != null ? String(body.reason).trim() : "";
+      const commissionRaw = body.commission_amount;
+      const commission =
+        commissionRaw != null && String(commissionRaw).trim() !== "" && Number.isFinite(Number(commissionRaw))
+          ? Number(commissionRaw)
+          : 0;
+      if (!reason) {
+        return res.status(400).json({ ok: false, error: "Correction reason is required." });
+      }
+      const pool = getPgPool();
+      const tid = getAdminTenantId(req);
+      const result = await fieldAgentSubmissionsRepo.correctFieldAgentSubmissionStatus(pool, {
+        tenantId: tid,
+        submissionId: sid,
+        adminUserId: req.session.adminUser.id,
+        targetStatus,
+        correctionReason: reason,
+        commissionAmount: commission,
+        _obs: faAnalyticsObs.queryContext(req, "/admin/field-agent-analytics/drilldown/submissions/:id/correct", {
+          target_status: targetStatus,
+        }),
+      });
+      if (!result.ok) {
+        return res.status(400).json({ ok: false, error: result.error || "Correction failed." });
+      }
+      return res.json({ ok: true });
     } catch (e) {
       return next(e);
     }
@@ -491,13 +617,16 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
         ids,
         rejectionReason: reason,
         commissionAmount: 0,
+        maxIds: BULK_MAX_IDS,
+        adminUserId: req.session.adminUser.id,
         _obs: faAnalyticsObs.queryContext(req, "/admin/field-agent-analytics/drilldown/submissions/bulk-action", {
           action,
           id_count: Array.isArray(ids) ? ids.length : 0,
         }),
       });
       if (!result.ok) {
-        return res.status(400).json(result);
+        const tooMany = /Too many ids/i.test(String(result.error || ""));
+        return res.status(tooMany ? 413 : 400).json(result);
       }
       return res.json(result);
     } catch (e) {
@@ -520,6 +649,21 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
       });
       const effectiveStatus = filters.status || map.status || null;
       const decidedOnly = !effectiveStatus && Boolean(map.decidedOnly);
+      const totalResults = await fieldAgentAnalyticsRepo.countSubmissionDrilldownRows(pool, tid, {
+        from: filters.from,
+        to: filters.to,
+        fieldAgentId: filters.fieldAgentId,
+        status: effectiveStatus,
+        decidedOnly,
+        q: filters.q,
+        _obs: obs,
+      });
+      if (totalResults > EXPORT_MAX_ROWS) {
+        return res
+          .status(413)
+          .type("text")
+          .send(`This export is too large to run safely (${totalResults} rows). Narrow your filters to ${EXPORT_MAX_ROWS} rows or fewer and try again.`);
+      }
       const rows = await fieldAgentAnalyticsRepo.listSubmissionDrilldownRows(pool, tid, {
         from: filters.from,
         to: filters.to,
@@ -528,6 +672,7 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
         decidedOnly,
         q: filters.q,
         limit: EXPORT_MAX_ROWS,
+        maxLimit: EXPORT_MAX_ROWS,
         _obs: obs,
       });
       const payload = rows.map((r) => [
@@ -580,12 +725,26 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
         bucket,
         ...filters,
       });
+      const totalResults = await fieldAgentAnalyticsRepo.countCallbackLeadDrilldownRows(pool, tid, {
+        from: filters.from,
+        to: filters.to,
+        fieldAgentId: filters.fieldAgentId,
+        q: filters.q,
+        _obs: obs,
+      });
+      if (totalResults > EXPORT_MAX_ROWS) {
+        return res
+          .status(413)
+          .type("text")
+          .send(`This export is too large to run safely (${totalResults} rows). Narrow your filters to ${EXPORT_MAX_ROWS} rows or fewer and try again.`);
+      }
       const rows = await fieldAgentAnalyticsRepo.listCallbackLeadDrilldownRows(pool, tid, {
         from: filters.from,
         to: filters.to,
         fieldAgentId: filters.fieldAgentId,
         q: filters.q,
         limit: EXPORT_MAX_ROWS,
+        maxLimit: EXPORT_MAX_ROWS,
         _obs: obs,
       });
       const payload = rows.map((r) => [
@@ -670,6 +829,9 @@ module.exports = function registerAdminFieldAgentAnalyticsRoutes(router) {
           from: filters.from || "",
           to: filters.to || "",
           agent: filters.fieldAgentId || "",
+        },
+        exportGuard: {
+          max_rows: EXPORT_MAX_ROWS,
         },
         presets: [...subPresets.map(serializePreset), ...cbPresets.map(serializePreset)],
       });
