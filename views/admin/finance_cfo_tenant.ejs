@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Finance · <%= tenant.name %> | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Finance (CFO)', activeNav: 'finance_cfo' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title"><%= tenant.name %></h1>
+            <p class="admin-dashboard__subtitle muted">Finance drill-down · <%= tenant.slug %> · read-only</p>
+          </div>
+        </header>
+
+        <% var _embedQ = (typeof embed !== 'undefined' && embed) ? '&embed=1' : ''; %>
+        <% var _pf = typeof periodStartFrom !== 'undefined' ? periodStartFrom : ''; %>
+        <% var _pt = typeof periodStartTo !== 'undefined' ? periodStartTo : ''; %>
+        <% var _periodQs = ''; if (_pf) _periodQs += '&period_from=' + encodeURIComponent(_pf); if (_pt) _periodQs += '&period_to=' + encodeURIComponent(_pt); _periodQs += _embedQ; %>
+        <% var _prTenant = 'tenant_id=' + tenantId + _embedQ; %>
+
+        <p><a href="/admin/finance/cfo<% var _bq = _periodQs.replace(/^&/, ''); if (_bq) { %>?<%= _bq %><% } else if (typeof embed !== 'undefined' && embed) { %>?embed=1<% } %>">← Cross-tenant overview</a></p>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Period filter</h2>
+          <form method="get" action="/admin/finance/cfo/tenant/<%= tenantId %>" class="admin-filter-form admin-filter-form__grid" style="align-items:flex-end;">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <div class="input-field">
+              <label class="input-field__label" for="period_from">From</label>
+              <input id="period_from" class="input-field__control" name="period_from" type="date" value="<%= _pf %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="period_to">To</label>
+              <input id="period_to" class="input-field__control" name="period_to" type="date" value="<%= _pt %>" />
+            </div>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply' }) %>
+          </form>
+        </section>
+
+        <% var rr = typeof reconciliationRollup !== 'undefined' ? reconciliationRollup : {}; %>
+        <% var pc = typeof payRunCounts !== 'undefined' ? payRunCounts : {}; %>
+        <% var ua = typeof unappliedAdjustments !== 'undefined' ? unappliedAdjustments : { count: 0, sum: 0 }; %>
+
+        <section class="admin-dashboard__grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(10rem,1fr));gap:0.75rem;margin-bottom:1.25rem;">
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Pay runs D/L/A/P</p>
+            <p style="margin:0.25rem 0 0 0;font-weight:700;"><%= pc.draft %> / <%= pc.locked %> / <%= pc.approved %> / <%= pc.paid %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">A+P runs (filter)</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.25rem;font-weight:700;"><%= rr.approved_paid_run_count || 0 %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Frozen payable</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.25rem;font-weight:700;"><%= Number(rr.frozen_payable_total || 0).toFixed(2) %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Ledger paid</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.25rem;font-weight:700;"><%= Number(rr.ledger_paid_total || 0).toFixed(2) %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Outstanding</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.25rem;font-weight:700;color:<%= Number(rr.outstanding_total || 0) < 0 ? '#b45309' : 'inherit' %>;"><%= Number(rr.outstanding_total || 0).toFixed(2) %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Runs: unpaid / partial / paid / over</p>
+            <p style="margin:0.25rem 0 0 0;font-weight:700;"><%= rr.rec_unpaid %> / <%= rr.rec_partial %> / <%= rr.rec_paid %> / <%= rr.rec_overpaid %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Unapplied adjustments</p>
+            <p style="margin:0.25rem 0 0 0;font-weight:700;"><%= ua.count %> · <%= Number(ua.sum || 0).toFixed(2) %></p>
+          </div>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Quick links</h2>
+          <p style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+            <a class="c-button c-button--outline" style="text-decoration:none;" href="/admin/field-agent-pay-runs?<%= _prTenant %>">Pay runs (tenant)</a>
+            <a class="c-button c-button--outline" style="text-decoration:none;" href="/admin/field-agent-pay-runs/finance-dashboard?<%= _prTenant %>">Payout review</a>
+            <a class="c-button c-button--outline" style="text-decoration:none;" href="/admin/field-agent-adjustments?<%= _prTenant %>">Adjustments</a>
+          </p>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Pay runs (frozen totals)</h2>
+          <div class="admin-table-wrap" style="overflow-x:auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Period</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Frozen payable</th>
+                  <th style="text-align:right;">Net paid</th>
+                  <th>Reconciliation</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!(payRunRows || []).length) { %>
+                <tr><td colspan="7"><p class="admin-finance-empty" style="margin:0;">No pay runs in this filter.</p></td></tr>
+                <% } %>
+                <% (payRunRows || []).forEach(function (r) { %>
+                <tr>
+                  <td><%= r.pay_run_id %></td>
+                  <td style="white-space:nowrap;"><%= r.period_start ? new Date(r.period_start).toISOString().slice(0, 10) : '—' %> — <%= r.period_end ? new Date(r.period_end).toISOString().slice(0, 10) : '—' %></td>
+                  <td><%- include('../partials/admin_finance_status_badge', { status: r.run_status }) %></td>
+                  <td class="admin-finance-num"><%= Number(r.run_payable_total || 0).toFixed(2) %></td>
+                  <td class="admin-finance-num"><%= Number(r.total_paid_amount || 0).toFixed(2) %></td>
+                  <td>
+                    <% if (r.reconciliation_status) { %>
+                      <% var _rs = String(r.reconciliation_status); %>
+                      <% if (_rs === 'paid') { %>
+                        <span class="admin-finance-badge admin-finance-badge--status-paid"><%= _rs %></span>
+                      <% } else if (_rs === 'overpaid' || _rs === 'partial') { %>
+                        <span class="admin-finance-badge admin-finance-badge--state-adjusted"><%= _rs %></span>
+                      <% } else { %>
+                        <span class="admin-finance-badge admin-finance-badge--state-neutral"><%= _rs %></span>
+                      <% } %>
+                    <% } else { %>
+                      <span class="muted">—</span>
+                    <% } %>
+                  </td>
+                  <td style="white-space:nowrap;">
+                    <a href="/admin/field-agent-pay-runs/<%= r.pay_run_id %>/finance-detail?<%= _prTenant %>">Finance detail</a>
+                    · <a href="/admin/field-agent-pay-runs/<%= r.pay_run_id %>?<%= _prTenant %>">Workflow</a>
+                    <% if (r.run_status === 'approved' || r.run_status === 'paid') { %>
+                      · <a href="/admin/field-agent-pay-runs/<%= r.pay_run_id %>/month-close?<%= _prTenant %>">Month-close</a>
+                    <% } %>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="section-title section-title--flush">Recent ledger activity (this region)</h2>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Pay run</th>
+                  <th>Payment date</th>
+                  <th style="text-align:right;">Amount</th>
+                  <th>Method</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!(recentPayments || []).length) { %>
+                <tr><td colspan="5"><p class="admin-finance-empty" style="margin:0;">No recent payment lines.</p></td></tr>
+                <% } %>
+                <% (recentPayments || []).forEach(function (p) { %>
+                <% var _pam = Number(p.amount || 0); var _pamCls = 'admin-finance-num'; if (_pam < 0) { _pamCls += ' admin-finance-num--neg'; } %>
+                <tr>
+                  <td class="muted admin-finance-ts"><%= p.created_at ? new Date(p.created_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></td>
+                  <td><a href="/admin/field-agent-pay-runs/<%= p.pay_run_id %>?<%= _prTenant %>">#<%= p.pay_run_id %></a></td>
+                  <td><%= p.payment_date ? new Date(p.payment_date).toISOString().slice(0, 10) : '—' %></td>
+                  <td class="<%= _pamCls %>"><%= _pam.toFixed(2) %></td>
+                  <td><%= p.payment_method || '—' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

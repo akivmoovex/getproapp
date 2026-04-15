@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Field-agent payout review | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Payout review', activeNav: 'field_agent_payout_finance' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Field-agent payout review</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Read-only snapshot: frozen pay-run totals compared to the payment ledger. CSV export only — no edits.
+            </p>
+          </div>
+        </header>
+
+        <%- include('../partials/cfo_reconciliation_strip') %>
+
+        <% var _fdBase = '/admin/field-agent-pay-runs/finance-dashboard'; %>
+        <% var _fem = typeof financeExceptionMeta !== 'undefined' && financeExceptionMeta ? financeExceptionMeta : { title: 'Recent pay runs', description: 'Latest pay runs by period (no exception filter).', key: null }; %>
+        <% var _fexp = typeof financeExceptionPreset !== 'undefined' && financeExceptionPreset ? String(financeExceptionPreset) : ''; %>
+        <% function _fdQs(extra) { var a = []; if (typeof embed !== 'undefined' && embed) a.push('embed=1'); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') a.push('tenant_id=' + tenantId); if (extra) a.push(extra); return a.length ? '?' + a.join('&') : ''; } %>
+        <% var _expQs = []; if (typeof embed !== 'undefined' && embed) _expQs.push('embed=1'); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') _expQs.push('tenant_id=' + tenantId); %>
+        <p class="card card--mb-xl" style="padding:0.65rem 1rem;margin-bottom:1rem;">
+          <a href="/admin/field-agent-pay-runs/finance-dashboard/export.csv<% if (_expQs.length) { %>?<%= _expQs.join('&') %><% } %>">Download pay-run summary (CSV)</a>
+          <span class="muted"> — all runs in this region (up to cap)</span>
+        </p>
+
+        <% if (typeof isSuper !== 'undefined' && isSuper && tenants && tenants.length) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Region</h2>
+          <form method="get" action="<%= _fdBase %>" class="admin-filter-form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <% if (_fexp) { %><input type="hidden" name="exception" value="<%= _fexp %>" /><% } %>
+            <div class="input-field">
+              <label class="input-field__label" for="fd_tenant">Tenant</label>
+              <select id="fd_tenant" name="tenant_id" class="input-field__control" onchange="this.form.submit()">
+                <% tenants.forEach(function (t) { %>
+                <option value="<%= t.id %>" <%= Number(tenantId) === Number(t.id) ? 'selected' : '' %>><%= t.name %> (<%= t.slug %>)</option>
+                <% }); %>
+              </select>
+            </div>
+          </form>
+        </section>
+        <% } %>
+
+        <% var sc = typeof summary !== 'undefined' && summary.statusCounts ? summary.statusCounts : {}; %>
+
+        <section class="admin-dashboard__grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:0.75rem;margin-bottom:1.25rem;">
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Paid runs (count)</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.25rem;font-weight:700;"><%= sc.paid != null ? sc.paid : 0 %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Approved runs (count)</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.25rem;font-weight:700;"><%= sc.approved != null ? sc.approved : 0 %></p>
+          </div>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:0.85rem;">
+          <h2 class="section-title section-title--flush">Runs by status</h2>
+          <p style="margin:0;">
+            Draft <strong><%= sc.draft != null ? sc.draft : 0 %></strong>
+            · Locked <strong><%= sc.locked != null ? sc.locked : 0 %></strong>
+            · Approved <strong><%= sc.approved != null ? sc.approved : 0 %></strong>
+            · Paid <strong><%= sc.paid != null ? sc.paid : 0 %></strong>
+            · Void <strong><%= sc.void != null ? sc.void : 0 %></strong>
+          </p>
+        </section>
+
+        <% var _prQs = []; if (typeof embed !== 'undefined' && embed) _prQs.push('embed=1'); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') _prQs.push('tenant_id=' + tenantId); %>
+        <p class="card card--mb-xl" style="padding:0.75rem 1rem;">
+          <a href="/admin/field-agent-pay-runs<% if (_prQs.length) { %>?<%= _prQs.join('&') %><% } %>">← Pay runs (draft / workflow)</a>
+        </p>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Recent reopen events</h2>
+          <p class="muted" style="margin-top:0;">When net paid drops below frozen payable after a reversal or correction, the run may move from <strong>paid</strong> back to <strong>approved</strong> until it balances again.</p>
+          <% if (!reopenHistory || !reopenHistory.length) { %>
+            <p class="admin-finance-empty">No reopen events for this region yet (or status history is unavailable).</p>
+          <% } else { %>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>Pay run</th>
+                    <th>Status change</th>
+                    <th>Source payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% reopenHistory.forEach(function (h) { %>
+                  <tr>
+                    <td class="muted admin-finance-ts"><%= h.created_at ? new Date(h.created_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></td>
+                    <td>
+                      <a href="/admin/field-agent-pay-runs/<%= h.pay_run_id %><% if (typeof embed !== 'undefined' && embed) { %>?embed=1<% } %>">#<%= h.pay_run_id %></a>
+                    </td>
+                    <td><span class="admin-finance-badge admin-finance-badge--state-reopen" style="font-weight:600;"><%= h.from_status %> → <%= h.to_status %></span></td>
+                    <td class="admin-finance-num"><%= h.source_payment_id != null ? h.source_payment_id : '—' %></td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush"><%= _fem.title %></h2>
+          <p class="muted" style="margin-top:0;"><%= _fem.description %></p>
+          <nav aria-label="Pay run exception filters" style="display:flex;flex-wrap:wrap;gap:0.45rem;margin:0.75rem 0 1rem 0;align-items:center;">
+            <span class="muted" style="font-size:0.8rem;margin-right:0.25rem;">View:</span>
+            <a href="<%= _fdBase %><%= _fdQs() %>" style="display:inline-block;padding:0.35rem 0.65rem;border-radius:0.35rem;border:1px solid rgba(0,0,0,0.12);text-decoration:none;font-size:0.85rem;<%= !_fexp ? 'font-weight:600;border-color:rgba(0,0,0,0.35);' : '' %>">All</a>
+            <a href="<%= _fdBase %><%= _fdQs('exception=outstanding') %>" style="display:inline-block;padding:0.35rem 0.65rem;border-radius:0.35rem;border:1px solid rgba(0,0,0,0.12);text-decoration:none;font-size:0.85rem;<%= _fexp === 'outstanding' ? 'font-weight:600;border-color:rgba(0,0,0,0.35);' : '' %>">Outstanding</a>
+            <a href="<%= _fdBase %><%= _fdQs('exception=reopened') %>" style="display:inline-block;padding:0.35rem 0.65rem;border-radius:0.35rem;border:1px solid rgba(0,0,0,0.12);text-decoration:none;font-size:0.85rem;<%= _fexp === 'reopened' ? 'font-weight:600;border-color:rgba(0,0,0,0.35);' : '' %>">Reopened</a>
+            <a href="<%= _fdBase %><%= _fdQs('exception=adjusted') %>" style="display:inline-block;padding:0.35rem 0.65rem;border-radius:0.35rem;border:1px solid rgba(0,0,0,0.12);text-decoration:none;font-size:0.85rem;<%= _fexp === 'adjusted' ? 'font-weight:600;border-color:rgba(0,0,0,0.35);' : '' %>">Adjusted ledger</a>
+            <a href="<%= _fdBase %><%= _fdQs('exception=recent') %>" style="display:inline-block;padding:0.35rem 0.65rem;border-radius:0.35rem;border:1px solid rgba(0,0,0,0.12);text-decoration:none;font-size:0.85rem;<%= _fexp === 'recent' ? 'font-weight:600;border-color:rgba(0,0,0,0.35);' : '' %>">Recently changed</a>
+          </nav>
+          <% if (!recentRuns || !recentRuns.length) { %>
+            <p class="admin-finance-empty"><%= _fexp ? 'No pay runs match this filter for this region.' : 'No pay runs for this region.' %></p>
+          <% } else { %>
+            <div class="admin-table-wrap" style="overflow-x:auto;">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Period</th>
+                    <th style="text-align:right;">Agents</th>
+                    <th style="text-align:right;">Frozen payable</th>
+                    <th style="text-align:right;">Net paid</th>
+                    <th style="text-align:right;">Balance</th>
+                    <th>Status</th>
+                    <th>Paid at</th>
+                    <th>Updated</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% recentRuns.forEach(function (r) { %>
+                  <% var ps = r.period_start ? new Date(r.period_start) : null; var pe = r.period_end ? new Date(r.period_end) : null; %>
+                  <% var plabel = (ps && pe) ? (ps.toISOString().slice(0,10) + ' – ' + pe.toISOString().slice(0,10)) : '—'; %>
+                  <% var _fdet = []; if (typeof embed !== 'undefined' && embed) _fdet.push('embed=1'); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') _fdet.push('tenant_id=' + tenantId); %>
+                  <% var _fdetQs = _fdet.length ? '?' + _fdet.join('&') : ''; %>
+                  <% var _br = Number(r.balance_remaining || 0); %>
+                  <% var _brCls = 'admin-finance-num'; if (_br < 0) { _brCls += ' admin-finance-num--warn'; } else if (_br > 0) { _brCls += ' admin-finance-num--outstanding'; } %>
+                  <tr>
+                    <td><%= r.pay_run_id %></td>
+                    <td style="white-space:nowrap;"><%= plabel %></td>
+                    <td style="text-align:right;font-variant-numeric:tabular-nums;"><%= r.field_agent_count != null ? r.field_agent_count : 0 %></td>
+                    <td class="admin-finance-num"><%= Number(r.run_payable_total || 0).toFixed(2) %></td>
+                    <td class="admin-finance-num"><%= Number(r.total_paid_amount || 0).toFixed(2) %></td>
+                    <td class="<%= _brCls %>"><%= _br.toFixed(2) %></td>
+                    <td><%- include('../partials/admin_finance_status_badge', { status: r.run_status }) %></td>
+                    <td class="muted admin-finance-ts" style="font-size:0.88rem;"><%= r.paid_at ? new Date(r.paid_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></td>
+                    <td class="muted admin-finance-ts" style="font-size:0.88rem;"><%= r.updated_at ? new Date(r.updated_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></td>
+                    <td>
+                      <a href="/admin/field-agent-pay-runs/<%= r.pay_run_id %>/finance-detail<%= _fdetQs %>">Finance detail</a>
+                      · <a href="/admin/field-agent-pay-runs/<%= r.pay_run_id %><%= _fdetQs %>">Workflow</a>
+                    </td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

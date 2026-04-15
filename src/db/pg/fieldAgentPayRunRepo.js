@@ -55,6 +55,273 @@ function computeReconciliationStatus(payable, paid) {
   return "overpaid";
 }
 
+/** @enum {string} */
+const LEDGER_ENTRY_TYPE = {
+  PAYMENT: "payment",
+  REVERSAL: "reversal",
+  CORRECTION_PAYMENT: "correction_payment",
+};
+
+/** Reasons stored on {@link insertPayRunStatusHistory} (ledger-driven status sync). */
+const PAY_RUN_STATUS_HISTORY_REASON = {
+  REVERSAL_OR_CORRECTION_REOPENED: "reversal_or_correction_reopened",
+  LEDGER_SETTLED: "ledger_settled",
+};
+
+/** Index names from db/postgres/031_field_agent_pay_run_payments_unique_linkage.sql (pg reports these on unique_violation). */
+const UQ_FAPR_REVERSAL_PER_ORIGINAL_PAYMENT = "uq_fapr_reversal_per_original_payment";
+const UQ_FAPR_CORRECTION_PER_ORIGINAL_PAYMENT = "uq_fapr_correction_per_original_payment";
+
+/**
+ * @param {unknown} err
+ * @returns {{ error: string, message: string } | null}
+ */
+function mapPaymentLedgerUniqueViolation(err) {
+  const e = err && typeof err === "object" ? err : null;
+  if (!e || e.code !== "23505") return null;
+  const c = String(e.constraint || "");
+  if (c === UQ_FAPR_REVERSAL_PER_ORIGINAL_PAYMENT) {
+    return { error: "ALREADY_REVERSED", message: "This payment already has a reversal row (database constraint)." };
+  }
+  if (c === UQ_FAPR_CORRECTION_PER_ORIGINAL_PAYMENT) {
+    return { error: "ALREADY_CORRECTED", message: "A correction payment for this line already exists (database constraint)." };
+  }
+  return null;
+}
+
+/**
+ * @param {import("pg").Pool | import("pg").PoolClient} executor
+ * @param {Record<string, unknown>} row
+ */
+function parsePaymentMetadata(row) {
+  const m = row && row.metadata;
+  if (m != null && typeof m === "object" && !Array.isArray(m)) return m;
+  if (typeof m === "string" && m.trim()) {
+    try {
+      const o = JSON.parse(m);
+      return o && typeof o === "object" ? o : {};
+    } catch (_) {
+      return {};
+    }
+  }
+  return {};
+}
+
+/**
+ * Append-only ledger row (amount may be negative for reversals).
+ * @param {import("pg").Pool | import("pg").PoolClient} executor
+ */
+async function insertPaymentLedgerRow(executor, p) {
+  const tid = Number(p.tenantId);
+  const prid = Number(p.payRunId);
+  const amt = roundMoney2(Number(p.amount));
+  const paymentDateRaw = String(p.paymentDate || "").trim();
+  const method = p.paymentMethod != null ? String(p.paymentMethod).trim().slice(0, 200) : "";
+  const reference = p.paymentReference != null ? String(p.paymentReference).trim().slice(0, 2000) : "";
+  const notes = p.notes != null ? String(p.notes).trim().slice(0, 4000) : "";
+  const adminId =
+    p.createdByAdminUserId != null && Number.isFinite(Number(p.createdByAdminUserId)) && Number(p.createdByAdminUserId) > 0
+      ? Number(p.createdByAdminUserId)
+      : null;
+  const metaObj = p.metadata != null && typeof p.metadata === "object" && !Array.isArray(p.metadata) ? p.metadata : {};
+  const metadataJson = JSON.stringify(metaObj);
+
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(prid) || prid < 1) {
+    throw new Error("INVALID_LEDGER_INSERT");
+  }
+  if (amt === 0 || !Number.isFinite(amt)) {
+    throw new Error("INVALID_LEDGER_AMOUNT");
+  }
+  if (!paymentDateRaw) {
+    throw new Error("INVALID_PAYMENT_DATE");
+  }
+  const date = new Date(`${paymentDateRaw}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== paymentDateRaw) {
+    throw new Error("INVALID_PAYMENT_DATE");
+  }
+
+  const r = await executor.query(
+    `
+    INSERT INTO public.field_agent_pay_run_payments
+      (tenant_id, pay_run_id, payment_date, amount, payment_method, payment_reference, notes, created_by_admin_user_id, metadata)
+    VALUES
+      ($1, $2, $3::date, $4::numeric(12,2), NULLIF($5::text, ''), NULLIF($6::text, ''), NULLIF($7::text, ''), $8, $9::jsonb)
+    RETURNING *
+    `,
+    [tid, prid, paymentDateRaw, toMoneyFixed2(amt), method, reference, notes, adminId, metadataJson]
+  );
+  return r.rows[0];
+}
+
+async function getPaymentByIdForTenant(pool, paymentId, payRunId, tenantId) {
+  const pid = Number(paymentId);
+  const prid = Number(payRunId);
+  const tid = Number(tenantId);
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(prid) || prid < 1 || !Number.isFinite(tid) || tid < 1) {
+    return null;
+  }
+  const r = await pool.query(
+    `
+    SELECT * FROM public.field_agent_pay_run_payments
+    WHERE id = $1 AND pay_run_id = $2 AND tenant_id = $3
+    LIMIT 1
+    `,
+    [pid, prid, tid]
+  );
+  return r.rows[0] ?? null;
+}
+
+/**
+ * Row lock for reverse/correct flows — serializes concurrent operations on the same payment line.
+ * @param {import("pg").Pool | import("pg").PoolClient} executor
+ */
+async function getPaymentByIdForTenantForUpdate(executor, paymentId, payRunId, tenantId) {
+  const pid = Number(paymentId);
+  const prid = Number(payRunId);
+  const tid = Number(tenantId);
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(prid) || prid < 1 || !Number.isFinite(tid) || tid < 1) {
+    return null;
+  }
+  const r = await executor.query(
+    `
+    SELECT * FROM public.field_agent_pay_run_payments
+    WHERE id = $1 AND pay_run_id = $2 AND tenant_id = $3
+    FOR UPDATE
+    LIMIT 1
+    `,
+    [pid, prid, tid]
+  );
+  return r.rows[0] ?? null;
+}
+
+/**
+ * @param {import("pg").Pool | import("pg").PoolClient} executor
+ */
+async function reversalExistsForOriginalPaymentId(executor, tenantId, payRunId, originalPaymentId) {
+  const tid = Number(tenantId);
+  const prid = Number(payRunId);
+  const oid = Number(originalPaymentId);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(prid) || prid < 1 || !Number.isFinite(oid) || oid < 1) {
+    return false;
+  }
+  const r = await executor.query(
+    `
+    SELECT 1 FROM public.field_agent_pay_run_payments
+    WHERE tenant_id = $1 AND pay_run_id = $2
+      AND (metadata->>'reverses_payment_id') IS NOT NULL
+      AND (metadata->>'reverses_payment_id')::bigint = $3
+    LIMIT 1
+    `,
+    [tid, prid, oid]
+  );
+  return r.rows.length > 0;
+}
+
+/**
+ * Append-only audit row for pay-run status changes (ledger-driven paths).
+ * @param {import("pg").Pool | import("pg").PoolClient} executor
+ * @param {{ tenantId: number, payRunId: number, fromStatus: string, toStatus: string, reason: string, actorAdminUserId: number | null, sourcePaymentId: number | null }} row
+ */
+async function insertPayRunStatusHistory(executor, row) {
+  const tid = Number(row.tenantId);
+  const prid = Number(row.payRunId);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(prid) || prid < 1) return;
+  const aid =
+    row.actorAdminUserId != null && Number.isFinite(Number(row.actorAdminUserId)) && Number(row.actorAdminUserId) > 0
+      ? Number(row.actorAdminUserId)
+      : null;
+  const sid =
+    row.sourcePaymentId != null && Number.isFinite(Number(row.sourcePaymentId)) && Number(row.sourcePaymentId) > 0
+      ? Number(row.sourcePaymentId)
+      : null;
+  await executor.query(
+    `
+    INSERT INTO public.field_agent_pay_run_status_history (
+      tenant_id, pay_run_id, from_status, to_status, reason, actor_admin_user_id, source_payment_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `,
+    [tid, prid, String(row.fromStatus || ""), String(row.toStatus || ""), String(row.reason || "").slice(0, 4000), aid, sid]
+  );
+}
+
+/**
+ * When ledger SUM changes: reopen paid runs if underpaid; mark approved runs paid if fully settled.
+ * @param {import("pg").Pool} pool
+ * @param {number} payRunId
+ * @param {number} tenantId
+ * @param {number | null} adminUserId
+ * @param {{ sourcePaymentId?: number }} [options]
+ * @returns {{ changed: boolean, run?: object, action?: string }}
+ */
+async function syncPayRunStatusWithLedger(pool, payRunId, tenantId, adminUserId, options = {}) {
+  const pid = Number(payRunId);
+  const tid = Number(tenantId);
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) {
+    return { changed: false };
+  }
+  const sourcePaymentId =
+    options.sourcePaymentId != null && Number.isFinite(Number(options.sourcePaymentId)) && Number(options.sourcePaymentId) > 0
+      ? Number(options.sourcePaymentId)
+      : null;
+  const run = await getPayRunByIdForTenant(pool, pid, tid);
+  if (!run) return { changed: false };
+  const rec = await getPayRunReconciliationSummary(pool, pid, tid);
+  if (!rec) return { changed: false };
+  const payable = roundMoney2(Number(rec.run_payable_total || 0));
+  const paid = roundMoney2(Number(rec.total_paid_amount || 0));
+  const st = String(run.status || "");
+
+  if (st === "paid" && paid < payable) {
+    const r = await pool.query(
+      `
+      UPDATE public.field_agent_pay_runs
+      SET status = 'approved',
+          paid_at = NULL,
+          paid_by_admin_user_id = NULL,
+          payout_reference = NULL,
+          payout_notes = NULL,
+          updated_at = now()
+      WHERE id = $1 AND tenant_id = $2 AND status = 'paid'
+      RETURNING *
+      `,
+      [pid, tid]
+    );
+    if (r.rows.length) {
+      await insertPayRunStatusHistory(pool, {
+        tenantId: tid,
+        payRunId: pid,
+        fromStatus: "paid",
+        toStatus: "approved",
+        reason: PAY_RUN_STATUS_HISTORY_REASON.REVERSAL_OR_CORRECTION_REOPENED,
+        actorAdminUserId: adminUserId != null && Number.isFinite(Number(adminUserId)) && Number(adminUserId) > 0 ? Number(adminUserId) : null,
+        sourcePaymentId,
+      });
+      return { changed: true, run: r.rows[0], action: "reopened_to_approved" };
+    }
+  }
+
+  if (st === "approved" && paid >= payable) {
+    const mark = await markPayRunApprovedAsPaid(pool, pid, tid, adminUserId, {
+      payoutReference: "reconciled via payment ledger",
+      payoutNotes: "",
+    });
+    if (mark.run) {
+      await insertPayRunStatusHistory(pool, {
+        tenantId: tid,
+        payRunId: pid,
+        fromStatus: "approved",
+        toStatus: "paid",
+        reason: PAY_RUN_STATUS_HISTORY_REASON.LEDGER_SETTLED,
+        actorAdminUserId: adminUserId != null && Number.isFinite(Number(adminUserId)) && Number(adminUserId) > 0 ? Number(adminUserId) : null,
+        sourcePaymentId,
+      });
+      return { changed: true, run: mark.run, action: "marked_paid" };
+    }
+  }
+
+  return { changed: false, run };
+}
+
 /**
  * @param {import("pg").Pool | import("pg").PoolClient} executor
  */
@@ -341,11 +608,12 @@ async function getPayRunReconciliationSummary(pool, payRunId, tenantId) {
   };
 }
 
-async function listPaymentsForPayRun(pool, payRunId, tenantId, limit = 200) {
+async function listPaymentsForPayRun(pool, payRunId, tenantId, limit = 200, opts = {}) {
   const pid = Number(payRunId);
   const tid = Number(tenantId);
   const lim = Math.min(Math.max(Number(limit) || 200, 1), 500);
   if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) return [];
+  const order = opts && opts.order === "asc" ? "ASC" : "DESC";
   const r = await pool.query(
     `
     SELECT
@@ -357,11 +625,12 @@ async function listPaymentsForPayRun(pool, payRunId, tenantId, limit = 200) {
       p.payment_method,
       p.payment_reference,
       p.notes,
+      p.metadata,
       p.created_at,
       p.created_by_admin_user_id
     FROM public.field_agent_pay_run_payments p
     WHERE p.pay_run_id = $1 AND p.tenant_id = $2
-    ORDER BY p.payment_date DESC, p.id DESC
+    ORDER BY p.payment_date ${order}, p.id ${order}
     LIMIT $3
     `,
     [pid, tid, lim]
@@ -370,8 +639,8 @@ async function listPaymentsForPayRun(pool, payRunId, tenantId, limit = 200) {
 }
 
 /**
- * Record one payment event for an approved/paid run.
- * If an approved run reaches full settlement (paid >= payable), status is transitioned to paid.
+ * Record one payment event for an approved/paid run (positive amount; append-only ledger).
+ * Status is synced via {@link syncPayRunStatusWithLedger} after insert.
  */
 async function addPaymentForPayRun(pool, p) {
   const pid = Number(p.payRunId);
@@ -407,17 +676,25 @@ async function addPaymentForPayRun(pool, p) {
     return { ok: false, error: "Payments can only be recorded for approved or paid runs." };
   }
 
-  const inserted = await pool.query(
-    `
-    INSERT INTO public.field_agent_pay_run_payments
-      (tenant_id, pay_run_id, payment_date, amount, payment_method, payment_reference, notes, created_by_admin_user_id)
-    VALUES
-      ($1, $2, $3::date, $4::numeric(12,2), NULLIF($5::text, ''), NULLIF($6::text, ''), NULLIF($7::text, ''), $8)
-    RETURNING *
-    `,
-    [tid, pid, paymentDateRaw, toMoneyFixed2(amount), method, reference, notes, adminId]
-  );
-  const payment = inserted.rows[0];
+  let payment;
+  try {
+    payment = await insertPaymentLedgerRow(pool, {
+      tenantId: tid,
+      payRunId: pid,
+      paymentDate: paymentDateRaw,
+      amount,
+      paymentMethod: method,
+      paymentReference: reference,
+      notes,
+      createdByAdminUserId: adminId,
+      metadata: { type: LEDGER_ENTRY_TYPE.PAYMENT },
+    });
+  } catch (e) {
+    const msg = e && e.message ? String(e.message) : "";
+    if (msg.includes("INVALID_PAYMENT_DATE")) return { ok: false, error: "Invalid payment date." };
+    throw e;
+  }
+
   const reconciliation = await getPayRunReconciliationSummary(pool, pid, tid);
   let outRun = run;
   if (
@@ -429,10 +706,276 @@ async function addPaymentForPayRun(pool, p) {
       payoutReference: reference || "reconciled via payment ledger",
       payoutNotes: notes || "",
     });
-    if (mark && mark.run) outRun = mark.run;
+    if (mark && mark.run) {
+      outRun = mark.run;
+      await insertPayRunStatusHistory(pool, {
+        tenantId: tid,
+        payRunId: pid,
+        fromStatus: "approved",
+        toStatus: "paid",
+        reason: PAY_RUN_STATUS_HISTORY_REASON.LEDGER_SETTLED,
+        actorAdminUserId: adminId,
+        sourcePaymentId: payment && payment.id != null ? Number(payment.id) : null,
+      });
+    }
+  } else {
+    outRun = (await getPayRunByIdForTenant(pool, pid, tid)) || run;
   }
 
   return { ok: true, payment, reconciliation, run: outRun };
+}
+
+/**
+ * Full reversal of one positive payment line (negative ledger entry). Original row is not modified.
+ * @returns {Promise<{ ok: boolean, error?: string, message?: string, payment?: object, reconciliation?: object, run?: object }>}
+ */
+async function reversePaymentForPayRun(pool, p) {
+  const reason = String(p.reason || "").trim();
+  if (!reason) {
+    return { ok: false, error: "REASON_REQUIRED", message: "Reason is required." };
+  }
+  const paymentId = Number(p.paymentId);
+  const payRunId = Number(p.payRunId);
+  const tenantId = Number(p.tenantId);
+  const adminId =
+    p.createdByAdminUserId != null && Number.isFinite(Number(p.createdByAdminUserId)) && Number(p.createdByAdminUserId) > 0
+      ? Number(p.createdByAdminUserId)
+      : null;
+
+  let payment;
+  /** @type {object | undefined} */
+  let run;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const original = await getPaymentByIdForTenantForUpdate(client, paymentId, payRunId, tenantId);
+    if (!original) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "NOT_FOUND", message: "Payment not found." };
+    }
+    const origAmt = roundMoney2(Number(original.amount));
+    if (origAmt <= 0) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "NOT_REVERSIBLE", message: "Only positive payment lines can be reversed." };
+    }
+    const om = parsePaymentMetadata(original);
+    if (String(om.type || "") === LEDGER_ENTRY_TYPE.REVERSAL) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "NOT_REVERSIBLE", message: "Cannot reverse a reversal entry." };
+    }
+
+    const already = await reversalExistsForOriginalPaymentId(client, tenantId, payRunId, paymentId);
+    if (already) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "ALREADY_REVERSED", message: "This payment was already reversed." };
+    }
+
+    run = await getPayRunByIdForTenant(client, payRunId, tenantId);
+    if (!run) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "NOT_FOUND", message: "Pay run not found." };
+    }
+    const st = String(run.status || "");
+    if (st !== "approved" && st !== "paid") {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "INVALID_STATE", message: "Ledger changes require an approved or paid pay run." };
+    }
+
+    let paymentDateRaw = String(p.paymentDate || "").trim();
+    if (!paymentDateRaw) {
+      paymentDateRaw = new Date().toISOString().slice(0, 10);
+    }
+    const date = new Date(`${paymentDateRaw}T00:00:00.000Z`);
+    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== paymentDateRaw) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "INVALID_DATE", message: "Invalid payment date." };
+    }
+
+    const revAmount = roundMoney2(-origAmt);
+    try {
+      payment = await insertPaymentLedgerRow(client, {
+        tenantId,
+        payRunId,
+        paymentDate: paymentDateRaw,
+        amount: revAmount,
+        paymentMethod: "reversal",
+        paymentReference: `reversal of payment #${paymentId}`,
+        notes: reason.slice(0, 4000),
+        createdByAdminUserId: adminId,
+        metadata: {
+          type: LEDGER_ENTRY_TYPE.REVERSAL,
+          reason,
+          reverses_payment_id: paymentId,
+        },
+      });
+    } catch (e) {
+      await client.query("ROLLBACK");
+      const mapped = mapPaymentLedgerUniqueViolation(e);
+      if (mapped) return { ok: false, error: mapped.error, message: mapped.message };
+      throw e;
+    }
+
+    await client.query("COMMIT");
+  } catch (e) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (_) {
+      /* ignore */
+    }
+    throw e;
+  } finally {
+    client.release();
+  }
+
+  const sync = await syncPayRunStatusWithLedger(pool, payRunId, tenantId, adminId, {
+    sourcePaymentId: payment && payment.id != null ? Number(payment.id) : null,
+  });
+  const reconciliation = await getPayRunReconciliationSummary(pool, payRunId, tenantId);
+  const outRun = sync.run && sync.changed ? sync.run : (await getPayRunByIdForTenant(pool, payRunId, tenantId)) || run;
+
+  return { ok: true, payment, reconciliation, run: outRun };
+}
+
+/**
+ * Atomic correction: reversal of original + new positive payment (two inserts).
+ * @returns {Promise<{ ok: boolean, error?: string, message?: string, reversal?: object, payment?: object, reconciliation?: object, run?: object }>}
+ */
+async function correctPaymentForPayRun(pool, p) {
+  const reason = String(p.reason || "").trim();
+  if (!reason) {
+    return { ok: false, error: "REASON_REQUIRED", message: "Reason is required." };
+  }
+  const newAmount = roundMoney2(Number(p.newAmount));
+  if (!(newAmount > 0)) {
+    return { ok: false, error: "INVALID_AMOUNT", message: "Corrected amount must be greater than 0." };
+  }
+
+  const paymentId = Number(p.paymentId);
+  const payRunId = Number(p.payRunId);
+  const tenantId = Number(p.tenantId);
+  const adminId =
+    p.createdByAdminUserId != null && Number.isFinite(Number(p.createdByAdminUserId)) && Number(p.createdByAdminUserId) > 0
+      ? Number(p.createdByAdminUserId)
+      : null;
+
+  const method = p.paymentMethod != null ? String(p.paymentMethod).trim().slice(0, 200) : "";
+  const reference = p.paymentReference != null ? String(p.paymentReference).trim().slice(0, 2000) : "";
+
+  let reversalRow;
+  let paymentRow;
+  /** @type {object | undefined} */
+  let run;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const original = await getPaymentByIdForTenantForUpdate(client, paymentId, payRunId, tenantId);
+    if (!original) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "NOT_FOUND", message: "Payment not found." };
+    }
+    const origAmt = roundMoney2(Number(original.amount));
+    if (origAmt <= 0) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "NOT_REVERSIBLE", message: "Only positive payment lines can be corrected." };
+    }
+    const om = parsePaymentMetadata(original);
+    if (String(om.type || "") === LEDGER_ENTRY_TYPE.REVERSAL) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "NOT_REVERSIBLE", message: "Cannot correct a reversal entry." };
+    }
+
+    const already = await reversalExistsForOriginalPaymentId(client, tenantId, payRunId, paymentId);
+    if (already) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "ALREADY_REVERSED", message: "This payment was already reversed or corrected." };
+    }
+
+    run = await getPayRunByIdForTenant(client, payRunId, tenantId);
+    if (!run) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "NOT_FOUND", message: "Pay run not found." };
+    }
+    const st = String(run.status || "");
+    if (st !== "approved" && st !== "paid") {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "INVALID_STATE", message: "Ledger changes require an approved or paid pay run." };
+    }
+
+    let paymentDateRaw = String(p.paymentDate || "").trim();
+    if (!paymentDateRaw) {
+      paymentDateRaw = new Date().toISOString().slice(0, 10);
+    }
+    const date = new Date(`${paymentDateRaw}T00:00:00.000Z`);
+    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== paymentDateRaw) {
+      await client.query("ROLLBACK");
+      return { ok: false, error: "INVALID_DATE", message: "Invalid payment date." };
+    }
+
+    reversalRow = await insertPaymentLedgerRow(client, {
+      tenantId,
+      payRunId,
+      paymentDate: paymentDateRaw,
+      amount: roundMoney2(-origAmt),
+      paymentMethod: "reversal",
+      paymentReference: `correction: reversal of payment #${paymentId}`,
+      notes: reason.slice(0, 4000),
+      createdByAdminUserId: adminId,
+      metadata: {
+        type: LEDGER_ENTRY_TYPE.REVERSAL,
+        reason,
+        reverses_payment_id: paymentId,
+        correction: true,
+      },
+    });
+
+    paymentRow = await insertPaymentLedgerRow(client, {
+      tenantId,
+      payRunId,
+      paymentDate: paymentDateRaw,
+      amount: newAmount,
+      paymentMethod: method || "correction",
+      paymentReference: reference || `correction for payment #${paymentId}`,
+      notes: reason.slice(0, 4000),
+      createdByAdminUserId: adminId,
+      metadata: {
+        type: LEDGER_ENTRY_TYPE.CORRECTION_PAYMENT,
+        reason,
+        corrects_payment_id: paymentId,
+        replaced_amount: origAmt,
+      },
+    });
+
+    await client.query("COMMIT");
+  } catch (e) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (_) {
+      /* ignore */
+    }
+    const mapped = mapPaymentLedgerUniqueViolation(e);
+    if (mapped) {
+      return { ok: false, error: mapped.error, message: mapped.message };
+    }
+    throw e;
+  } finally {
+    client.release();
+  }
+
+  const sync = await syncPayRunStatusWithLedger(pool, payRunId, tenantId, adminId, {
+    sourcePaymentId: paymentRow && paymentRow.id != null ? Number(paymentRow.id) : null,
+  });
+  const reconciliation = await getPayRunReconciliationSummary(pool, payRunId, tenantId);
+  const outRun = sync.run && sync.changed ? sync.run : (await getPayRunByIdForTenant(pool, payRunId, tenantId)) || run;
+
+  return {
+    ok: true,
+    reversal: reversalRow,
+    payment: paymentRow,
+    reconciliation,
+    run: outRun,
+  };
 }
 
 async function listPayRunsForTenant(pool, tenantId, limit = 50) {
@@ -657,9 +1200,11 @@ async function createDraftPayRunWithCarryForward(pool, p) {
 }
 
 module.exports = {
+  LEDGER_ENTRY_TYPE,
   insertPayRunDraft,
   insertPayRunItems,
   roundMoney2,
+  parsePaymentMetadata,
   createDraftPayRunWithCarryForward,
   assertPayRunIsDraft,
   countItemsForPayRun,
@@ -671,10 +1216,16 @@ module.exports = {
   listPayRunsForTenant,
   getPayRunById,
   getPayRunByIdForTenant,
+  getPaymentByIdForTenant,
   listItemsForPayRun,
   getPayRunReconciliationSummary,
   listPaymentsForPayRun,
+  insertPaymentLedgerRow,
+  syncPayRunStatusWithLedger,
+  reversalExistsForOriginalPaymentId,
   addPaymentForPayRun,
+  reversePaymentForPayRun,
+  correctPaymentForPayRun,
   listVisiblePayRunItemsForFieldAgent,
   getVisiblePayRunItemDetailForFieldAgent,
   getPayRunStatementSnapshotForFieldAgent,

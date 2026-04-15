@@ -42,6 +42,7 @@ const registerAdminFieldAgentDisputesRoutes = require("./admin/adminFieldAgentDi
 const registerAdminFieldAgentAdjustmentsRoutes = require("./admin/adminFieldAgentAdjustments");
 const registerAdminIntakeRoutes = require("./admin/adminIntake");
 const registerAdminDbToolsRoutes = require("./admin/adminDbTools");
+const registerAdminFinanceCfoRoutes = require("./admin/adminFinanceCfo");
 
 module.exports = function adminRoutes({ db }) {
   const router = express.Router();
@@ -202,6 +203,7 @@ module.exports = function adminRoutes({ db }) {
   });
 
   registerAdminSuperRoutes(router);
+  registerAdminFinanceCfoRoutes(router);
   registerAdminTenantUsersRoutes(router, { db });
   registerAdminDashboardContentRoutes(router);
   registerAdminDirectoryRoutes(router);

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pay run #<%= run.id %> · finance detail | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Pay run finance', activeNav: 'field_agent_payout_finance' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <% var _fdQs = []; if (typeof embed !== 'undefined' && embed) _fdQs.push('embed=1'); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') _fdQs.push('tenant_id=' + tenantId); %>
+        <% var _fdQstr = _fdQs.length ? '?' + _fdQs.join('&') : ''; %>
+        <p style="margin-bottom:1rem;">
+          <a href="/admin/field-agent-pay-runs/finance-dashboard<%= _fdQstr %>">← Payout review</a>
+          &nbsp;·&nbsp;
+          <a href="/admin/field-agent-pay-runs/<%= run.id %><%= _fdQstr %>">Workflow detail</a>
+          &nbsp;·&nbsp;
+          <a href="/admin/field-agent-pay-runs/<%= run.id %>/finance-detail/export.csv<%= _fdQstr %>">Download ledger (CSV)</a>
+        </p>
+
+        <% if (typeof isSuper !== 'undefined' && isSuper && tenants && tenants.length) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Region</h2>
+          <form method="get" action="/admin/field-agent-pay-runs/<%= run.id %>/finance-detail" class="admin-filter-form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <div class="input-field">
+              <label class="input-field__label" for="fdet_tenant">Tenant</label>
+              <select id="fdet_tenant" name="tenant_id" class="input-field__control" onchange="this.form.submit()">
+                <% tenants.forEach(function (t) { %>
+                <option value="<%= t.id %>" <%= Number(tenantId) === Number(t.id) ? 'selected' : '' %>><%= t.name %> (<%= t.slug %>)</option>
+                <% }); %>
+              </select>
+            </div>
+          </form>
+        </section>
+        <% } %>
+
+        <%- include('../partials/cfo_reconciliation_strip') %>
+
+        <%- include('../partials/pay_run_finance_explanation_panel', { explanationVariant: 'finance' }) %>
+
+        <% var ps = run.period_start ? new Date(run.period_start) : null; var pe = run.period_end ? new Date(run.period_end) : null; %>
+        <% var periodLabel = (ps && pe) ? (ps.toISOString().slice(0,10) + ' – ' + pe.toISOString().slice(0,10)) : '—'; %>
+
+        <header class="admin-dashboard__header card card--mb-xl" style="padding:1rem;">
+          <h1 class="admin-dashboard__title" style="margin-top:0;">Pay run #<%= run.id %></h1>
+          <p class="admin-dashboard__subtitle muted" style="margin-bottom:0.75rem;">Read-only finance view — ledger timeline explains net paid.</p>
+          <dl style="display:grid;grid-template-columns:auto 1fr;gap:0.35rem 1.25rem;margin:0;max-width:42rem;">
+            <dt class="muted">Period</dt><dd style="margin:0;"><%= periodLabel %></dd>
+            <dt class="muted">Tenant</dt><dd style="margin:0;"><%= tenant && tenant.name ? tenant.name : '—' %> <% if (tenant && tenant.slug) { %><span class="muted">(<%= tenant.slug %>)</span><% } %></dd>
+            <dt class="muted">Status</dt><dd style="margin:0;"><%- include('../partials/admin_finance_status_badge', { status: run.status }) %></dd>
+            <dt class="muted">Approved at</dt><dd style="margin:0;" class="admin-finance-ts"><%= run.approved_at ? new Date(run.approved_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></dd>
+            <dt class="muted">Paid at</dt><dd style="margin:0;" class="admin-finance-ts"><%= run.paid_at ? new Date(run.paid_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></dd>
+          </dl>
+        </header>
+
+        <% var ldev = typeof ledgerDriverEvents !== 'undefined' ? ledgerDriverEvents : []; %>
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <h2 class="section-title section-title--flush">Ledger-driven status changes</h2>
+          <% if (!ldev.length) { %>
+            <p class="admin-finance-empty" style="margin:0;">No reopen or settlement events for this run yet (or status history is unavailable).</p>
+          <% } else { %>
+            <ul style="margin:0;padding-left:1.25rem;">
+              <% ldev.forEach(function (ev) { %>
+              <li>
+                <strong><%= ev.from_status %> → <%= ev.to_status %></strong>
+                · <%= ev.reason %>
+                · <span class="admin-finance-ts"><%= ev.created_at ? new Date(ev.created_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></span>
+                <% if (ev.source_payment_id != null) { %> · source payment #<%= ev.source_payment_id %><% } %>
+              </li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Payment ledger (timeline)</h2>
+          <p class="muted" style="margin-top:0;">
+            Rows in chronological order (payment date, then id). <strong>Running net paid</strong> is the balance after each line, in that same order.
+          </p>
+          <% if (!ledgerRows || !ledgerRows.length) { %>
+            <p class="admin-finance-empty">No payment lines recorded for this run yet.</p>
+          <% } else { %>
+            <div class="admin-table-wrap" style="overflow-x:auto;">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Row id</th>
+                    <th>Payment date</th>
+                    <th style="text-align:right;">Amount</th>
+                    <th style="text-align:right;">Running net paid<br /><span class="muted" style="font-weight:normal;font-size:0.75rem;">(after row)</span></th>
+                    <th>Kind</th>
+                    <th>Related payment #</th>
+                    <th>Method</th>
+                    <th>Reference</th>
+                    <th>Reason</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% ledgerRows.forEach(function (row) { %>
+                  <% var _amt = Number(row.amount || 0); var _amtCls = 'admin-finance-num'; if (_amt < 0) { _amtCls += ' admin-finance-num--neg'; } %>
+                  <% var _k = row._kind || ''; %>
+                  <tr>
+                    <td><%= row.id %></td>
+                    <td style="white-space:nowrap;"><%= row.payment_date ? new Date(row.payment_date).toISOString().slice(0, 10) : '—' %></td>
+                    <td class="<%= _amtCls %>"><%= _amt.toFixed(2) %></td>
+                    <td class="admin-finance-num"><%= row._runningNetPaidAfter != null ? Number(row._runningNetPaidAfter).toFixed(2) : '—' %></td>
+                    <td>
+                      <% if (_k.indexOf('Reversal') === 0) { %>
+                        <span class="admin-finance-badge admin-finance-badge--state-reopen"><%= _k %></span>
+                      <% } else if (_k.indexOf('Correction') === 0) { %>
+                        <span class="admin-finance-badge admin-finance-badge--state-adjusted"><%= _k %></span>
+                      <% } else { %>
+                        <span class="admin-finance-badge admin-finance-badge--state-neutral"><%= _k || '—' %></span>
+                      <% } %>
+                    </td>
+                    <td class="muted"><%= row._relatedOriginalPaymentId != null ? '#' + row._relatedOriginalPaymentId : '—' %></td>
+                    <td><%= row.payment_method != null ? row.payment_method : '—' %></td>
+                    <td style="max-width:11rem;word-break:break-word;"><%= row.payment_reference != null ? row.payment_reference : '—' %></td>
+                    <td style="max-width:14rem;word-break:break-word;font-size:0.88rem;" class="muted"><%= row._reasonSummary ? row._reasonSummary : '—' %></td>
+                    <td class="muted admin-finance-ts" style="white-space:nowrap;font-size:0.88rem;"><%= row.created_at ? new Date(row.created_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <% var sh = typeof statusHistory !== 'undefined' ? statusHistory : []; %>
+        <% var hal = typeof historyActorLabels !== 'undefined' ? historyActorLabels : {}; %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Status history</h2>
+          <% if (!sh.length) { %>
+            <p class="admin-finance-empty" style="margin:0;">No status history rows for this run (or history is unavailable).</p>
+          <% } else { %>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>From → to</th>
+                    <th>Reason</th>
+                    <th>Actor</th>
+                    <th>Source payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% sh.forEach(function (h) { %>
+                  <% var aid = h.actor_admin_user_id != null ? Number(h.actor_admin_user_id) : null; %>
+                  <tr>
+                    <td class="muted admin-finance-ts" style="white-space:nowrap;"><%= h.created_at ? new Date(h.created_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></td>
+                    <td><%= h.from_status %> → <%= h.to_status %></td>
+                    <td><%= h.reason != null ? h.reason : '—' %></td>
+                    <td>
+                      <% if (aid != null && hal[aid]) { %><%= hal[aid] %> <span class="muted">(#<%= aid %>)</span><% } else if (aid != null) { %>#<%= aid %><% } else { %>—<% } %>
+                    </td>
+                    <td><%= h.source_payment_id != null ? h.source_payment_id : '—' %></td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

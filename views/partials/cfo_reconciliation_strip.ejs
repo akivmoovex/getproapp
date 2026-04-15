@@ -1,0 +1,40 @@
+<% var rs = typeof reconciliationStrip !== 'undefined' && reconciliationStrip ? reconciliationStrip : null; %>
+<% if (rs) { %>
+<% var _rb = Number(rs.remainingBalance); %>
+<% var _rbCls = 'admin-finance-num'; if (_rb < 0) { _rbCls += ' admin-finance-num--warn'; } else if (_rb > 0) { _rbCls += ' admin-finance-num--outstanding'; } else { _rbCls += ' admin-finance-num--ok'; } %>
+<section class="card card--mb-xl" style="padding:1rem 1.25rem;border-left:4px solid var(--border-strong);">
+  <h2 class="section-title section-title--flush" style="margin-top:0;"><%= typeof reconciliationStripTitle !== 'undefined' ? reconciliationStripTitle : 'Reconciliation summary' %></h2>
+  <div style="display:flex;flex-wrap:wrap;gap:1.1rem 1.85rem;align-items:flex-start;line-height:1.5;">
+    <div>
+      <span class="muted" style="font-size:0.8rem;">Frozen payable</span><br />
+      <strong class="admin-finance-num" style="font-size:1.1rem;display:inline-block;"><%= Number(rs.frozenPayable).toFixed(2) %></strong>
+    </div>
+    <div>
+      <span class="muted" style="font-size:0.8rem;">Net paid (ledger)</span><br />
+      <strong class="admin-finance-num" style="font-size:1.1rem;display:inline-block;"><%= Number(rs.netPaid).toFixed(2) %></strong>
+    </div>
+    <div>
+      <span class="muted" style="font-size:0.8rem;">Remaining balance</span><br />
+      <strong class="<%= _rbCls %>" style="font-size:1.1rem;display:inline-block;"><%= _rb.toFixed(2) %></strong>
+    </div>
+    <div>
+      <span class="muted" style="font-size:0.8rem;">Settlement</span><br />
+      <span class="admin-finance-badge admin-finance-badge--state-neutral admin-finance-badge--rec" style="margin-top:0.2rem;"><%= rs.settlementState %></span>
+    </div>
+    <div>
+      <span class="muted" style="font-size:0.8rem;">Ledger adjustments</span><br />
+      <% if (String(rs.adjustmentState || '') === 'Adjusted') { %>
+        <span class="admin-finance-badge admin-finance-badge--state-adjusted" style="margin-top:0.2rem;"><%= rs.adjustmentState %></span>
+      <% } else { %>
+        <span class="admin-finance-badge admin-finance-badge--state-neutral" style="margin-top:0.2rem;"><%= rs.adjustmentState %></span>
+      <% } %>
+    </div>
+    <% if (rs.reopenState) { %>
+    <div>
+      <span class="muted" style="font-size:0.8rem;">Reopen</span><br />
+      <span class="admin-finance-badge admin-finance-badge--state-reopen" style="margin-top:0.2rem;"><%= rs.reopenState %></span>
+    </div>
+    <% } %>
+  </div>
+</section>
+<% } %>

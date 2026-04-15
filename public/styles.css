@@ -12536,3 +12536,115 @@ body[class*="tenant-"] {
   height: auto;
 }
 
+/* ——— Admin finance / CFO polish (tabular money, badges, ledger cues) ——— */
+.admin-app .admin-finance-num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.admin-app .admin-finance-num--neg {
+  color: var(--color-error);
+  font-weight: 650;
+}
+
+.admin-app .admin-finance-num--warn {
+  color: var(--color-warning);
+  font-weight: 650;
+}
+
+.admin-app .admin-finance-num--outstanding {
+  color: #b45309;
+  font-weight: 650;
+}
+
+.admin-app .admin-finance-num--ok {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.admin-app .admin-finance-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.25;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.3rem;
+  border: 1px solid var(--border-strong);
+  background: var(--color-surface-variant);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.admin-app .admin-finance-badge--status-draft {
+  border-color: var(--border-strong);
+  background: var(--color-slate-100);
+  color: var(--color-text-secondary);
+}
+
+.admin-app .admin-finance-badge--status-locked {
+  border-color: rgba(var(--color-primary-rgb), 0.35);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary-dark);
+}
+
+.admin-app .admin-finance-badge--status-approved {
+  border-color: rgba(217, 119, 6, 0.45);
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+
+.admin-app .admin-finance-badge--status-paid {
+  border-color: rgba(22, 163, 74, 0.4);
+  background: rgba(22, 163, 74, 0.1);
+  color: #15803d;
+}
+
+.admin-app .admin-finance-badge--status-void {
+  border-color: var(--border-strong);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+}
+
+.admin-app .admin-finance-badge--status-unknown {
+  opacity: 0.9;
+}
+
+.admin-app .admin-finance-badge--state-adjusted {
+  border-color: rgba(217, 119, 6, 0.5);
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+
+.admin-app .admin-finance-badge--state-reopen {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+}
+
+.admin-app .admin-finance-badge--state-neutral {
+  border-color: var(--border-strong);
+  background: var(--color-surface-variant);
+}
+
+.admin-app .admin-finance-badge--rec {
+  text-transform: none;
+  font-weight: 650;
+}
+
+.admin-app .admin-finance-empty {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 0.35rem;
+  border: 1px dashed var(--border-strong);
+  background: var(--color-surface-variant);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.admin-app .admin-finance-ts {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+

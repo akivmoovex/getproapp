@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Finance overview (CFO) | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Finance (CFO)', activeNav: 'finance_cfo' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Cross-tenant finance overview</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Read-only aggregates from frozen pay-run lines, payment ledger, and adjustments. No field-agent PII on this page.
+            </p>
+          </div>
+        </header>
+
+        <% var _embedQ = (typeof embed !== 'undefined' && embed) ? '&embed=1' : ''; %>
+        <% var _pf = typeof periodStartFrom !== 'undefined' ? periodStartFrom : ''; %>
+        <% var _pt = typeof periodStartTo !== 'undefined' ? periodStartTo : ''; %>
+        <% var _periodQs = ''; if (_pf) _periodQs += '&period_from=' + encodeURIComponent(_pf); if (_pt) _periodQs += '&period_to=' + encodeURIComponent(_pt); _periodQs += _embedQ; %>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Period filter (pay-run period start)</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">Filters pay runs whose <strong>period start</strong> falls in the range (inclusive). Leave blank for all time.</p>
+          <form method="get" action="/admin/finance/cfo" class="admin-filter-form admin-filter-form__grid" style="align-items:flex-end;">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <div class="input-field">
+              <label class="input-field__label" for="period_from">From</label>
+              <input id="period_from" class="input-field__control" name="period_from" type="date" value="<%= _pf %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="period_to">To</label>
+              <input id="period_to" class="input-field__control" name="period_to" type="date" value="<%= _pt %>" />
+            </div>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply' }) %>
+            <a class="c-button c-button--outline" href="/admin/finance/cfo<% if (typeof embed !== 'undefined' && embed) { %>?embed=1<% } %>" style="text-decoration:none;display:inline-flex;align-items:center;">Clear</a>
+          </form>
+        </section>
+
+        <% var plat = typeof platform !== 'undefined' ? platform : {}; %>
+        <section class="admin-dashboard__grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:0.75rem;margin-bottom:1.25rem;">
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Regions (total)</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= plat.tenant_count != null ? plat.tenant_count : '—' %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">With pay-run / adj. signals</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= plat.tenants_with_signals != null ? plat.tenants_with_signals : '—' %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Approved / paid runs (in filter)</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= plat.approved_paid_run_count != null ? plat.approved_paid_run_count : 0 %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Frozen payable (approved+paid)</p>
+            <p class="admin-finance-num" style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= Number(plat.frozen_payable_total || 0).toFixed(2) %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Ledger paid total</p>
+            <p class="admin-finance-num" style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= Number(plat.ledger_paid_total || 0).toFixed(2) %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Net outstanding</p>
+            <p class="admin-finance-num" style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= Number(plat.outstanding_total || 0).toFixed(2) %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Overpaid (magnitude)</p>
+            <p class="admin-finance-num" style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= Number(plat.overpaid_total || 0).toFixed(2) %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Unapplied adjustments</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.1rem;font-weight:700;"><%= plat.unapplied_adjustment_count != null ? plat.unapplied_adjustment_count : 0 %> · <%= Number(plat.unapplied_adjustment_sum || 0).toFixed(2) %></p>
+          </div>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Reconciliation run counts (approved / paid only)</h2>
+          <p class="muted" style="margin-bottom:0.75rem;">Unpaid <strong><%= plat.rec_unpaid %></strong>, partial <strong><%= plat.rec_partial %></strong>, settled <strong><%= plat.rec_paid %></strong>, overpaid <strong><%= plat.rec_overpaid %></strong></p>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Recent ledger activity</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">Latest payment lines (amount, date, region). References and notes omitted on this summary.</p>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Region</th>
+                  <th>Pay run</th>
+                  <th>Payment date</th>
+                  <th style="text-align:right;">Amount</th>
+                  <th>Method</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!(recentPayments || []).length) { %>
+                <tr><td colspan="6"><p class="admin-finance-empty" style="margin:0;">No recent payment lines.</p></td></tr>
+                <% } %>
+                <% (recentPayments || []).forEach(function (p) { %>
+                <% var tr = tenantsById && tenantsById[String(p.tenant_id)] ? tenantsById[String(p.tenant_id)] : null; %>
+                <% var _pam = Number(p.amount || 0); var _pamCls = 'admin-finance-num'; if (_pam < 0) { _pamCls += ' admin-finance-num--neg'; } %>
+                <tr>
+                  <td class="muted admin-finance-ts"><%= p.created_at ? new Date(p.created_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></td>
+                  <td><%= tr ? (tr.name + ' (' + tr.slug + ')') : ('#' + p.tenant_id) %></td>
+                  <td><a href="/admin/field-agent-pay-runs/<%= p.pay_run_id %>?tenant_id=<%= p.tenant_id %><%= _embedQ %>">#<%= p.pay_run_id %></a></td>
+                  <td><%= p.payment_date ? new Date(p.payment_date).toISOString().slice(0, 10) : '—' %></td>
+                  <td class="<%= _pamCls %>"><%= _pam.toFixed(2) %></td>
+                  <td><%= p.payment_method || '—' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="section-title section-title--flush">By region</h2>
+          <div class="admin-table-wrap" style="overflow-x:auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Region</th>
+                  <th>Pay runs (D / L / A / P)</th>
+                  <th>A+P runs</th>
+                  <th style="text-align:right;">Frozen payable</th>
+                  <th style="text-align:right;">Ledger paid</th>
+                  <th style="text-align:right;">Outstanding</th>
+                  <th>Unpaid / partial / paid / over</th>
+                  <th>Unapplied adj.</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (tenantsTable || []).forEach(function (row) { %>
+                <tr>
+                  <td><strong><%= row.name %></strong> <span class="muted">(<%= row.slug %>)</span></td>
+                  <td><%= row.pay_run_counts.draft %> / <%= row.pay_run_counts.locked %> / <%= row.pay_run_counts.approved %> / <%= row.pay_run_counts.paid %></td>
+                  <td><%= row.approved_paid_run_count %></td>
+                  <td class="admin-finance-num"><%= Number(row.frozen_payable_total || 0).toFixed(2) %></td>
+                  <td class="admin-finance-num"><%= Number(row.ledger_paid_total || 0).toFixed(2) %></td>
+                  <% var _rowOt = Number(row.outstanding_total || 0); var _rowOtCls = 'admin-finance-num'; if (_rowOt < 0) { _rowOtCls += ' admin-finance-num--warn'; } else if (_rowOt > 0) { _rowOtCls += ' admin-finance-num--outstanding'; } %>
+                  <td class="<%= _rowOtCls %>"><%= _rowOt.toFixed(2) %></td>
+                  <td><span class="muted"><%= row.rec_unpaid %> / <%= row.rec_partial %> / <%= row.rec_paid %> / <%= row.rec_overpaid %></span></td>
+                  <td class="admin-finance-num"><%= row.unapplied_adjustment_count %> · <%= Number(row.unapplied_adjustment_sum || 0).toFixed(2) %></td>
+                  <td><a href="/admin/finance/cfo/tenant/<%= row.id %><% var _tdq = _periodQs.replace(/^&/, ''); if (_tdq) { %>?<%= _tdq %><% } %>">Detail</a></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

@@ -64,6 +64,12 @@
         <% if (typeof flashAdjustment !== 'undefined' && flashAdjustment) { %>
           <p class="admin-gate-success" role="status">Adjustment recorded. Original snapshot rows were not changed.</p>
         <% } %>
+        <% if (typeof flashReversal !== 'undefined' && flashReversal) { %>
+          <p class="admin-gate-success" role="status">Reversal recorded as a new ledger line (original row unchanged).</p>
+        <% } %>
+        <% if (typeof flashCorrection !== 'undefined' && flashCorrection) { %>
+          <p class="admin-gate-success" role="status">Correction recorded (reversal + replacement payment in the ledger).</p>
+        <% } %>
 
         <p><a href="/admin/field-agent-pay-runs<% if (typeof embed !== 'undefined' && embed) { %>?embed=1<% } %>">← Back to list</a></p>
         <% if (typeof tenantId !== 'undefined') { %>
@@ -107,8 +113,10 @@
           <% if (run.notes) { %><p><strong>Notes:</strong> <%= run.notes %></p><% } %>
         </section>
 
+        <%- include('../partials/pay_run_finance_explanation_panel', { explanationVariant: 'workflow' }) %>
+
         <% var _rec = (typeof reconciliation !== 'undefined' && reconciliation) ? reconciliation : null; %>
-        <% var _payments = (typeof payments !== 'undefined' && payments) ? payments : []; %>
+        <% var _payments = (typeof paymentsUi !== 'undefined' && paymentsUi && paymentsUi.length) ? paymentsUi : ((typeof payments !== 'undefined' && payments) ? payments : []); %>
         <section class="card card--mb-xl">
           <h2 class="section-title section-title--flush">Reconciliation ledger</h2>
           <% if (_rec) { %>
@@ -116,18 +124,24 @@
             <table class="admin-table">
               <thead>
                 <tr>
-                  <th>Frozen payable total</th>
-                  <th>Total paid</th>
-                  <th>Outstanding</th>
-                  <th>Reconciliation status</th>
+                  <th style="text-align:right;">Frozen payable</th>
+                  <th style="text-align:right;">Net paid</th>
+                  <th style="text-align:right;">Balance</th>
+                  <th>Reconciliation</th>
                 </tr>
               </thead>
               <tbody>
+                <% var _oa = Number(_rec.outstanding_amount || 0); var _oaCls = 'admin-finance-num'; if (_oa < 0) { _oaCls += ' admin-finance-num--warn'; } else if (_oa > 0) { _oaCls += ' admin-finance-num--outstanding'; } %>
                 <tr>
-                  <td><strong><%= Number(_rec.run_payable_total || 0).toFixed(2) %></strong></td>
-                  <td><strong><%= Number(_rec.total_paid_amount || 0).toFixed(2) %></strong></td>
-                  <td><strong><%= Number(_rec.outstanding_amount || 0).toFixed(2) %></strong></td>
-                  <td><span style="font-weight:600;"><%= _rec.reconciliation_status %></span></td>
+                  <td class="admin-finance-num"><%= Number(_rec.run_payable_total || 0).toFixed(2) %></td>
+                  <td class="admin-finance-num"><%= Number(_rec.total_paid_amount || 0).toFixed(2) %></td>
+                  <td class="<%= _oaCls %>"><%= _oa.toFixed(2) %></td>
+                  <td>
+                    <% var _rx = String(_rec.reconciliation_status || ''); %>
+                    <% if (_rx === 'paid') { %><span class="admin-finance-badge admin-finance-badge--status-paid"><%= _rx %></span>
+                    <% } else if (_rx === 'overpaid' || _rx === 'partial') { %><span class="admin-finance-badge admin-finance-badge--state-adjusted"><%= _rx %></span>
+                    <% } else { %><span class="admin-finance-badge admin-finance-badge--state-neutral"><%= _rx || '—' %></span><% } %>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -169,37 +183,123 @@
           <% } %>
 
           <h3 class="section-title section-title--flush" style="font-size:1rem;">Payment history</h3>
+          <p class="muted" style="margin-bottom:0.6rem;font-size:0.9rem;">Ledger is append-only. Reversals and corrections add new lines; existing rows are never edited.</p>
           <div class="admin-table-wrap">
             <table class="admin-table">
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Amount</th>
+                  <th style="text-align:right;">Amount</th>
+                  <th>Kind</th>
                   <th>Method</th>
                   <th>Reference</th>
                   <th>Notes</th>
                   <th>Recorded by</th>
                   <th>Created at</th>
+                  <% if (run.status === 'approved' || run.status === 'paid') { %>
+                  <th>Actions</th>
+                  <% } %>
                 </tr>
               </thead>
               <tbody>
                 <% if (!_payments.length) { %>
-                <tr><td colspan="7" class="muted">No payment events recorded.</td></tr>
+                <tr><td colspan="<%= (run.status === 'approved' || run.status === 'paid') ? 9 : 8 %>" class="muted">No payment events recorded.</td></tr>
                 <% } %>
                 <% _payments.forEach(function (p) { %>
+                <% var _lm = (typeof p._ledgerMeta !== 'undefined' && p._ledgerMeta) ? p._ledgerMeta : {}; %>
+                <% var _revOf = _lm.reverses_payment_id != null ? _lm.reverses_payment_id : null; %>
+                <% var _corrOf = _lm.corrects_payment_id != null ? _lm.corrects_payment_id : null; %>
+                <% var _pam = Number(p.amount || 0); var _pamCls = 'admin-finance-num'; if (_pam < 0) { _pamCls += ' admin-finance-num--neg'; } %>
                 <tr>
                   <td><%= p.payment_date ? new Date(p.payment_date).toISOString().slice(0, 10) : '—' %></td>
-                  <td><strong><%= Number(p.amount || 0).toFixed(2) %></strong></td>
+                  <td class="<%= _pamCls %>"><%= _pam.toFixed(2) %></td>
+                  <td>
+                    <% if (p._isReversalLine) { %>
+                      <span style="font-weight:600;">Reversal</span>
+                      <% if (_revOf) { %><span class="muted" style="font-size:0.85rem;"> of #<%= _revOf %></span><% } %>
+                    <% } else if (String(_lm.type || '') === 'correction_payment') { %>
+                      <span style="font-weight:600;">Correction</span>
+                      <% if (_corrOf) { %><span class="muted" style="font-size:0.85rem;"> replaces #<%= _corrOf %></span><% } %>
+                    <% } else { %>
+                      <span class="muted">Payment</span>
+                    <% } %>
+                  </td>
                   <td><%= p.payment_method || '—' %></td>
                   <td><%= p.payment_reference || '—' %></td>
                   <td><%= p.notes || '—' %></td>
                   <td><%= (p.created_by_admin_user_id && actorLabels && actorLabels[p.created_by_admin_user_id]) ? actorLabels[p.created_by_admin_user_id] : (p.created_by_admin_user_id ? ('#' + p.created_by_admin_user_id) : '—') %></td>
                   <td><%= p.created_at ? new Date(p.created_at).toLocaleString() : '—' %></td>
+                  <% if (run.status === 'approved' || run.status === 'paid') { %>
+                  <td style="white-space:nowrap;">
+                    <% if (p._canReverseOrCorrect) { %>
+                    <button type="button" class="c-button c-button--sm" style="margin-right:0.35rem;" onclick="document.getElementById('faa-rev-<%= p.id %>').showModal()">Reverse</button>
+                    <button type="button" class="c-button c-button--sm c-button--outline" onclick="document.getElementById('faa-cor-<%= p.id %>').showModal()">Correct</button>
+                    <% } else { %>
+                      <span class="muted">—</span>
+                    <% } %>
+                  </td>
+                  <% } %>
                 </tr>
                 <% }); %>
               </tbody>
             </table>
           </div>
+          <% if (run.status === 'approved' || run.status === 'paid') { %>
+            <% _payments.forEach(function (p) { %>
+            <% if (p._canReverseOrCorrect) { %>
+            <dialog id="faa-rev-<%= p.id %>" style="max-width:28rem;border:1px solid #ccc;border-radius:6px;padding:1rem;">
+              <h3 style="margin-top:0;">Reverse payment #<%= p.id %></h3>
+              <p class="muted" style="font-size:0.9rem;">Adds one ledger line for <strong><%= (-Number(p.amount || 0)).toFixed(2) %></strong> (full reversal). Reason is required for audit.</p>
+              <form method="post" action="/admin/field-agent-pay-runs/<%= run.id %>/payments/<%= p.id %>/reverse">
+                <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+                <div class="input-field" style="margin-bottom:0.6rem;">
+                  <label class="input-field__label" for="faa_rev_reason_<%= p.id %>">Reason (required)</label>
+                  <textarea id="faa_rev_reason_<%= p.id %>" class="input-field__control" name="reason" rows="3" required maxlength="4000"></textarea>
+                </div>
+                <div class="input-field" style="margin-bottom:0.6rem;">
+                  <label class="input-field__label" for="faa_rev_date_<%= p.id %>">Ledger date</label>
+                  <input id="faa_rev_date_<%= p.id %>" class="input-field__control" name="payment_date" type="date" />
+                </div>
+                <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.75rem;">
+                  <button type="button" class="c-button c-button--outline" onclick="document.getElementById('faa-rev-<%= p.id %>').close()">Cancel</button>
+                  <button type="submit" class="c-button c-button--primary">Record reversal</button>
+                </div>
+              </form>
+            </dialog>
+            <dialog id="faa-cor-<%= p.id %>" style="max-width:28rem;border:1px solid #ccc;border-radius:6px;padding:1rem;">
+              <h3 style="margin-top:0;">Correct payment #<%= p.id %></h3>
+              <p class="muted" style="font-size:0.9rem;">Creates a reversal of <strong><%= Number(p.amount || 0).toFixed(2) %></strong> and a new payment for the amount you enter. Both lines share the same ledger date.</p>
+              <form method="post" action="/admin/field-agent-pay-runs/<%= run.id %>/payments/<%= p.id %>/correct">
+                <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+                <div class="input-field" style="margin-bottom:0.6rem;">
+                  <label class="input-field__label" for="faa_cor_amt_<%= p.id %>">Corrected amount</label>
+                  <input id="faa_cor_amt_<%= p.id %>" class="input-field__control" name="amount" type="number" min="0.01" step="0.01" required />
+                </div>
+                <div class="input-field" style="margin-bottom:0.6rem;">
+                  <label class="input-field__label" for="faa_cor_reason_<%= p.id %>">Reason (required)</label>
+                  <textarea id="faa_cor_reason_<%= p.id %>" class="input-field__control" name="reason" rows="3" required maxlength="4000"></textarea>
+                </div>
+                <div class="input-field" style="margin-bottom:0.6rem;">
+                  <label class="input-field__label" for="faa_cor_date_<%= p.id %>">Ledger date</label>
+                  <input id="faa_cor_date_<%= p.id %>" class="input-field__control" name="payment_date" type="date" />
+                </div>
+                <div class="input-field" style="margin-bottom:0.6rem;">
+                  <label class="input-field__label" for="faa_cor_ref_<%= p.id %>">Reference (optional)</label>
+                  <input id="faa_cor_ref_<%= p.id %>" class="input-field__control" name="payment_reference" type="text" maxlength="2000" />
+                </div>
+                <div class="input-field" style="margin-bottom:0.6rem;">
+                  <label class="input-field__label" for="faa_cor_meth_<%= p.id %>">Method (optional)</label>
+                  <input id="faa_cor_meth_<%= p.id %>" class="input-field__control" name="payment_method" type="text" maxlength="200" />
+                </div>
+                <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.75rem;">
+                  <button type="button" class="c-button c-button--outline" onclick="document.getElementById('faa-cor-<%= p.id %>').close()">Cancel</button>
+                  <button type="submit" class="c-button c-button--primary">Record correction</button>
+                </div>
+              </form>
+            </dialog>
+            <% } %>
+            <% }); %>
+          <% } %>
         </section>
 
         <% if (run.status === 'draft' && items && items.length) { %>
@@ -231,6 +331,11 @@
           <p style="margin-bottom:0.75rem;">
             <%- include('../partials/components/button', { variant: 'primary', href: '/admin/field-agent-pay-runs/' + run.id + '/export', label: 'Download CSV' }) %>
           </p>
+          <p class="muted" style="margin-bottom:0.5rem;">Accounting: month-close report and reconciliation export (ledger + frozen items).</p>
+          <p style="margin-bottom:0.75rem;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
+            <%- include('../partials/components/button', { variant: 'primary', href: '/admin/field-agent-pay-runs/' + run.id + '/month-close' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'Month-close report' }) %>
+            <%- include('../partials/components/button', { variant: 'primary', href: '/admin/field-agent-pay-runs/' + run.id + '/accounting-export.csv' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'Accounting CSV' }) %>
+          </p>
         </section>
         <section class="card card--mb-xl">
           <h2 class="section-title section-title--flush">Mark as paid</h2>
@@ -256,6 +361,11 @@
           <p class="muted" style="margin-bottom:0.75rem;">Re-download frozen snapshot (CSV). System does not execute payments.</p>
           <p style="margin-bottom:0.75rem;">
             <%- include('../partials/components/button', { variant: 'primary', href: '/admin/field-agent-pay-runs/' + run.id + '/export', label: 'Download CSV' }) %>
+          </p>
+          <p class="muted" style="margin-bottom:0.5rem;">Accounting: month-close report and reconciliation export.</p>
+          <p style="margin-bottom:0.75rem;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
+            <%- include('../partials/components/button', { variant: 'primary', href: '/admin/field-agent-pay-runs/' + run.id + '/month-close' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'Month-close report' }) %>
+            <%- include('../partials/components/button', { variant: 'primary', href: '/admin/field-agent-pay-runs/' + run.id + '/accounting-export.csv' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'Accounting CSV' }) %>
           </p>
         </section>
         <% } %>

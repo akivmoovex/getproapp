@@ -1,0 +1,15 @@
+<% var _pex = typeof explanationVariant !== 'undefined' ? explanationVariant : 'finance'; %>
+<section class="card card--mb-xl" style="padding:0.85rem 1rem;" aria-labelledby="pay-run-finance-help-title">
+  <h2 id="pay-run-finance-help-title" class="section-title section-title--flush" style="font-size:1rem;">How to read this pay run</h2>
+  <ul class="muted" style="margin:0.45rem 0 0 0;padding-left:1.2rem;font-size:0.92rem;line-height:1.5;max-width:46rem;">
+    <li style="margin-bottom:0.35rem;"><strong>Net paid</strong> is the total of all payment lines on the ledger for this run—each line is applied in order (payment date, then line id).</li>
+    <li style="margin-bottom:0.35rem;"><strong>Reversals</strong> show as negative amounts; they reduce net paid without removing earlier lines.</li>
+    <li style="margin-bottom:0.35rem;"><strong>Corrections</strong> are recorded as a reversal of the original payment plus a separate replacement payment line.</li>
+    <li style="margin-bottom:0.35rem;">If net paid falls <strong>below</strong> the <strong>frozen payable</strong> total, a run marked <strong>paid</strong> may return to <strong>approved</strong> until amounts balance again.</li>
+    <% if (_pex === 'finance') { %>
+    <li><strong>Status history</strong> below lists when the pay run’s settlement state changed (for example after a ledger update).</li>
+    <% } else { %>
+    <li><strong>Status history</strong> on the finance detail page lists when settlement changed; open that view for the full ledger timeline.</li>
+    <% } %>
+  </ul>
+</section>

@@ -1,0 +1,5 @@
+<% var _raw = typeof status !== 'undefined' && status != null ? String(status) : ''; %>
+<% var _s = _raw.toLowerCase(); %>
+<% var _labels = { draft: 'Draft', locked: 'Locked', approved: 'Approved', paid: 'Paid', void: 'Void' }; %>
+<% var _show = _labels[_s] || (_raw ? _raw.charAt(0).toUpperCase() + _raw.slice(1) : '—'); %>
+<span class="admin-finance-badge admin-finance-badge--status-<%= _s || 'unknown' %>"><%= _show %></span>
