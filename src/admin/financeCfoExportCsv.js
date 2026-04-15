@@ -2,6 +2,13 @@
 
 /**
  * Read-only CFO CSV exports: pay-run summary list and single-run ledger lines.
+ *
+ * Summary columns: pay_run_id, period, status, frozen_payable, net_paid, remaining_balance,
+ * has_adjustments, reopened_flag, paid_at, updated_at
+ *
+ * Ledger columns: row_id, pay_run_id, payment_date, amount, kind (payment|reversal|correction),
+ * payment_method, payment_reference, reverses_payment_id, corrects_payment_id, replaced_amount,
+ * reason, created_at — one row per ledger line, chronological export order matches listPaymentsForPayRun asc.
  */
 
 const { csvEscape } = require("./fieldAgentPayRunExportCsv");
@@ -42,7 +49,7 @@ function numCsv(n) {
 function buildCfoPayRunSummaryCsv(rows) {
   const header = [
     "pay_run_id",
-    "period_month",
+    "period",
     "status",
     "frozen_payable",
     "net_paid",
@@ -58,9 +65,9 @@ function buildCfoPayRunSummaryCsv(rows) {
       csvEscape(row.pay_run_id),
       csvEscape(periodMonthLabel(row.period_start, row.period_end)),
       csvEscape(row.run_status),
-      numCsv(row.frozen_payable),
-      numCsv(row.net_paid),
-      numCsv(row.remaining_balance),
+      numCsv(fieldAgentPayRunRepo.roundMoney2(Number(row.frozen_payable || 0))),
+      numCsv(fieldAgentPayRunRepo.roundMoney2(Number(row.net_paid || 0))),
+      numCsv(fieldAgentPayRunRepo.roundMoney2(Number(row.remaining_balance || 0))),
       csvEscape(row.has_adjustments ? "true" : "false"),
       csvEscape(row.reopened_flag ? "true" : "false"),
       csvEscape(isoDateTime(row.paid_at)),
@@ -77,7 +84,7 @@ function buildCfoPayRunSummaryCsv(rows) {
  */
 function buildCfoPayRunLedgerCsv(payRunId, payments) {
   const header = [
-    "ledger_row_id",
+    "row_id",
     "pay_run_id",
     "payment_date",
     "amount",
@@ -94,7 +101,7 @@ function buildCfoPayRunLedgerCsv(payRunId, payments) {
   const pid = Number(payRunId);
   for (const p of payments || []) {
     const m = fieldAgentPayRunRepo.parsePaymentMetadata(p);
-    const kind = financeCfoDashboardRepo.cfoLedgerRowKind(p);
+    const kindCode = financeCfoDashboardRepo.cfoLedgerRowKindCode(p);
     const rev =
       m.reverses_payment_id != null && Number.isFinite(Number(m.reverses_payment_id)) ? Number(m.reverses_payment_id) : "";
     const corr =
@@ -104,12 +111,13 @@ function buildCfoPayRunLedgerCsv(payRunId, payments) {
         ? fieldAgentPayRunRepo.roundMoney2(Number(m.replaced_amount))
         : "";
     const reason = m.reason != null ? String(m.reason) : "";
+    const amt = fieldAgentPayRunRepo.roundMoney2(Number(p.amount || 0));
     const row = [
       csvEscape(p.id),
       csvEscape(pid),
       csvEscape(isoDate(p.payment_date)),
-      numCsv(p.amount),
-      csvEscape(kind),
+      numCsv(amt),
+      csvEscape(kindCode),
       csvEscape(p.payment_method),
       csvEscape(p.payment_reference),
       rev === "" ? "" : csvEscape(rev),

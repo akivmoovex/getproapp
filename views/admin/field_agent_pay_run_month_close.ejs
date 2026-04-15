@@ -95,6 +95,56 @@
           <% } %>
         </section>
 
+        <% if (typeof snapshotSaved !== 'undefined' && snapshotSaved) { %>
+          <p class="admin-gate-success" role="status">Finance snapshot recorded (totals and status at capture time).</p>
+        <% } %>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Month-close snapshots</h2>
+          <p class="muted" style="margin-top:0;">
+            Store a read-only record of frozen payable, net paid, remaining balance, and workflow status at this moment. This does not lock the pay run or change the ledger.
+          </p>
+          <form method="post" action="/admin/field-agent-pay-runs/<%= run.id %>/snapshot" style="margin-bottom:1rem;">
+            <input type="hidden" name="snapshot_type" value="month_close" />
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Create snapshot' }) %>
+          </form>
+          <% var _snaps = typeof payRunSnapshots !== 'undefined' && payRunSnapshots ? payRunSnapshots : []; %>
+          <% var _slab = typeof snapshotActorLabels !== 'undefined' && snapshotActorLabels ? snapshotActorLabels : {}; %>
+          <% if (!_snaps.length) { %>
+            <p class="muted" style="margin:0;">No snapshots yet.</p>
+          <% } else { %>
+            <div class="admin-table-wrap" style="overflow-x:auto;">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Snapshot at</th>
+                    <th>Type</th>
+                    <th style="text-align:right;">Frozen payable</th>
+                    <th style="text-align:right;">Net paid</th>
+                    <th style="text-align:right;">Balance</th>
+                    <th>Status</th>
+                    <th>Recorded by</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% _snaps.forEach(function (s) { %>
+                  <% var aid = s.actor_admin_user_id != null ? Number(s.actor_admin_user_id) : null; %>
+                  <tr>
+                    <td class="muted" style="white-space:nowrap;"><%= s.snapshot_at ? new Date(s.snapshot_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></td>
+                    <td><%= s.snapshot_type != null ? s.snapshot_type : '—' %></td>
+                    <td class="admin-finance-num"><%= Number(s.frozen_payable || 0).toFixed(2) %></td>
+                    <td class="admin-finance-num"><%= Number(s.net_paid || 0).toFixed(2) %></td>
+                    <td class="admin-finance-num"><%= Number(s.remaining_balance || 0).toFixed(2) %></td>
+                    <td><%= s.status != null ? s.status : '—' %></td>
+                    <td><%= aid != null && _slab[aid] ? _slab[aid] : (aid != null ? '#' + aid : '—') %></td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
         <section class="card card--mb-xl">
           <h2 class="section-title section-title--flush">Field-agent line items (frozen)</h2>
           <p class="muted" style="margin-bottom:0.75rem;">Values are stored snapshot columns from the pay run; components are not recomputed from live ratings or thresholds.</p>

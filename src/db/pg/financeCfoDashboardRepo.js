@@ -428,6 +428,7 @@ function _mapPayRunPayoutDashboardRow(row) {
   return {
     pay_run_id: Number(row.pay_run_id),
     run_status: String(row.run_status || ""),
+    closed_at: row.closed_at,
     period_start: row.period_start,
     period_end: row.period_end,
     paid_at: row.paid_at,
@@ -461,6 +462,7 @@ async function listPayRunsForPayoutDashboard(pool, tenantId, opts = {}) {
     SELECT
       pr.id AS pay_run_id,
       pr.status::text AS run_status,
+      pr.closed_at,
       pr.period_start,
       pr.period_end,
       pr.paid_at,
@@ -653,7 +655,7 @@ async function listPayRunsForCfoSummaryExport(pool, tenantId, opts = {}) {
       SELECT DISTINCT pay_run_id::int AS pay_run_id
       FROM public.field_agent_pay_run_status_history
       WHERE tenant_id = $1
-        AND reason = 'reversal_or_correction_reopened'
+        AND from_status = 'paid' AND to_status = 'approved'
       `,
       [tid]
     );
@@ -741,6 +743,20 @@ function cfoLedgerRowKind(paymentRow) {
 }
 
 /**
+ * Machine codes for CFO CSV: payment | reversal | correction (metadata.type).
+ * @param {Record<string, unknown>} paymentRow
+ * @returns {"payment"|"reversal"|"correction"}
+ */
+function cfoLedgerRowKindCode(paymentRow) {
+  const m = fieldAgentPayRunRepo.parsePaymentMetadata(paymentRow);
+  const T = fieldAgentPayRunRepo.LEDGER_ENTRY_TYPE;
+  const t = String(m.type || "");
+  if (t === T.REVERSAL) return "reversal";
+  if (t === T.CORRECTION_PAYMENT) return "correction";
+  return "payment";
+}
+
+/**
  * Short text derived from JSON metadata (not a substitute for the full JSONB audit trail).
  * @param {Record<string, unknown>} paymentRow
  */
@@ -806,6 +822,43 @@ function reopenStateLabelFromStatusHistory(statusHistoryRows) {
     (h) => String(h.from_status || "").toLowerCase() === "paid" && String(h.to_status || "").toLowerCase() === "approved"
   );
   return hit ? "Reopened after payment" : null;
+}
+
+/**
+ * Pre–soft-close finance checks (warnings only; callers must not block on this).
+ * @param {{
+ *   reconciliation?: { run_payable_total?: unknown, total_paid_amount?: unknown } | null,
+ *   statusHistory?: Array<Record<string, unknown>>,
+ *   hasPayRunAdjustmentRecords?: boolean,
+ *   ledgerHasReversalOrCorrection?: boolean,
+ *   payments?: Array<Record<string, unknown>>,
+ * }} input
+ * @returns {{ warnings: Array<{ code: string, message: string }> }}
+ */
+function buildPayRunSoftCloseWarnings(input) {
+  const warnings = [];
+  const round = fieldAgentPayRunRepo.roundMoney2;
+  const rec = input && input.reconciliation;
+  if (rec) {
+    const fp = round(Number(rec.run_payable_total || 0));
+    const np = round(Number(rec.total_paid_amount || 0));
+    if (np < fp) {
+      warnings.push({ code: "NOT_FULLY_PAID", message: "Run not fully paid" });
+    }
+  }
+  let ledgerAdjusted = !!(input && input.ledgerHasReversalOrCorrection);
+  if (input && input.ledgerHasReversalOrCorrection === undefined && input.payments) {
+    ledgerAdjusted = adjustmentStateFromLedgerRows(input.payments) === "Adjusted";
+  }
+  const hasAdjRecords = !!(input && input.hasPayRunAdjustmentRecords);
+  if (ledgerAdjusted || hasAdjRecords) {
+    warnings.push({ code: "HAS_ADJUSTMENTS_OR_LEDGER", message: "Run contains reversals/corrections" });
+  }
+  const hist = input && input.statusHistory;
+  if (reopenStateLabelFromStatusHistory(hist || [])) {
+    warnings.push({ code: "REOPENED_AFTER_PAYMENT", message: "Run was reopened after payment" });
+  }
+  return { warnings };
 }
 
 /**
@@ -939,10 +992,12 @@ module.exports = {
   listRecentPayRunReopenHistory,
   listPayRunStatusHistoryForPayRun,
   cfoLedgerRowKind,
+  cfoLedgerRowKindCode,
   cfoLedgerMetadataSummary,
   buildReconciliationStripCore,
   adjustmentStateFromLedgerRows,
   reopenStateLabelFromStatusHistory,
+  buildPayRunSoftCloseWarnings,
   getTenantLedgerHasReversalOrCorrection,
   getTenantHasPaidToApprovedHistory,
   FINANCE_EXCEPTION_PRESET,

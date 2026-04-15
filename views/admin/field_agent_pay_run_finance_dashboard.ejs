@@ -157,7 +157,12 @@
                     <td class="admin-finance-num"><%= Number(r.run_payable_total || 0).toFixed(2) %></td>
                     <td class="admin-finance-num"><%= Number(r.total_paid_amount || 0).toFixed(2) %></td>
                     <td class="<%= _brCls %>"><%= _br.toFixed(2) %></td>
-                    <td><%- include('../partials/admin_finance_status_badge', { status: r.run_status }) %></td>
+                    <td style="white-space:normal;">
+                      <%- include('../partials/admin_finance_status_badge', { status: r.run_status }) %>
+                      <% if (r.closed_at) { %>
+                        <span class="admin-finance-badge" style="margin-left:0.25rem;border-color:#64748b;background:rgba(100,116,139,0.12);font-size:0.7rem;">Closed</span>
+                      <% } %>
+                    </td>
                     <td class="muted admin-finance-ts" style="font-size:0.88rem;"><%= r.paid_at ? new Date(r.paid_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></td>
                     <td class="muted admin-finance-ts" style="font-size:0.88rem;"><%= r.updated_at ? new Date(r.updated_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></td>
                     <td>

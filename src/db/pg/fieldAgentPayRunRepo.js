@@ -608,6 +608,29 @@ async function getPayRunReconciliationSummary(pool, payRunId, tenantId) {
   };
 }
 
+/**
+ * Whether the pay run’s ledger includes at least one reversal or correction line (metadata.type).
+ * @param {import("pg").Pool} pool
+ * @param {number} payRunId
+ * @param {number} tenantId
+ */
+async function payRunLedgerHasReversalOrCorrection(pool, payRunId, tenantId) {
+  const pid = Number(payRunId);
+  const tid = Number(tenantId);
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) return false;
+  const r = await pool.query(
+    `
+    SELECT EXISTS (
+      SELECT 1 FROM public.field_agent_pay_run_payments p
+      WHERE p.pay_run_id = $1 AND p.tenant_id = $2
+        AND (p.metadata->>'type') IN ($3, $4)
+    ) AS x
+    `,
+    [pid, tid, LEDGER_ENTRY_TYPE.REVERSAL, LEDGER_ENTRY_TYPE.CORRECTION_PAYMENT]
+  );
+  return !!r.rows[0]?.x;
+}
+
 async function listPaymentsForPayRun(pool, payRunId, tenantId, limit = 200, opts = {}) {
   const pid = Number(payRunId);
   const tid = Number(tenantId);
@@ -986,7 +1009,8 @@ async function listPayRunsForTenant(pool, tenantId, limit = 50) {
     `
     SELECT id, tenant_id, period_start, period_end, status, created_at, updated_at, notes, created_by_admin_user_id,
            locked_at, locked_by_admin_user_id, approved_at, approved_by_admin_user_id,
-           paid_at, paid_by_admin_user_id, payout_reference, export_generated_at, export_format
+           paid_at, paid_by_admin_user_id, payout_reference, export_generated_at, export_format,
+           closed_at, closed_by_admin_user_id
     FROM public.field_agent_pay_runs
     WHERE tenant_id = $1
     ORDER BY period_start DESC, id DESC
@@ -995,6 +1019,56 @@ async function listPayRunsForTenant(pool, tenantId, limit = 50) {
     [tid, lim]
   );
   return r.rows;
+}
+
+/**
+ * Soft-close marker only (informational). Idempotent: no-op if already closed.
+ * @param {import("pg").Pool} pool
+ * @param {number} payRunId
+ * @param {number} tenantId
+ * @param {number} adminUserId
+ * @returns {Promise<{ ok: boolean, run?: object, alreadyClosed?: boolean, error?: string }>}
+ */
+async function markPayRunSoftClosed(pool, payRunId, tenantId, adminUserId) {
+  const pid = Number(payRunId);
+  const tid = Number(tenantId);
+  const aid = Number(adminUserId);
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) {
+    return { ok: false, error: "INVALID_SCOPE" };
+  }
+  if (!Number.isFinite(aid) || aid < 1) {
+    return { ok: false, error: "INVALID_ACTOR" };
+  }
+  const existing = await getPayRunByIdForTenant(pool, pid, tid);
+  if (!existing) {
+    return { ok: false, error: "NOT_FOUND" };
+  }
+  if (existing.closed_at) {
+    return { ok: true, run: existing, alreadyClosed: true };
+  }
+  const st = String(existing.status || "");
+  if (!["locked", "approved", "paid"].includes(st)) {
+    return { ok: false, error: "INVALID_STATUS_FOR_CLOSE" };
+  }
+  const r = await pool.query(
+    `
+    UPDATE public.field_agent_pay_runs
+    SET closed_at = now(),
+        closed_by_admin_user_id = $3,
+        updated_at = now()
+    WHERE id = $1 AND tenant_id = $2 AND closed_at IS NULL
+    RETURNING *
+    `,
+    [pid, tid, aid]
+  );
+  if (!r.rows.length) {
+    const again = await getPayRunByIdForTenant(pool, pid, tid);
+    if (again && again.closed_at) {
+      return { ok: true, run: again, alreadyClosed: true };
+    }
+    return { ok: false, error: "NO_UPDATE" };
+  }
+  return { ok: true, run: r.rows[0] };
 }
 
 async function getPayRunById(pool, payRunId) {
@@ -1214,11 +1288,13 @@ module.exports = {
   markPayRunApprovedAsPaidViaLedger,
   recordPayRunExportGenerated,
   listPayRunsForTenant,
+  markPayRunSoftClosed,
   getPayRunById,
   getPayRunByIdForTenant,
   getPaymentByIdForTenant,
   listItemsForPayRun,
   getPayRunReconciliationSummary,
+  payRunLedgerHasReversalOrCorrection,
   listPaymentsForPayRun,
   insertPaymentLedgerRow,
   syncPayRunStatusWithLedger,

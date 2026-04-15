@@ -69,7 +69,12 @@
                     <td><%= r.id %></td>
                     <td><%= r.period_start ? new Date(r.period_start).toISOString().slice(0, 10) : '—' %></td>
                     <td><%= r.period_end ? new Date(r.period_end).toISOString().slice(0, 10) : '—' %></td>
-                    <td><% if (r.status === 'approved') { %><strong>Approved</strong><% } else if (r.status === 'paid') { %><strong>Paid</strong><% } else { %><%= r.status %><% } %></td>
+                    <td>
+                      <% if (r.status === 'approved') { %><strong>Approved</strong><% } else if (r.status === 'paid') { %><strong>Paid</strong><% } else { %><%= r.status %><% } %>
+                      <% if (r.closed_at) { %>
+                        <span class="admin-finance-badge" style="margin-left:0.35rem;border-color:#64748b;background:rgba(100,116,139,0.12);font-size:0.7rem;">Closed</span>
+                      <% } %>
+                    </td>
                     <td class="muted"><%= r.created_at ? new Date(r.created_at).toLocaleString() : '—' %></td>
                     <td style="white-space:nowrap;">
                       <a href="/admin/field-agent-pay-runs/<%= r.id %><%= _listQs.length ? '?' + _listQs : '' %>">Workflow</a>

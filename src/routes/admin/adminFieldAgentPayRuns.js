@@ -6,6 +6,7 @@ const { getAdminTenantId, redirectWithEmbed } = require("./adminShared");
 const { getPgPool } = require("../../db/pg");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
 const fieldAgentPayRunRepo = require("../../db/pg/fieldAgentPayRunRepo");
+const fieldAgentPayRunSnapshotsRepo = require("../../db/pg/fieldAgentPayRunSnapshotsRepo");
 const financeCfoDashboardRepo = require("../../db/pg/financeCfoDashboardRepo");
 const fieldAgentPayRunAdjustmentsRepo = require("../../db/pg/fieldAgentPayRunAdjustmentsRepo");
 const tenantCommerceSettingsRepo = require("../../db/pg/tenantCommerceSettingsRepo");
@@ -51,6 +52,7 @@ async function loadActorLabels(pool, run, paymentRows) {
     run.locked_by_admin_user_id,
     run.approved_by_admin_user_id,
     run.paid_by_admin_user_id,
+    run.closed_by_admin_user_id,
   ]
     .map((x) => (x != null ? Number(x) : null))
     .filter((x) => x != null && Number.isFinite(x) && x > 0);
@@ -106,6 +108,52 @@ async function loadAdminUserLabelsByIds(pool, ids) {
     })
   );
   return out;
+}
+
+/**
+ * Read-only: latest finance snapshot vs current reconciliation + run (workflow detail).
+ * @param {Record<string, unknown> | null} latestSnap
+ * @param {Record<string, unknown> | null} reconciliation
+ * @param {Record<string, unknown>} run
+ * @param {Array<Record<string, unknown>>} statusHistory
+ */
+function buildPayRunSnapshotVsCurrent(latestSnap, reconciliation, run, statusHistory) {
+  if (!latestSnap) return null;
+  const round = fieldAgentPayRunRepo.roundMoney2;
+  const snapAt = latestSnap.snapshot_at ? new Date(latestSnap.snapshot_at) : null;
+  const snapMs = snapAt && !Number.isNaN(snapAt.getTime()) ? snapAt.getTime() : 0;
+  const rec = reconciliation || {};
+  const curNet = round(Number(rec.total_paid_amount || 0));
+  const curBal = round(Number(rec.outstanding_amount || 0));
+  const curStatus = String(run.status || "");
+  const snapNet = round(Number(latestSnap.net_paid || 0));
+  const snapBal = round(Number(latestSnap.remaining_balance || 0));
+  const snapStatus = String(latestSnap.status || "");
+  const deltaNet = round(curNet - snapNet);
+  const deltaBal = round(curBal - snapBal);
+  const statusChanged = curStatus !== snapStatus;
+  const runUpdatedAt = run.updated_at ? new Date(run.updated_at).getTime() : 0;
+  const changedAfterSnapshot = snapMs > 0 && runUpdatedAt > snapMs;
+  let reopenedAfterSnapshot = false;
+  for (const h of statusHistory || []) {
+    const ts = h.created_at ? new Date(h.created_at).getTime() : 0;
+    if (ts <= snapMs) continue;
+    if (String(h.from_status || "").toLowerCase() === "paid" && String(h.to_status || "").toLowerCase() === "approved") {
+      reopenedAfterSnapshot = true;
+      break;
+    }
+  }
+  return {
+    snapshotRow: latestSnap,
+    snapshotAtMs: snapMs,
+    atSnapshot: { net_paid: snapNet, remaining_balance: snapBal, status: snapStatus },
+    current: { net_paid: curNet, remaining_balance: curBal, status: curStatus },
+    deltaNet,
+    deltaBal,
+    statusChanged,
+    changedAfterSnapshot,
+    reopenedAfterSnapshot,
+  };
 }
 
 module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
@@ -226,7 +274,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.get("/field-agent-pay-runs/finance-dashboard/export.csv", requirePayRunAdmin, async (req, res, next) => {
+  async function handleCfoPayRunSummaryCsvExport(req, res, next) {
     try {
       const pool = getPgPool();
       const tid = resolveTargetTenantId(req);
@@ -242,7 +290,11 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     } catch (e) {
       return next(e);
     }
-  });
+  }
+
+  /** CFO structured pack A: tenant pay-run summary (same CSV on both paths). */
+  router.get("/field-agent-pay-runs/cfo-exports/pay-run-summary.csv", requirePayRunAdmin, handleCfoPayRunSummaryCsvExport);
+  router.get("/field-agent-pay-runs/finance-dashboard/export.csv", requirePayRunAdmin, handleCfoPayRunSummaryCsvExport);
 
   router.post("/field-agent-pay-runs/preview", requirePayRunAdmin, async (req, res, next) => {
     try {
@@ -435,6 +487,37 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
+  router.post("/field-agent-pay-runs/:id/mark-closed", requirePayRunAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 1) return res.status(400).type("text").send("Invalid id.");
+      const runProbe = await fieldAgentPayRunRepo.getPayRunById(pool, id);
+      if (!runProbe) return res.status(404).type("text").send("Not found.");
+      const tid = Number(runProbe.tenant_id);
+      if (!(await assertTenantAccessible(pool, req, tid))) {
+        return res.status(403).type("text").send("You do not have access to this pay run.");
+      }
+      const adminId = req.session.adminUser && req.session.adminUser.id != null ? Number(req.session.adminUser.id) : null;
+      if (!adminId) return res.status(400).type("text").send("Missing admin session.");
+      const result = await fieldAgentPayRunRepo.markPayRunSoftClosed(pool, id, tid, adminId);
+      if (!result.ok) {
+        if (result.error === "INVALID_STATUS_FOR_CLOSE") {
+          return res.status(409).type("text").send("Soft-close is only available for locked, approved, or paid pay runs.");
+        }
+        if (result.error === "NOT_FOUND") return res.status(404).type("text").send("Not found.");
+        return res.status(400).type("text").send("Could not mark as closed.");
+      }
+      const q = new URLSearchParams();
+      if (res.locals.embed) q.set("embed", "1");
+      if (result.alreadyClosed) q.set("closed_already", "1");
+      else q.set("closed", "1");
+      return res.redirect(302, `/admin/field-agent-pay-runs/${id}?${q.toString()}`);
+    } catch (e) {
+      return next(e);
+    }
+  });
+
   router.get("/field-agent-pay-runs/:id/accounting-export.csv", requirePayRunAdmin, async (req, res, next) => {
     try {
       const pool = getPgPool();
@@ -500,6 +583,11 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         if (signedOutstanding < 0) overpaidAmount = fieldAgentPayRunRepo.roundMoney2(-signedOutstanding);
       }
 
+      const payRunSnapshots = await fieldAgentPayRunSnapshotsRepo.listSnapshotsForPayRun(pool, tid, id, 50);
+      const snapshotActorIds = payRunSnapshots.map((s) => s.actor_admin_user_id).filter((x) => x != null);
+      const snapshotActorLabels = await loadAdminUserLabelsByIds(pool, snapshotActorIds);
+      const snapshotSaved = req.query && String(req.query.snapshot_saved || "") === "1";
+
       return res.render("admin/field_agent_pay_run_month_close", {
         activeNav: "field_agent_pay_runs",
         run,
@@ -512,9 +600,57 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         agentQ,
         overpaidAmount,
         signedOutstanding,
+        payRunSnapshots,
+        snapshotActorLabels,
+        snapshotSaved,
         isSuper: isSuperAdmin(req.session.adminUser.role),
         embed: !!res.locals.embed,
       });
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.post("/field-agent-pay-runs/:id/snapshot", requirePayRunAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 1) return res.status(404).type("text").send("Not found.");
+      const runProbe = await fieldAgentPayRunRepo.getPayRunById(pool, id);
+      if (!runProbe) return res.status(404).type("text").send("Not found.");
+      const tid = Number(runProbe.tenant_id);
+      if (!(await assertTenantAccessible(pool, req, tid))) {
+        return res.status(403).type("text").send("You do not have access to this pay run.");
+      }
+      if (!isAccountingReportAllowed(runProbe)) {
+        return res.status(409).type("text").send("Snapshots are available for approved or paid pay runs only.");
+      }
+      const run = await fieldAgentPayRunRepo.getPayRunByIdForTenant(pool, id, tid);
+      if (!run) return res.status(404).type("text").send("Not found.");
+      const reconciliation = await fieldAgentPayRunRepo.getPayRunReconciliationSummary(pool, id, tid);
+      if (!reconciliation) return res.status(404).type("text").send("Not found.");
+      const adminId = req.session.adminUser && req.session.adminUser.id != null ? Number(req.session.adminUser.id) : null;
+      if (!adminId || adminId < 1) {
+        return res.status(400).type("text").send("Missing admin session.");
+      }
+      const rawType =
+        req.body && req.body.snapshot_type != null ? String(req.body.snapshot_type).trim().slice(0, 64) : "";
+      const snapshotType =
+        rawType && rawType.length > 0 ? rawType : fieldAgentPayRunSnapshotsRepo.SNAPSHOT_TYPE_MONTH_CLOSE;
+      const fp = fieldAgentPayRunRepo.roundMoney2(Number(reconciliation.run_payable_total || 0));
+      const np = fieldAgentPayRunRepo.roundMoney2(Number(reconciliation.total_paid_amount || 0));
+      const rb = fieldAgentPayRunRepo.roundMoney2(Number(reconciliation.outstanding_amount || 0));
+      await fieldAgentPayRunSnapshotsRepo.insertPayRunSnapshot(pool, {
+        tenantId: tid,
+        payRunId: id,
+        snapshotType,
+        frozenPayable: fp,
+        netPaid: np,
+        remainingBalance: rb,
+        status: String(run.status || ""),
+        actorAdminUserId: adminId,
+      });
+      return res.redirect(redirectWithEmbed(req, `/admin/field-agent-pay-runs/${id}/month-close?snapshot_saved=1`));
     } catch (e) {
       return next(e);
     }
@@ -795,7 +931,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     }
   });
 
-  router.get("/field-agent-pay-runs/:id/finance-detail/export.csv", requirePayRunAdmin, async (req, res, next) => {
+  async function handleCfoPayRunLedgerCsvExport(req, res, next) {
     try {
       const pool = getPgPool();
       const id = Number(req.params.id);
@@ -817,7 +953,11 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
     } catch (e) {
       return next(e);
     }
-  });
+  }
+
+  /** CFO structured pack B: per-run ledger (same CSV on both paths). */
+  router.get("/field-agent-pay-runs/:id/cfo-exports/ledger.csv", requirePayRunAdmin, handleCfoPayRunLedgerCsvExport);
+  router.get("/field-agent-pay-runs/:id/finance-detail/export.csv", requirePayRunAdmin, handleCfoPayRunLedgerCsvExport);
 
   router.get("/field-agent-pay-runs/:id", requirePayRunAdmin, async (req, res, next) => {
     try {
@@ -852,6 +992,24 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         carriedAdjustmentsByFieldAgentId[fa].push(a);
       }
       const canAddAdjustment = run.status === "approved" || run.status === "paid";
+      const latestSnapshot = await fieldAgentPayRunSnapshotsRepo.getLatestSnapshotForPayRun(pool, tid, id);
+      const hasPayRunAdjustmentRecords =
+        (adjRows && adjRows.length > 0) || (carriedRows && carriedRows.length > 0);
+      const [statusHistory, ledgerHasReversalOrCorrection] = await Promise.all([
+        financeCfoDashboardRepo.listPayRunStatusHistoryForPayRun(pool, tid, id),
+        fieldAgentPayRunRepo.payRunLedgerHasReversalOrCorrection(pool, id, tid),
+      ]);
+      let snapshotVsCurrent = null;
+      if (latestSnapshot) {
+        snapshotVsCurrent = buildPayRunSnapshotVsCurrent(latestSnapshot, reconciliation, run, statusHistory);
+      }
+      const softCloseWarnings = financeCfoDashboardRepo.buildPayRunSoftCloseWarnings({
+        reconciliation,
+        payments,
+        statusHistory,
+        hasPayRunAdjustmentRecords,
+        ledgerHasReversalOrCorrection,
+      }).warnings;
       return res.render("admin/field_agent_pay_run_detail", {
         activeNav: "field_agent_pay_runs",
         run,
@@ -865,6 +1023,7 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         canAddAdjustment,
         tenantId: tid,
         isSuper: isSuperAdmin(req.session.adminUser.role),
+        snapshotVsCurrent,
         flashLocked: req.query.locked === "1",
         flashApproved: req.query.approved === "1",
         flashPaid: req.query.paid === "1",
@@ -872,6 +1031,9 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         flashAdjustment: req.query.adjustment === "1",
         flashReversal: req.query.reversal === "1",
         flashCorrection: req.query.correction === "1",
+        flashClosed: req.query.closed === "1",
+        flashClosedAlready: req.query.closed_already === "1",
+        softCloseWarnings,
         embed: !!res.locals.embed,
       });
     } catch (e) {

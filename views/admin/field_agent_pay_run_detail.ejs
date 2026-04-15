@@ -15,6 +15,9 @@
           <div>
             <h1 class="admin-dashboard__title">
               Pay-run snapshot #<%= run.id %>
+              <% if (run.closed_at) { %>
+                <span class="admin-finance-badge" style="margin-left:0.35rem;border-color:#64748b;background:rgba(100,116,139,0.12);font-size:0.8rem;">Closed</span>
+              <% } %>
               <% if (run.status === 'draft') { %>
                 <span class="muted" style="font-size:0.85rem;font-weight:600;">Draft</span>
               <% } else if (run.status === 'locked') { %>
@@ -70,6 +73,12 @@
         <% if (typeof flashCorrection !== 'undefined' && flashCorrection) { %>
           <p class="admin-gate-success" role="status">Correction recorded (reversal + replacement payment in the ledger).</p>
         <% } %>
+        <% if (typeof flashClosed !== 'undefined' && flashClosed) { %>
+          <p class="admin-gate-success" role="status">Marked as closed for workflow tracking (informational only).</p>
+        <% } %>
+        <% if (typeof flashClosedAlready !== 'undefined' && flashClosedAlready) { %>
+          <p class="muted" role="status">This run was already marked closed.</p>
+        <% } %>
 
         <p><a href="/admin/field-agent-pay-runs<% if (typeof embed !== 'undefined' && embed) { %>?embed=1<% } %>">← Back to list</a></p>
         <% if (typeof tenantId !== 'undefined') { %>
@@ -78,6 +87,15 @@
 
         <section class="card card--mb-xl">
           <p><strong>Status:</strong> <%= run.status %></p>
+          <% if (run.closed_at) { %>
+          <p><strong>Soft-closed:</strong> <%= new Date(run.closed_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+            <% if (run.closed_by_admin_user_id && typeof actorLabels !== 'undefined' && actorLabels[run.closed_by_admin_user_id]) { %>
+              <span class="muted">(<%= actorLabels[run.closed_by_admin_user_id] %>)</span>
+            <% } else if (run.closed_by_admin_user_id) { %>
+              <span class="muted">(#<%= run.closed_by_admin_user_id %>)</span>
+            <% } %>
+          </p>
+          <% } %>
           <p><strong>Period:</strong> <%= run.period_start ? new Date(run.period_start).toISOString().slice(0, 10) : '—' %> — <%= run.period_end ? new Date(run.period_end).toISOString().slice(0, 10) : '—' %></p>
           <p><strong>Created:</strong> <%= run.created_at ? new Date(run.created_at).toLocaleString() : '—' %>
             <% if (run.created_by_admin_user_id && typeof actorLabels !== 'undefined' && actorLabels[run.created_by_admin_user_id]) { %>
@@ -145,6 +163,62 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+          <% } %>
+
+          <% if (typeof snapshotVsCurrent !== 'undefined' && snapshotVsCurrent) { %>
+          <% var _sv = snapshotVsCurrent; var _sr = _sv.snapshotRow; %>
+          <div style="margin-top:1rem;padding:0.75rem 1rem;border-radius:0.35rem;border:1px solid var(--border-strong);background:var(--color-surface-variant);max-width:44rem;">
+            <p class="section-title section-title--flush" style="font-size:0.95rem;margin-top:0;">Snapshot vs current</p>
+            <p class="muted" style="margin:0 0 0.65rem 0;font-size:0.88rem;">
+              Latest snapshot
+              <% if (_sr && _sr.snapshot_at) { %>
+                · <%= new Date(_sr.snapshot_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+              <% } %>
+              <% if (_sr && _sr.snapshot_type) { %> · type <code style="font-size:0.85rem;"><%= _sr.snapshot_type %></code><% } %>
+            </p>
+            <% if (_sv.changedAfterSnapshot) { %>
+              <p style="margin:0 0 0.5rem 0;padding:0.35rem 0.5rem;border-left:3px solid var(--color-warning);font-size:0.88rem;background:rgba(245,158,11,0.08);">
+                Pay run was updated after this snapshot (record <code style="font-size:0.8rem;">updated_at</code> is later than snapshot time).
+              </p>
+            <% } %>
+            <% if (_sv.reopenedAfterSnapshot) { %>
+              <p style="margin:0 0 0.5rem 0;padding:0.35rem 0.5rem;border-left:3px solid #1d4ed8;font-size:0.88rem;background:rgba(59,130,246,0.1);">
+                <strong>Reopened after snapshot:</strong> status history includes <strong>paid → approved</strong> after the snapshot time.
+              </p>
+            <% } %>
+            <div class="admin-table-wrap">
+              <table class="admin-table" style="font-size:0.9rem;">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th style="text-align:right;">Net paid</th>
+                    <th style="text-align:right;">Balance</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="muted">At snapshot</td>
+                    <td class="admin-finance-num"><%= Number(_sv.atSnapshot.net_paid).toFixed(2) %></td>
+                    <td class="admin-finance-num"><%= Number(_sv.atSnapshot.remaining_balance).toFixed(2) %></td>
+                    <td><%= _sv.atSnapshot.status %></td>
+                  </tr>
+                  <tr>
+                    <td class="muted">Current</td>
+                    <td class="admin-finance-num"><%= Number(_sv.current.net_paid).toFixed(2) %></td>
+                    <td class="admin-finance-num"><%= Number(_sv.current.remaining_balance).toFixed(2) %></td>
+                    <td><%= _sv.current.status %><% if (_sv.statusChanged) { %> <span class="admin-finance-badge admin-finance-badge--state-adjusted" style="font-size:0.7rem;">changed</span><% } %></td>
+                  </tr>
+                  <tr>
+                    <td class="muted">Difference</td>
+                    <td class="admin-finance-num" style="font-weight:650;color:<%= _sv.deltaNet !== 0 ? 'var(--color-error)' : 'inherit' %>;"><%= (_sv.deltaNet >= 0 ? '+' : '') + Number(_sv.deltaNet).toFixed(2) %></td>
+                    <td class="admin-finance-num" style="font-weight:650;color:<%= _sv.deltaBal !== 0 ? 'var(--color-error)' : 'inherit' %>;"><%= (_sv.deltaBal >= 0 ? '+' : '') + Number(_sv.deltaBal).toFixed(2) %></td>
+                    <td class="muted">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
           <% } %>
 
@@ -367,6 +441,30 @@
             <%- include('../partials/components/button', { variant: 'primary', href: '/admin/field-agent-pay-runs/' + run.id + '/month-close' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'Month-close report' }) %>
             <%- include('../partials/components/button', { variant: 'primary', href: '/admin/field-agent-pay-runs/' + run.id + '/accounting-export.csv' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'Accounting CSV' }) %>
           </p>
+        </section>
+        <% } %>
+
+        <% var _canSoftClose = (run.status === 'locked' || run.status === 'approved' || run.status === 'paid') && !run.closed_at; %>
+        <% var _softCloseWarnings = typeof softCloseWarnings !== 'undefined' && softCloseWarnings ? softCloseWarnings : []; %>
+        <% if (_canSoftClose) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Soft-close (workflow tracking)</h2>
+          <p class="muted" style="margin-bottom:0.75rem;">Mark this run as closed for internal finance workflow. This is informational only — it does not block reversals, corrections, or other edits.</p>
+          <% if (_softCloseWarnings.length) { %>
+          <div role="status" style="margin-bottom:0.75rem;padding:0.65rem 0.75rem;border-radius:0.35rem;border:1px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.09);max-width:40rem;">
+            <p style="margin:0 0 0.35rem 0;font-weight:600;font-size:0.9rem;color:inherit;">Finance checks (warnings)</p>
+            <p class="muted" style="margin:0 0 0.5rem 0;font-size:0.82rem;">Review before closing. You can still mark as closed — nothing here blocks the action.</p>
+            <ul style="margin:0;padding-left:1.25rem;font-size:0.88rem;">
+              <% _softCloseWarnings.forEach(function (w) { %>
+              <li><%= w.message %></li>
+              <% }); %>
+            </ul>
+          </div>
+          <% } %>
+          <form method="post" action="/admin/field-agent-pay-runs/<%= run.id %>/mark-closed">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <%- include('../partials/components/button', { variant: 'outline', type: 'submit', label: 'Mark as closed' }) %>
+          </form>
         </section>
         <% } %>
 
