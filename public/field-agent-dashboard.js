@@ -413,7 +413,7 @@
       photos +=
         '<p class="field-agent-dash-detail__photo"><a href="' +
         escapeHtml(sub.photo_profile_url) +
-        '" target="_blank" rel="noopener noreferrer">Profile photo</a></p>";
+        '" target="_blank" rel="noopener noreferrer">Profile photo</a></p>';
     }
     var works = "";
     try {
