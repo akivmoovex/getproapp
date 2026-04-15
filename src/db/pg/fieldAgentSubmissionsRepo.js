@@ -734,7 +734,7 @@ async function updatePhotosAfterUpload(pool, client, { submissionId, tenantId, p
 }
 
 /**
- * Field agent: set reply while status is info_needed (no status change).
+ * Field agent: set reply while status is info_needed or rejected (no status change).
  * @param {import("pg").Pool} pool
  * @param {{ tenantId: number, fieldAgentId: number, submissionId: number, message: string }} p
  */
@@ -750,7 +750,7 @@ async function patchFieldAgentSubmissionReply(pool, p) {
     UPDATE public.field_agent_provider_submissions
     SET field_agent_reply = $4,
         updated_at = now()
-    WHERE id = $1 AND tenant_id = $2 AND field_agent_id = $3 AND status = 'info_needed'
+    WHERE id = $1 AND tenant_id = $2 AND field_agent_id = $3 AND status IN ('info_needed', 'rejected')
     `,
     [sid, tid, aid, msg.slice(0, 4000)]
   );
@@ -758,7 +758,7 @@ async function patchFieldAgentSubmissionReply(pool, p) {
 }
 
 /**
- * Field agent: update editable fields and resubmit (info_needed → pending).
+ * Field agent: update editable fields and resubmit (info_needed | rejected → pending).
  * @param {import("pg").Pool} pool
  * @param {{
  *   tenantId: number,
@@ -784,7 +784,7 @@ async function patchFieldAgentSubmissionReply(pool, p) {
  * }} p
  * @returns {Promise<boolean>}
  */
-async function resubmitFieldAgentSubmissionFromInfoNeeded(pool, p) {
+async function resubmitFieldAgentSubmissionForReview(pool, p) {
   const tid = Number(p.tenantId);
   const aid = Number(p.fieldAgentId);
   const sid = Number(p.submissionId);
@@ -832,9 +832,10 @@ async function resubmitFieldAgentSubmissionFromInfoNeeded(pool, p) {
       work_photos_json = $19,
       status = 'pending',
       admin_info_request = '',
+      rejection_reason = '',
       field_agent_reply = CASE WHEN $20::text IS NULL THEN field_agent_reply ELSE $20 END,
       updated_at = now()
-    WHERE id = $1 AND tenant_id = $2 AND field_agent_id = $3 AND status = 'info_needed'
+    WHERE id = $1 AND tenant_id = $2 AND field_agent_id = $3 AND status IN ('info_needed', 'rejected')
     `,
     [
       sid,
@@ -1066,7 +1067,7 @@ module.exports = {
   insertSubmission,
   updatePhotosAfterUpload,
   patchFieldAgentSubmissionReply,
-  resubmitFieldAgentSubmissionFromInfoNeeded,
+  resubmitFieldAgentSubmissionForReview,
   applyBulkSubmissionAction,
   correctFieldAgentSubmissionStatus,
 };

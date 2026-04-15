@@ -99,7 +99,46 @@ async function listAuditBySubmission(pool, tenantId, submissionId, opts) {
   }
 }
 
+/**
+ * Field-agent visible moderation history (subset of audit; excludes correction overrides).
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} submissionId
+ * @param {{ limit?: number }} [opts]
+ * @returns {Promise<{ created_at: Date|string, action_type: string, summary: string, admin_label: string }[]>}
+ */
+async function listAuditForFieldAgentVisible(pool, tenantId, submissionId, opts) {
+  const raw = await listAuditBySubmission(pool, tenantId, submissionId, opts);
+  const out = [];
+  for (const a of raw) {
+    const meta = a.metadata && typeof a.metadata === "object" && !Array.isArray(a.metadata) ? a.metadata : {};
+    if (meta.correction === true) continue;
+    let summary = "";
+    if (a.action_type === "info_needed") {
+      summary = meta.info_request ? String(meta.info_request).trim() : "More information was requested.";
+    } else if (a.action_type === "reject") {
+      summary = meta.reject_reason ? String(meta.reject_reason).trim() : "";
+      if (!summary) continue;
+    } else if (a.action_type === "approve") {
+      summary = "Application approved.";
+    } else if (a.action_type === "appeal") {
+      summary = "Submission reopened for review.";
+    } else {
+      continue;
+    }
+    const adminLabel = (a.admin_display_name && String(a.admin_display_name).trim()) || (a.admin_username && String(a.admin_username).trim()) || "Admin";
+    out.push({
+      created_at: a.created_at,
+      action_type: a.action_type,
+      summary: summary.slice(0, 4000),
+      admin_label: adminLabel.slice(0, 200),
+    });
+  }
+  return out.reverse();
+}
+
 module.exports = {
   insertAuditRecord,
   listAuditBySubmission,
+  listAuditForFieldAgentVisible,
 };

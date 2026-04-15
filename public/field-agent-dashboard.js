@@ -370,37 +370,12 @@
     });
   }
 
-  function renderDetail(sub) {
+  function renderDetail(sub, history) {
     if (!sub) {
       detailBody.innerHTML = '<p class="muted">Could not load submission.</p>';
       return;
     }
-    var callout = "";
-    if (sub.status === "info_needed") {
-      callout =
-        '<div class="field-agent-info-needed-callout card" style="padding:0.75rem 1rem;margin-bottom:1rem;border-left:4px solid rgba(180,120,0,0.45);">' +
-        '<div style="font-weight:600;margin-bottom:0.35rem;">More information needed</div>';
-      if (sub.admin_info_request && String(sub.admin_info_request).trim()) {
-        callout +=
-          '<div class="muted" style="font-size:0.85rem;margin-bottom:0.2rem;">Admin comment</div>' +
-          '<p style="margin:0;white-space:pre-wrap;">' +
-          escapeHtml(String(sub.admin_info_request)) +
-          "</p>";
-      }
-      if (sub.field_agent_reply && String(sub.field_agent_reply).trim()) {
-        callout +=
-          '<div class="muted" style="font-size:0.85rem;margin:0.65rem 0 0.2rem;">Reply to admin</div>' +
-          '<p style="margin:0;white-space:pre-wrap;">' +
-          escapeHtml(String(sub.field_agent_reply)) +
-          "</p>";
-      }
-      callout +=
-        '<p style="margin:0.75rem 0 0;">' +
-        '<a class="btn btn--primary" href="' +
-        escapeHtml(tenantPrefix() + "/field-agent/submissions/" + Number(sub.id) + "/edit") +
-        '">Update and resubmit</a>' +
-        "</p></div>";
-    }
+    var hist = Array.isArray(history) ? history : [];
     var rows = [
       ["Status", STATUS_LABEL[sub.status] || sub.status],
       ["Name", [sub.first_name, sub.last_name].filter(Boolean).join(" ")],
@@ -411,7 +386,6 @@
       ["PACRA", sub.pacra],
       ["Address", [sub.address_street, sub.address_landmarks, sub.address_neighbourhood, sub.address_city].filter(Boolean).join(", ")],
       ["NRC", sub.nrc_number],
-      ["Rejection reason", sub.rejection_reason],
       ["Commission", sub.commission_amount != null ? String(sub.commission_amount) : "—"],
       ["Submitted", sub.created_at],
       ["Updated", sub.updated_at],
@@ -422,7 +396,6 @@
         .map(function (pair) {
           var v = pair[1];
           if (v === "" || v == null) return "";
-          if (pair[0] === "Rejection reason" && sub.status === "info_needed") return "";
           return (
             "<div class=\"field-agent-dash-detail__row\"><dt>" +
             escapeHtml(pair[0]) +
@@ -440,7 +413,7 @@
       photos +=
         '<p class="field-agent-dash-detail__photo"><a href="' +
         escapeHtml(sub.photo_profile_url) +
-        '" target="_blank" rel="noopener noreferrer">Profile photo</a></p>';
+        '" target="_blank" rel="noopener noreferrer">Profile photo</a></p>";
     }
     var works = "";
     try {
@@ -457,7 +430,84 @@
     } catch (e) {
       /* ignore */
     }
-    detailBody.innerHTML = callout + dl + photos + works;
+
+    var prominent = "";
+    if (sub.status === "rejected" && sub.rejection_reason && String(sub.rejection_reason).trim()) {
+      prominent +=
+        '<div class="field-agent-dash-prominent card" style="padding:0.85rem 1rem;margin-bottom:0.75rem;border-left:4px solid rgba(160,60,60,0.45);">' +
+        '<div class="muted" style="font-size:0.85rem;margin-bottom:0.25rem;">Admin comment</div>' +
+        '<p style="margin:0;font-weight:600;white-space:pre-wrap;">' +
+        escapeHtml(String(sub.rejection_reason)) +
+        "</p></div>";
+    }
+    if (sub.status === "info_needed") {
+      prominent +=
+        '<div class="field-agent-dash-prominent card" style="padding:0.85rem 1rem;margin-bottom:0.75rem;border-left:4px solid rgba(180,120,0,0.45);">' +
+        '<div style="font-weight:600;margin-bottom:0.35rem;">More information needed</div>';
+      if (sub.admin_info_request && String(sub.admin_info_request).trim()) {
+        prominent +=
+          '<div class="muted" style="font-size:0.85rem;margin-bottom:0.2rem;">Admin comment</div>' +
+          '<p style="margin:0;font-weight:600;white-space:pre-wrap;">' +
+          escapeHtml(String(sub.admin_info_request)) +
+          "</p>";
+      }
+      prominent += "</div>";
+    }
+
+    var historyHtml = "";
+    if (hist.length) {
+      historyHtml +=
+        '<div class="muted" style="font-size:0.8rem;margin:0.5rem 0 0.35rem;">Previous review activity</div><ul class="field-agent-dash-history" style="margin:0;padding-left:1.1rem;max-height:12rem;overflow:auto;">';
+      hist.forEach(function (h) {
+        var when = h.created_at ? formatWhen(h.created_at) : "—";
+        var who = h.admin_label ? escapeHtml(String(h.admin_label)) : "Admin";
+        var sum = h.summary ? escapeHtml(String(h.summary)) : "";
+        historyHtml +=
+          '<li style="margin-bottom:0.5rem;"><span class="muted">' +
+          when +
+          "</span> · " +
+          who +
+          '<div style="margin-top:0.2rem;white-space:pre-wrap;">' +
+          sum +
+          "</div></li>";
+      });
+      historyHtml += "</ul>";
+    }
+
+    var replyBlock = "";
+    if (sub.field_agent_reply && String(sub.field_agent_reply).trim()) {
+      replyBlock +=
+        '<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid rgba(0,0,0,0.08);">' +
+        '<div class="muted" style="font-size:0.85rem;margin-bottom:0.2rem;">Reply to admin</div>' +
+        '<p style="margin:0;white-space:pre-wrap;">' +
+        escapeHtml(String(sub.field_agent_reply)) +
+        "</p></div>";
+    }
+
+    var actions = "";
+    if (sub.status === "info_needed" || sub.status === "rejected") {
+      actions +=
+        '<p style="margin:0.75rem 0 0;">' +
+        '<a class="btn btn--primary" href="' +
+        escapeHtml(tenantPrefix() + "/field-agent/submissions/" + Number(sub.id) + "/edit") +
+        '">Update and resubmit</a>' +
+        "</p>";
+    }
+
+    var hasLower = prominent || historyHtml || replyBlock || actions;
+    var lower = "";
+    if (hasLower) {
+      lower =
+        '<div class="field-agent-dash-comments card" style="margin-top:1rem;padding:0.85rem 1rem;border-top:2px solid rgba(0,0,0,0.06);">' +
+        '<div style="font-weight:600;margin-bottom:0.5rem;font-size:0.95rem;">Comments &amp; history</div>' +
+        prominent +
+        replyBlock +
+        historyHtml +
+        actions +
+        "</div>";
+    }
+
+    detailBody.innerHTML = dl + photos + works + lower;
   }
 
   function openList(status) {
@@ -506,7 +556,7 @@
       })
       .then(function (data) {
         if (!data) return;
-        if (data.submission) renderDetail(data.submission);
+        if (data.submission) renderDetail(data.submission, data.history || []);
         else detailBody.innerHTML = '<p class="muted">Could not load submission.</p>';
       })
       .catch(function () {

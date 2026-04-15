@@ -27,6 +27,7 @@ const fieldAgentSpRatingRepo = require("../db/pg/fieldAgentSpRatingRepo");
 const fieldAgentPayRunRepo = require("../db/pg/fieldAgentPayRunRepo");
 const fieldAgentPayRunDisputesRepo = require("../db/pg/fieldAgentPayRunDisputesRepo");
 const fieldAgentPayRunAdjustmentsRepo = require("../db/pg/fieldAgentPayRunAdjustmentsRepo");
+const fieldAgentSubmissionAuditRepo = require("../db/pg/fieldAgentSubmissionAuditRepo");
 const tenantsRepo = require("../db/pg/tenantsRepo");
 const { getCommerceSettingsForTenant, commerceCurrencyCodeUpper } = require("../tenants/tenantCommerceSettings");
 const { buildStatementDetailFromSnapshotRow } = require("../fieldAgent/fieldAgentStatementPayload");
@@ -338,7 +339,7 @@ module.exports = function fieldAgentRoutes() {
     }));
   });
 
-  /** Update submission after admin requested more information (info_needed only). */
+  /** Update submission after admin feedback (info_needed or rejected → resubmit to pending). */
   router.get("/field-agent/submissions/:id/edit", requireFieldAgent, async (req, res, next) => {
     try {
       const pool = getPgPool();
@@ -352,7 +353,8 @@ module.exports = function fieldAgentRoutes() {
       if (!row) {
         return res.status(404).type("text").send("Not found.");
       }
-      if (String(row.status || "") !== "info_needed") {
+      const st = String(row.status || "");
+      if (st !== "info_needed" && st !== "rejected") {
         return res.redirect(302, `${tenantPrefix(req)}/field-agent/dashboard`);
       }
       return res.render("field_agent/edit_submission", renderLocals(req, res, {
@@ -741,10 +743,11 @@ module.exports = function fieldAgentRoutes() {
     if (!row) {
       return res.status(404).json({ ok: false, error: "Not found." });
     }
-    return res.json({ ok: true, submission: row });
+    const history = await fieldAgentSubmissionAuditRepo.listAuditForFieldAgentVisible(pool, tid, id, { limit: 80 });
+    return res.json({ ok: true, submission: row, history });
   });
 
-  /** JSON: set reply text while submission is info_needed (no status change). */
+  /** JSON: set reply text while submission is info_needed or rejected (no status change). */
   router.patch("/field-agent/api/submissions/:id/reply", requireFieldAgent, async (req, res) => {
     const pool = getPgPool();
     const s = getFieldAgentSession(req);
@@ -765,13 +768,16 @@ module.exports = function fieldAgentRoutes() {
       message,
     });
     if (!ok) {
-      return res.status(400).json({ ok: false, error: "Could not save reply — submission must be yours in info needed status." });
+      return res.status(400).json({
+        ok: false,
+        error: "Could not save reply — submission must be yours in info needed or rejected status.",
+      });
     }
     const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
     return res.json({ ok: true, submission: row });
   });
 
-  /** JSON: update submission fields and resubmit (info_needed → pending). */
+  /** JSON: update submission fields and resubmit (info_needed | rejected → pending). */
   router.post("/field-agent/api/submissions/:id/resubmit", requireFieldAgent, async (req, res) => {
     const pool = getPgPool();
     const s = getFieldAgentSession(req);
@@ -781,7 +787,8 @@ module.exports = function fieldAgentRoutes() {
       return res.status(400).json({ ok: false, error: "Invalid submission." });
     }
     const existing = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
-    if (!existing || String(existing.status || "") !== "info_needed") {
+    const existingStatus = existing ? String(existing.status || "") : "";
+    if (!existing || (existingStatus !== "info_needed" && existingStatus !== "rejected")) {
       return res.status(400).json({ ok: false, error: "Submission is not awaiting your response." });
     }
     const b = req.body || {};
@@ -837,7 +844,48 @@ module.exports = function fieldAgentRoutes() {
       fieldAgentReply = String(b.field_agent_reply).trim().slice(0, 4000);
     }
 
-    const ok = await fieldAgentSubmissionsRepo.resubmitFieldAgentSubmissionFromInfoNeeded(pool, {
+    const exPhone = String(existing.phone_raw || "").trim();
+    const exWa = String(existing.whatsapp_raw || "").trim();
+    const exFn = String(existing.first_name || "").trim();
+    const exLn = String(existing.last_name || "").trim();
+    const exPr = String(existing.profession || "").trim();
+    const exPac = String(existing.pacra || "").trim();
+    const exSt = String(existing.address_street || "").trim();
+    const exLm = String(existing.address_landmarks || "").trim();
+    const exNh = String(existing.address_neighbourhood || "").trim();
+    const exCity = String(existing.address_city || "").trim();
+    const exNrc = String(existing.nrc_number || "").trim();
+    const exPhoto = String(existing.photo_profile_url || "").trim();
+    const exWork = String(existing.work_photos_json || "[]").trim();
+    const exPn = String(existing.phone_norm || "").trim();
+    const exWn = String(existing.whatsapp_norm || "").trim();
+    const fieldsChanged =
+      exPhone !== phoneRaw ||
+      exWa !== whatsappRaw ||
+      exFn !== firstName ||
+      exLn !== lastName ||
+      exPr !== profession ||
+      exPac !== pacra ||
+      exSt !== addressStreet ||
+      exLm !== addressLandmarks ||
+      exNh !== addressNeighbourhood ||
+      exCity !== addressCity ||
+      exNrc !== nrcNumber ||
+      exPhoto !== (b.photo_profile_url != null ? String(b.photo_profile_url).trim().slice(0, 500) : exPhoto) ||
+      exWork !== workPhotosJson ||
+      exPn !== pNorm ||
+      exWn !== wNorm;
+    const existingReply = String(existing.field_agent_reply || "").trim();
+    const replyProvided = fieldAgentReply !== undefined && String(fieldAgentReply).trim() !== "";
+    const replyChanged = replyProvided && String(fieldAgentReply).trim() !== existingReply;
+    if (!fieldsChanged && !replyChanged) {
+      return res.status(400).json({
+        ok: false,
+        error: "Update your contact details and/or add a reply before resubmitting.",
+      });
+    }
+
+    const ok = await fieldAgentSubmissionsRepo.resubmitFieldAgentSubmissionForReview(pool, {
       tenantId: tid,
       fieldAgentId: s.id,
       submissionId: id,

@@ -188,6 +188,7 @@ test(
     const ownDetail = await request(app).get(`/field-agent/api/submissions/${subA}`).expect(200);
     assert.equal(ownDetail.body.ok, true);
     assert.equal(ownDetail.body.submission.id, subA);
+    assert.ok(Array.isArray(ownDetail.body.history));
 
     const otherDetail = await request(app).get(`/field-agent/api/submissions/${subB}`).expect(404);
     assert.equal(otherDetail.body.ok, false);

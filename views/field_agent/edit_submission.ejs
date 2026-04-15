@@ -1,6 +1,8 @@
 <!doctype html>
 <% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
 <% var _sub = typeof submission !== 'undefined' ? submission : {}; %>
+<% var _faSt = String(_sub.status || ''); var _faRejected = _faSt === 'rejected'; %>
+<% var _faAdminNote = _faRejected ? String(_sub.rejection_reason || '').trim() : String(_sub.admin_info_request || '').trim(); %>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -16,14 +18,16 @@
       <div class="app-layout__main">
         <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
 
-        <h1 class="gp-home-story__title" style="margin-top:0;">More information needed</h1>
+        <h1 class="gp-home-story__title" style="margin-top:0;"><%= _faRejected ? 'Rejected — update and resubmit' : 'More information needed' %></h1>
         <p class="muted" style="max-width:40rem;line-height:1.5;margin:-0.25rem 0 1rem;">
-          The review team needs updates to this application. Edit the fields below, add a reply if helpful, then resubmit.
+          <%= _faRejected
+            ? 'This application was not approved. Edit the fields below, add a reply if helpful, then resubmit for another review.'
+            : 'The review team needs updates to this application. Edit the fields below, add a reply if helpful, then resubmit.' %>
         </p>
 
-        <div class="card" style="padding:1rem;margin-bottom:1rem;border-left:4px solid rgba(180,120,0,0.5);">
+        <div class="card" style="padding:1rem;margin-bottom:1rem;border-left:4px solid <%= _faRejected ? 'rgba(160,60,60,0.45)' : 'rgba(180,120,0,0.5)' %>;">
           <h2 class="form-step__title" style="margin-top:0;font-size:1rem;">Admin comment</h2>
-          <p style="margin:0;white-space:pre-wrap;"><%= String(_sub.admin_info_request || '').trim() || '—' %></p>
+          <p style="margin:0;white-space:pre-wrap;"><%= _faAdminNote || '—' %></p>
         </div>
 
         <p class="input-field__error" id="fa-edit-error" hidden role="alert" style="margin-bottom:1rem;"></p>
