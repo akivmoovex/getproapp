@@ -23,7 +23,12 @@
               <% } else if (run.status === 'locked') { %>
                 <span style="font-size:0.85rem;font-weight:600;">Locked — values frozen</span>
               <% } else if (run.status === 'approved') { %>
-                <span style="font-size:0.85rem;font-weight:600;">Ready for payout processing</span>
+                <span style="font-size:0.85rem;font-weight:600;">Workflow approved</span>
+                <% if (typeof payoutApproved !== 'undefined' && payoutApproved) { %>
+                <span class="admin-finance-badge admin-finance-badge--status-paid" style="margin-left:0.35rem;font-size:0.75rem;">Payout approved</span>
+                <% } else { %>
+                <span class="admin-finance-badge admin-finance-badge--state-neutral" style="margin-left:0.35rem;font-size:0.75rem;">Payout pending</span>
+                <% } %>
               <% } else if (run.status === 'paid') { %>
                 <span style="font-size:0.85rem;font-weight:600;">Marked as paid (record only)</span>
               <% } else { %>
@@ -39,9 +44,11 @@
               Locked runs are immutable — line items and period cannot change. Not final payment.
             </p>
             <% } else if (run.status === 'approved') { %>
-            <p class="admin-dashboard__subtitle muted">
-              System does not execute payments. Export is for manual processing. Marking as paid records completion in this system only.
-            </p>
+            <% if (typeof payoutApproved !== 'undefined' && payoutApproved) { %>
+            <p class="admin-dashboard__subtitle muted">Finance approved this run for payout — you may record ledger payments or mark as paid below. The system does not send money automatically.</p>
+            <% } else { %>
+            <p class="admin-dashboard__subtitle muted">Workflow approval is done — finance payout approval is still required before recording payments or marking paid.</p>
+            <% } %>
             <% } else if (run.status === 'paid') { %>
             <p class="admin-dashboard__subtitle muted">
               This run is closed. Amounts remain frozen. No further changes.
@@ -78,6 +85,26 @@
         <% } %>
         <% if (typeof flashClosedAlready !== 'undefined' && flashClosedAlready) { %>
           <p class="muted" role="status">This run was already marked closed.</p>
+        <% } %>
+        <% if (typeof flashPayoutApproved !== 'undefined' && flashPayoutApproved) { %>
+          <p class="admin-gate-success" role="status">Approved for payout — you can record payment events or mark as paid.</p>
+        <% } %>
+        <% if (typeof flashManualPayoutCompleted !== 'undefined' && flashManualPayoutCompleted) { %>
+          <p class="admin-gate-success" role="status">Payout completion recorded (bank reference evidence). Ledger lines were not changed.</p>
+        <% } %>
+        <% if (typeof manualPayoutCompleteErr !== 'undefined' && manualPayoutCompleteErr) { %>
+          <% var _mpc = String(manualPayoutCompleteErr); %>
+          <p class="muted" role="status">
+            <% if (_mpc === 'bank_ref') { %>Bank reference is required.<% } %>
+            <% if (_mpc === 'pay_method') { %>Payment method is required.<% } %>
+            <% if (_mpc === 'use_batch') { %>This run is in a payout batch — record completion on the batch detail page.<% } %>
+            <% if (_mpc === 'already_done') { %>Payout completion was already recorded.<% } %>
+            <% if (_mpc === 'void') { %>Void runs cannot be completed.<% } %>
+            <% if (_mpc === 'not_found') { %>Pay run not found.<% } %>
+            <% if (_mpc === 'not_payout_approved') { %>Payout approval is required before recording completion.<% } %>
+            <% if (_mpc === 'period_or_close') { %>Hard-close or accounting period rules blocked this action.<% } %>
+            <% if (_mpc === 'failed') { %>Could not record payout completion.<% } %>
+          </p>
         <% } %>
 
         <p><a href="/admin/field-agent-pay-runs<% if (typeof embed !== 'undefined' && embed) { %>?embed=1<% } %>">← Back to list</a></p>
@@ -116,6 +143,16 @@
             <% } %>
           </p>
           <% } %>
+          <% if (run.payout_approved_at) { %>
+          <p><strong>Payout approved:</strong> <%= new Date(run.payout_approved_at).toLocaleString() %>
+            <% if (run.payout_approved_by_admin_user_id && typeof actorLabels !== 'undefined' && actorLabels[run.payout_approved_by_admin_user_id]) { %>
+              <span class="muted">(<%= actorLabels[run.payout_approved_by_admin_user_id] %>)</span>
+            <% } else if (run.payout_approved_by_admin_user_id) { %>
+              <span class="muted">(#<%= run.payout_approved_by_admin_user_id %>)</span>
+            <% } %>
+          </p>
+          <% if (run.payout_approval_note) { %><p><strong>Payout approval note:</strong> <%= run.payout_approval_note %></p><% } %>
+          <% } %>
           <% if (run.paid_at) { %>
           <p><strong>Paid (record):</strong> <%= new Date(run.paid_at).toLocaleString() %>
             <% if (run.paid_by_admin_user_id && typeof actorLabels !== 'undefined' && actorLabels[run.paid_by_admin_user_id]) { %>
@@ -125,6 +162,22 @@
           <% } %>
           <% if (run.payout_reference) { %><p><strong>Payout reference:</strong> <%= run.payout_reference %></p><% } %>
           <% if (run.payout_notes) { %><p><strong>Payout notes:</strong> <%= run.payout_notes %></p><% } %>
+          <% if (run.payout_completed_at) { %>
+          <p><strong>Payout completed (evidence):</strong> <%= new Date(run.payout_completed_at).toLocaleString() %>
+            <% if (run.completed_by_admin_user_id && typeof actorLabels !== 'undefined' && actorLabels[run.completed_by_admin_user_id]) { %>
+              <span class="muted">(<%= actorLabels[run.completed_by_admin_user_id] %>)</span>
+            <% } else if (run.completed_by_admin_user_id) { %>
+              <span class="muted">(#<%= run.completed_by_admin_user_id %>)</span>
+            <% } %>
+          </p>
+          <% if (run.bank_reference) { %><p><strong>Bank reference:</strong> <%= run.bank_reference %></p><% } %>
+          <% if (run.payment_method) { %><p><strong>Payment method:</strong> <%= run.payment_method %></p><% } %>
+          <% if (run.completion_note) { %><p><strong>Completion note:</strong> <%= run.completion_note %></p><% } %>
+          <% } %>
+          <% if (typeof payoutBatchForRun !== 'undefined' && payoutBatchForRun && !run.payout_completed_at) { %>
+          <% var _pbL = []; if (typeof embed !== 'undefined' && embed) _pbL.push('embed=1'); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') _pbL.push('tenant_id=' + tenantId); %>
+          <p class="muted">This run is in <a href="/admin/field-agent-payout-batches/<%= payoutBatchForRun.id %><%= _pbL.length ? '?' + _pbL.join('&') : '' %>">payout batch #<%= payoutBatchForRun.id %> (<%= payoutBatchForRun.batch_reference %>)</a>. Record bank evidence on the batch.</p>
+          <% } %>
           <% if (run.export_generated_at) { %>
           <p class="muted"><strong>Last export:</strong> <%= new Date(run.export_generated_at).toLocaleString() %> <% if (run.export_format) { %>(<%= run.export_format %>)<% } %></p>
           <% } %>
@@ -223,8 +276,10 @@
           <% } %>
 
           <% if (run.status === 'approved' || run.status === 'paid') { %>
+          <% var _canPay = typeof canRecordPayout === 'undefined' || canRecordPayout || run.status === 'paid'; %>
           <details style="margin-bottom:0.9rem;">
             <summary style="cursor:pointer;font-weight:600;">Record payment event</summary>
+            <% if (_canPay) { %>
             <form method="post" action="/admin/field-agent-pay-runs/<%= run.id %>/payments" style="margin-top:0.6rem;">
               <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
               <div class="admin-filter-form admin-filter-form__grid">
@@ -251,6 +306,9 @@
               </div>
               <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Add payment event' }) %>
             </form>
+            <% } else { %>
+            <p class="muted" style="margin-top:0.6rem;">Finance payout approval is required before adding new payment lines. Reversals and corrections of existing lines remain available below when permitted.</p>
+            <% } %>
           </details>
           <% } else { %>
           <p class="muted" style="margin:0 0 0.75rem 0;">Payment events can be recorded only for approved or paid runs.</p>
@@ -411,6 +469,22 @@
             <%- include('../partials/components/button', { variant: 'primary', href: '/admin/field-agent-pay-runs/' + run.id + '/accounting-export.csv' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'Accounting CSV' }) %>
           </p>
         </section>
+        <% if (typeof canApprovePayout !== 'undefined' && canApprovePayout) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Approve for payout</h2>
+          <p class="muted" style="margin-bottom:0.75rem;">Explicit finance approval that this run is ready for payout recording (ledger / mark paid). Does not send money. Respects period lock and soft-close rules.</p>
+          <form method="post" action="/admin/field-agent-pay-runs/<%= run.id %>/approve-for-payout">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <div class="input-field" style="margin-bottom:0.75rem;">
+              <label class="input-field__label" for="payout_approval_note">Note (optional)</label>
+              <textarea class="input-field__control" id="payout_approval_note" name="payout_approval_note" rows="2" maxlength="4000" placeholder="e.g. batch approved, ticket ref"></textarea>
+            </div>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Approve for payout' }) %>
+          </form>
+        </section>
+        <% } %>
+        <% var _canMarkPaid = typeof canRecordPayout === 'undefined' || canRecordPayout; %>
+        <% if (_canMarkPaid) { %>
         <section class="card card--mb-xl">
           <h2 class="section-title section-title--flush">Mark as paid</h2>
           <p class="muted" style="margin-bottom:0.75rem;">Record that payout was completed outside this system (e.g. bank transfer). This cannot be undone.</p>
@@ -427,6 +501,12 @@
             <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Mark as paid' }) %>
           </form>
         </section>
+        <% } else if (run.status === 'approved') { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Mark as paid</h2>
+          <p class="muted" style="margin:0;">Available after <strong>Approve for payout</strong> above.</p>
+        </section>
+        <% } %>
         <% } %>
 
         <% if (run.status === 'paid') { %>
@@ -441,6 +521,61 @@
             <%- include('../partials/components/button', { variant: 'primary', href: '/admin/field-agent-pay-runs/' + run.id + '/month-close' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'Month-close report' }) %>
             <%- include('../partials/components/button', { variant: 'primary', href: '/admin/field-agent-pay-runs/' + run.id + '/accounting-export.csv' + (typeof embed !== 'undefined' && embed ? '?embed=1' : ''), label: 'Accounting CSV' }) %>
           </p>
+        </section>
+        <% } %>
+
+        <% if (typeof canCompleteManualPayout !== 'undefined' && canCompleteManualPayout && (run.status === 'approved' || run.status === 'paid')) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Record payout completion</h2>
+          <p class="muted" style="margin-bottom:0.75rem;">Capture bank reference evidence for this pay run. Does not create ledger lines or change reconciliation — see status history for the audit entry.</p>
+          <form method="post" action="/admin/field-agent-pay-runs/<%= run.id %>/complete-payout" class="admin-filter-form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <div class="input-field" style="max-width:28rem;">
+              <label class="input-field__label" for="mpc_bank_ref">Bank reference</label>
+              <input id="mpc_bank_ref" class="input-field__control" name="bank_reference" type="text" required maxlength="2000" placeholder="Bank transfer ref, batch ID, wire confirmation" />
+            </div>
+            <div class="input-field" style="max-width:28rem;">
+              <label class="input-field__label" for="mpc_pay_method">Payment method</label>
+              <input id="mpc_pay_method" class="input-field__control" name="payment_method" type="text" required maxlength="200" placeholder="e.g. SEPA, SWIFT, local transfer" />
+            </div>
+            <div class="input-field" style="max-width:36rem;">
+              <label class="input-field__label" for="mpc_note">Note (optional)</label>
+              <textarea id="mpc_note" class="input-field__control" name="completion_note" rows="2" maxlength="4000"></textarea>
+            </div>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Record payout completion' }) %>
+          </form>
+        </section>
+        <% } %>
+
+        <% if (typeof payoutFinanceAudit !== 'undefined' && payoutFinanceAudit && payoutFinanceAudit.length) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Payout finance audit</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.88rem;">Append-only log of payout approval, batch membership, payout completion, and bank reconciliation actions for this pay run.</p>
+          <div class="admin-table-wrap" style="overflow-x:auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Action</th>
+                  <th>Actor</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% payoutFinanceAudit.forEach(function (row) { %>
+                <tr>
+                  <td class="muted" style="white-space:nowrap;font-size:0.85rem;"><%= row.created_at ? new Date(row.created_at).toLocaleString() : '—' %></td>
+                  <td><code style="font-size:0.82rem;"><%= row.action_type %></code></td>
+                  <td class="muted">
+                    <% var _pfa = row.actor_admin_user_id; %>
+                    <% if (_pfa && typeof actorLabels !== 'undefined' && actorLabels[_pfa]) { %><%= actorLabels[_pfa] %><% } else if (_pfa) { %>#<%= _pfa %><% } else { %>—<% } %>
+                  </td>
+                  <td class="muted" style="font-size:0.85rem;max-width:28rem;word-break:break-word;"><%= row.note || '—' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
         </section>
         <% } %>
 

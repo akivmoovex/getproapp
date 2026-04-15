@@ -18,6 +18,10 @@ const REVERSAL_WINDOW_EXPIRED_MESSAGE = "Reversal window expired. Create adjustm
 const ACCOUNTING_PERIOD_LOCKED_ERROR = "ACCOUNTING_PERIOD_LOCKED";
 const ACCOUNTING_PERIOD_LOCKED_MESSAGE = "Accounting period is locked";
 
+const PAYOUT_NOT_APPROVED_ERROR = "PAYOUT_NOT_APPROVED";
+const PAYOUT_NOT_APPROVED_MESSAGE =
+  "Finance payout approval is required before recording payments or marking this run as paid.";
+
 /**
  * @param {Record<string, unknown> | null | undefined} row
  * @returns {boolean}
@@ -200,12 +204,27 @@ function assertPayRunStatusAllowsRecordingPayment(run) {
  * @param {number} tenantId
  * @param {Record<string, unknown>} run
  */
+/**
+ * Approved runs need explicit payout approval before positive payments or mark-paid (paid runs exempt).
+ * @param {Record<string, unknown>} run
+ * @returns {{ ok: true } | { ok: false, error: string, message: string }}
+ */
+function assertPayoutApprovedForApprovedRun(run) {
+  const st = String(run.status || "");
+  if (st === "paid") return { ok: true };
+  if (st !== "approved") return { ok: true };
+  if (run.payout_approved_at != null) return { ok: true };
+  return { ok: false, error: PAYOUT_NOT_APPROVED_ERROR, message: PAYOUT_NOT_APPROVED_MESSAGE };
+}
+
 async function assertPaymentRecordingGuards(executor, tenantId, run) {
   const hc = assertPayRunNotHardClosed(run);
   if (!hc.ok) return hc;
   const ap = await assertAccountingPeriodNotLockedForPayRun(executor, tenantId, run);
   if (!ap.ok) return ap;
-  return assertPayRunStatusAllowsRecordingPayment(run);
+  const stOk = assertPayRunStatusAllowsRecordingPayment(run);
+  if (!stOk.ok) return stOk;
+  return assertPayoutApprovedForApprovedRun(run);
 }
 
 /**
@@ -251,6 +270,8 @@ module.exports = {
   REVERSAL_WINDOW_EXPIRED_MESSAGE,
   ACCOUNTING_PERIOD_LOCKED_ERROR,
   ACCOUNTING_PERIOD_LOCKED_MESSAGE,
+  PAYOUT_NOT_APPROVED_ERROR,
+  PAYOUT_NOT_APPROVED_MESSAGE,
   payRunIsHardClosed,
   payRunAccountingPeriodKey,
   paymentRowPaymentDateAsYmd,
@@ -265,6 +286,7 @@ module.exports = {
   softClosePermissionGrantedForRole,
   assertPayRunStatusAllowsLedgerPaymentOrReversal,
   assertPayRunStatusAllowsRecordingPayment,
+  assertPayoutApprovedForApprovedRun,
   assertPaymentRecordingGuards,
   assertReverseOrCorrectGuards,
   assertSoftCloseStatusPreconditions,

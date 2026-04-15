@@ -6,12 +6,15 @@ const {
   canPayRunWorkflowWrite,
   canPayRunReverseOrCorrect,
   canManageAccountingPeriodLock,
+  canApprovePayrunForPayout,
 } = require("../../auth/roles");
 const { isSuperAdmin } = require("../../auth");
 const { getAdminTenantId, redirectWithEmbed } = require("./adminShared");
 const { getPgPool } = require("../../db/pg");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
 const fieldAgentPayRunRepo = require("../../db/pg/fieldAgentPayRunRepo");
+const fieldAgentPayoutBatchRepo = require("../../db/pg/fieldAgentPayoutBatchRepo");
+const fieldAgentPayoutFinanceAuditRepo = require("../../db/pg/fieldAgentPayoutFinanceAuditRepo");
 const {
   PAY_RUN_CLOSED_ERROR,
   PAY_RUN_CLOSED_MESSAGE,
@@ -19,6 +22,8 @@ const {
   REVERSAL_WINDOW_EXPIRED_MESSAGE,
   ACCOUNTING_PERIOD_LOCKED_ERROR,
   ACCOUNTING_PERIOD_LOCKED_MESSAGE,
+  PAYOUT_NOT_APPROVED_ERROR,
+  PAYOUT_NOT_APPROVED_MESSAGE,
 } = fieldAgentPayRunRepo;
 const accountingPeriodsRepo = require("../../db/pg/accountingPeriodsRepo");
 const financeOverrideEventsRepo = require("../../db/pg/financeOverrideEventsRepo");
@@ -32,6 +37,32 @@ const { computePayRunPreview } = require("../../admin/fieldAgentPayRunCompute");
 const { buildPayRunItemsCsv, buildPayRunAccountingReconciliationCsv } = require("../../admin/fieldAgentPayRunExportCsv");
 const { buildCfoPayRunSummaryCsv, buildCfoPayRunLedgerCsv } = require("../../admin/financeCfoExportCsv");
 const { buildStatementDetailFromSnapshotRow } = require("../../fieldAgent/fieldAgentStatementPayload");
+
+function mapManualPayoutCompleteErr(code) {
+  const c = String(code || "");
+  switch (c) {
+    case "BANK_REFERENCE_REQUIRED":
+      return "bank_ref";
+    case "PAYMENT_METHOD_REQUIRED":
+      return "pay_method";
+    case "USE_BATCH_COMPLETION":
+      return "use_batch";
+    case "ALREADY_COMPLETED":
+      return "already_done";
+    case "VOID":
+      return "void";
+    case "NOT_FOUND":
+      return "not_found";
+    case PAYOUT_NOT_APPROVED_ERROR:
+      return "not_payout_approved";
+    case PAY_RUN_CLOSED_ERROR:
+    case ACCOUNTING_PERIOD_LOCKED_ERROR:
+    case "PERIOD_OR_CLOSE":
+      return "period_or_close";
+    default:
+      return "failed";
+  }
+}
 
 function requirePayRunAccess(req, res, next) {
   if (!req.session.adminUser) return res.redirect("/admin/login");
@@ -84,6 +115,20 @@ function requireAccountingPeriodLockPrivilege(req, res, next) {
   next();
 }
 
+function requirePayRunPayoutApprovalWrite(req, res, next) {
+  if (!req.session.adminUser) return res.redirect("/admin/login");
+  if (!canAccessPayRunSection(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Pay runs require finance access or tenant administration.");
+  }
+  if (isPayRunFinanceViewerOnly(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Finance viewer access is read-only.");
+  }
+  if (!canApprovePayrunForPayout(req.session.adminUser.role)) {
+    return res.status(403).type("text").send("Payout approval requires tenant administration or finance operator/manager.");
+  }
+  next();
+}
+
 function resolveTargetTenantId(req) {
   const u = req.session.adminUser;
   if (isSuperAdmin(u.role)) {
@@ -113,6 +158,8 @@ async function loadActorLabels(pool, run, paymentRows) {
     run.approved_by_admin_user_id,
     run.paid_by_admin_user_id,
     run.closed_by_admin_user_id,
+    run.payout_approved_by_admin_user_id,
+    run.completed_by_admin_user_id,
   ]
     .map((x) => (x != null ? Number(x) : null))
     .filter((x) => x != null && Number.isFinite(x) && x > 0);
@@ -640,6 +687,9 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
       if (result.error === ACCOUNTING_PERIOD_LOCKED_ERROR) {
         return res.status(409).type("text").send(ACCOUNTING_PERIOD_LOCKED_MESSAGE);
       }
+      if (result.error === PAYOUT_NOT_APPROVED_ERROR) {
+        return res.status(409).type("text").send(PAYOUT_NOT_APPROVED_MESSAGE);
+      }
       if (result.error === "INVALID_STATE" || !result.run) {
         return res.status(409).type("text").send("Invalid state transition: only approved runs can be marked as paid.");
       }
@@ -647,6 +697,77 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
       if (res.locals.embed) q.set("embed", "1");
       q.set("paid", "1");
       return res.redirect(302, `/admin/field-agent-pay-runs/${id}?${q.toString()}`);
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.post("/field-agent-pay-runs/:id/approve-for-payout", requirePayRunPayoutApprovalWrite, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 1) return res.status(400).type("text").send("Invalid id.");
+      const runProbe = await fieldAgentPayRunRepo.getPayRunById(pool, id);
+      if (!runProbe) return res.status(404).type("text").send("Not found.");
+      const tid = Number(runProbe.tenant_id);
+      if (!(await assertTenantAccessible(pool, req, tid))) {
+        return res.status(403).type("text").send("You do not have access to this pay run.");
+      }
+      const adminId = req.session.adminUser && req.session.adminUser.id != null ? Number(req.session.adminUser.id) : null;
+      const note = req.body && req.body.payout_approval_note != null ? String(req.body.payout_approval_note) : "";
+      const result = await fieldAgentPayRunRepo.approvePayRunForPayout(pool, id, tid, adminId, note);
+      if (result.error === PAY_RUN_CLOSED_ERROR) {
+        return res.status(409).type("text").send(PAY_RUN_CLOSED_MESSAGE);
+      }
+      if (result.error === ACCOUNTING_PERIOD_LOCKED_ERROR) {
+        return res.status(409).type("text").send(ACCOUNTING_PERIOD_LOCKED_MESSAGE);
+      }
+      if (result.error === "ALREADY_PAYOUT_APPROVED") {
+        return res.status(409).type("text").send("This pay run is already approved for payout.");
+      }
+      if (result.error === "INVALID_STATE" || !result.run) {
+        return res.status(409).type("text").send("Only approved pay runs that are not soft-closed can be approved for payout.");
+      }
+      const q = new URLSearchParams();
+      if (res.locals.embed) q.set("embed", "1");
+      q.set("payout_approved", "1");
+      return res.redirect(302, `/admin/field-agent-pay-runs/${id}?${q.toString()}`);
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.post("/field-agent-pay-runs/:id/complete-payout", requirePayRunPayoutApprovalWrite, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 1) return res.status(400).type("text").send("Invalid id.");
+      const runProbe = await fieldAgentPayRunRepo.getPayRunById(pool, id);
+      if (!runProbe) return res.status(404).type("text").send("Not found.");
+      const tid = Number(runProbe.tenant_id);
+      if (!(await assertTenantAccessible(pool, req, tid))) {
+        return res.status(403).type("text").send("You do not have access to this pay run.");
+      }
+      const adminId = req.session.adminUser && req.session.adminUser.id != null ? Number(req.session.adminUser.id) : null;
+      const body = req.body || {};
+      const bankReference = String(body.bank_reference || "").trim();
+      const paymentMethod = String(body.payment_method || "").trim();
+      const completionNote = body.completion_note != null ? String(body.completion_note).trim() : "";
+      const result = await fieldAgentPayRunRepo.recordManualPayoutCompletionForPayRun(pool, {
+        payRunId: id,
+        tenantId: tid,
+        adminUserId: adminId,
+        bankReference,
+        paymentMethod,
+        completionNote: completionNote || null,
+      });
+      const q = new URLSearchParams();
+      if (result.error) {
+        q.set("mpc_err", mapManualPayoutCompleteErr(result.error));
+      } else {
+        q.set("payout_completed", "1");
+      }
+      return res.redirect(302, redirectWithEmbed(req, `/admin/field-agent-pay-runs/${id}?${q.toString()}`));
     } catch (e) {
       return next(e);
     }
@@ -1002,10 +1123,13 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         const msg =
           result.error === ACCOUNTING_PERIOD_LOCKED_ERROR
             ? ACCOUNTING_PERIOD_LOCKED_MESSAGE
-            : result.message || result.error || "Could not record payment.";
+            : result.error === PAYOUT_NOT_APPROVED_ERROR
+              ? PAYOUT_NOT_APPROVED_MESSAGE
+              : result.message || result.error || "Could not record payment.";
         const code =
           result.error === PAY_RUN_CLOSED_ERROR ||
           result.error === ACCOUNTING_PERIOD_LOCKED_ERROR ||
+          result.error === PAYOUT_NOT_APPROVED_ERROR ||
           /approved or paid/i.test(String(result.error || ""))
             ? 409
             : 400;
@@ -1185,7 +1309,15 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
       const reconciliation = await fieldAgentPayRunRepo.getPayRunReconciliationSummary(pool, id, tid);
       const payments = await fieldAgentPayRunRepo.listPaymentsForPayRun(pool, id, tid, 300);
       const paymentsUi = buildPaymentLedgerUiRows(payments);
-      const actorLabels = await loadActorLabels(pool, run, payments);
+      let actorLabels = await loadActorLabels(pool, run, payments);
+      const payoutApproved = !!(run.payout_approved_at);
+      const canRecordPayout =
+        String(run.status || "") === "paid" || (String(run.status || "") === "approved" && payoutApproved);
+      const canApprovePayout =
+        canApprovePayrunForPayout(req.session.adminUser.role) &&
+        String(run.status || "") === "approved" &&
+        !run.closed_at &&
+        !payoutApproved;
       const adjRows = await fieldAgentPayRunAdjustmentsRepo.listAdjustmentsForOriginalPayRun(pool, tid, id);
       const adjustmentsByItemId = {};
       for (const a of adjRows) {
@@ -1204,10 +1336,22 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
       const latestSnapshot = await fieldAgentPayRunSnapshotsRepo.getLatestSnapshotForPayRun(pool, tid, id);
       const hasPayRunAdjustmentRecords =
         (adjRows && adjRows.length > 0) || (carriedRows && carriedRows.length > 0);
-      const [statusHistory, ledgerHasReversalOrCorrection] = await Promise.all([
+      const [statusHistory, ledgerHasReversalOrCorrection, payoutBatchForRun, payoutFinanceAudit] = await Promise.all([
         financeCfoDashboardRepo.listPayRunStatusHistoryForPayRun(pool, tid, id),
         fieldAgentPayRunRepo.payRunLedgerHasReversalOrCorrection(pool, id, tid),
+        fieldAgentPayoutBatchRepo.getNonCancelledPayoutBatchContainingPayRun(pool, id, tid),
+        fieldAgentPayoutFinanceAuditRepo.listPayoutFinanceAuditForPayRun(pool, tid, id, 40),
       ]);
+      const canCompleteManualPayout =
+        canApprovePayrunForPayout(req.session.adminUser.role) &&
+        !run.payout_completed_at &&
+        String(run.status || "") !== "void" &&
+        !payoutBatchForRun;
+      const auditActorIds = (payoutFinanceAudit || [])
+        .map((r) => (r.actor_admin_user_id != null ? Number(r.actor_admin_user_id) : null))
+        .filter((x) => x != null && Number.isFinite(x) && x > 0);
+      const auditLabels = await loadAdminUserLabelsByIds(pool, auditActorIds);
+      actorLabels = { ...actorLabels, ...auditLabels };
       let snapshotVsCurrent = null;
       if (latestSnapshot) {
         snapshotVsCurrent = buildPayRunSnapshotVsCurrent(latestSnapshot, reconciliation, run, statusHistory);
@@ -1242,8 +1386,17 @@ module.exports = function registerAdminFieldAgentPayRunsRoutes(router) {
         flashCorrection: req.query.correction === "1",
         flashClosed: req.query.closed === "1",
         flashClosedAlready: req.query.closed_already === "1",
+        flashPayoutApproved: req.query.payout_approved === "1",
+        flashManualPayoutCompleted: req.query.payout_completed === "1",
+        manualPayoutCompleteErr: req.query.mpc_err || "",
+        payoutApproved,
+        payoutBatchForRun,
+        canRecordPayout,
+        canApprovePayout,
+        canCompleteManualPayout,
         softCloseWarnings,
         embed: !!res.locals.embed,
+        payoutFinanceAudit,
       });
     } catch (e) {
       return next(e);

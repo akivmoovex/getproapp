@@ -5,6 +5,10 @@ const { getPgPool } = require("../../db/pg");
 const tenantsRepo = require("../../db/pg/tenantsRepo");
 const financeCfoDashboardRepo = require("../../db/pg/financeCfoDashboardRepo");
 const fieldAgentPayRunRepo = require("../../db/pg/fieldAgentPayRunRepo");
+const {
+  buildCrossTenantConsolidatedSummaryCsv,
+  buildCrossTenantPayRunSummaryCsv,
+} = require("../../admin/financeCfoExportCsv");
 
 function parseOptionalISODate(raw) {
   if (raw == null || String(raw).trim() === "") return null;
@@ -13,6 +17,60 @@ function parseOptionalISODate(raw) {
   const d = new Date(`${s}T00:00:00.000Z`);
   if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== s) return null;
   return s;
+}
+
+/** Query params for cross-tenant finance summary + exception run list (GET; read-only). */
+function parseCrossTenantFinanceQuery(req) {
+  const periodStartFrom = parseOptionalISODate(req.query.period_from);
+  const periodStartTo = parseOptionalISODate(req.query.period_to);
+  const tenantIdRaw = req.query.tenant_id != null && String(req.query.tenant_id).trim() !== "" ? Number(req.query.tenant_id) : null;
+  const tenantId = tenantIdRaw != null && Number.isFinite(tenantIdRaw) && tenantIdRaw > 0 ? tenantIdRaw : null;
+  const tenantExceptionPreset = financeCfoDashboardRepo.normalizeCrossTenantTenantPreset(req.query.exception);
+  const frequentAdjustmentsMinRuns = Math.min(100, Math.max(1, Number(req.query.frequent_min) || 3));
+
+  const runStatusRaw = String(req.query.run_status || "").trim().toLowerCase();
+  const runStatus = ["draft", "locked", "approved", "paid", "void"].includes(runStatusRaw) ? runStatusRaw : null;
+  const runAdjustedOnly = String(req.query.run_adj || "") === "1";
+  const runReopenedOnly = String(req.query.run_reopened || "") === "1";
+  const runOutstandingOnly = String(req.query.run_out || "") === "1";
+  const runChangedAfterCloseOnly = String(req.query.run_changed || "") === "1";
+
+  const summaryOpts = {
+    periodStartFrom,
+    periodStartTo,
+    tenantId,
+    tenantExceptionPreset,
+    frequentAdjustmentsMinRuns,
+  };
+
+  const exceptionRunOpts = {
+    periodStartFrom,
+    periodStartTo,
+    tenantId,
+    runStatus,
+    adjustedOnly: runAdjustedOnly,
+    reopenedOnly: runReopenedOnly,
+    outstandingOnly: runOutstandingOnly,
+    changedAfterCloseOrSnapshotOnly: runChangedAfterCloseOnly,
+    limit: 80,
+  };
+
+  return {
+    summaryOpts,
+    exceptionRunOpts,
+    form: {
+      periodStartFrom: periodStartFrom || "",
+      periodStartTo: periodStartTo || "",
+      tenantId: tenantId != null ? String(tenantId) : "",
+      exception: tenantExceptionPreset || "",
+      frequentMin: String(frequentAdjustmentsMinRuns),
+      runStatus: runStatus || "",
+      runAdjustedOnly,
+      runReopenedOnly,
+      runOutstandingOnly,
+      runChangedAfterCloseOnly,
+    },
+  };
 }
 
 function buildTenantTableRows(tenantRows, statusByTenant, recByTenant, unappliedByTenant) {
@@ -44,6 +102,134 @@ function buildTenantTableRows(tenantRows, statusByTenant, recByTenant, unapplied
 }
 
 module.exports = function registerAdminFinanceCfoRoutes(router) {
+  /** Cross-tenant KPIs + filters + exception run list; super admin only (requireSuperAdmin → super_admin). */
+  router.get("/finance/summary", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const q = parseCrossTenantFinanceQuery(req);
+      const [{ platform, tenants, filterMeta }, tenantOptions, exceptionRuns] = await Promise.all([
+        financeCfoDashboardRepo.getCrossTenantFinanceSummaryDashboard(pool, q.summaryOpts),
+        tenantsRepo.listOrderedById(pool),
+        financeCfoDashboardRepo.listCrossTenantFinanceExceptionRuns(pool, q.exceptionRunOpts),
+      ]);
+      return res.render("admin/finance_cross_tenant_summary", {
+        activeNav: "finance_summary",
+        platform,
+        tenants,
+        filterMeta,
+        form: q.form,
+        tenantOptions,
+        exceptionRuns,
+        embed: !!res.locals.embed,
+      });
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  /** CSV: one row per tenant; respects same filter query params as HTML summary. */
+  router.get("/finance/summary/export.csv", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const q = parseCrossTenantFinanceQuery(req);
+      const { tenants } = await financeCfoDashboardRepo.getCrossTenantFinanceSummaryDashboard(pool, q.summaryOpts);
+      const csv = buildCrossTenantConsolidatedSummaryCsv(tenants);
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", 'attachment; filename="cross-tenant-finance-summary.csv"');
+      return res.status(200).send(Buffer.from(csv, "utf8"));
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  /** CSV: one row per pay run (cross-tenant); capped in repo. */
+  router.get("/finance/summary/pay-runs-export.csv", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const rows = await financeCfoDashboardRepo.listPayRunsForCrossTenantCfoSummaryExport(pool, {});
+      const csv = buildCrossTenantPayRunSummaryCsv(rows);
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", 'attachment; filename="cross-tenant-pay-runs-summary.csv"');
+      return res.status(200).send(Buffer.from(csv, "utf8"));
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  /**
+   * Tenant drill-down from consolidated finance summary (read-only).
+   * Access: requireSuperAdmin only (same global console gate as /finance/summary). Tenant-scoped roles are not granted this route.
+   */
+  router.get("/finance/summary/tenant/:tenantId", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const tenantId = Number(req.params.tenantId);
+      if (!Number.isFinite(tenantId) || tenantId < 1) {
+        return res.status(400).type("text").send("Invalid tenant.");
+      }
+      const tenantRow = await tenantsRepo.getById(pool, tenantId);
+      if (!tenantRow) return res.status(404).type("text").send("Tenant not found.");
+
+      const preset = financeCfoDashboardRepo.FINANCE_EXCEPTION_PRESET;
+      const sliceLimit = 25;
+      const [payoutSummary, recentPayRuns, reopenedRuns, adjustedRuns, outstandingRuns] = await Promise.all([
+        financeCfoDashboardRepo.getFieldAgentPayoutDashboardSummary(pool, tenantId),
+        financeCfoDashboardRepo.listPayRunsForPayoutDashboard(pool, tenantId, { limit: sliceLimit }),
+        financeCfoDashboardRepo.listPayRunsForPayoutDashboard(pool, tenantId, {
+          limit: sliceLimit,
+          exceptionPreset: preset.REOPENED,
+        }),
+        financeCfoDashboardRepo.listPayRunsForPayoutDashboard(pool, tenantId, {
+          limit: sliceLimit,
+          exceptionPreset: preset.ADJUSTED,
+        }),
+        financeCfoDashboardRepo.listPayRunsForPayoutDashboard(pool, tenantId, {
+          limit: sliceLimit,
+          exceptionPreset: preset.OUTSTANDING,
+        }),
+      ]);
+
+      const tenant = tenantsRepo.serializeTenantRow(tenantRow);
+      const payRunSlices = [
+        {
+          key: "recent",
+          title: "Recent pay runs",
+          description: "Latest pay runs by period (up to " + sliceLimit + ").",
+          rows: recentPayRuns,
+        },
+        {
+          key: "reopened",
+          title: "Reopened runs",
+          description: "Runs with paid → approved in status history (when history is available).",
+          rows: reopenedRuns,
+        },
+        {
+          key: "adjusted",
+          title: "Adjusted runs",
+          description: "Runs with at least one reversal or correction ledger line.",
+          rows: adjustedRuns,
+        },
+        {
+          key: "outstanding",
+          title: "Outstanding runs",
+          description: "Frozen payable exceeds net ledger on the run.",
+          rows: outstandingRuns,
+        },
+      ];
+
+      return res.render("admin/finance_summary_tenant", {
+        activeNav: "finance_summary",
+        tenant,
+        tenantId,
+        payoutSummary: payoutSummary || null,
+        payRunSlices,
+        embed: !!res.locals.embed,
+      });
+    } catch (e) {
+      return next(e);
+    }
+  });
+
   router.get("/finance/cfo", requireSuperAdmin, async (req, res, next) => {
     try {
       const pool = getPgPool();

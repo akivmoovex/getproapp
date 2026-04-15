@@ -688,6 +688,98 @@ async function listPayRunsForCfoSummaryExport(pool, tenantId, opts = {}) {
 }
 
 /**
+ * Pay-run rows for all tenants (CFO summary columns + tenant). One row per pay run;
+ * net_paid is SUM(amount) on the run’s ledger (includes reversals/corrections as stored).
+ * @param {import("pg").Pool} pool
+ * @param {{ limit?: number }} [opts]
+ */
+async function listPayRunsForCrossTenantCfoSummaryExport(pool, opts = {}) {
+  const lim = Math.min(Math.max(Number(opts.limit) || 2000, 1), 5000);
+
+  const r = await pool.query(
+    `
+    SELECT
+      t.id::int AS tenant_id,
+      t.name::text AS tenant_name,
+      t.slug::text AS tenant_slug,
+      pr.id AS pay_run_id,
+      pr.period_start,
+      pr.period_end,
+      pr.status::text AS run_status,
+      pr.paid_at,
+      pr.updated_at,
+      COALESCE((
+        SELECT COALESCE(SUM(COALESCE(i.net_payable_amount, (
+          COALESCE(i.sp_payable_amount, 0)
+          + COALESCE(i.ec_payable_amount, 0)
+          + COALESCE(i.recruitment_commission_amount, 0)
+        ))), 0)::numeric
+        FROM public.field_agent_pay_run_items i
+        WHERE i.pay_run_id = pr.id AND i.tenant_id = pr.tenant_id
+      ), 0)::numeric AS frozen_payable,
+      COALESCE((
+        SELECT SUM(pay.amount)::numeric
+        FROM public.field_agent_pay_run_payments pay
+        WHERE pay.pay_run_id = pr.id AND pay.tenant_id = pr.tenant_id
+      ), 0)::numeric AS net_paid,
+      EXISTS (
+        SELECT 1
+        FROM public.field_agent_pay_run_adjustments a
+        WHERE a.tenant_id = pr.tenant_id
+          AND (a.original_pay_run_id = pr.id OR a.applied_in_pay_run_id = pr.id)
+      ) AS has_adjustments
+    FROM public.field_agent_pay_runs pr
+    INNER JOIN public.tenants t ON t.id = pr.tenant_id
+    ORDER BY t.id ASC, pr.period_start DESC NULLS LAST, pr.id DESC
+    LIMIT $1
+    `,
+    [lim]
+  );
+
+  /** @type {Set<string>} */
+  let reopenPairs = new Set();
+  try {
+    const rh = await pool.query(
+      `
+      SELECT tenant_id::int AS tenant_id, pay_run_id::int AS pay_run_id
+      FROM public.field_agent_pay_run_status_history
+      WHERE from_status = 'paid' AND to_status = 'approved'
+      `
+    );
+    reopenPairs = new Set(rh.rows.map((x) => `${Number(x.tenant_id)}:${Number(x.pay_run_id)}`));
+  } catch (e) {
+    const msg = e && e.message ? String(e.message) : "";
+    if (!(msg.includes("field_agent_pay_run_status_history") || (e && e.code === "42P01"))) {
+      throw e;
+    }
+  }
+
+  return r.rows.map((row) => {
+    const tid = Number(row.tenant_id);
+    const frozen = fieldAgentPayRunRepo.roundMoney2(Number(row.frozen_payable || 0));
+    const net = fieldAgentPayRunRepo.roundMoney2(Number(row.net_paid || 0));
+    const pid = Number(row.pay_run_id);
+    const pairKey = `${tid}:${pid}`;
+    return {
+      tenant_id: tid,
+      tenant_name: String(row.tenant_name || ""),
+      tenant_slug: String(row.tenant_slug || ""),
+      pay_run_id: pid,
+      period_start: row.period_start,
+      period_end: row.period_end,
+      run_status: String(row.run_status || ""),
+      frozen_payable: frozen,
+      net_paid: net,
+      remaining_balance: fieldAgentPayRunRepo.roundMoney2(frozen - net),
+      has_adjustments: !!row.has_adjustments,
+      reopened_flag: reopenPairs.has(pairKey),
+      paid_at: row.paid_at,
+      updated_at: row.updated_at,
+    };
+  });
+}
+
+/**
  * All status history rows for one pay run (chronological).
  * @param {import("pg").Pool} pool
  * @param {number} tenantId
@@ -977,6 +1069,564 @@ function rollupPlatform(rowsByTenant) {
   return o;
 }
 
+function _periodBounds(opts) {
+  const from = opts.periodStartFrom && String(opts.periodStartFrom).trim() ? String(opts.periodStartFrom).trim() : null;
+  const to = opts.periodStartTo && String(opts.periodStartTo).trim() ? String(opts.periodStartTo).trim() : null;
+  return { from, to, hasPeriod: from != null || to != null };
+}
+
+/**
+ * Frozen payable (items snapshot) per tenant for approved + paid runs only.
+ * Optional pay-run period window on `period_start` (inclusive).
+ * @param {import("pg").Pool} pool
+ * @param {{ periodStartFrom?: string | null, periodStartTo?: string | null }} [opts]
+ * @returns {Promise<Map<number, number>>}
+ */
+async function getFrozenPayableApprovedPaidByTenant(pool, opts = {}) {
+  const { from, to } = _periodBounds(opts);
+  const r = await pool.query(
+    `
+    SELECT pr.tenant_id::int AS tenant_id,
+           COALESCE(SUM((
+             SELECT COALESCE(SUM(COALESCE(i.net_payable_amount, (
+               COALESCE(i.sp_payable_amount, 0)
+               + COALESCE(i.ec_payable_amount, 0)
+               + COALESCE(i.recruitment_commission_amount, 0)
+             ))), 0)::numeric
+             FROM public.field_agent_pay_run_items i
+             WHERE i.pay_run_id = pr.id AND i.tenant_id = pr.tenant_id
+           )), 0)::numeric AS frozen_payable_total
+    FROM public.field_agent_pay_runs pr
+    WHERE pr.status IN ('approved', 'paid')
+      AND ($1::date IS NULL OR pr.period_start >= $1::date)
+      AND ($2::date IS NULL OR pr.period_start <= $2::date)
+    GROUP BY pr.tenant_id
+    `,
+    [from, to]
+  );
+  const m = new Map();
+  for (const row of r.rows) {
+    m.set(Number(row.tenant_id), fieldAgentPayRunRepo.roundMoney2(Number(row.frozen_payable_total || 0)));
+  }
+  return m;
+}
+
+/**
+ * Net paid for cross-tenant summary: all ledger lines per tenant, or — when a period window is set —
+ * only payments whose pay run has `period_start` in that window (DB join; reversals stay on their run).
+ * @param {import("pg").Pool} pool
+ * @param {{ periodStartFrom?: string | null, periodStartTo?: string | null }} [opts]
+ * @returns {Promise<Map<number, number>>}
+ */
+async function getNetPaidLedgerTotalByTenant(pool, opts = {}) {
+  const { from, to, hasPeriod } = _periodBounds(opts);
+  if (!hasPeriod) {
+    const r = await pool.query(
+      `
+      SELECT p.tenant_id::int AS tenant_id,
+             COALESCE(SUM(p.amount), 0)::numeric AS total_net_paid
+      FROM public.field_agent_pay_run_payments p
+      GROUP BY p.tenant_id
+      `
+    );
+    const m = new Map();
+    for (const row of r.rows) {
+      m.set(Number(row.tenant_id), fieldAgentPayRunRepo.roundMoney2(Number(row.total_net_paid || 0)));
+    }
+    return m;
+  }
+  const r = await pool.query(
+    `
+    SELECT pr.tenant_id::int AS tenant_id,
+           COALESCE(SUM(pay.amount), 0)::numeric AS total_net_paid
+    FROM public.field_agent_pay_run_payments pay
+    INNER JOIN public.field_agent_pay_runs pr
+      ON pr.id = pay.pay_run_id AND pr.tenant_id = pay.tenant_id
+    WHERE ($1::date IS NULL OR pr.period_start >= $1::date)
+      AND ($2::date IS NULL OR pr.period_start <= $2::date)
+    GROUP BY pr.tenant_id
+    `,
+    [from, to]
+  );
+  const m = new Map();
+  for (const row of r.rows) {
+    m.set(Number(row.tenant_id), fieldAgentPayRunRepo.roundMoney2(Number(row.total_net_paid || 0)));
+  }
+  return m;
+}
+
+/**
+ * Distinct pay runs with paid → approved in status history (ledger sync reopen signal).
+ * Optional: only runs whose pay-run `period_start` falls in the window.
+ * @param {import("pg").Pool} pool
+ * @param {{ periodStartFrom?: string | null, periodStartTo?: string | null }} [opts]
+ * @returns {Promise<Map<number, number>>}
+ */
+async function getReopenedRunCountByTenant(pool, opts = {}) {
+  const { from, to, hasPeriod } = _periodBounds(opts);
+  try {
+    const r = hasPeriod
+      ? await pool.query(
+          `
+          SELECT h.tenant_id::int AS tenant_id,
+                 COUNT(DISTINCT h.pay_run_id)::int AS cnt
+          FROM public.field_agent_pay_run_status_history h
+          INNER JOIN public.field_agent_pay_runs pr
+            ON pr.id = h.pay_run_id AND pr.tenant_id = h.tenant_id
+          WHERE h.from_status = 'paid' AND h.to_status = 'approved'
+            AND ($1::date IS NULL OR pr.period_start >= $1::date)
+            AND ($2::date IS NULL OR pr.period_start <= $2::date)
+          GROUP BY h.tenant_id
+          `,
+          [from, to]
+        )
+      : await pool.query(
+          `
+          SELECT h.tenant_id::int AS tenant_id,
+                 COUNT(DISTINCT h.pay_run_id)::int AS cnt
+          FROM public.field_agent_pay_run_status_history h
+          WHERE h.from_status = 'paid' AND h.to_status = 'approved'
+          GROUP BY h.tenant_id
+          `
+        );
+    const m = new Map();
+    for (const row of r.rows) {
+      m.set(Number(row.tenant_id), Number(row.cnt || 0));
+    }
+    return m;
+  } catch (e) {
+    const msg = e && e.message ? String(e.message) : "";
+    if (msg.includes("field_agent_pay_run_status_history") || (e && e.code === "42P01")) {
+      return new Map();
+    }
+    throw e;
+  }
+}
+
+/**
+ * Distinct pay runs with at least one reversal or correction_payment ledger line (metadata.type).
+ * Optional: only runs whose pay-run `period_start` falls in the window.
+ * @param {import("pg").Pool} pool
+ * @param {{ periodStartFrom?: string | null, periodStartTo?: string | null }} [opts]
+ * @returns {Promise<Map<number, number>>}
+ */
+async function getAdjustedRunCountByTenant(pool, opts = {}) {
+  const { from, to, hasPeriod } = _periodBounds(opts);
+  const r = hasPeriod
+    ? await pool.query(
+        `
+        SELECT p.tenant_id::int AS tenant_id,
+               COUNT(DISTINCT p.pay_run_id)::int AS cnt
+        FROM public.field_agent_pay_run_payments p
+        INNER JOIN public.field_agent_pay_runs pr
+          ON pr.id = p.pay_run_id AND pr.tenant_id = p.tenant_id
+        WHERE (p.metadata->>'type') IN ('reversal', 'correction_payment')
+          AND ($1::date IS NULL OR pr.period_start >= $1::date)
+          AND ($2::date IS NULL OR pr.period_start <= $2::date)
+        GROUP BY p.tenant_id
+        `,
+        [from, to]
+      )
+    : await pool.query(
+        `
+        SELECT p.tenant_id::int AS tenant_id,
+               COUNT(DISTINCT p.pay_run_id)::int AS cnt
+        FROM public.field_agent_pay_run_payments p
+        WHERE (p.metadata->>'type') IN ('reversal', 'correction_payment')
+        GROUP BY p.tenant_id
+        `
+      );
+  const m = new Map();
+  for (const row of r.rows) {
+    m.set(Number(row.tenant_id), Number(row.cnt || 0));
+  }
+  return m;
+}
+
+/**
+ * Latest finance-related activity per tenant (pay runs, payments, optional status history).
+ * @param {import("pg").Pool} pool
+ * @returns {Promise<Map<number, Date | null>>}
+ */
+async function getLatestFinanceActivityByTenant(pool) {
+  const run = async (includeHistory) => {
+    const sql = includeHistory
+      ? `
+        SELECT u.tenant_id::int AS tenant_id, MAX(u.activity_ts) AS latest_at
+        FROM (
+          SELECT pr.tenant_id, pr.updated_at AS activity_ts FROM public.field_agent_pay_runs pr
+          UNION ALL
+          SELECT pay.tenant_id, pay.created_at AS activity_ts FROM public.field_agent_pay_run_payments pay
+          UNION ALL
+          SELECT h.tenant_id, h.created_at AS activity_ts FROM public.field_agent_pay_run_status_history h
+        ) u
+        GROUP BY u.tenant_id
+        `
+      : `
+        SELECT u.tenant_id::int AS tenant_id, MAX(u.activity_ts) AS latest_at
+        FROM (
+          SELECT pr.tenant_id, pr.updated_at AS activity_ts FROM public.field_agent_pay_runs pr
+          UNION ALL
+          SELECT pay.tenant_id, pay.created_at AS activity_ts FROM public.field_agent_pay_run_payments pay
+        ) u
+        GROUP BY u.tenant_id
+        `;
+    const r = await pool.query(sql);
+    const m = new Map();
+    for (const row of r.rows) {
+      m.set(Number(row.tenant_id), row.latest_at instanceof Date ? row.latest_at : null);
+    }
+    return m;
+  };
+  try {
+    return await run(true);
+  } catch (e) {
+    const msg = e && e.message ? String(e.message) : "";
+    if (msg.includes("field_agent_pay_run_status_history") || (e && e.code === "42P01")) {
+      return run(false);
+    }
+    throw e;
+  }
+}
+
+/** Presets for tenant-level exception filtering (summary table). */
+const CROSS_TENANT_TENANT_PRESET = Object.freeze({
+  OUTSTANDING: "outstanding",
+  REOPENED: "reopened",
+  FREQUENT_ADJUSTMENTS: "frequent_adjustments",
+});
+
+/**
+ * @param {string | null | undefined} raw
+ * @returns {string | null}
+ */
+function normalizeCrossTenantTenantPreset(raw) {
+  if (raw == null || raw === "") return null;
+  const s = String(raw).trim().toLowerCase();
+  if (s === CROSS_TENANT_TENANT_PRESET.OUTSTANDING) return CROSS_TENANT_TENANT_PRESET.OUTSTANDING;
+  if (s === CROSS_TENANT_TENANT_PRESET.REOPENED) return CROSS_TENANT_TENANT_PRESET.REOPENED;
+  if (s === CROSS_TENANT_TENANT_PRESET.FREQUENT_ADJUSTMENTS) return CROSS_TENANT_TENANT_PRESET.FREQUENT_ADJUSTMENTS;
+  return null;
+}
+
+/**
+ * Cross-tenant finance summary: DB-backed per-tenant aggregates + platform roll-up (read-only).
+ * Aligns KPIs with tenant payout finance dashboard (frozen on approved+paid; net paid = full ledger, or period-scoped ledger when a period window is set).
+ *
+ * @param {import("pg").Pool} pool
+ * @param {{
+ *   periodStartFrom?: string | null,
+ *   periodStartTo?: string | null,
+ *   tenantId?: number | null,
+ *   tenantExceptionPreset?: string | null,
+ *   frequentAdjustmentsMinRuns?: number,
+ * }} [opts]
+ * @returns {Promise<{ platform: object, tenants: object[], filterMeta: object }>}
+ */
+async function getCrossTenantFinanceSummaryDashboard(pool, opts = {}) {
+  const dateOpts = {
+    periodStartFrom: opts.periodStartFrom && String(opts.periodStartFrom).trim() ? String(opts.periodStartFrom).trim() : null,
+    periodStartTo: opts.periodStartTo && String(opts.periodStartTo).trim() ? String(opts.periodStartTo).trim() : null,
+  };
+  const onlyTid = opts.tenantId != null && Number.isFinite(Number(opts.tenantId)) && Number(opts.tenantId) > 0 ? Number(opts.tenantId) : null;
+  const tenantPreset = normalizeCrossTenantTenantPreset(opts.tenantExceptionPreset);
+  const frequentMin = Math.min(100, Math.max(1, Number(opts.frequentAdjustmentsMinRuns) || 3));
+  const { hasPeriod } = _periodBounds(dateOpts);
+
+  const [
+    tenantRows,
+    frozenByTenant,
+    netPaidByTenant,
+    statusByTenant,
+    reopenedByTenant,
+    adjustedByTenant,
+    latestByTenant,
+    globalStatus,
+    globalReopened,
+    globalAdjusted,
+  ] = await Promise.all([
+    pool.query(`SELECT id::int AS id, name::text AS name, slug::text AS slug FROM public.tenants ORDER BY id ASC`),
+    getFrozenPayableApprovedPaidByTenant(pool, dateOpts),
+    getNetPaidLedgerTotalByTenant(pool, dateOpts),
+    getPayRunStatusCountsByTenant(pool, dateOpts),
+    getReopenedRunCountByTenant(pool, dateOpts),
+    getAdjustedRunCountByTenant(pool, dateOpts),
+    getLatestFinanceActivityByTenant(pool),
+    pool.query(
+      `
+      SELECT
+        COUNT(*) FILTER (WHERE pr.status = 'paid')::int AS cnt_paid,
+        COUNT(*) FILTER (WHERE pr.status = 'approved')::int AS cnt_approved
+      FROM public.field_agent_pay_runs pr
+      WHERE ($1::date IS NULL OR pr.period_start >= $1::date)
+        AND ($2::date IS NULL OR pr.period_start <= $2::date)
+      `,
+      [dateOpts.periodStartFrom, dateOpts.periodStartTo]
+    ),
+    (async () => {
+      try {
+        const r = hasPeriod
+          ? await pool.query(
+              `
+              SELECT COUNT(DISTINCT h.pay_run_id)::int AS c
+              FROM public.field_agent_pay_run_status_history h
+              INNER JOIN public.field_agent_pay_runs pr
+                ON pr.id = h.pay_run_id AND pr.tenant_id = h.tenant_id
+              WHERE h.from_status = 'paid' AND h.to_status = 'approved'
+                AND ($1::date IS NULL OR pr.period_start >= $1::date)
+                AND ($2::date IS NULL OR pr.period_start <= $2::date)
+              `,
+              [dateOpts.periodStartFrom, dateOpts.periodStartTo]
+            )
+          : await pool.query(
+              `
+              SELECT COUNT(DISTINCT pay_run_id)::int AS c
+              FROM public.field_agent_pay_run_status_history
+              WHERE from_status = 'paid' AND to_status = 'approved'
+              `
+            );
+        return Number(r.rows[0]?.c || 0);
+      } catch (e) {
+        const msg = e && e.message ? String(e.message) : "";
+        if (msg.includes("field_agent_pay_run_status_history") || (e && e.code === "42P01")) {
+          return 0;
+        }
+        throw e;
+      }
+    })(),
+    (async () => {
+      const r = hasPeriod
+        ? await pool.query(
+            `
+            SELECT COUNT(DISTINCT p.pay_run_id)::int AS c
+            FROM public.field_agent_pay_run_payments p
+            INNER JOIN public.field_agent_pay_runs pr
+              ON pr.id = p.pay_run_id AND pr.tenant_id = p.tenant_id
+            WHERE (p.metadata->>'type') IN ('reversal', 'correction_payment')
+              AND ($1::date IS NULL OR pr.period_start >= $1::date)
+              AND ($2::date IS NULL OR pr.period_start <= $2::date)
+            `,
+            [dateOpts.periodStartFrom, dateOpts.periodStartTo]
+          )
+        : await pool.query(
+            `
+            SELECT COUNT(DISTINCT pay_run_id)::int AS c
+            FROM public.field_agent_pay_run_payments
+            WHERE (metadata->>'type') IN ('reversal', 'correction_payment')
+            `
+          );
+      return Number(r.rows[0]?.c || 0);
+    })(),
+  ]);
+
+  const gs = globalStatus.rows[0] || {};
+  let tenants = tenantRows.rows.map((t) => {
+    const id = Number(t.id);
+    const frozen = frozenByTenant.get(id) ?? 0;
+    const netPaid = netPaidByTenant.get(id) ?? 0;
+    const remaining = fieldAgentPayRunRepo.roundMoney2(frozen - netPaid);
+    const st = statusByTenant.get(id) || { draft: 0, locked: 0, approved: 0, paid: 0 };
+    const reopenedCount = reopenedByTenant.get(id) ?? 0;
+    const adjustedCount = adjustedByTenant.get(id) ?? 0;
+    const latestAt = latestByTenant.get(id) ?? null;
+    return {
+      tenant_id: id,
+      tenant_name: String(t.name || ""),
+      tenant_slug: String(t.slug || ""),
+      frozen_payable_total: frozen,
+      total_net_paid: netPaid,
+      remaining_balance: remaining,
+      paid_run_count: Number(st.paid || 0),
+      approved_run_count: Number(st.approved || 0),
+      reopened_run_count: reopenedCount,
+      adjusted_run_count: adjustedCount,
+      latest_activity_at: latestAt instanceof Date ? latestAt.toISOString() : null,
+    };
+  });
+
+  if (onlyTid != null) {
+    tenants = tenants.filter((row) => row.tenant_id === onlyTid);
+  }
+  if (tenantPreset === CROSS_TENANT_TENANT_PRESET.OUTSTANDING) {
+    tenants = tenants.filter((row) => fieldAgentPayRunRepo.roundMoney2(Number(row.remaining_balance || 0)) > 0);
+  } else if (tenantPreset === CROSS_TENANT_TENANT_PRESET.REOPENED) {
+    tenants = tenants.filter((row) => Number(row.reopened_run_count || 0) > 0);
+  } else if (tenantPreset === CROSS_TENANT_TENANT_PRESET.FREQUENT_ADJUSTMENTS) {
+    tenants = tenants.filter((row) => Number(row.adjusted_run_count || 0) >= frequentMin);
+  }
+
+  let totalFrozen = 0;
+  let totalNetPaid = 0;
+  for (const row of tenants) {
+    totalFrozen = fieldAgentPayRunRepo.roundMoney2(totalFrozen + Number(row.frozen_payable_total || 0));
+    totalNetPaid = fieldAgentPayRunRepo.roundMoney2(totalNetPaid + Number(row.total_net_paid || 0));
+  }
+
+  const platform = {
+    total_frozen_payable: totalFrozen,
+    total_net_paid: totalNetPaid,
+    total_remaining_balance: fieldAgentPayRunRepo.roundMoney2(totalFrozen - totalNetPaid),
+    paid_run_count: Number(gs.cnt_paid || 0),
+    approved_run_count: Number(gs.cnt_approved || 0),
+    reopened_run_count: globalReopened,
+    adjusted_run_count: globalAdjusted,
+    tenant_count: tenants.length,
+  };
+
+  const filterMeta = {
+    periodStartFrom: dateOpts.periodStartFrom,
+    periodStartTo: dateOpts.periodStartTo,
+    periodScopedLedger: hasPeriod,
+    tenantId: onlyTid,
+    tenantExceptionPreset: tenantPreset,
+    frequentAdjustmentsMinRuns: frequentMin,
+  };
+
+  return { platform, tenants, filterMeta };
+}
+
+/**
+ * Pay runs for cross-tenant exception reporting (read-only). One row per run; ledger totals per run (SUM amount).
+ * @param {import("pg").Pool} pool
+ * @param {{
+ *   periodStartFrom?: string | null,
+ *   periodStartTo?: string | null,
+ *   tenantId?: number | null,
+ *   runStatus?: string | null,
+ *   adjustedOnly?: boolean,
+ *   reopenedOnly?: boolean,
+ *   outstandingOnly?: boolean,
+ *   changedAfterCloseOrSnapshotOnly?: boolean,
+ *   limit?: number,
+ * }} [opts]
+ */
+async function listCrossTenantFinanceExceptionRuns(pool, opts = {}) {
+  const lim = Math.min(Math.max(Number(opts.limit) || 80, 1), 200);
+  const dateOpts = {
+    periodStartFrom: opts.periodStartFrom && String(opts.periodStartFrom).trim() ? String(opts.periodStartFrom).trim() : null,
+    periodStartTo: opts.periodStartTo && String(opts.periodStartTo).trim() ? String(opts.periodStartTo).trim() : null,
+  };
+  const onlyTid = opts.tenantId != null && Number.isFinite(Number(opts.tenantId)) && Number(opts.tenantId) > 0 ? Number(opts.tenantId) : null;
+  const st = opts.runStatus != null ? String(opts.runStatus).trim().toLowerCase() : "";
+  const statusOk = ["draft", "locked", "approved", "paid", "void"].includes(st) ? st : null;
+
+  const adjustedOnly = !!opts.adjustedOnly;
+  const reopenedOnly = !!opts.reopenedOnly;
+  const outstandingOnly = !!opts.outstandingOnly;
+  const changedOnly = !!opts.changedAfterCloseOrSnapshotOnly;
+
+  const params = [dateOpts.periodStartFrom, dateOpts.periodStartTo, onlyTid, statusOk, lim];
+  let statusSql = "($4::text IS NULL OR pr.status::text = $4::text)";
+  let extra = "";
+
+  if (adjustedOnly) {
+    extra += `
+      AND EXISTS (
+        SELECT 1 FROM public.field_agent_pay_run_payments p
+        WHERE p.tenant_id = pr.tenant_id AND p.pay_run_id = pr.id
+          AND (p.metadata->>'type') IN ('reversal', 'correction_payment')
+      )`;
+  }
+  if (reopenedOnly) {
+    extra += `
+      AND EXISTS (
+        SELECT 1 FROM public.field_agent_pay_run_status_history h
+        WHERE h.tenant_id = pr.tenant_id AND h.pay_run_id = pr.id
+          AND h.from_status = 'paid' AND h.to_status = 'approved'
+      )`;
+  }
+  if (outstandingOnly) {
+    extra += `
+      AND COALESCE((
+        SELECT COALESCE(SUM(COALESCE(i.net_payable_amount, (
+          COALESCE(i.sp_payable_amount, 0) + COALESCE(i.ec_payable_amount, 0) + COALESCE(i.recruitment_commission_amount, 0)
+        ))), 0)::numeric
+        FROM public.field_agent_pay_run_items i
+        WHERE i.pay_run_id = pr.id AND i.tenant_id = pr.tenant_id
+      ), 0) >
+      COALESCE((
+        SELECT COALESCE(SUM(pay.amount), 0)::numeric
+        FROM public.field_agent_pay_run_payments pay
+        WHERE pay.pay_run_id = pr.id AND pay.tenant_id = pr.tenant_id
+      ), 0)`;
+  }
+  if (changedOnly) {
+    extra += `
+      AND (
+        (pr.closed_at IS NOT NULL AND pr.updated_at > pr.closed_at)
+        OR EXISTS (
+          SELECT 1 FROM public.field_agent_pay_run_snapshots s
+          WHERE s.tenant_id = pr.tenant_id AND s.pay_run_id = pr.id
+            AND pr.updated_at > s.snapshot_at
+        )
+      )`;
+  }
+
+  const sql = `
+    SELECT
+      t.id::int AS tenant_id,
+      t.name::text AS tenant_name,
+      t.slug::text AS tenant_slug,
+      pr.id::int AS pay_run_id,
+      pr.status::text AS run_status,
+      pr.period_start,
+      pr.period_end,
+      pr.closed_at,
+      pr.updated_at,
+      COALESCE((
+        SELECT COALESCE(SUM(COALESCE(i.net_payable_amount, (
+          COALESCE(i.sp_payable_amount, 0)
+          + COALESCE(i.ec_payable_amount, 0)
+          + COALESCE(i.recruitment_commission_amount, 0)
+        ))), 0)::numeric
+        FROM public.field_agent_pay_run_items i
+        WHERE i.pay_run_id = pr.id AND i.tenant_id = pr.tenant_id
+      ), 0)::numeric AS frozen_payable,
+      COALESCE((
+        SELECT SUM(pay.amount)::numeric
+        FROM public.field_agent_pay_run_payments pay
+        WHERE pay.pay_run_id = pr.id AND pay.tenant_id = pr.tenant_id
+      ), 0)::numeric AS net_paid
+    FROM public.field_agent_pay_runs pr
+    INNER JOIN public.tenants t ON t.id = pr.tenant_id
+    WHERE ($1::date IS NULL OR pr.period_start >= $1::date)
+      AND ($2::date IS NULL OR pr.period_start <= $2::date)
+      AND ($3::int IS NULL OR pr.tenant_id = $3::int)
+      AND ${statusSql}
+      ${extra}
+    ORDER BY pr.updated_at DESC NULLS LAST, pr.id DESC
+    LIMIT $5
+  `;
+
+  try {
+    const r = await pool.query(sql, params);
+    return r.rows.map((row) => {
+      const frozen = fieldAgentPayRunRepo.roundMoney2(Number(row.frozen_payable || 0));
+      const net = fieldAgentPayRunRepo.roundMoney2(Number(row.net_paid || 0));
+      return {
+        tenant_id: Number(row.tenant_id),
+        tenant_name: String(row.tenant_name || ""),
+        tenant_slug: String(row.tenant_slug || ""),
+        pay_run_id: Number(row.pay_run_id),
+        run_status: String(row.run_status || ""),
+        period_start: row.period_start,
+        period_end: row.period_end,
+        closed_at: row.closed_at,
+        updated_at: row.updated_at,
+        frozen_payable: frozen,
+        net_paid: net,
+        remaining_balance: fieldAgentPayRunRepo.roundMoney2(frozen - net),
+      };
+    });
+  } catch (e) {
+    const code = e && e.code;
+    if ((reopenedOnly || changedOnly) && code === "42P01") {
+      return [];
+    }
+    throw e;
+  }
+}
+
 module.exports = {
   getPayRunStatusCountsByTenant,
   getApprovedPaidRunReconciliationRows,
@@ -989,6 +1639,7 @@ module.exports = {
   getFieldAgentPayoutDashboardSummary,
   listPayRunsForPayoutDashboard,
   listPayRunsForCfoSummaryExport,
+  listPayRunsForCrossTenantCfoSummaryExport,
   listRecentPayRunReopenHistory,
   listPayRunStatusHistoryForPayRun,
   cfoLedgerRowKind,
@@ -1004,4 +1655,8 @@ module.exports = {
   FINANCE_EXCEPTION_RECENT_ACTIVITY_DAYS,
   normalizeFinanceExceptionPreset,
   getFinanceExceptionPresetMeta,
+  getCrossTenantFinanceSummaryDashboard,
+  CROSS_TENANT_TENANT_PRESET,
+  normalizeCrossTenantTenantPreset,
+  listCrossTenantFinanceExceptionRuns,
 };

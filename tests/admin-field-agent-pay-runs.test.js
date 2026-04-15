@@ -84,6 +84,7 @@ async function insertApprovedPayRunWithOneItem(pool, tenantId) {
   const adminId = await getAnyAdminUserId(pool);
   await fieldAgentPayRunRepo.lockPayRunDraft(pool, created.payRunId, tenantId, adminId);
   await fieldAgentPayRunRepo.approvePayRunLocked(pool, created.payRunId, tenantId, adminId);
+  await fieldAgentPayRunRepo.approvePayRunForPayout(pool, created.payRunId, tenantId, adminId, null);
   return created;
 }
 

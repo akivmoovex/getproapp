@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Bank reconciliation | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Bank reconciliation', activeNav: 'field_agent_bank_reconciliation' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Manual bank reconciliation</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Compare ledger and payout-completion data to your bank records. Nothing here imports statements or edits payment lines.
+            </p>
+          </div>
+        </header>
+
+        <% var _brQs = []; if (typeof embed !== 'undefined' && embed) _brQs.push('embed=1'); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') _brQs.push('tenant_id=' + tenantId); %>
+        <% var _brQstr = _brQs.length ? '?' + _brQs.join('&') : ''; %>
+
+        <% if (typeof isSuper !== 'undefined' && isSuper && tenants && tenants.length) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Region</h2>
+          <form method="get" action="/admin/field-agent-bank-reconciliation" class="admin-filter-form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <div class="input-field">
+              <label class="input-field__label" for="br_tenant">Tenant</label>
+              <select id="br_tenant" name="tenant_id" class="input-field__control" onchange="this.form.submit()">
+                <% tenants.forEach(function (t) { %>
+                <option value="<%= t.id %>" <%= Number(tenantId) === Number(t.id) ? 'selected' : '' %>><%= t.name %> (<%= t.slug %>)</option>
+                <% }); %>
+              </select>
+            </div>
+          </form>
+        </section>
+        <% } %>
+
+        <% if (typeof flashReconciled !== 'undefined' && flashReconciled) { %>
+          <p class="admin-gate-success" role="status">
+            Reconciliation flag saved.
+            <% if (typeof flashScope !== 'undefined' && flashScope === 'batch') { %> (payout batch)<% } %>
+            <% if (typeof flashScope !== 'undefined' && flashScope === 'pay_run') { %> (pay run)<% } %>
+          </p>
+        <% } %>
+        <% if (typeof errBatch !== 'undefined' && errBatch) { %>
+          <p class="muted" role="status">
+            <% if (errBatch === 'batch_nf') { %>Batch not found.<% } %>
+            <% if (errBatch === 'batch_done') { %>Already marked reconciled.<% } %>
+            <% if (errBatch === 'batch_cancel') { %>Cancelled batch cannot be reconciled.<% } %>
+            <% if (errBatch === 'batch_fail') { %>Could not save batch reconciliation.<% } %>
+          </p>
+        <% } %>
+        <% if (typeof errPayRun !== 'undefined' && errPayRun) { %>
+          <p class="muted" role="status">
+            <% if (errPayRun === 'pr_nf') { %>Pay run not found.<% } %>
+            <% if (errPayRun === 'pr_done') { %>Already marked reconciled.<% } %>
+            <% if (errPayRun === 'pr_fail') { %>Could not save pay run reconciliation.<% } %>
+          </p>
+        <% } %>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Payout batches</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">Expected / net paid / outstanding are sums of member pay runs (same figures as each run reconciliation ledger).</p>
+          <% if (!batchRows || !batchRows.length) { %>
+            <p class="muted">No payout batches for this region.</p>
+          <% } else { %>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Batch</th>
+                    <th>Members</th>
+                    <th style="text-align:right;">Expected</th>
+                    <th style="text-align:right;">Net paid</th>
+                    <th style="text-align:right;">Outstanding</th>
+                    <th>Bank ref</th>
+                    <th>Payout done</th>
+                    <th>Reconciled</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% batchRows.forEach(function (row) { %>
+                  <% var b = row.batch; %>
+                  <tr>
+                    <td><strong>#<%= b.id %></strong> <%= b.batch_reference %></td>
+                    <td><%= row.memberCount %></td>
+                    <td class="admin-finance-num"><%= Number(row.expectedTotal).toFixed(2) %></td>
+                    <td class="admin-finance-num"><%= Number(row.netPaidTotal).toFixed(2) %></td>
+                    <td class="admin-finance-num" style="font-weight:600;color:<%= Number(row.outstandingTotal) !== 0 ? 'var(--color-error)' : 'inherit' %>;"><%= Number(row.outstandingTotal).toFixed(2) %></td>
+                    <td class="muted" style="max-width:10rem;word-break:break-word;"><%= b.bank_reference || '—' %></td>
+                    <td><%= b.payout_completed_at ? 'Yes' : '—' %></td>
+                    <td>
+                      <% if (b.reconciled_at) { %>
+                        <%= new Date(b.reconciled_at).toLocaleDateString() %>
+                        <% if (b.reconciled_by_admin_user_id && typeof reconcilerLabels !== 'undefined' && reconcilerLabels[b.reconciled_by_admin_user_id]) { %>
+                          <span class="muted">(<%= reconcilerLabels[b.reconciled_by_admin_user_id] %>)</span>
+                        <% } %>
+                      <% } else { %>—<% } %>
+                    </td>
+                    <td style="white-space:nowrap;">
+                      <a href="/admin/field-agent-payout-batches/<%= b.id %><%= _brQstr %>">Batch</a>
+                    </td>
+                  </tr>
+                  <% if (typeof canMutate !== 'undefined' && canMutate && !b.reconciled_at && b.status !== 'cancelled') { %>
+                  <tr>
+                    <td colspan="9" style="background:rgba(0,0,0,0.02);padding:0.65rem 0.75rem;">
+                      <form method="post" action="/admin/field-agent-bank-reconciliation/batch/<%= b.id %>/reconcile" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-end;">
+                        <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+                        <% if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') { %>
+                        <input type="hidden" name="tenant_id" value="<%= tenantId %>" />
+                        <% } %>
+                        <div class="input-field" style="flex:1;min-width:14rem;margin:0;">
+                          <label class="input-field__label" for="br_bn_<%= b.id %>">Note (optional)</label>
+                          <input id="br_bn_<%= b.id %>" class="input-field__control" name="reconciliation_note" type="text" maxlength="4000" placeholder="e.g. matches bank stmt line …" />
+                        </div>
+                        <%- include('../partials/components/button', { variant: 'outline', type: 'submit', label: 'Mark batch reconciled' }) %>
+                      </form>
+                    </td>
+                  </tr>
+                  <% } %>
+                  <% if (b.reconciliation_note) { %>
+                  <tr>
+                    <td colspan="9" class="muted" style="font-size:0.85rem;padding-top:0;">Reconciliation note: <%= b.reconciliation_note %></td>
+                  </tr>
+                  <% } %>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Standalone pay runs</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">Runs not in an open/closed payout batch (excludes runs tied only to cancelled batches).</p>
+          <% if (!standaloneRows || !standaloneRows.length) { %>
+            <p class="muted">No standalone pay runs in view.</p>
+          <% } else { %>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Pay run</th>
+                    <th>Period</th>
+                    <th style="text-align:right;">Expected</th>
+                    <th style="text-align:right;">Net paid</th>
+                    <th style="text-align:right;">Outstanding</th>
+                    <th>Bank ref</th>
+                    <th>Payout done</th>
+                    <th>Reconciled</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% standaloneRows.forEach(function (row) { %>
+                  <% var r = row.run; var rec = row.rec; %>
+                  <tr>
+                    <td><strong>#<%= r.id %></strong></td>
+                    <td class="muted">
+                      <%= r.period_start ? new Date(r.period_start).toISOString().slice(0, 10) : '—' %>
+                      —
+                      <%= r.period_end ? new Date(r.period_end).toISOString().slice(0, 10) : '—' %>
+                    </td>
+                    <td class="admin-finance-num"><%= Number(rec.run_payable_total).toFixed(2) %></td>
+                    <td class="admin-finance-num"><%= Number(rec.total_paid_amount).toFixed(2) %></td>
+                    <td class="admin-finance-num" style="font-weight:600;color:<%= Number(rec.outstanding_amount) !== 0 ? 'var(--color-error)' : 'inherit' %>;"><%= Number(rec.outstanding_amount).toFixed(2) %></td>
+                    <td class="muted" style="max-width:10rem;word-break:break-word;"><%= r.bank_reference || '—' %></td>
+                    <td><%= r.payout_completed_at ? 'Yes' : '—' %></td>
+                    <td>
+                      <% if (r.reconciled_at) { %>
+                        <%= new Date(r.reconciled_at).toLocaleDateString() %>
+                        <% if (r.reconciled_by_admin_user_id && typeof reconcilerLabels !== 'undefined' && reconcilerLabels[r.reconciled_by_admin_user_id]) { %>
+                          <span class="muted">(<%= reconcilerLabels[r.reconciled_by_admin_user_id] %>)</span>
+                        <% } %>
+                      <% } else { %>—<% } %>
+                    </td>
+                    <td><a href="/admin/field-agent-pay-runs/<%= r.id %><%= _brQstr %>">Workflow</a></td>
+                  </tr>
+                  <% if (typeof canMutate !== 'undefined' && canMutate && !r.reconciled_at) { %>
+                  <tr>
+                    <td colspan="9" style="background:rgba(0,0,0,0.02);padding:0.65rem 0.75rem;">
+                      <form method="post" action="/admin/field-agent-bank-reconciliation/pay-run/<%= r.id %>/reconcile" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-end;">
+                        <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+                        <% if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') { %>
+                        <input type="hidden" name="tenant_id" value="<%= tenantId %>" />
+                        <% } %>
+                        <div class="input-field" style="flex:1;min-width:14rem;margin:0;">
+                          <label class="input-field__label" for="br_pn_<%= r.id %>">Note (optional)</label>
+                          <input id="br_pn_<%= r.id %>" class="input-field__control" name="reconciliation_note" type="text" maxlength="4000" placeholder="e.g. confirmed against statement …" />
+                        </div>
+                        <%- include('../partials/components/button', { variant: 'outline', type: 'submit', label: 'Mark pay run reconciled' }) %>
+                      </form>
+                    </td>
+                  </tr>
+                  <% } %>
+                  <% if (r.reconciliation_note) { %>
+                  <tr>
+                    <td colspan="9" class="muted" style="font-size:0.85rem;padding-top:0;">Reconciliation note: <%= r.reconciliation_note %></td>
+                  </tr>
+                  <% } %>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <p style="margin-top:1rem;">
+          <a href="/admin/field-agent-pay-runs<%= _brQstr %>">Pay runs</a>
+          <span class="muted"> · </span>
+          <a href="/admin/field-agent-payout-batches<%= _brQstr %>">Payout batches</a>
+        </p>
+      </div>
+    </main>
+  </body>
+</html>

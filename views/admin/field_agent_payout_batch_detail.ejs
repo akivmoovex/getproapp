@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Payout batch <%= batch.batch_reference %> | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Payout batch', activeNav: 'field_agent_payout_batches' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <% var _bdQs = []; if (typeof embed !== 'undefined' && embed) _bdQs.push('embed=1'); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') _bdQs.push('tenant_id=' + tenantId); %>
+        <% var _bdQstr = _bdQs.length ? '?' + _bdQs.join('&') : ''; %>
+
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">
+              Batch: <%= batch.batch_reference %>
+              <span class="admin-finance-badge admin-finance-badge--state-neutral" style="margin-left:0.35rem;font-size:0.75rem;"><%= batch.status %></span>
+              <% if (batch.payout_completed_at) { %>
+              <span class="admin-finance-badge admin-finance-badge--status-paid" style="margin-left:0.35rem;font-size:0.75rem;">Payout completed</span>
+              <% } %>
+            </h1>
+            <p class="admin-dashboard__subtitle muted">
+              Payout batch #<%= batch.id %>. Grouping only — no bank execution.
+            </p>
+          </div>
+        </header>
+
+        <% if (typeof flashBatchCreated !== 'undefined' && flashBatchCreated) { %>
+          <p class="admin-gate-success" role="status">Batch created. Add pay runs below when ready.</p>
+        <% } %>
+        <% if (typeof flashAdded !== 'undefined' && flashAdded) { %>
+          <p class="admin-gate-success" role="status">Pay run added to this batch.</p>
+        <% } %>
+        <% if (typeof flashClosed !== 'undefined' && flashClosed) { %>
+          <p class="admin-gate-success" role="status">Batch closed — no further pay runs can be added.</p>
+        <% } %>
+        <% if (typeof flashPayoutCompleted !== 'undefined' && flashPayoutCompleted) { %>
+          <p class="admin-gate-success" role="status">Payout completion recorded for this batch and member pay runs (ledger unchanged).</p>
+        <% } %>
+        <% if (typeof completeErr !== 'undefined' && completeErr) { %>
+          <% var _ce = String(completeErr); %>
+          <p class="muted" role="status">
+            <% if (_ce === 'bank_ref') { %>Bank reference is required.<% } %>
+            <% if (_ce === 'pay_method') { %>Payment method is required.<% } %>
+            <% if (_ce === 'already_done') { %>This batch was already marked complete.<% } %>
+            <% if (_ce === 'cancelled') { %>Cancelled batches cannot be completed.<% } %>
+            <% if (_ce === 'void_member') { %>A void pay run is in this batch.<% } %>
+            <% if (_ce === 'member_done') { %>A member pay run already has payout completion recorded.<% } %>
+            <% if (_ce === 'not_payout_approved') { %>A member run is not approved for payout.<% } %>
+            <% if (_ce === 'period_or_close') { %>Hard-close or period lock blocked completion for a member run.<% } %>
+            <% if (_ce === 'not_found') { %>Batch not found.<% } %>
+            <% if (_ce === 'pr_not_found') { %>A pay run in this batch was not found.<% } %>
+            <% if (_ce === 'complete_failed') { %>Could not complete batch.<% } %>
+          </p>
+        <% } %>
+        <% if (typeof closeErr !== 'undefined' && closeErr) { %>
+          <p class="muted" role="status">Could not close batch (<%= closeErr %>).</p>
+        <% } %>
+        <% if (typeof addErr !== 'undefined' && addErr) { %>
+          <% var _addMsg = 'Could not add pay run.'; %>
+          <% if (addErr === 'batch_not_open') _addMsg = 'This batch is not open.'; %>
+          <% if (addErr === 'not_payout_approved') _addMsg = 'Only pay runs approved for payout can be batched.'; %>
+          <% if (addErr === 'period_or_close') _addMsg = 'Period lock or hard-close rules blocked this pay run.'; %>
+          <% if (addErr === 'already_in_open_batch') _addMsg = 'This pay run is already in another open batch.'; %>
+          <% if (addErr === 'already_in_batch') _addMsg = 'This pay run is already listed in this batch.'; %>
+          <% if (addErr === 'pay_run_already_batched') _addMsg = 'This pay run is already assigned to a batch.'; %>
+          <% if (addErr === 'pay_run_not_found') _addMsg = 'Pay run not found for this region.'; %>
+          <p class="muted" role="status"><%= _addMsg %></p>
+        <% } %>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Details</h2>
+          <p><strong>Created:</strong> <%= batch.created_at ? new Date(batch.created_at).toLocaleString() : '—' %>
+            <% if (batch.created_by_admin_user_id && typeof actorLabels !== 'undefined' && actorLabels[batch.created_by_admin_user_id]) { %>
+              <span class="muted">(<%= actorLabels[batch.created_by_admin_user_id] %>)</span>
+            <% } %>
+          </p>
+          <% if (batch.notes) { %>
+          <p><strong>Notes:</strong> <%= batch.notes %></p>
+          <% } %>
+          <p class="muted" style="font-size:0.9rem;">Pay runs in this batch: <strong><%= members ? members.length : 0 %></strong></p>
+          <% if (batch.payout_completed_at) { %>
+          <p><strong>Payout completed:</strong> <%= new Date(batch.payout_completed_at).toLocaleString() %>
+            <% if (batch.completed_by_admin_user_id && typeof actorLabels !== 'undefined' && actorLabels[batch.completed_by_admin_user_id]) { %>
+              <span class="muted">(<%= actorLabels[batch.completed_by_admin_user_id] %>)</span>
+            <% } %>
+          </p>
+          <% if (batch.bank_reference) { %><p><strong>Bank reference:</strong> <%= batch.bank_reference %></p><% } %>
+          <% if (batch.payment_method) { %><p><strong>Payment method:</strong> <%= batch.payment_method %></p><% } %>
+          <% if (batch.completion_note) { %><p><strong>Completion note:</strong> <%= batch.completion_note %></p><% } %>
+          <% } %>
+        </section>
+
+        <% if (typeof payoutFinanceAudit !== 'undefined' && payoutFinanceAudit && payoutFinanceAudit.length) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Payout finance audit</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.88rem;">Append-only log of batch lifecycle, member additions, payout completion, and reconciliation.</p>
+          <div class="admin-table-wrap" style="overflow-x:auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th>Actor</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% payoutFinanceAudit.forEach(function (row) { %>
+                <tr>
+                  <td class="muted" style="white-space:nowrap;font-size:0.85rem;"><%= row.created_at ? new Date(row.created_at).toLocaleString() : '—' %></td>
+                  <td><code style="font-size:0.82rem;"><%= row.action_type %></code></td>
+                  <td class="muted" style="font-size:0.82rem;"><%= row.entity_type %> #<%= row.entity_id %></td>
+                  <td class="muted">
+                    <% var _bfa = row.actor_admin_user_id; %>
+                    <% if (_bfa && typeof actorLabels !== 'undefined' && actorLabels[_bfa]) { %><%= actorLabels[_bfa] %><% } else if (_bfa) { %>#<%= _bfa %><% } else { %>—<% } %>
+                  </td>
+                  <td class="muted" style="font-size:0.85rem;max-width:22rem;word-break:break-word;"><%= row.note || '—' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <% } %>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Pay runs in batch</h2>
+          <% if (!members || !members.length) { %>
+            <p class="muted">No pay runs yet. Add approved-for-payout runs below.</p>
+          <% } else { %>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Pay run ID</th>
+                    <th>Period</th>
+                    <th>Status</th>
+                    <th>Added</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% members.forEach(function (row) { %>
+                  <tr>
+                    <td><%= row.id %></td>
+                    <td>
+                      <%= row.period_start ? new Date(row.period_start).toISOString().slice(0, 10) : '—' %>
+                      —
+                      <%= row.period_end ? new Date(row.period_end).toISOString().slice(0, 10) : '—' %>
+                    </td>
+                    <td><%= row.status %></td>
+                    <td class="muted"><%= row.added_at ? new Date(row.added_at).toLocaleString() : '—' %></td>
+                    <td><a href="/admin/field-agent-pay-runs/<%= row.id %><%= _bdQstr %>">Workflow</a></td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <% if (typeof canMutate !== 'undefined' && canMutate && batch.status === 'open') { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Add pay run</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">Only runs that are workflow-approved, approved for payout, and not already in a batch are listed.</p>
+          <% if (!eligible || !eligible.length) { %>
+            <p class="muted">No eligible pay runs for this region right now.</p>
+          <% } else { %>
+            <form method="post" action="/admin/field-agent-payout-batches/<%= batch.id %>/pay-runs" class="admin-filter-form" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+              <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+              <% if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') { %>
+              <input type="hidden" name="tenant_id" value="<%= tenantId %>" />
+              <% } %>
+              <div class="input-field" style="min-width:16rem;">
+                <label class="input-field__label" for="pay_run_id">Pay run</label>
+                <select id="pay_run_id" class="input-field__control" name="pay_run_id" required>
+                  <% eligible.forEach(function (pr) { %>
+                  <option value="<%= pr.id %>">#<%= pr.id %> — <%= pr.period_start ? new Date(pr.period_start).toISOString().slice(0, 10) : '' %> (<%= pr.status %>)</option>
+                  <% }); %>
+                </select>
+              </div>
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Add to batch' }) %>
+            </form>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Close batch</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">Closing stops new additions. Existing rows stay for audit.</p>
+          <form method="post" action="/admin/field-agent-payout-batches/<%= batch.id %>/close" onsubmit="return confirm('Close this batch? You will not be able to add more pay runs.');">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <% if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') { %>
+            <input type="hidden" name="tenant_id" value="<%= tenantId %>" />
+            <% } %>
+            <%- include('../partials/components/button', { variant: 'outline', type: 'submit', label: 'Close batch' }) %>
+          </form>
+        </section>
+        <% } %>
+
+        <% if (typeof canMutate !== 'undefined' && canMutate && batch.status !== 'cancelled' && !batch.payout_completed_at) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Record payout completion</h2>
+          <p class="muted" style="margin-bottom:0.75rem;">Store bank reference evidence for the whole batch. Applies the same details to each member pay run for traceability; ledger lines are not changed. Status history records an entry per pay run.</p>
+          <form method="post" action="/admin/field-agent-payout-batches/<%= batch.id %>/complete-payout" class="admin-filter-form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <% if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') { %>
+            <input type="hidden" name="tenant_id" value="<%= tenantId %>" />
+            <% } %>
+            <div class="input-field" style="max-width:28rem;">
+              <label class="input-field__label" for="bpc_bank_ref">Bank reference</label>
+              <input id="bpc_bank_ref" class="input-field__control" name="bank_reference" type="text" required maxlength="2000" placeholder="Bank batch ref, wire ID" />
+            </div>
+            <div class="input-field" style="max-width:28rem;">
+              <label class="input-field__label" for="bpc_pay_method">Payment method</label>
+              <input id="bpc_pay_method" class="input-field__control" name="payment_method" type="text" required maxlength="200" placeholder="e.g. SEPA bulk, SWIFT" />
+            </div>
+            <div class="input-field" style="max-width:36rem;">
+              <label class="input-field__label" for="bpc_note">Note (optional)</label>
+              <textarea id="bpc_note" class="input-field__control" name="completion_note" rows="2" maxlength="4000"></textarea>
+            </div>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Record batch payout completion' }) %>
+          </form>
+        </section>
+        <% } %>
+
+        <p>
+          <a href="/admin/field-agent-payout-batches<%= _bdQstr %>">← All batches</a>
+        </p>
+      </div>
+    </main>
+  </body>
+</html>

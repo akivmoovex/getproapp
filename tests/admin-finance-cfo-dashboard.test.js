@@ -76,6 +76,7 @@ async function insertApprovedPayRunWithOneItem(pool, tenantId, baseAmount = 10) 
   const adminId = await getAnyAdminUserId(pool);
   await fieldAgentPayRunRepo.lockPayRunDraft(pool, payRunId, tenantId, adminId);
   await fieldAgentPayRunRepo.approvePayRunLocked(pool, payRunId, tenantId, adminId);
+  await fieldAgentPayRunRepo.approvePayRunForPayout(pool, payRunId, tenantId, adminId, null);
   return { payRunId, periodStartIso: periodStart.toISOString().slice(0, 10) };
 }
 
@@ -135,6 +136,10 @@ test(
     const app = createFinanceApp(ROLES.TENANT_MANAGER, TENANT_ZM);
     await request(app).get("/admin/finance/cfo").expect(403);
     await request(app).get(`/admin/finance/cfo/tenant/${TENANT_ZM}`).expect(403);
+    await request(app).get("/admin/finance/summary").expect(403);
+    await request(app).get("/admin/finance/summary/export.csv").expect(403);
+    await request(app).get("/admin/finance/summary/pay-runs-export.csv").expect(403);
+    await request(app).get(`/admin/finance/summary/tenant/${TENANT_ZM}`).expect(403);
   }
 );
 
@@ -145,6 +150,17 @@ test(
     const app = createFinanceApp(ROLES.SUPER_ADMIN, TENANT_ZM);
     const dash = await request(app).get("/admin/finance/cfo").expect(200);
     assert.ok(String(dash.text || "").includes("Cross-tenant finance overview"));
+    const summary = await request(app).get("/admin/finance/summary").expect(200);
+    assert.ok(String(summary.text || "").includes("Cross-tenant finance summary"));
+    assert.ok(String(summary.text || "").includes("Filters"));
+    const csvSummary = await request(app).get("/admin/finance/summary/export.csv").expect(200);
+    assert.equal(csvSummary.headers["content-type"].includes("text/csv"), true);
+    assert.ok(String(csvSummary.text || "").includes("tenant_id,tenant_name,total_frozen_payable"));
+    const csvRuns = await request(app).get("/admin/finance/summary/pay-runs-export.csv").expect(200);
+    assert.equal(csvRuns.headers["content-type"].includes("text/csv"), true);
+    assert.ok(String(csvRuns.text || "").includes("tenant_id,tenant_name,tenant_slug,pay_run_id"));
+    const sumTenant = await request(app).get(`/admin/finance/summary/tenant/${TENANT_ZM}`).expect(200);
+    assert.ok(String(sumTenant.text || "").includes("Tenant finance drill-down"));
     const tenantPage = await request(app).get(`/admin/finance/cfo/tenant/${TENANT_ZM}`).expect(200);
     assert.ok(String(tenantPage.text || "").includes("Finance drill-down"));
   }
@@ -156,6 +172,7 @@ test(
   async () => {
     const app = createFinanceApp(ROLES.SUPER_ADMIN, TENANT_ZM);
     await request(app).get("/admin/finance/cfo/tenant/999999999").expect(404);
+    await request(app).get("/admin/finance/summary/tenant/999999999").expect(404);
   }
 );
 

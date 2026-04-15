@@ -61,6 +61,7 @@
       <% if (isSuper) { %>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'super' ? 'admin-nav__link--active' : '' %>" href="/admin/super">Super</a>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'super_users' ? 'admin-nav__link--active' : '' %>" href="/admin/super/users">All users</a>
+        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'finance_summary' ? 'admin-nav__link--active' : '' %>" href="/admin/finance/summary">Finance summary</a>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'finance_cfo' ? 'admin-nav__link--active' : '' %>" href="/admin/finance/cfo">Finance (CFO)</a>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'db' ? 'admin-nav__link--active' : '' %>" href="/admin/db">DB</a>
       <% } %>
@@ -82,6 +83,8 @@
         <% if (scoped && (canUsers || canPayRunFinanceNav)) { %>
           <% var _payoutFinQs = []; if (typeof embed !== 'undefined' && embed) _payoutFinQs.push('embed=1'); if (isSuper && contactTenantId > 0) _payoutFinQs.push('tenant_id=' + contactTenantId); %>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'field_agent_pay_runs' ? 'admin-nav__link--active' : '' %>" href="/admin/field-agent-pay-runs">Pay runs</a>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'field_agent_payout_batches' ? 'admin-nav__link--active' : '' %>" href="/admin/field-agent-payout-batches<% if (_payoutFinQs.length) { %>?<%= _payoutFinQs.join('&') %><% } %>">Payout batches</a>
+          <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'field_agent_bank_reconciliation' ? 'admin-nav__link--active' : '' %>" href="/admin/field-agent-bank-reconciliation<% if (_payoutFinQs.length) { %>?<%= _payoutFinQs.join('&') %><% } %>">Bank reconciliation</a>
           <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'field_agent_payout_finance' ? 'admin-nav__link--active' : '' %>" href="/admin/field-agent-pay-runs/finance-dashboard<% if (_payoutFinQs.length) { %>?<%= _payoutFinQs.join('&') %><% } %>" title="Read-only payout totals, ledger timeline, and status history">Payout review</a>
         <% } %>
         <% if (scoped && canUsers) { %>

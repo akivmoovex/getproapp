@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cross-tenant finance summary | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Finance summary', activeNav: 'finance_summary' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Cross-tenant finance summary</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Read-only aggregates: frozen payable on approved and paid runs, payment ledger per region, and run-level signals (reopened / adjusted). Super admin only.
+            </p>
+            <p class="muted" style="margin-top:0.5rem;font-size:0.9rem;">
+              <a href="/admin/finance/cfo<% if (typeof embed !== 'undefined' && embed) { %>?embed=1<% } %>">Finance (CFO)</a>
+              — period filters and reconciliation drill-down.
+            </p>
+          </div>
+        </header>
+
+        <% var _fm = typeof filterMeta !== 'undefined' && filterMeta ? filterMeta : {}; %>
+        <% var _form = typeof form !== 'undefined' && form ? form : {}; %>
+        <% var _preset = typeof tenantPresetKeys !== 'undefined' && tenantPresetKeys ? tenantPresetKeys : {}; %>
+        <% var _embed = (typeof embed !== 'undefined' && embed) ? 'embed=1' : ''; %>
+        <% function _q(params) { var p = new URLSearchParams(); if (_embed) p.set('embed','1'); for (var k in params) { if (params[k] != null && params[k] !== '') p.set(k, params[k]); } return p.toString(); } %>
+        <% var _exportQs = _q({ period_from: _form.periodStartFrom, period_to: _form.periodStartTo, tenant_id: _form.tenantId, exception: _form.exception, frequent_min: _form.frequentMin, run_status: _form.runStatus, run_adj: _form.runAdjustedOnly ? '1' : '', run_reopened: _form.runReopenedOnly ? '1' : '', run_out: _form.runOutstandingOnly ? '1' : '', run_changed: _form.runChangedAfterCloseOnly ? '1' : '' }); %>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Filters</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">
+            Pay-run <strong>period start</strong> (inclusive) limits status counts and — when set — frozen payable, net paid attributed to runs in range, and reopen/adjusted run counts. Latest activity stays all-time per region.
+            <% if (_fm.periodScopedLedger) { %><span> Net paid in the table is the sum of ledger lines on runs whose period falls in the range (not the region’s full all-time ledger).</span><% } else { %><span> With no period, net paid is the <strong>full</strong> payment ledger per region (same as payout review).</span><% } %>
+          </p>
+          <form method="get" action="/admin/finance/summary" class="admin-filter-form admin-filter-form__grid" style="align-items:flex-end;">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <div class="input-field">
+              <label class="input-field__label" for="period_from">Period from</label>
+              <input id="period_from" class="input-field__control" name="period_from" type="date" value="<%= _form.periodStartFrom || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="period_to">Period to</label>
+              <input id="period_to" class="input-field__control" name="period_to" type="date" value="<%= _form.periodStartTo || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="tenant_id">Region</label>
+              <select id="tenant_id" class="input-field__control" name="tenant_id">
+                <option value="">All regions</option>
+                <% (tenantOptions || []).forEach(function (t) { %>
+                <option value="<%= t.id %>" <%= String(_form.tenantId || '') === String(t.id) ? 'selected' : '' %>><%= t.name %> (<%= t.slug %>)</option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="exception">Tenant exceptions</label>
+              <select id="exception" class="input-field__control" name="exception">
+                <option value="" <%= !_form.exception ? 'selected' : '' %>>None</option>
+                <option value="outstanding" <%= _form.exception === 'outstanding' ? 'selected' : '' %>>Outstanding balance &gt; 0</option>
+                <option value="reopened" <%= _form.exception === 'reopened' ? 'selected' : '' %>>Has reopened runs</option>
+                <option value="frequent_adjustments" <%= _form.exception === 'frequent_adjustments' ? 'selected' : '' %>>Frequent adjusted runs</option>
+              </select>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="frequent_min">Min. adjusted runs (frequent)</label>
+              <input id="frequent_min" class="input-field__control" name="frequent_min" type="number" min="1" max="100" value="<%= _form.frequentMin || '3' %>" style="max-width:6rem;" />
+            </div>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply' }) %>
+            <a class="c-button c-button--outline" href="/admin/finance/summary<% if (typeof embed !== 'undefined' && embed) { %>?embed=1<% } %>" style="text-decoration:none;display:inline-flex;align-items:center;">Clear</a>
+          </form>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Exception shortcuts (tenant table)</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">Preset filters on the region list below. Combine with period filters as needed.</p>
+          <p style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+            <a class="c-button c-button--outline" style="text-decoration:none;" href="/admin/finance/summary?<%= _q({ exception: 'outstanding' }) %>">Tenants with outstanding balances</a>
+            <a class="c-button c-button--outline" style="text-decoration:none;" href="/admin/finance/summary?<%= _q({ exception: 'reopened' }) %>">Tenants with reopened runs</a>
+            <a class="c-button c-button--outline" style="text-decoration:none;" href="/admin/finance/summary?<%= _q({ exception: 'frequent_adjustments', frequent_min: '3' }) %>">Tenants with frequent adjustments (≥3)</a>
+          </p>
+        </section>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Pay-run filters (exception list)</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">Narrow the pay-run list. “Changed after close / snapshot” uses soft-close <code>closed_at</code> or latest finance snapshot time — ledger lines stay one row each in detail exports.</p>
+          <form method="get" action="/admin/finance/summary" class="admin-filter-form" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <input type="hidden" name="period_from" value="<%= _form.periodStartFrom || '' %>" />
+            <input type="hidden" name="period_to" value="<%= _form.periodStartTo || '' %>" />
+            <input type="hidden" name="tenant_id" value="<%= _form.tenantId || '' %>" />
+            <input type="hidden" name="exception" value="<%= _form.exception || '' %>" />
+            <input type="hidden" name="frequent_min" value="<%= _form.frequentMin || '3' %>" />
+            <div class="input-field">
+              <label class="input-field__label" for="run_status">Run status</label>
+              <select id="run_status" class="input-field__control" name="run_status">
+                <option value="" <%= !_form.runStatus ? 'selected' : '' %>>Any</option>
+                <option value="draft" <%= _form.runStatus === 'draft' ? 'selected' : '' %>>draft</option>
+                <option value="locked" <%= _form.runStatus === 'locked' ? 'selected' : '' %>>locked</option>
+                <option value="approved" <%= _form.runStatus === 'approved' ? 'selected' : '' %>>approved</option>
+                <option value="paid" <%= _form.runStatus === 'paid' ? 'selected' : '' %>>paid</option>
+                <option value="void" <%= _form.runStatus === 'void' ? 'selected' : '' %>>void</option>
+              </select>
+            </div>
+            <label class="input-field" style="display:flex;align-items:center;gap:0.35rem;">
+              <input type="checkbox" name="run_adj" value="1" <%= _form.runAdjustedOnly ? 'checked' : '' %> />
+              <span>Adjusted only</span>
+            </label>
+            <label class="input-field" style="display:flex;align-items:center;gap:0.35rem;">
+              <input type="checkbox" name="run_reopened" value="1" <%= _form.runReopenedOnly ? 'checked' : '' %> />
+              <span>Reopened only</span>
+            </label>
+            <label class="input-field" style="display:flex;align-items:center;gap:0.35rem;">
+              <input type="checkbox" name="run_out" value="1" <%= _form.runOutstandingOnly ? 'checked' : '' %> />
+              <span>Outstanding only</span>
+            </label>
+            <label class="input-field" style="display:flex;align-items:center;gap:0.35rem;">
+              <input type="checkbox" name="run_changed" value="1" <%= _form.runChangedAfterCloseOnly ? 'checked' : '' %> />
+              <span>Changed after close / snapshot</span>
+            </label>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply run filters' }) %>
+          </form>
+        </section>
+
+        <p class="muted" style="margin-bottom:1rem;font-size:0.9rem;">
+          Exports (CSV):
+          <a href="/admin/finance/summary/export.csv<%= _exportQs ? '?' + _exportQs : '' %>">Consolidated summary by tenant</a>
+          · <a href="/admin/finance/summary/pay-runs-export.csv">Pay-run summary (all regions, capped)</a>
+        </p>
+
+        <% var plat = typeof platform !== 'undefined' ? platform : {}; %>
+
+        <section class="admin-dashboard__grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:0.75rem;margin-bottom:1.25rem;">
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Regions (in table)</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= plat.tenant_count != null ? plat.tenant_count : '—' %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Total frozen payable</p>
+            <p class="admin-finance-num" style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= Number(plat.total_frozen_payable || 0).toFixed(2) %></p>
+            <p class="muted" style="margin:0.35rem 0 0 0;font-size:0.75rem;">Approved + paid (scope above)</p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Total net paid</p>
+            <p class="admin-finance-num" style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= Number(plat.total_net_paid || 0).toFixed(2) %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Total remaining balance</p>
+            <% var _rem = Number(plat.total_remaining_balance || 0); var _remCls = 'admin-finance-num'; if (_rem < 0) { _remCls += ' admin-finance-num--warn'; } else if (_rem > 0) { _remCls += ' admin-finance-num--outstanding'; } %>
+            <p class="<%= _remCls %>" style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= _rem.toFixed(2) %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Paid runs</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= plat.paid_run_count != null ? plat.paid_run_count : 0 %></p>
+            <p class="muted" style="margin:0.35rem 0 0 0;font-size:0.75rem;">In period filter</p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Approved runs</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= plat.approved_run_count != null ? plat.approved_run_count : 0 %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Reopened runs</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= plat.reopened_run_count != null ? plat.reopened_run_count : 0 %></p>
+          </div>
+          <div class="card" style="padding:0.85rem;">
+            <p class="muted" style="margin:0;font-size:0.8rem;">Adjusted runs</p>
+            <p style="margin:0.25rem 0 0 0;font-size:1.35rem;font-weight:700;"><%= plat.adjusted_run_count != null ? plat.adjusted_run_count : 0 %></p>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="section-title section-title--flush">By region</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">Read-only — open pay runs from each region when authorized.</p>
+          <div class="admin-table-wrap" style="overflow-x:auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Region</th>
+                  <th></th>
+                  <th style="text-align:right;">Frozen payable</th>
+                  <th style="text-align:right;">Net paid</th>
+                  <th style="text-align:right;">Remaining</th>
+                  <th>Paid</th>
+                  <th>Approved</th>
+                  <th>Reopened</th>
+                  <th>Adjusted</th>
+                  <th>Latest activity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% var _sumEmb = (typeof embed !== 'undefined' && embed) ? '?embed=1' : ''; %>
+                <% (tenants || []).forEach(function (row) { %>
+                <tr>
+                  <td class="muted"><%= row.tenant_id %></td>
+                  <td><strong><%= row.tenant_name %></strong> <span class="muted">(<%= row.tenant_slug %>)</span></td>
+                  <td><a href="/admin/finance/summary/tenant/<%= row.tenant_id %><%= _sumEmb %>">Drill-down</a></td>
+                  <td class="admin-finance-num"><%= Number(row.frozen_payable_total || 0).toFixed(2) %></td>
+                  <td class="admin-finance-num"><%= Number(row.total_net_paid || 0).toFixed(2) %></td>
+                  <% var _trem = Number(row.remaining_balance || 0); var _tremCls = 'admin-finance-num'; if (_trem < 0) { _tremCls += ' admin-finance-num--warn'; } else if (_trem > 0) { _tremCls += ' admin-finance-num--outstanding'; } %>
+                  <td class="<%= _tremCls %>"><%= _trem.toFixed(2) %></td>
+                  <td><%= row.paid_run_count %></td>
+                  <td><%= row.approved_run_count %></td>
+                  <td><%= row.reopened_run_count %></td>
+                  <td><%= row.adjusted_run_count %></td>
+                  <td class="muted admin-finance-ts">
+                    <% if (row.latest_activity_at) { %>
+                      <%= new Date(row.latest_activity_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+                    <% } else { %>—<% } %>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" style="margin-top:1.25rem;">
+          <h2 class="section-title section-title--flush">Pay runs matching filters</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">Up to 80 rows, newest <code>updated_at</code> first. Use run filters above; links go to existing finance detail (read-only where your role allows).</p>
+          <div class="admin-table-wrap" style="overflow-x:auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Region</th>
+                  <th>Pay run</th>
+                  <th>Status</th>
+                  <th>Period</th>
+                  <th style="text-align:right;">Frozen</th>
+                  <th style="text-align:right;">Net paid</th>
+                  <th style="text-align:right;">Remaining</th>
+                  <th>Updated</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!(exceptionRuns || []).length) { %>
+                <tr><td colspan="9"><p class="admin-finance-empty" style="margin:0;">No pay runs match the current filters.</p></td></tr>
+                <% } %>
+                <% (exceptionRuns || []).forEach(function (r) { %>
+                <% var _pq = 'tenant_id=' + r.tenant_id + (_sumEmb ? '&embed=1' : ''); %>
+                <tr>
+                  <td><%= r.tenant_name %> <span class="muted">(<%= r.tenant_slug %>)</span></td>
+                  <td><%= r.pay_run_id %></td>
+                  <td><%- include('../partials/admin_finance_status_badge', { status: r.run_status }) %></td>
+                  <td style="white-space:nowrap;"><%= r.period_start ? new Date(r.period_start).toISOString().slice(0, 10) : '—' %> — <%= r.period_end ? new Date(r.period_end).toISOString().slice(0, 10) : '—' %></td>
+                  <td class="admin-finance-num"><%= Number(r.frozen_payable || 0).toFixed(2) %></td>
+                  <td class="admin-finance-num"><%= Number(r.net_paid || 0).toFixed(2) %></td>
+                  <% var _er = Number(r.remaining_balance || 0); var _erCls = 'admin-finance-num'; if (_er < 0) { _erCls += ' admin-finance-num--warn'; } else if (_er > 0) { _erCls += ' admin-finance-num--outstanding'; } %>
+                  <td class="<%= _erCls %>"><%= _er.toFixed(2) %></td>
+                  <td class="muted admin-finance-ts"><%= r.updated_at ? new Date(r.updated_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' %></td>
+                  <td style="white-space:nowrap;"><a href="/admin/field-agent-pay-runs/<%= r.pay_run_id %>/finance-detail?<%= _pq %>">Finance detail</a></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

@@ -9,16 +9,23 @@ async function listPresets(pool, tenantId, adminUserId, recordType) {
   const uid = Number(adminUserId);
   const rt = String(recordType || "").trim();
   if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(uid) || uid < 1 || !rt) return [];
-  const r = await pool.query(
-    `
+  try {
+    const r = await pool.query(
+      `
     SELECT id, tenant_id, admin_user_id, name, record_type, bucket, filters_json, created_at, updated_at
     FROM public.admin_field_agent_analytics_presets
     WHERE tenant_id = $1 AND admin_user_id = $2 AND record_type = $3
     ORDER BY lower(name) ASC, id ASC
     `,
-    [tid, uid, rt]
-  );
-  return r.rows;
+      [tid, uid, rt]
+    );
+    return r.rows;
+  } catch (err) {
+    if (err && err.code === "42P01") {
+      return [];
+    }
+    throw err;
+  }
 }
 
 async function createPreset(pool, p) {

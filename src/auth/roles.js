@@ -197,6 +197,13 @@ function canManageAccountingPeriodLock(role) {
   return isSuperAdmin(role) || normalizeRole(role) === ROLES.FINANCE_MANAGER;
 }
 
+/** Approve pay run for payout (finance gate before ledger payout / mark paid). Tenant admins + finance operator/manager. */
+function canApprovePayrunForPayout(role) {
+  if (canPayRunWorkflowWrite(role)) return true;
+  const n = normalizeRole(role);
+  return n === ROLES.FINANCE_OPERATOR || n === ROLES.FINANCE_MANAGER;
+}
+
 /**
  * “New Project” intake (admin): search clients, create clients, create projects.
  * GET access mirrors CRM (all tenant roles incl. viewer). Mutations use canMutateCrm (excludes tenant_viewer).
@@ -242,4 +249,5 @@ module.exports = {
   canPayRunCloseRun,
   canPayRunOverrideReversalWindow,
   canManageAccountingPeriodLock,
+  canApprovePayrunForPayout,
 };

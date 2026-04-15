@@ -131,4 +131,87 @@ function buildCfoPayRunLedgerCsv(payRunId, payments) {
   return lines.join("\n") + "\n";
 }
 
-module.exports = { buildCfoPayRunSummaryCsv, buildCfoPayRunLedgerCsv };
+/**
+ * Consolidated cross-tenant summary (one row per region). Amounts match dashboard aggregates.
+ * @param {Array<Record<string, unknown>>} tenants from getCrossTenantFinanceSummaryDashboard().tenants
+ */
+function buildCrossTenantConsolidatedSummaryCsv(tenants) {
+  const header = [
+    "tenant_id",
+    "tenant_name",
+    "total_frozen_payable",
+    "total_net_paid",
+    "total_remaining_balance",
+    "paid_run_count",
+    "approved_run_count",
+    "reopened_run_count",
+    "adjusted_run_count",
+    "latest_activity_at",
+  ];
+  const lines = [header.join(",")];
+  for (const row of tenants || []) {
+    const r = [
+      csvEscape(row.tenant_id),
+      csvEscape(row.tenant_name),
+      numCsv(fieldAgentPayRunRepo.roundMoney2(Number(row.frozen_payable_total || 0))),
+      numCsv(fieldAgentPayRunRepo.roundMoney2(Number(row.total_net_paid || 0))),
+      numCsv(fieldAgentPayRunRepo.roundMoney2(Number(row.remaining_balance || 0))),
+      csvEscape(row.paid_run_count),
+      csvEscape(row.approved_run_count),
+      csvEscape(row.reopened_run_count),
+      csvEscape(row.adjusted_run_count),
+      csvEscape(row.latest_activity_at ? isoDateTime(row.latest_activity_at) : ""),
+    ];
+    lines.push(r.join(","));
+  }
+  return lines.join("\n") + "\n";
+}
+
+/**
+ * Cross-tenant pay-run summary: one row per pay run; tenant on every row. Per-run net_paid is ledger SUM(amount).
+ * @param {Array<Record<string, unknown>>} rows from listPayRunsForCrossTenantCfoSummaryExport
+ */
+function buildCrossTenantPayRunSummaryCsv(rows) {
+  const header = [
+    "tenant_id",
+    "tenant_name",
+    "tenant_slug",
+    "pay_run_id",
+    "period",
+    "status",
+    "frozen_payable",
+    "net_paid",
+    "remaining_balance",
+    "has_adjustments",
+    "reopened_flag",
+    "paid_at",
+    "updated_at",
+  ];
+  const lines = [header.join(",")];
+  for (const row of rows || []) {
+    const r = [
+      csvEscape(row.tenant_id),
+      csvEscape(row.tenant_name),
+      csvEscape(row.tenant_slug),
+      csvEscape(row.pay_run_id),
+      csvEscape(periodMonthLabel(row.period_start, row.period_end)),
+      csvEscape(row.run_status),
+      numCsv(fieldAgentPayRunRepo.roundMoney2(Number(row.frozen_payable || 0))),
+      numCsv(fieldAgentPayRunRepo.roundMoney2(Number(row.net_paid || 0))),
+      numCsv(fieldAgentPayRunRepo.roundMoney2(Number(row.remaining_balance || 0))),
+      csvEscape(row.has_adjustments ? "true" : "false"),
+      csvEscape(row.reopened_flag ? "true" : "false"),
+      csvEscape(isoDateTime(row.paid_at)),
+      csvEscape(isoDateTime(row.updated_at)),
+    ];
+    lines.push(r.join(","));
+  }
+  return lines.join("\n") + "\n";
+}
+
+module.exports = {
+  buildCfoPayRunSummaryCsv,
+  buildCfoPayRunLedgerCsv,
+  buildCrossTenantConsolidatedSummaryCsv,
+  buildCrossTenantPayRunSummaryCsv,
+};

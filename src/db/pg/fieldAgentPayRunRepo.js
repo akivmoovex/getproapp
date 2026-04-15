@@ -2,6 +2,11 @@
 
 const financeGuardService = require("../../finance/financeGuardService");
 const financeOverrideEventsRepo = require("./financeOverrideEventsRepo");
+const {
+  appendPayoutFinanceAudit,
+  PAYOUT_FINANCE_AUDIT_ACTION,
+  ENTITY: PAYOUT_FINANCE_AUDIT_ENTITY,
+} = require("./fieldAgentPayoutFinanceAuditRepo");
 
 const {
   PAY_RUN_CLOSED_ERROR,
@@ -10,9 +15,12 @@ const {
   REVERSAL_WINDOW_EXPIRED_MESSAGE,
   ACCOUNTING_PERIOD_LOCKED_ERROR,
   ACCOUNTING_PERIOD_LOCKED_MESSAGE,
+  PAYOUT_NOT_APPROVED_ERROR,
+  PAYOUT_NOT_APPROVED_MESSAGE,
   payRunIsHardClosed,
   payRunAccountingPeriodKey,
   paymentExceedsReversalWindowDays,
+  assertPayoutApprovedForApprovedRun,
 } = financeGuardService;
 
 /**
@@ -81,6 +89,13 @@ const LEDGER_ENTRY_TYPE = {
 const PAY_RUN_STATUS_HISTORY_REASON = {
   REVERSAL_OR_CORRECTION_REOPENED: "reversal_or_correction_reopened",
   LEDGER_SETTLED: "ledger_settled",
+  PAYOUT_APPROVED: "payout_approved",
+  /** Manual bank evidence on pay run — does not change workflow status or ledger. */
+  MANUAL_PAYOUT_COMPLETION_RECORDED: "manual_payout_completion_recorded",
+  /** Same bank evidence applied to all members when a payout batch is completed. */
+  PAYOUT_BATCH_COMPLETION_RECORDED: "payout_batch_completion_recorded",
+  /** Finance marked pay run manually reconciled to bank records (no ledger change). */
+  MANUAL_BANK_RECONCILIATION_RECORDED: "manual_bank_reconciliation_recorded",
 };
 
 /** Hard-close: {@link markPayRunSoftClosed} sets closed_at — ledger mutations must be blocked. */
@@ -506,6 +521,84 @@ async function approvePayRunLocked(pool, payRunId, tenantId, adminUserId) {
 }
 
 /**
+ * Finance gate: approved run may record payout ledger / be marked paid only after this (read audit on status history).
+ * @returns {{ run: object | null, error: string | null }}
+ */
+async function approvePayRunForPayout(pool, payRunId, tenantId, adminUserId, note) {
+  const pid = Number(payRunId);
+  const tid = Number(tenantId);
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) {
+    return { run: null, error: "INVALID_STATE" };
+  }
+  const aid = adminUserId != null && Number.isFinite(Number(adminUserId)) && Number(adminUserId) > 0 ? Number(adminUserId) : null;
+  const noteTrim = note != null ? String(note).trim().slice(0, 4000) : "";
+  const probe = await getPayRunByIdForTenant(pool, pid, tid);
+  if (!probe) return { run: null, error: "INVALID_STATE" };
+  if (String(probe.status || "") !== "approved") {
+    return { run: null, error: "INVALID_STATE" };
+  }
+  if (probe.payout_approved_at != null) {
+    return { run: null, error: "ALREADY_PAYOUT_APPROVED" };
+  }
+  const guards = await financeGuardService.assertHardCloseAndPeriodUnlocked(pool, tid, probe);
+  if (!guards.ok) {
+    return { run: null, error: guards.error };
+  }
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const r = await client.query(
+      `
+      UPDATE public.field_agent_pay_runs
+      SET payout_approved_at = now(),
+          payout_approved_by_admin_user_id = $3,
+          payout_approval_note = NULLIF($4::text, ''),
+          updated_at = now()
+      WHERE id = $1 AND tenant_id = $2 AND status = 'approved' AND payout_approved_at IS NULL AND closed_at IS NULL
+      RETURNING *
+      `,
+      [pid, tid, aid, noteTrim]
+    );
+    if (!r.rows.length) {
+      await client.query("ROLLBACK");
+      return { run: null, error: "INVALID_STATE" };
+    }
+    const out = r.rows[0];
+    const reasonBase = PAY_RUN_STATUS_HISTORY_REASON.PAYOUT_APPROVED;
+    const reason = noteTrim ? `${reasonBase}: ${noteTrim}`.slice(0, 4000) : reasonBase;
+    await insertPayRunStatusHistory(client, {
+      tenantId: tid,
+      payRunId: pid,
+      fromStatus: "approved",
+      toStatus: "approved",
+      reason,
+      actorAdminUserId: aid,
+      sourcePaymentId: null,
+    });
+    await appendPayoutFinanceAudit(client, {
+      tenantId: tid,
+      actorAdminUserId: aid,
+      actionType: PAYOUT_FINANCE_AUDIT_ACTION.PAYOUT_APPROVED,
+      entityType: PAYOUT_FINANCE_AUDIT_ENTITY.PAY_RUN,
+      entityId: pid,
+      note: noteTrim || null,
+      metadata: {},
+    });
+    await client.query("COMMIT");
+    return { run: out, error: null };
+  } catch (e) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (_) {
+      /* ignore */
+    }
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+/**
  * approved → paid. Single-use transition (WHERE status = 'approved').
  * @returns {{ run: object | null, error: 'INVALID_STATE' | null }}
  */
@@ -523,6 +616,10 @@ async function markPayRunApprovedAsPaid(pool, payRunId, tenantId, adminUserId, {
   const markPaidGuards = await financeGuardService.assertHardCloseAndPeriodUnlocked(pool, tid, probe);
   if (!markPaidGuards.ok) {
     return { run: null, error: markPaidGuards.error };
+  }
+  const payoutOk = assertPayoutApprovedForApprovedRun(probe);
+  if (!payoutOk.ok) {
+    return { run: null, error: payoutOk.error };
   }
   const r = await pool.query(
     `
@@ -1419,6 +1516,197 @@ async function createDraftPayRunWithCarryForward(pool, p) {
   }
 }
 
+/**
+ * Record manual payout completion evidence on a pay run (bank ref, method, note).
+ * Does not insert ledger lines or change workflow status. Blocked when the run is in a non-cancelled payout batch (use batch completion).
+ * @param {import("pg").Pool} pool
+ * @param {{ payRunId: number, tenantId: number, adminUserId: number | null, bankReference: string, paymentMethod: string, completionNote?: string | null }} p
+ * @returns {Promise<{ run: object | null, error: string | null, batchId?: number }>}
+ */
+async function recordManualPayoutCompletionForPayRun(pool, p) {
+  const pid = Number(p.payRunId);
+  const tid = Number(p.tenantId);
+  const aid = p.adminUserId != null && Number.isFinite(Number(p.adminUserId)) && Number(p.adminUserId) > 0 ? Number(p.adminUserId) : null;
+  const bank = p.bankReference != null ? String(p.bankReference).trim() : "";
+  const meth = p.paymentMethod != null ? String(p.paymentMethod).trim().slice(0, 200) : "";
+  const note = p.completionNote != null ? String(p.completionNote).trim().slice(0, 4000) : "";
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) {
+    return { run: null, error: "INVALID" };
+  }
+  if (!bank) return { run: null, error: "BANK_REFERENCE_REQUIRED" };
+  if (!meth) return { run: null, error: "PAYMENT_METHOD_REQUIRED" };
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const run = await getPayRunByIdForTenantForUpdate(client, pid, tid);
+    if (!run) {
+      await client.query("ROLLBACK");
+      return { run: null, error: "NOT_FOUND" };
+    }
+    if (String(run.status || "") === "void") {
+      await client.query("ROLLBACK");
+      return { run: null, error: "VOID" };
+    }
+    if (run.payout_completed_at != null) {
+      await client.query("ROLLBACK");
+      return { run: null, error: "ALREADY_COMPLETED" };
+    }
+    const batchProbe = await client.query(
+      `
+      SELECT b.id
+      FROM public.field_agent_payout_batch_pay_runs m
+      INNER JOIN public.field_agent_payout_batches b ON b.id = m.payout_batch_id
+      WHERE m.pay_run_id = $1 AND m.tenant_id = $2 AND b.status <> 'cancelled'
+      LIMIT 1
+      `,
+      [pid, tid]
+    );
+    if (batchProbe.rows.length) {
+      await client.query("ROLLBACK");
+      return { run: null, error: "USE_BATCH_COMPLETION", batchId: Number(batchProbe.rows[0].id) };
+    }
+    const payoutOk = assertPayoutApprovedForApprovedRun(run);
+    if (!payoutOk.ok) {
+      await client.query("ROLLBACK");
+      return { run: null, error: payoutOk.error || "NOT_PAYOUT_APPROVED" };
+    }
+    const guards = await financeGuardService.assertHardCloseAndPeriodUnlocked(client, tid, run);
+    if (!guards.ok) {
+      await client.query("ROLLBACK");
+      return { run: null, error: guards.error || "PERIOD_OR_CLOSE" };
+    }
+    const st = String(run.status || "");
+    const rb = PAY_RUN_STATUS_HISTORY_REASON.MANUAL_PAYOUT_COMPLETION_RECORDED;
+    const reason = `${rb}: ref=${bank.slice(0, 120)} method=${meth.slice(0, 80)}${note ? ` note=${note.slice(0, 500)}` : ""}`.slice(0, 4000);
+    const up = await client.query(
+      `
+      UPDATE public.field_agent_pay_runs
+      SET payout_completed_at = now(),
+          completed_by_admin_user_id = $3,
+          bank_reference = $4,
+          payment_method = $5,
+          completion_note = NULLIF($6::text, ''),
+          updated_at = now()
+      WHERE id = $1 AND tenant_id = $2 AND payout_completed_at IS NULL
+      RETURNING *
+      `,
+      [pid, tid, aid, bank, meth, note]
+    );
+    if (!up.rows.length) {
+      await client.query("ROLLBACK");
+      return { run: null, error: "ALREADY_COMPLETED" };
+    }
+    await insertPayRunStatusHistory(client, {
+      tenantId: tid,
+      payRunId: pid,
+      fromStatus: st,
+      toStatus: st,
+      reason,
+      actorAdminUserId: aid,
+      sourcePaymentId: null,
+    });
+    await appendPayoutFinanceAudit(client, {
+      tenantId: tid,
+      actorAdminUserId: aid,
+      actionType: PAYOUT_FINANCE_AUDIT_ACTION.PAY_RUN_PAYOUT_COMPLETED,
+      entityType: PAYOUT_FINANCE_AUDIT_ENTITY.PAY_RUN,
+      entityId: pid,
+      note: note || null,
+      metadata: { bank_reference: bank, payment_method: meth },
+    });
+    await client.query("COMMIT");
+    return { run: up.rows[0], error: null };
+  } catch (e) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (_) {
+      /* ignore */
+    }
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Mark a pay run as manually bank-reconciled (flags only; ledger unchanged).
+ * @param {import("pg").Pool} pool
+ * @param {{ payRunId: number, tenantId: number, adminUserId: number | null, reconciliationNote?: string | null }} p
+ * @returns {Promise<{ run: object | null, error: string | null }>}
+ */
+async function markPayRunBankReconciled(pool, p) {
+  const pid = Number(p.payRunId);
+  const tid = Number(p.tenantId);
+  const aid = p.adminUserId != null && Number.isFinite(Number(p.adminUserId)) && Number(p.adminUserId) > 0 ? Number(p.adminUserId) : null;
+  const note = p.reconciliationNote != null ? String(p.reconciliationNote).trim().slice(0, 4000) : "";
+  if (!Number.isFinite(pid) || pid < 1 || !Number.isFinite(tid) || tid < 1) {
+    return { run: null, error: "INVALID" };
+  }
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const run = await getPayRunByIdForTenantForUpdate(client, pid, tid);
+    if (!run) {
+      await client.query("ROLLBACK");
+      return { run: null, error: "NOT_FOUND" };
+    }
+    if (run.reconciled_at != null) {
+      await client.query("ROLLBACK");
+      return { run: null, error: "ALREADY_RECONCILED" };
+    }
+    const st = String(run.status || "");
+    const up = await client.query(
+      `
+      UPDATE public.field_agent_pay_runs
+      SET reconciled_at = now(),
+          reconciled_by_admin_user_id = $3,
+          reconciliation_note = NULLIF($4::text, ''),
+          updated_at = now()
+      WHERE id = $1 AND tenant_id = $2 AND reconciled_at IS NULL
+      RETURNING *
+      `,
+      [pid, tid, aid, note]
+    );
+    if (!up.rows.length) {
+      await client.query("ROLLBACK");
+      return { run: null, error: "ALREADY_RECONCILED" };
+    }
+    const out = up.rows[0];
+    const rb = PAY_RUN_STATUS_HISTORY_REASON.MANUAL_BANK_RECONCILIATION_RECORDED;
+    const reason = `${rb}${note ? `: ${note.slice(0, 3500)}` : ""}`.slice(0, 4000);
+    await insertPayRunStatusHistory(client, {
+      tenantId: tid,
+      payRunId: pid,
+      fromStatus: st,
+      toStatus: st,
+      reason,
+      actorAdminUserId: aid,
+      sourcePaymentId: null,
+    });
+    await appendPayoutFinanceAudit(client, {
+      tenantId: tid,
+      actorAdminUserId: aid,
+      actionType: PAYOUT_FINANCE_AUDIT_ACTION.PAY_RUN_BANK_RECONCILED,
+      entityType: PAYOUT_FINANCE_AUDIT_ENTITY.PAY_RUN,
+      entityId: pid,
+      note: note || null,
+      metadata: {},
+    });
+    await client.query("COMMIT");
+    return { run: out, error: null };
+  } catch (e) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (_) {
+      /* ignore */
+    }
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   LEDGER_ENTRY_TYPE,
   PAY_RUN_CLOSED_ERROR,
@@ -1427,6 +1715,8 @@ module.exports = {
   REVERSAL_WINDOW_EXPIRED_MESSAGE,
   ACCOUNTING_PERIOD_LOCKED_ERROR,
   ACCOUNTING_PERIOD_LOCKED_MESSAGE,
+  PAYOUT_NOT_APPROVED_ERROR,
+  PAYOUT_NOT_APPROVED_MESSAGE,
   payRunIsHardClosed,
   payRunAccountingPeriodKey,
   insertPayRunDraft,
@@ -1438,6 +1728,7 @@ module.exports = {
   countItemsForPayRun,
   lockPayRunDraft,
   approvePayRunLocked,
+  approvePayRunForPayout,
   markPayRunApprovedAsPaid,
   markPayRunApprovedAsPaidViaLedger,
   recordPayRunExportGenerated,
@@ -1460,4 +1751,8 @@ module.exports = {
   listVisiblePayRunItemsForFieldAgent,
   getVisiblePayRunItemDetailForFieldAgent,
   getPayRunStatementSnapshotForFieldAgent,
+  PAY_RUN_STATUS_HISTORY_REASON,
+  insertPayRunStatusHistory,
+  recordManualPayoutCompletionForPayRun,
+  markPayRunBankReconciled,
 };

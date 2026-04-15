@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Payout batches | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Payout batches', activeNav: 'field_agent_payout_batches' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Payout batches</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Group approved-for-payout pay runs for finance operations. Does not send bank files or mark runs paid.
+            </p>
+          </div>
+        </header>
+
+        <% var _pbQs = []; if (typeof embed !== 'undefined' && embed) _pbQs.push('embed=1'); if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') _pbQs.push('tenant_id=' + tenantId); %>
+        <% var _pbQstr = _pbQs.length ? '?' + _pbQs.join('&') : ''; %>
+
+        <% if (typeof isSuper !== 'undefined' && isSuper && tenants && tenants.length) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Region</h2>
+          <form method="get" action="/admin/field-agent-payout-batches" class="admin-filter-form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <div class="input-field">
+              <label class="input-field__label" for="pb_tenant">Tenant</label>
+              <select id="pb_tenant" name="tenant_id" class="input-field__control" onchange="this.form.submit()">
+                <% tenants.forEach(function (t) { %>
+                <option value="<%= t.id %>" <%= Number(tenantId) === Number(t.id) ? 'selected' : '' %>><%= t.name %> (<%= t.slug %>)</option>
+                <% }); %>
+              </select>
+            </div>
+          </form>
+        </section>
+        <% } %>
+
+        <% if (typeof flashDupRef !== 'undefined' && flashDupRef) { %>
+          <p class="muted" role="status" style="margin-bottom:0.75rem;">That batch reference already exists for this region. Choose another reference.</p>
+        <% } %>
+
+        <% if (typeof canMutate !== 'undefined' && canMutate) { %>
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Create batch</h2>
+          <p class="muted" style="margin-bottom:0.75rem;font-size:0.9rem;">Reference is unique per region (e.g. bank batch ID or internal ticket).</p>
+          <form method="post" action="/admin/field-agent-payout-batches" class="admin-filter-form">
+            <% if (typeof embed !== 'undefined' && embed) { %><input type="hidden" name="embed" value="1" /><% } %>
+            <% if (typeof isSuper !== 'undefined' && isSuper && typeof tenantId !== 'undefined') { %>
+            <input type="hidden" name="tenant_id" value="<%= tenantId %>" />
+            <% } %>
+            <div class="input-field" style="max-width:28rem;">
+              <label class="input-field__label" for="batch_reference">Batch reference</label>
+              <input id="batch_reference" class="input-field__control" name="batch_reference" type="text" required maxlength="200" placeholder="e.g. PAYOUT-2026-04-001" />
+            </div>
+            <div class="input-field" style="max-width:36rem;">
+              <label class="input-field__label" for="batch_notes">Notes (optional)</label>
+              <textarea id="batch_notes" class="input-field__control" name="notes" rows="2" maxlength="4000"></textarea>
+            </div>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Create batch' }) %>
+          </form>
+        </section>
+        <% } %>
+
+        <section class="card">
+          <h2 class="section-title section-title--flush">Batches (this region)</h2>
+          <% if (!batches || !batches.length) { %>
+            <p class="muted">No payout batches yet.</p>
+          <% } else { %>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Reference</th>
+                    <th>Status</th>
+                    <th>Pay runs</th>
+                    <th>Payout done</th>
+                    <th>Created</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% batches.forEach(function (b) { %>
+                  <tr>
+                    <td><%= b.id %></td>
+                    <td><strong><%= b.batch_reference %></strong></td>
+                    <td><%= b.status %></td>
+                    <td><%= b.pay_run_count != null ? b.pay_run_count : '—' %></td>
+                    <td><%= b.payout_completed_at ? 'Yes' : '—' %></td>
+                    <td class="muted"><%= b.created_at ? new Date(b.created_at).toLocaleString() : '—' %></td>
+                    <td><a href="/admin/field-agent-payout-batches/<%= b.id %><%= _pbQstr %>">View</a></td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <p style="margin-top:1rem;">
+          <a href="/admin/field-agent-pay-runs<%= _pbQstr %>">← Pay runs</a>
+        </p>
+      </div>
+    </main>
+  </body>
+</html>

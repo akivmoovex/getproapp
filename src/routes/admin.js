@@ -39,6 +39,8 @@ const registerAdminDirectoryRoutes = require("./admin/adminDirectory");
 const registerAdminCrmRoutes = require("./admin/adminCrm");
 const registerAdminFieldAgentAnalyticsRoutes = require("./admin/adminFieldAgentAnalytics");
 const registerAdminFieldAgentPayRunsRoutes = require("./admin/adminFieldAgentPayRuns");
+const registerAdminFieldAgentPayoutBatchesRoutes = require("./admin/adminFieldAgentPayoutBatches");
+const registerAdminFieldAgentBankReconciliationRoutes = require("./admin/adminFieldAgentBankReconciliation");
 const registerAdminFieldAgentDisputesRoutes = require("./admin/adminFieldAgentDisputes");
 const registerAdminFieldAgentAdjustmentsRoutes = require("./admin/adminFieldAgentAdjustments");
 const registerAdminIntakeRoutes = require("./admin/adminIntake");
@@ -212,6 +214,8 @@ module.exports = function adminRoutes({ db }) {
   registerAdminCrmRoutes(router);
   registerAdminFieldAgentAnalyticsRoutes(router);
   registerAdminFieldAgentPayRunsRoutes(router);
+  registerAdminFieldAgentPayoutBatchesRoutes(router);
+  registerAdminFieldAgentBankReconciliationRoutes(router);
   registerAdminFieldAgentDisputesRoutes(router);
   registerAdminFieldAgentAdjustmentsRoutes(router);
   registerAdminIntakeRoutes(router, { projectIntakeUpload });
