@@ -7,12 +7,12 @@
     <title>About field agent | <%= _bn %></title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
-  <body class="<%= tenant.themeClass %>">
+  <body class="<%= tenant.themeClass %>" data-screen-role="support">
     <div class="app-layout">
-      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
-      <%- include('../partials/app_navigation', { tenantUrlPrefix }) %>
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: 'about', faIncludeFaq: true }) %>
       <div class="app-layout__main">
-        <%- include('../partials/components/container_start') %>
+        <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
         <h1 class="gp-home-story__title">Field agent program</h1>
         <p class="join-lead">Field agents capture verified professionals for the <%= _bn %> directory. Leads enter the CRM as unassigned tasks for staff to qualify.</p>
         <p><a href="<%= tenantUrlPrefix %>/field-agent/dashboard">← Dashboard</a></p>

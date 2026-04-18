@@ -37,6 +37,14 @@
         class="admin-nav__link <%= _active === 'faq' ? 'admin-nav__link--active' : '' %>"
       >FAQ</a>
       <% } %>
+      <a
+        href="<%= _tp %>/field-agent/support"
+        class="admin-nav__link <%= _active === 'support' ? 'admin-nav__link--active' : '' %>"
+      >Support</a>
+      <a
+        href="<%= _tp %>/field-agent/about"
+        class="admin-nav__link <%= _active === 'about' ? 'admin-nav__link--active' : '' %>"
+      >About</a>
     </nav>
     <% if (_deskLogout) { %>
     <form method="post" action="<%= _tp %>/field-agent/logout" class="field-agent-console__logout field-agent-console__logout--desktop">
@@ -99,6 +107,14 @@
           class="wf-home-nav-btn <%= _active === 'faq' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
         >FAQ</a>
         <% } %>
+        <a
+          href="<%= _tp %>/field-agent/support"
+          class="wf-home-nav-btn <%= _active === 'support' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
+        >Support</a>
+        <a
+          href="<%= _tp %>/field-agent/about"
+          class="wf-home-nav-btn <%= _active === 'about' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
+        >About</a>
       </nav>
       <form method="post" action="<%= _tp %>/field-agent/logout" class="field-agent-console__logout field-agent-console__logout--drawer">
         <%- include('components/button', { variant: 'default', type: 'submit', label: 'Sign out', className: 'admin-nav__btn field-agent-console__logout-btn' }) %>

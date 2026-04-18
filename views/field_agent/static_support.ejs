@@ -7,12 +7,12 @@
     <title>Field agent support | <%= _bn %></title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
-  <body class="<%= tenant.themeClass %>">
+  <body class="<%= tenant.themeClass %>" data-screen-role="support">
     <div class="app-layout">
-      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [] }) %>
-      <%- include('../partials/app_navigation', { tenantUrlPrefix }) %>
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: 'support', faIncludeFaq: true }) %>
       <div class="app-layout__main">
-        <%- include('../partials/components/container_start') %>
+        <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
         <h1 class="gp-home-story__title">Support</h1>
         <p class="join-lead">Contact your <%= _bn %> coordinator for account issues.</p>
         <p><a href="<%= tenantUrlPrefix %>/field-agent/dashboard">← Dashboard</a></p>
