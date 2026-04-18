@@ -84,8 +84,9 @@
             <div class="field-agent-metric-card__value"><%= typeof metricSpCommission30 !== 'undefined' ? metricSpCommission30 : 0 %></div>
           </div>
           <div
-            class="card field-agent-metric-card field-agent-metric-card--kpi"
+            class="card field-agent-metric-card field-agent-metric-card--kpi field-agent-metric-card--clickable"
             data-metric="recruitment_commission_30d"
+            title="Approved recruitment commission in the last 30 days (by submission update date)"
           >
             <div class="field-agent-metric-card__label muted">Recruitment commission (30d)</div>
             <div class="field-agent-metric-card__value"><%= typeof recruitmentCommission30 !== 'undefined' ? recruitmentCommission30 : 0 %></div>
@@ -108,6 +109,12 @@
             <div class="field-agent-metric-card__hint muted">Based on client reviews (last 30 days)</div>
           </div>
         </div>
+
+        <a
+          class="field-agent-dash-fab"
+          href="<%= tenantUrlPrefix %>/field-agent/add-contact"
+          aria-label="New contact"
+        ><span aria-hidden="true">+</span></a>
 
         <% if (typeof spQualityPayableDisplay !== 'undefined' && spQualityPayableDisplay) { %>
         <div

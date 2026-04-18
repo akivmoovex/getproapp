@@ -257,6 +257,37 @@
       });
   }
 
+  function openListRecruitmentCommission30d() {
+    if (listTitle) listTitle.textContent = "Recruitment commission (30d) — approved in rolling window";
+    listBody.innerHTML = '<p class="muted field-agent-dash-modal__loading">Loading…</p>';
+
+    setOpen(detailRoot, false);
+    setOpen(listRoot, true);
+
+    var cutoffMs = Date.now() - 30 * 24 * 60 * 60 * 1000;
+
+    fetch(apiUrl("/field-agent/api/submissions?status=approved"), {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("Request failed");
+        return r.json();
+      })
+      .then(function (data) {
+        var items = data && data.items ? data.items : [];
+        var filtered = items.filter(function (row) {
+          if (!row || !row.updated_at) return false;
+          var t = new Date(row.updated_at).getTime();
+          return Number.isFinite(t) && t >= cutoffMs;
+        });
+        renderListCards(filtered, "approved");
+      })
+      .catch(function () {
+        renderListEmpty("Could not load submissions. Try again.");
+      });
+  }
+
   function openListSpCommissionCharges() {
     if (listTitle) listTitle.textContent = "SP_Commission (30d) — charges";
     listBody.innerHTML = '<p class="muted field-agent-dash-modal__loading">Loading…</p>';
@@ -826,6 +857,19 @@
       if (e.key !== "Enter" && e.key !== " ") return;
       e.preventDefault();
       openListEcCommissionProjects();
+    });
+    tile.setAttribute("role", "button");
+    tile.setAttribute("tabindex", "0");
+  });
+
+  document.querySelectorAll('.field-agent-metric-card[data-metric="recruitment_commission_30d"]').forEach(function (tile) {
+    tile.addEventListener("click", function () {
+      openListRecruitmentCommission30d();
+    });
+    tile.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      openListRecruitmentCommission30d();
     });
     tile.setAttribute("role", "button");
     tile.setAttribute("tabindex", "0");
