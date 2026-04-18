@@ -967,13 +967,25 @@ module.exports = function fieldAgentRoutes() {
       { name: "works", maxCount: 10 },
     ]),
     async (req, res) => {
+      const accept = String(req.get("Accept") || "");
+      const wantsJson = accept.includes("application/json");
+      const dashboardBase = `${tenantPrefix(req)}${FIELD_AGENT_DASHBOARD}`;
+      const sendSubmitErr = (status, msg) => {
+        if (wantsJson) return res.status(status).json({ ok: false, error: msg });
+        return res.status(status).type("text").send(msg);
+      };
+      const sendSubmitSuccess = () => {
+        if (wantsJson) return res.status(200).json({ ok: true, redirect: dashboardBase });
+        return res.redirect(302, `${dashboardBase}?submitted=1`);
+      };
+
       const pool = getPgPool();
       const s = getFieldAgentSession(req);
       const tid = req.tenant.id;
       const agentRow = await fieldAgentsRepo.getByIdAndTenant(pool, s.id, tid);
       if (!agentRow) {
         clearFieldAgentSession(req);
-        return res.status(401).type("text").send("Session expired. Please sign in again.");
+        return sendSubmitErr(401, "Session expired. Please sign in again.");
       }
       const fieldAgentDbId = Number(agentRow.id);
       const b = req.body || {};
@@ -993,12 +1005,12 @@ module.exports = function fieldAgentRoutes() {
 
       const vPhone = await phoneRulesService.validatePhoneForTenant(pool, tid, phoneRaw, "phone");
       if (!vPhone.ok) {
-        return res.status(400).type("text").send(vPhone.error || "Invalid phone.");
+        return sendSubmitErr(400, vPhone.error || "Invalid phone.");
       }
       if (whatsappRaw) {
         const vWa = await phoneRulesService.validatePhoneForTenant(pool, tid, whatsappRaw, "whatsapp");
         if (!vWa.ok) {
-          return res.status(400).type("text").send(vWa.error || "Invalid WhatsApp number.");
+          return sendSubmitErr(400, vWa.error || "Invalid WhatsApp number.");
         }
       }
 
@@ -1006,22 +1018,22 @@ module.exports = function fieldAgentRoutes() {
       const wNorm = whatsappRaw ? await phoneRulesService.normalizePhoneForTenant(pool, tid, whatsappRaw) : "";
 
       if (!pNorm || !firstName || !lastName || !profession || !addressCity || !nrcNumber) {
-        return res.status(400).type("text").send("Missing required fields.");
+        return sendSubmitErr(400, "Missing required fields.");
       }
       const profileFiles = (req.files && req.files.profile) || [];
       const workFiles = (req.files && req.files.works) || [];
       if (workFiles.length > 10) {
-        return res.status(400).type("text").send("Please upload at most 10 work photos.");
+        return sendSubmitErr(400, "Please upload at most 10 work photos.");
       }
 
       const dupS = await fieldAgentSubmissionsRepo.duplicateExistsAgainstSubmissions(pool, tid, pNorm, wNorm, null);
       if (dupS.duplicate) {
-        return res.status(400).type("text").send("Service provider exists in system.");
+        return sendSubmitErr(400, "Service provider exists in system.");
       }
       const dupCandidates = await phoneRulesService.expandDuplicateNormsForTenant(pool, tid, pNorm, wNorm);
       const dupC = await fieldAgentSubmissionsRepo.duplicateExistsCompaniesOrSignups(pool, tid, dupCandidates);
       if (dupC.duplicate) {
-        return res.status(400).type("text").send("Service provider exists in system.");
+        return sendSubmitErr(400, "Service provider exists in system.");
       }
 
       const client = await pool.connect();
@@ -1066,7 +1078,7 @@ module.exports = function fieldAgentRoutes() {
         await client.query("ROLLBACK");
         // eslint-disable-next-line no-console
         console.error("[getpro] field-agent submit:", e.message);
-        return res.status(500).type("text").send("Could not save submission.");
+        return sendSubmitErr(500, "Could not save submission.");
       } finally {
         client.release();
       }
@@ -1095,7 +1107,7 @@ module.exports = function fieldAgentRoutes() {
         console.error("[getpro] field-agent CRM notify:", e.message);
       }
 
-      return res.redirect(302, `${tenantPrefix(req)}${FIELD_AGENT_DASHBOARD}?submitted=1`);
+      return sendSubmitSuccess();
     }
   );
 

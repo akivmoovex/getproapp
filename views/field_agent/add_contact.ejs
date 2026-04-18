@@ -18,14 +18,14 @@
         <section class="join-hero" style="padding-top:0;">
           <div class="ds-container join-hero-inner">
             <h1>Add service provider</h1>
-            <p class="join-lead">Enter details in five steps. We will create a lead and notify the CRM team.</p>
+            <p class="join-lead">Enter details in six steps. We will create a lead and notify the CRM team.</p>
 
             <div class="join-wizard-frame" id="join-wizard-frame">
               <section class="join-wizard" id="fa-wizard" aria-hidden="false">
                 <div class="join-wizard-inner">
                   <div class="join-progress-wrap" id="join-progress-wrap">
                     <div class="join-progress" role="status" aria-live="polite">
-                      Step <span id="fa-step-num">1</span> of 5
+                      Step <span id="fa-step-num">1</span> of 6
                     </div>
                     <div class="join-progress-track" aria-hidden="true">
                       <div class="join-progress-fill" id="fa-progress-fill" style="width:0%"></div>
@@ -233,15 +233,85 @@
                           </div>
                           <div class="form-step__actions">
                             <div class="join-wizard-actions join-wizard-actions--split">
-                              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Send', id: 'fa-send' }) %>
+                              <%- include('../partials/components/button', { variant: 'primary', type: 'button', label: 'Continue', id: 'fa-next-5' }) %>
                               <%- include('../partials/components/button', { variant: 'secondary', type: 'button', label: 'Back', id: 'fa-back-5' }) %>
                             </div>
                           </div>
                           <p class="input-field__error" id="fa-error-5" hidden role="alert"></p>
                         </div>
                       </div>
+
+                      <div class="join-step-panel" id="fa-step-6" data-step="6" hidden>
+                        <div class="form-step">
+                          <div class="form-step__header">
+                            <h2 class="form-step__title">Review</h2>
+                            <p class="form-step__subtitle">Check all details before sending to the CRM team.</p>
+                          </div>
+                          <div class="form-step__body">
+                            <ul class="field-agent-dash-list" role="list">
+                              <li class="field-agent-dash-list__item">
+                                <div class="field-agent-dash-list-card field-agent-dash-list-card--static">
+                                  <div class="field-agent-dash-list-card__title">Application summary</div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-phone"></div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-name"></div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-whatsapp"></div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-profession"></div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-pacra"></div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-street"></div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-landmarks"></div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-neighbourhood"></div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-city"></div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-nrc"></div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-profile"></div>
+                                  <div class="muted field-agent-dash-list-card__contact" id="fa-rev-line-works"></div>
+                                </div>
+                              </li>
+                            </ul>
+                            <p class="input-field__error" id="fa-error-submit" hidden role="alert"></p>
+                          </div>
+                          <div class="form-step__actions">
+                            <div class="join-wizard-actions join-wizard-actions--split">
+                              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Submit', id: 'fa-send' }) %>
+                              <div class="join-wizard-actions-right">
+                                <%- include('../partials/components/button', { variant: 'secondary', type: 'button', label: 'Back', id: 'fa-back-6' }) %>
+                                <%- include('../partials/components/button', { variant: 'secondary', type: 'button', label: 'Cancel', id: 'fa-cancel-6' }) %>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </form>
+
+                  <div
+                    id="fa-submit-success-overlay"
+                    class="m3-modal-overlay fa-submit-success-overlay"
+                    hidden
+                    aria-hidden="true"
+                  >
+                    <div class="m3-modal-overlay__backdrop" data-fa-submit-success-dismiss tabindex="-1"></div>
+                    <div
+                      id="fa-submit-success-dialog"
+                      class="m3-modal m3-modal--join fa-submit-success-dialog"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="fa-submit-success-title"
+                      tabindex="-1"
+                    >
+                      <div class="fa-submit-success-countdown-wrap" aria-hidden="true">
+                        <div class="fa-submit-success-countdown" id="fa-submit-success-countdown"></div>
+                      </div>
+                      <header class="m3-modal__header">
+                        <h2 id="fa-submit-success-title" class="m3-modal__title">Submission received</h2>
+                        <button type="button" class="m3-modal__close" data-fa-submit-success-dismiss aria-label="Close">
+                          ×
+                        </button>
+                      </header>
+                      <div class="m3-modal__body">
+                        <p class="muted" style="margin: 0">You will return to your dashboard shortly.</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
             </div>

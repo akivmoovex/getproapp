@@ -2727,6 +2727,10 @@ a:hover {
 }
 
 @media (max-width: 720px) {
+  .field-agent-console__bar {
+    justify-content: flex-end;
+  }
+
   .field-agent-console__burger {
     display: inline-flex;
   }
@@ -2790,6 +2794,45 @@ a:hover {
   .field-agent-console__scrim,
   .field-agent-console__drawer {
     display: none !important;
+  }
+}
+
+/* Add-contact: success dialog countdown (primary bar on top edge) */
+.fa-submit-success-overlay.m3-modal-overlay--open {
+  z-index: 10050;
+}
+
+.fa-submit-success-dialog {
+  position: relative;
+  overflow: hidden;
+}
+
+.fa-submit-success-countdown-wrap {
+  height: 3px;
+  overflow: hidden;
+  background: var(--border);
+}
+
+.fa-submit-success-countdown {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--btn-primary-bg);
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+.fa-submit-success-countdown.fa-submit-success-countdown--animate {
+  animation: fa-submit-success-countdown-shrink 5s linear forwards;
+}
+
+@keyframes fa-submit-success-countdown-shrink {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
   }
 }
 
