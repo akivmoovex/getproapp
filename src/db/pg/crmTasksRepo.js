@@ -466,6 +466,28 @@ async function insertFromInboundEvent(pool, { tenantId, title, description, sour
   return r.rows[0] ? Number(r.rows[0].id) : null;
 }
 
+/**
+ * Idempotency for inbound-sourced tasks (e.g. website listing review): one task per tenant + type + ref.
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {{ tenantId: number, sourceType: string, sourceRefId: number }} p
+ * @returns {Promise<number | null>} existing task id
+ */
+async function findInboundTaskIdBySourceRef(pool, { tenantId, sourceType, sourceRefId }) {
+  const tid = Number(tenantId);
+  const st = String(sourceType || "").trim().slice(0, 40);
+  const ref = Number(sourceRefId);
+  if (!Number.isFinite(tid) || tid < 1 || !st || !Number.isFinite(ref) || ref < 1) return null;
+  const r = await pool.query(
+    `
+    SELECT id FROM public.crm_tasks
+    WHERE tenant_id = $1 AND source_type = $2 AND source_ref_id = $3
+    LIMIT 1
+    `,
+    [tid, st, ref]
+  );
+  return r.rows[0] ? Number(r.rows[0].id) : null;
+}
+
 module.exports = {
   userIsInTenant,
   listTenantUsersForCrm,
@@ -486,4 +508,5 @@ module.exports = {
   reassignTaskWithAudit,
   insertCommentWithAudit,
   insertFromInboundEvent,
+  findInboundTaskIdBySourceRef,
 };

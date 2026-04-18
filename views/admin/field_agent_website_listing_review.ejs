@@ -1,0 +1,117 @@
+<!doctype html>
+<% var _sub = typeof submission !== 'undefined' ? submission : {}; %>
+<% var _d = typeof websiteDraft !== 'undefined' && websiteDraft ? websiteDraft : {}; %>
+<% var _ec = typeof existingCompanyId !== 'undefined' && existingCompanyId != null ? existingCompanyId : null; %>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Website listing review · Submission #<%= _sub.id %> | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- typeof bodyEmbedClass !== 'undefined' ? bodyEmbedClass : '' %>">
+    <%- include('../partials/admin_nav', { navTitle: typeof navTitle !== 'undefined' ? navTitle : 'Website listing review', activeNav: typeof activeNav !== 'undefined' ? activeNav : 'companies' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <div class="admin-toolbar admin-toolbar--compact">
+          <%- include('../partials/components/button', { variant: 'default', href: '/admin/crm', label: '← CRM' }) %>
+        </div>
+        <% if (typeof saved !== 'undefined' && saved) { %>
+        <div class="flash flash--success" role="status">Draft saved.</div>
+        <% } %>
+        <h1 class="section-title section-title--flush">Website / directory listing</h1>
+        <p class="muted" style="max-width:40rem;line-height:1.5;">
+          Submission #<%= _sub.id %> — <%= _sub.first_name %> <%= _sub.last_name %>
+          <% if (_sub.profession) { %> · <%= _sub.profession %><% } %>
+          <% if (typeof reviewRequestedAt !== 'undefined' && reviewRequestedAt) { %>
+            <br /><span class="muted">Field agent requested review: <%= String(reviewRequestedAt) %></span>
+          <% } %>
+        </p>
+
+        <% if (_ec != null) { %>
+        <div class="card admin-form-card" style="padding:1rem;">
+          <p class="admin-gate-success" role="status">
+            This submission is already linked to company #<%= _ec %>. The directory listing and mini-site are managed from the company workspace.
+          </p>
+          <p style="margin:1rem 0 0;">
+            <%- include('../partials/components/button', { variant: 'primary', href: '/admin/companies/' + _ec + '/workspace', label: 'Open company workspace' }) %>
+          </p>
+        </div>
+        <% } else { %>
+        <p class="muted" style="max-width:42rem;margin-bottom:1rem;">
+          Edit listing text, then <strong>Publish listing</strong> to create the company record, link this submission, and enable the public mini-site. Category is applied on publish only. Photos can be added later in the workspace.
+        </p>
+
+        <% var _cats = typeof categories !== 'undefined' && categories ? categories : []; %>
+        <% var _saveUrl = '/admin/field-agent/submissions/' + _sub.id + '/website-listing-review/save'; %>
+        <% var _pubUrl = '/admin/field-agent/submissions/' + _sub.id + '/website-listing-review/publish'; %>
+        <form method="post" action="<%= _saveUrl %>" class="card admin-form-card" style="padding:1rem;">
+          <h2 class="form-step__title" style="margin-top:0;">Listing text</h2>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-cat">Category (optional, on publish)</label>
+            <select id="adm-wc-cat" name="category_id" class="input-field__control">
+              <option value="">— None —</option>
+              <% _cats.forEach(function(c) { %>
+              <option value="<%= c.id %>"><%= c.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-name">Business / listing name</label>
+            <input id="adm-wc-name" name="listing_name" class="input-field__control" type="text" value="<%= _d.listing_name || '' %>" maxlength="200" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-headline">Headline</label>
+            <input id="adm-wc-headline" name="headline" class="input-field__control" type="text" value="<%= _d.headline || '' %>" maxlength="500" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-about">About</label>
+            <textarea id="adm-wc-about" name="about" class="input-field__control" rows="5" maxlength="12000"><%= _d.about || '' %></textarea>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-services">Services</label>
+            <textarea id="adm-wc-services" name="services" class="input-field__control" rows="4" maxlength="12000"><%= _d.services || '' %></textarea>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-location">Location</label>
+            <input id="adm-wc-location" name="location" class="input-field__control" type="text" value="<%= _d.location || '' %>" maxlength="500" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-areas">Service areas</label>
+            <textarea id="adm-wc-areas" name="service_areas" class="input-field__control" rows="2" maxlength="4000"><%= _d.service_areas || '' %></textarea>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-hours">Hours</label>
+            <textarea id="adm-wc-hours" name="hours_text" class="input-field__control" rows="2" maxlength="4000"><%= _d.hours_text || '' %></textarea>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-email">Email</label>
+            <input id="adm-wc-email" name="email" class="input-field__control" type="email" value="<%= _d.email || '' %>" maxlength="320" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-phone">Phone (listing)</label>
+            <input id="adm-wc-phone" name="listing_phone" class="input-field__control" type="tel" value="<%= (_d.listing_phone != null && String(_d.listing_phone).trim() !== '') ? _d.listing_phone : (_sub.phone_raw || '') %>" maxlength="120" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-cta-l">Featured CTA label</label>
+            <input id="adm-wc-cta-l" name="featured_cta_label" class="input-field__control" type="text" value="<%= _d.featured_cta_label || '' %>" maxlength="120" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-cta-p">Featured CTA phone</label>
+            <input id="adm-wc-cta-p" name="featured_cta_phone" class="input-field__control" type="tel" value="<%= _d.featured_cta_phone || '' %>" maxlength="120" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-yoe">Years of experience (optional)</label>
+            <input id="adm-wc-yoe" name="years_experience" class="input-field__control" type="number" min="0" max="999" step="1" value="<%= (_d.years_experience != null && _d.years_experience !== '') ? _d.years_experience : '' %>" />
+          </div>
+          <div class="crm-task-form__actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+            <%- include('../partials/components/button', { variant: 'secondary', type: 'submit', label: 'Save draft' }) %>
+            <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Publish listing', extraAttrs: 'formaction="' + _pubUrl + '"' }) %>
+          </div>
+        </form>
+        <% } %>
+      </div>
+    </main>
+  </body>
+</html>

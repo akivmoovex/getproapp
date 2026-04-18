@@ -36,6 +36,7 @@ const registerAdminSuperRoutes = require("./admin/adminSuper");
 const registerAdminTenantUsersRoutes = require("./admin/adminTenantUsers");
 const registerAdminDashboardContentRoutes = require("./admin/adminDashboardContent");
 const registerAdminDirectoryRoutes = require("./admin/adminDirectory");
+const registerAdminFieldAgentWebsiteListingReviewRoutes = require("./admin/adminFieldAgentWebsiteListingReview");
 const registerAdminCrmRoutes = require("./admin/adminCrm");
 const registerAdminFieldAgentAnalyticsRoutes = require("./admin/adminFieldAgentAnalytics");
 const registerAdminFieldAgentPayRunsRoutes = require("./admin/adminFieldAgentPayRuns");
@@ -211,6 +212,7 @@ module.exports = function adminRoutes({ db }) {
   registerAdminTenantUsersRoutes(router, { db });
   registerAdminDashboardContentRoutes(router);
   registerAdminDirectoryRoutes(router);
+  registerAdminFieldAgentWebsiteListingReviewRoutes(router);
   registerAdminCrmRoutes(router);
   registerAdminFieldAgentAnalyticsRoutes(router);
   registerAdminFieldAgentPayRunsRoutes(router);

@@ -87,6 +87,24 @@ test("field-agent static pages: unauthenticated GET redirects to field-agent log
   }
 });
 
+test("field-agent website-content: unauthenticated GET redirects to field-agent login", async () => {
+  const app = createApp({});
+  const res = await request(app).get("/field-agent/submissions/1/website-content").redirects(0);
+  assert.equal(res.status, 302);
+  assert.match(String(res.headers.location || ""), /field-agent\/login/);
+});
+
+test("field-agent website-content draft API: unauthenticated POST redirects to login", async () => {
+  const app = createApp({});
+  const res = await request(app)
+    .post("/field-agent/api/submissions/1/website-content-draft")
+    .set("Content-Type", "application/json")
+    .send({ draft: { headline: "x" } })
+    .redirects(0);
+  assert.equal(res.status, 302);
+  assert.match(String(res.headers.location || ""), /field-agent\/login/);
+});
+
 test("field-agent static pages: authenticated GET returns 200", async () => {
   const app = createApp({ fieldAgentId: 424242 });
   for (const p of ["/field-agent/faq", "/field-agent/support", "/field-agent/about"]) {

@@ -101,7 +101,7 @@ async function getWithCategoryBySubdomainAndTenantId(pool, subdomain, tenantId) 
     SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
     FROM public.companies c
     LEFT JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-    WHERE c.subdomain = $1 AND c.tenant_id = $2
+    WHERE c.subdomain = $1 AND c.tenant_id = $2 AND c.listing_disabled = false
     `,
     [subdomain, tenantId]
   );
@@ -119,7 +119,7 @@ async function getWithCategoryBySubdomain(pool, subdomain) {
     SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
     FROM public.companies c
     LEFT JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-    WHERE c.subdomain = $1
+    WHERE c.subdomain = $1 AND c.listing_disabled = false
     `,
     [subdomain]
   );
@@ -244,7 +244,7 @@ async function enrichCompaniesWithAccountManagerLabels(pool, tenantId, companies
 /** @returns {{ id: number, subdomain: string | null }[]} */
 async function listIdsForSitemap(pool, tenantId, limit = 500) {
   const r = await pool.query(
-    `SELECT id, subdomain FROM public.companies WHERE tenant_id = $1 ORDER BY updated_at DESC LIMIT $2`,
+    `SELECT id, subdomain FROM public.companies WHERE tenant_id = $1 AND listing_disabled = false ORDER BY updated_at DESC LIMIT $2`,
     [tenantId, limit]
   );
   return r.rows;
@@ -290,7 +290,7 @@ async function listDirectoryByCategorySlug(pool, tenantId, categorySlug, cityLik
     SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
     FROM public.companies c
     INNER JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-    WHERE cat.slug = $2 AND c.tenant_id = $1
+    WHERE cat.slug = $2 AND c.tenant_id = $1 AND c.listing_disabled = false
     ${cityClause}
     ORDER BY c.name ASC
     `,
@@ -314,7 +314,7 @@ async function listDirectoryFeaturedByCategorySlug(pool, tenantId, categorySlug,
     SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
     FROM public.companies c
     INNER JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-    WHERE cat.slug = $2 AND c.tenant_id = $1 AND c.directory_featured = true
+    WHERE cat.slug = $2 AND c.tenant_id = $1 AND c.directory_featured = true AND c.listing_disabled = false
     ${cityClause}
     ORDER BY c.name ASC
     `,
@@ -335,7 +335,7 @@ async function listDirectoryDefault(pool, tenantId, limit = 24) {
     SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
     FROM public.companies c
     LEFT JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-    WHERE c.tenant_id = $1
+    WHERE c.tenant_id = $1 AND c.listing_disabled = false
     ORDER BY c.updated_at DESC
     LIMIT $2
     `,
@@ -353,7 +353,7 @@ async function listDirectoryHomeFeatured(pool, tenantId, limit = 48) {
     SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
     FROM public.companies c
     LEFT JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-    WHERE c.tenant_id = $1 AND c.directory_featured = true
+    WHERE c.tenant_id = $1 AND c.directory_featured = true AND c.listing_disabled = false
     ORDER BY c.updated_at DESC, c.name ASC
     LIMIT $2
     `,
@@ -366,7 +366,7 @@ async function listDirectoryHomeFeatured(pool, tenantId, limit = 48) {
  * Same as {@link listDirectorySearchIlike} but only companies marked `directory_featured` (homepage search with q/city).
  */
 async function listDirectoryFeaturedSearchIlike(pool, tenantId, searchPattern, cityPattern, limit = 48) {
-  const parts = [`c.tenant_id = $1`, `c.directory_featured = true`];
+  const parts = [`c.tenant_id = $1`, `c.directory_featured = true`, `c.listing_disabled = false`];
   const params = [tenantId];
   let i = 2;
   if (searchPattern) {
@@ -408,7 +408,7 @@ async function listDirectoryFeaturedSearchIlike(pool, tenantId, searchPattern, c
  * @param {number} limit
  */
 async function listDirectorySearchIlike(pool, tenantId, searchPattern, cityPattern, limit = 48) {
-  const parts = [`c.tenant_id = $1`];
+  const parts = [`c.tenant_id = $1`, `c.listing_disabled = false`];
   const params = [tenantId];
   let i = 2;
   if (searchPattern) {
@@ -459,6 +459,7 @@ async function suggestByNameForPublicSearch(pool, tenantId, term, limit = 5) {
     SELECT c.name, c.subdomain
     FROM public.companies c
     WHERE c.tenant_id = $1
+      AND c.listing_disabled = false
       AND c.subdomain IS NOT NULL
       AND TRIM(c.subdomain) <> ''
       AND c.name ILIKE $2
@@ -687,20 +688,21 @@ async function deleteByIdAndTenantId(pool, id, tenantId) {
 
 /**
  * @param {import("pg").Pool} pool
- * @param {{ id: number, tenantId: number, directoryFeatured: boolean, isPremium: boolean }} fields
+ * @param {{ id: number, tenantId: number, directoryFeatured: boolean, isPremium: boolean, listingDisabled: boolean }} fields
  */
 async function updateDirectoryFlagsByIdAndTenantId(pool, fields) {
-  const { id, tenantId, directoryFeatured, isPremium } = fields;
+  const { id, tenantId, directoryFeatured, isPremium, listingDisabled } = fields;
   const r = await pool.query(
     `
     UPDATE public.companies SET
       directory_featured = $3,
       is_premium = $4,
+      listing_disabled = $5,
       updated_at = now()
     WHERE id = $1 AND tenant_id = $2
     RETURNING id
     `,
-    [id, tenantId, !!directoryFeatured, !!isPremium]
+    [id, tenantId, !!directoryFeatured, !!isPremium, !!listingDisabled]
   );
   return (r.rows[0] && r.rows[0].id) || null;
 }

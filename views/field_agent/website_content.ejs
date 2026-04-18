@@ -1,0 +1,221 @@
+<!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<% var _sub = typeof submission !== 'undefined' ? submission : {}; %>
+<% var _d = typeof websiteDraft !== 'undefined' && websiteDraft ? websiteDraft : {}; %>
+<% var _ro = typeof websiteReadOnly !== 'undefined' && websiteReadOnly; %>
+<% var _rev = typeof reviewRequestedAt !== 'undefined' && reviewRequestedAt != null ? reviewRequestedAt : null; %>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Website content (next step) | Field agent | <%= _bn %></title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="<%= tenant.themeClass %>" data-screen-role="support" data-tenant-prefix="<%= tenantUrlPrefix %>">
+    <div class="app-layout">
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: 'dashboard', faIncludeFaq: typeof faIncludeFaq !== 'undefined' ? faIncludeFaq : true }) %>
+      <div class="app-layout__main">
+        <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
+        <h1 class="gp-home-story__title" style="margin-top:0;">Website &amp; directory listing</h1>
+        <p class="join-lead">
+          Approved lead: <strong><%= _sub.first_name %> <%= _sub.last_name %></strong>
+          <% if (_sub.profession) { %> — <%= _sub.profession %><% } %>
+        </p>
+        <% if (typeof linkedCompanyId !== 'undefined' && linkedCompanyId != null) { %>
+          <p class="admin-gate-success" role="status">
+            This submission is already linked to a directory listing (company #<%= linkedCompanyId %>). Listing text is read-only here; further setup continues in the admin console.
+          </p>
+        <% } else { %>
+          <p class="muted" style="max-width:42rem;line-height:1.5;margin:0 0 1rem;">
+            Private draft for submission #<%= _sub.id %>. Nothing on this page is published to the public directory or mini-site yet.
+          </p>
+        <% } %>
+        <% if (_rev && !_ro) { %>
+          <p class="admin-gate-success" id="fa-wc-review-banner" role="status">
+            Submitted for staff review (<%= String(_rev) %>).
+          </p>
+        <% } %>
+        <p class="input-field__error" id="fa-wc-error" hidden role="alert" style="margin-bottom:0.75rem;"></p>
+        <p class="admin-gate-success" id="fa-wc-save-ok" hidden role="status">Draft saved.</p>
+        <p class="admin-gate-success" id="fa-wc-submit-ok" hidden role="status">Submitted for review.</p>
+
+        <form id="fa-website-content-form" class="card" style="padding:1rem;max-width:42rem;" data-submission-id="<%= _sub.id %>">
+          <h2 class="form-step__title" style="margin-top:0;font-size:1.125rem;">Listing text</h2>
+          <p class="muted" style="margin:0 0 1rem;line-height:1.45;font-size:0.9375rem;">
+            These fields mirror what will eventually power the public profile. Save a draft anytime; use “Submit for review” when the text is ready for staff.
+          </p>
+
+          <div class="input-field">
+            <label class="input-field__label" for="wc-listing-name">Business / listing name</label>
+            <input id="wc-listing-name" name="listing_name" class="input-field__control" type="text" value="<%= _d.listing_name || '' %>" maxlength="200" <%= _ro ? 'readonly' : '' %> />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="wc-headline">Headline</label>
+            <input id="wc-headline" name="headline" class="input-field__control" type="text" value="<%= _d.headline || '' %>" maxlength="500" <%= _ro ? 'readonly' : '' %> />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="wc-about">About</label>
+            <textarea id="wc-about" name="about" class="input-field__control" rows="5" maxlength="12000" <%= _ro ? 'readonly' : '' %>><%= _d.about || '' %></textarea>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="wc-services">Services</label>
+            <textarea id="wc-services" name="services" class="input-field__control" rows="4" maxlength="12000" <%= _ro ? 'readonly' : '' %>><%= _d.services || '' %></textarea>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="wc-location">Location</label>
+            <input id="wc-location" name="location" class="input-field__control" type="text" value="<%= _d.location || '' %>" maxlength="500" <%= _ro ? 'readonly' : '' %> />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="wc-service-areas">Service areas</label>
+            <textarea id="wc-service-areas" name="service_areas" class="input-field__control" rows="2" maxlength="4000" <%= _ro ? 'readonly' : '' %>><%= _d.service_areas || '' %></textarea>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="wc-hours">Hours</label>
+            <textarea id="wc-hours" name="hours_text" class="input-field__control" rows="2" maxlength="4000" <%= _ro ? 'readonly' : '' %>><%= _d.hours_text || '' %></textarea>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="wc-email">Email (listing)</label>
+            <input id="wc-email" name="email" class="input-field__control" type="email" value="<%= _d.email || '' %>" maxlength="320" autocomplete="email" <%= _ro ? 'readonly' : '' %> />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="wc-listing-phone">Phone (listing)</label>
+            <input id="wc-listing-phone" name="listing_phone" class="input-field__control" type="tel" value="<%= (_d.listing_phone != null && String(_d.listing_phone).trim() !== '') ? _d.listing_phone : (_sub.phone_raw || '') %>" maxlength="120" autocomplete="tel" <%= _ro ? 'readonly' : '' %> />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="wc-cta-label">Featured CTA label</label>
+            <input id="wc-cta-label" name="featured_cta_label" class="input-field__control" type="text" value="<%= _d.featured_cta_label || '' %>" maxlength="120" placeholder="e.g. Call us" <%= _ro ? 'readonly' : '' %> />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="wc-cta-phone">Featured CTA phone</label>
+            <input id="wc-cta-phone" name="featured_cta_phone" class="input-field__control" type="tel" value="<%= _d.featured_cta_phone || '' %>" maxlength="120" <%= _ro ? 'readonly' : '' %> />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="wc-years">Years of experience (optional)</label>
+            <input id="wc-years" name="years_experience" class="input-field__control" type="number" min="0" max="999" step="1" value="<%= (_d.years_experience != null && _d.years_experience !== '') ? _d.years_experience : '' %>" <%= _ro ? 'readonly' : '' %> />
+          </div>
+
+          <% if (!_ro) { %>
+            <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem;">
+              <button type="button" class="btn btn--secondary" id="fa-wc-save-btn">Save draft</button>
+              <button type="button" class="btn" id="fa-wc-submit-btn">Submit for review</button>
+            </div>
+          <% } %>
+        </form>
+
+        <p style="margin-top:1rem;">
+          <a href="<%= tenantUrlPrefix %>/field-agent/dashboard">← Dashboard</a>
+        </p>
+        <%- include('../partials/site_footer', { tenantUrlPrefix }) %>
+        <%- include('../partials/components/container_close') %>
+      </div>
+    </div>
+    <script src="<%= asset('scripts') %>" defer></script>
+    <% if (!_ro) { %>
+    <script>
+      (function () {
+        var form = document.getElementById("fa-website-content-form");
+        if (!form) return;
+        var sid = form.getAttribute("data-submission-id");
+        var saveBtn = document.getElementById("fa-wc-save-btn");
+        var submitBtn = document.getElementById("fa-wc-submit-btn");
+        var errEl = document.getElementById("fa-wc-error");
+        var saveOk = document.getElementById("fa-wc-save-ok");
+        var submitOk = document.getElementById("fa-wc-submit-ok");
+        function prefix() {
+          var el = document.body && document.body.getAttribute("data-tenant-prefix");
+          return el != null ? String(el) : "";
+        }
+        function api(path) {
+          var p = prefix();
+          return (p ? p : "") + path;
+        }
+        function showErr(msg) {
+          if (errEl) {
+            errEl.textContent = msg || "";
+            errEl.hidden = !msg;
+          }
+          if (saveOk) saveOk.hidden = true;
+          if (submitOk) submitOk.hidden = true;
+        }
+        function gatherDraft() {
+          var fd = new FormData(form);
+          var o = {};
+          fd.forEach(function (v, k) {
+            o[k] = typeof v === "string" ? v : String(v);
+          });
+          var y = document.getElementById("wc-years");
+          if (y && y.value !== "") o.years_experience = y.value;
+          else o.years_experience = null;
+          return o;
+        }
+        function showSaveOk() {
+          if (saveOk) saveOk.hidden = false;
+          if (submitOk) submitOk.hidden = true;
+          if (errEl) errEl.hidden = true;
+        }
+        function showSubmitOk() {
+          if (submitOk) submitOk.hidden = false;
+          if (saveOk) saveOk.hidden = true;
+          if (errEl) errEl.hidden = true;
+          var ban = document.getElementById("fa-wc-review-banner");
+          if (ban) ban.hidden = false;
+        }
+        if (saveBtn) {
+          saveBtn.addEventListener("click", function () {
+            showErr("");
+            fetch(api("/field-agent/api/submissions/" + encodeURIComponent(sid) + "/website-content-draft"), {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ draft: gatherDraft() }),
+            })
+              .then(function (r) {
+                return r.json().then(function (j) {
+                  return { ok: r.ok, j: j };
+                });
+              })
+              .then(function (x) {
+                if (!x.ok || !x.j || x.j.ok !== true) {
+                  showErr((x.j && x.j.error) || "Could not save draft.");
+                  return;
+                }
+                showSaveOk();
+              })
+              .catch(function () {
+                showErr("Could not save draft. Try again.");
+              });
+          });
+        }
+        if (submitBtn) {
+          submitBtn.addEventListener("click", function () {
+            showErr("");
+            fetch(api("/field-agent/api/submissions/" + encodeURIComponent(sid) + "/website-content-submit-review"), {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ draft: gatherDraft() }),
+            })
+              .then(function (r) {
+                return r.json().then(function (j) {
+                  return { ok: r.ok, j: j };
+                });
+              })
+              .then(function (x) {
+                if (!x.ok || !x.j || x.j.ok !== true) {
+                  showErr((x.j && x.j.error) || "Could not submit for review.");
+                  return;
+                }
+                showSubmitOk();
+              })
+              .catch(function () {
+                showErr("Could not submit for review. Try again.");
+              });
+          });
+        }
+      })();
+    </script>
+    <% } %>
+    <%- include('../partials/theme_prefs') %>
+  </body>
+</html>

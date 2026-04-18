@@ -16,7 +16,11 @@ const {
 } = require("../auth/fieldAgentAuth");
 const phoneRulesService = require("../phone/phoneRulesService");
 const { saveJpegImages, MAX_IMAGE_BYTES } = require("../fieldAgent/fieldAgentUploads");
-const { notifyProviderSubmissionToCrm, notifyCallbackLeadToCrm } = require("../fieldAgent/fieldAgentCrm");
+const {
+  notifyProviderSubmissionToCrm,
+  notifyWebsiteListingReviewToCrm,
+  notifyCallbackLeadToCrm,
+} = require("../fieldAgent/fieldAgentCrm");
 const { fieldAgentLoginLimiter } = require("../middleware/authRateLimit");
 const { getTenantCitiesForClientAsync, getJoinCityWatermarkRotateAsync } = require("../tenants/tenantCities");
 const categoriesRepo = require("../db/pg/categoriesRepo");
@@ -310,6 +314,12 @@ module.exports = function fieldAgentRoutes() {
       withheldEcCommission30: ecQualityPayable.withheldEcCommission30,
     };
     const rejectedRows = await fieldAgentSubmissionsRepo.listRejectedWithReason(pool, s.id, 20);
+    const approvedWebsiteNextRows = await fieldAgentSubmissionsRepo.listApprovedForFieldAgentNotLinkedToCompany(
+      pool,
+      tid,
+      s.id,
+      25
+    );
     const metricTotal = metricPending + metricInfoNeeded + metricApproved + metricRejected + metricAppealed;
     return res.render("field_agent/dashboard", renderLocals(req, res, {
       fieldAgent: s,
@@ -333,10 +343,51 @@ module.exports = function fieldAgentRoutes() {
       ecQualityPayableDisplay,
       ecPayableBreakdownPayload,
       rejectedRows,
+      approvedWebsiteNextRows,
       submitted: req.query && req.query.submitted === "1",
       callback: req.query && req.query.callback === "1",
       resubmitted: req.query && req.query.resubmitted === "1",
     }));
+  });
+
+  /**
+   * Placeholder entry for post-approval website / directory content workflow (non-publishing).
+   * Guards: session field agent + tenant + submission status approved.
+   */
+  router.get("/field-agent/submissions/:id/website-content", requireFieldAgent, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 1) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+      if (!row) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      if (String(row.status || "") !== "approved") {
+        return res.redirect(302, `${tenantPrefix(req)}/field-agent/dashboard`);
+      }
+      const linkedCompanyId = await companiesRepo.findCompanyIdBySourceSubmissionExcluding(pool, tid, id, null);
+      const websiteDraft = fieldAgentSubmissionsRepo.mergeWebsiteListingDraftForDisplay(row.website_listing_draft_json);
+      const reviewRequestedAt = row.website_listing_review_requested_at || null;
+      return res.render(
+        "field_agent/website_content",
+        renderLocals(req, res, {
+          submission: row,
+          linkedCompanyId,
+          websiteDraft,
+          reviewRequestedAt,
+          websiteReadOnly: linkedCompanyId != null,
+          faActiveNav: "dashboard",
+          faIncludeFaq: true,
+        })
+      );
+    } catch (e) {
+      return next(e);
+    }
   });
 
   /** Update submission after admin feedback (info_needed or rejected → resubmit to pending). */
@@ -745,6 +796,112 @@ module.exports = function fieldAgentRoutes() {
     }
     const history = await fieldAgentSubmissionAuditRepo.listAuditForFieldAgentVisible(pool, tid, id, { limit: 80 });
     return res.json({ ok: true, submission: row, history });
+  });
+
+  /** JSON: save structured website/directory listing draft (approved, not company-linked only). */
+  router.post("/field-agent/api/submissions/:id/website-content-draft", requireFieldAgent, async (req, res) => {
+    const pool = getPgPool();
+    const s = getFieldAgentSession(req);
+    const tid = req.tenant.id;
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id < 1) {
+      return res.status(400).json({ ok: false, error: "Invalid submission." });
+    }
+    const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+    if (!row) {
+      return res.status(404).json({ ok: false, error: "Not found." });
+    }
+    if (String(row.status || "") !== "approved") {
+      return res.status(400).json({ ok: false, error: "Submission must be approved to edit website content." });
+    }
+    const linkedId = await companiesRepo.findCompanyIdBySourceSubmissionExcluding(pool, tid, id, null);
+    if (linkedId != null) {
+      return res.status(403).json({
+        ok: false,
+        error: "This submission is linked to a directory listing; draft edits are disabled here.",
+      });
+    }
+    const body = req.body || {};
+    const draft = body.draft != null ? body.draft : body;
+    const ok = await fieldAgentSubmissionsRepo.patchWebsiteListingDraftForFieldAgent(pool, {
+      tenantId: tid,
+      fieldAgentId: s.id,
+      submissionId: id,
+      draft,
+    });
+    if (!ok) {
+      return res.status(400).json({ ok: false, error: "Could not save draft." });
+    }
+    const next = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+    return res.json({ ok: true, submission: next });
+  });
+
+  /** JSON: submit listing text for staff second review (sets timestamp only; no moderation status change). */
+  router.post("/field-agent/api/submissions/:id/website-content-submit-review", requireFieldAgent, async (req, res) => {
+    const pool = getPgPool();
+    const s = getFieldAgentSession(req);
+    const tid = req.tenant.id;
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id < 1) {
+      return res.status(400).json({ ok: false, error: "Invalid submission." });
+    }
+    const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+    if (!row) {
+      return res.status(404).json({ ok: false, error: "Not found." });
+    }
+    if (String(row.status || "") !== "approved") {
+      return res.status(400).json({ ok: false, error: "Submission must be approved to submit for review." });
+    }
+    const linkedId = await companiesRepo.findCompanyIdBySourceSubmissionExcluding(pool, tid, id, null);
+    if (linkedId != null) {
+      return res.status(403).json({
+        ok: false,
+        error: "This submission is linked to a directory listing; you cannot submit for review from here.",
+      });
+    }
+    const body = req.body || {};
+    const draft = body.draft != null ? body.draft : undefined;
+    const ok = await fieldAgentSubmissionsRepo.submitWebsiteListingReviewRequestForFieldAgent(pool, {
+      tenantId: tid,
+      fieldAgentId: s.id,
+      submissionId: id,
+      draft,
+    });
+    if (!ok) {
+      return res.status(400).json({ ok: false, error: "Could not submit for review." });
+    }
+    const next = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+    try {
+      const fn = String(next.first_name || "").trim();
+      const ln = String(next.last_name || "").trim();
+      const prof = String(next.profession || "").trim();
+      const draft = fieldAgentSubmissionsRepo.mergeWebsiteListingDraftForDisplay(next.website_listing_draft_json);
+      const sumHead = String(draft.headline || "").trim().slice(0, 120);
+      const sumLine = [sumHead && `Headline: ${sumHead}`, draft.listing_name && `Listing name: ${String(draft.listing_name).slice(0, 80)}`]
+        .filter(Boolean)
+        .join("\n");
+      const desc = [
+        "Field agent submitted website / directory listing text for staff review.",
+        "",
+        "Next steps: call the service provider, review and edit content in Admin, then publish to create the directory listing.",
+        "",
+        `Submission #${id}: ${fn} ${ln}${prof ? ` — ${prof}` : ""}`,
+        next.phone_raw ? `Phone: ${next.phone_raw}` : "",
+        sumLine || "(No headline in draft yet — open review page to edit.)",
+      ]
+        .filter((x) => x !== "")
+        .join("\n")
+        .slice(0, 8000);
+      await notifyWebsiteListingReviewToCrm({
+        tenantId: tid,
+        submissionId: id,
+        title: `Website listing review — submission #${id}`,
+        description: desc,
+      });
+    } catch {
+      /* CRM task is best-effort; submission timestamp already saved */
+    }
+    return res.json({ ok: true, submission: next });
   });
 
   /** JSON: set reply text while submission is info_needed or rejected (no status change). */

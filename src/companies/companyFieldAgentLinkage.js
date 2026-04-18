@@ -1,5 +1,6 @@
 "use strict";
 
+const companiesRepo = require("../db/pg/companiesRepo");
 const fieldAgentsRepo = require("../db/pg/fieldAgentsRepo");
 const fieldAgentSubmissionsRepo = require("../db/pg/fieldAgentSubmissionsRepo");
 /**

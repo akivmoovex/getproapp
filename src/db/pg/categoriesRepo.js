@@ -174,7 +174,7 @@ async function listTopByCompanyCount(pool, tenantId, limit = 5) {
     `SELECT cat.slug, cat.name, COUNT(c.id)::int AS listing_count
      FROM public.companies c
      INNER JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
-     WHERE c.tenant_id = $1
+     WHERE c.tenant_id = $1 AND c.listing_disabled = false
      GROUP BY cat.id, cat.slug, cat.name
      ORDER BY listing_count DESC, cat.name ASC
      LIMIT $2`,

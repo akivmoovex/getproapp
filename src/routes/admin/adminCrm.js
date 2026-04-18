@@ -52,7 +52,11 @@ module.exports = function registerAdminCrmRoutes(router) {
     const auditLogs = await crmTasksRepo.listAuditForTask(pool, id, tid);
 
     let fieldAgentProviderSubmission = null;
-    if (String(task.source_type || "").trim() === "field_agent_provider" && task.source_ref_id != null) {
+    const _srcType = String(task.source_type || "").trim();
+    if (
+      (_srcType === "field_agent_provider" || _srcType === "field_agent_website_listing") &&
+      task.source_ref_id != null
+    ) {
       const refId = Number(task.source_ref_id);
       if (Number.isFinite(refId) && refId > 0) {
         fieldAgentProviderSubmission = await fieldAgentSubmissionsRepo.getSubmissionByIdForAdmin(pool, tid, refId);

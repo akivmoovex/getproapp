@@ -43,7 +43,24 @@
 
       <% if (typeof fieldAgentProviderSubmission !== 'undefined' && fieldAgentProviderSubmission) { %>
       <% var _fas = fieldAgentProviderSubmission; %>
+      <% var _faWeb = String(task.source_type || '') === 'field_agent_website_listing'; %>
       <section class="crm-task-section card crm-task-section--field-agent" data-field-agent-submission="<%= _fas.id %>">
+        <% if (_faWeb) { %>
+        <h2 class="crm-task-section__h">Website / directory listing review</h2>
+        <p class="muted crm-task-hero__meta">
+          Submission #<%= _fas.id %> · Approved
+          <% if (_fas.field_agent_username) { %> · Agent: <strong><%= _fas.field_agent_username %></strong><% } %>
+        </p>
+        <p class="crm-task-prose">
+          Call the service provider, review and edit listing text, then <strong>publish</strong> to create the directory listing and mini-site (photos can be added later).
+        </p>
+        <div class="crm-task-prose crm-task-fa-summary">
+          <p><strong>Name:</strong> <%= _fas.first_name %> <%= _fas.last_name %> · <strong>Phone:</strong> <%= _fas.phone_raw %></p>
+        </div>
+        <p class="crm-task-form__actions">
+          <%- include('components/button', { variant: 'primary', href: '/admin/field-agent/submissions/' + _fas.id + '/website-listing-review', label: 'Open review & publish' }) %>
+        </p>
+        <% } else { %>
         <h2 class="crm-task-section__h">Field agent provider submission</h2>
         <% var _faSt = String(_fas.status || '');
            var _faLbl = _faSt === 'info_needed' ? 'Info needed' : (_faSt === 'appealed' ? 'Appealed' : _faSt); %>
@@ -132,6 +149,7 @@
           <% } %>
         <% } else { %>
           <p class="muted crm-task-empty">Read-only — moderation actions require CRM edit access.</p>
+        <% } %>
         <% } %>
       </section>
       <% } %>

@@ -758,7 +758,7 @@ module.exports = function publicRoutes() {
       }
       const pool = getPgPool();
       const company = await companiesRepo.getWithCategoryByIdAndTenantId(pool, id, tenantId);
-      if (!company) {
+      if (!company || company.listing_disabled) {
         res.status(404);
         return res.render("not_found", {
           slug: String(id),

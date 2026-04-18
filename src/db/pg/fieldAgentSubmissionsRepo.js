@@ -563,6 +563,36 @@ async function listSubmissionsForFieldAgentByStatus(pool, fieldAgentId, status, 
 }
 
 /**
+ * Approved submissions for this field agent that are not yet linked to any company row
+ * (`companies.source_field_agent_submission_id`). Used for field-agent "next website step" UX only.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} fieldAgentId
+ * @param {number} [limit]
+ */
+async function listApprovedForFieldAgentNotLinkedToCompany(pool, tenantId, fieldAgentId, limit = 25) {
+  const tid = Number(tenantId);
+  const aid = Number(fieldAgentId);
+  const lim = Math.min(Math.max(Number(limit) || 25, 1), 100);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(aid) || aid < 1) return [];
+  const r = await pool.query(
+    `
+    SELECT s.id, s.first_name, s.last_name, s.profession, s.city, s.phone_raw, s.updated_at
+    FROM public.field_agent_provider_submissions s
+    WHERE s.tenant_id = $1 AND s.field_agent_id = $2 AND s.status = 'approved'
+      AND NOT EXISTS (
+        SELECT 1 FROM public.companies c
+        WHERE c.tenant_id = $1 AND c.source_field_agent_submission_id = s.id
+      )
+    ORDER BY s.updated_at DESC
+    LIMIT $3
+    `,
+    [tid, aid, lim]
+  );
+  return r.rows;
+}
+
+/**
  * Approved submissions available to link to a company (excludes submission already linked to another company).
  * @param {import("pg").Pool} pool
  * @param {number} tenantId
@@ -630,6 +660,160 @@ async function getSubmissionByIdForFieldAgent(pool, tenantId, fieldAgentId, subm
     [sid, tid, aid]
   );
   return r.rows[0] ?? null;
+}
+
+/** Keys align with public.companies listing text fields (mini-site / directory); photos out of scope. */
+const WEBSITE_LISTING_DRAFT_KEYS = [
+  "listing_name",
+  "headline",
+  "about",
+  "services",
+  "location",
+  "service_areas",
+  "hours_text",
+  "email",
+  "listing_phone",
+  "featured_cta_label",
+  "featured_cta_phone",
+];
+
+const WEBSITE_LISTING_DRAFT_MAX = {
+  listing_name: 200,
+  headline: 500,
+  about: 12000,
+  services: 12000,
+  location: 500,
+  service_areas: 4000,
+  hours_text: 4000,
+  email: 320,
+  listing_phone: 120,
+  featured_cta_label: 120,
+  featured_cta_phone: 120,
+};
+
+/**
+ * Sanitize client payload for website_listing_draft_json (JSONB).
+ * @param {unknown} raw
+ * @returns {Record<string, string | number | null>}
+ */
+function normalizeWebsiteListingDraft(raw) {
+  const o = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  const out = /** @type {Record<string, string | number | null>} */ ({});
+  for (const k of WEBSITE_LISTING_DRAFT_KEYS) {
+    const lim = WEBSITE_LISTING_DRAFT_MAX[k] || 500;
+    out[k] = String(o[k] != null ? o[k] : "").trim().slice(0, lim);
+  }
+  let y = o.years_experience;
+  if (y === "" || y == null) {
+    out.years_experience = null;
+  } else {
+    const n = Number(y);
+    out.years_experience = Number.isFinite(n) ? Math.min(999, Math.max(0, Math.floor(n))) : null;
+  }
+  return out;
+}
+
+/**
+ * Merge stored JSONB (object or missing keys) with defaults for forms.
+ * @param {unknown} stored
+ */
+function mergeWebsiteListingDraftForDisplay(stored) {
+  const base = normalizeWebsiteListingDraft({});
+  const cur = stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+  const n = normalizeWebsiteListingDraft(cur);
+  return { ...base, ...n };
+}
+
+/**
+ * Approved submission, not linked to a company: save listing draft only (no moderation status change).
+ * @param {import("pg").Pool} pool
+ * @param {{ tenantId: number, fieldAgentId: number, submissionId: number, draft: unknown }} params
+ * @returns {Promise<boolean>}
+ */
+async function patchWebsiteListingDraftForFieldAgent(pool, params) {
+  const tid = Number(params.tenantId);
+  const aid = Number(params.fieldAgentId);
+  const sid = Number(params.submissionId);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(aid) || aid < 1 || !Number.isFinite(sid) || sid < 1) {
+    return false;
+  }
+  const normalized = normalizeWebsiteListingDraft(params.draft);
+  const r = await pool.query(
+    `
+    UPDATE public.field_agent_provider_submissions s
+    SET website_listing_draft_json = $1::jsonb,
+        updated_at = now()
+    WHERE s.id = $2 AND s.tenant_id = $3 AND s.field_agent_id = $4
+      AND s.status = 'approved'
+      AND NOT EXISTS (
+        SELECT 1 FROM public.companies c
+        WHERE c.tenant_id = s.tenant_id AND c.source_field_agent_submission_id = s.id
+      )
+    RETURNING s.id
+    `,
+    [JSON.stringify(normalized), sid, tid, aid]
+  );
+  return r.rowCount === 1;
+}
+
+/**
+ * Sets website_listing_review_requested_at; optionally updates draft in the same row.
+ * @param {import("pg").Pool} pool
+ * @param {{ tenantId: number, fieldAgentId: number, submissionId: number, draft?: unknown }} params
+ * @returns {Promise<boolean>}
+ */
+async function submitWebsiteListingReviewRequestForFieldAgent(pool, params) {
+  const tid = Number(params.tenantId);
+  const aid = Number(params.fieldAgentId);
+  const sid = Number(params.submissionId);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(aid) || aid < 1 || !Number.isFinite(sid) || sid < 1) {
+    return false;
+  }
+  const hasDraft = params.draft !== undefined;
+  const draftJson = hasDraft ? JSON.stringify(normalizeWebsiteListingDraft(params.draft)) : null;
+  const r = await pool.query(
+    `
+    UPDATE public.field_agent_provider_submissions s
+    SET website_listing_draft_json = CASE WHEN $1 IS NULL THEN s.website_listing_draft_json ELSE $1::jsonb END,
+        website_listing_review_requested_at = now(),
+        updated_at = now()
+    WHERE s.id = $2 AND s.tenant_id = $3 AND s.field_agent_id = $4
+      AND s.status = 'approved'
+      AND NOT EXISTS (
+        SELECT 1 FROM public.companies c
+        WHERE c.tenant_id = s.tenant_id AND c.source_field_agent_submission_id = s.id
+      )
+    RETURNING s.id
+    `,
+    [draftJson, sid, tid, aid]
+  );
+  return r.rowCount === 1;
+}
+
+/**
+ * Staff console: update website_listing_draft_json on an approved submission (tenant-scoped).
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {{ tenantId: number, submissionId: number, draft: unknown }} params
+ * @returns {Promise<boolean>}
+ */
+async function patchWebsiteListingDraftForAdmin(pool, params) {
+  const tid = Number(params.tenantId);
+  const sid = Number(params.submissionId);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) {
+    return false;
+  }
+  const normalized = normalizeWebsiteListingDraft(params.draft);
+  const r = await pool.query(
+    `
+    UPDATE public.field_agent_provider_submissions
+    SET website_listing_draft_json = $1::jsonb,
+        updated_at = now()
+    WHERE id = $2 AND tenant_id = $3 AND status = 'approved'
+    RETURNING id
+    `,
+    [JSON.stringify(normalized), sid, tid]
+  );
+  return r.rowCount === 1;
 }
 
 async function duplicateExistsAgainstSubmissions(pool, tenantId, phoneNorm, whatsappNorm, excludeId) {
@@ -1059,6 +1243,7 @@ module.exports = {
   sumCommissionApprovedInPeriod,
   listRejectedWithReason,
   listSubmissionsForFieldAgentByStatus,
+  listApprovedForFieldAgentNotLinkedToCompany,
   listApprovedForCompanyLinkageSelect,
   getSubmissionByIdForAdminLinkage,
   getSubmissionByIdForFieldAgent,
@@ -1070,4 +1255,9 @@ module.exports = {
   resubmitFieldAgentSubmissionForReview,
   applyBulkSubmissionAction,
   correctFieldAgentSubmissionStatus,
+  normalizeWebsiteListingDraft,
+  mergeWebsiteListingDraftForDisplay,
+  patchWebsiteListingDraftForFieldAgent,
+  submitWebsiteListingReviewRequestForFieldAgent,
+  patchWebsiteListingDraftForAdmin,
 };

@@ -181,6 +181,11 @@
                   <% } %>
                 </div>
               </section>
+            <% } else { %>
+              <section class="pro-company-profile__section" aria-labelledby="gallery-heading-empty">
+                <h2 id="gallery-heading-empty" class="pro-company-profile__h2">Photos</h2>
+                <p class="muted">No photos added</p>
+              </section>
             <% } %>
 
             <% if (company.service_areas && String(company.service_areas).trim()) { %>

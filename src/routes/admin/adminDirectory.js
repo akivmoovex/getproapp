@@ -306,12 +306,14 @@ module.exports = function registerAdminDirectoryRoutes(router) {
       if (!Number.isFinite(cid) || cid <= 0) return res.status(400).send("Invalid company.");
       const featured = req.body.directory_featured === "1" || req.body.directory_featured === "on";
       const premium = req.body.is_premium === "1" || req.body.is_premium === "on";
+      const listingDisabled = req.body.listing_disabled === "1" || req.body.listing_disabled === "on";
       const pool = getPgPool();
       const row = await companiesRepo.updateDirectoryFlagsByIdAndTenantId(pool, {
         id: cid,
         tenantId: tid,
         directoryFeatured: featured,
         isPremium: premium,
+        listingDisabled,
       });
       if (!row) return res.status(404).send("Company not found.");
       const returnQuery = String(req.body.return_query || "").trim();

@@ -82,6 +82,7 @@
               <th>Directory profile</th>
               <th>Directory featured</th>
               <th>Premium</th>
+              <th>Hide public</th>
               <% if (typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive) { %>
               <th>Portal credit</th>
               <% } %>
@@ -91,7 +92,7 @@
           </thead>
           <tbody>
             <% var _pcCol = typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive ? 1 : 0; %>
-            <% var _emptyCols = (editMode ? 10 : 9) + _pcCol; %>
+            <% var _emptyCols = (editMode ? 11 : 10) + _pcCol; %>
             <% if (!companies || companies.length === 0) { %>
               <tr>
                 <td colspan="<%= _emptyCols %>" class="admin-table-empty-cell">
@@ -145,9 +146,14 @@
                 <% } %></td>
                 <td><% if (editMode && typeof canManageFeaturedPremium !== 'undefined' && canManageFeaturedPremium) { %>
                   <label class="admin-companies-flag-label"><input type="checkbox" name="is_premium" value="1" form="dirflags-<%= c.id %>" <%= c.is_premium ? 'checked' : '' %> title="Premium provider (directory)" /> Yes</label>
-                  <button type="submit" class="btn btn--sm" form="dirflags-<%= c.id %>">Save</button>
                 <% } else { %>
                   <span class="muted"><%= c.is_premium ? 'Yes' : 'No' %></span>
+                <% } %></td>
+                <td><% if (editMode && typeof canManageFeaturedPremium !== 'undefined' && canManageFeaturedPremium) { %>
+                  <label class="admin-companies-flag-label"><input type="checkbox" name="listing_disabled" value="1" form="dirflags-<%= c.id %>" <%= c.listing_disabled ? 'checked' : '' %> title="Hide from public directory, search, typeahead, sitemap, and mini-site" /> Yes</label>
+                  <button type="submit" class="btn btn--sm" form="dirflags-<%= c.id %>">Save</button>
+                <% } else { %>
+                  <span class="muted"><%= c.listing_disabled ? 'Yes' : 'No' %></span>
                 <% } %></td>
                 <% if (typeof portalCreditUiActive !== 'undefined' && portalCreditUiActive) { %>
                 <td>
