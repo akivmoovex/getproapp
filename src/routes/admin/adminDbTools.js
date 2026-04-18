@@ -65,7 +65,17 @@ module.exports = function registerAdminDbToolsRoutes(router) {
       const pool = getPgPool();
       const tenantId = getAdminTenantId(req);
       const adminUserId = Number(req.session.adminUser.id);
-      const result = await adminTestDataService.createTestData(pool, { tenantId, adminUserId });
+      const body = req.body && typeof req.body === "object" ? req.body : {};
+      const includeFaDashboardFixtures =
+        body.includeFaDashboardFixtures === true ||
+        body.includeFaDashboardFixtures === "true" ||
+        body.include_fa_dashboard_fixtures === true ||
+        body.include_fa_dashboard_fixtures === "true";
+      const result = await adminTestDataService.createTestData(pool, {
+        tenantId,
+        adminUserId,
+        includeFaDashboardFixtures,
+      });
       const status = result.ok ? 200 : result.error === "validation" ? 400 : 500;
       return res.status(status).json(result);
     } catch (e) {

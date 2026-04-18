@@ -21,14 +21,48 @@
 
     <div class="app-top-app-bar__actions">
       <% if (_faConsole) { %>
-      <label
-        for="field-agent-console-nav"
-        class="field-agent-console__burger field-agent-console__burger--app-bar"
-        aria-label="Open field agent menu"
+      <button
+        type="button"
+        class="app-menu-toggle field-agent-console__app-menu-toggle"
+        id="wf-app-nav-toggle"
+        aria-label="Open navigation"
+        aria-controls="wf-app-nav-drawer"
+        aria-expanded="false"
       >
-        <span class="field-agent-console__burger-icon" aria-hidden="true"></span>
-        <span class="field-agent-console__burger-label">Menu</span>
-      </label>
+        <svg
+          class="app-menu-icon app-menu-icon--hamburger"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.25"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4 6h16" />
+          <path d="M4 12h16" />
+          <path d="M4 18h16" />
+        </svg>
+        <svg
+          class="app-menu-icon app-menu-icon--close"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.25"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
       <% } %>
       <% if (_renderRegionPickerTrigger && _showRegionPickerUi) { %>
       <button

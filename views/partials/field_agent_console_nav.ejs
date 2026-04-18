@@ -5,12 +5,7 @@
   var _deskLogout = typeof faShowLogoutDesktop !== 'undefined' ? !!faShowLogoutDesktop : (_active === 'dashboard');
 %>
 <div class="field-agent-console">
-  <input type="checkbox" id="field-agent-console-nav" class="field-agent-console__check" autocomplete="off" tabindex="-1" />
   <div class="field-agent-console__bar">
-    <label for="field-agent-console-nav" class="field-agent-console__burger">
-      <span class="field-agent-console__burger-icon" aria-hidden="true"></span>
-      <span class="field-agent-console__burger-label">Menu</span>
-    </label>
     <nav class="field-agent-console__tabs" aria-label="Field agent console">
       <a
         href="<%= _tp %>/field-agent/add-contact"
@@ -49,25 +44,65 @@
     </form>
     <% } %>
   </div>
-  <label for="field-agent-console-nav" class="field-agent-console__scrim" aria-hidden="true" tabindex="-1"></label>
-  <aside class="field-agent-console__drawer" aria-label="Field agent menu">
-    <div class="field-agent-console__drawer-top">
-      <span class="field-agent-console__drawer-title">Field agent</span>
-      <label for="field-agent-console-nav" class="field-agent-console__drawer-close" aria-label="Close menu">&times;</label>
+
+  <div class="app-nav-backdrop" id="wf-app-nav-backdrop" hidden></div>
+
+  <aside
+    class="app-nav-drawer"
+    id="wf-app-nav-drawer"
+    aria-label="Field agent menu"
+    aria-hidden="true"
+  >
+    <div class="app-nav-drawer-top">
+      <button
+        type="button"
+        class="wf-home-sidebar-close app-nav-drawer-close"
+        id="wf-app-nav-close"
+        aria-label="Close menu"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
     </div>
-    <nav class="field-agent-console__drawer-nav" aria-label="Field agent console">
-      <a href="<%= _tp %>/field-agent/add-contact" class="field-agent-console__drawer-link <%= _active === 'add_contact' ? 'is-active' : '' %>">New contact</a>
-      <a href="<%= _tp %>/field-agent/dashboard" class="field-agent-console__drawer-link <%= _active === 'dashboard' ? 'is-active' : '' %>">Dashboard</a>
-      <a href="<%= _tp %>/field-agent/statements" class="field-agent-console__drawer-link <%= _active === 'statements' ? 'is-active' : '' %>">Statements</a>
-      <a href="<%= _tp %>/field-agent/disputes" class="field-agent-console__drawer-link <%= _active === 'disputes' ? 'is-active' : '' %>">Disputes</a>
-      <a href="<%= _tp %>/field-agent/adjustments" class="field-agent-console__drawer-link <%= _active === 'adjustments' ? 'is-active' : '' %>">Adjustments</a>
-      <a href="<%= _tp %>/field-agent/call-me-back" class="field-agent-console__drawer-link <%= _active === 'callback' ? 'is-active' : '' %>">Call me back</a>
-      <% if (_faq) { %>
-      <a href="<%= _tp %>/field-agent/faq" class="field-agent-console__drawer-link <%= _active === 'faq' ? 'is-active' : '' %>">FAQ</a>
-      <% } %>
-    </nav>
-    <form method="post" action="<%= _tp %>/field-agent/logout" class="field-agent-console__logout field-agent-console__logout--drawer">
-      <%- include('components/button', { variant: 'default', type: 'submit', label: 'Sign out', className: 'admin-nav__btn field-agent-console__logout-btn' }) %>
-    </form>
+
+    <div class="app-nav-drawer-body">
+      <nav class="wf-home-sidebar-nav wf-home-sidebar-nav--primary" aria-label="Field agent console">
+        <a
+          href="<%= _tp %>/field-agent/add-contact"
+          class="wf-home-nav-btn <%= _active === 'add_contact' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
+        >New contact</a>
+        <a
+          href="<%= _tp %>/field-agent/dashboard"
+          class="wf-home-nav-btn <%= _active === 'dashboard' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
+        >Dashboard</a>
+        <a
+          href="<%= _tp %>/field-agent/statements"
+          class="wf-home-nav-btn <%= _active === 'statements' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
+        >Statements</a>
+        <a
+          href="<%= _tp %>/field-agent/disputes"
+          class="wf-home-nav-btn <%= _active === 'disputes' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
+        >Disputes</a>
+        <a
+          href="<%= _tp %>/field-agent/adjustments"
+          class="wf-home-nav-btn <%= _active === 'adjustments' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
+        >Adjustments</a>
+        <a
+          href="<%= _tp %>/field-agent/call-me-back"
+          class="wf-home-nav-btn <%= _active === 'callback' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
+        >Call me back</a>
+        <% if (_faq) { %>
+        <a
+          href="<%= _tp %>/field-agent/faq"
+          class="wf-home-nav-btn <%= _active === 'faq' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
+        >FAQ</a>
+        <% } %>
+      </nav>
+      <form method="post" action="<%= _tp %>/field-agent/logout" class="field-agent-console__logout field-agent-console__logout--drawer">
+        <%- include('components/button', { variant: 'default', type: 'submit', label: 'Sign out', className: 'admin-nav__btn field-agent-console__logout-btn' }) %>
+      </form>
+    </div>
   </aside>
 </div>

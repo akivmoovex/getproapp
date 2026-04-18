@@ -39,6 +39,10 @@ async function recordItem(q, p) {
 }
 
 const DELETE_TABLE_ORDER = [
+  "intake_deal_reviews",
+  "intake_project_assignments",
+  "intake_client_projects",
+  "intake_clients",
   "leads",
   "field_agent_callback_leads",
   "field_agent_provider_submissions",
@@ -52,6 +56,10 @@ const PG_TABLE = {
   field_agents: "public.field_agents",
   field_agent_provider_submissions: "public.field_agent_provider_submissions",
   field_agent_callback_leads: "public.field_agent_callback_leads",
+  intake_clients: "public.intake_clients",
+  intake_client_projects: "public.intake_client_projects",
+  intake_project_assignments: "public.intake_project_assignments",
+  intake_deal_reviews: "public.intake_deal_reviews",
 };
 
 const TABLES_SEED_TOUCHED = [
@@ -63,6 +71,10 @@ const TABLES_SEED_TOUCHED = [
   "field_agents",
   "field_agent_provider_submissions",
   "field_agent_callback_leads",
+  "intake_clients",
+  "intake_client_projects",
+  "intake_project_assignments",
+  "intake_deal_reviews",
 ];
 
 function tenantSlugFromRow(tenant) {
@@ -140,10 +152,169 @@ function buildClearSuccessResponse(tenantId, tenant, batchUuids, deleted, tracke
 }
 
 /**
+ * Optional intake + submission updates so field-agent dashboard metrics (SP/EC/rating/recruitment) are non-zero.
+ * @param {import("pg").PoolClient} client
+ * @param {{ runId: number, tenantId: number, batchShort: string, primaryFieldAgentId: number, companyIds: number[], submissionIds: number[], categoryId: number | null }} ctx
+ */
+async function applyFaDashboardMetricsFixtures(client, ctx) {
+  const { runId, tenantId, batchShort, primaryFieldAgentId, companyIds, submissionIds, categoryId } = ctx;
+  const out = {
+    intake_clients: 0,
+    intake_client_projects: 0,
+    intake_project_assignments: 0,
+    intake_deal_reviews: 0,
+    submission_updates: 0,
+  };
+
+  if (!companyIds.length || !primaryFieldAgentId || !submissionIds.length) return out;
+
+  await client.query(
+    `UPDATE public.companies
+     SET account_manager_field_agent_id = $1
+     WHERE tenant_id = $2 AND id = ANY($3::int[])`,
+    [primaryFieldAgentId, tenantId, companyIds]
+  );
+
+  for (let j = 0; j < submissionIds.length; j += 1) {
+    const sid = submissionIds[j];
+    let status;
+    let commission;
+    let daysAgo;
+    if (j < 8) {
+      status = "approved";
+      commission = 40 + j * 6;
+      daysAgo = 3 + (j % 20);
+    } else if (j < 12) {
+      status = "approved";
+      commission = 75;
+      daysAgo = 42 + (j % 5);
+    } else if (j < 14) {
+      status = "pending";
+      commission = 0;
+      daysAgo = 1;
+    } else if (j < 16) {
+      status = "info_needed";
+      commission = 0;
+      daysAgo = 2;
+    } else if (j < 18) {
+      status = "rejected";
+      commission = 0;
+      daysAgo = 4;
+    } else {
+      status = "appealed";
+      commission = 25;
+      daysAgo = 6 + (j % 8);
+    }
+    await client.query(
+      `UPDATE public.field_agent_provider_submissions
+       SET status = $1::text,
+           commission_amount = $2::numeric,
+           updated_at = NOW() - ($3::int * INTERVAL '1 day')
+       WHERE id = $4 AND tenant_id = $5`,
+      [status, commission, daysAgo, sid, tenantId]
+    );
+    out.submission_updates += 1;
+  }
+
+  const prefix = String(batchShort || "seed")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(0, 10) || "seed";
+
+  for (let i = 0; i < 15; i += 1) {
+    const icode = `${prefix}-ic-${i}`;
+    const icIns = await client.query(
+      `INSERT INTO public.intake_clients (tenant_id, client_code, phone_normalized, full_name)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id`,
+      [tenantId, icode, "", `Seed client ${i}`]
+    );
+    const intakeClientId = Number(icIns.rows[0].id);
+    await recordItem(client, { runId, tableName: "intake_clients", entityId: intakeClientId });
+    out.intake_clients += 1;
+
+    const pcode = `SD-${prefix}-${i}`;
+    const projectDaysAgo = i < 11 ? 5 + (i % 22) : 33 + (i % 8);
+    const dealPrice = 1200 + i * 175;
+    const pr = await client.query(
+      `INSERT INTO public.intake_client_projects (
+        tenant_id, client_id, project_code, client_full_name_snapshot, city, neighborhood, street_name,
+        deal_price, status, created_at, updated_at, intake_category_id
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7,
+        $8, 'new',
+        NOW() - ($9::int * INTERVAL '1 day'),
+        NOW() - ($9::int * INTERVAL '1 day'),
+        $10
+      ) RETURNING id`,
+      [
+        tenantId,
+        intakeClientId,
+        pcode,
+        `Seed Project Contact ${i}`,
+        "Seed City",
+        "",
+        `${10 + i} Test Rd`,
+        dealPrice,
+        projectDaysAgo,
+        categoryId,
+      ]
+    );
+    const projectId = Number(pr.rows[0].id);
+    await recordItem(client, { runId, tableName: "intake_client_projects", entityId: projectId });
+    out.intake_client_projects += 1;
+
+    const companyId = companyIds[i % companyIds.length];
+    const respDaysAgo = i < 12 ? 2 + (i % 18) : 38 + (i % 5);
+    const recordDealFee = i < 13;
+
+    const ar = await client.query(
+      `INSERT INTO public.intake_project_assignments (
+        tenant_id, project_id, company_id, status, deal_fee_recorded,
+        responded_at, updated_at
+      ) VALUES (
+        $1, $2, $3, 'accepted', $4,
+        CASE WHEN $4 THEN NOW() - ($5::int * INTERVAL '1 day') ELSE NULL END,
+        NOW() - ($5::int * INTERVAL '1 day')
+      ) RETURNING id`,
+      [tenantId, projectId, companyId, recordDealFee, respDaysAgo]
+    );
+    const assignmentId = Number(ar.rows[0].id);
+    await recordItem(client, { runId, tableName: "intake_project_assignments", entityId: assignmentId });
+    out.intake_project_assignments += 1;
+
+    if (i < 10) {
+      const rating = 3 + (i % 3) + (i % 2) * 0.5;
+      const dr = await client.query(
+        `INSERT INTO public.intake_deal_reviews (
+          tenant_id, project_id, assignment_id, reviewer_role, rating, body, created_at
+        ) VALUES (
+          $1, $2, $3, 'client', $4, $5,
+          NOW() - ($6::int * INTERVAL '1 day')
+        ) RETURNING id`,
+        [
+          tenantId,
+          projectId,
+          assignmentId,
+          rating,
+          "Seed client review for dashboard testing.",
+          4 + (i % 12),
+        ]
+      );
+      const drid = Number(dr.rows[0].id);
+      await recordItem(client, { runId, tableName: "intake_deal_reviews", entityId: drid });
+      out.intake_deal_reviews += 1;
+    }
+  }
+
+  return out;
+}
+
+/**
  * @param {import("pg").Pool} pool
- * @param {{ tenantId: number, adminUserId: number }} p
+ * @param {{ tenantId: number, adminUserId: number, includeFaDashboardFixtures?: boolean }} p
  */
 async function createTestData(pool, p) {
+  const includeFaDashboardFixtures = !!p.includeFaDashboardFixtures;
   const tenantId = Number(p.tenantId);
   const adminUserId = Number(p.adminUserId);
   if (!Number.isFinite(tenantId) || tenantId < 1) {
@@ -177,6 +348,9 @@ async function createTestData(pool, p) {
     fieldAgentSubmissions: 0,
     fieldAgentCallbackLeads: 0,
   };
+
+  const companyIds = [];
+  const submissionIds = [];
 
   const client = await pool.connect();
   try {
@@ -223,6 +397,7 @@ async function createTestData(pool, p) {
         logoUrl: "",
       });
       const companyId = Number(row.id);
+      companyIds.push(companyId);
       await recordItem(client, { runId, tableName: "companies", entityId: companyId });
       counts.companies += 1;
 
@@ -252,7 +427,7 @@ async function createTestData(pool, p) {
     const passwordHash = await bcrypt.hash("seed1234", 12);
 
     const agentIds = [];
-    for (let i = 0; i < 20; i += 1) {
+    for (let i = 0; i < 30; i += 1) {
       const username = `seed_fa_${batchShort}_${i}`;
       const existing = await fieldAgentsRepo.getByUsernameAndTenant(client, username, tenantId);
       if (existing) {
@@ -312,6 +487,7 @@ async function createTestData(pool, p) {
         photoProfileUrl: "",
         workPhotosJson: "[]",
       });
+      submissionIds.push(sid);
       await recordItem(client, { runId, tableName: "field_agent_provider_submissions", entityId: sid });
       counts.fieldAgentSubmissions += 1;
     }
@@ -337,12 +513,43 @@ async function createTestData(pool, p) {
       counts.fieldAgentCallbackLeads += 1;
     }
 
+    let faFixtureOut = null;
+    if (includeFaDashboardFixtures && companyIds.length > 0 && submissionIds.length > 0 && agentIds.length > 0) {
+      faFixtureOut = await applyFaDashboardMetricsFixtures(client, {
+        runId,
+        tenantId,
+        batchShort,
+        primaryFieldAgentId: agentIds[0],
+        companyIds,
+        submissionIds,
+        categoryId,
+      });
+    }
+
     await client.query("COMMIT");
 
     // eslint-disable-next-line no-console
     console.log(
-      `[getpro] adminTestData: seeded batch ${batchUuid} tenant=${tenantId} admin=${adminUserId} counts=${JSON.stringify(counts)}`
+      `[getpro] adminTestData: seeded batch ${batchUuid} tenant=${tenantId} admin=${adminUserId} counts=${JSON.stringify(
+        counts
+      )} faFixtures=${faFixtureOut ? JSON.stringify(faFixtureOut) : "0"}`
     );
+
+    const createdCounts = {
+      companies: counts.companies,
+      reviews: counts.reviews,
+      leads: counts.leads,
+      field_agents: counts.fieldAgents,
+      field_agent_provider_submissions: counts.fieldAgentSubmissions,
+      field_agent_callback_leads: counts.fieldAgentCallbackLeads,
+    };
+    if (faFixtureOut) {
+      createdCounts.intake_clients = faFixtureOut.intake_clients;
+      createdCounts.intake_client_projects = faFixtureOut.intake_client_projects;
+      createdCounts.intake_project_assignments = faFixtureOut.intake_project_assignments;
+      createdCounts.intake_deal_reviews = faFixtureOut.intake_deal_reviews;
+      createdCounts.field_agent_submission_fixture_updates = faFixtureOut.submission_updates;
+    }
 
     return {
       ok: true,
@@ -351,16 +558,10 @@ async function createTestData(pool, p) {
       batchUuids: [batchUuid],
       batchUuid,
       counts: {
-        created: {
-          companies: counts.companies,
-          reviews: counts.reviews,
-          leads: counts.leads,
-          field_agents: counts.fieldAgents,
-          field_agent_provider_submissions: counts.fieldAgentSubmissions,
-          field_agent_callback_leads: counts.fieldAgentCallbackLeads,
-        },
+        created: createdCounts,
         deleted: {},
       },
+      includeFaDashboardFixtures,
       tablesTouched: TABLES_SEED_TOUCHED,
     };
   } catch (e) {
@@ -423,6 +624,10 @@ async function clearTestData(pool, p) {
     }
 
     const deleted = {
+      intake_deal_reviews: 0,
+      intake_project_assignments: 0,
+      intake_client_projects: 0,
+      intake_clients: 0,
       leads: 0,
       companies: 0,
       field_agents: 0,
@@ -480,7 +685,18 @@ async function clearTestData(pool, p) {
         tenantId,
         tenant,
         allBatchUuids,
-        { leads: 0, companies: 0, field_agents: 0, field_agent_provider_submissions: 0, field_agent_callback_leads: 0, seed_runs: n },
+        {
+          intake_deal_reviews: 0,
+          intake_project_assignments: 0,
+          intake_client_projects: 0,
+          intake_clients: 0,
+          leads: 0,
+          companies: 0,
+          field_agents: 0,
+          field_agent_provider_submissions: 0,
+          field_agent_callback_leads: 0,
+          seed_runs: n,
+        },
         0,
         userMessage
       );
@@ -506,6 +722,10 @@ async function clearTestData(pool, p) {
 
   const client = await pool.connect();
   const deleted = {
+    intake_deal_reviews: 0,
+    intake_project_assignments: 0,
+    intake_client_projects: 0,
+    intake_clients: 0,
     leads: 0,
     companies: 0,
     field_agents: 0,

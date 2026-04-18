@@ -3,6 +3,7 @@
   var feedback = document.getElementById("db_tools_feedback");
   var summary = document.getElementById("db_tools_summary");
   var btnSeed = document.getElementById("db_tools_btn_seed");
+  var chkFaDashboard = document.getElementById("db_tools_fa_dashboard_fixtures");
   var btnClearOpen = document.getElementById("db_tools_btn_clear_open");
   var btnClearConfirm = document.getElementById("db_tools_btn_clear_confirm");
   var slugInput = document.getElementById("db_tools_clear_slug");
@@ -31,6 +32,7 @@
       btnSeed.disabled = busy || cfg.disabled;
       btnSeed.setAttribute("aria-busy", busy ? "true" : "false");
     }
+    if (chkFaDashboard) chkFaDashboard.disabled = busy || cfg.disabled;
     if (btnClearOpen) btnClearOpen.disabled = busy || cfg.disabled;
     if (btnClearConfirm)
       btnClearConfirm.disabled = busy || cfg.disabled || !slugInput || String(slugInput.value || "").trim() !== expectedSlug;
@@ -73,6 +75,13 @@
         parts.push(cr.field_agent_provider_submissions + " provider submission(s)");
       }
       if (cr.field_agent_callback_leads) parts.push(cr.field_agent_callback_leads + " callback lead(s)");
+      if (cr.intake_clients) parts.push(cr.intake_clients + " intake client(s)");
+      if (cr.intake_client_projects) parts.push(cr.intake_client_projects + " intake project(s)");
+      if (cr.intake_project_assignments) parts.push(cr.intake_project_assignments + " intake assignment(s)");
+      if (cr.intake_deal_reviews) parts.push(cr.intake_deal_reviews + " intake deal review(s)");
+      if (cr.field_agent_submission_fixture_updates) {
+        parts.push(cr.field_agent_submission_fixture_updates + " submission status/commission tweak(s)");
+      }
       if (parts.length) return "Summary: Created " + parts.join(", ") + ".";
     }
     if (c.deleted && typeof c.deleted === "object") {
@@ -108,6 +117,10 @@
         );
       }
       var parts2 = [];
+      if (d.intake_deal_reviews) parts2.push(d.intake_deal_reviews + " intake deal review(s)");
+      if (d.intake_project_assignments) parts2.push(d.intake_project_assignments + " intake assignment(s)");
+      if (d.intake_client_projects) parts2.push(d.intake_client_projects + " intake project(s)");
+      if (d.intake_clients) parts2.push(d.intake_clients + " intake client(s)");
       if (d.leads) parts2.push(d.leads + " lead(s)");
       if (d.field_agent_callback_leads) parts2.push(d.field_agent_callback_leads + " callback lead(s)");
       if (d.field_agent_provider_submissions) parts2.push(d.field_agent_provider_submissions + " submission(s)");
@@ -202,7 +215,9 @@
       showFeedback("loading", "Working…");
       var data;
       try {
-        data = await postJson("/admin/db/seed", {});
+        data = await postJson("/admin/db/seed", {
+          includeFaDashboardFixtures: !!(chkFaDashboard && chkFaDashboard.checked),
+        });
       } catch (e) {
         data = { ok: false, message: e && e.message ? String(e.message) : "Network error." };
       }

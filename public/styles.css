@@ -2578,18 +2578,6 @@ a:hover {
   margin: 0 0 var(--space-2-25);
 }
 
-.field-agent-console__check {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 .field-agent-console__bar {
   display: flex;
   flex-wrap: nowrap;
@@ -2613,111 +2601,9 @@ a:hover {
   flex-shrink: 0;
 }
 
-.field-agent-console__burger {
-  display: none;
-  align-items: center;
-  gap: var(--space-1);
-  cursor: pointer;
-  font-weight: 800;
-  font-size: var(--space-1-875);
-  color: var(--text);
-  user-select: none;
-  padding: var(--space-1-25) var(--space-1-5);
-  margin: calc(var(--space-1-25) * -1) calc(var(--space-1-5) * -1);
-  border-radius: var(--radius-pill);
-  border: var(--border-width-hairline) solid transparent;
-  background: transparent;
-}
-
-.field-agent-console__burger:hover {
-  background: var(--primary-softer-bg);
-  color: var(--wf-primary-dark);
-}
-
-.field-agent-console__burger--app-bar {
-  display: none;
-}
-
-.field-agent-console__burger-icon {
-  display: block;
-  width: 1.125rem;
-  height: 0.125rem;
-  border-radius: var(--border-radius-full);
-  background: currentColor;
-  box-shadow:
-    0 0.3125rem 0 currentColor,
-    0 0.625rem 0 currentColor;
-}
-
-.field-agent-console__burger-label {
-  line-height: 1;
-}
-
-.field-agent-console__scrim {
-  display: none;
-}
-
-.field-agent-console__drawer {
-  display: none;
-}
-
-.field-agent-console__drawer-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-1-5);
-  margin-bottom: var(--space-1-5);
-  padding-bottom: var(--space-1-25);
-  border-bottom: var(--border-width-hairline) solid var(--border);
-}
-
-.field-agent-console__drawer-title {
-  font-weight: 800;
-  font-size: var(--space-1-875);
-  letter-spacing: -0.02em;
-}
-
-.field-agent-console__drawer-close {
-  cursor: pointer;
-  font-size: 1.5rem;
-  line-height: 1;
-  padding: var(--space-half) var(--space-1);
-  margin: calc(var(--space-half) * -1) calc(var(--space-1) * -1);
-  border-radius: var(--radius);
-  color: var(--muted);
-}
-
-.field-agent-console__drawer-close:hover {
-  color: var(--text);
-  background: var(--primary-softer-bg);
-}
-
-.field-agent-console__drawer-nav {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-half);
-}
-
-.field-agent-console__drawer-link {
-  display: block;
-  padding: var(--space-1-25) var(--space-1-5);
-  border-radius: var(--radius);
-  font-weight: 700;
-  font-size: var(--space-1-875);
-  color: var(--text);
-  text-decoration: none;
-  border: var(--border-width-hairline) solid transparent;
-}
-
-.field-agent-console__drawer-link:hover {
-  background: var(--primary-softer-bg);
-  color: var(--wf-primary-dark);
-  text-decoration: none;
-}
-
-.field-agent-console__drawer-link.is-active {
-  background: var(--btn-primary-bg);
-  color: var(--color-on-primary) !important;
+/* Mobile only: same `#wf-app-nav-toggle` control as public app bar; hidden on desktop where tabs show */
+.field-agent-console__app-menu-toggle {
+  display: none !important;
 }
 
 .field-agent-console__logout--drawer {
@@ -2744,8 +2630,8 @@ a:hover {
     padding-bottom: 0;
   }
 
-  .field-agent-console__burger--app-bar {
-    display: inline-flex;
+  .field-agent-console__app-menu-toggle {
+    display: inline-flex !important;
   }
 
   .field-agent-console__tabs {
@@ -2756,60 +2642,23 @@ a:hover {
     display: none;
   }
 
-  .field-agent-console__scrim {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 10041;
-    background: var(--color-scrim-medium);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition:
-      opacity var(--transition-fast) var(--ease-standard),
-      visibility var(--transition-fast) var(--ease-standard);
-  }
-
-  .field-agent-console__drawer {
+  /* Keep Sign out pinned to drawer bottom (shared `.app-nav-drawer` is not a column by default). */
+  .field-agent-console .app-nav-drawer {
     display: flex;
     flex-direction: column;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: min(20rem, 86vw);
-    z-index: 10042;
-    padding: var(--space-2) var(--space-2-25);
-    background: var(--color-surface);
-    border-right: var(--border-width-hairline) solid var(--border-strong);
-    box-shadow: var(--elevation-2);
-    transform: translateX(-100%);
-    transition: transform var(--transition-medium) var(--ease-standard);
-    overflow-y: auto;
   }
 
-  .field-agent-console__check:checked ~ .field-agent-console__scrim {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-  }
-
-  .field-agent-console__check:checked ~ .field-agent-console__drawer {
-    transform: translateX(0);
+  .field-agent-console .app-nav-drawer-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 }
 
 @media (min-width: 721px) {
-  .field-agent-console__burger {
-    display: none !important;
-  }
-
-  .field-agent-console__burger--app-bar {
-    display: none !important;
-  }
-
-  .field-agent-console__scrim,
-  .field-agent-console__drawer {
+  .field-agent-console .app-nav-backdrop,
+  .field-agent-console .app-nav-drawer {
     display: none !important;
   }
 }

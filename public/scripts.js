@@ -405,6 +405,17 @@ function initAppNavDrawer() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && layout.classList.contains("app-nav-drawer-open")) close();
   });
+
+  /* If the viewport crosses desktop width while the drawer is open, close it so body scroll and aria state cannot stick (field-agent hides the menu control on desktop). */
+  window.addEventListener("resize", () => {
+    try {
+      if (!window.matchMedia || !window.matchMedia("(min-width: 721px)").matches) return;
+      if (!layout.classList.contains("app-nav-drawer-open")) return;
+      close();
+    } catch (_) {
+      /* ignore */
+    }
+  });
 }
 
 function isMobileLikeViewport() {

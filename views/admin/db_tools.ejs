@@ -56,6 +56,12 @@
                 Create test data
               </button>
             </div>
+            <div class="db-tools-actions__row" style="margin-top: 0.75rem">
+              <label class="muted" style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none">
+                <input type="checkbox" id="db_tools_fa_dashboard_fixtures" <%= dbToolsDisabled ? 'disabled' : '' %> />
+                <span>Also add intake + submission tweaks for field-agent dashboard metrics (SP / recruitment / EC / SP rating, 30d windows)</span>
+              </label>
+            </div>
             <p class="muted" style="margin-top: 1.25rem">Remove seeded test data for this tenant only (requires typing the region slug). Blocked when fixture tools are disabled for this host (e.g. real production without the two-flag demo override).</p>
             <div class="db-tools-actions__row">
               <button type="button" class="c-button btn btn--danger-outline" id="db_tools_btn_clear_open" <%= dbToolsDisabled ? 'disabled' : '' %>>

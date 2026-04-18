@@ -11,6 +11,10 @@ const ALLOWED_TABLES = new Set([
   "field_agents",
   "field_agent_provider_submissions",
   "field_agent_callback_leads",
+  "intake_clients",
+  "intake_client_projects",
+  "intake_project_assignments",
+  "intake_deal_reviews",
 ]);
 
 /**

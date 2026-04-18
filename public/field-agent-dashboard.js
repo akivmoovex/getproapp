@@ -940,11 +940,12 @@
     }
   });
 
-  var drawerCheck = document.getElementById("field-agent-console-nav");
-  if (drawerCheck) {
-    drawerCheck.addEventListener("change", function () {
-      if (drawerCheck.checked) closeAll();
+  var layout = document.querySelector(".app-layout");
+  if (layout) {
+    var obs = new MutationObserver(function () {
+      if (layout.classList.contains("app-nav-drawer-open")) closeAll();
     });
+    obs.observe(layout, { attributes: true, attributeFilter: ["class"] });
   }
 })();
 
