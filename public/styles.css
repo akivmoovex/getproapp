@@ -12691,3 +12691,66 @@ body[class*="tenant-"] {
   font-variant-numeric: tabular-nums;
 }
 
+/* --- Global same-origin page navigation loading (partials/page_nav_loading.ejs + page-nav-loading.js) --- */
+.getpro-page-nav-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 10044; /* below wf-join-us modal scrim (10045) so open dialogs stay above */
+}
+
+.getpro-page-nav-loading:not([hidden]) {
+  pointer-events: auto;
+}
+
+.getpro-page-nav-loading[hidden] {
+  display: none !important;
+}
+
+.getpro-page-nav-loading__backdrop {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-text-primary) 55%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.getpro-page-nav-loading__bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+.getpro-page-nav-loading__bar::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: 42%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-primary) 88%, white),
+    transparent
+  );
+  animation: getpro-page-nav-loading-slide 1.05s ease-in-out infinite;
+}
+
+@keyframes getpro-page-nav-loading-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .getpro-page-nav-loading__bar::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.85;
+  }
+}
+

@@ -1,0 +1,6 @@
+<%# Full-page overlay for same-origin navigations (see page-nav-loading.js). Markup is hidden until JS runs. %>
+<div id="getpro-page-nav-loading" class="getpro-page-nav-loading" hidden aria-hidden="true">
+  <div class="getpro-page-nav-loading__backdrop" aria-hidden="true"></div>
+  <div class="getpro-page-nav-loading__bar" role="progressbar" aria-hidden="true"></div>
+</div>
+<script src="<%= asset('page-nav-loading') %>" defer></script>

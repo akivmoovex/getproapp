@@ -40,5 +40,6 @@
         <%- include('partials/components/button', { variant: 'primary', href: typeof apexUrl !== 'undefined' ? apexUrl : tenantHomeHref, label: typeof apexHostLabel !== 'undefined' ? apexHostLabel : 'getproapp.org', extraAttrs: 'dir="ltr"' }) %>
       </p>
     </main>
+    <%- include('partials/page_nav_loading') %>
   </body>
 </html>

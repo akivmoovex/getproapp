@@ -29,6 +29,7 @@ const entryInputs = {
   "field-agent-modal": path.join(frontendRoot, "entries", "field-agent-modal.js"),
   "field-agent-contact": path.join(frontendRoot, "entries", "field-agent-contact.js"),
   "field-agent-dashboard": path.join(frontendRoot, "entries", "field-agent-dashboard.js"),
+  "page-nav-loading": path.join(frontendRoot, "entries", "page-nav-loading.js"),
 };
 
 function relToFrontend(abs) {
