@@ -239,6 +239,8 @@ Metrics include submission counts by status, commission sum/average on **approve
 
 ## Related documentation
 
+- `docs/FIELD_AGENT_STABILIZATION_RELEASE_NOTES.md` — **internal** stabilization summary (auth, callback, limits, CRM logs, duplicate status, remaining risks) with links to smoke + config + triage.
+- `docs/FIELD_AGENT_POST_FIX_SMOKE.md` — concise **manual smoke matrix** for field-agent console (login, dashboard, add-contact, callback, limiter, wording, CRM logs).
 - `README.md` — deploy, tenants, env.
 - `docs/CONFIG_AND_DEPLOYMENT.md` — env and production policy.
 - `docs/DATA_MODEL.md` — multi-tenant tables (cross-link to this doc for field agent moderation).

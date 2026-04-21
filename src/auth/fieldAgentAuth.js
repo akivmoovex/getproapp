@@ -1,6 +1,7 @@
 "use strict";
 
 const bcrypt = require("bcryptjs");
+const { getPgPool } = require("../db/pg");
 const fieldAgentsRepo = require("../db/pg/fieldAgentsRepo");
 
 const SESSION_KEY = "fieldAgent";
@@ -50,7 +51,7 @@ async function authenticateFieldAgent(pool, username, password, tenantId) {
   return u;
 }
 
-function requireFieldAgent(req, res, next) {
+async function requireFieldAgent(req, res, next) {
   const s = getFieldAgentSession(req);
   if (!s) {
     const prefix = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
@@ -60,6 +61,17 @@ function requireFieldAgent(req, res, next) {
     clearFieldAgentSession(req);
     const prefix = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
     return res.redirect(302, `${prefix}/field-agent/login`);
+  }
+  try {
+    const pool = getPgPool();
+    const row = await fieldAgentsRepo.getByIdAndTenant(pool, s.id, req.tenant.id);
+    if (!row || row.enabled === false || Number(row.enabled) === 0) {
+      clearFieldAgentSession(req);
+      const prefix = req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
+      return res.redirect(302, `${prefix}/field-agent/login`);
+    }
+  } catch (e) {
+    return next(e);
   }
   return next();
 }

@@ -65,20 +65,28 @@
             <input id="fa-edit-prof" name="profession" class="input-field__control" type="text" required value="<%= _sub.profession || '' %>" />
           </div>
           <div class="input-field">
-            <label class="input-field__label" for="fa-edit-pacra">PACRA</label>
-            <input id="fa-edit-pacra" name="pacra" class="input-field__control" type="text" value="<%= _sub.pacra || '' %>" />
+            <label class="input-field__label" for="fa-edit-pacra"
+              >PACRA / business ID <span class="fa-req-asterisk" aria-hidden="true">*</span></label
+            >
+            <input id="fa-edit-pacra" name="pacra" class="input-field__control" type="text" required value="<%= _sub.pacra || '' %>" />
           </div>
           <div class="input-field">
-            <label class="input-field__label" for="fa-edit-street">Street address</label>
-            <input id="fa-edit-street" name="address_street" class="input-field__control" type="text" value="<%= _sub.address_street || '' %>" />
+            <label class="input-field__label" for="fa-edit-street"
+              >Street address <span class="fa-req-asterisk" aria-hidden="true">*</span></label
+            >
+            <input id="fa-edit-street" name="address_street" class="input-field__control" type="text" required value="<%= _sub.address_street || '' %>" />
           </div>
           <div class="input-field">
-            <label class="input-field__label" for="fa-edit-land">Landmarks</label>
-            <input id="fa-edit-land" name="address_landmarks" class="input-field__control" type="text" value="<%= _sub.address_landmarks || '' %>" />
+            <label class="input-field__label" for="fa-edit-land"
+              >Landmarks <span class="fa-req-asterisk" aria-hidden="true">*</span></label
+            >
+            <input id="fa-edit-land" name="address_landmarks" class="input-field__control" type="text" required value="<%= _sub.address_landmarks || '' %>" />
           </div>
           <div class="input-field">
-            <label class="input-field__label" for="fa-edit-neigh">Neighbourhood</label>
-            <input id="fa-edit-neigh" name="address_neighbourhood" class="input-field__control" type="text" value="<%= _sub.address_neighbourhood || '' %>" />
+            <label class="input-field__label" for="fa-edit-neigh"
+              >Neighbourhood <span class="fa-req-asterisk" aria-hidden="true">*</span></label
+            >
+            <input id="fa-edit-neigh" name="address_neighbourhood" class="input-field__control" type="text" required value="<%= _sub.address_neighbourhood || '' %>" />
           </div>
           <div class="input-field">
             <label class="input-field__label" for="fa-edit-city">City <span class="fa-req-asterisk" aria-hidden="true">*</span></label>

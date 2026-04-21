@@ -289,7 +289,7 @@
   }
 
   function openListSpCommissionCharges() {
-    if (listTitle) listTitle.textContent = "SP_Commission (30d) — charges";
+    if (listTitle) listTitle.textContent = "Lead-fee SP commission (30d) — charges";
     listBody.innerHTML = '<p class="muted field-agent-dash-modal__loading">Loading…</p>';
 
     setOpen(detailRoot, false);

@@ -27,6 +27,8 @@
     "sync-inlined-theme": "node scripts/sync-inlined-theme.js",
     "test:pg": "node scripts/test-pg-connection.js",
     "test:pg:repos": "node scripts/test-pg-repos.js",
+    "test:db:schema": "node scripts/apply-test-db-schema.js",
+    "test:pg:isolated": "node scripts/run-node-tests-with-test-db.js",
     "check:pg": "node scripts/check-pg-readiness.js",
     "check:ejs-partials": "node scripts/check-ejs-partials.js",
     "test": "node --test tests",

@@ -197,8 +197,64 @@
       }
       return;
     }
-    if (err2) err2.hidden = true;
-    showStep(3);
+    var phone = phoneEl && phoneEl.value ? phoneEl.value.trim() : "";
+    if (!isValidPhoneForTenant(phone)) {
+      if (err2) {
+        err2.textContent = phoneErrHint();
+        err2.hidden = false;
+      }
+      return;
+    }
+    var wa = waEl && waEl.value ? waEl.value.trim() : "";
+    if (wa && !isValidPhoneForTenant(wa)) {
+      if (err2) {
+        err2.textContent = "Enter a valid WhatsApp number.";
+        err2.hidden = false;
+      }
+      return;
+    }
+    fetch(checkUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ phone: phone, whatsapp: wa }),
+    })
+      .then(function (r) {
+        return r.json().then(function (j) {
+          return { status: r.status, json: j };
+        });
+      })
+      .then(function (x) {
+        if (x.status === 400 && x.json && x.json.error) {
+          if (err2) {
+            err2.textContent = x.json.error;
+            err2.hidden = false;
+          }
+          return;
+        }
+        if (x.status !== 200 || !x.json || !x.json.ok) {
+          if (err2) {
+            err2.textContent = "Could not verify phone. Try again.";
+            err2.hidden = false;
+          }
+          return;
+        }
+        if (x.json.duplicate) {
+          if (err2) {
+            err2.textContent = x.json.message || "Service provider exists in system.";
+            err2.hidden = false;
+          }
+          return;
+        }
+        if (err2) err2.hidden = true;
+        showStep(3);
+      })
+      .catch(function () {
+        if (err2) {
+          err2.textContent = "Network error. Try again.";
+          err2.hidden = false;
+        }
+      });
   });
 
   document.getElementById("fa-back-3").addEventListener("click", function () {
@@ -209,14 +265,28 @@
       document.getElementById("fa-profession") &&
       document.getElementById("fa-profession").value &&
       document.getElementById("fa-profession").value.trim();
+    var pacra =
+      document.getElementById("fa-pacra") && document.getElementById("fa-pacra").value && document.getElementById("fa-pacra").value.trim();
+    var st =
+      document.getElementById("fa-address-street") &&
+      document.getElementById("fa-address-street").value &&
+      document.getElementById("fa-address-street").value.trim();
+    var lm =
+      document.getElementById("fa-address-landmarks") &&
+      document.getElementById("fa-address-landmarks").value &&
+      document.getElementById("fa-address-landmarks").value.trim();
+    var nh =
+      document.getElementById("fa-address-neighbourhood") &&
+      document.getElementById("fa-address-neighbourhood").value &&
+      document.getElementById("fa-address-neighbourhood").value.trim();
     var acity =
       document.getElementById("fa-address-city") &&
       document.getElementById("fa-address-city").value &&
       document.getElementById("fa-address-city").value.trim();
     var err3 = document.getElementById("fa-error-3");
-    if (!prof || !acity) {
+    if (!prof || !pacra || !st || !lm || !nh || !acity) {
       if (err3) {
-        err3.textContent = "Please complete profession and address city.";
+        err3.textContent = "Please complete profession, PACRA, and full address.";
         err3.hidden = false;
       }
       return;
@@ -231,7 +301,18 @@
   document.getElementById("fa-next-4").addEventListener("click", function () {
     var nrc = document.getElementById("fa-nrc");
     var nrcv = nrc && nrc.value ? nrc.value.trim() : "";
+    var err4 = document.getElementById("fa-error-4");
+    var profIn = document.getElementById("fa-profile");
+    var pfiles = profIn && profIn.files ? profIn.files.length : 0;
     if (!nrcv) return;
+    if (pfiles !== 1) {
+      if (err4) {
+        err4.textContent = "Please choose exactly one profile photo.";
+        err4.hidden = false;
+      }
+      return;
+    }
+    if (err4) err4.hidden = true;
     showStep(5);
   });
 
@@ -242,16 +323,22 @@
   document.getElementById("fa-next-5").addEventListener("click", function () {
     var works = document.getElementById("fa-works");
     var nfiles = works && works.files ? works.files.length : 0;
+    var err5 = document.getElementById("fa-error-5");
+    if (nfiles < 2) {
+      if (err5) {
+        err5.textContent = "Please upload at least 2 work photos.";
+        err5.hidden = false;
+      }
+      return;
+    }
     if (nfiles > 10) {
-      var err5 = document.getElementById("fa-error-5");
       if (err5) {
         err5.textContent = "Please upload at most 10 work photos.";
         err5.hidden = false;
       }
       return;
     }
-    var err5b = document.getElementById("fa-error-5");
-    if (err5b) err5b.hidden = true;
+    if (err5) err5.hidden = true;
     showStep(6);
   });
 

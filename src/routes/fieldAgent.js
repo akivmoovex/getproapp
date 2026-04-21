@@ -16,12 +16,8 @@ const {
 } = require("../auth/fieldAgentAuth");
 const phoneRulesService = require("../phone/phoneRulesService");
 const { saveJpegImages, MAX_IMAGE_BYTES } = require("../fieldAgent/fieldAgentUploads");
-const {
-  notifyProviderSubmissionToCrm,
-  notifyWebsiteListingReviewToCrm,
-  notifyCallbackLeadToCrm,
-} = require("../fieldAgent/fieldAgentCrm");
-const { fieldAgentLoginLimiter } = require("../middleware/authRateLimit");
+const fieldAgentCrm = require("../fieldAgent/fieldAgentCrm");
+const { fieldAgentLoginLimiter, fieldAgentAuthedPostLimiter } = require("../middleware/authRateLimit");
 const { getTenantCitiesForClientAsync, getJoinCityWatermarkRotateAsync } = require("../tenants/tenantCities");
 const categoriesRepo = require("../db/pg/categoriesRepo");
 const companiesRepo = require("../db/pg/companiesRepo");
@@ -96,6 +92,39 @@ function renderLocals(req, res, extra) {
   };
 }
 
+/**
+ * Add-contact + resubmit: required identity/address fields (trimmed strings; empty fails).
+ * Mirrors product rules: PACRA plus full street-level address lines and city, with NRC and profession.
+ */
+function fieldAgentProviderCoreFieldsMissing(p) {
+  return (
+    !p.firstName ||
+    !p.lastName ||
+    !p.profession ||
+    !p.pacra ||
+    !p.addressStreet ||
+    !p.addressLandmarks ||
+    !p.addressNeighbourhood ||
+    !p.addressCity ||
+    !p.nrcNumber
+  );
+}
+
+/** Server-side email check for callback form (no new deps): local@host.tld, no spaces. */
+function isPlausibleEmailForCallback(raw) {
+  const s = String(raw || "").trim();
+  if (!s || s.length > 200) return false;
+  if (/\s|["<>]/.test(s)) return false;
+  const at = s.indexOf("@");
+  if (at < 1 || at !== s.lastIndexOf("@")) return false;
+  const local = s.slice(0, at);
+  const host = s.slice(at + 1);
+  if (!local || !host || !host.includes(".")) return false;
+  const tld = host.slice(host.lastIndexOf(".") + 1);
+  if (tld.length < 2) return false;
+  return true;
+}
+
 module.exports = function fieldAgentRoutes() {
   const router = express.Router();
 
@@ -108,7 +137,7 @@ module.exports = function fieldAgentRoutes() {
 
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: MAX_IMAGE_BYTES, files: 12 },
+    limits: { fileSize: MAX_IMAGE_BYTES, files: 20 },
   });
 
   router.get("/field-agent/signup", (req, res) => {
@@ -892,14 +921,41 @@ module.exports = function fieldAgentRoutes() {
         .filter((x) => x !== "")
         .join("\n")
         .slice(0, 8000);
-      await notifyWebsiteListingReviewToCrm({
+      const crmTaskId = await fieldAgentCrm.notifyWebsiteListingReviewToCrm({
         tenantId: tid,
         submissionId: id,
         title: `Website listing review — submission #${id}`,
         description: desc,
       });
-    } catch {
-      /* CRM task is best-effort; submission timestamp already saved */
+      if (crmTaskId == null) {
+        // eslint-disable-next-line no-console
+        console.error(
+          "[getpro] field-agent CRM inbound task not created",
+          JSON.stringify({
+            op: "field_agent_website_listing_review",
+            severity: "warning",
+            tenantId: tid,
+            submissionId: id,
+            sourceType: fieldAgentCrm.WEBSITE_LISTING_CRM_SOURCE,
+            reason: "null_task_id",
+          })
+        );
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(
+        "[getpro] field-agent CRM inbound task failed",
+        JSON.stringify({
+          op: "field_agent_website_listing_review",
+          severity: "error",
+          tenantId: tid,
+          submissionId: id,
+          sourceType: fieldAgentCrm.WEBSITE_LISTING_CRM_SOURCE,
+          error: e && e.message ? String(e.message) : String(e),
+        })
+      );
+      // eslint-disable-next-line no-console
+      if (e && e.stack) console.error(e.stack);
     }
     return res.json({ ok: true, submission: next });
   });
@@ -982,7 +1038,20 @@ module.exports = function fieldAgentRoutes() {
     }
     const pNorm = await phoneRulesService.normalizePhoneForTenant(pool, tid, phoneRaw);
     const wNorm = whatsappRaw ? await phoneRulesService.normalizePhoneForTenant(pool, tid, whatsappRaw) : "";
-    if (!pNorm || !firstName || !lastName || !profession || !addressCity || !nrcNumber) {
+    if (
+      !pNorm ||
+      fieldAgentProviderCoreFieldsMissing({
+        firstName,
+        lastName,
+        profession,
+        pacra,
+        addressStreet,
+        addressLandmarks,
+        addressNeighbourhood,
+        addressCity,
+        nrcNumber,
+      })
+    ) {
       return res.status(400).json({ ok: false, error: "Missing required fields." });
     }
 
@@ -1094,22 +1163,32 @@ module.exports = function fieldAgentRoutes() {
   router.post(
     "/field-agent/api/check-phone",
     requireFieldAgent,
+    fieldAgentAuthedPostLimiter,
     async (req, res) => {
       const pool = getPgPool();
       const tid = req.tenant.id;
-      const phone = String((req.body && req.body.phone) || "").trim();
-      const v = await phoneRulesService.validatePhoneForTenant(pool, tid, phone, "phone");
-      if (!v.ok) {
-        return res.status(400).json({ ok: false, error: v.error || "Invalid phone." });
+      const b = req.body || {};
+      const phone = String(b.phone || "").trim();
+      const whatsappRaw = String(b.whatsapp || "").trim();
+      const vPhone = await phoneRulesService.validatePhoneForTenant(pool, tid, phone, "phone");
+      if (!vPhone.ok) {
+        return res.status(400).json({ ok: false, error: vPhone.error || "Invalid phone." });
+      }
+      if (whatsappRaw) {
+        const vWa = await phoneRulesService.validatePhoneForTenant(pool, tid, whatsappRaw, "whatsapp");
+        if (!vWa.ok) {
+          return res.status(400).json({ ok: false, error: vWa.error || "Invalid WhatsApp number." });
+        }
       }
       const pNorm = await phoneRulesService.normalizePhoneForTenant(pool, tid, phone);
-      const dupNorms = await phoneRulesService.expandDuplicateNormsForTenant(pool, tid, pNorm, "");
-      const d1 = await fieldAgentSubmissionsRepo.duplicateExistsAgainstSubmissions(pool, tid, pNorm, "");
-      if (d1.duplicate) {
+      const wNorm = whatsappRaw ? await phoneRulesService.normalizePhoneForTenant(pool, tid, whatsappRaw) : "";
+      const dupS = await fieldAgentSubmissionsRepo.duplicateExistsAgainstSubmissions(pool, tid, pNorm, wNorm, null);
+      if (dupS.duplicate) {
         return res.json({ ok: true, duplicate: true, message: "Service provider exists in system." });
       }
-      const d2 = await fieldAgentSubmissionsRepo.duplicateExistsCompaniesOrSignups(pool, tid, dupNorms);
-      if (d2.duplicate) {
+      const dupCandidates = await phoneRulesService.expandDuplicateNormsForTenant(pool, tid, pNorm, wNorm);
+      const dupC = await fieldAgentSubmissionsRepo.duplicateExistsCompaniesOrSignups(pool, tid, dupCandidates);
+      if (dupC.duplicate) {
         return res.json({ ok: true, duplicate: true, message: "Service provider exists in system." });
       }
       return res.json({ ok: true, duplicate: false });
@@ -1119,9 +1198,10 @@ module.exports = function fieldAgentRoutes() {
   router.post(
     "/field-agent/add-contact/submit",
     requireFieldAgent,
+    fieldAgentAuthedPostLimiter,
     upload.fields([
       { name: "profile", maxCount: 1 },
-      { name: "works", maxCount: 10 },
+      { name: "works", maxCount: 15 },
     ]),
     async (req, res) => {
       const accept = String(req.get("Accept") || "");
@@ -1174,11 +1254,30 @@ module.exports = function fieldAgentRoutes() {
       const pNorm = await phoneRulesService.normalizePhoneForTenant(pool, tid, phoneRaw);
       const wNorm = whatsappRaw ? await phoneRulesService.normalizePhoneForTenant(pool, tid, whatsappRaw) : "";
 
-      if (!pNorm || !firstName || !lastName || !profession || !addressCity || !nrcNumber) {
+      if (
+        !pNorm ||
+        fieldAgentProviderCoreFieldsMissing({
+          firstName,
+          lastName,
+          profession,
+          pacra,
+          addressStreet,
+          addressLandmarks,
+          addressNeighbourhood,
+          addressCity,
+          nrcNumber,
+        })
+      ) {
         return sendSubmitErr(400, "Missing required fields.");
       }
       const profileFiles = (req.files && req.files.profile) || [];
       const workFiles = (req.files && req.files.works) || [];
+      if (profileFiles.length !== 1) {
+        return sendSubmitErr(400, "Please upload exactly one profile photo.");
+      }
+      if (workFiles.length < 2) {
+        return sendSubmitErr(400, "Please upload at least 2 work photos.");
+      }
       if (workFiles.length > 10) {
         return sendSubmitErr(400, "Please upload at most 10 work photos.");
       }
@@ -1218,10 +1317,15 @@ module.exports = function fieldAgentRoutes() {
           workPhotosJson: "[]",
         });
 
-        const profileUrls =
-          profileFiles.length > 0 ? await saveJpegImages(tid, submissionId, profileFiles, { maxFiles: 1 }) : [];
-        const workUrls =
-          workFiles.length > 0 ? await saveJpegImages(tid, submissionId, workFiles, { maxFiles: 10 }) : [];
+        const profileUrls = await saveJpegImages(tid, submissionId, profileFiles, { maxFiles: 1 });
+        const workUrls = await saveJpegImages(tid, submissionId, workFiles, { maxFiles: 10 });
+        if (profileUrls.length !== 1 || workUrls.length < 2) {
+          await client.query("ROLLBACK");
+          return sendSubmitErr(
+            400,
+            "One or more images could not be processed. Use JPEG, PNG, WebP, or GIF under 5 MB per file."
+          );
+        }
         const profileUrl = profileUrls[0] || "";
         await fieldAgentSubmissionsRepo.updatePhotosAfterUpload(pool, client, {
           submissionId,
@@ -1253,15 +1357,41 @@ module.exports = function fieldAgentRoutes() {
       ].join("\n");
 
       try {
-        await notifyProviderSubmissionToCrm({
+        const crmTaskId = await fieldAgentCrm.notifyProviderSubmissionToCrm({
           tenantId: tid,
           submissionId,
           title,
           description,
         });
+        if (crmTaskId == null) {
+          // eslint-disable-next-line no-console
+          console.error(
+            "[getpro] field-agent CRM inbound task not created",
+            JSON.stringify({
+              op: "field_agent_provider_submission",
+              severity: "warning",
+              tenantId: tid,
+              submissionId,
+              sourceType: "field_agent_provider",
+              reason: "null_task_id",
+            })
+          );
+        }
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.error("[getpro] field-agent CRM notify:", e.message);
+        console.error(
+          "[getpro] field-agent CRM inbound task failed",
+          JSON.stringify({
+            op: "field_agent_provider_submission",
+            severity: "error",
+            tenantId: tid,
+            submissionId,
+            sourceType: "field_agent_provider",
+            error: e && e.message ? String(e.message) : String(e),
+          })
+        );
+        // eslint-disable-next-line no-console
+        if (e && e.stack) console.error(e.stack);
       }
 
       return sendSubmitSuccess();
@@ -1272,7 +1402,7 @@ module.exports = function fieldAgentRoutes() {
     return res.render("field_agent/callback", renderLocals(req, res, { error: null }));
   });
 
-  router.post("/field-agent/call-me-back", requireFieldAgent, async (req, res) => {
+  router.post("/field-agent/call-me-back", requireFieldAgent, fieldAgentAuthedPostLimiter, async (req, res) => {
     const pool = getPgPool();
     const s = getFieldAgentSession(req);
     const tid = req.tenant.id;
@@ -1291,6 +1421,9 @@ module.exports = function fieldAgentRoutes() {
     if (!firstName || !lastName || !phone || !email || !locationCity) {
       return res.status(400).render("field_agent/callback", renderLocals(req, res, { error: "All fields are required." }));
     }
+    if (!isPlausibleEmailForCallback(email)) {
+      return res.status(400).render("field_agent/callback", renderLocals(req, res, { error: "Enter a valid email address." }));
+    }
     const vPh = await phoneRulesService.validatePhoneForTenant(pool, tid, phone, "phone");
     if (!vPh.ok) {
       return res.status(400).render("field_agent/callback", renderLocals(req, res, { error: vPh.error || "Invalid phone." }));
@@ -1305,15 +1438,41 @@ module.exports = function fieldAgentRoutes() {
       locationCity,
     });
     try {
-      await notifyCallbackLeadToCrm({
+      const crmTaskId = await fieldAgentCrm.notifyCallbackLeadToCrm({
         tenantId: tid,
         leadId,
         title: `Field agent callback · ${firstName} ${lastName}`,
         description: `Phone: ${phone}\nEmail: ${email}\nLocation: ${locationCity}\nLead #${leadId}`,
       });
+      if (crmTaskId == null) {
+        // eslint-disable-next-line no-console
+        console.error(
+          "[getpro] field-agent CRM inbound task not created",
+          JSON.stringify({
+            op: "field_agent_callback_lead",
+            severity: "warning",
+            tenantId: tid,
+            leadId,
+            sourceType: "field_agent_callback",
+            reason: "null_task_id",
+          })
+        );
+      }
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error("[getpro] field-agent callback CRM:", e.message);
+      console.error(
+        "[getpro] field-agent CRM inbound task failed",
+        JSON.stringify({
+          op: "field_agent_callback_lead",
+          severity: "error",
+          tenantId: tid,
+          leadId,
+          sourceType: "field_agent_callback",
+          error: e && e.message ? String(e.message) : String(e),
+        })
+      );
+      // eslint-disable-next-line no-console
+      if (e && e.stack) console.error(e.stack);
     }
     return res.redirect(302, `${tenantPrefix(req)}${FIELD_AGENT_DASHBOARD}?callback=1`);
   });

@@ -7,6 +7,9 @@ const os = require("os");
  * Used by repositories and by server.js (connect-pg-simple). The HTTP server requires a connection string at boot.
  *
  * Configure with DATABASE_URL (preferred) or GETPRO_DATABASE_URL.
+ * Automated tests: set GETPRO_TEST_DB=1 and TEST_DATABASE_URL to use a dedicated Postgres database
+ * (never mixed with local dev). When GETPRO_TEST_DB is set, DATABASE_URL/GETPRO_DATABASE_URL are ignored
+ * unless TEST_DATABASE_URL is unset (then PG is treated as not configured).
  * SSL: set GETPRO_PG_SSL to strict | no-verify | off (see README). When unset, Supabase-style hosts default to no-verify.
  * When explicit ssl is set, sslmode=… query params are stripped from the URI so node-pg is not told both “require” and a conflicting Pool.ssl.
  * Do not commit secrets.
@@ -24,12 +27,23 @@ function envStringIsSet(value) {
   return value != null && String(value).trim() !== "";
 }
 
+/** When true, only TEST_DATABASE_URL is used (isolates CI/local test DB from dev .env). */
+function isGetproTestDbIntent() {
+  const v = (process.env.GETPRO_TEST_DB || "").trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
 /**
  * Single source for the Postgres connection string (never log the return value).
- * Prefer DATABASE_URL, then GETPRO_DATABASE_URL.
+ * With GETPRO_TEST_DB=1: TEST_DATABASE_URL only (empty if unset — PG tests skip).
+ * Otherwise: DATABASE_URL, then GETPRO_DATABASE_URL.
  * @returns {string}
  */
 function getDatabaseUrl() {
+  if (isGetproTestDbIntent()) {
+    if (envStringIsSet(process.env.TEST_DATABASE_URL)) return String(process.env.TEST_DATABASE_URL).trim();
+    return "";
+  }
   if (envStringIsSet(process.env.DATABASE_URL)) return String(process.env.DATABASE_URL).trim();
   if (envStringIsSet(process.env.GETPRO_DATABASE_URL)) return String(process.env.GETPRO_DATABASE_URL).trim();
   return "";
@@ -44,6 +58,14 @@ function connectionStringFromEnv() {
  * @returns {{ hasDatabaseUrl: boolean, hasGetproDatabaseUrl: boolean, effectiveSource: string }}
  */
 function summarizeDatabaseUrlEnv() {
+  if (isGetproTestDbIntent()) {
+    const hasTestDatabaseUrl = envStringIsSet(process.env.TEST_DATABASE_URL);
+    return {
+      hasDatabaseUrl: false,
+      hasGetproDatabaseUrl: false,
+      effectiveSource: hasTestDatabaseUrl ? "TEST_DATABASE_URL" : "(none)",
+    };
+  }
   const hasDatabaseUrl = envStringIsSet(process.env.DATABASE_URL);
   const hasGetproDatabaseUrl = envStringIsSet(process.env.GETPRO_DATABASE_URL);
   const effectiveSource = hasDatabaseUrl

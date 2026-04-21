@@ -73,6 +73,30 @@ Real `.env` files are **gitignored**. Never commit secrets.
 
 See `README.md` and `.env.example` for **GETPRO_STYLES_V**, **GETPRO_USE_BUILD_ASSETS**, seeds, **ISRAEL_COMING_SOON**, intake/OTP, etc.
 
+### Field agent POST rate limits (IP-based)
+
+Express `express-rate-limit` in **`src/middleware/authRateLimit.js`**. **Login/signup** (`POST /field-agent/login`, `POST /field-agent/signup`) use **`fieldAgentLoginLimiter`**. **Authenticated** field-agent POSTs use a **separate** counter (**`fieldAgentAuthedPostLimiter`**) so login attempts are not mixed with API/form volume.
+
+| Route | Limiter |
+|-------|---------|
+| `POST /field-agent/api/check-phone` | Authed POST (after session) |
+| `POST /field-agent/add-contact/submit` | Authed POST |
+| `POST /field-agent/call-me-back` | Authed POST |
+
+| Variable | Default | Notes |
+|----------|---------|--------|
+| **GETPRO_LOGIN_RATE_WINDOW_MS** | `900000` (15 min) | Shared window for admin/company/field-agent limiters in this file. |
+| **GETPRO_FIELD_AGENT_LOGIN_RATE_MAX** | `30` | Max requests per window for **field-agent login + signup** only. |
+| **GETPRO_FIELD_AGENT_AUTHED_POST_RATE_MAX** | Same as login max if unset | Max combined authed POSTs (check-phone + add-contact + callback) **per IP per window**. Invalid or non-positive values fall back to **`GETPRO_FIELD_AGENT_LOGIN_RATE_MAX`**. |
+
+**429 responses:** If the request path contains **`/api/`** or **`Accept`** includes **`application/json`**, the handler returns **`429`** with **`{ ok: false, error: "<message>" }`**. Otherwise **`429`** plain **text** (HTML-style form posts, e.g. call-me-back).
+
+**Logging (authed-post 429 only):** Before sending the response, **`console.warn`** emits one JSON object: `op` **`field_agent_authed_post_rate_limit`**, `path`, `method`, optional **`tenantId`** (when `req.tenant` is set), **`ip`** (truncated), **`limit`**, **`windowMs`**, and whether the response shape is **`json`** or **`text`**. No request body or query string is logged.
+
+**Operations:** Bursts of legitimate activity from one IP can hit 429; raise **`GETPRO_FIELD_AGENT_AUTHED_POST_RATE_MAX`** (or widen **`GETPRO_LOGIN_RATE_WINDOW_MS`**) only if abuse is not a concern. Unauthenticated clients do not consume the authed bucket (limiter runs **after** `requireFieldAgent`).
+
+**NAT / shared egress:** The authed-post limit is **per client IP** (Express **`req.ip`**, which depends on **`TRUST_PROXY`** / **`app.set('trust proxy', …)`** in **`server.js`** — same as other IP limits). It is **not** per field-agent account. Many agents on the **same public IP** (office, VPN, carrier NAT) **share** the same combined budget for check-phone + add-contact + callback. If support sees 429s clustered by IP without abuse, increase **`GETPRO_FIELD_AGENT_AUTHED_POST_RATE_MAX`** and use **`field_agent_authed_post_rate_limit`** logs to confirm.
+
 ## NODE_ENV: development vs production
 
 | `NODE_ENV=production` | Not production |
@@ -87,6 +111,7 @@ See `README.md` and `.env.example` for **GETPRO_STYLES_V**, **GETPRO_USE_BUILD_A
 
 ## Related code
 
+- `src/middleware/authRateLimit.js` — Field agent (and admin/company) login + field-agent authed POST rate limits
 - `src/admin/dbFixturesEnv.js` — Admin → DB tools enabled/disabled (see **Admin > DB Tools Environment Policy** above)
 - `src/startup/bootstrap.js` — when dotenv runs; production may merge **`.env.production`** from well-known paths when host env is incomplete (see file header and logs — exact paths depend on deployment home directory)
 - `src/startup/productionEnvGate.js` — production required vars + diagnostics

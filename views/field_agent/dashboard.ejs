@@ -48,7 +48,7 @@
           <span class="muted"> — frozen pay-run snapshots (not rolling estimates).</span>
         </p>
 
-        <div class="field-agent-metrics" aria-label="Submission and performance metrics">
+        <div class="field-agent-metrics" aria-label="Submission counts and commission metrics">
           <div
             class="card field-agent-metric-card field-agent-metric-card--clickable"
             data-status="pending"
@@ -97,7 +97,7 @@
             data-metric="sp_commission_30d"
             title="View lead-fee charges in the last 30 days"
           >
-            <div class="field-agent-metric-card__label muted">SP_Commission (30d)</div>
+            <div class="field-agent-metric-card__label muted">Lead-fee SP commission (30d)</div>
             <div class="field-agent-metric-card__value"><%= typeof metricSpCommission30 !== 'undefined' ? metricSpCommission30 : 0 %></div>
           </div>
           <div

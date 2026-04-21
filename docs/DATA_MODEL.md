@@ -1,5 +1,7 @@
 # GetPro data model (multi-tenant)
 
+**Documentation suite (product + ops):** For persona summaries, flow narratives, RBAC tables, route-to-template mapping, non-technical QA steps, and release checklists, see [product-overview.md](./product-overview.md), [flows.md](./flows.md), [roles-and-permissions.md](./roles-and-permissions.md), [route-to-screen-audit.md](./route-to-screen-audit.md), [database-entity-map.md](./database-entity-map.md), [qa-standard-test-script.md](./qa-standard-test-script.md), and the repo-root `RELEASE_NOTES.md`. This file remains the **tenant/catalog and table-oriented** reference.
+
 ## Tenants (regions)
 
 Rows live in **`tenants`** (`id`, `slug`, `name`, `stage`, …). Canonical seed IDs (see `src/tenants/tenantIds.js`):
