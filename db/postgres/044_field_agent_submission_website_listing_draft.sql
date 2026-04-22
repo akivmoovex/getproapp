@@ -9,4 +9,10 @@ ALTER TABLE public.field_agent_provider_submissions
 ALTER TABLE public.field_agent_provider_submissions
   ADD COLUMN IF NOT EXISTS website_listing_review_requested_at TIMESTAMPTZ NULL;
 
+ALTER TABLE public.field_agent_provider_submissions
+  ADD COLUMN IF NOT EXISTS website_listing_review_status TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE public.field_agent_provider_submissions
+  ADD COLUMN IF NOT EXISTS website_listing_review_comment TEXT NOT NULL DEFAULT '';
+
 COMMIT;

@@ -68,6 +68,115 @@ async function getSubmissionByIdForAdmin(pool, tenantId, submissionId) {
 }
 
 /**
+ * Admin reporting rows for website-content quality / publish operations.
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {number} tenantId
+ * @param {{ reviewStatus?: string, published?: "yes"|"no"|"all", city?: string, limit?: number }} [opts]
+ */
+async function listWebsiteContentReportRowsForAdmin(pool, tenantId, opts) {
+  const tid = Number(tenantId);
+  if (!Number.isFinite(tid) || tid < 1) return [];
+  const o = opts && typeof opts === "object" ? opts : {};
+  const reviewStatus = String(o.reviewStatus || "").trim().slice(0, 40);
+  const published = String(o.published || "all").trim().toLowerCase();
+  const cityRaw = String(o.city || "")
+    .trim()
+    .replace(/[%_\\]/g, "");
+  const cityLike = cityRaw ? `%${cityRaw}%` : null;
+  const lim = Math.min(Math.max(Number(o.limit) || 500, 1), 2000);
+  const params = [tid, reviewStatus || null, published, cityLike, lim];
+  const r = await pool.query(
+    `
+    WITH sp_agg AS (
+      SELECT
+        tenant_id,
+        submission_id,
+        COUNT(*)::int AS specialities_count,
+        COUNT(*) FILTER (WHERE is_verified = TRUE)::int AS verified_specialities_count
+      FROM public.field_agent_submission_website_specialities
+      WHERE tenant_id = $1
+      GROUP BY tenant_id, submission_id
+    ),
+    wh_agg AS (
+      SELECT
+        tenant_id,
+        submission_id,
+        COUNT(*)::int AS hours_days_count
+      FROM public.field_agent_submission_website_hours
+      WHERE tenant_id = $1
+      GROUP BY tenant_id, submission_id
+    )
+    SELECT
+      s.id AS submission_id,
+      s.first_name,
+      s.last_name,
+      s.city,
+      s.phone_raw,
+      s.website_listing_draft_json,
+      s.status AS submission_status,
+      s.website_listing_review_status,
+      s.website_listing_review_requested_at,
+      s.updated_at AS submission_updated_at,
+      s.field_agent_id,
+      fa.username AS field_agent_username,
+      fa.display_name AS field_agent_display_name,
+      t.slug AS tenant_slug,
+      t.name AS tenant_name,
+      c.id AS company_id,
+      c.created_at AS company_created_at,
+      COALESCE(
+        c.established_year,
+        CASE
+          WHEN (s.website_listing_draft_json->>'established_year') ~ '^[0-9]{4}$'
+          THEN (s.website_listing_draft_json->>'established_year')::int
+          ELSE NULL
+        END
+      ) AS established_year,
+      COALESCE(sp.specialities_count, 0)::int AS specialities_count,
+      COALESCE(sp.verified_specialities_count, 0)::int AS verified_specialities_count,
+      COALESCE(wh.hours_days_count, 0)::int AS hours_days_count
+    FROM public.field_agent_provider_submissions s
+    LEFT JOIN public.field_agents fa ON fa.id = s.field_agent_id AND fa.tenant_id = s.tenant_id
+    LEFT JOIN public.tenants t ON t.id = s.tenant_id
+    LEFT JOIN public.companies c ON c.tenant_id = s.tenant_id AND c.source_field_agent_submission_id = s.id
+    LEFT JOIN sp_agg sp ON sp.tenant_id = s.tenant_id AND sp.submission_id = s.id
+    LEFT JOIN wh_agg wh ON wh.tenant_id = s.tenant_id AND wh.submission_id = s.id
+    WHERE s.tenant_id = $1
+      AND (
+        s.status = 'approved'
+        OR s.website_listing_review_status IS NOT NULL
+        OR s.website_listing_draft_json IS NOT NULL
+        OR c.id IS NOT NULL
+        OR sp.submission_id IS NOT NULL
+        OR wh.submission_id IS NOT NULL
+      )
+      AND ($2::text IS NULL OR s.website_listing_review_status = $2)
+      AND (
+        $3::text = 'all'
+        OR ($3::text = 'yes' AND c.id IS NOT NULL)
+        OR ($3::text = 'no' AND c.id IS NULL)
+      )
+      AND ($4::text IS NULL OR s.city ILIKE $4 OR s.address_city ILIKE $4)
+    ORDER BY s.updated_at DESC, s.id DESC
+    LIMIT $5
+    `,
+    params
+  );
+  return r.rows.map((row) => ({
+    ...row,
+    submission_id: Number(row.submission_id),
+    field_agent_id:
+      row.field_agent_id != null && Number.isFinite(Number(row.field_agent_id)) ? Number(row.field_agent_id) : null,
+    company_id: row.company_id != null && Number.isFinite(Number(row.company_id)) ? Number(row.company_id) : null,
+    established_year:
+      row.established_year != null && Number.isFinite(Number(row.established_year)) ? Number(row.established_year) : null,
+    specialities_count: Number(row.specialities_count || 0),
+    verified_specialities_count: Number(row.verified_specialities_count || 0),
+    hours_days_count: Number(row.hours_days_count || 0),
+  }));
+}
+
+/**
  * Tenant-scoped submission rows by id set for admin operations.
  * @param {import("pg").Pool} pool
  * @param {number} tenantId
@@ -86,6 +195,66 @@ async function listSubmissionsByIdsForAdmin(pool, tenantId, submissionIds) {
     [tid, ids]
   );
   return r.rows;
+}
+
+/**
+ * Website queue quality snapshot rows for selected submissions (tenant-scoped).
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number[]} submissionIds
+ */
+async function listWebsiteQueueQualityRowsBySubmissionIdsForAdmin(pool, tenantId, submissionIds) {
+  const tid = Number(tenantId);
+  const ids = [
+    ...new Set(
+      (Array.isArray(submissionIds) ? submissionIds : [])
+        .map((x) => Number(x))
+        .filter((n) => Number.isFinite(n) && n > 0)
+    ),
+  ];
+  if (!Number.isFinite(tid) || tid < 1 || ids.length === 0) return [];
+  const r = await pool.query(
+    `
+    WITH sp AS (
+      SELECT tenant_id, submission_id, COUNT(*)::int AS specialities_count
+      FROM public.field_agent_submission_website_specialities
+      WHERE tenant_id = $1 AND submission_id = ANY($2::int[])
+      GROUP BY tenant_id, submission_id
+    ),
+    wh AS (
+      SELECT tenant_id, submission_id, COUNT(*)::int AS hours_days_count
+      FROM public.field_agent_submission_website_hours
+      WHERE tenant_id = $1 AND submission_id = ANY($2::int[])
+      GROUP BY tenant_id, submission_id
+    )
+    SELECT
+      s.id AS submission_id,
+      s.city,
+      s.website_listing_review_status,
+      s.phone_raw,
+      s.website_listing_draft_json,
+      COALESCE(sp.specialities_count, 0)::int AS specialities_count,
+      COALESCE(wh.hours_days_count, 0)::int AS hours_days_count,
+      CASE
+        WHEN (s.website_listing_draft_json->>'established_year') ~ '^[0-9]{4}$'
+        THEN (s.website_listing_draft_json->>'established_year')::int
+        ELSE NULL
+      END AS established_year
+    FROM public.field_agent_provider_submissions s
+    LEFT JOIN sp ON sp.tenant_id = s.tenant_id AND sp.submission_id = s.id
+    LEFT JOIN wh ON wh.tenant_id = s.tenant_id AND wh.submission_id = s.id
+    WHERE s.tenant_id = $1 AND s.id = ANY($2::int[])
+    `,
+    [tid, ids]
+  );
+  return r.rows.map((row) => ({
+    ...row,
+    submission_id: Number(row.submission_id),
+    specialities_count: Number(row.specialities_count || 0),
+    hours_days_count: Number(row.hours_days_count || 0),
+    established_year:
+      row.established_year != null && Number.isFinite(Number(row.established_year)) ? Number(row.established_year) : null,
+  }));
 }
 
 /**
@@ -691,6 +860,100 @@ const WEBSITE_LISTING_DRAFT_MAX = {
   featured_cta_phone: 120,
 };
 
+const WEEKDAY_KEYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+function normalizeEstablishedYear(value) {
+  if (value === "" || value == null) return null;
+  const s = String(value).trim();
+  if (!/^\d{4}$/.test(s)) return null;
+  const n = Number(s);
+  const currentYear = new Date().getUTCFullYear();
+  if (!Number.isFinite(n) || n < 1800 || n > currentYear) return null;
+  return n;
+}
+
+function normalizeSpecialityName(raw) {
+  return String(raw || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 120);
+}
+
+function normalizeSpecialityNames(raw) {
+  const list = Array.isArray(raw) ? raw : [];
+  const out = [];
+  const seen = new Set();
+  for (const item of list) {
+    const name = normalizeSpecialityName(item);
+    if (!name) continue;
+    const k = name.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(name);
+  }
+  return out;
+}
+
+function normalizeSpecialityEntries(raw) {
+  const list = Array.isArray(raw) ? raw : [];
+  const out = [];
+  const seen = new Set();
+  for (const item of list) {
+    const name = normalizeSpecialityName(item && typeof item === "object" ? item.name : item);
+    if (!name) continue;
+    const k = name.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({
+      name,
+      nameNorm: k,
+      isVerified: !!(item && typeof item === "object" && item.isVerified),
+    });
+  }
+  return out;
+}
+
+function normalizeHourTime(raw) {
+  const s = String(raw || "").trim();
+  if (!/^\d{2}:\d{2}$/.test(s)) return "";
+  const hh = Number(s.slice(0, 2));
+  const mm = Number(s.slice(3, 5));
+  if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return "";
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
+function normalizeWebsiteWeeklyHours(raw) {
+  const src = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  const out = {};
+  for (const d of WEEKDAY_KEYS) {
+    const hasRow = !!(src[d] && typeof src[d] === "object" && !Array.isArray(src[d]));
+    const row = hasRow ? src[d] : {};
+    const closed = hasRow ? !!row.closed : true;
+    const from = normalizeHourTime(row.from);
+    const to = normalizeHourTime(row.to);
+    out[d] = closed ? { closed: true, from: "", to: "" } : { closed: false, from, to };
+  }
+  return out;
+}
+
+function specialitiesToLegacyText(specialities) {
+  return normalizeSpecialityNames(specialities).join("\n").slice(0, 4000);
+}
+
+function weeklyHoursToLegacyText(weekly) {
+  const w = normalizeWebsiteWeeklyHours(weekly);
+  const labels = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const lines = [];
+  for (let i = 0; i < WEEKDAY_KEYS.length; i += 1) {
+    const k = WEEKDAY_KEYS[i];
+    const r = w[k];
+    if (!r) continue;
+    if (r.closed) lines.push(`${labels[i]}: Closed`);
+    else if (r.from && r.to) lines.push(`${labels[i]}: ${r.from}-${r.to}`);
+  }
+  return lines.join("\n").slice(0, 4000);
+}
+
 /**
  * Sanitize client payload for website_listing_draft_json (JSONB).
  * @param {unknown} raw
@@ -710,6 +973,7 @@ function normalizeWebsiteListingDraft(raw) {
     const n = Number(y);
     out.years_experience = Number.isFinite(n) ? Math.min(999, Math.max(0, Math.floor(n))) : null;
   }
+  out.established_year = normalizeEstablishedYear(o.established_year);
   return out;
 }
 
@@ -722,6 +986,241 @@ function mergeWebsiteListingDraftForDisplay(stored) {
   const cur = stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
   const n = normalizeWebsiteListingDraft(cur);
   return { ...base, ...n };
+}
+
+/**
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {number} tenantId
+ * @param {number} submissionId
+ */
+async function listWebsiteSpecialitiesForSubmission(pool, tenantId, submissionId) {
+  const tid = Number(tenantId);
+  const sid = Number(submissionId);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return [];
+  const r = await pool.query(
+    `
+    SELECT speciality_name
+    FROM public.field_agent_submission_website_specialities
+    WHERE tenant_id = $1 AND submission_id = $2
+    ORDER BY speciality_name_norm ASC
+    `,
+    [tid, sid]
+  );
+  return r.rows.map((x) => String(x.speciality_name || "").trim()).filter(Boolean);
+}
+
+/**
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {number} tenantId
+ * @param {number} submissionId
+ */
+async function listWebsiteSpecialityEntriesForSubmission(pool, tenantId, submissionId) {
+  const tid = Number(tenantId);
+  const sid = Number(submissionId);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return [];
+  const r = await pool.query(
+    `
+    SELECT speciality_name, speciality_name_norm, is_verified, verified_at, verified_by_admin_user_id
+    FROM public.field_agent_submission_website_specialities
+    WHERE tenant_id = $1 AND submission_id = $2
+    ORDER BY speciality_name_norm ASC
+    `,
+    [tid, sid]
+  );
+  return r.rows.map((row) => ({
+    name: String(row.speciality_name || "").trim(),
+    nameNorm: String(row.speciality_name_norm || "").trim().toLowerCase(),
+    isVerified: !!row.is_verified,
+    verifiedAt: row.verified_at || null,
+    verifiedByAdminUserId:
+      row.verified_by_admin_user_id != null && Number.isFinite(Number(row.verified_by_admin_user_id))
+        ? Number(row.verified_by_admin_user_id)
+        : null,
+  }));
+}
+
+/**
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {{ tenantId: number, submissionId: number, specialities: string[] }} params
+ */
+async function replaceWebsiteSpecialitiesForSubmission(pool, params) {
+  const tid = Number(params.tenantId);
+  const sid = Number(params.submissionId);
+  const names = normalizeSpecialityNames(params.specialities || []);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+  if (names.length > 10) return false;
+  await pool.query(
+    `DELETE FROM public.field_agent_submission_website_specialities WHERE tenant_id = $1 AND submission_id = $2`,
+    [tid, sid]
+  );
+  for (const name of names) {
+    // eslint-disable-next-line no-await-in-loop
+    await pool.query(
+      `
+      INSERT INTO public.field_agent_submission_website_specialities
+      (tenant_id, submission_id, speciality_name, speciality_name_norm)
+      VALUES ($1, $2, $3, $4)
+      `,
+      [tid, sid, name, name.toLowerCase()]
+    );
+  }
+  return true;
+}
+
+/**
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {{ tenantId: number, submissionId: number, entries: Array<{ name: string, isVerified?: boolean }>, verifiedByAdminUserId?: number | null }} params
+ */
+async function replaceWebsiteSpecialityEntriesForSubmission(pool, params) {
+  const tid = Number(params.tenantId);
+  const sid = Number(params.submissionId);
+  const entries = normalizeSpecialityEntries(params.entries || []);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+  if (entries.length > 10) return false;
+  const byAdmin =
+    params.verifiedByAdminUserId != null && Number.isFinite(Number(params.verifiedByAdminUserId))
+      ? Number(params.verifiedByAdminUserId)
+      : null;
+  await pool.query(
+    `DELETE FROM public.field_agent_submission_website_specialities WHERE tenant_id = $1 AND submission_id = $2`,
+    [tid, sid]
+  );
+  for (const e of entries) {
+    const verified = !!e.isVerified;
+    // eslint-disable-next-line no-await-in-loop
+    await pool.query(
+      `
+      INSERT INTO public.field_agent_submission_website_specialities
+      (tenant_id, submission_id, speciality_name, speciality_name_norm, is_verified, verified_at, verified_by_admin_user_id)
+      VALUES ($1, $2, $3, $4, $5, CASE WHEN $5 THEN now() ELSE NULL END, CASE WHEN $5 THEN $6::int ELSE NULL END)
+      `,
+      [tid, sid, e.name, e.nameNorm, verified, byAdmin]
+    );
+  }
+  return true;
+}
+
+/**
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {number} tenantId
+ * @param {number} submissionId
+ */
+async function listVerifiedSpecialityNamesForSubmission(pool, tenantId, submissionId) {
+  const tid = Number(tenantId);
+  const sid = Number(submissionId);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return [];
+  const r = await pool.query(
+    `
+    SELECT speciality_name
+    FROM public.field_agent_submission_website_specialities
+    WHERE tenant_id = $1 AND submission_id = $2 AND is_verified = TRUE
+    ORDER BY speciality_name_norm ASC
+    `,
+    [tid, sid]
+  );
+  return r.rows.map((x) => String(x.speciality_name || "").trim()).filter(Boolean);
+}
+
+/**
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {number} tenantId
+ * @param {string} q
+ * @param {number} limit
+ */
+async function listWebsiteSpecialitySuggestions(pool, tenantId, q, limit = 20) {
+  const tid = Number(tenantId);
+  const qs = normalizeSpecialityName(q || "").toLowerCase();
+  const lim = Math.min(Math.max(Number(limit) || 20, 1), 50);
+  if (!Number.isFinite(tid) || tid < 1) return [];
+  const r = await pool.query(
+    `
+    SELECT speciality_name, speciality_name_norm
+    FROM public.field_agent_submission_website_specialities
+    WHERE tenant_id = $1
+      AND ($2::text = '' OR speciality_name_norm LIKE $2 || '%')
+    ORDER BY speciality_name_norm ASC
+    LIMIT $3
+    `,
+    [tid, qs, lim]
+  );
+  const out = [];
+  const seen = new Set();
+  for (const row of r.rows) {
+    const n = String(row.speciality_name || "").trim();
+    if (!n) continue;
+    const k = n.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(n);
+  }
+  return out;
+}
+
+/**
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {number} tenantId
+ * @param {number} submissionId
+ */
+async function getWebsiteWeeklyHoursForSubmission(pool, tenantId, submissionId) {
+  const tid = Number(tenantId);
+  const sid = Number(submissionId);
+  const base = normalizeWebsiteWeeklyHours({});
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return base;
+  const r = await pool.query(
+    `
+    SELECT day_of_week, is_closed, opens_at::text AS opens_at_text, closes_at::text AS closes_at_text
+    FROM public.field_agent_submission_website_hours
+    WHERE tenant_id = $1 AND submission_id = $2
+    ORDER BY day_of_week ASC
+    `,
+    [tid, sid]
+  );
+  for (const row of r.rows) {
+    const i = Number(row.day_of_week);
+    if (!Number.isFinite(i) || i < 0 || i > 6) continue;
+    const key = WEEKDAY_KEYS[i];
+    if (row.is_closed) {
+      base[key] = { closed: true, from: "", to: "" };
+    } else {
+      const from = normalizeHourTime(String(row.opens_at_text || "").slice(0, 5));
+      const to = normalizeHourTime(String(row.closes_at_text || "").slice(0, 5));
+      base[key] = { closed: false, from, to };
+    }
+  }
+  return base;
+}
+
+/**
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {{ tenantId: number, submissionId: number, weeklyHours: Record<string, { closed: boolean, from: string, to: string }> }} params
+ */
+async function replaceWebsiteWeeklyHoursForSubmission(pool, params) {
+  const tid = Number(params.tenantId);
+  const sid = Number(params.submissionId);
+  const weekly = normalizeWebsiteWeeklyHours(params.weeklyHours || {});
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1) return false;
+  await pool.query(
+    `DELETE FROM public.field_agent_submission_website_hours WHERE tenant_id = $1 AND submission_id = $2`,
+    [tid, sid]
+  );
+  for (let i = 0; i < WEEKDAY_KEYS.length; i += 1) {
+    const key = WEEKDAY_KEYS[i];
+    const row = weekly[key];
+    const closed = !!row.closed;
+    const from = closed ? null : normalizeHourTime(row.from) || null;
+    const to = closed ? null : normalizeHourTime(row.to) || null;
+    if (!closed && (!from || !to || from >= to)) continue;
+    // eslint-disable-next-line no-await-in-loop
+    await pool.query(
+      `
+      INSERT INTO public.field_agent_submission_website_hours
+      (tenant_id, submission_id, day_of_week, is_closed, opens_at, closes_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5::time, $6::time, now())
+      `,
+      [tid, sid, i, closed, from, to]
+    );
+  }
+  return true;
 }
 
 /**
@@ -776,6 +1275,8 @@ async function submitWebsiteListingReviewRequestForFieldAgent(pool, params) {
     UPDATE public.field_agent_provider_submissions s
     SET website_listing_draft_json = CASE WHEN $1 IS NULL THEN s.website_listing_draft_json ELSE $1::jsonb END,
         website_listing_review_requested_at = now(),
+        website_listing_review_status = 'submitted',
+        website_listing_review_comment = '',
         updated_at = now()
     WHERE s.id = $2 AND s.tenant_id = $3 AND s.field_agent_id = $4
       AND s.status = 'approved'
@@ -786,6 +1287,36 @@ async function submitWebsiteListingReviewRequestForFieldAgent(pool, params) {
     RETURNING s.id
     `,
     [draftJson, sid, tid, aid]
+  );
+  return r.rowCount === 1;
+}
+
+/**
+ * Website listing review outcome/status for approved submission (tenant-scoped).
+ * @param {import("pg").Pool|import("pg").PoolClient} pool
+ * @param {{ tenantId: number, submissionId: number, reviewStatus: string, reviewComment?: string }} params
+ * @returns {Promise<boolean>}
+ */
+async function setWebsiteListingReviewOutcomeForAdmin(pool, params) {
+  const tid = Number(params.tenantId);
+  const sid = Number(params.submissionId);
+  const st = String(params.reviewStatus || "").trim().slice(0, 40);
+  const comment = String(params.reviewComment || "")
+    .trim()
+    .slice(0, 4000);
+  if (!Number.isFinite(tid) || tid < 1 || !Number.isFinite(sid) || sid < 1 || !st) {
+    return false;
+  }
+  const r = await pool.query(
+    `
+    UPDATE public.field_agent_provider_submissions
+    SET website_listing_review_status = $1,
+        website_listing_review_comment = $2,
+        updated_at = now()
+    WHERE id = $3 AND tenant_id = $4 AND status = 'approved'
+    RETURNING id
+    `,
+    [st, comment, sid, tid]
   );
   return r.rowCount === 1;
 }
@@ -1231,7 +1762,9 @@ async function applyBulkSubmissionAction(pool, p) {
 
 module.exports = {
   getSubmissionByIdForAdmin,
+  listWebsiteContentReportRowsForAdmin,
   listSubmissionsByIdsForAdmin,
+  listWebsiteQueueQualityRowsBySubmissionIdsForAdmin,
   listFieldAgentSubmissionsForAdmin,
   approveFieldAgentSubmission,
   rejectFieldAgentSubmission,
@@ -1257,7 +1790,21 @@ module.exports = {
   correctFieldAgentSubmissionStatus,
   normalizeWebsiteListingDraft,
   mergeWebsiteListingDraftForDisplay,
+  normalizeSpecialityNames,
+  normalizeSpecialityEntries,
+  normalizeWebsiteWeeklyHours,
+  specialitiesToLegacyText,
+  weeklyHoursToLegacyText,
+  listWebsiteSpecialitiesForSubmission,
+  listWebsiteSpecialityEntriesForSubmission,
+  replaceWebsiteSpecialitiesForSubmission,
+  replaceWebsiteSpecialityEntriesForSubmission,
+  listWebsiteSpecialitySuggestions,
+  listVerifiedSpecialityNamesForSubmission,
+  getWebsiteWeeklyHoursForSubmission,
+  replaceWebsiteWeeklyHoursForSubmission,
   patchWebsiteListingDraftForFieldAgent,
   submitWebsiteListingReviewRequestForFieldAgent,
+  setWebsiteListingReviewOutcomeForAdmin,
   patchWebsiteListingDraftForAdmin,
 };

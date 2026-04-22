@@ -16,6 +16,10 @@
         class="admin-nav__link <%= _active === 'dashboard' ? 'admin-nav__link--active' : '' %>"
       >Dashboard</a>
       <a
+        href="<%= _tp %>/field-agent/sp-websites"
+        class="admin-nav__link <%= _active === 'sp_websites' ? 'admin-nav__link--active' : '' %>"
+      >SP Websites</a>
+      <a
         href="<%= _tp %>/field-agent/statements"
         class="admin-nav__link <%= _active === 'statements' ? 'admin-nav__link--active' : '' %>"
       >Statements</a>
@@ -85,6 +89,10 @@
           href="<%= _tp %>/field-agent/dashboard"
           class="wf-home-nav-btn <%= _active === 'dashboard' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
         >Dashboard</a>
+        <a
+          href="<%= _tp %>/field-agent/sp-websites"
+          class="wf-home-nav-btn <%= _active === 'sp_websites' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"
+        >SP Websites</a>
         <a
           href="<%= _tp %>/field-agent/statements"
           class="wf-home-nav-btn <%= _active === 'statements' ? 'wf-home-nav-btn--primary' : 'wf-home-nav-btn--ghost' %>"

@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Website content report | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+    <style>
+      .website-report-row--highlight {
+        outline: 2px solid var(--accent, #2563eb);
+        outline-offset: -2px;
+        background: rgba(37, 99, 235, 0.07);
+      }
+    </style>
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../partials/admin_nav', { navTitle: 'Website content report', activeNav: 'crm' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <h1 class="section-title">Website content report</h1>
+        <p class="admin-intro muted">Operational table for website-content quality and publish state. CSV exports use the same row filters; optional column sets only change which columns are included. HTML column views (<code>view_set</code>) affect the on-screen table only, not CSV.</p>
+
+        <% var _htmlVs = (typeof reportHtmlViewSet !== 'undefined' && reportHtmlViewSet && reportHtmlViewSet !== 'default') ? ('&view_set=' + encodeURIComponent(reportHtmlViewSet)) : ''; %>
+        <% var _f = (typeof filters !== 'undefined' && filters) ? filters : {}; %>
+        <% var _catPreserve = (_f.category && String(_f.category).trim()) ? ('&category=' + encodeURIComponent(String(_f.category).trim())) : ''; %>
+        <% var _cityPreserve = (_f.city && String(_f.city).trim()) ? ('&city=' + encodeURIComponent(String(_f.city).trim())) : ''; %>
+
+        <div class="card admin-form-card" style="padding:0.75rem;margin:0 0 0.75rem;">
+          <p class="muted" style="margin:0 0 0.5rem;">Report presets</p>
+          <p style="display:flex;gap:0.45rem;flex-wrap:wrap;margin:0;">
+            <a class="btn btn--secondary" href="/admin/crm/websites/report?review_status=changes_requested&quality_tier=low<%= _htmlVs %><%= _catPreserve %>">Needs attention</a>
+            <a class="btn btn--secondary" href="/admin/crm/websites/report?review_status=changes_requested<%= _htmlVs %><%= _catPreserve %>">Changes requested</a>
+            <a class="btn btn--secondary" href="/admin/crm/websites/report?published=yes&quality_tier=high&has_hours=yes&has_verified_specialities=yes<%= _htmlVs %><%= _catPreserve %>">Published and complete</a>
+            <a class="btn btn--secondary" href="/admin/crm/websites/report?has_hours=no<%= _htmlVs %><%= _catPreserve %>">Missing hours</a>
+            <a class="btn btn--secondary" href="/admin/crm/websites/report?has_established_year=no<%= _htmlVs %><%= _catPreserve %>">No established year</a>
+            <a class="btn btn--secondary" href="/admin/crm/websites/report?quality_tier=high<%= _htmlVs %><%= _catPreserve %>">High quality</a>
+          </p>
+        </div>
+
+        <% if (typeof htmlViewHrefDefault !== 'undefined' && htmlViewHrefDefault) { %>
+        <div class="card admin-form-card" style="padding:0.75rem;margin:0 0 0.75rem;">
+          <p class="muted" style="margin:0 0 0.5rem;">Table column view (HTML only)</p>
+          <p style="display:flex;gap:0.45rem;flex-wrap:wrap;margin:0;">
+            <a class="btn <%= (typeof reportHtmlViewSet !== 'undefined' && reportHtmlViewSet === 'default') ? '' : 'btn--secondary' %>" href="<%= htmlViewHrefDefault %>">Default columns</a>
+            <a class="btn <%= (typeof reportHtmlViewSet !== 'undefined' && reportHtmlViewSet === 'moderation') ? '' : 'btn--secondary' %>" href="<%= htmlViewHrefModeration %>">Moderation</a>
+            <a class="btn <%= (typeof reportHtmlViewSet !== 'undefined' && reportHtmlViewSet === 'quality') ? '' : 'btn--secondary' %>" href="<%= htmlViewHrefQuality %>">Quality</a>
+            <a class="btn <%= (typeof reportHtmlViewSet !== 'undefined' && reportHtmlViewSet === 'publish_readiness') ? '' : 'btn--secondary' %>" href="<%= htmlViewHrefPublishReadiness %>">Publish readiness</a>
+          </p>
+        </div>
+        <% } %>
+
+        <% if (typeof websiteReportShareUrl !== 'undefined' && websiteReportShareUrl) { %>
+        <div class="card admin-form-card website-share-card website-share-card--copy-wrap website-share-card--focus-a11y website-share-card--group-focus-a11y" style="padding:0.75rem;margin:0 0 0.75rem;max-width:100%;min-width:0;box-sizing:border-box;display:flex;flex-direction:column;gap:0;">
+          <div id="website-report-share-copy-live" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+          <div style="display:flex;flex-direction:column;gap:0.35rem;">
+            <p class="muted" style="margin:0;"><strong>Permalink</strong> — URL for this report (filters + column view).</p>
+            <% if (typeof websiteReportShareLabel !== 'undefined' && websiteReportShareLabel) { %>
+            <p class="muted" style="margin:0;font-size:0.95em;"><strong>Summary:</strong> <%= websiteReportShareLabel %></p>
+            <% } %>
+            <p class="muted" style="margin:0;font-size:0.88em;line-height:1.35;">HTML filters and column view only. CSV <code>export_set</code> not included. Not stored — bookmark or copy the URL.</p>
+          </div>
+          <div class="website-share-a11y-group website-share-a11y-group--permalink" style="padding-top:0.55rem;margin-top:0.35rem;border-top:1px solid var(--line,#e6e8ee);display:flex;flex-direction:column;gap:0.4rem;width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Permalink: report URL, copy, and open in new tab">
+            <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:stretch;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
+              <input
+                type="text"
+                readonly
+                class="input-field__control"
+                style="flex:1 1 12rem;min-width:0;max-width:100%;cursor:text;box-sizing:border-box;"
+                id="website-report-share-url"
+                value="<%= websiteReportShareUrl %>"
+                onclick="this.select();"
+                aria-label="Shareable report URL"
+              />
+              <button type="button" class="btn btn--primary website-share-copy-btn--primary" id="website-report-share-copy" style="white-space:nowrap;flex-shrink:0;">Copy URL</button>
+            </div>
+            <% if (typeof websiteReportSharePath !== 'undefined' && websiteReportSharePath) { %>
+            <p class="muted" style="margin:0;font-size:0.88em;line-height:1.35;"><a href="<%= String(websiteReportSharePath).replace(/&/g, '&amp;') %>" target="_blank" rel="noopener noreferrer">Open current state in new tab</a></p>
+            <% } %>
+          </div>
+          <% if (typeof websiteReportShareSnippet !== 'undefined' && websiteReportShareSnippet) { %>
+          <div class="website-share-a11y-group website-share-a11y-group--snippet" style="padding-top:0.55rem;margin-top:0.35rem;border-top:1px solid var(--line,#e6e8ee);display:flex;flex-direction:column;gap:0.45rem;width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Message snippet: text field and copy">
+            <p class="muted" style="margin:0;font-size:0.88em;"><strong>Snippet</strong> — summary and URL (plain text).</p>
+            <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-start;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
+              <textarea
+                readonly
+                class="input-field__control"
+                style="flex:1 1 12rem;min-width:0;max-width:100%;min-height:3.25rem;resize:vertical;cursor:text;font-family:inherit;box-sizing:border-box;"
+                id="website-report-share-snippet"
+                onclick="this.select();"
+                aria-label="Shareable report message snippet"
+              ><%= websiteReportShareSnippet %></textarea>
+              <button type="button" class="btn btn--primary website-share-copy-btn--primary" id="website-report-share-snippet-copy" style="white-space:nowrap;align-self:flex-start;flex-shrink:0;">Copy snippet</button>
+            </div>
+          </div>
+          <% } %>
+          <div class="website-share-a11y-group website-share-a11y-group--operational" style="padding-top:0.55rem;margin-top:0.35rem;border-top:1px solid var(--line,#e6e8ee);display:flex;flex-direction:column;gap:0.35rem;width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Operational report views: preset links">
+            <p class="muted" id="website-report-share-operational-hint" style="margin:0;font-size:0.88em;line-height:1.35;"><strong>Operational share states</strong> — preset filtered views (not saved). Keeps <code>view_set</code>, category, and city when set.</p>
+            <p id="website-report-share-operational-states" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin:0;">
+              <a class="btn btn--secondary" href="/admin/crm/websites/report?review_status=changes_requested&quality_tier=low<%= _htmlVs %><%= _catPreserve %><%= _cityPreserve %>">Needs attention report</a>
+              <a class="btn btn--secondary" href="/admin/crm/websites/report?quality_tier=high<%= _htmlVs %><%= _catPreserve %><%= _cityPreserve %>">High quality report</a>
+              <a class="btn btn--secondary" href="/admin/crm/websites/report?has_hours=no<%= _htmlVs %><%= _catPreserve %><%= _cityPreserve %>">Missing hours report</a>
+              <a class="btn btn--secondary" href="/admin/crm/websites/report?has_established_year=no<%= _htmlVs %><%= _catPreserve %><%= _cityPreserve %>">No established year report</a>
+            </p>
+          </div>
+          <% var _rpBestMd = typeof websiteReportShareSnippetMarkdown !== 'undefined' && websiteReportShareSnippetMarkdown; %>
+          <% var _rpBestChat = typeof websiteReportShareChatSnippet !== 'undefined' && websiteReportShareChatSnippet; %>
+          <% var _rpBestEmail = typeof websiteReportShareBundleEmailReady !== 'undefined' && websiteReportShareBundleEmailReady; %>
+          <% if (_rpBestMd || _rpBestChat || _rpBestEmail) { %>
+          <% var _rpBestShareLbl = (typeof websiteReportShareLabel !== 'undefined' && websiteReportShareLabel) ? String(websiteReportShareLabel).trim() : ''; %>
+          <div class="website-share-best-format-shortcuts website-share-a11y-group website-share-a11y-group--best-for" style="padding-top:0.45rem;margin-top:0.25rem;border-top:1px solid var(--line,#e6e8ee);width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Best-for copy: Slack, email, and docs shortcuts">
+            <p class="muted" id="website-report-share-best-format-hint" style="margin:0 0 0.35rem;font-size:0.82em;line-height:1.35;"><strong>Best for</strong> — same copy as Advanced, one click (Slack / email / docs).</p>
+            <p class="muted website-share-best-for-copy-best-legend" id="website-report-share-copy-best-legend" style="margin:0 0 0.38rem;font-size:0.78em;line-height:1.4;"><strong>Copy best</strong> — Slack uses chat bundle; Email uses plain bundle; Docs uses markdown bundle.</p>
+            <p id="website-report-share-best-format-actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin:0;align-items:flex-start;min-width:0;width:100%;box-sizing:border-box;">
+              <% if (_rpBestChat) { %>
+              <div class="website-share-best-for-row website-share-best-for-row--slack website-share-a11y-group website-share-a11y-group--best-for-slack" style="display:flex;flex-direction:column;gap:0.24rem;align-items:stretch;max-width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line,#e6e8ee);border-radius:8px;padding:0.4rem 0.5rem;background:rgba(255,255,255,0.5);" role="group" aria-label="Best-for: Slack — copy and related deep-link fields">
+                <div class="website-share-best-for-row__primary" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem;min-width:0;width:100%;box-sizing:border-box;">
+                  <strong class="muted" style="font-size:0.76em;font-weight:700;letter-spacing:0.02em;margin:0;">Slack</strong>
+                  <button type="button" class="btn btn--primary website-share-copy-btn--primary" id="website-report-share-best-slack-copy" style="font-size:0.83em;padding:0.26em 0.5em;line-height:1.2;white-space:nowrap;" aria-label="Copy best format for Slack (chat snippet)">Copy for Slack</button>
+                  <% if (typeof websiteReportShareDeepLinks !== 'undefined' && websiteReportShareDeepLinks && websiteReportShareDeepLinks.chat) { %>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-best-slack-copy-best" style="font-size:0.8em;padding:0.24em 0.48em;line-height:1.2;white-space:nowrap;" aria-label="Copy richest Best-for preset for Slack (chat deep-link bundle)">Copy best</button>
+                  <span class="muted website-share-best-for-copy-best-hint" style="font-size:0.74em;line-height:1.25;white-space:nowrap;">uses chat bundle</span>
+                  <% } %>
+                </div>
+              <% if (typeof websiteReportShareDeepLinks !== 'undefined' && websiteReportShareDeepLinks && websiteReportShareDeepLinks.chat) { %>
+                <div class="website-share-best-for-row__links" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.35rem;">
+              <a id="website-report-share-best-slack-open-source" class="muted" href="<%= websiteReportShareDeepLinks.chat %>" style="font-size:0.82em;line-height:1.2;white-space:nowrap;">Open source</a>
+              <input type="text" readonly tabindex="-1" aria-hidden="true" class="input-field__control" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;opacity:0;" id="website-report-share-best-slack-open-url" value="<%= websiteReportShareDeepLinks.chat %>" />
+              <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.82em;padding:0.22em 0.45em;line-height:1.2;white-space:nowrap;" id="website-report-share-best-slack-open-copy" aria-label="Copy Slack advanced-source deep link URL">Copy link</button>
+                </div>
+                <div class="website-share-best-for-row__bundles" style="display:flex;flex-direction:column;gap:0.2rem;width:100%;min-width:0;">
+              <div style="display:flex;flex-wrap:wrap;gap:0.28rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.15rem;max-height:4.25rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-best-slack-open-bundle"
+                  onclick="this.select();"
+                  aria-label="Best-for deep-link bundle for Slack (label, target, URL)"
+                ><%= _rpBestShareLbl %><% if (_rpBestShareLbl) { %>
+
+<% } %>Best for: Slack
+<%= websiteReportShareDeepLinks.chat %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.78em;padding:0.24em 0.42em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-best-slack-open-bundle-copy" aria-label="Copy best-for deep-link bundle for Slack">Copy bundle</button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:0.28rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.25rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-best-slack-open-bundle-md"
+                  onclick="this.select();"
+                  aria-label="Best-for deep-link bundle for Slack, markdown one-liner"
+                ><% if (_rpBestShareLbl) { %>[<%= _rpBestShareLbl %> · Best for: Slack](<%= websiteReportShareDeepLinks.chat %>)<% } else { %>[Best for: Slack](<%= websiteReportShareDeepLinks.chat %>)<% } %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.78em;padding:0.24em 0.42em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-best-slack-open-bundle-md-copy" aria-label="Copy best-for deep-link bundle for Slack (markdown)">MD</button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:0.28rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.25rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-best-slack-open-bundle-chat"
+                  onclick="this.select();"
+                  aria-label="Best-for deep-link bundle for Slack, chat one-liner"
+                ><% if (_rpBestShareLbl) { %><<%= websiteReportShareDeepLinks.chat %>|<%= _rpBestShareLbl %> · Best for: Slack><% } else { %><<%= websiteReportShareDeepLinks.chat %>|Best for: Slack><% } %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.78em;padding:0.24em 0.42em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-best-slack-open-bundle-chat-copy" aria-label="Copy best-for deep-link bundle for Slack (chat)">Chat</button>
+              </div>
+                </div>
+              <% } %>
+              </div>
+              <% } %>
+              <% if (_rpBestEmail) { %>
+              <div class="website-share-best-for-row website-share-best-for-row--email website-share-a11y-group website-share-a11y-group--best-for-email" style="display:flex;flex-direction:column;gap:0.24rem;align-items:stretch;max-width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line,#e6e8ee);border-radius:8px;padding:0.4rem 0.5rem;background:rgba(255,255,255,0.5);" role="group" aria-label="Best-for: Email — copy and related deep-link fields">
+                <div class="website-share-best-for-row__primary" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem;min-width:0;width:100%;box-sizing:border-box;">
+                  <strong class="muted" style="font-size:0.76em;font-weight:700;letter-spacing:0.02em;margin:0;">Email</strong>
+                  <button type="button" class="btn btn--primary website-share-copy-btn--primary" id="website-report-share-best-email-copy" style="font-size:0.83em;padding:0.26em 0.5em;line-height:1.2;white-space:nowrap;" aria-label="Copy best format for email (email-ready bundle)">Copy for Email</button>
+                  <% if (typeof websiteReportShareDeepLinks !== 'undefined' && websiteReportShareDeepLinks && websiteReportShareDeepLinks.bundles) { %>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-best-email-copy-best" style="font-size:0.8em;padding:0.24em 0.48em;line-height:1.2;white-space:nowrap;" aria-label="Copy richest Best-for preset for Email (plain deep-link bundle)">Copy best</button>
+                  <span class="muted website-share-best-for-copy-best-hint" style="font-size:0.74em;line-height:1.25;white-space:nowrap;">uses plain bundle</span>
+                  <% } %>
+                </div>
+              <% if (typeof websiteReportShareDeepLinks !== 'undefined' && websiteReportShareDeepLinks && websiteReportShareDeepLinks.bundles) { %>
+                <div class="website-share-best-for-row__links" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.35rem;">
+              <a id="website-report-share-best-email-open-source" class="muted" href="<%= websiteReportShareDeepLinks.bundles %>" style="font-size:0.82em;line-height:1.2;white-space:nowrap;">Open source</a>
+              <input type="text" readonly tabindex="-1" aria-hidden="true" class="input-field__control" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;opacity:0;" id="website-report-share-best-email-open-url" value="<%= websiteReportShareDeepLinks.bundles %>" />
+              <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.82em;padding:0.22em 0.45em;line-height:1.2;white-space:nowrap;" id="website-report-share-best-email-open-copy" aria-label="Copy email bundles advanced-source deep link URL">Copy link</button>
+                </div>
+                <div class="website-share-best-for-row__bundles" style="display:flex;flex-direction:column;gap:0.2rem;width:100%;min-width:0;">
+              <div style="display:flex;flex-wrap:wrap;gap:0.28rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.15rem;max-height:4.25rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-best-email-open-bundle"
+                  onclick="this.select();"
+                  aria-label="Best-for deep-link bundle for Email (label, target, URL)"
+                ><%= _rpBestShareLbl %><% if (_rpBestShareLbl) { %>
+
+<% } %>Best for: Email
+<%= websiteReportShareDeepLinks.bundles %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.78em;padding:0.24em 0.42em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-best-email-open-bundle-copy" aria-label="Copy best-for deep-link bundle for Email">Copy bundle</button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:0.28rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.25rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-best-email-open-bundle-md"
+                  onclick="this.select();"
+                  aria-label="Best-for deep-link bundle for Email, markdown one-liner"
+                ><% if (_rpBestShareLbl) { %>[<%= _rpBestShareLbl %> · Best for: Email](<%= websiteReportShareDeepLinks.bundles %>)<% } else { %>[Best for: Email](<%= websiteReportShareDeepLinks.bundles %>)<% } %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.78em;padding:0.24em 0.42em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-best-email-open-bundle-md-copy" aria-label="Copy best-for deep-link bundle for Email (markdown)">MD</button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:0.28rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.25rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-best-email-open-bundle-chat"
+                  onclick="this.select();"
+                  aria-label="Best-for deep-link bundle for Email, chat one-liner"
+                ><% if (_rpBestShareLbl) { %><<%= websiteReportShareDeepLinks.bundles %>|<%= _rpBestShareLbl %> · Best for: Email><% } else { %><<%= websiteReportShareDeepLinks.bundles %>|Best for: Email><% } %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.78em;padding:0.24em 0.42em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-best-email-open-bundle-chat-copy" aria-label="Copy best-for deep-link bundle for Email (chat)">Chat</button>
+              </div>
+                </div>
+              <% } %>
+              </div>
+              <% } %>
+              <% if (_rpBestMd) { %>
+              <div class="website-share-best-for-row website-share-best-for-row--docs website-share-a11y-group website-share-a11y-group--best-for-docs" style="display:flex;flex-direction:column;gap:0.24rem;align-items:stretch;max-width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line,#e6e8ee);border-radius:8px;padding:0.4rem 0.5rem;background:rgba(255,255,255,0.5);" role="group" aria-label="Best-for: Docs — copy and related deep-link fields">
+                <div class="website-share-best-for-row__primary" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem;min-width:0;width:100%;box-sizing:border-box;">
+                  <strong class="muted" style="font-size:0.76em;font-weight:700;letter-spacing:0.02em;margin:0;">Docs</strong>
+                  <button type="button" class="btn btn--primary website-share-copy-btn--primary" id="website-report-share-best-docs-copy" style="font-size:0.83em;padding:0.26em 0.5em;line-height:1.2;white-space:nowrap;" aria-label="Copy best format for docs (markdown link)">Copy for Docs</button>
+                  <% if (typeof websiteReportShareDeepLinks !== 'undefined' && websiteReportShareDeepLinks && websiteReportShareDeepLinks.markdown) { %>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-best-docs-copy-best" style="font-size:0.8em;padding:0.24em 0.48em;line-height:1.2;white-space:nowrap;" aria-label="Copy richest Best-for preset for Docs (markdown deep-link bundle)">Copy best</button>
+                  <span class="muted website-share-best-for-copy-best-hint" style="font-size:0.74em;line-height:1.25;white-space:nowrap;">uses markdown bundle</span>
+                  <% } %>
+                </div>
+              <% if (typeof websiteReportShareDeepLinks !== 'undefined' && websiteReportShareDeepLinks && websiteReportShareDeepLinks.markdown) { %>
+                <div class="website-share-best-for-row__links" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.35rem;">
+              <a id="website-report-share-best-docs-open-source" class="muted" href="<%= websiteReportShareDeepLinks.markdown %>" style="font-size:0.82em;line-height:1.2;white-space:nowrap;">Open source</a>
+              <input type="text" readonly tabindex="-1" aria-hidden="true" class="input-field__control" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;opacity:0;" id="website-report-share-best-docs-open-url" value="<%= websiteReportShareDeepLinks.markdown %>" />
+              <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.82em;padding:0.22em 0.45em;line-height:1.2;white-space:nowrap;" id="website-report-share-best-docs-open-copy" aria-label="Copy docs markdown advanced-source deep link URL">Copy link</button>
+                </div>
+                <div class="website-share-best-for-row__bundles" style="display:flex;flex-direction:column;gap:0.2rem;width:100%;min-width:0;">
+              <div style="display:flex;flex-wrap:wrap;gap:0.28rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.15rem;max-height:4.25rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-best-docs-open-bundle"
+                  onclick="this.select();"
+                  aria-label="Best-for deep-link bundle for Docs (label, target, URL)"
+                ><%= _rpBestShareLbl %><% if (_rpBestShareLbl) { %>
+
+<% } %>Best for: Docs
+<%= websiteReportShareDeepLinks.markdown %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.78em;padding:0.24em 0.42em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-best-docs-open-bundle-copy" aria-label="Copy best-for deep-link bundle for Docs">Copy bundle</button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:0.28rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.25rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-best-docs-open-bundle-md"
+                  onclick="this.select();"
+                  aria-label="Best-for deep-link bundle for Docs, markdown one-liner"
+                ><% if (_rpBestShareLbl) { %>[<%= _rpBestShareLbl %> · Best for: Docs](<%= websiteReportShareDeepLinks.markdown %>)<% } else { %>[Best for: Docs](<%= websiteReportShareDeepLinks.markdown %>)<% } %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.78em;padding:0.24em 0.42em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-best-docs-open-bundle-md-copy" aria-label="Copy best-for deep-link bundle for Docs (markdown)">MD</button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:0.28rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.25rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-best-docs-open-bundle-chat"
+                  onclick="this.select();"
+                  aria-label="Best-for deep-link bundle for Docs, chat one-liner"
+                ><% if (_rpBestShareLbl) { %><<%= websiteReportShareDeepLinks.markdown %>|<%= _rpBestShareLbl %> · Best for: Docs><% } else { %><<%= websiteReportShareDeepLinks.markdown %>|Best for: Docs><% } %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.78em;padding:0.24em 0.42em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-best-docs-open-bundle-chat-copy" aria-label="Copy best-for deep-link bundle for Docs (chat)">Chat</button>
+              </div>
+                </div>
+              <% } %>
+              </div>
+              <% } %>
+            </p>
+          </div>
+          <% } %>
+          <% if ((typeof websiteReportShareSnippet !== 'undefined' && websiteReportShareSnippet) || (typeof websiteReportShareBundleQuickLink !== 'undefined' && websiteReportShareBundleQuickLink)) { %>
+          <% if (typeof websiteReportShareDeepLinks !== 'undefined' && websiteReportShareDeepLinks) { %>
+          <div class="website-share-a11y-group website-share-a11y-group--target-presets" style="padding-top:0.45rem;margin-top:0.25rem;border-top:1px dashed var(--line,#e0e3ea);width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Advanced target presets: open links and copy snippets by format">
+            <p class="muted" id="website-report-share-advanced-target-presets-hint" style="margin:0 0 0.35rem;font-size:0.82em;line-height:1.4;"><strong>Advanced target presets</strong> — opens this page with Advanced expanded and one format highlighted.</p>
+            <p id="website-report-share-advanced-target-presets" class="website-share-advanced-target-presets" style="display:flex;gap:0.45rem;flex-wrap:wrap;margin:0;align-items:stretch;min-width:0;width:100%;box-sizing:border-box;">
+              <% var _rpPresetSnippetLbl = (typeof websiteReportShareLabel !== 'undefined' && websiteReportShareLabel) ? String(websiteReportShareLabel).trim() : ''; %>
+              <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-markdown" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line,#e2e5ec);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:rgba(255,255,255,0.55);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Markdown — open, copy snippets">
+                <a class="btn btn--secondary" style="font-size:0.86em;padding:0.3em 0.55em;line-height:1.2;font-weight:600;align-self:flex-start;" id="website-report-share-advanced-target-preset-markdown" href="<%= websiteReportShareDeepLinks.markdown %>">Markdown</a>
+                <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line,#e8eaef);padding-top:0.28rem;margin-top:0.06rem;">
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.35rem;max-height:4.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-markdown-snippet"
+                    onclick="this.select();"
+                    aria-label="Copy preset snippet for Markdown advanced target"
+                  ><%= _rpPresetSnippetLbl %><% if (_rpPresetSnippetLbl) { %>
+
+<% } %>Target: Markdown
+<%= websiteReportShareDeepLinks.markdown %></textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-markdown-snippet-copy" aria-label="Copy preset snippet for Markdown">Copy snippet</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-markdown-snippet-md"
+                    onclick="this.select();"
+                    aria-label="Markdown variant of preset snippet (Markdown advanced target)"
+                  >[<%= _rpPresetSnippetLbl ? _rpPresetSnippetLbl + ' · Markdown' : 'Markdown' %>](<%= websiteReportShareDeepLinks.markdown %>)</textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-markdown-snippet-md-copy" aria-label="Copy markdown variant for Markdown preset">MD</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-markdown-snippet-chat"
+                    onclick="this.select();"
+                    aria-label="Chat variant of preset snippet (Markdown advanced target)"
+                  ><<%= websiteReportShareDeepLinks.markdown %>|<%= _rpPresetSnippetLbl ? _rpPresetSnippetLbl + ' · Markdown' : 'Markdown' %>></textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-markdown-snippet-chat-copy" aria-label="Copy chat variant for Markdown preset">Chat fmt</button>
+                </div>
+                </div>
+              </div>
+              <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-chat" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line,#e2e5ec);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:rgba(255,255,255,0.55);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Chat — open, copy snippets">
+                <a class="btn btn--secondary" style="font-size:0.86em;padding:0.3em 0.55em;line-height:1.2;font-weight:600;align-self:flex-start;" id="website-report-share-advanced-target-preset-chat" href="<%= websiteReportShareDeepLinks.chat %>">Chat</a>
+                <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line,#e8eaef);padding-top:0.28rem;margin-top:0.06rem;">
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.35rem;max-height:4.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-chat-snippet"
+                    onclick="this.select();"
+                    aria-label="Copy preset snippet for Chat advanced target"
+                  ><%= _rpPresetSnippetLbl %><% if (_rpPresetSnippetLbl) { %>
+
+<% } %>Target: Chat
+<%= websiteReportShareDeepLinks.chat %></textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-chat-snippet-copy" aria-label="Copy preset snippet for Chat">Copy snippet</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-chat-snippet-md"
+                    onclick="this.select();"
+                    aria-label="Markdown variant of preset snippet (Chat advanced target)"
+                  >[<%= _rpPresetSnippetLbl ? _rpPresetSnippetLbl + ' · Chat' : 'Chat' %>](<%= websiteReportShareDeepLinks.chat %>)</textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-chat-snippet-md-copy" aria-label="Copy markdown variant for Chat preset">MD</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-chat-snippet-chat"
+                    onclick="this.select();"
+                    aria-label="Chat variant of preset snippet (Chat advanced target)"
+                  ><<%= websiteReportShareDeepLinks.chat %>|<%= _rpPresetSnippetLbl ? _rpPresetSnippetLbl + ' · Chat' : 'Chat' %>></textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-chat-snippet-chat-copy" aria-label="Copy chat variant for Chat preset">Chat fmt</button>
+                </div>
+                </div>
+              </div>
+              <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-named" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line,#e2e5ec);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:rgba(255,255,255,0.55);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Named link — open, copy snippets">
+                <a class="btn btn--secondary" style="font-size:0.86em;padding:0.3em 0.55em;line-height:1.2;font-weight:600;align-self:flex-start;" id="website-report-share-advanced-target-preset-named" href="<%= websiteReportShareDeepLinks.named %>">Named</a>
+                <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line,#e8eaef);padding-top:0.28rem;margin-top:0.06rem;">
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.35rem;max-height:4.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-named-snippet"
+                    onclick="this.select();"
+                    aria-label="Copy preset snippet for Named advanced target"
+                  ><%= _rpPresetSnippetLbl %><% if (_rpPresetSnippetLbl) { %>
+
+<% } %>Target: Named
+<%= websiteReportShareDeepLinks.named %></textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-named-snippet-copy" aria-label="Copy preset snippet for Named link">Copy snippet</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-named-snippet-md"
+                    onclick="this.select();"
+                    aria-label="Markdown variant of preset snippet (Named advanced target)"
+                  >[<%= _rpPresetSnippetLbl ? _rpPresetSnippetLbl + ' · Named' : 'Named' %>](<%= websiteReportShareDeepLinks.named %>)</textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-named-snippet-md-copy" aria-label="Copy markdown variant for Named preset">MD</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-named-snippet-chat"
+                    onclick="this.select();"
+                    aria-label="Chat variant of preset snippet (Named advanced target)"
+                  ><<%= websiteReportShareDeepLinks.named %>|<%= _rpPresetSnippetLbl ? _rpPresetSnippetLbl + ' · Named' : 'Named' %>></textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-named-snippet-chat-copy" aria-label="Copy chat variant for Named preset">Chat fmt</button>
+                </div>
+                </div>
+              </div>
+              <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-email" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line,#e2e5ec);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:rgba(255,255,255,0.55);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Email — open, copy snippets">
+                <a class="btn btn--secondary" style="font-size:0.86em;padding:0.3em 0.55em;line-height:1.2;font-weight:600;align-self:flex-start;" id="website-report-share-advanced-target-preset-email" href="<%= websiteReportShareDeepLinks.email %>">Email</a>
+                <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line,#e8eaef);padding-top:0.28rem;margin-top:0.06rem;">
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.35rem;max-height:4.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-email-snippet"
+                    onclick="this.select();"
+                    aria-label="Copy preset snippet for Email advanced target"
+                  ><%= _rpPresetSnippetLbl %><% if (_rpPresetSnippetLbl) { %>
+
+<% } %>Target: Email
+<%= websiteReportShareDeepLinks.email %></textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-email-snippet-copy" aria-label="Copy preset snippet for Email">Copy snippet</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-email-snippet-md"
+                    onclick="this.select();"
+                    aria-label="Markdown variant of preset snippet (Email advanced target)"
+                  >[<%= _rpPresetSnippetLbl ? _rpPresetSnippetLbl + ' · Email' : 'Email' %>](<%= websiteReportShareDeepLinks.email %>)</textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-email-snippet-md-copy" aria-label="Copy markdown variant for Email preset">MD</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-email-snippet-chat"
+                    onclick="this.select();"
+                    aria-label="Chat variant of preset snippet (Email advanced target)"
+                  ><<%= websiteReportShareDeepLinks.email %>|<%= _rpPresetSnippetLbl ? _rpPresetSnippetLbl + ' · Email' : 'Email' %>></textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-email-snippet-chat-copy" aria-label="Copy chat variant for Email preset">Chat fmt</button>
+                </div>
+                </div>
+              </div>
+              <div class="website-share-advanced-target-preset-block website-share-a11y-group website-share-a11y-group--target-bundles" style="display:flex;flex:1 1 11rem;flex-direction:column;gap:0.2rem;align-items:stretch;box-sizing:border-box;border:1px solid var(--line,#e2e5ec);border-radius:8px;padding:0.38rem 0.42rem 0.42rem;background:rgba(255,255,255,0.55);max-width:100%;min-width:0;" role="group" aria-label="Advanced target: Bundles — open, copy snippets">
+                <a class="btn btn--secondary" style="font-size:0.86em;padding:0.3em 0.55em;line-height:1.2;font-weight:600;align-self:flex-start;" id="website-report-share-advanced-target-preset-bundles" href="<%= websiteReportShareDeepLinks.bundles %>">Bundles</a>
+                <div class="website-share-advanced-target-preset-snippets" style="display:flex;flex-direction:column;gap:0.14rem;width:100%;min-width:0;border-top:1px dashed var(--line,#e8eaef);padding-top:0.28rem;margin-top:0.06rem;">
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.35rem;max-height:4.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-bundles-snippet"
+                    onclick="this.select();"
+                    aria-label="Copy preset snippet for Bundles advanced target"
+                  ><%= _rpPresetSnippetLbl %><% if (_rpPresetSnippetLbl) { %>
+
+<% } %>Target: Bundles
+<%= websiteReportShareDeepLinks.bundles %></textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-bundles-snippet-copy" aria-label="Copy preset snippet for Bundles">Copy snippet</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-bundles-snippet-md"
+                    onclick="this.select();"
+                    aria-label="Markdown variant of preset snippet (Bundles advanced target)"
+                  >[<%= _rpPresetSnippetLbl ? _rpPresetSnippetLbl + ' · Bundles' : 'Bundles' %>](<%= websiteReportShareDeepLinks.bundles %>)</textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-bundles-snippet-md-copy" aria-label="Copy markdown variant for Bundles preset">MD</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.24rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                  <textarea
+                    readonly
+                    class="input-field__control"
+                    style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:1.85rem;max-height:3.75rem;resize:vertical;cursor:text;font-size:0.76em;line-height:1.32;font-family:inherit;box-sizing:border-box;"
+                    id="website-report-share-advanced-target-preset-bundles-snippet-chat"
+                    onclick="this.select();"
+                    aria-label="Chat variant of preset snippet (Bundles advanced target)"
+                  ><<%= websiteReportShareDeepLinks.bundles %>|<%= _rpPresetSnippetLbl ? _rpPresetSnippetLbl + ' · Bundles' : 'Bundles' %>></textarea>
+                  <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.76em;padding:0.22em 0.4em;line-height:1.2;white-space:nowrap;align-self:flex-start;" id="website-report-share-advanced-target-preset-bundles-snippet-chat-copy" aria-label="Copy chat variant for Bundles preset">Chat fmt</button>
+                </div>
+                </div>
+              </div>
+            </p>
+          </div>
+          <% } %>
+          <details class="website-share-card__advanced" style="margin-top:0.35rem;padding-top:0.55rem;border-top:1px solid var(--line,#e6e8ee);width:100%;min-width:0;box-sizing:border-box;"<% if (typeof websiteReportShareAdvancedOpen !== 'undefined' && websiteReportShareAdvancedOpen) { %> open<% } %>>
+            <summary class="muted" style="cursor:pointer;font-size:0.95em;line-height:1.4;list-style-position:outside;">Advanced share formats (markdown, chat, email, bundles)</summary>
+            <div style="display:flex;flex-direction:column;gap:0.45rem;width:100%;min-width:0;padding-top:0.5rem;box-sizing:border-box;">
+            <% if (typeof websiteReportShareDeepLinks !== 'undefined' && websiteReportShareDeepLinks) { %>
+            <div class="website-share-a11y-group website-share-a11y-group--direct-links" style="display:flex;flex-direction:column;gap:0.35rem;width:100%;max-width:100%;min-width:0;box-sizing:border-box;" role="group" aria-label="Direct permalinks: copy link and copy bundle by share format">
+              <p class="muted website-share-card__hint-line" id="website-report-share-direct-links-hint" style="margin:0;font-size:0.82em;line-height:1.35;"><strong>Direct links</strong> — same filters; Advanced opens with one format focused.</p>
+              <p id="website-report-share-direct-links" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-start;margin:0;min-width:0;width:100%;box-sizing:border-box;">
+                <% var _rpShareBundleLbl = (typeof websiteReportShareLabel !== 'undefined' && websiteReportShareLabel) ? String(websiteReportShareLabel).trim() : ''; %>
+                <span class="website-share-direct-link-block" style="display:flex;flex:1 1 12rem;min-width:0;max-width:100%;box-sizing:border-box;flex-direction:column;gap:0.25rem;align-items:stretch;">
+                  <span class="website-share-direct-link-block__head" style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;min-width:0;max-width:100%;box-sizing:border-box;">
+                    <a class="btn btn--secondary" style="font-size:0.85em;padding:0.28em 0.55em;line-height:1.25;" href="<%= websiteReportShareDeepLinks.markdown %>">Markdown</a>
+                    <input type="text" readonly tabindex="-1" aria-hidden="true" class="input-field__control" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;opacity:0;" id="website-report-share-direct-markdown-url" value="<%= websiteReportShareDeepLinks.markdown %>" />
+                    <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.85em;padding:0.28em 0.5em;line-height:1.25;white-space:nowrap;" id="website-report-share-direct-markdown-copy" aria-label="Copy markdown direct link URL">Copy</button>
+                  </span>
+                  <div style="display:flex;flex-wrap:wrap;gap:0.35rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                    <textarea
+                      readonly
+                      class="input-field__control"
+                      style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.55rem;max-height:5rem;resize:vertical;cursor:text;font-size:0.78em;line-height:1.35;font-family:inherit;box-sizing:border-box;"
+                      id="website-report-share-direct-markdown-bundle"
+                      onclick="this.select();"
+                      aria-label="Deep-link bundle for markdown (label, target, permalink)"
+                    ><%= _rpShareBundleLbl %><% if (_rpShareBundleLbl) { %>
+
+<% } %>Target: Markdown
+<%= websiteReportShareDeepLinks.markdown %></textarea>
+                    <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.8em;padding:0.26em 0.45em;line-height:1.25;white-space:nowrap;align-self:flex-start;" id="website-report-share-direct-markdown-bundle-copy" aria-label="Copy deep-link bundle for markdown">Copy bundle</button>
+                  </div>
+                </span>
+                <span class="website-share-direct-link-block" style="display:flex;flex:1 1 12rem;min-width:0;max-width:100%;box-sizing:border-box;flex-direction:column;gap:0.25rem;align-items:stretch;">
+                  <span class="website-share-direct-link-block__head" style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;min-width:0;max-width:100%;box-sizing:border-box;">
+                    <a class="btn btn--secondary" style="font-size:0.85em;padding:0.28em 0.55em;line-height:1.25;" href="<%= websiteReportShareDeepLinks.chat %>">Chat</a>
+                    <input type="text" readonly tabindex="-1" aria-hidden="true" class="input-field__control" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;opacity:0;" id="website-report-share-direct-chat-url" value="<%= websiteReportShareDeepLinks.chat %>" />
+                    <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.85em;padding:0.28em 0.5em;line-height:1.25;white-space:nowrap;" id="website-report-share-direct-chat-copy" aria-label="Copy chat direct link URL">Copy</button>
+                  </span>
+                  <div style="display:flex;flex-wrap:wrap;gap:0.35rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                    <textarea
+                      readonly
+                      class="input-field__control"
+                      style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.55rem;max-height:5rem;resize:vertical;cursor:text;font-size:0.78em;line-height:1.35;font-family:inherit;box-sizing:border-box;"
+                      id="website-report-share-direct-chat-bundle"
+                      onclick="this.select();"
+                      aria-label="Deep-link bundle for chat (label, target, permalink)"
+                    ><%= _rpShareBundleLbl %><% if (_rpShareBundleLbl) { %>
+
+<% } %>Target: Chat
+<%= websiteReportShareDeepLinks.chat %></textarea>
+                    <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.8em;padding:0.26em 0.45em;line-height:1.25;white-space:nowrap;align-self:flex-start;" id="website-report-share-direct-chat-bundle-copy" aria-label="Copy deep-link bundle for chat">Copy bundle</button>
+                  </div>
+                </span>
+                <span class="website-share-direct-link-block" style="display:flex;flex:1 1 12rem;min-width:0;max-width:100%;box-sizing:border-box;flex-direction:column;gap:0.25rem;align-items:stretch;">
+                  <span class="website-share-direct-link-block__head" style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;min-width:0;max-width:100%;box-sizing:border-box;">
+                    <a class="btn btn--secondary" style="font-size:0.85em;padding:0.28em 0.55em;line-height:1.25;" href="<%= websiteReportShareDeepLinks.named %>">Named</a>
+                    <input type="text" readonly tabindex="-1" aria-hidden="true" class="input-field__control" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;opacity:0;" id="website-report-share-direct-named-url" value="<%= websiteReportShareDeepLinks.named %>" />
+                    <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.85em;padding:0.28em 0.5em;line-height:1.25;white-space:nowrap;" id="website-report-share-direct-named-copy" aria-label="Copy named direct link URL">Copy</button>
+                  </span>
+                  <div style="display:flex;flex-wrap:wrap;gap:0.35rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                    <textarea
+                      readonly
+                      class="input-field__control"
+                      style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.55rem;max-height:5rem;resize:vertical;cursor:text;font-size:0.78em;line-height:1.35;font-family:inherit;box-sizing:border-box;"
+                      id="website-report-share-direct-named-bundle"
+                      onclick="this.select();"
+                      aria-label="Deep-link bundle for named link (label, target, permalink)"
+                    ><%= _rpShareBundleLbl %><% if (_rpShareBundleLbl) { %>
+
+<% } %>Target: Named
+<%= websiteReportShareDeepLinks.named %></textarea>
+                    <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.8em;padding:0.26em 0.45em;line-height:1.25;white-space:nowrap;align-self:flex-start;" id="website-report-share-direct-named-bundle-copy" aria-label="Copy deep-link bundle for named link">Copy bundle</button>
+                  </div>
+                </span>
+                <span class="website-share-direct-link-block" style="display:flex;flex:1 1 12rem;min-width:0;max-width:100%;box-sizing:border-box;flex-direction:column;gap:0.25rem;align-items:stretch;">
+                  <span class="website-share-direct-link-block__head" style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;min-width:0;max-width:100%;box-sizing:border-box;">
+                    <a class="btn btn--secondary" style="font-size:0.85em;padding:0.28em 0.55em;line-height:1.25;" href="<%= websiteReportShareDeepLinks.email %>">Email</a>
+                    <input type="text" readonly tabindex="-1" aria-hidden="true" class="input-field__control" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;opacity:0;" id="website-report-share-direct-email-url" value="<%= websiteReportShareDeepLinks.email %>" />
+                    <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.85em;padding:0.28em 0.5em;line-height:1.25;white-space:nowrap;" id="website-report-share-direct-email-copy" aria-label="Copy email direct link URL">Copy</button>
+                  </span>
+                  <div style="display:flex;flex-wrap:wrap;gap:0.35rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                    <textarea
+                      readonly
+                      class="input-field__control"
+                      style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.55rem;max-height:5rem;resize:vertical;cursor:text;font-size:0.78em;line-height:1.35;font-family:inherit;box-sizing:border-box;"
+                      id="website-report-share-direct-email-bundle"
+                      onclick="this.select();"
+                      aria-label="Deep-link bundle for email (label, target, permalink)"
+                    ><%= _rpShareBundleLbl %><% if (_rpShareBundleLbl) { %>
+
+<% } %>Target: Email
+<%= websiteReportShareDeepLinks.email %></textarea>
+                    <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.8em;padding:0.26em 0.45em;line-height:1.25;white-space:nowrap;align-self:flex-start;" id="website-report-share-direct-email-bundle-copy" aria-label="Copy deep-link bundle for email">Copy bundle</button>
+                  </div>
+                </span>
+                <span class="website-share-direct-link-block" style="display:flex;flex:1 1 12rem;min-width:0;max-width:100%;box-sizing:border-box;flex-direction:column;gap:0.25rem;align-items:stretch;">
+                  <span class="website-share-direct-link-block__head" style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;min-width:0;max-width:100%;box-sizing:border-box;">
+                    <a class="btn btn--secondary" style="font-size:0.85em;padding:0.28em 0.55em;line-height:1.25;" href="<%= websiteReportShareDeepLinks.bundles %>">Bundles</a>
+                    <input type="text" readonly tabindex="-1" aria-hidden="true" class="input-field__control" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;opacity:0;" id="website-report-share-direct-bundles-url" value="<%= websiteReportShareDeepLinks.bundles %>" />
+                    <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.85em;padding:0.28em 0.5em;line-height:1.25;white-space:nowrap;" id="website-report-share-direct-bundles-copy" aria-label="Copy bundles direct link URL">Copy</button>
+                  </span>
+                  <div style="display:flex;flex-wrap:wrap;gap:0.35rem;align-items:flex-start;max-width:100%;min-width:0;box-sizing:border-box;">
+                    <textarea
+                      readonly
+                      class="input-field__control"
+                      style="flex:1 1 8rem;min-width:0;max-width:min(16rem,100%);min-height:2.55rem;max-height:5rem;resize:vertical;cursor:text;font-size:0.78em;line-height:1.35;font-family:inherit;box-sizing:border-box;"
+                      id="website-report-share-direct-bundles-bundle"
+                      onclick="this.select();"
+                      aria-label="Deep-link bundle for bundles section (label, target, permalink)"
+                    ><%= _rpShareBundleLbl %><% if (_rpShareBundleLbl) { %>
+
+<% } %>Target: Bundles
+<%= websiteReportShareDeepLinks.bundles %></textarea>
+                    <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" style="font-size:0.8em;padding:0.26em 0.45em;line-height:1.25;white-space:nowrap;align-self:flex-start;" id="website-report-share-direct-bundles-bundle-copy" aria-label="Copy deep-link bundle for bundles">Copy bundle</button>
+                  </div>
+                </span>
+              </p>
+            </div>
+            <% } %>
+            <% var _rpt = (typeof websiteReportShareTarget !== 'undefined' && websiteReportShareTarget) ? String(websiteReportShareTarget).trim().toLowerCase() : ''; %>
+            <% var _rptEm = 'outline:2px solid rgba(37,99,235,0.35);outline-offset:2px;background:rgba(37,99,235,0.08);border-radius:6px;padding:0.5rem 0.55rem 0.55rem;max-width:100%;box-sizing:border-box;'; %>
+            <% if (typeof websiteReportShareSnippet !== 'undefined' && websiteReportShareSnippet) { %>
+            <% if (typeof websiteReportShareSnippetMarkdown !== 'undefined' && websiteReportShareSnippetMarkdown) { %>
+            <div class="website-share-a11y-group website-share-a11y-group--optional-markdown" style="display:flex;flex-direction:column;gap:0.35rem;width:100%;max-width:100%;min-width:0;box-sizing:border-box;<%= _rpt === 'markdown' ? _rptEm : '' %>" role="group" aria-label="Optional: Markdown link — field and copy">
+              <% if (_rpt === 'markdown') { %><p class="muted website-share-card__target-note" style="margin:0;font-size:0.82em;line-height:1.35;">Target format (deep link)</p><% } %>
+              <p class="muted" style="margin:0;font-size:0.88em;">Markdown link (optional)</p>
+              <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-start;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 12rem;min-width:0;max-width:100%;min-height:2.35rem;resize:vertical;cursor:text;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-snippet-md"
+                  onclick="this.select();"
+                  aria-label="Shareable report markdown link snippet"
+                ><%= websiteReportShareSnippetMarkdown %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-snippet-md-copy" style="white-space:nowrap;align-self:flex-start;flex-shrink:0;">Copy markdown</button>
+              </div>
+            </div>
+            <% } %>
+            <% if (typeof websiteReportShareChatSnippet !== 'undefined' && websiteReportShareChatSnippet) { %>
+            <div class="website-share-a11y-group website-share-a11y-group--optional-chat" style="display:flex;flex-direction:column;gap:0.35rem;width:100%;max-width:100%;min-width:0;box-sizing:border-box;<%= _rpt === 'chat' ? _rptEm : '' %>" role="group" aria-label="Optional: Slack or chat link — field and copy">
+              <% if (_rpt === 'chat') { %><p class="muted website-share-card__target-note" style="margin:0;font-size:0.82em;line-height:1.35;">Target format (deep link)</p><% } %>
+              <p class="muted" style="margin:0;font-size:0.88em;">Slack / chat link (optional, <code>&lt;url|label&gt;</code>)</p>
+              <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-start;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 12rem;min-width:0;max-width:100%;min-height:2.35rem;resize:vertical;cursor:text;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-chat-snippet"
+                  onclick="this.select();"
+                  aria-label="Shareable Slack-style report link snippet"
+                ><%= websiteReportShareChatSnippet %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-chat-copy" style="white-space:nowrap;align-self:flex-start;flex-shrink:0;">Copy chat snippet</button>
+              </div>
+            </div>
+            <% } %>
+            <% if (typeof websiteReportShareNamedLink !== 'undefined' && websiteReportShareNamedLink) { %>
+            <div class="website-share-a11y-group website-share-a11y-group--optional-named" style="display:flex;flex-direction:column;gap:0.35rem;width:100%;max-width:100%;min-width:0;box-sizing:border-box;<%= _rpt === 'named' ? _rptEm : '' %>" role="group" aria-label="Optional: Named link — field and copy">
+              <% if (_rpt === 'named') { %><p class="muted website-share-card__target-note" style="margin:0;font-size:0.82em;line-height:1.35;">Target format (deep link)</p><% } %>
+              <p class="muted" style="margin:0;font-size:0.88em;">Named link (built-in, not saved)</p>
+              <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-start;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 12rem;min-width:0;max-width:100%;min-height:2.35rem;resize:vertical;cursor:text;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-named"
+                  onclick="this.select();"
+                  aria-label="Shareable report named link line"
+                ><%= websiteReportShareNamedLink %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-named-copy" style="white-space:nowrap;align-self:flex-start;flex-shrink:0;">Copy named link</button>
+              </div>
+            </div>
+            <% } %>
+            <% if (typeof websiteReportShareEmailSubject !== 'undefined' && websiteReportShareEmailSubject != null && typeof websiteReportShareEmailBody !== 'undefined' && websiteReportShareEmailBody) { %>
+            <div class="website-share-a11y-group website-share-a11y-group--email-plain" style="padding-top:0.45rem;margin-top:0.2rem;border-top:1px dashed var(--line,#e0e3ea);display:flex;flex-direction:column;gap:0.4rem;width:100%;min-width:0;box-sizing:border-box;<%= _rpt === 'email' ? _rptEm : '' %>" role="group" aria-label="Email (plain text): subject, body, and copy">
+              <% if (_rpt === 'email') { %><p class="muted website-share-card__target-note" style="margin:0;font-size:0.82em;line-height:1.35;">Target format (deep link)</p><% } %>
+              <p class="muted" style="margin:0;font-size:0.88em;">Email (plain text)</p>
+              <p class="muted" style="margin:0;font-size:0.82em;line-height:1.35;">Suggested subject and body — not sent automatically.</p>
+              <p class="muted" style="margin:0;font-size:0.88em;">Subject</p>
+              <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:stretch;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
+                <input
+                  type="text"
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 12rem;min-width:0;max-width:100%;cursor:text;box-sizing:border-box;"
+                  id="website-report-share-email-subject"
+                  value="<%= websiteReportShareEmailSubject %>"
+                  onclick="this.select();"
+                  aria-label="Suggested email subject for this report"
+                />
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-email-subject-copy" style="white-space:nowrap;flex-shrink:0;">Copy subject</button>
+              </div>
+              <p class="muted" style="margin:0;font-size:0.88em;">Body</p>
+              <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-start;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
+                <textarea
+                  readonly
+                  class="input-field__control"
+                  style="flex:1 1 12rem;min-width:0;max-width:100%;min-height:3.75rem;resize:vertical;cursor:text;font-family:inherit;box-sizing:border-box;"
+                  id="website-report-share-email-body"
+                  onclick="this.select();"
+                  aria-label="Suggested email body for this report"
+                ><%= websiteReportShareEmailBody %></textarea>
+                <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-email-body-copy" style="white-space:nowrap;align-self:flex-start;flex-shrink:0;">Copy body</button>
+              </div>
+              <% if (typeof websiteReportShareMailtoDraftHref !== 'undefined' && websiteReportShareMailtoDraftHref) { %>
+              <p class="muted" style="margin:0;font-size:0.88em;line-height:1.35;">
+                <a id="website-report-share-email-draft" href="<%= websiteReportShareMailtoDraftHref %>">Open email draft</a>
+                — opens your default mail app (no recipient). Nothing is sent from this app.
+              </p>
+              <% } %>
+            </div>
+            <% } %>
+            <% } %>
+            <% if (typeof websiteReportShareBundleQuickLink !== 'undefined' && websiteReportShareBundleQuickLink) { %>
+            <div class="website-share-a11y-group website-share-a11y-group--copy-bundles" style="padding-top:0.45rem;margin-top:0.25rem;border-top:1px dashed var(--line,#e0e3ea);display:flex;flex-direction:column;gap:0.45rem;width:100%;min-width:0;box-sizing:border-box;<%= _rpt === 'bundles' ? _rptEm : '' %>" role="group" aria-label="Copy bundles: combined and format-specific blocks">
+            <% if (_rpt === 'bundles') { %><p class="muted website-share-card__target-note" style="margin:0;font-size:0.82em;line-height:1.35;">Target format (deep link)</p><% } %>
+            <p class="muted website-share-card__hint-line" id="website-report-share-bundles-hint" style="margin:0;font-size:0.88em;line-height:1.35;"><strong>Copy bundles</strong> — combined blocks from the formats above.</p>
+            <% if (typeof websiteReportShareBundleAllFormats !== 'undefined' && websiteReportShareBundleAllFormats) { %>
+            <p class="muted" style="margin:0;font-size:0.88em;">All share formats</p>
+            <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-start;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
+              <textarea
+                readonly
+                class="input-field__control"
+                style="flex:1 1 12rem;min-width:0;max-width:100%;min-height:6rem;resize:vertical;cursor:text;font-family:inherit;box-sizing:border-box;"
+                id="website-report-share-bundle-all"
+                onclick="this.select();"
+                aria-label="Copy bundle: all share formats (plain text)"
+              ><%= websiteReportShareBundleAllFormats %></textarea>
+              <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-bundle-all-copy" style="white-space:nowrap;align-self:flex-start;flex-shrink:0;">Copy all formats</button>
+            </div>
+            <% } %>
+            <p class="muted" style="margin:0;font-size:0.88em;">Quick link</p>
+            <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-start;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
+              <textarea
+                readonly
+                class="input-field__control"
+                style="flex:1 1 12rem;min-width:0;max-width:100%;min-height:2.35rem;resize:vertical;cursor:text;font-family:inherit;box-sizing:border-box;"
+                id="website-report-share-bundle-quick"
+                onclick="this.select();"
+                aria-label="Copy bundle: quick link (named link)"
+              ><%= websiteReportShareBundleQuickLink %></textarea>
+              <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-bundle-quick-copy" style="white-space:nowrap;align-self:flex-start;flex-shrink:0;">Copy bundle</button>
+            </div>
+            <% if (typeof websiteReportShareBundleEmailReady !== 'undefined' && websiteReportShareBundleEmailReady) { %>
+            <p class="muted" style="margin:0;font-size:0.88em;">Email-ready</p>
+            <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-start;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
+              <textarea
+                readonly
+                class="input-field__control"
+                style="flex:1 1 12rem;min-width:0;max-width:100%;min-height:4.5rem;resize:vertical;cursor:text;font-family:inherit;box-sizing:border-box;"
+                id="website-report-share-bundle-email"
+                onclick="this.select();"
+                aria-label="Copy bundle: email-ready subject and body"
+              ><%= websiteReportShareBundleEmailReady %></textarea>
+              <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-bundle-email-copy" style="white-space:nowrap;align-self:flex-start;flex-shrink:0;">Copy bundle</button>
+            </div>
+            <% } %>
+            <% if (typeof websiteReportShareBundleChatReady !== 'undefined' && websiteReportShareBundleChatReady) { %>
+            <p class="muted" style="margin:0;font-size:0.88em;">Chat-ready</p>
+            <div class="website-share-copy-row" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:flex-start;width:100%;max-width:100%;min-width:0;box-sizing:border-box;">
+              <textarea
+                readonly
+                class="input-field__control"
+                style="flex:1 1 12rem;min-width:0;max-width:100%;min-height:2.35rem;resize:vertical;cursor:text;font-family:inherit;box-sizing:border-box;"
+                id="website-report-share-bundle-chat"
+                onclick="this.select();"
+                aria-label="Copy bundle: Slack-style chat link"
+              ><%= websiteReportShareBundleChatReady %></textarea>
+              <button type="button" class="btn btn--text btn--sm website-share-copy-btn--secondary website-share-copy-btn--secondary-compact" id="website-report-share-bundle-chat-copy" style="white-space:nowrap;align-self:flex-start;flex-shrink:0;">Copy bundle</button>
+            </div>
+            <% } %>
+            </div>
+            <% } %>
+            </div>
+          </details>
+          <% } %>
+        </div>
+        <style>
+          .website-share-card .btn.website-share-copy-btn--secondary-compact {
+            font-size: 0.72em !important;
+            line-height: 1.15 !important;
+            padding: 0.14em 0.32em !important;
+            font-weight: 500;
+          }
+          .website-share-card.website-share-card--focus-a11y a:focus-visible,
+          .website-share-card.website-share-card--focus-a11y button:focus-visible,
+          .website-share-card.website-share-card--focus-a11y input:focus-visible,
+          .website-share-card.website-share-card--focus-a11y textarea:focus-visible,
+          .website-share-card.website-share-card--focus-a11y summary:focus-visible {
+            outline: 2px solid var(--accent, #2563eb);
+            outline-offset: 2px;
+          }
+          .website-share-card.website-share-card--group-focus-a11y .website-share-a11y-group:focus-within {
+            background-color: rgba(37, 99, 235, 0.045);
+            box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.2);
+          }
+          .website-share-card.website-share-card--group-focus-a11y .website-share-direct-link-block:focus-within {
+            background-color: rgba(37, 99, 235, 0.05);
+            box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.24);
+            border-radius: 6px;
+          }
+          .website-share-card .btn.website-share-copy-btn--copied-state {
+            color: #15803d;
+          }
+          .website-share-card .btn.website-share-copy-btn--failed-state {
+            color: #b45309;
+          }
+          .website-share-card .btn.website-share-copy-btn--busy {
+            opacity: 0.75;
+            pointer-events: none;
+          }
+        </style>
+        <script>
+          (function () {
+            var WEBSITE_SHARE_COPY_OK_MS = 2000;
+            var WEBSITE_SHARE_COPY_FAIL_MS = 2500;
+            var copyLiveEl = document.getElementById("website-report-share-copy-live");
+            function clearCopyLiveForNewAttempt() {
+              if (!copyLiveEl) return;
+              if (copyLiveEl._copyLiveRearmTimer) {
+                clearTimeout(copyLiveEl._copyLiveRearmTimer);
+                copyLiveEl._copyLiveRearmTimer = null;
+              }
+              copyLiveEl.textContent = "";
+            }
+            function setCopyLiveAnnounce(msg) {
+              if (!copyLiveEl) return;
+              if (copyLiveEl._copyLiveRearmTimer) {
+                clearTimeout(copyLiveEl._copyLiveRearmTimer);
+                copyLiveEl._copyLiveRearmTimer = null;
+              }
+              copyLiveEl.textContent = "";
+              copyLiveEl._copyLiveRearmTimer = setTimeout(function () {
+                if (copyLiveEl) copyLiveEl.textContent = msg;
+                copyLiveEl._copyLiveRearmTimer = null;
+              }, 0);
+            }
+            function resetAllCopyButtonStatesInShareCard(fromBtn) {
+              var card = fromBtn && fromBtn.closest && fromBtn.closest(".website-share-card");
+              if (!card) return;
+              var nodes = card.querySelectorAll("button");
+              for (var i = 0; i < nodes.length; i++) {
+                var b = nodes[i];
+                if (b._websiteShareCopyTimer) {
+                  clearTimeout(b._websiteShareCopyTimer);
+                  b._websiteShareCopyTimer = null;
+                }
+                var saved = b.getAttribute("data-website-share-copy-label");
+                if (saved) {
+                  b.textContent = saved;
+                }
+                b.removeAttribute("aria-busy");
+                b.classList.remove("website-share-copy-btn--busy", "website-share-copy-btn--copied-state", "website-share-copy-btn--failed-state");
+              }
+            }
+            function applyCopyButtonFeedback(btn, mode, orig) {
+              if (!btn) return;
+              if (btn._websiteShareCopyTimer) {
+                clearTimeout(btn._websiteShareCopyTimer);
+                btn._websiteShareCopyTimer = null;
+              }
+              btn.removeAttribute("aria-busy");
+              btn.classList.remove("website-share-copy-btn--busy", "website-share-copy-btn--copied-state", "website-share-copy-btn--failed-state");
+              if (mode === "ok") {
+                setCopyLiveAnnounce("Copied");
+                btn.textContent = "Copied";
+                btn.classList.add("website-share-copy-btn--copied-state");
+                btn._websiteShareCopyTimer = setTimeout(function () {
+                  if (!btn) return;
+                  if (btn.isConnected === false) {
+                    btn._websiteShareCopyTimer = null;
+                    return;
+                  }
+                  btn.textContent = orig;
+                  btn.classList.remove("website-share-copy-btn--copied-state");
+                  btn._websiteShareCopyTimer = null;
+                }, WEBSITE_SHARE_COPY_OK_MS);
+              } else {
+                setCopyLiveAnnounce("Select and copy");
+                btn.textContent = "Select and copy";
+                btn.classList.add("website-share-copy-btn--failed-state");
+                btn._websiteShareCopyTimer = setTimeout(function () {
+                  if (!btn) return;
+                  if (btn.isConnected === false) {
+                    btn._websiteShareCopyTimer = null;
+                    return;
+                  }
+                  btn.textContent = orig;
+                  btn.classList.remove("website-share-copy-btn--failed-state");
+                  btn._websiteShareCopyTimer = null;
+                }, WEBSITE_SHARE_COPY_FAIL_MS);
+              }
+            }
+            function wireCopy(btnId, fieldId) {
+              var btn = document.getElementById(btnId);
+              var field = document.getElementById(fieldId);
+              if (!btn || !field) return;
+              btn.addEventListener("click", function () {
+                resetAllCopyButtonStatesInShareCard(btn);
+                clearCopyLiveForNewAttempt();
+                if (!btn.getAttribute("data-website-share-copy-label")) {
+                  btn.setAttribute("data-website-share-copy-label", String(btn.textContent).replace(/\s+/g, " ").trim());
+                }
+                var orig = btn.getAttribute("data-website-share-copy-label");
+                field.focus();
+                if (field.select) field.select();
+                try {
+                  if (field.setSelectionRange) field.setSelectionRange(0, (field.value != null ? String(field.value) : "").length);
+                } catch (e) {}
+                btn.setAttribute("aria-busy", "true");
+                btn.classList.add("website-share-copy-btn--busy");
+                var val = field.value != null ? String(field.value) : "";
+                var writeText = navigator.clipboard && navigator.clipboard.writeText;
+                if (typeof writeText !== "function") {
+                  applyCopyButtonFeedback(btn, "fail", orig);
+                  return;
+                }
+                var p;
+                try {
+                  p = writeText.call(navigator.clipboard, val);
+                } catch (e) {
+                  applyCopyButtonFeedback(btn, "fail", orig);
+                  return;
+                }
+                if (p && typeof p.then === "function") {
+                  p.then(function () {
+                    if (!btn || btn.isConnected === false) return;
+                    applyCopyButtonFeedback(btn, "ok", orig);
+                  }).catch(function () {
+                    if (!btn || btn.isConnected === false) return;
+                    applyCopyButtonFeedback(btn, "fail", orig);
+                  });
+                } else {
+                  applyCopyButtonFeedback(btn, "fail", orig);
+                }
+              });
+            }
+            wireCopy("website-report-share-copy", "website-report-share-url");
+            wireCopy("website-report-share-snippet-copy", "website-report-share-snippet");
+            wireCopy("website-report-share-snippet-md-copy", "website-report-share-snippet-md");
+            wireCopy("website-report-share-chat-copy", "website-report-share-chat-snippet");
+            wireCopy("website-report-share-named-copy", "website-report-share-named");
+            wireCopy("website-report-share-email-subject-copy", "website-report-share-email-subject");
+            wireCopy("website-report-share-email-body-copy", "website-report-share-email-body");
+            wireCopy("website-report-share-bundle-all-copy", "website-report-share-bundle-all");
+            wireCopy("website-report-share-bundle-quick-copy", "website-report-share-bundle-quick");
+            wireCopy("website-report-share-bundle-email-copy", "website-report-share-bundle-email");
+            wireCopy("website-report-share-bundle-chat-copy", "website-report-share-bundle-chat");
+            wireCopy("website-report-share-best-slack-copy", "website-report-share-chat-snippet");
+            wireCopy("website-report-share-best-slack-copy-best", "website-report-share-best-slack-open-bundle-chat");
+            wireCopy("website-report-share-best-email-copy", "website-report-share-bundle-email");
+            wireCopy("website-report-share-best-email-copy-best", "website-report-share-best-email-open-bundle");
+            wireCopy("website-report-share-best-docs-copy", "website-report-share-snippet-md");
+            wireCopy("website-report-share-best-docs-copy-best", "website-report-share-best-docs-open-bundle-md");
+            wireCopy("website-report-share-best-slack-open-copy", "website-report-share-best-slack-open-url");
+            wireCopy("website-report-share-best-email-open-copy", "website-report-share-best-email-open-url");
+            wireCopy("website-report-share-best-docs-open-copy", "website-report-share-best-docs-open-url");
+            wireCopy("website-report-share-best-slack-open-bundle-copy", "website-report-share-best-slack-open-bundle");
+            wireCopy("website-report-share-best-slack-open-bundle-md-copy", "website-report-share-best-slack-open-bundle-md");
+            wireCopy("website-report-share-best-slack-open-bundle-chat-copy", "website-report-share-best-slack-open-bundle-chat");
+            wireCopy("website-report-share-best-email-open-bundle-copy", "website-report-share-best-email-open-bundle");
+            wireCopy("website-report-share-best-email-open-bundle-md-copy", "website-report-share-best-email-open-bundle-md");
+            wireCopy("website-report-share-best-email-open-bundle-chat-copy", "website-report-share-best-email-open-bundle-chat");
+            wireCopy("website-report-share-best-docs-open-bundle-copy", "website-report-share-best-docs-open-bundle");
+            wireCopy("website-report-share-best-docs-open-bundle-md-copy", "website-report-share-best-docs-open-bundle-md");
+            wireCopy("website-report-share-best-docs-open-bundle-chat-copy", "website-report-share-best-docs-open-bundle-chat");
+            wireCopy("website-report-share-direct-markdown-copy", "website-report-share-direct-markdown-url");
+            wireCopy("website-report-share-direct-chat-copy", "website-report-share-direct-chat-url");
+            wireCopy("website-report-share-direct-named-copy", "website-report-share-direct-named-url");
+            wireCopy("website-report-share-direct-email-copy", "website-report-share-direct-email-url");
+            wireCopy("website-report-share-direct-bundles-copy", "website-report-share-direct-bundles-url");
+            wireCopy("website-report-share-direct-markdown-bundle-copy", "website-report-share-direct-markdown-bundle");
+            wireCopy("website-report-share-direct-chat-bundle-copy", "website-report-share-direct-chat-bundle");
+            wireCopy("website-report-share-direct-named-bundle-copy", "website-report-share-direct-named-bundle");
+            wireCopy("website-report-share-direct-email-bundle-copy", "website-report-share-direct-email-bundle");
+            wireCopy("website-report-share-direct-bundles-bundle-copy", "website-report-share-direct-bundles-bundle");
+            wireCopy("website-report-share-advanced-target-preset-markdown-snippet-copy", "website-report-share-advanced-target-preset-markdown-snippet");
+            wireCopy("website-report-share-advanced-target-preset-chat-snippet-copy", "website-report-share-advanced-target-preset-chat-snippet");
+            wireCopy("website-report-share-advanced-target-preset-named-snippet-copy", "website-report-share-advanced-target-preset-named-snippet");
+            wireCopy("website-report-share-advanced-target-preset-email-snippet-copy", "website-report-share-advanced-target-preset-email-snippet");
+            wireCopy("website-report-share-advanced-target-preset-bundles-snippet-copy", "website-report-share-advanced-target-preset-bundles-snippet");
+            wireCopy("website-report-share-advanced-target-preset-markdown-snippet-md-copy", "website-report-share-advanced-target-preset-markdown-snippet-md");
+            wireCopy("website-report-share-advanced-target-preset-markdown-snippet-chat-copy", "website-report-share-advanced-target-preset-markdown-snippet-chat");
+            wireCopy("website-report-share-advanced-target-preset-chat-snippet-md-copy", "website-report-share-advanced-target-preset-chat-snippet-md");
+            wireCopy("website-report-share-advanced-target-preset-chat-snippet-chat-copy", "website-report-share-advanced-target-preset-chat-snippet-chat");
+            wireCopy("website-report-share-advanced-target-preset-named-snippet-md-copy", "website-report-share-advanced-target-preset-named-snippet-md");
+            wireCopy("website-report-share-advanced-target-preset-named-snippet-chat-copy", "website-report-share-advanced-target-preset-named-snippet-chat");
+            wireCopy("website-report-share-advanced-target-preset-email-snippet-md-copy", "website-report-share-advanced-target-preset-email-snippet-md");
+            wireCopy("website-report-share-advanced-target-preset-email-snippet-chat-copy", "website-report-share-advanced-target-preset-email-snippet-chat");
+            wireCopy("website-report-share-advanced-target-preset-bundles-snippet-md-copy", "website-report-share-advanced-target-preset-bundles-snippet-md");
+            wireCopy("website-report-share-advanced-target-preset-bundles-snippet-chat-copy", "website-report-share-advanced-target-preset-bundles-snippet-chat");
+          })();
+        </script>
+        <% } %>
+
+        <form method="get" action="/admin/crm/websites/report" class="form" style="margin:0 0 1rem;">
+          <% if (typeof reportHtmlViewSet !== 'undefined' && reportHtmlViewSet && reportHtmlViewSet !== 'default') { %>
+          <input type="hidden" name="view_set" value="<%= reportHtmlViewSet %>" />
+          <% } %>
+          <% if (typeof websiteReportHighlightSubmissionId !== 'undefined' && websiteReportHighlightSubmissionId != null) { %>
+          <input type="hidden" name="highlight_submission_id" value="<%= websiteReportHighlightSubmissionId %>" />
+          <% } %>
+          <div class="form-step form-step--admin">
+            <div class="form-step__body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;">
+              <div class="input-field">
+                <label class="input-field__label" for="review_status">Review status</label>
+                <input id="review_status" name="review_status" class="input-field__control" value="<%= (filters && filters.reviewStatus) ? filters.reviewStatus : '' %>" maxlength="40" placeholder="e.g. published" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="published">Published</label>
+                <select id="published" name="published" class="input-field__control">
+                  <% var _pub = (filters && filters.published) ? filters.published : 'all'; %>
+                  <option value="all" <%= _pub === 'all' ? 'selected' : '' %>>All</option>
+                  <option value="yes" <%= _pub === 'yes' ? 'selected' : '' %>>Yes</option>
+                  <option value="no" <%= _pub === 'no' ? 'selected' : '' %>>No</option>
+                </select>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="city">City</label>
+                <input id="city" name="city" class="input-field__control" value="<%= (filters && filters.city) ? filters.city : '' %>" maxlength="120" placeholder="Optional" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="report_category">Category</label>
+                <select id="report_category" name="category" class="input-field__control">
+                  <% var _rcat = (filters && filters.category) ? filters.category : ''; %>
+                  <option value="" <%= !_rcat ? 'selected' : '' %>>All categories</option>
+                  <% (typeof websiteReportCategoryOptions !== 'undefined' ? websiteReportCategoryOptions : []).forEach(function(c) { %>
+                    <option value="<%= c %>" <%= _rcat === c ? 'selected' : '' %>><%= c %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="quality_tier">Quality tier</label>
+                <select id="quality_tier" name="quality_tier" class="input-field__control">
+                  <% var _qt = (filters && filters.qualityTier) ? filters.qualityTier : 'all'; %>
+                  <option value="all" <%= _qt === 'all' ? 'selected' : '' %>>All</option>
+                  <option value="high" <%= _qt === 'high' ? 'selected' : '' %>>High</option>
+                  <option value="medium" <%= _qt === 'medium' ? 'selected' : '' %>>Medium</option>
+                  <option value="low" <%= _qt === 'low' ? 'selected' : '' %>>Low</option>
+                </select>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="quality_min">Min quality score</label>
+                <input id="quality_min" name="quality_min" class="input-field__control" type="number" min="0" max="100" value="<%= (filters && filters.qualityMin != null) ? filters.qualityMin : '' %>" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="has_verified_specialities">Has verified specialities</label>
+                <select id="has_verified_specialities" name="has_verified_specialities" class="input-field__control">
+                  <% var _hvs = (filters && filters.hasVerifiedSpecialities) ? filters.hasVerifiedSpecialities : 'all'; %>
+                  <option value="all" <%= _hvs === 'all' ? 'selected' : '' %>>All</option>
+                  <option value="yes" <%= _hvs === 'yes' ? 'selected' : '' %>>Yes</option>
+                  <option value="no" <%= _hvs === 'no' ? 'selected' : '' %>>No</option>
+                </select>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="has_hours">Has hours</label>
+                <select id="has_hours" name="has_hours" class="input-field__control">
+                  <% var _hh = (filters && filters.hasHours) ? filters.hasHours : 'all'; %>
+                  <option value="all" <%= _hh === 'all' ? 'selected' : '' %>>All</option>
+                  <option value="yes" <%= _hh === 'yes' ? 'selected' : '' %>>Yes</option>
+                  <option value="no" <%= _hh === 'no' ? 'selected' : '' %>>No</option>
+                </select>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="has_established_year">Established year present</label>
+                <select id="has_established_year" name="has_established_year" class="input-field__control">
+                  <% var _hey = (filters && filters.hasEstablishedYear) ? filters.hasEstablishedYear : 'all'; %>
+                  <option value="all" <%= _hey === 'all' ? 'selected' : '' %>>All</option>
+                  <option value="yes" <%= _hey === 'yes' ? 'selected' : '' %>>Yes</option>
+                  <option value="no" <%= _hey === 'no' ? 'selected' : '' %>>No</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-step__actions admin-gate-actions" style="flex-wrap:wrap;gap:0.5rem;">
+              <%- include('../partials/components/button', { variant: 'default', type: 'submit', label: 'Apply filters' }) %>
+              <a class="btn btn--secondary" href="/admin/crm/websites/report">Reset</a>
+              <a class="btn btn--secondary" href="<%= csvHref %>">Export CSV (default columns)</a>
+              <% if (typeof csvHrefModeration !== 'undefined' && csvHrefModeration) { %>
+              <a class="btn btn--secondary" href="<%= csvHrefModeration %>">CSV · Moderation</a>
+              <a class="btn btn--secondary" href="<%= csvHrefQuality %>">CSV · Quality</a>
+              <a class="btn btn--secondary" href="<%= csvHrefPublishReadiness %>">CSV · Publish readiness</a>
+              <% } %>
+            </div>
+          </div>
+        </form>
+
+        <% var _rows = Array.isArray(rows) ? rows : []; %>
+        <% var _show = (typeof reportHtmlColumnShow !== 'undefined' && reportHtmlColumnShow) ? reportHtmlColumnShow : {}; %>
+        <% function _hcol(k) { return _show[k] !== false; } %>
+        <% var _colspan = typeof reportHtmlColspan !== 'undefined' ? reportHtmlColspan : 17; %>
+        <div class="card admin-table-card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <% if (_hcol('submission')) { %><th>Submission</th><% } %>
+                  <% if (_hcol('tenant')) { %><th>Tenant</th><% } %>
+                  <% if (_hcol('field_agent')) { %><th>Field agent</th><% } %>
+                  <% if (_hcol('review')) { %><th>Review</th><% } %>
+                  <% if (_hcol('published')) { %><th>Published</th><% } %>
+                  <% if (_hcol('quality')) { %><th>Quality</th><% } %>
+                  <% if (_hcol('established')) { %><th>Established</th><% } %>
+                  <% if (_hcol('est_set')) { %><th>Est. set</th><% } %>
+                  <% if (_hcol('specs')) { %><th>Specs</th><% } %>
+                  <% if (_hcol('verified')) { %><th>Verified</th><% } %>
+                  <% if (_hcol('hours')) { %><th>Hours</th><% } %>
+                  <% if (_hcol('has_hours')) { %><th>Has hours</th><% } %>
+                  <% if (_hcol('updated')) { %><th>Updated</th><% } %>
+                  <% if (_hcol('submitted')) { %><th>Submitted</th><% } %>
+                  <% if (_hcol('published_at')) { %><th>Published at</th><% } %>
+                  <% if (_hcol('missing_summary')) { %><th>Missing data</th><% } %>
+                  <% if (_hcol('actions')) { %><th>Actions</th><% } %>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!_rows.length) { %>
+                  <tr><td colspan="<%= _colspan %>" class="muted">No records for these filters.</td></tr>
+                <% } %>
+                <% _rows.forEach(function (r) { %>
+                  <% var _reviewUrl = '/admin/field-agent/submissions/' + r.submission_id + '/website-listing-review'; %>
+                  <% var _queueHref = (r.website_report_queue_href != null && r.website_report_queue_href !== '') ? r.website_report_queue_href : '/admin/crm?queue=websites'; %>
+                  <% var _hl = (typeof websiteReportHighlightSubmissionId !== 'undefined' && websiteReportHighlightSubmissionId != null && Number(r.submission_id) === Number(websiteReportHighlightSubmissionId)); %>
+                  <tr<% if (_hl) { %> class="website-report-row--highlight"<% } %>>
+                    <% if (_hcol('submission')) { %>
+                    <td>
+                      <a href="<%= _reviewUrl %>">#<%= r.submission_id %></a>
+                      <div><%= r.lead_name || 'Unknown lead' %></div>
+                      <% if (r.city) { %><div class="muted"><%= r.city %></div><% } %>
+                    </td>
+                    <% } %>
+                    <% if (_hcol('tenant')) { %><td><%= r.tenant_label || '' %></td><% } %>
+                    <% if (_hcol('field_agent')) { %><td><%= r.field_agent_label || '' %></td><% } %>
+                    <% if (_hcol('review')) { %><td><%= r.review_status %></td><% } %>
+                    <% if (_hcol('published')) { %><td><%= r.published %></td><% } %>
+                    <% if (_hcol('quality')) { %><td><%= r.quality_score %> (<%= r.quality_tier %>)</td><% } %>
+                    <% if (_hcol('established')) { %><td><%= r.established_year != null ? r.established_year : '' %></td><% } %>
+                    <% if (_hcol('est_set')) { %><td><%= r.established_year != null ? 'yes' : 'no' %></td><% } %>
+                    <% if (_hcol('specs')) { %><td><%= r.specialities_count %></td><% } %>
+                    <% if (_hcol('verified')) { %><td><%= r.verified_specialities_count %></td><% } %>
+                    <% if (_hcol('hours')) { %><td><%= r.hours_completeness %></td><% } %>
+                    <% if (_hcol('has_hours')) { %><td><%= Number(r.hours_days_count || 0) > 0 ? 'yes' : 'no' %></td><% } %>
+                    <% if (_hcol('updated')) { %><td><%= r.submission_updated_at ? new Date(r.submission_updated_at).toISOString() : '' %></td><% } %>
+                    <% if (_hcol('submitted')) { %><td><%= r.website_listing_review_requested_at ? new Date(r.website_listing_review_requested_at).toISOString() : '' %></td><% } %>
+                    <% if (_hcol('published_at')) { %><td><%= r.company_created_at ? new Date(r.company_created_at).toISOString() : '' %></td><% } %>
+                    <% if (_hcol('missing_summary')) { %>
+                    <td class="muted" style="font-size:0.92em;max-width:14rem;line-height:1.25;">
+                      <% if (r.website_report_missing_count > 0) { %>
+                      <div><%= r.website_report_missing_count %> gap<%= r.website_report_missing_count === 1 ? '' : 's' %></div>
+                      <% if (r.website_report_missing_preview_labels) { %>
+                      <div style="margin-top:0.2rem;"><%= r.website_report_missing_preview_labels %><% if (r.website_report_missing_more_count > 0) { %> <span class="muted">(+<%= r.website_report_missing_more_count %> more)</span><% } %></div>
+                      <% } %>
+                      <% } else { %>
+                      —
+                      <% } %>
+                    </td>
+                    <% } %>
+                    <% if (_hcol('actions')) { %>
+                    <td>
+                      <a href="<%= _reviewUrl %>">Open review</a>
+                      <span class="muted"> · </span>
+                      <a href="<%= String(_queueHref).replace(/&/g, '&amp;') %>">View in queue</a>
+                      <% if (r.website_report_missing_slices && r.website_report_missing_slices.length) { %>
+                      <div class="muted" style="margin-top:0.35rem;font-size:0.9em;">
+                        Missing:
+                        <% r.website_report_missing_slices.forEach(function(slice, idx) { %>
+                          <% if (idx) { %><span class="muted"> · </span><% } %>
+                          <a href="<%= String(slice.href).replace(/&/g, '&amp;') %>"><%= slice.label %></a>
+                        <% }); %>
+                      </div>
+                      <% } %>
+                    </td>
+                    <% } %>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

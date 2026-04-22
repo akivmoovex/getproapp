@@ -409,6 +409,11 @@ module.exports = function publicRoutes() {
     const tenantId = req.tenant.id;
     const pool = getPgPool();
     const categories = await loadCategoriesList(tenantId);
+    const directorySpecialitySuggestions = await companiesRepo.listDirectorySpecialitySuggestionsPublic(
+      pool,
+      tenantId,
+      100
+    );
     const tenantCategoryNames = (categories || []).map((c) => c.name).filter(Boolean);
     const tenantCitiesRows = await getTenantCitiesForClientAsync(pool, tenantId);
     const cityWhitelist = cityNamesAll(tenantCitiesRows.map((r) => ({ name: r.name })));
@@ -422,6 +427,19 @@ module.exports = function publicRoutes() {
     const cityQ = cityOk ? cityRaw.replace(/[%_\\]/g, "") : "";
     const homeFeatured =
       req.query.home_featured === "1" || String(req.query.home_featured || "").toLowerCase() === "true";
+    const specialityFilter = String(req.query.speciality || "").trim().slice(0, 120);
+    const openNowFilter =
+      req.query.open_now === "1" || String(req.query.open_now || "").toLowerCase() === "true";
+    const establishedFromRaw = String(req.query.established_from || "").trim();
+    const establishedFromFilter = /^\d{4}$/.test(establishedFromRaw) ? establishedFromRaw : "";
+    const now = new Date();
+    const directoryStructuredFilters = {
+      speciality: specialityFilter,
+      openNow: openNowFilter,
+      establishedFrom: establishedFromFilter,
+      dayOfWeek: now.getDay(),
+      timeHHMM: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
+    };
 
     let mergedCityNamesForServices = null;
     if (!homeFeatured && selected && cityQ && !searchQ) {
@@ -442,27 +460,47 @@ module.exports = function publicRoutes() {
       const searchPattern = searchQ ? `%${searchQ}%` : null;
       const cityPattern = cityQ ? `%${cityQ}%` : null;
       if (selected) {
-        companies = await companiesRepo.listDirectoryFeaturedByCategorySlug(pool, tenantId, selected, cityLike);
+        companies = await companiesRepo.listDirectoryFeaturedByCategorySlug(
+          pool,
+          tenantId,
+          selected,
+          cityLike,
+          directoryStructuredFilters
+        );
       } else if (searchQ || cityQ) {
         companies = await companiesRepo.listDirectoryFeaturedSearchIlike(
           pool,
           tenantId,
           searchPattern,
           cityPattern,
-          48
+          48,
+          directoryStructuredFilters
         );
       } else {
-        companies = await companiesRepo.listDirectoryHomeFeatured(pool, tenantId, 48);
+        companies = await companiesRepo.listDirectoryHomeFeatured(pool, tenantId, 48, directoryStructuredFilters);
       }
     } else if (selected) {
       const cityLike = cityQ ? `%${cityQ}%` : null;
-      companies = await companiesRepo.listDirectoryByCategorySlug(pool, tenantId, selected, cityLike);
+      companies = await companiesRepo.listDirectoryByCategorySlug(
+        pool,
+        tenantId,
+        selected,
+        cityLike,
+        directoryStructuredFilters
+      );
     } else if (searchQ || cityQ) {
       const searchPattern = searchQ ? `%${searchQ}%` : null;
       const cityPattern = cityQ ? `%${cityQ}%` : null;
-      companies = await companiesRepo.listDirectorySearchIlike(pool, tenantId, searchPattern, cityPattern, 48);
+      companies = await companiesRepo.listDirectorySearchIlike(
+        pool,
+        tenantId,
+        searchPattern,
+        cityPattern,
+        48,
+        directoryStructuredFilters
+      );
     } else {
-      companies = await companiesRepo.listDirectoryDefault(pool, tenantId, 24);
+      companies = await companiesRepo.listDirectoryDefault(pool, tenantId, 24, directoryStructuredFilters);
     }
 
     const phoneRulesPublic = await phoneRulesService.getPublicPhoneRulesForTenant(pool, tenantId);
@@ -573,6 +611,10 @@ module.exports = function publicRoutes() {
       /* When filtering by category, show raw q in the field (e.g. category name from home) even if not in service whitelist — SQL uses category slug only. */
       searchQuery: selected ? searchRaw : searchOk ? searchRaw : "",
       cityQuery: cityOk ? cityRaw : "",
+      specialityQuery: specialityFilter,
+      openNowQuery: openNowFilter,
+      establishedFromQuery: establishedFromFilter,
+      directorySpecialitySuggestions,
       companies,
       baseDomain: process.env.BASE_DOMAIN || "",
       companyMiniSiteHref: (sub) => `/${encodeURIComponent(String(sub || "").trim())}`,

@@ -116,6 +116,15 @@ async function mergeDraftCompanyForPreviewAsync(pool, baseRow, draft) {
       years_experience = Number.isNaN(n) ? null : n;
     }
   }
+  let established_year = baseRow.established_year;
+  if (d.established_year !== undefined) {
+    const ey = String(d.established_year).trim();
+    if (ey === "") established_year = null;
+    else {
+      const n = Number(ey);
+      established_year = Number.isNaN(n) ? null : n;
+    }
+  }
 
   const merged = {
     ...baseRow,
@@ -133,6 +142,7 @@ async function mergeDraftCompanyForPreviewAsync(pool, baseRow, draft) {
     featured_cta_phone:
       d.featured_cta_phone !== undefined ? String(d.featured_cta_phone).trim() : baseRow.featured_cta_phone,
     years_experience,
+    established_year,
     service_areas: d.service_areas !== undefined ? String(d.service_areas).trim() : baseRow.service_areas,
     hours_text: d.hours_text !== undefined ? String(d.hours_text).trim() : baseRow.hours_text,
     logo_url: d.logo_url !== undefined ? String(d.logo_url).trim() : baseRow.logo_url,

@@ -13,6 +13,7 @@ async function ensureCompaniesDirectoryFlagsSchema(pool) {
     "011_companies_directory_flags.sql",
     "015_companies_field_agent_linkage.sql",
     "045_companies_listing_disabled.sql",
+    "048_companies_established_year.sql",
   ]) {
     const sql = fs.readFileSync(path.join(base, f), "utf8");
     await pool.query(sql);

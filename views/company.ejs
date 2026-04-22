@@ -41,6 +41,14 @@
         <div class="pro-company-profile__shell">
     <main class="pro-company-profile" dir="ltr" lang="en">
       <div class="ds-container pro-company-profile__inner">
+        <% if (typeof previewMode !== 'undefined' && previewMode) { %>
+          <section class="card" style="padding:0.75rem 1rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            <strong><%= typeof previewLabel !== 'undefined' && previewLabel ? previewLabel : 'Preview' %></strong>
+            <% if (typeof previewEditHref !== 'undefined' && previewEditHref) { %>
+              <a class="btn btn--secondary" href="<%= previewEditHref %>">Edit</a>
+            <% } %>
+          </section>
+        <% } %>
         <% var _gpPhone = typeof getproPhone !== 'undefined' ? String(getproPhone || '').trim() : ''; %>
         <% var _gpTel = typeof getproTelHref !== 'undefined' ? String(getproTelHref || '').trim() : ''; %>
         <% var _supPhone = typeof getproSupportPhone !== 'undefined' ? String(getproSupportPhone || '').trim() : ''; %>
@@ -99,6 +107,10 @@
                 <% } %>
               </div>
             </div>
+            <% var estYear = company.established_year != null && company.established_year !== '' ? Number(company.established_year) : null; %>
+            <% if (estYear != null && !isNaN(estYear) && estYear >= 1800) { %>
+              <p class="pro-company-profile__meta-line">Established in <strong><%= estYear %></strong></p>
+            <% } %>
             <% var yoe = company.years_experience != null && company.years_experience !== '' ? Number(company.years_experience) : null; %>
             <% if (yoe != null && !isNaN(yoe) && yoe > 0) { %>
               <p class="pro-company-profile__meta-line"><strong><%= yoe %></strong> years in business</p>
@@ -191,7 +203,18 @@
             <% if (company.service_areas && String(company.service_areas).trim()) { %>
               <section class="pro-company-profile__section" aria-labelledby="areas-heading">
                 <h2 id="areas-heading" class="pro-company-profile__h2">Service areas</h2>
-                <div class="pro-company-profile__prose pro-company-profile__preline"><%= company.service_areas %></div>
+                <% var _vs = Array.isArray(verifiedSpecialities) ? verifiedSpecialities : []; %>
+                <% var _vsSet = {}; _vs.forEach(function(v){ _vsSet[String(v || '').trim().toLowerCase()] = true; }); %>
+                <ul class="pro-company-profile__bullets">
+                  <% String(company.service_areas).split('\n').map(function(s){ return String(s).trim(); }).filter(Boolean).forEach(function(s) { %>
+                    <li>
+                      <%= s %>
+                      <% if (_vsSet[String(s || '').trim().toLowerCase()]) { %>
+                        <span style="color: var(--brand-primary, #0a66c2); font-weight: 600;"> ✓</span>
+                      <% } %>
+                    </li>
+                  <% }); %>
+                </ul>
               </section>
             <% } %>
 

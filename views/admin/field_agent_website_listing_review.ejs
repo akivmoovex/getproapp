@@ -2,6 +2,10 @@
 <% var _sub = typeof submission !== 'undefined' ? submission : {}; %>
 <% var _d = typeof websiteDraft !== 'undefined' && websiteDraft ? websiteDraft : {}; %>
 <% var _ec = typeof existingCompanyId !== 'undefined' && existingCompanyId != null ? existingCompanyId : null; %>
+<% var _sp = Array.isArray(websiteSpecialities) ? websiteSpecialities : []; %>
+<% var _sv = Array.isArray(websiteVerifiedSpecialities) ? websiteVerifiedSpecialities : []; %>
+<% var _wh = typeof websiteWeeklyHours !== 'undefined' && websiteWeeklyHours ? websiteWeeklyHours : {}; %>
+<% var _sg = Array.isArray(specialitySuggestions) ? specialitySuggestions : []; %>
 <html lang="en">
   <head>
     <%- include('../partials/brand_resolve') %>
@@ -46,6 +50,7 @@
         <% var _cats = typeof categories !== 'undefined' && categories ? categories : []; %>
         <% var _saveUrl = '/admin/field-agent/submissions/' + _sub.id + '/website-listing-review/save'; %>
         <% var _pubUrl = '/admin/field-agent/submissions/' + _sub.id + '/website-listing-review/publish'; %>
+        <% var _rejUrl = '/admin/field-agent/submissions/' + _sub.id + '/website-listing-review/reject'; %>
         <form method="post" action="<%= _saveUrl %>" class="card admin-form-card" style="padding:1rem;">
           <h2 class="form-step__title" style="margin-top:0;">Listing text</h2>
           <div class="input-field">
@@ -78,12 +83,39 @@
             <input id="adm-wc-location" name="location" class="input-field__control" type="text" value="<%= _d.location || '' %>" maxlength="500" />
           </div>
           <div class="input-field">
-            <label class="input-field__label" for="adm-wc-areas">Service areas</label>
-            <textarea id="adm-wc-areas" name="service_areas" class="input-field__control" rows="2" maxlength="4000"><%= _d.service_areas || '' %></textarea>
+            <label class="input-field__label">Specialities</label>
+            <datalist id="adm-speciality-options">
+              <% _sg.forEach(function(s) { %><option value="<%= s %>"></option><% }); %>
+            </datalist>
+            <div id="adm-specialities-wrap" style="display:flex;flex-direction:column;gap:0.4rem;">
+              <% var _rows = _sp.length ? _sp : ['']; %>
+              <% _rows.forEach(function(sp) { %>
+              <% var _isV = _sv.map(function(v){ return String(v || '').trim().toLowerCase(); }).includes(String(sp || '').trim().toLowerCase()); %>
+              <div class="adm-speciality-row" style="display:flex;gap:0.4rem;align-items:center;">
+                <input class="input-field__control adm-speciality-input" name="specialities" type="text" list="adm-speciality-options" value="<%= sp %>" maxlength="120" />
+                <label style="display:flex;gap:0.25rem;align-items:center;white-space:nowrap;">
+                  <input class="adm-speciality-verified" name="specialities_verified" type="checkbox" value="<%= sp %>" <%= _isV ? 'checked' : '' %> />
+                  Verified
+                </label>
+                <button type="button" class="btn btn--secondary adm-speciality-remove">−</button>
+              </div>
+              <% }); %>
+            </div>
+            <p style="margin-top:0.4rem;"><button type="button" class="btn btn--secondary" id="adm-speciality-add">+ Add speciality</button></p>
           </div>
           <div class="input-field">
-            <label class="input-field__label" for="adm-wc-hours">Hours</label>
-            <textarea id="adm-wc-hours" name="hours_text" class="input-field__control" rows="2" maxlength="4000"><%= _d.hours_text || '' %></textarea>
+            <label class="input-field__label">Business hours (24-hour)</label>
+            <% var _days = [['sunday','Sunday'],['monday','Monday'],['tuesday','Tuesday'],['wednesday','Wednesday'],['thursday','Thursday'],['friday','Friday'],['saturday','Saturday']]; %>
+            <div style="display:grid;gap:0.35rem;">
+              <% _days.forEach(function(day) { var k = day[0]; var lbl = day[1]; var r = _wh[k] || { closed: true, from: '', to: '' }; %>
+              <div style="display:grid;grid-template-columns:110px 90px 1fr 1fr;gap:0.4rem;align-items:center;">
+                <div><%= lbl %></div>
+                <label style="display:flex;gap:0.3rem;align-items:center;"><input type="checkbox" class="adm-hours-closed" name="hours_<%= k %>_closed" data-day="<%= k %>" value="1" <%= r.closed ? 'checked' : '' %> /> Closed</label>
+                <input class="input-field__control adm-hours-from" name="hours_<%= k %>_from" data-day="<%= k %>" type="time" value="<%= r.from || '' %>" <%= r.closed ? 'disabled' : '' %> />
+                <input class="input-field__control adm-hours-to" name="hours_<%= k %>_to" data-day="<%= k %>" type="time" value="<%= r.to || '' %>" <%= r.closed ? 'disabled' : '' %> />
+              </div>
+              <% }); %>
+            </div>
           </div>
           <div class="input-field">
             <label class="input-field__label" for="adm-wc-email">Email</label>
@@ -105,13 +137,82 @@
             <label class="input-field__label" for="adm-wc-yoe">Years of experience (optional)</label>
             <input id="adm-wc-yoe" name="years_experience" class="input-field__control" type="number" min="0" max="999" step="1" value="<%= (_d.years_experience != null && _d.years_experience !== '') ? _d.years_experience : '' %>" />
           </div>
+          <div class="input-field">
+            <label class="input-field__label" for="adm-wc-established-year">Established in year (optional)</label>
+            <input id="adm-wc-established-year" name="established_year" class="input-field__control" type="number" min="1800" max="<%= new Date().getUTCFullYear() %>" step="1" value="<%= (_d.established_year != null && _d.established_year !== '') ? _d.established_year : '' %>" />
+          </div>
           <div class="crm-task-form__actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;">
             <%- include('../partials/components/button', { variant: 'secondary', type: 'submit', label: 'Save draft' }) %>
             <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Publish listing', extraAttrs: 'formaction="' + _pubUrl + '"' }) %>
+            <%- include('../partials/components/button', { variant: 'default', type: 'submit', label: 'Reject with comment', extraAttrs: 'formaction="' + _rejUrl + '"' }) %>
+          </div>
+          <div class="input-field" style="margin-top:0.75rem;">
+            <label class="input-field__label" for="adm-wc-reject-reason">Rejection comment (required to reject)</label>
+            <textarea id="adm-wc-reject-reason" name="rejection_reason" class="input-field__control" rows="2" maxlength="4000" placeholder="Explain required changes before publish..."></textarea>
           </div>
         </form>
         <% } %>
       </div>
     </main>
+    <script>
+      (function () {
+        var wrap = document.getElementById("adm-specialities-wrap");
+        var add = document.getElementById("adm-speciality-add");
+        if (wrap && add) {
+          add.addEventListener("click", function () {
+            var count = wrap.querySelectorAll(".adm-speciality-input").length;
+            if (count >= 10) return;
+            var row = document.createElement("div");
+            row.className = "adm-speciality-row";
+            row.style.display = "flex";
+            row.style.gap = "0.4rem";
+            row.style.alignItems = "center";
+            row.innerHTML =
+              '<input class="input-field__control adm-speciality-input" name="specialities" type="text" list="adm-speciality-options" maxlength="120" />' +
+              '<label style="display:flex;gap:0.25rem;align-items:center;white-space:nowrap;"><input class="adm-speciality-verified" name="specialities_verified" type="checkbox" value="" /> Verified</label>' +
+              '<button type="button" class="btn btn--secondary adm-speciality-remove">−</button>';
+            wrap.appendChild(row);
+          });
+          wrap.addEventListener("input", function (e) {
+            var t = e.target;
+            if (!t || !t.classList || !t.classList.contains("adm-speciality-input")) return;
+            var row = t.closest(".adm-speciality-row");
+            if (!row) return;
+            var chk = row.querySelector(".adm-speciality-verified");
+            if (chk) chk.value = String(t.value || "").trim();
+          });
+          wrap.addEventListener("click", function (e) {
+            var t = e.target;
+            if (!t || !t.classList || !t.classList.contains("adm-speciality-remove")) return;
+            var row = t.closest(".adm-speciality-row");
+            if (!row) return;
+            var rows = wrap.querySelectorAll(".adm-speciality-row");
+            if (rows.length <= 1) {
+              var inp = row.querySelector(".adm-speciality-input");
+              if (inp) inp.value = "";
+              return;
+            }
+            row.remove();
+          });
+        }
+        var closed = document.querySelectorAll(".adm-hours-closed");
+        closed.forEach(function (c) {
+          c.addEventListener("change", function () {
+            var d = c.getAttribute("data-day");
+            var f = document.querySelector('.adm-hours-from[data-day="' + d + '"]');
+            var t = document.querySelector('.adm-hours-to[data-day="' + d + '"]');
+            var isClosed = !!c.checked;
+            if (f) {
+              f.disabled = isClosed;
+              if (isClosed) f.value = "";
+            }
+            if (t) {
+              t.disabled = isClosed;
+              if (isClosed) t.value = "";
+            }
+          });
+        });
+      })();
+    </script>
   </body>
 </html>

@@ -34,6 +34,7 @@
       <% if (typeof selectedCategory !== 'undefined' && selectedCategory) { %>
         <% (categories || []).forEach(function(c) { if (c.slug === selectedCategory) activeCatLabel = c.name; }); %>
       <% } %>
+      <% var hasAnyFilters = !!(activeCatLabel || (typeof searchQuery !== 'undefined' && searchQuery) || (typeof cityQuery !== 'undefined' && cityQuery) || (typeof specialityQuery !== 'undefined' && specialityQuery) || (typeof openNowQuery !== 'undefined' && openNowQuery) || (typeof establishedFromQuery !== 'undefined' && establishedFromQuery)); %>
       <div class="pro-directory-top-band">
         <div class="pro-directory-toolbar">
           <div id="site-search-bar" class="c-search-bar-shell gp-home-search gp-home-search-card" aria-label="Directory search">
@@ -42,6 +43,10 @@
             tenantUrlPrefix,
             searchQuery: typeof searchQuery !== 'undefined' ? searchQuery : '',
             cityQuery: typeof cityQuery !== 'undefined' ? cityQuery : '',
+            specialityQuery: typeof specialityQuery !== 'undefined' ? specialityQuery : '',
+            openNowQuery: typeof openNowQuery !== 'undefined' ? openNowQuery : false,
+            establishedFromQuery: typeof establishedFromQuery !== 'undefined' ? establishedFromQuery : '',
+            specialitySuggestions: typeof directorySpecialitySuggestions !== 'undefined' ? directorySpecialitySuggestions : [],
             showCategoryFilter: false,
             selectedCategory: typeof selectedCategory !== 'undefined' ? selectedCategory : '',
             categories: typeof categories !== 'undefined' ? categories : [],
@@ -63,10 +68,22 @@
               <% if (typeof cityQuery !== 'undefined' && cityQuery) { %>
                 <span class="pro-directory-toolbar__chip"><%= cityQuery %></span>
               <% } %>
-              <% if (!activeCatLabel && !(typeof searchQuery !== 'undefined' && searchQuery) && !(typeof cityQuery !== 'undefined' && cityQuery)) { %>
+              <% if (typeof specialityQuery !== 'undefined' && specialityQuery) { %>
+                <span class="pro-directory-toolbar__chip">Speciality: <%= specialityQuery %></span>
+              <% } %>
+              <% if (typeof openNowQuery !== 'undefined' && openNowQuery) { %>
+                <span class="pro-directory-toolbar__chip">Open now</span>
+              <% } %>
+              <% if (typeof establishedFromQuery !== 'undefined' && establishedFromQuery) { %>
+                <span class="pro-directory-toolbar__chip">Established from: <%= establishedFromQuery %></span>
+              <% } %>
+              <% if (!activeCatLabel && !(typeof searchQuery !== 'undefined' && searchQuery) && !(typeof cityQuery !== 'undefined' && cityQuery) && !(typeof specialityQuery !== 'undefined' && specialityQuery) && !(typeof openNowQuery !== 'undefined' && openNowQuery) && !(typeof establishedFromQuery !== 'undefined' && establishedFromQuery)) { %>
                 <span class="pro-directory-toolbar__hint muted">Browse trusted professionals in your area</span>
               <% } %>
             </span>
+            <% if (hasAnyFilters) { %>
+              <a class="pro-directory-toolbar__hint muted" href="/directory">Clear filters</a>
+            <% } %>
           </div>
         </div>
         <% if ((companies || []).length > 0) { %>

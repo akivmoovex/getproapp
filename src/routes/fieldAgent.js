@@ -38,6 +38,8 @@ const {
 const { computeEcCommissionQualityPayableHoldbackOnly } = require("../fieldAgent/fieldAgentEcCommissionQualityPayable");
 const { normalizeSpRatingThresholdsForTenant } = require("../fieldAgent/normalizeSpRatingThresholds");
 const { FIELD_AGENT_DASHBOARD } = require("../auth/postLoginDestinations");
+const { buildCompanyPageLocals } = require("../companies/companyPageRender");
+const { mergeDraftCompanyForPreviewAsync } = require("./admin/adminShared");
 
 function tenantPrefix(req) {
   return req.tenantUrlPrefix != null ? String(req.tenantUrlPrefix) : "";
@@ -111,9 +113,9 @@ function fieldAgentProviderCoreFieldsMissing(p) {
 }
 
 /** Server-side email check for callback form (no new deps): local@host.tld, no spaces. */
-function isPlausibleEmailForCallback(raw) {
+function isPlausibleEmail(raw, maxLen = 320) {
   const s = String(raw || "").trim();
-  if (!s || s.length > 200) return false;
+  if (!s || s.length > maxLen) return false;
   if (/\s|["<>]/.test(s)) return false;
   const at = s.indexOf("@");
   if (at < 1 || at !== s.lastIndexOf("@")) return false;
@@ -123,6 +125,54 @@ function isPlausibleEmailForCallback(raw) {
   const tld = host.slice(host.lastIndexOf(".") + 1);
   if (tld.length < 2) return false;
   return true;
+}
+
+function parseEstablishedYearOrError(raw) {
+  const s = String(raw == null ? "" : raw).trim();
+  if (!s) return { ok: true, value: null };
+  if (!/^\d{4}$/.test(s)) {
+    return { ok: false, error: "Established in year must be exactly 4 digits." };
+  }
+  const n = Number(s);
+  const currentYear = new Date().getUTCFullYear();
+  if (!Number.isFinite(n) || n < 1800 || n > currentYear) {
+    return { ok: false, error: `Established in year must be between 1800 and ${currentYear}.` };
+  }
+  return { ok: true, value: n };
+}
+
+function normalizeWebsiteDraftInputForFieldAgent(draft, row) {
+  const payload = draft && typeof draft === "object" && !Array.isArray(draft) ? { ...draft } : {};
+  const existingDraft = fieldAgentSubmissionsRepo.mergeWebsiteListingDraftForDisplay(row.website_listing_draft_json);
+  payload.listing_phone = String(existingDraft.listing_phone || row.phone_raw || "")
+    .trim()
+    .slice(0, 120);
+  return payload;
+}
+
+function parseSpecialitiesFromDraft(draft) {
+  const raw = draft && Array.isArray(draft.specialities) ? draft.specialities : [];
+  return fieldAgentSubmissionsRepo.normalizeSpecialityNames(raw);
+}
+
+function parseWeeklyHoursFromDraft(draft) {
+  const raw = draft && draft.weekly_hours && typeof draft.weekly_hours === "object" ? draft.weekly_hours : {};
+  return fieldAgentSubmissionsRepo.normalizeWebsiteWeeklyHours(raw);
+}
+
+function validateWeeklyHours(weeklyHours) {
+  const weekly = fieldAgentSubmissionsRepo.normalizeWebsiteWeeklyHours(weeklyHours);
+  for (const day of Object.keys(weekly)) {
+    const row = weekly[day];
+    if (row.closed) continue;
+    if (!row.from || !row.to) {
+      return { ok: false, error: "For each open day, both from and to times are required." };
+    }
+    if (row.from >= row.to) {
+      return { ok: false, error: "Open time must be before close time." };
+    }
+  }
+  return { ok: true };
 }
 
 module.exports = function fieldAgentRoutes() {
@@ -379,6 +429,32 @@ module.exports = function fieldAgentRoutes() {
     }));
   });
 
+  router.get("/field-agent/sp-websites", requireFieldAgent, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const approvedRows = await fieldAgentSubmissionsRepo.listApprovedForFieldAgentNotLinkedToCompany(
+        pool,
+        tid,
+        s.id,
+        100
+      );
+      return res.render(
+        "field_agent/sp_websites",
+        renderLocals(req, res, {
+          fieldAgent: s,
+          approvedRows,
+          tenantId: tid,
+          faActiveNav: "sp_websites",
+          faIncludeFaq: true,
+        })
+      );
+    } catch (e) {
+      return next(e);
+    }
+  });
+
   /**
    * Placeholder entry for post-approval website / directory content workflow (non-publishing).
    * Guards: session field agent + tenant + submission status approved.
@@ -401,22 +477,117 @@ module.exports = function fieldAgentRoutes() {
       }
       const linkedCompanyId = await companiesRepo.findCompanyIdBySourceSubmissionExcluding(pool, tid, id, null);
       const websiteDraft = fieldAgentSubmissionsRepo.mergeWebsiteListingDraftForDisplay(row.website_listing_draft_json);
+      const websiteSpecialityEntries = await fieldAgentSubmissionsRepo.listWebsiteSpecialityEntriesForSubmission(pool, tid, id);
+      const websiteSpecialities = websiteSpecialityEntries.map((x) => x.name);
+      const websiteVerifiedSpecialities = websiteSpecialityEntries.filter((x) => x.isVerified).map((x) => x.name);
+      const websiteWeeklyHours = await fieldAgentSubmissionsRepo.getWebsiteWeeklyHoursForSubmission(pool, tid, id);
+      const specialitySuggestions = await fieldAgentSubmissionsRepo.listWebsiteSpecialitySuggestions(pool, tid, "", 40);
       const reviewRequestedAt = row.website_listing_review_requested_at || null;
+      const websiteReviewStatus = String(row.website_listing_review_status || "").trim();
+      const websiteReviewComment = String(row.website_listing_review_comment || "").trim();
       return res.render(
         "field_agent/website_content",
         renderLocals(req, res, {
           submission: row,
           linkedCompanyId,
           websiteDraft,
+          websiteSpecialities,
+          websiteVerifiedSpecialities,
+          websiteWeeklyHours,
+          specialitySuggestions,
           reviewRequestedAt,
+          websiteReviewStatus,
+          websiteReviewComment,
           websiteReadOnly: linkedCompanyId != null,
-          faActiveNav: "dashboard",
+          faActiveNav: "sp_websites",
           faIncludeFaq: true,
         })
       );
     } catch (e) {
       return next(e);
     }
+  });
+
+  /** Field-agent saved-draft preview via canonical company template (no publish / no company row creation). */
+  router.get("/field-agent/submissions/:id/website-content/preview", requireFieldAgent, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 1) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+      if (!row) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      if (String(row.status || "") !== "approved") {
+        return res.redirect(302, `${tenantPrefix(req)}/field-agent/dashboard`);
+      }
+      const linkedId = await companiesRepo.findCompanyIdBySourceSubmissionExcluding(pool, tid, id, null);
+      if (linkedId != null) {
+        return res.status(403).type("text").send("Preview is unavailable for linked submissions.");
+      }
+      const websiteDraft = fieldAgentSubmissionsRepo.mergeWebsiteListingDraftForDisplay(row.website_listing_draft_json);
+      const websiteSpecialityEntries = await fieldAgentSubmissionsRepo.listWebsiteSpecialityEntriesForSubmission(pool, tid, id);
+      const websiteSpecialities = websiteSpecialityEntries.map((x) => x.name);
+      const websiteVerifiedSpecialities = websiteSpecialityEntries.filter((x) => x.isVerified).map((x) => x.name);
+      const websiteWeeklyHours = await fieldAgentSubmissionsRepo.getWebsiteWeeklyHoursForSubmission(pool, tid, id);
+      const baseCompany = {
+        id: 0,
+        tenant_id: tid,
+        category_id: null,
+        category_slug: null,
+        category_name: null,
+        name: `${String(row.first_name || "").trim()} ${String(row.last_name || "").trim()}`.trim() || "Service provider",
+        subdomain: `fa-preview-${id}`,
+        headline: "",
+        about: "",
+        services: "",
+        phone: String(row.phone_raw || "").trim(),
+        email: "",
+        location: String(row.city || row.address_city || "").trim(),
+        featured_cta_label: "Call us",
+        featured_cta_phone: "",
+        years_experience: null,
+        established_year: null,
+        service_areas: "",
+        hours_text: "",
+        gallery_json: "[]",
+        logo_url: "",
+      };
+      const previewDraft = {
+        ...websiteDraft,
+        name: websiteDraft.listing_name,
+        phone: websiteDraft.listing_phone,
+        established_year: websiteDraft.established_year,
+        service_areas: fieldAgentSubmissionsRepo.specialitiesToLegacyText(websiteSpecialities),
+        hours_text: fieldAgentSubmissionsRepo.weeklyHoursToLegacyText(websiteWeeklyHours),
+      };
+      const merged = await mergeDraftCompanyForPreviewAsync(pool, baseCompany, previewDraft);
+      const locals = await buildCompanyPageLocals(req, merged, {});
+      return res.render(
+        "company",
+        renderLocals(req, res, {
+          ...locals,
+          previewMode: true,
+          previewEditHref: `${tenantPrefix(req)}/field-agent/submissions/${id}/website-content`,
+          previewLabel: "Preview mode",
+          verifiedSpecialities: websiteVerifiedSpecialities,
+        })
+      );
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.get("/field-agent/api/website-specialities/suggest", requireFieldAgent, async (req, res) => {
+    const pool = getPgPool();
+    const tid = req.tenant.id;
+    const q = String((req.query && req.query.q) || "").trim();
+    const items = await fieldAgentSubmissionsRepo.listWebsiteSpecialitySuggestions(pool, tid, q, 20);
+    return res.json({ ok: true, items });
   });
 
   /** Update submission after admin feedback (info_needed or rejected → resubmit to pending). */
@@ -829,78 +1000,172 @@ module.exports = function fieldAgentRoutes() {
 
   /** JSON: save structured website/directory listing draft (approved, not company-linked only). */
   router.post("/field-agent/api/submissions/:id/website-content-draft", requireFieldAgent, async (req, res) => {
-    const pool = getPgPool();
-    const s = getFieldAgentSession(req);
-    const tid = req.tenant.id;
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id) || id < 1) {
-      return res.status(400).json({ ok: false, error: "Invalid submission." });
-    }
-    const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
-    if (!row) {
-      return res.status(404).json({ ok: false, error: "Not found." });
-    }
-    if (String(row.status || "") !== "approved") {
-      return res.status(400).json({ ok: false, error: "Submission must be approved to edit website content." });
-    }
-    const linkedId = await companiesRepo.findCompanyIdBySourceSubmissionExcluding(pool, tid, id, null);
-    if (linkedId != null) {
-      return res.status(403).json({
-        ok: false,
-        error: "This submission is linked to a directory listing; draft edits are disabled here.",
+    try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 1) {
+        return res.status(400).json({ ok: false, error: "Invalid submission." });
+      }
+      const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+      if (!row) {
+        return res.status(404).json({ ok: false, error: "Not found." });
+      }
+      if (String(row.status || "") !== "approved") {
+        return res.status(400).json({ ok: false, error: "Submission must be approved to edit website content." });
+      }
+      const linkedId = await companiesRepo.findCompanyIdBySourceSubmissionExcluding(pool, tid, id, null);
+      if (linkedId != null) {
+        return res.status(403).json({
+          ok: false,
+          error: "This submission is linked to a directory listing; draft edits are disabled here.",
+        });
+      }
+      const body = req.body || {};
+      const draftRaw = body.draft != null ? body.draft : body;
+      const draft = normalizeWebsiteDraftInputForFieldAgent(draftRaw, row);
+      const specialities = parseSpecialitiesFromDraft(draft);
+      if (specialities.length > 10) {
+        return res.status(400).json({ ok: false, error: "Maximum 10 specialities." });
+      }
+      const weeklyHours = parseWeeklyHoursFromDraft(draft);
+      const hv = validateWeeklyHours(weeklyHours);
+      if (!hv.ok) {
+        return res.status(400).json({ ok: false, error: hv.error });
+      }
+      draft.service_areas = fieldAgentSubmissionsRepo.specialitiesToLegacyText(specialities);
+      draft.hours_text = fieldAgentSubmissionsRepo.weeklyHoursToLegacyText(weeklyHours);
+      const email = String(draft.email || "").trim();
+      if (email && !isPlausibleEmail(email, 320)) {
+        return res.status(400).json({ ok: false, error: "Enter a valid email address." });
+      }
+      const establishedYear = parseEstablishedYearOrError(draft.established_year);
+      if (!establishedYear.ok) {
+        return res.status(400).json({ ok: false, error: establishedYear.error });
+      }
+      const ok = await fieldAgentSubmissionsRepo.patchWebsiteListingDraftForFieldAgent(pool, {
+        tenantId: tid,
+        fieldAgentId: s.id,
+        submissionId: id,
+        draft,
       });
+      if (!ok) {
+        return res.status(400).json({ ok: false, error: "Could not save draft." });
+      }
+      const existingEntries = await fieldAgentSubmissionsRepo.listWebsiteSpecialityEntriesForSubmission(pool, tid, id);
+      const verifiedByName = new Set(
+        existingEntries.filter((x) => x.isVerified).map((x) => String(x.nameNorm || "").toLowerCase())
+      );
+      const entries = specialities.map((name) => ({
+        name,
+        isVerified: verifiedByName.has(String(name || "").trim().toLowerCase()),
+      }));
+      await fieldAgentSubmissionsRepo.replaceWebsiteSpecialityEntriesForSubmission(pool, {
+        tenantId: tid,
+        submissionId: id,
+        entries,
+      });
+      await fieldAgentSubmissionsRepo.replaceWebsiteWeeklyHoursForSubmission(pool, {
+        tenantId: tid,
+        submissionId: id,
+        weeklyHours,
+      });
+      const next = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+      return res.json({ ok: true, submission: next });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[field-agent] website-content-draft save failed", {
+        tenantId: req.tenant && req.tenant.id,
+        fieldAgentId: req.session && req.session.fieldAgent && req.session.fieldAgent.id,
+        submissionId: Number(req.params && req.params.id),
+        error: e && e.message ? e.message : String(e),
+      });
+      return res.status(500).json({ ok: false, error: "Could not save draft." });
     }
-    const body = req.body || {};
-    const draft = body.draft != null ? body.draft : body;
-    const ok = await fieldAgentSubmissionsRepo.patchWebsiteListingDraftForFieldAgent(pool, {
-      tenantId: tid,
-      fieldAgentId: s.id,
-      submissionId: id,
-      draft,
-    });
-    if (!ok) {
-      return res.status(400).json({ ok: false, error: "Could not save draft." });
-    }
-    const next = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
-    return res.json({ ok: true, submission: next });
   });
 
   /** JSON: submit listing text for staff second review (sets timestamp only; no moderation status change). */
   router.post("/field-agent/api/submissions/:id/website-content-submit-review", requireFieldAgent, async (req, res) => {
-    const pool = getPgPool();
-    const s = getFieldAgentSession(req);
-    const tid = req.tenant.id;
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id) || id < 1) {
-      return res.status(400).json({ ok: false, error: "Invalid submission." });
-    }
-    const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
-    if (!row) {
-      return res.status(404).json({ ok: false, error: "Not found." });
-    }
-    if (String(row.status || "") !== "approved") {
-      return res.status(400).json({ ok: false, error: "Submission must be approved to submit for review." });
-    }
-    const linkedId = await companiesRepo.findCompanyIdBySourceSubmissionExcluding(pool, tid, id, null);
-    if (linkedId != null) {
-      return res.status(403).json({
-        ok: false,
-        error: "This submission is linked to a directory listing; you cannot submit for review from here.",
-      });
-    }
-    const body = req.body || {};
-    const draft = body.draft != null ? body.draft : undefined;
-    const ok = await fieldAgentSubmissionsRepo.submitWebsiteListingReviewRequestForFieldAgent(pool, {
-      tenantId: tid,
-      fieldAgentId: s.id,
-      submissionId: id,
-      draft,
-    });
-    if (!ok) {
-      return res.status(400).json({ ok: false, error: "Could not submit for review." });
-    }
-    const next = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
     try {
+      const pool = getPgPool();
+      const s = getFieldAgentSession(req);
+      const tid = req.tenant.id;
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 1) {
+        return res.status(400).json({ ok: false, error: "Invalid submission." });
+      }
+      const row = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+      if (!row) {
+        return res.status(404).json({ ok: false, error: "Not found." });
+      }
+      if (String(row.status || "") !== "approved") {
+        return res.status(400).json({ ok: false, error: "Submission must be approved to submit for review." });
+      }
+      const linkedId = await companiesRepo.findCompanyIdBySourceSubmissionExcluding(pool, tid, id, null);
+      if (linkedId != null) {
+        return res.status(403).json({
+          ok: false,
+          error: "This submission is linked to a directory listing; you cannot submit for review from here.",
+        });
+      }
+      const body = req.body || {};
+      const draftRaw = body.draft != null ? body.draft : undefined;
+      const draft = draftRaw !== undefined ? normalizeWebsiteDraftInputForFieldAgent(draftRaw, row) : undefined;
+      let specialities = [];
+      let weeklyHours = fieldAgentSubmissionsRepo.normalizeWebsiteWeeklyHours({});
+      if (draft) {
+        specialities = parseSpecialitiesFromDraft(draft);
+        if (specialities.length > 10) {
+          return res.status(400).json({ ok: false, error: "Maximum 10 specialities." });
+        }
+        weeklyHours = parseWeeklyHoursFromDraft(draft);
+        const hv = validateWeeklyHours(weeklyHours);
+        if (!hv.ok) {
+          return res.status(400).json({ ok: false, error: hv.error });
+        }
+        draft.service_areas = fieldAgentSubmissionsRepo.specialitiesToLegacyText(specialities);
+        draft.hours_text = fieldAgentSubmissionsRepo.weeklyHoursToLegacyText(weeklyHours);
+        const email = String(draft.email || "").trim();
+        if (email && !isPlausibleEmail(email, 320)) {
+          return res.status(400).json({ ok: false, error: "Enter a valid email address." });
+        }
+        const establishedYear = parseEstablishedYearOrError(draft.established_year);
+        if (!establishedYear.ok) {
+          return res.status(400).json({ ok: false, error: establishedYear.error });
+        }
+      }
+      const ok = await fieldAgentSubmissionsRepo.submitWebsiteListingReviewRequestForFieldAgent(pool, {
+        tenantId: tid,
+        fieldAgentId: s.id,
+        submissionId: id,
+        draft,
+      });
+      if (!ok) {
+        return res.status(400).json({ ok: false, error: "Could not submit for review." });
+      }
+      if (draft) {
+        const existingEntries = await fieldAgentSubmissionsRepo.listWebsiteSpecialityEntriesForSubmission(pool, tid, id);
+        const verifiedByName = new Set(
+          existingEntries.filter((x) => x.isVerified).map((x) => String(x.nameNorm || "").toLowerCase())
+        );
+        const entries = specialities.map((name) => ({
+          name,
+          isVerified: verifiedByName.has(String(name || "").trim().toLowerCase()),
+        }));
+        await fieldAgentSubmissionsRepo.replaceWebsiteSpecialityEntriesForSubmission(pool, {
+          tenantId: tid,
+          submissionId: id,
+          entries,
+        });
+        await fieldAgentSubmissionsRepo.replaceWebsiteWeeklyHoursForSubmission(pool, {
+          tenantId: tid,
+          submissionId: id,
+          weeklyHours,
+        });
+      }
+      const next = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
+      try {
       const fn = String(next.first_name || "").trim();
       const ln = String(next.last_name || "").trim();
       const prof = String(next.profession || "").trim();
@@ -941,23 +1206,33 @@ module.exports = function fieldAgentRoutes() {
           })
         );
       }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(
+          "[getpro] field-agent CRM inbound task failed",
+          JSON.stringify({
+            op: "field_agent_website_listing_review",
+            severity: "error",
+            tenantId: tid,
+            submissionId: id,
+            sourceType: fieldAgentCrm.WEBSITE_LISTING_CRM_SOURCE,
+            error: e && e.message ? String(e.message) : String(e),
+          })
+        );
+        // eslint-disable-next-line no-console
+        if (e && e.stack) console.error(e.stack);
+      }
+      return res.json({ ok: true, submission: next });
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error(
-        "[getpro] field-agent CRM inbound task failed",
-        JSON.stringify({
-          op: "field_agent_website_listing_review",
-          severity: "error",
-          tenantId: tid,
-          submissionId: id,
-          sourceType: fieldAgentCrm.WEBSITE_LISTING_CRM_SOURCE,
-          error: e && e.message ? String(e.message) : String(e),
-        })
-      );
-      // eslint-disable-next-line no-console
-      if (e && e.stack) console.error(e.stack);
+      console.error("[field-agent] website-content-submit-review failed", {
+        tenantId: req.tenant && req.tenant.id,
+        fieldAgentId: req.session && req.session.fieldAgent && req.session.fieldAgent.id,
+        submissionId: Number(req.params && req.params.id),
+        error: e && e.message ? e.message : String(e),
+      });
+      return res.status(500).json({ ok: false, error: "Could not submit for review." });
     }
-    return res.json({ ok: true, submission: next });
   });
 
   /** JSON: set reply text while submission is info_needed or rejected (no status change). */
@@ -1421,7 +1696,7 @@ module.exports = function fieldAgentRoutes() {
     if (!firstName || !lastName || !phone || !email || !locationCity) {
       return res.status(400).render("field_agent/callback", renderLocals(req, res, { error: "All fields are required." }));
     }
-    if (!isPlausibleEmailForCallback(email)) {
+    if (!isPlausibleEmail(email, 200)) {
       return res.status(400).render("field_agent/callback", renderLocals(req, res, { error: "Enter a valid email address." }));
     }
     const vPh = await phoneRulesService.validatePhoneForTenant(pool, tid, phone, "phone");

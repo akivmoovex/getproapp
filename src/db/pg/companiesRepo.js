@@ -27,11 +27,94 @@ function serializeCompanyRow(row) {
   if (out.source_field_agent_submission_id != null) {
     out.source_field_agent_submission_id = Number(out.source_field_agent_submission_id);
   }
+  if (out.established_year != null) {
+    out.established_year = Number(out.established_year);
+  }
   return out;
 }
 
 function mapRows(rows) {
   return (rows || []).map(serializeCompanyRow);
+}
+
+function normalizeDirectorySpeciality(raw) {
+  const s = String(raw || "").trim().toLowerCase().slice(0, 120);
+  return s || "";
+}
+
+function normalizeDirectoryTimeHHMM(raw) {
+  const s = String(raw || "").trim();
+  if (!/^\d{2}:\d{2}$/.test(s)) return "";
+  const hh = Number(s.slice(0, 2));
+  const mm = Number(s.slice(3, 5));
+  if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return "";
+  return s;
+}
+
+function normalizeDirectoryEstablishedYear(raw) {
+  const s = String(raw == null ? "" : raw).trim();
+  if (!s) return null;
+  if (!/^\d{4}$/.test(s)) return null;
+  const n = Number(s);
+  const currentYear = new Date().getUTCFullYear();
+  if (!Number.isFinite(n) || n < 1800 || n > currentYear) return null;
+  return n;
+}
+
+function buildDirectoryStructuredFiltersSql(baseParamIndex, options) {
+  const opts = options && typeof options === "object" ? options : {};
+  const specialityNorm = normalizeDirectorySpeciality(opts.speciality);
+  const openNow = !!opts.openNow;
+  const establishedFrom = normalizeDirectoryEstablishedYear(opts.establishedFrom);
+  const dayOfWeekNum = Number(opts.dayOfWeek);
+  const dayOfWeek = Number.isFinite(dayOfWeekNum) && dayOfWeekNum >= 0 && dayOfWeekNum <= 6 ? dayOfWeekNum : null;
+  const timeHHMM = normalizeDirectoryTimeHHMM(opts.timeHHMM);
+
+  const parts = [];
+  const params = [];
+  let idx = baseParamIndex;
+
+  if (specialityNorm) {
+    parts.push(
+      `EXISTS (
+        SELECT 1
+        FROM public.field_agent_submission_website_specialities sp
+        WHERE sp.tenant_id = c.tenant_id
+          AND sp.submission_id = c.source_field_agent_submission_id
+          AND sp.speciality_name_norm = $${idx}
+      )`
+    );
+    params.push(specialityNorm);
+    idx += 1;
+  }
+
+  if (openNow && dayOfWeek != null && timeHHMM) {
+    parts.push(
+      `EXISTS (
+        SELECT 1
+        FROM public.field_agent_submission_website_hours h
+        WHERE h.tenant_id = c.tenant_id
+          AND h.submission_id = c.source_field_agent_submission_id
+          AND h.day_of_week = $${idx}
+          AND h.is_closed = FALSE
+          AND h.opens_at <= $${idx + 1}::time
+          AND h.closes_at > $${idx + 1}::time
+      )`
+    );
+    params.push(dayOfWeek, timeHHMM);
+    idx += 2;
+  }
+
+  if (establishedFrom != null) {
+    parts.push(`c.established_year IS NOT NULL AND c.established_year >= $${idx}`);
+    params.push(establishedFrom);
+    idx += 1;
+  }
+
+  return {
+    clause: parts.length ? ` AND ${parts.join(" AND ")}` : "",
+    params,
+  };
 }
 
 /**
@@ -272,19 +355,58 @@ async function listIdNameSubdomainForTenant(pool, tenantId) {
 }
 
 /**
+ * Public directory speciality suggestions sourced from published companies linked
+ * to field-agent website specialities.
+ * @param {import("pg").Pool} pool
+ * @param {number} tenantId
+ * @param {number} [limit]
+ */
+async function listDirectorySpecialitySuggestionsPublic(pool, tenantId, limit = 100) {
+  const tid = Number(tenantId);
+  const lim = Math.min(Math.max(Number(limit) || 100, 1), 200);
+  if (!Number.isFinite(tid) || tid < 1) return [];
+  const r = await pool.query(
+    `
+    SELECT sp.speciality_name, sp.speciality_name_norm
+    FROM public.companies c
+    INNER JOIN public.field_agent_submission_website_specialities sp
+      ON sp.tenant_id = c.tenant_id
+     AND sp.submission_id = c.source_field_agent_submission_id
+    WHERE c.tenant_id = $1
+      AND c.listing_disabled = false
+    ORDER BY sp.speciality_name_norm ASC
+    LIMIT $2
+    `,
+    [tid, lim]
+  );
+  const out = [];
+  const seen = new Set();
+  for (const row of r.rows) {
+    const name = String(row.speciality_name || "").trim();
+    const norm = String(row.speciality_name_norm || "").trim().toLowerCase();
+    if (!name || !norm || seen.has(norm)) continue;
+    seen.add(norm);
+    out.push(name);
+  }
+  return out;
+}
+
+/**
  * Directory: companies in a category (by category slug), optional city ILIKE on location.
  * @param {import("pg").Pool} pool
  * @param {number} tenantId
  * @param {string} categorySlug
  * @param {string | null} cityLike — e.g. `%Lusaka%` or null
  */
-async function listDirectoryByCategorySlug(pool, tenantId, categorySlug, cityLike) {
+async function listDirectoryByCategorySlug(pool, tenantId, categorySlug, cityLike, options) {
   const params = [tenantId, categorySlug];
   let cityClause = "";
   if (cityLike) {
     cityClause = ` AND c.location ILIKE $3`;
     params.push(cityLike);
   }
+  const extra = buildDirectoryStructuredFiltersSql(params.length + 1, options);
+  params.push(...extra.params);
   const r = await pool.query(
     `
     SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
@@ -292,6 +414,7 @@ async function listDirectoryByCategorySlug(pool, tenantId, categorySlug, cityLik
     INNER JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
     WHERE cat.slug = $2 AND c.tenant_id = $1 AND c.listing_disabled = false
     ${cityClause}
+    ${extra.clause}
     ORDER BY c.name ASC
     `,
     params
@@ -302,13 +425,15 @@ async function listDirectoryByCategorySlug(pool, tenantId, categorySlug, cityLik
 /**
  * Like {@link listDirectoryByCategorySlug} but only companies marked `directory_featured` (homepage search with category).
  */
-async function listDirectoryFeaturedByCategorySlug(pool, tenantId, categorySlug, cityLike) {
+async function listDirectoryFeaturedByCategorySlug(pool, tenantId, categorySlug, cityLike, options) {
   const params = [tenantId, categorySlug];
   let cityClause = "";
   if (cityLike) {
     cityClause = ` AND c.location ILIKE $3`;
     params.push(cityLike);
   }
+  const extra = buildDirectoryStructuredFiltersSql(params.length + 1, options);
+  params.push(...extra.params);
   const r = await pool.query(
     `
     SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
@@ -316,6 +441,7 @@ async function listDirectoryFeaturedByCategorySlug(pool, tenantId, categorySlug,
     INNER JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
     WHERE cat.slug = $2 AND c.tenant_id = $1 AND c.directory_featured = true AND c.listing_disabled = false
     ${cityClause}
+    ${extra.clause}
     ORDER BY c.name ASC
     `,
     params
@@ -329,17 +455,19 @@ async function listDirectoryFeaturedByCategorySlug(pool, tenantId, categorySlug,
  * @param {number} tenantId
  * @param {number} limit
  */
-async function listDirectoryDefault(pool, tenantId, limit = 24) {
+async function listDirectoryDefault(pool, tenantId, limit = 24, options) {
+  const extra = buildDirectoryStructuredFiltersSql(3, options);
   const r = await pool.query(
     `
     SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
     FROM public.companies c
     LEFT JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
     WHERE c.tenant_id = $1 AND c.listing_disabled = false
+    ${extra.clause}
     ORDER BY c.updated_at DESC
     LIMIT $2
     `,
-    [tenantId, limit]
+    [tenantId, limit, ...extra.params]
   );
   return mapRows(r.rows);
 }
@@ -347,17 +475,19 @@ async function listDirectoryDefault(pool, tenantId, limit = 24) {
 /**
  * Homepage / footer “featured” directory: admin-curated (`directory_featured`), tenant-scoped.
  */
-async function listDirectoryHomeFeatured(pool, tenantId, limit = 48) {
+async function listDirectoryHomeFeatured(pool, tenantId, limit = 48, options) {
+  const extra = buildDirectoryStructuredFiltersSql(3, options);
   const r = await pool.query(
     `
     SELECT c.*, cat.slug AS category_slug, cat.name AS category_name
     FROM public.companies c
     LEFT JOIN public.categories cat ON cat.id = c.category_id AND cat.tenant_id = c.tenant_id
     WHERE c.tenant_id = $1 AND c.directory_featured = true AND c.listing_disabled = false
+    ${extra.clause}
     ORDER BY c.updated_at DESC, c.name ASC
     LIMIT $2
     `,
-    [tenantId, limit]
+    [tenantId, limit, ...extra.params]
   );
   return mapRows(r.rows);
 }
@@ -365,7 +495,7 @@ async function listDirectoryHomeFeatured(pool, tenantId, limit = 48) {
 /**
  * Same as {@link listDirectorySearchIlike} but only companies marked `directory_featured` (homepage search with q/city).
  */
-async function listDirectoryFeaturedSearchIlike(pool, tenantId, searchPattern, cityPattern, limit = 48) {
+async function listDirectoryFeaturedSearchIlike(pool, tenantId, searchPattern, cityPattern, limit = 48, options) {
   const parts = [`c.tenant_id = $1`, `c.directory_featured = true`, `c.listing_disabled = false`];
   const params = [tenantId];
   let i = 2;
@@ -381,6 +511,10 @@ async function listDirectoryFeaturedSearchIlike(pool, tenantId, searchPattern, c
     params.push(cityPattern);
     i += 1;
   }
+  const extra = buildDirectoryStructuredFiltersSql(i, options);
+  if (extra.clause) parts.push(extra.clause.replace(/^ AND /, ""));
+  params.push(...extra.params);
+  i += extra.params.length;
   const where = parts.join(" AND ");
   params.push(limit);
   const r = await pool.query(
@@ -407,7 +541,7 @@ async function listDirectoryFeaturedSearchIlike(pool, tenantId, searchPattern, c
  * @param {string | null} cityPattern — `%city%` or null
  * @param {number} limit
  */
-async function listDirectorySearchIlike(pool, tenantId, searchPattern, cityPattern, limit = 48) {
+async function listDirectorySearchIlike(pool, tenantId, searchPattern, cityPattern, limit = 48, options) {
   const parts = [`c.tenant_id = $1`, `c.listing_disabled = false`];
   const params = [tenantId];
   let i = 2;
@@ -423,6 +557,10 @@ async function listDirectorySearchIlike(pool, tenantId, searchPattern, cityPatte
     params.push(cityPattern);
     i += 1;
   }
+  const extra = buildDirectoryStructuredFiltersSql(i, options);
+  if (extra.clause) parts.push(extra.clause.replace(/^ AND /, ""));
+  params.push(...extra.params);
+  i += extra.params.length;
   const where = parts.join(" AND ");
   params.push(limit);
   const r = await pool.query(
@@ -528,6 +666,7 @@ async function insertFull(pool, row) {
     featuredCtaLabel,
     featuredCtaPhone,
     yearsExperience,
+    establishedYear,
     serviceAreas,
     hoursText,
     galleryJson,
@@ -555,11 +694,11 @@ async function insertFull(pool, row) {
     `
     INSERT INTO public.companies (
       tenant_id, subdomain, name, category_id, headline, about, services, phone, email, location,
-      featured_cta_label, featured_cta_phone, years_experience, service_areas, hours_text, gallery_json, logo_url,
+      featured_cta_label, featured_cta_phone, years_experience, established_year, service_areas, hours_text, gallery_json, logo_url,
       portal_lead_credits_balance,
       account_manager_field_agent_id, source_field_agent_submission_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
     )
     RETURNING *
     `,
@@ -577,6 +716,7 @@ async function insertFull(pool, row) {
       featuredCtaLabel,
       featuredCtaPhone,
       yearsExperience,
+      establishedYear,
       serviceAreas,
       hoursText,
       galleryJson,
@@ -610,6 +750,7 @@ async function updateFullByIdAndTenantId(pool, row) {
     featuredCtaLabel,
     featuredCtaPhone,
     yearsExperience,
+    establishedYear,
     serviceAreas,
     hoursText,
     galleryJson,
@@ -640,12 +781,13 @@ async function updateFullByIdAndTenantId(pool, row) {
       featured_cta_label = $12,
       featured_cta_phone = $13,
       years_experience = $14,
-      service_areas = $15,
-      hours_text = $16,
-      gallery_json = $17,
-      logo_url = $18,
-      account_manager_field_agent_id = $19,
-      source_field_agent_submission_id = $20,
+      established_year = COALESCE($15, established_year),
+      service_areas = $16,
+      hours_text = $17,
+      gallery_json = $18,
+      logo_url = $19,
+      account_manager_field_agent_id = $20,
+      source_field_agent_submission_id = $21,
       updated_at = now()
     WHERE id = $1 AND tenant_id = $2
     RETURNING *
@@ -665,6 +807,7 @@ async function updateFullByIdAndTenantId(pool, row) {
       featuredCtaLabel,
       featuredCtaPhone,
       yearsExperience,
+      establishedYear,
       serviceAreas,
       hoursText,
       galleryJson,
@@ -723,6 +866,7 @@ module.exports = {
   listIdsForSitemap,
   countForTenant,
   listIdNameSubdomainForTenant,
+  listDirectorySpecialitySuggestionsPublic,
   listDirectoryByCategorySlug,
   listDirectoryFeaturedByCategorySlug,
   listDirectoryDefault,

@@ -1,0 +1,57 @@
+<!doctype html>
+<% var _bn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online'; %>
+<% var _rows = typeof approvedRows !== 'undefined' && approvedRows ? approvedRows : []; %>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>SP Websites | Field agent | <%= _bn %></title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="<%= tenant.themeClass %>" data-screen-role="support" data-tenant-prefix="<%= tenantUrlPrefix %>">
+    <div class="app-layout">
+      <%- include('../partials/site_header', { tenantUrlPrefix, tenant, regionChoices: typeof regionChoices !== 'undefined' ? regionChoices : [], isFieldAgentConsole: true }) %>
+      <%- include('../partials/app_navigation', { tenantUrlPrefix, isFieldAgentConsole: true, faActiveNav: 'sp_websites', faIncludeFaq: true }) %>
+      <div class="app-layout__main">
+        <%- include('../partials/components/container_start', { extraClass: 'field-agent-page' }) %>
+        <h1 class="gp-home-story__title" style="margin-top:0;">SP Websites</h1>
+        <p class="muted" style="max-width:42rem;line-height:1.5;margin:0 0 1rem;">
+          Approved service-provider leads. Select a card to open website details.
+        </p>
+
+        <% if (_rows.length) { %>
+          <ul class="field-agent-dash-list" role="list">
+            <% _rows.forEach(function (row) { %>
+              <% var _name = [row.first_name, row.last_name].filter(Boolean).join(' ').trim() || '—'; %>
+              <% var _sub = [row.profession, row.city].filter(Boolean).join(' · '); %>
+              <% var _phone = row.phone_raw ? ('Phone: ' + row.phone_raw) : ''; %>
+              <% var _wa = row.whatsapp_raw ? ('WhatsApp: ' + row.whatsapp_raw) : ''; %>
+              <% var _contact = [_phone, _wa].filter(Boolean).join(' · '); %>
+              <li class="field-agent-dash-list__item">
+                <a
+                  class="field-agent-dash-list-card"
+                  href="<%= tenantUrlPrefix %>/field-agent/submissions/<%= row.id %>/website-content"
+                >
+                  <div class="field-agent-dash-list-card__title"><%= _name %></div>
+                  <% if (_sub) { %><div class="muted field-agent-dash-list-card__sub"><%= _sub %></div><% } %>
+                  <% if (_contact) { %><div class="muted field-agent-dash-list-card__contact"><%= _contact %></div><% } %>
+                  <div class="muted field-agent-dash-list-card__date"><%= String(row.updated_at || row.created_at || '') %></div>
+                  <div class="field-agent-dash-list-card__status">Approved</div>
+                </a>
+              </li>
+            <% }); %>
+          </ul>
+        <% } else { %>
+          <div class="field-agent-dash-empty">
+            <p class="muted" style="margin:0;">No approved leads found.</p>
+          </div>
+        <% } %>
+
+        <%- include('../partials/site_footer', { tenantUrlPrefix }) %>
+        <%- include('../partials/components/container_close') %>
+      </div>
+    </div>
+    <script src="<%= asset('scripts') %>" defer></script>
+    <%- include('../partials/theme_prefs') %>
+  </body>
+</html>

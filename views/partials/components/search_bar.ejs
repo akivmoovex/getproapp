@@ -26,6 +26,10 @@
   }
   var _q = typeof searchQuery !== 'undefined' ? String(searchQuery || '') : '';
   var _city = typeof cityQuery !== 'undefined' ? String(cityQuery || '') : '';
+  var _speciality = typeof specialityQuery !== 'undefined' ? String(specialityQuery || '') : '';
+  var _specialitySuggestions = typeof specialitySuggestions !== 'undefined' && specialitySuggestions ? specialitySuggestions : [];
+  var _openNow = typeof openNowQuery !== 'undefined' && !!openNowQuery;
+  var _establishedFrom = typeof establishedFromQuery !== 'undefined' ? String(establishedFromQuery || '') : '';
   var _showCat = typeof showCategoryFilter !== 'undefined' && showCategoryFilter;
   var _selCat = typeof selectedCategory !== 'undefined' ? String(selectedCategory || '').trim() : '';
   var _cats = typeof categories !== 'undefined' && categories ? categories : [];
@@ -43,6 +47,51 @@
       <% }); %>
     </select>
   </div>
+
+  <% if (_v === 'directory') { %>
+  <div class="pro-search-form__toolbar-row" style="margin-top:0.5rem;">
+    <div class="pro-search-form__fields">
+      <div class="pro-search-form__field input-field input-field--search">
+        <label class="pro-search-form__label input-field__label" for="<%= _pre %>-search-speciality">Speciality</label>
+        <datalist id="<%= _pre %>-search-speciality-options">
+          <% _specialitySuggestions.forEach(function (s) { %>
+            <option value="<%= s %>"></option>
+          <% }); %>
+        </datalist>
+        <input
+          id="<%= _pre %>-search-speciality"
+          name="speciality"
+          class="input-field__control"
+          type="text"
+          value="<%= _speciality %>"
+          maxlength="120"
+          list="<%= _pre %>-search-speciality-options"
+          placeholder="e.g. Plumbing"
+        />
+      </div>
+      <div class="pro-search-form__field input-field" style="display:flex;align-items:flex-end;">
+        <label class="input-field__label" style="display:flex;gap:0.4rem;align-items:center;margin:0 0 0.15rem 0;">
+          <input type="checkbox" name="open_now" value="1" <%= _openNow ? 'checked' : '' %> />
+          Open now
+        </label>
+      </div>
+      <div class="pro-search-form__field input-field input-field--search">
+        <label class="pro-search-form__label input-field__label" for="<%= _pre %>-search-established-from">Established from</label>
+        <input
+          id="<%= _pre %>-search-established-from"
+          name="established_from"
+          class="input-field__control"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]{4}"
+          maxlength="4"
+          value="<%= _establishedFrom %>"
+          placeholder="e.g. 2015"
+        />
+      </div>
+    </div>
+  </div>
+  <% } %>
 <% } else if (_selCat) { %>
   <input type="hidden" name="category" value="<%= _selCat %>" />
 <% } %>

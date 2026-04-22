@@ -18,6 +18,7 @@ const {
 const { getPgPool } = require("../db/pg");
 const reviewsRepo = require("../db/pg/reviewsRepo");
 const categoriesRepo = require("../db/pg/categoriesRepo");
+const fieldAgentSubmissionsRepo = require("../db/pg/fieldAgentSubmissionsRepo");
 
 function tenantHomeHrefFromPrefix(prefix) {
   if (!prefix) return "/";
@@ -190,6 +191,14 @@ async function buildCompanyPageLocals(req, company, options = {}) {
   }
 
   const supportLocals = await getTenantContactSupportAsync(pool, co.tenant_id);
+  let verifiedSpecialities = [];
+  if (co.source_field_agent_submission_id != null && Number.isFinite(Number(co.source_field_agent_submission_id))) {
+    verifiedSpecialities = await fieldAgentSubmissionsRepo.listVerifiedSpecialityNamesForSubmission(
+      pool,
+      co.tenant_id,
+      Number(co.source_field_agent_submission_id)
+    );
+  }
 
   const categoryObj = co.category_slug ? { slug: co.category_slug, name: co.category_name } : null;
   const providerSeo = buildProviderMiniSiteSeo({
@@ -224,6 +233,7 @@ async function buildCompanyPageLocals(req, company, options = {}) {
     companyPortalPersonnel: companyPortalPersonnel || null,
     activeCompanyNav: activeCompanyNav || "",
     providerPortalBasePath: providerPortalBasePath || "/company",
+    verifiedSpecialities,
     seoTitle: providerSeo.seoTitle,
     seoDescription: providerSeo.seoDescription,
     showProviderSeoIntro: providerSeo.showProviderSeoIntro,
