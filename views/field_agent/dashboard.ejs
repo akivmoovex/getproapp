@@ -24,22 +24,11 @@
         <% if (typeof resubmitted !== 'undefined' && resubmitted) { %>
           <p class="admin-gate-success" role="status">Resubmitted. Your application is back in review.</p>
         <% } %>
-
-        <% if (typeof approvedWebsiteNextRows !== 'undefined' && approvedWebsiteNextRows.length) { %>
-          <div class="card" style="padding:1rem;margin-bottom:1rem;border-left:3px solid rgba(25,118,210,0.85);">
-            <h2 class="form-step__title" style="margin-top:0;">Next step</h2>
-            <p class="muted" style="margin:0 0 0.75rem;line-height:1.45;max-width:42rem;">
-              Approved lead<% if (approvedWebsiteNextRows.length > 1) { %>s<% } %> not yet linked to a directory listing: you can start the guided <strong>website content</strong> step (nothing is published from this screen).
-            </p>
-            <ul style="margin:0;padding-left:1.25rem;">
-              <% approvedWebsiteNextRows.forEach(function (row) { %>
-                <li style="margin-bottom:0.5rem;">
-                  <strong><%= row.first_name %> <%= row.last_name %></strong><% if (row.profession) { %> — <%= row.profession %><% } %>
-                  — <a href="<%= tenantUrlPrefix %>/field-agent/submissions/<%= row.id %>/website-content">Prepare website content</a>
-                </li>
-              <% }); %>
-            </ul>
-          </div>
+        <% if (typeof draftSaved !== 'undefined' && draftSaved) { %>
+          <p class="admin-gate-success" role="status">Website draft saved.</p>
+        <% } %>
+        <% if (typeof reviewSubmitted !== 'undefined' && reviewSubmitted) { %>
+          <p class="admin-gate-success" role="status">Listing submitted for staff review.</p>
         <% } %>
 
         <h1 class="gp-home-story__title" style="margin-top:0;">Hello, <%= fieldAgent.displayName || fieldAgent.username %></h1>
@@ -84,6 +73,15 @@
             <div class="field-agent-metric-card__label muted">Appealed</div>
             <div class="field-agent-metric-card__value"><%= typeof metricAppealed !== 'undefined' ? metricAppealed : 0 %></div>
           </div>
+          <a
+            class="card field-agent-metric-card field-agent-metric-card--clickable"
+            href="<%= tenantUrlPrefix %>/field-agent/sp-websites"
+            style="text-decoration:none;color:inherit;"
+            title="Open SP Websites — approved leads not yet linked to a directory listing"
+          >
+            <div class="field-agent-metric-card__label muted">Websites to create</div>
+            <div class="field-agent-metric-card__value"><%= typeof spWebsitesEligibleCount !== 'undefined' ? spWebsitesEligibleCount : 0 %></div>
+          </a>
           <div
             class="card field-agent-metric-card field-agent-metric-card--clickable"
             data-metric="linked_service_providers"

@@ -30,7 +30,8 @@ const companiesRepo = require("../src/db/pg/companiesRepo");
 const categoriesRepo = require("../src/db/pg/categoriesRepo");
 const { ensureFieldAgentSchema } = require("../src/db/pg/ensureFieldAgentSchema");
 const { createCrmTaskFromEvent } = require("../src/crm/crmAutoTasks");
-const { authenticateFieldAgent } = require("../src/auth/fieldAgentAuth");
+const { authenticateFieldAgent, setFieldAgentSession } = require("../src/auth/fieldAgentAuth");
+const fieldAgentRoutes = require("../src/routes/fieldAgent");
 const { TENANT_ZM, TENANT_IL } = require("../src/tenants/tenantIds");
 
 function uniq() {
@@ -70,6 +71,49 @@ async function adminLoginAgent(app, username, password) {
   const agent = request.agent(app);
   await agent.post("/admin/login").type("form").send({ username, password }).expect(302);
   return agent;
+}
+
+/** Minimal field-agent app for API submit tests (same pool as admin app). */
+function createFieldAgentHttpTestApp(fieldAgentId) {
+  const app = express();
+  app.set("view engine", "ejs");
+  app.set("views", path.join(__dirname, "..", "views"));
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  app.use(
+    session({
+      secret: "field_agent_http_vis_test",
+      resave: false,
+      saveUninitialized: true,
+      name: "fa_http_vis_sid",
+    })
+  );
+  app.use((req, res, next) => {
+    req.tenant = { id: TENANT_ZM, slug: "zm", themeClass: "" };
+    req.tenantUrlPrefix = "";
+    next();
+  });
+  app.use((req, res, next) => {
+    res.locals.asset = (k) => `/${String(k || "").replace(/^\//, "")}`;
+    res.locals.brandProductName = "Pro-online";
+    res.locals.brandPublicTagline = "x";
+    res.locals.showUiGuard = false;
+    res.locals.appVersion = "";
+    next();
+  });
+  if (fieldAgentId != null) {
+    app.use((req, res, next) => {
+      setFieldAgentSession(req, {
+        id: fieldAgentId,
+        tenantId: TENANT_ZM,
+        username: "fa_http_vis",
+        displayName: "",
+      });
+      next();
+    });
+  }
+  app.use(fieldAgentRoutes());
+  return app;
 }
 
 async function countCommentsForTask(pool, taskId) {
@@ -3424,3 +3468,119 @@ test("admin websites queue shows informational quality score for triage", { skip
     resetBootstrapForTests();
   }
 });
+
+test(
+  "FA website submit creates CRM task visible on admin websites queue for super, manager, editor; viewer 403; review page still loads",
+  { skip: !isPgConfigured() },
+  async () => {
+    runBootstrap();
+    const pool = getPgPool();
+    await ensureFieldAgentSchema(pool);
+    const tenantId = TENANT_ZM;
+    const suffix = uniq();
+    const pw = "Vis_1!";
+    const hash = await bcrypt.hash(pw, 4);
+    let managerId;
+    let editorId;
+    let viewerId;
+    let superId;
+    let agentId;
+    let subId;
+    try {
+      managerId = await adminUsersRepo.insertUser(pool, {
+        username: `vis_mgr_${suffix}`,
+        passwordHash: hash,
+        role: ROLES.TENANT_MANAGER,
+        tenantId,
+        displayName: "",
+      });
+      editorId = await adminUsersRepo.insertUser(pool, {
+        username: `vis_ed_${suffix}`,
+        passwordHash: hash,
+        role: ROLES.TENANT_EDITOR,
+        tenantId,
+        displayName: "",
+      });
+      viewerId = await adminUsersRepo.insertUser(pool, {
+        username: `vis_vw_${suffix}`,
+        passwordHash: hash,
+        role: ROLES.TENANT_VIEWER,
+        tenantId,
+        displayName: "",
+      });
+      superId = await adminUsersRepo.insertUser(pool, {
+        username: `vis_sup_${suffix}`,
+        passwordHash: hash,
+        role: ROLES.SUPER_ADMIN,
+        tenantId: null,
+        displayName: "",
+      });
+      agentId = await fieldAgentsRepo.insertAgent(pool, {
+        tenantId,
+        username: `vis_fa_${suffix}`,
+        passwordHash: hash,
+        displayName: "",
+        phone: "",
+      });
+      const p = makePhoneNorm(`${suffix}_vis`);
+      subId = await insertProviderSubmission(pool, { tenantId, fieldAgentId: agentId, phoneNorm: p });
+      await fieldAgentSubmissionsRepo.approveFieldAgentSubmission(pool, {
+        tenantId,
+        submissionId: subId,
+        commissionAmount: 0,
+      });
+
+      const faApp = createFieldAgentHttpTestApp(agentId);
+      const submitRes = await request(faApp)
+        .post(`/field-agent/api/submissions/${subId}/website-content-submit-review`)
+        .set("Content-Type", "application/json")
+        .send({})
+        .redirects(0);
+      assert.equal(submitRes.status, 200);
+      const body = submitRes.body;
+      assert.equal(body && body.ok, true);
+
+      const crmCheck = await pool.query(
+        `SELECT id FROM public.crm_tasks WHERE tenant_id = $1 AND source_type = 'field_agent_website_listing' AND source_ref_id = $2`,
+        [tenantId, subId]
+      );
+      assert.equal(crmCheck.rows.length, 1);
+
+      const adminApp = createModerationHttpApp();
+      const needle = `Website listing review — submission #${subId}`;
+      const needleRe = new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+      for (const [label, user] of [
+        ["manager", `vis_mgr_${suffix}`],
+        ["editor", `vis_ed_${suffix}`],
+        ["super", `vis_sup_${suffix}`],
+      ]) {
+        const ag = await adminLoginAgent(adminApp, user, pw);
+        const q = await ag.get("/admin/crm?queue=websites");
+        assert.equal(q.status, 200, label);
+        assert.match(String(q.text || ""), needleRe, label);
+      }
+      const viewerAg = await adminLoginAgent(adminApp, `vis_vw_${suffix}`, pw);
+      const denied = await viewerAg.get("/admin/crm?queue=websites");
+      assert.equal(denied.status, 403);
+
+      const mgr = await adminLoginAgent(adminApp, `vis_mgr_${suffix}`, pw);
+      const reviewPage = await mgr.get(`/admin/field-agent/submissions/${subId}/website-listing-review`);
+      assert.equal(reviewPage.status, 200);
+    } finally {
+      try {
+        await pool.query(
+          `DELETE FROM public.crm_tasks WHERE tenant_id = $1 AND source_ref_id = $2 AND source_type = 'field_agent_website_listing'`,
+          [tenantId, subId]
+        );
+        if (subId) await pool.query(`DELETE FROM public.field_agent_provider_submissions WHERE id = $1`, [subId]);
+        if (agentId) await pool.query(`DELETE FROM public.field_agents WHERE id = $1`, [agentId]);
+        for (const id of [managerId, editorId, viewerId, superId].filter(Boolean)) {
+          await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [id]);
+        }
+      } catch {
+        /* ignore */
+      }
+      resetBootstrapForTests();
+    }
+  }
+);

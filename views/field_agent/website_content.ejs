@@ -158,6 +158,38 @@
           <% } %>
         </form>
 
+        <% if (!_ro) { %>
+        <div
+          id="fa-wc-submit-success-overlay"
+          class="m3-modal-overlay fa-submit-success-overlay"
+          hidden
+          aria-hidden="true"
+        >
+          <div class="m3-modal-overlay__backdrop" data-fa-wc-submit-success-dismiss tabindex="-1"></div>
+          <div
+            id="fa-wc-submit-success-dialog"
+            class="m3-modal m3-modal--join fa-submit-success-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="fa-wc-submit-success-title"
+            tabindex="-1"
+          >
+            <div class="fa-submit-success-countdown-wrap" aria-hidden="true">
+              <div class="fa-submit-success-countdown" id="fa-wc-submit-success-countdown"></div>
+            </div>
+            <header class="m3-modal__header">
+              <h2 id="fa-wc-submit-success-title" class="m3-modal__title">Submitted for review</h2>
+              <button type="button" class="m3-modal__close" data-fa-wc-submit-success-dismiss aria-label="Close">
+                ×
+              </button>
+            </header>
+            <div class="m3-modal__body">
+              <p class="muted" style="margin: 0">You will return to your dashboard shortly.</p>
+            </div>
+          </div>
+        </div>
+        <% } %>
+
         <p style="margin-top:1rem;">
           <a href="<%= tenantUrlPrefix %>/field-agent/sp-websites">← SP Websites</a>
         </p>
@@ -215,11 +247,14 @@
             var f = form.querySelector('.wc-hours-from[data-day="' + d + '"]');
             var t = form.querySelector('.wc-hours-to[data-day="' + d + '"]');
             var closed = !!(c && c.checked);
-            o.weekly_hours[d] = {
-              closed: closed,
-              from: closed ? "" : (f && f.value ? String(f.value) : ""),
-              to: closed ? "" : (t && t.value ? String(t.value) : ""),
-            };
+            var fromV = closed ? "" : f && f.value ? String(f.value) : "";
+            var toV = closed ? "" : t && t.value ? String(t.value) : "";
+            if (!closed && (!fromV || !toV)) {
+              closed = true;
+              fromV = "";
+              toV = "";
+            }
+            o.weekly_hours[d] = { closed: closed, from: fromV, to: toV };
           });
           return o;
         }
@@ -282,6 +317,74 @@
           var ban = document.getElementById("fa-wc-review-banner");
           if (ban) ban.hidden = false;
         }
+        var submitReviewInFlight = false;
+        var reviewSuccessNavTimer = null;
+        var pendingReviewSuccessUrl = "";
+        var reviewSuccessNavigationStarted = false;
+        function clearReviewSuccessNavTimer() {
+          if (reviewSuccessNavTimer) {
+            clearTimeout(reviewSuccessNavTimer);
+            reviewSuccessNavTimer = null;
+          }
+        }
+        function setWcSubmitSuccessOverlayOpen(open) {
+          var o = document.getElementById("fa-wc-submit-success-overlay");
+          if (!o) return;
+          if (open) {
+            o.removeAttribute("hidden");
+            o.setAttribute("aria-hidden", "false");
+            void o.offsetWidth;
+            o.classList.add("m3-modal-overlay--open");
+            document.body.classList.add("join-modal-open");
+            var dlg = document.getElementById("fa-wc-submit-success-dialog");
+            if (dlg && typeof dlg.focus === "function") {
+              try {
+                dlg.focus();
+              } catch (fe) {}
+            }
+          } else {
+            o.classList.remove("m3-modal-overlay--open");
+            document.body.classList.remove("join-modal-open");
+            o.setAttribute("hidden", "");
+            o.setAttribute("aria-hidden", "true");
+          }
+        }
+        function restartWcCountdownAnimation() {
+          var cd = document.getElementById("fa-wc-submit-success-countdown");
+          if (!cd) return;
+          cd.classList.remove("fa-submit-success-countdown--animate");
+          void cd.offsetWidth;
+          cd.classList.add("fa-submit-success-countdown--animate");
+        }
+        function goDashboardFromReviewSuccess() {
+          if (reviewSuccessNavigationStarted) return;
+          clearReviewSuccessNavTimer();
+          var url = pendingReviewSuccessUrl || "";
+          pendingReviewSuccessUrl = "";
+          if (!url) {
+            setWcSubmitSuccessOverlayOpen(false);
+            return;
+          }
+          reviewSuccessNavigationStarted = true;
+          setWcSubmitSuccessOverlayOpen(false);
+          window.location.assign(url);
+        }
+        document.querySelectorAll("[data-fa-wc-submit-success-dismiss]").forEach(function (el) {
+          el.addEventListener("click", function (e) {
+            e.preventDefault();
+            goDashboardFromReviewSuccess();
+          });
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key !== "Escape") return;
+          var o = document.getElementById("fa-wc-submit-success-overlay");
+          if (!o || o.hasAttribute("hidden") || !o.classList.contains("m3-modal-overlay--open")) return;
+          e.preventDefault();
+          goDashboardFromReviewSuccess();
+        });
+        window.addEventListener("pagehide", function () {
+          clearReviewSuccessNavTimer();
+        });
         if (saveBtn) {
           saveBtn.addEventListener("click", function () {
             showErr("");
@@ -301,6 +404,10 @@
                   showErr((x.j && x.j.error) || "Could not save draft.");
                   return;
                 }
+                if (x.j.redirect) {
+                  window.location.assign(x.j.redirect);
+                  return;
+                }
                 showSaveOk();
               })
               .catch(function () {
@@ -310,27 +417,71 @@
         }
         if (submitBtn) {
           submitBtn.addEventListener("click", function () {
+            if (submitReviewInFlight) return;
             showErr("");
+            submitReviewInFlight = true;
+            if (submitBtn) submitBtn.setAttribute("aria-busy", "true");
+            if (saveBtn) saveBtn.disabled = true;
             fetch(api("/field-agent/api/submissions/" + encodeURIComponent(sid) + "/website-content-submit-review"), {
               method: "POST",
               credentials: "same-origin",
               headers: { "Content-Type": "application/json", Accept: "application/json" },
               body: JSON.stringify({ draft: gatherDraft() }),
             })
-              .then(function (r) {
-                return r.json().then(function (j) {
-                  return { ok: r.ok, j: j };
+              .then(function (res) {
+                var status = res.status;
+                var ct = (res.headers.get("content-type") || "").toLowerCase();
+                return res.text().then(function (raw) {
+                  var out = { status: status };
+                  if (ct.indexOf("application/json") !== -1) {
+                    try {
+                      out.json = raw ? JSON.parse(raw) : null;
+                    } catch (parseErr) {
+                      out.jsonParseError = true;
+                    }
+                  } else {
+                    out.text = raw;
+                  }
+                  return out;
                 });
               })
-              .then(function (x) {
-                if (!x.ok || !x.j || x.j.ok !== true) {
-                  showErr((x.j && x.j.error) || "Could not submit for review.");
+              .then(function (result) {
+                if (result.jsonParseError) {
+                  showErr("Could not submit for review. Try again.");
                   return;
                 }
-                showSubmitOk();
+                if (result.json) {
+                  if (result.json.ok && result.json.redirect) {
+                    pendingReviewSuccessUrl = result.json.redirect;
+                    setWcSubmitSuccessOverlayOpen(true);
+                    restartWcCountdownAnimation();
+                    clearReviewSuccessNavTimer();
+                    reviewSuccessNavTimer = setTimeout(function () {
+                      reviewSuccessNavTimer = null;
+                      goDashboardFromReviewSuccess();
+                    }, 5000);
+                    return;
+                  }
+                  showErr(result.json.error || "Could not submit for review.");
+                  return;
+                }
+                if (result.text && String(result.text).trim()) {
+                  showErr(String(result.text).trim().slice(0, 500));
+                  return;
+                }
+                showErr("Could not submit for review. Try again.");
               })
               .catch(function () {
                 showErr("Could not submit for review. Try again.");
+              })
+              .finally(function () {
+                if (!pendingReviewSuccessUrl) {
+                  submitReviewInFlight = false;
+                  if (submitBtn) {
+                    submitBtn.removeAttribute("aria-busy");
+                  }
+                  if (saveBtn) saveBtn.disabled = false;
+                }
               });
           });
         }

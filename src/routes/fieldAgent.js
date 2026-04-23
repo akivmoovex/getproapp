@@ -393,12 +393,13 @@ module.exports = function fieldAgentRoutes() {
       withheldEcCommission30: ecQualityPayable.withheldEcCommission30,
     };
     const rejectedRows = await fieldAgentSubmissionsRepo.listRejectedWithReason(pool, s.id, 20);
-    const approvedWebsiteNextRows = await fieldAgentSubmissionsRepo.listApprovedForFieldAgentNotLinkedToCompany(
+    const spWebsitesEligibleRows = await fieldAgentSubmissionsRepo.listApprovedForFieldAgentNotLinkedToCompany(
       pool,
       tid,
       s.id,
-      25
+      100
     );
+    const spWebsitesEligibleCount = spWebsitesEligibleRows.length;
     const metricTotal = metricPending + metricInfoNeeded + metricApproved + metricRejected + metricAppealed;
     return res.render("field_agent/dashboard", renderLocals(req, res, {
       fieldAgent: s,
@@ -422,10 +423,12 @@ module.exports = function fieldAgentRoutes() {
       ecQualityPayableDisplay,
       ecPayableBreakdownPayload,
       rejectedRows,
-      approvedWebsiteNextRows,
+      spWebsitesEligibleCount,
       submitted: req.query && req.query.submitted === "1",
       callback: req.query && req.query.callback === "1",
       resubmitted: req.query && req.query.resubmitted === "1",
+      draftSaved: req.query && req.query.draft_saved === "1",
+      reviewSubmitted: req.query && req.query.review_submitted === "1",
     }));
   });
 
@@ -1072,7 +1075,11 @@ module.exports = function fieldAgentRoutes() {
         weeklyHours,
       });
       const next = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
-      return res.json({ ok: true, submission: next });
+      return res.json({
+        ok: true,
+        submission: next,
+        redirect: `${tenantPrefix(req)}${FIELD_AGENT_DASHBOARD}?draft_saved=1`,
+      });
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("[field-agent] website-content-draft save failed", {
@@ -1165,13 +1172,12 @@ module.exports = function fieldAgentRoutes() {
         });
       }
       const next = await fieldAgentSubmissionsRepo.getSubmissionByIdForFieldAgent(pool, tid, s.id, id);
-      try {
       const fn = String(next.first_name || "").trim();
       const ln = String(next.last_name || "").trim();
       const prof = String(next.profession || "").trim();
-      const draft = fieldAgentSubmissionsRepo.mergeWebsiteListingDraftForDisplay(next.website_listing_draft_json);
-      const sumHead = String(draft.headline || "").trim().slice(0, 120);
-      const sumLine = [sumHead && `Headline: ${sumHead}`, draft.listing_name && `Listing name: ${String(draft.listing_name).slice(0, 80)}`]
+      const displayDraft = fieldAgentSubmissionsRepo.mergeWebsiteListingDraftForDisplay(next.website_listing_draft_json);
+      const sumHead = String(displayDraft.headline || "").trim().slice(0, 120);
+      const sumLine = [sumHead && `Headline: ${sumHead}`, displayDraft.listing_name && `Listing name: ${String(displayDraft.listing_name).slice(0, 80)}`]
         .filter(Boolean)
         .join("\n");
       const desc = [
@@ -1186,26 +1192,15 @@ module.exports = function fieldAgentRoutes() {
         .filter((x) => x !== "")
         .join("\n")
         .slice(0, 8000);
-      const crmTaskId = await fieldAgentCrm.notifyWebsiteListingReviewToCrm({
+      const crmNotifyPayload = {
         tenantId: tid,
         submissionId: id,
         title: `Website listing review — submission #${id}`,
         description: desc,
-      });
-      if (crmTaskId == null) {
-        // eslint-disable-next-line no-console
-        console.error(
-          "[getpro] field-agent CRM inbound task not created",
-          JSON.stringify({
-            op: "field_agent_website_listing_review",
-            severity: "warning",
-            tenantId: tid,
-            submissionId: id,
-            sourceType: fieldAgentCrm.WEBSITE_LISTING_CRM_SOURCE,
-            reason: "null_task_id",
-          })
-        );
-      }
+      };
+      let crmTaskId = null;
+      try {
+        crmTaskId = await fieldAgentCrm.notifyWebsiteListingReviewToCrm(crmNotifyPayload);
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error(
@@ -1222,7 +1217,41 @@ module.exports = function fieldAgentRoutes() {
         // eslint-disable-next-line no-console
         if (e && e.stack) console.error(e.stack);
       }
-      return res.json({ ok: true, submission: next });
+      if (crmTaskId == null) {
+        try {
+          crmTaskId = await fieldAgentCrm.notifyWebsiteListingReviewToCrm(crmNotifyPayload);
+        } catch (e2) {
+          // eslint-disable-next-line no-console
+          console.error(
+            "[getpro] field-agent CRM inbound task retry failed",
+            JSON.stringify({
+              op: "field_agent_website_listing_review_retry",
+              tenantId: tid,
+              submissionId: id,
+              error: e2 && e2.message ? String(e2.message) : String(e2),
+            })
+          );
+        }
+      }
+      if (crmTaskId == null) {
+        // eslint-disable-next-line no-console
+        console.error(
+          "[getpro] field-agent CRM inbound task not created",
+          JSON.stringify({
+            op: "field_agent_website_listing_review",
+            severity: "warning",
+            tenantId: tid,
+            submissionId: id,
+            sourceType: fieldAgentCrm.WEBSITE_LISTING_CRM_SOURCE,
+            reason: "null_task_id_after_notify_and_retry",
+          })
+        );
+      }
+      return res.json({
+        ok: true,
+        submission: next,
+        redirect: `${tenantPrefix(req)}${FIELD_AGENT_DASHBOARD}?review_submitted=1`,
+      });
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error("[field-agent] website-content-submit-review failed", {

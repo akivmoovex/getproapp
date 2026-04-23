@@ -7,6 +7,7 @@
  */
 
 const path = require("path");
+const fs = require("fs");
 const express = require("express");
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
@@ -153,6 +154,28 @@ test("field-agent website-content draft API: unauthenticated POST redirects to l
   assert.match(String(res.headers.location || ""), /field-agent\/login/);
 });
 
+test("field-agent website-content submit API: unauthenticated POST redirects to login", async () => {
+  const app = createApp({});
+  const res = await request(app)
+    .post("/field-agent/api/submissions/1/website-content-submit-review")
+    .set("Content-Type", "application/json")
+    .send({ draft: {} })
+    .redirects(0);
+  assert.equal(res.status, 302);
+  assert.match(String(res.headers.location || ""), /field-agent\/login/);
+});
+
+test("field-agent website-content view: submit success reuses m3 success overlay, countdown CSS, 5s timer, navigate helper", () => {
+  const p = path.join(__dirname, "..", "views", "field_agent", "website_content.ejs");
+  const s = fs.readFileSync(p, "utf8");
+  assert.match(s, /id="fa-wc-submit-success-overlay"/);
+  assert.match(s, /class="fa-submit-success-countdown"/);
+  assert.match(s, /m3-modal-overlay/);
+  assert.match(s, /, 5000\)/);
+  assert.match(s, /goDashboardFromReviewSuccess/);
+  assert.match(s, /pendingReviewSuccessUrl\s*=\s*result\.json\.redirect/);
+});
+
 test(
   "field-agent SP Websites: authenticated page shows approved and not-linked submissions only",
   { skip: !isPgConfigured() },
@@ -207,6 +230,72 @@ test(
 );
 
 test(
+  "field-agent dashboard: websites-to-create card links to SP Websites; count matches eligible list; no Next step block",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    const u = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const agentId = await fieldAgentsRepo.insertAgent(pool, {
+      tenantId: TENANT_ZM,
+      username: `fa_dash_spw_${u}`,
+      passwordHash: "x",
+      displayName: "",
+      phone: "",
+    });
+    const showSubId = await insertApprovedSubmission(pool, agentId, `dash_show_${u}`);
+    const linkedSubId = await insertApprovedSubmission(pool, agentId, `dash_linked_${u}`);
+    const catRows = await categoriesRepo.listByTenantId(pool, TENANT_ZM);
+    const catId = catRows && catRows[0] ? catRows[0].id : null;
+    const linkedCompany = await companiesRepo.insertFull(pool, {
+      tenantId: TENANT_ZM,
+      subdomain: `dash-spw-${u}`.slice(0, 40).toLowerCase().replace(/[^a-z0-9-]/g, ""),
+      name: `Dash SPW ${u}`,
+      categoryId: catId,
+      headline: "",
+      about: "",
+      services: "",
+      phone: "",
+      email: "",
+      location: "",
+      featuredCtaLabel: "Call us",
+      featuredCtaPhone: "",
+      yearsExperience: null,
+      serviceAreas: "",
+      hoursText: "",
+      galleryJson: "[]",
+      logoUrl: "",
+      accountManagerFieldAgentId: agentId,
+      sourceFieldAgentSubmissionId: linkedSubId,
+    });
+
+    try {
+      const app = createApp({ fieldAgentId: agentId });
+      const spRes = await request(app).get("/field-agent/sp-websites").redirects(0);
+      assert.equal(spRes.status, 200);
+      const listCount = (String(spRes.text || "").match(/field-agent-dash-list__item/g) || []).length;
+
+      const dash = await request(app).get("/field-agent/dashboard").redirects(0);
+      assert.equal(dash.status, 200);
+      const html = String(dash.text || "");
+      assert.doesNotMatch(html, /Next step/i);
+      assert.doesNotMatch(html, /Prepare website content/);
+      assert.match(html, /href="\/field-agent\/sp-websites"/);
+      assert.match(html, /Field agent dashboard/i);
+      const cardM = html.match(
+        /field-agent-metric-card__label[^>]*>Websites to create<[\s\S]*?field-agent-metric-card__value">(\d+)</
+      );
+      assert.ok(cardM, "expected websites-to-create metric");
+      assert.equal(Number(cardM[1]), listCount);
+      assert.equal(listCount, 1);
+    } finally {
+      await pool.query(`DELETE FROM public.companies WHERE id = $1`, [linkedCompany.id]);
+      await pool.query(`DELETE FROM public.field_agent_provider_submissions WHERE id = ANY($1::int[])`, [[showSubId, linkedSubId]]);
+      await pool.query(`DELETE FROM public.field_agents WHERE id = $1`, [agentId]);
+    }
+  }
+);
+
+test(
   "field-agent website-content draft: blank email accepted, phone tampering ignored, and reopen hydrates saved draft",
   { skip: !isPgConfigured() },
   async () => {
@@ -248,6 +337,11 @@ test(
       assert.equal(save.status, 200);
       const savedBody = JSON.parse(save.text || "{}");
       assert.equal(savedBody.ok, true);
+      assert.equal(
+        String(savedBody.redirect || ""),
+        "/field-agent/dashboard?draft_saved=1",
+        "save success includes dashboard redirect for confirmation banner"
+      );
       assert.equal(String(savedBody.submission.website_listing_draft_json.listing_name || ""), "Saved Listing");
       assert.equal(String(savedBody.submission.website_listing_draft_json.email || ""), "");
       assert.equal(Number(savedBody.submission.website_listing_draft_json.years_experience), 12);
@@ -271,6 +365,227 @@ test(
       assert.match(reopen.text || "", /Established in year/i);
     } finally {
       await pool.query(`DELETE FROM public.field_agent_provider_submissions WHERE id = $1`, [subId]);
+      await pool.query(`DELETE FROM public.field_agents WHERE id = $1`, [agentId]);
+    }
+  }
+);
+
+test(
+  "field-agent dashboard: draft_saved=1 shows website draft saved banner",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    const u = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const agentId = await fieldAgentsRepo.insertAgent(pool, {
+      tenantId: TENANT_ZM,
+      username: `fa_draftbanner_${u}`,
+      passwordHash: "x",
+      displayName: "",
+      phone: "",
+    });
+    try {
+      const app = createApp({ fieldAgentId: agentId });
+      const res = await request(app).get("/field-agent/dashboard?draft_saved=1").redirects(0);
+      assert.equal(res.status, 200);
+      assert.match(String(res.text || ""), /Website draft saved/i);
+    } finally {
+      await pool.query(`DELETE FROM public.field_agents WHERE id = $1`, [agentId]);
+    }
+  }
+);
+
+test(
+  "field-agent dashboard: review_submitted=1 shows listing submitted for staff review banner",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    const u = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const agentId = await fieldAgentsRepo.insertAgent(pool, {
+      tenantId: TENANT_ZM,
+      username: `fa_reviewbanner_${u}`,
+      passwordHash: "x",
+      displayName: "",
+      phone: "",
+    });
+    try {
+      const app = createApp({ fieldAgentId: agentId });
+      const res = await request(app).get("/field-agent/dashboard?review_submitted=1").redirects(0);
+      assert.equal(res.status, 200);
+      assert.match(String(res.text || ""), /Listing submitted for staff review/i);
+    } finally {
+      await pool.query(`DELETE FROM public.field_agents WHERE id = $1`, [agentId]);
+    }
+  }
+);
+
+test(
+  "field-agent website-content submit: persists review status, returns dashboard redirect, creates CRM inbound task",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    const u = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const agentId = await fieldAgentsRepo.insertAgent(pool, {
+      tenantId: TENANT_ZM,
+      username: `fa_wcsubmit_${u}`,
+      passwordHash: "x",
+      displayName: "",
+      phone: "",
+    });
+    const subId = await insertApprovedSubmission(pool, agentId, `wcsr_${u}`);
+    try {
+      const app = createApp({ fieldAgentId: agentId });
+      const res = await request(app)
+        .post(`/field-agent/api/submissions/${subId}/website-content-submit-review`)
+        .set("Content-Type", "application/json")
+        .send({ draft: {} })
+        .redirects(0);
+      assert.equal(res.status, 200);
+      const body = JSON.parse(res.text || "{}");
+      assert.equal(body.ok, true);
+      assert.equal(String(body.redirect || ""), "/field-agent/dashboard?review_submitted=1");
+      assert.equal(String(body.submission && body.submission.website_listing_review_status), "submitted");
+      const crm = await pool.query(
+        `SELECT id FROM public.crm_tasks
+         WHERE tenant_id = $1 AND source_type = 'field_agent_website_listing' AND source_ref_id = $2`,
+        [TENANT_ZM, subId]
+      );
+      assert.equal(crm.rows.length, 1);
+    } finally {
+      await pool.query(
+        `DELETE FROM public.crm_tasks
+         WHERE tenant_id = $1 AND source_type = 'field_agent_website_listing' AND source_ref_id = $2`,
+        [TENANT_ZM, subId]
+      );
+      await pool.query(`DELETE FROM public.field_agent_provider_submissions WHERE id = $1`, [subId]);
+      await pool.query(`DELETE FROM public.field_agents WHERE id = $1`, [agentId]);
+    }
+  }
+);
+
+test(
+  "field-agent website flow regression: dashboard + SP list + save/reload + submit/CRM + review_submitted dashboard",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    const u = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const agentId = await fieldAgentsRepo.insertAgent(pool, {
+      tenantId: TENANT_ZM,
+      username: `fa_wc_journey_${u}`,
+      passwordHash: "x",
+      displayName: "",
+      phone: "",
+    });
+    const showSubId = await insertApprovedSubmission(pool, agentId, `jr_show_${u}`);
+    const linkedSubId = await insertApprovedSubmission(pool, agentId, `jr_linked_${u}`);
+    const catRows = await categoriesRepo.listByTenantId(pool, TENANT_ZM);
+    const catId = catRows && catRows[0] ? catRows[0].id : null;
+    const linkedCompany = await companiesRepo.insertFull(pool, {
+      tenantId: TENANT_ZM,
+      subdomain: `jr-spw-${u}`.slice(0, 40).toLowerCase().replace(/[^a-z0-9-]/g, ""),
+      name: `JR SPW ${u}`,
+      categoryId: catId,
+      headline: "",
+      about: "",
+      services: "",
+      phone: "",
+      email: "",
+      location: "",
+      featuredCtaLabel: "Call us",
+      featuredCtaPhone: "",
+      yearsExperience: null,
+      serviceAreas: "",
+      hoursText: "",
+      galleryJson: "[]",
+      logoUrl: "",
+      accountManagerFieldAgentId: agentId,
+      sourceFieldAgentSubmissionId: linkedSubId,
+    });
+    const journeyName = `JourneyList_${u}`;
+
+    try {
+      const app = createApp({ fieldAgentId: agentId });
+
+      const dash = await request(app).get("/field-agent/dashboard").redirects(0);
+      assert.equal(dash.status, 200);
+      const dashHtml = String(dash.text || "");
+      const cardM = dashHtml.match(
+        /Websites to create<[\s\S]*?field-agent-metric-card__value">(\d+)</
+      );
+      assert.ok(cardM, "websites-to-create card");
+      assert.equal(Number(cardM[1]), 1);
+
+      const sp = await request(app).get("/field-agent/sp-websites").redirects(0);
+      assert.equal(sp.status, 200);
+      assert.match(String(sp.text || ""), new RegExp(`/field-agent/submissions/${showSubId}/website-content`));
+
+      const page = await request(app)
+        .get(`/field-agent/submissions/${showSubId}/website-content`)
+        .redirects(0);
+      assert.equal(page.status, 200);
+      const pageHtml = String(page.text || "");
+      assert.match(pageHtml, /id="fa-website-content-form"/);
+      assert.match(pageHtml, /id="fa-wc-submit-success-overlay"/);
+      assert.match(pageHtml, /field-agent\/sp-websites/);
+
+      const save = await request(app)
+        .post(`/field-agent/api/submissions/${showSubId}/website-content-draft`)
+        .set("Content-Type", "application/json")
+        .send({
+          draft: {
+            listing_name: journeyName,
+            established_year: "2010",
+            weekly_hours: {
+              sunday: { closed: true, from: "", to: "" },
+              monday: { closed: false, from: "08:00", to: "17:00" },
+              tuesday: { closed: true, from: "", to: "" },
+              wednesday: { closed: true, from: "", to: "" },
+              thursday: { closed: true, from: "", to: "" },
+              friday: { closed: true, from: "", to: "" },
+              saturday: { closed: true, from: "", to: "" },
+            },
+          },
+        })
+        .redirects(0);
+      assert.equal(save.status, 200);
+      const saveJson = JSON.parse(String(save.text || "{}"));
+      assert.equal(saveJson.ok, true);
+      assert.equal(String(saveJson.redirect || ""), "/field-agent/dashboard?draft_saved=1");
+
+      const afterSave = await request(app)
+        .get(`/field-agent/submissions/${showSubId}/website-content`)
+        .redirects(0);
+      assert.equal(afterSave.status, 200);
+      assert.match(String(afterSave.text || ""), new RegExp(journeyName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+
+      const subRes = await request(app)
+        .post(`/field-agent/api/submissions/${showSubId}/website-content-submit-review`)
+        .set("Content-Type", "application/json")
+        .send({ draft: {} })
+        .redirects(0);
+      assert.equal(subRes.status, 200);
+      const subJson = JSON.parse(String(subRes.text || "{}"));
+      assert.equal(subJson.ok, true);
+      assert.equal(String(subJson.redirect || ""), "/field-agent/dashboard?review_submitted=1");
+      const crm = await pool.query(
+        `SELECT id, title FROM public.crm_tasks
+         WHERE tenant_id = $1 AND source_type = 'field_agent_website_listing' AND source_ref_id = $2`,
+        [TENANT_ZM, showSubId]
+      );
+      assert.equal(crm.rows.length, 1);
+      assert.match(String(crm.rows[0].title || ""), new RegExp(`submission #${showSubId}`));
+
+      const afterReview = await request(app).get("/field-agent/dashboard?review_submitted=1").redirects(0);
+      assert.equal(afterReview.status, 200);
+      assert.match(String(afterReview.text || ""), /Listing submitted for staff review/i);
+    } finally {
+      await pool.query(`DELETE FROM public.crm_tasks WHERE tenant_id = $1 AND source_ref_id = $2 AND source_type = 'field_agent_website_listing'`, [
+        TENANT_ZM,
+        showSubId,
+      ]);
+      await pool.query(`DELETE FROM public.companies WHERE id = $1`, [linkedCompany.id]);
+      await pool.query(`DELETE FROM public.field_agent_provider_submissions WHERE id = ANY($1::int[])`, [
+        [showSubId, linkedSubId],
+      ]);
       await pool.query(`DELETE FROM public.field_agents WHERE id = $1`, [agentId]);
     }
   }
@@ -345,6 +660,9 @@ test(
         .send({ draft: { weekly_hours: { monday: { closed: true, from: "", to: "" } } } })
         .redirects(0);
       assert.equal(closedOk.status, 200);
+      const closedJson = JSON.parse(closedOk.text || "{}");
+      assert.equal(closedJson.ok, true);
+      assert.equal(String(closedJson.redirect || ""), "/field-agent/dashboard?draft_saved=1");
     } finally {
       await pool.query(`DELETE FROM public.field_agent_provider_submissions WHERE id = $1`, [subId]);
       await pool.query(`DELETE FROM public.field_agents WHERE id = $1`, [agentId]);
@@ -570,6 +888,8 @@ test(
         })
         .redirects(0);
       assert.equal(save.status, 200);
+      const saveJson = JSON.parse(save.text || "{}");
+      assert.equal(String(saveJson.redirect || ""), "/field-agent/dashboard?draft_saved=1");
       await pool.query(
         `UPDATE public.field_agent_submission_website_specialities
          SET is_verified = TRUE, verified_at = now()
