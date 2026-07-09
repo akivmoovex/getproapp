@@ -31,6 +31,32 @@ function formatPublicEventWhen(ev) {
   return [dateStr, timeStr, loc].filter(Boolean).join(" · ");
 }
 
+function demoSermonSamples(churchName) {
+  return [
+    {
+      title: "Walking by Faith in Uncertain Times",
+      speaker: `${churchName} Pastoral Team`,
+      date: "Recent message",
+      category: "Sunday Sermon",
+      icon: "play_circle",
+    },
+    {
+      title: "Foundations: Grace and Community",
+      speaker: "Teaching Series",
+      date: "Study series",
+      category: "Bible Study",
+      icon: "menu_book",
+    },
+    {
+      title: "Prayer and Purpose",
+      speaker: "Mid-week teaching",
+      date: "Mid-week",
+      category: "Devotional",
+      icon: "auto_stories",
+    },
+  ];
+}
+
 function buildVerticalApexLocals() {
   return {
     pageTitle: BLESSBOARD_NAME,
@@ -66,17 +92,20 @@ async function loadBranchPublicLocals(req, activePage) {
 
   const locals = preparePublicViewModel(org, branch, merged, { activePage });
 
-  if (activePage === "home") {
-    const [branchAnnouncements, hqBroadcasts] = await Promise.all([
-      announcementsRepo.listPublicAnnouncementsForBranch(pool, branch.id, { limit: 6 }),
-      hqBroadcastsRepo.listVisibleBroadcastsForBranch(pool, org.id, branch.id, {
-        audiences: PUBLIC_HQ_AUDIENCES,
-        limit: 6,
-      }),
-    ]);
-    const publicAnnouncements = mergeAnnouncementFeed(branchAnnouncements, hqBroadcasts, 3);
-    const publicEvents = await eventsRepo.listPublicEventsForBranch(pool, branch.id, { limit: 6 });
-    locals.publicAnnouncements = publicAnnouncements;
+  if (activePage === "home" || activePage === "events") {
+    if (activePage === "home") {
+      const [branchAnnouncements, hqBroadcasts] = await Promise.all([
+        announcementsRepo.listPublicAnnouncementsForBranch(pool, branch.id, { limit: 6 }),
+        hqBroadcastsRepo.listVisibleBroadcastsForBranch(pool, org.id, branch.id, {
+          audiences: PUBLIC_HQ_AUDIENCES,
+          limit: 6,
+        }),
+      ]);
+      locals.publicAnnouncements = mergeAnnouncementFeed(branchAnnouncements, hqBroadcasts, 3);
+    }
+    const publicEvents = await eventsRepo.listPublicEventsForBranch(pool, branch.id, {
+      limit: activePage === "events" ? 24 : 6,
+    });
     if (publicEvents.length > 0) {
       locals.upcomingEvents = publicEvents.map((ev) => ({
         title: ev.title,
@@ -87,17 +116,21 @@ async function loadBranchPublicLocals(req, activePage) {
     } else {
       locals.upcomingEvents = [
         { title: "Sunday Worship Service", when: locals.serviceTimes.split("\n")[0] || "Sunday · 9:00 AM" },
+        { title: "Mid-week Bible Study", when: "Wednesday · 6:00 PM", description: "Prayer and study in the main hall." },
+        { title: "Community Fellowship", when: "First Friday monthly · 6:30 PM", description: "Food, fellowship, and connection." },
       ];
       locals.hasDbEvents = false;
     }
-    const publicMinistries = await ministriesRepo.listPublishedMinistriesForBranch(pool, branch.id, {
-      visibility: "public",
-      limit: 3,
-    });
-    if (publicMinistries.length > 0) {
-      locals.publicMinistries = publicMinistries;
-    } else if ((locals.ministries || []).length > 0) {
-      locals.publicMinistries = locals.ministries.slice(0, 3);
+    if (activePage === "home") {
+      const publicMinistries = await ministriesRepo.listPublishedMinistriesForBranch(pool, branch.id, {
+        visibility: "public",
+        limit: 3,
+      });
+      if (publicMinistries.length > 0) {
+        locals.publicMinistries = publicMinistries;
+      } else if ((locals.ministries || []).length > 0) {
+        locals.publicMinistries = locals.ministries.slice(0, 3);
+      }
     }
   }
 
@@ -237,6 +270,22 @@ function registerPublicPagesRoutes(router) {
     }
   });
 
+  router.get("/events", async (req, res, next) => {
+    try {
+      const ctx = req.churchContext;
+      if (ctx.kind === "vertical-apex") {
+        return res.redirect("/");
+      }
+      if (ctx.kind !== "branch" || !ctx.branch) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      const locals = await loadBranchPublicLocals(req, "events");
+      return res.render("church/public/events", locals);
+    } catch (e) {
+      return next(e);
+    }
+  });
+
   router.get("/sermons", async (req, res, next) => {
     try {
       const ctx = req.churchContext;
@@ -248,6 +297,7 @@ function registerPublicPagesRoutes(router) {
       }
       const merged = buildBranchFallbacks(ctx.organization, ctx.branch);
       const locals = preparePublicViewModel(ctx.organization, ctx.branch, merged, { activePage: "sermons" });
+      locals.sermonSamples = demoSermonSamples(locals.churchName);
       return res.render("church/public/sermons", locals);
     } catch (e) {
       return next(e);

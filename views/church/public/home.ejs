@@ -1,5 +1,44 @@
 <%- include('../partials/public_shell_start') %>
-    <section class="church-hero" id="welcome">
+    <% if (!isVerticalApex && !(typeof isPreview !== 'undefined' && isPreview)) { %>
+    <section class="church-branch-mobile-hero church-show-mobile-only" id="welcome">
+      <div class="church-branch-mobile-hero__media" aria-hidden="true"></div>
+      <div class="church-branch-mobile-hero__content">
+        <div class="church-branch-mobile-hero__badge">
+          <span class="church-branch-mobile-hero__badge-dot"></span>
+          <span><%= churchName %></span>
+        </div>
+        <h1 class="church-branch-mobile-hero__title"><%= heroTitle || 'Welcome home to our community.' %></h1>
+        <p class="church-branch-mobile-hero__lead"><%= welcomeMessage %></p>
+        <div class="church-branch-mobile-hero__cta">
+          <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="/register">Register as Member</a>
+          <a class="church-btn church-btn--outline church-btn--block church-btn--mobile-pill" href="/contact">Plan a Visit</a>
+        </div>
+      </div>
+    </section>
+    <section class="church-service-scroller church-show-mobile-only" aria-label="Service times">
+      <div class="church-service-scroller__head">
+        <h2>Service Times</h2>
+      </div>
+      <div class="church-service-scroller__track">
+        <% var serviceLines = (serviceTimes || '').split('\n').filter(function (line) { return line.trim(); }); %>
+        <% if (serviceLines.length === 0) { serviceLines = [serviceTimes || 'Sunday worship']; } %>
+        <% serviceLines.forEach(function (line, idx) { %>
+        <article class="church-service-card <%= idx === 1 ? 'church-service-card--accent' : '' %>">
+          <div class="church-service-card__label">
+            <span class="material-symbols-outlined" aria-hidden="true"><%= idx === 0 ? 'sunny' : idx === 1 ? 'nightlight' : 'groups' %></span>
+            <span>Service <%= idx + 1 %></span>
+          </div>
+          <p class="church-service-card__time"><%= line.split('·')[0].trim() %></p>
+          <% if (line.indexOf('·') > -1) { %>
+          <p class="church-service-card__detail"><%= line.split('·').slice(1).join('·').trim() %></p>
+          <% } %>
+        </article>
+        <% }); %>
+      </div>
+    </section>
+    <% } %>
+
+    <section class="church-hero church-hero--desktop-layout" id="<%= isVerticalApex ? 'welcome' : '' %>">
       <div class="church-hero__inner">
         <div class="church-hero__copy">
           <% if (isVerticalApex) { %>
@@ -21,14 +60,14 @@
           </div>
         </div>
         <div class="church-hero__panel" aria-label="Service information">
-          <div class="church-card">
+          <div class="church-card glass-card">
             <div class="church-card__icon-wrap">
               <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
             </div>
             <h2 class="church-card__title">Service Times</h2>
             <p class="church-card__body church-card__body--pre"><%= serviceTimes %></p>
           </div>
-          <div class="church-card">
+          <div class="church-card glass-card">
             <div class="church-card__icon-wrap">
               <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
             </div>
@@ -49,7 +88,7 @@
         <div class="church-section__header church-section__header--compact">
           <h3 class="church-section__title church-section__title--sm">Latest announcements</h3>
         </div>
-        <div class="church-grid church-grid--events">
+        <div class="church-grid church-grid--events church-show-desktop-only">
           <% publicAnnouncements.forEach(function (a) { %>
           <article class="church-card church-card--event">
             <span class="material-symbols-outlined church-card__event-icon" aria-hidden="true">campaign</span>
@@ -58,8 +97,19 @@
           </article>
           <% }); %>
         </div>
+        <div class="church-show-mobile-only church-show-mobile-only--grid">
+          <% publicAnnouncements.forEach(function (a) { %>
+          <article class="church-event-row">
+            <div class="church-event-row__date"><span>News</span></div>
+            <div class="church-event-row__body">
+              <h3><%= a.title %></h3>
+              <p><%= a.body %></p>
+            </div>
+          </article>
+          <% }); %>
+        </div>
         <% } %>
-        <div class="church-grid church-grid--events">
+        <div class="church-grid church-grid--events church-show-desktop-only">
           <% (upcomingEvents || []).forEach(function (event) { %>
           <article class="church-card church-card--event">
             <span class="material-symbols-outlined church-card__event-icon" aria-hidden="true">event</span>
@@ -68,6 +118,17 @@
             <% if (event.description) { %>
             <p class="church-card__body church-card__body--muted"><%= event.description %></p>
             <% } %>
+          </article>
+          <% }); %>
+        </div>
+        <div class="church-show-mobile-only church-show-mobile-only--grid">
+          <% (upcomingEvents || []).forEach(function (event) { %>
+          <article class="church-event-row">
+            <div class="church-event-row__date"><span>Event</span></div>
+            <div class="church-event-row__body">
+              <h3><%= event.title %></h3>
+              <p><%= event.when %><% if (event.description) { %> · <%= event.description %><% } %></p>
+            </div>
           </article>
           <% }); %>
         </div>
@@ -81,7 +142,15 @@
           <h2 class="church-section__title">Ministries</h2>
           <p class="church-section__subtitle"><a href="/ministries">View all ministries</a></p>
         </div>
-        <div class="church-grid church-grid--events">
+        <div class="church-bento-grid church-show-mobile-only">
+          <% publicMinistries.forEach(function (m, idx) { %>
+          <a href="/ministries" class="church-bento-tile <%= idx === 0 ? 'church-bento-item--wide church-bento-tile--wide' : '' %>">
+            <div class="church-bento-tile__bg"></div>
+            <p class="church-bento-tile__title"><%= m.name %></p>
+          </a>
+          <% }); %>
+        </div>
+        <div class="church-grid church-grid--events church-show-desktop-only">
           <%- include('../partials/ministry_cards', { ministries: publicMinistries }) %>
         </div>
       </div>

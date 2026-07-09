@@ -4,6 +4,36 @@
         <p class="church-member-header__subtitle">Church forms and downloadable documents</p>
       </header>
       <section class="church-member-panel">
-        <p class="church-member-empty">Church forms and documents will appear here when available.</p>
+        <div class="church-resource-list">
+          <article class="church-resource-row">
+            <span class="church-resource-row__icon material-symbols-outlined" aria-hidden="true">description</span>
+            <div class="church-resource-row__body">
+              <h2 class="church-resource-row__title">Membership Information Form</h2>
+              <p class="church-resource-row__meta">PDF · Church office</p>
+            </div>
+            <span class="church-resource-row__badge">Coming soon</span>
+          </article>
+          <article class="church-resource-row">
+            <span class="church-resource-row__icon material-symbols-outlined" aria-hidden="true">article</span>
+            <div class="church-resource-row__body">
+              <h2 class="church-resource-row__title">Ministry Volunteer Application</h2>
+              <p class="church-resource-row__meta">DOCX · Ministries team</p>
+            </div>
+            <span class="church-resource-row__badge">Coming soon</span>
+          </article>
+          <article class="church-resource-row">
+            <span class="church-resource-row__icon material-symbols-outlined" aria-hidden="true">slideshow</span>
+            <div class="church-resource-row__body">
+              <h2 class="church-resource-row__title">Church Policies &amp; Guidelines</h2>
+              <p class="church-resource-row__meta">PDF · Leadership approved</p>
+            </div>
+            <span class="church-resource-row__badge">Coming soon</span>
+          </article>
+        </div>
+        <div class="church-empty-state church-empty-state--compact">
+          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">download</span>
+          <p class="church-empty-state__body">Downloadable forms and documents will appear here when published by branch leadership.</p>
+          <a class="church-btn church-btn--outline" href="/member/requests/new">Submit an online request instead</a>
+        </div>
       </section>
 <%- include('../partials/member_shell_end') %>

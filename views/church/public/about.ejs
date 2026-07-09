@@ -1,24 +1,62 @@
 <%- include('../partials/public_shell_start') %>
-    <section class="church-section church-section--page">
+    <%- include('../partials/public_page_hero', { heroTitle: aboutTitle || 'About Us', heroSubtitle: 'Discover the heart of ' + churchName + '.' }) %>
+    <section class="church-section church-section--page church-section--content">
       <div class="church-section__inner">
-        <h1 class="church-section__title"><%= aboutTitle %></h1>
-        <p class="church-section__subtitle church-section__subtitle--lead"><%= aboutBody %></p>
-        <% if (missionText) { %>
-        <div class="church-public-block">
-          <h2 class="church-public-block__title">Our mission</h2>
-          <p class="church-public-block__body"><%= missionText %></p>
+        <article class="church-content-card">
+          <div class="church-content-card__head">
+            <span class="church-content-card__icon" aria-hidden="true"><span class="material-symbols-outlined">history_edu</span></span>
+            <h2 class="church-content-card__title">Our Story</h2>
+          </div>
+          <p class="church-content-card__body"><%= aboutBody %></p>
+        </article>
+        <div class="church-mission-grid">
+          <% if (missionText) { %>
+          <article class="church-mission-card church-mission-card--primary">
+            <span class="material-symbols-outlined church-mission-card__icon" aria-hidden="true">rocket_launch</span>
+            <h2 class="church-mission-card__title">Our Mission</h2>
+            <p class="church-mission-card__body"><%= missionText %></p>
+          </article>
+          <% } %>
+          <% if (visionText) { %>
+          <article class="church-mission-card">
+            <span class="material-symbols-outlined church-mission-card__icon church-mission-card__icon--accent" aria-hidden="true">visibility</span>
+            <h2 class="church-mission-card__title">Our Vision</h2>
+            <p class="church-mission-card__body"><%= visionText %></p>
+          </article>
+          <% } %>
         </div>
-        <% } %>
-        <% if (visionText) { %>
-        <div class="church-public-block">
-          <h2 class="church-public-block__title">Our vision</h2>
-          <p class="church-public-block__body"><%= visionText %></p>
-        </div>
-        <% } %>
         <% if (valuesText) { %>
-        <div class="church-public-block">
-          <h2 class="church-public-block__title">Our values</h2>
-          <p class="church-public-block__body church-card__body--pre"><%= valuesText %></p>
+        <div class="church-values-section">
+          <h2 class="church-section__title church-section__title--sm">Core Values</h2>
+          <div class="church-values-list">
+            <% valuesText.split('\n').map(function (line) { return line.trim(); }).filter(Boolean).forEach(function (line, idx) { %>
+            <% var parts = line.split('|').map(function (p) { return p.trim(); }); %>
+            <% var valueTitle = parts[0] || line; %>
+            <% var valueBody = parts[1] || ''; %>
+            <article class="church-value-row">
+              <span class="church-value-row__icon material-symbols-outlined" aria-hidden="true"><%= ['favorite', 'groups', 'auto_stories', 'volunteer_activism'][idx % 4] %></span>
+              <div>
+                <h3 class="church-value-row__title"><%= valueTitle %></h3>
+                <% if (valueBody) { %><p class="church-value-row__body"><%= valueBody %></p><% } %>
+              </div>
+            </article>
+            <% }); %>
+          </div>
+        </div>
+        <% } %>
+        <% if (address || locationText) { %>
+        <div class="church-location-card">
+          <h2 class="church-section__title church-section__title--sm">Find Us</h2>
+          <div class="church-location-card__map" aria-hidden="true">
+            <span class="church-location-card__pin material-symbols-outlined">location_on</span>
+          </div>
+          <div class="church-location-card__body">
+            <h3 class="church-location-card__name"><%= churchName %></h3>
+            <p class="church-location-card__address"><%= address || locationText %></p>
+            <% if (contactPhone) { %>
+            <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="tel:<%= contactPhone %>">Get Directions</a>
+            <% } %>
+          </div>
         </div>
         <% } %>
       </div>

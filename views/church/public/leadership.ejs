@@ -1,37 +1,55 @@
 <%- include('../partials/public_shell_start') %>
-    <section class="church-section church-section--page">
+    <section class="church-section church-section--page church-section--content">
       <div class="church-section__inner">
-        <h1 class="church-section__title">Leadership</h1>
-        <p class="church-section__subtitle">Meet the leaders serving <%= churchName %>.</p>
-        <div class="church-grid church-grid--events">
-          <% if (leadership.pastor && leadership.pastor.name) { %>
-          <article class="church-card">
-            <h2 class="church-card__title"><%= leadership.pastor.name %></h2>
-            <p class="church-card__body church-card__body--muted"><%= leadership.pastor.title || 'Pastor' %></p>
+        <header class="church-page-intro">
+          <h1 class="church-section__title">Our Leadership</h1>
+          <p class="church-section__subtitle">Guided by faith, serving with love. Meet the heart of <%= churchName %>.</p>
+        </header>
+        <% if (leadership.pastor && leadership.pastor.name) { %>
+        <% var pastorInitials = leadership.pastor.name.split(' ').filter(Boolean).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase(); %>
+        <article class="church-leader-feature">
+          <div class="church-leader-feature__media">
+            <div class="church-leader-avatar church-leader-avatar--lg" aria-hidden="true"><%= pastorInitials %></div>
+          </div>
+          <div class="church-leader-feature__body">
+            <span class="church-leader-feature__badge"><%= leadership.pastor.title || 'Senior Pastor' %></span>
+            <h2 class="church-leader-feature__name"><%= leadership.pastor.name %></h2>
             <% if (leadership.pastor.bio) { %>
-            <p class="church-card__body"><%= leadership.pastor.bio %></p>
+            <p class="church-leader-feature__bio"><%= leadership.pastor.bio %></p>
             <% } %>
-          </article>
-          <% } %>
-          <% if (leadership.assistant_pastor && leadership.assistant_pastor.name) { %>
-          <article class="church-card">
-            <h2 class="church-card__title"><%= leadership.assistant_pastor.name %></h2>
-            <p class="church-card__body church-card__body--muted">Assistant Pastor</p>
-          </article>
-          <% } %>
-        </div>
-        <% if (leadership.elders && leadership.elders.length > 0) { %>
-        <div class="church-public-block">
-          <h2 class="church-public-block__title">Elders</h2>
-          <ul class="church-public-list">
-            <% leadership.elders.forEach(function (name) { %>
-            <li><%= name %></li>
-            <% }); %>
-          </ul>
-        </div>
+          </div>
+        </article>
         <% } %>
-        <% if (!(leadership.pastor && leadership.pastor.name) && !(leadership.elders && leadership.elders.length)) { %>
-        <p class="church-section__subtitle">Leadership information will be posted soon.</p>
+        <div class="church-leader-grid">
+          <% if (leadership.assistant_pastor && leadership.assistant_pastor.name) { %>
+          <% var apInitials = leadership.assistant_pastor.name.split(' ').filter(Boolean).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase(); %>
+          <article class="church-leader-row">
+            <div class="church-leader-avatar" aria-hidden="true"><%= apInitials %></div>
+            <div class="church-leader-row__body">
+              <h3 class="church-leader-row__name"><%= leadership.assistant_pastor.name %></h3>
+              <p class="church-leader-row__role">Assistant Pastor</p>
+            </div>
+          </article>
+          <% } %>
+          <% if (leadership.elders && leadership.elders.length > 0) { %>
+          <% leadership.elders.forEach(function (name) { %>
+          <% var elderInitials = String(name).split(' ').filter(Boolean).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase(); %>
+          <article class="church-leader-row">
+            <div class="church-leader-avatar" aria-hidden="true"><%= elderInitials %></div>
+            <div class="church-leader-row__body">
+              <h3 class="church-leader-row__name"><%= name %></h3>
+              <p class="church-leader-row__role">Elder</p>
+            </div>
+          </article>
+          <% }); %>
+          <% } %>
+        </div>
+        <% if (!(leadership.pastor && leadership.pastor.name) && !(leadership.elders && leadership.elders.length) && !(leadership.assistant_pastor && leadership.assistant_pastor.name)) { %>
+        <div class="church-empty-state">
+          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">diversity_3</span>
+          <p class="church-empty-state__title">Leadership information coming soon</p>
+          <p class="church-empty-state__body">Profiles for pastors and ministry leaders will be posted here.</p>
+        </div>
         <% } %>
       </div>
     </section>

@@ -1,13 +1,30 @@
 <%- include('../partials/public_shell_start') %>
-    <section class="church-section church-section--page">
+    <section class="church-section church-section--page church-section--content">
       <div class="church-section__inner">
-        <h1 class="church-section__title">Sermons &amp; Resources</h1>
-        <p class="church-section__subtitle">Messages, study materials, and church resources from <%= churchName %>.</p>
-        <div class="church-card">
-          <span class="material-symbols-outlined church-card__event-icon" aria-hidden="true">menu_book</span>
-          <p class="church-card__body church-member-empty">Sermons and resources will be published here soon.</p>
-          <p class="church-card__body"><a href="/">Back to homepage</a></p>
+        <header class="church-page-intro">
+          <h1 class="church-section__title">Sermons &amp; Resources</h1>
+          <p class="church-section__subtitle">Messages, study materials, and church resources from <%= churchName %>.</p>
+        </header>
+        <div class="church-sermon-grid">
+          <% (sermonSamples || []).forEach(function (item) { %>
+          <article class="church-sermon-card">
+            <div class="church-sermon-card__media" aria-hidden="true">
+              <span class="material-symbols-outlined"><%= item.icon %></span>
+            </div>
+            <div class="church-sermon-card__body">
+              <p class="church-sermon-card__meta"><%= item.date %> · <%= item.category %></p>
+              <h2 class="church-sermon-card__title"><%= item.title %></h2>
+              <p class="church-sermon-card__speaker"><%= item.speaker %></p>
+              <a class="church-sermon-card__cta" href="#" onclick="return false;">Listen / Read</a>
+            </div>
+          </article>
+          <% }); %>
         </div>
+        <div class="church-content-note">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          <p>Sample resources shown for layout preview. New sermons and study materials will be published here by church leadership.</p>
+        </div>
+        <p class="church-section__subtitle"><a href="/">← Back to homepage</a></p>
       </div>
     </section>
 <%- include('../partials/public_shell_end') %>

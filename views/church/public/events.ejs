@@ -1,0 +1,42 @@
+<%- include('../partials/public_shell_start') %>
+    <section class="church-section church-section--page church-section--content">
+      <div class="church-section__inner">
+        <header class="church-page-intro">
+          <h1 class="church-section__title">Events &amp; Calendar</h1>
+          <p class="church-section__subtitle">Stay connected with what is happening at <%= churchName %>.</p>
+        </header>
+        <% if ((upcomingEvents || []).length === 0) { %>
+        <div class="church-empty-state">
+          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">event</span>
+          <p class="church-empty-state__title">No upcoming events yet</p>
+          <p class="church-empty-state__body">New events will appear here when published by church leadership.</p>
+        </div>
+        <% } else { %>
+        <div class="church-events-page-list church-show-mobile-only church-show-mobile-only--grid">
+          <% (upcomingEvents || []).forEach(function (event) { %>
+          <article class="church-event-row">
+            <div class="church-event-row__date"><span>Event</span></div>
+            <div class="church-event-row__body">
+              <h3><%= event.title %></h3>
+              <p><%= event.when %><% if (event.description) { %> · <%= event.description %><% } %></p>
+            </div>
+          </article>
+          <% }); %>
+        </div>
+        <div class="church-grid church-grid--events church-show-desktop-only">
+          <% (upcomingEvents || []).forEach(function (event) { %>
+          <article class="church-card church-card--event">
+            <span class="material-symbols-outlined church-card__event-icon" aria-hidden="true">event</span>
+            <h3 class="church-card__title"><%= event.title %></h3>
+            <p class="church-card__body"><%= event.when %></p>
+            <% if (event.description) { %>
+            <p class="church-card__body church-card__body--muted"><%= event.description %></p>
+            <% } %>
+          </article>
+          <% }); %>
+        </div>
+        <% } %>
+        <p class="church-section__subtitle"><a href="/">← Back to homepage</a></p>
+      </div>
+    </section>
+<%- include('../partials/public_shell_end') %>

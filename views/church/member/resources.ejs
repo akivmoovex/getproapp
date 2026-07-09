@@ -4,6 +4,35 @@
         <p class="church-member-header__subtitle">Study notes, devotionals, and church resources</p>
       </header>
       <section class="church-member-panel">
-        <p class="church-member-empty">Study notes, devotionals, and church resources will appear here when available.</p>
+        <div class="church-resource-list">
+          <article class="church-resource-row">
+            <span class="church-resource-row__icon material-symbols-outlined" aria-hidden="true">menu_book</span>
+            <div class="church-resource-row__body">
+              <h2 class="church-resource-row__title">Weekly Bible Study Notes</h2>
+              <p class="church-resource-row__meta">PDF · Updated weekly</p>
+            </div>
+            <span class="church-resource-row__badge">Coming soon</span>
+          </article>
+          <article class="church-resource-row">
+            <span class="church-resource-row__icon material-symbols-outlined" aria-hidden="true">auto_stories</span>
+            <div class="church-resource-row__body">
+              <h2 class="church-resource-row__title">Devotional Series</h2>
+              <p class="church-resource-row__meta">Reading plan · 30 days</p>
+            </div>
+            <span class="church-resource-row__badge">Coming soon</span>
+          </article>
+          <article class="church-resource-row">
+            <span class="church-resource-row__icon material-symbols-outlined" aria-hidden="true">play_circle</span>
+            <div class="church-resource-row__body">
+              <h2 class="church-resource-row__title">Recent Sermon Archive</h2>
+              <p class="church-resource-row__meta">Audio &amp; notes · Member access</p>
+            </div>
+            <a class="church-member-link" href="/sermons">Public sermons</a>
+          </article>
+        </div>
+        <div class="church-empty-state church-empty-state--compact">
+          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">folder_open</span>
+          <p class="church-empty-state__body">Additional study notes and devotionals will appear here when uploaded by church leadership.</p>
+        </div>
       </section>
 <%- include('../partials/member_shell_end') %>

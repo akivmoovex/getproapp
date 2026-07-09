@@ -56,12 +56,12 @@ test("non-church host cannot access /sermons", async () => {
   assert.equal(res.status, 404);
 });
 
-test("/sermons loads placeholder on branch church host", async () => {
+test("/sermons loads polished resource cards on branch church host", async () => {
   const app = makeApp(activeBranchCtx);
   const res = await request(app).get("/sermons");
   assert.equal(res.status, 200);
   assert.match(res.text, /Sermons &amp; Resources|Sermons & Resources/);
-  assert.match(res.text, /Sermons and resources will be published here soon/i);
+  assert.match(res.text, /church-sermon-card/);
   assert.match(res.text, /Back to homepage/i);
 });
 
@@ -139,13 +139,14 @@ test(
 
     const resources = await agent.get("/member/resources");
     assert.equal(resources.status, 200);
-    assert.match(resources.text, /Resources &amp; Study|Resources & Study/);
-    assert.match(resources.text, /Study notes, devotionals, and church resources will appear here when available/i);
+    assert.match(resources.text, /church-resource-row/);
+    assert.match(resources.text, /Weekly Bible Study Notes/);
 
     const forms = await agent.get("/member/forms");
     assert.equal(forms.status, 200);
     assert.match(forms.text, /Forms &amp; Documents|Forms & Documents/);
-    assert.match(forms.text, /Church forms and documents will appear here when available/i);
+    assert.match(forms.text, /church-resource-row/);
+    assert.match(forms.text, /Membership Information Form/);
 
     const dashboard = await agent.get("/member/dashboard");
     assert.match(dashboard.text, /href="\/member\/resources"/);

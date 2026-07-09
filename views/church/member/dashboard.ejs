@@ -1,18 +1,51 @@
 <%- include('../partials/member_shell_start') %>
       <header class="church-member-header">
         <div>
-          <p class="church-member-header__eyebrow">Welcome back</p>
-          <h1 class="church-member-header__title"><%= memberName %></h1>
-          <p class="church-member-header__subtitle"><%= churchName %></p>
+          <span class="church-status-chip church-status-chip--pill church-show-mobile-only">
+            <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+            Verified Member
+          </span>
+          <p class="church-member-header__eyebrow church-show-desktop-only">Welcome back</p>
+          <h1 class="church-member-header__title">Welcome back, <%= memberName %>!</h1>
+          <p class="church-member-header__subtitle">
+            <span class="material-symbols-outlined church-show-mobile-only" aria-hidden="true">location_on</span>
+            <%= churchName %>
+          </p>
         </div>
-        <span class="church-status-chip church-status-chip--verified">Verified member</span>
+        <span class="church-status-chip church-status-chip--verified church-show-desktop-only">Verified member</span>
       </header>
       <% if (notice) { %>
       <div class="church-alert church-alert--success" role="status"><%= notice %></div>
       <% } %>
       <section class="church-member-panel">
         <h2 class="church-member-panel__title">Quick actions</h2>
-        <div class="church-member-actions">
+        <div class="church-member-bento">
+          <a class="church-member-bento__tile" href="/member/prayer-request">
+            <span class="material-symbols-outlined" aria-hidden="true">prayer_times</span>
+            <span>Submit Prayer Request</span>
+          </a>
+          <a class="church-member-bento__tile" href="/member/requests/new">
+            <span class="material-symbols-outlined" aria-hidden="true">online_prediction</span>
+            <span>Online Request</span>
+          </a>
+          <a class="church-member-bento__tile" href="/member/giving">
+            <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+            <span>Giving Info</span>
+          </a>
+          <a class="church-member-bento__tile" href="/member/resources">
+            <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+            <span>Resources</span>
+          </a>
+          <a class="church-member-bento__tile" href="/member/ministries">
+            <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+            <span>Browse Ministries</span>
+          </a>
+          <a class="church-member-bento__tile" href="/member/forms">
+            <span class="material-symbols-outlined" aria-hidden="true">description</span>
+            <span>Forms &amp; Docs</span>
+          </a>
+        </div>
+        <div class="church-member-actions church-member-actions--buttons">
           <a class="church-btn church-btn--primary" href="/member/prayer-request">Submit Prayer Request</a>
           <a class="church-btn church-btn--outline" href="/member/requests/new">Submit Online Request</a>
           <a class="church-btn church-btn--outline" href="/member/ministries">Browse Ministries</a>
@@ -35,11 +68,22 @@
         <% } else { %>
         <ul class="church-member-list">
           <% announcements.forEach(function (a) { %>
-          <li class="church-member-list__item">
+          <li class="church-member-list__item church-show-desktop-only">
             <strong><%= a.title %></strong>
             <% if (a.source === 'hq') { %><span class="church-status-chip">HQ</span><% } %>
             <p><%= a.body %></p>
             <span class="church-member-list__meta"><%= a.publish_at ? new Date(a.publish_at).toLocaleDateString('en-GB') : '' %></span>
+          </li>
+          <li class="church-member-announcement-card church-show-mobile-only">
+            <div class="church-member-announcement-card__icon">
+              <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+            </div>
+            <div>
+              <strong><%= a.title %></strong>
+              <% if (a.source === 'hq') { %><span class="church-status-chip">HQ</span><% } %>
+              <p><%= a.body %></p>
+              <span class="church-member-list__meta"><%= a.publish_at ? new Date(a.publish_at).toLocaleDateString('en-GB') : '' %></span>
+            </div>
           </li>
           <% }); %>
         </ul>
