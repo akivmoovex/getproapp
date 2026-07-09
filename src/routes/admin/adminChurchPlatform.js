@@ -94,6 +94,7 @@ const {
   SUCCESS_FILTERS,
   FAILURE_REASONS,
 } = require("../../church/platformSecurityValidation");
+const { gatherChurchProductionDiagnostics } = require("../../services/church/churchProductionDiagnostics");
 
 function formatDate(value) {
   if (!value) return "—";
@@ -661,6 +662,18 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         formatDate,
         getPlanDisplay,
         activeNav: "church_platform",
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get("/church/diagnostics", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const diagnostics = await gatherChurchProductionDiagnostics();
+      res.render("admin/church/diagnostics", {
+        diagnostics,
+        activeNav: "church_platform_diagnostics",
       });
     } catch (err) {
       next(err);

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BlessBoard diagnostics | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'BlessBoard diagnostics', activeNav: activeNav || 'church_platform_diagnostics' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">BlessBoard production diagnostics</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Super admin only. No secrets are displayed on this page.
+            </p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church', label: 'Church dashboard' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/new', label: 'Provision church' }) %>
+          </div>
+        </header>
+
+        <% if (diagnostics.warnings && diagnostics.warnings.length) { %>
+        <section class="card card--mb-xl" style="padding:1rem;border-left:4px solid #c0392b;">
+          <h2 class="section-title section-title--flush">Warnings</h2>
+          <ul>
+            <% diagnostics.warnings.forEach(function (w) { %>
+            <li><%= w %></li>
+            <% }); %>
+          </ul>
+        </section>
+        <% } else { %>
+        <div class="flash flash--success" role="status">No blocking warnings detected.</div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Deployment</h2>
+          <dl class="admin-dl">
+            <dt>Deployment label</dt><dd><code><%= diagnostics.deploymentLabel %></code></dd>
+            <dt>NODE_ENV</dt><dd><code><%= diagnostics.nodeEnv %></code></dd>
+            <dt>Checked at</dt><dd><%= diagnostics.checkedAt %></dd>
+            <dt>Latest church migration</dt><dd><code><%= diagnostics.latestChurchMigration %></code></dd>
+            <dt>CHURCH_HOST_DOMAIN</dt><dd><code><%= diagnostics.churchHostDomain %></code></dd>
+            <dt>BASE_DOMAIN</dt><dd><code><%= diagnostics.baseDomain %></code></dd>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Database</h2>
+          <dl class="admin-dl">
+            <dt>Configured</dt><dd><%= diagnostics.databaseConfigured ? 'Yes' : 'No' %></dd>
+            <dt>Reachable</dt><dd><%= diagnostics.databaseReachable ? 'Yes' : 'No' %></dd>
+            <% if (diagnostics.databaseError) { %>
+            <dt>Error</dt><dd class="muted"><%= diagnostics.databaseError %></dd>
+            <% } %>
+            <dt>Demo branch (host_slug=demo)</dt>
+            <dd><%= diagnostics.demoBranch.ok ? 'Yes' : 'No' %> — <%= diagnostics.demoBranch.message %></dd>
+            <dt>Pilot branch (kafuebaptist)</dt>
+            <dd><%= diagnostics.pilotBranch.ok ? 'Yes' : 'No' %> — <%= diagnostics.pilotBranch.message %></dd>
+            <dt>member_registration_enabled column</dt>
+            <dd><%= diagnostics.schema.memberRegistrationColumn.ok ? 'OK' : 'Missing' %> — <%= diagnostics.schema.memberRegistrationColumn.message %></dd>
+            <dt>church_public_contact_submissions</dt>
+            <dd><%= diagnostics.schema.contactSubmissionsTable.ok ? 'OK' : 'Missing' %> — <%= diagnostics.schema.contactSubmissionsTable.message %></dd>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Session security</h2>
+          <dl class="admin-dl">
+            <dt>SESSION_SECRET set</dt><dd><%= diagnostics.sessionSecretConfigured ? 'Yes' : 'No' %></dd>
+            <dt>Length OK (≥32)</dt><dd><%= diagnostics.sessionSecretLengthOk ? 'Yes' : 'No' %></dd>
+            <% if (diagnostics.sessionSecretWarning) { %>
+            <dt>Warning</dt><dd><%= diagnostics.sessionSecretWarning %></dd>
+            <% } %>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Host resolution samples</h2>
+          <p class="muted">Parsed locally — does not perform HTTP requests.</p>
+          <table class="admin-table" style="width:100%;margin-top:0.75rem;">
+            <thead>
+              <tr>
+                <th>Host</th>
+                <th>Label</th>
+                <th>Kind</th>
+                <th>Slug</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% diagnostics.hostResolutionSamples.forEach(function (row) { %>
+              <tr>
+                <td><code><%= row.host %></code></td>
+                <td><%= row.label %></td>
+                <td><code><%= row.parsedKind %></code></td>
+                <td><%= row.parsedSlug || '—' %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Pilot launch docs</h2>
+          <ul>
+            <li><a href="/admin/church/organizations/new">Provision Kafue Baptist</a> (manual — do not hard-code in seed)</li>
+            <li>Smoke test checklist: <code>docs/blessboard-pilot-smoke-test.md</code></li>
+            <li>Branch admin training: <code>docs/blessboard-branch-admin-training.md</code></li>
+          </ul>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

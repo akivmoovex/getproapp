@@ -6,6 +6,42 @@ Deploy and operate BlessBoard (`blessboard.com`, `*.blessboard.com`) alongside G
 
 ---
 
+## Deploy V4 to Hostinger
+
+Use this sequence for every production deploy of branch **V4** (operational readiness through migration **090**).
+
+| Step | Action | Verify |
+|------|--------|--------|
+| 1 | **Pull latest V4** — SSH or Hostinger Git deploy: `git fetch && git checkout V4 && git pull origin V4` | `git log -1` shows expected commit |
+| 2 | **Install dependencies** — `npm ci` (preferred) or `npm install` | No install errors |
+| 3 | **Build assets** — `npm run build` or `npm run build:assets` | CSS/JS bundles present |
+| 4 | **Run migrations** — automatic on boot via `ensureChurchSchema`; optional manual check below | Logs show schema ensured; migration **090** features present |
+| 5 | **Run seed/demo script if needed** — demo seed is idempotent on boot; manual trigger only if demo missing | `demo.blessboard.com` resolves |
+| 6 | **Restart Node app** — hPanel → Node.js → **Restart** | Process PID / uptime resets |
+| 7 | **Verify logs** — PostgreSQL connected, church schema ensured, demo seed ok | No unhandled startup errors |
+| 8 | **Test URLs** — run [blessboard-pilot-smoke-test.md](./blessboard-pilot-smoke-test.md) | Demo + getproapp.org pass before pilot provision |
+
+### Environment check before restart
+
+Confirm in Hostinger **Environment variables**:
+
+- `DATABASE_URL` or `GETPRO_DATABASE_URL`
+- `SESSION_SECRET` (≥ 32 characters)
+- `NODE_ENV=production`
+- `BASE_DOMAIN=getproapp.org`
+- `CHURCH_HOST_DOMAIN=blessboard.com` (optional; default is blessboard.com)
+
+### Post-deploy super admin diagnostics
+
+Open `https://getproapp.org/admin/church/diagnostics` (super admin only). Confirm:
+
+- Database reachable: **Yes**
+- Latest migration label: **090_church_operational_readiness.sql**
+- Demo branch: **Yes**
+- No SESSION_SECRET length warning
+
+---
+
 ## Required environment variables
 
 | Variable | Required | Purpose |
@@ -44,6 +80,14 @@ Never commit secrets. Set in Hostinger **Environment variables** panel.
 
 Schema is applied automatically at startup via `ensureChurchSchema` in `server.js`.
 
+**Required migrations through:** `090_church_operational_readiness.sql`
+
+| Migration | Purpose |
+|-----------|---------|
+| `049`–`088` | Church core, auth, content, HQ/branch admin |
+| `089_church_sermons_resources.sql` | Sermons and resources tables |
+| `090_church_operational_readiness.sql` | `member_registration_enabled`, `church_public_contact_submissions` |
+
 To verify manually after deploy:
 
 ```bash
@@ -51,7 +95,24 @@ To verify manually after deploy:
 node -e "require('./src/db/pg/ensureChurchSchema').ensureChurchSchema(require('./src/db/pg').getPgPool()).then(()=>console.log('ok')).catch(console.error)"
 ```
 
-Latest church migrations include `089_church_sermons_resources.sql` (sermons/resources tables) and `090_church_operational_readiness.sql` (member registration flag + contact submissions).
+Latest church migrations include `089_church_sermons_resources.sql` (sermons/resources tables) and **`090_church_operational_readiness.sql`** (member registration flag + contact submissions).
+
+---
+
+## Pilot church provisioning (Kafue Baptist)
+
+Do **not** add Kafue Baptist to production seed. Provision via super admin only:
+
+1. `https://getproapp.org/admin/church/organizations/new`
+2. Organization name: **Kafue Baptist Church**
+3. Branch host slug: **`kafuebaptist`**
+4. City: **Kafue**, Country: **Zambia**
+5. Branch admin + HQ admin credentials
+6. Check **Publish starter website content**
+7. Submit → copy welcome handoff from organization detail page
+8. Run [blessboard-pilot-smoke-test.md](./blessboard-pilot-smoke-test.md) pilot section
+
+Full form guide: [blessboard-church-onboarding.md](./blessboard-church-onboarding.md#example-add-kafuebaptistblessboardcom)
 
 ---
 
@@ -237,6 +298,8 @@ npm test
 
 ## Related docs
 
+- [blessboard-pilot-smoke-test.md](./blessboard-pilot-smoke-test.md)
+- [blessboard-branch-admin-training.md](./blessboard-branch-admin-training.md)
 - [blessboard-church-onboarding.md](./blessboard-church-onboarding.md)
 - [blessboard-content-management.md](./blessboard-content-management.md)
 - [blessboard-screen-implementation-status.md](./blessboard-screen-implementation-status.md)
