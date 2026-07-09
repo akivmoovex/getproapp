@@ -1,11 +1,37 @@
 <%- include('../partials/public_shell_start') %>
-    <section class="church-section church-section--page">
-      <div class="church-section__inner church-giving">
-        <h1 class="church-section__title">Giving Information</h1>
-        <%- include('../partials/giving_details') %>
-        <div class="church-card church-card--giving">
-          <span class="material-symbols-outlined church-card__event-icon" aria-hidden="true">info</span>
-          <p class="church-card__body">Online payments are not available in this phase. This page is display-only for giving instructions.</p>
+    <%- include('../partials/public_page_hero', { heroTitle: 'Giving', heroSubtitle: 'Support the ministry of ' + churchName + '.' }) %>
+    <section class="church-section church-section--page church-section--content">
+      <div class="church-section__inner church-giving-page">
+        <div class="church-giving-intro">
+          <p class="church-section__subtitle">Your generosity helps us serve the community. Online payments are not available yet — please use the options below or contact the church office.</p>
+        </div>
+        <div class="church-giving-options">
+          <%- include('../partials/giving_details') %>
+        </div>
+        <div class="church-giving-fallback">
+          <article class="church-giving-card church-giving-card--office">
+            <span class="material-symbols-outlined church-giving-card__icon" aria-hidden="true">support_agent</span>
+            <div>
+              <h2 class="church-giving-card__title">Contact the church office</h2>
+              <p class="church-giving-card__body">
+                Need giving instructions or a receipt?
+                <% if (contactPhone || contactEmail) { %>
+                  <% if (contactPhone) { %>Call <a href="tel:<%= contactPhone %>"><%= contactPhone %></a><% } %>
+                  <% if (contactPhone && contactEmail) { %> or <% } %>
+                  <% if (contactEmail) { %>email <a href="mailto:<%= contactEmail %>"><%= contactEmail %></a><% } %>.
+                <% } else { %>
+                  Visit our <a href="/contact">contact page</a> to reach branch leadership.
+                <% } %>
+              </p>
+            </div>
+          </article>
+          <article class="church-giving-card church-giving-card--notice">
+            <span class="material-symbols-outlined church-giving-card__icon" aria-hidden="true">info</span>
+            <div>
+              <h2 class="church-giving-card__title">Display-only giving page</h2>
+              <p class="church-giving-card__body">Branch leadership can publish bank, mobile money, and category details from the branch admin giving settings.</p>
+            </div>
+          </article>
         </div>
       </div>
     </section>

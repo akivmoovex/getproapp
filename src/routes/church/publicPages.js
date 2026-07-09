@@ -7,6 +7,7 @@ const { mergeAnnouncementFeed } = require("../../church/announcementFeed");
 const { PUBLIC_HQ_AUDIENCES } = require("../../church/hqBroadcastValidation");
 const eventsRepo = require("../../db/pg/church/eventsRepo");
 const sermonsRepo = require("../../db/pg/church/sermonsRepo");
+const contactSubmissionsRepo = require("../../db/pg/church/contactSubmissionsRepo");
 const websiteContentRepo = require("../../db/pg/church/websiteContentRepo");
 const givingSettingsRepo = require("../../db/pg/church/givingSettingsRepo");
 const ministriesRepo = require("../../db/pg/church/ministriesRepo");
@@ -16,6 +17,7 @@ const {
   preparePublicViewModel,
 } = require("../../services/church/websiteContentService");
 const { prepareGivingDisplay } = require("../../services/church/givingSettingsService");
+const { validatePublicContactBody } = require("../../church/contactSubmissionValidation");
 const {
   BLESSBOARD_NAME,
   BLESSBOARD_TAGLINE,
@@ -95,7 +97,21 @@ async function loadBranchPublicLocals(req, activePage) {
   const pool = getPgPool();
 
   if (!pool) {
-    return branchPublicLocalsWithoutDb(org, branch, activePage);
+    const locals = branchPublicLocalsWithoutDb(org, branch, activePage);
+    if (activePage === "giving") {
+      locals.givingDisplay = prepareGivingDisplay(
+        null,
+        {
+          givingInstructions: locals.givingInstructions,
+          givingBankDetails: locals.givingBankDetails,
+          givingMobileMoney: locals.givingMobileMoney,
+          givingCategories: locals.givingCategories,
+          givingQrPlaceholder: locals.givingQrPlaceholder,
+        },
+        { audience: "public", churchName: locals.churchName }
+      );
+    }
+    return locals;
   }
 
   let published = null;
@@ -244,6 +260,17 @@ function registerPublicPagesRoutes(router) {
         return res.status(404).type("text").send("Not found.");
       }
       const locals = await loadBranchPublicLocals(req, "ministries");
+      const filters = [{ key: "all", label: "All" }];
+      const seen = new Set();
+      for (const m of locals.ministries || []) {
+        const day = String(m.meeting_day || "").trim();
+        if (!day) continue;
+        const key = day.toLowerCase().replace(/\s+/g, "-");
+        if (seen.has(key)) continue;
+        seen.add(key);
+        filters.push({ key, label: day });
+      }
+      locals.ministryFilters = filters;
       return res.render("church/public/ministries", locals);
     } catch (e) {
       return next(e);
@@ -276,7 +303,48 @@ function registerPublicPagesRoutes(router) {
         return res.status(404).type("text").send("Not found.");
       }
       const locals = await loadBranchPublicLocals(req, "contact");
+      locals.contactSubmitted = String(req.query.submitted || "") === "1";
+      locals.contactError = null;
+      locals.contactForm = {};
       return res.render("church/public/contact", locals);
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.post("/contact", async (req, res, next) => {
+    try {
+      const ctx = req.churchContext;
+      if (ctx.kind === "vertical-apex") {
+        return res.redirect("/");
+      }
+      if (ctx.kind !== "branch" || !ctx.branch || !ctx.organization) {
+        return res.status(404).type("text").send("Not found.");
+      }
+      const validation = validatePublicContactBody(req.body);
+      const locals = await loadBranchPublicLocals(req, "contact");
+      locals.contactSubmitted = false;
+      locals.contactForm = {
+        full_name: String(req.body?.full_name || req.body?.contact_name || ""),
+        email: String(req.body?.email || req.body?.contact_email || ""),
+        phone: String(req.body?.phone || req.body?.contact_phone || ""),
+        message: String(req.body?.message || req.body?.contact_message || ""),
+      };
+      if (!validation.ok) {
+        locals.contactError = validation.error;
+        return res.status(400).render("church/public/contact", locals);
+      }
+      const pool = getPgPool();
+      if (!pool) {
+        locals.contactError = "We could not send your message right now. Please call or email the church directly.";
+        return res.status(503).render("church/public/contact", locals);
+      }
+      await contactSubmissionsRepo.createContactSubmissionForBranch(pool, {
+        organization_id: ctx.organization.id,
+        branch_id: ctx.branch.id,
+        ...validation.data,
+      });
+      return res.redirect(303, "/contact?submitted=1");
     } catch (e) {
       return next(e);
     }

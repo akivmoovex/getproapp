@@ -300,8 +300,9 @@ async function createChurchBranch(client, fields) {
   const r = await client.query(
     `INSERT INTO public.church_branches (
        organization_id, slug, host_slug, name, status, city, country,
-       pastor_name, contact_phone, contact_email, welcome_message, service_times, location_text
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       pastor_name, contact_phone, contact_email, welcome_message, service_times, location_text,
+       member_registration_enabled
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING *`,
     [
       fields.organization_id,
@@ -317,6 +318,7 @@ async function createChurchBranch(client, fields) {
       fields.welcome_message || null,
       fields.service_times || null,
       fields.location_text || null,
+      fields.member_registration_enabled !== false,
     ]
   );
   return r.rows[0];

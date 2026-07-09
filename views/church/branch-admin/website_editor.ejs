@@ -17,6 +17,17 @@
       <div class="church-branch-panel church-branch-panel--compact">
         <p class="church-branch-panel__hint">Status: <strong><%= status === 'published' ? 'Published' : 'Draft' %></strong><% if (lastPublishedAt) { %> · Last published <%= new Date(lastPublishedAt).toLocaleString('en-GB') %><% } %></p>
       </div>
+      <section class="church-branch-panel church-branch-panel--compact">
+        <h2 class="church-branch-panel__title">Site settings</h2>
+        <form class="church-form" method="post" action="/branch/site-settings">
+          <label class="church-checkbox">
+            <input type="checkbox" name="member_registration_enabled" value="on" <%= branch.member_registration_enabled !== false ? 'checked' : '' %> />
+            Member registration enabled on <code>/register</code>
+          </label>
+          <p class="church-branch-panel__hint">When disabled, visitors see a friendly “registration closed” message. Suspended branches still block all public access.</p>
+          <button class="church-btn church-btn--outline church-btn--sm" type="submit">Save site settings</button>
+        </form>
+      </section>
       <form class="church-form" method="post" action="/branch/website-editor">
         <section class="church-branch-panel">
           <h2 class="church-branch-panel__title">Homepage</h2>

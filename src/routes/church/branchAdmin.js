@@ -34,6 +34,7 @@ const registerBranchAdminPrayerRequestsRoutes = require("./branchAdminPrayerRequ
 const registerBranchAdminAnnouncementsRoutes = require("./branchAdminAnnouncements");
 const registerBranchAdminEventsRoutes = require("./branchAdminEvents");
 const registerBranchAdminWebsiteEditorRoutes = require("./branchAdminWebsiteEditor");
+const registerBranchAdminSiteSettingsRoutes = require("./branchAdminSiteSettings");
 const registerBranchAdminSermonsRoutes = require("./branchAdminSermons");
 const registerBranchAdminResourcesRoutes = require("./branchAdminResources");
 const registerBranchAdminGivingSettingsRoutes = require("./branchAdminGivingSettings");
@@ -549,6 +550,7 @@ function registerBranchAdminRoutes(router) {
   registerBranchAdminAnnouncementsRoutes(router);
   registerBranchAdminEventsRoutes(router);
   registerBranchAdminWebsiteEditorRoutes(router);
+  registerBranchAdminSiteSettingsRoutes(router);
   registerBranchAdminSermonsRoutes(router);
   registerBranchAdminResourcesRoutes(router);
 }

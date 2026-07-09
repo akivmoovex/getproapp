@@ -51,9 +51,34 @@ To verify manually after deploy:
 node -e "require('./src/db/pg/ensureChurchSchema').ensureChurchSchema(require('./src/db/pg').getPgPool()).then(()=>console.log('ok')).catch(console.error)"
 ```
 
-Latest church migrations include `089_church_sermons_resources.sql` (sermons/resources tables).
+Latest church migrations include `089_church_sermons_resources.sql` (sermons/resources tables) and `090_church_operational_readiness.sql` (member registration flag + contact submissions).
 
 ---
+
+## New Church Smoke Test
+
+After onboarding **`kafuebaptist`** (or any new slug), run this checklist:
+
+| Step | URL / action | Expected |
+|------|----------------|----------|
+| 1 | `https://kafuebaptist.blessboard.com` | Public homepage loads |
+| 2 | `/about` | About/mission content from website editor |
+| 3 | `/contact` | Contact form + church details |
+| 4 | Submit contact form | Success message; appears in branch admin **Contact submissions** |
+| 5 | `/register` | Member registration form (if enabled) |
+| 6 | Submit member registration | Redirect to `/registration-submitted`; pending in branch admin queue |
+| 7 | `/branch/login` | Branch admin login works |
+| 8 | `/branch/member-verification` | Pending member visible |
+| 9 | `/branch/sermons` → add sermon | Saves and can publish |
+| 10 | `/branch/resources` → add resource | Saves and can publish |
+| 11 | Public `/sermons` and `/about` | Updated content visible |
+| 12 | `https://getproapp.org` | GetPro platform unchanged |
+
+### Automated smoke subset
+
+```bash
+npm test -- tests/church-operational-readiness.test.js tests/church-onboarding.test.js tests/church-blessboard-subdomains.test.js
+```
 
 ## Seed command
 

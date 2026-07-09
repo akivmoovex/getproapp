@@ -141,8 +141,8 @@ async function createBranch(pool, fields) {
     `INSERT INTO public.church_branches
        (organization_id, slug, host_slug, name, status, city, country,
         pastor_name, contact_phone, contact_email,
-        welcome_message, service_times, location_text)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        welcome_message, service_times, location_text, member_registration_enabled)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING *`,
     [
       fields.organization_id,
@@ -158,6 +158,7 @@ async function createBranch(pool, fields) {
       welcomeMessage,
       serviceTimes,
       locationText,
+      fields.member_registration_enabled !== false,
     ]
   );
   return r.rows[0];
@@ -491,6 +492,17 @@ async function updateBranchMetadataForPlatform(pool, branchId, fields, platformA
   }
 }
 
+async function updateBranchMemberRegistrationEnabled(pool, branchId, enabled, adminId) {
+  const r = await pool.query(
+    `UPDATE public.church_branches
+     SET member_registration_enabled = $1, updated_at = now()
+     WHERE id = $2
+     RETURNING id, member_registration_enabled`,
+    [enabled === true, branchId]
+  );
+  return r.rows[0] ?? null;
+}
+
 module.exports = {
   branchHostSlug,
   findBranchBySlug,
@@ -508,4 +520,5 @@ module.exports = {
   getBranchAdminSummaryForBranch,
   getBranchUsageSummaryForBranch,
   updateBranchMetadataForPlatform,
+  updateBranchMemberRegistrationEnabled,
 };

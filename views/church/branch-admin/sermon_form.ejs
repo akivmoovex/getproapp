@@ -32,8 +32,9 @@
               <input class="church-input" id="scripture" name="scripture" value="<%= form.scripture %>"/>
             </div>
             <div class="church-field church-field--full">
-              <label class="church-label" for="media_url">Media URL (optional)</label>
-              <input class="church-input" id="media_url" name="media_url" type="url" value="<%= form.media_url %>"/>
+              <label class="church-label" for="media_url">Audio / video / file URL (optional)</label>
+              <input class="church-input" id="media_url" name="media_url" type="url" value="<%= form.media_url %>" placeholder="https://..."/>
+              <p class="church-field-hint">Paste a link to hosted audio, video, or a document. Direct file upload is coming soon.</p>
             </div>
             <div class="church-field church-field--full">
               <label class="church-label" for="description">Description</label>

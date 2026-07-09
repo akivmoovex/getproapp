@@ -1,0 +1,32 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Contact message</h1>
+          <p class="church-branch-topbar__subtitle"><%= submission.full_name %></p>
+        </div>
+        <a class="church-btn church-btn--ghost" href="/branch/contact-submissions">Back to list</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <section class="church-branch-panel">
+        <dl class="church-branch-dl">
+          <div><dt>Status</dt><dd><%= contactStatusLabel(submission.status) %></dd></div>
+          <div><dt>Received</dt><dd><%= new Date(submission.created_at).toLocaleString('en-GB') %></dd></div>
+          <% if (submission.email) { %><div><dt>Email</dt><dd><a href="mailto:<%= submission.email %>"><%= submission.email %></a></dd></div><% } %>
+          <% if (submission.phone) { %><div><dt>Phone</dt><dd><a href="tel:<%= submission.phone %>"><%= submission.phone %></a></dd></div><% } %>
+        </dl>
+        <h2 class="church-branch-panel__title">Message</h2>
+        <p class="church-card__body church-card__body--pre"><%= submission.message %></p>
+        <form class="church-form" method="post" action="/branch/contact-submissions/<%= submission.id %>">
+          <div class="church-field">
+            <label class="church-label" for="status">Update status</label>
+            <select class="church-input" id="status" name="status">
+              <option value="new" <%= submission.status === 'new' ? 'selected' : '' %>>New</option>
+              <option value="read" <%= submission.status === 'read' ? 'selected' : '' %>>Read</option>
+              <option value="resolved" <%= submission.status === 'resolved' ? 'selected' : '' %>>Resolved</option>
+            </select>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Save status</button>
+        </form>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

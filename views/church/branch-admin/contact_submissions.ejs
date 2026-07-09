@@ -1,0 +1,32 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Contact submissions</h1>
+          <p class="church-branch-topbar__subtitle">Messages from the public contact form</p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <section class="church-branch-panel">
+        <div class="church-branch-filter-row">
+          <a class="church-btn church-btn--<%= statusFilter === 'all' ? 'primary' : 'outline' %> church-btn--sm" href="/branch/contact-submissions?status=all">All</a>
+          <a class="church-btn church-btn--<%= statusFilter === 'new' ? 'primary' : 'outline' %> church-btn--sm" href="/branch/contact-submissions?status=new">New</a>
+          <a class="church-btn church-btn--<%= statusFilter === 'read' ? 'primary' : 'outline' %> church-btn--sm" href="/branch/contact-submissions?status=read">Read</a>
+          <a class="church-btn church-btn--<%= statusFilter === 'resolved' ? 'primary' : 'outline' %> church-btn--sm" href="/branch/contact-submissions?status=resolved">Resolved</a>
+        </div>
+        <% if (!submissions || submissions.length === 0) { %>
+        <p class="church-branch-panel__hint">No contact submissions yet.</p>
+        <% } else { %>
+        <div class="church-branch-list">
+          <% submissions.forEach(function (item) { %>
+          <a class="church-branch-list__item" href="/branch/contact-submissions/<%= item.id %>">
+            <div>
+              <strong><%= item.full_name %></strong>
+              <p class="muted"><%= item.email || item.phone || 'No contact detail' %> · <%= new Date(item.created_at).toLocaleString('en-GB') %></p>
+            </div>
+            <span class="church-status-chip church-status-chip--<%= item.status === 'new' ? 'pending' : item.status === 'resolved' ? 'verified' : 'default' %>"><%= contactStatusLabel(item.status) %></span>
+          </a>
+          <% }); %>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

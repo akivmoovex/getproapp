@@ -78,7 +78,7 @@ Re-running seed does not duplicate rows (checks counts / published content exist
 | `/` | Published website content + events + ministries + announcements |
 | `/about` | `church_branch_website_content` (about/mission/vision/values) |
 | `/leadership` | `leadership_json` from published website content |
-| `/contact` | Contact fields from published website content + branch fallbacks |
+| `/contact` | Contact fields from published website content + branch fallbacks; **POST stores** `church_public_contact_submissions` |
 | `/events` | `church_events` where `status=published`, `visibility=public` |
 | `/sermons` | `church_sermons` where `status=published`; safe fallback if empty |
 | `/member/resources` | `church_resources` type `study`, visibility `members` |
@@ -131,10 +131,10 @@ npm test
 
 ## Remaining gaps
 
-- Contact form submission (display-only on public contact page)
+- Contact form email notifications (submissions stored in `church_public_contact_submissions`; no SMTP yet)
 - Leader photo URLs (initials placeholders; no `photo_url` on JSON leadership)
 - Calendar month grid on `/events`
-- File upload for resources/sermons (URL fields only for now)
+- File upload for resources/sermons (URL fields with labels; upload coming soon)
 - Giving page visual polish
 - Ministries page image tiles/filters
 - HQ/leader portal content management (out of scope)

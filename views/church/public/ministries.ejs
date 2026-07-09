@@ -1,15 +1,43 @@
 <%- include('../partials/public_shell_start') %>
-    <section class="church-section church-section--page">
+    <%- include('../partials/public_page_hero', { heroTitle: 'Ministries', heroSubtitle: 'Find a place to serve and grow at ' + churchName + '.' }) %>
+    <section class="church-section church-section--page church-section--content">
       <div class="church-section__inner">
-        <h1 class="church-section__title">Ministries</h1>
-        <p class="church-section__subtitle">Find a place to serve and grow at <%= churchName %>.</p>
         <% if ((ministries || []).length === 0) { %>
-        <p class="church-section__subtitle">Ministry information will be posted soon.</p>
+        <div class="church-empty-state">
+          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">groups</span>
+          <p class="church-empty-state__title">Ministries coming soon</p>
+          <p class="church-empty-state__body">Published ministries will appear here when branch leadership adds them.</p>
+        </div>
         <% } else { %>
-        <div class="church-grid church-grid--events">
-          <%- include('../partials/ministry_cards') %>
+        <% if ((ministryFilters || []).length > 1) { %>
+        <div class="church-ministry-filters" role="tablist" aria-label="Filter ministries">
+          <% ministryFilters.forEach(function (filter) { %>
+          <button class="church-ministry-filter<%= filter.key === 'all' ? ' is-active' : '' %>" type="button" data-ministry-filter="<%= filter.key %>"><%= filter.label %></button>
+          <% }); %>
+        </div>
+        <% } %>
+        <div class="church-ministry-grid" id="ministry-grid">
+          <%- include('../partials/public_ministry_tiles') %>
         </div>
         <% } %>
       </div>
     </section>
+    <% if ((ministries || []).length > 0 && (ministryFilters || []).length > 1) { %>
+    <script>
+      (function () {
+        var buttons = document.querySelectorAll("[data-ministry-filter]");
+        var tiles = document.querySelectorAll(".church-ministry-tile");
+        buttons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var key = btn.getAttribute("data-ministry-filter");
+            buttons.forEach(function (b) { b.classList.toggle("is-active", b === btn); });
+            tiles.forEach(function (tile) {
+              var match = key === "all" || tile.getAttribute("data-ministry-filter") === key;
+              tile.style.display = match ? "" : "none";
+            });
+          });
+        });
+      })();
+    </script>
+    <% } %>
 <%- include('../partials/public_shell_end') %>

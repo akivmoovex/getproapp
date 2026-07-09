@@ -1,10 +1,15 @@
 <%- include('../partials/public_shell_start') %>
+    <%- include('../partials/public_page_hero', { heroTitle: 'Get in Touch', heroSubtitle: 'We would love to hear from you.' }) %>
     <section class="church-section church-section--page church-section--content">
       <div class="church-section__inner">
-        <header class="church-page-intro">
-          <h1 class="church-section__title">Get in Touch</h1>
-          <p class="church-section__subtitle">We would love to hear from you. Reach out for prayer, information, or just to say hello.</p>
-        </header>
+        <% if (contactSubmitted) { %>
+        <div class="church-alert church-alert--success church-contact-alert" role="status">
+          Thank you for your message. The church office will respond as soon as possible.
+        </div>
+        <% } %>
+        <% if (contactError) { %>
+        <div class="church-alert church-alert--error church-contact-alert" role="alert"><%= contactError %></div>
+        <% } %>
         <div class="church-contact-quick">
           <% if (contactPhone) { %>
           <a class="church-contact-quick__btn church-contact-quick__btn--primary" href="tel:<%= contactPhone %>">
@@ -41,47 +46,27 @@
               <p class="church-content-card__body church-card__body--pre"><%= officeHours %></p>
             </article>
             <% } %>
-            <div class="church-contact-details church-show-desktop-only">
-              <% if (contactPhone) { %>
-              <article class="church-contact-detail-card">
-                <span class="material-symbols-outlined" aria-hidden="true">call</span>
-                <div>
-                  <h3>Phone</h3>
-                  <p><a href="tel:<%= contactPhone %>"><%= contactPhone %></a></p>
-                </div>
-              </article>
-              <% } %>
-              <% if (contactEmail) { %>
-              <article class="church-contact-detail-card">
-                <span class="material-symbols-outlined" aria-hidden="true">mail</span>
-                <div>
-                  <h3>Email</h3>
-                  <p><a href="mailto:<%= contactEmail %>"><%= contactEmail %></a></p>
-                </div>
-              </article>
-              <% } %>
-            </div>
-            <% if (mapEmbedPlaceholder) { %>
-            <p class="church-section__subtitle"><%= mapEmbedPlaceholder %></p>
-            <% } %>
           </div>
           <aside class="church-contact-form-panel">
             <h2 class="church-contact-form-panel__title">Send a Message</h2>
-            <p class="church-contact-form-panel__note">This form is for display only. Please call or email us directly for now.</p>
-            <form class="church-form church-form--display" action="#" method="post" onsubmit="return false;">
+            <form class="church-form" action="/contact" method="post">
               <div class="church-field">
-                <label class="church-label" for="contact_name">Full Name</label>
-                <input class="church-input" id="contact_name" name="contact_name" type="text" placeholder="Your name"/>
+                <label class="church-label" for="full_name">Full Name</label>
+                <input class="church-input" id="full_name" name="full_name" type="text" required placeholder="Your name" value="<%= (contactForm && contactForm.full_name) || '' %>"/>
               </div>
               <div class="church-field">
-                <label class="church-label" for="contact_email">Email Address</label>
-                <input class="church-input" id="contact_email" name="contact_email" type="email" placeholder="example@email.com"/>
+                <label class="church-label" for="email">Email Address</label>
+                <input class="church-input" id="email" name="email" type="email" placeholder="example@email.com" value="<%= (contactForm && contactForm.email) || '' %>"/>
               </div>
               <div class="church-field">
-                <label class="church-label" for="contact_message">Message</label>
-                <textarea class="church-input church-input--textarea" id="contact_message" name="contact_message" rows="4" placeholder="How can we help you?"></textarea>
+                <label class="church-label" for="phone">Phone (optional if email provided)</label>
+                <input class="church-input" id="phone" name="phone" type="tel" placeholder="+260 ..." value="<%= (contactForm && contactForm.phone) || '' %>"/>
               </div>
-              <button class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" type="button" disabled>
+              <div class="church-field">
+                <label class="church-label" for="message">Message</label>
+                <textarea class="church-input church-input--textarea" id="message" name="message" rows="4" required placeholder="How can we help you?"><%= (contactForm && contactForm.message) || '' %></textarea>
+              </div>
+              <button class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" type="submit">
                 <span class="material-symbols-outlined" aria-hidden="true">send</span>
                 Send Message
               </button>

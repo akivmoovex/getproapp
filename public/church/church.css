@@ -3007,3 +3007,183 @@ a.church-branch-stat-card--link:hover {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* --- Operational readiness polish (BlessBoard v32) --- */
+.church-contact-alert {
+  margin-bottom: var(--church-space-md);
+}
+
+.church-giving-page {
+  display: grid;
+  gap: var(--church-space-lg);
+}
+
+.church-giving-options .church-grid {
+  display: grid;
+  gap: var(--church-space-md);
+}
+
+.church-giving-fallback {
+  display: grid;
+  gap: var(--church-space-md);
+}
+
+.church-giving-card {
+  display: flex;
+  gap: var(--church-space-md);
+  align-items: flex-start;
+  padding: var(--church-space-md);
+  border-radius: var(--church-radius-lg);
+  background: var(--church-surface);
+  border: 1px solid var(--church-border);
+  box-shadow: var(--church-shadow-sm);
+}
+
+.church-giving-card__icon {
+  font-size: 1.75rem;
+  color: var(--church-primary);
+  flex-shrink: 0;
+}
+
+.church-giving-card__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.church-giving-card__body {
+  margin: 0;
+  color: var(--church-text-muted);
+  line-height: 1.5;
+}
+
+.church-giving-card--office {
+  border-color: color-mix(in srgb, var(--church-primary) 25%, var(--church-border));
+}
+
+.church-ministry-grid {
+  display: grid;
+  gap: var(--church-space-md);
+}
+
+.church-ministry-tile {
+  display: flex;
+  gap: var(--church-space-md);
+  padding: var(--church-space-md);
+  border-radius: var(--church-radius-lg);
+  background: var(--church-surface);
+  border: 1px solid var(--church-border);
+  box-shadow: var(--church-shadow-sm);
+}
+
+.church-ministry-tile__avatar {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--church-primary) 12%, white);
+  color: var(--church-primary);
+  flex-shrink: 0;
+}
+
+.church-ministry-tile__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.church-ministry-tile__desc {
+  margin: 0 0 0.5rem;
+  color: var(--church-text-muted);
+  line-height: 1.45;
+}
+
+.church-ministry-tile__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  font-size: 0.875rem;
+  color: var(--church-text-muted);
+}
+
+.church-ministry-tile__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.church-ministry-tile__meta .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.church-ministry-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: var(--church-space-md);
+}
+
+.church-ministry-filter {
+  border: 1px solid var(--church-border);
+  background: var(--church-surface);
+  color: var(--church-text);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.church-ministry-filter.is-active {
+  background: var(--church-primary);
+  border-color: var(--church-primary);
+  color: #fff;
+}
+
+.church-field-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--church-text-muted);
+}
+
+.church-branch-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.church-branch-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.church-branch-list__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--church-border);
+  border-radius: var(--church-radius-md);
+  text-decoration: none;
+  color: inherit;
+}
+
+.church-branch-list__item:hover {
+  border-color: var(--church-primary);
+}
+
+@media (min-width: 768px) {
+  .church-giving-options .church-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .church-ministry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .church-ministry-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

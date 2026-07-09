@@ -94,10 +94,16 @@ function validateRegistrationBody(body) {
   return { ok: true, data: form };
 }
 
+function isMemberRegistrationEnabled(branch) {
+  if (!branch) return false;
+  return branch.member_registration_enabled !== false;
+}
+
 module.exports = {
   GENDER_VALUES,
   AGE_GROUP_OPTIONS,
   ATTENDANCE_DURATION_OPTIONS,
   MINISTRY_INTEREST_OPTIONS,
   validateRegistrationBody,
+  isMemberRegistrationEnabled,
 };

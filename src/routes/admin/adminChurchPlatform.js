@@ -20,6 +20,7 @@ const {
   updateOrganizationFormFromBody,
   organizationToUpdateForm,
 } = require("../../church/platformProvisioningValidation");
+const { buildProvisionWelcomePack } = require("../../services/church/provisionWelcomeService");
 const { validatePlanUpdateBody } = require("../../church/churchPlanValidation");
 const { PLAN_CODES: CHURCH_PLAN_CODES, getPlanDisplay } = require("../../church/churchPlans");
 const {
@@ -343,6 +344,17 @@ async function renderOrganizationDetail(req, res, extra) {
       : null;
   const orgReturnTo = `/admin/church/organizations/${organizationId}`;
   const notesPanel = await supportNotesPanelData(pool, "organization", organizationId, orgReturnTo);
+  let welcomePack = null;
+  const provisioned = String(req.query.provisioned || "") === "1";
+  if (
+    provisioned &&
+    req.session &&
+    req.session.churchProvisionWelcome &&
+    Number(req.session.churchProvisionWelcome.organizationId) === organizationId
+  ) {
+    welcomePack = req.session.churchProvisionWelcome.pack;
+    delete req.session.churchProvisionWelcome;
+  }
   return res.status(extra && extra.statusCode ? extra.statusCode : 200).render("admin/church/organization_detail", {
     organization: detail.organization,
     branches: detail.branches,
@@ -354,7 +366,8 @@ async function renderOrganizationDetail(req, res, extra) {
     formatDate,
     churchPublicHost,
     getPlanDisplay,
-    provisioned: String(req.query.provisioned || "") === "1",
+    provisioned,
+    welcomePack,
     statusNotice: organizationStatusNotice(req),
     statusError: (extra && extra.statusError) || null,
     supportNoteNotice: supportNoteNotice(req) || (extra && extra.supportNoteNotice) || null,
@@ -1083,6 +1096,19 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         },
         platformAdminId
       );
+
+      if (req.session) {
+        req.session.churchProvisionWelcome = {
+          organizationId: result.organization.id,
+          pack: buildProvisionWelcomePack({
+            organization: result.organization,
+            branch: result.branch,
+            branchAdmin: result.branchAdmin,
+            branchAdminCredentials: validation.data.branchAdmin,
+            hqAdmin: result.hqAdmin,
+          }),
+        };
+      }
 
       return res.redirect(
         `/admin/church/organizations/${result.organization.id}?provisioned=1`

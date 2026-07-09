@@ -50,7 +50,13 @@ const ANNOUNCEMENT_NOTICES = new Set([
   "announcement_archived",
 ]);
 const EVENT_NOTICES = new Set(["event_created", "event_updated", "event_published", "event_cancelled"]);
-const WEBSITE_NOTICES = new Set(["website_draft_saved", "website_published"]);
+const WEBSITE_NOTICES = new Set([
+  "website_draft_saved",
+  "website_published",
+  "registration_updated",
+  "settings_error",
+]);
+const CONTACT_NOTICES = new Set(["contact_updated"]);
 const GIVING_SETTINGS_NOTICES = new Set(["giving_settings_draft_saved", "giving_settings_published"]);
 const MINISTRY_NOTICES = new Set([
   "ministry_created",
@@ -124,6 +130,9 @@ function noticeMessage(code) {
     event_cancelled: "Event cancelled.",
     website_draft_saved: "Website draft saved.",
     website_published: "Website published successfully.",
+    registration_updated: "Member registration setting updated.",
+    settings_error: "Settings could not be saved. Please try again.",
+    contact_updated: "Contact submission updated.",
     giving_settings_draft_saved: "Giving settings draft saved.",
     giving_settings_published: "Giving information published.",
     ministry_created: "Ministry saved as draft.",
@@ -188,6 +197,7 @@ module.exports = {
   ANNOUNCEMENT_NOTICES,
   EVENT_NOTICES,
   WEBSITE_NOTICES,
+  CONTACT_NOTICES,
   GIVING_SETTINGS_NOTICES,
   MINISTRY_NOTICES,
   DEPARTMENT_NOTICES,

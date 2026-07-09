@@ -42,6 +42,46 @@
             <% } %>
           </div>
         <% } %>
+        <% if (typeof welcomePack !== 'undefined' && welcomePack) { %>
+          <section class="card card--mb-xl" style="padding:1.25rem;" id="provision-welcome-pack">
+            <h2 class="section-title section-title--flush">Branch admin welcome handoff</h2>
+            <p class="muted">Copy this message once and share it securely with the branch admin. Credentials are not stored after you leave this page.</p>
+            <textarea id="welcome-pack-text" class="input-field__control" rows="16" readonly style="width:100%;font-family:ui-monospace,monospace;font-size:0.85rem;"><%= [
+              'Welcome to BlessBoard — ' + welcomePack.churchName,
+              '',
+              'Public website: ' + welcomePack.publicUrl,
+              'Branch admin login: ' + welcomePack.branchAdminLoginUrl,
+              'Username: ' + welcomePack.branchAdmin.username,
+              'Temporary password: ' + welcomePack.branchAdmin.temporary_password,
+              '',
+              'Member registration: ' + welcomePack.memberRegisterUrl,
+              '',
+              'First setup checklist:',
+              welcomePack.checklist.map(function (item, i) { return (i + 1) + '. ' + item; }).join('\n')
+            ].join('\n') %></textarea>
+            <div class="admin-toolbar" style="margin-top:0.75rem;">
+              <button type="button" class="btn btn--primary" id="copy-welcome-pack">Copy welcome message</button>
+            </div>
+            <script>
+              (function () {
+                var btn = document.getElementById("copy-welcome-pack");
+                var text = document.getElementById("welcome-pack-text");
+                if (!btn || !text) return;
+                btn.addEventListener("click", function () {
+                  text.select();
+                  if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text.value).then(function () {
+                      btn.textContent = "Copied!";
+                    });
+                  } else {
+                    document.execCommand("copy");
+                    btn.textContent = "Copied!";
+                  }
+                });
+              })();
+            </script>
+          </section>
+        <% } %>
 
         <% if (typeof statusNotice !== 'undefined' && statusNotice) { %>
           <div class="flash flash--success" role="status"><%= statusNotice %></div>

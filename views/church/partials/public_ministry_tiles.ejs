@@ -1,0 +1,18 @@
+<% ministries.forEach(function (m) { %>
+<article class="church-ministry-tile" data-ministry-filter="<%= (m.meeting_day || 'general').toLowerCase().replace(/\s+/g, '-') %>">
+  <div class="church-ministry-tile__avatar" aria-hidden="true">
+    <span class="material-symbols-outlined">groups</span>
+  </div>
+  <div class="church-ministry-tile__body">
+    <h2 class="church-ministry-tile__title"><%= m.name %></h2>
+    <% if (m.description) { %><p class="church-ministry-tile__desc"><%= m.description %></p><% } %>
+    <div class="church-ministry-tile__meta">
+      <% if (m.leader_name) { %><span><span class="material-symbols-outlined" aria-hidden="true">person</span><%= m.leader_name %></span><% } %>
+      <% if (m.meeting_day || m.meeting_time) { %>
+      <span><span class="material-symbols-outlined" aria-hidden="true">schedule</span><%= [m.meeting_day, m.meeting_time].filter(Boolean).join(' · ') %></span>
+      <% } %>
+      <% if (m.location) { %><span><span class="material-symbols-outlined" aria-hidden="true">location_on</span><%= m.location %></span><% } %>
+    </div>
+  </div>
+</article>
+<% }); %>

@@ -217,7 +217,8 @@ npm test -- tests/church-platform-provisioning.test.js tests/church-blessboard-s
 - No automated DNS/SSL provisioning per church
 - No welcome email with credentials
 - No self-service church signup (super admin only)
-- `member_registration_enabled` checkbox is informational — registration is blocked when branch is suspended, not via a separate DB flag
+- Welcome email automation (copyable handoff on provision success page instead)
+- `member_registration_enabled` is stored on `church_branches` (default `true`); toggle in onboarding or branch admin Website Editor → Site settings
 - File uploads for leader photos / resources still URL-only
 
 See also: [blessboard-production-checklist.md](./blessboard-production-checklist.md), [blessboard-content-management.md](./blessboard-content-management.md)

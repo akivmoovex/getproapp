@@ -36,11 +36,12 @@
             </div>
             <div class="church-field church-field--full">
               <label class="church-label" for="file_url">File URL (optional)</label>
-              <input class="church-input" id="file_url" name="file_url" type="url" value="<%= form.file_url %>"/>
+              <input class="church-input" id="file_url" name="file_url" type="url" value="<%= form.file_url %>" placeholder="https://..."/>
+              <p class="church-field-hint">Paste a link to a PDF or document. File upload is coming soon.</p>
             </div>
             <div class="church-field church-field--full">
               <label class="church-label" for="external_url">External URL (optional)</label>
-              <input class="church-input" id="external_url" name="external_url" type="url" value="<%= form.external_url %>"/>
+              <input class="church-input" id="external_url" name="external_url" type="url" value="<%= form.external_url %>" placeholder="https://..."/>
             </div>
           </div>
           <div class="church-auth-card__actions">

@@ -241,6 +241,7 @@ function validateProvisioningBody(body) {
         welcome_message: `Welcome to ${form.branch_name}`,
         service_times: "Sunday · Contact the church office for service times",
         status: form.branch_status,
+        member_registration_enabled: form.member_registration_enabled,
       },
       hqAdmin: {
         full_name: hq.data.full_name,

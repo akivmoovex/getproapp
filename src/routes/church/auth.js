@@ -15,6 +15,7 @@ const {
   AGE_GROUP_OPTIONS,
   ATTENDANCE_DURATION_OPTIONS,
   MINISTRY_INTEREST_OPTIONS,
+  isMemberRegistrationEnabled,
 } = require("../../church/memberRegistration");
 const { authenticateWithLoginProtection } = require("../../services/church/churchLoginProtectionService");
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
@@ -61,8 +62,21 @@ function redirectIfVerifiedMember(req, res, next) {
   return next();
 }
 
+function requireMemberRegistrationOpen(req, res, next) {
+  if (!isMemberRegistrationEnabled(req.churchContext.branch)) {
+    return res.render(
+      "church/auth/register_closed",
+      branchAuthLocals(req, {
+        pageTitle: "Registration closed",
+      })
+    );
+  }
+  return next();
+}
+
 function registerChurchAuthRoutes(router) {
   router.use("/register", requireChurchBranchHost);
+  router.use("/register", requireMemberRegistrationOpen);
   router.use("/login", requireChurchBranchHost);
   router.use("/forgot-password", requireChurchBranchHost);
   router.use("/forgot-password-submitted", requireChurchBranchHost);

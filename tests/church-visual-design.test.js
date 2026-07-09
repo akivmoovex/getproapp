@@ -62,18 +62,18 @@ const branchPublicRoutes = [
   { path: "/contact", markers: ["church-contact-layout", "Get in Touch", "Powered by GetPro"] },
   { path: "/events", markers: ["Events &amp; Calendar", "church-event-row", "Powered by GetPro"] },
   { path: "/sermons", markers: ["church-sermon-grid", "church-sermon-card", "Powered by GetPro"] },
-  { path: "/ministries", markers: ["Ministries", "Powered by GetPro"] },
-  { path: "/giving", markers: ["Giving", "Powered by GetPro"] },
+  { path: "/ministries", markers: ["church-ministry-grid", "Ministries", "Powered by GetPro"] },
+  { path: "/giving", markers: ["church-giving-page", "Giving", "Powered by GetPro"] },
   { path: "/login", markers: ["Member Login", "Powered by GetPro", "brand-lockup"] },
   { path: "/register", markers: ["Member Registration", "Powered by GetPro"] },
   { path: "/registration-submitted", markers: ["Registration submitted", "Powered by GetPro"] },
 ];
 
-test("BlessBoard apex homepage includes updated CSS bundle v31", async () => {
+test("BlessBoard apex homepage includes updated CSS bundle v32", async () => {
   const app = makeVerticalApexApp();
   const res = await request(app).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=31/);
+  assert.match(res.text, /church\.css\?v=32/);
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
   assert.match(res.text, /Powered by GetPro/);
 });
@@ -123,7 +123,7 @@ test("branch admin shell includes mobile drawer and topbar markup", () => {
   assert.match(shell, /church-branch-menu-btn/);
   assert.match(shell, /church-branch-drawer/);
   assert.match(shell, /church-branch-mobile-topbar/);
-  assert.match(shell, /church\.css\?v=31/);
+  assert.match(shell, /church\.css\?v=32/);
 });
 
 test("platform host does not expose branch-only public events route", async () => {
