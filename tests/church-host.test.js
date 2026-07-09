@@ -5,6 +5,9 @@ const assert = require("node:assert/strict");
 
 const {
   parseChurchHostFromParts,
+  parseChurchHostFromDedicatedDomain,
+  parseChurchHost,
+  isChurchHost,
   CHURCH_VERTICAL_LABEL,
   isChurchVerticalSubdomain,
 } = require("../src/church/host");
@@ -88,4 +91,60 @@ test("isChurchVerticalSubdomain: church label is reserved", () => {
 
 test("CHURCH_VERTICAL_LABEL is church", () => {
   assert.equal(CHURCH_VERTICAL_LABEL, "church");
+});
+
+test("isChurchHost: blessboard.com and www.blessboard.com", () => {
+  assert.equal(isChurchHost("blessboard.com"), true);
+  assert.equal(isChurchHost("www.blessboard.com"), true);
+  assert.equal(isChurchHost("BLESSBOARD.COM:443"), true);
+});
+
+test("isChurchHost: kafuebaptist.blessboard.com branch tenant", () => {
+  assert.equal(isChurchHost("kafuebaptist.blessboard.com"), true);
+});
+
+test("isChurchHost: getproapp.org and www.getproapp.org remain platform", () => {
+  const prev = process.env.BASE_DOMAIN;
+  process.env.BASE_DOMAIN = "getproapp.org";
+  try {
+    assert.equal(isChurchHost("getproapp.org"), false);
+    assert.equal(isChurchHost("www.getproapp.org"), false);
+    assert.equal(isChurchHost("zm.getproapp.org"), false);
+    assert.equal(isChurchHost("church.getproapp.org"), true);
+  } finally {
+    if (prev !== undefined) process.env.BASE_DOMAIN = prev;
+    else delete process.env.BASE_DOMAIN;
+  }
+});
+
+test("parseChurchHostFromDedicatedDomain: blessboard apex and branch", () => {
+  assert.deepEqual(parseChurchHostFromDedicatedDomain("blessboard.com"), {
+    kind: "vertical-apex",
+    host: "blessboard.com",
+  });
+  assert.deepEqual(parseChurchHostFromDedicatedDomain("www.blessboard.com"), {
+    kind: "vertical-apex",
+    host: "www.blessboard.com",
+  });
+  assert.deepEqual(parseChurchHostFromDedicatedDomain("kafuebaptist.blessboard.com"), {
+    kind: "branch",
+    orgSlug: "kafuebaptist",
+    host: "kafuebaptist.blessboard.com",
+  });
+  assert.equal(parseChurchHostFromDedicatedDomain("foo.bar.blessboard.com"), null);
+});
+
+test("parseChurchHost: blessboard.com resolves without BASE_DOMAIN church prefix", () => {
+  const prev = process.env.BASE_DOMAIN;
+  process.env.BASE_DOMAIN = "getproapp.org";
+  try {
+    const req = makeReq("blessboard.com");
+    const parsed = parseChurchHost(req);
+    assert.ok(parsed);
+    assert.equal(parsed.kind, "vertical-apex");
+    assert.equal(parsed.host, "blessboard.com");
+  } finally {
+    if (prev !== undefined) process.env.BASE_DOMAIN = prev;
+    else delete process.env.BASE_DOMAIN;
+  }
 });

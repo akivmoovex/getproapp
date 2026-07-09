@@ -283,6 +283,10 @@ async function setApexTenantPg(pool, req, res) {
 function createAttachTenantByHost() {
   return async function attachTenantByHost(req, res, next) {
     try {
+      if (req.isChurchHost) {
+        return next();
+      }
+
       const scheme = process.env.PUBLIC_SCHEME || "https";
       const base = (process.env.BASE_DOMAIN || "").toLowerCase().trim();
       const host = resolveHostname(req);
