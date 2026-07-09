@@ -8,11 +8,23 @@ const CHURCH_VERTICAL_LABEL = "church";
 /** Dedicated church marketing / branch host domain (e.g. blessboard.com). Override via CHURCH_HOST_DOMAIN. */
 const DEFAULT_CHURCH_HOST_DOMAIN = "blessboard.com";
 
+/**
+ * Normalize a hostname string (strip port, lowercase).
+ * @param {string} host
+ */
 function normalizeHost(host) {
   return String(host || "")
     .toLowerCase()
     .trim()
     .split(":")[0];
+}
+
+/**
+ * Resolve the public hostname for an Express request (proxy-aware).
+ * @param {import("express").Request} req
+ */
+function normalizeHostFromRequest(req) {
+  return resolveHostname(req);
 }
 
 function getChurchHostDomain() {
@@ -22,21 +34,13 @@ function getChurchHostDomain() {
 }
 
 /**
- * True when the hostname should serve the GetPro Church module (not the main platform site).
- * @param {string} host - Host header or hostname (port optional).
+ * True for blessboard.com, www.blessboard.com, and any *.blessboard.com host.
+ * @param {string} host
  */
-function isChurchHost(host) {
+function isBlessBoardHost(host) {
   const cleanHost = normalizeHost(host);
-  if (!cleanHost || cleanHost === "localhost" || cleanHost === "127.0.0.1") return false;
-
-  const base = String(process.env.BASE_DOMAIN || "")
-    .toLowerCase()
-    .trim();
-  if (base && parseChurchHostFromParts(cleanHost, base)) return true;
-
   const churchDomain = getChurchHostDomain();
-  if (!churchDomain) return false;
-
+  if (!cleanHost || !churchDomain) return false;
   return (
     cleanHost === churchDomain ||
     cleanHost === `www.${churchDomain}` ||
@@ -45,10 +49,50 @@ function isChurchHost(host) {
 }
 
 /**
+ * Extract the church branch slug from a BlessBoard host.
+ * Returns null for apex/www hosts or invalid multi-label subdomains.
+ * @param {string} host
+ * @returns {string | null}
+ */
+function getBlessBoardChurchSlug(host) {
+  const cleanHost = normalizeHost(host);
+  const churchDomain = getChurchHostDomain();
+  if (!cleanHost || !churchDomain) return null;
+  if (cleanHost === churchDomain || cleanHost === `www.${churchDomain}`) return null;
+  if (!cleanHost.endsWith(`.${churchDomain}`)) return null;
+
+  const prefix = cleanHost.slice(0, cleanHost.length - churchDomain.length - 1);
+  const labels = prefix.split(".").filter(Boolean);
+  if (labels.length !== 1) return null;
+
+  const slug = labels[0];
+  if (!slug || slug === "www") return null;
+  return slug;
+}
+
+/**
+ * True when the hostname should serve the BlessBoard church module (not the main platform site).
+ * @param {string} host - Host header or hostname (port optional).
+ */
+function isChurchHost(host) {
+  const cleanHost = normalizeHost(host);
+  if (!cleanHost || cleanHost === "localhost" || cleanHost === "127.0.0.1") return false;
+
+  if (isBlessBoardHost(cleanHost)) return true;
+
+  const base = String(process.env.BASE_DOMAIN || "")
+    .toLowerCase()
+    .trim();
+  if (base && parseChurchHostFromParts(cleanHost, base)) return true;
+
+  return false;
+}
+
+/**
  * Parse host relative to BASE_DOMAIN into a church context descriptor.
  * @param {string} host - Lowercase hostname without port.
  * @param {string} baseDomain - Lowercase BASE_DOMAIN (no scheme).
- * @returns {{ kind: 'vertical-apex', host: string } | { kind: 'branch', orgSlug: string, host: string } | null}
+ * @returns {{ kind: 'vertical-apex', host: string } | { kind: 'branch', orgSlug: string | null, hostSlug?: string | null, host: string } | null}
  */
 function parseChurchHostFromParts(host, baseDomain) {
   const h = normalizeHost(host);
@@ -69,42 +113,39 @@ function parseChurchHostFromParts(host, baseDomain) {
   if (labels.length === 2 && labels[1] === CHURCH_VERTICAL_LABEL) {
     const orgSlug = labels[0];
     if (!orgSlug || orgSlug === "www") return null;
-    return { kind: "branch", orgSlug, host: h };
+    return { kind: "branch", orgSlug, hostSlug: orgSlug, host: h };
   }
   return null;
 }
 
 /**
- * Parse dedicated church host domain (blessboard.com and *.blessboard.com).
+ * Parse dedicated BlessBoard host domain (blessboard.com and *.blessboard.com).
  * @param {string} host
- * @returns {{ kind: 'vertical-apex', host: string } | { kind: 'branch', orgSlug: string, host: string } | null}
+ * @returns {{ kind: 'vertical-apex', host: string } | { kind: 'branch', orgSlug: string | null, hostSlug: string | null, host: string } | null}
  */
 function parseChurchHostFromDedicatedDomain(host) {
   const h = normalizeHost(host);
-  const churchDomain = getChurchHostDomain();
-  if (!h || !churchDomain) return null;
+  if (!isBlessBoardHost(h)) return null;
 
+  const churchDomain = getChurchHostDomain();
   if (h === churchDomain || h === `www.${churchDomain}`) {
     return { kind: "vertical-apex", host: h };
   }
 
-  if (!h.endsWith(`.${churchDomain}`)) return null;
+  if (h.endsWith(`.${churchDomain}`)) {
+    const slug = getBlessBoardChurchSlug(h);
+    return { kind: "branch", orgSlug: slug, hostSlug: slug, host: h };
+  }
 
-  const prefix = h.slice(0, h.length - churchDomain.length - 1);
-  const labels = prefix.split(".").filter(Boolean);
-  if (labels.length !== 1) return null;
-
-  const orgSlug = labels[0];
-  if (!orgSlug || orgSlug === "www") return null;
-  return { kind: "branch", orgSlug, host: h };
+  return null;
 }
 
 /**
  * @param {import("express").Request} req
- * @returns {{ kind: 'vertical-apex', host: string } | { kind: 'branch', orgSlug: string, host: string } | null}
+ * @returns {{ kind: 'vertical-apex', host: string } | { kind: 'branch', orgSlug: string | null, hostSlug?: string | null, host: string } | null}
  */
 function parseChurchHost(req) {
-  const host = resolveHostname(req);
+  const host = normalizeHostFromRequest(req);
   if (!isChurchHost(host)) return null;
 
   const base = (process.env.BASE_DOMAIN || "").toLowerCase().trim();
@@ -134,6 +175,10 @@ module.exports = {
   CHURCH_VERTICAL_LABEL,
   DEFAULT_CHURCH_HOST_DOMAIN,
   getChurchHostDomain,
+  normalizeHost,
+  normalizeHostFromRequest,
+  isBlessBoardHost,
+  getBlessBoardChurchSlug,
   isChurchHost,
   parseChurchHost,
   parseChurchHostFromParts,

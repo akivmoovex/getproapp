@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Church not found | BlessBoard</title>
+  <meta name="description" content="This BlessBoard church site could not be found."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/church/church.css?v=26"/>
+</head>
+<body class="church-body church-body--unavailable">
+  <header class="church-header church-header--auth">
+    <div class="church-header__inner">
+      <%- include('../partials/brand_lockup', { href: 'https://blessboard.com' }) %>
+    </div>
+  </header>
+  <main class="church-unavailable">
+    <div class="church-unavailable__card">
+      <span class="material-symbols-outlined church-unavailable__icon" aria-hidden="true">search_off</span>
+      <h1 class="church-unavailable__title">Church not found</h1>
+      <p class="church-unavailable__lead">
+        <% if (typeof requestedSlug !== 'undefined' && requestedSlug) { %>
+        We could not find a BlessBoard church site for <strong><%= requestedSlug %></strong>.
+        <% } else if (typeof requestedHost !== 'undefined' && requestedHost) { %>
+        We could not find a BlessBoard church site for <strong><%= requestedHost %></strong>.
+        <% } else { %>
+        We could not find a BlessBoard church site at this address.
+        <% } %>
+        Check the spelling of the church subdomain or visit the BlessBoard home page.
+      </p>
+      <p class="church-unavailable__actions">
+        <a class="church-btn church-btn--primary" href="https://blessboard.com">Go to BlessBoard home</a>
+      </p>
+    </div>
+  </main>
+</body>
+</html>

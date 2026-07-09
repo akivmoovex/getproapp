@@ -145,7 +145,8 @@ function registerPublicPagesRoutes(router) {
       }
       if (ctx.kind !== "branch" || !ctx.branch || !ctx.organization) {
         if (ctx.kind === "branch") {
-          return res.status(404).type("text").send("Church organization not found.");
+          const { renderChurchNotFound } = require("../../church/churchStatusAccess");
+          return renderChurchNotFound(req, res);
         }
         return next();
       }

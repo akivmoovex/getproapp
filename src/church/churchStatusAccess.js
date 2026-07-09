@@ -1,6 +1,7 @@
 "use strict";
 
 const { ORG_BRANCH_STATUSES } = require("./platformStatusValidation");
+const { normalizeHostFromRequest } = require("./host");
 
 function isOperationalStatus(status) {
   return status === "active";
@@ -75,6 +76,16 @@ function renderChurchUnavailable(req, res) {
   });
 }
 
+function renderChurchNotFound(req, res) {
+  const ctx = req.churchContext || {};
+  const requestedSlug = ctx.hostSlug || ctx.orgSlug || null;
+  return res.status(404).render("church/public/not_found", {
+    pageTitle: "Church not found",
+    requestedSlug,
+    requestedHost: ctx.host || normalizeHostFromRequest(req),
+  });
+}
+
 function isHqPath(path) {
   return String(path || "").startsWith("/hq");
 }
@@ -91,7 +102,7 @@ function churchOperationalAccessGate(req, res, next) {
   const block = getChurchAccessBlock(req.churchContext);
   if (!block) return next();
   if (block.code === "not_found") {
-    return res.status(404).type("text").send("Church organization not found.");
+    return renderChurchNotFound(req, res);
   }
   clearOperationalSessions(req);
   return renderChurchUnavailable(req, res);
@@ -118,6 +129,7 @@ module.exports = {
   getHqStatusBanner,
   clearOperationalSessions,
   renderChurchUnavailable,
+  renderChurchNotFound,
   churchOperationalAccessGate,
   statusBadgeClass,
   statusLabel,

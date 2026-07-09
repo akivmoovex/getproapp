@@ -36,8 +36,21 @@ function createAttachChurchContext() {
         return next();
       }
 
+      const hostSlug = parsed.hostSlug || parsed.orgSlug;
+      if (!hostSlug) {
+        req.churchContext = {
+          kind: "branch",
+          host: parsed.host,
+          orgSlug: null,
+          hostSlug: null,
+          organization: null,
+          branch: null,
+        };
+        res.locals.churchContext = req.churchContext;
+        return next();
+      }
+
       const pool = getPgPool();
-      const hostSlug = parsed.orgSlug;
       const branch = await branchesRepo.findBranchByHostSlug(pool, hostSlug);
       let organization = null;
       if (branch) {

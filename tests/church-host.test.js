@@ -129,9 +129,21 @@ test("parseChurchHostFromDedicatedDomain: blessboard apex and branch", () => {
   assert.deepEqual(parseChurchHostFromDedicatedDomain("kafuebaptist.blessboard.com"), {
     kind: "branch",
     orgSlug: "kafuebaptist",
+    hostSlug: "kafuebaptist",
     host: "kafuebaptist.blessboard.com",
   });
-  assert.equal(parseChurchHostFromDedicatedDomain("foo.bar.blessboard.com"), null);
+  assert.deepEqual(parseChurchHostFromDedicatedDomain("foo.bar.blessboard.com"), {
+    kind: "branch",
+    orgSlug: null,
+    hostSlug: null,
+    host: "foo.bar.blessboard.com",
+  });
+});
+
+test("getBlessBoardChurchSlug helper", () => {
+  const { getBlessBoardChurchSlug, isBlessBoardHost } = require("../src/church/host");
+  assert.equal(getBlessBoardChurchSlug("demo.blessboard.com"), "demo");
+  assert.equal(isBlessBoardHost("demo.blessboard.com"), true);
 });
 
 test("parseChurchHost: blessboard.com resolves without BASE_DOMAIN church prefix", () => {

@@ -1624,6 +1624,10 @@ a.church-branch-stat-card--link:hover {
   line-height: 1.6;
 }
 
+.church-unavailable__actions {
+  margin: 1.25rem 0 0;
+}
+
 .reset-timeline-section {
   margin-top: 0;
 }
