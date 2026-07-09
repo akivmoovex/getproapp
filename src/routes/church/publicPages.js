@@ -6,6 +6,7 @@ const hqBroadcastsRepo = require("../../db/pg/church/hqBroadcastsRepo");
 const { mergeAnnouncementFeed } = require("../../church/announcementFeed");
 const { PUBLIC_HQ_AUDIENCES } = require("../../church/hqBroadcastValidation");
 const eventsRepo = require("../../db/pg/church/eventsRepo");
+const sermonsRepo = require("../../db/pg/church/sermonsRepo");
 const websiteContentRepo = require("../../db/pg/church/websiteContentRepo");
 const givingSettingsRepo = require("../../db/pg/church/givingSettingsRepo");
 const ministriesRepo = require("../../db/pg/church/ministriesRepo");
@@ -31,30 +32,36 @@ function formatPublicEventWhen(ev) {
   return [dateStr, timeStr, loc].filter(Boolean).join(" · ");
 }
 
-function demoSermonSamples(churchName) {
+function fallbackSermonSamples(churchName) {
   return [
     {
-      title: "Walking by Faith in Uncertain Times",
-      speaker: `${churchName} Pastoral Team`,
-      date: "Recent message",
-      category: "Sunday Sermon",
-      icon: "play_circle",
-    },
-    {
-      title: "Foundations: Grace and Community",
-      speaker: "Teaching Series",
-      date: "Study series",
-      category: "Bible Study",
-      icon: "menu_book",
-    },
-    {
-      title: "Prayer and Purpose",
-      speaker: "Mid-week teaching",
-      date: "Mid-week",
-      category: "Devotional",
-      icon: "auto_stories",
+      title: "Sermons coming soon",
+      speaker: churchName,
+      date: "",
+      category: "Announcement",
+      icon: "info",
+      description: "Published sermons will appear here when branch leadership adds them.",
+      media_url: null,
     },
   ];
+}
+
+function applyDemoEventFallbacks(locals) {
+  locals.upcomingEvents = [
+    { title: "Sunday Worship Service", when: locals.serviceTimes.split("\n")[0] || "Sunday · 9:00 AM" },
+    { title: "Mid-week Bible Study", when: "Wednesday · 6:00 PM", description: "Prayer and study in the main hall." },
+    { title: "Community Fellowship", when: "First Friday monthly · 6:30 PM", description: "Food, fellowship, and connection." },
+  ];
+  locals.hasDbEvents = false;
+}
+
+function branchPublicLocalsWithoutDb(org, branch, activePage) {
+  const merged = buildBranchFallbacks(org, branch);
+  const locals = preparePublicViewModel(org, branch, merged, { activePage });
+  if (activePage === "home" || activePage === "events") {
+    applyDemoEventFallbacks(locals);
+  }
+  return locals;
 }
 
 function buildVerticalApexLocals() {
@@ -87,7 +94,17 @@ async function loadBranchPublicLocals(req, activePage) {
   const branch = ctx.branch;
   const pool = getPgPool();
 
-  const published = await websiteContentRepo.getPublishedWebsiteContentForBranch(pool, branch.id);
+  if (!pool) {
+    return branchPublicLocalsWithoutDb(org, branch, activePage);
+  }
+
+  let published = null;
+  try {
+    published = await websiteContentRepo.getPublishedWebsiteContentForBranch(pool, branch.id);
+  } catch {
+    return branchPublicLocalsWithoutDb(org, branch, activePage);
+  }
+
   const merged = published ? mergeWithFallbacks(published, org, branch) : buildBranchFallbacks(org, branch);
 
   const locals = preparePublicViewModel(org, branch, merged, { activePage });
@@ -114,12 +131,7 @@ async function loadBranchPublicLocals(req, activePage) {
       }));
       locals.hasDbEvents = true;
     } else {
-      locals.upcomingEvents = [
-        { title: "Sunday Worship Service", when: locals.serviceTimes.split("\n")[0] || "Sunday · 9:00 AM" },
-        { title: "Mid-week Bible Study", when: "Wednesday · 6:00 PM", description: "Prayer and study in the main hall." },
-        { title: "Community Fellowship", when: "First Friday monthly · 6:30 PM", description: "Food, fellowship, and connection." },
-      ];
-      locals.hasDbEvents = false;
+      applyDemoEventFallbacks(locals);
     }
     if (activePage === "home") {
       const publicMinistries = await ministriesRepo.listPublishedMinistriesForBranch(pool, branch.id, {
@@ -295,9 +307,18 @@ function registerPublicPagesRoutes(router) {
       if (ctx.kind !== "branch" || !ctx.branch || !ctx.organization) {
         return res.status(404).type("text").send("Not found.");
       }
-      const merged = buildBranchFallbacks(ctx.organization, ctx.branch);
-      const locals = preparePublicViewModel(ctx.organization, ctx.branch, merged, { activePage: "sermons" });
-      locals.sermonSamples = demoSermonSamples(locals.churchName);
+      const locals = await loadBranchPublicLocals(req, "sermons");
+      const pool = getPgPool();
+      let published = [];
+      if (pool) {
+        try {
+          published = await sermonsRepo.listPublicSermonsForBranch(pool, ctx.branch.id, { limit: 24 });
+        } catch {
+          published = [];
+        }
+      }
+      locals.sermonSamples = published.length > 0 ? published : fallbackSermonSamples(locals.churchName);
+      locals.hasDbSermons = published.length > 0;
       return res.render("church/public/sermons", locals);
     } catch (e) {
       return next(e);

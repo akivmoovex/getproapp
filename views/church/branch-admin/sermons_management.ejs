@@ -1,0 +1,37 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Sermons</h1>
+          <p class="church-branch-topbar__subtitle">Publish sermons for the public website</p>
+        </div>
+        <a class="church-btn church-btn--primary" href="/branch/sermons/new">Add sermon</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <div class="church-branch-filter-tabs">
+        <% sermonFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/sermons<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1) %></a>
+        <% }); %>
+      </div>
+      <section class="church-branch-panel">
+        <% if ((sermons || []).length === 0) { %>
+        <p class="church-branch-empty">No sermons in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Title</th><th>Speaker</th><th>Category</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <% sermons.forEach(function (s) { %>
+              <tr>
+                <td><%= s.title %></td>
+                <td><%= s.speaker || '—' %></td>
+                <td><%= s.category || '—' %></td>
+                <td><span class="church-status-chip church-status-chip--<%= s.status === 'published' ? 'verified' : 'pending' %>"><%= s.status %></span></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/sermons/<%= s.id %>">Edit</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

@@ -76,12 +76,15 @@ function createAttachChurchContext() {
       }
 
       const pool = getPgPool();
-      const branch = await branchesRepo.findBranchByHostSlug(pool, hostSlug);
+      let branch = null;
       let organization = null;
-      if (branch) {
-        organization = await organizationsRepo.findOrganizationById(pool, branch.organization_id);
-      } else {
-        organization = await organizationsRepo.findOrganizationBySlug(pool, hostSlug);
+      if (pool) {
+        branch = await branchesRepo.findBranchByHostSlug(pool, hostSlug);
+        if (branch) {
+          organization = await organizationsRepo.findOrganizationById(pool, branch.organization_id);
+        } else {
+          organization = await organizationsRepo.findOrganizationBySlug(pool, hostSlug);
+        }
       }
 
       req.churchContext = {

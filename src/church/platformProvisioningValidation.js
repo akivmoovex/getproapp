@@ -1,6 +1,9 @@
 "use strict";
 
+const { getChurchHostDomain } = require("./host");
+
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{0,62}$/;
+const ADMIN_USERNAME_PATTERN = /^[a-z0-9._-]{3,64}$/;
 const RESERVED_SLUGS = new Set([
   "www",
   "admin",
@@ -12,6 +15,9 @@ const RESERVED_SLUGS = new Set([
   "global",
   "demo",
   "zm",
+  "blessboard",
+  "getpro",
+  "support",
 ]);
 
 const BRANCH_HOST_RESERVED_SLUGS = new Set([
@@ -48,9 +54,16 @@ function normalizeSlug(value) {
 }
 
 function churchPublicHost(slug) {
-  const base = (process.env.BASE_DOMAIN || "getproapp.org").toLowerCase().trim();
+  const domain = getChurchHostDomain();
   const s = normalizeSlug(slug);
-  return s ? `${s}.church.${base}` : "";
+  return s ? `${s}.${domain}` : "";
+}
+
+function churchPublicUrl(slug, path = "") {
+  const host = churchPublicHost(slug);
+  if (!host) return "";
+  const suffix = String(path || "").trim();
+  return suffix ? `https://${host}${suffix.startsWith("/") ? suffix : `/${suffix}`}` : `https://${host}`;
 }
 
 function validateSlugField(value, label, reservedSet = RESERVED_SLUGS) {
@@ -71,11 +84,27 @@ function validateBranchHostSlugField(value) {
   return validateSlugField(value, "Branch host slug", BRANCH_HOST_RESERVED_SLUGS);
 }
 
+function validateAdminUsername(value, label = "Admin") {
+  const username = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (!username) return { ok: true, value: null };
+  if (!ADMIN_USERNAME_PATTERN.test(username)) {
+    return {
+      ok: false,
+      error: `${label} username must be 3–64 characters: lowercase letters, numbers, dots, hyphens, or underscores.`,
+    };
+  }
+  return { ok: true, value: username };
+}
+
 function validateAdminAccount(body, prefix) {
   const fullName = String(body[`${prefix}_full_name`] || "").trim();
   const email = String(body[`${prefix}_email`] || "").trim();
   const phone = String(body[`${prefix}_phone`] || "").trim();
   const password = String(body[`${prefix}_temporary_password`] || "");
+  const usernameField =
+    prefix === "branch_admin" ? String(body.branch_admin_username || "").trim().toLowerCase() : "";
   const label =
     prefix === "hq" ? "HQ admin" : prefix === "branch_admin" ? "Branch admin" : "Admin";
 
@@ -88,10 +117,34 @@ function validateAdminAccount(body, prefix) {
   if (password.length < 8) {
     return { ok: false, error: `${label} temporary password must be at least 8 characters.` };
   }
+  const usernameCheck = validateAdminUsername(usernameField, label);
+  if (!usernameCheck.ok) return { ok: false, error: usernameCheck.error };
   return {
     ok: true,
-    data: { full_name: fullName, email, phone, temporary_password: password },
+    data: {
+      full_name: fullName,
+      email,
+      phone,
+      username: usernameCheck.value,
+      temporary_password: password,
+    },
   };
+}
+
+function parseBooleanField(value, defaultValue = true) {
+  if (value == null || value === "") return defaultValue;
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "off" || normalized === "0" || normalized === "false" || normalized === "no") {
+    return false;
+  }
+  return true;
+}
+
+function normalizeBranchStatus(value) {
+  const status = String(value || "active").trim().toLowerCase();
+  if (status === "inactive" || status === "suspended") return "suspended";
+  if (status === "archived") return "archived";
+  return "active";
 }
 
 function formFromBody(body) {
@@ -119,7 +172,14 @@ function formFromBody(body) {
     branch_admin_full_name: String(b.branch_admin_full_name || "").trim(),
     branch_admin_email: String(b.branch_admin_email || "").trim(),
     branch_admin_phone: String(b.branch_admin_phone || "").trim(),
+    branch_admin_username: String(b.branch_admin_username || "")
+      .trim()
+      .toLowerCase(),
     branch_admin_temporary_password: String(b.branch_admin_temporary_password || ""),
+    branch_address: String(b.branch_address || "").trim(),
+    branch_status: normalizeBranchStatus(b.branch_status),
+    public_site_enabled: parseBooleanField(b.public_site_enabled, true),
+    member_registration_enabled: parseBooleanField(b.member_registration_enabled, true),
   };
 }
 
@@ -177,7 +237,10 @@ function validateProvisioningBody(body) {
         pastor_name: form.pastor_name || null,
         contact_phone: form.contact_phone || null,
         contact_email: form.contact_email || null,
-        status: "active",
+        location_text: form.branch_address || null,
+        welcome_message: `Welcome to ${form.branch_name}`,
+        service_times: "Sunday · Contact the church office for service times",
+        status: form.branch_status,
       },
       hqAdmin: {
         full_name: hq.data.full_name,
@@ -189,7 +252,12 @@ function validateProvisioningBody(body) {
         full_name: branchAdmin.data.full_name,
         email: branchAdmin.data.email,
         phone: branchAdmin.data.phone,
+        username: branchAdmin.data.username,
         temporary_password: branchAdmin.data.temporary_password,
+      },
+      onboarding: {
+        publishWebsite: form.public_site_enabled,
+        memberRegistrationEnabled: form.member_registration_enabled,
       },
     },
     form,
@@ -209,6 +277,9 @@ function addBranchFormFromBody(body) {
     branch_admin_full_name: String(b.branch_admin_full_name || "").trim(),
     branch_admin_email: String(b.branch_admin_email || "").trim(),
     branch_admin_phone: String(b.branch_admin_phone || "").trim(),
+    branch_admin_username: String(b.branch_admin_username || "")
+      .trim()
+      .toLowerCase(),
     branch_admin_temporary_password: String(b.branch_admin_temporary_password || ""),
   };
 }
@@ -364,7 +435,12 @@ function validateAddBranchBody(body, organization) {
         full_name: branchAdmin.data.full_name,
         email: branchAdmin.data.email,
         phone: branchAdmin.data.phone,
+        username: branchAdmin.data.username,
         temporary_password: branchAdmin.data.temporary_password,
+      },
+      onboarding: {
+        publishWebsite: true,
+        memberRegistrationEnabled: true,
       },
     },
     form,
@@ -373,12 +449,15 @@ function validateAddBranchBody(body, organization) {
 
 module.exports = {
   SLUG_PATTERN,
+  ADMIN_USERNAME_PATTERN,
   RESERVED_SLUGS,
   BRANCH_HOST_RESERVED_SLUGS,
   ORGANIZATION_RESERVED_SLUGS,
   PLAN_CODES,
   normalizeSlug,
   churchPublicHost,
+  churchPublicUrl,
+  validateAdminUsername,
   validateProvisioningBody,
   validateAddBranchBody,
   validateUpdateBranchBody,

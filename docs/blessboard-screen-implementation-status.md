@@ -46,8 +46,8 @@ Statuses: **Matches** · **Partial** · **Placeholder** · **Missing** · **Need
 | Ministries | Mobile | *(no dedicated PNG in export set)* | `/ministries` | `ministries.ejs` | Partial | Bento tiles on homepage only |
 | Events / Calendar | Desktop | `01-public-website/05-public-events-calendar-desktop/05-public-events-calendar-desktop.png` | `/events` | `views/church/public/events.ejs` | Partial | List/cards; no calendar grid widget |
 | Events / Calendar | Mobile | `01-public-website/05-public-events-calendar-mobile/05-public-events-calendar-mobile.png` | `/events` | `events.ejs` | Partial | Stacked event rows; demo fallback events |
-| Sermons / Resources | Desktop | `01-public-website/06-public-sermons-resources-desktop/06-public-sermons-resources-desktop.png` | `/sermons` | `views/church/public/sermons.ejs` | Partial | Demo sermon cards; no media player |
-| Sermons / Resources | Mobile | `01-public-website/06-public-sermons-resources-mobile/06-public-sermons-resources-mobile.png` | `/sermons` | `sermons.ejs` | Partial | Stacked sermon cards |
+| Sermons / Resources | Desktop | `01-public-website/06-public-sermons-resources-desktop/06-public-sermons-resources-desktop.png` | `/sermons` | `views/church/public/sermons.ejs` | Partial | DB-backed via `church_sermons`; media upload not wired |
+| Sermons / Resources | Mobile | `01-public-website/06-public-sermons-resources-mobile/06-public-sermons-resources-mobile.png` | `/sermons` | `sermons.ejs` | Partial | Seeded demo sermons render as cards |
 | Giving information | Desktop | `01-public-website/07-public-giving-information-desktop/07-public-giving-information-desktop.png` | `/giving` | `views/church/public/giving.ejs` | Partial | Method icons, bank detail cards |
 | Giving information | Mobile | `01-public-website/07-public-giving-information-mobile/07-public-giving-information-mobile.png` | `/giving` | `giving.ejs` | Partial | Stacked method cards |
 | Contact | Desktop | `01-public-website/08-public-contact-desktop/08-public-contact-desktop.png` | `/contact` | `views/church/public/contact.ejs` | Partial | Two-column layout; form display-only |
@@ -82,10 +82,10 @@ Statuses: **Matches** · **Partial** · **Placeholder** · **Missing** · **Need
 | Events calendar | Mobile | `03-member-portal/17-member-events-calendar-mobile/17-member-events-calendar-mobile.png` | `/member/events` | `events.ejs` | Partial | — |
 | My ministries | Desktop | `03-member-portal/18-member-my-ministries-desktop/18-member-my-ministries-desktop.png` | `/member/my-ministries` | `views/church/member/my_ministries.ejs` | Partial | Role cards |
 | My ministries | Mobile | `03-member-portal/18-member-my-ministries-mobile/18-member-my-ministries-mobile.png` | `/member/my-ministries` | `my_ministries.ejs` | Partial | — |
-| Resources & Study | Desktop | `03-member-portal/19-member-resources-study-desktop/19-member-resources-study-desktop.png` | `/member/resources` | `views/church/member/resources.ejs` | Partial | Resource rows + coming-soon badges |
-| Resources & Study | Mobile | `03-member-portal/19-member-resources-study-mobile/19-member-resources-study-mobile.png` | `/member/resources` | `resources.ejs` | Partial | Stacked resource rows |
-| Church Forms & Docs | Desktop | `03-member-portal/20-member-forms-documents-desktop/20-member-forms-documents-desktop.png` | `/member/forms` | `views/church/member/forms.ejs` | Partial | Document rows + CTA |
-| Church Forms & Docs | Mobile | `03-member-portal/20-member-forms-documents-mobile/20-member-forms-documents-mobile.png` | `/member/forms` | `forms.ejs` | Partial | Stacked document rows |
+| Resources & Study | Desktop | `03-member-portal/19-member-resources-study-desktop/19-member-resources-study-desktop.png` | `/member/resources` | `views/church/member/resources.ejs` | Partial | DB-backed via `church_resources` type `study` |
+| Resources & Study | Mobile | `03-member-portal/19-member-resources-study-mobile/19-member-resources-study-mobile.png` | `/member/resources` | `resources.ejs` | Partial | Seeded demo resources |
+| Church Forms & Docs | Desktop | `03-member-portal/20-member-forms-documents-desktop/20-member-forms-documents-desktop.png` | `/member/forms` | `views/church/member/forms.ejs` | Partial | DB-backed via `church_resources` types `form`/`document` |
+| Church Forms & Docs | Mobile | `03-member-portal/20-member-forms-documents-mobile/20-member-forms-documents-mobile.png` | `/member/forms` | `forms.ejs` | Partial | Seeded demo forms/documents |
 | Submit Online Request | Desktop | *(see member requests flow)* | `/member/requests/new` | `views/church/member/request_new.ejs` | Partial | — |
 | Submit Online Request | Mobile | *(Stitch member requests PNGs in extended flow)* | `/member/requests/new` | `request_new.ejs` | Partial | — |
 | My Request Status | Desktop | *(requests list)* | `/member/requests` | `views/church/member/requests.ejs` | Partial | Status chips |

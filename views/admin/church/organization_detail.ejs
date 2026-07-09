@@ -31,6 +31,15 @@
         <% if (typeof provisioned !== 'undefined' && provisioned) { %>
           <div class="flash flash--info" role="status">
             Church organization provisioned successfully. Temporary passwords were set as entered. Share them securely.
+            <% if (typeof branches !== 'undefined' && branches && branches.length) { %>
+              <% var provisionHost = churchPublicHost(branches[0].host_slug || branches[0].slug); %>
+              <ul style="margin:0.75rem 0 0 1rem;padding:0;">
+                <li>Public site: <code>https://<%= provisionHost %></code></li>
+                <li>Branch admin login: <code>https://<%= provisionHost %>/branch/login</code></li>
+                <li>Member registration: <code>https://<%= provisionHost %>/register</code></li>
+                <li>HQ login: <code>https://<%= provisionHost %>/hq/login</code></li>
+              </ul>
+            <% } %>
           </div>
         <% } %>
 

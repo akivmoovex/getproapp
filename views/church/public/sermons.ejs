@@ -5,25 +5,42 @@
           <h1 class="church-section__title">Sermons &amp; Resources</h1>
           <p class="church-section__subtitle">Messages, study materials, and church resources from <%= churchName %>.</p>
         </header>
+        <% if ((sermonSamples || []).length === 0) { %>
+        <div class="church-empty-state">
+          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">menu_book</span>
+          <p class="church-empty-state__title">Sermons coming soon</p>
+          <p class="church-empty-state__body">Published sermons will appear here when branch leadership adds them.</p>
+        </div>
+        <% } else { %>
         <div class="church-sermon-grid">
-          <% (sermonSamples || []).forEach(function (item) { %>
+          <% sermonSamples.forEach(function (item) { %>
           <article class="church-sermon-card">
             <div class="church-sermon-card__media" aria-hidden="true">
               <span class="material-symbols-outlined"><%= item.icon %></span>
             </div>
             <div class="church-sermon-card__body">
-              <p class="church-sermon-card__meta"><%= item.date %> · <%= item.category %></p>
+              <% if (item.date || item.category) { %>
+              <p class="church-sermon-card__meta"><%= [item.date, item.category].filter(Boolean).join(' · ') %></p>
+              <% } %>
               <h2 class="church-sermon-card__title"><%= item.title %></h2>
-              <p class="church-sermon-card__speaker"><%= item.speaker %></p>
-              <a class="church-sermon-card__cta" href="#" onclick="return false;">Listen / Read</a>
+              <% if (item.speaker) { %><p class="church-sermon-card__speaker"><%= item.speaker %><% if (item.scripture) { %> · <%= item.scripture %><% } %></p><% } %>
+              <% if (item.description) { %><p class="church-sermon-card__speaker"><%= item.description %></p><% } %>
+              <% if (item.media_url) { %>
+              <a class="church-sermon-card__cta" href="<%= item.media_url %>" target="_blank" rel="noopener noreferrer">Listen / Read</a>
+              <% } else if (typeof hasDbSermons !== 'undefined' && hasDbSermons) { %>
+              <span class="church-sermon-card__cta">Message available</span>
+              <% } %>
             </div>
           </article>
           <% }); %>
         </div>
+        <% if (typeof hasDbSermons === 'undefined' || !hasDbSermons) { %>
         <div class="church-content-note">
           <span class="material-symbols-outlined" aria-hidden="true">info</span>
-          <p>Sample resources shown for layout preview. New sermons and study materials will be published here by church leadership.</p>
+          <p>No published sermons yet. Check back after branch leadership publishes content.</p>
         </div>
+        <% } %>
+        <% } %>
         <p class="church-section__subtitle"><a href="/">← Back to homepage</a></p>
       </div>
     </section>

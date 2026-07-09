@@ -7,6 +7,9 @@ const branchAdminsRepo = require("../db/pg/church/branchAdminsRepo");
 const announcementsRepo = require("../db/pg/church/announcementsRepo");
 const eventsRepo = require("../db/pg/church/eventsRepo");
 const ministriesRepo = require("../db/pg/church/ministriesRepo");
+const websiteContentRepo = require("../db/pg/church/websiteContentRepo");
+const sermonsRepo = require("../db/pg/church/sermonsRepo");
+const resourcesRepo = require("../db/pg/church/resourcesRepo");
 const tenantsRepo = require("../db/pg/tenantsRepo");
 
 const DEMO_ORG_SLUG = "demo";
@@ -51,6 +54,168 @@ async function seedDemoBranchAdminIfMissing(pool, org, branch) {
       if (retryUsername.rows[0]) return retryUsername.rows[0];
     }
     throw err;
+  }
+}
+
+async function seedDemoWebsiteContentIfMissing(pool, org, branch) {
+  const existing = await websiteContentRepo.getPublishedWebsiteContentForBranch(pool, branch.id);
+  if (existing) return existing;
+
+  const draft = await websiteContentRepo.getWebsiteContentForBranch(pool, branch.id);
+  if (draft && draft.status === "published") return draft;
+
+  const leadership = {
+    pastor: {
+      name: branch.pastor_name || "Rev. Demo Pastor",
+      title: "Senior Pastor",
+      bio: "Serving BlessBoard Demo Church with a heart for discipleship, community, and faithful teaching.",
+    },
+    assistant_pastor: { name: "Sarah Chilufya" },
+    elders: ["Mark Banda", "Grace Mumba"],
+  };
+
+  const content = {
+    organization_id: org.id,
+    homepage_hero_title: branch.name || "BlessBoard Demo Church",
+    homepage_hero_subtitle: "Welcome home",
+    welcome_message: branch.welcome_message,
+    service_times: branch.service_times,
+    location_text: branch.location_text,
+    about_title: `About ${branch.name}`,
+    about_body:
+      "BlessBoard Demo Church is a Christ-centered community demonstrating the BlessBoard platform. We welcome visitors, members, and branch admins exploring the public site and member portal.",
+    mission_text: "To make disciples of Jesus Christ who love God, love people, and serve the community.",
+    vision_text: "A transformed community where every person experiences grace and fellowship.",
+    values_text:
+      "Structured Compassion | We combine reliable organization with pastoral warmth.\nCommunity First | We believe in being a hub for local connection.\nBiblical Integrity | Our foundation is built on Scripture.",
+    leadership_json: leadership,
+    ministries_json: [],
+    contact_phone: branch.contact_phone || "+260 97 000 0000",
+    contact_email: branch.contact_email || "hello@demo.blessboard.com",
+    office_hours: "Mon–Fri · 08:00 – 17:00\nSaturday · 09:00 – 13:00\nSunday · Service times",
+    address: branch.location_text || "123 BlessBoard Avenue, Demo City",
+    map_embed_placeholder: "Map preview for BlessBoard Demo Church.",
+    giving_bank_details: "",
+    giving_mobile_money: "",
+    giving_categories: "Tithes, Offerings, Missions",
+    giving_instructions:
+      "Your generosity supports ministry and outreach. Giving details are managed by branch leadership.",
+    giving_qr_placeholder: "",
+    footer_message: "Member registration and login are available on your branch church site.",
+    updated_by_admin_id: null,
+  };
+
+  await websiteContentRepo.upsertWebsiteDraftForBranch(pool, branch.id, content);
+  return websiteContentRepo.publishWebsiteContentForBranch(pool, branch.id, null);
+}
+
+async function seedDemoSermonsIfMissing(pool, org, branch) {
+  const count = await sermonsRepo.countSermonsForBranch(pool, branch.id);
+  if (count > 0) return;
+
+  const samples = [
+    {
+      title: "Walking by Faith in Uncertain Times",
+      speaker: "Rev. Demo Pastor",
+      category: "Sunday Sermon",
+      description: "A message on trusting God through change and challenge.",
+      scripture: "Hebrews 11:1",
+    },
+    {
+      title: "Foundations: Grace and Community",
+      speaker: "BlessBoard Teaching Team",
+      category: "Bible Study",
+      description: "Study notes from our foundations series.",
+      scripture: "Ephesians 2:8",
+    },
+    {
+      title: "Prayer and Purpose",
+      speaker: "Mid-week teaching",
+      category: "Devotional",
+      description: "A devotional on prayerful living.",
+      scripture: "Philippians 4:6",
+    },
+  ];
+
+  for (const [idx, sample] of samples.entries()) {
+    await sermonsRepo.createSermonForBranch(pool, {
+      organization_id: org.id,
+      branch_id: branch.id,
+      ...sample,
+      sermon_date: new Date().toISOString().slice(0, 10),
+      status: "published",
+      sort_order: idx,
+      created_by_admin_id: null,
+    });
+  }
+}
+
+async function seedDemoResourcesIfMissing(pool, org, branch) {
+  const studyCount = await resourcesRepo.countResourcesForBranch(pool, branch.id, { resource_type: "study" });
+  if (studyCount === 0) {
+    await resourcesRepo.createResourceForBranch(pool, {
+      organization_id: org.id,
+      branch_id: branch.id,
+      title: "Weekly Bible Study Notes",
+      description: "PDF · Updated weekly",
+      resource_type: "study",
+      visibility: "members",
+      status: "published",
+      sort_order: 1,
+      created_by_admin_id: null,
+    });
+    await resourcesRepo.createResourceForBranch(pool, {
+      organization_id: org.id,
+      branch_id: branch.id,
+      title: "Devotional Series",
+      description: "Reading plan · 30 days",
+      resource_type: "study",
+      visibility: "members",
+      status: "published",
+      sort_order: 2,
+      created_by_admin_id: null,
+    });
+  }
+
+  const docCount = await resourcesRepo.countResourcesForBranch(pool, branch.id, { resource_type: "document" });
+  if (docCount === 0) {
+    await resourcesRepo.createResourceForBranch(pool, {
+      organization_id: org.id,
+      branch_id: branch.id,
+      title: "Church Policies & Guidelines",
+      description: "PDF · Leadership approved",
+      resource_type: "document",
+      visibility: "members",
+      status: "published",
+      sort_order: 1,
+      created_by_admin_id: null,
+    });
+  }
+
+  const formCount = await resourcesRepo.countResourcesForBranch(pool, branch.id, { resource_type: "form" });
+  if (formCount === 0) {
+    await resourcesRepo.createResourceForBranch(pool, {
+      organization_id: org.id,
+      branch_id: branch.id,
+      title: "Membership Information Form",
+      description: "PDF · Church office",
+      resource_type: "form",
+      visibility: "members",
+      status: "published",
+      sort_order: 1,
+      created_by_admin_id: null,
+    });
+    await resourcesRepo.createResourceForBranch(pool, {
+      organization_id: org.id,
+      branch_id: branch.id,
+      title: "Ministry Volunteer Application",
+      description: "DOCX · Ministries team",
+      resource_type: "form",
+      visibility: "members",
+      status: "published",
+      sort_order: 2,
+      created_by_admin_id: null,
+    });
   }
 }
 
@@ -191,6 +356,9 @@ async function seedChurchDemoOrganizationIfMissing(pool) {
   }
 
   await seedDemoPublicContentIfMissing(pool, org, branch);
+  await seedDemoWebsiteContentIfMissing(pool, org, branch);
+  await seedDemoSermonsIfMissing(pool, org, branch);
+  await seedDemoResourcesIfMissing(pool, org, branch);
   await seedDemoBranchAdminIfMissing(pool, org, branch);
 
   return { organization: org, branch };

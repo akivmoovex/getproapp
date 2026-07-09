@@ -1,0 +1,43 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Resources</h1>
+          <p class="church-branch-topbar__subtitle">Study materials, documents, and forms for members</p>
+        </div>
+        <a class="church-btn church-btn--primary" href="/branch/resources/new">Add resource</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <div class="church-branch-filter-tabs">
+        <% resourceFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/resources?<%= 'status=' + f + (resourceTypeFilter !== 'all' ? '&type=' + resourceTypeFilter : '') %>"><%= f === 'all' ? 'All statuses' : f.charAt(0).toUpperCase() + f.slice(1) %></a>
+        <% }); %>
+      </div>
+      <div class="church-branch-filter-tabs">
+        <% resourceTypes.forEach(function (t) { %>
+        <a class="church-branch-filter-tab <%= resourceTypeFilter === t ? 'church-branch-filter-tab--active' : '' %>" href="/branch/resources?type=<%= t %><%= statusFilter !== 'all' ? '&status=' + statusFilter : '' %>"><%= t %></a>
+        <% }); %>
+        <a class="church-branch-filter-tab <%= resourceTypeFilter === 'all' ? 'church-branch-filter-tab--active' : '' %>" href="/branch/resources<%= statusFilter !== 'all' ? '?status=' + statusFilter : '' %>">All types</a>
+      </div>
+      <section class="church-branch-panel">
+        <% if ((resources || []).length === 0) { %>
+        <p class="church-branch-empty">No resources in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Title</th><th>Type</th><th>Visibility</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <% resources.forEach(function (r) { %>
+              <tr>
+                <td><%= r.title %></td>
+                <td><%= r.resource_type %></td>
+                <td><%= r.visibility %></td>
+                <td><span class="church-status-chip church-status-chip--<%= r.status === 'published' ? 'verified' : 'pending' %>"><%= r.status %></span></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/resources/<%= r.id %>">Edit</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

@@ -107,12 +107,11 @@ test("branch homepage does not use legacy horizontal mobile nav strip", { skip: 
   assert.doesNotMatch(res.text, /church-public-mobile-nav/);
 });
 
-test("sermons page uses sermon cards instead of bare placeholder copy only", { skip: !isPgConfigured() }, async () => {
+test("sermons page uses sermon cards from DB when available", { skip: !isPgConfigured() }, async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/sermons");
   assert.equal(res.status, 200);
   assert.match(res.text, /church-sermon-card/);
-  assert.doesNotMatch(res.text, /Sermons and resources will be published here soon/i);
 });
 
 test("branch admin shell includes mobile drawer and topbar markup", () => {

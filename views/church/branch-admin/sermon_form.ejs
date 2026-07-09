@@ -1,0 +1,49 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title"><%= isEdit ? 'Edit sermon' : 'Add sermon' %></h1>
+          <p class="church-branch-topbar__subtitle">Published sermons appear on the public /sermons page</p>
+        </div>
+        <a class="church-btn church-btn--ghost" href="/branch/sermons">Back to sermons</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <section class="church-branch-panel">
+        <form class="church-form" method="post" action="<%= isEdit ? '/branch/sermons/' + sermonId : '/branch/sermons' %>">
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="title">Title</label>
+              <input class="church-input" id="title" name="title" required value="<%= form.title %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="speaker">Speaker</label>
+              <input class="church-input" id="speaker" name="speaker" value="<%= form.speaker %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="sermon_date">Date</label>
+              <input class="church-input" id="sermon_date" name="sermon_date" type="date" value="<%= form.sermon_date %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="category">Category</label>
+              <input class="church-input" id="category" name="category" value="<%= form.category %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="scripture">Scripture</label>
+              <input class="church-input" id="scripture" name="scripture" value="<%= form.scripture %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="media_url">Media URL (optional)</label>
+              <input class="church-input" id="media_url" name="media_url" type="url" value="<%= form.media_url %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="description">Description</label>
+              <textarea class="church-input church-input--textarea" id="description" name="description" rows="4"><%= form.description %></textarea>
+            </div>
+          </div>
+          <div class="church-auth-card__actions">
+            <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft">Save draft</button>
+            <button class="church-btn church-btn--primary" type="submit" name="_intent" value="publish">Publish</button>
+          </div>
+        </form>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

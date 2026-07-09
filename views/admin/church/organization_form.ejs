@@ -15,7 +15,7 @@
           <div>
             <h1 class="admin-dashboard__title">Create church organization</h1>
             <p class="admin-dashboard__subtitle muted">
-              Provisions organization, first branch tenant, HQ admin, and branch admin in one transaction.
+              Provisions organization, first branch at <strong>&lt;slug&gt;.blessboard.com</strong>, HQ admin, branch admin, and starter website content.
             </p>
           </div>
         </header>
@@ -77,13 +77,21 @@
               <label class="input-field__label" for="branch_host_slug">Branch host slug *</label>
               <input id="branch_host_slug" class="input-field__control" name="branch_host_slug" required pattern="[a-z0-9][a-z0-9-]{0,62}" value="<%= f.branch_host_slug || f.organization_slug || '' %>" />
               <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">
-                Public host preview: <strong id="host-preview"><%= (f.branch_host_slug || f.organization_slug) ? churchPublicHost(f.branch_host_slug || f.organization_slug) : '—' %></strong>
+                Public domain preview: <strong id="host-preview"><%= (f.branch_host_slug || f.organization_slug) ? churchPublicHost(f.branch_host_slug || f.organization_slug) : '—' %></strong>
               </p>
-              <p class="muted" style="font-size:0.85rem;">Unique public host for this branch tenant.</p>
+              <p class="muted" style="font-size:0.85rem;">Lowercase letters, numbers, and hyphens only. Reserved slugs (www, admin, demo, blessboard, etc.) are blocked.</p>
             </div>
             <div class="input-field">
               <label class="input-field__label" for="branch_city">Branch city</label>
               <input id="branch_city" class="input-field__control" name="branch_city" value="<%= f.branch_city || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_country">Branch country</label>
+              <input id="branch_country" class="input-field__control" name="branch_country" value="<%= f.branch_country || f.country || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_address">Address</label>
+              <input id="branch_address" class="input-field__control" name="branch_address" value="<%= f.branch_address || '' %>" />
             </div>
             <div class="input-field">
               <label class="input-field__label" for="pastor_name">Pastor name</label>
@@ -96,6 +104,27 @@
             <div class="input-field">
               <label class="input-field__label" for="contact_email">Contact email</label>
               <input id="contact_email" class="input-field__control" name="contact_email" type="email" value="<%= f.contact_email || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_status">Branch status</label>
+              <select id="branch_status" class="input-field__control" name="branch_status">
+                <option value="active" <%= (f.branch_status || 'active') === 'active' ? 'selected' : '' %>>Active (public site and registration enabled)</option>
+                <option value="suspended" <%= f.branch_status === 'suspended' ? 'selected' : '' %>>Suspended (site and registration blocked)</option>
+              </select>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label">
+                <input type="checkbox" name="public_site_enabled" value="on" <%= f.public_site_enabled !== false ? 'checked' : '' %> />
+                Publish starter website content immediately
+              </label>
+              <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">Creates about/mission/vision/contact placeholders in the website editor.</p>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label">
+                <input type="checkbox" name="member_registration_enabled" value="on" <%= f.member_registration_enabled !== false ? 'checked' : '' %> />
+                Member registration enabled
+              </label>
+              <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">Requires active branch status. Members register at <code>/register</code> on the branch host.</p>
             </div>
           </div>
 
@@ -127,6 +156,11 @@
               <input id="branch_admin_full_name" class="input-field__control" name="branch_admin_full_name" required value="<%= f.branch_admin_full_name || '' %>" />
             </div>
             <div class="input-field">
+              <label class="input-field__label" for="branch_admin_username">Username</label>
+              <input id="branch_admin_username" class="input-field__control" name="branch_admin_username" pattern="[a-z0-9._-]{3,64}" value="<%= f.branch_admin_username || '' %>" />
+              <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">Optional. Defaults to email if left blank.</p>
+            </div>
+            <div class="input-field">
               <label class="input-field__label" for="branch_admin_email">Email</label>
               <input id="branch_admin_email" class="input-field__control" name="branch_admin_email" type="email" value="<%= f.branch_admin_email || '' %>" />
             </div>
@@ -152,11 +186,11 @@
         var orgSlug = document.getElementById("organization_slug");
         var branchSlug = document.getElementById("branch_host_slug");
         var preview = document.getElementById("host-preview");
-        var churchHostSuffix = "<%= 'church.' + (process.env.BASE_DOMAIN || 'getproapp.org') %>";
+        var churchHostDomain = "<%= churchPublicHost('x').replace(/^x\./, '') %>";
         function syncPreview() {
           var slug = (branchSlug && branchSlug.value.trim()) || (orgSlug && orgSlug.value.trim()) || "";
           slug = slug.toLowerCase();
-          if (preview) preview.textContent = slug ? slug + "." + churchHostSuffix : "—";
+          if (preview) preview.textContent = slug ? slug + "." + churchHostDomain : "—";
         }
         if (orgSlug) {
           orgSlug.addEventListener("input", function () {

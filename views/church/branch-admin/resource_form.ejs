@@ -1,0 +1,52 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title"><%= isEdit ? 'Edit resource' : 'Add resource' %></h1>
+          <p class="church-branch-topbar__subtitle">Published resources appear in the member portal</p>
+        </div>
+        <a class="church-btn church-btn--ghost" href="/branch/resources">Back to resources</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <section class="church-branch-panel">
+        <form class="church-form" method="post" action="<%= isEdit ? '/branch/resources/' + resourceId : '/branch/resources' %>">
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="title">Title</label>
+              <input class="church-input" id="title" name="title" required value="<%= form.title %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="resource_type">Type</label>
+              <select class="church-input" id="resource_type" name="resource_type">
+                <option value="study" <%= form.resource_type === 'study' ? 'selected' : '' %>>Study</option>
+                <option value="document" <%= form.resource_type === 'document' ? 'selected' : '' %>>Document</option>
+                <option value="form" <%= form.resource_type === 'form' ? 'selected' : '' %>>Form</option>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="visibility">Visibility</label>
+              <select class="church-input" id="visibility" name="visibility">
+                <option value="members" <%= form.visibility === 'members' ? 'selected' : '' %>>Members</option>
+                <option value="public" <%= form.visibility === 'public' ? 'selected' : '' %>>Public</option>
+              </select>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="description">Description</label>
+              <input class="church-input" id="description" name="description" value="<%= form.description %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="file_url">File URL (optional)</label>
+              <input class="church-input" id="file_url" name="file_url" type="url" value="<%= form.file_url %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="external_url">External URL (optional)</label>
+              <input class="church-input" id="external_url" name="external_url" type="url" value="<%= form.external_url %>"/>
+            </div>
+          </div>
+          <div class="church-auth-card__actions">
+            <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft">Save draft</button>
+            <button class="church-btn church-btn--primary" type="submit" name="_intent" value="publish">Publish</button>
+          </div>
+        </form>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

@@ -9,6 +9,7 @@ const hqAdminsRepo = require("./hqAdminsRepo");
 const churchPlanService = require("../../../services/church/churchPlanService");
 const { buildUsageWarnings, normalizePlanCode, getPlanLimit, formatLimitValue, canCreateAdditionalBranch } = require("../../../church/churchPlans");
 const { normalizeSlug } = require("../../../church/platformProvisioningValidation");
+const { onboardNewBranchContent } = require("../../../services/church/branchOnboardingService");
 
 async function checkOrganizationSlugAvailable(pool, slug, client) {
   const db = client || pool;
@@ -299,8 +300,8 @@ async function createChurchBranch(client, fields) {
   const r = await client.query(
     `INSERT INTO public.church_branches (
        organization_id, slug, host_slug, name, status, city, country,
-       pastor_name, contact_phone, contact_email
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       pastor_name, contact_phone, contact_email, welcome_message, service_times, location_text
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
      RETURNING *`,
     [
       fields.organization_id,
@@ -313,6 +314,9 @@ async function createChurchBranch(client, fields) {
       fields.pastor_name,
       fields.contact_phone,
       fields.contact_email,
+      fields.welcome_message || null,
+      fields.service_times || null,
+      fields.location_text || null,
     ]
   );
   return r.rows[0];
@@ -435,6 +439,17 @@ async function provisionChurchOrganization(pool, payload, platformAdminId) {
       metadata_json: { email: branchAdmin.email || null },
     });
 
+    const onboarding = payload.onboarding || { publishWebsite: true, memberRegistrationEnabled: true };
+    try {
+      await onboardNewBranchContent(client, organization, branch, {
+        publishWebsite: onboarding.publishWebsite !== false,
+        includeDraftStarters: true,
+      });
+    } catch (onboardingErr) {
+      onboardingErr.code = onboardingErr.code || "ONBOARDING_CONTENT_FAILED";
+      throw onboardingErr;
+    }
+
     await client.query("COMMIT");
     return { organization, branch, hqAdmin, branchAdmin };
   } catch (err) {
@@ -476,7 +491,7 @@ async function createInitialBranchAdmin(client, fields) {
   const phone = String(fields.phone || "").trim();
   const phoneNorm = phone.replace(/\D/g, "");
   const fullName = String(fields.full_name || "").trim();
-  const username = String(fields.username || email || phoneNorm).trim().toLowerCase();
+  const username = String(fields.username || fields.email || phoneNorm).trim().toLowerCase();
   const r = await client.query(
     `INSERT INTO public.church_branch_admins (
        organization_id, branch_id, username, password_hash, display_name, full_name,
@@ -569,6 +584,17 @@ async function createBranchForOrganization(pool, organizationId, payload, platfo
       target_label: branchAdmin.full_name,
       metadata_json: { email: branchAdmin.email || null },
     });
+
+    const onboarding = payload.onboarding || { publishWebsite: true, memberRegistrationEnabled: true };
+    try {
+      await onboardNewBranchContent(client, organization, branch, {
+        publishWebsite: onboarding.publishWebsite !== false,
+        includeDraftStarters: true,
+      });
+    } catch (onboardingErr) {
+      onboardingErr.code = onboardingErr.code || "ONBOARDING_CONTENT_FAILED";
+      throw onboardingErr;
+    }
 
     await client.query("COMMIT");
     return { organization, branch, branchAdmin };

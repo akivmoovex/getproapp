@@ -668,12 +668,43 @@ function registerMemberPortalRoutes(router) {
     }
   });
 
-  router.get("/member/resources", requireVerifiedMemberSession, ensureMemberAccountActive, (req, res) => {
-    return res.render("church/member/resources", memberPortalLocals(req, {}));
+  router.get("/member/resources", requireVerifiedMemberSession, ensureMemberAccountActive, async (req, res, next) => {
+    try {
+      const branch = req.churchContext.branch;
+      const pool = getPgPool();
+      const resourcesRepo = require("../../db/pg/church/resourcesRepo");
+      const resources = await resourcesRepo.listPublishedResourcesForBranch(pool, branch.id, {
+        resource_type: "study",
+        visibility: "members",
+      });
+      return res.render("church/member/resources", memberPortalLocals(req, { resources }));
+    } catch (e) {
+      return next(e);
+    }
   });
 
-  router.get("/member/forms", requireVerifiedMemberSession, ensureMemberAccountActive, (req, res) => {
-    return res.render("church/member/forms", memberPortalLocals(req, {}));
+  router.get("/member/forms", requireVerifiedMemberSession, ensureMemberAccountActive, async (req, res, next) => {
+    try {
+      const branch = req.churchContext.branch;
+      const pool = getPgPool();
+      const resourcesRepo = require("../../db/pg/church/resourcesRepo");
+      const [documents, forms] = await Promise.all([
+        resourcesRepo.listPublishedResourcesForBranch(pool, branch.id, {
+          resource_type: "document",
+          visibility: "members",
+        }),
+        resourcesRepo.listPublishedResourcesForBranch(pool, branch.id, {
+          resource_type: "form",
+          visibility: "members",
+        }),
+      ]);
+      return res.render(
+        "church/member/forms",
+        memberPortalLocals(req, { documents, forms, formItems: [...forms, ...documents] })
+      );
+    } catch (e) {
+      return next(e);
+    }
   });
 
   router.get("/member/prayer-request", requireVerifiedMemberSession, ensureMemberAccountActive, (req, res) => {

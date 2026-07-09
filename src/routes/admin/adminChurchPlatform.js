@@ -1045,6 +1045,10 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
     }
   });
 
+  router.get("/church/branches/new", requireSuperAdmin, (req, res) => {
+    res.redirect("/admin/church/organizations/new");
+  });
+
   router.get("/church/organizations/new", requireSuperAdmin, (req, res) => {
     res.render("admin/church/organization_form", {
       form: formFromBody({}),
@@ -1097,6 +1101,16 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         return res.status(400).render("admin/church/organization_form", {
           form: formFromBody(req.body),
           error: "Organization slug or admin account already exists.",
+          planCodes: PLAN_CODES,
+          churchPublicHost,
+          activeNav: "church_platform_orgs",
+        });
+      }
+      if (err && err.code === "ONBOARDING_CONTENT_FAILED") {
+        return res.status(400).render("admin/church/organization_form", {
+          form: formFromBody(req.body),
+          error:
+            "Organization was not created because initial website content could not be saved. Please try again or contact support.",
           planCodes: PLAN_CODES,
           churchPublicHost,
           activeNav: "church_platform_orgs",
