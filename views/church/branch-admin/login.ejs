@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title><%= pageTitle %> — Branch Admin Login</title>
+  <title><%= pageTitle %> — BlessBoard Branch Admin Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -13,10 +13,7 @@
 <body class="church-body church-body--auth">
   <header class="church-header church-header--auth">
     <div class="church-header__inner">
-      <a class="church-brand" href="/">
-        <span class="material-symbols-outlined church-brand__icon" aria-hidden="true">church</span>
-        <span class="church-brand__text">GetPro Church</span>
-      </a>
+      <%- include('../partials/brand_lockup') %>
     </div>
   </header>
   <main class="church-auth-main">

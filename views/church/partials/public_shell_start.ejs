@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title><%= pageTitle %> | GetPro Church</title>
-  <meta name="description" content="<%= welcomeMessage %>"/>
+  <title><%= pageTitle %> | BlessBoard</title>
+  <meta name="description" content="<%= typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : welcomeMessage %>"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -17,10 +17,14 @@
   <% } %>
   <header class="church-header">
     <div class="church-header__inner">
+      <% if (isVerticalApex) { %>
+      <%- include('./brand_lockup', { href: typeof isPreview !== 'undefined' && isPreview ? '/branch/website-preview' : '/' }) %>
+      <% } else { %>
       <a class="church-brand" href="<%= typeof isPreview !== 'undefined' && isPreview ? '/branch/website-preview' : '/' %>">
         <span class="material-symbols-outlined church-brand__icon" aria-hidden="true">church</span>
         <span class="church-brand__text"><%= churchName %></span>
       </a>
+      <% } %>
       <nav class="church-nav" aria-label="Primary">
         <% if (!isVerticalApex) { %>
         <a href="<%= isPreview ? '/branch/website-preview' : '/' %>" class="<%= activePage === 'home' ? 'church-nav__active' : '' %>">Home</a>

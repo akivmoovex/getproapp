@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title><%= pageTitle %> — HQ Admin</title>
+  <title><%= pageTitle %> — BlessBoard HQ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -13,13 +13,7 @@
 <body class="church-body church-body--hq-admin">
   <div class="church-branch-layout church-branch-layout--hq">
     <aside class="church-branch-sidebar church-branch-sidebar--hq" aria-label="HQ admin navigation">
-      <div class="church-branch-sidebar__brand">
-        <span class="material-symbols-outlined" aria-hidden="true">corporate_fare</span>
-        <div>
-          <strong>GetPro Church HQ</strong>
-          <span><%= organizationName %></span>
-        </div>
-      </div>
+      <%- include('./sidebar_brand', { sidebarIcon: 'corporate_fare', portalLabel: 'HQ', contextName: organizationName }) %>
       <nav class="church-branch-sidebar__nav">
         <a href="/hq/dashboard" class="church-branch-nav-link">Dashboard</a>
         <a href="/hq/account" class="church-branch-nav-link">Account</a>

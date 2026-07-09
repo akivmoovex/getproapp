@@ -1,0 +1,66 @@
+"use strict";
+
+const path = require("path");
+const express = require("express");
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const request = require("supertest");
+
+const churchRoutes = require("../src/routes/church");
+const { BLESSBOARD_NAME } = require("../src/church/branding");
+
+function makeVerticalApexApp() {
+  const app = express();
+  app.set("view engine", "ejs");
+  app.set("views", path.join(__dirname, "../views"));
+  app.use((req, res, next) => {
+    req.isChurchHost = true;
+    req.churchContext = { kind: "vertical-apex", host: "blessboard.com", organization: null, branch: null };
+    next();
+  });
+  app.use(churchRoutes());
+  return app;
+}
+
+function makeBranchApp() {
+  const app = express();
+  app.set("view engine", "ejs");
+  app.set("views", path.join(__dirname, "../views"));
+  app.use((req, res, next) => {
+    req.isChurchHost = true;
+    req.churchContext = {
+      kind: "branch",
+      orgSlug: "demo",
+      organization: { id: 1, name: "Demo Church", status: "active" },
+      branch: { id: 1, name: "Demo Branch", status: "active", host_slug: "demo" },
+    };
+    next();
+  });
+  app.use(churchRoutes());
+  return app;
+}
+
+test("BlessBoard branding on vertical apex homepage", async () => {
+  const app = makeVerticalApexApp();
+  const res = await request(app).get("/");
+  assert.equal(res.status, 200);
+  assert.match(res.text, new RegExp(BLESSBOARD_NAME));
+  assert.match(res.text, /Powered by GetPro/);
+  assert.doesNotMatch(res.text, /GetPro Church/);
+  assert.match(res.text, /<title>BlessBoard \| BlessBoard<\/title>/);
+});
+
+test("BlessBoard branding on branch public homepage footer", { skip: !require("../src/db/pg/pool").isPgConfigured() }, async () => {
+  const app = makeBranchApp();
+  const res = await request(app).get("/");
+  assert.equal(res.status, 200);
+  assert.match(res.text, /Powered by GetPro/);
+  assert.doesNotMatch(res.text, /GetPro Church/);
+});
+
+test("branch homepage uses blessboard.com sample link on vertical apex only", async () => {
+  const app = makeVerticalApexApp();
+  const res = await request(app).get("/");
+  assert.match(res.text, /kafuebaptist\.blessboard\.com/);
+  assert.doesNotMatch(res.text, /kafuebaptist\.church\.getproapp\.org/);
+});

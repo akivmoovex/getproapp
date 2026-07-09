@@ -1,4 +1,4 @@
-/* GetPro Church — scoped styles (Phase 1). Loaded only from church templates. */
+/* BlessBoard — scoped church module styles. Loaded only from church templates. */
 
 :root {
   --church-violet: #6c5ce7;
@@ -75,6 +75,86 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.brand-lockup {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.brand-lockup--compact .brand-name {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.brand-lockup--compact .brand-powered {
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.brand-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1.15;
+  color: inherit;
+  letter-spacing: -0.01em;
+}
+
+.brand-powered {
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.2;
+  opacity: 0.72;
+  letter-spacing: 0.01em;
+}
+
+.church-brand--compact {
+  align-items: flex-start;
+}
+
+.church-sidebar-brand {
+  display: flex;
+  gap: var(--church-space-md);
+  align-items: flex-start;
+}
+
+.church-sidebar-brand__icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.church-sidebar-brand__text {
+  min-width: 0;
+}
+
+.church-sidebar-brand .brand-name {
+  color: #fff;
+}
+
+.church-sidebar-brand .brand-powered {
+  color: rgba(255, 255, 255, 0.78);
+  opacity: 1;
+}
+
+.church-sidebar-context {
+  display: block;
+  margin-top: var(--church-space-xs);
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
+.church-sidebar-context--secondary {
+  font-weight: 400;
+  opacity: 0.78;
+  margin-top: 2px;
+}
+
+.church-branch-sidebar__brand .church-sidebar-brand .brand-name,
+.church-member-sidebar__brand .church-sidebar-brand .brand-name {
+  color: #fff;
 }
 
 .church-nav {
@@ -308,6 +388,14 @@
 .church-footer__powered {
   margin: 0 0 var(--church-space-sm);
   font-weight: 600;
+}
+
+.church-footer__powered-sub {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 0.75;
+  margin-top: 2px;
 }
 
 .church-footer__note {

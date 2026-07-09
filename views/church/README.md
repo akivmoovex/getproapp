@@ -1,6 +1,6 @@
-# GetPro Church — EJS templates
+# BlessBoard — EJS templates
 
-This folder will contain EJS templates for the GetPro Church module.
+User-facing templates for the BlessBoard church module (`/church` routes).
 
 Subfolders:
 

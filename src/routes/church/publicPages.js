@@ -15,6 +15,11 @@ const {
   preparePublicViewModel,
 } = require("../../services/church/websiteContentService");
 const { prepareGivingDisplay } = require("../../services/church/givingSettingsService");
+const {
+  BLESSBOARD_NAME,
+  BLESSBOARD_TAGLINE,
+  BLESSBOARD_PUBLIC_URL,
+} = require("../../church/branding");
 
 function formatPublicEventWhen(ev) {
   const date = ev.event_date instanceof Date ? ev.event_date : new Date(ev.event_date);
@@ -28,16 +33,17 @@ function formatPublicEventWhen(ev) {
 
 function buildVerticalApexLocals() {
   return {
-    pageTitle: "GetPro Church",
-    churchName: "GetPro Church",
+    pageTitle: BLESSBOARD_NAME,
+    churchName: BLESSBOARD_NAME,
+    metaDescription: BLESSBOARD_TAGLINE,
     isVerticalApex: true,
     activePage: "home",
-    heroTitle: "GetPro Church",
-    heroSubtitle: "GetPro Church vertical",
+    heroTitle: BLESSBOARD_NAME,
+    heroSubtitle: "A GetPro-powered platform",
     welcomeMessage:
-      "A modern church management platform for branches, members, attendance, giving summaries, and monthly reporting — powered by GetPro.",
-    serviceTimes: "Explore a live sample branch at kafuebaptist.church.getproapp.org",
-    locationText: "Multi-tenant church vertical on getproapp.org",
+      "BlessBoard helps churches engage members, manage branches, track attendance, summarize giving, and submit monthly reports — powered by GetPro.",
+    serviceTimes: "Explore a live sample branch at kafuebaptist.blessboard.com",
+    locationText: "Multi-tenant church platform at blessboard.com",
     upcomingEvents: [
       { title: "Community Welcome Day", when: "First Sunday monthly · 12:30 PM" },
       { title: "Leadership Training", when: "Quarterly · Saturday 2:00 PM" },
@@ -45,6 +51,7 @@ function buildVerticalApexLocals() {
     givingTeaser:
       "Track giving summaries and monthly reports without online payment processing in the MVP phase.",
     footerMessage: "Member registration and login are available on your branch church site.",
+    blessboardPublicUrl: BLESSBOARD_PUBLIC_URL,
   };
 }
 

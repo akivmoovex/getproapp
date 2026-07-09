@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title><%= pageTitle %> — Branch Admin</title>
+  <title><%= pageTitle %> — BlessBoard Branch Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -13,13 +13,7 @@
 <body class="church-body church-body--branch-admin">
   <div class="church-branch-layout">
     <aside class="church-branch-sidebar" aria-label="Branch admin navigation">
-      <div class="church-branch-sidebar__brand">
-        <span class="material-symbols-outlined" aria-hidden="true">church</span>
-        <div>
-          <strong>GetPro Church</strong>
-          <span><%= churchName %></span>
-        </div>
-      </div>
+      <%- include('./sidebar_brand', { portalLabel: 'Branch Admin', contextName: churchName }) %>
       <nav class="church-branch-sidebar__nav">
         <a href="/branch/dashboard" class="church-branch-nav-link">Dashboard</a>
         <a href="/branch/account" class="church-branch-nav-link">Account</a>

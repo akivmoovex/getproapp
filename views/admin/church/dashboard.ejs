@@ -4,16 +4,16 @@
     <%- include('../../partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Church platform | <%= _bn %> Admin</title>
+    <title>BlessBoard | <%= _bn %> Admin</title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../../partials/admin_nav', { navTitle: 'Church platform', activeNav: activeNav || 'church_platform' }) %>
+    <%- include('../../partials/admin_nav', { navTitle: 'BlessBoard', activeNav: activeNav || 'church_platform' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
         <header class="admin-dashboard__header">
           <div>
-            <h1 class="admin-dashboard__title">GetPro Church platform</h1>
+            <h1 class="admin-dashboard__title">BlessBoard Admin</h1>
             <p class="admin-dashboard__subtitle muted">
               Provision church organizations, branch tenants, and initial HQ / branch admins. Super admin only.
             </p>
@@ -34,7 +34,7 @@
             </div>
             <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Search' }) %>
           </form>
-          <p class="muted" style="margin-top:0.5rem;font-size:0.9rem;">Search organizations, branches, HQ admins, branch admins, and members across GetPro Church.</p>
+          <p class="muted" style="margin-top:0.5rem;font-size:0.9rem;">Search organizations, branches, HQ admins, branch admins, and members across BlessBoard.</p>
         </section>
 
         <% var s = typeof summary !== 'undefined' && summary ? summary : {}; %>

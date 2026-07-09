@@ -1,0 +1,19 @@
+<%
+  var _href = typeof href !== 'undefined' ? href : '/';
+  var _compact = typeof compact !== 'undefined' && compact;
+  var _showIcon = typeof showIcon === 'undefined' ? true : !!showIcon;
+  var _asDiv = typeof asDiv !== 'undefined' && asDiv;
+%>
+<% if (!_asDiv) { %>
+<a class="church-brand<% if (_compact) { %> church-brand--compact<% } %>" href="<%= _href %>">
+  <% if (_showIcon) { %>
+  <span class="material-symbols-outlined church-brand__icon" aria-hidden="true">church</span>
+  <% } %>
+<% } %>
+  <div class="brand-lockup<% if (_compact) { %> brand-lockup--compact<% } %>">
+    <div class="brand-name">BlessBoard</div>
+    <div class="brand-powered">Powered by GetPro</div>
+  </div>
+<% if (!_asDiv) { %>
+</a>
+<% } %>

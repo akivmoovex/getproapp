@@ -1,0 +1,16 @@
+<%
+  var _icon = typeof sidebarIcon !== 'undefined' ? sidebarIcon : 'church';
+  var _portalLabel = typeof portalLabel !== 'undefined' ? portalLabel : '';
+%>
+<div class="church-sidebar-brand">
+  <span class="material-symbols-outlined church-sidebar-brand__icon" aria-hidden="true"><%= _icon %></span>
+  <div class="church-sidebar-brand__text">
+    <%- include('./brand_lockup', { asDiv: true, compact: true }) %>
+    <% if (_portalLabel) { %>
+    <span class="church-sidebar-context"><%= _portalLabel %></span>
+    <% } %>
+    <% if (typeof contextName !== 'undefined' && contextName) { %>
+    <span class="church-sidebar-context church-sidebar-context--secondary"><%= contextName %></span>
+    <% } %>
+  </div>
+</div>

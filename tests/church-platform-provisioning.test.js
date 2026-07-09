@@ -157,7 +157,7 @@ test(
 
     const dash = await agent.get("/admin/church");
     assert.equal(dash.status, 200);
-    assert.match(dash.text, /GetPro Church platform/);
+    assert.match(dash.text, /BlessBoard Admin/);
 
     const body = provisioningBody(slug, suffix);
     const create = await agent.post("/admin/church/organizations").type("form").send(body);

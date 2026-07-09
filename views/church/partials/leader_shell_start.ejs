@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title><%= pageTitle %> — Ministry Leader</title>
+  <title><%= pageTitle %> — BlessBoard Ministry Leader</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -13,13 +13,7 @@
 <body class="church-body church-body--leader-portal">
   <div class="church-member-layout">
     <aside class="church-member-sidebar" aria-label="Leader navigation">
-      <div class="church-member-sidebar__brand">
-        <span class="material-symbols-outlined" aria-hidden="true">groups</span>
-        <div>
-          <strong>Ministry Leader</strong>
-          <span><%= churchName %></span>
-        </div>
-      </div>
+      <%- include('./sidebar_brand', { sidebarIcon: 'groups', portalLabel: 'Ministry Leader', contextName: churchName }) %>
       <nav class="church-member-sidebar__nav">
         <a href="/leader/dashboard" class="church-member-nav-link">Dashboard</a>
         <a href="/leader/roster" class="church-member-nav-link">Roster</a>
