@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Member Verification Queue - Ecclesia Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom scrollbar for clean UI */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c8c4d7; border-radius: 10px; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#474554",
+                        "surface-variant": "#d9e4e9",
+                        "inverse-surface": "#283236",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-fixed": "#160066",
+                        "inverse-on-surface": "#e7f3f7",
+                        "inverse-primary": "#c6bfff",
+                        "tertiary-container": "#707273",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "surface-container-highest": "#d9e4e9",
+                        "secondary": "#586062",
+                        "surface-bright": "#f1fbff",
+                        "surface": "#f1fbff",
+                        "tertiary": "#57595b",
+                        "surface-tint": "#5847d2",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#787586",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-primary-container": "#faf6ff",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#e4dfff",
+                        "background": "#f1fbff",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#d1dce0",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "surface-container-high": "#dfeaef",
+                        "primary": "#5341cd",
+                        "on-secondary-fixed": "#161d1f",
+                        "on-surface": "#131d21",
+                        "surface-container": "#e4f0f4",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-background": "#131d21",
+                        "on-secondary-container": "#5d6466",
+                        "outline-variant": "#c8c4d7",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#dde4e6",
+                        "secondary-container": "#dae1e3",
+                        "tertiary-fixed": "#e1e3e4",
+                        "primary-container": "#6c5ce7",
+                        "on-tertiary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "base": "8px",
+                        "lg": "24px",
+                        "gutter": "24px",
+                        "margin-desktop": "32px",
+                        "xl": "32px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "title-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- Top AppBar (From JSON logic) -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant shadow-sm flex justify-between items-center px-margin-mobile py-base">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="church">church</span>
+<h1 class="font-title-lg text-title-lg font-black text-primary">Ecclesia Admin</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-80" data-icon="notifications">notifications</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a church administrator in a bright, modern office setting. The individual is smiling warmly, wearing business casual attire. The lighting is soft and natural, emphasizing a welcoming community-oriented atmosphere with subtle blue and violet tones in the background to match the Ecclesia brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfrVx3IYHsbAG9KfVN9vwK2LM4H76f6JnyY4FcpIDDunqwfCJPXBmff0yRygZEjNg3OxkyslxUT5UpWwAY4zj9tBzhDzBvDqSA7nXlbJFo8GLQ-u6rzvztMo3rXQM6L1JnkVAKhm--FlomMtivxRI7n9bOQB98KkWLhq7O7mLwx9q2m_Y94t0ta3iT47yhZhsF1WfQjD-Z35ZJo3wGYItjzSoAb_Pes4nytp5x_kfId8D3MEcFYFqV3w"/>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<main class="pt-20 px-margin-mobile max-w-md mx-auto">
+<!-- Header & Stats Section -->
+<section class="mb-lg">
+<div class="flex justify-between items-end mb-md">
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Member Verification</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Review pending registrations</p>
+</div>
+<div class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-label-lg text-label-lg">
+                    12 Pending
+                </div>
+</div>
+<!-- Date Filter Row -->
+<div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+<button class="whitespace-nowrap px-4 py-2 bg-primary text-on-primary rounded-full font-label-lg text-label-lg shadow-sm">All Time</button>
+<button class="whitespace-nowrap px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg text-label-lg border border-outline-variant">Today</button>
+<button class="whitespace-nowrap px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg text-label-lg border border-outline-variant">This Week</button>
+<button class="whitespace-nowrap px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg text-label-lg border border-outline-variant">Last 30 Days</button>
+</div>
+</section>
+<!-- Verification Queue List -->
+<div class="space-y-4">
+<!-- Queue Item 1 -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-outline-variant transition-all hover:border-primary/30">
+<div class="flex justify-between items-start mb-base">
+<div class="flex gap-3">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Sarah Mitchell</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Joined 2 hours ago</p>
+</div>
+</div>
+<span class="bg-surface-container-high px-2 py-1 rounded text-on-surface-variant font-label-md text-label-md">Web App</span>
+</div>
+<div class="bg-surface-container rounded-lg p-base mb-md">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="mail">mail</span>
+<span class="font-body-md text-body-md">sarah.m@example.com</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="groups">groups</span>
+<span class="font-body-md text-body-md">Youth Ministry</span>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 bg-error-container text-on-error-container rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-95 transition-transform" onclick="this.closest('.bg-surface-container-lowest').style.opacity='0.5'">
+<span class="material-symbols-outlined" data-icon="close">close</span> Reject
+                    </button>
+<button class="flex-2 grow-[2] py-3 bg-primary text-on-primary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-md" onclick="this.closest('.bg-surface-container-lowest').style.opacity='0.5'">
+<span class="material-symbols-outlined" data-icon="check">check</span> Approve
+                    </button>
+</div>
+</div>
+<!-- Queue Item 2 -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-outline-variant transition-all hover:border-primary/30">
+<div class="flex justify-between items-start mb-base">
+<div class="flex gap-3">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">David Chen</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Joined Today, 09:15 AM</p>
+</div>
+</div>
+<span class="bg-surface-container-high px-2 py-1 rounded text-on-surface-variant font-label-md text-label-md">QR Scan</span>
+</div>
+<div class="bg-surface-container rounded-lg p-base mb-md">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="mail">mail</span>
+<span class="font-body-md text-body-md">d.chen_hq@outlook.com</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="location_on">location_on</span>
+<span class="font-body-md text-body-md">North Branch</span>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 bg-error-container text-on-error-container rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="close">close</span> Reject
+                    </button>
+<button class="flex-2 grow-[2] py-3 bg-primary text-on-primary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-md">
+<span class="material-symbols-outlined" data-icon="check">check</span> Approve
+                    </button>
+</div>
+</div>
+<!-- Queue Item 3 (High Priority Visual) -->
+<div class="relative bg-surface-container-lowest p-md rounded-xl shadow-sm border-2 border-primary transition-all">
+<div class="absolute -top-3 left-4 bg-primary text-on-primary text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full font-bold">Priority Guest</div>
+<div class="flex justify-between items-start mb-base pt-1">
+<div class="flex gap-3">
+<div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="verified_user" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Elena Rodriguez</h3>
+<p class="font-body-md text-body-md text-primary font-semibold">Legacy Transfer</p>
+</div>
+</div>
+<span class="bg-primary-container text-on-primary-container px-2 py-1 rounded text-on-surface-variant font-label-md text-label-md">Admin Entry</span>
+</div>
+<div class="bg-surface-container rounded-lg p-base mb-md">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="call">call</span>
+<span class="font-body-md text-body-md">+1 (555) 012-3456</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="volunteer_activism">volunteer_activism</span>
+<span class="font-body-md text-body-md">Worship Team Applicant</span>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 bg-error-container text-on-error-container rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="close">close</span> Reject
+                    </button>
+<button class="flex-2 grow-[2] py-3 bg-primary text-on-primary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-md">
+<span class="material-symbols-outlined" data-icon="check">check</span> Approve
+                    </button>
+</div>
+</div>
+<!-- Queue Item 4 -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-outline-variant opacity-80">
+<div class="flex justify-between items-start mb-base">
+<div class="flex gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Robert Thompson</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Joined Yesterday</p>
+</div>
+</div>
+<span class="bg-surface-container-high px-2 py-1 rounded text-on-surface-variant font-label-md text-label-md">Mobile App</span>
+</div>
+<div class="bg-surface-container rounded-lg p-base mb-md">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="mail">mail</span>
+<span class="font-body-md text-body-md">rob.thompson@gmail.com</span>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 bg-error-container text-on-error-container rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="close">close</span> Reject
+                    </button>
+<button class="flex-2 grow-[2] py-3 bg-primary text-on-primary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-md">
+<span class="material-symbols-outlined" data-icon="check">check</span> Approve
+                    </button>
+</div>
+</div>
+</div>
+<!-- Pagination/Load More -->
+<div class="mt-lg text-center">
+<button class="text-primary font-label-lg text-label-lg py-2 px-6 rounded-full border border-primary hover:bg-primary/5 active:scale-95 transition-all">
+                Load More Records
+            </button>
+</div>
+</main>
+<!-- Bottom Navigation (From JSON Logic) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-xs py-base pb-safe bg-surface-container dark:bg-surface-dim border-t border-outline-variant shadow-lg z-50 rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant scale-95 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md-mobile text-label-md-mobile">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:bg-surface-variant scale-95 transition-all active-tab" href="#">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-md-mobile text-label-md-mobile">Members</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant scale-95 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-label-md-mobile text-label-md-mobile">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant scale-95 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="font-label-md-mobile text-label-md-mobile">Check-in</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant scale-95 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-label-md-mobile text-label-md-mobile">More</span>
+</a>
+</nav>
+<!-- Floating Action Button for Filters (Contextual) -->
+<button class="fixed right-6 bottom-24 w-14 h-14 bg-inverse-surface text-inverse-on-surface rounded-2xl flex items-center justify-center shadow-2xl active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+</button>
+<script>
+        // Simple Micro-interaction for list item removal simulation
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const label = btn.innerText.trim();
+                if (label === 'Approve' || label === 'Reject') {
+                    const card = btn.closest('.bg-surface-container-lowest');
+                    card.style.transform = 'translateX(100px)';
+                    card.style.opacity = '0';
+                    setTimeout(() => {
+                        card.style.display = 'none';
+                    }, 300);
+                }
+            });
+        });
+    </script>
+</body></html>

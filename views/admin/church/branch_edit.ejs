@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Edit branch | <%= branch.name %> | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'Edit branch', activeNav: activeNav || 'church_platform_branches' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Edit branch</h1>
+            <p class="admin-dashboard__subtitle muted">
+              <a href="/admin/church/organizations/<%= branch.organization_id %>"><%= branch.organization_name %></a>
+              · <%- include('../../partials/admin/church_status_badge', { status: branch.status }) %>
+            </p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id, label: 'Branch detail' }) %>
+          </div>
+        </header>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash flash--error" role="alert"><%= error %></div>
+        <% } %>
+
+        <% var f = typeof form !== 'undefined' && form ? form : {}; %>
+        <% var currentHost = typeof currentHostSlug !== 'undefined' ? currentHostSlug : (branch.host_slug || branch.slug); %>
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <dl class="admin-dl">
+            <dt>Current public URL</dt>
+            <dd><code>https://<%= churchPublicHost(currentHost) %>/</code></dd>
+            <dt>Status</dt>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: branch.status }) %> <span class="muted">(managed on branch detail)</span></dd>
+          </dl>
+        </section>
+
+        <form method="post" action="/admin/church/branches/<%= branch.id %>" class="card card--mb-xl" style="padding:1.25rem;" id="branch-edit-form">
+          <h2 class="section-title section-title--flush">Branch metadata</h2>
+          <div class="admin-form-grid">
+            <div class="input-field">
+              <label class="input-field__label" for="branch_name">Branch name *</label>
+              <input id="branch_name" class="input-field__control" name="branch_name" required value="<%= f.branch_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_host_slug">Branch host slug *</label>
+              <input id="branch_host_slug" class="input-field__control" name="branch_host_slug" required pattern="[a-z0-9][a-z0-9-]{0,62}" value="<%= f.branch_host_slug || '' %>" data-current="<%= currentHost %>" />
+              <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">
+                New public URL preview: <strong id="host-preview"><%= f.branch_host_slug ? churchPublicHost(f.branch_host_slug) : churchPublicHost(currentHost) %></strong>
+              </p>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="city">City</label>
+              <input id="city" class="input-field__control" name="city" value="<%= f.city || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="country">Country</label>
+              <input id="country" class="input-field__control" name="country" value="<%= f.country || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="pastor_name">Pastor name</label>
+              <input id="pastor_name" class="input-field__control" name="pastor_name" value="<%= f.pastor_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="contact_phone">Contact phone</label>
+              <input id="contact_phone" class="input-field__control" name="contact_phone" value="<%= f.contact_phone || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="contact_email">Contact email</label>
+              <input id="contact_email" class="input-field__control" name="contact_email" type="email" value="<%= f.contact_email || '' %>" />
+            </div>
+          </div>
+
+          <div id="host-slug-warning" class="flash flash--info" role="status" style="display:none;margin-top:1rem;">
+            Changing host slug changes the branch URL. Old links may stop working unless a redirect is configured.
+          </div>
+
+          <div class="admin-toolbar" style="margin-top:1.5rem;">
+            <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save branch' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id, label: 'Cancel' }) %>
+          </div>
+        </form>
+      </div>
+    </main>
+    <script>
+      (function () {
+        var branchSlug = document.getElementById("branch_host_slug");
+        var preview = document.getElementById("host-preview");
+        var warning = document.getElementById("host-slug-warning");
+        var current = branchSlug ? String(branchSlug.getAttribute("data-current") || "").trim().toLowerCase() : "";
+        var churchHostSuffix = "<%= 'church.' + (process.env.BASE_DOMAIN || 'getproapp.org') %>";
+        function syncPreview() {
+          var slug = branchSlug ? branchSlug.value.trim().toLowerCase() : "";
+          if (preview) preview.textContent = slug ? slug + "." + churchHostSuffix : "—";
+          if (warning && branchSlug) {
+            warning.style.display = slug && current && slug !== current ? "block" : "none";
+          }
+        }
+        if (branchSlug) branchSlug.addEventListener("input", syncPreview);
+        syncPreview();
+      })();
+    </script>
+  </body>
+</html>

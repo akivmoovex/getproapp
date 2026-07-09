@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>My Ministries - GetPro Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Shared Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#c6bfff",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-primary-fixed": "#160066",
+                    "inverse-on-surface": "#e7f3f7",
+                    "inverse-surface": "#283236",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#474554",
+                    "surface-variant": "#d9e4e9",
+                    "surface-container-highest": "#d9e4e9",
+                    "secondary": "#586062",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "tertiary-container": "#707273",
+                    "surface-tint": "#5847d2",
+                    "tertiary": "#57595b",
+                    "surface-bright": "#f1fbff",
+                    "surface": "#f1fbff",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-primary-container": "#faf6ff",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#787586",
+                    "on-tertiary-fixed": "#191c1d",
+                    "surface-container-high": "#dfeaef",
+                    "surface-dim": "#d1dce0",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "surface-container-low": "#eaf5fa",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-error": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "primary-fixed": "#e4dfff",
+                    "background": "#f1fbff",
+                    "on-secondary-container": "#5d6466",
+                    "surface-container": "#e4f0f4",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-background": "#131d21",
+                    "on-surface": "#131d21",
+                    "primary": "#5341cd",
+                    "on-secondary-fixed": "#161d1f",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#c8c4d7",
+                    "tertiary-fixed": "#e1e3e4",
+                    "primary-container": "#6c5ce7",
+                    "on-tertiary": "#ffffff",
+                    "secondary-container": "#dae1e3",
+                    "secondary-fixed": "#dde4e6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "md": "16px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "sm": "8px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .tab-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .ministry-card { 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+            border: 1px solid #E2E8F0;
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim font-title-lg text-title-lg h-16 w-full z-40 flex justify-between items-center px-margin-mobile md:px-margin-desktop sticky top-0">
+<div class="flex items-center gap-3 active:scale-95 duration-150 cursor-pointer">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of Mary Phiri, a cheerful woman in her late 30s with a warm smile, wearing modest business casual attire. The photography is soft-focus with natural sunlight from a window, set against a clean, modern church interior background with soft pastel tones of the GetPro Church brand palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsab2wfsIvHGHOyZGpoZDMSiuvVWMtq8QOL12_p5GduelaPqeJLpWDzOmBDo4yAezwX7tzoq05soaDQzfLEACWqsrQYNduBrFSXm1zZIlcqe8FZ89H3rNthAUbdupSqf6xH461mCM_4UrGUU9AtdsXtsMfteHvElerJciEvcz7Hrv9w68xHPOubqjfGFKAS1sTkR3D1p5mPRP0vvdCSMRvQNCfmPzVBQksTHC20QxATYFLl0YfrSzNtA"/>
+</div>
+<span class="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim font-bold">GetPro Church</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors active:scale-95">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="px-margin-mobile pt-lg pb-32 max-w-lg mx-auto">
+<!-- Header Section -->
+<section class="mb-lg">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-xs">Ministries</h1>
+<p class="font-body-md text-on-surface-variant">Manage your current commitments or find new ways to serve the community.</p>
+</section>
+<!-- Tabs Container -->
+<div class="flex gap-4 mb-lg overflow-x-auto hide-scrollbar">
+<button class="tab-transition whitespace-nowrap px-6 py-2 rounded-full font-label-lg text-label-lg bg-primary-container text-on-primary-container" id="tab-active" onclick="switchTab('active')">My Ministries</button>
+<button class="tab-transition whitespace-nowrap px-6 py-2 rounded-full font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-variant/30" id="tab-discover" onclick="switchTab('discover')">Discover New</button>
+</div>
+<!-- Active Ministries List -->
+<div class="flex flex-col gap-md" id="list-active">
+<!-- Ministry Card 1 -->
+<div class="ministry-card bg-surface-container-lowest p-md rounded-xl flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg text-primary">Worship Team</span>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md">
+<span class="material-symbols-outlined text-[18px]">person</span>
+<span>Leader: Sarah Chilufya</span>
+</div>
+</div>
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Member</span>
+</div>
+<div class="flex items-center gap-3 bg-surface-container-low p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">calendar_month</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg">Meeting time</span>
+<span class="font-body-md text-on-surface-variant">Saturdays 14:00</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex items-center justify-center gap-2 border border-outline-variant py-2.5 rounded-lg font-label-lg text-primary hover:bg-primary/5 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+                        Contact
+                    </button>
+<button class="flex items-center justify-center gap-2 border border-outline-variant py-2.5 rounded-lg font-label-lg text-on-surface-variant hover:bg-surface-variant/30 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">info</span>
+                        Details
+                    </button>
+</div>
+</div>
+<!-- Ministry Card 2 -->
+<div class="ministry-card bg-surface-container-lowest p-md rounded-xl flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg text-primary">Youth Mentorship</span>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md">
+<span class="material-symbols-outlined text-[18px]">person</span>
+<span>Leader: James Mulenga</span>
+</div>
+</div>
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Volunteer</span>
+</div>
+<div class="flex items-center gap-3 bg-surface-container-low p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">calendar_month</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg">Meeting time</span>
+<span class="font-body-md text-on-surface-variant">Fridays 17:30</span>
+</div>
+</div>
+<div class="grid grid-cols-1">
+<button class="flex items-center justify-center gap-2 bg-secondary text-on-secondary py-2.5 rounded-lg font-label-lg active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">send</span>
+                        Message Group
+                    </button>
+</div>
+</div>
+</div>
+<!-- Discover Ministries List (Hidden by default) -->
+<div class="hidden flex flex-col gap-md" id="list-discover">
+<!-- Join Card 1 -->
+<div class="ministry-card bg-surface-container-lowest p-md rounded-xl flex flex-col gap-4 border-l-4 border-primary">
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg text-primary">Hospitality Team</span>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md mt-1">
+<span class="material-symbols-outlined text-[18px]">person</span>
+<span>Leader: Martha Zulu</span>
+</div>
+</div>
+<p class="font-body-md text-on-surface-variant">Help us welcome newcomers and organize Sunday morning refreshments. Perfect for friendly faces!</p>
+<div class="flex items-center gap-3 bg-surface-container-low p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">schedule</span>
+<span class="font-body-md text-on-surface-variant">Sundays 08:30 - 11:30</span>
+</div>
+<button class="w-full bg-primary text-on-primary py-3 rounded-xl font-label-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined">add_circle</span>
+                    Join / Request Interest
+                </button>
+</div>
+<!-- Join Card 2 -->
+<div class="ministry-card bg-surface-container-lowest p-md rounded-xl flex flex-col gap-4 border-l-4 border-primary">
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg text-primary">Tech &amp; Media</span>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md mt-1">
+<span class="material-symbols-outlined text-[18px]">person</span>
+<span>Leader: David Phiri</span>
+</div>
+</div>
+<p class="font-body-md text-on-surface-variant">Operate sound, lighting, and cameras during services. Training provided for all equipment.</p>
+<div class="flex items-center gap-3 bg-surface-container-low p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">schedule</span>
+<span class="font-body-md text-on-surface-variant">Rehearsals: Thurs 18:00</span>
+</div>
+<button class="w-full bg-primary text-on-primary py-3 rounded-xl font-label-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined">volunteer_activism</span>
+                    Request Interest
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface-container dark:bg-surface-container-highest fixed bottom-0 w-full z-50 md:hidden pb-safe shadow-lg h-20 flex justify-around items-center px-2">
+<!-- Home -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</button>
+<!-- Groups (Active) -->
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="font-label-md text-label-md">Groups</span>
+</button>
+<!-- Events -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-md text-label-md">Events</span>
+</button>
+<!-- Study -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-md text-label-md">Study</span>
+</button>
+<!-- More -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="font-label-md text-label-md">More</span>
+</button>
+</nav>
+<script>
+        function switchTab(type) {
+            const listActive = document.getElementById('list-active');
+            const listDiscover = document.getElementById('list-discover');
+            const tabActive = document.getElementById('tab-active');
+            const tabDiscover = document.getElementById('tab-discover');
+
+            if (type === 'active') {
+                listActive.classList.remove('hidden');
+                listDiscover.classList.add('hidden');
+                tabActive.classList.add('bg-primary-container', 'text-on-primary-container');
+                tabActive.classList.remove('text-on-surface-variant');
+                tabDiscover.classList.remove('bg-primary-container', 'text-on-primary-container');
+                tabDiscover.classList.add('text-on-surface-variant');
+            } else {
+                listActive.classList.add('hidden');
+                listDiscover.classList.remove('hidden');
+                tabDiscover.classList.add('bg-primary-container', 'text-on-primary-container');
+                tabDiscover.classList.remove('text-on-surface-variant');
+                tabActive.classList.remove('bg-primary-container', 'text-on-primary-container');
+                tabActive.classList.add('text-on-surface-variant');
+            }
+        }
+    </script>
+</body></html>

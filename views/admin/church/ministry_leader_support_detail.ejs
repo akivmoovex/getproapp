@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= leader.full_name %> | Ministry leader support | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: leader.full_name, activeNav: activeNav || 'church_platform_search' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <% var ctx = typeof loginContext !== 'undefined' && loginContext ? loginContext : {}; %>
+        <% var host = typeof branchHostSlug !== 'undefined' ? branchHostSlug : (branch.host_slug || branch.slug); %>
+        <% var act = typeof activitySummary !== 'undefined' && activitySummary ? activitySummary : {}; %>
+        <% var attempts = typeof loginAttempts !== 'undefined' && loginAttempts ? loginAttempts : []; %>
+
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title"><%= leader.full_name %></h1>
+            <p class="admin-dashboard__subtitle muted">
+              <a href="/admin/church/organizations/<%= organization.id %>"><%= organization.name %></a>
+              · <a href="/admin/church/branches/<%= branch.id %>"><%= branch.name %></a>
+              <% if (ministry && ministry.name) { %>
+                · <%= ministry.name %>
+              <% } %>
+              · <%- include('../../partials/admin/church_status_badge', { status: leader.status }) %>
+            </p>
+            <p class="muted">Created <%= formatDate(leader.created_at) %> · Last updated <%= formatDate(leader.updated_at) %></p>
+          </div>
+          <div class="admin-toolbar">
+            <% if (typeof returnTo !== 'undefined' && returnTo) { %>
+              <%- include('../../partials/components/button', { variant: 'default', href: returnTo, label: 'Back' }) %>
+            <% } else { %>
+              <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/search', label: 'Church search' }) %>
+            <% } %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id, label: 'View branch' }) %>
+          </div>
+        </header>
+
+        <% if (typeof flashNotice !== 'undefined' && flashNotice) { %>
+          <div class="flash flash--success" role="status"><%= flashNotice %></div>
+        <% } %>
+        <% if (typeof supportNoteNotice !== 'undefined' && supportNoteNotice && !(typeof flashNotice !== 'undefined' && flashNotice)) { %>
+          <div class="flash flash--success" role="status"><%= supportNoteNotice %></div>
+        <% } %>
+        <% if (typeof statusActionError !== 'undefined' && statusActionError) { %>
+          <div class="flash flash--error" role="alert"><%= statusActionError %></div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Login and access context</h2>
+          <dl class="admin-dl">
+            <dt>Access summary</dt>
+            <dd>
+              <% if (ctx.can_access_leader_portal) { %>
+                <span class="flash flash--success" style="display:inline-block;padding:0.35rem 0.75rem;margin:0;">Can access leader portal</span>
+              <% } else { %>
+                <span class="flash flash--error" style="display:inline-block;padding:0.35rem 0.75rem;margin:0;"><%= ctx.access_summary %></span>
+              <% } %>
+            </dd>
+            <dt>Leader status</dt>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: leader.status }) %> — <%= ctx.leader_status_meaning %></dd>
+            <dt>Organization status</dt>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: organization.status }) %></dd>
+            <dt>Branch status</dt>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: branch.status }) %></dd>
+            <dt>Leader login URL</dt>
+            <dd><code>https://<%= churchPublicHost(host) %>/leader/login</code></dd>
+            <dt>Public branch URL</dt>
+            <dd><code>https://<%= churchPublicHost(host) %>/</code></dd>
+            <%- include('./partials/login_protection_summary', { loginProtection: typeof loginProtection !== 'undefined' ? loginProtection : null, formatDate: formatDate }) %>
+          </dl>
+          <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">Platform support actions below. Profile edits remain on the branch admin portal.</p>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Reset password</h2>
+          <% if (typeof resetError !== 'undefined' && resetError) { %>
+            <div class="flash flash--error" role="alert"><%= resetError %></div>
+          <% } %>
+          <p class="muted">Password will not be shown after saving. Share it securely.</p>
+          <form method="post" action="/admin/church/ministry-leaders/<%= leader.id %>/reset-password" class="admin-form-grid" style="margin-top:1rem;">
+            <div class="input-field">
+              <label class="input-field__label" for="new_password">New password *</label>
+              <input id="new_password" class="input-field__control" name="new_password" type="password" required minlength="8" autocomplete="new-password" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="confirm_password">Confirm password *</label>
+              <input id="confirm_password" class="input-field__control" name="confirm_password" type="password" required minlength="8" autocomplete="new-password" />
+            </div>
+            <div class="input-field">
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Reset password' }) %>
+            </div>
+          </form>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Status actions</h2>
+          <% if (leader.status === 'active') { %>
+            <form method="post" action="/admin/church/ministry-leaders/<%= leader.id %>/deactivate">
+              <div class="input-field">
+                <label class="input-field__label" for="deactivate_reason">Deactivate reason *</label>
+                <textarea id="deactivate_reason" class="input-field__control" name="reason" rows="3" required minlength="3" maxlength="500" placeholder="Why is this leader being deactivated?"></textarea>
+              </div>
+              <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Deactivate leader' }) %>
+            </form>
+          <% } else if (leader.status === 'inactive') { %>
+            <form method="post" action="/admin/church/ministry-leaders/<%= leader.id %>/activate">
+              <div class="input-field">
+                <label class="input-field__label" for="activate_reason">Activate reason (optional)</label>
+                <textarea id="activate_reason" class="input-field__control" name="reason" rows="3" maxlength="500" placeholder="Optional note for activation"></textarea>
+              </div>
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Activate leader' }) %>
+            </form>
+          <% } else { %>
+            <p class="muted">No status actions available for this leader status.</p>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Login lock</h2>
+          <% var lockInfo = typeof loginProtection !== 'undefined' && loginProtection ? loginProtection : {}; %>
+          <% if (typeof unlockError !== 'undefined' && unlockError) { %>
+            <div class="flash flash--error" role="alert"><%= unlockError %></div>
+          <% } %>
+          <% if (lockInfo.is_locked) { %>
+            <p class="muted">This leader account has an active login lock.</p>
+            <form method="post" action="/admin/church/ministry-leaders/<%= leader.id %>/unlock-login" style="margin-top:1rem;">
+              <div class="input-field">
+                <label class="input-field__label" for="unlock_reason">Unlock reason (optional)</label>
+                <textarea id="unlock_reason" class="input-field__control" name="reason" rows="2" maxlength="500" placeholder="Optional note for unlock"></textarea>
+              </div>
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Unlock login' }) %>
+            </form>
+          <% } else { %>
+            <p class="muted">No active login lock.</p>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Contact and role</h2>
+          <dl class="admin-dl">
+            <dt>Email</dt><dd><%= leader.email || '—' %></dd>
+            <dt>Phone</dt><dd><%= leader.phone || '—' %></dd>
+            <dt>Role</dt><dd><%= leader.role || 'ministry_leader' %></dd>
+            <% if (leader.notes) { %>
+              <dt>Notes</dt><dd><%= leader.notes %></dd>
+            <% } %>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Ministry context</h2>
+          <% if (ministry && ministry.id) { %>
+            <dl class="admin-dl">
+              <dt>Ministry</dt><dd><%= ministry.name %></dd>
+              <dt>Ministry status</dt><dd><%- include('../../partials/admin/church_status_badge', { status: ministry.status }) %></dd>
+              <dt>Visibility</dt><dd><%= ministry.visibility || '—' %></dd>
+            </dl>
+          <% } else { %>
+            <p class="muted">No ministry assigned (leader ID <%= leader.id %>).</p>
+          <% } %>
+          <p style="margin-top:1rem;">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id, label: 'View branch detail' }) %>
+          </p>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Recent login attempts</h2>
+          <% if (attempts.length === 0) { %>
+            <p class="muted">No login attempts recorded for this leader.</p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Date/time</th>
+                    <th>Result</th>
+                    <th>Reason</th>
+                    <th>Identifier</th>
+                    <th>IP</th>
+                    <th>User agent</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% attempts.forEach(function (row) { %>
+                    <tr>
+                      <td><%= formatDateTime(row.created_at) %></td>
+                      <td><%= row.success ? 'Success' : 'Failure' %></td>
+                      <td><%= row.failure_reason || '—' %></td>
+                      <td><%= row.identifier_display || '—' %></td>
+                      <td><%= row.ip_preview || '—' %></td>
+                      <td class="muted" style="max-width:12rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= row.user_agent_preview || '—' %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Activity summary</h2>
+          <dl class="admin-dl">
+            <dt>Activity notes pending review</dt><dd><%= act.activity_notes_submitted || 0 %></dd>
+            <dt>Activity notes reviewed</dt><dd><%= act.activity_notes_reviewed || 0 %></dd>
+            <dt>Follow-up requested</dt><dd><%= act.activity_notes_follow_up || 0 %></dd>
+            <dt>Latest note period</dt><dd><%= act.latest_note_period || '—' %></dd>
+            <dt>Latest note status</dt><dd><%= act.latest_note_review_status || '—' %></dd>
+            <dt>Confirmed duties (ministry)</dt><dd><%= act.confirmed_duties_count || 0 %></dd>
+            <dt>Roster duties (ministry)</dt><dd><%= act.roster_duties_count || 0 %></dd>
+          </dl>
+        </section>
+
+        <%- include('./partials/support_notes_panel', {
+          supportNotes: typeof supportNotes !== 'undefined' ? supportNotes : [],
+          supportNoteEntityType: supportNoteEntityType,
+          supportNoteEntityId: supportNoteEntityId,
+          supportNoteReturnTo: supportNoteReturnTo,
+          supportNoteNotice: typeof supportNoteNotice !== 'undefined' ? supportNoteNotice : null,
+          supportNoteError: typeof supportNoteError !== 'undefined' ? supportNoteError : null,
+          formatDate: formatDate
+        }) %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Related links</h2>
+          <div class="admin-toolbar" style="flex-wrap:wrap;">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'View organization' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id, label: 'View branch detail' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: 'https://' + churchPublicHost(host) + '/', label: 'Open public branch site', extraAttrs: 'target="_blank" rel="noopener noreferrer"' }) %>
+            <% if (typeof returnTo !== 'undefined' && returnTo) { %>
+              <%- include('../../partials/components/button', { variant: 'default', href: returnTo, label: 'Back' }) %>
+            <% } %>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

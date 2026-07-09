@@ -1,0 +1,48 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Member verification queue</h1>
+          <p class="church-branch-topbar__subtitle">Review pending registrations for <%= churchName %></p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <%- include('../partials/plan_limit_warnings', { planContext: typeof planContext !== 'undefined' ? planContext : null }) %>
+      <section class="church-branch-panel">
+        <% if ((pendingMembers || []).length === 0) { %>
+        <p class="church-branch-empty">No pending member registrations right now.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Full name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Age group</th>
+                <th>Ministry interest</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% pendingMembers.forEach(function (m) { %>
+              <tr>
+                <td><%= m.full_name %></td>
+                <td><%= m.phone %></td>
+                <td><%= m.email %></td>
+                <td><%= m.age_group %></td>
+                <td><%= m.ministry_interest || '—' %></td>
+                <td><%= new Date(m.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></td>
+                <td><span class="church-status-chip church-status-chip--pending">Pending</span></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/members/<%= m.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

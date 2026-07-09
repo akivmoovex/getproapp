@@ -1,0 +1,43 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Ministry leaders</h1>
+          <p class="church-branch-topbar__subtitle">Manage leader portal accounts</p>
+        </div>
+        <a class="church-btn church-btn--primary" href="/branch/leaders/new">Add leader</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <div class="church-branch-filter-tabs">
+        <% leaderFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/leaders<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : leaderStatusLabel(f) %></a>
+        <% }); %>
+      </div>
+      <section class="church-branch-panel">
+        <% if ((leaders || []).length === 0) { %>
+        <p class="church-branch-empty">No leaders in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Ministry</th><th>Role</th><th>Status</th><th>Updated</th><th></th></tr></thead>
+            <tbody>
+              <% leaders.forEach(function (l) { %>
+              <tr>
+                <td><%= l.full_name %></td>
+                <td><%= l.email || '—' %></td>
+                <td><%= l.phone || '—' %></td>
+                <td><%= l.ministry_name || '—' %></td>
+                <td><%= leaderRoleLabel(l.role) %></td>
+                <td><span class="church-status-chip church-status-chip--<%= l.status === 'active' ? 'verified' : 'pending' %>"><%= leaderStatusLabel(l.status) %></span></td>
+                <td><%= l.updated_at ? new Date(l.updated_at).toLocaleDateString('en-GB') : '—' %></td>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/leaders/<%= l.id %>">View</a>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/leaders/<%= l.id %>/edit">Edit</a>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

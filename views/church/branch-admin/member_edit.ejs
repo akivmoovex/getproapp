@@ -1,0 +1,29 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/members/<%= member.id %>">&larr; Back to profile</a>
+          <h1 class="church-branch-topbar__title">Edit member</h1>
+          <p class="church-branch-topbar__subtitle"><%= member.full_name %></p>
+        </div>
+      </header>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <form class="church-form" method="post" action="/branch/members/<%= member.id %>">
+        <section class="church-branch-panel">
+          <div class="church-form-grid">
+            <div class="church-field"><label class="church-label" for="full_name">Full name</label><input class="church-input" id="full_name" name="full_name" type="text" required value="<%= form.full_name %>"/></div>
+            <div class="church-field"><label class="church-label" for="email">Email</label><input class="church-input" id="email" name="email" type="email" required value="<%= form.email %>"/></div>
+            <div class="church-field"><label class="church-label" for="phone">Phone</label><input class="church-input" id="phone" name="phone" type="text" required value="<%= form.phone %>"/></div>
+            <div class="church-field"><label class="church-label" for="gender">Gender</label><select class="church-input" id="gender" name="gender" required><option value="male" <%= form.gender === 'male' ? 'selected' : '' %>>Male</option><option value="female" <%= form.gender === 'female' ? 'selected' : '' %>>Female</option></select></div>
+            <div class="church-field"><label class="church-label" for="age_group">Age group</label><select class="church-input" id="age_group" name="age_group" required><% ageGroupOptions.forEach(function (opt) { %><option value="<%= opt %>" <%= form.age_group === opt ? 'selected' : '' %>><%= opt %></option><% }); %></select></div>
+            <div class="church-field"><label class="church-label" for="address_area">Address area</label><input class="church-input" id="address_area" name="address_area" type="text" required value="<%= form.address_area %>"/></div>
+            <div class="church-field"><label class="church-label" for="attendance_duration">Attendance duration</label><select class="church-input" id="attendance_duration" name="attendance_duration" required><% attendanceDurationOptions.forEach(function (opt) { %><option value="<%= opt %>" <%= form.attendance_duration === opt ? 'selected' : '' %>><%= opt %></option><% }); %></select></div>
+            <div class="church-field church-field--full"><label class="church-label" for="ministry_interest">Ministry interest</label><input class="church-input" id="ministry_interest" name="ministry_interest" type="text" value="<%= form.ministry_interest %>"/></div>
+            <div class="church-field"><label class="church-label" for="emergency_contact_name">Emergency contact name</label><input class="church-input" id="emergency_contact_name" name="emergency_contact_name" type="text" value="<%= form.emergency_contact_name %>"/></div>
+            <div class="church-field"><label class="church-label" for="emergency_contact_phone">Emergency contact phone</label><input class="church-input" id="emergency_contact_phone" name="emergency_contact_phone" type="text" value="<%= form.emergency_contact_phone %>"/></div>
+          </div>
+        </section>
+        <div class="church-branch-actions">
+          <button class="church-btn church-btn--primary" type="submit">Save changes</button>
+        </div>
+      </form>
+<%- include('../partials/branch_admin_shell_end') %>

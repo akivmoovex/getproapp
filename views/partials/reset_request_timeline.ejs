@@ -1,0 +1,42 @@
+<% var events = typeof resetTimeline !== 'undefined' && resetTimeline ? resetTimeline : []; %>
+<% var timelineError = typeof resetTimelineError !== 'undefined' ? resetTimelineError : null; %>
+<% var formatTimelineDateTime = typeof formatDateTime === 'function' ? formatDateTime : function (value) {
+  if (!value) return '—';
+  var d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString('en-GB', { hour12: false });
+}; %>
+
+<section class="reset-timeline-section">
+  <h2 class="reset-timeline-section__title"><%= typeof timelineTitle !== 'undefined' && timelineTitle ? timelineTitle : 'Request Timeline' %></h2>
+  <% if (timelineError) { %>
+  <p class="reset-timeline-section__notice muted" role="status"><%= timelineError %></p>
+  <% } %>
+  <% if (events.length === 0) { %>
+  <p class="reset-timeline-section__empty muted">No timeline events yet.</p>
+  <% } else { %>
+  <ol class="reset-timeline" aria-label="Password reset request timeline">
+    <% events.forEach(function (event) { %>
+    <li class="reset-timeline-item">
+      <span class="reset-timeline-dot <%= event.icon_class || '' %>" aria-hidden="true"></span>
+      <div class="reset-timeline-body">
+        <div class="reset-timeline-meta">
+          <strong class="reset-timeline-label"><%= event.label %></strong>
+          <span class="reset-timeline-date"><%= formatTimelineDateTime(event.occurred_at) %></span>
+        </div>
+        <p class="reset-timeline-actor muted"><%= event.actor_label || 'System' %></p>
+        <% if (event.status_after) { %>
+        <p class="reset-timeline-status muted">Status: <%= event.status_after.replace(/_/g, ' ') %></p>
+        <% } %>
+        <% if (event.note) { %>
+        <p class="reset-timeline-note"><%= event.note %></p>
+        <% } %>
+        <% if (event.source === 'fallback') { %>
+        <span class="reset-timeline-badge">System timeline</span>
+        <% } %>
+      </div>
+    </li>
+    <% }); %>
+  </ol>
+  <% } %>
+</section>

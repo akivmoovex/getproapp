@@ -113,6 +113,10 @@ const fieldAgentRoutes = require("./src/routes/fieldAgent");
 const adminRoutes = require("./src/routes/admin");
 const companyPortalRoutes = require("./src/routes/companyPortal");
 const clientPortalRoutes = require("./src/routes/clientPortal");
+const churchRoutes = require("./src/routes/church");
+const { createAttachChurchContext } = require("./src/church/attachChurchContext");
+const { ensureChurchSchema } = require("./src/db/pg/ensureChurchSchema");
+const { seedChurchSampleOrganizationIfMissing } = require("./src/seeds/seedChurchSampleOrganization");
 const apiRoutes = require("./src/routes/api");
 const { runProductionStartupChecks } = require("./src/startup/productionStartupChecks");
 const companiesRepo = require("./src/db/pg/companiesRepo");
@@ -244,10 +248,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// GetPro Church vertical hosts (*.church.{BASE} and church.{BASE}) — before company-subdomain classification.
+app.use(createAttachChurchContext());
+
 // Subdomain is a platform tenant (reserved region slugs + rows in `tenants`) vs a company marketing subdomain
 app.use(async (req, res, next) => {
   try {
     req.isPlatformTenant = false;
+    if (req.isChurchHost) {
+      return next();
+    }
     const sub = req.subdomain;
     if (sub) {
       if (RESERVED_PLATFORM_SUBDOMAINS.has(sub)) {
@@ -349,8 +359,34 @@ app.get("/healthz", (req, res) => {
   return res.json({ ok: true });
 });
 
+// GetPro Church public routes (branch + vertical apex homepages).
+app.use(churchRoutes());
+
+// Church hosts must not fall through to regional directory / mini-site routes.
+app.use((req, res, next) => {
+  if (!req.isChurchHost) {
+    return next();
+  }
+  if (req.path === "/" && req.method === "GET") {
+    return next();
+  }
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return res.status(404).type("text").send("Not found");
+  }
+  if (/\.(?:css|js|mjs|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot)$/i.test(req.path)) {
+    return next();
+  }
+  if (req.path.startsWith("/build/") || req.path.startsWith("/church/") || req.path.startsWith("/images/")) {
+    return next();
+  }
+  return res.status(404).type("text").send("Not found");
+});
+
 // Company subdomains: only GET / serves a page; other paths 404
 app.use((req, res, next) => {
+  if (req.isChurchHost) {
+    return next();
+  }
   const sub = req.subdomain;
   if (sub && !req.isPlatformTenant) {
     if (req.path !== "/" || req.method !== "GET") {
@@ -362,6 +398,9 @@ app.use((req, res, next) => {
 
 // Legacy company hosts (e.g. demo-lusaka-spark.getproapp.org/) → regional path mini-site (demo.getproapp.org/demo-lusaka-spark)
 app.get("/", async (req, res, next) => {
+  if (req.isChurchHost) {
+    return next();
+  }
   if (req.subdomain && !req.isPlatformTenant) {
     try {
       const pool = getPgPool();
@@ -492,6 +531,8 @@ ensureAdminUser({ pool: pgPoolForBoot })
     await ensureFieldAgentPayRunsSchema(pgPoolForBoot);
     await ensureCompaniesDirectoryFlagsSchema(pgPoolForBoot);
     await ensureTenantDirectoryOptionLists(pgPoolForBoot);
+    await ensureChurchSchema(pgPoolForBoot);
+    await seedChurchSampleOrganizationIfMissing(pgPoolForBoot);
     await seedBuiltinUsers(pgPoolForBoot);
     await seedManagerUsers(pgPoolForBoot);
     await seedFieldAgentUser(pgPoolForBoot);

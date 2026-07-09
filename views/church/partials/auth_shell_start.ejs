@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= pageTitle %> — Member Access</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/church/church.css?v=2"/>
+</head>
+<body class="church-body church-body--auth">
+  <header class="church-header church-header--auth">
+    <div class="church-header__inner">
+      <a class="church-brand" href="/">
+        <span class="material-symbols-outlined church-brand__icon" aria-hidden="true">church</span>
+        <span class="church-brand__text"><%= churchName %></span>
+      </a>
+      <a class="church-btn church-btn--ghost" href="/">Back to home</a>
+    </div>
+  </header>
+  <main class="church-auth-main">

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ecclesia Admin - Member Verification Queue</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#474554",
+                    "surface-variant": "#d9e4e9",
+                    "inverse-surface": "#283236",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-primary-fixed": "#160066",
+                    "inverse-on-surface": "#e7f3f7",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary-container": "#707273",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "surface-container-highest": "#d9e4e9",
+                    "secondary": "#586062",
+                    "surface-bright": "#f1fbff",
+                    "surface": "#f1fbff",
+                    "tertiary": "#57595b",
+                    "surface-tint": "#5847d2",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#787586",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-primary-container": "#faf6ff",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-primary": "#ffffff",
+                    "primary-fixed": "#e4dfff",
+                    "background": "#f1fbff",
+                    "surface-container-low": "#eaf5fa",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#d1dce0",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "surface-container-high": "#dfeaef",
+                    "primary": "#5341cd",
+                    "on-secondary-fixed": "#161d1f",
+                    "on-surface": "#131d21",
+                    "surface-container": "#e4f0f4",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-background": "#131d21",
+                    "on-secondary-container": "#5d6466",
+                    "outline-variant": "#c8c4d7",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#dde4e6",
+                    "secondary-container": "#dae1e3",
+                    "tertiary-fixed": "#e1e3e4",
+                    "primary-container": "#6c5ce7",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "md": "16px",
+                    "margin-mobile": "16px",
+                    "base": "8px",
+                    "lg": "24px",
+                    "gutter": "24px",
+                    "margin-desktop": "32px",
+                    "xl": "32px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "title-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom scrollbar for data tables */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d9e4e9;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #c8c4d7;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen overflow-x-hidden">
+<!-- Sidebar Navigation Shell -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-inverse-surface dark:bg-surface-container-lowest border-r border-outline-variant hidden lg:flex flex-col p-md z-50">
+<div class="flex flex-col h-full">
+<div class="flex items-center gap-3 mb-xl px-4">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1">church</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-primary-fixed dark:text-primary leading-none">Ecclesia Branch</h2>
+<p class="font-label-md text-label-md text-surface-variant/70">HQ Admin Portal</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:bg-surface-variant/10 hover:text-on-primary-container transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg group active-nav" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-lg text-label-lg">Members</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:bg-surface-variant/10 hover:text-on-primary-container transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">church</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:bg-surface-variant/10 hover:text-on-primary-container transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:bg-surface-variant/10 hover:text-on-primary-container transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="font-label-lg text-label-lg">Attendance</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:bg-surface-variant/10 hover:text-on-primary-container transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-lg text-label-lg">Reports</span>
+</a>
+</nav>
+<div class="mt-auto space-y-1 pt-lg border-t border-outline-variant/20">
+<button class="w-full flex items-center justify-center gap-2 bg-primary-fixed text-on-primary-fixed py-3 rounded-xl font-title-md text-title-md active:scale-95 transition-transform mb-6">
+<span class="material-symbols-outlined">add</span>
+                    New Record
+                </button>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:bg-surface-variant/10 hover:text-on-primary-container transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:bg-surface-variant/10 hover:text-on-primary-container transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-lg text-label-lg">Support</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="lg:ml-[280px] min-h-screen flex flex-col pb-20 lg:pb-0">
+<!-- Top App Bar -->
+<header class="flex justify-between items-center w-full px-margin-mobile lg:px-margin-desktop py-base bg-surface dark:bg-surface-dim border-b border-outline-variant shadow-sm sticky top-0 z-40">
+<div class="flex items-center gap-4">
+<button class="lg:hidden p-2 hover:bg-surface-container-high rounded-full">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="hidden md:flex items-center bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant/30 focus-within:ring-2 focus-within:ring-primary/20">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md w-64 placeholder:text-outline" placeholder="Search members..." type="text"/>
+</div>
+<h1 class="font-title-lg text-title-lg font-black text-primary dark:text-inverse-primary lg:hidden">Ecclesia</h1>
+</div>
+<div class="flex items-center gap-base">
+<button class="p-2 hover:bg-surface-container-high transition-colors rounded-full relative">
+<span class="material-symbols-outlined text-primary dark:text-inverse-primary">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="flex items-center gap-3 ml-2 pl-2 border-l border-outline-variant/50 cursor-pointer active:opacity-80 transition-opacity">
+<div class="text-right hidden sm:block">
+<p class="font-label-lg text-label-lg text-on-surface leading-none">Church Admin</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Kafue Baptist</p>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a church administrator in their 40s with a warm, welcoming smile. They are wearing a clean, modern white collared shirt. The background is a soft-focus office setting with warm wooden tones and a hint of a bookshelf, captured in bright, airy natural daylight to match a high-end corporate light-mode UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPre4yI4es2OdF6AZ7E-adBwTCxeXW9zU5M4TSE9Tk0UjzoqiVHt3sjhDyX-ZPpZkvDzlmrYWQDfZD-nWJMtSHFN9hD70zMJgOwaUn3uMfaKhdlayN-yjQY4sYl4Ccu6OT_3y7Fc9sYRWB6_dKuAdJCkFsBqd5wriG3tVYOv4Y_Tk8_ySG68hCZji9-X0XUqu6CjhnBTfaWTh1j4T5V3E2WNCUMAN78SdxfNA47hH5jYBe_UVhMIE2xg"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<section class="flex-1 p-margin-mobile lg:p-margin-desktop space-y-lg">
+<!-- Breadcrumbs & Header -->
+<div class="space-y-2">
+<nav class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="hover:text-primary cursor-pointer">Members</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-bold">Verification Queue</span>
+</nav>
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Member Verification Queue</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Review and manage pending registrations for Kafue Baptist Church.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant text-on-surface-variant rounded-lg font-title-md text-title-md hover:bg-surface-variant/10 transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+                            Filter
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg font-title-md text-title-md hover:shadow-lg active:scale-95 transition-all">
+<span class="material-symbols-outlined">export_notes</span>
+                            Export List
+                        </button>
+</div>
+</div>
+</div>
+<!-- Dashboard Stats Summary (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">pending_actions</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Pending</p>
+<p class="font-headline-md text-headline-md text-on-surface">24</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">group</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Today's Subs</p>
+<p class="font-headline-md text-headline-md text-on-surface">12</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-error-container/30 flex items-center justify-center text-error">
+<span class="material-symbols-outlined">emergency</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">High Priority</p>
+<p class="font-headline-md text-headline-md text-on-surface">05</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-700">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Approved Today</p>
+<p class="font-headline-md text-headline-md text-on-surface">18</p>
+</div>
+</div>
+</div>
+<!-- Verification Queue Table -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
+<div class="px-lg py-md border-b border-outline-variant/30 flex items-center justify-between">
+<h3 class="font-title-lg text-title-lg text-on-surface">Pending Registrations</h3>
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface-variant">Showing 1-10 of 24</span>
+<div class="flex border border-outline-variant rounded-lg overflow-hidden">
+<button class="p-1 hover:bg-surface-container text-on-surface-variant border-r border-outline-variant disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="p-1 hover:bg-surface-container text-on-surface-variant">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant border-b border-outline-variant/30">
+<div class="flex items-center gap-2">
+<input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+                                        Member Name
+                                    </div>
+</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant border-b border-outline-variant/30 uppercase tracking-wider">Phone</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant border-b border-outline-variant/30 uppercase tracking-wider">Email</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant border-b border-outline-variant/30 uppercase tracking-wider">Submitted Date</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant border-b border-outline-variant/30 uppercase tracking-wider">Status</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant border-b border-outline-variant/30 text-right uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<div class="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-[14px]">BM</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface leading-tight">Blessing Musonda</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Small Groups: Youth</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">+260 971 234567</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">b.musonda@example.zm</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">Oct 24, 2023 <span class="text-outline text-[12px] ml-1">10:45 AM</span></td>
+<td class="px-lg py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                                        Pending
+                                    </span>
+</td>
+<td class="px-lg py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-all" title="View Details">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Approve">
+<span class="material-symbols-outlined">check_circle</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-all" title="Reject">
+<span class="material-symbols-outlined">cancel</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<div class="w-9 h-9 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold text-[14px]">CN</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface leading-tight">Chanda Ngosa</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Small Groups: Women</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">+260 965 987654</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">c.ngosa@mail.zm</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">Oct 24, 2023 <span class="text-outline text-[12px] ml-1">09:12 AM</span></td>
+<td class="px-lg py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                                        Pending
+                                    </span>
+</td>
+<td class="px-lg py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-all" title="View Details">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Approve">
+<span class="material-symbols-outlined">check_circle</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-all" title="Reject">
+<span class="material-symbols-outlined">cancel</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<div class="w-9 h-9 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center font-bold text-[14px]">KM</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface leading-tight">Kelvin Mwamba</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Small Groups: Music</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">+260 978 445566</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">kmwamba@church.com</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">Oct 23, 2023 <span class="text-outline text-[12px] ml-1">04:30 PM</span></td>
+<td class="px-lg py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                                        Pending
+                                    </span>
+</td>
+<td class="px-lg py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-all" title="View Details">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Approve">
+<span class="material-symbols-outlined">check_circle</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-all" title="Reject">
+<span class="material-symbols-outlined">cancel</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<div class="w-9 h-9 rounded-full bg-primary-fixed-dim text-on-primary-fixed-variant flex items-center justify-center font-bold text-[14px]">TM</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface leading-tight">Thandiwe Mbewe</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Small Groups: Outreach</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">+260 955 112233</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">t.mbewe@za.com</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface">Oct 23, 2023 <span class="text-outline text-[12px] ml-1">02:15 PM</span></td>
+<td class="px-lg py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                                        Pending
+                                    </span>
+</td>
+<td class="px-lg py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-all" title="View Details">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Approve">
+<span class="material-symbols-outlined">check_circle</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-lg transition-all" title="Reject">
+<span class="material-symbols-outlined">cancel</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-lg py-md border-t border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="flex items-center gap-4">
+<select class="bg-surface-container-low border border-outline-variant rounded-lg text-body-md px-3 py-1.5 focus:ring-primary focus:border-primary">
+<option>10 per page</option>
+<option>25 per page</option>
+<option>50 per page</option>
+</select>
+<p class="font-body-md text-body-md text-on-surface-variant">Showing 1-4 of 24 records</p>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-3 py-1.5 rounded-lg font-title-md text-title-md bg-primary-container text-on-primary-container">1</button>
+<button class="px-3 py-1.5 rounded-lg font-title-md text-title-md hover:bg-surface-variant/20 text-on-surface-variant">2</button>
+<button class="px-3 py-1.5 rounded-lg font-title-md text-title-md hover:bg-surface-variant/20 text-on-surface-variant">3</button>
+<span class="px-2 text-outline">...</span>
+<button class="px-3 py-1.5 rounded-lg font-title-md text-title-md hover:bg-surface-variant/20 text-on-surface-variant">6</button>
+</div>
+</div>
+</div>
+<!-- Verification Guidelines Card -->
+<div class="bg-primary/5 rounded-xl border-2 border-dashed border-primary/20 p-lg flex flex-col md:flex-row items-start gap-gutter">
+<div class="w-12 h-12 shrink-0 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">info</span>
+</div>
+<div class="flex-1 space-y-2">
+<h4 class="font-title-lg text-title-lg text-primary">Verification Checklist</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Before approving, please ensure you have verified the following for each new member record to maintain database integrity.</p>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg pt-2">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-green-600 text-[20px]">check</span>
+<span class="font-label-lg text-label-lg">Contact information is valid and unique.</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-green-600 text-[20px]">check</span>
+<span class="font-label-lg text-label-lg">Ministry assignment matches their request.</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-green-600 text-[20px]">check</span>
+<span class="font-label-lg text-label-lg">No duplicate profiles exist in the system.</span>
+</div>
+</div>
+</div>
+<button class="text-primary font-bold font-title-md text-title-md hover:underline shrink-0">Learn more</button>
+</div>
+</section>
+<!-- Bottom NavBar (Mobile Only) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full bg-surface-container dark:bg-surface-dim border-t border-outline-variant shadow-lg flex justify-around items-center px-xs py-base pb-safe z-50 rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant py-1" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">group</span>
+<span class="font-label-md text-label-md">Members</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant py-1" href="#">
+<span class="material-symbols-outlined">event</span>
+<span class="font-label-md text-label-md mt-1">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant py-1" href="#">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+<span class="font-label-md text-label-md mt-1">Check-in</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant py-1" href="#">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="font-label-md text-label-md mt-1">More</span>
+</a>
+</nav>
+</main>
+<!-- Micro-interaction Scripts -->
+<script>
+        // Simple row selection logic
+        const masterCheckbox = document.querySelector('thead input[type="checkbox"]');
+        const rowCheckboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+
+        if (masterCheckbox) {
+            masterCheckbox.addEventListener('change', (e) => {
+                rowCheckboxes.forEach(cb => {
+                    cb.checked = e.target.checked;
+                    if(e.target.checked) {
+                        cb.closest('tr').classList.add('bg-primary/5');
+                    } else {
+                        cb.closest('tr').classList.remove('bg-primary/5');
+                    }
+                });
+            });
+        }
+
+        rowCheckboxes.forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                if(e.target.checked) {
+                    cb.closest('tr').classList.add('bg-primary/5');
+                } else {
+                    cb.closest('tr').classList.remove('bg-primary/5');
+                }
+            });
+        });
+
+        // Search bar interaction
+        const searchInput = document.querySelector('input[type="text"]');
+        if (searchInput) {
+            searchInput.addEventListener('focus', () => {
+                searchInput.parentElement.classList.add('ring-2', 'ring-primary/20', 'border-primary/50');
+            });
+            searchInput.addEventListener('blur', () => {
+                searchInput.parentElement.classList.remove('ring-2', 'ring-primary/20', 'border-primary/50');
+            });
+        }
+    </script>
+</body></html>

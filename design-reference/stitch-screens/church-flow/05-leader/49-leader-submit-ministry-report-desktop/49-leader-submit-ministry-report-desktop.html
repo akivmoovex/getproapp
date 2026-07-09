@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Submit Ministry Report | Youth Ministry</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom scrollbar for better UI */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #787586;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#5341cd",
+                        "tertiary": "#57595b",
+                        "on-tertiary-container": "#f7f8f9",
+                        "primary-fixed": "#e4dfff",
+                        "secondary": "#586062",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#e1e3e4",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-secondary-container": "#5d6466",
+                        "on-primary-fixed": "#160066",
+                        "background": "#f1fbff",
+                        "surface-container": "#e4f0f4",
+                        "surface-tint": "#5847d2",
+                        "on-background": "#131d21",
+                        "surface-container-low": "#eaf5fa",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#f1fbff",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#faf6ff",
+                        "primary-container": "#6c5ce7",
+                        "on-surface-variant": "#474554",
+                        "on-secondary-fixed": "#161d1f",
+                        "inverse-surface": "#283236",
+                        "tertiary-container": "#707273",
+                        "surface-variant": "#d9e4e9",
+                        "secondary-fixed": "#dde4e6",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "outline": "#787586",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#c8c4d7",
+                        "secondary-container": "#dae1e3",
+                        "surface-bright": "#f1fbff",
+                        "inverse-on-surface": "#e7f3f7",
+                        "on-surface": "#131d21",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#c6bfff",
+                        "surface-container-high": "#dfeaef",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d1dce0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "gutter": "24px",
+                        "margin-desktop": "32px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "base": "8px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- NavigationDrawer (Desktop Shell) -->
+<aside class="hidden lg:flex flex-col h-full py-6 bg-inverse-surface fixed left-0 top-0 w-[280px] z-50 shadow-sm">
+<div class="px-6 mb-8">
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed">Youth Ministry</h1>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white hover:bg-on-tertiary-fixed-variant transition-colors duration-200 px-4 py-3 mx-2 my-1 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white hover:bg-on-tertiary-fixed-variant transition-colors duration-200 px-4 py-3 mx-2 my-1 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-lg text-label-lg">Roster</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white hover:bg-on-tertiary-fixed-variant transition-colors duration-200 px-4 py-3 mx-2 my-1 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-lg text-label-lg">Attendance</span>
+</a>
+<a class="flex items-center gap-4 bg-primary-container text-on-primary-container rounded-lg px-4 py-3 mx-2 my-1 scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined active-icon" data-icon="bar_chart" style="font-variation-settings: 'FILL' 1;">bar_chart</span>
+<span class="font-label-lg text-label-lg">Reports</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white hover:bg-on-tertiary-fixed-variant transition-colors duration-200 px-4 py-3 mx-2 my-1 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+<span class="font-label-lg text-label-lg">Requests</span>
+</a>
+</nav>
+<div class="mt-auto px-4 pt-4 border-t border-on-tertiary-fixed-variant">
+<div class="flex items-center gap-3 p-2">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="A professional headshot of a female African department leader with a warm, confident expression. She is wearing business-casual attire against a soft-focus office background. The lighting is bright and airy, matching a modern light-mode design aesthetic with soft shadows and high clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqIt40qxeakCeNaQQYsNHQ2lH_g5dFRZTJc8UQ4D7p01VcnOG-179HTrbpHnfPeIy6Ec_e05nf60qu3luixTuGQdCHYNYUTENacCzU_zY_XCr_39s7ssUShFvjLmVS8jZKKqUjBfoEU1MrvyGqABW_yVlNoNQatgyNlriIZl_5kAUy_p4oTpmIqtAU3_Z2BocXMnmi1Kex1GRu01nA0NU-LmT6NOXnXyTxupFvMpmhF0kJDXq2ZGlmiw"/>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-white">Grace Mwansa</span>
+<span class="text-[10px] text-tertiary-fixed-dim uppercase tracking-wider">Department Leader</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="lg:ml-[280px] min-h-screen flex flex-col pb-24 lg:pb-8">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-4 md:px-8 h-16 sticky top-0 z-40 bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<button class="lg:hidden p-2 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h2 class="font-title-lg text-title-lg text-primary">Ministry Report Submission</h2>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-full relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="hidden md:flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface-variant">Admin Sync: Online</span>
+<div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+</div>
+</div>
+</header>
+<!-- Form Canvas -->
+<div class="p-4 md:p-8 max-w-5xl mx-auto w-full">
+<div class="mb-8">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">Monthly Ministry Report</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Complete this form to update the Branch Admin on the Youth Ministry's progress and needs for the current period.</p>
+</div>
+<form class="space-y-6" id="ministryReportForm">
+<!-- Section: Period and Basic Stats -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Month Selector -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:border-primary transition-colors group">
+<label class="block font-label-lg text-label-lg text-on-surface-variant mb-2 group-focus-within:text-primary">Reporting Month</label>
+<div class="relative">
+<select class="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary appearance-none cursor-pointer">
+<option>October 2023</option>
+<option>September 2023</option>
+<option>August 2023</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-on-surface-variant" data-icon="calendar_month">calendar_month</span>
+</div>
+</div>
+<!-- Events Counter -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:border-primary transition-colors group">
+<label class="block font-label-lg text-label-lg text-on-surface-variant mb-2 group-focus-within:text-primary">Meetings / Events Held</label>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center bg-secondary-container text-on-secondary-container rounded-lg hover:bg-outline-variant transition-colors" onclick="decrement('eventsCount')" type="button">
+<span class="material-symbols-outlined" data-icon="remove">remove</span>
+</button>
+<input class="flex-1 bg-surface-container-low border-none rounded-lg px-4 py-2.5 text-center font-bold focus:ring-2 focus:ring-primary" id="eventsCount" type="number" value="8"/>
+<button class="w-10 h-10 flex items-center justify-center bg-primary-container text-on-primary-container rounded-lg hover:opacity-90 transition-opacity" onclick="increment('eventsCount')" type="button">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Section: Attendance Analytics -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+<div class="p-4 border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+<h4 class="font-title-md text-title-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="analytics">analytics</span>
+                            Attendance Summary
+                        </h4>
+<span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md rounded">Auto-Calculated</span>
+</div>
+<div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container flex flex-col items-center justify-center p-4 rounded-lg">
+<span class="text-3xl font-bold text-primary">142</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Total Attendees</span>
+</div>
+<div class="bg-surface-container flex flex-col items-center justify-center p-4 rounded-lg">
+<span class="text-3xl font-bold text-green-600">+12%</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Growth vs Last Month</span>
+</div>
+<div class="bg-surface-container flex flex-col items-center justify-center p-4 rounded-lg">
+<span class="text-3xl font-bold text-secondary">35</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Average per Meeting</span>
+</div>
+</div>
+<div class="px-6 pb-6">
+<label class="block font-label-lg text-label-lg text-on-surface-variant mb-2">Attendance Notes (Optional)</label>
+<textarea class="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary min-h-[80px]" placeholder="Summary of specific turnout trends..."></textarea>
+</div>
+</div>
+<!-- Section: Activities & Accomplishments (Bento Style) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<div class="flex justify-between items-center mb-4">
+<h4 class="font-title-md text-title-md">Activities Completed</h4>
+<button class="text-primary font-label-lg text-label-lg flex items-center gap-1 hover:underline" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="add_circle">add_circle</span>
+                                Add Item
+                            </button>
+</div>
+<ul class="space-y-3" id="activityList">
+<li class="flex items-center gap-3 bg-surface-container-low p-3 rounded-lg group">
+<span class="material-symbols-outlined text-green-500" data-icon="check_circle">check_circle</span>
+<input class="flex-1 bg-transparent border-none p-0 focus:ring-0 text-body-md" type="text" value="Organized regional 'Level Up' youth conference."/>
+<button class="opacity-0 group-hover:opacity-100 text-error p-1" type="button">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</li>
+<li class="flex items-center gap-3 bg-surface-container-low p-3 rounded-lg group">
+<span class="material-symbols-outlined text-green-500" data-icon="check_circle">check_circle</span>
+<input class="flex-1 bg-transparent border-none p-0 focus:ring-0 text-body-md" type="text" value="Distributed 50 student care packages."/>
+<button class="opacity-0 group-hover:opacity-100 text-error p-1" type="button">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</li>
+<li class="flex items-center gap-3 bg-surface-container-low p-3 rounded-lg group">
+<span class="material-symbols-outlined text-green-500" data-icon="check_circle">check_circle</span>
+<input class="flex-1 bg-transparent border-none p-0 focus:ring-0 text-body-md" type="text" value="Bi-weekly bible study mentorship program."/>
+<button class="opacity-0 group-hover:opacity-100 text-error p-1" type="button">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</li>
+</ul>
+</div>
+<div class="bg-primary-container text-on-primary-container p-6 rounded-xl shadow-lg flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-3xl mb-4" data-icon="auto_awesome">auto_awesome</span>
+<h4 class="font-title-lg text-title-lg mb-2">Impact Spotlight</h4>
+<p class="font-body-md text-body-md opacity-90">"Three new students joined the leadership team after the conference, showing significant spiritual growth."</p>
+</div>
+<button class="mt-6 bg-white/20 hover:bg-white/30 text-white rounded-lg px-4 py-2 text-label-lg transition-colors border border-white/30 backdrop-blur-sm" type="button">
+                            Edit Highlight
+                        </button>
+</div>
+</div>
+<!-- Section: Challenges & Support (Two Column) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:border-error transition-colors">
+<label class="flex items-center gap-2 font-label-lg text-label-lg text-on-surface-variant mb-4">
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+                            Challenges Faced
+                        </label>
+<textarea class="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-error min-h-[120px]" placeholder="Detail any obstacles or issues encountered this month..."></textarea>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm hover:border-primary transition-colors">
+<label class="flex items-center gap-2 font-label-lg text-label-lg text-on-surface-variant mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="handshake">handshake</span>
+                            Support Needed
+                        </label>
+<textarea class="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary min-h-[120px]" placeholder="List resources, approvals, or specific help needed from the branch admin..."></textarea>
+</div>
+</div>
+<!-- Section: General Notes -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<label class="block font-label-lg text-label-lg text-on-surface-variant mb-4">General Notes / Additional Comments</label>
+<textarea class="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary min-h-[100px]" placeholder="Any other important updates for the administrative board..."></textarea>
+</div>
+<!-- Form Actions -->
+<div class="flex flex-col sm:flex-row gap-4 items-center justify-between pt-6 border-t border-outline-variant">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="info">info</span>
+<span class="font-label-md text-label-md">Last autosaved 2 mins ago</span>
+</div>
+<div class="flex gap-3 w-full sm:w-auto">
+<button class="flex-1 sm:flex-none px-6 py-3 border border-outline text-on-surface font-label-lg text-label-lg rounded-xl hover:bg-surface-container-low transition-colors" type="button">
+                            Save Draft
+                        </button>
+<button class="flex-1 sm:flex-none px-12 py-3 bg-primary text-on-primary font-label-lg text-label-lg rounded-xl shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2" type="submit">
+                            Submit Report
+                            <span class="material-symbols-outlined" data-icon="send">send</span>
+</button>
+</div>
+</div>
+</form>
+</div>
+<!-- Footer for Small Screens -->
+<footer class="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-1 pb-safe bg-surface-container-lowest shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md-mobile text-label-md-mobile">Dash</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md-mobile text-label-md-mobile">Roster</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-md-mobile text-label-md-mobile">Check-in</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl p-2 scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart" style="font-variation-settings: 'FILL' 1;">bar_chart</span>
+<span class="font-label-md-mobile text-label-md-mobile">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+<span class="font-label-md-mobile text-label-md-mobile">Reqs</span>
+</a>
+</footer>
+</main>
+<script>
+        function increment(id) {
+            const input = document.getElementById(id);
+            input.value = parseInt(input.value) + 1;
+        }
+
+        function decrement(id) {
+            const input = document.getElementById(id);
+            if (parseInt(input.value) > 0) {
+                input.value = parseInt(input.value) - 1;
+            }
+        }
+
+        // Simple form submission micro-interaction
+        document.getElementById('ministryReportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = e.submitter;
+            const originalContent = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = `<span class="animate-spin material-symbols-outlined" data-icon="progress_activity">progress_activity</span> Sending...`;
+            
+            setTimeout(() => {
+                btn.innerHTML = `<span class="material-symbols-outlined" data-icon="check">check</span> Submitted`;
+                btn.classList.replace('bg-primary', 'bg-green-600');
+                
+                setTimeout(() => {
+                    alert('Ministry report has been successfully submitted to the Branch Admin.');
+                    // Reset or redirect logic here
+                }, 500);
+            }, 1500);
+        });
+
+        // Activity list add item logic (visual only)
+        const addActivityBtn = document.querySelector('button[type="button"].text-primary');
+        addActivityBtn.addEventListener('click', () => {
+            const list = document.getElementById('activityList');
+            const newItem = document.createElement('li');
+            newItem.className = "flex items-center gap-3 bg-surface-container-low p-3 rounded-lg group animate-pulse";
+            newItem.innerHTML = `
+                <span class="material-symbols-outlined text-green-500" data-icon="check_circle">check_circle</span>
+                <input type="text" class="flex-1 bg-transparent border-none p-0 focus:ring-0 text-body-md" placeholder="Enter activity..." autofocus>
+                <button type="button" class="text-error p-1" onclick="this.parentElement.remove()">
+                    <span class="material-symbols-outlined" data-icon="delete">delete</span>
+                </button>
+            `;
+            list.appendChild(newItem);
+            setTimeout(() => newItem.classList.remove('animate-pulse'), 500);
+        });
+    </script>
+</body></html>

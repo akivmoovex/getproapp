@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Branch Reports | Kafue Baptist Church</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "outline-variant": "#c8c4d7",
+                      "on-error": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "tertiary-container": "#707273",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-container": "#f7f8f9",
+                      "on-secondary-container": "#5d6466",
+                      "on-secondary-fixed": "#161d1f",
+                      "background": "#f1fbff",
+                      "on-error-container": "#93000a",
+                      "inverse-surface": "#283236",
+                      "primary-fixed-dim": "#c6bfff",
+                      "error": "#ba1a1a",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-fixed": "#e1e3e4",
+                      "surface-tint": "#5847d2",
+                      "primary": "#5341cd",
+                      "outline": "#787586",
+                      "secondary-fixed-dim": "#c1c8ca",
+                      "on-primary-container": "#faf6ff",
+                      "surface-container-high": "#dfeaef",
+                      "on-primary-fixed-variant": "#4029ba",
+                      "surface-bright": "#f1fbff",
+                      "tertiary-fixed-dim": "#c5c7c8",
+                      "tertiary": "#57595b",
+                      "surface-variant": "#d9e4e9",
+                      "on-tertiary": "#ffffff",
+                      "on-background": "#131d21",
+                      "secondary": "#586062",
+                      "on-tertiary-fixed-variant": "#454748",
+                      "surface-container": "#e4f0f4",
+                      "primary-container": "#6c5ce7",
+                      "on-secondary-fixed-variant": "#41484a",
+                      "on-primary": "#ffffff",
+                      "secondary-container": "#dae1e3",
+                      "primary-fixed": "#e4dfff",
+                      "on-surface": "#131d21",
+                      "surface-container-highest": "#d9e4e9",
+                      "surface-dim": "#d1dce0",
+                      "surface-container-low": "#eaf5fa",
+                      "surface": "#f1fbff",
+                      "secondary-fixed": "#dde4e6",
+                      "inverse-primary": "#c6bfff",
+                      "on-tertiary-fixed": "#191c1d",
+                      "on-primary-fixed": "#160066",
+                      "on-surface-variant": "#474554",
+                      "inverse-on-surface": "#e7f3f7"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "xs": "4px",
+                      "md": "16px",
+                      "gutter": "24px",
+                      "lg": "24px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "32px",
+                      "xl": "32px",
+                      "base": "8px"
+              },
+              "fontFamily": {
+                      "title-md": ["Inter"],
+                      "label-md": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "title-lg": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "body-md": ["Inter"],
+                      "label-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(200, 196, 215, 0.3);
+        }
+        .zebra-row:nth-child(even) { background-color: rgba(234, 245, 250, 0.4); }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex overflow-hidden">
+<!-- Sidebar (Ecclesia Admin Branch Portal) -->
+<aside class="hidden md:flex w-[280px] h-screen sticky left-0 top-0 bg-inverse-surface text-on-secondary-fixed-variant flex-col py-md z-50 shadow-md shrink-0">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-headline-md">E</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-primary-container leading-none">Ecclesia Admin</h1>
+<p class="font-label-lg text-label-lg text-secondary-fixed-dim">Branch Portal</p>
+</div>
+</div>
+<nav class="flex-grow space-y-1">
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors mx-2 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors mx-2 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3">group</span>
+<span class="font-label-lg text-label-lg">Membership</span>
+</a>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors mx-2 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3">church</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors mx-2 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3">payments</span>
+<span class="font-label-lg text-label-lg">Financials</span>
+</a>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors mx-2 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3">calendar_today</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<a class="text-on-primary-container bg-primary-container rounded-lg mx-2 flex items-center px-4 py-3 opacity-90 transition-all" href="#">
+<span class="material-symbols-outlined mr-3" style="font-variation-settings: 'FILL' 1;">bar_chart</span>
+<span class="font-label-lg text-label-lg">Reports</span>
+</a>
+</nav>
+<div class="mt-auto px-2 space-y-1">
+<button class="w-full mb-4 bg-primary text-on-primary font-label-lg text-label-lg py-3 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all">
+<span class="material-symbols-outlined">add</span>
+                New Record
+            </button>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3">help</span>
+<span class="font-label-lg text-label-lg">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-grow h-screen overflow-y-auto relative bg-surface-container-low">
+<!-- Top App Bar -->
+<header class="w-full h-16 sticky top-0 z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-margin-desktop">
+<div class="flex items-center gap-4">
+<div class="relative group">
+<input class="bg-surface-container-high border-none rounded-full px-10 py-2 text-body-md focus:ring-2 focus:ring-primary w-64 transition-all" placeholder="Search records..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+<div class="flex items-center gap-3 border-l border-outline-variant pl-6">
+<div class="text-right hidden sm:block">
+<p class="font-title-md text-title-md text-on-surface leading-none">Pastor John Banda</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Kafue Baptist Church</p>
+</div>
+<img class="w-10 h-10 rounded-full border-2 border-primary object-cover shadow-sm" data-alt="A professional portrait of a Zambian pastor in his 40s, wearing a clean-cut suit, smiling warmly with a modern office background that fits a light-mode corporate aesthetic. Soft natural lighting, high resolution, professional photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqrUXhK1ScvUYJmbA17y8jXhrUOyqjtHCakPasPS5Ys-SmpS47C5mIfrsDEcaNC7z5sUkBqdW0cIediYdyL_giRBcz7wWwMfeUwebY6KeTg2GZcwoMAh51UGt3-MOW3bcJKZ1C_aXMxEFf5LYnRfmdthjbp-IGTylQ1Lljg1T1B-5DTJLEFBNWTflDlZwRS_R5YUBdkJO1F3ZVP77ketQKdMAYRLzNCK7lr4GkhExEOXbJgEJK0mgaHg"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-margin-desktop pb-32">
+<!-- Page Header & Action -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-background">Branch Reports</h2>
+<nav class="flex text-on-surface-variant font-label-md text-label-md gap-2 mt-1">
+<span>Dashboard</span>
+<span>/</span>
+<span class="text-primary font-bold">Kafue Branch Dashboard</span>
+</nav>
+</div>
+<div class="flex gap-3 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-6 py-2.5 rounded-lg border border-primary text-primary font-label-lg text-label-lg hover:bg-primary/5 transition-all">
+                        Save as Draft
+                    </button>
+<button class="flex-1 md:flex-none px-8 py-2.5 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                        Submit Report
+                        <span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+</div>
+</div>
+<!-- Status Banner & Overdue Warning -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+<div class="lg:col-span-2 p-6 rounded-xl bg-primary-container text-on-primary-container flex items-center gap-6 relative overflow-hidden group shadow-lg">
+<!-- Animated background effect -->
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+
+</div>
+<div class="relative z-10 w-16 h-16 rounded-full bg-on-primary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-[40px]" style="font-variation-settings: 'FILL' 1;">edit_note</span>
+</div>
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 bg-white/20 rounded text-[10px] uppercase font-bold tracking-wider">Status: Draft</span>
+<span class="font-label-lg text-label-lg opacity-80">|</span>
+<span class="font-label-lg text-label-lg">October 2023 Report</span>
+</div>
+<h3 class="font-headline-md text-headline-md font-bold mb-1">Active Draft in Progress</h3>
+<p class="font-body-md text-body-md opacity-90">Kafue Branch reporting is currently at 85% completion. Please finalize the Giving Summary to submit.</p>
+</div>
+</div>
+<div class="p-6 rounded-xl bg-error-container text-on-error-container border border-error/20 flex flex-col justify-between shadow-sm relative">
+<div class="flex items-start justify-between">
+<div>
+<p class="font-label-lg text-label-lg uppercase tracking-wider mb-1 opacity-70">Overdue Alerts</p>
+<h4 class="font-title-lg text-title-lg font-bold">2 Warnings</h4>
+</div>
+<span class="material-symbols-outlined text-error text-[32px]">warning</span>
+</div>
+<div class="mt-4 space-y-2">
+<div class="flex items-center gap-2 text-body-md">
+<span class="w-1.5 h-1.5 bg-error rounded-full"></span>
+<span>Annual Inventory Audit (3 days)</span>
+</div>
+<div class="flex items-center gap-2 text-body-md">
+<span class="w-1.5 h-1.5 bg-error rounded-full"></span>
+<span>Staff Performance Review</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bento Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<!-- Attendance -->
+<div class="glass-panel p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[28px]">groups</span>
+</div>
+<span class="text-green-600 font-bold text-label-lg flex items-center">
+<span class="material-symbols-outlined text-[16px]">trending_up</span> 4.2%
+                        </span>
+</div>
+<p class="text-on-surface-variant font-label-lg text-label-lg mb-1">Avg. Attendance</p>
+<h3 class="font-headline-lg text-headline-lg text-on-background font-black">482</h3>
+<p class="text-on-surface-variant font-body-md text-body-md mt-2">Target: 500 members</p>
+</div>
+<!-- Member Growth -->
+<div class="glass-panel p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[28px]">person_add</span>
+</div>
+<span class="text-green-600 font-bold text-label-lg flex items-center">
+                            New this month
+                        </span>
+</div>
+<p class="text-on-surface-variant font-label-lg text-label-lg mb-1">Member Growth</p>
+<h3 class="font-headline-lg text-headline-lg text-on-background font-black">+12</h3>
+<div class="w-full bg-surface-variant h-1.5 rounded-full mt-4">
+<div class="bg-primary h-full w-[60%] rounded-full"></div>
+</div>
+</div>
+<!-- Ministry Activity -->
+<div class="glass-panel p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[28px]">event_note</span>
+</div>
+<span class="text-on-surface-variant font-bold text-label-lg">Active</span>
+</div>
+<p class="text-on-surface-variant font-label-lg text-label-lg mb-1">Ministry Activity</p>
+<h3 class="font-headline-lg text-headline-lg text-on-background font-black">15</h3>
+<p class="text-on-surface-variant font-body-md text-body-md mt-2">Planned events total</p>
+</div>
+<!-- Giving Summary -->
+<div class="bg-inverse-surface p-6 rounded-xl shadow-lg relative overflow-hidden">
+<div class="absolute -right-4 -bottom-4 opacity-10">
+<span class="material-symbols-outlined text-[120px] text-white">payments</span>
+</div>
+<p class="text-primary-fixed-dim font-label-lg text-label-lg mb-1 relative z-10">Total Giving (ZMW)</p>
+<h3 class="font-headline-lg text-headline-lg text-on-primary-container font-black relative z-10">42,850</h3>
+<div class="mt-6 flex items-center gap-2 relative z-10">
+<span class="px-2 py-0.5 bg-primary rounded text-on-primary font-bold text-[10px]">VERIFIED</span>
+<span class="text-secondary-fixed-dim font-body-md text-body-md">vs ZMW 38k prev.</span>
+</div>
+</div>
+</div>
+<!-- Lower Section: Ministry Details & HQ Comments -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Detailed Table Area -->
+<div class="lg:col-span-2 glass-panel rounded-xl shadow-sm overflow-hidden">
+<div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center">
+<h4 class="font-title-lg text-title-lg text-on-surface font-bold">Ministry Performance Breakdown</h4>
+<button class="text-primary font-label-lg text-label-lg flex items-center gap-1 hover:underline">
+                            View Full Report <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg">
+<tr>
+<th class="px-6 py-4">Ministry Name</th>
+<th class="px-6 py-4">Leader</th>
+<th class="px-6 py-4">Status</th>
+<th class="px-6 py-4 text-right">Engagement</th>
+</tr>
+</thead>
+<tbody class="text-body-md divide-y divide-outline-variant">
+<tr class="zebra-row">
+<td class="px-6 py-4 font-bold">Youth Fellowship</td>
+<td class="px-6 py-4">Brother Moses</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-label-md font-bold">Excellent</span>
+</td>
+<td class="px-6 py-4 text-right">92%</td>
+</tr>
+<tr class="zebra-row">
+<td class="px-6 py-4 font-bold">Women's Union</td>
+<td class="px-6 py-4">Sister Sarah</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-label-md font-bold">On Track</span>
+</td>
+<td class="px-6 py-4 text-right">78%</td>
+</tr>
+<tr class="zebra-row">
+<td class="px-6 py-4 font-bold">Sunday School</td>
+<td class="px-6 py-4">Eld. Lungu</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-label-md font-bold">Action Needed</span>
+</td>
+<td class="px-6 py-4 text-right">54%</td>
+</tr>
+<tr class="zebra-row">
+<td class="px-6 py-4 font-bold">Men of Valour</td>
+<td class="px-6 py-4">Deacon Phiri</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-label-md font-bold">Excellent</span>
+</td>
+<td class="px-6 py-4 text-right">88%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- HQ Comments Section -->
+<div class="flex flex-col gap-6">
+<div class="glass-panel p-6 rounded-xl shadow-sm flex-grow">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">forum</span>
+<h4 class="font-title-lg text-title-lg text-on-surface font-bold">HQ Feedback</h4>
+</div>
+<div class="space-y-4">
+<div class="p-4 bg-surface-container rounded-lg border-l-4 border-primary">
+<div class="flex justify-between items-center mb-1">
+<span class="font-label-lg text-label-lg text-primary">Regional Admin</span>
+<span class="text-[10px] text-on-surface-variant">2h ago</span>
+</div>
+<p class="text-body-md text-on-surface-variant italic">"Great work on the youth engagement spike this month. Please ensure the financial reconciliation matches the bank statement before final submission."</p>
+</div>
+<div class="p-4 bg-surface-container rounded-lg">
+<div class="flex justify-between items-center mb-1">
+<span class="font-label-lg text-label-lg text-on-surface-variant">Finance Dept</span>
+<span class="text-[10px] text-on-surface-variant">Yesterday</span>
+</div>
+<p class="text-body-md text-on-surface-variant">"Quarterly tithe distribution report is still pending for your branch."</p>
+</div>
+</div>
+<div class="mt-6">
+<textarea class="w-full bg-surface-container-high border-outline-variant rounded-lg p-3 text-body-md focus:ring-primary focus:border-primary min-h-[80px]" placeholder="Reply to HQ..."></textarea>
+<button class="mt-2 w-full py-2 bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg hover:opacity-90 transition-all">Send Note</button>
+</div>
+</div>
+<!-- Map Location (Branch Identity) -->
+<div class="h-48 rounded-xl overflow-hidden relative shadow-sm">
+<div class="absolute inset-0 bg-slate-200">
+<!-- Injected Map Placeholder -->
+<div class="w-full h-full flex items-center justify-center bg-surface-variant" data-location="Kafue, Zambia" style="">
+<span class="material-symbols-outlined text-primary text-[48px] animate-bounce">location_on</span>
+</div>
+</div>
+<div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full shadow-md">
+<p class="font-label-md text-label-md text-on-surface">Kafue, Lusaka Province</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container-lowest shadow-lg flex justify-around items-center h-16 px-4 pb-safe border-t border-outline-variant/10">
+<button class="flex flex-col items-center justify-center text-on-surface-variant active:bg-secondary-container rounded-full px-4 py-1 transition-transform active:scale-95">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant active:bg-secondary-container rounded-full px-4 py-1 transition-transform active:scale-95">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Members</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant active:bg-secondary-container rounded-full px-4 py-1 transition-transform active:scale-95">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Finance</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-transform scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bar_chart</span>
+<span class="font-label-md text-label-md">Reports</span>
+</button>
+</nav>
+<!-- Micro-interaction Scripts -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Placeholder for real-time counters or animation triggers
+            console.log('Ecclesia Modern Dashboard Initialized');
+        });
+    </script>
+</body></html>

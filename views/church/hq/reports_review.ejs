@@ -1,0 +1,75 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Review monthly reports</h1>
+          <p class="church-branch-topbar__subtitle"><%= organizationName %> — all branches</p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Awaiting review</h2>
+        <% if ((pendingReports || []).length === 0) { %>
+        <p class="church-branch-empty">No submitted reports awaiting review.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Period</th>
+                <th>Submitted</th>
+                <th>Submitted by</th>
+                <th>Giving</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% pendingReports.forEach(function (r) { %>
+              <tr>
+                <td><%= r.branch_name %></td>
+                <td><%= r.period_month_label %></td>
+                <td><%= r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB') : '—' %></td>
+                <td><%= r.submitted_by_name || '—' %></td>
+                <td><%= r.giving_included ? 'Yes' : 'No' %></td>
+                <td><a class="church-btn church-btn--primary church-btn--sm" href="/hq/reports/<%= r.id %>">Review</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Recently reviewed</h2>
+        <% if ((reviewedReports || []).length === 0) { %>
+        <p class="church-branch-empty">No reviewed reports yet.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Period</th>
+                <th>Status</th>
+                <th>Submitted</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% reviewedReports.forEach(function (r) { %>
+              <tr>
+                <td><%= r.branch_name %></td>
+                <td><%= r.period_month_label %></td>
+                <td><span class="church-status-chip church-status-chip--<%= r.status === 'approved' ? 'verified' : 'pending' %>"><%= reportStatusLabel(r.status) %></span></td>
+                <td><%= r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB') : '—' %></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/hq/reports/<%= r.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/hq_shell_end') %>

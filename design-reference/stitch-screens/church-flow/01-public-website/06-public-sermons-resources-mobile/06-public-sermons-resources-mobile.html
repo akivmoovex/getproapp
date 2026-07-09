@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sermons &amp; Resources - Kafue Baptist</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#f7f8f9",
+                    "error-container": "#ffdad6",
+                    "on-secondary": "#ffffff",
+                    "tertiary-container": "#707273",
+                    "primary-fixed": "#e4dfff",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-surface-variant": "#474554",
+                    "surface-container-low": "#eaf5fa",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-background": "#131d21",
+                    "surface": "#f1fbff",
+                    "background": "#f1fbff",
+                    "on-surface": "#131d21",
+                    "surface-tint": "#5847d2",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#e4f0f4",
+                    "on-primary-container": "#faf6ff",
+                    "secondary": "#586062",
+                    "surface-variant": "#d9e4e9",
+                    "inverse-on-surface": "#e7f3f7",
+                    "secondary-container": "#dae1e3",
+                    "primary": "#5341cd",
+                    "on-primary-fixed": "#160066",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "on-secondary-container": "#5d6466",
+                    "surface-bright": "#f1fbff",
+                    "error": "#ba1a1a",
+                    "on-tertiary-fixed": "#191c1d",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary-fixed": "#161d1f",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "outline": "#787586",
+                    "outline-variant": "#c8c4d7",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "tertiary": "#57595b",
+                    "secondary-fixed": "#dde4e6",
+                    "surface-dim": "#d1dce0",
+                    "surface-container-high": "#dfeaef",
+                    "inverse-surface": "#283236"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "xl": "32px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "base": "8px",
+                    "md": "16px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c8c4d7; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-inverse-surface shadow-sm flex justify-between items-center px-margin-mobile h-16 w-full">
+<div class="flex items-center gap-md">
+<button class="text-primary dark:text-inverse-primary p-2 hover:bg-surface-variant/50 rounded-full transition-colors duration-200">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="font-headline-md-mobile text-headline-md-mobile font-bold text-primary dark:text-inverse-primary">Kafue Baptist</h1>
+</div>
+<div class="h-10 w-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold shadow-sm">
+            CM
+        </div>
+</header>
+<main class="pt-20 px-margin-mobile max-w-xl mx-auto">
+<!-- Header Section -->
+<section class="mb-lg py-md">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-xs">Sermons &amp; Resources</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Growing together through Word and Spirit.</p>
+</section>
+<!-- Filter Dropdown -->
+<div class="relative mb-lg">
+<button class="flex items-center justify-between w-full bg-surface-container-low border border-outline-variant px-md py-sm rounded-xl text-on-surface font-title-md text-title-md transition-all active:scale-[0.98]" id="filterBtn">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">filter_list</span>
+<span>All Series</span>
+</div>
+<span class="material-symbols-outlined">expand_more</span>
+</button>
+<!-- Dropdown Menu (Hidden by default) -->
+<div class="hidden absolute top-full left-0 w-full mt-2 bg-surface-container-highest shadow-xl rounded-xl z-10 border border-outline-variant overflow-hidden" id="filterMenu">
+<ul class="py-sm">
+<li class="px-md py-sm hover:bg-primary-container hover:text-on-primary-container cursor-pointer font-body-md text-body-md">All Series</li>
+<li class="px-md py-sm hover:bg-primary-container hover:text-on-primary-container cursor-pointer font-body-md text-body-md border-t border-outline-variant/10">The Gospel of John</li>
+<li class="px-md py-sm hover:bg-primary-container hover:text-on-primary-container cursor-pointer font-body-md text-body-md border-t border-outline-variant/10">Faith in Action</li>
+<li class="px-md py-sm hover:bg-primary-container hover:text-on-primary-container cursor-pointer font-body-md text-body-md border-t border-outline-variant/10">Community Pillars</li>
+</ul>
+</div>
+</div>
+<!-- Featured Sermon -->
+<section class="mb-xl">
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm border border-outline-variant">
+<div class="relative aspect-video">
+<img class="w-full h-full object-cover" data-alt="A serene cinematic shot of a modern church pulpit in Kafue, illuminated by soft morning sunlight streaming through high windows. The atmosphere is quiet and reverent, with polished wooden textures and a warm, inviting glow. The color palette features rich purples and soft creams, conveying a sense of spiritual peace and structured compassion." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3VNK7G4yKKO-cZqVH9XfDAqJFLcbwy-OmVIUvq9jZJAe5KuVn4tVc7L5vuxARRelqFXSDbf0WONy4OIpMSpzl_tkG75ANUpLBy6fHPJyers3zkBPaHZcck1Z8htaA_KIPGwUPnVQC0YJ5putMLJwPr83Ak-YHNwG04CuNj6dw1HctJVV-k1TWCtpEVnFq-N7zLLevvKrJrvc2MZMMGRO7G0BvyBy-x7MO4svUfkGaCCAD5YAsv_mi0A"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-md">
+<span class="bg-primary text-white text-[10px] uppercase font-bold px-2 py-1 rounded-sm mb-1 tracking-wider">Latest Sermon</span>
+</div>
+<button class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary/90 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div class="p-md">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-1">Walking in Purpose</h3>
+<div class="flex items-center gap-sm text-on-surface-variant mb-sm">
+<span class="material-symbols-outlined text-sm">person</span>
+<span class="font-label-md text-label-md">Pastor Emmanuel Phiri</span>
+<span class="mx-1">•</span>
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span class="font-label-md text-label-md">Oct 27, 2024</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">Understanding our divine calling in a modern world and how to remain steadfast in faith through community...</p>
+</div>
+</div>
+</section>
+<!-- Vertical Feed -->
+<div class="space-y-lg">
+<h4 class="font-title-md text-title-md text-primary flex items-center gap-xs">
+<span class="material-symbols-outlined">history</span> Recent Sermons
+            </h4>
+<!-- Sermon Card 2 -->
+<div class="flex gap-md bg-surface-container/30 p-sm rounded-xl items-center border border-transparent hover:border-primary/20 transition-all">
+<div class="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden relative shadow-sm">
+<img class="w-full h-full object-cover" data-alt="An abstract representation of community and unity, featuring a group of diverse people in a circle, their hands joined in the center. The style is modern corporate with soft Material Design 3 shadows. The lighting is bright and optimistic, dominated by Kafue Baptist violet and soft cyan tones, symbolizing institutional trust and pastoral warmth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkmB7C3mNCUNcT4kTajFTl4-XbNuDCQ2vV4QNRL9Oucpajgiw_Ki3jP8q8HlNd_y_odKOzyPuFPj0IzWQLkhr_81OKAqcaGernmOPWCKn-nNPi4blL7xFl18HoZDMVsjj6OBIVPi06C6n2BR7fCBn351jaot-DXuyKIodAV-BCMIWT_AUlTLnmYG3ARHhDQYcOtXOcKelJuzcHpGSJDm8dYTHIolIzskRwDSk1u3SXcPqHThPExK7T2Q"/>
+<div class="absolute inset-0 bg-black/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-lg">play_circle</span>
+</div>
+</div>
+<div class="flex-grow">
+<h5 class="font-title-md text-title-md text-on-surface leading-tight mb-1">Foundations of Community</h5>
+<p class="font-label-md text-label-md text-on-surface-variant mb-sm">Oct 20 • Series: Pillars</p>
+<div class="flex gap-md">
+<button class="flex items-center gap-xs text-primary font-label-lg text-label-lg uppercase tracking-tight">
+<span class="material-symbols-outlined text-sm">headphones</span> Listen
+                        </button>
+<button class="flex items-center gap-xs text-on-surface-variant font-label-lg text-label-lg uppercase tracking-tight">
+<span class="material-symbols-outlined text-sm">download</span> MP3
+                        </button>
+</div>
+</div>
+</div>
+<!-- Sermon Card 3 -->
+<div class="flex gap-md bg-surface-container/30 p-sm rounded-xl items-center border border-transparent hover:border-primary/20 transition-all">
+<div class="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden relative shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A close-up of a well-worn bible lying on a rustic wooden table, with a single candle casting a warm, flickering light across the pages. The visual style is compassionate and grounded, using high-quality whitespace and soft ambient depth. Colors are focused on deep charcoals and warm violet highlights to evoke a sense of calm organization and study." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEIAy8pAN2_Akoy16oLuH0XAGxDIkxHW14KYNFifeW6XVjb_Pu31ZC7WO_hatRF2tKirJOh16JEEnPElt2mBV8MtriMNGQmioS5VCxbYTyIChZOIiK4n59Z7OqlSmryWf1OHDtUjiWLyfCr0mMkQtLF1s6Df4AH_k-fe5F4CjPWqnHcH_A2cnbh8ynakNfBdi1kj5lzxO10UP5a3NaI_Ncs0yV-7b4BnZIwH1_u9mR7RQ9WqaP5RpUGg"/>
+<div class="absolute inset-0 bg-black/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-lg">play_circle</span>
+</div>
+</div>
+<div class="flex-grow">
+<h5 class="font-title-md text-title-md text-on-surface leading-tight mb-1">The Power of Stillness</h5>
+<p class="font-label-md text-label-md text-on-surface-variant mb-sm">Oct 13 • Series: John</p>
+<div class="flex gap-md">
+<button class="flex items-center gap-xs text-primary font-label-lg text-label-lg uppercase tracking-tight">
+<span class="material-symbols-outlined text-sm">headphones</span> Listen
+                        </button>
+<button class="flex items-center gap-xs text-on-surface-variant font-label-lg text-label-lg uppercase tracking-tight">
+<span class="material-symbols-outlined text-sm">download</span> MP3
+                        </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Resources Section -->
+<section class="mt-xl mb-xl">
+<h4 class="font-title-md text-title-md text-primary mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined">library_books</span> Study Resources
+            </h4>
+<div class="grid grid-cols-1 gap-sm">
+<!-- Resource Item -->
+<div class="flex items-center justify-between p-md bg-surface-container-low rounded-xl border border-outline-variant/30 hover:bg-surface-variant/20 transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 bg-error-container text-on-error-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">picture_as_pdf</span>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface leading-none">Weekly Study Guide</p>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">PDF • 1.2 MB</p>
+</div>
+</div>
+<button class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors active:scale-90">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+<!-- Resource Item -->
+<div class="flex items-center justify-between p-md bg-surface-container-low rounded-xl border border-outline-variant/30 hover:bg-surface-variant/20 transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 bg-secondary-container text-on-secondary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">article</span>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface leading-none">John 1:1-18 Notes</p>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">DOCX • 450 KB</p>
+</div>
+</div>
+<button class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors active:scale-90">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+<!-- Resource Item -->
+<div class="flex items-center justify-between p-md bg-surface-container-low rounded-xl border border-outline-variant/30 hover:bg-surface-variant/20 transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 bg-primary-fixed text-on-primary-fixed-variant rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">slideshow</span>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface leading-none">Ministry Overview</p>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">PPTX • 5.8 MB</p>
+</div>
+</div>
+<button class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors active:scale-90">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full py-xl mb-20 flex flex-col items-center justify-center text-center gap-sm px-margin-mobile bg-surface-container-highest dark:bg-inverse-surface">
+<h3 class="font-title-md text-title-md font-semibold text-secondary">Kafue Baptist Church</h3>
+<p class="font-label-md text-label-md text-on-secondary-container opacity-80">© 2024 Kafue Baptist Church. Powered by GetPro Church.</p>
+<div class="flex gap-md mt-sm">
+<a class="font-label-md text-label-md text-on-secondary-container hover:underline hover:opacity-100 transition-opacity" href="#">Privacy Policy</a>
+<a class="font-label-md text-label-md text-on-secondary-container hover:underline hover:opacity-100 transition-opacity" href="#">Terms of Service</a>
+</div>
+</footer>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface dark:bg-inverse-surface shadow-[0_-4px_12px_rgba(0,0,0,0.05)] h-20 px-4 pb-safe flex justify-around items-center rounded-t-xl">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant/50 transition-all active:scale-90 p-2 rounded-xl">
+<span class="material-symbols-outlined">volunteer_activism</span>
+<span class="font-label-md text-label-md">Give</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant/50 transition-all active:scale-90 p-2 rounded-xl">
+<span class="material-symbols-outlined">app_registration</span>
+<span class="font-label-md text-label-md">Register</span>
+</button>
+<!-- Active: Sermons (Mapped to 'Login' context here but logically would be Home/Content) -->
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-2xl px-4 py-1 transition-all active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-label-md text-label-md">Sermons</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant/50 transition-all active:scale-90 p-2 rounded-xl">
+<span class="material-symbols-outlined">mail</span>
+<span class="font-label-md text-label-md">Contact</span>
+</button>
+</nav>
+<script>
+        // Micro-interaction for filter dropdown
+        const filterBtn = document.getElementById('filterBtn');
+        const filterMenu = document.getElementById('filterMenu');
+
+        filterBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            filterMenu.classList.toggle('hidden');
+            const icon = filterBtn.querySelector('.material-symbols-outlined:last-child');
+            icon.innerText = filterMenu.classList.contains('hidden') ? 'expand_more' : 'expand_less';
+        });
+
+        document.addEventListener('click', () => {
+            if (!filterMenu.classList.contains('hidden')) {
+                filterMenu.classList.add('hidden');
+                filterBtn.querySelector('.material-symbols-outlined:last-child').innerText = 'expand_more';
+            }
+        });
+
+        // Toggle Active State simulation
+        const navButtons = document.querySelectorAll('nav button');
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                navButtons.forEach(b => {
+                    b.classList.remove('bg-primary-container', 'text-on-primary-container', 'rounded-2xl', 'px-4', 'py-1');
+                    b.classList.add('text-on-surface-variant', 'p-2', 'rounded-xl');
+                    const icon = b.querySelector('.material-symbols-outlined');
+                    if(icon) icon.style.fontVariationSettings = "'FILL' 0";
+                });
+                btn.classList.add('bg-primary-container', 'text-on-primary-container', 'rounded-2xl', 'px-4', 'py-1');
+                btn.classList.remove('text-on-surface-variant', 'p-2', 'rounded-xl');
+                const activeIcon = btn.querySelector('.material-symbols-outlined');
+                if(activeIcon) activeIcon.style.fontVariationSettings = "'FILL' 1";
+            });
+        });
+    </script>
+</body></html>

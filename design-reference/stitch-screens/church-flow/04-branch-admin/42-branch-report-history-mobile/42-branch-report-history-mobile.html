@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Report History | Ecclesia Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#c8c4d7",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#707273",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-secondary-container": "#5d6466",
+                        "on-secondary-fixed": "#161d1f",
+                        "background": "#f1fbff",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#283236",
+                        "primary-fixed-dim": "#c6bfff",
+                        "error": "#ba1a1a",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#e1e3e4",
+                        "surface-tint": "#5847d2",
+                        "primary": "#5341cd",
+                        "outline": "#787586",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "on-primary-container": "#faf6ff",
+                        "surface-container-high": "#dfeaef",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "surface-bright": "#f1fbff",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "tertiary": "#57595b",
+                        "surface-variant": "#d9e4e9",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#131d21",
+                        "secondary": "#586062",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "surface-container": "#e4f0f4",
+                        "primary-container": "#6c5ce7",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "primary-fixed": "#e4dfff",
+                        "on-surface": "#131d21",
+                        "surface-container-highest": "#d9e4e9",
+                        "surface-dim": "#d1dce0",
+                        "surface-container-low": "#eaf5fa",
+                        "surface": "#f1fbff",
+                        "secondary-fixed": "#dde4e6",
+                        "inverse-primary": "#c6bfff",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-primary-fixed": "#160066",
+                        "on-surface-variant": "#474554",
+                        "inverse-on-surface": "#e7f3f7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "gutter": "24px",
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px",
+                        "xl": "32px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "title-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .report-card-active {
+            transform: scale(0.98);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-bright text-on-surface font-body-md">
+<!-- Top Navigation Bar -->
+<header class="w-full h-16 sticky top-0 z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-margin-mobile">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="church">church</span>
+<h1 class="font-title-lg text-title-lg font-black text-primary">Ecclesia</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a church administrator in a bright office environment, with soft natural light. The aesthetic is clean and modern, using a color palette of soft blues and warm neutrals to signify trust and leadership." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDZ0pMVd4yNCAlAJ9VmLGdB-RhWzHT3qE_jIZvXFwXC-AzC_A5PfdWAUp99VWhcpse9lcvw1Rq9lDKlJrUmMaWiwUp2SgNda3p3lwMxbDrkBdu7EQoe2DklgFZ5aV4Jq6ekbxE7HFkgi7p4mUXXKoLCw--wUjvrV5cI86IsaZwqXETwSj1STzyRWKA02uY0GpYv5K-TqLbulmlXxKqOdeykm9pKxjQHwpNxzNW3HApULNPlPse5ZrBzQ"/>
+</div>
+</div>
+</header>
+<main class="pb-24">
+<!-- Header & Search -->
+<div class="px-margin-mobile pt-6 pb-4">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background mb-4">Report History</h2>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline" data-icon="search">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-3 bg-surface-container border-none rounded-xl focus:ring-2 focus:ring-primary text-body-md" placeholder="Search reports..." type="text"/>
+</div>
+</div>
+<!-- Quick Filters -->
+<div class="px-margin-mobile mb-6">
+<div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+<button class="flex-none px-4 py-2 bg-primary text-on-primary rounded-full font-label-lg transition-all shadow-sm">All</button>
+<button class="flex-none px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg hover:bg-secondary-container transition-all">Financial</button>
+<button class="flex-none px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg hover:bg-secondary-container transition-all">Ministries</button>
+<button class="flex-none px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg hover:bg-secondary-container transition-all">Attendance</button>
+<button class="flex-none px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg hover:bg-secondary-container transition-all">Quarterly</button>
+</div>
+</div>
+<!-- Report List -->
+<div class="px-margin-mobile space-y-4">
+<!-- Card 1: Success -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm active:scale-95 transition-transform duration-100">
+<div class="flex justify-between items-start mb-3">
+<div>
+<p class="font-label-lg text-primary uppercase tracking-wider mb-1">Financial Report</p>
+<h3 class="font-title-md text-title-md text-on-surface">September 2023 Summary</h3>
+</div>
+<div class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+<span class="text-[10px] font-bold uppercase">Finalized</span>
+</div>
+</div>
+<div class="flex items-center justify-between mt-4 pt-4 border-t border-surface-variant">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="calendar_today">calendar_today</span>
+<span class="text-label-lg">Oct 02, 2023</span>
+</div>
+<button class="flex items-center gap-1 text-primary font-label-lg">
+                        View Details
+                        <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Card 2: Warning -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm active:scale-95 transition-transform duration-100">
+<div class="flex justify-between items-start mb-3">
+<div>
+<p class="font-label-lg text-primary uppercase tracking-wider mb-1">Ministry Impact</p>
+<h3 class="font-title-md text-title-md text-on-surface">August 2023 Quarterly</h3>
+</div>
+<div class="bg-amber-100 text-amber-800 px-2 py-1 rounded-md flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-amber-600"></span>
+<span class="text-[10px] font-bold uppercase">Pending Review</span>
+</div>
+</div>
+<div class="flex items-center justify-between mt-4 pt-4 border-t border-surface-variant">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="calendar_today">calendar_today</span>
+<span class="text-label-lg">Sep 15, 2023</span>
+</div>
+<button class="flex items-center gap-1 text-primary font-label-lg">
+                        Complete
+                        <span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+<!-- Card 3: Alert -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm active:scale-95 transition-transform duration-100">
+<div class="flex justify-between items-start mb-3">
+<div>
+<p class="font-label-lg text-primary uppercase tracking-wider mb-1">Attendance Audit</p>
+<h3 class="font-title-md text-title-md text-on-surface">July 2023 Branch Check</h3>
+</div>
+<div class="bg-rose-100 text-rose-800 px-2 py-1 rounded-md flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-rose-600"></span>
+<span class="text-[10px] font-bold uppercase">Needs Attention</span>
+</div>
+</div>
+<div class="flex items-center justify-between mt-4 pt-4 border-t border-surface-variant">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="calendar_today">calendar_today</span>
+<span class="text-label-lg">Aug 10, 2023</span>
+</div>
+<button class="flex items-center gap-1 text-primary font-label-lg">
+                        Fix Errors
+                        <span class="material-symbols-outlined text-sm" data-icon="warning">warning</span>
+</button>
+</div>
+</div>
+<!-- Card 4: Success -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm active:scale-95 transition-transform duration-100">
+<div class="flex justify-between items-start mb-3">
+<div>
+<p class="font-label-lg text-primary uppercase tracking-wider mb-1">Annual Budget</p>
+<h3 class="font-title-md text-title-md text-on-surface">FY2023 Projections</h3>
+</div>
+<div class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+<span class="text-[10px] font-bold uppercase">Finalized</span>
+</div>
+</div>
+<div class="flex items-center justify-between mt-4 pt-4 border-t border-surface-variant">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="calendar_today">calendar_today</span>
+<span class="text-label-lg">Jul 22, 2023</span>
+</div>
+<button class="flex items-center gap-1 text-primary font-label-lg">
+                        View Details
+                        <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Load More CTA -->
+<div class="px-margin-mobile mt-8 mb-4">
+<button class="w-full py-4 bg-surface-container border border-outline-variant rounded-xl text-primary font-label-lg flex items-center justify-center gap-2">
+                Load Previous Reports
+                <span class="material-symbols-outlined text-sm" data-icon="history">history</span>
+</button>
+</div>
+</main>
+<!-- Bottom Navigation Shell -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container-lowest flex justify-around items-center h-16 px-4 pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-secondary-container rounded-full px-4 py-1 transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-secondary-container rounded-full px-4 py-1 transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md">Members</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-secondary-container rounded-full px-4 py-1 transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Finance</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-transform scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart" style="font-variation-settings: 'FILL' 1;">bar_chart</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+</nav>
+<script>
+        // Simple Interaction logic
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Haptic feedback simulation
+                if (window.navigator.vibrate) {
+                    window.navigator.vibrate(5);
+                }
+            });
+        });
+
+        // Filter toggle logic
+        const filterButtons = document.querySelectorAll('.overflow-x-auto button');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(b => {
+                    b.classList.remove('bg-primary', 'text-on-primary');
+                    b.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+                });
+                button.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+                button.classList.add('bg-primary', 'text-on-primary');
+            });
+        });
+    </script>
+</body></html>

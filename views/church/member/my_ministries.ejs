@@ -1,0 +1,62 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <h1 class="church-member-header__title">My ministries</h1>
+        <p class="church-member-header__subtitle">Your ministry connections at <%= churchName %></p>
+      </header>
+      <% if (ministryInterest) { %>
+      <div class="church-alert church-alert--info" role="note">Profile ministry interest: <%= ministryInterest %></div>
+      <% } %>
+      <section class="church-member-panel">
+        <div class="church-member-panel__head">
+          <h2 class="church-member-panel__title">Active ministries</h2>
+          <a class="church-member-link" href="/member/ministries">Browse ministries</a>
+        </div>
+        <% if ((activeMinistries || []).length === 0) { %>
+        <p class="church-member-empty">No approved ministry assignments yet.</p>
+        <% } else { %>
+        <div class="church-grid church-grid--events">
+          <%- include('../partials/ministry_cards', { ministries: activeMinistries.map(function (m) { return Object.assign({}, m, { member_relationship_status: 'active', member_relationship_label: memberRelationshipStatusLabel('active'), can_request_join: false }); }), visibilityLabel, memberRelationshipStatusLabel }) %>
+        </div>
+        <% } %>
+      </section>
+      <section class="church-member-panel">
+        <h2 class="church-member-panel__title">Pending join requests</h2>
+        <% if ((pendingRequests || []).length === 0) { %>
+        <p class="church-member-empty">No pending join requests.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% pendingRequests.forEach(function (r) { %>
+          <li class="church-member-list__item">
+            <strong><a href="/member/ministries/<%= r.ministry_id %>"><%= r.ministry_name %></a></strong>
+            · <%= joinRequestStatusLabel(r.status) %>
+            · <%= new Date(r.created_at).toLocaleDateString('en-GB') %>
+            <% if (r.message) { %><p><%= r.message %></p><% } %>
+            <% if (r.admin_comment) { %><p class="church-member-list__meta">Admin note: <%= r.admin_comment %></p><% } %>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <% if ((closedRequests || []).length > 0) { %>
+      <section class="church-member-panel">
+        <h2 class="church-member-panel__title">Previous requests</h2>
+        <ul class="church-member-list">
+          <% closedRequests.forEach(function (r) { %>
+          <li class="church-member-list__item">
+            <strong><a href="/member/ministries/<%= r.ministry_id %>"><%= r.ministry_name %></a></strong>
+            · <%= joinRequestStatusLabel(r.status) %>
+            <% if (r.admin_comment) { %> · <%= r.admin_comment %><% } %>
+          </li>
+          <% }); %>
+        </ul>
+      </section>
+      <% } %>
+      <% if ((interestMatches || []).length > 0) { %>
+      <section class="church-member-panel">
+        <h2 class="church-member-panel__title">Suggested by your profile interest</h2>
+        <div class="church-grid church-grid--events">
+          <%- include('../partials/ministry_cards', { ministries: interestMatches, visibilityLabel, memberRelationshipStatusLabel }) %>
+        </div>
+      </section>
+      <% } %>
+<%- include('../partials/member_shell_end') %>

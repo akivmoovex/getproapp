@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= branch.name %> | Branch | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: branch.name, activeNav: activeNav || 'church_platform_branches' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title"><%= branch.name %></h1>
+            <p class="admin-dashboard__subtitle muted">
+              <a href="/admin/church/organizations/<%= branch.organization_id %>"><%= branch.organization_name %></a>
+            </p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/branches/' + branch.id + '/edit', label: 'Edit branch' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches', label: 'All branches' }) %>
+          </div>
+        </header>
+
+        <% if (typeof created !== 'undefined' && created) { %>
+          <div class="flash flash--info" role="status">
+            Branch created. Temporary password was set as entered. Share it securely.
+          </div>
+        <% } %>
+
+        <% if (typeof flashNotice !== 'undefined' && flashNotice) { %>
+          <div class="flash flash--success" role="status"><%= flashNotice %></div>
+        <% } %>
+        <% if (typeof statusNotice !== 'undefined' && statusNotice) { %>
+          <div class="flash flash--success" role="status"><%= statusNotice %></div>
+        <% } %>
+        <% if (typeof statusError !== 'undefined' && statusError) { %>
+          <div class="flash flash--error" role="alert"><%= statusError %></div>
+        <% } %>
+
+        <% if (branch.organization_status && branch.organization_status !== 'active') { %>
+          <div class="flash flash--info" role="status">
+            Parent organization is <strong><%= branch.organization_status %></strong>. Branch access may be affected even if this branch is active.
+          </div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Branch status</h2>
+          <dl class="admin-dl">
+            <dt>Status</dt>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: branch.status }) %></dd>
+            <% if (branch.status_reason) { %>
+              <dt>Status reason</dt><dd><%= branch.status_reason %></dd>
+            <% } %>
+            <% if (branch.suspended_at) { %>
+              <dt>Suspended at</dt><dd><%= formatDate(branch.suspended_at) %></dd>
+            <% } %>
+            <% if (branch.archived_at) { %>
+              <dt>Archived at</dt><dd><%= formatDate(branch.archived_at) %></dd>
+            <% } %>
+          </dl>
+          <div class="admin-status-actions">
+            <% if (branch.status === 'active') { %>
+            <form class="admin-status-actions__form" method="post" action="/admin/church/branches/<%= branch.id %>/suspend">
+              <h3>Suspend branch</h3>
+              <p class="muted">Blocks this branch host public site, member, branch-admin, and leader access.</p>
+              <label class="input-field__label" for="branch_suspend_reason">Reason (required)</label>
+              <textarea id="branch_suspend_reason" name="status_reason" required minlength="3" maxlength="2000" placeholder="Explain why this branch is being suspended"></textarea>
+              <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Suspend branch' }) %>
+            </form>
+            <% } %>
+            <% if (branch.status === 'suspended') { %>
+            <form class="admin-status-actions__form" method="post" action="/admin/church/branches/<%= branch.id %>/reactivate">
+              <h3>Reactivate branch</h3>
+              <label class="input-field__label" for="branch_reactivate_reason">Note (optional)</label>
+              <textarea id="branch_reactivate_reason" name="status_reason" maxlength="2000" placeholder="Optional note for audit trail"></textarea>
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Reactivate branch' }) %>
+            </form>
+            <form class="admin-status-actions__form" method="post" action="/admin/church/branches/<%= branch.id %>/archive">
+              <h3>Archive branch</h3>
+              <label class="input-field__label" for="branch_archive_reason">Reason (required)</label>
+              <textarea id="branch_archive_reason" name="status_reason" required minlength="3" maxlength="2000" placeholder="Explain why this branch is being archived"></textarea>
+              <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Archive branch' }) %>
+            </form>
+            <% } %>
+            <% if (branch.status === 'archived') { %>
+              <p class="muted">Archived branches cannot be reactivated in this release.</p>
+            <% } %>
+          </div>
+        </section>
+
+        <% var hostSlug = typeof branchHostSlug !== 'undefined' && branchHostSlug ? branchHostSlug : (branch.branch_host_slug || branch.host_slug || branch.slug); %>
+        <% var publicHost = churchPublicHost(hostSlug); %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Public URLs</h2>
+          <ul class="admin-list">
+            <li>Public site: <code>https://<%= publicHost %>/</code></li>
+            <li>Branch admin login: <code>https://<%= publicHost %>/branch/login</code></li>
+            <li>HQ login: <code>https://<%= publicHost %>/hq/login</code></li>
+          </ul>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Branch details</h2>
+          <dl class="admin-dl">
+            <dt>Organization</dt><dd><a href="/admin/church/organizations/<%= branch.organization_id %>"><%= branch.organization_name %></a></dd>
+            <dt>Branch slug</dt><dd><%= branch.slug %></dd>
+            <dt>Host slug</dt><dd><%= hostSlug %></dd>
+            <dt>City</dt><dd><%= branch.city || '—' %></dd>
+            <dt>Country</dt><dd><%= branch.country || '—' %></dd>
+            <dt>Pastor</dt><dd><%= branch.pastor_name || '—' %></dd>
+            <dt>Contact phone</dt><dd><%= branch.contact_phone || '—' %></dd>
+            <dt>Contact email</dt><dd><%= branch.contact_email || '—' %></dd>
+            <dt>Created</dt><dd><%= formatDate(branch.created_at) %></dd>
+            <dt>Last updated</dt><dd><%= formatDate(branch.updated_at) %></dd>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Usage summary</h2>
+          <dl class="admin-dl">
+            <dt>Verified members</dt><dd><%= (typeof usage !== 'undefined' && usage) ? usage.verified_member_count : (branch.verified_member_count != null ? branch.verified_member_count : 0) %></dd>
+            <dt>Pending members</dt><dd><%= (typeof usage !== 'undefined' && usage) ? usage.pending_member_count : (branch.pending_member_count != null ? branch.pending_member_count : 0) %></dd>
+            <% if ((typeof usage !== 'undefined' && usage && usage.latest_report_status) || branch.latest_report_status) { %>
+              <dt>Latest report</dt>
+              <dd>
+                <% var lrYear = usage && usage.latest_report_year ? usage.latest_report_year : branch.latest_report_year; %>
+                <% var lrMonth = usage && usage.latest_report_month ? usage.latest_report_month : branch.latest_report_month; %>
+                <% var lrStatus = usage && usage.latest_report_status ? usage.latest_report_status : branch.latest_report_status; %>
+                <%= lrYear %>-<%= String(lrMonth).padStart(2, '0') %> — <%= lrStatus %>
+              </dd>
+            <% } %>
+          </dl>
+        </section>
+
+        <% if (typeof planSummary !== 'undefined' && planSummary) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Organization plan</h2>
+          <p><strong><%= planSummary.planDisplay.label %></strong> · Branches <%= planSummary.branchesDisplay %></p>
+          <% if (planSummary.branchLimitReached) { %>
+            <p class="muted">Branch limit reached for this plan.</p>
+          <% } %>
+        </section>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <div class="admin-toolbar" style="margin-bottom:1rem;">
+            <h2 class="section-title section-title--flush" style="margin:0;flex:1;">Branch admins</h2>
+            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/branches/' + branch.id + '/admins', label: 'Manage branch admins' }) %>
+          </div>
+          <dl class="admin-dl">
+            <dt>Active admins</dt><dd><%= typeof activeAdminCount !== 'undefined' ? activeAdminCount : 0 %></dd>
+          </dl>
+          <% var admin = typeof branchAdmin !== 'undefined' && branchAdmin ? branchAdmin : null; %>
+          <% if (admin || branch.branch_admin_name) { %>
+            <p class="muted" style="margin-top:0.5rem;">Primary admin summary:</p>
+            <dl class="admin-dl">
+              <dt>Name</dt><dd><%= admin ? admin.full_name : branch.branch_admin_name %></dd>
+              <dt>Email</dt><dd><%= (admin && admin.email) || branch.branch_admin_email || '—' %></dd>
+              <dt>Phone</dt><dd><%= (admin && admin.phone) || branch.branch_admin_phone || '—' %></dd>
+            </dl>
+          <% } else { %>
+            <p class="muted">No active branch admin.</p>
+          <% } %>
+        </section>
+
+        <%- include('partials/support_notes_panel', {
+          supportNotes: typeof supportNotes !== 'undefined' ? supportNotes : [],
+          supportNoteEntityType: typeof supportNoteEntityType !== 'undefined' ? supportNoteEntityType : 'branch',
+          supportNoteEntityId: typeof supportNoteEntityId !== 'undefined' ? supportNoteEntityId : branch.id,
+          supportNoteReturnTo: typeof supportNoteReturnTo !== 'undefined' ? supportNoteReturnTo : ('/admin/church/branches/' + branch.id),
+          supportNoteNotice: typeof supportNoteNotice !== 'undefined' ? supportNoteNotice : null,
+          supportNoteError: typeof supportNoteError !== 'undefined' ? supportNoteError : null,
+          formatDate: formatDate
+        }) %>
+      </div>
+    </main>
+  </body>
+</html>

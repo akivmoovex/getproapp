@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= admin.full_name %> | Branch admin | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: admin.full_name, activeNav: activeNav || 'church_platform_branches' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title"><%= admin.full_name %></h1>
+            <p class="admin-dashboard__subtitle muted">
+              <a href="/admin/church/branches/<%= branch.id %>"><%= branch.name %></a>
+              · <%- include('../../partials/admin/church_status_badge', { status: admin.status }) %>
+            </p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/branches/' + branch.id + '/admins/' + admin.id + '/edit', label: 'Edit' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id + '/admins', label: 'All branch admins' }) %>
+          </div>
+        </header>
+
+        <% if (typeof flashNotice !== 'undefined' && flashNotice) { %>
+          <div class="flash flash--success" role="status"><%= flashNotice %></div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Account</h2>
+          <dl class="admin-dl">
+            <dt>Full name</dt><dd><%= admin.full_name %></dd>
+            <dt>Email</dt><dd><%= admin.email || '—' %></dd>
+            <dt>Phone</dt><dd><%= admin.phone || '—' %></dd>
+            <dt>Role</dt><dd><%= admin.role %></dd>
+            <dt>Status</dt><dd><%- include('../../partials/admin/church_status_badge', { status: admin.status }) %></dd>
+            <dt>Notes</dt><dd><%= admin.notes || '—' %></dd>
+            <dt>Branch</dt><dd><a href="/admin/church/branches/<%= branch.id %>"><%= branch.name %></a></dd>
+            <dt>Organization</dt><dd><a href="/admin/church/organizations/<%= branch.organization_id %>"><%= branch.organization_name %></a></dd>
+            <dt>Login URL</dt><dd><code>https://<%= churchPublicHost(branchHostSlug) %>/branch/login</code></dd>
+            <dt>Created</dt><dd><%= formatDate(admin.created_at) %></dd>
+            <dt>Last updated</dt><dd><%= formatDate(admin.updated_at) %></dd>
+            <% if (admin.last_password_reset_at) { %>
+              <dt>Last password reset</dt><dd><%= formatDate(admin.last_password_reset_at) %></dd>
+            <% } %>
+            <%- include('./partials/login_protection_summary', { loginProtection: typeof loginProtection !== 'undefined' ? loginProtection : null, formatDate: formatDate }) %>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Status actions</h2>
+          <div class="admin-toolbar">
+            <% if (admin.status === 'active') { %>
+              <form method="post" action="/admin/church/branches/<%= branch.id %>/admins/<%= admin.id %>/deactivate">
+                <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Deactivate' }) %>
+              </form>
+            <% } else { %>
+              <form method="post" action="/admin/church/branches/<%= branch.id %>/admins/<%= admin.id %>/activate">
+                <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Activate' }) %>
+              </form>
+            <% } %>
+          </div>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Reset password</h2>
+          <% if (typeof resetError !== 'undefined' && resetError) { %>
+            <div class="flash flash--error" role="alert"><%= resetError %></div>
+          <% } %>
+          <form method="post" action="/admin/church/branches/<%= branch.id %>/admins/<%= admin.id %>/reset-password">
+            <div class="admin-form-grid">
+              <div class="input-field">
+                <label class="input-field__label" for="new_password">New password *</label>
+                <input id="new_password" class="input-field__control" name="new_password" type="password" required minlength="8" autocomplete="new-password" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="confirm_password">Confirm password *</label>
+                <input id="confirm_password" class="input-field__control" name="confirm_password" type="password" required minlength="8" autocomplete="new-password" />
+              </div>
+            </div>
+            <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">Password is hashed and never displayed after save.</p>
+            <div class="admin-toolbar" style="margin-top:1rem;">
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save reset' }) %>
+            </div>
+          </form>
+        </section>
+
+        <%- include('partials/support_notes_panel', {
+          supportNotes: typeof supportNotes !== 'undefined' ? supportNotes : [],
+          supportNoteEntityType: typeof supportNoteEntityType !== 'undefined' ? supportNoteEntityType : 'branch_admin',
+          supportNoteEntityId: typeof supportNoteEntityId !== 'undefined' ? supportNoteEntityId : admin.id,
+          supportNoteReturnTo: typeof supportNoteReturnTo !== 'undefined' ? supportNoteReturnTo : ('/admin/church/branches/' + branch.id + '/admins/' + admin.id),
+          supportNoteNotice: typeof supportNoteNotice !== 'undefined' ? supportNoteNotice : null,
+          supportNoteError: typeof supportNoteError !== 'undefined' ? supportNoteError : null,
+          formatDate: formatDate
+        }) %>
+      </div>
+    </main>
+  </body>
+</html>

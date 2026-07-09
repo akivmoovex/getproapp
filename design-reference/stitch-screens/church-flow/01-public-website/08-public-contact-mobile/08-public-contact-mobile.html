@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Contact Us - Kafue Baptist Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Load Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#f7f8f9",
+                    "error-container": "#ffdad6",
+                    "on-secondary": "#ffffff",
+                    "tertiary-container": "#707273",
+                    "primary-fixed": "#e4dfff",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-surface-variant": "#474554",
+                    "surface-container-low": "#eaf5fa",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-background": "#131d21",
+                    "surface": "#f1fbff",
+                    "background": "#f1fbff",
+                    "on-surface": "#131d21",
+                    "surface-tint": "#5847d2",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#e4f0f4",
+                    "on-primary-container": "#faf6ff",
+                    "secondary": "#586062",
+                    "surface-variant": "#d9e4e9",
+                    "inverse-on-surface": "#e7f3f7",
+                    "secondary-container": "#dae1e3",
+                    "primary": "#5341cd",
+                    "on-primary-fixed": "#160066",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "on-secondary-container": "#5d6466",
+                    "surface-bright": "#f1fbff",
+                    "error": "#ba1a1a",
+                    "on-tertiary-fixed": "#191c1d",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary-fixed": "#161d1f",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "outline": "#787586",
+                    "outline-variant": "#c8c4d7",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "tertiary": "#57595b",
+                    "secondary-fixed": "#dde4e6",
+                    "surface-dim": "#d1dce0",
+                    "surface-container-high": "#dfeaef",
+                    "inverse-surface": "#283236"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "xl": "32px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "base": "8px",
+                    "md": "16px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-20">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-inverse-surface shadow-sm flex justify-between items-center px-margin-mobile h-16 w-full">
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-primary transition-colors duration-200" data-icon="menu">menu</button>
+<h1 class="font-headline-md-mobile text-headline-md-mobile font-bold text-primary dark:text-inverse-primary">Kafue Baptist</h1>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20">
+<img class="w-full h-full object-cover" data-alt="A clean, professional headshot of a smiling church member with soft, warm lighting. The background is a blurred, bright church interior in light tones, maintaining a modern and welcoming aesthetic for the Kafue Baptist Church member profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxUeimFS5QnDaiZMvUHFSvvkqYWpFHHKPrWbtK4Tdugomipa8P-wVPk3CRRd4d6pB3ILgAafBRJN1OT9p5ceXSNlVn1tsClsssj2vgXYHTL_F67o8eA9_0-H3NCP23UB0HqoCNfq5TT-KOqOe33ZAAZae08cdAV-YjiRGnuZnb5R_CLUUZjxmjmQ6xdST7SM7F_NtYbLRM_PApRAOBe3yxxZVA7lAUX7Tccb-fCLfmo8dKJYGZr7XICg"/>
+</div>
+</header>
+<main class="pt-20 px-margin-mobile space-y-lg">
+<!-- Hero Section / Title -->
+<section class="mt-md">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Get in Touch</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">We would love to hear from you. Reach out for prayer, information, or just to say hello.</p>
+</section>
+<!-- Quick Action Buttons -->
+<section class="grid grid-cols-2 gap-md">
+<a class="flex flex-col items-center justify-center p-lg bg-primary-container text-on-primary-container rounded-xl shadow-sm active:scale-95 transition-transform" href="tel:+260123456789">
+<span class="material-symbols-outlined mb-xs text-[32px]">call</span>
+<span class="font-label-lg text-label-lg">Call Us</span>
+</a>
+<a class="flex flex-col items-center justify-center p-lg bg-surface-container-high border border-outline-variant rounded-xl shadow-sm active:scale-95 transition-transform" href="mailto:info@kafuebaptist.org">
+<span class="material-symbols-outlined mb-xs text-[32px] text-primary">mail</span>
+<span class="font-label-lg text-label-lg text-on-surface">Email Us</span>
+</a>
+</section>
+<!-- Map Card (Asymmetric Bento Element) -->
+<section class="w-full h-48 rounded-xl overflow-hidden shadow-sm border border-outline-variant relative">
+<div class="w-full h-full bg-cover bg-center" data-alt="A clean, minimalist vector map of Kafue, Zambia, styled for a modern church application. The map uses a light-mode color palette with soft blues and greys, featuring a prominent, stylish pin icon at the church's location. The overall aesthetic is professional, clear, and integrated with a high-end UI design." data-location="Kafue, Zambia" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAR1OyI4g5uJs7PHKBCFwWUJrbDz8WFBkIA_T7M2TUH1a_jsz11UkkOYGF_CcNIh870Z8Ze6QI5SHBQq9BqTiY85sU65dbFMEWEe3ac5flHvKC4_kBgkwBco4f26AvqOdNGP1x4bjmT5aLAopN7Ztn4NHPAUmTpzTZbxbZI2MrhBxJcglf6QZNfWp2Sw2loGpRS3Q1oV5igEVaaBSz1sjz0uy9zZt0aPlmSefbTrLgHCh610njEi7KFbw')">
+<div class="absolute bottom-3 left-3 bg-glass px-md py-sm rounded-lg border border-white/50">
+<p class="font-label-md text-label-md text-on-surface">Plot 452, Kafue Central</p>
+</div>
+</div>
+</section>
+<!-- Office Hours & Location Details -->
+<section class="bg-surface-container-lowest p-lg rounded-xl shadow-sm border border-outline-variant space-y-md">
+<div class="flex items-start gap-md">
+<span class="material-symbols-outlined text-primary mt-1">schedule</span>
+<div class="flex-1">
+<h3 class="font-title-md text-title-md text-on-surface mb-sm">Office Hours</h3>
+<ul class="space-y-xs">
+<li class="flex justify-between font-body-md text-body-md">
+<span class="text-on-surface-variant">Mon - Fri</span>
+<span class="font-semibold text-on-surface">08:00 - 17:00</span>
+</li>
+<li class="flex justify-between font-body-md text-body-md">
+<span class="text-on-surface-variant">Saturday</span>
+<span class="font-semibold text-on-surface">09:00 - 13:00</span>
+</li>
+<li class="flex justify-between font-body-md text-body-md">
+<span class="text-on-surface-variant">Sunday</span>
+<span class="font-semibold text-on-surface">Service Times</span>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- Contact Form -->
+<section class="bg-surface-container p-lg rounded-xl space-y-md mb-xl">
+<h3 class="font-title-md text-title-md text-on-surface">Send a Message</h3>
+<form class="space-y-md">
+<div class="relative">
+<label class="font-label-lg text-label-lg text-on-surface-variant mb-xs block">Full Name</label>
+<input class="w-full px-md py-sm rounded-lg border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none font-body-md" placeholder="Your Name" type="text"/>
+</div>
+<div class="relative">
+<label class="font-label-lg text-label-lg text-on-surface-variant mb-xs block">Email Address</label>
+<input class="w-full px-md py-sm rounded-lg border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none font-body-md" placeholder="example@email.com" type="email"/>
+</div>
+<div class="relative">
+<label class="font-label-lg text-label-lg text-on-surface-variant mb-xs block">Message</label>
+<textarea class="w-full px-md py-sm rounded-lg border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none font-body-md resize-none" placeholder="How can we help you?" rows="4"></textarea>
+</div>
+<button class="w-full py-md bg-primary text-on-primary rounded-full font-title-md shadow-md active:scale-95 transition-all flex items-center justify-center gap-sm" type="submit">
+<span class="material-symbols-outlined">send</span>
+                    Send Message
+                </button>
+</form>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-xl mb-20 bg-surface-container-highest dark:bg-inverse-surface flex flex-col items-center justify-center text-center gap-sm px-margin-mobile">
+<p class="font-title-md text-title-md font-semibold text-secondary">Kafue Baptist Church</p>
+<p class="font-label-md text-label-md text-on-secondary-container">© 2024 Kafue Baptist Church. Powered by GetPro Church.</p>
+<div class="flex gap-md mt-sm">
+<a class="font-label-md text-label-md text-on-secondary-container hover:underline" href="#">Privacy Policy</a>
+<a class="font-label-md text-label-md text-on-secondary-container hover:underline" href="#">Terms of Service</a>
+</div>
+</footer>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface dark:bg-inverse-surface shadow-[0_-4px_12px_rgba(0,0,0,0.05)] flex justify-around items-center h-20 px-4 pb-safe">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant active:scale-90 transition-all">
+<span class="material-symbols-outlined" data-icon="volunteer_activism">volunteer_activism</span>
+<span class="font-label-md text-label-md mt-1">Give</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant active:scale-90 transition-all">
+<span class="material-symbols-outlined" data-icon="app_registration">app_registration</span>
+<span class="font-label-md text-label-md mt-1">Register</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant active:scale-90 transition-all">
+<span class="material-symbols-outlined" data-icon="login">login</span>
+<span class="font-label-md text-label-md mt-1">Login</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-2xl px-4 py-1 active:scale-90 transition-all">
+<span class="material-symbols-outlined" data-icon="mail" style="font-variation-settings: 'FILL' 1;">mail</span>
+<span class="font-label-md text-label-md mt-1">Contact</span>
+</button>
+</nav>
+<script>
+        // Simple micro-interaction for the form submit
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = this.querySelector('button');
+            const originalContent = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Sending...';
+            btn.classList.add('opacity-70');
+            
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Message Sent!';
+                btn.classList.replace('bg-primary', 'bg-green-600');
+                
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                    btn.classList.replace('bg-green-600', 'bg-primary');
+                    btn.classList.remove('opacity-70');
+                    this.reset();
+                }, 3000);
+            }, 1500);
+        });
+    </script>
+</body></html>

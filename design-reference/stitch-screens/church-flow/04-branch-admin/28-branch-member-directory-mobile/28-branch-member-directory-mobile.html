@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#474554",
+                        "surface-variant": "#d9e4e9",
+                        "inverse-surface": "#283236",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-fixed": "#160066",
+                        "inverse-on-surface": "#e7f3f7",
+                        "inverse-primary": "#c6bfff",
+                        "tertiary-container": "#707273",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "surface-container-highest": "#d9e4e9",
+                        "secondary": "#586062",
+                        "surface-bright": "#f1fbff",
+                        "surface": "#f1fbff",
+                        "tertiary": "#57595b",
+                        "surface-tint": "#5847d2",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#787586",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-primary-container": "#faf6ff",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#e4dfff",
+                        "background": "#f1fbff",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#d1dce0",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "surface-container-high": "#dfeaef",
+                        "primary": "#5341cd",
+                        "on-secondary-fixed": "#161d1f",
+                        "on-surface": "#131d21",
+                        "surface-container": "#e4f0f4",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-background": "#131d21",
+                        "on-secondary-container": "#5d6466",
+                        "outline-variant": "#c8c4d7",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#dde4e6",
+                        "secondary-container": "#dae1e3",
+                        "tertiary-fixed": "#e1e3e4",
+                        "primary-container": "#6c5ce7",
+                        "on-tertiary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "base": "8px",
+                        "lg": "24px",
+                        "gutter": "24px",
+                        "margin-desktop": "32px",
+                        "xl": "32px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "title-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .active-filter {
+            background-color: #5341cd;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md overflow-x-hidden pb-24">
+<!-- Top AppBar -->
+<header class="flex justify-between items-center w-full px-margin-mobile py-base bg-surface border-b border-outline-variant shadow-sm sticky top-0 z-40">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary cursor-pointer active:opacity-80">menu</span>
+<h1 class="font-title-lg text-title-lg font-black text-primary">Ecclesia Admin</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-80" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-80" data-icon="account_circle">account_circle</span>
+</div>
+</header>
+<!-- Main Content -->
+<main class="px-margin-mobile pt-md flex flex-col gap-md">
+<!-- Page Title & Stats -->
+<section class="flex flex-col gap-base">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Members</h2>
+<div class="flex items-center gap-2">
+<span class="px-3 py-1 bg-primary-container/10 text-primary text-label-md rounded-full border border-primary/20 font-label-md">1,248 Total</span>
+<span class="px-3 py-1 bg-surface-container-high text-on-surface-variant text-label-md rounded-full font-label-md">42 New this month</span>
+</div>
+</section>
+<!-- Search and Global Action -->
+<section class="flex gap-2 w-full">
+<div class="relative flex-grow group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-outline" placeholder="Search by name, email, or group..." type="text"/>
+</div>
+<button class="bg-primary text-on-primary p-3 rounded-xl shadow-md active:scale-95 transition-transform flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+</button>
+</section>
+<!-- Mobile Filter Chips -->
+<section class="flex gap-3 overflow-x-auto hide-scrollbar -mx-margin-mobile px-margin-mobile py-xs">
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full font-label-lg whitespace-nowrap active-filter">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+                All Members
+            </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg whitespace-nowrap hover:bg-surface-variant/20">
+                Small Groups
+            </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg whitespace-nowrap hover:bg-surface-variant/20">
+                Volunteers
+            </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg whitespace-nowrap hover:bg-surface-variant/20">
+                Donors
+            </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg whitespace-nowrap hover:bg-surface-variant/20">
+                Inactive
+            </button>
+</section>
+<!-- Member List Container (Asymmetric Cards/Bento Inspiration for Mobile) -->
+<section class="flex flex-col gap-3">
+<!-- Member Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
+<div class="flex items-center gap-4">
+<div class="relative">
+<img class="w-16 h-16 rounded-full object-cover border-2 border-primary/10" data-alt="A professional studio portrait of a friendly smiling middle-aged woman with warm lighting and a soft neutral background. She is dressed in smart-casual office attire, embodying a welcoming church administrator persona. The image is crisp, high-resolution, and perfectly suited for a modern corporate light-mode UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3drq4hKmjV4aUP9iqXpzVJHLErSYKTxyhLCAiXgyZdruohHEqvTNhcR40rYj8F5DNbCnKztgnymTKsOIAJ8kSPpJGnIXeqEtNaDXiEpnWBgPN4m58GkBB11QmOz68BQ46GfipVWL5X1uNkUS8Oe5VdbZ5-YsXBqqueiwch1C5aKtgX7oOVlh76GFvNIIlU1brbxESCG610RTgZUD66c36o5kbzzWd_aXG0UKrVpbJBFMuX44rr9vbNA"/>
+<div class="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-surface-container-lowest rounded-full"></div>
+</div>
+<div class="flex-grow">
+<h3 class="font-title-md text-title-md text-on-surface">Sarah Mitchell</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Adult Ministries • Leader</p>
+<div class="flex gap-1 mt-1">
+<span class="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] rounded uppercase font-bold tracking-wider">Staff</span>
+</div>
+</div>
+</div>
+<div class="flex border-t border-outline-variant/50 pt-3 mt-1 justify-between items-center">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">call</span>
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">mail</span>
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">chat_bubble</span>
+</div>
+<button class="text-primary font-label-lg py-2 px-3 hover:bg-primary/5 rounded-lg">View Profile</button>
+</div>
+</div>
+<!-- Member Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
+<div class="flex items-center gap-4">
+<div class="relative">
+<img class="w-16 h-16 rounded-full object-cover border-2 border-primary/10" data-alt="A high-quality portrait of a young man with a modern haircut, smiling confidently. The lighting is soft and professional, against a clean white background. He looks like a tech-savvy community member. The overall aesthetic is bright, minimalist, and perfectly aligned with a premium modern UI design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlbw14skN6cfLdt7mLJELC3P3I0ehd-nieMcjupearmOUQQwMBxL9fB6ooCoO-C_UQxg8f0nd4fuijxX2hWeRYZzSp3kpWU2Vb-2kkn3pz40aCQhzjxrhwBdgSxXhFIYCD9sf4479eVf6K36nTNiXGZKKh_erO0v5RB9eBQTXiRcdooq2M2ZHRwM5--gtpJRxAZZYSyPegbhEfz95-cbFQtc3VmuR_JxqpASF2cDZ62UQNizLik21rTA"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-title-md text-title-md text-on-surface">David Chen</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Youth Group • Volunteer</p>
+<div class="flex gap-1 mt-1">
+<span class="px-2 py-0.5 bg-secondary-fixed text-on-secondary-fixed-variant text-[10px] rounded uppercase font-bold tracking-wider">Active</span>
+</div>
+</div>
+</div>
+<div class="flex border-t border-outline-variant/50 pt-3 mt-1 justify-between items-center">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">call</span>
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">mail</span>
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">chat_bubble</span>
+</div>
+<button class="text-primary font-label-lg py-2 px-3 hover:bg-primary/5 rounded-lg">View Profile</button>
+</div>
+</div>
+<!-- Member Card 3 (Focused Layout Variant) -->
+<div class="bg-primary/5 border-2 border-primary/20 rounded-xl p-4 flex flex-col gap-3">
+<div class="flex items-center gap-4">
+<div class="relative">
+<img class="w-16 h-16 rounded-full object-cover border-2 border-primary/20" data-alt="A dignified close-up portrait of an elderly man with silver hair and a kind expression. The lighting is directional and warm, highlighting textures of wisdom and experience. Background is a blurred warm-toned living room. Perfect for a compassionate church community member profile in a light-mode modern UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmo6n4A5YHAsq6iicoR1cvzTGQO7cxaaskc-pGH18QVOgLcZa3_vcUV7ak-GD_8ELcqKDPjF5111D_FkukzXov_go0oz7kitAzd8C747BWGN0v7Z30LIz1ZSle1Z6gcsybIDjEDLrRfW-qS5xWuW05fzORwKmevdjt1634aVxFK9i0tB1Wz5SKChrdvEsWtuS1QCuv8WxkhAbsMoCxiEzyj-pz-eVaIhBdqwBRlJGoOw4twlu-9G-iOA"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-title-md text-title-md text-on-surface flex items-center gap-2">
+                            Robert Jackson
+                            <span class="material-symbols-outlined text-primary text-[16px]" data-weight="fill">verified</span>
+</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Elders Council • Head</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-2">
+<button class="flex items-center justify-center gap-2 bg-primary text-on-primary py-2 rounded-lg font-label-lg active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">call</span> Call Now
+                    </button>
+<button class="flex items-center justify-center gap-2 border border-primary text-primary py-2 rounded-lg font-label-lg active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">mail</span> Message
+                    </button>
+</div>
+</div>
+<!-- Member Card 4 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
+<div class="flex items-center gap-4">
+<div class="relative">
+<img class="w-16 h-16 rounded-full object-cover border-2 border-primary/10" data-alt="A portrait of a diverse woman in her late 20s with a cheerful and energetic look. Soft natural lighting from a window creates a bright, fresh vibe. She has curly hair and wears modern glasses. The background is a clean, minimal interior workspace, fitting the modern corporate light-mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuALNbokCuXkS_gEpZGZ7I--VxWt7U0bcb1M7Ed8ytazmSHRqFVGp2raFr36WewIVVEubKcP8yM1OAAOXQ35cbF1F-6WTHTMsbILprEI4VxSVYs5HqCXRAYkOASrdQk6nq9a8OUHiRf63XLR4-PqXcAYqWp7rNQwkDNvcH-SRDn1lyHckymHcf5SvD_iJaU7AFJSxAqF09QEW8Klm7jEmpQrRHVvWScBTz52h-qwHpkLo1vbXnD9wbDuAQ"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-title-md text-title-md text-on-surface">Elena Rodriguez</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Worship Team • Singer</p>
+<div class="flex gap-1 mt-1">
+<span class="px-2 py-0.5 bg-surface-container-highest text-on-surface-variant text-[10px] rounded uppercase font-bold tracking-wider">New</span>
+</div>
+</div>
+</div>
+<div class="flex border-t border-outline-variant/50 pt-3 mt-1 justify-between items-center">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">call</span>
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">mail</span>
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">chat_bubble</span>
+</div>
+<button class="text-primary font-label-lg py-2 px-3 hover:bg-primary/5 rounded-lg">View Profile</button>
+</div>
+</div>
+<!-- Member Card 5 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
+<div class="flex items-center gap-4">
+<div class="relative">
+<img class="w-16 h-16 rounded-full object-cover border-2 border-primary/10" data-alt="A high-end professional headshot of a person with a warm, sincere smile. The image uses soft-key lighting to minimize shadows and create a very approachable, friendly appearance. The person wears a neutral-toned knit sweater. The environment is a blurred modern church foyer with light wood and glass elements." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIXYMTypJkM67o1VqKEsipfYq7vwQCbNAQq3mVgSesgFhlXLkhSUhLmmLechOU2NjguVeRhU0ugs4kg0bxsI67xAiFNlFnF57SpP6zrd6AUxjNQ9lBuW3F2oaLxqKfE56Pc400dMS4vkbsh7vjjdSlrx7RWWyamOP5g5TPN2L8H3bwYEJJmn40r4G_xBqIUAXn0Xx2IUqCZ1OwW0Y616EBMjxy0qlIYQnaIVrcY1yGTB3W1F578BOZGg"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-title-md text-title-md text-on-surface">Sam Wilson</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Hospitality • Greeter</p>
+</div>
+</div>
+<div class="flex border-t border-outline-variant/50 pt-3 mt-1 justify-between items-center">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">call</span>
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">mail</span>
+<span class="material-symbols-outlined text-primary p-2 bg-primary/5 rounded-lg cursor-pointer active:scale-90 transition-transform">chat_bubble</span>
+</div>
+<button class="text-primary font-label-lg py-2 px-3 hover:bg-primary/5 rounded-lg">View Profile</button>
+</div>
+</div>
+</section>
+<!-- Empty State Hint (Simulated) -->
+<div class="py-12 flex flex-col items-center text-center gap-2 opacity-50">
+<span class="material-symbols-outlined text-[48px] text-outline">search_off</span>
+<p class="font-body-md">Showing 128 of 1,248 members</p>
+<button class="text-primary font-label-lg mt-2">Load More</button>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-xs py-base pb-safe bg-surface-container border-t border-outline-variant shadow-lg z-50 rounded-t-xl">
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-[11px] leading-4 font-medium">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:bg-surface-variant scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-[11px] leading-4 font-medium">Members</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-label-md text-[11px] leading-4 font-medium">Events</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="font-label-md text-[11px] leading-4 font-medium">Check-in</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-label-md text-[11px] leading-4 font-medium">More</span>
+</div>
+</nav>
+<!-- Contextual FAB (Hidden as per rule on details, but keeping for directory main action if needed) -->
+<!-- Suppression rule applied: Suppression of FAB on Details/Transaction. Since this is a list view, we use the Person Add in-line above -->
+<script>
+        // Micro-interactions
+        document.querySelectorAll('button, span.material-symbols-outlined').forEach(el => {
+            el.addEventListener('mousedown', () => {
+                el.style.transform = 'scale(0.95)';
+            });
+            el.addEventListener('mouseup', () => {
+                el.style.transform = 'scale(1)';
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = 'scale(1)';
+            });
+        });
+
+        // Search highlight simulation
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('main > section:last-of-type > div');
+            
+            cards.forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                if (name.includes(val)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body></html>

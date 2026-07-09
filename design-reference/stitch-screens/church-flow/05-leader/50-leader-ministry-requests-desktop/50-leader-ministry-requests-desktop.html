@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Youth Ministry - Requests Dashboard</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#5341cd",
+                        "tertiary": "#57595b",
+                        "on-tertiary-container": "#f7f8f9",
+                        "primary-fixed": "#e4dfff",
+                        "secondary": "#586062",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#e1e3e4",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-secondary-container": "#5d6466",
+                        "on-primary-fixed": "#160066",
+                        "background": "#f1fbff",
+                        "surface-container": "#e4f0f4",
+                        "surface-tint": "#5847d2",
+                        "on-background": "#131d21",
+                        "surface-container-low": "#eaf5fa",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#f1fbff",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#faf6ff",
+                        "primary-container": "#6c5ce7",
+                        "on-surface-variant": "#474554",
+                        "on-secondary-fixed": "#161d1f",
+                        "inverse-surface": "#283236",
+                        "tertiary-container": "#707273",
+                        "surface-variant": "#d9e4e9",
+                        "secondary-fixed": "#dde4e6",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "outline": "#787586",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#c8c4d7",
+                        "secondary-container": "#dae1e3",
+                        "surface-bright": "#f1fbff",
+                        "inverse-on-surface": "#e7f3f7",
+                        "on-surface": "#131d21",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#c6bfff",
+                        "surface-container-high": "#dfeaef",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d1dce0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "gutter": "24px",
+                        "margin-desktop": "32px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "base": "8px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #f1fbff;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d9e4e9;
+            border-radius: 10px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-background overflow-hidden h-screen flex">
+<!-- Navigation Drawer (Desktop Anchor) -->
+<aside class="hidden lg:flex flex-col h-full py-6 bg-inverse-surface dark:bg-inverse-surface w-[280px] fixed left-0 top-0 shadow-sm z-50">
+<div class="px-6 mb-8">
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed">Youth Ministry</h1>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-lg text-label-lg">Roster</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-lg text-label-lg">Attendance</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-lg text-label-lg">Reports</span>
+</a>
+<!-- Active Tab: Requests -->
+<a class="flex items-center gap-4 bg-primary-container text-on-primary-container rounded-lg px-4 py-3 mx-2 my-1 transition-transform scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+<span class="font-label-lg text-label-lg">Requests</span>
+</a>
+</nav>
+<div class="mt-auto px-4">
+<div class="flex items-center gap-3 p-3 rounded-xl bg-on-tertiary-fixed-variant/20">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="A professional headshot of Grace Mwansa, a young African woman with a warm, confident expression. She is wearing modern business casual attire against a soft-focus studio background with gentle purple and blue lighting accents, reflecting a high-end corporate church management aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHu8y80r6iOoZPbbzdSqnw7GSJEO6BcFOdR3l_iTDOhYYwocE8SMJXrNbuMM1hAWT-nPeYQzNVg4ayP9YMyZRaomnP3ynXypM_sQNN2r6IyWNfFDsfNhirdIP1hDZnDH8AbYQqLEkjq4oG0pAd1Zecc4TNTIe-loRdUgKfXYs-5sOUvSIN6lMrXYx10eNY-dl7SWxO-KtOMHNZmTKB2tMFZusaEKyP3jjFb3tfYcid4gMWRtyVjMcSaQ"/>
+<div class="overflow-hidden">
+<p class="font-title-lg text-title-lg text-primary-fixed truncate">Grace Mwansa</p>
+<p class="font-label-md text-label-md text-tertiary-fixed-dim truncate">Department Leader</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col lg:ml-[280px] h-full overflow-hidden bg-background">
+<!-- Top AppBar -->
+<header class="flex justify-between items-center w-full px-4 md:px-8 h-16 sticky top-0 z-40 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-4">
+<button class="lg:hidden p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="font-title-lg text-title-lg text-primary">Ministry Requests</h2>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-full relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-white"></span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant mx-2"></div>
+<div class="flex items-center gap-2 px-3 py-1.5 hover:bg-surface-container-high rounded-lg cursor-pointer transition-all">
+<span class="font-label-md text-label-md font-bold text-primary">YOUTH HQ</span>
+<span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<section class="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 space-y-8">
+<!-- Header & Filter Actions -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-1">
+<p class="font-body-md text-body-md text-on-surface-variant">Manage incoming member inquiries and camp registrations</p>
+<div class="flex gap-2 pt-2">
+<span class="px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-md text-label-md">12 New</span>
+<span class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-label-md">4 Pending</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="pl-10 pr-4 py-2 bg-white border border-outline-variant rounded-xl text-body-md focus:ring-2 focus:ring-primary focus:border-primary w-full md:w-64 outline-none transition-all" placeholder="Search requests..." type="text"/>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-xl font-label-lg text-label-lg text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                        Filter
+                    </button>
+</div>
+</div>
+<!-- Bento Grid Layout for Requests -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+<!-- Main Request Queue Table (Taking up 2/3) -->
+<div class="xl:col-span-2 glass-card rounded-2xl overflow-hidden flex flex-col">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center bg-white/50">
+<h3 class="font-title-md text-title-md text-on-surface">Active Queue</h3>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Sorted by newest</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-6 py-4 font-label-lg text-label-lg text-on-surface-variant uppercase">Member</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-on-surface-variant uppercase">Type &amp; Subject</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-on-surface-variant uppercase">Status</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-on-surface-variant uppercase">Date</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-on-surface-variant uppercase text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant bg-white">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors cursor-pointer group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">JD</div>
+<div>
+<p class="font-title-md text-body-md font-semibold">Jordan Doe</p>
+<p class="text-label-md text-on-surface-variant">Grade 11</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="max-w-xs">
+<p class="font-label-md text-label-md text-primary font-bold uppercase mb-0.5">Youth Camp Registration</p>
+<p class="font-body-md text-body-md text-on-surface truncate">Inquiry regarding dietary restrictions for summer retreat.</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-error-container text-on-error-container">
+<span class="w-1.5 h-1.5 rounded-full bg-error mr-2"></span> New
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-on-surface-variant text-body-md">Oct 24, 2023</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors cursor-pointer group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="A portrait of a smiling teenage boy with glasses and a bright yellow hoodie, sitting in a modern church youth room with colorful bean bags and soft ambient lighting. The style is clean, vibrant, and professional, consistent with a modern community center aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzZQPyRnTIdgjKUPOz60NvFZYjq7WfSmCEOJT6R1GTe2W7YRHgsB-LP7q3APAsClFmx_k4N-Oiy1MoUCDrX_jipH07gPQptaq1Isl19NGzBqglFhwA_4v1k3HwbpXfLQduJYa895iXggThPfGEk8f0-07ALQwzxPU-kRwc-uuNgS-70lxecrnK8EFEL2D91fDv0pbigvw9cXg7VOFn8xyK7O1xgcL5Mh7b5C__7_loBa9wQNeyYBgxPA"/>
+<div>
+<p class="font-title-md text-body-md font-semibold">Samuel Kim</p>
+<p class="text-label-md text-on-surface-variant">Small Group leader</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="max-w-xs">
+<p class="font-label-md text-label-md text-primary font-bold uppercase mb-0.5">Mentor Request</p>
+<p class="font-body-md text-body-md text-on-surface truncate">Seeking a senior mentor for theology foundations.</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-container-highest text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline mr-2"></span> In Review
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-on-surface-variant text-body-md">Oct 22, 2023</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors cursor-pointer group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-bold">AL</div>
+<div>
+<p class="font-title-md text-body-md font-semibold">Abigail Loe</p>
+<p class="text-label-md text-on-surface-variant">Parent</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="max-w-xs">
+<p class="font-label-md text-label-md text-primary font-bold uppercase mb-0.5">Volunteer Application</p>
+<p class="font-body-md text-body-md text-on-surface truncate">Applying to help with Wednesday night snacks.</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-2"></span> Approved
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-on-surface-variant text-body-md">Oct 20, 2023</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low transition-colors cursor-pointer group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">MW</div>
+<div>
+<p class="font-title-md text-body-md font-semibold">Mark Wallace</p>
+<p class="text-label-md text-on-surface-variant">Grade 12</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="max-w-xs">
+<p class="font-label-md text-label-md text-primary font-bold uppercase mb-0.5">Youth Camp Registration</p>
+<p class="font-body-md text-body-md text-on-surface truncate">Scholarship request for Winter Intensive camp.</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-error-container text-on-error-container">
+<span class="w-1.5 h-1.5 rounded-full bg-error mr-2"></span> New
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-on-surface-variant text-body-md">Oct 18, 2023</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-white border-t border-outline-variant flex justify-between items-center">
+<p class="text-label-md text-on-surface-variant">Showing 1-4 of 12 requests</p>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 border border-outline-variant rounded-lg font-label-md text-on-surface-variant disabled:opacity-40" disabled="">Previous</button>
+<button class="px-3 py-1.5 border border-outline-variant rounded-lg font-label-md text-on-surface hover:bg-surface-container">Next</button>
+</div>
+</div>
+</div>
+<!-- Right Sidebar Statistics & Quick Actions -->
+<div class="space-y-6">
+<!-- Stat Card -->
+<div class="bg-primary-container p-6 rounded-2xl text-on-primary-container relative overflow-hidden shadow-lg">
+<div class="relative z-10">
+<p class="font-label-lg uppercase tracking-wider opacity-80">Pending Action</p>
+<h3 class="font-display-lg text-display-lg mt-2">08</h3>
+<p class="font-body-md mt-2">Requests requiring your immediate review to meet the 48-hour response goal.</p>
+<button class="mt-6 w-full py-3 bg-on-primary-container text-primary-container font-label-lg rounded-xl flex items-center justify-center gap-2 hover:bg-white transition-colors">
+                                Start Review Session
+                                <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+</div>
+<!-- Abstract decorative circle -->
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+</div>
+<!-- Category Breakdown -->
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant">
+<h4 class="font-title-md text-on-surface mb-4">Request Types</h4>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="font-body-md">Camp Reg</span>
+</div>
+<span class="font-label-lg text-on-surface-variant">65%</span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-1.5">
+<div class="bg-primary h-1.5 rounded-full" style="width: 65%"></div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<span class="font-body-md">Mentorship</span>
+</div>
+<span class="font-label-lg text-on-surface-variant">25%</span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-1.5">
+<div class="bg-secondary h-1.5 rounded-full" style="width: 25%"></div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<span class="font-body-md">Emergency</span>
+</div>
+<span class="font-label-lg text-on-surface-variant">10%</span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-1.5">
+<div class="bg-error h-1.5 rounded-full" style="width: 10%"></div>
+</div>
+</div>
+</div>
+<!-- Notification Card -->
+<div class="bg-surface-container-low p-6 rounded-2xl border border-dashed border-outline">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary border border-outline-variant">
+<span class="material-symbols-outlined">auto_awesome</span>
+</div>
+<div>
+<p class="font-title-md text-body-md font-semibold">AI Assistant</p>
+<p class="text-label-md text-on-surface-variant">3 similar requests found in history.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Modal Placeholder (Hidden) -->
+<div class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-background/20 backdrop-blur-sm" id="requestModal">
+<div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+<h3 class="font-headline-md text-primary">Request Details</h3>
+<button class="p-2 hover:bg-surface-container rounded-full text-on-surface-variant transition-colors" onclick="closeModal()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-8 space-y-6">
+<div class="flex items-start gap-4">
+<div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-bold">JD</div>
+<div class="flex-1">
+<h4 class="font-title-lg text-on-surface">Jordan Doe</h4>
+<p class="text-on-surface-variant">jordan.doe@example.com • 11th Grade Student</p>
+</div>
+<span class="px-4 py-1.5 rounded-full bg-error-container text-on-error-container font-label-md font-bold uppercase tracking-tight">NEW</span>
+</div>
+<div class="space-y-4">
+<div>
+<p class="font-label-lg text-primary uppercase mb-1">Request Type</p>
+<p class="font-body-lg text-on-surface font-medium">Youth Camp Registration - Summer 2024</p>
+</div>
+<div>
+<p class="font-label-lg text-primary uppercase mb-1">Subject</p>
+<p class="font-body-lg text-on-surface">Dietary Restrictions &amp; Medical Waiver</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant">
+<p class="font-label-lg text-on-surface-variant uppercase mb-2">Description</p>
+<p class="font-body-md text-on-surface leading-relaxed italic">
+                            "Hi Grace, I'm registering for the summer retreat but I have some severe peanut allergies. I wanted to check if the camp facilities are nut-free or how the kitchen handles cross-contamination? Also, my mom hasn't signed the digital waiver yet, can you resend that link?"
+                        </p>
+</div>
+</div>
+<div class="flex flex-col md:flex-row gap-3 pt-4 border-t border-outline-variant">
+<div class="flex-1">
+<select class="w-full px-4 py-2 border border-outline-variant rounded-xl text-body-md bg-white focus:ring-2 focus:ring-primary outline-none">
+<option>Change Status: New</option>
+<option>In Review</option>
+<option>Waiting for Info</option>
+<option>Approved</option>
+<option>Declined</option>
+</select>
+</div>
+<button class="px-6 py-2 bg-primary text-white rounded-xl font-label-lg hover:shadow-lg transition-all">
+                        Update Request
+                    </button>
+<button class="px-6 py-2 border border-outline-variant text-on-surface rounded-xl font-label-lg hover:bg-surface-container transition-colors">
+                        Assign to Mentor
+                    </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Mobile Navigation Shell (Suppressed on Desktop) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-1 pb-safe bg-surface-container-lowest shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md">Dash</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md">Roster</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-md text-label-md">Check-in</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl p-2 scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+<span class="font-label-md text-label-md">Reqs</span>
+</a>
+</nav>
+<script>
+        function openModal() {
+            document.getElementById('requestModal').classList.remove('hidden');
+        }
+        function closeModal() {
+            document.getElementById('requestModal').classList.add('hidden');
+        }
+
+        // Attach click listener to table rows for demo
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('click', openModal);
+        });
+    </script>
+</body></html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>HQ admins | <%= organization.name %> | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'HQ admins', activeNav: activeNav || 'church_platform_orgs' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">HQ admins</h1>
+            <p class="admin-dashboard__subtitle muted">
+              <a href="/admin/church/organizations/<%= organization.id %>"><%= organization.name %></a>
+              · <%= activeHqAdminCount != null ? activeHqAdminCount : 0 %> active
+            </p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/organizations/' + organization.id + '/hq-admins/new', label: 'Add HQ admin' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'Organization detail' }) %>
+          </div>
+        </header>
+
+        <% if (typeof flashNotice !== 'undefined' && flashNotice) { %>
+          <div class="flash flash--success" role="status"><%= flashNotice %></div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash flash--error" role="alert"><%= error %></div>
+        <% } %>
+
+        <% if (hqLoginHostSlug) { %>
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <p class="muted" style="margin:0;">
+            Example HQ login: <code>https://<%= churchPublicHost(hqLoginHostSlug) %>/hq/login</code>
+          </p>
+        </section>
+        <% } else { %>
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <p class="muted" style="margin:0;">Add a branch to this organization before HQ admins can log in on a branch host.</p>
+        </section>
+        <% } %>
+
+        <div class="card card--mb-xl">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Last updated</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!admins || admins.length === 0) { %>
+                  <tr><td colspan="7" class="muted">No HQ admins yet.</td></tr>
+                <% } else { admins.forEach(function (a) { %>
+                  <tr>
+                    <td><%= a.full_name %></td>
+                    <td><%= a.email || '—' %></td>
+                    <td><%= a.phone || '—' %></td>
+                    <td><%= a.role %></td>
+                    <td><%- include('../../partials/admin/church_status_badge', { status: a.status }) %></td>
+                    <td><%= formatDate(a.updated_at || a.created_at) %></td>
+                    <td>
+                      <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/hq-admins/' + a.id, label: 'View' }) %>
+                      <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/hq-admins/' + a.id + '/edit', label: 'Edit' }) %>
+                    </td>
+                  </tr>
+                <% }); } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

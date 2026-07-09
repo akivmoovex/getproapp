@@ -1,0 +1,6 @@
+<% if (typeof premiumNotice !== 'undefined' && premiumNotice) { %>
+<div class="church-alert church-alert--info church-plan-premium-notice" role="status">
+  <strong><%= premiumNotice.title %></strong>
+  <p><%= premiumNotice.message %></p>
+</div>
+<% } %>

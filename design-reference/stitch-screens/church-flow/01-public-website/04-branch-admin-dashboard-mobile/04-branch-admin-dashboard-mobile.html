@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GetPro Church - Branch Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom touch target optimization */
+        .touch-target { min-height: 48px; min-width: 48px; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-fixed-variant": "#4029ba",
+                      "surface-container-lowest": "#ffffff",
+                      "outline": "#787586",
+                      "on-tertiary-fixed": "#191c1d",
+                      "inverse-primary": "#c6bfff",
+                      "tertiary": "#57595b",
+                      "on-error": "#ffffff",
+                      "secondary-container": "#dae1e3",
+                      "on-secondary-fixed-variant": "#41484a",
+                      "surface-container": "#e4f0f4",
+                      "on-tertiary-fixed-variant": "#454748",
+                      "surface-variant": "#d9e4e9",
+                      "error-container": "#ffdad6",
+                      "surface-bright": "#f1fbff",
+                      "tertiary-fixed": "#e1e3e4",
+                      "on-tertiary-container": "#f7f8f9",
+                      "tertiary-container": "#707273",
+                      "on-secondary-fixed": "#161d1f",
+                      "secondary": "#586062",
+                      "secondary-fixed-dim": "#c1c8ca",
+                      "primary-container": "#6c5ce7",
+                      "outline-variant": "#c8c4d7",
+                      "on-surface-variant": "#474554",
+                      "primary-fixed-dim": "#c6bfff",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary": "#ffffff",
+                      "surface-container-high": "#dfeaef",
+                      "on-error-container": "#93000a",
+                      "on-background": "#131d21",
+                      "primary": "#5341cd",
+                      "secondary-fixed": "#dde4e6",
+                      "on-primary-container": "#faf6ff",
+                      "tertiary-fixed-dim": "#c5c7c8",
+                      "surface-dim": "#d1dce0",
+                      "on-secondary-container": "#5d6466",
+                      "surface-container-low": "#eaf5fa",
+                      "on-surface": "#131d21",
+                      "inverse-on-surface": "#e7f3f7",
+                      "surface": "#f1fbff",
+                      "on-primary": "#ffffff",
+                      "surface-container-highest": "#d9e4e9",
+                      "inverse-surface": "#283236",
+                      "error": "#ba1a1a",
+                      "primary-fixed": "#e4dfff",
+                      "background": "#f1fbff",
+                      "surface-tint": "#5847d2",
+                      "on-primary-fixed": "#160066"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "base": "8px",
+                      "gutter": "24px",
+                      "margin-desktop": "32px",
+                      "margin-mobile": "16px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "sm": "8px",
+                      "xl": "32px",
+                      "xs": "4px"
+              },
+              "fontFamily": {
+                      "headline-lg": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "body-md": ["Inter"],
+                      "title-md": ["Inter"],
+                      "label-md": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "title-lg": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "label-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+<!-- Top AppBar (Admin Header) -->
+<header class="sticky top-0 z-50 bg-surface border-b border-outline-variant px-margin-mobile h-16 flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">church</span>
+</div>
+<div>
+<h1 class="font-headline-md text-title-md leading-none text-on-surface">Grace Community</h1>
+<p class="font-label-lg text-label-lg text-secondary">Main Branch Admin</p>
+</div>
+</div>
+<button aria-label="Notifications" class="touch-target flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<!-- Main Content Area (Scrollable) -->
+<main class="flex-1 overflow-y-auto px-margin-mobile py-lg pb-32">
+<!-- Welcome Message -->
+<section class="mb-xl">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Hello, Admin</h2>
+<p class="font-body-md text-body-md text-secondary mt-xs">Here is what's happening at your branch today.</p>
+</section>
+<!-- Summary Metrics (Bento-style Stack) -->
+<section class="grid grid-cols-1 gap-md mb-xl">
+<!-- Active Members Card -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm flex items-center justify-between">
+<div>
+<p class="font-label-lg text-label-lg text-secondary uppercase tracking-wider">Total Members</p>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mt-xs">1,284</h3>
+<div class="flex items-center gap-xs text-on-primary-fixed-variant mt-xs">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span class="font-label-md text-label-md">+12 this week</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]">group</span>
+</div>
+</div>
+<!-- Sunday Attendance Card -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm flex items-center justify-between">
+<div>
+<p class="font-label-lg text-label-lg text-secondary uppercase tracking-wider">Last Sunday</p>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-tertiary-container mt-xs">842</h3>
+<p class="font-label-md text-label-md text-secondary mt-xs">92% capacity</p>
+</div>
+<div class="w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[32px]">event_available</span>
+</div>
+</div>
+<!-- Giving Summary Card -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm flex items-center justify-between">
+<div>
+<p class="font-label-lg text-label-lg text-secondary uppercase tracking-wider">Weekly Giving</p>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-primary-fixed-variant mt-xs">$14,205</h3>
+<p class="font-label-md text-label-md text-secondary mt-xs">Target: $15,000</p>
+</div>
+<div class="w-12 h-12 rounded-full bg-on-primary-fixed-variant/10 flex items-center justify-center text-on-primary-fixed-variant">
+<span class="material-symbols-outlined text-[32px]">volunteer_activism</span>
+</div>
+</div>
+</section>
+<!-- Recent Activity List -->
+<section class="mb-xl">
+<div class="flex items-center justify-between mb-md">
+<h2 class="font-title-lg text-title-lg text-on-surface">Recent Activity</h2>
+<button class="font-label-lg text-label-lg text-primary touch-target">View All</button>
+</div>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant divide-y divide-outline-variant">
+<!-- Activity Item 1 -->
+<div class="p-md flex items-start gap-md">
+<div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A professional studio headshot of a smiling middle-aged woman with warm lighting, against a soft blurred office background, representing a church member profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAv4opR6kjTfw1cjJdaQ9cuPFMSazyM5MgY_jKuWVOZXNQHwKguejVmfjcrwyYlXlRK_rDD4TExyEeyR3BIDltBSv9W2yfR7SsflVkZmamQ95Wb7MX8JHwCKav21ailcl8BeSd3c57lAD8MRsq9Sc3mCmdv1V39n5j_BW4qNhIkK2nKoZJuSPpXtabJW7sfLHyKolrm5N3dt1Jy3AdVjfSuwem1dFNZNRelDWqQhihbf1XlY9d7oEuuPw"/>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-on-surface"><strong>Sarah Jenkins</strong> joined the Worship Team ministry.</p>
+<p class="font-label-md text-label-md text-secondary mt-xs">2 hours ago</p>
+</div>
+</div>
+<!-- Activity Item 2 -->
+<div class="p-md flex items-start gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant flex-shrink-0">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-on-surface">New anonymous donation of <strong>$500</strong> received for Youth Fund.</p>
+<p class="font-label-md text-label-md text-secondary mt-xs">5 hours ago</p>
+</div>
+</div>
+<!-- Activity Item 3 -->
+<div class="p-md flex items-start gap-md">
+<div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A professional studio headshot of a young man wearing a casual shirt, smiling warmly, clean lighting, minimalist background, high-quality corporate church management profile style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7pTPZNNLVjku-WdVlJwLlrW0yiSUkI1aEx7BW4MUHfaFXiI7imev3MiSSRHBCw5ZRmteIC1X01BT5epn9WucUWI1N-sqzkHz0BgaKvHwuh67jSRlQ9uunGsLZnHj6_9cpqzYqvTgiMEU8WZf5fiq9zs5zZPNRCqhrNdfLsQxRrnyvAEnmYLMiXMI9cOK_SEgwG9Wbu087yY8Fd4oxXAsNfv_BZTFmBmCzOjM7zqq8eH07E3GOymB_QQ"/>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-on-surface"><strong>Marcus Thorne</strong> updated the Attendance for 'Youth Night'.</p>
+<p class="font-label-md text-label-md text-secondary mt-xs">Yesterday</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Quick Actions Grid -->
+<section class="mb-lg">
+<h2 class="font-title-lg text-title-lg text-on-surface mb-md">Field Actions</h2>
+<div class="grid grid-cols-2 gap-md">
+<button class="flex flex-col items-center justify-center p-lg bg-primary-container text-on-primary-container rounded-xl gap-sm active:scale-95 transition-transform touch-target shadow-md">
+<span class="material-symbols-outlined text-[28px]">person_add</span>
+<span class="font-label-lg text-label-lg">Add Member</span>
+</button>
+<button class="flex flex-col items-center justify-center p-lg bg-surface-container-highest text-on-surface rounded-xl gap-sm active:scale-95 transition-transform touch-target border border-outline-variant">
+<span class="material-symbols-outlined text-[28px]">edit_calendar</span>
+<span class="font-label-lg text-label-lg">Check-in</span>
+</button>
+<button class="flex flex-col items-center justify-center p-lg bg-surface-container-highest text-on-surface rounded-xl gap-sm active:scale-95 transition-transform touch-target border border-outline-variant">
+<span class="material-symbols-outlined text-[28px]">receipt_long</span>
+<span class="font-label-lg text-label-lg">Expense</span>
+</button>
+<button class="flex flex-col items-center justify-center p-lg bg-surface-container-highest text-on-surface rounded-xl gap-sm active:scale-95 transition-transform touch-target border border-outline-variant">
+<span class="material-symbols-outlined text-[28px]">share_location</span>
+<span class="font-label-lg text-label-lg">Visits</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Floating Action Button (Universal Add) -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-primary text-on-primary rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-transform z-40">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</button>
+<!-- Bottom Navigation Bar (Mandatory Shell) -->
+<nav class="fixed bottom-0 left-0 right-0 h-20 bg-surface-container-lowest border-t border-outline-variant flex items-center justify-around px-sm z-50">
+<!-- Dashboard (Active) -->
+<button class="flex flex-col items-center gap-xs text-primary transition-colors touch-target min-w-[64px]">
+<span class="material-symbols-outlined active-nav-icon">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</button>
+<!-- Members -->
+<button class="flex flex-col items-center gap-xs text-secondary hover:text-primary transition-colors touch-target min-w-[64px]">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-lg text-label-lg">Members</span>
+</button>
+<!-- Ministries -->
+<button class="flex flex-col items-center gap-xs text-secondary hover:text-primary transition-colors touch-target min-w-[64px]">
+<span class="material-symbols-outlined">church</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</button>
+<!-- Giving -->
+<button class="flex flex-col items-center gap-xs text-secondary hover:text-primary transition-colors touch-target min-w-[64px]">
+<span class="material-symbols-outlined">volunteer_activism</span>
+<span class="font-label-lg text-label-lg">Giving</span>
+</button>
+<!-- More Menu -->
+<button class="flex flex-col items-center gap-xs text-secondary hover:text-primary transition-colors touch-target min-w-[64px]">
+<span class="material-symbols-outlined">menu</span>
+<span class="font-label-lg text-label-lg">More</span>
+</button>
+</nav>
+<!-- Micro-interactions Script -->
+<script>
+        // Simple ripple-like effect on button clicks for mobile feel
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('touchstart', function() {
+                this.classList.add('opacity-70');
+            });
+            button.addEventListener('touchend', function() {
+                this.classList.remove('opacity-70');
+            });
+        });
+
+        // Navigation simulation
+        const navButtons = document.querySelectorAll('nav button');
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                navButtons.forEach(b => {
+                    b.classList.replace('text-primary', 'text-secondary');
+                    const icon = b.querySelector('.material-symbols-outlined');
+                    if(icon) icon.style.fontVariationSettings = "'FILL' 0";
+                });
+                btn.classList.replace('text-secondary', 'text-primary');
+                const activeIcon = btn.querySelector('.material-symbols-outlined');
+                if(activeIcon) activeIcon.style.fontVariationSettings = "'FILL' 1";
+            });
+        });
+    </script>
+</body></html>

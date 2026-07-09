@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= mode === 'edit' ? 'Edit branch admin' : 'Add branch admin' %> | <%= branch.name %> | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: mode === 'edit' ? 'Edit branch admin' : 'Add branch admin', activeNav: activeNav || 'church_platform_branches' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title"><%= mode === 'edit' ? 'Edit branch admin' : 'Add branch admin' %></h1>
+            <p class="admin-dashboard__subtitle muted">
+              <a href="/admin/church/branches/<%= branch.id %>"><%= branch.name %></a>
+              <% if (mode === 'edit' && admin) { %>
+                · <%- include('../../partials/admin/church_status_badge', { status: admin.status }) %>
+              <% } %>
+            </p>
+          </div>
+          <div class="admin-toolbar">
+            <% if (mode === 'edit' && admin) { %>
+              <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id + '/admins/' + admin.id, label: 'Admin detail' }) %>
+            <% } %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id + '/admins', label: 'All branch admins' }) %>
+          </div>
+        </header>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash flash--error" role="alert"><%= error %></div>
+        <% } %>
+
+        <% var f = typeof form !== 'undefined' && form ? form : {}; %>
+        <% var formAction = mode === 'edit' && admin
+          ? '/admin/church/branches/' + branch.id + '/admins/' + admin.id
+          : '/admin/church/branches/' + branch.id + '/admins'; %>
+        <form method="post" action="<%= formAction %>" class="card card--mb-xl" style="padding:1.25rem;">
+          <div class="admin-form-grid">
+            <div class="input-field">
+              <label class="input-field__label" for="full_name">Full name *</label>
+              <input id="full_name" class="input-field__control" name="full_name" required value="<%= f.full_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="email">Email</label>
+              <input id="email" class="input-field__control" name="email" type="email" value="<%= f.email || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="phone">Phone</label>
+              <input id="phone" class="input-field__control" name="phone" value="<%= f.phone || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="role">Role</label>
+              <select id="role" class="input-field__control" name="role">
+                <% (branchAdminRoles || ['branch_admin']).forEach(function (r) { %>
+                  <option value="<%= r %>" <%= (f.role || 'branch_admin') === r ? 'selected' : '' %>><%= r %></option>
+                <% }); %>
+              </select>
+            </div>
+            <% if (mode !== 'edit') { %>
+            <div class="input-field">
+              <label class="input-field__label" for="temporary_password">Temporary password *</label>
+              <input id="temporary_password" class="input-field__control" name="temporary_password" type="password" required minlength="8" autocomplete="new-password" />
+              <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">Minimum 8 characters. Share securely after creation.</p>
+            </div>
+            <% } %>
+            <div class="input-field" style="grid-column:1/-1;">
+              <label class="input-field__label" for="notes">Notes</label>
+              <textarea id="notes" class="input-field__control" name="notes" rows="3"><%= f.notes || '' %></textarea>
+            </div>
+          </div>
+
+          <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">Email or phone is required for login.</p>
+
+          <div class="admin-toolbar" style="margin-top:1.5rem;">
+            <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: mode === 'edit' ? 'Save changes' : 'Create branch admin' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: mode === 'edit' && admin ? '/admin/church/branches/' + branch.id + '/admins/' + admin.id : '/admin/church/branches/' + branch.id + '/admins', label: 'Cancel' }) %>
+          </div>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>

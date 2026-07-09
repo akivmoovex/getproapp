@@ -1,0 +1,15 @@
+<%- include('../partials/public_shell_start') %>
+    <section class="church-section church-section--page">
+      <div class="church-section__inner">
+        <h1 class="church-section__title">Ministries</h1>
+        <p class="church-section__subtitle">Find a place to serve and grow at <%= churchName %>.</p>
+        <% if ((ministries || []).length === 0) { %>
+        <p class="church-section__subtitle">Ministry information will be posted soon.</p>
+        <% } else { %>
+        <div class="church-grid church-grid--events">
+          <%- include('../partials/ministry_cards') %>
+        </div>
+        <% } %>
+      </div>
+    </section>
+<%- include('../partials/public_shell_end') %>

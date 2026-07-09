@@ -1,0 +1,66 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <h1 class="church-member-header__title">My profile</h1>
+        <p class="church-member-header__subtitle">Update your contact and ministry details</p>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <section class="church-member-panel">
+        <form class="church-form" method="post" action="/member/profile">
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="full_name">Full name</label>
+              <input class="church-input" id="full_name" name="full_name" type="text" required value="<%= profile.full_name || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="email">Email</label>
+              <input class="church-input" id="email" name="email" type="email" required value="<%= profile.email || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="phone">Phone</label>
+              <input class="church-input" id="phone" name="phone" type="tel" required value="<%= profile.phone || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="gender">Gender</label>
+              <select class="church-input" id="gender" name="gender" required>
+                <option value="male" <%= profile.gender === 'male' ? 'selected' : '' %>>Male</option>
+                <option value="female" <%= profile.gender === 'female' ? 'selected' : '' %>>Female</option>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="age_group">Age group</label>
+              <select class="church-input" id="age_group" name="age_group" required>
+                <% ageGroupOptions.forEach(function (opt) { %>
+                <option value="<%= opt %>" <%= profile.age_group === opt ? 'selected' : '' %>><%= opt %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="address_area">Address area</label>
+              <input class="church-input" id="address_area" name="address_area" type="text" required value="<%= profile.address_area || '' %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="ministry_interest">Ministry interest</label>
+              <input class="church-input" id="ministry_interest" name="ministry_interest" type="text" value="<%= profile.ministry_interest || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="emergency_contact_name">Emergency contact name</label>
+              <input class="church-input" id="emergency_contact_name" name="emergency_contact_name" type="text" value="<%= profile.emergency_contact_name || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="emergency_contact_phone">Emergency contact phone</label>
+              <input class="church-input" id="emergency_contact_phone" name="emergency_contact_phone" type="tel" value="<%= profile.emergency_contact_phone || '' %>"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Save profile</button>
+        </form>
+        <p class="church-member-panel__hint" style="margin-top: 1rem;">
+          Need to update your password?
+          <a class="church-member-link" href="/member/account">Account &amp; security</a>
+        </p>
+      </section>
+<%- include('../partials/member_shell_end') %>

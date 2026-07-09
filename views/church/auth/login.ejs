@@ -1,0 +1,27 @@
+<%- include('../partials/auth_shell_start') %>
+  <div class="church-auth-card">
+    <h1 class="church-auth-card__title">Member Login</h1>
+    <p class="church-auth-card__subtitle">Sign in with the email or phone number you used to register.</p>
+    <% if (error) { %>
+    <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+    <% } %>
+    <form class="church-form" method="post" action="/login">
+      <div class="church-field">
+        <label class="church-label" for="identifier">Email or phone</label>
+        <input class="church-input" id="identifier" name="identifier" type="text" autocomplete="username" required value="<%= typeof identifier !== 'undefined' ? identifier : '' %>"/>
+      </div>
+      <div class="church-field">
+        <label class="church-label" for="password">Password</label>
+        <input class="church-input" id="password" name="password" type="password" autocomplete="current-password" required/>
+      </div>
+      <button class="church-btn church-btn--primary church-btn--block" type="submit">Sign in</button>
+    </form>
+    <p class="church-auth-card__footer">
+      <a href="/forgot-password">Forgot password?</a>
+    </p>
+    <p class="church-auth-card__footer">
+      New here?
+      <a href="/register">Register as a member</a>
+    </p>
+  </div>
+<%- include('../partials/auth_shell_end') %>

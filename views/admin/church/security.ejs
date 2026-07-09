@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Church Security | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'Church Security', activeNav: activeNav || 'church_platform_security' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
+        <% var ss = typeof securitySummary !== 'undefined' && securitySummary ? securitySummary : {}; %>
+        <% var locked = typeof lockedAccounts !== 'undefined' && lockedAccounts ? lockedAccounts : []; %>
+        <% var attempts = typeof loginAttempts !== 'undefined' && loginAttempts ? loginAttempts : { items: [], total: 0, page: 1, limit: 50, totalPages: 0 }; %>
+
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Church Security</h1>
+            <p class="admin-dashboard__subtitle muted">Login protection visibility for GetPro Church</p>
+            <p class="muted" style="margin-top:0.35rem;">This page shows login attempt and lockout data. It does not include passwords.</p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church', label: 'Church dashboard' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/search', label: 'Support search' }) %>
+          </div>
+        </header>
+
+        <% if (typeof flashNotice !== 'undefined' && flashNotice) { %>
+          <div class="flash flash--success" role="status"><%= flashNotice %></div>
+        <% } %>
+        <% if (typeof validationErrors !== 'undefined' && validationErrors && validationErrors.length > 0) { %>
+          <div class="flash flash--error" role="alert"><%= validationErrors.join(' ') %></div>
+        <% } %>
+
+        <section class="admin-dashboard__grid card card--mb-xl" style="padding:1rem;">
+          <div class="admin-stat">
+            <p class="admin-stat__label">Locked members</p>
+            <p class="admin-stat__value"><%= ss.locked_members != null ? ss.locked_members : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Locked branch admins</p>
+            <p class="admin-stat__value"><%= ss.locked_branch_admins != null ? ss.locked_branch_admins : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Locked HQ admins</p>
+            <p class="admin-stat__value"><%= ss.locked_hq_admins != null ? ss.locked_hq_admins : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Locked ministry leaders</p>
+            <p class="admin-stat__value"><%= ss.locked_ministry_leaders != null ? ss.locked_ministry_leaders : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Failed attempts (24h)</p>
+            <p class="admin-stat__value"><%= ss.failed_attempts_last_24h != null ? ss.failed_attempts_last_24h : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Successful logins (24h)</p>
+            <p class="admin-stat__value"><%= ss.successful_logins_last_24h != null ? ss.successful_logins_last_24h : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Password reset requests rate-limited (24h)</p>
+            <p class="admin-stat__value"><%= ss.password_reset_rate_limited_24h != null ? ss.password_reset_rate_limited_24h : 0 %></p>
+          </div>
+        </section>
+        <p class="muted card card--mb-xl" style="padding:0.75rem 1rem;">
+          <a href="/admin/church/reset-requests">Open unified password reset inbox</a>
+          — read-only visibility for member, branch admin, and HQ admin reset requests.
+        </p>
+
+        <% var blockedResets = typeof ss.recent_blocked_reset_attempts !== 'undefined' && ss.recent_blocked_reset_attempts ? ss.recent_blocked_reset_attempts : []; %>
+        <% if (blockedResets.length > 0) { %>
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <h2 class="section-title section-title--flush">Recent blocked password reset attempts</h2>
+          <p class="muted" style="margin-bottom:0.75rem;">Public forgot-password submissions throttled in the last 24 hours. Identifiers are masked.</p>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Type</th>
+                  <th>Organization</th>
+                  <th>Branch</th>
+                  <th>Identifier / IP</th>
+                  <th>Blocked until</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% blockedResets.forEach(function (row) { %>
+                <tr>
+                  <td><%= formatDateTime(row.last_attempt_at) %></td>
+                  <td><%= row.request_type.replace(/_/g, ' ') %></td>
+                  <td><%= row.organization_name || '—' %></td>
+                  <td><%= row.branch_name || '—' %></td>
+                  <td><%= row.identifier_preview || '—' %></td>
+                  <td><%= formatDateTime(row.blocked_until) %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <% } %>
+
+        <form method="get" action="/admin/church/security" class="card card--mb-xl admin-filter-form" style="padding:1rem;">
+          <div class="input-field">
+            <label class="input-field__label" for="account_type">Account type</label>
+            <select id="account_type" class="input-field__control" name="account_type">
+              <% (accountTypes || ['all']).forEach(function (t) { %>
+                <option value="<%= t %>" <%= (f.account_type || 'all') === t ? 'selected' : '' %>><%= t.replace(/_/g, ' ') %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="organization_id">Organization ID</label>
+            <input id="organization_id" class="input-field__control" name="organization_id" type="number" min="1" value="<%= f.organization_id || '' %>" placeholder="Optional" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="branch_id">Branch ID</label>
+            <input id="branch_id" class="input-field__control" name="branch_id" type="number" min="1" value="<%= f.branch_id || '' %>" placeholder="Optional" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="success">Success/failure</label>
+            <select id="success" class="input-field__control" name="success">
+              <% (successFilters || ['all']).forEach(function (s) { %>
+                <option value="<%= s %>" <%= (f.success || 'all') === s ? 'selected' : '' %>><%= s %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="failure_reason">Failure reason</label>
+            <select id="failure_reason" class="input-field__control" name="failure_reason">
+              <option value="">All</option>
+              <% (failureReasons || []).forEach(function (reason) { %>
+                <option value="<%= reason %>" <%= f.failure_reason === reason ? 'selected' : '' %>><%= reason %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="date_from">Date from</label>
+            <input id="date_from" class="input-field__control" name="date_from" type="date" value="<%= f.date_from || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="date_to">Date to</label>
+            <input id="date_to" class="input-field__control" name="date_to" type="date" value="<%= f.date_to || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="limit">Limit</label>
+            <input id="limit" class="input-field__control" name="limit" type="number" min="1" max="100" value="<%= f.limit || 50 %>" />
+          </div>
+          <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Apply filters' }) %>
+          <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/security', label: 'Clear filters' }) %>
+        </form>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Locked accounts (<%= locked.length %>)</h2>
+          <% if (locked.length === 0) { %>
+            <p class="muted">No accounts are currently locked.</p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Organization</th>
+                    <th>Branch</th>
+                    <th>Locked until</th>
+                    <th>Failed attempts</th>
+                    <th>Last failed</th>
+                    <th>Last success</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% locked.forEach(function (row) { %>
+                    <tr>
+                      <td><%= row.account_type.replace(/_/g, ' ') %></td>
+                      <td><%= row.full_name %></td>
+                      <td><%= row.organization_name || '—' %></td>
+                      <td><%= row.branch_name || '—' %></td>
+                      <td><%= formatDateTime(row.login_locked_until) %></td>
+                      <td><%= row.failed_login_attempts || 0 %></td>
+                      <td><%= formatDateTime(row.last_failed_login_at) %></td>
+                      <td><%= formatDateTime(row.last_successful_login_at) %></td>
+                      <td>
+                        <% if (row.detail_link) { %>
+                          <a href="<%= row.detail_link %>">View</a>
+                        <% } %>
+                        <form method="post" action="/admin/church/security/unlock<%= buildSecurityReturnQuery(f).replace('/admin/church/security', '') %>" style="display:inline;margin-left:0.5rem;">
+                          <input type="hidden" name="account_type" value="<%= row.account_type %>" />
+                          <input type="hidden" name="account_id" value="<%= row.account_id %>" />
+                          <button type="submit" class="btn btn--default btn--sm">Unlock</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Recent login attempts (<%= attempts.total || 0 %>)</h2>
+          <% if (!attempts.items || attempts.items.length === 0) { %>
+            <p class="muted">No login attempts match the current filters.</p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Date/time</th>
+                    <th>Type</th>
+                    <th>Identifier</th>
+                    <th>Result</th>
+                    <th>Reason</th>
+                    <th>Organization</th>
+                    <th>Branch</th>
+                    <th>IP</th>
+                    <th>User agent</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% attempts.items.forEach(function (row) { %>
+                    <tr>
+                      <td><%= formatDateTime(row.created_at) %></td>
+                      <td><%= row.account_type.replace(/_/g, ' ') %></td>
+                      <td><%= row.identifier_display || '—' %></td>
+                      <td><%= row.success ? 'Success' : 'Failure' %></td>
+                      <td><%= row.failure_reason || '—' %></td>
+                      <td><%= row.organization_name || '—' %></td>
+                      <td><%= row.branch_name || '—' %></td>
+                      <td><%= row.ip_address || '—' %></td>
+                      <td><%= row.user_agent_preview || '—' %></td>
+                      <td><% if (row.detail_link) { %><a href="<%= row.detail_link %>">View</a><% } else { %>—<% } %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

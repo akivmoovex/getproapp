@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Moovex Admin - Platform Plans</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#d9e4e9",
+                    "tertiary-fixed-dim": "#4bddb7",
+                    "on-background": "#131d21",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#eaf5fa",
+                    "surface-tint": "#5847d2",
+                    "surface-container": "#e4f0f4",
+                    "background": "#f1fbff",
+                    "on-secondary-container": "#5d6466",
+                    "on-tertiary-fixed-variant": "#005140",
+                    "on-primary-fixed": "#160066",
+                    "on-tertiary-fixed": "#002018",
+                    "tertiary-fixed": "#6dfad2",
+                    "on-error": "#ffffff",
+                    "secondary": "#586062",
+                    "primary-fixed": "#e4dfff",
+                    "primary": "#5341cd",
+                    "on-tertiary-container": "#dffff1",
+                    "tertiary": "#006651",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d1dce0",
+                    "inverse-primary": "#c6bfff",
+                    "surface-container-high": "#dfeaef",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#131d21",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "surface-bright": "#f1fbff",
+                    "inverse-on-surface": "#e7f3f7",
+                    "secondary-container": "#dae1e3",
+                    "outline-variant": "#c8c4d7",
+                    "error": "#ba1a1a",
+                    "outline": "#787586",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#dde4e6",
+                    "inverse-surface": "#283236",
+                    "on-secondary-fixed": "#161d1f",
+                    "tertiary-container": "#008167",
+                    "surface-variant": "#d9e4e9",
+                    "primary-container": "#6c5ce7",
+                    "on-surface-variant": "#474554",
+                    "on-primary-container": "#faf6ff",
+                    "surface": "#f1fbff",
+                    "on-error-container": "#93000a",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "unit": "4px",
+                    "sidebar-width": "260px",
+                    "gutter": "16px",
+                    "density-comfortable": "16px",
+                    "margin-desktop": "32px",
+                    "density-compact": "8px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "label-md": ["JetBrains Mono"],
+                    "headline-sm": ["Hanken Grotesk"],
+                    "label-sm": ["JetBrains Mono"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-sm": ["10px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1fbff;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #787586;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<!-- SideNavBar (Authority: JSON) -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-inverse-surface dark:bg-on-background flex flex-col py-lg px-md shadow-sm z-50">
+<div class="mb-8 px-4">
+<h1 class="text-title-lg font-title-lg text-primary-fixed font-bold leading-tight tracking-tight">Moovex/GetPro</h1>
+<p class="text-on-tertiary-fixed-variant text-label-sm font-label-sm mt-1 opacity-80 uppercase tracking-widest">Super Admin Portal</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-4 py-3 transition-colors duration-200 hover:bg-surface-variant/5 hover:text-on-primary-fixed text-on-tertiary-fixed-variant rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center px-4 py-3 transition-colors duration-200 hover:bg-surface-variant/5 hover:text-on-primary-fixed text-on-tertiary-fixed-variant rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="corporate_fare">corporate_fare</span>
+<span class="font-body-md text-body-md">Organizations</span>
+</a>
+<a class="flex items-center px-4 py-3 transition-colors duration-200 hover:bg-surface-variant/5 hover:text-on-primary-fixed text-on-tertiary-fixed-variant rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="hub">hub</span>
+<span class="font-body-md text-body-md">Tenants</span>
+</a>
+<a class="flex items-center px-4 py-3 transition-colors duration-200 text-on-primary-fixed font-bold border-l-4 border-primary-fixed bg-surface-variant/10 rounded-r-lg" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="payments">payments</span>
+<span class="font-body-md text-body-md">Plans</span>
+</a>
+<a class="flex items-center px-4 py-3 transition-colors duration-200 hover:bg-surface-variant/5 hover:text-on-primary-fixed text-on-tertiary-fixed-variant rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+<a class="flex items-center px-4 py-3 transition-colors duration-200 hover:bg-surface-variant/5 hover:text-on-primary-fixed text-on-tertiary-fixed-variant rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="contact_support">contact_support</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-outline-variant/20 px-4 flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up professional portrait of a tech administrator in a clean office setting, featuring sharp lighting and a professional corporate aesthetic with purple brand accents. The subject looks confident and approachable." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeWsIwuhEw90NIJYdLmjV90rySeaJlbSyKBK2UVzWdlKswKCtrIWr-cBXkDUSpQLV9B4Q_c9cNKl_HXr_z4V6vOwfbc0fGX4SkBvFxDrvllQrnJ2zx-phFtvc5XzfR2PZqq0ucBB-EyuxowUFOVDa9RKvAk8uI1RgsHi5swaJBT7m6_U20sXdUSwIfDUieypOJ-5uJ62o4rVofPetriR336zNulRErdWKusF4X-xTE5Fh1V0VkjxpRkw"/>
+</div>
+<div class="overflow-hidden">
+<p class="text-primary-fixed font-bold text-sm truncate">Admin User</p>
+<p class="text-on-tertiary-fixed-variant text-xs truncate">Super Administrator</p>
+</div>
+</div>
+</aside>
+<!-- TopAppBar (Authority: JSON) -->
+<header class="fixed top-0 left-0 w-full h-16 bg-surface-container-lowest dark:bg-on-background border-b border-outline-variant flex justify-between items-center pl-[280px] pr-margin-desktop z-40">
+<div class="flex items-center space-x-4 ml-6">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container border-none rounded-full text-body-md focus:ring-2 focus:ring-primary-container w-64 transition-all duration-150" placeholder="Search plans or tenants..." type="text"/>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<button class="p-2 rounded-full hover:bg-surface-container transition-all duration-150 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="health_metrics">health_metrics</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container transition-all duration-150 text-on-surface-variant relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface-container-lowest"></span>
+</button>
+<button class="flex items-center space-x-2 pl-2 pr-1 py-1 rounded-full hover:bg-surface-container transition-all duration-150 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="material-symbols-outlined text-sm" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pl-[280px] pt-24 pb-12 pr-margin-desktop min-h-screen">
+<div class="max-w-6xl mx-auto">
+<!-- Page Header -->
+<div class="mb-10 flex justify-between items-end">
+<div>
+<h2 class="font-display-lg text-display-lg text-on-surface">Platform Plans</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2 max-w-2xl">Configure global entitlement tiers and resource limits for the Moovex ecosystem. Changes apply instantly to new registrations.</p>
+</div>
+<button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-xl font-bold flex items-center space-x-2 shadow-sm hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span>Create Custom Tier</span>
+</button>
+</div>
+<!-- Bento Layout for Plans -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+<!-- Free Plan Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm flex flex-col h-full hover:border-primary/30 transition-colors duration-300">
+<div class="p-8 border-b border-outline-variant/30">
+<div class="flex justify-between items-center mb-4">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container text-label-md rounded-full uppercase tracking-wider">Starter Tier</span>
+<span class="material-symbols-outlined text-secondary" data-icon="eco">eco</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Free</h3>
+<p class="text-on-surface-variant text-body-md mt-2">Essential management for small independent teams and pilots.</p>
+<div class="mt-6 flex items-baseline">
+<span class="font-display-lg text-display-lg text-on-surface">$0</span>
+<span class="text-on-surface-variant ml-2">/ month</span>
+</div>
+</div>
+<div class="p-8 flex-1 space-y-6">
+<h4 class="font-label-md text-label-md text-outline uppercase tracking-widest">Core Limits</h4>
+<ul class="space-y-4">
+<li class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-tertiary mt-0.5" data-icon="check_circle">check_circle</span>
+<div>
+<p class="font-bold text-on-surface">Up to 3 Branches</p>
+<p class="text-on-surface-variant text-sm">Perfect for local operations.</p>
+</div>
+</li>
+<li class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-tertiary mt-0.5" data-icon="check_circle">check_circle</span>
+<div>
+<p class="font-bold text-on-surface">5GB Cloud Storage</p>
+<p class="text-on-surface-variant text-sm">Document and media logs.</p>
+</div>
+</li>
+<li class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-tertiary mt-0.5" data-icon="check_circle">check_circle</span>
+<div>
+<p class="font-bold text-on-surface">Standard Dashboard</p>
+<p class="text-on-surface-variant text-sm">Basic operational metrics.</p>
+</div>
+</li>
+<li class="flex items-start space-x-3 opacity-40 grayscale">
+<span class="material-symbols-outlined text-outline mt-0.5" data-icon="cancel">cancel</span>
+<div>
+<p class="font-bold text-on-surface">Custom Domains</p>
+<p class="text-on-surface-variant text-sm">Requires premium upgrade.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="p-8 pt-0">
+<button class="w-full py-3 border border-outline text-on-surface font-bold rounded-xl hover:bg-surface-container transition-colors duration-150">
+                            Current Default Tier
+                        </button>
+</div>
+</div>
+<!-- Paid Plan Card -->
+<div class="relative bg-surface-container-lowest border-2 border-primary-container rounded-xl overflow-hidden shadow-lg flex flex-col h-full transform hover:scale-[1.01] transition-transform duration-300">
+<div class="absolute top-0 right-0 px-4 py-1.5 bg-primary-container text-on-primary-container text-label-sm font-bold uppercase rounded-bl-xl">
+                        Most Popular
+                    </div>
+<div class="p-8 border-b border-outline-variant/30 bg-primary-container/5">
+<div class="flex justify-between items-center mb-4">
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed text-label-md rounded-full uppercase tracking-wider">Enterprise Growth</span>
+<span class="material-symbols-outlined text-primary" data-icon="rocket_launch">rocket_launch</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Professional</h3>
+<p class="text-on-surface-variant text-body-md mt-2">Scale across regions with advanced oversight and white-labeling.</p>
+<div class="mt-6 flex items-baseline">
+<span class="font-display-lg text-display-lg text-on-surface">$249</span>
+<span class="text-on-surface-variant ml-2">/ month per tenant</span>
+</div>
+</div>
+<div class="p-8 flex-1 space-y-6">
+<h4 class="font-label-md text-label-md text-primary uppercase tracking-widest">Enhanced Capabilities</h4>
+<ul class="space-y-4">
+<li class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+<div>
+<p class="font-bold text-on-surface">Unlimited Branches</p>
+<p class="text-on-surface-variant text-sm">Global scale without restriction.</p>
+</div>
+</li>
+<li class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+<div>
+<p class="font-bold text-on-surface">250GB High-Speed Storage</p>
+<p class="text-on-surface-variant text-sm">Unlimited historical data logs.</p>
+</div>
+</li>
+<li class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+<div>
+<p class="font-bold text-on-surface">HQ Command Dashboard</p>
+<p class="text-on-surface-variant text-sm">Full predictive analytics &amp; custom KPIs.</p>
+</div>
+</li>
+<li class="flex items-start space-x-3">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+<div>
+<p class="font-bold text-on-surface">Unlimited Custom Domains</p>
+<p class="text-on-surface-variant text-sm">Fully white-labeled experience.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="p-8 pt-0">
+<button class="w-full py-3 bg-primary-container text-on-primary-container font-bold rounded-xl hover:shadow-md transition-shadow duration-150">
+                            Configure Parameters
+                        </button>
+</div>
+</div>
+</div>
+<!-- Management Section -->
+<div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-white p-6 rounded-xl border border-outline-variant hover:shadow-md transition-shadow">
+<div class="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="security">security</span>
+</div>
+<h5 class="font-headline-sm text-headline-sm text-on-surface mb-2">Access Control</h5>
+<p class="text-on-surface-variant text-sm">Manage which admin roles can override plan limits for specific tenants.</p>
+</div>
+<div class="bg-white p-6 rounded-xl border border-outline-variant hover:shadow-md transition-shadow">
+<div class="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="history">history</span>
+</div>
+<h5 class="font-headline-sm text-headline-sm text-on-surface mb-2">Change History</h5>
+<p class="text-on-surface-variant text-sm">Audit trail for all plan pricing and limit adjustments across the platform.</p>
+</div>
+<div class="bg-white p-6 rounded-xl border border-outline-variant hover:shadow-md transition-shadow">
+<div class="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="notifications_active">notifications_active</span>
+</div>
+<h5 class="font-headline-sm text-headline-sm text-on-surface mb-2">Alert Thresholds</h5>
+<p class="text-on-surface-variant text-sm">Set automated notifications when tenants reach 80% of their storage limit.</p>
+</div>
+</div>
+<!-- Footer Stats -->
+<div class="mt-12 p-8 bg-inverse-surface rounded-xl flex flex-wrap justify-between items-center text-white">
+<div>
+<h4 class="text-primary-fixed-dim font-bold text-lg mb-1">Global Subscription Health</h4>
+<p class="text-on-tertiary-fixed-variant text-sm opacity-80">Real-time breakdown of current tenant distribution.</p>
+</div>
+<div class="flex space-x-12 mt-6 md:mt-0">
+<div class="text-center">
+<p class="text-primary-fixed text-display-lg font-display-lg leading-none">1,240</p>
+<p class="text-on-tertiary-fixed-variant text-xs uppercase tracking-widest mt-2">Free Tenants</p>
+</div>
+<div class="text-center">
+<p class="text-primary-fixed text-display-lg font-display-lg leading-none">842</p>
+<p class="text-on-tertiary-fixed-variant text-xs uppercase tracking-widest mt-2">Paid Tenants</p>
+</div>
+<div class="text-center border-l border-outline-variant/30 pl-12">
+<p class="text-tertiary-fixed-dim text-display-lg font-display-lg leading-none">42%</p>
+<p class="text-on-tertiary-fixed-variant text-xs uppercase tracking-widest mt-2">Conversion</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual FAB (Only for appropriate screens) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary-container text-on-primary-container rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 z-50">
+<span class="material-symbols-outlined" data-icon="chat_bubble" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+</button>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.rounded-xl').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = card.classList.contains('transform') ? 'scale(1.02)' : 'translateY(-4px)';
+                card.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = card.classList.contains('transform') ? 'scale(1.01)' : 'translateY(0)';
+            });
+        });
+
+        // Search highlight interaction
+        const searchInput = document.querySelector('input');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary-container');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary-container');
+        });
+    </script>
+</body></html>

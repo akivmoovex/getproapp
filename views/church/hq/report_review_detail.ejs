@@ -1,0 +1,117 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/hq/reports">&larr; Back to reports</a>
+          <h1 class="church-branch-topbar__title"><%= report.branch_name %> — <%= report.period_month_label %></h1>
+          <p class="church-branch-topbar__subtitle">Monthly report review</p>
+        </div>
+        <span class="church-status-chip church-status-chip--<%= report.status === 'approved' ? 'verified' : 'pending' %>"><%= reportStatusLabel(report.status) %></span>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <div class="church-branch-profile-grid">
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Member growth</h2>
+          <dl class="church-branch-dl">
+            <div><dt>Starting members</dt><dd><%= report.starting_members %></dd></div>
+            <div><dt>New members</dt><dd><%= report.new_members %></dd></div>
+            <div><dt>Transferred</dt><dd><%= report.transferred_members %></dd></div>
+            <div><dt>Inactive</dt><dd><%= report.inactive_members %></dd></div>
+            <div><dt>Ending members</dt><dd><%= report.ending_members %></dd></div>
+          </dl>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Attendance snapshot</h2>
+          <dl class="church-branch-dl">
+            <div><dt>Sunday average</dt><dd><%= report.sunday_average %></dd></div>
+            <div><dt>Midweek average</dt><dd><%= report.midweek_average %></dd></div>
+            <div><dt>Children average</dt><dd><%= report.children_average %></dd></div>
+            <div><dt>Youth average</dt><dd><%= report.youth_average %></dd></div>
+            <div><dt>Visitors total</dt><dd><%= report.visitors_total %></dd></div>
+          </dl>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Giving snapshot (ZMW)</h2>
+          <% if (givingSnapshot && givingSnapshot.total_giving != null) { %>
+          <dl class="church-branch-dl">
+            <div><dt>Tithes</dt><dd><%= formatMoney(givingSnapshot.tithes_total) %></dd></div>
+            <div><dt>Offerings</dt><dd><%= formatMoney(givingSnapshot.offerings_total) %></dd></div>
+            <div><dt>Building fund</dt><dd><%= formatMoney(givingSnapshot.building_fund_total) %></dd></div>
+            <div><dt>Missions fund</dt><dd><%= formatMoney(givingSnapshot.missions_fund_total) %></dd></div>
+            <div><dt>Special offerings</dt><dd><%= formatMoney(givingSnapshot.special_offerings_total) %></dd></div>
+            <div><dt>Other giving</dt><dd><%= formatMoney(givingSnapshot.other_giving_total) %></dd></div>
+            <div><dt>Total giving</dt><dd><strong><%= formatMoney(givingSnapshot.total_giving) %></strong></dd></div>
+          </dl>
+          <% } else { %>
+          <p class="church-branch-empty">No giving summary included.</p>
+          <% } %>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Ministry activity</h2>
+          <dl class="church-branch-dl">
+            <div><dt>Services held</dt><dd><%= report.services_held %></dd></div>
+            <div><dt>Ministry meetings</dt><dd><%= report.ministry_meetings_held %></dd></div>
+            <div><dt>Department meetings</dt><dd><%= report.department_meetings_held %></dd></div>
+            <div><dt>Outreach activities</dt><dd><%= report.outreach_activities %></dd></div>
+            <div><dt>Special events</dt><dd><%= report.special_events %></dd></div>
+          </dl>
+          <% if (report.ministry_activity_notes) { %>
+          <div class="church-branch-review-note"><strong>Notes</strong><p><%= report.ministry_activity_notes %></p></div>
+          <% } %>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Challenges &amp; support</h2>
+          <% if (report.main_challenges) { %>
+          <div class="church-branch-review-note"><strong>Main challenges</strong><p><%= report.main_challenges %></p></div>
+          <% } %>
+          <% if (report.support_needed_from_hq) { %>
+          <div class="church-branch-review-note"><strong>Support needed from HQ</strong><p><%= report.support_needed_from_hq %></p></div>
+          <% } %>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Submission</h2>
+          <dl class="church-branch-dl">
+            <div><dt>Submitted by</dt><dd><%= report.submitted_by_name || '—' %></dd></div>
+            <div><dt>Submitted at</dt><dd><%= report.submitted_at ? new Date(report.submitted_at).toLocaleString('en-GB') : '—' %></dd></div>
+            <% if (report.reviewed_at) { %>
+            <div><dt>Reviewed at</dt><dd><%= new Date(report.reviewed_at).toLocaleString('en-GB') %></dd></div>
+            <% } %>
+          </dl>
+          <% if (report.hq_review_comment) { %>
+          <div class="church-branch-review-note church-branch-review-note--hq">
+            <strong>HQ review comment</strong>
+            <p><%= report.hq_review_comment %></p>
+          </div>
+          <% } %>
+        </section>
+      </div>
+      <% if (report.status === 'submitted') { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Review actions</h2>
+        <div class="church-hq-review-actions">
+          <form class="church-form" method="post" action="/hq/reports/<%= report.id %>/approve">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="approve_comment">Approval comment (optional)</label>
+              <textarea class="church-input church-input--textarea" id="approve_comment" name="hq_review_comment" rows="2"></textarea>
+            </div>
+            <button class="church-btn church-btn--primary" type="submit">Approve report</button>
+          </form>
+          <form class="church-form" method="post" action="/hq/reports/<%= report.id %>/request-changes">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="changes_comment">Changes requested comment (required)</label>
+              <textarea class="church-input church-input--textarea" id="changes_comment" name="hq_review_comment" rows="3" required></textarea>
+            </div>
+            <button class="church-btn church-btn--outline" type="submit">Request changes</button>
+          </form>
+        </div>
+      </section>
+      <% } else if (report.status === 'approved') { %>
+      <div class="church-alert church-alert--info" role="status">This report has been approved and is read-only.</div>
+      <% } else if (report.status === 'changes_requested') { %>
+      <div class="church-alert church-alert--warning" role="status">Changes were requested. The branch admin can edit and resubmit.</div>
+      <% } %>
+<%- include('../partials/hq_shell_end') %>

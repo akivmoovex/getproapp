@@ -1,0 +1,18 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <h1 class="church-member-header__title">Giving information</h1>
+        <p class="church-member-header__subtitle">How to give to <%= churchName %></p>
+      </header>
+      <% if (givingDisplay.hasPublishedSettings) { %>
+      <div class="church-alert church-alert--info" role="note">
+        GetPro Church does not process payments in this MVP. Use the details below to give directly to the church.
+      </div>
+      <section class="church-member-panel">
+        <%- include('../partials/giving_details') %>
+      </section>
+      <% } else { %>
+      <section class="church-member-panel">
+        <p class="church-member-empty">Giving information has not been published by your branch yet. Please contact the church office.</p>
+      </section>
+      <% } %>
+<%- include('../partials/member_shell_end') %>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Member Profile - GetPro Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1fbff;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for better UI density */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c8c4d7; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #787586; }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-primary": "#c6bfff",
+                      "on-tertiary-fixed-variant": "#454748",
+                      "on-primary-fixed": "#160066",
+                      "inverse-on-surface": "#e7f3f7",
+                      "inverse-surface": "#283236",
+                      "error-container": "#ffdad6",
+                      "on-surface-variant": "#474554",
+                      "surface-variant": "#d9e4e9",
+                      "surface-container-highest": "#d9e4e9",
+                      "secondary": "#586062",
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed-dim": "#c5c7c8",
+                      "tertiary-container": "#707273",
+                      "surface-tint": "#5847d2",
+                      "tertiary": "#57595b",
+                      "surface-bright": "#f1fbff",
+                      "surface": "#f1fbff",
+                      "primary-fixed-dim": "#c6bfff",
+                      "on-primary-container": "#faf6ff",
+                      "secondary-fixed-dim": "#c1c8ca",
+                      "surface-container-lowest": "#ffffff",
+                      "outline": "#787586",
+                      "on-tertiary-fixed": "#191c1d",
+                      "surface-container-high": "#dfeaef",
+                      "surface-dim": "#d1dce0",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed-variant": "#4029ba",
+                      "surface-container-low": "#eaf5fa",
+                      "on-tertiary-container": "#f7f8f9",
+                      "on-error": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "primary-fixed": "#e4dfff",
+                      "background": "#f1fbff",
+                      "on-secondary-container": "#5d6466",
+                      "surface-container": "#e4f0f4",
+                      "on-secondary-fixed-variant": "#41484a",
+                      "on-background": "#131d21",
+                      "on-surface": "#131d21",
+                      "primary": "#5341cd",
+                      "on-secondary-fixed": "#161d1f",
+                      "error": "#ba1a1a",
+                      "outline-variant": "#c8c4d7",
+                      "tertiary-fixed": "#e1e3e4",
+                      "primary-container": "#6c5ce7",
+                      "on-tertiary": "#ffffff",
+                      "secondary-container": "#dae1e3",
+                      "secondary-fixed": "#dde4e6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "lg": "24px",
+                      "base": "8px",
+                      "margin-mobile": "16px",
+                      "md": "16px",
+                      "xs": "4px",
+                      "xl": "32px",
+                      "sm": "8px",
+                      "margin-desktop": "32px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "label-lg": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "title-md": ["Inter"],
+                      "title-lg": ["Inter"],
+                      "label-md": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "body-md": ["Inter"],
+                      "display-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background overflow-hidden h-screen flex">
+<!-- Navigation Drawer (Sidebar) -->
+<aside class="h-full w-72 bg-surface-container-low flex flex-col p-md fixed left-0 top-0 border-r border-outline-variant/30 hidden md:flex z-50">
+<!-- Brand / Header Section -->
+<div class="mb-xl px-sm">
+<h1 class="font-headline-lg text-headline-lg text-primary font-bold">GetPro Church</h1>
+<div class="mt-lg flex items-center gap-sm">
+<div class="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/20">
+<img class="w-full h-full object-cover" data-alt="A professional, warm studio portrait of a Zambian woman in her 40s with a kind smile, wearing a modest colorful blazer. The background is a soft-focus interior of a modern community building with warm sunlight filtering through. High-end photography with natural skin textures and elegant lighting that aligns with a professional church management UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCf6rxjwyz9B9zWPY3OB-HodphERnthcEHYIsea1j35ugIyz4BQ1NrgH1UKlVZuRO_jGlaEIDTW7-bYRWe0X7TtUEesy5STm3Om8qmOtwRk7dDMKypRFhjE-c5rESUe7IVMFxp00u1BLQyYgC6hPA7nRlbBkd9I-Q1MojI5kUrMaEh-w-93zIzZouwQHxMMDlON69iylaVsBIrpeDErnb9MlJ23YH_PJ2UHM09k7CT52n0d2MZXZgxC4w"/>
+</div>
+<div>
+<h2 class="font-label-lg text-label-lg text-on-surface font-bold">Mary Phiri</h2>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Verified Member</p>
+<p class="text-[11px] text-primary">Kafue Baptist Church</p>
+</div>
+</div>
+</div>
+<!-- Nav Items -->
+<nav class="flex flex-col gap-sm flex-1">
+<a class="flex items-center gap-md p-md rounded-full text-on-surface-variant hover:bg-surface-variant/50 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary" data-icon="dashboard">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-full text-on-surface-variant hover:bg-surface-variant/50 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary" data-icon="groups">groups</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-full text-on-surface-variant hover:bg-surface-variant/50 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary" data-icon="calendar_month">calendar_month</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-full text-on-surface-variant hover:bg-surface-variant/50 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary" data-icon="menu_book">menu_book</span>
+<span class="font-label-lg text-label-lg">Resources</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-full text-on-surface-variant hover:bg-surface-variant/50 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary" data-icon="send">send</span>
+<span class="font-label-lg text-label-lg">Requests</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-full text-on-surface-variant hover:bg-surface-variant/50 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary" data-icon="payments">payments</span>
+<span class="font-label-lg text-label-lg">Giving</span>
+</a>
+</nav>
+<!-- Footer Profile Active State Indicator (Simulated) -->
+<div class="mt-auto p-md bg-secondary-container text-on-secondary-container rounded-full flex items-center gap-md font-bold">
+<span class="material-symbols-outlined" data-icon="person" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-0 md:ml-72 flex flex-col h-full overflow-y-auto">
+<!-- Top App Bar (Sticky) -->
+<header class="bg-surface sticky top-0 z-40 h-16 w-full flex justify-between items-center px-margin-mobile md:px-margin-desktop">
+<h3 class="font-title-lg text-title-lg text-primary">Member Profile</h3>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="flex items-center gap-sm bg-primary text-on-primary px-lg py-sm rounded-full font-label-lg text-label-lg hover:shadow-lg transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+                    Edit Profile
+                </button>
+</div>
+</header>
+<!-- Profile Content -->
+<div class="p-margin-mobile md:p-margin-desktop space-y-lg max-w-7xl mx-auto w-full">
+<!-- Hero Header Section (Bento Style) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<!-- Completion Card -->
+<div class="lg:col-span-2 glass-card p-xl rounded-xl relative overflow-hidden flex flex-col justify-center">
+<div class="relative z-10">
+<h4 class="font-headline-md text-headline-md text-on-surface mb-xs">Welcome back, Mary</h4>
+<p class="text-on-surface-variant font-body-md text-body-md mb-lg">Your profile is almost complete. Complete it to unlock better ministry matches.</p>
+<div class="w-full bg-surface-container-highest h-3 rounded-full overflow-hidden mb-sm">
+<div class="bg-primary h-full w-[85%] rounded-full shadow-[0_0_12px_rgba(83,65,205,0.4)]"></div>
+</div>
+<div class="flex justify-between text-label-md font-label-md">
+<span class="text-primary font-bold">85% Complete</span>
+<span class="text-outline">Remaining: Skills &amp; Bio</span>
+</div>
+</div>
+<!-- Subtle background decoration -->
+<div class="absolute -right-20 -bottom-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+</div>
+<!-- Identity Summary Card -->
+<div class="glass-card p-xl rounded-xl flex flex-col items-center text-center">
+<div class="w-24 h-24 rounded-full border-4 border-white shadow-md mb-md overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up portrait of Mary Phiri, featuring vibrant attire and a professional warm look. High resolution, 8k, bokeh background of a modern atrium, soft purple and blue color palette to match the UI system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsXBVWzK2FaRjBMt0nmGw71pMxaCsyHqXaazniXogTvwhJ_aCnvsUshDZTmbwVfCsXMgdVB41PNM1Ss62dBf_uTeMizmzDsgI1FiadkFLWeaKyErEnST6F3JQ1ARdxBTednnivy4qNfGoLYN1aAd76t8BRMpXSOtgLt5P3q-TOAVxRGbXIYfbMhOEhn60JwmmoSlyl0x6Vr7_X3_savES60MdW-U4j1RNj_HeRbN4wVoIxbDLhAQSR4Q"/>
+</div>
+<h5 class="font-title-lg text-title-lg text-on-surface">Mary Phiri</h5>
+<p class="text-on-surface-variant font-body-md text-body-md">Member since June 2021</p>
+<div class="mt-md flex flex-wrap justify-center gap-xs">
+<span class="px-md py-xs bg-primary/10 text-primary text-label-md font-label-md rounded-full">Volunteer</span>
+<span class="px-md py-xs bg-secondary-container text-on-secondary-container text-label-md font-label-md rounded-full">Small Group Leader</span>
+</div>
+</div>
+</div>
+<!-- Profile Details Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg items-start">
+<!-- Left Column: Personal Info -->
+<div class="lg:col-span-7 space-y-lg">
+<section class="glass-card rounded-xl p-xl">
+<div class="flex items-center gap-sm mb-lg border-b border-outline-variant/30 pb-md">
+<span class="material-symbols-outlined text-primary" data-icon="person">person</span>
+<h6 class="font-title-md text-title-md text-on-surface">Personal Information</h6>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-xl">
+<div>
+<label class="block text-label-md font-label-md text-outline mb-xs">Legal Name</label>
+<p class="text-body-lg font-body-lg text-on-surface">Mary Mutale Phiri</p>
+</div>
+<div>
+<label class="block text-label-md font-label-md text-outline mb-xs">Email Address</label>
+<p class="text-body-lg font-body-lg text-on-surface">m.phiri@example.zm</p>
+</div>
+<div>
+<label class="block text-label-md font-label-md text-outline mb-xs">Phone Number</label>
+<p class="text-body-lg font-body-lg text-on-surface">+260 97 1234567</p>
+</div>
+<div>
+<label class="block text-label-md font-label-md text-outline mb-xs">Date of Birth</label>
+<p class="text-body-lg font-body-lg text-on-surface">14 October 1978</p>
+</div>
+<div class="md:col-span-2">
+<label class="block text-label-md font-label-md text-outline mb-xs">Residential Address</label>
+<p class="text-body-lg font-body-lg text-on-surface">Plot 452, New Kasama, Lusaka, Zambia</p>
+</div>
+</div>
+</section>
+<section class="glass-card rounded-xl p-xl">
+<div class="flex items-center gap-sm mb-lg border-b border-outline-variant/30 pb-md">
+<span class="material-symbols-outlined text-primary" data-icon="volunteer_activism">volunteer_activism</span>
+<h6 class="font-title-md text-title-md text-on-surface">Ministry Interests</h6>
+</div>
+<div class="flex flex-col gap-md">
+<div class="flex items-center justify-between p-md bg-surface-container rounded-lg border border-outline-variant/20">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined" data-icon="child_care">child_care</span>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Children's Ministry</p>
+<p class="text-label-md text-outline">Sunday School Teacher</p>
+</div>
+</div>
+<span class="px-md py-xs bg-green-100 text-green-700 text-[10px] font-bold uppercase rounded">Active</span>
+</div>
+<div class="flex items-center justify-between p-md bg-surface-container rounded-lg border border-outline-variant/20">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 bg-secondary-container rounded-lg flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Hospitality Team</p>
+<p class="text-label-md text-outline">Events Coordination</p>
+</div>
+</div>
+<span class="px-md py-xs bg-secondary text-white text-[10px] font-bold uppercase rounded">Interested</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Sidebar info -->
+<div class="lg:col-span-5 space-y-lg">
+<section class="glass-card rounded-xl p-xl">
+<div class="flex items-center gap-sm mb-lg border-b border-outline-variant/30 pb-md">
+<span class="material-symbols-outlined text-error" data-icon="contact_emergency">contact_emergency</span>
+<h6 class="font-title-md text-title-md text-on-surface">Emergency Contact</h6>
+</div>
+<div class="space-y-md">
+<div class="bg-surface-container-low p-md rounded-lg">
+<h7 class="font-label-lg text-label-lg text-on-surface block mb-xs">Primary Contact</h7>
+<p class="text-body-md font-bold text-on-surface">Joseph Phiri</p>
+<p class="text-label-md text-on-surface-variant">Relationship: Spouse</p>
+<div class="mt-md flex items-center gap-sm text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="call">call</span>
+<span class="font-label-md">+260 96 9876543</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-md rounded-lg">
+<h7 class="font-label-lg text-label-lg text-on-surface block mb-xs">Medical Notes</h7>
+<p class="text-body-md text-on-surface italic">Allergic to penicillin. No other known conditions.</p>
+</div>
+</div>
+</section>
+<!-- Profile QR Code Section -->
+<section class="bg-primary-container text-on-primary-container rounded-xl p-xl shadow-md">
+<div class="flex flex-col items-center">
+<h6 class="font-title-md text-title-md mb-md">Member Digital ID</h6>
+<div class="bg-white p-md rounded-lg mb-md">
+<!-- Simulated QR code -->
+<div class="w-32 h-32 bg-slate-100 flex flex-wrap gap-1 p-1">
+<div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-slate-100"></div><div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-primary"></div>
+<div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-slate-100"></div><div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-slate-100"></div><div class="w-6 h-6 bg-primary"></div>
+<div class="w-6 h-6 bg-slate-100"></div><div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-slate-100"></div><div class="w-6 h-6 bg-slate-100"></div>
+<div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-slate-100"></div><div class="w-6 h-6 bg-slate-100"></div><div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-primary"></div>
+<div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-slate-100"></div><div class="w-6 h-6 bg-primary"></div><div class="w-6 h-6 bg-primary"></div>
+</div>
+</div>
+<p class="text-center text-label-md opacity-90">Scan this code at the reception desk for quick check-in at events and services.</p>
+</div>
+</section>
+</div>
+</div>
+<!-- Recent Activity Table -->
+<section class="glass-card rounded-xl overflow-hidden mb-xl">
+<div class="p-xl border-b border-outline-variant/30 flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="history">history</span>
+<h6 class="font-title-md text-title-md text-on-surface">Recent Member Activity</h6>
+</div>
+<button class="text-primary font-label-lg text-label-lg hover:underline transition-all">View All History</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant/20">
+<th class="p-md font-label-lg text-label-lg text-outline">Date</th>
+<th class="p-md font-label-lg text-label-lg text-outline">Activity</th>
+<th class="p-md font-label-lg text-label-lg text-outline">Category</th>
+<th class="p-md font-label-lg text-label-lg text-outline">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="p-md font-body-md text-body-md">Oct 24, 2023</td>
+<td class="p-md font-body-md text-body-md">Attended Sunday Morning Service</td>
+<td class="p-md"><span class="px-sm py-xs bg-surface-container rounded text-[11px] font-medium">Worship</span></td>
+<td class="p-md text-green-600 font-bold text-[11px]">VERIFIED</td>
+</tr>
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="p-md font-body-md text-body-md">Oct 22, 2023</td>
+<td class="p-md font-body-md text-body-md">Donation: Tithe Oct 2nd Half</td>
+<td class="p-md"><span class="px-sm py-xs bg-surface-container rounded text-[11px] font-medium">Giving</span></td>
+<td class="p-md text-green-600 font-bold text-[11px]">COMPLETED</td>
+</tr>
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="p-md font-body-md text-body-md">Oct 18, 2023</td>
+<td class="p-md font-body-md text-body-md">Mid-week Prayer Meeting</td>
+<td class="p-md"><span class="px-sm py-xs bg-surface-container rounded text-[11px] font-medium">Community</span></td>
+<td class="p-md text-green-600 font-bold text-[11px]">VERIFIED</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- Spacer for Bottom Nav on Mobile if it were enabled -->
+<div class="h-20 md:hidden"></div>
+</main>
+<!-- Bottom Navigation Bar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full bg-surface-container h-20 px-2 flex justify-around items-center z-50 shadow-lg pb-safe">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-md text-label-md">Groups</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-md text-label-md">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-md text-label-md">Study</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz" style="font-variation-settings: 'FILL' 1;">more_horiz</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for hover states on list items
+        document.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                // Potential for adding subtle sound or haptic feedback calls
+            });
+        });
+
+        // Tab focus logic (simulated for accessibility)
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                document.body.classList.add('user-is-tabbing');
+            }
+        });
+    </script>
+</body></html>

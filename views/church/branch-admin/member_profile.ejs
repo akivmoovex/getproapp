@@ -1,0 +1,139 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/members">&larr; Back to members</a>
+          <h1 class="church-branch-topbar__title"><%= member.full_name %></h1>
+          <p class="church-branch-topbar__subtitle"><%= member.email %> · <%= member.phone %></p>
+        </div>
+        <span class="church-status-chip church-status-chip--<%= member.status %>"><%= memberStatusLabel(member.status) %></span>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <% if (member.status === 'suspended') { %>
+      <div class="church-alert church-alert--error" role="alert">This member is suspended and cannot access the member portal.</div>
+      <% } %>
+      <section class="church-branch-panel">
+        <div class="church-hq-review-actions">
+          <a class="church-btn church-btn--outline" href="/branch/members/<%= member.id %>/edit">Edit profile</a>
+          <% if (member.status !== 'verified') { %>
+          <form method="post" action="/branch/members/<%= member.id %>/verify"><button class="church-btn church-btn--primary" type="submit">Verify</button></form>
+          <% } %>
+          <% if (member.status === 'verified') { %>
+          <form class="church-form" method="post" action="/branch/members/<%= member.id %>/suspend">
+            <div class="church-field"><label class="church-label" for="suspend_reason">Suspend reason (optional)</label><input class="church-input" id="suspend_reason" name="suspend_reason" type="text"/></div>
+            <button class="church-btn church-btn--outline" type="submit">Suspend</button>
+          </form>
+          <% } %>
+          <% if (member.status === 'suspended') { %>
+          <form method="post" action="/branch/members/<%= member.id %>/reactivate"><button class="church-btn church-btn--primary" type="submit">Reactivate</button></form>
+          <% } %>
+        </div>
+      </section>
+      <% if (member.status === 'pending') { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Verification review</h2>
+        <div class="church-hq-review-actions">
+          <form class="church-form" method="post" action="/branch/members/<%= member.id %>/approve">
+            <div class="church-field church-field--full"><label class="church-label" for="review_comment_approve">Comment (optional)</label><textarea class="church-input church-input--textarea" id="review_comment_approve" name="review_comment" rows="2"></textarea></div>
+            <input type="hidden" name="redirect_to" value="profile"/>
+            <button class="church-btn church-btn--primary" type="submit">Approve</button>
+          </form>
+          <form class="church-form" method="post" action="/branch/members/<%= member.id %>/reject">
+            <div class="church-field church-field--full"><label class="church-label" for="review_comment_reject">Rejection comment (optional)</label><textarea class="church-input church-input--textarea" id="review_comment_reject" name="review_comment" rows="2"></textarea></div>
+            <input type="hidden" name="redirect_to" value="profile"/>
+            <button class="church-btn church-btn--outline" type="submit">Reject</button>
+          </form>
+          <form class="church-form" method="post" action="/branch/members/<%= member.id %>/request-more-info">
+            <div class="church-field church-field--full"><label class="church-label" for="review_comment_more">Information needed (required)</label><textarea class="church-input church-input--textarea" id="review_comment_more" name="review_comment" rows="2" required></textarea></div>
+            <input type="hidden" name="redirect_to" value="profile"/>
+            <button class="church-btn church-btn--ghost" type="submit">Request more information</button>
+          </form>
+        </div>
+      </section>
+      <% } %>
+      <div class="church-branch-profile-grid">
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Profile details</h2>
+          <dl class="church-branch-dl">
+            <div><dt>Gender</dt><dd><%= member.gender %></dd></div>
+            <div><dt>Age group</dt><dd><%= member.age_group %></dd></div>
+            <div><dt>Address area</dt><dd><%= member.address_area %></dd></div>
+            <div><dt>Attendance duration</dt><dd><%= member.attendance_duration || '—' %></dd></div>
+            <div><dt>Ministry interest</dt><dd><%= member.ministry_interest || '—' %></dd></div>
+            <div><dt>Emergency contact</dt><dd><%= member.emergency_contact_name || '—' %><% if (member.emergency_contact_phone) { %> · <%= member.emergency_contact_phone %><% } %></dd></div>
+            <div><dt>Registered</dt><dd><%= new Date(member.created_at).toLocaleString('en-GB') %></dd></div>
+            <div><dt>Last updated</dt><dd><%= member.updated_at ? new Date(member.updated_at).toLocaleString('en-GB') : '—' %></dd></div>
+          </dl>
+          <% if (member.review_comment) { %>
+          <div class="church-branch-review-note"><strong>Review note</strong><p><%= member.review_comment %></p></div>
+          <% } %>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Ministries</h2>
+          <% if ((summary.activeMinistries || []).length === 0) { %>
+          <p class="church-branch-empty">No active ministry assignments.</p>
+          <% } else { %>
+          <ul class="church-member-list">
+            <% summary.activeMinistries.forEach(function (m) { %>
+            <li class="church-member-list__item"><strong><a href="/branch/ministries/<%= m.id %>"><%= m.name %></a></strong> · Active · <%= m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-GB') : '' %></li>
+            <% }); %>
+          </ul>
+          <% } %>
+          <% if ((summary.pendingJoinRequests || []).length > 0) { %>
+          <h3 class="church-branch-panel__title church-branch-panel__title--sm">Pending join requests</h3>
+          <ul class="church-member-list">
+            <% summary.pendingJoinRequests.forEach(function (r) { %>
+            <li class="church-member-list__item"><strong><%= r.ministry_name %></strong> · <%= joinRequestStatusLabel(r.status) %></li>
+            <% }); %>
+          </ul>
+          <% } %>
+        </section>
+      </div>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Recent online requests</h2>
+        <% if ((summary.memberRequests || []).length === 0) { %>
+        <p class="church-branch-empty">No online requests submitted.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% summary.memberRequests.forEach(function (r) { %>
+          <li class="church-member-list__item"><strong><%= r.subject %></strong> · <%= r.request_type %> · <%= memberRequestStatusLabel(r.status) %> · <a href="/branch/requests/<%= r.id %>">View</a></li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Prayer requests</h2>
+        <p>Submitted: <%= summary.prayerSummary.submitted || 0 %> · Reviewed: <%= summary.prayerSummary.reviewed || 0 %> · Closed: <%= summary.prayerSummary.closed || 0 %></p>
+        <% if ((summary.prayerItems || []).length > 0) { %>
+        <ul class="church-member-list">
+          <% summary.prayerItems.forEach(function (p) { %>
+          <li class="church-member-list__item"><strong><%= p.prayer_topic %></strong> · <%= prayerRequestStatusLabel(p.status) %> · <%= p.privacy_label %><% if (!p.identity_masked) { %> · <a href="/branch/prayer-requests/<%= p.id %>">View</a><% } %><% if (p.details_preview) { %><p><%= p.details_preview %></p><% } %></li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Duties</h2>
+        <p>Upcoming confirmed: <%= (summary.upcomingDuties || []).length %> · Past confirmed: <%= summary.pastDutyCount || 0 %></p>
+        <% if ((summary.upcomingDuties || []).length > 0) { %>
+        <ul class="church-member-list">
+          <% summary.upcomingDuties.forEach(function (d) { %>
+          <li class="church-member-list__item"><strong><%= d.role_name %></strong> · <%= d.service_name %> · <%= formatDutyDate(d.duty_date) %></li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Admin notes</h2>
+        <% if (member.admin_notes) { %>
+        <div class="church-branch-review-note"><pre class="church-branch-notes"><%= member.admin_notes %></pre></div>
+        <% if (member.last_admin_note_at) { %><p class="church-branch-empty church-branch-empty--inline">Last note: <%= new Date(member.last_admin_note_at).toLocaleString('en-GB') %></p><% } %>
+        <% } else { %>
+        <p class="church-branch-empty">No admin notes yet.</p>
+        <% } %>
+        <form class="church-form" method="post" action="/branch/members/<%= member.id %>/add-note">
+          <div class="church-field church-field--full"><label class="church-label" for="note">Add note</label><textarea class="church-input church-input--textarea" id="note" name="note" rows="3" required></textarea></div>
+          <button class="church-btn church-btn--primary" type="submit">Save note</button>
+        </form>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

@@ -1,0 +1,153 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/reports">&larr; Back to reports</a>
+          <h1 class="church-branch-topbar__title">Submit monthly report</h1>
+          <p class="church-branch-topbar__subtitle">Complete all sections for HQ reporting</p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <form class="church-form" method="post" action="<%= reportId ? '/branch/reports/' + reportId + '/save-draft' : '/branch/reports' %>">
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Report period</h2>
+          <div class="church-field church-field--narrow">
+            <label class="church-label" for="period_month">Month</label>
+            <input class="church-input" id="period_month" name="period_month" type="month" required value="<%= form.period_month || periodContext.period_month_label %>"/>
+          </div>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Attendance snapshot</h2>
+          <p class="church-branch-panel__hint">Calculated from submitted attendance records for the selected month.</p>
+          <dl class="church-branch-dl church-branch-dl--inline">
+            <div><dt>Sunday average</dt><dd><%= periodContext.attendance.snapshot.sunday_average %></dd></div>
+            <div><dt>Midweek average</dt><dd><%= periodContext.attendance.snapshot.midweek_average %></dd></div>
+            <div><dt>Children average</dt><dd><%= periodContext.attendance.snapshot.children_average %></dd></div>
+            <div><dt>Youth average</dt><dd><%= periodContext.attendance.snapshot.youth_average %></dd></div>
+            <div><dt>Visitors total</dt><dd><%= periodContext.attendance.snapshot.visitors_total %></dd></div>
+          </dl>
+          <% if (periodContext.attendance.draftCount > 0) { %>
+          <div class="church-alert church-alert--warning church-alert--compact" role="alert">
+            Warning: <%= periodContext.attendance.draftCount %> draft attendance record(s) exist for this month and are not included in these totals.
+          </div>
+          <% } %>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Giving summary</h2>
+          <% if (periodContext.giving.linked) { %>
+          <dl class="church-branch-dl church-branch-dl--inline">
+            <div><dt>Tithes</dt><dd><%= formatMoney(periodContext.giving.snapshot.tithes_total) %></dd></div>
+            <div><dt>Offerings</dt><dd><%= formatMoney(periodContext.giving.snapshot.offerings_total) %></dd></div>
+            <div><dt>Building fund</dt><dd><%= formatMoney(periodContext.giving.snapshot.building_fund_total) %></dd></div>
+            <div><dt>Missions</dt><dd><%= formatMoney(periodContext.giving.snapshot.missions_fund_total) %></dd></div>
+            <div><dt>Special</dt><dd><%= formatMoney(periodContext.giving.snapshot.special_offerings_total) %></dd></div>
+            <div><dt>Other</dt><dd><%= formatMoney(periodContext.giving.snapshot.other_giving_total) %></dd></div>
+            <div><dt>Total</dt><dd><strong><%= formatMoney(periodContext.giving.snapshot.total_giving) %></strong></dd></div>
+          </dl>
+          <% if (periodContext.giving.snapshot.giving_notes) { %>
+          <p class="church-branch-panel__hint"><%= periodContext.giving.snapshot.giving_notes %></p>
+          <% } %>
+          <% } else { %>
+          <p class="church-branch-empty">No giving summary recorded for this month yet. You can still save a draft report.</p>
+          <% } %>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Member growth</h2>
+          <div class="church-form-grid">
+            <% [
+              ['starting_members','Starting members'],
+              ['new_members','New members'],
+              ['transferred_members','Transferred members'],
+              ['inactive_members','Inactive members'],
+              ['ending_members','Ending members']
+            ].forEach(function (pair) { %>
+            <div class="church-field">
+              <label class="church-label" for="<%= pair[0] %>"><%= pair[1] %></label>
+              <input class="church-input" id="<%= pair[0] %>" name="<%= pair[0] %>" type="number" min="0" step="1" value="<%= form[pair[0]] != null ? form[pair[0]] : 0 %>"/>
+            </div>
+            <% }); %>
+          </div>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Ministry leader activity</h2>
+          <p class="church-branch-panel__hint">Use ministry notes below to complete your ministry activity section.</p>
+          <% var ma = periodContext.ministryActivity; %>
+          <dl class="church-branch-dl church-branch-dl--inline">
+            <div><dt>Ministries with notes</dt><dd><%= ma.summary.ministries_with_notes %></dd></div>
+            <div><dt>Notes submitted</dt><dd><%= ma.summary.notes_submitted %></dd></div>
+            <div><dt>Reviewed</dt><dd><%= ma.summary.notes_reviewed %></dd></div>
+            <div><dt>Follow-up requested</dt><dd><%= ma.summary.follow_up_requested %></dd></div>
+          </dl>
+          <% if (ma.notes.length === 0) { %>
+          <p class="church-branch-empty">No submitted ministry activity notes for this period yet.</p>
+          <% } else { %>
+          <% if (ma.reviewedNotes.length > 0) { %>
+          <h3 class="church-branch-panel__title church-branch-panel__title--sm">Reviewed notes</h3>
+          <ul class="church-member-list">
+            <% ma.reviewedNotes.forEach(function (n) { %>
+            <li class="church-member-list__item"><strong><%= n.ministry_name || 'Ministry' %></strong> — <%= n.title %><p><%= (n.activity_summary || '').slice(0, 200) %><%= (n.activity_summary || '').length > 200 ? '…' : '' %></p></li>
+            <% }); %>
+          </ul>
+          <% } %>
+          <% if (ma.pendingNotes.length > 0) { %>
+          <h3 class="church-branch-panel__title church-branch-panel__title--sm">Pending review</h3>
+          <ul class="church-member-list">
+            <% ma.pendingNotes.forEach(function (n) { %>
+            <li class="church-member-list__item"><strong><%= n.ministry_name || 'Ministry' %></strong> — <%= n.title %> · <a href="/branch/ministry-activity/<%= n.id %>">Review</a></li>
+            <% }); %>
+          </ul>
+          <% } %>
+          <% } %>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Services &amp; ministry activity</h2>
+          <div class="church-form-grid">
+            <% [
+              ['services_held','Services held'],
+              ['ministry_meetings_held','Ministry meetings held'],
+              ['department_meetings_held','Department meetings held'],
+              ['outreach_activities','Outreach activities'],
+              ['special_events','Special events']
+            ].forEach(function (pair) { %>
+            <div class="church-field">
+              <label class="church-label" for="<%= pair[0] %>"><%= pair[1] %></label>
+              <input class="church-input" id="<%= pair[0] %>" name="<%= pair[0] %>" type="number" min="0" step="1" value="<%= form[pair[0]] != null ? form[pair[0]] : 0 %>"/>
+            </div>
+            <% }); %>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="ministry_activity_notes">Activity notes</label>
+              <textarea class="church-input church-input--textarea" id="ministry_activity_notes" name="ministry_activity_notes" rows="3"><%= form.ministry_activity_notes || '' %></textarea>
+            </div>
+          </div>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Challenges &amp; support needed</h2>
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="main_challenges">Main challenges</label>
+              <textarea class="church-input church-input--textarea" id="main_challenges" name="main_challenges" rows="3"><%= form.main_challenges || '' %></textarea>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="support_needed_from_hq">Support needed from HQ</label>
+              <textarea class="church-input church-input--textarea" id="support_needed_from_hq" name="support_needed_from_hq" rows="3"><%= form.support_needed_from_hq || '' %></textarea>
+            </div>
+          </div>
+        </section>
+        <section class="church-branch-panel church-branch-panel--placeholder">
+          <h2 class="church-branch-panel__title">Attachments</h2>
+          <p class="church-branch-empty">File uploads are not available in this MVP phase.</p>
+        </section>
+        <div class="church-branch-form-actions">
+          <button class="church-btn church-btn--outline" type="submit">Save draft</button>
+          <% if (reportId) { %>
+          <button class="church-btn church-btn--primary" type="submit" formaction="/branch/reports/<%= reportId %>/submit" formmethod="post">Submit to HQ</button>
+          <% } else { %>
+          <p class="church-branch-panel__hint">Save a draft first, then submit from the report details page.</p>
+          <% } %>
+        </div>
+      </form>
+<%- include('../partials/branch_admin_shell_end') %>

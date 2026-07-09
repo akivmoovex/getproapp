@@ -1,0 +1,73 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/hq/broadcasts">&larr; Back to broadcasts</a>
+          <h1 class="church-branch-topbar__title"><%= isEdit ? 'Edit broadcast' : 'New broadcast' %></h1>
+        </div>
+      </header>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <form class="church-form" method="post" action="<%= isEdit ? '/hq/broadcasts/' + broadcastId : '/hq/broadcasts' %>">
+        <section class="church-branch-panel">
+          <div class="church-field church-field--full">
+            <label class="church-label" for="title">Title</label>
+            <input class="church-input" id="title" name="title" type="text" required maxlength="200" value="<%= form.title || '' %>"/>
+          </div>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="body">Body</label>
+            <textarea class="church-input church-input--textarea" id="body" name="body" rows="8" required><%= form.body || '' %></textarea>
+          </div>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="category">Category</label>
+              <select class="church-input" id="category" name="category">
+                <% categories.forEach(function (c) { %>
+                <option value="<%= c %>" <%= form.category === c ? 'selected' : '' %>><%= c %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="audience">Audience</label>
+              <select class="church-input" id="audience" name="audience">
+                <% audiences.forEach(function (a) { %>
+                <option value="<%= a %>" <%= form.audience === a ? 'selected' : '' %>><%= broadcastAudienceLabel(a) %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="target_scope">Target scope</label>
+              <select class="church-input" id="target_scope" name="target_scope">
+                <% targetScopes.forEach(function (s) { %>
+                <option value="<%= s %>" <%= form.target_scope === s ? 'selected' : '' %>><%= targetScopeLabel(s) %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="publish_at">Publish at (optional)</label>
+              <input class="church-input" id="publish_at" name="publish_at" type="datetime-local" value="<%= form.publish_at || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="expires_at">Expires at (optional)</label>
+              <input class="church-input" id="expires_at" name="expires_at" type="datetime-local" value="<%= form.expires_at || '' %>"/>
+            </div>
+          </div>
+          <div class="church-field church-field--full" id="branch-targets-panel">
+            <label class="church-label">Target branches</label>
+            <p class="church-branch-panel__hint">Required when target scope is “Selected branches”. Only branches in your organization are listed.</p>
+            <div class="church-hq-branch-checklist">
+              <% (branches || []).forEach(function (br) { %>
+              <label class="church-checkbox-row">
+                <input type="checkbox" name="branch_ids" value="<%= br.id %>" <%= (form.branch_ids || []).some(function (id) { return Number(id) === Number(br.id); }) ? 'checked' : '' %>/>
+                <span><%= br.name %><% if (br.location_text) { %> · <%= br.location_text %><% } %></span>
+              </label>
+              <% }); %>
+            </div>
+          </div>
+        </section>
+        <div class="church-branch-actions">
+          <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft">Save draft</button>
+          <button class="church-btn church-btn--primary" type="submit" name="_intent" value="publish">Publish</button>
+        </div>
+      </form>
+<%- include('../partials/hq_shell_end') %>

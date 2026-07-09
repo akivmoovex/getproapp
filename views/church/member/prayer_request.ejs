@@ -1,0 +1,44 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <h1 class="church-member-header__title">Prayer request</h1>
+        <p class="church-member-header__subtitle">Share a request with church leadership</p>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <section class="church-member-panel">
+        <form class="church-form" method="post" action="/member/prayer-request">
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="prayer_topic">Prayer topic</label>
+              <input class="church-input" id="prayer_topic" name="prayer_topic" type="text" required value="<%= form.prayer_topic || '' %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="details">Details</label>
+              <textarea class="church-input church-input--textarea" id="details" name="details" rows="4"><%= form.details || '' %></textarea>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="urgency">Urgency</label>
+              <select class="church-input" id="urgency" name="urgency" required>
+                <% urgencyLevels.forEach(function (u) { %>
+                <option value="<%= u.value %>" <%= form.urgency === u.value || (!form.urgency && u.value === 'normal') ? 'selected' : '' %>><%= u.label %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="privacy_level">Privacy level</label>
+              <select class="church-input" id="privacy_level" name="privacy_level" required>
+                <option value="" disabled <%= !form.privacy_level ? 'selected' : '' %>>Select privacy</option>
+                <% privacyLevels.forEach(function (p) { %>
+                <option value="<%= p.value %>" <%= form.privacy_level === p.value ? 'selected' : '' %>><%= p.label %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Submit prayer request</button>
+        </form>
+      </section>
+<%- include('../partials/member_shell_end') %>

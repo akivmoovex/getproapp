@@ -1,0 +1,109 @@
+<%- include('../partials/auth_shell_start') %>
+  <div class="church-auth-card church-auth-card--wide">
+    <h1 class="church-auth-card__title">Member Registration</h1>
+    <p class="church-auth-card__subtitle">Join <%= churchName %> — your application will be reviewed by branch leadership.</p>
+    <% if (error) { %>
+    <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+    <% } %>
+    <form class="church-form" method="post" action="/register">
+      <fieldset class="church-form-section">
+        <legend class="church-form-section__title">Personal details</legend>
+        <div class="church-form-grid">
+          <div class="church-field church-field--full">
+            <label class="church-label" for="full_name">Full name</label>
+            <input class="church-input" id="full_name" name="full_name" type="text" required value="<%= form.full_name || '' %>"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="phone">Phone number</label>
+            <input class="church-input" id="phone" name="phone" type="tel" required value="<%= form.phone || '' %>"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="email">Email address</label>
+            <input class="church-input" id="email" name="email" type="email" required value="<%= form.email || '' %>"/>
+          </div>
+          <div class="church-field">
+            <span class="church-label">Gender</span>
+            <div class="church-radio-row">
+              <label class="church-radio"><input type="radio" name="gender" value="male" <%= form.gender === 'male' ? 'checked' : '' %> required/> Male</label>
+              <label class="church-radio"><input type="radio" name="gender" value="female" <%= form.gender === 'female' ? 'checked' : '' %> required/> Female</label>
+            </div>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="age_group">Age group</label>
+            <select class="church-input" id="age_group" name="age_group" required>
+              <option value="" disabled <%= !form.age_group ? 'selected' : '' %>>Select age group</option>
+              <% ageGroupOptions.forEach(function (opt) { %>
+              <option value="<%= opt %>" <%= form.age_group === opt ? 'selected' : '' %>><%= opt %></option>
+              <% }); %>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="church-form-section">
+        <legend class="church-form-section__title">Church information</legend>
+        <div class="church-form-grid">
+          <div class="church-field church-field--full">
+            <label class="church-label" for="address_area">Address area</label>
+            <input class="church-input" id="address_area" name="address_area" type="text" required value="<%= form.address_area || '' %>"/>
+          </div>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="attendance_duration">Attendance duration</label>
+            <select class="church-input" id="attendance_duration" name="attendance_duration" required>
+              <option value="" disabled <%= !form.attendance_duration ? 'selected' : '' %>>Select duration</option>
+              <% attendanceDurationOptions.forEach(function (opt) { %>
+              <option value="<%= opt %>" <%= form.attendance_duration === opt ? 'selected' : '' %>><%= opt %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="church-field church-field--full">
+            <span class="church-label">Ministry interests (optional)</span>
+            <div class="church-chip-row">
+              <% var selectedMinistries = (form.ministry_interest || '').split(',').map(function (s) { return s.trim(); }); %>
+              <% ministryInterestOptions.forEach(function (opt) { %>
+              <label class="church-chip">
+                <input type="checkbox" name="ministry_interest" value="<%= opt.value %>" <%= selectedMinistries.indexOf(opt.value) !== -1 ? 'checked' : '' %>/>
+                <%= opt.label %>
+              </label>
+              <% }); %>
+            </div>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="emergency_contact_name">Emergency contact name (optional)</label>
+            <input class="church-input" id="emergency_contact_name" name="emergency_contact_name" type="text" value="<%= form.emergency_contact_name || '' %>"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="emergency_contact_phone">Emergency contact phone (optional)</label>
+            <input class="church-input" id="emergency_contact_phone" name="emergency_contact_phone" type="tel" value="<%= form.emergency_contact_phone || '' %>"/>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="church-form-section">
+        <legend class="church-form-section__title">Account security</legend>
+        <div class="church-form-grid">
+          <div class="church-field">
+            <label class="church-label" for="password">Password</label>
+            <input class="church-input" id="password" name="password" type="password" autocomplete="new-password" minlength="8" required/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="confirm_password">Confirm password</label>
+            <input class="church-input" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required/>
+          </div>
+          <div class="church-field church-field--full">
+            <label class="church-check">
+              <input type="checkbox" name="accept_terms" <%= form.accept_terms ? 'checked' : '' %> required/>
+              I agree to the privacy policy regarding my personal data usage for church administration.
+            </label>
+          </div>
+        </div>
+      </fieldset>
+
+      <button class="church-btn church-btn--primary church-btn--block" type="submit">Submit registration</button>
+    </form>
+    <p class="church-auth-card__footer">
+      Already registered?
+      <a href="/login">Member login</a>
+    </p>
+  </div>
+<%- include('../partials/auth_shell_end') %>

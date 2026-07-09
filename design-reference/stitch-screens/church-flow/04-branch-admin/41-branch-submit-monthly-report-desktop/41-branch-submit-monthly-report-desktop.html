@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ecclesia Admin - Monthly Report</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Config Verbatim -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c8c4d7",
+                    "on-error": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#707273",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-secondary-container": "#5d6466",
+                    "on-secondary-fixed": "#161d1f",
+                    "background": "#f1fbff",
+                    "on-error-container": "#93000a",
+                    "inverse-surface": "#283236",
+                    "primary-fixed-dim": "#c6bfff",
+                    "error": "#ba1a1a",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "surface-tint": "#5847d2",
+                    "primary": "#5341cd",
+                    "outline": "#787586",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "on-primary-container": "#faf6ff",
+                    "surface-container-high": "#dfeaef",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "surface-bright": "#f1fbff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "tertiary": "#57595b",
+                    "surface-variant": "#d9e4e9",
+                    "on-tertiary": "#ffffff",
+                    "on-background": "#131d21",
+                    "secondary": "#586062",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "surface-container": "#e4f0f4",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-primary": "#ffffff",
+                    "secondary-container": "#dae1e3",
+                    "primary-fixed": "#e4dfff",
+                    "on-surface": "#131d21",
+                    "surface-container-highest": "#d9e4e9",
+                    "surface-dim": "#d1dce0",
+                    "surface-container-low": "#eaf5fa",
+                    "surface": "#f1fbff",
+                    "secondary-fixed": "#dde4e6",
+                    "inverse-primary": "#c6bfff",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-primary-fixed": "#160066",
+                    "on-surface-variant": "#474554",
+                    "inverse-on-surface": "#e7f3f7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "xs": "4px",
+                    "md": "16px",
+                    "gutter": "24px",
+                    "lg": "24px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px",
+                    "xl": "32px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "title-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .step-active { background-color: #5341cd; color: white; }
+        .step-inactive { background-color: #e4f0f4; color: #474554; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex">
+<!-- SIDE NAV BAR (Shared Component) -->
+<aside class="w-[280px] h-screen sticky left-0 top-0 bg-inverse-surface flex flex-col py-md shrink-0 hidden md:flex shadow-md">
+<div class="px-6 mb-8">
+<h1 class="font-headline-md text-headline-md font-bold text-on-primary-container">Ecclesia Admin</h1>
+<p class="font-label-lg text-label-lg text-secondary-fixed-dim opacity-70">Branch Portal</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">group</span>
+<span class="font-label-lg text-label-lg">Membership</span>
+</a>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">church</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">payments</span>
+<span class="font-label-lg text-label-lg">Financials</span>
+</a>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">calendar_today</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<a class="text-on-primary-container bg-primary-container rounded-lg mx-2 flex items-center px-4 py-3 opacity-90 transition-all" href="#">
+<span class="material-symbols-outlined mr-3">bar_chart</span>
+<span class="font-label-lg text-label-lg">Reports</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-1">
+<button class="w-full bg-primary text-on-primary font-label-lg text-label-lg py-3 rounded-xl mb-6 shadow-lg hover:brightness-110 transition-all">
+                New Record
+            </button>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+<a class="flex items-center text-on-secondary-fixed-variant hover:text-on-tertiary-container px-4 py-3 hover:bg-tertiary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">help</span>
+<span class="font-label-lg text-label-lg">Support</span>
+</a>
+</div>
+</aside>
+<!-- MAIN CANVAS -->
+<main class="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+<!-- TOP BAR (Shared Component) -->
+<header class="w-full h-16 sticky top-0 z-40 bg-surface flex justify-between items-center px-margin-desktop border-b border-outline-variant shrink-0">
+<div class="flex items-center gap-4">
+<span class="md:hidden material-symbols-outlined text-primary">menu</span>
+<h2 class="font-title-lg text-title-lg font-black text-primary">Ecclesia</h2>
+<div class="hidden md:flex items-center bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant focus-within:ring-2 focus-within:ring-primary ml-4">
+<span class="material-symbols-outlined text-outline text-sm mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md font-body-md w-64" placeholder="Search members or records..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">help_outline</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="font-label-lg text-label-lg text-on-surface">Kafue Baptist</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Lead Admin</p>
+</div>
+<img class="w-10 h-10 rounded-full border-2 border-primary-fixed shadow-sm" data-alt="A professional headshot of a church administrator with a warm, friendly expression, set against a blurred modern office background with soft violet and blue accents to match the brand palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCo8glbl5P4kEXa3QbKsP5Ns3aZj3_PN3_np5sicjTnwh1clJSlKFotUgUWEu0NEOA6PJYOe5ISsxOGhK0r3CdqXXkzUW1aYmufUz-LLjRLod0SuffrDaOfn2m9dvB5bBChjjG7bA-bG7o7YUVV34mamc0zoKpVsLBekC4WKo3Mju-Hkgm2r1ez1V3UeCoq1ETPlX2la3YJ9Ym7oXSTfmiz6bT8oDHcbp4zMK6VPWdDGSEanbYm-mZkAg"/>
+</div>
+</div>
+</header>
+<!-- CONTENT -->
+<div class="p-margin-desktop max-w-6xl mx-auto w-full pb-24">
+<div class="mb-gutter">
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-2">Monthly Ministry Report</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Kafue Baptist Church • Reporting Period: October 2023</p>
+</div>
+<form class="space-y-gutter" id="reportForm">
+<!-- PROGRESS STEPS (Custom visual pattern) -->
+<div class="flex items-center justify-between mb-8 overflow-x-auto pb-4">
+<div class="flex items-center shrink-0">
+<div class="w-10 h-10 rounded-full flex items-center justify-center step-active font-title-md text-title-md">1</div>
+<div class="ml-3">
+<p class="font-label-lg text-label-lg text-primary">Membership</p>
+</div>
+</div>
+<div class="h-px bg-outline-variant flex-1 mx-4 min-w-[20px]"></div>
+<div class="flex items-center shrink-0">
+<div class="w-10 h-10 rounded-full flex items-center justify-center step-inactive font-title-md text-title-md">2</div>
+<div class="ml-3">
+<p class="font-label-lg text-label-lg text-on-surface-variant">Attendance</p>
+</div>
+</div>
+<div class="h-px bg-outline-variant flex-1 mx-4 min-w-[20px]"></div>
+<div class="flex items-center shrink-0">
+<div class="w-10 h-10 rounded-full flex items-center justify-center step-inactive font-title-md text-title-md">3</div>
+<div class="ml-3">
+<p class="font-label-lg text-label-lg text-on-surface-variant">Ministry</p>
+</div>
+</div>
+<div class="h-px bg-outline-variant flex-1 mx-4 min-w-[20px]"></div>
+<div class="flex items-center shrink-0">
+<div class="w-10 h-10 rounded-full flex items-center justify-center step-inactive font-title-md text-title-md">4</div>
+<div class="ml-3">
+<p class="font-label-lg text-label-lg text-on-surface-variant">Overview</p>
+</div>
+</div>
+</div>
+<!-- MEMBER GROWTH BENTO GRID -->
+<section class="space-y-md">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">person_add</span>
+<h4 class="font-title-lg text-title-lg text-on-surface">Member Growth</h4>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-5 gap-md">
+<div class="glass-card p-md rounded-xl flex flex-col justify-between">
+<label class="font-label-lg text-label-lg text-on-surface-variant mb-4">Starting Count</label>
+<input class="text-headline-md font-headline-md bg-transparent border-0 focus:ring-0 p-0 text-primary" type="number" value="124"/>
+</div>
+<div class="glass-card p-md rounded-xl border-l-4 border-l-primary/40">
+<label class="font-label-lg text-label-lg text-on-surface-variant block mb-4">New Members</label>
+<input class="text-headline-md font-headline-md bg-transparent border-0 focus:ring-0 p-0 w-full" placeholder="0" type="number"/>
+<p class="font-label-md text-label-md text-secondary mt-2">Bapstism &amp; Profession</p>
+</div>
+<div class="glass-card p-md rounded-xl">
+<label class="font-label-lg text-label-lg text-on-surface-variant block mb-4">Transferred In</label>
+<input class="text-headline-md font-headline-md bg-transparent border-0 focus:ring-0 p-0 w-full" placeholder="0" type="number"/>
+</div>
+<div class="glass-card p-md rounded-xl border-l-4 border-l-error/40">
+<label class="font-label-lg text-label-lg text-on-surface-variant block mb-4">Inactive/Lost</label>
+<input class="text-headline-md font-headline-md bg-transparent border-0 focus:ring-0 p-0 w-full" placeholder="0" type="number"/>
+<p class="font-label-md text-label-md text-on-error-container mt-2">Transfers/Deaths</p>
+</div>
+<div class="bg-primary-container text-on-primary-container p-md rounded-xl flex flex-col justify-between shadow-lg">
+<label class="font-label-lg text-label-lg opacity-80 mb-4">Ending Count</label>
+<span class="text-headline-md font-headline-md">124</span>
+</div>
+</div>
+</section>
+<!-- ATTENDANCE SUMMARY -->
+<section class="space-y-md pt-8">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">groups</span>
+<h4 class="font-title-lg text-title-lg text-on-surface">Attendance Averages</h4>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-md">
+<div class="glass-card p-gutter rounded-xl">
+<p class="font-label-lg text-label-lg text-on-surface-variant mb-2">Sunday Worship</p>
+<div class="flex items-end gap-2">
+<input class="text-headline-md font-headline-md bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 p-0 w-20" placeholder="0" type="number"/>
+<span class="font-body-md text-body-md text-outline mb-1">avg.</span>
+</div>
+</div>
+<div class="glass-card p-gutter rounded-xl">
+<p class="font-label-lg text-label-lg text-on-surface-variant mb-2">Midweek Service</p>
+<div class="flex items-end gap-2">
+<input class="text-headline-md font-headline-md bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 p-0 w-20" placeholder="0" type="number"/>
+<span class="font-body-md text-body-md text-outline mb-1">avg.</span>
+</div>
+</div>
+<div class="glass-card p-gutter rounded-xl">
+<p class="font-label-lg text-label-lg text-on-surface-variant mb-2">Children's Min.</p>
+<div class="flex items-end gap-2">
+<input class="text-headline-md font-headline-md bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 p-0 w-20" placeholder="0" type="number"/>
+<span class="font-body-md text-body-md text-outline mb-1">avg.</span>
+</div>
+</div>
+<div class="glass-card p-gutter rounded-xl">
+<p class="font-label-lg text-label-lg text-on-surface-variant mb-2">Youth Meeting</p>
+<div class="flex items-end gap-2">
+<input class="text-headline-md font-headline-md bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 p-0 w-20" placeholder="0" type="number"/>
+<span class="font-body-md text-body-md text-outline mb-1">avg.</span>
+</div>
+</div>
+<div class="glass-card p-gutter rounded-xl">
+<p class="font-label-lg text-label-lg text-on-surface-variant mb-2">New Visitors</p>
+<div class="flex items-end gap-2">
+<input class="text-headline-md font-headline-md bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 p-0 w-20" placeholder="0" type="number"/>
+<span class="font-body-md text-body-md text-outline mb-1">total</span>
+</div>
+</div>
+</div>
+</section>
+<!-- SERVICES & MINISTRY ACTIVITY -->
+<section class="space-y-md pt-8">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">volunteer_activism</span>
+<h4 class="font-title-lg text-title-lg text-on-surface">Service &amp; Activity Counts</h4>
+</div>
+<div class="glass-card rounded-2xl overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-gutter py-4 font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Activity Type</th>
+<th class="px-gutter py-4 font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider text-center">Count</th>
+<th class="px-gutter py-4 font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Notes / Highlights</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/30">
+<tr>
+<td class="px-gutter py-4 font-body-lg text-body-lg">Main Worship Services</td>
+<td class="px-gutter py-4 text-center">
+<input class="w-16 text-center border-outline-variant rounded-lg focus:ring-primary focus:border-primary" type="number" value="4"/>
+</td>
+<td class="px-gutter py-4">
+<input class="w-full border-none bg-transparent focus:ring-0 text-body-md" placeholder="Special guest speaker on the 15th..." type="text"/>
+</td>
+</tr>
+<tr>
+<td class="px-gutter py-4 font-body-lg text-body-lg">Leadership Meetings</td>
+<td class="px-gutter py-4 text-center">
+<input class="w-16 text-center border-outline-variant rounded-lg focus:ring-primary focus:border-primary" type="number" value="2"/>
+</td>
+<td class="px-gutter py-4">
+<input class="w-full border-none bg-transparent focus:ring-0 text-body-md" placeholder="Deacons and Elders strategy session" type="text"/>
+</td>
+</tr>
+<tr>
+<td class="px-gutter py-4 font-body-lg text-body-lg">Outreach Programs</td>
+<td class="px-gutter py-4 text-center">
+<input class="w-16 text-center border-outline-variant rounded-lg focus:ring-primary focus:border-primary" type="number" value="1"/>
+</td>
+<td class="px-gutter py-4">
+<input class="w-full border-none bg-transparent focus:ring-0 text-body-md" placeholder="Community clinic support day" type="text"/>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- CHALLENGES & FINANCIAL LINK -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter pt-8">
+<section class="space-y-md">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary">report_problem</span>
+<h4 class="font-title-lg text-title-lg text-on-surface">Challenges &amp; Support</h4>
+</div>
+<div class="glass-card p-gutter rounded-xl">
+<textarea class="w-full border-outline-variant rounded-xl focus:ring-primary focus:border-primary font-body-md text-body-md" placeholder="Describe any ministry challenges or specific support needed from the regional office..." rows="4"></textarea>
+</div>
+</section>
+<section class="space-y-md">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+<h4 class="font-title-lg text-title-lg text-on-surface">Giving &amp; Attachments</h4>
+</div>
+<div class="glass-card p-gutter rounded-xl space-y-4">
+<div class="flex items-center justify-between p-4 bg-surface-container rounded-lg border border-primary/20">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">link</span>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface">Giving Summary</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Auto-linked to Finance Module</p>
+</div>
+</div>
+<button class="text-primary font-label-lg text-label-lg hover:underline" type="button">Edit Ledger</button>
+</div>
+<!-- FILE UPLOAD AREA -->
+<div class="border-2 border-dashed border-outline-variant rounded-xl p-6 flex flex-col items-center justify-center text-center hover:border-primary transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-4xl text-outline group-hover:text-primary transition-colors mb-2">cloud_upload</span>
+<p class="font-label-lg text-label-lg text-on-surface">Upload Monthly Supporting Documents</p>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">PDF, DOC, or XLSX up to 10MB</p>
+<input class="hidden" type="file"/>
+</div>
+</div>
+</section>
+</div>
+<!-- FORM ACTIONS -->
+<div class="flex items-center justify-between pt-12 border-t border-outline-variant">
+<button class="px-gutter py-3 rounded-xl border border-outline-variant font-label-lg text-label-lg text-on-surface hover:bg-surface-variant transition-colors" type="button">
+                        Save as Draft
+                    </button>
+<div class="flex items-center gap-4">
+<button class="px-gutter py-3 font-label-lg text-label-lg text-primary hover:text-primary-container transition-colors" type="button">
+                            Discard Changes
+                        </button>
+<button class="px-10 py-3 rounded-xl bg-primary text-on-primary font-title-md text-title-md shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all" type="submit">
+                            Submit Report
+                        </button>
+</div>
+</div>
+</form>
+</div>
+</main>
+<!-- MOBILE NAV (Shared Component) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 bg-surface-container-lowest flex justify-around items-center h-16 px-4 pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Members</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Finance</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined">menu</span>
+<span class="font-label-md text-label-md">Menu</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for form submission
+        document.getElementById('reportForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Submitting...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Submitted';
+                btn.classList.replace('bg-primary', 'bg-green-600');
+                
+                // Show success toast-like feedback
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-20 right-8 bg-green-100 text-green-800 px-6 py-4 rounded-xl shadow-xl z-50 flex items-center gap-3 animate-bounce';
+                notification.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Report for October 2023 successfully submitted.';
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    btn.classList.replace('bg-green-600', 'bg-primary');
+                }, 4000);
+            }, 1500);
+        });
+
+        // Dynamic Member calculation
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('change', () => {
+                // In a real app, logic would update the "Ending Count" bento card here
+                console.log('Stats updated');
+            });
+        });
+    </script>
+</body></html>

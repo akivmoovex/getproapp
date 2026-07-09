@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Platform Support Notes | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'Platform Support Notes', activeNav: activeNav || 'church_platform_support_notes' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
+        <% var r = typeof results !== 'undefined' && results ? results : { items: [], total: 0, page: 1, limit: 50, totalPages: 0 }; %>
+
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Platform Support Notes</h1>
+            <p class="admin-dashboard__subtitle muted">Internal GetPro support notes only.</p>
+            <p class="muted" style="margin-top:0.35rem;">Do not store passwords, prayer details, or sensitive pastoral content.</p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church', label: 'Church dashboard' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/search', label: 'Support search' }) %>
+          </div>
+        </header>
+
+        <% if (typeof validationErrors !== 'undefined' && validationErrors && validationErrors.length > 0) { %>
+          <div class="flash flash--error" role="alert"><%= validationErrors.join(' ') %></div>
+        <% } %>
+
+        <form method="get" action="/admin/church/support-notes" class="card card--mb-xl admin-filter-form" style="padding:1rem;">
+          <div class="input-field" style="flex:2;">
+            <label class="input-field__label" for="q">Search notes</label>
+            <input id="q" class="input-field__control" name="q" type="search" value="<%= f.q || '' %>" placeholder="Note text…" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="entity_type">Entity type</label>
+            <select id="entity_type" class="input-field__control" name="entity_type">
+              <% (entityTypes || ['all']).forEach(function (t) { %>
+                <option value="<%= t %>" <%= (f.entity_type || 'all') === t ? 'selected' : '' %>><%= t.replace(/_/g, ' ') %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="organization_id">Organization ID</label>
+            <input id="organization_id" class="input-field__control" name="organization_id" type="number" min="1" value="<%= f.organization_id || '' %>" placeholder="Optional" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="branch_id">Branch ID</label>
+            <input id="branch_id" class="input-field__control" name="branch_id" type="number" min="1" value="<%= f.branch_id || '' %>" placeholder="Optional" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="date_from">Date from</label>
+            <input id="date_from" class="input-field__control" name="date_from" type="date" value="<%= f.date_from || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="date_to">Date to</label>
+            <input id="date_to" class="input-field__control" name="date_to" type="date" value="<%= f.date_to || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="limit">Limit</label>
+            <input id="limit" class="input-field__control" name="limit" type="number" min="1" max="100" value="<%= f.limit || 50 %>" />
+          </div>
+          <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Search' }) %>
+          <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/support-notes', label: 'Clear filters' }) %>
+        </form>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Results (<%= r.total || 0 %>)</h2>
+          <% if (f.q && f.q.length > 0 && f.q.length < (minQueryLength || 2)) { %>
+            <p class="muted">Enter at least <%= minQueryLength || 2 %> characters to search note text.</p>
+          <% } else if (!r.items || r.items.length === 0) { %>
+            <p class="muted">No support notes found.</p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Entity</th>
+                    <th>Organization</th>
+                    <th>Branch</th>
+                    <th>Note preview</th>
+                    <th>Created by</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% r.items.forEach(function (note) { %>
+                    <tr>
+                      <td><%= formatDate(note.created_at) %></td>
+                      <td>
+                        <span class="muted"><%= note.entity_type.replace(/_/g, ' ') %></span><br />
+                        <%= note.entity_label %>
+                      </td>
+                      <td><%= note.organization_name || '—' %></td>
+                      <td><%= note.branch_name || '—' %></td>
+                      <td><%= note.note_preview %></td>
+                      <td><%= note.created_by_label %></td>
+                      <td>
+                        <%- include('../../partials/components/button', { variant: 'default', href: note.entity_link, label: 'View record' }) %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+
+            <% if ((r.totalPages || 0) > 1) { %>
+              <div class="admin-toolbar" style="margin-top:1rem;">
+                <% if (r.page > 1) { %>
+                  <%- include('../../partials/components/button', { variant: 'default', href: paginationPrevHref, label: 'Previous' }) %>
+                <% } %>
+                <span class="muted">Page <%= r.page %> of <%= r.totalPages %></span>
+                <% if (r.page < r.totalPages) { %>
+                  <%- include('../../partials/components/button', { variant: 'default', href: paginationNextHref, label: 'Next' }) %>
+                <% } %>
+              </div>
+            <% } %>
+          <% } %>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

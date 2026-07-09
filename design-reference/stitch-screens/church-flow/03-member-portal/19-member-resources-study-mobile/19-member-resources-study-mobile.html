@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#c6bfff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-fixed": "#160066",
+                        "inverse-on-surface": "#e7f3f7",
+                        "inverse-surface": "#283236",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#474554",
+                        "surface-variant": "#d9e4e9",
+                        "surface-container-highest": "#d9e4e9",
+                        "secondary": "#586062",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "tertiary-container": "#707273",
+                        "surface-tint": "#5847d2",
+                        "tertiary": "#57595b",
+                        "surface-bright": "#f1fbff",
+                        "surface": "#f1fbff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-primary-container": "#faf6ff",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#787586",
+                        "on-tertiary-fixed": "#191c1d",
+                        "surface-container-high": "#dfeaef",
+                        "surface-dim": "#d1dce0",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#e4dfff",
+                        "background": "#f1fbff",
+                        "on-secondary-container": "#5d6466",
+                        "surface-container": "#e4f0f4",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-background": "#131d21",
+                        "on-surface": "#131d21",
+                        "primary": "#5341cd",
+                        "on-secondary-fixed": "#161d1f",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#c8c4d7",
+                        "tertiary-fixed": "#e1e3e4",
+                        "primary-container": "#6c5ce7",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "secondary-fixed": "#dde4e6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top AppBar (JSON Component Mapping) -->
+<header class="bg-surface dark:bg-surface-dim flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full z-40 sticky top-0">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20">
+<img class="w-full h-full object-cover" data-alt="A professional and friendly portrait of a Zambian woman named Mary Phiri, smiling warmly. She is in a bright, modern interior with soft, natural lighting. The style is clean and corporate-professional, reflecting the brand's 'Structured Compassion' identity with a soft color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWeHPH-uDGAJkL40EetdK_vTlkjSXZOQAllwsT2hhKGRJgNspPjxVMBYZmaML-NQsHT6dVtOS0VO43NsRmFJ5ayoqbEVSPeCoWyQS7GqABVnHtK9udrI6tqVmqXmsAn2qgFxuYRMGl9hbLLRoNztEQvitHDVJuNrdcNTOJf9zCs5lRgWb2cPvyz34N5ms-2mA-_lZv1oTAkMB6705_Oe18147-mp6BaX-TIWJRugPXQ1Vaictj6IOu-g"/>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim font-bold">GetPro Church</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="pb-24 pt-4 px-margin-mobile">
+<!-- Welcome Header -->
+<section class="mb-8">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background mb-1">Study Resources</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Exclusive materials for Kafue Baptist members.</p>
+</section>
+<!-- Search & Filters -->
+<section class="mb-8 space-y-4">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full h-12 pl-12 pr-4 rounded-xl border-outline-variant bg-surface-container-low focus:ring-2 focus:ring-primary focus:border-primary border transition-all outline-none" placeholder="Search sermons, notes..." type="text"/>
+</div>
+<div class="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+<button class="px-6 py-2 rounded-full bg-primary text-on-primary font-label-lg text-label-lg transition-transform active:scale-95 shadow-sm">All</button>
+<button class="px-6 py-2 rounded-full bg-secondary-container text-on-secondary-container font-label-lg text-label-lg transition-transform active:scale-95">Sermons</button>
+<button class="px-6 py-2 rounded-full bg-secondary-container text-on-secondary-container font-label-lg text-label-lg transition-transform active:scale-95">Notes</button>
+<button class="px-6 py-2 rounded-full bg-secondary-container text-on-secondary-container font-label-lg text-label-lg transition-transform active:scale-95">Media</button>
+</div>
+</section>
+<!-- Media Rich Cards Grid -->
+<section class="space-y-6">
+<!-- Featured Sermon Video Card -->
+<div class="bg-surface-container-lowest rounded-3xl overflow-hidden shadow-sm border border-outline-variant/30 flex flex-col">
+<div class="relative h-52 w-full">
+<img class="w-full h-full object-cover" data-alt="A high-quality cinematic still of a modern church sanctuary during a sermon. Soft purple and blue stage lighting creates a peaceful, spiritual atmosphere. A wooden pulpit stands in the foreground under warm spotlights. The style is modern, professional, and visually rich." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCr86VzrJjiIRj6vjgdHw393cFlJgYIkQnMZT-lLYvfAzKsCkTBP57M_0ivpKQ2_S8_eeS0hnZpp3yf0PiprCqROuhvY-32WVS_0EWUHKJuX9VgQEwVR4FqE_oSd5Z10of-6k0diB1GQGIN7p8rYFE_ArImtXwglvks1fnfai4MbNAQqo1J_t5SC4Dj6tIMmLGz620sWbahJ30wkmVWgNKgb5JN6C51MEyVnuK97hkCUQQKLhSwWlbpVg"/>
+<div class="absolute inset-0 bg-black/20 flex items-center justify-center">
+<button class="w-14 h-14 rounded-full bg-primary/90 text-white flex items-center justify-center backdrop-blur-sm shadow-xl active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div class="absolute top-4 right-4 px-3 py-1 bg-primary text-on-primary rounded-full font-label-md text-label-md">Video</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-title-lg text-title-lg text-on-surface leading-tight">Walking in Faith: The Kafue Series</h3>
+<button class="text-on-surface-variant"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 line-clamp-2">Pastor John explores the deep roots of faith in our local community and how we can grow together.</p>
+<div class="flex items-center gap-4 text-outline font-label-md text-label-md">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">calendar_today</span> Oct 12, 2023</div>
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">schedule</span> 45:20</div>
+</div>
+<div class="mt-6 flex gap-3">
+<button class="flex-1 py-3 bg-primary-container text-on-primary-container rounded-xl font-label-lg text-label-lg flex items-center justify-center gap-2 transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[20px]">download</span> Download
+                        </button>
+<button class="w-12 h-12 flex items-center justify-center border border-outline-variant rounded-xl text-primary transition-colors active:scale-95">
+<span class="material-symbols-outlined">share</span>
+</button>
+</div>
+</div>
+</div>
+<!-- PDF Notes Card -->
+<div class="bg-surface-container-lowest rounded-3xl p-6 shadow-sm border border-outline-variant/30 flex gap-4">
+<div class="w-16 h-16 shrink-0 rounded-2xl bg-error-container flex items-center justify-center text-on-error-container">
+<span class="material-symbols-outlined text-3xl">description</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between">
+<h3 class="font-title-md text-title-md text-on-surface">The Parables Study Guide</h3>
+<span class="font-label-md text-label-md px-2 py-0.5 bg-surface-container text-on-surface-variant rounded">PDF</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 mb-3">Comprehensive notes for the 8-week Bible study on Jesus' parables.</p>
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-outline">2.4 MB • 15 Pages</span>
+<button class="text-primary font-label-lg text-label-lg flex items-center gap-1 active:scale-95">
+<span class="material-symbols-outlined text-[20px]">download</span> Get File
+                        </button>
+</div>
+</div>
+</div>
+<!-- Ministry Document Card -->
+<div class="bg-surface-container-lowest rounded-3xl p-6 shadow-sm border border-outline-variant/30 flex gap-4">
+<div class="w-16 h-16 shrink-0 rounded-2xl bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined text-3xl">verified_user</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between">
+<h3 class="font-title-md text-title-md text-on-surface">Leadership Covenant</h3>
+<span class="font-label-md text-label-md px-2 py-0.5 bg-surface-container text-on-surface-variant rounded">DOCX</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 mb-3">Required reading for all new ministry leads and small group facilitators.</p>
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-outline">850 KB • Oct 2023</span>
+<button class="text-primary font-label-lg text-label-lg flex items-center gap-1 active:scale-95">
+<span class="material-symbols-outlined text-[20px]">download</span> Get File
+                        </button>
+</div>
+</div>
+</div>
+<!-- Audio Sermon Card -->
+<div class="bg-surface-container-lowest rounded-3xl p-6 shadow-sm border border-outline-variant/30">
+<div class="flex gap-4 items-center mb-4">
+<div class="w-12 h-12 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined">headset</span>
+</div>
+<div class="flex-1 overflow-hidden">
+<h3 class="font-title-md text-title-md text-on-surface truncate">Community Prayer Workshop</h3>
+<p class="font-label-md text-label-md text-outline">Pastor Sarah Phiri • Audio Only</p>
+</div>
+<button class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<!-- Mini Player Waveform Emulation -->
+<div class="flex items-end gap-0.5 h-8 w-full px-2 opacity-50 mb-4">
+<div class="bg-primary flex-1 h-2 rounded-full"></div>
+<div class="bg-primary flex-1 h-4 rounded-full"></div>
+<div class="bg-primary flex-1 h-6 rounded-full"></div>
+<div class="bg-primary flex-1 h-3 rounded-full"></div>
+<div class="bg-primary flex-1 h-5 rounded-full"></div>
+<div class="bg-primary flex-1 h-2 rounded-full"></div>
+<div class="bg-primary flex-1 h-4 rounded-full"></div>
+<div class="bg-primary flex-1 h-7 rounded-full"></div>
+<div class="bg-primary flex-1 h-3 rounded-full"></div>
+<div class="bg-primary flex-1 h-5 rounded-full"></div>
+<div class="bg-outline-variant flex-1 h-2 rounded-full"></div>
+<div class="bg-outline-variant flex-1 h-4 rounded-full"></div>
+<div class="bg-outline-variant flex-1 h-6 rounded-full"></div>
+<div class="bg-outline-variant flex-1 h-3 rounded-full"></div>
+</div>
+<div class="flex justify-between items-center text-outline font-label-md text-label-md">
+<span>12:45</span>
+<span>28:00</span>
+</div>
+</div>
+</section>
+<!-- Content Warning / Note -->
+<div class="mt-8 p-4 rounded-2xl bg-surface-container-low border border-dashed border-outline-variant flex items-start gap-3">
+<span class="material-symbols-outlined text-primary">info</span>
+<p class="font-label-md text-label-md text-on-surface-variant italic">Documents marked with a shield are for church members only and should not be shared publicly.</p>
+</div>
+</main>
+<!-- Bottom Navigation Bar (JSON Component Mapping) -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden pb-safe bg-surface-container dark:bg-surface-container-highest shadow-lg flex justify-around items-center h-20 px-2">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant/30 transition-transform active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant/30 transition-transform active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-md text-label-md">Groups</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant/30 transition-transform active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-md text-label-md">Events</span>
+</a>
+<!-- Active Tab: Study -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1 transition-transform active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-label-md text-label-md font-bold">Study</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant/30 transition-transform active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+<!-- Micro-interaction Script -->
+<script>
+        document.querySelectorAll('button, a').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const ripple = document.createElement('div');
+                ripple.classList.add('ripple');
+                // Basic implementation for visual feedback
+            });
+        });
+    </script>
+</body></html>

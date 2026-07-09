@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Branch Giving Summary - Kafue Baptist Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .report-card-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-24">
+<!-- Top Navigation Bar (Mobile Focused) -->
+<header class="fixed top-0 w-full z-40 bg-surface border-b border-outline-variant px-margin-mobile py-base flex justify-between items-center h-16">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">church</span>
+</div>
+<div>
+<h1 class="font-title-lg text-title-lg font-black text-primary leading-tight">ChurchConnect HQ</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Kafue Baptist Church</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a church administrator in a bright, modern office setting. The lighting is soft and natural, reflecting a clean light-mode aesthetic with high-quality whitespace. The individual is smiling warmly, representing the 'Structured Compassion' brand identity of the Kafue Baptist Church management system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo3TDKr9dh0ZzZTcpn69VIgp3pZTRdGxy-bmAmEmV8zhsTQqhPoYHAccp0WKdX_y8H72WuFEGpolxl25140fiYHgCGYXJRqsHQlc2i2Kd65wZiixkyQ-ioN_6VWOneZDWpa42Umvqv8FnQcbgxDz66EEeW6S181Zu84SyZMXRg_G9sDllAoo2gGSJGtWlfVrGupuUy-Wotd71cJHTedJro05oTTpLdHy2uTroKYRXPDcUv4VDtmr9nAg"/>
+</div>
+</div>
+</header>
+<main class="mt-20 px-margin-mobile space-y-lg">
+<!-- Reporting Warning Banner -->
+<section class="mt-4 p-md bg-error-container rounded-xl flex items-start gap-4 border border-error/20">
+<span class="material-symbols-outlined text-error mt-1" style="font-variation-settings: 'FILL' 1;">warning</span>
+<div>
+<h3 class="font-title-md text-title-md text-on-error-container font-bold">Unsubmitted Reports</h3>
+<p class="font-body-md text-body-md text-on-error-container/80">Monthly summary for September 2023 is still pending submission. Failure to submit affects regional budget allocations.</p>
+</div>
+</section>
+<!-- Page Header -->
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface font-extrabold">Giving Summary</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Kafue Branch Office</p>
+</div>
+<div class="bg-surface-container-high px-3 py-1 rounded-full flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+<span class="font-label-lg text-label-lg">FY 2023</span>
+</div>
+</div>
+<!-- Monthly Summary Cards List -->
+<div class="space-y-md" id="report-list">
+<!-- October Card (Active/Expansion) -->
+<div class="report-card-transition bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm active:scale-[0.98]" onclick="toggleDetails('oct-details')">
+<div class="flex justify-between items-center mb-4">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary uppercase tracking-wider">Current Period</span>
+<span class="font-title-lg text-title-lg font-bold">October 2023</span>
+</div>
+<div class="text-right">
+<span class="font-headline-md text-headline-md text-primary font-black">ZMW 42,850</span>
+<div class="flex items-center justify-end text-green-600 gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span class="font-label-md text-label-md font-bold">+12%</span>
+</div>
+</div>
+</div>
+<div class="hidden space-y-4 pt-4 border-t border-outline-variant" id="oct-details">
+<div class="grid grid-cols-2 gap-4">
+<div class="p-md bg-surface-container-low rounded-lg">
+<p class="font-label-md text-label-md text-on-surface-variant">Tithes</p>
+<p class="font-title-md text-title-md font-bold">ZMW 28,400</p>
+</div>
+<div class="p-md bg-surface-container-low rounded-lg">
+<p class="font-label-md text-label-md text-on-surface-variant">Offerings</p>
+<p class="font-title-md text-title-md font-bold">ZMW 14,450</p>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">group</span>
+<span class="font-body-md text-body-md">214 Givers</span>
+</div>
+<span class="font-label-lg text-label-lg text-secondary px-2 py-0.5 bg-secondary-container rounded">IN PROGRESS</span>
+</div>
+</div>
+</div>
+<!-- September Card (Warning State) -->
+<div class="report-card-transition bg-surface-container-lowest p-lg rounded-xl border-l-4 border-l-error border border-outline-variant shadow-sm" onclick="toggleDetails('sep-details')">
+<div class="flex justify-between items-center mb-2">
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg font-bold">September 2023</span>
+</div>
+<span class="font-title-lg text-title-lg text-on-surface-variant font-bold">ZMW 38,120</span>
+</div>
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined text-sm">report</span>
+<span class="font-label-lg text-label-lg font-bold uppercase">Pending Regional Submission</span>
+</div>
+<div class="hidden space-y-4 pt-4 mt-4 border-t border-outline-variant" id="sep-details">
+<div class="space-y-2">
+<div class="flex justify-between font-body-md">
+<span class="text-on-surface-variant">Tithes</span>
+<span class="font-bold">ZMW 24,000</span>
+</div>
+<div class="flex justify-between font-body-md">
+<span class="text-on-surface-variant">Building Fund</span>
+<span class="font-bold">ZMW 8,000</span>
+</div>
+<div class="flex justify-between font-body-md">
+<span class="text-on-surface-variant">Missions</span>
+<span class="font-bold">ZMW 6,120</span>
+</div>
+</div>
+<button class="w-full bg-error text-on-error py-3 rounded-lg font-label-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">send</span>
+                        SUBMIT REPORT NOW
+                    </button>
+</div>
+</div>
+<!-- August Card -->
+<div class="report-card-transition bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm" onclick="toggleDetails('aug-details')">
+<div class="flex justify-between items-center mb-2">
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg font-bold">August 2023</span>
+</div>
+<span class="font-title-lg text-title-lg text-on-surface-variant font-bold">ZMW 45,600</span>
+</div>
+<div class="flex items-center gap-2 text-green-600">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-lg text-label-lg font-bold uppercase">Archived</span>
+</div>
+<div class="hidden space-y-4 pt-4 mt-4 border-t border-outline-variant" id="aug-details">
+<div class="p-md bg-surface-container-high rounded-lg text-center">
+<p class="font-body-md text-body-md italic text-on-surface-variant mb-3">"Bring the whole tithe into the storehouse, that there may be food in my house."</p>
+<button class="text-primary font-label-lg underline">View Full Ledger</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Analytical Bento-ish Section -->
+<section class="grid grid-cols-2 gap-4 pb-12">
+<div class="col-span-2 p-lg bg-inverse-surface text-primary-fixed rounded-xl shadow-lg relative overflow-hidden h-40">
+
+<div class="relative z-10 flex flex-col justify-between h-full">
+<h4 class="font-title-md text-title-md font-bold">Quarterly Target</h4>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-black">84%</span>
+<span class="text-primary-fixed-dim font-label-lg">OF ZMW 150k</span>
+</div>
+<div class="w-full bg-surface-variant/30 h-2 rounded-full overflow-hidden">
+<div class="bg-primary-fixed-dim h-full" style="width: 84%;"></div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed right-6 bottom-24 w-16 h-16 bg-primary-container text-on-primary-container rounded-full shadow-xl flex items-center justify-center z-50 hover:scale-105 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+<!-- Bottom Navigation Bar (Admin Focused) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-surface-container-highest flex justify-around items-center px-4 pb-4 pt-2 shadow-lg md:hidden">
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:bg-secondary-container/50 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:bg-secondary-container/50 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Giving</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:bg-secondary-container/50 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">menu</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+<script>
+        function toggleDetails(id) {
+            const detailsElement = document.getElementById(id);
+            const isHidden = detailsElement.classList.contains('hidden');
+            
+            // Close all first for a clean accordion effect if desired, 
+            // or just toggle the clicked one
+            document.querySelectorAll('[id$="-details"]').forEach(el => {
+                el.classList.add('hidden');
+            });
+
+            if (isHidden) {
+                detailsElement.classList.remove('hidden');
+            }
+        }
+
+        // Simple scale interaction for cards
+        document.querySelectorAll('.report-card-transition').forEach(card => {
+            card.addEventListener('mousedown', () => card.classList.add('scale-[0.98]'));
+            card.addEventListener('mouseup', () => card.classList.remove('scale-[0.98]'));
+            card.addEventListener('mouseleave', () => card.classList.remove('scale-[0.98]'));
+        });
+    </script>
+</body></html>

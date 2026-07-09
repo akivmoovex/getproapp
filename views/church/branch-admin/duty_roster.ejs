@@ -1,0 +1,69 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Duty roster</h1>
+          <p class="church-branch-topbar__subtitle">Schedule and manage service duties</p>
+        </div>
+        <a class="church-btn church-btn--primary" href="/branch/duty-roster/new">Add duty</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <div class="church-branch-filter-tabs">
+        <% dutyFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/duty-roster<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : dutyStatusLabel(f) %></a>
+        <% }); %>
+      </div>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Upcoming duties</h2>
+        <% if ((upcomingDuties || []).length === 0) { %>
+        <p class="church-branch-empty">No upcoming duties in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Date</th><th>Service</th><th>Role</th><th>Assigned</th><th>Ministry / dept</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <% upcomingDuties.forEach(function (d) { %>
+              <tr>
+                <td><%= formatDutyDate(d.duty_date) %></td>
+                <td><%= d.service_name %></td>
+                <td><%= d.role_name %></td>
+                <td><%= assignedMemberDisplay(d) %></td>
+                <td><%= ministryDepartmentLabel(d) %></td>
+                <td><span class="church-status-chip church-status-chip--<%= d.status === 'confirmed' ? 'verified' : d.status === 'cancelled' ? 'pending' : 'draft' %>"><%= dutyStatusLabel(d.status) %></span></td>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/duty-roster/<%= d.id %>">View</a>
+                  <% if (d.status !== 'cancelled') { %>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/duty-roster/<%= d.id %>/edit">Edit</a>
+                  <% } %>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Past duties</h2>
+        <% if ((pastDuties || []).length === 0) { %>
+        <p class="church-branch-empty">No past duties in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Date</th><th>Service</th><th>Role</th><th>Assigned</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <% pastDuties.forEach(function (d) { %>
+              <tr>
+                <td><%= formatDutyDate(d.duty_date) %></td>
+                <td><%= d.service_name %></td>
+                <td><%= d.role_name %></td>
+                <td><%= assignedMemberDisplay(d) %></td>
+                <td><span class="church-status-chip church-status-chip--<%= d.status === 'confirmed' ? 'verified' : 'pending' %>"><%= dutyStatusLabel(d.status) %></span></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/duty-roster/<%= d.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

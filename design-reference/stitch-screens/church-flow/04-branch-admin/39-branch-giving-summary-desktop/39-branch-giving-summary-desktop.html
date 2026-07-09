@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Giving Summary | Kafue Baptist Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#dde4e6",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#707273",
+                    "surface-container-low": "#eaf5fa",
+                    "outline": "#787586",
+                    "on-secondary-container": "#5d6466",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#e4dfff",
+                    "inverse-surface": "#283236",
+                    "on-primary-fixed": "#160066",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#d9e4e9",
+                    "secondary-container": "#dae1e3",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "secondary": "#586062",
+                    "surface-dim": "#d1dce0",
+                    "surface-bright": "#f1fbff",
+                    "surface-container-high": "#dfeaef",
+                    "surface-tint": "#5847d2",
+                    "on-surface-variant": "#474554",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-secondary-fixed": "#161d1f",
+                    "on-primary-container": "#faf6ff",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "outline-variant": "#c8c4d7",
+                    "surface-container": "#e4f0f4",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-error": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "inverse-on-surface": "#e7f3f7",
+                    "background": "#f1fbff",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f1fbff",
+                    "primary": "#5341cd",
+                    "on-surface": "#131d21",
+                    "on-background": "#131d21",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "primary-container": "#6c5ce7",
+                    "tertiary": "#57595b",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "xl": "32px",
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "title-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md overflow-x-hidden">
+<div class="flex min-h-screen">
+<!-- SideNavBar - JSON Data Implementation -->
+<aside class="hidden md:flex w-[280px] h-screen sticky left-0 top-0 bg-inverse-surface dark:bg-surface-container-lowest flex-col p-md z-50">
+<div class="flex flex-col gap-sm mb-xl">
+<div class="font-headline-md text-headline-md font-bold text-primary-fixed dark:text-primary">Grace Community</div>
+<div class="text-surface-variant font-label-lg text-label-lg opacity-80">HQ Administrator</div>
+</div>
+<nav class="flex-1 flex flex-col gap-xs">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 transition-all duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<!-- Attendance -->
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 transition-all duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="how_to_reg">how_to_reg</span>
+<span class="font-label-lg text-label-lg">Attendance</span>
+</a>
+<!-- Giving (ACTIVE) -->
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold transition-all duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="payments" style="font-variation-settings: 'FILL' 1;">payments</span>
+<span class="font-label-lg text-label-lg">Giving</span>
+</a>
+<!-- Members -->
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 transition-all duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-lg text-label-lg">Members</span>
+</a>
+<!-- Ministries -->
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 transition-all duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="church">church</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<!-- Settings -->
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 transition-all duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<div class="mt-auto flex flex-col gap-xs border-t border-surface-variant/20 pt-md">
+<button class="w-full bg-primary-fixed text-on-primary-fixed py-md rounded-xl font-bold mb-md hover:opacity-90 transition-opacity">
+                    New Record
+                </button>
+<a class="flex items-center gap-3 px-4 py-2 text-surface-variant hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-lg text-label-lg">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-surface-variant hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 flex flex-col min-w-0">
+<!-- TopNavBar - JSON Data Implementation -->
+<header class="docked full-width top-0 sticky z-40 bg-surface dark:bg-surface-container-high border-b border-outline-variant dark:border-outline flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-base">
+<div class="flex items-center gap-md">
+<span class="md:hidden material-symbols-outlined text-primary" data-icon="menu">menu</span>
+<div class="font-title-lg text-title-lg font-black text-primary dark:text-primary-fixed-dim">ChurchConnect HQ</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden md:flex items-center bg-surface-container rounded-full px-md py-xs border border-outline-variant">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md placeholder:text-on-surface-variant/50 w-64" placeholder="Search data..." type="text"/>
+</div>
+<div class="flex items-center gap-sm">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+</button>
+<button class="flex items-center gap-sm p-1 pr-3 rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[32px]" data-icon="account_circle">account_circle</span>
+<span class="hidden md:block font-label-md text-label-md font-bold">Admin</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="p-margin-mobile md:p-margin-desktop flex flex-col gap-lg pb-32">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Kafue Baptist Church</h1>
+<p class="text-on-surface-variant font-body-lg text-body-lg mt-1">Branch Giving Summary Report</p>
+</div>
+<div class="flex items-center gap-sm bg-error-container/50 text-on-error-container px-md py-sm rounded-lg border border-error-container">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+<span class="font-label-lg text-label-lg">This is a summary for reporting, not a full accounting system.</span>
+</div>
+</div>
+<!-- Main Layout: Bento Grid Style -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Monthly Summary Table Card (Bento Area Large) -->
+<div class="lg:col-span-8 flex flex-col gap-md">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+<div class="px-lg py-md border-b border-outline-variant flex justify-between items-center bg-surface-container-low/50">
+<h2 class="font-title-md text-title-md">Reporting History</h2>
+<div class="flex gap-xs">
+<button class="p-2 rounded-lg hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[20px]" data-icon="filter_list">filter_list</span></button>
+<button class="p-2 rounded-lg hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[20px]" data-icon="download">download</span></button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-lg py-md font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Month</th>
+<th class="px-lg py-md font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider text-right">Tithes</th>
+<th class="px-lg py-md font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider text-right">Offerings</th>
+<th class="px-lg py-md font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider text-right">Total</th>
+<th class="px-lg py-md font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider text-center">Status</th>
+<th class="px-lg py-md"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-md font-title-md text-title-md">September 2023</td>
+<td class="px-lg py-md text-right tabular-nums">K 14,250.00</td>
+<td class="px-lg py-md text-right tabular-nums">K 6,400.00</td>
+<td class="px-lg py-md text-right font-bold tabular-nums">K 20,650.00</td>
+<td class="px-lg py-md text-center">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-label-lg font-bold bg-secondary-container text-on-secondary-container">Submitted</span>
+</td>
+<td class="px-lg py-md text-right">
+<button class="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-md font-title-md text-title-md">August 2023</td>
+<td class="px-lg py-md text-right tabular-nums">K 12,100.00</td>
+<td class="px-lg py-md text-right tabular-nums">K 5,800.00</td>
+<td class="px-lg py-md text-right font-bold tabular-nums">K 17,900.00</td>
+<td class="px-lg py-md text-center">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-label-lg font-bold bg-secondary-container text-on-secondary-container">Submitted</span>
+</td>
+<td class="px-lg py-md text-right">
+<button class="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors group bg-surface-container-low/20">
+<td class="px-lg py-md font-title-md text-title-md">October 2023</td>
+<td class="px-lg py-md text-right tabular-nums">K 8,450.00</td>
+<td class="px-lg py-md text-right tabular-nums">K 2,100.00</td>
+<td class="px-lg py-md text-right font-bold tabular-nums">K 10,550.00</td>
+<td class="px-lg py-md text-center">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-label-lg font-bold bg-primary-fixed text-on-primary-fixed">Draft</span>
+</td>
+<td class="px-lg py-md text-right">
+<button class="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Stats Overview Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant flex flex-col">
+<span class="text-on-surface-variant font-label-lg text-label-lg uppercase">YTD Tithes</span>
+<span class="text-headline-md font-bold mt-sm">K 124,500</span>
+<div class="mt-md h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[75%]"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant flex flex-col">
+<span class="text-on-surface-variant font-label-lg text-label-lg uppercase">Missions Fund</span>
+<span class="text-headline-md font-bold mt-sm">K 32,400</span>
+<div class="mt-md h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-surface-tint w-[40%]"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant flex flex-col">
+<span class="text-on-surface-variant font-label-lg text-label-lg uppercase">Total Reported</span>
+<span class="text-headline-md font-bold mt-sm">K 189,200</span>
+<div class="mt-md h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[90%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- New Summary Form Card (Bento Area Right) -->
+<div class="lg:col-span-4">
+<div class="bg-white dark:bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-lg sticky top-32">
+<div class="flex items-center gap-sm mb-lg">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="add_chart">add_chart</span>
+</div>
+<h2 class="font-title-lg text-title-lg">New Summary</h2>
+</div>
+<form class="flex flex-col gap-md">
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Reporting Month</label>
+<select class="w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary text-body-md py-md bg-surface-container-lowest">
+<option>October 2023</option>
+<option>November 2023</option>
+<option>December 2023</option>
+</select>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Tithes</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">K</span>
+<input class="w-full pl-8 rounded-lg border-outline-variant focus:border-primary focus:ring-primary text-body-md py-md bg-surface-container-lowest" placeholder="0.00" type="number"/>
+</div>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Offerings</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">K</span>
+<input class="w-full pl-8 rounded-lg border-outline-variant focus:border-primary focus:ring-primary text-body-md py-md bg-surface-container-lowest" placeholder="0.00" type="number"/>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Building</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">K</span>
+<input class="w-full pl-8 rounded-lg border-outline-variant focus:border-primary focus:ring-primary text-body-md py-md bg-surface-container-lowest" placeholder="0.00" type="number"/>
+</div>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Missions</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">K</span>
+<input class="w-full pl-8 rounded-lg border-outline-variant focus:border-primary focus:ring-primary text-body-md py-md bg-surface-container-lowest" placeholder="0.00" type="number"/>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Special</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">K</span>
+<input class="w-full pl-8 rounded-lg border-outline-variant focus:border-primary focus:ring-primary text-body-md py-md bg-surface-container-lowest" placeholder="0.00" type="number"/>
+</div>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Other</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">K</span>
+<input class="w-full pl-8 rounded-lg border-outline-variant focus:border-primary focus:ring-primary text-body-md py-md bg-surface-container-lowest" placeholder="0.00" type="number"/>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Notes</label>
+<textarea class="w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary text-body-md py-md bg-surface-container-lowest" placeholder="Add specific breakdown or comments..." rows="3"></textarea>
+</div>
+<div class="mt-lg flex flex-col gap-sm">
+<button class="w-full bg-primary text-on-primary py-lg rounded-xl font-bold hover:bg-primary-container transition-all flex items-center justify-center gap-sm shadow-md active:scale-95" type="submit">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+                                        Submit to HQ
+                                    </button>
+<button class="w-full bg-surface-container-highest text-on-surface py-md rounded-xl font-medium hover:bg-outline-variant transition-colors" type="button">
+                                        Save as Draft
+                                    </button>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container-highest dark:bg-inverse-surface rounded-t-xl md:hidden shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1 scale-95 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1 scale-95 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 scale-95 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Giving</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1 scale-95 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for table rows
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('click', () => {
+                // Future expansion: open row details
+                console.log('Row clicked');
+            });
+        });
+
+        // Form Submission Logic Simulation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = form.querySelector('button[type="submit"]');
+            const originalContent = btn.innerHTML;
+            
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin" data-icon="sync">sync</span> Processing...`;
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = `<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span> Submitted!`;
+                btn.classList.replace('bg-primary', 'bg-green-600');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.replace('bg-green-600', 'bg-primary');
+                    btn.disabled = false;
+                    form.reset();
+                }, 2000);
+            }, 1500);
+        });
+    </script>
+</body></html>

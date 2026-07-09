@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Announcements | GetPro Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1fbff;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        /* Custom scrollbar for data density */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #787586;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-primary": "#c6bfff",
+                      "on-tertiary-fixed-variant": "#454748",
+                      "on-primary-fixed": "#160066",
+                      "inverse-on-surface": "#e7f3f7",
+                      "inverse-surface": "#283236",
+                      "error-container": "#ffdad6",
+                      "on-surface-variant": "#474554",
+                      "surface-variant": "#d9e4e9",
+                      "surface-container-highest": "#d9e4e9",
+                      "secondary": "#586062",
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed-dim": "#c5c7c8",
+                      "tertiary-container": "#707273",
+                      "surface-tint": "#5847d2",
+                      "tertiary": "#57595b",
+                      "surface-bright": "#f1fbff",
+                      "surface": "#f1fbff",
+                      "primary-fixed-dim": "#c6bfff",
+                      "on-primary-container": "#faf6ff",
+                      "secondary-fixed-dim": "#c1c8ca",
+                      "surface-container-lowest": "#ffffff",
+                      "outline": "#787586",
+                      "on-tertiary-fixed": "#191c1d",
+                      "surface-container-high": "#dfeaef",
+                      "surface-dim": "#d1dce0",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed-variant": "#4029ba",
+                      "surface-container-low": "#eaf5fa",
+                      "on-tertiary-container": "#f7f8f9",
+                      "on-error": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "primary-fixed": "#e4dfff",
+                      "background": "#f1fbff",
+                      "on-secondary-container": "#5d6466",
+                      "surface-container": "#e4f0f4",
+                      "on-secondary-fixed-variant": "#41484a",
+                      "on-background": "#131d21",
+                      "on-surface": "#131d21",
+                      "primary": "#5341cd",
+                      "on-secondary-fixed": "#161d1f",
+                      "error": "#ba1a1a",
+                      "outline-variant": "#c8c4d7",
+                      "tertiary-fixed": "#e1e3e4",
+                      "primary-container": "#6c5ce7",
+                      "on-tertiary": "#ffffff",
+                      "secondary-container": "#dae1e3",
+                      "secondary-fixed": "#dde4e6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "lg": "24px",
+                      "base": "8px",
+                      "margin-mobile": "16px",
+                      "md": "16px",
+                      "xs": "4px",
+                      "xl": "32px",
+                      "sm": "8px",
+                      "margin-desktop": "32px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "label-lg": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "title-md": ["Inter"],
+                      "title-lg": ["Inter"],
+                      "label-md": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "body-md": ["Inter"],
+                      "display-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background">
+<!-- Navigation Drawer (Desktop) -->
+<aside class="h-full w-72 fixed left-0 top-0 hidden md:flex flex-col bg-surface-container-low dark:bg-surface-container z-50">
+<div class="p-lg flex flex-col gap-lg">
+<!-- Brand -->
+<div class="flex items-center gap-base">
+<span class="material-symbols-outlined text-primary text-[32px]">church</span>
+<h1 class="font-headline-lg text-headline-lg text-primary">GetPro</h1>
+</div>
+<!-- Profile Header -->
+<div class="flex flex-col gap-sm p-md rounded-xl bg-surface-container-high">
+<div class="flex items-center gap-md">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="A high-quality professional portrait of a smiling African woman named Mary Phiri, wearing contemporary church attire, set against a soft-focus architectural background of a modern community center. The lighting is warm and natural, emphasizing a bright, trustworthy aesthetic. The color palette is composed of soft blues, crisp whites, and gentle lavender tones, reflecting the structured compassion of the GetPro brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvXK3MuhpYjPb0FIhnfIT07pSx4nzCZ22L1iT5t83UG8wQe4EGs_ryMcPvviuLw-KQeNf9kJjdG2zPjJLvpZF0ihRnN1DUztZ5H5_utjQT_JaovsnMorjTlc2F6EecpXjAjyjY9uexl7G50c1QTCSJmMK_owl_BDhITEUfCfNKHNOrONP-nanuBDeu6t7trsS5RcM3pujIZ1JD7ZNYHZ06AkE-AQ2hHG-osJ-utZVe7kWU9inGsiWfSw"/>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Mary Phiri</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Kafue Baptist Church</span>
+</div>
+</div>
+<div class="mt-2 flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-label-md text-label-md text-primary">Verified Member</span>
+</div>
+</div>
+<!-- Nav Items -->
+<nav class="flex flex-col gap-xs">
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<a class="flex items-center gap-md px-md py-3 bg-secondary-container text-on-secondary-container rounded-full font-bold transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">notifications</span>
+<span class="font-label-lg text-label-lg">Announcements</span>
+</a>
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-lg text-label-lg">Resources</span>
+</a>
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-lg text-label-lg">Giving</span>
+</a>
+</nav>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="md:ml-72 min-h-screen transition-all duration-300">
+<!-- Top App Bar -->
+<header class="bg-surface sticky top-0 z-40 h-16 flex justify-between items-center px-margin-mobile md:px-margin-desktop">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined md:hidden text-on-surface-variant">menu</span>
+<h2 class="font-headline-md text-headline-md text-primary font-bold">Announcements</h2>
+</div>
+<div class="flex items-center gap-lg">
+<div class="hidden sm:flex items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 border border-outline-variant/30">
+<span class="material-symbols-outlined text-outline text-[20px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md w-48 placeholder-outline" placeholder="Search announcements..." type="text"/>
+</div>
+<div class="flex items-center gap-md">
+<button class="relative p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95">
+<span class="material-symbols-outlined text-primary">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="cursor-pointer active:scale-95 duration-150">
+<img class="w-8 h-8 rounded-full border-2 border-primary/20" data-alt="A small circular avatar of Mary Phiri, an African woman with a professional and friendly expression. The image is captured in high definition with a soft focus on a light blue background. The aesthetic is clean, minimalist, and aligns with high-end corporate church management software visuals, using a palette of white, primary violet, and soft sky blue." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQIHlmSHDF3PGtWFi9JMi17a8QU1lRmuC5gaETA5T-wwa1iUwxMzuGsbJmn8GXKB2iQT2PYNE1hQq6-UPhlPC5XpYwmUMybQqMHL7Jrbx3bPM8FPaaKnlhMhwYSI0q_tdZOaFJXDRjlZuOyyUfUYqm18Q5vuqmBLDxPsLfoNSEoGY45HcLpNjmamhRXwwIOgh2i66pWwVjT9vnrgS0ijeYAmWGI3HxnjNAgtlGeoCP7dz3Z7b7iyWVZg"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="p-margin-mobile md:p-margin-desktop max-w-6xl mx-auto space-y-lg">
+<!-- Filters & Header Section -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-md">
+<div class="space-y-1">
+<p class="font-body-md text-body-md text-on-surface-variant">Stay updated with the latest from your community.</p>
+</div>
+<!-- Tab Filters -->
+<div class="flex bg-surface-container p-1 rounded-xl w-fit">
+<button class="px-6 py-2 rounded-lg font-label-lg text-label-lg bg-surface-container-lowest text-primary shadow-sm transition-all">All</button>
+<button class="px-6 py-2 rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-all">Branch</button>
+<button class="px-6 py-2 rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-all">HQ</button>
+</div>
+</section>
+<!-- Featured Announcement (Bento Style) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<div class="md:col-span-2 relative overflow-hidden rounded-3xl group cursor-pointer shadow-lg hover:shadow-xl transition-shadow duration-300">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A cinematic, wide-angle photograph of a vibrant church conference hall filled with sunlight and people engaged in joyful conversation. The atmosphere is warm, professional, and community-oriented. Soft bokeh effects highlight a diverse group of members in the foreground. The lighting is bright and airy, following a modern Material Design 3 light mode aesthetic with subtle violet and deep charcoal accents." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCAF5D3zjPsBsv3CZ6xoppR2hFiWhSsL3bG3Tz-ZfLGbozsr9s8qFSqJ3BKA7-aYmFIJ8rRF3kEjKCw5gJUhQzT4eKEcVxMBpRBBzlvM2Jh33ibNjG3ntetorW6Zjk0LowZHf8tjZE1AG0lw2jZjFAh4tsUc1ZIZKlUcAzZSa2hoFPphUjFfvuIAK02vQ2TPrwSDf2yAm7wvXUpQA4l4y6HQG54v4gVQsYztvMQ6jBJhAYBKaTtdUtDlw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 p-lg w-full flex flex-col gap-sm">
+<span class="w-fit px-3 py-1 bg-primary text-white text-label-md font-label-md rounded-full uppercase tracking-wider">Major Event</span>
+<h3 class="font-headline-md text-headline-md text-white">Annual General Meeting 2024: Shaping Our Future</h3>
+<p class="text-white/80 font-body-md text-body-md line-clamp-2 max-w-2xl">Join us this Sunday as we discuss the roadmap for our community expansion and upcoming ministry initiatives. Your voice matters in this journey of faith.</p>
+<div class="flex items-center gap-md mt-2">
+<div class="flex items-center gap-xs text-white/90">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span class="font-label-md text-label-md">Oct 24, 2023</span>
+</div>
+<span class="w-1.5 h-1.5 bg-white/40 rounded-full"></span>
+<span class="text-white font-label-md text-label-md">Read 5 mins ago</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-lg">
+<div class="glass-card p-lg rounded-3xl flex flex-col justify-between h-full">
+<div class="space-y-sm">
+<div class="flex justify-between items-start">
+<span class="p-2 bg-secondary-container text-on-secondary-container rounded-xl">
+<span class="material-symbols-outlined">volunteer_activism</span>
+</span>
+<span class="w-2 h-2 bg-primary rounded-full"></span>
+</div>
+<h4 class="font-title-lg text-title-lg text-on-surface">Volunteer Drive</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-3">The youth ministry is looking for dedicated mentors for the summer camp program. Sign up by Friday.</p>
+</div>
+<button class="mt-4 flex items-center gap-xs text-primary font-label-lg text-label-lg hover:gap-sm transition-all">
+                            Apply Now <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<div class="bg-primary-container p-lg rounded-3xl flex flex-col justify-between text-on-primary-container shadow-inner">
+<h4 class="font-title-lg text-title-lg">Tithe &amp; Offering Update</h4>
+<p class="font-body-md text-body-md opacity-90 mt-2">New digital giving portals are now live on the mobile app for easier contributions.</p>
+<div class="flex justify-end mt-4">
+<span class="material-symbols-outlined text-[48px] opacity-20">payments</span>
+</div>
+</div>
+</div>
+</section>
+<!-- List Table Section -->
+<section class="glass-card rounded-3xl overflow-hidden shadow-sm">
+<div class="p-lg flex justify-between items-center border-b border-outline-variant/20">
+<h3 class="font-title-lg text-title-lg text-on-surface">All Announcements</h3>
+<div class="flex items-center gap-sm">
+<button class="p-2 hover:bg-surface-container rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">tune</span>
+</button>
+<button class="p-2 hover:bg-surface-container rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">sort</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-lg py-4 font-label-lg text-label-lg text-outline uppercase tracking-wider">Status</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-outline uppercase tracking-wider">Title</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-outline uppercase tracking-wider">Category</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-outline uppercase tracking-wider">Date</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-outline uppercase tracking-wider text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-5">
+<span class="flex items-center gap-2 text-primary">
+<span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+<span class="font-label-md text-label-md font-bold">Unread</span>
+</span>
+</td>
+<td class="px-lg py-5">
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Worship Night: A Symphony of Grace</span>
+<span class="font-body-md text-body-md text-on-surface-variant line-clamp-1">Invitation to all choir members and congregation for the monthly night...</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<span class="px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full text-label-md font-label-md">Ministry</span>
+</td>
+<td class="px-lg py-5">
+<span class="font-body-md text-body-md text-on-surface-variant">2 hours ago</span>
+</td>
+<td class="px-lg py-5 text-right">
+<button class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-5">
+<span class="flex items-center gap-2 text-outline">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">done_all</span>
+<span class="font-label-md text-label-md">Read</span>
+</span>
+</td>
+<td class="px-lg py-5">
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Updated Office Hours for HQ</span>
+<span class="font-body-md text-body-md text-on-surface-variant line-clamp-1">Please note the central administration office will close early...</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<span class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-full text-label-md font-label-md">HQ</span>
+</td>
+<td class="px-lg py-5">
+<span class="font-body-md text-body-md text-on-surface-variant">Yesterday</span>
+</td>
+<td class="px-lg py-5 text-right">
+<button class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-5">
+<span class="flex items-center gap-2 text-outline">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">done_all</span>
+<span class="font-label-md text-label-md">Read</span>
+</span>
+</td>
+<td class="px-lg py-5">
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Community Pantry Donation Drive</span>
+<span class="font-body-md text-body-md text-on-surface-variant line-clamp-1">We are collecting non-perishable items for the Kafue local pantry...</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<span class="px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full text-label-md font-label-md">Outreach</span>
+</td>
+<td class="px-lg py-5">
+<span class="font-body-md text-body-md text-on-surface-variant">Oct 20, 2023</span>
+</td>
+<td class="px-lg py-5 text-right">
+<button class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-5">
+<span class="flex items-center gap-2 text-outline">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">done_all</span>
+<span class="font-label-md text-label-md">Read</span>
+</span>
+</td>
+<td class="px-lg py-5">
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Branch Level Meeting - Kafue West</span>
+<span class="font-body-md text-body-md text-on-surface-variant line-clamp-1">Special meeting for members of the Kafue West branch to discuss...</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<span class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant rounded-full text-label-md font-label-md">Branch</span>
+</td>
+<td class="px-lg py-5">
+<span class="font-body-md text-body-md text-on-surface-variant">Oct 18, 2023</span>
+</td>
+<td class="px-lg py-5 text-right">
+<button class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="p-lg bg-surface-container-low flex justify-between items-center">
+<span class="font-body-md text-body-md text-on-surface-variant">Showing 4 of 24 announcements</span>
+<div class="flex gap-sm">
+<button class="p-2 border border-outline-variant/30 rounded-lg hover:bg-surface transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="p-2 border border-outline-variant/30 rounded-lg hover:bg-surface transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer Space for Mobile Bottom Nav -->
+<div class="h-20 md:hidden"></div>
+</main>
+<!-- Bottom Nav Bar (Mobile) -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden pb-safe bg-surface-container shadow-lg flex justify-around items-center h-20 px-2 transition-all">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-md text-label-md">Groups</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-md text-label-md">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">notifications</span>
+<span class="font-label-md text-label-md">Alerts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1" href="#">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+<script>
+        // Simple Micro-interactions
+        document.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', () => {
+                // Navigate to details or open modal (mock interaction)
+                console.log('Opening announcement details...');
+            });
+        });
+
+        // Search Filter Simulation
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('tbody tr').forEach(row => {
+                const title = row.querySelector('.font-title-md').textContent.toLowerCase();
+                if (title.includes(term)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body></html>

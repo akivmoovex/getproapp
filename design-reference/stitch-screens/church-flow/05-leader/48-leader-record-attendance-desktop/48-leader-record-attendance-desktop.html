@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Record Attendance - Youth Ministry</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#5341cd",
+                    "tertiary": "#57595b",
+                    "on-tertiary-container": "#f7f8f9",
+                    "primary-fixed": "#e4dfff",
+                    "secondary": "#586062",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-secondary-container": "#5d6466",
+                    "on-primary-fixed": "#160066",
+                    "background": "#f1fbff",
+                    "surface-container": "#e4f0f4",
+                    "surface-tint": "#5847d2",
+                    "on-background": "#131d21",
+                    "surface-container-low": "#eaf5fa",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f1fbff",
+                    "on-error-container": "#93000a",
+                    "on-primary-container": "#faf6ff",
+                    "primary-container": "#6c5ce7",
+                    "on-surface-variant": "#474554",
+                    "on-secondary-fixed": "#161d1f",
+                    "inverse-surface": "#283236",
+                    "tertiary-container": "#707273",
+                    "surface-variant": "#d9e4e9",
+                    "secondary-fixed": "#dde4e6",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed-dim": "#c6bfff",
+                    "outline": "#787586",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#c8c4d7",
+                    "secondary-container": "#dae1e3",
+                    "surface-bright": "#f1fbff",
+                    "inverse-on-surface": "#e7f3f7",
+                    "on-surface": "#131d21",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#c6bfff",
+                    "surface-container-high": "#dfeaef",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d1dce0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "gutter": "24px",
+                    "margin-desktop": "32px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "base": "8px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "title-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"]
+            },
+            "fontSize": {
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .form-input-focus:focus {
+            outline: none;
+            border-color: #5341cd;
+            box-shadow: 0 0 0 2px rgba(83, 65, 205, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex">
+<!-- NavigationDrawer (Shared Component) -->
+<aside class="hidden lg:flex flex-col h-full py-6 bg-inverse-surface fixed left-0 top-0 w-[280px] z-50 shadow-sm overflow-y-auto">
+<div class="px-6 mb-10">
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed">Youth Ministry</h1>
+<div class="mt-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of Grace Mwansa, a smiling woman of African descent in her early 30s, wearing business casual attire. The photography is soft and warm with a shallow depth of field, positioned against a minimalist office background with soft violet accents reflecting the modern corporate brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBA_2gXOgANLMgvdQf_4G9tK3aXVZh73-R5l2TpHmIPLvQEp40PjtM-HV6WLefJ6iaguKuz2F1-i-EL4bkT16VyAym1dMsMBR2VXtnT1Jx36YVd0fzNphVaos0fBfknURdLCumD55hT4IthA2E-iZ6Yyu1jr5Cv3EKh017DW_rIpWiAwcO6bb-qTDE32cuppOzxN7Uh-dUkW_zCG8ipWKlkyAZV7uhg1E16mwNzGnWyrF9MVUDrS76UxQ"/>
+</div>
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg text-primary-fixed">Grace Mwansa</span>
+<span class="font-label-lg text-label-lg text-tertiary-fixed-dim">Department Leader</span>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-lg text-label-lg">Roster</span>
+</a>
+<a class="flex items-center gap-4 bg-primary-container text-on-primary-container rounded-lg px-4 py-3 mx-2 my-1 scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check" style="font-variation-settings: 'FILL' 1;">fact_check</span>
+<span class="font-label-lg text-label-lg">Attendance</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-lg text-label-lg">Reports</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+<span class="font-label-lg text-label-lg">Requests</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<div class="p-4 bg-primary-container/10 rounded-xl border border-primary/20">
+<span class="font-label-md text-label-md text-primary-fixed block mb-1">Weekly Goal</span>
+<div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full w-3/4"></div>
+</div>
+<span class="font-label-md text-label-md text-tertiary-fixed-dim mt-2 block">75% Target Reached</span>
+</div>
+</div>
+</aside>
+<!-- Content Canvas -->
+<main class="flex-1 lg:ml-[280px] pb-20 lg:pb-0">
+<!-- TopAppBar (Shared Component) -->
+<header class="flex justify-between items-center w-full px-4 md:px-8 h-16 sticky top-0 z-40 bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<button class="lg:hidden p-2 text-on-surface-variant">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Attendance Tracking</h2>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A close up shot of a diverse youth group in a bright, modern church community center. The lighting is natural and airy, with soft pastel colors in the background, conveying a sense of structured compassion and community warmth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrVjPFtY8_MuDXimv1_9w4ZL0g5-rY-8FCIfPv60MnK0Q72LFdeL6MdGFC1MiWDNNIj4WbhKezqiyUN6rBYC6KwFMLBQpPvovuj5O-zsr_fRSbMnjKGOWKrjswtUzCsBEZpYgO2Z-6vtNlh19UJzxroj5dPobOok9fWJfgEVl2JYH_dklnLLGcVXUA-E3oF012HpFGfuu0HkDZLyW5srRgDXdLM1NcGgm0iRztkMVWkxqOS2O14m7q9w"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<div class="max-w-5xl mx-auto p-4 md:p-8">
+<!-- Breadcrumbs & Status -->
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="font-label-lg text-label-lg">Youth Ministry</span>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span class="font-label-lg text-label-lg text-primary font-bold">Record Attendance</span>
+</div>
+<div class="bg-surface-container-low px-3 py-1 rounded-full border border-outline-variant flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Session Active</span>
+</div>
+</div>
+<!-- Record Attendance Form Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+<div class="p-6 md:p-8">
+<form class="space-y-8" id="attendanceForm">
+<!-- Primary Details -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant ml-1" for="meeting_name">Meeting/Event Name</label>
+<div class="relative">
+<select class="w-full h-12 px-4 rounded-lg bg-surface border border-outline-variant font-body-md text-body-md form-input-focus appearance-none" id="meeting_name">
+<option value="">Select an event...</option>
+<option value="friday_night_live">Friday Night Live</option>
+<option value="sunday_youth_service">Sunday Youth Service</option>
+<option value="midweek_connect">Mid-Week Connect</option>
+<option value="leadership_huddle">Leadership Huddle</option>
+<option value="other">Other Event</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant ml-1" for="date_picker">Session Date</label>
+<div class="relative">
+<input class="w-full h-12 px-4 rounded-lg bg-surface border border-outline-variant font-body-md text-body-md form-input-focus" id="date_picker" type="date"/>
+</div>
+</div>
+</div>
+<hr class="border-outline-variant"/>
+<!-- Metrics Grid -->
+<div class="space-y-4">
+<h3 class="font-title-md text-title-md text-on-surface">Attendance Breakdown</h3>
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+<div class="p-4 bg-surface rounded-xl border border-outline-variant space-y-3">
+<label class="font-label-md text-label-md text-on-surface-variant block uppercase tracking-tight">Youth</label>
+<input class="w-full bg-transparent border-0 border-b border-outline-variant text-center font-title-lg text-title-lg text-primary focus:ring-0 focus:border-primary px-0 pb-1" placeholder="0" type="number"/>
+</div>
+<div class="p-4 bg-surface rounded-xl border border-outline-variant space-y-3">
+<label class="font-label-md text-label-md text-on-surface-variant block uppercase tracking-tight">Adults</label>
+<input class="w-full bg-transparent border-0 border-b border-outline-variant text-center font-title-lg text-title-lg text-primary focus:ring-0 focus:border-primary px-0 pb-1" placeholder="0" type="number"/>
+</div>
+<div class="p-4 bg-surface rounded-xl border border-outline-variant space-y-3">
+<label class="font-label-md text-label-md text-on-surface-variant block uppercase tracking-tight">Children</label>
+<input class="w-full bg-transparent border-0 border-b border-outline-variant text-center font-title-lg text-title-lg text-primary focus:ring-0 focus:border-primary px-0 pb-1" placeholder="0" type="number"/>
+</div>
+<div class="p-4 bg-surface rounded-xl border border-outline-variant space-y-3">
+<label class="font-label-md text-label-md text-on-surface-variant block uppercase tracking-tight">Visitors</label>
+<input class="w-full bg-transparent border-0 border-b border-outline-variant text-center font-title-lg text-title-lg text-primary focus:ring-0 focus:border-primary px-0 pb-1" placeholder="0" type="number"/>
+</div>
+<div class="p-4 bg-surface rounded-xl border border-outline-variant space-y-3">
+<label class="font-label-md text-label-md text-on-surface-variant block uppercase tracking-tight">Volunteers</label>
+<input class="w-full bg-transparent border-0 border-b border-outline-variant text-center font-title-lg text-title-lg text-primary focus:ring-0 focus:border-primary px-0 pb-1" placeholder="0" type="number"/>
+</div>
+</div>
+</div>
+<hr class="border-outline-variant"/>
+<!-- Notes Area -->
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant ml-1" for="notes">Session Notes &amp; Observations</label>
+<textarea class="w-full p-4 rounded-lg bg-surface border border-outline-variant font-body-md text-body-md form-input-focus resize-none" id="notes" placeholder="Document prayer requests, testimonies, or logistical issues encountered during the session..." rows="6"></textarea>
+</div>
+<!-- Submit Footer -->
+<div class="flex flex-col md:flex-row items-center justify-between gap-4 pt-4">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-base">info</span>
+<p class="font-label-md text-label-md">Reports are sent directly to Church HQ Admin.</p>
+</div>
+<div class="flex gap-4 w-full md:w-auto">
+<button class="flex-1 md:flex-initial px-6 h-12 rounded-lg border border-outline font-title-md text-title-md text-on-surface-variant hover:bg-surface-container-high transition-all" type="reset">Clear Form</button>
+<button class="flex-1 md:flex-initial px-8 h-12 rounded-lg bg-primary text-white font-title-md text-title-md hover:bg-primary/90 transition-all shadow-md active:scale-95 duration-150 flex items-center justify-center gap-2" type="submit">
+<span>Submit to Branch Admin</span>
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+<!-- Recent Submissions Preview (Bento Item) -->
+<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="md:col-span-2 bg-white/50 border border-outline-variant p-6 rounded-xl">
+<h4 class="font-title-md text-title-md mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">history</span>
+                        Recent Submissions
+                    </h4>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 bg-surface rounded-lg">
+<div class="flex items-center gap-3">
+<span class="font-body-md text-body-md font-bold">Friday Night Live</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Oct 24, 2023</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-label-lg text-label-lg text-primary">42 Attended</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">visibility</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface rounded-lg">
+<div class="flex items-center gap-3">
+<span class="font-body-md text-body-md font-bold">Sunday Service</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Oct 19, 2023</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-label-lg text-label-lg text-primary">38 Attended</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">visibility</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-primary text-on-primary p-6 rounded-xl shadow-lg flex flex-col justify-between">
+<div>
+<h4 class="font-label-lg text-label-lg uppercase tracking-widest opacity-80 mb-2">Total Outreach</h4>
+<div class="text-4xl font-bold">152</div>
+<p class="font-label-md text-label-md mt-1 opacity-90">Individuals reached this month</p>
+</div>
+<div class="mt-6 flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-primary bg-surface-container-highest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A detailed digital art portrait of a young male youth leader with a friendly expression. Soft, clean light fills the scene, reflecting a modern ministry brand identity with professional and compassionate vibes." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnMrrJLOliPbNw3MHFPK4oVShMZIzI25-hy-HdOnGJyKTHIu9QlKs0HsyzIysKFBQWJHVCADD4wi-5aroC_-BHE5p32QE96Myp-Mh7MvuOTIRl7X4VvptnI7sC7uhS2O_uM7lAb-K4M3_MrbdWqH5iJuSTS1BJoSS9--8lfOo9DaPXWv9_ksPbfu7XNtWIimI06zCQB-3k--bYghpziBVke3NgtzDJ5eEsjQDs9O9LUfrx6hbEpceKkQ"/>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-primary bg-surface-container-highest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional corporate headshot of a young woman smiling warmly. High key lighting, soft violet accents in the background, embodying the Ecclesia Modern design system's clean and approachable aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnIFgeic_roArz9hFQi82TDTO0TYLqiDtJxGRQfdYopsHRc6eSy8gVR5nQnEauMa1OQu6Wd4kx9vyQ88D2-qz3eKLtHMxQprLiQrOv77J310vSAtLE7NGB6fykyhouPCVxLJUhYHz1kSRcGEqn0XssufDcloB1ORCUHv6GaRIWN6tnvstExV7055Z4Zwkf6tf6M_PwQO_CIc-UeGkGfllp1VbfNCb6kwe78k2o8riLZy9kT6qv5DkU1g"/>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-primary bg-surface-container-highest flex items-center justify-center bg-primary-container text-[10px] font-bold">
+                                +12
+                            </div>
+</div>
+<span class="material-symbols-outlined text-3xl opacity-40">trending_up</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Shared Component - Mobile Only) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-1 pb-safe bg-surface-container-lowest shadow-lg rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md mt-1">Dash</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md mt-1">Roster</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl p-2 scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check" style="font-variation-settings: 'FILL' 1;">fact_check</span>
+<span class="font-label-md text-label-md mt-1">Check-in</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-md text-label-md mt-1">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+<span class="font-label-md text-label-md mt-1">Reqs</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions for form submission
+        document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = e.submitter;
+            const originalContent = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span><span>Processing...</span>`;
+            
+            // Simulating API call
+            setTimeout(() => {
+                btn.innerHTML = `<span class="material-symbols-outlined">check_circle</span><span>Success!</span>`;
+                btn.classList.replace('bg-primary', 'bg-emerald-600');
+                
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                    btn.classList.replace('bg-emerald-600', 'bg-primary');
+                    alert('Attendance report submitted successfully to the Branch Administrator.');
+                    this.reset();
+                }, 2000);
+            }, 1500);
+        });
+
+        // Set default date to today
+        document.getElementById('date_picker').valueAsDate = new Date();
+    </script>
+</body></html>

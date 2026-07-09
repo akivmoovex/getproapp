@@ -1,0 +1,40 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Departments</h1>
+          <p class="church-branch-topbar__subtitle">Manage church departments and teams</p>
+        </div>
+        <a class="church-btn church-btn--primary" href="/branch/departments/new">Add department</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <div class="church-branch-filter-tabs">
+        <% departmentFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/departments<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : departmentStatusLabel(f) %></a>
+        <% }); %>
+      </div>
+      <section class="church-branch-panel">
+        <% if ((departments || []).length === 0) { %>
+        <p class="church-branch-empty">No departments in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Name</th><th>Purpose</th><th>Leader</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <% departments.forEach(function (d) { %>
+              <tr>
+                <td><%= d.name %></td>
+                <td><%= (d.purpose || '').slice(0, 80) %><%= (d.purpose || '').length > 80 ? '…' : '' %></td>
+                <td><%= d.leader_name || '—' %></td>
+                <td><span class="church-status-chip church-status-chip--<%= d.status === 'active' ? 'verified' : 'pending' %>"><%= departmentStatusLabel(d.status) %></span></td>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/departments/<%= d.id %>">View</a>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/departments/<%= d.id %>/edit">Edit</a>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

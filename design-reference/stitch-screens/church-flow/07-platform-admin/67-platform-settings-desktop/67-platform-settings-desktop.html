@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Moovex Admin | Platform Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Hanken+Grotesk:wght@600;700;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#d9e4e9",
+                    "tertiary-fixed-dim": "#4bddb7",
+                    "on-background": "#131d21",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#eaf5fa",
+                    "surface-tint": "#5847d2",
+                    "surface-container": "#e4f0f4",
+                    "background": "#f1fbff",
+                    "on-secondary-container": "#5d6466",
+                    "on-tertiary-fixed-variant": "#005140",
+                    "on-primary-fixed": "#160066",
+                    "on-tertiary-fixed": "#002018",
+                    "tertiary-fixed": "#6dfad2",
+                    "on-error": "#ffffff",
+                    "secondary": "#586062",
+                    "primary-fixed": "#e4dfff",
+                    "primary": "#5341cd",
+                    "on-tertiary-container": "#dffff1",
+                    "tertiary": "#006651",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d1dce0",
+                    "inverse-primary": "#c6bfff",
+                    "surface-container-high": "#dfeaef",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#131d21",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "surface-bright": "#f1fbff",
+                    "inverse-on-surface": "#e7f3f7",
+                    "secondary-container": "#dae1e3",
+                    "outline-variant": "#c8c4d7",
+                    "error": "#ba1a1a",
+                    "outline": "#787586",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#dde4e6",
+                    "inverse-surface": "#283236",
+                    "on-secondary-fixed": "#161d1f",
+                    "tertiary-container": "#008167",
+                    "surface-variant": "#d9e4e9",
+                    "primary-container": "#6c5ce7",
+                    "on-surface-variant": "#474554",
+                    "on-primary-container": "#faf6ff",
+                    "surface": "#f1fbff",
+                    "on-error-container": "#93000a",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "unit": "4px",
+                    "sidebar-width": "260px",
+                    "gutter": "16px",
+                    "density-comfortable": "16px",
+                    "margin-desktop": "32px",
+                    "density-compact": "8px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "label-md": ["JetBrains Mono"],
+                    "headline-sm": ["Hanken Grotesk"],
+                    "label-sm": ["JetBrains Mono"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-sm": ["10px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-item-active { border-left-width: 4px; }
+        .high-density-table th { padding: 8px 12px; }
+        .high-density-table td { padding: 8px 12px; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .filled-input { border-bottom: 2px solid #787586; background: #eaf5fa; }
+        .filled-input:focus { border-bottom: 2px solid #6c5ce7; outline: none; }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Side Navigation Shell -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-inverse-surface flex flex-col py-lg px-md shadow-sm z-50">
+<div class="mb-10 px-4">
+<h1 class="text-title-lg font-title-lg text-primary-fixed font-bold leading-tight tracking-tight">Moovex/GetPro</h1>
+<p class="text-label-sm text-on-tertiary-fixed-variant opacity-70 uppercase tracking-widest mt-1">Super Admin Portal</p>
+</div>
+<nav class="flex-grow space-y-1">
+<a class="flex items-center gap-4 py-3 px-4 text-on-tertiary-fixed-variant hover:bg-surface-variant/5 hover:text-on-primary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-tertiary-fixed-variant hover:bg-surface-variant/5 hover:text-on-primary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">corporate_fare</span>
+<span class="font-body-md text-body-md">Organizations</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-tertiary-fixed-variant hover:bg-surface-variant/5 hover:text-on-primary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span class="font-body-md text-body-md">Tenants</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-tertiary-fixed-variant hover:bg-surface-variant/5 hover:text-on-primary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-body-md text-body-md">Plans</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-primary-fixed font-bold border-l-4 border-primary-fixed bg-surface-variant/10 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-tertiary-fixed-variant hover:bg-surface-variant/5 hover:text-on-primary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 px-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-white">
+<span class="material-symbols-outlined">account_circle</span>
+</div>
+<div>
+<p class="text-body-md font-bold text-on-primary-fixed">Admin User</p>
+<p class="text-label-sm text-on-tertiary-fixed-variant opacity-70">Super Admin</p>
+</div>
+</div>
+</aside>
+<!-- Top App Bar -->
+<header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center pl-[280px] pr-margin-desktop z-40">
+<div class="flex items-center gap-4 pl-6">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="pl-10 pr-4 py-1.5 bg-surface-container-low rounded-lg text-body-md focus:ring-2 focus:ring-primary-container border-none w-80" placeholder="Search platform settings..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:bg-surface-container p-2 rounded-full transition-all">
+<span class="material-symbols-outlined">health_metrics</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container p-2 rounded-full transition-all relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant"></div>
+<button class="flex items-center gap-2 text-on-surface font-bold font-title-md">
+<span class="material-symbols-outlined">account_circle</span>
+<span>Moovex Admin</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[280px] mt-16 p-margin-desktop">
+<!-- Header & Breadcrumbs -->
+<section class="mb-8">
+<div class="flex items-center gap-2 text-label-md text-on-surface-variant mb-2">
+<span>System</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span class="text-primary font-bold">Global Settings</span>
+</div>
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-display-lg text-display-lg text-on-surface">Platform Settings</h2>
+<p class="text-body-lg text-on-surface-variant">Manage global configuration, branding, and system security.</p>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-2 border border-primary text-primary font-bold rounded-lg hover:bg-primary-fixed-dim transition-all">Export Logs</button>
+<button class="px-6 py-2 bg-primary-container text-on-primary-container font-bold rounded-lg shadow-sm hover:opacity-90 transition-all">Save Changes</button>
+</div>
+</div>
+</section>
+<!-- Bento Grid Layout for Settings -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Branding Section (Col 1-8) -->
+<section class="col-span-8 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">palette</span>
+<h3 class="font-headline-sm text-headline-sm">Global Branding</h3>
+</div>
+<div class="grid grid-cols-2 gap-8">
+<div class="space-y-6">
+<div>
+<label class="block text-label-md text-on-surface-variant uppercase mb-2">Platform Logo</label>
+<div class="flex items-center gap-4">
+<div class="w-24 h-24 bg-surface-container rounded-lg flex items-center justify-center border-2 border-dashed border-outline">
+<span class="material-symbols-outlined text-on-surface-variant text-4xl">image</span>
+</div>
+<div class="space-y-2">
+<button class="block px-4 py-1 bg-surface-variant text-on-surface text-label-md rounded font-bold">Upload SVG</button>
+<p class="text-[10px] text-on-surface-variant">Recommended: 512x512px SVG or PNG.</p>
+</div>
+</div>
+</div>
+<div>
+<label class="block text-label-md text-on-surface-variant uppercase mb-2">Primary Color</label>
+<div class="flex items-center gap-3">
+<input class="w-12 h-12 rounded cursor-pointer border-none p-0" type="color" value="#6C5CE7"/>
+<input class="filled-input w-full px-3 py-2 font-label-md" type="text" value="#6C5CE7"/>
+</div>
+</div>
+</div>
+<div class="space-y-6">
+<div>
+<label class="block text-label-md text-on-surface-variant uppercase mb-2">Login Page Accent</label>
+<div class="flex items-center gap-3">
+<input class="w-12 h-12 rounded cursor-pointer border-none p-0" type="color" value="#5341CD"/>
+<input class="filled-input w-full px-3 py-2 font-label-md" type="text" value="#5341CD"/>
+</div>
+</div>
+<div>
+<label class="block text-label-md text-on-surface-variant uppercase mb-2">Platform Name</label>
+<input class="filled-input w-full px-3 py-2 font-body-md" type="text" value="Moovex SuperPortal"/>
+</div>
+<div class="flex items-center gap-2 mt-4">
+<input checked="" class="w-4 h-4 text-primary border-outline-variant rounded focus:ring-primary" type="checkbox"/>
+<span class="text-body-md text-on-surface">Apply branding to all tenant dashboards</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Backup Status (Col 9-12) -->
+<section class="col-span-4 bg-inverse-surface text-on-primary-fixed p-6 rounded-xl flex flex-col justify-between overflow-hidden relative">
+
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-tertiary-fixed">cloud_done</span>
+<span class="bg-tertiary-container text-on-tertiary-container text-[10px] px-2 py-0.5 rounded font-bold">HEALTHY</span>
+</div>
+<h3 class="text-label-md uppercase opacity-70 mb-1">System Backup Status</h3>
+<p class="text-display-lg font-display-lg leading-none">99.8%</p>
+<p class="text-body-md mt-2 opacity-80">Last full snapshot: 42 mins ago</p>
+</div>
+<div class="mt-8 relative z-10">
+<div class="flex justify-between text-label-sm mb-1">
+<span>Vault Storage</span>
+<span>1.2TB / 2.0TB</span>
+</div>
+<div class="w-full h-2 bg-on-tertiary-fixed-variant/30 rounded-full">
+<div class="w-[60%] h-full bg-tertiary-fixed rounded-full"></div>
+</div>
+<button class="w-full mt-6 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded font-bold transition-all text-body-md">Manual Failover</button>
+</div>
+</section>
+<!-- Subdomain Patterns & Templates (Col 1-6) -->
+<section class="col-span-6 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">dns</span>
+<h3 class="font-headline-sm text-headline-sm">Subdomain &amp; DNS Patterns</h3>
+</div>
+<div class="space-y-4">
+<div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant">
+<div class="flex justify-between items-center mb-2">
+<span class="text-label-md font-bold text-on-surface uppercase">Default Pattern</span>
+<span class="text-label-sm bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded">Active</span>
+</div>
+<code class="text-primary font-label-md">{tenant}.moovex-getpro.io</code>
+</div>
+<div class="space-y-2">
+<label class="block text-label-md text-on-surface-variant uppercase">Reserved Keywords</label>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-variant text-on-surface-variant text-label-md rounded flex items-center gap-1">admin <span class="material-symbols-outlined text-[14px] cursor-pointer">close</span></span>
+<span class="px-2 py-1 bg-surface-variant text-on-surface-variant text-label-md rounded flex items-center gap-1">root <span class="material-symbols-outlined text-[14px] cursor-pointer">close</span></span>
+<span class="px-2 py-1 bg-surface-variant text-on-surface-variant text-label-md rounded flex items-center gap-1">support <span class="material-symbols-outlined text-[14px] cursor-pointer">close</span></span>
+<button class="px-2 py-1 border border-dashed border-outline text-label-md rounded">+ Add Keyword</button>
+</div>
+</div>
+<div class="pt-4 border-t border-outline-variant">
+<h4 class="font-bold text-body-md mb-2">Report Templates</h4>
+<div class="grid grid-cols-2 gap-3">
+<div class="p-3 border border-outline-variant rounded hover:border-primary cursor-pointer transition-all flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">article</span>
+<span class="text-body-md">Standard Audit</span>
+</div>
+<div class="p-3 border border-outline-variant rounded hover:border-primary cursor-pointer transition-all flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">analytics</span>
+<span class="text-body-md">Financial Summary</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Security Configuration (Col 7-12) -->
+<section class="col-span-6 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-error">security</span>
+<h3 class="font-headline-sm text-headline-sm">Security &amp; Access Control</h3>
+</div>
+<div class="space-y-6">
+<div class="flex justify-between items-center p-4 bg-error-container/20 border border-error/20 rounded-lg">
+<div>
+<h4 class="font-bold text-body-md text-on-error-container">Multi-Factor Authentication (MFA)</h4>
+<p class="text-label-md text-on-surface-variant">Force MFA for all Super Admin accounts.</p>
+</div>
+<div class="relative inline-block w-12 h-6">
+<input checked="" class="peer hidden" id="mfa-toggle" type="checkbox"/>
+<label class="block bg-outline rounded-full h-full w-full cursor-pointer transition-all peer-checked:bg-primary" for="mfa-toggle"></label>
+<span class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-all peer-checked:left-7"></span>
+</div>
+</div>
+<div>
+<label class="block text-label-md text-on-surface-variant uppercase mb-2">IP Restriction (Whitelist)</label>
+<div class="space-y-2">
+<div class="flex gap-2">
+<input class="filled-input flex-grow px-3 py-2 font-label-md" type="text" value="192.168.1.1/24"/>
+<button class="px-4 bg-surface-variant text-on-surface rounded font-bold text-label-md">Add</button>
+</div>
+<p class="text-label-sm text-on-surface-variant italic">Only these IP ranges can access the Admin Portal.</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-4 border border-outline-variant rounded-lg">
+<p class="text-label-md text-on-surface-variant mb-1 uppercase">Session Timeout</p>
+<select class="w-full bg-transparent border-none font-bold text-body-md focus:ring-0 cursor-pointer">
+<option>30 Minutes</option>
+<option>1 Hour</option>
+<option>4 Hours</option>
+<option>End of Day</option>
+</select>
+</div>
+<div class="p-4 border border-outline-variant rounded-lg">
+<p class="text-label-md text-on-surface-variant mb-1 uppercase">Password Policy</p>
+<select class="w-full bg-transparent border-none font-bold text-body-md focus:ring-0 cursor-pointer">
+<option>Strict (16+ chars)</option>
+<option>Standard (12+ chars)</option>
+<option>Legacy (8+ chars)</option>
+</select>
+</div>
+</div>
+</div>
+</section>
+<!-- Activity Logs / System Audit (Col 1-12) -->
+<section class="col-span-12 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary">history</span>
+<h3 class="font-headline-sm text-headline-sm">Recent Configuration Changes</h3>
+</div>
+<button class="text-primary font-bold text-body-md flex items-center gap-1">
+                        View Audit Log <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+</button>
+</div>
+<table class="w-full text-left high-density-table">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="text-label-md text-on-surface-variant uppercase font-bold">Admin User</th>
+<th class="text-label-md text-on-surface-variant uppercase font-bold">Action</th>
+<th class="text-label-md text-on-surface-variant uppercase font-bold">Category</th>
+<th class="text-label-md text-on-surface-variant uppercase font-bold">Timestamp</th>
+<th class="text-label-md text-on-surface-variant uppercase font-bold">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary-fixed-dim text-[10px] flex items-center justify-center font-bold">JD</div>
+<span class="text-body-md font-bold">Jane Doe</span>
+</td>
+<td class="text-body-md">Updated Branding (Primary Color)</td>
+<td class="text-body-md">Branding</td>
+<td class="text-label-md font-label-md text-on-surface-variant">2023-10-24 14:22:01</td>
+<td><span class="bg-tertiary-container/20 text-tertiary px-2 py-0.5 rounded text-[10px] font-bold">SUCCESS</span></td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary-fixed-dim text-[10px] flex items-center justify-center font-bold">MK</div>
+<span class="text-body-md font-bold">Mike Kean</span>
+</td>
+<td class="text-body-md">Modified IP Whitelist range</td>
+<td class="text-body-md">Security</td>
+<td class="text-label-md font-label-md text-on-surface-variant">2023-10-24 11:05:44</td>
+<td><span class="bg-tertiary-container/20 text-tertiary px-2 py-0.5 rounded text-[10px] font-bold">SUCCESS</span></td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary-fixed-dim text-[10px] flex items-center justify-center font-bold">SY</div>
+<span class="text-body-md font-bold">System</span>
+</td>
+<td class="text-body-md">Automated Vault Backup Snapshot</td>
+<td class="text-body-md">Backup</td>
+<td class="text-label-md font-label-md text-on-surface-variant">2023-10-24 09:00:00</td>
+<td><span class="bg-tertiary-container/20 text-tertiary px-2 py-0.5 rounded text-[10px] font-bold">SUCCESS</span></td>
+</tr>
+</tbody>
+</table>
+</section>
+</div>
+<!-- Footer / Technical Specs -->
+<footer class="mt-12 pt-8 border-t border-outline-variant flex justify-between items-center text-on-surface-variant">
+<div class="text-label-sm">
+                PLATFORM VERSION: v4.12.0-STABLE | BUILD: 8829-AF2
+            </div>
+<div class="flex gap-6 text-label-md">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary transition-colors" href="#">Global API Docs</a>
+</div>
+</footer>
+</main>
+<script>
+        // Micro-interaction for the navigation and toggles
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                if (!link.classList.contains('border-l-4')) {
+                    // This is just a visual demo of state switching
+                }
+            });
+        });
+
+        // Simple feedback for the save button
+        const saveBtn = document.querySelector('button.bg-primary-container');
+        saveBtn.addEventListener('click', () => {
+            const originalText = saveBtn.innerText;
+            saveBtn.innerText = 'Changes Applied!';
+            saveBtn.classList.replace('bg-primary-container', 'bg-tertiary-container');
+            setTimeout(() => {
+                saveBtn.innerText = originalText;
+                saveBtn.classList.replace('bg-tertiary-container', 'bg-primary-container');
+            }, 2000);
+        });
+    </script>
+</body></html>

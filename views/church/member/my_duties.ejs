@@ -1,0 +1,41 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <div>
+          <h1 class="church-member-header__title">My duties</h1>
+          <p class="church-member-header__subtitle">Your confirmed service assignments</p>
+        </div>
+      </header>
+      <section class="church-member-panel">
+        <h2 class="church-member-panel__title">Upcoming duties</h2>
+        <% if ((upcomingDuties || []).length === 0) { %>
+        <p class="church-member-empty">No upcoming duties assigned to you.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% upcomingDuties.forEach(function (d) { %>
+          <li class="church-member-list__item">
+            <strong><%= d.role_name %> — <%= d.service_name %></strong>
+            <p><%= formatDutyDate(d.duty_date) %><% if (d.ministry_name || d.department_name) { %> · <%= [d.ministry_name, d.department_name].filter(Boolean).join(' · ') %><% } %></p>
+            <% if (d.notes) { %><p class="church-member-list__meta"><%= d.notes %></p><% } %>
+            <span class="church-status-chip church-status-chip--verified"><%= dutyStatusLabel(d.status) %></span>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <section class="church-member-panel">
+        <h2 class="church-member-panel__title">Past duties</h2>
+        <% if ((pastDuties || []).length === 0) { %>
+        <p class="church-member-empty">No past duties on record.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% pastDuties.forEach(function (d) { %>
+          <li class="church-member-list__item">
+            <strong><%= d.role_name %> — <%= d.service_name %></strong>
+            <p><%= formatDutyDate(d.duty_date) %><% if (d.ministry_name || d.department_name) { %> · <%= [d.ministry_name, d.department_name].filter(Boolean).join(' · ') %><% } %></p>
+            <% if (d.notes) { %><p class="church-member-list__meta"><%= d.notes %></p><% } %>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+<%- include('../partials/member_shell_end') %>

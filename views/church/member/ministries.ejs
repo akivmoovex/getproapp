@@ -1,0 +1,15 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <h1 class="church-member-header__title">Ministries</h1>
+        <p class="church-member-header__subtitle">Explore ministries at <%= churchName %></p>
+      </header>
+      <section class="church-member-panel">
+        <% if ((ministries || []).length === 0) { %>
+        <p class="church-member-empty">No published ministries yet. Check back soon.</p>
+        <% } else { %>
+        <div class="church-grid church-grid--events">
+          <%- include('../partials/ministry_cards') %>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/member_shell_end') %>

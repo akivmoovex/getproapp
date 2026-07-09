@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Church platform | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'Church platform', activeNav: activeNav || 'church_platform' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">GetPro Church platform</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Provision church organizations, branch tenants, and initial HQ / branch admins. Super admin only.
+            </p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/search', label: 'Support search' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/new', label: 'Create church organization' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations', label: 'All organizations' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches', label: 'All branches' }) %>
+          </div>
+        </header>
+
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <form method="get" action="/admin/church/search" class="admin-filter-form">
+            <div class="input-field" style="flex:1;">
+              <label class="input-field__label" for="support-q">Support search</label>
+              <input id="support-q" class="input-field__control" name="q" type="search" placeholder="Organization, branch, admin, member…" />
+            </div>
+            <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Search' }) %>
+          </form>
+          <p class="muted" style="margin-top:0.5rem;font-size:0.9rem;">Search organizations, branches, HQ admins, branch admins, and members across GetPro Church.</p>
+        </section>
+
+        <% var s = typeof summary !== 'undefined' && summary ? summary : {}; %>
+        <section class="admin-dashboard__grid card card--mb-xl">
+          <div class="admin-stat">
+            <p class="admin-stat__label">Church organizations</p>
+            <p class="admin-stat__value"><%= s.total_organizations != null ? s.total_organizations : 0 %></p>
+            <p class="muted admin-stat__hint"><%= s.active_organizations != null ? s.active_organizations : 0 %> active</p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Branch tenants</p>
+            <p class="admin-stat__value"><%= s.total_branches != null ? s.total_branches : 0 %></p>
+            <p class="muted admin-stat__hint"><%= s.active_branches != null ? s.active_branches : 0 %> active</p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Free plan</p>
+            <p class="admin-stat__value"><%= s.free_plan_count != null ? s.free_plan_count : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Standard plan</p>
+            <p class="admin-stat__value"><%= s.standard_plan_count != null ? s.standard_plan_count : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Pro plan</p>
+            <p class="admin-stat__value"><%= s.pro_plan_count != null ? s.pro_plan_count : 0 %></p>
+          </div>
+        </section>
+
+        <% var recentNotes = typeof recentSupportNotes !== 'undefined' && recentSupportNotes ? recentSupportNotes : []; %>
+        <% var sec = typeof securitySummary !== 'undefined' && securitySummary ? securitySummary : {}; %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <div class="admin-toolbar" style="margin-bottom:1rem;">
+            <h2 class="section-title section-title--flush" style="margin:0;flex:1;">Security</h2>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/security', label: 'Open security page' }) %>
+          </div>
+          <div class="admin-dashboard__grid">
+            <div class="admin-stat">
+              <p class="admin-stat__label">Locked accounts</p>
+              <p class="admin-stat__value"><%= sec.locked_total != null ? sec.locked_total : 0 %></p>
+            </div>
+            <div class="admin-stat">
+              <p class="admin-stat__label">Failed attempts (24h)</p>
+              <p class="admin-stat__value"><%= sec.failed_attempts_last_24h != null ? sec.failed_attempts_last_24h : 0 %></p>
+            </div>
+          </div>
+        </section>
+
+        <% var baReset = typeof branchAdminPasswordResetCounts !== 'undefined' && branchAdminPasswordResetCounts ? branchAdminPasswordResetCounts : {}; %>
+        <% var unifiedReset = typeof unifiedResetSummary !== 'undefined' && unifiedResetSummary ? unifiedResetSummary : (typeof churchResetPendingCounts !== 'undefined' && churchResetPendingCounts ? churchResetPendingCounts : {}); %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <div class="admin-toolbar" style="margin-bottom:1rem;">
+            <h2 class="section-title section-title--flush" style="margin:0;flex:1;">Password reset requests</h2>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/reset-requests?status=submitted', label: 'Open unified inbox' }) %>
+          </div>
+          <p class="muted" style="margin-bottom:0.75rem;">Pending submitted requests across all types. Member requests are handled by branch admins; branch/HQ admin requests by platform admins.</p>
+          <div class="admin-dashboard__grid">
+            <div class="admin-stat admin-stat--pending-highlight">
+              <p class="admin-stat__label">Total pending</p>
+              <p class="admin-stat__value"><%= unifiedReset.submitted_total != null ? unifiedReset.submitted_total : (unifiedReset.submitted != null ? unifiedReset.submitted : 0) %></p>
+            </div>
+            <div class="admin-stat">
+              <p class="admin-stat__label">Member pending</p>
+              <p class="admin-stat__value"><%= unifiedReset.member != null ? unifiedReset.member : 0 %></p>
+            </div>
+            <div class="admin-stat">
+              <p class="admin-stat__label">Branch admin pending</p>
+              <p class="admin-stat__value"><%= unifiedReset.branch_admin != null ? unifiedReset.branch_admin : 0 %></p>
+            </div>
+            <div class="admin-stat">
+              <p class="admin-stat__label">HQ admin pending</p>
+              <p class="admin-stat__value"><%= unifiedReset.hq_admin != null ? unifiedReset.hq_admin : 0 %></p>
+            </div>
+          </div>
+        </section>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <div class="admin-toolbar" style="margin-bottom:1rem;">
+            <h2 class="section-title section-title--flush" style="margin:0;flex:1;">Branch admin password resets</h2>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branch-admin-password-reset-requests?status=submitted', label: 'Review Branch Admin Password Resets' }) %>
+          </div>
+          <div class="admin-dashboard__grid">
+            <div class="admin-stat">
+              <p class="admin-stat__label">Pending reset requests</p>
+              <p class="admin-stat__value"><%= baReset.submitted != null ? baReset.submitted : 0 %></p>
+            </div>
+            <div class="admin-stat">
+              <p class="admin-stat__label">Reviewed</p>
+              <p class="admin-stat__value"><%= baReset.reviewed != null ? baReset.reviewed : 0 %></p>
+            </div>
+          </div>
+        </section>
+        <% var hqReset = typeof hqAdminPasswordResetCounts !== 'undefined' && hqAdminPasswordResetCounts ? hqAdminPasswordResetCounts : {}; %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <div class="admin-toolbar" style="margin-bottom:1rem;">
+            <h2 class="section-title section-title--flush" style="margin:0;flex:1;">HQ admin password resets</h2>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/hq-admin-password-reset-requests?status=submitted', label: 'Review HQ Admin Password Resets' }) %>
+          </div>
+          <div class="admin-dashboard__grid">
+            <div class="admin-stat">
+              <p class="admin-stat__label">Pending reset requests</p>
+              <p class="admin-stat__value"><%= hqReset.submitted != null ? hqReset.submitted : 0 %></p>
+            </div>
+            <div class="admin-stat">
+              <p class="admin-stat__label">Reviewed</p>
+              <p class="admin-stat__value"><%= hqReset.reviewed != null ? hqReset.reviewed : 0 %></p>
+            </div>
+          </div>
+        </section>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <div class="admin-toolbar" style="margin-bottom:1rem;">
+            <h2 class="section-title section-title--flush" style="margin:0;flex:1;">Recent support notes</h2>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/support-notes', label: 'All support notes' }) %>
+          </div>
+          <p class="muted">Internal GetPro platform notes only. Do not store sensitive pastoral or prayer content.</p>
+          <% if (recentNotes.length === 0) { %>
+            <p class="muted" style="margin-top:0.75rem;">No platform support notes yet.</p>
+          <% } else { %>
+            <ul class="admin-list" style="margin-top:0.75rem;">
+              <% recentNotes.forEach(function (note) { %>
+                <li style="margin-bottom:0.75rem;">
+                  <strong><%= note.entity_label %></strong>
+                  <span class="muted"> · <%= note.entity_type.replace(/_/g, ' ') %> · <%= formatDate(note.created_at) %></span><br />
+                  <span><%= note.note_preview %></span>
+                  · <a href="<%= note.entity_link %>">View record</a>
+                </li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </section>
+
+        <% if ((s.nearMemberLimitOrganizations || []).length > 0) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Near member limit</h2>
+          <ul>
+            <% s.nearMemberLimitOrganizations.forEach(function (org) { %>
+              <li><a href="/admin/church/organizations/<%= org.id %>/plan"><%= org.name %></a> — <%= org.verified_member_count %> verified members</li>
+            <% }); %>
+          </ul>
+        </section>
+        <% } %>
+
+        <% if ((s.atBranchLimitOrganizations || []).length > 0) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">At branch limit</h2>
+          <ul>
+            <% s.atBranchLimitOrganizations.forEach(function (org) { %>
+              <li><a href="/admin/church/organizations/<%= org.id %>/plan"><%= org.name %></a> — <%= org.branch_count %>/<%= org.plan_code === 'free' ? '1' : 'limit' %> branches</li>
+            <% }); %>
+          </ul>
+        </section>
+        <% } %>
+
+        <section class="card card--mb-xl">
+          <h2 class="section-title section-title--flush">Recent organizations</h2>
+          <% if (!s.recentOrganizations || s.recentOrganizations.length === 0) { %>
+            <p class="muted">No church organizations yet. Create the first organization to provision a branch tenant and admins.</p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Slug</th>
+                    <th>Country</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% s.recentOrganizations.forEach(function (org) { %>
+                    <tr>
+                      <td><%= org.name %></td>
+                      <td class="muted"><%= org.slug %></td>
+                      <td><%= org.country || '—' %></td>
+                      <td><%= getPlanDisplay(org.plan_code || 'free').label %></td>
+                      <td><%= org.status %></td>
+                      <td><%= formatDate(org.created_at) %></td>
+                      <td>
+                        <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + org.id, label: 'View' }) %>
+                        <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + org.id + '/edit', label: 'Edit' }) %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

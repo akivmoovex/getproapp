@@ -1,0 +1,63 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Broadcast Center</h1>
+          <p class="church-branch-topbar__subtitle">Create and publish organization-wide announcements</p>
+        </div>
+        <a class="church-btn church-btn--primary" href="/hq/broadcasts/new">New broadcast</a>
+      </header>
+      <%- include('../partials/plan_premium_notice', { premiumNotice: typeof premiumNotice !== 'undefined' ? premiumNotice : null }) %>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <div class="church-branch-filter-tabs">
+        <% broadcastFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/hq/broadcasts<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : broadcastStatusLabel(f) %></a>
+        <% }); %>
+      </div>
+      <section class="church-branch-panel">
+        <% if ((broadcasts || []).length === 0) { %>
+        <p class="church-branch-empty">No broadcasts in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Audience</th>
+                <th>Target</th>
+                <th>Branches</th>
+                <th>Status</th>
+                <th>Publish</th>
+                <th>Expires</th>
+                <th>Created by</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% broadcasts.forEach(function (b) { %>
+              <tr>
+                <td><%= b.title %></td>
+                <td><%= b.category %></td>
+                <td><%= broadcastAudienceLabel(b.audience) %></td>
+                <td><%= targetScopeLabel(b.target_scope) %></td>
+                <td><%= b.target_scope === 'all_branches' ? 'All' : (b.target_branch_count || 0) %></td>
+                <td><span class="church-status-chip church-status-chip--<%= b.status === 'published' ? 'verified' : 'pending' %>"><%= broadcastStatusLabel(b.status) %></span></td>
+                <td><%= b.publish_at ? new Date(b.publish_at).toLocaleDateString('en-GB') : '—' %></td>
+                <td><%= b.expires_at ? new Date(b.expires_at).toLocaleDateString('en-GB') : '—' %></td>
+                <td><%= b.created_by_hq_admin_name || '—' %></td>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/broadcasts/<%= b.id %>">View</a>
+                  <% if (b.status !== 'archived') { %>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/broadcasts/<%= b.id %>/edit">Edit</a>
+                  <% } %>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/hq_shell_end') %>

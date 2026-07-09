@@ -1,0 +1,29 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/leaders">&larr; Back to leaders</a>
+          <h1 class="church-branch-topbar__title"><%= isEdit ? 'Edit leader' : 'New leader' %></h1>
+        </div>
+      </header>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <form class="church-form" method="post" action="<%= isEdit ? '/branch/leaders/' + leaderId : '/branch/leaders' %>">
+        <section class="church-branch-panel">
+          <div class="church-form-grid">
+            <div class="church-field"><label class="church-label" for="full_name">Full name</label><input class="church-input" id="full_name" name="full_name" type="text" required value="<%= form.full_name || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="email">Email</label><input class="church-input" id="email" name="email" type="email" value="<%= form.email || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="phone">Phone</label><input class="church-input" id="phone" name="phone" type="text" value="<%= form.phone || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="ministry_id">Assigned ministry</label><select class="church-input" id="ministry_id" name="ministry_id" required><option value="">— Select ministry —</option><% (ministries || []).forEach(function (m) { %><option value="<%= m.id %>" <%= String(form.ministry_id) === String(m.id) ? 'selected' : '' %>><%= m.name %></option><% }); %></select></div>
+            <div class="church-field"><label class="church-label" for="role">Role</label><select class="church-input" id="role" name="role"><option value="ministry_leader" selected>Ministry leader</option><option value="department_leader" disabled>Department leader (coming later)</option></select></div>
+            <div class="church-field"><label class="church-label" for="status">Status</label><select class="church-input" id="status" name="status"><option value="active" <%= form.status === 'active' ? 'selected' : '' %>>Active</option><option value="inactive" <%= form.status === 'inactive' ? 'selected' : '' %>>Inactive</option></select></div>
+            <% if (!isEdit) { %>
+            <div class="church-field church-field--full"><label class="church-label" for="temporary_password">Temporary password</label><input class="church-input" id="temporary_password" name="temporary_password" type="password" required minlength="8" autocomplete="new-password"/></div>
+            <% } %>
+            <div class="church-field church-field--full"><label class="church-label" for="notes">Notes (optional)</label><textarea class="church-input church-input--textarea" id="notes" name="notes" rows="3"><%= form.notes || '' %></textarea></div>
+          </div>
+          <p class="church-branch-panel__hint">Email or phone is required for leader login. Password must be at least 8 characters.</p>
+        </section>
+        <div class="church-branch-actions">
+          <button class="church-btn church-btn--primary" type="submit"><%= isEdit ? 'Save changes' : 'Create leader' %></button>
+        </div>
+      </form>
+<%- include('../partials/branch_admin_shell_end') %>

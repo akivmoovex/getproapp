@@ -1,0 +1,2 @@
+<% var _type = typeof requestType !== 'undefined' ? requestType : (typeof type !== 'undefined' ? type : ''); %>
+<span class="church-type-badge <%= typeof getResetRequestTypeClass === 'function' ? getResetRequestTypeClass(_type) : '' %>"><%= typeof getResetRequestTypeLabel === 'function' ? getResetRequestTypeLabel(_type) : _type %></span>

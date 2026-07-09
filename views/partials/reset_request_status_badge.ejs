@@ -1,0 +1,2 @@
+<% var _status = typeof status !== 'undefined' ? status : ''; %>
+<span class="church-status-badge <%= typeof getResetRequestStatusClass === 'function' ? getResetRequestStatusClass(_status) : '' %>"><%= typeof getResetRequestStatusLabel === 'function' ? getResetRequestStatusLabel(_status) : _status %></span>

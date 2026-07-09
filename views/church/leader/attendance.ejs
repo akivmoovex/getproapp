@@ -1,0 +1,51 @@
+<%- include('../partials/leader_shell_start') %>
+      <header class="church-member-header">
+        <div>
+          <h1 class="church-member-header__title">Record attendance</h1>
+          <p class="church-member-header__subtitle"><%= ministry ? ministry.name : '' %> · Ministry meeting</p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <form class="church-form" method="post" action="/leader/attendance">
+        <section class="church-member-panel">
+          <input type="hidden" name="attendance_type" value="Ministry meeting"/>
+          <div class="church-form-grid">
+            <div class="church-field"><label class="church-label" for="service_name">Meeting name</label><input class="church-input" id="service_name" name="service_name" type="text" required value="<%= form.service_name || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="attendance_date">Date</label><input class="church-input" id="attendance_date" name="attendance_date" type="date" required value="<%= form.attendance_date || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="adults_count">Adults</label><input class="church-input" id="adults_count" name="adults_count" type="number" min="0" value="<%= form.adults_count != null ? form.adults_count : 0 %>"/></div>
+            <div class="church-field"><label class="church-label" for="youth_count">Youth</label><input class="church-input" id="youth_count" name="youth_count" type="number" min="0" value="<%= form.youth_count != null ? form.youth_count : 0 %>"/></div>
+            <div class="church-field"><label class="church-label" for="children_count">Children</label><input class="church-input" id="children_count" name="children_count" type="number" min="0" value="<%= form.children_count != null ? form.children_count : 0 %>"/></div>
+            <div class="church-field"><label class="church-label" for="first_time_visitors_count">First-time visitors</label><input class="church-input" id="first_time_visitors_count" name="first_time_visitors_count" type="number" min="0" value="<%= form.first_time_visitors_count != null ? form.first_time_visitors_count : 0 %>"/></div>
+            <div class="church-field"><label class="church-label" for="new_members_count">New members</label><input class="church-input" id="new_members_count" name="new_members_count" type="number" min="0" value="<%= form.new_members_count != null ? form.new_members_count : 0 %>"/></div>
+            <div class="church-field"><label class="church-label" for="volunteers_count">Volunteers</label><input class="church-input" id="volunteers_count" name="volunteers_count" type="number" min="0" value="<%= form.volunteers_count != null ? form.volunteers_count : 0 %>"/></div>
+            <div class="church-field church-field--full"><label class="church-label" for="notes">Notes</label><textarea class="church-input church-input--textarea" id="notes" name="notes" rows="3"><%= form.notes || '' %></textarea></div>
+          </div>
+          <div class="church-member-actions">
+            <button class="church-btn church-btn--primary" type="submit" name="submit_action" value="submit">Save attendance</button>
+          </div>
+        </section>
+      </form>
+      <section class="church-member-panel">
+        <h2 class="church-member-panel__title">Recent ministry attendance</h2>
+        <% if ((records || []).length === 0) { %>
+        <p class="church-member-empty">No attendance records yet for this ministry.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Date</th><th>Meeting</th><th>Total</th><th>Status</th></tr></thead>
+            <tbody>
+              <% records.forEach(function (r) { %>
+              <tr>
+                <td><%= r.service_date_display %></td>
+                <td><%= r.service_name %></td>
+                <td><%= r.total_attendance %></td>
+                <td><%= r.status %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/leader_shell_end') %>

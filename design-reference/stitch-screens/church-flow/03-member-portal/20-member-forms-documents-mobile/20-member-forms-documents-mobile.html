@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Church Forms & Documents</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#c6bfff",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-primary-fixed": "#160066",
+                    "inverse-on-surface": "#e7f3f7",
+                    "inverse-surface": "#283236",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#474554",
+                    "surface-variant": "#d9e4e9",
+                    "surface-container-highest": "#d9e4e9",
+                    "secondary": "#586062",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "tertiary-container": "#707273",
+                    "surface-tint": "#5847d2",
+                    "tertiary": "#57595b",
+                    "surface-bright": "#f1fbff",
+                    "surface": "#f1fbff",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-primary-container": "#faf6ff",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#787586",
+                    "on-tertiary-fixed": "#191c1d",
+                    "surface-container-high": "#dfeaef",
+                    "surface-dim": "#d1dce0",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "surface-container-low": "#eaf5fa",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-error": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "primary-fixed": "#e4dfff",
+                    "background": "#f1fbff",
+                    "on-secondary-container": "#5d6466",
+                    "surface-container": "#e4f0f4",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-background": "#131d21",
+                    "on-surface": "#131d21",
+                    "primary": "#5341cd",
+                    "on-secondary-fixed": "#161d1f",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#c8c4d7",
+                    "tertiary-fixed": "#e1e3e4",
+                    "primary-container": "#6c5ce7",
+                    "on-tertiary": "#ffffff",
+                    "secondary-container": "#dae1e3",
+                    "secondary-fixed": "#dde4e6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "md": "16px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "sm": "8px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f1fbff;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .safe-area-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface">
+<!-- Top App Bar -->
+<header class="bg-surface sticky top-0 z-40 flex justify-between items-center px-margin-mobile h-16 w-full">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/10">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of Mary Phiri, a warm and friendly African woman in her late 30s. She is smiling gently at the camera, wearing professional yet modest church attire. The background is a soft-focus interior of a modern church office with warm, high-key lighting. The overall mood is welcoming, compassionate, and trustworthy, reflecting the GetPro Church brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0os4yr9u3KohGuxty__jtR020g1KIAWzfi6K9xXZbM36WG1Mx5SRL4lrAiV__Ly1w-51McehMlbHl67TH0u4zm2mcGKJyPd5-cL8822pQU3PxxzS33MVYMG52kv3dxlDghpJRgnxN7HZT0c1782eR-1TBbItqGH3teMXqk-ziPn4E-Mx1Fe_01DwDX-iHCnCdhL87tVEwFHe077lseuKXd4se3bkcxnyE9LrmSh8qKjqihoGVzoJBnQ"/>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary font-bold">GetPro Church</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</button>
+</header>
+<main class="px-margin-mobile pt-lg pb-32 max-w-2xl mx-auto">
+<!-- Screen Header -->
+<div class="mb-lg">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-xs">Forms & Documents</h2>
+<p class="font-body-md text-on-surface-variant">Fill out church forms online or download PDFs.</p>
+</div>
+<!-- Search/Filter Bar (Contextual Addition) -->
+<div class="relative mb-lg">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-12 pr-4 py-3 rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary text-body-md text-on-surface placeholder-outline-variant" placeholder="Search for a form..." type="text"/>
+</div>
+<!-- Forms List -->
+<div class="flex flex-col gap-sm">
+<!-- Membership Form -->
+<div class="bg-surface-container-lowest p-md rounded-xl flex items-center justify-between border border-outline-variant/30 hover:bg-surface-variant/10 transition-colors cursor-pointer group active:scale-[0.98] duration-150">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="assignment">assignment</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Membership</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Online Form</p>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+<!-- Baptism Form -->
+<div class="bg-surface-container-lowest p-md rounded-xl flex items-center justify-between border border-outline-variant/30 hover:bg-surface-variant/10 transition-colors cursor-pointer group active:scale-[0.98] duration-150">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="water_drop">water_drop</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Baptism</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Online Form</p>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+<!-- Wedding Request -->
+<div class="bg-surface-container-lowest p-md rounded-xl flex items-center justify-between border border-outline-variant/30 hover:bg-surface-variant/10 transition-colors cursor-pointer group active:scale-[0.98] duration-150">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="favorite">favorite</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Wedding</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">PDF Download</p>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="picture_as_pdf">picture_as_pdf</span>
+</div>
+</div>
+<!-- Volunteer Application -->
+<div class="bg-surface-container-lowest p-md rounded-xl flex items-center justify-between border border-outline-variant/30 hover:bg-surface-variant/10 transition-colors cursor-pointer group active:scale-[0.98] duration-150">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="volunteer_activism">volunteer_activism</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Volunteer</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Online Form</p>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+<!-- Facility Booking -->
+<div class="bg-surface-container-lowest p-md rounded-xl flex items-center justify-between border border-outline-variant/30 hover:bg-surface-variant/10 transition-colors cursor-pointer group active:scale-[0.98] duration-150">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="apartment">apartment</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Facility Booking</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Online Form</p>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Additional Resources / Help (Design Quality Enhancement) -->
+<div class="mt-xl p-lg rounded-2xl bg-secondary-container/30 border border-secondary/10">
+<h4 class="font-title-md text-title-md text-on-secondary-container mb-xs">Need help?</h4>
+<p class="font-body-md text-on-secondary-container opacity-80 mb-md">If you have questions about any of these documents, please reach out to our church office.</p>
+<button class="flex items-center gap-sm text-primary font-title-md hover:underline transition-all">
+                Contact Office <span class="material-symbols-outlined text-sm">mail</span>
+</button>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden bg-surface-container pb-safe shadow-lg flex justify-around items-center h-20 px-2 w-full">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<!-- Groups -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-md text-label-md">Groups</span>
+</a>
+<!-- Events -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-md text-label-md">Events</span>
+</a>
+<!-- Study -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-md text-label-md">Study</span>
+</a>
+<!-- More (Active for Resources/Forms) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz" style="font-variation-settings: 'FILL' 1;">more_horiz</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for list items
+        document.querySelectorAll('.group').forEach(item => {
+            item.addEventListener('click', function() {
+                const title = this.querySelector('h3').innerText;
+                console.log(`Navigating to ${title} form...`);
+                // Navigation logic would go here
+            });
+        });
+    </script>
+</body></html>

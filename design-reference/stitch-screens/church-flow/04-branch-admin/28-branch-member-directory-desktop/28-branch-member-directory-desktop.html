@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Member Directory | Ecclesia Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#474554",
+                    "surface-variant": "#d9e4e9",
+                    "inverse-surface": "#283236",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-primary-fixed": "#160066",
+                    "inverse-on-surface": "#e7f3f7",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary-container": "#707273",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "surface-container-highest": "#d9e4e9",
+                    "secondary": "#586062",
+                    "surface-bright": "#f1fbff",
+                    "surface": "#f1fbff",
+                    "tertiary": "#57595b",
+                    "surface-tint": "#5847d2",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#787586",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-primary-container": "#faf6ff",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-primary": "#ffffff",
+                    "primary-fixed": "#e4dfff",
+                    "background": "#f1fbff",
+                    "surface-container-low": "#eaf5fa",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#d1dce0",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "surface-container-high": "#dfeaef",
+                    "primary": "#5341cd",
+                    "on-secondary-fixed": "#161d1f",
+                    "on-surface": "#131d21",
+                    "surface-container": "#e4f0f4",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-background": "#131d21",
+                    "on-secondary-container": "#5d6466",
+                    "outline-variant": "#c8c4d7",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#dde4e6",
+                    "secondary-container": "#dae1e3",
+                    "tertiary-fixed": "#e1e3e4",
+                    "primary-container": "#6c5ce7",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "md": "16px",
+                    "margin-mobile": "16px",
+                    "base": "8px",
+                    "lg": "24px",
+                    "gutter": "24px",
+                    "margin-desktop": "32px",
+                    "xl": "32px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "title-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c8c4d7; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #787586; }
+    </style>
+</head>
+<body class="bg-surface-container-low text-on-surface">
+<!-- SideNavBar Shell -->
+<aside class="hidden lg:flex flex-col h-screen p-md fixed left-0 top-0 h-full w-[280px] bg-inverse-surface dark:bg-surface-container-lowest border-r border-outline-variant z-40">
+<div class="flex items-center gap-3 px-2 py-4 mb-lg">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary" data-icon="church">church</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed dark:text-primary leading-tight">Ecclesia Branch</h1>
+<p class="font-label-md text-label-md text-on-surface-variant/70">HQ Admin Portal</p>
+</div>
+</div>
+<div class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-on-primary-container hover:bg-surface-variant/10 transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg shadow-sm" href="#">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-lg text-label-lg">Members</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-on-primary-container hover:bg-surface-variant/10 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="church">church</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-on-primary-container hover:bg-surface-variant/10 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-on-primary-container hover:bg-surface-variant/10 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-lg text-label-lg">Attendance</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-on-primary-container hover:bg-surface-variant/10 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-lg text-label-lg">Reports</span>
+</a>
+</div>
+<div class="mt-auto pt-lg border-t border-outline-variant/20">
+<button class="w-full bg-primary text-on-primary font-label-lg text-label-lg py-3 rounded-xl flex items-center justify-center gap-2 mb-lg active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                New Record
+            </button>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-on-primary-container hover:bg-surface-variant/10 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-on-primary-container hover:bg-surface-variant/10 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-lg text-label-lg">Support</span>
+</a>
+<div class="mt-md flex items-center gap-3 px-2">
+<img class="w-10 h-10 rounded-full border-2 border-primary-container" data-alt="A professional headshot of a smiling church administrator in a clean modern office setting, wearing corporate casual attire. High-quality lighting, soft background blur, expressing warmth and leadership in a modern church environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeP3ydj3M2eYtk3b7pbMchu2pFi9ROjyCZTa8gCUwDDpv9atfDdAPJQscpE_hZ9XIbPx3V5Qoc857S110xWy3AG46Qxuk39LpKVssEOTXx0-t2gZoerGiO1neyBeje5WjbwuFfLzJFPCZUGxIw6L-FoSBi0S85C0inL4NbVhMA9QDDVRF06n0jxXt6xbgp_cI2ZWyWF3_9UJIXWyFhWM7cCygvaFz8knvXB63LJMH9PVkFkK4Kdk5p6w"/>
+<div class="overflow-hidden">
+<p class="font-label-lg text-label-lg text-white truncate">Admin User</p>
+<p class="font-label-md text-label-md text-surface-variant truncate">Branch Manager</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar Shell (Mobile & Desktop Spacer) -->
+<header class="flex justify-between items-center w-full px-margin-mobile lg:px-margin-desktop py-base lg:ml-[280px] lg:w-[calc(100%-280px)] bg-surface dark:bg-surface-dim border-b border-outline-variant shadow-sm sticky top-0 z-30">
+<div class="flex items-center gap-4 flex-1">
+<button class="lg:hidden p-2 text-on-surface">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<div class="relative w-full max-w-md hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container rounded-full border-none focus:ring-2 focus:ring-primary text-body-md font-body-md outline-none" placeholder="Search members, records..." type="text"/>
+</div>
+<h2 class="lg:hidden font-title-lg text-title-lg font-black text-primary">Ecclesia Admin</h2>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-surface-container-high rounded-full transition-colors relative">
+<span class="material-symbols-outlined text-on-surface" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined text-on-surface" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="lg:ml-[280px] min-h-screen p-md lg:p-lg pb-32 lg:pb-lg">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-lg">
+<div>
+<nav class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md mb-2">
+<span>Directory</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-primary font-bold">Member List</span>
+</nav>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Member Directory</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage and organize 1,248 branch members across all ministries.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-lg py-2.5 bg-surface-container-highest text-on-surface-variant font-label-lg text-label-lg rounded-xl flex items-center gap-2 hover:bg-outline-variant/30 transition-colors">
+<span class="material-symbols-outlined" data-icon="file_download">file_download</span>
+                    Export CSV
+                </button>
+<button class="px-lg py-2.5 bg-primary text-on-primary font-label-lg text-label-lg rounded-xl flex items-center gap-2 shadow-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+                    Add Member
+                </button>
+</div>
+</div>
+<!-- Filter Bar -->
+<div class="bg-surface-container-lowest rounded-2xl p-md mb-lg border border-outline-variant/10 flex flex-wrap items-center gap-4">
+<div class="relative flex-1 min-w-[240px]">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="filter_list">filter_list</span>
+<input class="w-full pl-10 pr-4 py-2.5 bg-background border border-outline-variant rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md text-body-md" placeholder="Filter by name, email or phone..." type="text"/>
+</div>
+<select class="px-4 py-2.5 bg-background border border-outline-variant rounded-xl font-body-md text-body-md text-on-surface-variant outline-none focus:border-primary min-w-[140px]">
+<option>All Status</option>
+<option>Active</option>
+<option>Inactive</option>
+<option>Pending</option>
+</select>
+<select class="px-4 py-2.5 bg-background border border-outline-variant rounded-xl font-body-md text-body-md text-on-surface-variant outline-none focus:border-primary min-w-[140px]">
+<option>All Ministries</option>
+<option>Youth Choir</option>
+<option>Media Team</option>
+<option>Hospitality</option>
+<option>Ushering</option>
+</select>
+<button class="p-2.5 text-on-surface-variant hover:bg-surface-variant/20 rounded-xl transition-colors">
+<span class="material-symbols-outlined" data-icon="refresh">refresh</span>
+</button>
+</div>
+<!-- Directory Table Container -->
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant/30">
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Member Name</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Contact Info</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Ministry</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Last Activity</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full bg-surface-variant object-cover" data-alt="A portrait of a young man with a friendly smile, neat short hair, wearing a casual polo shirt. Professional lighting, vibrant but soft background, modern corporate style for a church member profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjsgxLIAmm6HdQJfWyZycjXJIpEFmYJ0bxPdLzXnrpFM9PggvProTEwMIvMLbGB0bj6D8ZfL_FYSnPKC0hCCNMWwnVuS_z9uwUAw8dcMRV6YEtiu4EYzGxSAep6a5FwA5gI50ozwK3e3-AofAWKRIaESlroAQYof_vSTvoAuehtFzEgBrAdn_C9s1a919my_aZaSY5fFtTK3oy0uFLwobwvKifQx85DpG3nikTH6JTLjUZ_l95hlK2_g"/>
+<div>
+<p class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Samuel Richardson</p>
+<p class="font-label-md text-label-md text-on-surface-variant">ID: EC-10922</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4">
+<div class="font-body-md text-body-md text-on-surface">
+<p>+1 (555) 012-3456</p>
+<p class="text-on-surface-variant text-[12px]">s.richardson@email.com</p>
+</div>
+</td>
+<td class="px-lg py-4">
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full font-label-md text-label-md">Media Team</span>
+</td>
+<td class="px-lg py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+<span class="font-label-lg text-label-lg text-emerald-700">Active</span>
+</div>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface-variant">
+                                2 hours ago
+                            </td>
+<td class="px-lg py-4 text-right">
+<button class="p-2 hover:bg-surface-variant/30 rounded-full transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full bg-surface-variant object-cover" data-alt="A portrait of an elegant woman in her 40s with a warm and welcoming expression, professional headshot style. Soft lighting, clean bright background, suitable for a senior church member directory listing." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcSRyyDeoSpsq1XOj9pX88iWFj2poYO8UL9wH0eHycp3Aqq1x_wEXvG6pHL2C1nrZEdfGX0BfN1B2WhKmI-uECL8SduI6-658CkxysZXUV1zW_HOSg_1TqgEA5Mkf2sERIyC5R6M_F80pId0Gm38m6vhsvDzktvDsxocgVtjKY6d_OvU6ALbPI3xh9V21NP__QGIXQOh9fDqlKuRQJbvKFoTzsdC1A2zs4l1q0BzGSxZyYXbcPSM2qgw"/>
+<div>
+<p class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Elena Rodriguez</p>
+<p class="font-label-md text-label-md text-on-surface-variant">ID: EC-11045</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4">
+<div class="font-body-md text-body-md text-on-surface">
+<p>+1 (555) 098-7654</p>
+<p class="text-on-surface-variant text-[12px]">elena.r@churchmail.org</p>
+</div>
+</td>
+<td class="px-lg py-4">
+<span class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant rounded-full font-label-md text-label-md">Hospitality</span>
+</td>
+<td class="px-lg py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+<span class="font-label-lg text-label-lg text-emerald-700">Active</span>
+</div>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface-variant">
+                                Yesterday
+                            </td>
+<td class="px-lg py-4 text-right">
+<button class="p-2 hover:bg-surface-variant/30 rounded-full transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed-variant font-bold">MK</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Marcus Koppel</p>
+<p class="font-label-md text-label-md text-on-surface-variant">ID: EC-10883</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4">
+<div class="font-body-md text-body-md text-on-surface">
+<p>+1 (555) 234-5678</p>
+<p class="text-on-surface-variant text-[12px]">mkoppel@provider.com</p>
+</div>
+</td>
+<td class="px-lg py-4">
+<span class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-full font-label-md text-label-md">Youth Choir</span>
+</td>
+<td class="px-lg py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-amber-500 rounded-full"></span>
+<span class="font-label-lg text-label-lg text-amber-700">On Leave</span>
+</div>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface-variant">
+                                2 weeks ago
+                            </td>
+<td class="px-lg py-4 text-right">
+<button class="p-2 hover:bg-surface-variant/30 rounded-full transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full bg-surface-variant object-cover" data-alt="A portrait of an older gentleman with silver hair and glasses, wearing a sharp suit. He has a wise and kind expression. High-end portrait photography style with a blurred library background. Traditional and respectful visual tone." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMbBCx4XCEGVH02yWnfneEEyOXeuR9i7ENo8QJdfPArdhhjtnUW4MqcfMArIRQi-mYkXalgDv8lI-4jgyZWcdzSpaBDVnKdol0vngJvsDCEPxPkSOOJXZnnk_8j_B_HiHV7georC6fvcUCtigE1KIp7W8H-O6O_BqqLPixuAyIBsDsg94UZQhxHFPIAvmSOb4yOlFk_tBZ--VMUwjGZBoyewoIr_UjFtC6UfdnBp-gH7iLzGQHibmxoQ"/>
+<div>
+<p class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Dr. Arthur Vance</p>
+<p class="font-label-md text-label-md text-on-surface-variant">ID: EC-09432</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4">
+<div class="font-body-md text-body-md text-on-surface">
+<p>+1 (555) 888-1212</p>
+<p class="text-on-surface-variant text-[12px]">vance.arthur@email.net</p>
+</div>
+</td>
+<td class="px-lg py-4">
+<span class="px-3 py-1 bg-outline-variant/30 text-on-surface-variant rounded-full font-label-md text-label-md">General</span>
+</td>
+<td class="px-lg py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+<span class="font-label-lg text-label-lg text-emerald-700">Active</span>
+</div>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface-variant">
+                                Today, 10:45 AM
+                            </td>
+<td class="px-lg py-4 text-right">
+<button class="p-2 hover:bg-surface-variant/30 rounded-full transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full bg-surface-variant object-cover" data-alt="A professional woman with curly dark hair and a bright smile, wearing a stylish blazer. Modern high-key studio lighting with a soft lavender background. Professional, accessible, and organized aesthetic for a church admin interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYx35qUBjpYR7WZuvSIq0hIg5Vu0FvmscK1PNxlvEl_7vqjMIDGWvFPSFPJK1cm0of1VmUleq4N6xGuTOBHpfFkNOY_e_uXQFhdc6pxFKk38hLmD-gxRMBHoKNm7NSMgVElSJ82mvUUmnZPXFmrHNl-_VjTwfmCFHdaQYvRnZWBOhkpgcTyga24yyNN0CbU9YI-tRIJ17YD2gydQme8HPT9-fSl8ceJPaUAWEC5uZlSBgzkX7lYZMF4A"/>
+<div>
+<p class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Sarah Jenkins</p>
+<p class="font-label-md text-label-md text-on-surface-variant">ID: EC-11200</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4">
+<div class="font-body-md text-body-md text-on-surface">
+<p>+1 (555) 444-5566</p>
+<p class="text-on-surface-variant text-[12px]">sjenkins@church.org</p>
+</div>
+</td>
+<td class="px-lg py-4">
+<span class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant rounded-full font-label-md text-label-md">Hospitality</span>
+</td>
+<td class="px-lg py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-slate-400 rounded-full"></span>
+<span class="font-label-lg text-label-lg text-slate-600">Inactive</span>
+</div>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md text-on-surface-variant">
+                                3 months ago
+                            </td>
+<td class="px-lg py-4 text-right">
+<button class="p-2 hover:bg-surface-variant/30 rounded-full transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination -->
+<div class="px-lg py-4 flex items-center justify-between bg-surface-container-low border-t border-outline-variant/30">
+<p class="font-label-md text-label-md text-on-surface-variant">Showing <span class="font-bold text-on-surface">1 - 5</span> of <span class="font-bold text-on-surface">1,248</span> members</p>
+<div class="flex items-center gap-1">
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant/40 rounded-lg transition-colors disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center bg-primary text-on-primary font-label-lg text-label-lg rounded-lg">1</button>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-variant/40 font-label-lg text-label-lg rounded-lg">2</button>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-variant/40 font-label-lg text-label-lg rounded-lg">3</button>
+<span class="px-1 text-on-surface-variant">...</span>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-variant/40 font-label-lg text-label-lg rounded-lg">250</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant/40 rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Stats Cards (Bento Style Bottom) -->
+<div class="mt-lg grid grid-cols-1 md:grid-cols-3 gap-lg">
+<div class="bg-primary-container/20 p-lg rounded-2xl border border-primary/10 flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" data-icon="person_check" style="font-variation-settings: 'FILL' 1;">person_check</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-primary/70 uppercase">Total Active</p>
+<p class="font-headline-md text-headline-md text-on-primary-container">1,184</p>
+</div>
+</div>
+<div class="bg-secondary-container/30 p-lg rounded-2xl border border-secondary/10 flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-on-secondary">
+<span class="material-symbols-outlined" data-icon="volunteer_activism" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-secondary-container/70 uppercase">Volunteers</p>
+<p class="font-headline-md text-headline-md text-on-secondary-container">412</p>
+</div>
+</div>
+<div class="bg-surface-container-highest p-lg rounded-2xl border border-outline-variant/10 flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-outline flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase">Growth Rate</p>
+<p class="font-headline-md text-headline-md text-on-surface">+12% <span class="text-label-md font-normal text-emerald-600">MoM</span></p>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-xs py-base pb-safe bg-surface-container dark:bg-surface-dim border-t border-outline-variant shadow-lg z-50 rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant px-4 py-1 transition-all scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md-mobile text-label-md-mobile">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-all scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-md-mobile text-label-md-mobile">Members</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant px-4 py-1 transition-all scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-label-md-mobile text-label-md-mobile">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant px-4 py-1 transition-all scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="font-label-md-mobile text-label-md-mobile">Check-in</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-variant px-4 py-1 transition-all scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-label-md-mobile text-label-md-mobile">More</span>
+</a>
+</nav>
+<script>
+        // Simple search interaction
+        const searchInput = document.querySelector('input[placeholder="Filter by name, email or phone..."]');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const name = row.querySelector('.text-title-md').textContent.toLowerCase();
+                const email = row.querySelector('.text-[12px]').textContent.toLowerCase();
+                if (name.includes(query) || email.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Toggle Sidebar for mobile (visual only for this demo)
+        document.querySelector('button.lg\\:hidden').addEventListener('click', () => {
+            const sidebar = document.querySelector('aside');
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('fixed');
+            sidebar.classList.toggle('top-0');
+            sidebar.classList.toggle('left-0');
+            sidebar.classList.toggle('z-50');
+        });
+    </script>
+</body></html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Add branch | <%= organization.name %> | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'Add branch', activeNav: activeNav || 'church_platform_orgs' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Add branch</h1>
+            <p class="admin-dashboard__subtitle muted"><%= organization.name %></p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'Organization detail' }) %>
+          </div>
+        </header>
+
+        <% if (typeof planSummary !== 'undefined' && planSummary) { %>
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <p><strong>Plan:</strong> <%= planSummary.planDisplay.label %> · Branches <%= planSummary.branchesDisplay %></p>
+          <% if (branchLimitBlocked) { %>
+            <div class="flash" role="alert">Branch limit reached for this plan. Change the organization plan before adding another branch.</div>
+          <% } %>
+        </section>
+        <% } %>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+
+        <% var f = typeof form !== 'undefined' && form ? form : {}; %>
+        <% var blocked = typeof branchLimitBlocked !== 'undefined' && branchLimitBlocked; %>
+        <form method="post" action="/admin/church/organizations/<%= organization.id %>/branches" class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">1. Branch details</h2>
+          <div class="admin-form-grid">
+            <div class="input-field">
+              <label class="input-field__label" for="branch_name">Branch name *</label>
+              <input id="branch_name" class="input-field__control" name="branch_name" required <%= blocked ? 'disabled' : '' %> value="<%= f.branch_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_host_slug">Branch host slug *</label>
+              <input id="branch_host_slug" class="input-field__control" name="branch_host_slug" required pattern="[a-z0-9][a-z0-9-]{0,62}" <%= blocked ? 'disabled' : '' %> value="<%= f.branch_host_slug || '' %>" />
+              <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">
+                Public host preview: <strong id="host-preview"><%= f.branch_host_slug ? churchPublicHost(f.branch_host_slug) : '—' %></strong>
+              </p>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="city">City</label>
+              <input id="city" class="input-field__control" name="city" <%= blocked ? 'disabled' : '' %> value="<%= f.city || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="country">Country</label>
+              <input id="country" class="input-field__control" name="country" <%= blocked ? 'disabled' : '' %> value="<%= f.country || organization.country || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="pastor_name">Pastor name</label>
+              <input id="pastor_name" class="input-field__control" name="pastor_name" <%= blocked ? 'disabled' : '' %> value="<%= f.pastor_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="contact_phone">Contact phone</label>
+              <input id="contact_phone" class="input-field__control" name="contact_phone" <%= blocked ? 'disabled' : '' %> value="<%= f.contact_phone || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="contact_email">Contact email</label>
+              <input id="contact_email" class="input-field__control" name="contact_email" type="email" <%= blocked ? 'disabled' : '' %> value="<%= f.contact_email || '' %>" />
+            </div>
+          </div>
+
+          <h2 class="section-title">2. Initial branch admin</h2>
+          <div class="admin-form-grid">
+            <div class="input-field">
+              <label class="input-field__label" for="branch_admin_full_name">Full name *</label>
+              <input id="branch_admin_full_name" class="input-field__control" name="branch_admin_full_name" required <%= blocked ? 'disabled' : '' %> value="<%= f.branch_admin_full_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_admin_email">Email</label>
+              <input id="branch_admin_email" class="input-field__control" name="branch_admin_email" type="email" <%= blocked ? 'disabled' : '' %> value="<%= f.branch_admin_email || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_admin_phone">Phone</label>
+              <input id="branch_admin_phone" class="input-field__control" name="branch_admin_phone" <%= blocked ? 'disabled' : '' %> value="<%= f.branch_admin_phone || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_admin_temporary_password">Temporary password *</label>
+              <input id="branch_admin_temporary_password" class="input-field__control" name="branch_admin_temporary_password" type="password" required minlength="8" autocomplete="new-password" <%= blocked ? 'disabled' : '' %> />
+            </div>
+          </div>
+
+          <div class="admin-toolbar" style="margin-top:1.5rem;">
+            <% if (!blocked) { %>
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Create branch' }) %>
+            <% } %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'Cancel' }) %>
+          </div>
+        </form>
+      </div>
+    </main>
+    <script>
+      (function () {
+        var branchSlug = document.getElementById("branch_host_slug");
+        var preview = document.getElementById("host-preview");
+        var churchHostSuffix = "<%= 'church.' + (process.env.BASE_DOMAIN || 'getproapp.org') %>";
+        function syncPreview() {
+          var slug = branchSlug ? branchSlug.value.trim().toLowerCase() : "";
+          if (preview) preview.textContent = slug ? slug + "." + churchHostSuffix : "—";
+        }
+        if (branchSlug) branchSlug.addEventListener("input", syncPreview);
+        syncPreview();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Request Details | Ecclesia Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c8c4d7",
+                    "on-error": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#707273",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-secondary-container": "#5d6466",
+                    "on-secondary-fixed": "#161d1f",
+                    "background": "#f1fbff",
+                    "on-error-container": "#93000a",
+                    "inverse-surface": "#283236",
+                    "primary-fixed-dim": "#c6bfff",
+                    "error": "#ba1a1a",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "surface-tint": "#5847d2",
+                    "primary": "#5341cd",
+                    "outline": "#787586",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "on-primary-container": "#faf6ff",
+                    "surface-container-high": "#dfeaef",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "surface-bright": "#f1fbff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "tertiary": "#57595b",
+                    "surface-variant": "#d9e4e9",
+                    "on-tertiary": "#ffffff",
+                    "on-background": "#131d21",
+                    "secondary": "#586062",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "surface-container": "#e4f0f4",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-primary": "#ffffff",
+                    "secondary-container": "#dae1e3",
+                    "primary-fixed": "#e4dfff",
+                    "on-surface": "#131d21",
+                    "surface-container-highest": "#d9e4e9",
+                    "surface-dim": "#d1dce0",
+                    "surface-container-low": "#eaf5fa",
+                    "surface": "#f1fbff",
+                    "secondary-fixed": "#dde4e6",
+                    "inverse-primary": "#c6bfff",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-primary-fixed": "#160066",
+                    "on-surface-variant": "#474554",
+                    "inverse-on-surface": "#e7f3f7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "xs": "4px",
+                    "md": "16px",
+                    "gutter": "24px",
+                    "lg": "24px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px",
+                    "xl": "32px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "title-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 24px;
+            bottom: -24px;
+            width: 2px;
+            background-color: #d9e4e9;
+        }
+        .timeline-item:last-child .timeline-line::before {
+            display: none;
+        }
+        /* Custom Scrollbar for sleekness */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c8c4d7; border-radius: 10px; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="w-full h-16 sticky top-0 z-40 bg-surface flex justify-between items-center px-4 border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<button class="p-2 -ml-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg font-black text-primary">Ecclesia</span>
+<span class="font-label-md text-label-md text-on-surface-variant -mt-1 uppercase tracking-wider">Request #742</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a church administrator, middle-aged with a warm smile, set against a blurred modern office background with soft violet lighting. The style is clean, corporate photography with high-key lighting and a shallow depth of field, maintaining a professional and approachable aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnIZQObqzKxh2dJnvFYpMbjADTOHbeOlnLvZGDyldmDo5rg4Q6MC5ZJ-Js6d9gmJY5g0kY_RQ9Gpqc47940lIJ9noegk64YnjUrHxPEWrXamN8vqT4zcYLMw7HOo9jvARIRVjGystHIc4cDn1jlAHkQKdueF8BX63kCR5JjHLu7Twv96W-4ZaLVktb-sis45CJCk_5ZcrzgUX2gDNc57wpI6M2TIR9xQcBaq6Oqem96cipSjk-s75kKw"/>
+</div>
+</div>
+</header>
+<main class="px-4 py-6 space-y-6">
+<!-- Status Banner -->
+<div class="bg-primary-container/10 border border-primary-container/20 p-4 rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="bg-primary-container text-on-primary-container p-2 rounded-lg">
+<span class="material-symbols-outlined">pending_actions</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase">Current Status</p>
+<p class="font-title-md text-title-md text-primary font-bold">Needs Review</p>
+</div>
+</div>
+<button class="bg-surface border border-outline-variant px-3 py-1.5 rounded-full font-label-lg text-label-lg text-on-surface-variant flex items-center gap-1">
+                Change <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+<!-- Member Info Card (Asymmetric Layout) -->
+<section class="bg-surface-container-lowest rounded-xl p-4 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-outline-variant/30">
+<div class="flex items-start gap-4">
+<div class="w-16 h-16 rounded-2xl overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a young adult church member with a friendly and sincere expression, captured in soft, natural daylight. The background is a gently out-of-focus garden, providing a sense of community and warmth. The photography is modern, featuring clear details and a vibrant but natural color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKau429l-oN_YYPreAt_scWha1k0iyAnvLvaWwDUCQT62VCV1KF6I2eIxcCdtXEeM_C-Fgxpw9uBqyuRABNWD5nJ2ze-j87wzXnoCKtfsex-miSlV1SDL4u7rYEElYlLdmBW7cgtsAOjxb-g7pN_nYmeWVTtUaHwy7cxv56zdixo48UKlXJ3JSbJ-X0EL6bog4deWh1uD7hgHwfGoe7a-17-w1RGXughYAdP9MFsPCeKIAx5-xXC4snQ"/>
+</div>
+<div class="flex-1">
+<h2 class="font-headline-md text-headline-md text-on-surface">Elena Rodriguez</h2>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-md font-label-lg text-label-lg">Member since 2021</span>
+<span class="bg-primary-fixed text-on-primary-fixed-variant px-2 py-0.5 rounded-md font-label-lg text-label-lg">Young Professionals</span>
+</div>
+</div>
+</div>
+<div class="mt-4 grid grid-cols-2 gap-4 border-t border-outline-variant/20 pt-4">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Email</p>
+<p class="font-body-md text-body-md text-on-surface truncate">elena.r@email.com</p>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Phone</p>
+<p class="font-body-md text-body-md text-on-surface">(555) 0123-4567</p>
+</div>
+</div>
+</section>
+<!-- Request Content (Bento Style) -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="font-title-lg text-title-lg font-bold text-on-surface">Request Details</h3>
+<span class="text-on-surface-variant font-label-md text-label-md">Submitted 2h ago</span>
+</div>
+<div class="grid grid-cols-1 gap-4">
+<div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/20">
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase mb-2">Subject</p>
+<p class="font-title-md text-title-md text-on-surface font-semibold">Small Group Facilitator Application</p>
+</div>
+<div class="bg-white p-5 rounded-xl border border-outline-variant/30 shadow-sm">
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase mb-3">Content</p>
+<p class="font-body-lg text-body-lg text-on-surface leading-relaxed">
+                        I would like to apply to be a co-facilitator for the "Faith and Work" small group starting next semester. I have been leading similar projects at my workplace for 3 years and feel called to serve in this capacity. I've already completed the foundational discipleship track.
+                    </p>
+</div>
+<div class="bg-surface-variant/30 p-4 rounded-xl border border-dashed border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">description</span>
+<div>
+<p class="font-body-md text-body-md text-on-surface font-medium">Application_Form.pdf</p>
+<p class="font-label-md text-label-md text-on-surface-variant">2.4 MB</p>
+</div>
+</div>
+<button class="text-primary p-2">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Timeline of Comments -->
+<section class="space-y-4">
+<h3 class="font-title-lg text-title-lg font-bold text-on-surface">Activity Timeline</h3>
+<div class="space-y-6 relative ml-3">
+<!-- Timeline Item 1 -->
+<div class="timeline-item relative flex gap-4 timeline-line">
+<div class="w-6 h-6 rounded-full bg-primary-container border-4 border-white shadow-sm z-10 flex-shrink-0 mt-1"></div>
+<div class="flex-1">
+<div class="bg-surface-container-high/40 p-3 rounded-lg">
+<div class="flex justify-between items-start mb-1">
+<p class="font-label-lg text-label-lg font-bold text-on-surface">Request Created</p>
+<span class="font-label-md text-label-md text-on-surface-variant">10:42 AM</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">System generated request from Elena Rodriguez via Member Portal.</p>
+</div>
+</div>
+</div>
+<!-- Timeline Item 2 -->
+<div class="timeline-item relative flex gap-4 timeline-line">
+<div class="w-6 h-6 rounded-full bg-surface-dim border-4 border-white shadow-sm z-10 flex-shrink-0 mt-1"></div>
+<div class="flex-1">
+<div class="bg-white border border-outline-variant/30 p-3 rounded-lg shadow-sm">
+<div class="flex justify-between items-start mb-1">
+<p class="font-label-lg text-label-lg font-bold text-on-surface">Admin Review Started</p>
+<span class="font-label-md text-label-md text-on-surface-variant">11:15 AM</span>
+</div>
+<div class="flex items-center gap-2 mb-2">
+<div class="w-5 h-5 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close-up of a diverse professional office environment with blurred computer screens and soft violet accent lighting. The mood is one of focused productivity and organized chaos, rendered in a modern digital photography style with clean lines and soft gradients." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCh9b9iU3FExi0DNrzeykllElv-T04_oB63K72kMHzhy65z2QBDNeKYZneHgc9vXPisBNis0EsmwOJHlTsvtpE12Kj4U8FBbbdw7IfyVmQ6BED6ten4n79jjjrQd6lI82ikPoh7vsRBfqKv5Fn-ICB5TKr8lJHOxtLTOqvGTXzBz5eB40GqWQu--sC8tWNGuTZ_VzL2URB9uvt1kpn4plFn8PX140ifjtb24hjVwcc7lZH95iBJdjt9tg"/>
+</div>
+<span class="font-label-md text-label-md text-primary">Admin Sarah J.</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface italic">"Checking Elena's discipleship track completion records before approval."</p>
+</div>
+</div>
+</div>
+<!-- Timeline Item 3 (Input) -->
+<div class="timeline-item relative flex gap-4 timeline-line">
+<div class="w-6 h-6 rounded-full bg-outline-variant border-4 border-white shadow-sm z-10 flex-shrink-0 mt-1"></div>
+<div class="flex-1">
+<div class="relative">
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-body-md font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none h-24" placeholder="Add internal note..."></textarea>
+<button class="absolute bottom-3 right-3 text-primary">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Sticky Footer Actions -->
+<footer class="fixed bottom-0 left-0 right-0 bg-surface/80 backdrop-blur-md border-t border-outline-variant/20 px-4 py-4 z-50">
+<div class="max-w-md mx-auto flex gap-3">
+<button class="flex-1 bg-surface border border-outline-variant text-on-surface-variant font-title-md text-title-md py-3 rounded-xl hover:bg-surface-variant/20 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">close</span>
+                Reject
+            </button>
+<button class="flex-[2] bg-primary text-on-primary font-title-md text-title-md py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                Approve Request
+            </button>
+</div>
+</footer>
+<!-- BottomNavBar (Only for top-level, suppressed here for focused task view) -->
+<!-- Suppressed based on "Task-Focused" rule -->
+<script>
+        // Micro-interaction for feedback
+        document.querySelector('button.bg-primary').addEventListener('click', function() {
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Processing...';
+            this.style.pointerEvents = 'none';
+            
+            setTimeout(() => {
+                this.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Approved!';
+                this.classList.replace('bg-primary', 'bg-green-600');
+                
+                setTimeout(() => {
+                    alert('Request #742 has been successfully approved.');
+                    window.location.reload();
+                }, 1000);
+            }, 1500);
+        });
+    </script>
+</body></html>

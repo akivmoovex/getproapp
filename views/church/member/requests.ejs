@@ -1,0 +1,30 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <div>
+          <h1 class="church-member-header__title">My requests</h1>
+          <p class="church-member-header__subtitle">Track your online requests</p>
+        </div>
+        <a class="church-btn church-btn--primary church-btn--sm" href="/member/requests/new">New request</a>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <section class="church-member-panel">
+        <% if ((requests || []).length === 0) { %>
+        <p class="church-member-empty">You have not submitted any requests yet.</p>
+        <a class="church-btn church-btn--outline" href="/member/requests/new">Submit a request</a>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% requests.forEach(function (r) { %>
+          <li class="church-member-list__item">
+            <a class="church-member-list__link" href="/member/requests/<%= r.id %>">
+              <strong><%= r.subject %></strong>
+              <span class="church-status-chip church-status-chip--<%= r.status === 'approved' || r.status === 'completed' ? 'verified' : 'pending' %>"><%= requestStatusLabel(r.status) %></span>
+            </a>
+            <span class="church-member-list__meta"><%= r.request_type %> · <%= new Date(r.created_at).toLocaleDateString('en-GB') %></span>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+<%- include('../partials/member_shell_end') %>

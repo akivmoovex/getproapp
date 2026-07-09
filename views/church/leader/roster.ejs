@@ -1,0 +1,30 @@
+<%- include('../partials/leader_shell_start') %>
+      <header class="church-member-header">
+        <div>
+          <h1 class="church-member-header__title">Ministry roster</h1>
+          <p class="church-member-header__subtitle"><%= ministry ? ministry.name : '' %></p>
+        </div>
+      </header>
+      <section class="church-member-panel">
+        <% if ((roster || []).length === 0) { %>
+        <p class="church-member-empty">No members assigned to this ministry yet. Ask your branch admin to connect members through the ministry roster.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+            <tbody>
+              <% roster.forEach(function (m) { %>
+              <tr>
+                <td><%= m.full_name %></td>
+                <td><%= m.phone || '—' %></td>
+                <td><%= m.email || '—' %></td>
+                <td><%= m.role || 'member' %></td>
+                <td><span class="church-status-chip"><%= m.status %></span></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/leader_shell_end') %>

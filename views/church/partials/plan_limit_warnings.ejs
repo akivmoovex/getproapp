@@ -1,0 +1,7 @@
+<% if (typeof planContext !== 'undefined' && planContext && (planContext.warnings || []).length > 0) { %>
+  <% planContext.warnings.forEach(function (warning) { %>
+  <div class="church-alert <%= warning.level === 'limit' ? 'church-alert--warning' : 'church-alert--info' %>" role="status">
+    <%= warning.message %>
+  </div>
+  <% }); %>
+<% } %>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>About Us | Kafue Baptist Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+        @keyframes subtle-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float {
+            animation: subtle-float 6s ease-in-out infinite;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-tertiary-container": "#f7f8f9",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#707273",
+                        "primary-fixed": "#e4dfff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-surface-variant": "#474554",
+                        "surface-container-low": "#eaf5fa",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-background": "#131d21",
+                        "surface": "#f1fbff",
+                        "background": "#f1fbff",
+                        "on-surface": "#131d21",
+                        "surface-tint": "#5847d2",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#e4f0f4",
+                        "on-primary-container": "#faf6ff",
+                        "secondary": "#586062",
+                        "surface-variant": "#d9e4e9",
+                        "inverse-on-surface": "#e7f3f7",
+                        "secondary-container": "#dae1e3",
+                        "primary": "#5341cd",
+                        "on-primary-fixed": "#160066",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-secondary-container": "#5d6466",
+                        "surface-bright": "#f1fbff",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#191c1d",
+                        "primary-container": "#6c5ce7",
+                        "on-secondary-fixed": "#161d1f",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "inverse-primary": "#c6bfff",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "outline": "#787586",
+                        "outline-variant": "#c8c4d7",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed": "#e1e3e4",
+                        "tertiary": "#57595b",
+                        "secondary-fixed": "#dde4e6",
+                        "surface-dim": "#d1dce0",
+                        "surface-container-high": "#dfeaef",
+                        "inverse-surface": "#283236"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "xl": "32px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "base": "8px",
+                        "md": "16px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="bg-surface border-b border-outline-variant fixed top-0 w-full z-50">
+<div class="flex justify-between items-center px-margin-desktop w-full max-w-7xl mx-auto h-16">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-headline-md">church</span>
+<span class="text-title-lg font-headline-lg text-primary">GetPro Church</span>
+</div>
+<div class="hidden md:flex items-center gap-xl">
+<a class="text-secondary hover:text-primary-container hover:bg-surface-container-low transition-colors px-md py-xs rounded font-label-lg text-label-lg" href="#">Features</a>
+<a class="text-secondary hover:text-primary-container hover:bg-surface-container-low transition-colors px-md py-xs rounded font-label-lg text-label-lg" href="#">Pricing</a>
+<a class="text-primary font-bold border-b-2 border-primary px-md py-xs font-label-lg text-label-lg" href="#">About Us</a>
+</div>
+<div class="flex items-center gap-md">
+<button class="hidden md:block text-primary font-label-lg text-label-lg px-md py-sm hover:bg-surface-container-low rounded-full transition-all">Login</button>
+<button class="bg-primary text-on-primary px-lg py-sm rounded-full font-label-lg text-label-lg shadow-sm hover:opacity-90 active:scale-95 transition-all">Get Started</button>
+</div>
+</div>
+</nav>
+<main class="pt-16">
+<!-- Hero Section -->
+<section class="relative min-h-[716px] flex items-center justify-center overflow-hidden bg-surface-container-lowest">
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+
+</div>
+<div class="relative z-10 max-w-4xl mx-auto text-center px-margin-mobile">
+<span class="inline-block px-md py-xs bg-primary-fixed text-on-primary-fixed rounded-full font-label-lg text-label-lg mb-lg">OUR JOURNEY</span>
+<h1 class="font-display-lg text-display-lg mb-md leading-tight text-on-surface">Rooted in Grace,<br/><span class="text-primary">Growing in Community</span></h1>
+<p class="font-body-lg text-body-lg text-secondary max-w-2xl mx-auto">Kafue Baptist Church is more than just a building; we are a family dedicated to sharing the transformative power of the Gospel in Kafue and beyond.</p>
+</div>
+</section>
+<!-- The Story & Mission (Bento Style) -->
+<section class="py-xl px-margin-desktop max-w-7xl mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+<!-- Our Story -->
+<div class="md:col-span-8 bg-surface-container-low rounded-xl p-xl flex flex-col justify-center">
+<h2 class="font-headline-lg text-headline-lg mb-md">The Church Story</h2>
+<p class="font-body-lg text-body-lg text-secondary mb-lg leading-relaxed">
+                        Founded over three decades ago with a handful of faithful families, Kafue Baptist Church has stood as a beacon of hope along the Kafue River. Our journey has been one of unwavering faith, from humble open-air meetings to our vibrant, multi-generational campus today. We honor our heritage while looking forward to the future God has prepared for us.
+                    </p>
+<div class="flex gap-md">
+<div class="p-md bg-white rounded-lg shadow-sm border border-outline-variant">
+<span class="block font-title-lg text-title-lg text-primary">1988</span>
+<span class="text-label-md text-secondary">Year Founded</span>
+</div>
+<div class="p-md bg-white rounded-lg shadow-sm border border-outline-variant">
+<span class="block font-title-lg text-title-lg text-primary">1,200+</span>
+<span class="text-label-md text-secondary">Members</span>
+</div>
+</div>
+</div>
+<!-- Mission Card -->
+<div class="md:col-span-4 bg-primary-container text-on-primary-container rounded-xl p-xl flex flex-col justify-between">
+<span class="material-symbols-outlined text-[48px]" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+<div>
+<h3 class="font-headline-md text-headline-md mb-sm">Our Mission</h3>
+<p class="font-body-md text-body-md opacity-90">To make disciples of all nations, starting right here in Kafue, by proclaiming the Word, fostering authentic fellowship, and serving our neighbors with Christ-like love.</p>
+</div>
+</div>
+<!-- Vision Card -->
+<div class="md:col-span-4 bg-inverse-surface text-surface rounded-xl p-xl">
+<h3 class="font-headline-md text-headline-md mb-sm">Our Vision</h3>
+<p class="font-body-md text-body-md opacity-80">A community where every individual is reconciled to God, restored in their identity, and released into their divine calling.</p>
+</div>
+<!-- Branch Location -->
+<div class="md:col-span-8 relative rounded-xl overflow-hidden min-h-[300px]">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="An architectural exterior shot of a modern African church building in Kafue, Zambia, during the golden hour. The design features large glass windows and clean lines, surrounded by lush green landscaping and a clear blue sky. The lighting is warm and welcoming, reflecting a prestigious and well-maintained spiritual sanctuary." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCFVe1sT3Qvjz7U25pOpUFnmTRNWQSFDjmxA7ZMjXSFb1ivsxnnU1hK-NPUEI13j991EE0-faBBpKuoR69KneNl_XcmBr0YeK9O3BllS5b_J2MdgNYmbb6ltUS2MEn1LjSD-I8QV1EBcIr0EIOQnnuiNTw90EiLVlTUYOh1kMXU6aWDu14rXPkCrMduTWKUCT1cn7BsUfRas6wmCTLLl9pTFW6xVj0RsoCuISW3SvxNMWaiGEqST82Olw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-xl text-white">
+<h3 class="font-title-lg text-title-lg mb-xs">Kafue Main Branch</h3>
+<p class="font-body-md opacity-80 flex items-center gap-xs">
+<span class="material-symbols-outlined text-md">location_on</span>
+                            Plot 442, Great North Road, Kafue, Zambia
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Core Values Section -->
+<section class="bg-surface-container py-xl">
+<div class="max-w-7xl mx-auto px-margin-desktop">
+<div class="text-center mb-xl">
+<h2 class="font-headline-lg text-headline-lg mb-sm">Our Values</h2>
+<p class="text-secondary font-body-lg max-w-xl mx-auto">The non-negotiable principles that guide everything we do as a body of believers.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-lg">
+<div class="bg-white p-lg rounded-xl shadow-sm border border-outline-variant hover:shadow-md transition-all">
+<span class="material-symbols-outlined text-primary mb-md" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<h4 class="font-title-md text-title-md mb-xs">Biblical Authority</h4>
+<p class="text-body-md text-secondary">The Word of God is our ultimate guide in all matters of life and practice.</p>
+</div>
+<div class="bg-white p-lg rounded-xl shadow-sm border border-outline-variant hover:shadow-md transition-all">
+<span class="material-symbols-outlined text-primary mb-md" style="font-variation-settings: 'FILL' 1;">diversity_3</span>
+<h4 class="font-title-md text-title-md mb-xs">Radical Hospitality</h4>
+<p class="text-body-md text-secondary">We believe in creating a space where everyone feels seen, heard, and loved.</p>
+</div>
+<div class="bg-white p-lg rounded-xl shadow-sm border border-outline-variant hover:shadow-md transition-all">
+<span class="material-symbols-outlined text-primary mb-md" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+<h4 class="font-title-md text-title-md mb-xs">Sacrificial Service</h4>
+<p class="text-body-md text-secondary">Following Christ's example, we serve our community without expecting anything in return.</p>
+</div>
+<div class="bg-white p-lg rounded-xl shadow-sm border border-outline-variant hover:shadow-md transition-all">
+<span class="material-symbols-outlined text-primary mb-md" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<h4 class="font-title-md text-title-md mb-xs">Spiritual Growth</h4>
+<p class="text-body-md text-secondary">We are committed to lifelong discipleship and constant renewal of the mind.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Service Culture -->
+<section class="py-xl px-margin-desktop max-w-7xl mx-auto">
+<div class="flex flex-col md:flex-row items-center gap-xl">
+<div class="md:w-1/2 space-y-lg">
+<h2 class="font-display-lg text-headline-lg-mobile md:text-headline-lg">Service Culture</h2>
+<p class="text-body-lg text-secondary leading-relaxed">
+                        At Kafue Baptist, Sunday is the highlight of our week, but the church lives through the week in our "Growth Groups." Our service culture is defined by excellence, joy, and spiritual depth. From our uplifting worship team to our dedicated children's ministry workers, we strive to offer our best to God.
+                    </p>
+<ul class="space-y-md">
+<li class="flex items-start gap-md">
+<span class="material-symbols-outlined text-primary bg-primary-fixed p-xs rounded-full">check</span>
+<div>
+<h5 class="font-title-md text-title-md">Excellence in Worship</h5>
+<p class="text-body-md text-secondary">Contemporary and traditional elements blended to honor God's presence.</p>
+</div>
+</li>
+<li class="flex items-start gap-md">
+<span class="material-symbols-outlined text-primary bg-primary-fixed p-xs rounded-full">check</span>
+<div>
+<h5 class="font-title-md text-title-md">Authentic Connection</h5>
+<p class="text-body-md text-secondary">No masks allowed; we are real people facing real life together.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="md:w-1/2 grid grid-cols-2 gap-md relative">
+<div class="space-y-md pt-lg">
+<div class="rounded-xl overflow-hidden shadow-lg animate-float" style="animation-delay: 0s;">
+<img class="w-full aspect-square object-cover" data-alt="A candid, warm photograph of a diverse group of people laughing and talking in a modern church foyer. The space is filled with natural light, featuring soft violet and white interior accents. People are dressed in smart-casual attire, holding coffee cups, illustrating a vibrant and friendly community culture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC074QIvo-yQJzeh3CDeSOKreD2LdyYe0Q-hPdN_5z6V2C20IHp_TvpLy-d6RH3BGZLafL4RBGd-Zp93rvoPhdB4VVOU3nwE_AEYqRxltv_zKzwfwkFoC5INArNoK41EvZ0sRaUWx_E8qhBaGAadTK87woHLy01arYeO1ekBbF9dNKgqX5ccZ2WUe5SITktSbbobAgX19w01fmjalS5PrFXJUHdautVCBNfbPRkw5X7ajURO9wXAp9S4A"/>
+</div>
+<div class="rounded-xl overflow-hidden shadow-lg">
+<img class="w-full aspect-[4/3] object-cover" data-alt="Close-up of a worship leader singing with passion during a church service. Soft purple stage lighting illuminates the scene, with a blurred background of a modern auditorium. The mood is reverent and emotionally powerful, focusing on the spiritual atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_bMObj1ePGGj3plo_VEuruSwYwfV6-HU1UxKKV89ianBHP_TdGF43iqIXNz7Cpjj01g-TFL_n4HakEh4tpYF1uV7NQpeqrBwBDgbvkZkt-oBZJx1YTlBXQ-GLWbJX0qWYOnkOFaJ0SjZElIEzHZpwTou9JgelR01gx41e-rbsbtKt3SB8kUlZI2UeIdIjai1WoYHWFlTVD3_s3YxJgF5YTs523dd1c7uGaTeWe3XRBfyym2fkdrA1eQ"/>
+</div>
+</div>
+<div class="space-y-md">
+<div class="rounded-xl overflow-hidden shadow-lg">
+<img class="w-full aspect-[3/4] object-cover" data-alt="A group of church volunteers working together in a community garden in Kafue. They are smiling, wearing matching branded t-shirts. The scene is bright and sunny, highlighting the active, service-oriented nature of the church community." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNbBCXPD_x0a52FvmpLr4ySEY3c-3ESxFYmmcO1Lq1-htACk4_SKU9deR8siosYOLQ1_HIh6sNhwm4auniiGeMtLmZuKIsAhlEuc5aFI8_X3GM5cjLxpeItUHV-Of38d4GmFAJtV10WMifQFKrTC0AiuoZT_6CYFrToMffqc70XCMP1ENTiL8d1LoO8n1XGleZjqN4daM_UMtAzKqyQdwlYEkrEmHDNt2PixW4UQkIjwsT3wE-dYRXUg"/>
+</div>
+<div class="rounded-xl overflow-hidden shadow-lg animate-float" style="animation-delay: 1s;">
+<img class="w-full aspect-square object-cover" data-alt="A peaceful interior shot of a church sanctuary during a quiet moment. Rows of modern wooden pews lead to a simple, elegant pulpit. Light streams through high windows, creating a serene and sacred atmosphere for reflection." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGlzsacfmzheeIExebJOnFuopp6ZIAfpnyvtq5G_qsFSJ-I_Kh91SvLCQRqmGY4waRyAGAIzIXGNYMG1D8HVstwopW1d2SnOMhdkfIJ_6cxtEcyf47SRz9hqRF6kNT7EQUTOovAe68v-E6tDlHEmod_GjC-pu3UmSBLLDp57OYUppQ9r695nKLqZf-uw1OA7rglrDmtEMjXXaM5m_6Mlk_3uxx2j_J_HXx2xXWeogWUX63D-0iuIVvUA"/>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="bg-primary py-xl text-on-primary text-center">
+<div class="max-w-2xl mx-auto px-margin-mobile">
+<h2 class="font-headline-lg text-headline-lg mb-md">Want to learn more?</h2>
+<p class="font-body-lg text-body-lg opacity-90 mb-xl">Whether you have questions about faith or want to find a place to serve, we'd love to connect with you.</p>
+<div class="flex flex-col sm:flex-row justify-center gap-md">
+<button class="bg-white text-primary px-xl py-md rounded-full font-title-md hover:bg-surface-container transition-all">Visit Us Sunday</button>
+<button class="border border-on-primary text-on-primary px-xl py-md rounded-full font-title-md hover:bg-white/10 transition-all">Contact Us</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant w-full py-xl px-margin-desktop mt-auto flex flex-col md:flex-row justify-between items-center gap-lg">
+<div class="flex flex-col gap-sm">
+<span class="font-title-md text-primary font-bold">Kafue Baptist Church</span>
+<p class="text-secondary font-body-md">© 2024 GetPro Church Management System. All rights reserved.</p>
+</div>
+<div class="flex gap-xl flex-wrap justify-center">
+<a class="text-secondary-fixed-variant hover:text-primary underline transition-all font-body-md" href="#">Privacy Policy</a>
+<a class="text-secondary-fixed-variant hover:text-primary underline transition-all font-body-md" href="#">Terms of Service</a>
+<a class="text-secondary-fixed-variant hover:text-primary underline transition-all font-body-md" href="#">Support</a>
+<a class="text-secondary-fixed-variant hover:text-primary underline transition-all font-body-md" href="#">Documentation</a>
+</div>
+</footer>
+<script>
+        // Simple scroll interaction for the Navbar
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 20) {
+                nav.classList.add('shadow-md');
+                nav.classList.add('bg-white/90');
+                nav.classList.add('backdrop-blur-md');
+            } else {
+                nav.classList.remove('shadow-md');
+                nav.classList.remove('bg-white/90');
+                nav.classList.remove('backdrop-blur-md');
+            }
+        });
+
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100');
+                    entry.target.classList.remove('translate-y-10');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section > div').forEach(el => {
+            el.classList.add('transition-all', 'duration-1000', 'ease-out', 'opacity-0', 'translate-y-10');
+            observer.observe(el);
+        });
+    </script>
+</body></html>

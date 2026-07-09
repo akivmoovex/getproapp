@@ -1,0 +1,98 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <div>
+          <p class="church-member-header__eyebrow">Welcome back</p>
+          <h1 class="church-member-header__title"><%= memberName %></h1>
+          <p class="church-member-header__subtitle"><%= churchName %></p>
+        </div>
+        <span class="church-status-chip church-status-chip--verified">Verified member</span>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <section class="church-member-panel">
+        <h2 class="church-member-panel__title">Quick actions</h2>
+        <div class="church-member-actions">
+          <a class="church-btn church-btn--primary" href="/member/prayer-request">Submit Prayer Request</a>
+          <a class="church-btn church-btn--outline" href="/member/requests/new">Submit Online Request</a>
+          <a class="church-btn church-btn--outline" href="/member/ministries">Browse Ministries</a>
+          <a class="church-btn church-btn--outline" href="/member/my-ministries">My Ministries</a>
+          <a class="church-btn church-btn--outline" href="/member/my-duties">My Duties</a>
+          <a class="church-btn church-btn--outline" href="/member/resources">Resources &amp; Study</a>
+          <a class="church-btn church-btn--outline" href="/member/forms">Forms &amp; Documents</a>
+          <a class="church-btn church-btn--outline" href="/member/giving">Giving Information</a>
+          <a class="church-btn church-btn--outline" href="/member/profile">Update Profile</a>
+          <a class="church-btn church-btn--outline" href="/member/account">Account Security</a>
+        </div>
+      </section>
+      <section class="church-member-panel">
+        <div class="church-member-panel__head">
+          <h2 class="church-member-panel__title">Latest announcements</h2>
+          <a class="church-member-link" href="/member/announcements">View all</a>
+        </div>
+        <% if ((announcements || []).length === 0) { %>
+        <p class="church-member-empty">No announcements yet. Check back soon.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% announcements.forEach(function (a) { %>
+          <li class="church-member-list__item">
+            <strong><%= a.title %></strong>
+            <% if (a.source === 'hq') { %><span class="church-status-chip">HQ</span><% } %>
+            <p><%= a.body %></p>
+            <span class="church-member-list__meta"><%= a.publish_at ? new Date(a.publish_at).toLocaleDateString('en-GB') : '' %></span>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <section class="church-member-panel">
+        <div class="church-member-panel__head">
+          <h2 class="church-member-panel__title">My ministries</h2>
+          <a class="church-member-link" href="/member/my-ministries">View all</a>
+        </div>
+        <% if ((myMinistries || []).length === 0) { %>
+        <p class="church-member-empty"><% if (ministryInterest) { %>Your profile lists interest in: <%= ministryInterest %>. Browse ministries to connect.<% } else { %>No ministry connections yet.<% } %></p>
+        <% } else { %>
+        <div class="church-grid church-grid--events">
+          <%- include('../partials/ministry_cards', { ministries: myMinistries }) %>
+        </div>
+        <% } %>
+      </section>
+      <section class="church-member-panel">
+        <div class="church-member-panel__head">
+          <h2 class="church-member-panel__title">My duties</h2>
+          <a class="church-member-link" href="/member/my-duties">View all</a>
+        </div>
+        <% if ((upcomingDuties || []).length === 0) { %>
+        <p class="church-member-empty">No upcoming duties assigned to you.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% upcomingDuties.forEach(function (d) { %>
+          <li class="church-member-list__item">
+            <strong><%= d.role_name %> — <%= d.service_name %></strong>
+            <p><%= formatDutyDate(d.duty_date) %></p>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <section class="church-member-panel">
+        <div class="church-member-panel__head">
+          <h2 class="church-member-panel__title">Upcoming events</h2>
+          <a class="church-member-link" href="/member/events">View all</a>
+        </div>
+        <% if ((events || []).length === 0) { %>
+        <p class="church-member-empty">No upcoming events scheduled.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% events.forEach(function (ev) { %>
+          <li class="church-member-list__item">
+            <strong><%= ev.title %></strong>
+            <p><%= ev.description %></p>
+            <span class="church-member-list__meta"><%= new Date(ev.event_date).toLocaleDateString('en-GB') %><%= ev.start_time || ev.event_time ? ' · ' + (ev.start_time || ev.event_time) : '' %><%= ev.end_time ? ' – ' + ev.end_time : '' %><%= ev.location || ev.location_text ? ' · ' + (ev.location || ev.location_text) : '' %></span>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+<%- include('../partials/member_shell_end') %>

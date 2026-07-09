@@ -1,0 +1,102 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/ministries">&larr; Back to ministries</a>
+          <h1 class="church-branch-topbar__title"><%= ministry.name %></h1>
+          <p class="church-branch-topbar__subtitle"><%= visibilityLabel(ministry.visibility) %> · <%= ministryStatusLabel(ministry.status) %></p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <section class="church-branch-panel">
+        <p><%= ministry.description || 'No description provided.' %></p>
+        <dl class="church-branch-dl">
+          <div><dt>Leader</dt><dd><%= ministry.leader_name || '—' %><% if (ministry.leader_phone) { %> · <%= ministry.leader_phone %><% } %></dd></div>
+          <div><dt>Schedule</dt><dd><%= formatMinistrySchedule(ministry) %></dd></div>
+          <div><dt>Location</dt><dd><%= ministry.location || '—' %></dd></div>
+          <div><dt>Members</dt><dd><%= ministry.member_count || 0 %></dd></div>
+        </dl>
+      </section>
+      <section class="church-branch-panel">
+        <div class="church-member-panel__head">
+          <h2 class="church-branch-panel__title">Ministry leaders</h2>
+          <div class="church-branch-actions">
+            <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/leaders">Manage leaders</a>
+            <a class="church-btn church-btn--primary church-btn--sm" href="/branch/leaders/new?ministry_id=<%= ministry.id %>">Create leader for this ministry</a>
+          </div>
+        </div>
+        <% if ((ministryLeaders || []).length === 0) { %>
+        <p class="church-branch-empty">No portal leaders assigned yet.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% ministryLeaders.forEach(function (l) { %>
+          <li class="church-member-list__item">
+            <strong><a href="/branch/leaders/<%= l.id %>"><%= l.full_name %></a></strong>
+            · <%= l.email || l.phone || '—' %>
+            · <%= leaderRoleLabel(l.role) %>
+            · <span class="church-status-chip church-status-chip--<%= l.status === 'active' ? 'verified' : 'pending' %>"><%= l.status %></span>
+          </li>
+          <% }); %>
+        </ul>
+        <p class="church-branch-empty church-branch-empty--inline">Leaders sign in at <a href="/leader/login">/leader/login</a> on this branch host.</p>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <div class="church-member-panel__head">
+          <h2 class="church-branch-panel__title">Active roster</h2>
+          <% if (pendingJoinRequestsCount > 0) { %>
+          <a class="church-member-link" href="/branch/ministry-join-requests?ministry_id=<%= ministry.id %>&status=submitted"><%= pendingJoinRequestsCount %> pending join request<%= pendingJoinRequestsCount === 1 ? '' : 's' %></a>
+          <% } %>
+        </div>
+        <% if ((roster || []).length === 0) { %>
+        <p class="church-branch-empty">No active members assigned yet.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% roster.forEach(function (m) { %>
+          <li class="church-member-list__item"><strong><%= m.full_name %></strong> · <%= m.status %> · <%= m.role %></li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <div class="church-member-panel__head">
+          <h2 class="church-branch-panel__title">Latest activity notes</h2>
+          <a class="church-member-link" href="/branch/ministries/<%= ministry.id %>/activity">View all</a>
+        </div>
+        <% if ((latestActivityNotes || []).length === 0) { %>
+        <p class="church-branch-empty">No submitted activity notes yet.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% latestActivityNotes.forEach(function (n) { %>
+          <li class="church-member-list__item"><strong><%= n.period_month %></strong> · <%= n.title %> · <%= reviewStatusLabel(n.review_status) %> · <a href="/branch/ministry-activity/<%= n.id %>">View</a></li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <div class="church-member-panel__head">
+          <h2 class="church-branch-panel__title">Latest ministry attendance</h2>
+          <a class="church-member-link" href="/branch/ministry-attendance">View all</a>
+        </div>
+        <% if ((latestMinistryAttendance || []).length === 0) { %>
+        <p class="church-branch-empty">No ministry attendance records yet.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% latestMinistryAttendance.forEach(function (r) { %>
+          <li class="church-member-list__item"><strong><%= r.service_name %></strong> · <%= new Date(r.service_date).toLocaleDateString('en-GB') %> · <%= r.adults_count + r.youth_count + r.children_count %> attended</li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <% if (ministry.status !== 'archived') { %>
+      <section class="church-branch-panel">
+        <div class="church-hq-review-actions">
+          <a class="church-btn church-btn--outline" href="/branch/ministries/<%= ministry.id %>/edit">Edit</a>
+          <% if (ministry.status !== 'published') { %>
+          <form method="post" action="/branch/ministries/<%= ministry.id %>/publish"><button class="church-btn church-btn--primary" type="submit">Publish</button></form>
+          <% } %>
+          <form method="post" action="/branch/ministries/<%= ministry.id %>/archive"><button class="church-btn church-btn--outline" type="submit">Archive</button></form>
+        </div>
+      </section>
+      <% } %>
+<%- include('../partials/branch_admin_shell_end') %>

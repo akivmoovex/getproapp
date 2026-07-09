@@ -1,0 +1,164 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Website editor</h1>
+          <p class="church-branch-topbar__subtitle">Edit your branch public website content</p>
+        </div>
+        <div class="church-branch-actions">
+          <a class="church-btn church-btn--outline" href="/branch/website-preview" target="_blank" rel="noopener">Preview Website</a>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <div class="church-branch-panel church-branch-panel--compact">
+        <p class="church-branch-panel__hint">Status: <strong><%= status === 'published' ? 'Published' : 'Draft' %></strong><% if (lastPublishedAt) { %> · Last published <%= new Date(lastPublishedAt).toLocaleString('en-GB') %><% } %></p>
+      </div>
+      <form class="church-form" method="post" action="/branch/website-editor">
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Homepage</h2>
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="homepage_hero_title">Hero title</label>
+              <input class="church-input" id="homepage_hero_title" name="homepage_hero_title" type="text" value="<%= form.homepage_hero_title || '' %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="homepage_hero_subtitle">Hero subtitle</label>
+              <input class="church-input" id="homepage_hero_subtitle" name="homepage_hero_subtitle" type="text" value="<%= form.homepage_hero_subtitle || '' %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="welcome_message">Welcome message</label>
+              <textarea class="church-input church-input--textarea" id="welcome_message" name="welcome_message" rows="3"><%= form.welcome_message || '' %></textarea>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="service_times">Service times</label>
+              <textarea class="church-input church-input--textarea" id="service_times" name="service_times" rows="3"><%= form.service_times || '' %></textarea>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="location_text">Location text</label>
+              <textarea class="church-input church-input--textarea" id="location_text" name="location_text" rows="3"><%= form.location_text || '' %></textarea>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="footer_message">Footer message</label>
+              <input class="church-input" id="footer_message" name="footer_message" type="text" value="<%= form.footer_message || '' %>"/>
+            </div>
+          </div>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">About</h2>
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="about_title">About title</label>
+              <input class="church-input" id="about_title" name="about_title" type="text" value="<%= form.about_title || '' %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="about_body">About body</label>
+              <textarea class="church-input church-input--textarea" id="about_body" name="about_body" rows="4"><%= form.about_body || '' %></textarea>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="mission_text">Mission</label>
+              <textarea class="church-input church-input--textarea" id="mission_text" name="mission_text" rows="3"><%= form.mission_text || '' %></textarea>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="vision_text">Vision</label>
+              <textarea class="church-input church-input--textarea" id="vision_text" name="vision_text" rows="3"><%= form.vision_text || '' %></textarea>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="values_text">Values</label>
+              <textarea class="church-input church-input--textarea" id="values_text" name="values_text" rows="3"><%= form.values_text || '' %></textarea>
+            </div>
+          </div>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Leadership</h2>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="pastor_name">Pastor name</label>
+              <input class="church-input" id="pastor_name" name="pastor_name" type="text" value="<%= form.pastor_name || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="pastor_title">Pastor title</label>
+              <input class="church-input" id="pastor_title" name="pastor_title" type="text" value="<%= form.pastor_title || '' %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="pastor_bio">Pastor bio</label>
+              <textarea class="church-input church-input--textarea" id="pastor_bio" name="pastor_bio" rows="3"><%= form.pastor_bio || '' %></textarea>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="assistant_pastor_name">Assistant pastor name (optional)</label>
+              <input class="church-input" id="assistant_pastor_name" name="assistant_pastor_name" type="text" value="<%= form.assistant_pastor_name || '' %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="elder_names">Elder names (one per line)</label>
+              <textarea class="church-input church-input--textarea" id="elder_names" name="elder_names" rows="4"><%= form.elder_names || '' %></textarea>
+            </div>
+          </div>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Ministries</h2>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="ministries_entries">Ministries (one per line: Name | Description | Meeting time)</label>
+            <textarea class="church-input church-input--textarea" id="ministries_entries" name="ministries_entries" rows="6" placeholder="Youth Ministry | Friday fellowship | Fridays 5:00 PM"><%= form.ministries_entries || '' %></textarea>
+          </div>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Contact</h2>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="contact_phone">Phone</label>
+              <input class="church-input" id="contact_phone" name="contact_phone" type="text" value="<%= form.contact_phone || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="contact_email">Email</label>
+              <input class="church-input" id="contact_email" name="contact_email" type="email" value="<%= form.contact_email || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="office_hours">Office hours</label>
+              <textarea class="church-input church-input--textarea" id="office_hours" name="office_hours" rows="2"><%= form.office_hours || '' %></textarea>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="address">Address</label>
+              <textarea class="church-input church-input--textarea" id="address" name="address" rows="2"><%= form.address || '' %></textarea>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="map_embed_placeholder">Map placeholder text</label>
+              <input class="church-input" id="map_embed_placeholder" name="map_embed_placeholder" type="text" value="<%= form.map_embed_placeholder || '' %>"/>
+            </div>
+          </div>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Giving information (display only)</h2>
+          <p class="church-branch-panel__hint">Detailed giving channels are managed under Branch → Giving Settings.</p>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="giving_bank_details">Bank details</label>
+              <textarea class="church-input church-input--textarea" id="giving_bank_details" name="giving_bank_details" rows="3"><%= form.giving_bank_details || '' %></textarea>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="giving_mobile_money">Mobile money details</label>
+              <textarea class="church-input church-input--textarea" id="giving_mobile_money" name="giving_mobile_money" rows="3"><%= form.giving_mobile_money || '' %></textarea>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="giving_categories">Giving categories</label>
+              <input class="church-input" id="giving_categories" name="giving_categories" type="text" value="<%= form.giving_categories || '' %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="giving_instructions">Instructions</label>
+              <textarea class="church-input church-input--textarea" id="giving_instructions" name="giving_instructions" rows="3"><%= form.giving_instructions || '' %></textarea>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="giving_qr_placeholder">QR placeholder text</label>
+              <input class="church-input" id="giving_qr_placeholder" name="giving_qr_placeholder" type="text" value="<%= form.giving_qr_placeholder || '' %>"/>
+            </div>
+          </div>
+        </section>
+        <div class="church-branch-actions">
+          <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft">Save Draft</button>
+          <button class="church-btn church-btn--primary" type="submit" name="_intent" value="publish">Publish Website</button>
+          <a class="church-btn church-btn--ghost" href="/branch/website-preview" target="_blank" rel="noopener">Preview Website</a>
+        </div>
+      </form>
+<%- include('../partials/branch_admin_shell_end') %>

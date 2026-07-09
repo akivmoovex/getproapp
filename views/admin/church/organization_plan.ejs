@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Organization plan | <%= planSummary.organization.name %> | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'Organization plan', activeNav: activeNav || 'church_platform_orgs' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title"><%= planSummary.organization.name %> — Plan</h1>
+            <p class="admin-dashboard__subtitle muted">Manage church organization plan metadata (no billing).</p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + planSummary.organization.id, label: 'Organization detail' }) %>
+          </div>
+        </header>
+
+        <% if (saved) { %>
+          <div class="flash flash--info" role="status">Plan updated successfully.</div>
+        <% } %>
+        <% if (error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Current plan</h2>
+          <dl class="admin-dl">
+            <dt>Plan</dt><dd><strong><%= planSummary.planDisplay.label %></strong> (<%= planSummary.planCode %>)</dd>
+            <dt>Status</dt><dd><%= planSummary.planStatus %></dd>
+            <dt>Started</dt><dd><%= planSummary.planStartedAt ? formatDate(planSummary.planStartedAt) : '—' %></dd>
+            <dt>Notes</dt><dd><%= planSummary.planNotes || '—' %></dd>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Usage summary</h2>
+          <div class="admin-dashboard__grid">
+            <div class="admin-stat">
+              <p class="admin-stat__label">Branches</p>
+              <p class="admin-stat__value"><%= planSummary.branchesDisplay %></p>
+            </div>
+            <div class="admin-stat">
+              <p class="admin-stat__label">Verified members</p>
+              <p class="admin-stat__value"><%= planSummary.membersDisplay %></p>
+            </div>
+            <div class="admin-stat">
+              <p class="admin-stat__label">Storage (placeholder)</p>
+              <p class="admin-stat__value"><%= planSummary.storageDisplay %></p>
+            </div>
+          </div>
+          <% if ((planSummary.warnings || []).length > 0) { %>
+            <ul style="margin-top:1rem;">
+              <% planSummary.warnings.forEach(function (w) { %>
+                <li class="<%= w.level === 'limit' ? 'flash' : 'muted' %>"><%= w.message %></li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Features</h2>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Feature</th><th>Status</th></tr></thead>
+              <tbody>
+                <% planSummary.featureRows.forEach(function (row) { %>
+                  <tr>
+                    <td><%= row.label %></td>
+                    <td>
+                      <% if (row.locked) { %>
+                        <span class="muted">Locked</span>
+                      <% } else if (row.enabled) { %>
+                        Enabled
+                      <% } else { %>
+                        Disabled
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Change plan</h2>
+          <form method="post" action="/admin/church/organizations/<%= planSummary.organization.id %>/plan" class="admin-form-grid">
+            <div class="input-field">
+              <label class="input-field__label" for="plan_code">Plan</label>
+              <select id="plan_code" class="input-field__control" name="plan_code">
+                <% planCodes.forEach(function (code) { %>
+                  <option value="<%= code %>" <%= form.plan_code === code ? 'selected' : '' %>><%= code %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="plan_status">Plan status</label>
+              <select id="plan_status" class="input-field__control" name="plan_status">
+                <option value="active" <%= form.plan_status === 'active' ? 'selected' : '' %>>active</option>
+                <option value="inactive" <%= form.plan_status === 'inactive' ? 'selected' : '' %>>inactive</option>
+              </select>
+            </div>
+            <div class="input-field" style="grid-column:1/-1;">
+              <label class="input-field__label" for="plan_notes">Plan notes</label>
+              <textarea id="plan_notes" class="input-field__control" name="plan_notes" rows="3"><%= form.plan_notes || '' %></textarea>
+            </div>
+            <div class="admin-toolbar" style="grid-column:1/-1;">
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save plan' }) %>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

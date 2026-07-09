@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GetPro Church - Modern Church Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Shared Component Styling Logic and Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed-variant": "#4029ba",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#787586",
+                    "on-tertiary-fixed": "#191c1d",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary": "#57595b",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#dae1e3",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "surface-container": "#e4f0f4",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "surface-variant": "#d9e4e9",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#f1fbff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "on-tertiary-container": "#f7f8f9",
+                    "tertiary-container": "#707273",
+                    "on-secondary-fixed": "#161d1f",
+                    "secondary": "#586062",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "primary-container": "#6c5ce7",
+                    "outline-variant": "#c8c4d7",
+                    "on-surface-variant": "#474554",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#dfeaef",
+                    "on-error-container": "#93000a",
+                    "on-background": "#131d21",
+                    "primary": "#5341cd",
+                    "secondary-fixed": "#dde4e6",
+                    "on-primary-container": "#faf6ff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "surface-dim": "#d1dce0",
+                    "on-secondary-container": "#5d6466",
+                    "surface-container-low": "#eaf5fa",
+                    "on-surface": "#131d21",
+                    "inverse-on-surface": "#e7f3f7",
+                    "surface": "#f1fbff",
+                    "on-primary": "#ffffff",
+                    "surface-container-highest": "#d9e4e9",
+                    "inverse-surface": "#283236",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#e4dfff",
+                    "background": "#f1fbff",
+                    "surface-tint": "#5847d2",
+                    "on-primary-fixed": "#160066"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "gutter": "24px",
+                    "margin-desktop": "32px",
+                    "margin-mobile": "16px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "sm": "8px",
+                    "xl": "32px",
+                    "xs": "4px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-md": ["Inter"],
+                    "title-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @keyframes subtle-float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: subtle-float 6s ease-in-out infinite; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
+<!-- Mobile TopNavBar Shell (Suppressed from Web logic, active for Mobile Landing) -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant h-16 flex items-center px-margin-mobile justify-between">
+<div class="flex items-center gap-sm">
+<span class="font-headline-md text-headline-md text-primary tracking-tight">GetPro Church</span>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-2 text-secondary hover:bg-surface-container-low rounded-full transition-colors active:scale-95 duration-150" id="mobile-menu-trigger">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</header>
+<!-- Mobile Menu Overlay (Hidden by Default) -->
+<div class="fixed inset-0 z-[60] bg-surface translate-x-full transition-transform duration-300 ease-in-out md:hidden flex flex-col" id="mobile-menu">
+<div class="h-16 flex items-center justify-between px-margin-mobile border-b border-outline-variant">
+<span class="font-headline-md text-headline-md text-primary">GetPro Church</span>
+<button class="p-2 text-secondary" id="mobile-menu-close">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<nav class="flex flex-col p-lg gap-lg">
+<a class="font-title-lg text-title-lg text-secondary active:text-primary" href="#">Features</a>
+<a class="font-title-lg text-title-lg text-secondary active:text-primary" href="#">Pricing</a>
+<a class="font-title-lg text-title-lg text-secondary active:text-primary" href="#">About Us</a>
+<hr class="border-outline-variant"/>
+<a class="font-title-lg text-title-lg text-primary font-bold" href="#">Login</a>
+<button class="w-full py-md bg-primary text-on-primary rounded-full font-label-lg text-label-lg shadow-sm">Get Started</button>
+</nav>
+</div>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-16">
+<!-- Hero Section -->
+<section class="relative px-margin-mobile pt-xl pb-24 overflow-hidden">
+<!-- Background Decoration -->
+<div class="absolute top-0 right-0 -z-10 translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary-container/20 rounded-full blur-3xl"></div>
+<div class="absolute bottom-0 left-0 -z-10 -translate-x-1/2 translate-y-1/2 w-80 h-80 bg-secondary-container/30 rounded-full blur-3xl"></div>
+<div class="flex flex-col items-center text-center">
+<div class="inline-flex items-center px-md py-sm bg-primary-fixed text-on-primary-fixed rounded-full mb-lg border border-primary/10">
+<span class="material-symbols-outlined text-[18px] mr-2" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="font-label-md text-label-md">Trusted by 2,000+ Ministries</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-md max-w-sm">
+                    Structured Compassion for Modern Ministry
+                </h1>
+<p class="font-body-md text-body-md text-secondary mb-xl max-w-xs">
+                    Empower your church leadership with tools that balance administrative power with pastoral warmth. Manage attendance, giving, and members seamlessly.
+                </p>
+<div class="flex flex-col w-full gap-md">
+<button class="w-full py-md bg-primary text-on-primary rounded-full font-title-md text-title-md shadow-md active:scale-95 transition-transform">
+                        Get Started for Free
+                    </button>
+<button class="w-full py-md bg-surface-container-high text-on-surface rounded-full font-title-md text-title-md flex items-center justify-center gap-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">play_circle</span>
+                        See it in Action
+                    </button>
+</div>
+</div>
+<!-- Hero Image/Graphic -->
+<div class="mt-20 relative mx-auto max-w-[320px]">
+<div class="aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border border-white/40 animate-float">
+<img class="w-full h-full object-cover" data-alt="A sleek, modern mobile application interface showing a church management dashboard. The UI features soft purple and deep charcoal accents, clean white cards, and vibrant status chips for active members. The lighting is bright and professional, suggesting a high-end corporate yet community-focused software experience." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbAAw2si92d1VdBhpVmD-xGPqZtHlIu9Y56Eq7GXcZy7p-sqAnTBvgCA3EBZXbr5k_p5z-cByKoFOfgHet_9rl1dqsPHJFYR25QsOzCCfPdfja50aKXZ8e_QKx3kyO9NXETRWZb8FGeIyYiP-yYkVfK-_gS5B4Ci78ca_BuqJkcbBBf-U8F5wzunFRT9U66h6AnZOYlJ5SkgZUabAzamQgipooPlX4-IS4hHPe4-LD8DATdi5R6cd1vg"/>
+</div>
+<!-- Floating Mini Card -->
+<div class="absolute -bottom-6 -right-4 bg-surface-container-lowest p-md rounded-xl shadow-xl border border-outline-variant flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">volunteer_activism</span>
+</div>
+<div>
+<div class="font-label-lg text-label-lg text-secondary">Giving Today</div>
+<div class="font-title-md text-title-md text-on-surface">$2,450.00</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Feature Bento-ish Grid (Mobile Stacked) -->
+<section class="px-margin-mobile py-xl bg-surface-container-low">
+<div class="mb-xl">
+<span class="font-label-lg text-label-lg text-primary uppercase tracking-widest mb-xs block text-center">Capabilities</span>
+<h2 class="font-headline-md text-headline-md text-on-surface text-center">Built for every branch</h2>
+</div>
+<div class="grid grid-cols-1 gap-lg">
+<!-- Feature 1 -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 flex flex-col gap-md shadow-sm">
+<div class="w-12 h-12 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">group</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Member Management</h3>
+<p class="font-body-md text-body-md text-secondary">A unified profile for every member. Track involvement, family connections, and spiritual growth in one place.</p>
+</div>
+<!-- Feature 2 -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 flex flex-col gap-md shadow-sm">
+<div class="w-12 h-12 rounded-lg bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">volunteer_activism</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Simplified Giving</h3>
+<p class="font-body-md text-body-md text-secondary">Secure, seamless donation tracking and automated tax receipts to keep your mission moving forward.</p>
+</div>
+<!-- Feature 3 -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 flex flex-col gap-md shadow-sm">
+<div class="w-12 h-12 rounded-lg bg-tertiary-container/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">event_available</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Event Coordination</h3>
+<p class="font-body-md text-body-md text-secondary">Check-in systems for kids' ministry and attendance tracking for services and small groups.</p>
+</div>
+</div>
+</section>
+<!-- Stats Section -->
+<section class="py-24 px-margin-mobile bg-inverse-surface text-on-primary-fixed">
+<div class="flex flex-col gap-xl">
+<div class="text-center">
+<div class="text-[48px] font-bold leading-tight mb-xs text-primary-fixed">99.9%</div>
+<div class="font-label-lg text-label-lg text-secondary-fixed-dim">Platform Uptime</div>
+</div>
+<div class="text-center">
+<div class="text-[48px] font-bold leading-tight mb-xs text-primary-fixed">15M+</div>
+<div class="font-label-lg text-label-lg text-secondary-fixed-dim">Records Managed</div>
+</div>
+<div class="text-center">
+<div class="text-[48px] font-bold leading-tight mb-xs text-primary-fixed">24/7</div>
+<div class="font-label-lg text-label-lg text-secondary-fixed-dim">Expert Support</div>
+</div>
+</div>
+</section>
+<!-- CTA Final Section -->
+<section class="px-margin-mobile py-24 text-center">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-md">Ready to focus on ministry?</h2>
+<p class="font-body-md text-body-md text-secondary mb-xl">Join thousands of churches already using GetPro to manage their community with ease and grace.</p>
+<button class="w-full py-lg bg-primary text-on-primary rounded-full font-title-lg text-title-lg shadow-lg active:scale-95 transition-all">
+                Start Your 30-Day Free Trial
+            </button>
+<p class="mt-md font-label-md text-label-md text-secondary">No credit card required. Cancel anytime.</p>
+</section>
+</main>
+<!-- Footer Shell -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant w-full py-xl px-margin-mobile mt-auto flex flex-col gap-lg items-center">
+<div class="flex flex-col items-center gap-md">
+<span class="font-title-md text-title-md text-primary font-bold">GetPro Church</span>
+<div class="flex flex-wrap justify-center gap-md">
+<a class="font-body-md text-body-md text-secondary hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-secondary hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-md text-body-md text-secondary hover:text-primary transition-colors" href="#">Support</a>
+<a class="font-body-md text-body-md text-secondary hover:text-primary transition-colors" href="#">Documentation</a>
+</div>
+</div>
+<p class="text-center font-body-md text-body-md text-secondary opacity-80">
+            © 2024 GetPro Church Management System. All rights reserved.
+        </p>
+</footer>
+<script>
+        // Simple menu toggle interaction
+        const menuTrigger = document.getElementById('mobile-menu-trigger');
+        const menuClose = document.getElementById('mobile-menu-close');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        menuTrigger.addEventListener('click', () => {
+            mobileMenu.classList.remove('translate-x-full');
+            mobileMenu.classList.add('translate-x-0');
+            document.body.style.overflow = 'hidden';
+        });
+
+        menuClose.addEventListener('click', () => {
+            mobileMenu.classList.remove('translate-x-0');
+            mobileMenu.classList.add('translate-x-full');
+            document.body.style.overflow = 'auto';
+        });
+
+        // Close menu on link click
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('translate-x-full');
+                document.body.style.overflow = 'auto';
+            });
+        });
+    </script>
+</body></html>

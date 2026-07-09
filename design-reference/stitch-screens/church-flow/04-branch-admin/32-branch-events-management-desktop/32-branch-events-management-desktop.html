@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>32-branch-events-management-desktop</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "outline": "#787586",
+                        "surface-container-high": "#dfeaef",
+                        "primary": "#5341cd",
+                        "tertiary": "#57595b",
+                        "on-surface-variant": "#474554",
+                        "tertiary-container": "#707273",
+                        "primary-fixed": "#e4dfff",
+                        "on-surface": "#131d21",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#e4f0f4",
+                        "tertiary-fixed": "#e1e3e4",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-fixed": "#191c1d",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#5d6466",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "background": "#f1fbff",
+                        "on-background": "#131d21",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "secondary-fixed": "#dde4e6",
+                        "inverse-primary": "#c6bfff",
+                        "surface-variant": "#d9e4e9",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-container": "#faf6ff",
+                        "on-secondary-fixed": "#161d1f",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d1dce0",
+                        "surface": "#f1fbff",
+                        "on-primary-fixed": "#160066",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "inverse-surface": "#283236",
+                        "primary-container": "#6c5ce7",
+                        "outline-variant": "#c8c4d7",
+                        "surface-bright": "#f1fbff",
+                        "surface-tint": "#5847d2",
+                        "secondary": "#586062",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#e7f3f7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "xl": "32px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "margin-desktop": "32px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab-indicator {
+            position: absolute;
+            bottom: -1px;
+            height: 3px;
+            background-color: #5341cd;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex">
+<!-- Sidebar Navigation -->
+<aside class="bg-inverse-surface dark:bg-surface-container-lowest w-[280px] h-screen sticky top-0 left-0 flex flex-col py-base gap-sm shadow-sm shrink-0" id="side-nav">
+<div class="px-gutter mb-lg">
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed dark:text-primary">Kafue Baptist Church</h1>
+<p class="font-body-md text-body-md text-outline-variant">Branch Admin HQ</p>
+</div>
+<nav class="flex-1 space-y-xs overflow-y-auto">
+<a class="flex items-center gap-md py-base hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors text-surface-variant dark:text-outline pl-5" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center gap-md py-base hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors text-surface-variant dark:text-outline pl-5" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-label-lg text-label-lg">Departments</span>
+</a>
+<!-- Active State: Events -->
+<a class="flex items-center gap-md py-base text-primary-fixed dark:text-primary font-bold border-l-4 border-primary-fixed dark:border-primary pl-4 scale-[0.98] transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="event" style="font-variation-settings: 'FILL' 1;">event</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<a class="flex items-center gap-md py-base hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors text-surface-variant dark:text-outline pl-5" href="#">
+<span class="material-symbols-outlined" data-icon="assignment_ind">assignment_ind</span>
+<span class="font-label-lg text-label-lg">Duty Roster</span>
+</a>
+<a class="flex items-center gap-md py-base hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors text-surface-variant dark:text-outline pl-5" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="font-label-lg text-label-lg">Announcements</span>
+</a>
+<a class="flex items-center gap-md py-base hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors text-surface-variant dark:text-outline pl-5" href="#">
+<span class="material-symbols-outlined" data-icon="web">web</span>
+<span class="font-label-lg text-label-lg">Website Editor</span>
+</a>
+<a class="flex items-center gap-md py-base hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors text-surface-variant dark:text-outline pl-5 mt-auto" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<div class="px-gutter py-base border-t border-outline/20 mt-auto flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a church branch administrator, wearing business-casual attire against a soft-focus office background. The lighting is warm and natural, suggesting an approachable yet organized leadership figure within a modern corporate church environment. The style is clean, sharp, and optimistic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCedI6O1quyrAShSQARUmltFR65-M44IQyOIqunGFgLyMxB1RpCxb16N7QexBBoGgBxfP9K0WBCIxxcccjiRAoKS1WVg3ahJSkjf8pzIumazMMlYYDeYDDRTOTyO-ZK5tQ5czCTObIob69tf7U5Zna1bkJaflIXlklmzY_ePcPGwANAkO2eZCk5_Nqj3sTBwYx3yb0ed5e_QaB_K7laOtvgK0WvE3TS8q5vvQwEdCNiDZOkzLHn_0BhGQ"/>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-surface-container-lowest">Admin User</span>
+<span class="font-label-md text-label-md text-outline-variant">Kafue Central</span>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col min-w-0">
+<!-- Top Nav -->
+<header class="w-full h-16 bg-surface dark:bg-background border-b border-outline-variant dark:border-outline flex justify-between items-center px-gutter sticky top-0 z-50">
+<div class="flex items-center gap-xl">
+<h2 class="font-headline-md text-headline-md font-black text-on-surface dark:text-on-background">GetPro Church Operations</h2>
+<div class="relative w-80">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full font-body-md text-body-md focus:ring-2 focus:ring-primary" placeholder="Search events, members..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-2 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+</header>
+<!-- Content Area -->
+<div class="p-margin-desktop space-y-gutter">
+<!-- Header Section -->
+<div class="flex justify-between items-end">
+<div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">Events Management</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage schedules, attendance, and logistics for upcoming church activities.</p>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-on-primary px-lg py-base rounded-lg flex items-center gap-sm transition-all shadow-md active:scale-[0.98]">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span class="font-title-md text-title-md">Create Event</span>
+</button>
+</div>
+<!-- Tabs and Filters -->
+<div class="flex items-center justify-between border-b border-outline-variant">
+<div class="flex gap-xl relative">
+<button class="py-md px-base font-title-md text-title-md text-primary font-semibold relative" id="tab-upcoming">
+                        Upcoming Events
+                        <div class="active-tab-indicator w-full left-0"></div>
+</button>
+<button class="py-md px-base font-title-md text-title-md text-on-surface-variant hover:text-on-surface transition-colors" id="tab-past">
+                        Past Events
+                    </button>
+</div>
+<div class="flex gap-sm py-xs">
+<div class="flex items-center bg-white border border-outline-variant rounded-lg px-base gap-sm">
+<span class="material-symbols-outlined text-outline text-[18px]" data-icon="filter_list">filter_list</span>
+<select class="border-none focus:ring-0 font-label-lg text-label-lg py-xs cursor-pointer">
+<option>All Ministries</option>
+<option>Youth</option>
+<option>Worship</option>
+<option>Women's</option>
+</select>
+</div>
+<div class="flex items-center bg-white border border-outline-variant rounded-lg px-base gap-sm">
+<span class="material-symbols-outlined text-outline text-[18px]" data-icon="sort">sort</span>
+<select class="border-none focus:ring-0 font-label-lg text-label-lg py-xs cursor-pointer">
+<option>Date (Ascending)</option>
+<option>Recently Created</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Bento-Style Event Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Event Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col group">
+<div class="h-40 relative">
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A vibrant youth gathering inside a modern church hall, with neon accent lighting in violet and blue. Groups of teenagers are engaged in a lively discussion around coffee tables, creating an atmosphere of fellowship and community. The photographic style is cinematic with a shallow depth of field, highlighting a joyful, contemporary church vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNKji-wc7za2EQ6ZIrTxYwpBJDuZJNZMAGlKunWkr6mYaEi1QO9dfIi0EKCBnTC_tYl3TPqEH0SY7F9onBYwh1HkE0JPgJqleaXVXnZdF1qO8uj_yC4nIjpVSTTjHzjNI_ThKmabdTBVlheUl9lSqsi36kyEB_iExtIRsH9DewyDLHvLnnHTwqZVF_8poQaIHbAYntYw5sjqYk9xdkL7cFaG3Qva0IQccsg0xCl4WzsZq8sVnBBIhP4A"/>
+<div class="absolute top-3 left-3 bg-primary text-on-primary px-sm py-xs rounded font-label-lg text-label-lg z-20">Youth</div>
+<div class="absolute bottom-3 left-3 text-white z-20">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-lg text-label-lg">Oct 27, 2024</span>
+</div>
+</div>
+<div class="absolute top-3 right-3 bg-white/20 backdrop-blur-md border border-white/30 text-white px-base py-xs rounded-full font-label-md text-label-md z-20 flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-green-400"></span> Public
+                        </div>
+</div>
+<div class="p-lg flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-sm">
+<h4 class="font-title-lg text-title-lg text-on-surface">Youth Night Fellowship</h4>
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-md">An evening of worship, games, and deep-dive scripture study for ages 13-19. Focus on "Living Boldly in Christ."</p>
+<div class="mt-auto space-y-xs">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-label-lg text-label-lg">18:30 - 21:00</span>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="location_on">location_on</span>
+<span class="font-label-lg text-label-lg">Main Sanctuary &amp; Hall B</span>
+</div>
+</div>
+</div>
+<div class="p-lg pt-0 border-t border-outline-variant/30 flex gap-sm mt-xs">
+<button class="flex-1 py-base border border-primary text-primary rounded-lg font-label-lg text-label-lg hover:bg-primary/5 transition-colors">Manage Roster</button>
+<button class="px-base py-base bg-secondary-container text-on-secondary-container rounded-lg hover:bg-secondary-container/80 transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+<!-- Event Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col group">
+<div class="h-40 relative">
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A serene outdoor church gathering at sunset, with string lights overhead illuminating a group of people sitting in a circle on a lush green lawn. The lighting is golden and soft, capturing a peaceful and spiritual communal atmosphere. The overall mood is one of quiet devotion and natural beauty, consistent with a modern corporate church aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaa60d_ingSOavaUmrFVO-jKBDvNnpa7TL0a7T572fZoV9AwFO2Gfq-Ofk8jC8hjRpJrVgLiytlmcPSmW0WloopeAfw54hPUsyoXWlFC2crRmO9MJdgGWcMPL21EmSJJtiPo4NofGyaWRs-dyouLTJOY8AM-hOnZaD3FOVq2hWBylOW3k-QTAl6LWr5X4-Nn9Sw-S4rQKqaoXcK4J8_rh9a1YxsF_Lk-FIQtWpN3UGcfZi94bResNpzA"/>
+<div class="absolute top-3 left-3 bg-tertiary-container text-on-tertiary-container px-sm py-xs rounded font-label-lg text-label-lg z-20">Outreach</div>
+<div class="absolute bottom-3 left-3 text-white z-20">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-lg text-label-lg">Nov 02, 2024</span>
+</div>
+</div>
+<div class="absolute top-3 right-3 bg-white/20 backdrop-blur-md border border-white/30 text-white px-base py-xs rounded-full font-label-md text-label-md z-20 flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-green-400"></span> Public
+                        </div>
+</div>
+<div class="p-lg flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-sm">
+<h4 class="font-title-lg text-title-lg text-on-surface">Community Food Drive</h4>
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-md">Monthly distribution and collection of non-perishable items for local families in need. Volunteers needed for sorting.</p>
+<div class="mt-auto space-y-xs">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-label-lg text-label-lg">09:00 - 14:00</span>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="location_on">location_on</span>
+<span class="font-label-lg text-label-lg">South Parking Lot</span>
+</div>
+</div>
+</div>
+<div class="p-lg pt-0 border-t border-outline-variant/30 flex gap-sm mt-xs">
+<button class="flex-1 py-base border border-primary text-primary rounded-lg font-label-lg text-label-lg hover:bg-primary/5 transition-colors">Manage Roster</button>
+<button class="px-base py-base bg-secondary-container text-on-secondary-container rounded-lg hover:bg-secondary-container/80 transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+<!-- Event Card 3 (Private/Internal) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col group">
+<div class="h-40 relative">
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A bright, airy boardroom with large windows showing a cityscape. A small group of professional leaders is gathered around a sleek, light-wood table with laptops and tablets. The environment is organized and minimalist, using a soft palette of whites, grays, and subtle violet accents to convey a sense of strategic planning and calm administration." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1h1G4HJSwEUyqaxYsfybv6it0xqbCop1I7_sqSaqTwWH0XU4fd2amgTbWh8_FA5Qv9Ob1SeALa1qyo9pLCH0Cib9LGj-S5W4UiLdlWTC11fDsyS23F2xfUMt7lvM_1UzcoHU3X_a3CKARrYaMr3sCQJRfXdiGgSDsWDCqIHthShsinYgIotuKcMyXUIPtimZZZ4bb-9FgEwbIldeipZL-argZCzWDTdGJRVWxDwCgNj8E9UJHShxKjQ"/>
+<div class="absolute top-3 left-3 bg-secondary text-on-secondary px-sm py-xs rounded font-label-lg text-label-lg z-20">Leadership</div>
+<div class="absolute bottom-3 left-3 text-white z-20">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-lg text-label-lg">Nov 05, 2024</span>
+</div>
+</div>
+<div class="absolute top-3 right-3 bg-white/20 backdrop-blur-md border border-white/30 text-white px-base py-xs rounded-full font-label-md text-label-md z-20 flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-outline"></span> Internal
+                        </div>
+</div>
+<div class="p-lg flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-sm">
+<h4 class="font-title-lg text-title-lg text-on-surface">Annual Strategy Meeting</h4>
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-md">Review of previous year milestones and setting KPIs for the 2025 community impact initiatives.</p>
+<div class="mt-auto space-y-xs">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-label-lg text-label-lg">10:00 - 16:00</span>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="location_on">location_on</span>
+<span class="font-label-lg text-label-lg">Executive Boardroom</span>
+</div>
+</div>
+</div>
+<div class="p-lg pt-0 border-t border-outline-variant/30 flex gap-sm mt-xs">
+<button class="flex-1 py-base border border-primary text-primary rounded-lg font-label-lg text-label-lg hover:bg-primary/5 transition-colors">Manage Roster</button>
+<button class="px-base py-base bg-secondary-container text-on-secondary-container rounded-lg hover:bg-secondary-container/80 transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+<!-- Add Placeholder Card -->
+<div class="border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center p-xl hover:bg-surface-container-low hover:border-primary transition-all cursor-pointer group h-[420px]">
+<div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center mb-md group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[32px]" data-icon="add_circle">add_circle</span>
+</div>
+<h5 class="font-title-lg text-title-lg text-on-surface-variant group-hover:text-primary">Create New Event</h5>
+<p class="font-body-md text-body-md text-outline text-center mt-sm">Draft a new activity or fellowship for your branch.</p>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Simple tab switching logic for demonstration
+        const upcomingBtn = document.getElementById('tab-upcoming');
+        const pastBtn = document.getElementById('tab-past');
+        const indicator = document.querySelector('.active-tab-indicator');
+
+        upcomingBtn.addEventListener('click', () => {
+            upcomingBtn.classList.add('text-primary', 'font-semibold');
+            upcomingBtn.classList.remove('text-on-surface-variant');
+            pastBtn.classList.remove('text-primary', 'font-semibold');
+            pastBtn.classList.add('text-on-surface-variant');
+            
+            indicator.style.width = upcomingBtn.offsetWidth + 'px';
+            indicator.style.left = upcomingBtn.offsetLeft + 'px';
+        });
+
+        pastBtn.addEventListener('click', () => {
+            pastBtn.classList.add('text-primary', 'font-semibold');
+            pastBtn.classList.remove('text-on-surface-variant');
+            upcomingBtn.classList.remove('text-primary', 'font-semibold');
+            upcomingBtn.classList.add('text-on-surface-variant');
+            
+            indicator.style.width = pastBtn.offsetWidth + 'px';
+            indicator.style.left = pastBtn.offsetLeft + 'px';
+        });
+
+        // Initialize indicator position
+        window.addEventListener('load', () => {
+            indicator.style.width = upcomingBtn.offsetWidth + 'px';
+            indicator.style.left = upcomingBtn.offsetLeft + 'px';
+        });
+    </script>
+</body></html>

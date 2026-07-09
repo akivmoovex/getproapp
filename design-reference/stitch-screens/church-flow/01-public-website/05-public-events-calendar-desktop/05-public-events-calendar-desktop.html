@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Events &amp; Calendar | Kafue Baptist Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-tertiary-container": "#f7f8f9",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#707273",
+                        "primary-fixed": "#e4dfff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-surface-variant": "#474554",
+                        "surface-container-low": "#eaf5fa",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-background": "#131d21",
+                        "surface": "#f1fbff",
+                        "background": "#f1fbff",
+                        "on-surface": "#131d21",
+                        "surface-tint": "#5847d2",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#e4f0f4",
+                        "on-primary-container": "#faf6ff",
+                        "secondary": "#586062",
+                        "surface-variant": "#d9e4e9",
+                        "inverse-on-surface": "#e7f3f7",
+                        "secondary-container": "#dae1e3",
+                        "primary": "#5341cd",
+                        "on-primary-fixed": "#160066",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-secondary-container": "#5d6466",
+                        "surface-bright": "#f1fbff",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#191c1d",
+                        "primary-container": "#6c5ce7",
+                        "on-secondary-fixed": "#161d1f",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "inverse-primary": "#c6bfff",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "outline": "#787586",
+                        "outline-variant": "#c8c4d7",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed": "#e1e3e4",
+                        "tertiary": "#57595b",
+                        "secondary-fixed": "#dde4e6",
+                        "surface-dim": "#d1dce0",
+                        "surface-container-high": "#dfeaef",
+                        "inverse-surface": "#283236"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "xl": "32px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "base": "8px",
+                        "md": "16px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1fbff; color: #131d21; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .active-view-btn { background-color: #5341cd; color: white; }
+        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(200, 196, 215, 0.5); }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="bg-surface sticky top-0 z-50 border-b border-outline-variant">
+<nav class="flex justify-between items-center w-full px-lg md:px-margin-desktop py-base max-w-7xl mx-auto">
+<div class="font-headline-md text-headline-md font-bold text-primary">
+                Kafue Baptist Church
+            </div>
+<div class="hidden md:flex items-center gap-xl">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-title-md text-title-md" href="#">Home</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-title-md text-title-md" href="#">About</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-title-md text-title-md" href="#">Leadership</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-title-md text-title-md" href="#">Ministries</a>
+<a class="text-primary border-b-2 border-primary font-bold pb-1 font-title-md text-title-md" href="#">Events</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-title-md text-title-md" href="#">Resources</a>
+</div>
+<div class="flex items-center gap-md">
+<button class="hidden lg:block text-primary font-title-md text-title-md px-md py-sm hover:bg-surface-container-low rounded-lg transition-all">Member Login</button>
+<button class="bg-primary text-on-primary px-lg py-sm rounded-full font-title-md text-title-md shadow-lg shadow-primary/20 hover:opacity-90 transition-all">Register as Member</button>
+</div>
+</nav>
+</header>
+<main class="flex-grow max-w-7xl mx-auto w-full px-lg md:px-margin-desktop py-xl">
+<!-- Header Section -->
+<section class="mb-xl flex flex-col md:flex-row md:items-end justify-between gap-lg">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-background mb-xs">Church Events</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Join our community in worship, fellowship, and service. Find all upcoming gatherings, small groups, and special ministry events here.</p>
+</div>
+<!-- View Toggle -->
+<div class="flex bg-surface-container rounded-xl p-xs self-start md:self-auto">
+<button class="active-view-btn flex items-center gap-xs px-lg py-sm rounded-lg transition-all font-label-lg text-label-lg" id="listViewBtn" onclick="toggleView('list')">
+<span class="material-symbols-outlined">list</span>
+                    List View
+                </button>
+<button class="text-on-surface-variant hover:bg-surface-variant flex items-center gap-xs px-lg py-sm rounded-lg transition-all font-label-lg text-label-lg" id="calendarViewBtn" onclick="toggleView('calendar')">
+<span class="material-symbols-outlined">calendar_month</span>
+                    Calendar
+                </button>
+</div>
+</section>
+<!-- Filters & Search -->
+<div class="mb-xl flex flex-wrap gap-md items-center justify-between">
+<div class="flex flex-wrap gap-sm">
+<button class="bg-primary-container text-on-primary-container px-lg py-sm rounded-full font-label-lg text-label-lg">All Ministries</button>
+<button class="bg-surface-container-high text-on-surface-variant px-lg py-sm rounded-full font-label-lg text-label-lg hover:bg-surface-variant">Youth</button>
+<button class="bg-surface-container-high text-on-surface-variant px-lg py-sm rounded-full font-label-lg text-label-lg hover:bg-surface-variant">Women's</button>
+<button class="bg-surface-container-high text-on-surface-variant px-lg py-sm rounded-full font-label-lg text-label-lg hover:bg-surface-variant">Community</button>
+<button class="bg-surface-container-high text-on-surface-variant px-lg py-sm rounded-full font-label-lg text-label-lg hover:bg-surface-variant">Worship</button>
+</div>
+<div class="relative w-full md:w-72">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-xl pr-md py-sm bg-white border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none" placeholder="Search events..." type="text"/>
+</div>
+</div>
+<!-- List View (Default) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg" id="listView">
+<!-- Event Card 1 -->
+<div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-outline-variant/30 flex flex-col h-full">
+<div class="relative h-48 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A warm, brightly lit church sanctuary filled with people singing together, soft purple and blue ambient lighting, a focused worship band in the background, professional photography style, high-end light mode aesthetic, evoking peace and community." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkGk-yPfuQrfTmNDWYb2qXtnYtBOxiw9Ko65Z_iUzreGzjkvNXCtu38eh2g1SNCkA14kpcePdi8fEnrPrauIq-ej3W5VaQRwNyhTBn4oGhEg1U0masIXUmR2UEzrlEyzfPl3Odz_l1RD1YMFs09Q7iRddZlgSyVldp2d0P5BK-CcjtM6JX_fXyMoHvXcbEWanxFCOYQKs8z8VcjdjT2QMEQsyIt6xquFH5uxvUCsBcO3uarIr5TjB8uQ"/>
+<div class="absolute top-md left-md bg-white/90 backdrop-blur-md rounded-lg p-sm text-center min-w-[50px] shadow-sm">
+<span class="block font-headline-md text-headline-md text-primary leading-none">24</span>
+<span class="block font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Oct</span>
+</div>
+<div class="absolute bottom-md right-md">
+<span class="bg-primary/90 backdrop-blur-md text-white px-md py-xs rounded-full font-label-lg text-label-lg">Worship</span>
+</div>
+</div>
+<div class="p-lg flex-grow flex flex-col">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-sm">Sunday Morning Service</h3>
+<div class="space-y-xs mb-lg">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">schedule</span>
+<span class="font-body-md text-body-md">09:00 AM - 11:30 AM</span>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">location_on</span>
+<span class="font-body-md text-body-md">Main Sanctuary, Kafue</span>
+</div>
+</div>
+<button class="mt-auto w-full py-sm border-2 border-primary text-primary font-title-md text-title-md rounded-lg hover:bg-primary hover:text-white transition-all">Event Details</button>
+</div>
+</div>
+<!-- Event Card 2 -->
+<div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-outline-variant/30 flex flex-col h-full">
+<div class="relative h-48 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A group of energetic young adults sitting in a circle outdoors during sunset, smiling and engaged in conversation, warm golden hour lighting, lush green background, modern community vibe, vibrant and welcoming atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsXbQXD4XjpSGihn-L-UDYJcr1HTb5XGjoMvcqk0IHfr2lR95O4j_T9vCUirq6mo8jLD9Jpfe351euIowVoNPEM_ik97kyE3oNHAxTEmwhpg-5dz8LjBKKd5WcNwBY8uTlF2zN4lX1n9tL4nmKVYyA3Xuuj4E6gO2g7WG_MsqDYy64nh_24otfuId7V2eHSkzD6hl03S_vqpLjcfmA6xowBqHYhCXdI-U2GzYibZsnA_pneaQiCjdHDg"/>
+<div class="absolute top-md left-md bg-white/90 backdrop-blur-md rounded-lg p-sm text-center min-w-[50px] shadow-sm">
+<span class="block font-headline-md text-headline-md text-primary leading-none">27</span>
+<span class="block font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Oct</span>
+</div>
+<div class="absolute bottom-md right-md">
+<span class="bg-secondary/90 backdrop-blur-md text-white px-md py-xs rounded-full font-label-lg text-label-lg">Youth</span>
+</div>
+</div>
+<div class="p-lg flex-grow flex flex-col">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-sm">Youth Night Fellowship</h3>
+<div class="space-y-xs mb-lg">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">schedule</span>
+<span class="font-body-md text-body-md">06:30 PM - 08:30 PM</span>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">location_on</span>
+<span class="font-body-md text-body-md">Community Hall B</span>
+</div>
+</div>
+<button class="mt-auto w-full py-sm border-2 border-primary text-primary font-title-md text-title-md rounded-lg hover:bg-primary hover:text-white transition-all">Event Details</button>
+</div>
+</div>
+<!-- Event Card 3 -->
+<div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-outline-variant/30 flex flex-col h-full">
+<div class="relative h-48 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Close up of diverse hands working together to sort food and supplies into boxes for community aid, bright natural daylight, soft focus background of a community center, clean and hopeful aesthetic, emphasizing service and compassion." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoUkj4ZiJaNrrav6IVEVRLBI-HHU-cEZYSEuKeCeZrZc7M6sTihkeS_fG36YDMSgExgVQD3bah3z231jFjj3mXwYXLRGdo294MNigdMR4sKJXx8bDIr7injkNdfYO7skAFg6AoZeR4P8waABSfdEZz3foIWb_tkworc9mZu3y25vSCXIPaHi9e9_IAQP3EMAP2Jlzi6ndFXyJVIzpGPTuHugDN33etYkbspxFIkTUDMkI8cTzba2lj_Q"/>
+<div class="absolute top-md left-md bg-white/90 backdrop-blur-md rounded-lg p-sm text-center min-w-[50px] shadow-sm">
+<span class="block font-headline-md text-headline-md text-primary leading-none">30</span>
+<span class="block font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Oct</span>
+</div>
+<div class="absolute bottom-md right-md">
+<span class="bg-tertiary/90 backdrop-blur-md text-white px-md py-xs rounded-full font-label-lg text-label-lg">Community</span>
+</div>
+</div>
+<div class="p-lg flex-grow flex flex-col">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-sm">Community Outreach</h3>
+<div class="space-y-xs mb-lg">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">schedule</span>
+<span class="font-body-md text-body-md">08:00 AM - 12:00 PM</span>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">location_on</span>
+<span class="font-body-md text-body-md">Kafue Market Square</span>
+</div>
+</div>
+<button class="mt-auto w-full py-sm border-2 border-primary text-primary font-title-md text-title-md rounded-lg hover:bg-primary hover:text-white transition-all">Event Details</button>
+</div>
+</div>
+<!-- Event Card 4 -->
+<div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-outline-variant/30 flex flex-col h-full">
+<div class="relative h-48 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A group of women laughing and sharing coffee around a large wooden table, beautiful interior design with indoor plants and soft morning light, warm and welcoming atmosphere, elegant light mode aesthetic, high-quality community photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZew07nMmhdhCjs7WQg1UJHXvSt1f0Tk_u78sA1OgAB3B_kjkIPfIwFJcz8tb_y9bvHOV9Oh--elIZBQ_E-fRryKkRjjW_v63vmhlqJ-thoRzqnp9DG9MN-dtvWXI80zh3PVejKj8Cvip1r_ej6YomCvxUwwIp098H53_hdmI8_LYI_xD5FUkfbQy75_yj15UmxaZlFnf13uxVVQUvSscCfsxC3npmubtDnDP7CxZZrAtEifxmi3v2dw"/>
+<div class="absolute top-md left-md bg-white/90 backdrop-blur-md rounded-lg p-sm text-center min-w-[50px] shadow-sm">
+<span class="block font-headline-md text-headline-md text-primary leading-none">02</span>
+<span class="block font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Nov</span>
+</div>
+<div class="absolute bottom-md right-md">
+<span class="bg-on-secondary-container/90 backdrop-blur-md text-white px-md py-xs rounded-full font-label-lg text-label-lg">Women's</span>
+</div>
+</div>
+<div class="p-lg flex-grow flex flex-col">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-sm">Women's Prayer Breakfast</h3>
+<div class="space-y-xs mb-lg">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">schedule</span>
+<span class="font-body-md text-body-md">07:30 AM - 09:30 AM</span>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">location_on</span>
+<span class="font-body-md text-body-md">The Church Cafe</span>
+</div>
+</div>
+<button class="mt-auto w-full py-sm border-2 border-primary text-primary font-title-md text-title-md rounded-lg hover:bg-primary hover:text-white transition-all">Event Details</button>
+</div>
+</div>
+</div>
+<!-- Calendar View (Hidden by Default) -->
+<div class="hidden" id="calendarView">
+<div class="bg-white rounded-2xl shadow-sm border border-outline-variant p-lg overflow-hidden">
+<div class="flex justify-between items-center mb-xl">
+<h2 class="font-headline-md text-headline-md text-on-surface">October 2024</h2>
+<div class="flex gap-sm">
+<button class="p-sm rounded-lg hover:bg-surface-container transition-all"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="p-sm rounded-lg hover:bg-surface-container transition-all"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+<!-- Simple Calendar Grid -->
+<div class="grid grid-cols-7 gap-px bg-outline-variant/30 rounded-lg overflow-hidden">
+<!-- Days of Week -->
+<div class="bg-surface-container-high p-sm text-center font-label-lg text-label-lg text-on-surface-variant">SUN</div>
+<div class="bg-surface-container-high p-sm text-center font-label-lg text-label-lg text-on-surface-variant">MON</div>
+<div class="bg-surface-container-high p-sm text-center font-label-lg text-label-lg text-on-surface-variant">TUE</div>
+<div class="bg-surface-container-high p-sm text-center font-label-lg text-label-lg text-on-surface-variant">WED</div>
+<div class="bg-surface-container-high p-sm text-center font-label-lg text-label-lg text-on-surface-variant">THU</div>
+<div class="bg-surface-container-high p-sm text-center font-label-lg text-label-lg text-on-surface-variant">FRI</div>
+<div class="bg-surface-container-high p-sm text-center font-label-lg text-label-lg text-on-surface-variant">SAT</div>
+<!-- Calendar Cells (Representation) -->
+<div class="bg-white min-h-[120px] p-xs group relative opacity-50">
+<span class="font-label-lg text-label-lg p-xs">29</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative opacity-50">
+<span class="font-label-lg text-label-lg p-xs">30</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">1</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">2</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">3</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">4</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">5</span>
+</div>
+<!-- Row 2 -->
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">6</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">7</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">8</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">9</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">10</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">11</span>
+</div>
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">12</span>
+</div>
+<!-- Today Active Example -->
+<div class="bg-primary-container/10 min-h-[120px] p-xs group relative">
+<span class="bg-primary text-white font-label-lg text-label-lg h-7 w-7 flex items-center justify-center rounded-full ml-xs mt-xs">13</span>
+</div>
+<!-- Day with Event Example -->
+<div class="bg-white min-h-[120px] p-xs group relative">
+<span class="font-label-lg text-label-lg p-xs">24</span>
+<div class="mt-sm space-y-xs">
+<div class="bg-primary text-white text-[10px] px-sm py-[2px] rounded-sm truncate">09:00 - Sunday Service</div>
+</div>
+</div>
+<!-- Filling remaining cells... -->
+<div class="bg-white min-h-[120px] p-xs"></div>
+<div class="bg-white min-h-[120px] p-xs"></div>
+<div class="bg-white min-h-[120px] p-xs"></div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-highest mt-xl border-t border-outline-variant/30">
+<div class="max-w-7xl mx-auto px-lg py-xl flex flex-col md:flex-row justify-between items-center gap-md">
+<div class="flex flex-col gap-xs text-center md:text-left">
+<div class="font-title-lg text-title-lg font-bold text-primary">Kafue Baptist Church</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Shining light, sharing hope.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-xl">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Giving</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Contact</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Ministries</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Events</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Resources</a>
+</div>
+<div class="text-on-surface-variant font-body-md text-body-md opacity-70">
+                © 2024 Kafue Baptist Church. Powered by GetPro Church
+            </div>
+</div>
+</footer>
+<script>
+        function toggleView(view) {
+            const listView = document.getElementById('listView');
+            const calendarView = document.getElementById('calendarView');
+            const listBtn = document.getElementById('listViewBtn');
+            const calendarBtn = document.getElementById('calendarViewBtn');
+
+            if (view === 'list') {
+                listView.classList.remove('hidden');
+                calendarView.classList.add('hidden');
+                listBtn.classList.add('active-view-btn');
+                listBtn.classList.remove('text-on-surface-variant');
+                calendarBtn.classList.remove('active-view-btn');
+                calendarBtn.classList.add('text-on-surface-variant');
+            } else {
+                listView.classList.add('hidden');
+                calendarView.classList.remove('hidden');
+                calendarBtn.classList.add('active-view-btn');
+                calendarBtn.classList.remove('text-on-surface-variant');
+                listBtn.classList.remove('active-view-btn');
+                listBtn.classList.add('text-on-surface-variant');
+            }
+        }
+    </script>
+</body></html>

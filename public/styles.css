@@ -6168,6 +6168,12 @@ textarea {
   color: var(--flash-success-text);
 }
 
+.flash.flash--error {
+  border-color: #ef9a9a;
+  background: #ffebee;
+  color: #b71c1c;
+}
+
 .flash.flash--info {
   border-color: var(--flash-info-border);
   background: var(--flash-info-bg);
@@ -12669,3 +12675,231 @@ body[class*="tenant-"] {
   }
 }
 
+.admin-status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  border: 1px solid transparent;
+}
+
+.admin-status-badge--success {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-color: #a5d6a7;
+}
+
+.admin-status-badge--warning {
+  background: #fff8e1;
+  color: #f57f17;
+  border-color: #ffe082;
+}
+
+.admin-status-badge--muted {
+  background: #f3f4f6;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+.admin-status-badge--default {
+  background: #eef2ff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+}
+
+.church-status-badge,
+.church-type-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.church-status-submitted {
+  background: #fff8e1;
+  color: #f57f17;
+  border-color: #ffe082;
+}
+
+.church-status-reviewed {
+  background: #e3f2fd;
+  color: #1565c0;
+  border-color: #90caf9;
+}
+
+.church-status-completed {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-color: #a5d6a7;
+}
+
+.church-status-rejected {
+  background: #ffebee;
+  color: #c62828;
+  border-color: #ef9a9a;
+}
+
+.church-type-badge {
+  text-transform: none;
+}
+
+.church-type-member {
+  background: #f3e5f5;
+  color: #6a1b9a;
+  border-color: #ce93d8;
+}
+
+.church-type-branch-admin {
+  background: #e8eaf6;
+  color: #283593;
+  border-color: #9fa8da;
+}
+
+.church-type-hq-admin {
+  background: #e0f2f1;
+  color: #00695c;
+  border-color: #80cbc4;
+}
+
+.church-nav-count {
+  display: inline-block;
+  margin-left: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: inherit;
+}
+
+.admin-stat--pending-highlight .admin-stat__value {
+  color: #f57f17;
+}
+
+.admin-stat--pending-highlight .admin-stat__label {
+  font-weight: 600;
+}
+
+.admin-status-actions {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.admin-status-actions__form {
+  padding: 1rem;
+  border: 1px solid var(--border-subtle, #e5e7eb);
+  border-radius: 0.5rem;
+  background: var(--surface-muted, #fafafa);
+}
+
+.admin-status-actions__form h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.admin-status-actions__form textarea {
+  width: 100%;
+  min-height: 4rem;
+  margin: 0.5rem 0;
+}
+
+.reset-timeline-section {
+  margin-top: 0;
+}
+
+.reset-timeline-section__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.reset-timeline-section__empty,
+.reset-timeline-section__notice {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.reset-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.reset-timeline-item {
+  display: grid;
+  grid-template-columns: 1rem 1fr;
+  gap: 0.75rem 1rem;
+  padding-bottom: 1rem;
+  position: relative;
+}
+
+.reset-timeline-item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 0.4rem;
+  top: 1rem;
+  bottom: 0;
+  width: 2px;
+  background: #e5e7eb;
+}
+
+.reset-timeline-dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+  background: #94a3b8;
+  margin-top: 0.2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.reset-timeline-dot--submitted { background: #6366f1; }
+.reset-timeline-dot--reviewed { background: #0ea5e9; }
+.reset-timeline-dot--completed { background: #16a34a; }
+.reset-timeline-dot--rejected { background: #dc2626; }
+
+.reset-timeline-body {
+  min-width: 0;
+}
+
+.reset-timeline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  align-items: baseline;
+}
+
+.reset-timeline-label {
+  font-size: 0.95rem;
+}
+
+.reset-timeline-date {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.reset-timeline-actor,
+.reset-timeline-status {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+}
+
+.reset-timeline-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+.reset-timeline-badge {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}

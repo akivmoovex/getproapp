@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create Church Organization | Moovex Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Hanken+Grotesk:wght@600;700;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#d9e4e9",
+                    "tertiary-fixed-dim": "#4bddb7",
+                    "on-background": "#131d21",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#eaf5fa",
+                    "surface-tint": "#5847d2",
+                    "surface-container": "#e4f0f4",
+                    "background": "#f1fbff",
+                    "on-secondary-container": "#5d6466",
+                    "on-tertiary-fixed-variant": "#005140",
+                    "on-primary-fixed": "#160066",
+                    "on-tertiary-fixed": "#002018",
+                    "tertiary-fixed": "#6dfad2",
+                    "on-error": "#ffffff",
+                    "secondary": "#586062",
+                    "primary-fixed": "#e4dfff",
+                    "primary": "#5341cd",
+                    "on-tertiary-container": "#dffff1",
+                    "tertiary": "#006651",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d1dce0",
+                    "inverse-primary": "#c6bfff",
+                    "surface-container-high": "#dfeaef",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#131d21",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "surface-bright": "#f1fbff",
+                    "inverse-on-surface": "#e7f3f7",
+                    "secondary-container": "#dae1e3",
+                    "outline-variant": "#c8c4d7",
+                    "error": "#ba1a1a",
+                    "outline": "#787586",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#dde4e6",
+                    "inverse-surface": "#283236",
+                    "on-secondary-fixed": "#161d1f",
+                    "tertiary-container": "#008167",
+                    "surface-variant": "#d9e4e9",
+                    "primary-container": "#6c5ce7",
+                    "on-surface-variant": "#474554",
+                    "on-primary-container": "#faf6ff",
+                    "surface": "#f1fbff",
+                    "on-error-container": "#93000a",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "unit": "4px",
+                    "sidebar-width": "260px",
+                    "gutter": "16px",
+                    "density-comfortable": "16px",
+                    "margin-desktop": "32px",
+                    "density-compact": "8px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "label-md": ["JetBrains Mono"],
+                    "headline-sm": ["Hanken Grotesk"],
+                    "label-sm": ["JetBrains Mono"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-sm": ["10px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { background-color: #f1fbff; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .step-indicator { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .form-section { display: none; }
+        .form-section.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface">
+<!-- Top Navigation Header (Transactional Mode: Suppressed Global Nav) -->
+<header class="sticky top-0 z-40 bg-surface-container-lowest border-b border-outline-variant flex items-center h-16 px-margin-mobile">
+<button class="p-2 -ml-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors" onclick="history.back()">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="ml-4">
+<h1 class="font-headline-sm text-headline-sm text-on-surface">New Organization</h1>
+</div>
+<div class="ml-auto">
+<span class="font-label-md text-label-md text-secondary uppercase tracking-wider">Step <span id="current-step-num">1</span> of 3</span>
+</div>
+</header>
+<main class="min-h-screen pb-32">
+<!-- Progress Bar -->
+<div class="w-full bg-surface-container-highest h-1 flex">
+<div class="h-full bg-primary transition-all duration-500 ease-in-out" id="progress-bar" style="width: 33.33%"></div>
+</div>
+<div class="px-margin-mobile pt-8 max-w-lg mx-auto">
+<!-- Step Header Text -->
+<div class="mb-8" id="step-info">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2" id="step-title">Basic Information</h2>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed" id="step-desc">Enter the core details of the church or non-profit organization.</p>
+</div>
+<form class="space-y-8" id="create-org-form">
+<!-- SECTION 1: Basic Details -->
+<section class="form-section active space-y-6" id="section-1">
+<div class="relative">
+<div class="mb-4">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-wide" for="org_name">Organization Name</label>
+<input class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 font-body-lg text-body-lg text-on-surface placeholder-on-surface-variant/40 transition-all" id="org_name" name="org_name" placeholder="e.g. Grace Community Chapel" required="" type="text"/>
+</div>
+</div>
+<div class="relative">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-wide" for="org_type">Organization Type</label>
+<select class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 font-body-lg text-body-lg text-on-surface transition-all" id="org_type" name="org_type">
+<option value="church">Church / Parish</option>
+<option value="diocese">Diocese / Network</option>
+<option value="charity">Non-Profit / Charity</option>
+<option value="educational">Educational Institution</option>
+</select>
+</div>
+<div class="relative">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-wide" for="primary_contact">Primary Admin Email</label>
+<input class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 font-body-lg text-body-lg text-on-surface placeholder-on-surface-variant/40 transition-all" id="primary_contact" name="primary_contact" placeholder="admin@example.org" required="" type="email"/>
+</div>
+<!-- Visual Accent Card -->
+<div class="rounded-xl bg-primary-fixed/30 p-gutter flex items-start gap-4 border border-primary-fixed">
+<span class="material-symbols-outlined text-on-primary-fixed-variant" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="font-body-md text-body-md text-on-primary-fixed-variant">This email will receive the initial login credentials and setup link for the portal.</p>
+</div>
+</section>
+<!-- SECTION 2: Location & Region -->
+<section class="form-section space-y-6" id="section-2">
+<div class="relative">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-wide" for="hq_location">Headquarters Location</label>
+<input class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 font-body-lg text-body-lg text-on-surface placeholder-on-surface-variant/40 transition-all" id="hq_location" name="hq_location" placeholder="City, Country" required="" type="text"/>
+</div>
+<div class="aspect-video w-full rounded-xl overflow-hidden shadow-sm border border-outline-variant relative">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A clean, minimalist vector map of a metropolitan area with stylized landmarks and soft purple navigation pins, reflecting a professional Moovex corporate dashboard aesthetic with soft high-key lighting." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAzUv80IcZb2wGxVu3l0eNRUy3C9lHFDRU-j1DfbYVuoJUAeoYItzhB15gELSZ5AXQeJykXxRMLVhGCe0znpq8QRsTCoSF4T6h3UMLAeNUHZtmACp4yR63oE4UspZxH235Ae-1QwY5r9V20Pq7ZmlTqNLEKmN-B6VQ8l2GXKDyZcjzs92N0lRr1mb_-cGgp1AXIuNQq7ooCwN-HbBi4oPYiG2kVcjMeUpqH7wxVcHl_76lV0Dtfd68Afg')"></div>
+<div class="absolute inset-0 bg-primary/5 pointer-events-none"></div>
+<div class="absolute bottom-4 left-4 right-4 bg-surface-container-lowest/90 backdrop-blur-md p-3 rounded-lg border border-outline-variant flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">location_on</span>
+<span class="text-label-md font-label-md">Pin location to verify service region</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="relative">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-wide" for="timezone">Timezone</label>
+<select class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 font-body-md text-body-md text-on-surface" id="timezone" name="timezone">
+<option>UTC -5 (EST)</option>
+<option>UTC +0 (GMT)</option>
+<option>UTC +1 (CET)</option>
+</select>
+</div>
+<div class="relative">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-wide" for="currency">Currency</label>
+<select class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 font-body-md text-body-md text-on-surface" id="currency" name="currency">
+<option>USD ($)</option>
+<option>EUR (€)</option>
+<option>GBP (£)</option>
+</select>
+</div>
+</div>
+</section>
+<!-- SECTION 3: Governance & Review -->
+<section class="form-section space-y-6" id="section-3">
+<div class="bg-surface-container-low p-gutter rounded-xl border border-outline-variant space-y-4">
+<h4 class="font-headline-sm text-headline-sm text-primary">Configuration Summary</h4>
+<div class="space-y-3">
+<div class="flex justify-between border-b border-outline-variant pb-2">
+<span class="text-on-surface-variant font-label-md uppercase">Plan Tier</span>
+<span class="text-on-surface font-body-md font-bold">Standard Non-Profit</span>
+</div>
+<div class="flex justify-between border-b border-outline-variant pb-2">
+<span class="text-on-surface-variant font-label-md uppercase">Member Cap</span>
+<span class="text-on-surface font-body-md">5,000 Seats</span>
+</div>
+<div class="flex justify-between border-b border-outline-variant pb-2">
+<span class="text-on-surface-variant font-label-md uppercase">Module Access</span>
+<span class="text-on-surface font-body-md">Full Core Suite</span>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-start gap-3">
+<input class="mt-1 rounded text-primary focus:ring-primary h-5 w-5 border-outline-variant bg-surface-container-low" id="terms" type="checkbox"/>
+<label class="font-body-md text-body-md text-on-surface-variant" for="terms">
+                                I confirm this organization adheres to the <a class="text-primary underline font-medium" href="#">Compliance Guidelines</a> and the <a class="text-primary underline font-medium" href="#">System Acceptable Use Policy</a>.
+                            </label>
+</div>
+<div class="flex items-start gap-3">
+<input checked="" class="mt-1 rounded text-primary focus:ring-primary h-5 w-5 border-outline-variant bg-surface-container-low" id="broadcast" type="checkbox"/>
+<label class="font-body-md text-body-md text-on-surface-variant" for="broadcast">
+                                Enable multi-tenant broadcast capabilities (Required for diocese/network accounts).
+                            </label>
+</div>
+</div>
+<!-- Asset Upload Placeholder -->
+<div class="border-2 border-dashed border-outline-variant rounded-xl p-8 text-center bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant group-hover:text-primary mb-2">cloud_upload</span>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Upload Official Charter/Bylaws</p>
+<p class="font-body-md text-label-sm text-secondary mt-1">PDF or JPEG max 10MB</p>
+</div>
+</section>
+</form>
+</div>
+</main>
+<!-- Bottom Action Bar (Contextual FAB Suppression as it's a form) -->
+<footer class="fixed bottom-0 left-0 right-0 bg-surface-container-lowest border-t border-outline-variant px-margin-mobile py-6 flex gap-4 z-50">
+<button class="flex-1 h-14 rounded-full border border-primary text-primary font-bold hidden active:scale-95 transition-all flex items-center justify-center gap-2" id="prev-btn">
+<span class="material-symbols-outlined">chevron_left</span>
+            Back
+        </button>
+<button class="flex-[2] h-14 bg-primary-container text-on-primary-container rounded-full font-bold shadow-lg shadow-primary-container/20 active:scale-95 transition-all flex items-center justify-center gap-2" id="next-btn">
+            Continue
+            <span class="material-symbols-outlined">chevron_right</span>
+</button>
+<button class="flex-[2] h-14 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 hidden active:scale-95 transition-all flex items-center justify-center gap-2" id="submit-btn">
+            Deploy Organization
+            <span class="material-symbols-outlined">rocket_launch</span>
+</button>
+</footer>
+<script>
+        let currentStep = 1;
+        const totalSteps = 3;
+
+        const sections = {
+            1: {
+                title: "Basic Information",
+                desc: "Enter the core details of the church or non-profit organization.",
+                el: document.getElementById('section-1')
+            },
+            2: {
+                title: "Regional Context",
+                desc: "Specify geographic data to optimize local service distribution and compliance.",
+                el: document.getElementById('section-2')
+            },
+            3: {
+                title: "Governance & Launch",
+                desc: "Review configuration settings and verify regulatory compliance before deployment.",
+                el: document.getElementById('section-3')
+            }
+        };
+
+        const updateUI = () => {
+            // Update Text
+            document.getElementById('current-step-num').textContent = currentStep;
+            document.getElementById('step-title').textContent = sections[currentStep].title;
+            document.getElementById('step-desc').textContent = sections[currentStep].desc;
+            document.getElementById('progress-bar').style.width = `${(currentStep / totalSteps) * 100}%`;
+
+            // Update Section Visibility
+            Object.values(sections).forEach(s => s.el.classList.remove('active'));
+            sections[currentStep].el.classList.add('active');
+
+            // Button Logic
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (currentStep === 1) {
+                prevBtn.classList.add('hidden');
+            } else {
+                prevBtn.classList.remove('hidden');
+            }
+
+            if (currentStep === totalSteps) {
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateUI();
+            }
+        });
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                updateUI();
+            }
+        });
+
+        document.getElementById('submit-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Processing...';
+            btn.classList.add('opacity-80', 'pointer-events-none');
+            
+            setTimeout(() => {
+                alert('Organization deployment sequence initiated. Redirecting to Management Dashboard.');
+                window.location.reload();
+            }, 2000);
+        });
+
+        // Micro-interaction for input fields
+        document.querySelectorAll('input, select').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('scale-[1.01]');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('scale-[1.01]');
+            });
+        });
+    </script>
+</body></html>

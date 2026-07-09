@@ -1,0 +1,27 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/duty-roster">&larr; Back to duty roster</a>
+          <h1 class="church-branch-topbar__title"><%= isEdit ? 'Edit duty' : 'New duty' %></h1>
+        </div>
+      </header>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <form class="church-form" method="post" action="<%= isEdit ? '/branch/duty-roster/' + dutyId : '/branch/duty-roster' %>">
+        <section class="church-branch-panel">
+          <div class="church-form-grid">
+            <div class="church-field"><label class="church-label" for="duty_date">Duty date</label><input class="church-input" id="duty_date" name="duty_date" type="date" required value="<%= form.duty_date || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="service_name">Service name</label><input class="church-input" id="service_name" name="service_name" type="text" required placeholder="Sunday morning service" value="<%= form.service_name || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="role_name">Role</label><input class="church-input" id="role_name" name="role_name" type="text" required list="role-examples" value="<%= form.role_name || '' %>"/><datalist id="role-examples"><% roleExamples.forEach(function (r) { %><option value="<%= r %>"></option><% }); %></datalist></div>
+            <div class="church-field"><label class="church-label" for="assigned_member_id">Assigned member</label><select class="church-input" id="assigned_member_id" name="assigned_member_id"><option value="">— Select verified member —</option><% (members || []).forEach(function (m) { %><option value="<%= m.id %>" <%= String(form.assigned_member_id) === String(m.id) ? 'selected' : '' %>><%= m.full_name %></option><% }); %></select></div>
+            <div class="church-field"><label class="church-label" for="assigned_member_name">Or name (fallback)</label><input class="church-input" id="assigned_member_name" name="assigned_member_name" type="text" placeholder="Guest volunteer" value="<%= form.assigned_member_name || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="ministry_id">Ministry (optional)</label><select class="church-input" id="ministry_id" name="ministry_id"><option value="">— None —</option><% (ministries || []).forEach(function (m) { %><option value="<%= m.id %>" <%= String(form.ministry_id) === String(m.id) ? 'selected' : '' %>><%= m.name %></option><% }); %></select></div>
+            <div class="church-field"><label class="church-label" for="department_id">Department (optional)</label><select class="church-input" id="department_id" name="department_id"><option value="">— None —</option><% (departments || []).forEach(function (d) { %><option value="<%= d.id %>" <%= String(form.department_id) === String(d.id) ? 'selected' : '' %>><%= d.name %></option><% }); %></select></div>
+            <div class="church-field church-field--full"><label class="church-label" for="notes">Notes</label><textarea class="church-input church-input--textarea" id="notes" name="notes" rows="3"><%= form.notes || '' %></textarea></div>
+          </div>
+        </section>
+        <div class="church-branch-actions">
+          <button class="church-btn church-btn--primary" type="submit" name="_intent" value="draft">Save draft</button>
+          <button class="church-btn church-btn--outline" type="submit" name="_intent" value="confirm">Confirm duty</button>
+        </div>
+      </form>
+<%- include('../partials/branch_admin_shell_end') %>

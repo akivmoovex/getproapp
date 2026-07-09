@@ -1,0 +1,26 @@
+<%- include('../partials/public_shell_start') %>
+    <section class="church-section church-section--page">
+      <div class="church-section__inner">
+        <h1 class="church-section__title"><%= aboutTitle %></h1>
+        <p class="church-section__subtitle church-section__subtitle--lead"><%= aboutBody %></p>
+        <% if (missionText) { %>
+        <div class="church-public-block">
+          <h2 class="church-public-block__title">Our mission</h2>
+          <p class="church-public-block__body"><%= missionText %></p>
+        </div>
+        <% } %>
+        <% if (visionText) { %>
+        <div class="church-public-block">
+          <h2 class="church-public-block__title">Our vision</h2>
+          <p class="church-public-block__body"><%= visionText %></p>
+        </div>
+        <% } %>
+        <% if (valuesText) { %>
+        <div class="church-public-block">
+          <h2 class="church-public-block__title">Our values</h2>
+          <p class="church-public-block__body church-card__body--pre"><%= valuesText %></p>
+        </div>
+        <% } %>
+      </div>
+    </section>
+<%- include('../partials/public_shell_end') %>

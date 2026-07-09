@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Moovex Admin - Church Organizations</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-highest": "#d9e4e9",
+                      "tertiary-fixed-dim": "#4bddb7",
+                      "on-background": "#131d21",
+                      "error-container": "#ffdad6",
+                      "surface-container-low": "#eaf5fa",
+                      "surface-tint": "#5847d2",
+                      "surface-container": "#e4f0f4",
+                      "background": "#f1fbff",
+                      "on-secondary-container": "#5d6466",
+                      "on-tertiary-fixed-variant": "#005140",
+                      "on-primary-fixed": "#160066",
+                      "on-tertiary-fixed": "#002018",
+                      "tertiary-fixed": "#6dfad2",
+                      "on-error": "#ffffff",
+                      "secondary": "#586062",
+                      "primary-fixed": "#e4dfff",
+                      "primary": "#5341cd",
+                      "on-tertiary-container": "#dffff1",
+                      "tertiary": "#006651",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-dim": "#d1dce0",
+                      "inverse-primary": "#c6bfff",
+                      "surface-container-high": "#dfeaef",
+                      "on-primary-fixed-variant": "#4029ba",
+                      "secondary-fixed-dim": "#c1c8ca",
+                      "on-primary": "#ffffff",
+                      "on-surface": "#131d21",
+                      "on-secondary-fixed-variant": "#41484a",
+                      "surface-bright": "#f1fbff",
+                      "inverse-on-surface": "#e7f3f7",
+                      "secondary-container": "#dae1e3",
+                      "outline-variant": "#c8c4d7",
+                      "error": "#ba1a1a",
+                      "outline": "#787586",
+                      "primary-fixed-dim": "#c6bfff",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed": "#dde4e6",
+                      "inverse-surface": "#283236",
+                      "on-secondary-fixed": "#161d1f",
+                      "tertiary-container": "#008167",
+                      "surface-variant": "#d9e4e9",
+                      "primary-container": "#6c5ce7",
+                      "on-surface-variant": "#474554",
+                      "on-primary-container": "#faf6ff",
+                      "surface": "#f1fbff",
+                      "on-error-container": "#93000a",
+                      "on-tertiary": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "margin-mobile": "16px",
+                      "unit": "4px",
+                      "sidebar-width": "260px",
+                      "gutter": "16px",
+                      "density-comfortable": "16px",
+                      "margin-desktop": "32px",
+                      "density-compact": "8px"
+              },
+              "fontFamily": {
+                      "display-lg": ["Hanken Grotesk"],
+                      "headline-md": ["Hanken Grotesk"],
+                      "label-md": ["JetBrains Mono"],
+                      "headline-sm": ["Hanken Grotesk"],
+                      "label-sm": ["JetBrains Mono"],
+                      "body-lg": ["Inter"],
+                      "body-md": ["Inter"]
+              },
+              "fontSize": {
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "label-sm": ["10px", {"lineHeight": "14px", "fontWeight": "500"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            background-color: #f1fbff;
+            -webkit-font-smoothing: antialiased;
+        }
+        .bento-card {
+            background-color: #ffffff;
+            border: 1px solid #E2E8F0;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bento-card:active {
+            transform: scale(0.98);
+            background-color: #f8fafc;
+        }
+        /* Custom scrollbar for high density layout */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface selection:bg-primary-fixed">
+<!-- Top AppBar (Mobile View - Fixed) -->
+<header class="fixed top-0 left-0 right-0 z-40 bg-surface-container-lowest border-b border-outline-variant px-margin-mobile h-16 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">corporate_fare</span>
+<h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Organizations</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">health_metrics</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors relative">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-20 pb-32 px-margin-mobile min-h-screen">
+<!-- Sticky Search Bar Area -->
+<div class="mb-6 sticky top-[72px] z-30">
+<div class="relative group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">search</span>
+</div>
+<input class="w-full h-12 pl-12 pr-4 bg-surface-container border-b-2 border-outline hover:border-primary focus:border-primary-container focus:ring-0 transition-all font-body-md text-on-surface placeholder:text-on-surface-variant rounded-t-lg" placeholder="Search church networks..." type="text"/>
+</div>
+<!-- Quick Filters (Chips) -->
+<div class="flex gap-2 mt-4 overflow-x-auto pb-2 no-scrollbar">
+<button class="px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container font-label-md text-label-md whitespace-nowrap">All Orgs</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap border border-outline-variant">Active</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap border border-outline-variant">Pending</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap border border-outline-variant">Archived</button>
+</div>
+</div>
+<!-- Church Organizations List (Asymmetric Bento-ish List) -->
+<div class="flex flex-col gap-4">
+<!-- Card 1: Active Premium Org -->
+<div class="bento-card p-4 rounded-xl shadow-sm border-l-4 border-l-primary flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<div class="flex gap-3">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed text-[28px]">church</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Grace Community Network</h2>
+<p class="font-label-md text-label-md text-on-surface-variant tracking-wider uppercase">Global Administrative Unit</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-tertiary-container/20 text-on-tertiary-fixed-variant text-label-sm font-label-sm rounded uppercase tracking-tighter">Active</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-1 border-t border-outline-variant pt-3">
+<div class="flex flex-col">
+<span class="text-label-sm font-label-sm text-outline-variant uppercase">Branches</span>
+<span class="text-headline-sm font-headline-sm text-primary">142</span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-sm font-label-sm text-outline-variant uppercase">Total Tenants</span>
+<span class="text-headline-sm font-headline-sm text-on-surface">2,840</span>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="material-symbols-outlined text-outline-variant text-sm">location_on</span>
+<span class="text-body-md font-body-md text-on-surface-variant">Headquarters: London, UK</span>
+</div>
+</div>
+<!-- Card 2: Expansion Pending -->
+<div class="bento-card p-4 rounded-xl shadow-sm flex flex-col gap-3 border-l-4 border-l-secondary">
+<div class="flex justify-between items-start">
+<div class="flex gap-3">
+<div class="w-12 h-12 rounded-lg bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container text-[28px]">temple_buddhist</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Redeemer Alliance</h2>
+<p class="font-label-md text-label-md text-on-surface-variant tracking-wider uppercase">Regional Hub</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-surface-container-highest text-on-surface-variant text-label-sm font-label-sm rounded uppercase tracking-tighter">Onboarding</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-1 border-t border-outline-variant pt-3">
+<div class="flex flex-col">
+<span class="text-label-sm font-label-sm text-outline-variant uppercase">Branches</span>
+<span class="text-headline-sm font-headline-sm text-primary">12</span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-sm font-label-sm text-outline-variant uppercase">Activation %</span>
+<div class="w-full bg-surface-container h-2 rounded-full mt-2">
+<div class="bg-primary w-[45%] h-full rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: Large Network -->
+<div class="bento-card p-4 rounded-xl shadow-sm flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<div class="flex gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[28px]">mosque</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Harvest International</h2>
+<p class="font-label-md text-label-md text-on-surface-variant tracking-wider uppercase">Enterprise Partner</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-tertiary-container/20 text-on-tertiary-fixed-variant text-label-sm font-label-sm rounded uppercase tracking-tighter">Active</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-1 border-t border-outline-variant pt-3">
+<div class="flex flex-col">
+<span class="text-label-sm font-label-sm text-outline-variant uppercase">Branches</span>
+<span class="text-headline-sm font-headline-sm text-primary">562</span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-sm font-label-sm text-outline-variant uppercase">Health Score</span>
+<span class="text-headline-sm font-headline-sm text-tertiary">98.4%</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Action Required -->
+<div class="bento-card p-4 rounded-xl shadow-sm border-l-4 border-l-error flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<div class="flex gap-3">
+<div class="w-12 h-12 rounded-lg bg-error-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-error-container text-[28px]">domain_disabled</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">City Light Fellowship</h2>
+<p class="font-label-md text-label-md text-on-surface-variant tracking-wider uppercase">Local Chapter</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-error-container text-on-error-container text-label-sm font-label-sm rounded uppercase tracking-tighter">Suspended</span>
+</div>
+<div class="mt-2 p-2 bg-error-container/20 rounded border border-error/10">
+<p class="text-body-md font-body-md text-error flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">warning</span>
+                        Overdue subscription: 14 days
+                    </p>
+</div>
+</div>
+<!-- Empty space for FAB -->
+<div class="h-12"></div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-primary-container text-on-primary-container rounded-2xl shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-50">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface-container-high border-t border-outline-variant shadow-lg h-20 md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant gap-1" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 gap-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">corporate_fare</span>
+<span class="font-label-lg text-label-lg">Orgs</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant gap-1" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span class="font-label-lg text-label-lg">Tenants</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant gap-1" href="#">
+<span class="material-symbols-outlined">monitor_heart</span>
+<span class="font-label-lg text-label-lg">Health</span>
+</a>
+</nav>
+<!-- Micro-interaction Script -->
+<script>
+        document.querySelectorAll('.bento-card').forEach(card => {
+            card.addEventListener('click', () => {
+                // Subtle feedback on tap
+                card.style.borderColor = '#6c5ce7';
+                setTimeout(() => {
+                    card.style.borderColor = '';
+                }, 400);
+            });
+        });
+
+        // Simple Search Filter Simulation
+        const searchInput = document.querySelector('input[type="text"]');
+        const cards = document.querySelectorAll('.bento-card');
+
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                if (text.includes(term)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body></html>

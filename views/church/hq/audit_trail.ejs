@@ -1,0 +1,98 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Global audit trail</h1>
+          <p class="church-branch-topbar__subtitle">Organization-wide activity for <%= organizationName %></p>
+        </div>
+      </header>
+      <form class="church-form church-form--inline" method="get" action="/hq/audit">
+        <div class="church-field">
+          <label class="church-label" for="branch_id">Branch</label>
+          <select class="church-input" id="branch_id" name="branch_id">
+            <option value="">All branches</option>
+            <% (branches || []).forEach(function (b) { %>
+            <option value="<%= b.id %>" <%= filters.branchId === b.id ? 'selected' : '' %>><%= b.name %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="church-field church-field--grow">
+          <label class="church-label" for="q">Search</label>
+          <input class="church-input" id="q" name="q" type="search" value="<%= filters.q || '' %>" placeholder="Action, target, metadata"/>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="action_group">Action group</label>
+          <select class="church-input" id="action_group" name="action_group">
+            <% auditActionGroups.forEach(function (g) { %>
+            <option value="<%= g.id %>" <%= filters.actionGroup === g.id ? 'selected' : '' %>><%= g.label %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="actor_type">Actor type</label>
+          <select class="church-input" id="actor_type" name="actor_type">
+            <option value="">All</option>
+            <% auditActorTypes.forEach(function (t) { %>
+            <option value="<%= t %>" <%= filters.actorType === t ? 'selected' : '' %>><%= actorTypeLabel(t) %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="target_type">Target type</label>
+          <input class="church-input" id="target_type" name="target_type" type="text" value="<%= filters.targetType || '' %>" placeholder="e.g. member"/>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="date_from">From</label>
+          <input class="church-input" id="date_from" name="date_from" type="date" value="<%= filters.dateFrom || '' %>"/>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="date_to">To</label>
+          <input class="church-input" id="date_to" name="date_to" type="date" value="<%= filters.dateTo || '' %>"/>
+        </div>
+        <button class="church-btn church-btn--primary" type="submit">Apply</button>
+      </form>
+      <section class="church-branch-panel">
+        <p class="church-branch-panel__hint"><%= total %> event(s) · page <%= filters.page %> of <%= totalPages %></p>
+        <% if ((logs || []).length === 0) { %>
+        <p class="church-branch-empty">No audit events match these filters.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table church-audit-table">
+            <thead>
+              <tr>
+                <th>Date/time</th>
+                <th>Branch</th>
+                <th>Actor</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Summary</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% logs.forEach(function (log) { %>
+              <tr>
+                <td><%= new Date(log.created_at).toLocaleString('en-GB') %></td>
+                <td><%= log.branch_name || '—' %></td>
+                <td><%= actorTypeLabel(log.actor_type) %><br/><%= actorDisplayFromRow(log) %></td>
+                <td><%= actionLabel(log.action) %></td>
+                <td><%= targetTypeLabel(log.entity_type) %><br/><%= targetLabelFromRow(log) %></td>
+                <td><%= auditSummary(log) %></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/hq/audit/<%= log.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% if (totalPages > 1) { %>
+        <div class="church-branch-actions">
+          <% if (prevUrl) { %>
+          <a class="church-btn church-btn--outline church-btn--sm" href="<%= prevUrl %>">Previous</a>
+          <% } %>
+          <% if (nextUrl) { %>
+          <a class="church-btn church-btn--outline church-btn--sm" href="<%= nextUrl %>">Next</a>
+          <% } %>
+        </div>
+        <% } %>
+        <% } %>
+      </section>
+<%- include('../partials/hq_shell_end') %>

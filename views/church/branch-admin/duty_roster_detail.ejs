@@ -1,0 +1,35 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/duty-roster">&larr; Back to duty roster</a>
+          <h1 class="church-branch-topbar__title"><%= duty.role_name %></h1>
+          <p class="church-branch-topbar__subtitle"><%= formatDutyDate(duty.duty_date) %> · <%= duty.service_name %></p>
+        </div>
+        <span class="church-status-chip church-status-chip--<%= duty.status === 'confirmed' ? 'verified' : duty.status === 'cancelled' ? 'pending' : 'draft' %>"><%= dutyStatusLabel(duty.status) %></span>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <section class="church-branch-panel">
+        <dl class="church-branch-dl">
+          <div><dt>Date</dt><dd><%= formatDutyDate(duty.duty_date) %></dd></div>
+          <div><dt>Service</dt><dd><%= duty.service_name %></dd></div>
+          <div><dt>Role</dt><dd><%= duty.role_name %></dd></div>
+          <div><dt>Assigned member</dt><dd><%= assignedMemberDisplay(duty) %></dd></div>
+          <div><dt>Ministry / department</dt><dd><%= ministryDepartmentLabel(duty) %></dd></div>
+          <div><dt>Notes</dt><dd><%= duty.notes || '—' %></dd></div>
+          <div><dt>Created by</dt><dd><%= duty.created_by_admin_name || '—' %></dd></div>
+          <div><dt>Last updated</dt><dd><%= duty.updated_at ? new Date(duty.updated_at).toLocaleString('en-GB') : '—' %></dd></div>
+        </dl>
+      </section>
+      <% if (duty.status !== 'cancelled') { %>
+      <section class="church-branch-panel">
+        <div class="church-hq-review-actions">
+          <a class="church-btn church-btn--outline" href="/branch/duty-roster/<%= duty.id %>/edit">Edit</a>
+          <% if (duty.status !== 'confirmed') { %>
+          <form method="post" action="/branch/duty-roster/<%= duty.id %>/confirm"><button class="church-btn church-btn--primary" type="submit">Confirm</button></form>
+          <% } %>
+          <form method="post" action="/branch/duty-roster/<%= duty.id %>/cancel"><button class="church-btn church-btn--outline" type="submit">Cancel duty</button></form>
+        </div>
+      </section>
+      <% } %>
+<%- include('../partials/branch_admin_shell_end') %>

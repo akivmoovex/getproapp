@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Member Login - Kafue Baptist Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#ffffff",
+                    "outline-variant": "#c8c4d7",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-surface-variant": "#474554",
+                    "on-primary-container": "#faf6ff",
+                    "secondary-fixed": "#dde4e6",
+                    "primary": "#5341cd",
+                    "surface-dim": "#d1dce0",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "surface-container-high": "#dfeaef",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-background": "#131d21",
+                    "inverse-on-surface": "#e7f3f7",
+                    "on-primary": "#ffffff",
+                    "surface": "#f1fbff",
+                    "on-secondary-container": "#5d6466",
+                    "on-surface": "#131d21",
+                    "surface-container-low": "#eaf5fa",
+                    "surface-tint": "#5847d2",
+                    "on-primary-fixed": "#160066",
+                    "surface-container-highest": "#d9e4e9",
+                    "primary-fixed": "#e4dfff",
+                    "error": "#ba1a1a",
+                    "background": "#f1fbff",
+                    "inverse-surface": "#283236",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "inverse-primary": "#c6bfff",
+                    "outline": "#787586",
+                    "on-tertiary-fixed": "#191c1d",
+                    "secondary-container": "#dae1e3",
+                    "surface-container": "#e4f0f4",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "tertiary": "#57595b",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#707273",
+                    "tertiary-fixed": "#e1e3e4",
+                    "on-tertiary-container": "#f7f8f9",
+                    "secondary": "#586062",
+                    "on-secondary-fixed": "#161d1f",
+                    "surface-bright": "#f1fbff",
+                    "surface-variant": "#d9e4e9",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "error-container": "#ffdad6",
+                    "primary-container": "#6c5ce7",
+                    "secondary-fixed-dim": "#c1c8ca"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "xl": "32px",
+                    "xs": "4px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1fbff;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .auth-card {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+        .focused-input:focus-within {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-primary-container selection:text-white">
+<!-- Top Bar (Suppressed items, keeping branding as per TopAppBar JSON instruction) -->
+<header class="w-full top-0 sticky bg-surface dark:bg-background z-50">
+<div class="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="church">church</span>
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Kafue Baptist Church</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined p-2 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors" data-icon="help_outline">help_outline</button>
+</div>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center p-margin-mobile md:p-margin-desktop relative overflow-hidden">
+<!-- Subtle Atmospheric Background element -->
+<div class="absolute inset-0 pointer-events-none opacity-40">
+
+</div>
+<!-- Authentication Card -->
+<div class="auth-card bg-surface-container-lowest w-full max-w-md rounded-xl p-8 md:p-12 z-10 border border-outline-variant/30 flex flex-col gap-8">
+<!-- Branding/Logo Section -->
+<div class="flex flex-col items-center text-center gap-4">
+<div class="w-16 h-16 bg-primary-container rounded-2xl flex items-center justify-center shadow-lg transform rotate-3">
+<span class="material-symbols-outlined text-white text-4xl" data-icon="account_balance">account_balance</span>
+</div>
+<div class="space-y-1">
+<h1 class="font-headline-md text-headline-md text-on-surface">Member Access</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Welcome back to your church family</p>
+</div>
+</div>
+<!-- Login Form -->
+<form action="#" class="flex flex-col gap-5">
+<!-- Identity Field -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-lg text-label-lg text-on-surface-variant px-1" for="identity">Email or Phone Number</label>
+<div class="relative focused-input group border border-outline rounded-lg transition-all duration-200">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary" data-icon="mail">mail</span>
+<input class="w-full pl-10 pr-4 py-3 bg-transparent border-none focus:ring-0 text-on-surface font-body-lg text-body-lg placeholder:text-outline/50" id="identity" name="identity" placeholder="Enter your contact info" type="text"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center px-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant" for="password">Password</label>
+<a class="font-label-lg text-label-lg text-primary hover:underline transition-all" href="#">Forgot password?</a>
+</div>
+<div class="relative focused-input group border border-outline rounded-lg transition-all duration-200">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary" data-icon="lock">lock</span>
+<input class="w-full pl-10 pr-12 py-3 bg-transparent border-none focus:ring-0 text-on-surface font-body-lg text-body-lg placeholder:text-outline/50" id="password" name="password" placeholder="••••••••" type="password"/>
+<button class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface-variant" data-icon="visibility" type="button">visibility</button>
+</div>
+</div>
+<!-- Action Button -->
+<button class="mt-4 w-full bg-primary-container text-on-primary-container font-title-md text-title-md py-3.5 rounded-lg shadow-sm active:scale-95 transition-all duration-150 flex items-center justify-center gap-2 hover:brightness-110" type="submit">
+                    Login
+                    <span class="material-symbols-outlined text-xl" data-icon="login">login</span>
+</button>
+</form>
+<!-- Verification Note -->
+<div class="bg-surface-container-low p-4 rounded-lg flex gap-3 items-start border border-primary/10">
+<span class="material-symbols-outlined text-primary text-xl flex-shrink-0" data-icon="verified_user">verified_user</span>
+<p class="font-body-md text-body-md text-on-surface-variant leading-tight">
+                    Access is available after your branch admin verifies your membership.
+                </p>
+</div>
+<!-- Footer Links -->
+<div class="flex flex-col items-center gap-4 border-t border-outline-variant pt-6">
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    Not a member yet? 
+                    <a class="text-primary font-bold hover:underline" href="#">Register as Member</a>
+</p>
+<div class="flex items-center gap-2 opacity-60">
+<span class="font-label-lg text-label-lg text-secondary">Powered by</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-label-lg text-label-lg font-bold tracking-tight">GetPro Church</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Support Illustration/Abstract Pattern -->
+<div class="hidden lg:block absolute bottom-0 right-0 w-1/3 h-1/2 opacity-20 pointer-events-none">
+<div class="w-full h-full bg-cover bg-bottom opacity-30 mix-blend-multiply" data-alt="An artistic, blurred representation of a modern church interior with soft purple and blue atmospheric lighting, featuring contemporary architectural lines and a peaceful, welcoming community atmosphere in a minimalist high-key style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBkbh3nf-SULqBW2oH1c_kybvQAXh6L6gv5zqOJKCX73SegLtG_KkPavDFeJbjK4DI1g3ASx_CLp6X_DqKz_O2QkSgjdUORWBBFbv9RFfSrASo0mvC6Fz1jaKl3WtsQWl0aC-q9fc_Zmw7U-kKclhRpFiuxfyUzMduCCdGZbIsltwpnx9F051s2pY-Ce9KTX3E5UicX0XvhSVqIfVbgh2InyWXKjQzwOwCAsT41AnYwkbtpRM6DQXsFjg')"></div>
+</div>
+</main>
+<!-- Footer (Minimal for Login Screen) -->
+<footer class="w-full mt-auto bg-surface dark:bg-background border-t border-outline-variant dark:border-outline">
+<div class="flex flex-col md:flex-row justify-between items-center py-6 px-margin-mobile md:px-margin-desktop gap-4 max-w-7xl mx-auto">
+<p class="font-label-lg text-label-lg text-secondary dark:text-secondary-fixed-dim">© 2024 Kafue Baptist Church</p>
+<div class="flex gap-6 font-body-md text-body-md">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Support</a>
+</div>
+</div>
+</footer>
+<script>
+        // Simple micro-interaction for password visibility toggle
+        document.querySelector('[data-icon="visibility"]').addEventListener('click', function() {
+            const input = document.getElementById('password');
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.innerText = 'visibility_off';
+            } else {
+                input.type = 'password';
+                this.innerText = 'visibility';
+            }
+        });
+
+        // Add subtle hover effect to the card
+        const card = document.querySelector('.auth-card');
+        document.addEventListener('mousemove', (e) => {
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 45;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 45;
+            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+
+        document.addEventListener('mouseleave', () => {
+            card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        });
+    </script>
+</body></html>

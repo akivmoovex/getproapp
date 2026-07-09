@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Member Dashboard - GetPro Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#c6bfff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-fixed": "#160066",
+                        "inverse-on-surface": "#e7f3f7",
+                        "inverse-surface": "#283236",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#474554",
+                        "surface-variant": "#d9e4e9",
+                        "surface-container-highest": "#d9e4e9",
+                        "secondary": "#586062",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "tertiary-container": "#707273",
+                        "surface-tint": "#5847d2",
+                        "tertiary": "#57595b",
+                        "surface-bright": "#f1fbff",
+                        "surface": "#f1fbff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-primary-container": "#faf6ff",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#787586",
+                        "on-tertiary-fixed": "#191c1d",
+                        "surface-container-high": "#dfeaef",
+                        "surface-dim": "#d1dce0",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#e4dfff",
+                        "background": "#f1fbff",
+                        "on-secondary-container": "#5d6466",
+                        "surface-container": "#e4f0f4",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-background": "#131d21",
+                        "on-surface": "#131d21",
+                        "primary": "#5341cd",
+                        "on-secondary-fixed": "#161d1f",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#c8c4d7",
+                        "tertiary-fixed": "#e1e3e4",
+                        "primary-container": "#6c5ce7",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "secondary-fixed": "#dde4e6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1fbff;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background overflow-hidden flex h-screen">
+<!-- NavigationDrawer (Sidebar) -->
+<aside class="h-full w-72 fixed left-0 top-0 hidden md:flex flex-col bg-surface-container-low z-50 p-md gap-sm border-r border-outline-variant/30">
+<!-- Brand -->
+<div class="px-4 py-6">
+<h1 class="font-headline-lg text-headline-lg text-primary font-bold">GetPro Church</h1>
+</div>
+<!-- Profile Header -->
+<div class="flex items-center gap-md px-4 py-4 mb-4 bg-surface-container rounded-xl">
+<div class="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/20">
+<img class="w-full h-full object-cover" data-alt="A professional and friendly portrait of Mary Phiri, a middle-aged woman with a warm smile, wearing modest professional attire. The background is a soft-focus interior of a modern church community center with natural light and soft violet accents, maintaining a high-key light mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1sAjH2wSuUSUV0s1l9lWNuPE66r5r0BMIt38CS5rgezZeB6XUUo93UbJ_N0w_6rkhPsQJ6CCwMZxRqdkobdOhV7TkNbkJl5gaAF5SCPn0sHElATizPGjv_GAhgAnSFqCJlRS1MSAqX2kvtystZ97U3xwsS9ZRvE0B9Wb9TZHv7njoD6pRAVWJ9CX7NTVUFalVcYYZ0nB-abJjYSJV6XLiexBH0eLQ3iiQIpb6J6ltK_3zs6ni_RvZWA"/>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Mary Phiri</p>
+<p class="font-label-md text-label-md text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary" style="font-variation-settings: 'FILL' 1;">verified</span>
+                    Verified Member
+                </p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex flex-col gap-1 custom-scrollbar overflow-y-auto pr-1">
+<!-- Dashboard Active -->
+<a class="flex items-center gap-md px-4 py-3 bg-secondary-container text-on-secondary-container rounded-full font-bold transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-lg text-label-lg">Resources</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">send</span>
+<span class="font-label-lg text-label-lg">Requests</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 text-on-surface-variant hover:bg-surface-variant/50 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-lg text-label-lg">Giving</span>
+</a>
+</nav>
+<div class="mt-auto px-4 py-4 border-t border-outline-variant/30">
+<div class="text-on-surface-variant font-label-md text-label-md">Kafue Baptist Church</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-0 md:ml-72 flex flex-col h-full overflow-y-auto custom-scrollbar">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full sticky top-0 bg-surface z-40">
+<div class="md:hidden flex items-center gap-md">
+<span class="material-symbols-outlined text-primary">menu</span>
+<span class="font-brand_logo text-headline-md text-primary font-bold">GetPro Church</span>
+</div>
+<div class="hidden md:block">
+<h2 class="font-title-lg text-title-lg text-primary">Member Dashboard</h2>
+</div>
+<div class="flex items-center gap-lg">
+<div class="relative cursor-pointer hover:bg-surface-container-low p-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border border-surface"></span>
+</div>
+<div class="w-8 h-8 rounded-full bg-primary-fixed-dim flex items-center justify-center text-on-primary-fixed font-bold text-xs">
+                    MP
+                </div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="p-margin-mobile md:p-margin-desktop space-y-xl max-w-7xl mx-auto w-full">
+<!-- Welcome Hero -->
+<section class="relative overflow-hidden rounded-[32px] bg-primary text-on-primary p-xl md:p-24 flex flex-col md:flex-row items-center justify-between gap-xl">
+<div class="absolute inset-0 opacity-10">
+<div class="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-[100px] -mr-48 -mt-48"></div>
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-secondary-fixed rounded-full blur-[80px] -ml-32 -mb-32"></div>
+</div>
+<div class="relative z-10 space-y-md text-center md:text-left">
+<div class="inline-flex items-center gap-sm px-4 py-1.5 bg-on-primary/10 backdrop-blur-md rounded-full">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-label-lg text-label-lg uppercase tracking-wider">Verified Member</span>
+</div>
+<h2 class="font-display-lg text-display-lg leading-tight">Welcome home, <br class="hidden md:block"/>Mary Phiri</h2>
+<p class="font-body-lg text-body-lg text-on-primary/80 max-w-md">Your spiritual journey continues today. Explore upcoming events and see what's happening in your ministries.</p>
+<div class="pt-md flex flex-wrap gap-md justify-center md:justify-start">
+<button class="bg-surface-container-lowest text-primary px-8 py-3 rounded-full font-title-md text-title-md shadow-lg hover:shadow-xl transition-all active:scale-95">View Schedule</button>
+<button class="border border-on-primary/30 hover:bg-on-primary/10 px-8 py-3 rounded-full font-title-md text-title-md transition-all active:scale-95">Member Directory</button>
+</div>
+</div>
+<div class="relative z-10 w-full md:w-1/3 flex justify-center">
+<div class="w-48 h-48 md:w-64 md:h-64 rounded-3xl rotate-3 overflow-hidden shadow-2xl border-4 border-white/20">
+<img class="w-full h-full object-cover" data-alt="A serene and beautiful high-resolution image of a modern church garden at sunrise. Soft golden light filters through lush greenery and blooming violet flowers, creating a peaceful and uplifting atmosphere. The style is professional architectural photography with a clean, light-mode aesthetic, emphasizing growth and community." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDn2mVIEhGxPPbQiBZ0iB7-PYAtSYcjg9n0EZY55mMLLeZKZMiBRPtNil4ASYwvT1shAWr4_bqkW2Zlt_ZKAAC_zdqGcuI99AJFqoJ5Zx7-Hh7WLUwrEYhFNLeObKzX8GCjAdjR9jf_tYyqeADDXg_TS0tZT4JWULV78yyD8SXYw1QC_8v1jUu_zLyJ37dfH4Njaf6ozgJ5AN9_ELrY5bCT1TYxdQpilSPdqYPI3U83iUXmkUgVRS176g"/>
+</div>
+</div>
+</section>
+<!-- Main Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Center Column (8/12) -->
+<div class="lg:col-span-8 space-y-xl">
+<!-- Quick Actions Grid -->
+<section>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-lg">Quick Actions</h3>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-md">
+<button class="flex flex-col items-center justify-center gap-sm p-lg bg-surface-container-low border border-outline-variant/30 rounded-2xl hover:bg-surface-variant transition-colors group">
+<span class="material-symbols-outlined text-primary text-[32px] group-hover:scale-110 transition-transform">volunteer_activism</span>
+<span class="font-label-lg text-label-lg">Giving</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-sm p-lg bg-surface-container-low border border-outline-variant/30 rounded-2xl hover:bg-surface-variant transition-colors group">
+<span class="material-symbols-outlined text-primary text-[32px] group-hover:scale-110 transition-transform">diversity_3</span>
+<span class="font-label-lg text-label-lg">Join Group</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-sm p-lg bg-surface-container-low border border-outline-variant/30 rounded-2xl hover:bg-surface-variant transition-colors group">
+<span class="material-symbols-outlined text-primary text-[32px] group-hover:scale-110 transition-transform">event_available</span>
+<span class="font-label-lg text-label-lg">Check-in</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-sm p-lg bg-surface-container-low border border-outline-variant/30 rounded-2xl hover:bg-surface-variant transition-colors group">
+<span class="material-symbols-outlined text-primary text-[32px] group-hover:scale-110 transition-transform">help</span>
+<span class="font-label-lg text-label-lg">Prayer Request</span>
+</button>
+</div>
+</section>
+<!-- Upcoming Events: Bento Style -->
+<section>
+<div class="flex justify-between items-end mb-lg">
+<h3 class="font-headline-md text-headline-md text-on-surface">Upcoming Events</h3>
+<button class="text-primary font-label-lg text-label-lg uppercase tracking-wider flex items-center gap-1">View Calendar <span class="material-symbols-outlined text-[16px]">arrow_forward</span></button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Large Event Card -->
+<div class="glass-card rounded-[24px] overflow-hidden flex flex-col group cursor-pointer shadow-sm hover:shadow-md transition-all">
+<div class="h-48 relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A wide-angle, vibrant photograph of a diverse church choir performing on a modern stage with professional stage lighting. The mood is joyful and energetic, with warm violet and amber light highlighting the singers' expressions. High-key light-mode aesthetic with crisp focus and clean composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyrb8hpHC72MSO_4ZFqL1sXNEnt5Dra-VjdZquv_h7B7dk6oIvnfUWBo8P4UHMJhX20nklHudoh8VxQH7ifMCb8BAQz-qeu2bAv7U_QrwGAZ9h9-MCPvGRmuweQn_YN1_CMNTzSnFRNNn1Bww29gTtrTkLYnmuVFfOKnd9HOwP0c7Qn6Y7bA9CRQedpqslxzPYQRvsCyXx_kra4ct0ONu7150OY5gN6bv6rOHJ76QB0gFyRNSlSsk_0g"/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur rounded-xl px-3 py-1 flex flex-col items-center">
+<span class="font-bold text-primary text-xl">24</span>
+<span class="font-label-md text-label-md uppercase text-on-surface-variant">Nov</span>
+</div>
+</div>
+<div class="p-lg space-y-sm">
+<h4 class="font-title-lg text-title-lg text-on-surface">Sunday Worship Celebration</h4>
+<div class="flex items-center gap-md text-on-surface-variant font-label-lg text-label-lg">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">schedule</span> 09:00 AM</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">location_on</span> Main Sanctuary</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">Join us for a powerful morning of worship and an inspiring word from our guest speaker.</p>
+</div>
+</div>
+<!-- Small Event Stack -->
+<div class="space-y-md">
+<div class="glass-card p-md rounded-2xl flex gap-md items-center group cursor-pointer hover:bg-white/90 transition-colors">
+<div class="w-16 h-16 rounded-xl bg-primary-container/20 flex flex-col items-center justify-center text-primary shrink-0">
+<span class="font-bold text-lg">26</span>
+<span class="text-[10px] uppercase font-bold">Nov</span>
+</div>
+<div class="flex-1">
+<h4 class="font-title-md text-title-md text-on-surface">Mid-week Bible Study</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">06:30 PM • Room 204</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<div class="glass-card p-md rounded-2xl flex gap-md items-center group cursor-pointer hover:bg-white/90 transition-colors">
+<div class="w-16 h-16 rounded-xl bg-tertiary-container/20 flex flex-col items-center justify-center text-tertiary shrink-0">
+<span class="font-bold text-lg">28</span>
+<span class="text-[10px] uppercase font-bold">Nov</span>
+</div>
+<div class="flex-1">
+<h4 class="font-title-md text-title-md text-on-surface">Youth Outreach Night</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">07:00 PM • Community Hall</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<div class="glass-card p-md rounded-2xl flex gap-md items-center group cursor-pointer hover:bg-white/90 transition-colors">
+<div class="w-16 h-16 rounded-xl bg-secondary-container/30 flex flex-col items-center justify-center text-secondary shrink-0">
+<span class="font-bold text-lg">01</span>
+<span class="text-[10px] uppercase font-bold">Dec</span>
+</div>
+<div class="flex-1">
+<h4 class="font-title-md text-title-md text-on-surface">Monthly Fellowship Dinner</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">05:00 PM • Courtyard</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+<!-- My Ministries -->
+<section>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-lg">My Ministries</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant/30 p-lg rounded-2xl flex flex-col items-center text-center space-y-sm hover:border-primary/50 transition-colors cursor-pointer">
+<div class="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">child_care</span>
+</div>
+<h4 class="font-title-md text-title-md">Children's Ministry</h4>
+<span class="bg-primary-container/20 text-primary-fixed-dim text-[10px] px-3 py-1 rounded-full font-bold uppercase">Volunteer</span>
+<p class="font-body-md text-body-md text-on-surface-variant">Helping kids grow in faith through fun activities.</p>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant/30 p-lg rounded-2xl flex flex-col items-center text-center space-y-sm hover:border-primary/50 transition-colors cursor-pointer">
+<div class="w-14 h-14 bg-secondary-container/40 rounded-full flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">music_note</span>
+</div>
+<h4 class="font-title-md text-title-md">Worship Team</h4>
+<span class="bg-secondary-container/50 text-secondary-fixed-dim text-[10px] px-3 py-1 rounded-full font-bold uppercase">Member</span>
+<p class="font-body-md text-body-md text-on-surface-variant">Lifting spirits through choir and instrumental music.</p>
+</div>
+<!-- Add New -->
+<div class="border-2 border-dashed border-outline-variant/50 p-lg rounded-2xl flex flex-col items-center justify-center text-center space-y-sm hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="w-14 h-14 rounded-full flex items-center justify-center text-outline-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[32px]">add_circle</span>
+</div>
+<p class="font-title-md text-title-md text-on-surface-variant group-hover:text-on-surface transition-colors">Join a New Ministry</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Sidebar Column (4/12) -->
+<div class="lg:col-span-4 space-y-xl">
+<!-- Announcements -->
+<section class="bg-surface-container-low rounded-[24px] p-lg border border-outline-variant/20">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">campaign</span>
+                            Announcements
+                        </h3>
+<div class="space-y-md">
+<div class="p-md bg-white rounded-xl shadow-sm space-y-sm relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex justify-between items-center">
+<span class="text-[10px] font-bold text-primary uppercase">Mission Trip</span>
+<span class="text-[10px] text-on-surface-variant">2h ago</span>
+</div>
+<h4 class="font-title-md text-title-md">Applications open for Kenya 2025</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Be part of our international outreach team this summer.</p>
+</div>
+<div class="p-md bg-white rounded-xl shadow-sm space-y-sm relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary"></div>
+<div class="flex justify-between items-center">
+<span class="text-[10px] font-bold text-tertiary uppercase">Building Update</span>
+<span class="text-[10px] text-on-surface-variant">Yesterday</span>
+</div>
+<h4 class="font-title-md text-title-md">Parking Lot Renovation</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">East entrance will be closed this coming Wednesday.</p>
+</div>
+</div>
+<button class="w-full mt-lg py-3 text-primary font-label-lg text-label-lg uppercase border border-primary/20 rounded-xl hover:bg-primary/5 transition-colors">All Announcements</button>
+</section>
+<!-- Giving Summary -->
+<section class="bg-primary-fixed-dim/30 rounded-[24px] p-lg">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-title-md text-title-md text-on-surface">Your Impact</h3>
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+<div class="space-y-lg">
+<div class="flex items-end gap-1">
+<span class="font-headline-lg text-headline-lg text-primary">ZMK 1,250</span>
+<span class="font-label-md text-label-md text-on-surface-variant mb-1.5">this month</span>
+</div>
+<div class="w-full h-2 bg-white/50 rounded-full overflow-hidden">
+<div class="w-3/4 h-full bg-primary rounded-full"></div>
+</div>
+<div class="flex justify-between font-label-md text-label-md text-on-surface-variant">
+<span>Monthly Pledge: ZMK 1,500</span>
+<span>83%</span>
+</div>
+<button class="w-full bg-primary text-on-primary py-3 rounded-xl font-title-md text-title-md shadow-md hover:bg-primary/90 transition-colors">Quick Give</button>
+</div>
+</section>
+<!-- Today's Verse Card -->
+<section class="relative rounded-[24px] overflow-hidden bg-surface-container-high p-lg group">
+<div class="absolute -bottom-8 -right-8 w-32 h-32 text-primary/5 opacity-20">
+<span class="material-symbols-outlined text-[128px]">format_quote</span>
+</div>
+<div class="relative z-10 space-y-md">
+<span class="font-label-md text-label-md uppercase text-primary font-bold">Daily Bread</span>
+<p class="font-title-md text-title-md italic text-on-surface leading-relaxed">"The Lord is my shepherd; I shall not want. He makes me lie down in green pastures."</p>
+<p class="font-label-lg text-label-lg text-on-surface-variant">— Psalm 23:1-2</p>
+<div class="flex gap-md pt-sm">
+<button class="p-2 rounded-full hover:bg-white/50 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">share</span>
+</button>
+<button class="p-2 rounded-full hover:bg-white/50 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Footer Spacing -->
+<div class="h-16 md:hidden"></div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden bg-surface-container shadow-lg flex justify-around items-center h-20 px-2 pb-safe">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-md text-label-md">Groups</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-md text-label-md">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-md text-label-md">Study</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.glass-card, .bg-surface-container-lowest').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0px)';
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,94 @@
+<% if (givingDisplay.source === 'settings') { %>
+        <% if (givingDisplay.givingInstructions) { %>
+        <p class="church-section__subtitle"><%= givingDisplay.givingInstructions %></p>
+        <% } %>
+        <div class="church-grid church-grid--events">
+          <% if (givingDisplay.bank) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">Bank details</h2>
+            <dl class="church-branch-dl">
+              <% if (givingDisplay.bank.bank_name) { %><div><dt>Bank</dt><dd><%= givingDisplay.bank.bank_name %></dd></div><% } %>
+              <% if (givingDisplay.bank.account_name) { %><div><dt>Account name</dt><dd><%= givingDisplay.bank.account_name %></dd></div><% } %>
+              <% if (givingDisplay.bank.account_number) { %><div><dt>Account number</dt><dd><%= givingDisplay.bank.account_number %></dd></div><% } %>
+              <% if (givingDisplay.bank.branch_code) { %><div><dt>Branch code</dt><dd><%= givingDisplay.bank.branch_code %></dd></div><% } %>
+              <% if (givingDisplay.bank.swift_code) { %><div><dt>SWIFT</dt><dd><%= givingDisplay.bank.swift_code %></dd></div><% } %>
+            </dl>
+          </article>
+          <% } %>
+          <% if (givingDisplay.mobileMoney.length > 0) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">Mobile money</h2>
+            <dl class="church-branch-dl">
+              <% givingDisplay.mobileMoney.forEach(function (mm) { %>
+              <div><dt><%= mm.provider %></dt><dd><%= mm.number %><% if (mm.name) { %> (<%= mm.name %>)<% } %></dd></div>
+              <% }); %>
+            </dl>
+          </article>
+          <% } %>
+          <% if (givingDisplay.categories.length > 0) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">Giving categories</h2>
+            <ul class="church-member-tags">
+              <% givingDisplay.categories.forEach(function (cat) { %>
+              <li><%= cat %></li>
+              <% }); %>
+            </ul>
+          </article>
+          <% } %>
+          <% if (givingDisplay.qrCodeLabel) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">QR / reference</h2>
+            <p class="church-card__body"><%= givingDisplay.qrCodeLabel %></p>
+          </article>
+          <% } %>
+          <% if (givingDisplay.financeContactName || givingDisplay.financeContactPhone) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">Finance contact</h2>
+            <p class="church-card__body">
+              <% if (givingDisplay.financeContactName) { %><%= givingDisplay.financeContactName %><% } %>
+              <% if (givingDisplay.financeContactPhone) { %><% if (givingDisplay.financeContactName) { %> · <% } %><%= givingDisplay.financeContactPhone %><% } %>
+            </p>
+          </article>
+          <% } %>
+        </div>
+<% } else if (givingDisplay.source === 'website') { %>
+        <p class="church-section__subtitle"><%= givingDisplay.givingInstructions %></p>
+        <div class="church-grid church-grid--events">
+          <% if (givingDisplay.givingBankDetails) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">Bank details</h2>
+            <p class="church-card__body church-card__body--pre"><%= givingDisplay.givingBankDetails %></p>
+          </article>
+          <% } %>
+          <% if (givingDisplay.givingMobileMoney) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">Mobile money</h2>
+            <p class="church-card__body church-card__body--pre"><%= givingDisplay.givingMobileMoney %></p>
+          </article>
+          <% } %>
+          <% if (givingDisplay.givingCategories) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">Giving categories</h2>
+            <p class="church-card__body"><%= givingDisplay.givingCategories %></p>
+          </article>
+          <% } %>
+          <% if (givingDisplay.givingQrPlaceholder) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">QR / reference</h2>
+            <p class="church-card__body"><%= givingDisplay.givingQrPlaceholder %></p>
+          </article>
+          <% } %>
+        </div>
+<% } else if (givingDisplay.source === 'generic') { %>
+        <p class="church-section__subtitle"><%= givingDisplay.givingInstructions %></p>
+        <% if (givingDisplay.categories.length > 0) { %>
+        <div class="church-card">
+          <h2 class="church-card__title">Giving categories</h2>
+          <ul class="church-member-tags">
+            <% givingDisplay.categories.forEach(function (cat) { %>
+            <li><%= cat %></li>
+            <% }); %>
+          </ul>
+        </div>
+        <% } %>
+<% } %>

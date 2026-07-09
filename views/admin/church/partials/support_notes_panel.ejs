@@ -1,0 +1,52 @@
+<%#
+  Platform-only support notes panel (super admin).
+  Required: supportNoteEntityType, supportNoteEntityId, supportNoteReturnTo, formatDate
+  Optional: supportNotes, supportNoteError, supportNoteNotice
+-%>
+<section class="card card--mb-xl" style="padding:1.25rem;">
+  <h2 class="section-title section-title--flush">Platform support notes</h2>
+  <p class="muted">Visible only to GetPro platform admins. Do not record sensitive pastoral, prayer, password, or credential details here. Keep notes operational and non-sensitive.</p>
+
+  <% if (typeof supportNoteNotice !== 'undefined' && supportNoteNotice) { %>
+    <div class="flash flash--success" role="status"><%= supportNoteNotice %></div>
+  <% } %>
+  <% if (typeof supportNoteError !== 'undefined' && supportNoteError) { %>
+    <div class="flash flash--error" role="alert"><%= supportNoteError %></div>
+  <% } %>
+
+  <% var notes = typeof supportNotes !== 'undefined' && supportNotes ? supportNotes : []; %>
+  <% if (notes.length === 0) { %>
+    <p class="muted">No platform support notes yet.</p>
+  <% } else { %>
+    <ul class="admin-list" style="margin-top:1rem;">
+      <% notes.forEach(function (note) { %>
+        <li style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border-subtle, #e5e7eb);">
+          <p style="white-space:pre-wrap;margin:0 0 0.35rem;"><%= note.note_body %></p>
+          <p class="muted" style="font-size:0.9rem;margin:0;">
+            <%= formatDate(note.created_at) %>
+            <% if (note.created_by_label) { %> · <%= note.created_by_label %><% } %>
+          </p>
+        </li>
+      <% }); %>
+    </ul>
+  <% } %>
+
+  <form method="post" action="/admin/church/support-notes" style="margin-top:1.25rem;">
+    <input type="hidden" name="entity_type" value="<%= supportNoteEntityType %>" />
+    <input type="hidden" name="entity_id" value="<%= supportNoteEntityId %>" />
+    <input type="hidden" name="return_to" value="<%= supportNoteReturnTo %>" />
+    <div class="input-field">
+      <label class="input-field__label" for="support_note_body_<%= supportNoteEntityType %>_<%= supportNoteEntityId %>">Add note *</label>
+      <textarea
+        id="support_note_body_<%= supportNoteEntityType %>_<%= supportNoteEntityId %>"
+        class="input-field__control"
+        name="note_body"
+        rows="4"
+        required
+        minlength="3"
+        maxlength="2000"
+        placeholder="Operational support note for platform admins only"></textarea>
+    </div>
+    <%- include('../../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Add support note' }) %>
+  </form>
+</section>

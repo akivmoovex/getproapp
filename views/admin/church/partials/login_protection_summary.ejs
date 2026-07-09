@@ -1,0 +1,8 @@
+<% if (typeof loginProtection !== 'undefined' && loginProtection) { %>
+<dt>Last successful login</dt>
+<dd><%= loginProtection.last_successful_login_at ? formatDate(loginProtection.last_successful_login_at) : '—' %></dd>
+<dt>Failed login attempts</dt>
+<dd><%= loginProtection.failed_login_attempts || 0 %></dd>
+<dt>Login locked</dt>
+<dd><% if (loginProtection.is_locked) { %>Yes until <%= formatDate(loginProtection.login_locked_until) %><% } else { %>No<% } %></dd>
+<% } %>

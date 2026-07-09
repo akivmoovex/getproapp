@@ -29,6 +29,14 @@ const {
 const { getAdminTenantId } = require("./admin/adminShared");
 const { getPgPool } = require("../db/pg");
 const tenantsRepo = require("../db/pg/tenantsRepo");
+const platformResetRequestsInboxRepo = require("../db/pg/church/platformResetRequestsInboxRepo");
+const {
+  getResetRequestStatusLabel,
+  getResetRequestStatusClass,
+  getResetRequestTypeLabel,
+  getResetRequestTypeClass,
+  formatResetRequestCounts,
+} = require("../church/resetRequestFormatting");
 const clientIntake = require("../intake/clientProjectIntake");
 
 const registerAdminAuthRoutes = require("./admin/adminAuth");
@@ -46,6 +54,12 @@ const registerAdminFieldAgentDisputesRoutes = require("./admin/adminFieldAgentDi
 const registerAdminFieldAgentAdjustmentsRoutes = require("./admin/adminFieldAgentAdjustments");
 const registerAdminIntakeRoutes = require("./admin/adminIntake");
 const registerAdminDbToolsRoutes = require("./admin/adminDbTools");
+const registerAdminChurchPlatformRoutes = require("./admin/adminChurchPlatform");
+const registerAdminChurchBranchAdminPasswordResetRoutes = require("./admin/adminChurchBranchAdminPasswordResetRequests");
+const registerAdminChurchHqAdminPasswordResetRoutes = require("./admin/adminChurchHqAdminPasswordResetRequests");
+const registerAdminChurchResetRequestsInboxRoutes = require("./admin/adminChurchResetRequestsInbox");
+const registerAdminChurchMemberPasswordResetRequestRoutes = require("./admin/adminChurchMemberPasswordResetRequests");
+const registerAdminChurchMinistryLeaderSupportRoutes = require("./admin/adminChurchMinistryLeaderSupport");
 const registerAdminFinanceCfoRoutes = require("./admin/adminFinanceCfo");
 
 module.exports = function adminRoutes({ db }) {
@@ -201,6 +215,18 @@ module.exports = function adminRoutes({ db }) {
           res.locals.adminRegionSwitch = null;
         }
       }
+      if (isSuperAdmin(u.role)) {
+        const pool = getPgPool();
+        res.locals.churchResetPendingCounts = formatResetRequestCounts(
+          await platformResetRequestsInboxRepo.getPendingResetRequestCounts(pool)
+        );
+        res.locals.getResetRequestStatusLabel = getResetRequestStatusLabel;
+        res.locals.getResetRequestStatusClass = getResetRequestStatusClass;
+        res.locals.getResetRequestTypeLabel = getResetRequestTypeLabel;
+        res.locals.getResetRequestTypeClass = getResetRequestTypeClass;
+      } else {
+        res.locals.churchResetPendingCounts = null;
+      }
       return next();
     } catch (e) {
       return next(e);
@@ -222,6 +248,12 @@ module.exports = function adminRoutes({ db }) {
   registerAdminFieldAgentAdjustmentsRoutes(router);
   registerAdminIntakeRoutes(router, { projectIntakeUpload });
   registerAdminDbToolsRoutes(router);
+  registerAdminChurchPlatformRoutes(router);
+  registerAdminChurchBranchAdminPasswordResetRoutes(router);
+  registerAdminChurchHqAdminPasswordResetRoutes(router);
+  registerAdminChurchResetRequestsInboxRoutes(router);
+  registerAdminChurchMemberPasswordResetRequestRoutes(router);
+  registerAdminChurchMinistryLeaderSupportRoutes(router);
 
   return router;
 };

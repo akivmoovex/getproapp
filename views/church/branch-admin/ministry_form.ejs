@@ -1,0 +1,29 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/ministries">&larr; Back to ministries</a>
+          <h1 class="church-branch-topbar__title"><%= isEdit ? 'Edit ministry' : 'New ministry' %></h1>
+        </div>
+      </header>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <form class="church-form" method="post" action="<%= isEdit ? '/branch/ministries/' + ministryId : '/branch/ministries' %>">
+        <section class="church-branch-panel">
+          <div class="church-form-grid">
+            <div class="church-field"><label class="church-label" for="name">Name</label><input class="church-input" id="name" name="name" type="text" required value="<%= form.name || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="visibility">Visibility</label>
+              <select class="church-input" id="visibility" name="visibility"><% visibilities.forEach(function (v) { %><option value="<%= v %>" <%= form.visibility === v ? 'selected' : '' %>><%= visibilityLabel(v) %></option><% }); %></select>
+            </div>
+            <div class="church-field church-field--full"><label class="church-label" for="description">Description</label><textarea class="church-input church-input--textarea" id="description" name="description" rows="4"><%= form.description || '' %></textarea></div>
+            <div class="church-field"><label class="church-label" for="leader_name">Leader name</label><input class="church-input" id="leader_name" name="leader_name" type="text" value="<%= form.leader_name || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="leader_phone">Leader phone</label><input class="church-input" id="leader_phone" name="leader_phone" type="text" value="<%= form.leader_phone || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="meeting_day">Meeting day</label><input class="church-input" id="meeting_day" name="meeting_day" type="text" placeholder="e.g. Friday" value="<%= form.meeting_day || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="meeting_time">Meeting time</label><input class="church-input" id="meeting_time" name="meeting_time" type="text" placeholder="e.g. 5:00 PM" value="<%= form.meeting_time || '' %>"/></div>
+            <div class="church-field"><label class="church-label" for="location">Location</label><input class="church-input" id="location" name="location" type="text" value="<%= form.location || '' %>"/></div>
+          </div>
+        </section>
+        <div class="church-branch-actions">
+          <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft">Save Draft</button>
+          <button class="church-btn church-btn--primary" type="submit" name="_intent" value="publish">Publish</button>
+        </div>
+      </form>
+<%- include('../partials/branch_admin_shell_end') %>

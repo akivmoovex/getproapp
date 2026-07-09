@@ -1,0 +1,50 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/ministry-activity">&larr; Back to ministry activity</a>
+          <h1 class="church-branch-topbar__title"><%= note.title %></h1>
+          <p class="church-branch-topbar__subtitle"><%= note.ministry_name || 'Ministry' %> · <%= note.period_month %></p>
+        </div>
+        <span class="church-status-chip church-status-chip--<%= note.review_status === 'reviewed' ? 'verified' : note.review_status === 'follow_up_requested' ? 'pending' : 'draft' %>"><%= reviewStatusLabel(note.review_status) %></span>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <section class="church-branch-panel">
+        <dl class="church-branch-dl">
+          <div><dt>Ministry</dt><dd><%= note.ministry_name || '—' %></dd></div>
+          <div><dt>Leader</dt><dd><%= note.leader_name || '—' %></dd></div>
+          <div><dt>Period</dt><dd><%= note.period_month %></dd></div>
+          <div><dt>Status</dt><dd><%= note.status %></dd></div>
+          <div><dt>Submitted / updated</dt><dd><%= note.updated_at ? new Date(note.updated_at).toLocaleString('en-GB') : '—' %></dd></div>
+        </dl>
+        <h3 class="church-branch-panel__title church-branch-panel__title--sm">Activity summary</h3>
+        <p><%= note.activity_summary || '—' %></p>
+        <h3 class="church-branch-panel__title church-branch-panel__title--sm">Challenges</h3>
+        <p><%= note.challenges || '—' %></p>
+        <h3 class="church-branch-panel__title church-branch-panel__title--sm">Support needed</h3>
+        <p><%= note.support_needed || '—' %></p>
+        <% if (note.admin_comment) { %>
+        <h3 class="church-branch-panel__title church-branch-panel__title--sm">Admin comment</h3>
+        <p><%= note.admin_comment %></p>
+        <% if (note.reviewed_by_admin_name) { %>
+        <p class="church-branch-panel__hint">By <%= note.reviewed_by_admin_name %><% if (note.reviewed_at) { %> · <%= new Date(note.reviewed_at).toLocaleString('en-GB') %><% } %></p>
+        <% } %>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <form class="church-form" method="post" action="/branch/ministry-activity/<%= note.id %>/mark-reviewed">
+          <div class="church-field church-field--full">
+            <label class="church-label" for="review_comment">Comment (optional for review)</label>
+            <textarea class="church-input church-input--textarea" id="review_comment" name="admin_comment" rows="2"></textarea>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Mark reviewed</button>
+        </form>
+        <form class="church-form church-form--spaced" method="post" action="/branch/ministry-activity/<%= note.id %>/request-follow-up">
+          <div class="church-field church-field--full">
+            <label class="church-label" for="follow_up_comment">Follow-up comment (required)</label>
+            <textarea class="church-input church-input--textarea" id="follow_up_comment" name="admin_comment" rows="2" required></textarea>
+          </div>
+          <button class="church-btn church-btn--outline" type="submit">Request follow-up</button>
+        </form>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

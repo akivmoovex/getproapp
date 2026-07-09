@@ -1,0 +1,91 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Giving summary</h1>
+          <p class="church-branch-topbar__subtitle">Manual monthly giving totals for HQ reporting</p>
+        </div>
+      </header>
+      <div class="church-alert church-alert--info" role="note">
+        This is a summary for reporting only. GetPro Church does not process payments or provide full accounting in this MVP.
+      </div>
+      <p class="church-branch-panel__hint">Giving instructions shown to members and public visitors are managed in <a href="/branch/giving-settings">Giving Settings</a>.</p>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Record / update monthly summary</h2>
+        <% if (error) { %>
+        <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+        <% } %>
+        <form class="church-form" method="post" action="/branch/giving-summary">
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="period_month">Month</label>
+              <input class="church-input" id="period_month" name="period_month" type="month" required value="<%= form.period_month || '' %>"/>
+            </div>
+            <% [
+              ['tithes_total','Tithes'],
+              ['offerings_total','Offerings'],
+              ['building_fund_total','Building fund'],
+              ['missions_fund_total','Missions fund'],
+              ['special_offerings_total','Special offerings'],
+              ['other_giving_total','Other giving']
+            ].forEach(function (pair) { %>
+            <div class="church-field">
+              <label class="church-label" for="<%= pair[0] %>"><%= pair[1] %> (ZMW)</label>
+              <input class="church-input" id="<%= pair[0] %>" name="<%= pair[0] %>" type="number" min="0" step="0.01" value="<%= form[pair[0]] != null ? form[pair[0]] : 0 %>"/>
+            </div>
+            <% }); %>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="giving_notes">Notes</label>
+              <textarea class="church-input church-input--textarea" id="giving_notes" name="notes" rows="3"><%= form.notes || '' %></textarea>
+            </div>
+          </div>
+          <div class="church-branch-form-actions">
+            <button class="church-btn church-btn--outline" type="submit" name="submit_action" value="save_draft">Save draft</button>
+            <button class="church-btn church-btn--primary" type="submit" name="submit_action" value="submit">Submit summary</button>
+          </div>
+        </form>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Saved summaries</h2>
+        <% if ((summaries || []).length === 0) { %>
+        <p class="church-branch-empty">No giving summaries recorded yet.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Tithes</th>
+                <th>Offerings</th>
+                <th>Building</th>
+                <th>Missions</th>
+                <th>Special</th>
+                <th>Other</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% summaries.forEach(function (s) { %>
+              <tr>
+                <td><%= s.period_label %></td>
+                <td><%= formatMoney(s.tithes_total) %></td>
+                <td><%= formatMoney(s.offerings_total) %></td>
+                <td><%= formatMoney(s.building_fund_total) %></td>
+                <td><%= formatMoney(s.missions_fund_total) %></td>
+                <td><%= formatMoney(s.special_offerings_total) %></td>
+                <td><%= formatMoney(s.other_giving_total) %></td>
+                <td><strong><%= formatMoney(s.grand_total) %></strong></td>
+                <td><span class="church-status-chip church-status-chip--<%= s.status === 'submitted' ? 'verified' : 'pending' %>"><%= s.status %></span></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/giving-summary/<%= s.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

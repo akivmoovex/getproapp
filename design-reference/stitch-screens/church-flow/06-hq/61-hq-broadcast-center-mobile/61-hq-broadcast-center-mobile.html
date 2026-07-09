@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZBU HQ Broadcast Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#707273",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#57595b",
+                        "surface-container-low": "#eaf5fa",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "on-secondary-container": "#5d6466",
+                        "inverse-primary": "#c6bfff",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#dae1e3",
+                        "inverse-surface": "#283236",
+                        "primary": "#5341cd",
+                        "on-primary-fixed": "#160066",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "background": "#f1fbff",
+                        "surface-dim": "#d1dce0",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "tertiary-fixed": "#e1e3e4",
+                        "surface-tint": "#5847d2",
+                        "surface-container-high": "#dfeaef",
+                        "secondary-fixed": "#dde4e6",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#131d21",
+                        "surface-container": "#e4f0f4",
+                        "primary-fixed": "#e4dfff",
+                        "on-surface-variant": "#474554",
+                        "on-secondary-fixed": "#161d1f",
+                        "outline-variant": "#c8c4d7",
+                        "inverse-on-surface": "#e7f3f7",
+                        "outline": "#787586",
+                        "on-primary-container": "#faf6ff",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "surface-bright": "#f1fbff",
+                        "secondary": "#586062",
+                        "primary-container": "#6c5ce7",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#131d21",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#d9e4e9",
+                        "surface": "#f1fbff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "xs": "4px",
+                        "gutter": "24px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px",
+                        "xl": "32px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "title-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- Header Section -->
+<header class="sticky top-0 z-50 bg-surface-container-lowest flex items-center justify-between px-md py-md shadow-sm">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary" data-icon="campaign">campaign</span>
+<h1 class="font-headline-md text-headline-md text-on-surface">Broadcasts</h1>
+</div>
+<button class="flex items-center gap-xs bg-primary text-on-primary px-lg py-sm rounded-full font-label-lg shadow-lg active:scale-95 transition-all">
+<span class="material-symbols-outlined text-md" data-icon="add" style="font-variation-settings: 'FILL' 0, 'wght' 700;">add</span>
+            New Draft
+        </button>
+</header>
+<main class="px-md mt-md space-y-gutter">
+<!-- Audience Selection -->
+<section>
+<h2 class="font-title-md text-title-md mb-sm text-on-surface-variant">Target Audience</h2>
+<div class="grid grid-cols-2 gap-sm">
+<button class="audience-chip border-2 border-primary bg-primary-fixed text-on-primary-fixed-variant p-md rounded-xl flex flex-col items-center gap-xs transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-md text-label-md">All Branches</span>
+</button>
+<button class="audience-chip border border-outline-variant bg-surface-container-low text-on-surface-variant p-md rounded-xl flex flex-col items-center gap-xs transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-label-md text-label-md">Specific</span>
+</button>
+<button class="audience-chip border border-outline-variant bg-surface-container-low text-on-surface-variant p-md rounded-xl flex flex-col items-center gap-xs transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="admin_panel_settings">admin_panel_settings</span>
+<span class="font-label-md text-label-md">Admins</span>
+</button>
+<button class="audience-chip border border-outline-variant bg-surface-container-low text-on-surface-variant p-md rounded-xl flex flex-col items-center gap-xs transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md">Members</span>
+</button>
+</div>
+</section>
+<!-- Message Editor -->
+<section class="space-y-sm">
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-outline-variant">
+<input class="w-full bg-transparent font-title-lg text-title-lg border-none focus:ring-0 placeholder:text-outline p-0 mb-md" placeholder="Announcement Title" type="text"/>
+<textarea class="w-full bg-transparent font-body-md text-body-md border-none focus:ring-0 placeholder:text-outline p-0 h-32 resize-none" placeholder="Type your message here..."></textarea>
+<div class="flex items-center justify-between border-t border-outline-variant pt-md mt-sm">
+<div class="flex gap-sm">
+<button class="text-primary hover:bg-primary/10 p-sm rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="image">image</span>
+</button>
+<button class="text-primary hover:bg-primary/10 p-sm rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="attach_file">attach_file</span>
+</button>
+<button class="text-primary hover:bg-primary/10 p-sm rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="format_bold">format_bold</span>
+</button>
+</div>
+<span class="font-label-md text-label-md text-outline">0 / 1000</span>
+</div>
+</div>
+</section>
+<!-- Recent Activity -->
+<section>
+<div class="flex items-center justify-between mb-sm">
+<h2 class="font-title-md text-title-md text-on-surface-variant">Recent Activity</h2>
+<button class="text-primary font-label-md text-label-md uppercase tracking-wider">View All</button>
+</div>
+<div class="space-y-sm">
+<!-- Activity Card 1 -->
+<div class="bg-surface-container rounded-xl p-md flex items-center gap-md active:bg-surface-container-high transition-colors">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+</div>
+<div class="flex-1">
+<h3 class="font-title-md text-title-md truncate">Quarterly HQ Meeting</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Delivered to 1.2k members</p>
+</div>
+<div class="text-right">
+<p class="font-label-lg text-label-lg text-primary">98%</p>
+<p class="font-label-md text-label-md text-outline">Reach</p>
+</div>
+</div>
+<!-- Activity Card 2 -->
+<div class="bg-surface-container rounded-xl p-md flex items-center gap-md active:bg-surface-container-high transition-colors">
+<div class="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+</div>
+<div class="flex-1">
+<h3 class="font-title-md text-title-md truncate">Emergency Road Closure</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Scheduled for Tomorrow</p>
+</div>
+<div class="text-right">
+<span class="material-symbols-outlined text-outline" data-icon="more_vert">more_vert</span>
+</div>
+</div>
+<!-- Activity Card 3 -->
+<div class="bg-surface-container rounded-xl p-md flex items-center gap-md active:bg-surface-container-high transition-colors">
+<div class="w-12 h-12 rounded-full bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="error_outline">error_outline</span>
+</div>
+<div class="flex-1">
+<h3 class="font-title-md text-title-md truncate">Financial Update v2</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Failed to 12 recipients</p>
+</div>
+<div class="text-right">
+<button class="text-error font-label-md text-label-md px-sm py-xs border border-error rounded-md">Retry</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Action Bar -->
+<nav class="fixed bottom-0 left-0 right-0 glass-panel border-t border-outline-variant p-md pb-lg flex gap-md z-50">
+<button class="flex-1 bg-surface-container-highest text-on-surface font-label-lg text-label-lg py-md rounded-xl flex items-center justify-center gap-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-md" data-icon="event">event</span>
+            Schedule
+        </button>
+<button class="flex-1 bg-primary text-on-primary font-label-lg text-label-lg py-md rounded-xl flex items-center justify-center gap-sm shadow-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-md" data-icon="send" style="font-variation-settings: 'FILL' 1;">send</span>
+            Send Now
+        </button>
+<button class="w-14 bg-secondary-container text-on-secondary-container py-md rounded-xl flex items-center justify-center active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</nav>
+<!-- Micro-interaction Script -->
+<script>
+        document.querySelectorAll('.audience-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                // Remove active state from all
+                document.querySelectorAll('.audience-chip').forEach(c => {
+                    c.classList.remove('border-primary', 'bg-primary-fixed', 'text-on-primary-fixed-variant');
+                    c.classList.add('border-outline-variant', 'bg-surface-container-low', 'text-on-surface-variant');
+                });
+                // Add active state to clicked
+                chip.classList.remove('border-outline-variant', 'bg-surface-container-low', 'text-on-surface-variant');
+                chip.classList.add('border-primary', 'bg-primary-fixed', 'text-on-primary-fixed-variant');
+            });
+        });
+    </script>
+</body></html>

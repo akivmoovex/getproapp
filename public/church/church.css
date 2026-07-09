@@ -1,0 +1,1639 @@
+/* GetPro Church — scoped styles (Phase 1). Loaded only from church templates. */
+
+:root {
+  --church-violet: #6c5ce7;
+  --church-violet-dark: #5341cd;
+  --church-navy: #131d21;
+  --church-charcoal: #283236;
+  --church-surface: #f1fbff;
+  --church-surface-card: #ffffff;
+  --church-muted: #586062;
+  --church-outline: #c8c4d7;
+  --church-radius: 8px;
+  --church-radius-lg: 16px;
+  --church-space-xs: 4px;
+  --church-space-sm: 8px;
+  --church-space-md: 16px;
+  --church-space-lg: 24px;
+  --church-space-xl: 32px;
+  --church-max-width: 1120px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.church-body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--church-navy);
+  background: var(--church-surface);
+  line-height: 1.5;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  vertical-align: middle;
+}
+
+.church-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--church-outline);
+}
+
+.church-header__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+  padding: var(--church-space-md) var(--church-space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--church-space-lg);
+}
+
+.church-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--church-space-sm);
+  color: var(--church-violet-dark);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.05rem;
+  min-width: 0;
+}
+
+.church-brand__icon {
+  color: var(--church-violet);
+}
+
+.church-brand__text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.church-nav {
+  display: none;
+  gap: var(--church-space-lg);
+}
+
+.church-nav a {
+  color: var(--church-charcoal);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.church-nav a:hover {
+  color: var(--church-violet);
+}
+
+.church-header__actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--church-space-sm);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.church-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--church-space-sm);
+  padding: 10px var(--church-space-md);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.church-btn--primary {
+  background: var(--church-violet);
+  color: #fff;
+}
+
+.church-btn--primary:hover {
+  background: var(--church-violet-dark);
+}
+
+.church-btn--outline {
+  background: transparent;
+  color: var(--church-violet-dark);
+  border-color: var(--church-outline);
+}
+
+.church-btn--outline:hover {
+  background: #fff;
+  border-color: var(--church-violet);
+}
+
+.church-btn--ghost {
+  background: transparent;
+  color: var(--church-violet-dark);
+}
+
+.church-btn--ghost:hover {
+  background: rgba(108, 92, 231, 0.08);
+}
+
+.church-btn--lg {
+  padding: 14px var(--church-space-lg);
+  font-size: 1rem;
+}
+
+.church-hero {
+  background:
+    radial-gradient(circle at 70% 20%, rgba(108, 92, 231, 0.12), transparent 45%),
+    radial-gradient(circle at 10% 80%, rgba(83, 65, 205, 0.06), transparent 40%),
+    var(--church-surface);
+  padding: var(--church-space-xl) var(--church-space-lg) 48px;
+}
+
+.church-hero__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+  display: grid;
+  gap: var(--church-space-xl);
+}
+
+.church-eyebrow {
+  display: inline-block;
+  padding: var(--church-space-xs) var(--church-space-md);
+  border-radius: 999px;
+  background: rgba(108, 92, 231, 0.12);
+  color: var(--church-violet-dark);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-bottom: var(--church-space-md);
+}
+
+.church-hero__title {
+  margin: 0 0 var(--church-space-md);
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--church-navy);
+}
+
+.church-hero__lead {
+  margin: 0 0 var(--church-space-lg);
+  max-width: 42rem;
+  font-size: 1.05rem;
+  color: var(--church-muted);
+}
+
+.church-hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--church-space-md);
+}
+
+.church-hero__panel {
+  display: grid;
+  gap: var(--church-space-md);
+}
+
+.church-section {
+  padding: 48px var(--church-space-lg);
+}
+
+.church-section--muted {
+  background: #eaf5fa;
+}
+
+.church-section__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+}
+
+.church-section__header {
+  margin-bottom: var(--church-space-lg);
+}
+
+.church-section__title {
+  margin: 0 0 var(--church-space-sm);
+  font-size: 1.75rem;
+  color: var(--church-navy);
+}
+
+.church-section__subtitle {
+  margin: 0;
+  color: var(--church-muted);
+  max-width: 40rem;
+}
+
+.church-grid {
+  display: grid;
+  gap: var(--church-space-md);
+}
+
+.church-grid--events {
+  grid-template-columns: 1fr;
+}
+
+.church-card {
+  background: var(--church-surface-card);
+  border: 1px solid var(--church-outline);
+  border-radius: var(--church-radius-lg);
+  padding: var(--church-space-lg);
+  box-shadow: 0 8px 24px rgba(19, 29, 33, 0.04);
+}
+
+.church-card__icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--church-radius);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(108, 92, 231, 0.12);
+  color: var(--church-violet-dark);
+  margin-bottom: var(--church-space-md);
+}
+
+.church-card__title {
+  margin: 0 0 var(--church-space-sm);
+  font-size: 1.1rem;
+}
+
+.church-card__body {
+  margin: 0;
+  color: var(--church-muted);
+}
+
+.church-card__body--pre {
+  white-space: pre-line;
+}
+
+.church-card--event .church-card__event-icon,
+.church-card--giving .church-card__event-icon {
+  display: block;
+  color: var(--church-violet);
+  margin-bottom: var(--church-space-sm);
+}
+
+.church-giving {
+  display: grid;
+  gap: var(--church-space-lg);
+}
+
+.church-visit {
+  text-align: center;
+}
+
+.church-footer {
+  border-top: 1px solid var(--church-outline);
+  background: var(--church-charcoal);
+  color: #e7f3f7;
+  padding: var(--church-space-lg);
+}
+
+.church-footer__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.church-footer__powered {
+  margin: 0 0 var(--church-space-sm);
+  font-weight: 600;
+}
+
+.church-footer__note {
+  margin: 0;
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
+@media (min-width: 768px) {
+  .church-nav {
+    display: flex;
+  }
+
+  .church-hero__inner {
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: start;
+  }
+
+  .church-grid--events {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .church-giving {
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: center;
+  }
+}
+
+@media (max-width: 767px) {
+  .church-header__actions .church-btn--ghost {
+    display: none;
+  }
+
+  .church-public-mobile-nav {
+    display: flex;
+    gap: var(--church-space-sm);
+    overflow-x: auto;
+    padding: 0.5rem var(--church-space-lg);
+    border-bottom: 1px solid var(--church-outline);
+    background: var(--church-surface-card);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .church-public-mobile-nav a {
+    flex: 0 0 auto;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--church-outline);
+    color: var(--church-navy);
+    text-decoration: none;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+
+  .church-public-mobile-nav__active {
+    background: var(--church-primary);
+    border-color: var(--church-primary);
+    color: #fff;
+  }
+}
+
+.church-public-mobile-nav {
+  display: none;
+}
+
+/* --- Auth screens (Phase 2) --- */
+
+.church-body--auth {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.church-header--auth .church-header__inner {
+  justify-content: space-between;
+}
+
+.church-auth-main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--church-space-xl) var(--church-space-lg) 48px;
+}
+
+.church-auth-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--church-surface-card);
+  border: 1px solid var(--church-outline);
+  border-radius: var(--church-radius-lg);
+  padding: var(--church-space-xl);
+  box-shadow: 0 12px 32px rgba(19, 29, 33, 0.06);
+}
+
+.church-auth-card--wide {
+  max-width: 760px;
+}
+
+.church-auth-card--state {
+  text-align: center;
+}
+
+.church-auth-card__title {
+  margin: 0 0 var(--church-space-sm);
+  font-size: 1.75rem;
+  color: var(--church-navy);
+}
+
+.church-auth-card__subtitle {
+  margin: 0 0 var(--church-space-lg);
+  color: var(--church-muted);
+}
+
+.church-auth-card__body {
+  margin: 0 0 var(--church-space-lg);
+  color: var(--church-muted);
+}
+
+.church-auth-card__footer {
+  margin: var(--church-space-lg) 0 0;
+  text-align: center;
+  color: var(--church-muted);
+  font-size: 0.95rem;
+}
+
+.church-auth-card__footer a {
+  color: var(--church-violet-dark);
+  font-weight: 600;
+}
+
+.church-auth-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--church-space-md);
+  justify-content: center;
+}
+
+.church-alert {
+  padding: var(--church-space-md);
+  border-radius: var(--church-radius);
+  margin-bottom: var(--church-space-lg);
+  font-size: 0.95rem;
+}
+
+.church-alert--error {
+  background: #ffdad6;
+  color: #93000a;
+  border: 1px solid #ffb4ab;
+}
+
+.church-alert--success {
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #a5d6a7;
+}
+
+.church-alert--info {
+  background: #eaf5fa;
+  color: #283236;
+  border: 1px solid #c8c4d7;
+  margin-bottom: var(--church-space-lg);
+}
+
+.church-branch-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--church-space-md);
+  margin-top: var(--church-space-md);
+}
+
+.church-alert--warning {
+  background: #fff8e1;
+  color: #5d4037;
+  border: 1px solid #ffe082;
+  margin-bottom: var(--church-space-lg);
+}
+
+.church-alert--compact {
+  margin-top: var(--church-space-md);
+  margin-bottom: 0;
+}
+
+.church-branch-panel__hint {
+  margin: 0 0 var(--church-space-md);
+  color: var(--church-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+.church-branch-dl--inline {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--church-space-md);
+}
+
+.church-branch-panel--placeholder {
+  border-style: dashed;
+  opacity: 0.92;
+}
+
+.church-field--narrow {
+  max-width: 240px;
+}
+
+.church-form--spaced {
+  margin-top: var(--church-space-lg);
+}
+
+.church-branch-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--church-space-md);
+}
+
+.church-body--hq-admin {
+  background: var(--church-surface-dim);
+}
+
+.church-branch-sidebar--hq {
+  background: #1f2937;
+}
+
+.church-branch-sidebar--hq .church-branch-nav-link--disabled {
+  opacity: 0.45;
+}
+
+.church-hq-review-actions {
+  display: grid;
+  gap: var(--church-space-lg);
+}
+
+@media (min-width: 768px) {
+  .church-hq-review-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.church-branch-review-note--hq {
+  border-left: 3px solid var(--church-primary);
+  padding-left: var(--church-space-md);
+}
+
+.church-status-chip--warning {
+  background: #fff8e1;
+  color: #5d4037;
+}
+
+.church-form {
+  display: grid;
+  gap: var(--church-space-lg);
+}
+
+.church-form-section {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.church-form-section__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--church-violet-dark);
+  margin-bottom: var(--church-space-md);
+  padding: 0;
+}
+
+.church-form-grid {
+  display: grid;
+  gap: var(--church-space-md);
+  grid-template-columns: 1fr 1fr;
+}
+
+.church-field {
+  display: grid;
+  gap: var(--church-space-xs);
+}
+
+.church-field--full {
+  grid-column: 1 / -1;
+}
+
+.church-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--church-charcoal);
+}
+
+.church-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--church-outline);
+  border-radius: var(--church-radius);
+  font: inherit;
+  color: var(--church-navy);
+  background: #fff;
+}
+
+.church-input:focus {
+  outline: 2px solid rgba(108, 92, 231, 0.35);
+  border-color: var(--church-violet);
+}
+
+.church-radio-row,
+.church-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--church-space-md);
+}
+
+.church-radio,
+.church-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--church-space-sm);
+  font-size: 0.95rem;
+  color: var(--church-muted);
+}
+
+.church-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--church-space-xs);
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--church-outline);
+  font-size: 0.875rem;
+  cursor: pointer;
+  background: #fff;
+}
+
+.church-chip:has(input:checked) {
+  background: rgba(108, 92, 231, 0.12);
+  border-color: var(--church-violet);
+  color: var(--church-violet-dark);
+}
+
+.church-chip input {
+  accent-color: var(--church-violet);
+}
+
+.church-btn--block {
+  width: 100%;
+}
+
+.church-state-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--church-space-md);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(108, 92, 231, 0.12);
+  color: var(--church-violet);
+}
+
+.church-state-icon--pending {
+  background: rgba(88, 96, 98, 0.12);
+  color: var(--church-charcoal);
+}
+
+.church-footer--auth {
+  margin-top: auto;
+}
+
+@media (max-width: 767px) {
+  .church-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Branch admin (Phase 3) --- */
+
+.church-body--branch-admin {
+  background: #eef2f6;
+}
+
+.church-branch-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+.church-branch-sidebar {
+  background: var(--church-charcoal);
+  color: #e7f3f7;
+  display: flex;
+  flex-direction: column;
+  padding: var(--church-space-lg);
+  gap: var(--church-space-lg);
+}
+
+.church-branch-sidebar__brand {
+  display: flex;
+  gap: var(--church-space-md);
+  align-items: flex-start;
+}
+
+.church-branch-sidebar__brand strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.church-branch-sidebar__brand span {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.church-branch-sidebar__nav,
+.church-branch-sidebar__footer {
+  display: grid;
+  gap: var(--church-space-sm);
+}
+
+.church-branch-sidebar__footer {
+  margin-top: auto;
+}
+
+.church-branch-nav-link {
+  color: #e7f3f7;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: var(--church-radius);
+  font-size: 0.95rem;
+}
+
+.church-branch-nav-link:hover,
+.church-branch-nav-link:focus {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.church-branch-nav-link--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.church-branch-nav-link--button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.church-branch-main {
+  padding: var(--church-space-xl);
+}
+
+.church-branch-topbar {
+  margin-bottom: var(--church-space-lg);
+}
+
+.church-branch-topbar__title {
+  margin: 0 0 var(--church-space-xs);
+  font-size: 1.75rem;
+  color: var(--church-navy);
+}
+
+.church-branch-topbar__subtitle {
+  margin: 0;
+  color: var(--church-muted);
+}
+
+.church-branch-back {
+  display: inline-block;
+  margin-bottom: var(--church-space-sm);
+  color: var(--church-violet-dark);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.church-branch-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--church-space-md);
+  margin-bottom: var(--church-space-lg);
+}
+
+.church-branch-stat-card {
+  background: #fff;
+  border: 1px solid var(--church-outline);
+  border-radius: var(--church-radius-lg);
+  padding: var(--church-space-lg);
+}
+
+.church-branch-stat-card--wide {
+  grid-column: 1 / -1;
+}
+
+.church-branch-stat-card__label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--church-muted);
+  margin-bottom: var(--church-space-sm);
+}
+
+.church-branch-stat-card__value {
+  font-size: 2rem;
+  color: var(--church-navy);
+}
+
+.church-branch-stat-card__value--sm {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.church-branch-stat-card__hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--church-muted, #64748b);
+}
+
+a.church-branch-stat-card--link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+a.church-branch-stat-card--link:hover {
+  border-color: var(--church-primary);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.church-form--inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--church-space-md);
+  align-items: flex-end;
+  margin-bottom: var(--church-space-lg);
+}
+
+.church-field--grow {
+  flex: 1 1 240px;
+}
+
+.church-branch-notes {
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.church-member-actions--card {
+  margin-top: var(--church-space-md);
+  display: flex;
+  gap: var(--church-space-sm);
+  flex-wrap: wrap;
+}
+
+.church-branch-panel {
+  background: #fff;
+  border: 1px solid var(--church-outline);
+  border-radius: var(--church-radius-lg);
+  padding: var(--church-space-lg);
+  margin-bottom: var(--church-space-lg);
+}
+
+.church-branch-panel__title {
+  margin: 0 0 var(--church-space-md);
+  font-size: 1.1rem;
+}
+
+.church-branch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--church-space-md);
+}
+
+.church-btn--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.church-btn--sm {
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+}
+
+.church-branch-table-wrap {
+  overflow-x: auto;
+}
+
+.church-branch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.church-branch-table th,
+.church-branch-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--church-outline);
+  text-align: left;
+  vertical-align: top;
+}
+
+.church-branch-table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--church-muted);
+}
+
+.church-status-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.church-status-chip--pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.church-status-chip--verified {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.church-status-chip--rejected {
+  background: #ffdad6;
+  color: #93000a;
+}
+
+.church-status-chip--suspended {
+  background: #eceff1;
+  color: #455a64;
+}
+
+.church-status-badge,
+.church-type-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.church-status-submitted {
+  background: #fff3cd;
+  color: #856404;
+  border-color: #ffe082;
+}
+
+.church-status-reviewed {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+
+.church-status-completed {
+  background: #e8f5e9;
+  color: #1b5e20;
+  border-color: #a5d6a7;
+}
+
+.church-status-rejected {
+  background: #ffdad6;
+  color: #93000a;
+  border-color: #fca5a5;
+}
+
+.church-type-badge {
+  text-transform: none;
+}
+
+.church-type-member {
+  background: #f3e8ff;
+  color: #6b21a8;
+  border-color: #d8b4fe;
+}
+
+.church-type-ministry-leader {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.church-type-branch-admin {
+  background: #e0e7ff;
+  color: #3730a3;
+  border-color: #a5b4fc;
+}
+
+.church-type-hq-admin {
+  background: #ccfbf1;
+  color: #0f766e;
+  border-color: #5eead4;
+}
+
+.church-nav-count {
+  display: inline-block;
+  margin-left: 0.25rem;
+  font-weight: 700;
+}
+
+.church-branch-empty {
+  margin: 0;
+  color: var(--church-muted);
+}
+
+.church-branch-profile-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: var(--church-space-lg);
+}
+
+.church-branch-dl {
+  display: grid;
+  gap: var(--church-space-md);
+  margin: 0;
+}
+
+.church-branch-dl dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--church-muted);
+  margin-bottom: 2px;
+}
+
+.church-branch-dl dd {
+  margin: 0;
+  color: var(--church-navy);
+}
+
+.church-branch-review-note {
+  margin-top: var(--church-space-lg);
+  padding: var(--church-space-md);
+  background: #f8f9ff;
+  border-radius: var(--church-radius);
+  border: 1px solid var(--church-outline);
+}
+
+.church-input--textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.church-form--spaced {
+  margin-top: var(--church-space-lg);
+  padding-top: var(--church-space-lg);
+  border-top: 1px solid var(--church-outline);
+}
+
+@media (max-width: 960px) {
+  .church-branch-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .church-branch-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .church-branch-sidebar__nav {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .church-branch-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .church-member-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .church-member-sidebar {
+    display: none;
+  }
+
+  .church-member-main {
+    padding-bottom: 72px;
+  }
+}
+
+/* Member portal */
+.church-body--member-portal {
+  background: var(--church-surface-dim);
+}
+
+.church-member-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+.church-member-sidebar {
+  background: var(--church-navy);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: var(--church-space-lg);
+  gap: var(--church-space-lg);
+}
+
+.church-member-sidebar__brand {
+  display: flex;
+  gap: var(--church-space-md);
+  align-items: flex-start;
+}
+
+.church-member-sidebar__brand strong,
+.church-member-sidebar__brand span {
+  display: block;
+}
+
+.church-member-sidebar__brand span {
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
+.church-member-sidebar__nav,
+.church-member-sidebar__footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--church-space-sm);
+}
+
+.church-member-nav-link {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  padding: 0.5rem 0;
+  background: none;
+  border: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.church-member-nav-link--button {
+  width: 100%;
+}
+
+.church-member-main {
+  padding: var(--church-space-lg);
+  max-width: 960px;
+}
+
+.church-member-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--church-space-md);
+  margin-bottom: var(--church-space-lg);
+}
+
+.church-member-header__eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  color: var(--church-muted);
+}
+
+.church-member-header__title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--church-navy);
+}
+
+.church-member-header__subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--church-muted);
+}
+
+.church-member-panel {
+  background: #fff;
+  border: 1px solid var(--church-outline);
+  border-radius: var(--church-radius-lg);
+  padding: var(--church-space-lg);
+  margin-bottom: var(--church-space-lg);
+}
+
+.church-member-panel__title {
+  margin: 0 0 var(--church-space-md);
+  font-size: 1.125rem;
+}
+
+.church-member-panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--church-space-md);
+  margin-bottom: var(--church-space-md);
+}
+
+.church-member-panel__head .church-member-panel__title {
+  margin: 0;
+}
+
+.church-member-link {
+  font-size: 0.875rem;
+  color: var(--church-primary);
+}
+
+.church-member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--church-space-md);
+}
+
+.church-member-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--church-space-md);
+}
+
+.church-member-list__item {
+  padding-bottom: var(--church-space-md);
+  border-bottom: 1px solid var(--church-outline);
+}
+
+.church-member-list__item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.church-member-list__item p {
+  margin: 0.35rem 0;
+  color: var(--church-on-surface-variant);
+}
+
+.church-member-list__meta {
+  font-size: 0.8125rem;
+  color: var(--church-muted);
+}
+
+.church-member-list__link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--church-space-md);
+  text-decoration: none;
+  color: inherit;
+}
+
+.church-member-empty {
+  margin: 0;
+  color: var(--church-muted);
+}
+
+.church-member-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--church-space-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.church-member-tags li {
+  background: #eef2ff;
+  color: var(--church-primary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+}
+
+.church-member-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid var(--church-outline);
+  padding: 0.35rem 0.5rem;
+  justify-content: space-around;
+  z-index: 20;
+}
+
+.church-member-bottom-nav__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.6875rem;
+  color: var(--church-muted);
+  text-decoration: none;
+}
+
+.church-member-bottom-nav__link .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+@media (max-width: 960px) {
+  .church-member-bottom-nav {
+    display: flex;
+  }
+}
+
+.church-branch-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--church-space-sm);
+  margin-bottom: var(--church-space-lg);
+}
+
+.church-branch-filter-tab {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--church-outline);
+  text-decoration: none;
+  color: var(--church-navy);
+  font-size: 0.8125rem;
+}
+
+.church-branch-filter-tab--active {
+  background: var(--church-primary);
+  border-color: var(--church-primary);
+  color: #fff;
+}
+
+.church-preview-banner {
+  background: #fef3c7;
+  color: #92400e;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-bottom: 1px solid #fcd34d;
+}
+
+.church-nav__active {
+  color: var(--church-primary);
+  font-weight: 600;
+}
+
+.church-section--page {
+  padding-top: var(--church-space-xl);
+}
+
+.church-section__subtitle--lead {
+  font-size: 1.0625rem;
+  max-width: 48rem;
+}
+
+.church-section__header--compact {
+  margin-top: var(--church-space-lg);
+}
+
+.church-section__title--sm {
+  font-size: 1.125rem;
+}
+
+.church-public-block {
+  margin-top: var(--church-space-xl);
+}
+
+.church-public-block__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: var(--church-space-sm);
+}
+
+.church-public-block__body {
+  color: var(--church-muted);
+  line-height: 1.6;
+}
+
+.church-public-list {
+  list-style: disc;
+  padding-left: 1.25rem;
+  color: var(--church-muted);
+}
+
+.church-branch-panel--compact {
+  margin-bottom: var(--church-space-md);
+}
+
+.church-card__body--muted {
+  color: var(--church-muted);
+  font-size: 0.9375rem;
+}
+
+.church-hq-branch-checklist {
+  display: grid;
+  gap: var(--church-space-sm);
+  margin-top: var(--church-space-sm);
+}
+
+.church-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--church-space-sm);
+  font-size: 0.9375rem;
+  color: var(--church-text);
+}
+
+.church-checkbox-row input {
+  margin-top: 0.2rem;
+}
+
+.church-branch-inline-list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.church-hq-analytics-note {
+  margin-bottom: var(--church-space-md);
+}
+
+.church-branch-stats--compact {
+  margin-bottom: var(--church-space-md);
+}
+
+.church-branch-panel__subtitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: var(--church-space-md) 0 var(--church-space-sm);
+}
+
+.church-audit-metadata {
+  background: var(--church-surface-muted, #f8fafc);
+  border: 1px solid var(--church-border, #e2e8f0);
+  border-radius: var(--church-radius-md, 8px);
+  padding: var(--church-space-md);
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.church-audit-table td {
+  vertical-align: top;
+}
+
+.church-plan-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.church-plan-badge--standard {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.church-plan-badge--pro {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.church-plan-lock {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #b45309;
+  margin-left: 0.25rem;
+}
+
+.church-plan-premium-notice p {
+  margin: 0.35rem 0 0;
+}
+
+.church-alert--error {
+  background: #ffebee;
+  color: #b71c1c;
+  border: 1px solid #ef9a9a;
+  margin-bottom: var(--church-space-lg);
+}
+
+.church-body--unavailable {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--church-surface, #f8f7fb);
+}
+
+.church-unavailable {
+  width: 100%;
+  max-width: 36rem;
+  padding: 2rem 1.25rem;
+}
+
+.church-unavailable__card {
+  text-align: center;
+  background: #fff;
+  border: 1px solid #e5e1ef;
+  border-radius: 1rem;
+  padding: 2.5rem 1.75rem;
+  box-shadow: 0 8px 24px rgba(30, 20, 60, 0.06);
+}
+
+.church-unavailable__icon {
+  font-size: 2.5rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.church-unavailable__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+}
+
+.church-unavailable__lead {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.reset-timeline-section {
+  margin-top: 0;
+}
+
+.reset-timeline-section__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.reset-timeline-section__empty,
+.reset-timeline-section__notice {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.reset-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.reset-timeline-item {
+  display: grid;
+  grid-template-columns: 1rem 1fr;
+  gap: 0.75rem 1rem;
+  padding-bottom: 1rem;
+  position: relative;
+}
+
+.reset-timeline-item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 0.4rem;
+  top: 1rem;
+  bottom: 0;
+  width: 2px;
+  background: #e5e7eb;
+}
+
+.reset-timeline-dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+  background: #94a3b8;
+  margin-top: 0.2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.reset-timeline-dot--submitted { background: #6366f1; }
+.reset-timeline-dot--reviewed { background: #0ea5e9; }
+.reset-timeline-dot--completed { background: #16a34a; }
+.reset-timeline-dot--rejected { background: #dc2626; }
+
+.reset-timeline-body {
+  min-width: 0;
+}
+
+.reset-timeline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  align-items: baseline;
+}
+
+.reset-timeline-label {
+  font-size: 0.95rem;
+}
+
+.reset-timeline-date {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.reset-timeline-actor,
+.reset-timeline-status {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+}
+
+.reset-timeline-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+.reset-timeline-badge {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.church-branch-panel .reset-timeline-section__title {
+  font-size: 1rem;
+}

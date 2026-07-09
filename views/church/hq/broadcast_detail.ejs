@@ -1,0 +1,60 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/hq/broadcasts">&larr; Back to broadcasts</a>
+          <h1 class="church-branch-topbar__title"><%= broadcast.title %></h1>
+          <p class="church-branch-topbar__subtitle"><%= broadcast.category %> · <%= broadcastAudienceLabel(broadcast.audience) %></p>
+        </div>
+        <span class="church-status-chip church-status-chip--<%= broadcast.status === 'published' ? 'verified' : 'pending' %>"><%= broadcastStatusLabel(broadcast.status) %></span>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <section class="church-branch-panel">
+        <div class="church-branch-review-note">
+          <p><%= broadcast.body %></p>
+        </div>
+        <dl class="church-branch-dl">
+          <div><dt>Audience</dt><dd><%= broadcastAudienceLabel(broadcast.audience) %></dd></div>
+          <div><dt>Target scope</dt><dd><%= targetScopeLabel(broadcast.target_scope) %></dd></div>
+          <div><dt>Target branches</dt>
+            <dd>
+              <% if (broadcast.target_scope === 'all_branches') { %>
+              All branches in organization
+              <% } else if ((targets || []).length === 0) { %>
+              —
+              <% } else { %>
+              <ul class="church-branch-inline-list">
+                <% targets.forEach(function (t) { %>
+                <li><%= t.branch_name %></li>
+                <% }); %>
+              </ul>
+              <% } %>
+            </dd>
+          </div>
+          <div><dt>Publish date</dt><dd><%= broadcast.publish_at ? new Date(broadcast.publish_at).toLocaleString('en-GB') : '—' %></dd></div>
+          <div><dt>Expiry date</dt><dd><%= broadcast.expires_at ? new Date(broadcast.expires_at).toLocaleString('en-GB') : '—' %></dd></div>
+          <div><dt>Created by</dt><dd><%= broadcast.created_by_hq_admin_name || '—' %></dd></div>
+          <div><dt>Last updated</dt><dd><%= new Date(broadcast.updated_at).toLocaleString('en-GB') %></dd></div>
+        </dl>
+      </section>
+      <% if (broadcast.status !== 'archived') { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Actions</h2>
+        <div class="church-hq-review-actions">
+          <a class="church-btn church-btn--outline" href="/hq/broadcasts/<%= broadcast.id %>/edit">Edit</a>
+          <% if (broadcast.status !== 'published') { %>
+          <form method="post" action="/hq/broadcasts/<%= broadcast.id %>/publish">
+            <button class="church-btn church-btn--primary" type="submit">Publish</button>
+          </form>
+          <% } %>
+          <form method="post" action="/hq/broadcasts/<%= broadcast.id %>/archive">
+            <button class="church-btn church-btn--outline" type="submit">Archive</button>
+          </form>
+        </div>
+      </section>
+      <% } %>
+<%- include('../partials/hq_shell_end') %>

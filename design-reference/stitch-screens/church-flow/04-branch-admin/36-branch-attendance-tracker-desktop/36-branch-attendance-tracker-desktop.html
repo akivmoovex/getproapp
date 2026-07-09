@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Attendance Tracker - GetPro Church Operations</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#dde4e6",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#707273",
+                    "surface-container-low": "#eaf5fa",
+                    "outline": "#787586",
+                    "on-secondary-container": "#5d6466",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#e4dfff",
+                    "inverse-surface": "#283236",
+                    "on-primary-fixed": "#160066",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#d9e4e9",
+                    "secondary-container": "#dae1e3",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "secondary": "#586062",
+                    "surface-dim": "#d1dce0",
+                    "surface-bright": "#f1fbff",
+                    "surface-container-high": "#dfeaef",
+                    "surface-tint": "#5847d2",
+                    "on-surface-variant": "#474554",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-secondary-fixed": "#161d1f",
+                    "on-primary-container": "#faf6ff",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "outline-variant": "#c8c4d7",
+                    "surface-container": "#e4f0f4",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-error": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "inverse-on-surface": "#e7f3f7",
+                    "background": "#f1fbff",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f1fbff",
+                    "primary": "#5341cd",
+                    "on-surface": "#131d21",
+                    "on-background": "#131d21",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "primary-container": "#6c5ce7",
+                    "tertiary": "#57595b",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "xl": "32px",
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "title-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1fbff; color: #131d21; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .modal-overlay { background-color: rgba(19, 29, 33, 0.4); backdrop-filter: blur(4px); }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .active-tab { position: relative; }
+        .active-tab::after { content: ''; position: absolute; left: 0; top: 25%; height: 50%; width: 4px; background-color: #e4dfff; border-radius: 0 4px 4px 0; }
+    </style>
+</head>
+<body class="flex overflow-hidden">
+<!-- Side Navigation Shell -->
+<aside class="w-[280px] h-screen sticky left-0 top-0 bg-inverse-surface dark:bg-surface-container-lowest flex flex-col p-md z-50">
+<div class="mb-xl px-4">
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed dark:text-primary">Grace Community</h1>
+<p class="font-label-lg text-label-lg text-surface-variant/70">HQ Administrator</p>
+</div>
+<nav class="flex-1 space-y-2 overflow-y-auto hide-scrollbar">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold active-tab transition-all duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">how_to_reg</span>
+<span class="font-label-lg text-label-lg">Attendance</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 rounded-lg" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-lg text-label-lg">Giving</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 rounded-lg" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-lg text-label-lg">Members</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 rounded-lg" href="#">
+<span class="material-symbols-outlined">church</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<div class="mt-auto pt-md border-t border-surface-variant/10 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-lg text-label-lg">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden">
+<!-- Top Bar Shell -->
+<header class="flex justify-between items-center w-full px-margin-desktop py-base z-40 bg-surface dark:bg-surface-container-high border-b border-outline-variant dark:border-outline sticky top-0">
+<div class="flex items-center gap-4">
+<span class="font-title-lg text-title-lg font-black text-primary dark:text-primary-fixed-dim">GetPro Church Operations</span>
+<div class="h-6 w-px bg-outline-variant mx-2"></div>
+<span class="font-label-md text-label-md text-on-surface-variant">Kafue Baptist Church Branch</span>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden md:block">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</span>
+<input class="block w-64 pl-10 pr-3 py-2 border border-outline-variant rounded-full bg-surface-container-low text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Search records..." type="text"/>
+</div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant/20 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="flex items-center gap-2 pl-2 border-l border-outline-variant">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs uppercase">KA</div>
+<span class="material-symbols-outlined text-on-surface-variant">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 overflow-y-auto p-xl bg-background">
+<div class="max-w-7xl mx-auto space-y-lg">
+<!-- Header Actions -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Attendance Tracker</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Manage and review attendance for services and group meetings.</p>
+</div>
+<button class="flex items-center gap-2 bg-primary text-on-primary px-lg py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95" onclick="toggleModal('recordModal', true)">
+<span class="material-symbols-outlined">add</span>
+                        Record Attendance
+                    </button>
+</div>
+<!-- Bento Statistics (Quick Glance) -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="p-2 bg-primary/10 rounded-lg text-primary"><span class="material-symbols-outlined">group</span></span>
+<span class="text-xs font-bold text-on-secondary-fixed-variant bg-secondary-fixed px-2 py-0.5 rounded-full">+12%</span>
+</div>
+<div class="mt-4">
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Total Attendance</p>
+<p class="font-headline-md text-headline-md mt-1">1,248</p>
+<p class="text-[11px] text-on-surface-variant mt-1">Last 30 days avg</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="p-2 bg-secondary-container/30 rounded-lg text-secondary"><span class="material-symbols-outlined">person_add</span></span>
+<span class="text-xs font-bold text-on-primary-fixed-variant bg-primary-fixed px-2 py-0.5 rounded-full">+5</span>
+</div>
+<div class="mt-4">
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">New Visitors</p>
+<p class="font-headline-md text-headline-md mt-1">42</p>
+<p class="text-[11px] text-on-surface-variant mt-1">Reported this month</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="p-2 bg-tertiary-container/10 rounded-lg text-tertiary"><span class="material-symbols-outlined">child_care</span></span>
+</div>
+<div class="mt-4">
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Children Min.</p>
+<p class="font-headline-md text-headline-md mt-1">312</p>
+<p class="text-[11px] text-on-surface-variant mt-1">Last service count</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="p-2 bg-error-container/50 rounded-lg text-error"><span class="material-symbols-outlined">pending_actions</span></span>
+</div>
+<div class="mt-4">
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Pending Drafts</p>
+<p class="font-headline-md text-headline-md mt-1">3</p>
+<p class="text-[11px] text-on-surface-variant mt-1">Action required</p>
+</div>
+</div>
+</div>
+<!-- Main Data Table Container -->
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden shadow-sm">
+<div class="p-lg border-b border-outline-variant flex flex-col md:flex-row justify-between gap-md items-center">
+<h3 class="font-title-lg text-title-lg">Recent Records</h3>
+<div class="flex items-center gap-sm">
+<select class="bg-surface-container-low border border-outline-variant rounded-lg text-body-md py-2 px-3 focus:ring-primary focus:border-primary">
+<option>All Service Types</option>
+<option>Sunday Service</option>
+<option>Midweek Service</option>
+<option>Youth Night</option>
+</select>
+<button class="p-2 bg-surface-container-low border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-variant/30">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="p-md font-label-lg text-on-surface-variant border-b border-outline-variant">Date</th>
+<th class="p-md font-label-lg text-on-surface-variant border-b border-outline-variant">Type</th>
+<th class="p-md font-label-lg text-on-surface-variant border-b border-outline-variant">Total</th>
+<th class="p-md font-label-lg text-on-surface-variant border-b border-outline-variant">Adults</th>
+<th class="p-md font-label-lg text-on-surface-variant border-b border-outline-variant">Youth</th>
+<th class="p-md font-label-lg text-on-surface-variant border-b border-outline-variant">Children</th>
+<th class="p-md font-label-lg text-on-surface-variant border-b border-outline-variant">Visitors</th>
+<th class="p-md font-label-lg text-on-surface-variant border-b border-outline-variant">Status</th>
+<th class="p-md font-label-lg text-on-surface-variant border-b border-outline-variant"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-primary/5 transition-colors cursor-pointer group">
+<td class="p-md font-body-md">Oct 27, 2024</td>
+<td class="p-md font-body-md font-semibold">Sunday Service</td>
+<td class="p-md font-body-md">452</td>
+<td class="p-md font-body-md">280</td>
+<td class="p-md font-body-md">95</td>
+<td class="p-md font-body-md">77</td>
+<td class="p-md font-body-md">12</td>
+<td class="p-md">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Submitted</span>
+</td>
+<td class="p-md text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors cursor-pointer group">
+<td class="p-md font-body-md">Oct 24, 2024</td>
+<td class="p-md font-body-md font-semibold">Midweek Bible Study</td>
+<td class="p-md font-body-md">124</td>
+<td class="p-md font-body-md">98</td>
+<td class="p-md font-body-md">15</td>
+<td class="p-md font-body-md">11</td>
+<td class="p-md font-body-md">2</td>
+<td class="p-md">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Draft</span>
+</td>
+<td class="p-md text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors cursor-pointer group">
+<td class="p-md font-body-md">Oct 20, 2024</td>
+<td class="p-md font-body-md font-semibold">Sunday Service</td>
+<td class="p-md font-body-md">438</td>
+<td class="p-md font-body-md">275</td>
+<td class="p-md font-body-md">90</td>
+<td class="p-md font-body-md">73</td>
+<td class="p-md font-body-md">8</td>
+<td class="p-md">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Submitted</span>
+</td>
+<td class="p-md text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors cursor-pointer group">
+<td class="p-md font-body-md">Oct 18, 2024</td>
+<td class="p-md font-body-md font-semibold">Youth Friday Night</td>
+<td class="p-md font-body-md">86</td>
+<td class="p-md font-body-md">12</td>
+<td class="p-md font-body-md">74</td>
+<td class="p-md font-body-md">0</td>
+<td class="p-md font-body-md">5</td>
+<td class="p-md">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Submitted</span>
+</td>
+<td class="p-md text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-md bg-surface-container-low border-t border-outline-variant flex items-center justify-between">
+<span class="font-label-md text-on-surface-variant">Showing 4 of 128 records</span>
+<div class="flex gap-2">
+<button class="px-3 py-1 border border-outline-variant rounded bg-white text-body-md disabled:opacity-50" disabled="">Previous</button>
+<button class="px-3 py-1 border border-outline-variant rounded bg-white text-body-md hover:bg-surface-container">Next</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Mobile Bottom Nav Shell (Auto Suppression logic would apply but included for completeness) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container-highest shadow-lg rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1" href="#">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Giving</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1" href="#">
+<span class="material-symbols-outlined">menu</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+</main>
+<!-- Modal: Record Attendance Form -->
+<div class="fixed inset-0 z-[100] hidden" id="recordModal">
+<div class="modal-overlay absolute inset-0 transition-opacity"></div>
+<div class="absolute inset-0 flex items-center justify-center p-md">
+<div class="bg-surface-container-lowest w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[921px]">
+<div class="p-lg bg-primary text-on-primary flex justify-between items-center">
+<div>
+<h3 class="font-headline-md text-headline-md">Record Attendance</h3>
+<p class="font-body-md text-on-primary/80">Fill in the details for the specific meeting.</p>
+</div>
+<button class="p-2 hover:bg-white/10 rounded-full transition-colors" onclick="toggleModal('recordModal', false)">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-lg overflow-y-auto flex-1">
+<form class="space-y-lg">
+<!-- Basic Info Section -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant uppercase">Meeting Type</label>
+<select class="w-full border-outline-variant rounded-lg focus:ring-primary focus:border-primary">
+<option>Sunday Service</option>
+<option>Midweek Service</option>
+<option>Youth Night</option>
+<option>Special Event</option>
+</select>
+</div>
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant uppercase">Meeting Date</label>
+<input class="w-full border-outline-variant rounded-lg focus:ring-primary focus:border-primary" type="date"/>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant uppercase">Meeting Name (Optional)</label>
+<input class="w-full border-outline-variant rounded-lg focus:ring-primary focus:border-primary" placeholder="e.g., Morning Glory Celebration" type="text"/>
+</div>
+<div class="h-px bg-outline-variant/30 my-base"></div>
+<!-- Numeric Breakdown -->
+<div class="space-y-md">
+<h4 class="font-title-md text-title-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">groups</span>
+                                Population Breakdown
+                            </h4>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-md">
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Adults</label>
+<input class="w-full border-outline-variant rounded-lg focus:ring-primary focus:border-primary p-2" placeholder="0" type="number"/>
+</div>
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Youth</label>
+<input class="w-full border-outline-variant rounded-lg focus:ring-primary focus:border-primary p-2" placeholder="0" type="number"/>
+</div>
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Children</label>
+<input class="w-full border-outline-variant rounded-lg focus:ring-primary focus:border-primary p-2" placeholder="0" type="number"/>
+</div>
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Visitors</label>
+<input class="w-full border-outline-variant rounded-lg focus:ring-primary focus:border-primary p-2" placeholder="0" type="number"/>
+</div>
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">New Members</label>
+<input class="w-full border-outline-variant rounded-lg focus:ring-primary focus:border-primary p-2" placeholder="0" type="number"/>
+</div>
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Volunteers</label>
+<input class="w-full border-outline-variant rounded-lg focus:ring-primary focus:border-primary p-2" placeholder="0" type="number"/>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-md rounded-xl border border-primary/20 flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-primary uppercase">Estimated Total</span>
+<span class="font-headline-md text-headline-md text-primary">0</span>
+</div>
+</form>
+</div>
+<div class="p-lg bg-surface-container border-t border-outline-variant flex justify-end gap-md">
+<button class="px-lg py-3 rounded-xl font-bold text-on-surface-variant hover:bg-surface-variant/20 transition-all" onclick="toggleModal('recordModal', false)">Cancel</button>
+<button class="px-xl py-3 bg-primary text-on-primary rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">Save as Draft</button>
+<button class="px-xl py-3 bg-inverse-surface text-on-primary-container rounded-xl font-bold shadow-md hover:bg-black transition-all">Submit Final</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+        function toggleModal(id, show) {
+            const modal = document.getElementById(id);
+            if (show) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Simple calculation mock for the form
+        const inputs = document.querySelectorAll('#recordModal input[type="number"]');
+        const totalDisplay = document.querySelector('#recordModal .font-headline-md.text-primary');
+        
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                let total = 0;
+                inputs.forEach(i => total += (parseInt(i.value) || 0));
+                totalDisplay.innerText = total;
+            });
+        });
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') toggleModal('recordModal', false);
+        });
+    </script>
+</body></html>

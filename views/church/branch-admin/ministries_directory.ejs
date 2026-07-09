@@ -1,0 +1,46 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Ministries</h1>
+          <p class="church-branch-topbar__subtitle">Manage branch ministries and groups</p>
+        </div>
+        <a class="church-btn church-btn--primary" href="/branch/ministries/new">Add ministry</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <div class="church-branch-filter-tabs">
+        <% ministryFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/ministries<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : ministryStatusLabel(f) %></a>
+        <% }); %>
+      </div>
+      <section class="church-branch-panel">
+        <% if ((ministries || []).length === 0) { %>
+        <p class="church-branch-empty">No ministries in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr><th>Name</th><th>Leader</th><th>Schedule</th><th>Visibility</th><th>Status</th><th>Members</th><th></th></tr>
+            </thead>
+            <tbody>
+              <% ministries.forEach(function (m) { %>
+              <tr>
+                <td><%= m.name %></td>
+                <td><%= m.leader_name || '—' %></td>
+                <td><%= formatMinistrySchedule(m) %></td>
+                <td><%= visibilityLabel(m.visibility) %></td>
+                <td><span class="church-status-chip church-status-chip--<%= m.status === 'published' ? 'verified' : 'pending' %>"><%= ministryStatusLabel(m.status) %></span></td>
+                <td><%= m.member_count || 0 %></td>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/ministries/<%= m.id %>">View</a>
+                  <% if (m.status !== 'archived') { %>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/ministries/<%= m.id %>/edit">Edit</a>
+                  <% } %>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

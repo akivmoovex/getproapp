@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>32-branch-events-management-mobile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "outline": "#787586",
+                    "surface-container-high": "#dfeaef",
+                    "primary": "#5341cd",
+                    "tertiary": "#57595b",
+                    "on-surface-variant": "#474554",
+                    "tertiary-container": "#707273",
+                    "primary-fixed": "#e4dfff",
+                    "on-surface": "#131d21",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#e4f0f4",
+                    "tertiary-fixed": "#e1e3e4",
+                    "surface-container-low": "#eaf5fa",
+                    "on-tertiary-fixed": "#191c1d",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-container": "#5d6466",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "background": "#f1fbff",
+                    "on-background": "#131d21",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "secondary-fixed": "#dde4e6",
+                    "inverse-primary": "#c6bfff",
+                    "surface-variant": "#d9e4e9",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-primary": "#ffffff",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-primary-container": "#faf6ff",
+                    "on-secondary-fixed": "#161d1f",
+                    "on-error-container": "#93000a",
+                    "surface-dim": "#d1dce0",
+                    "surface": "#f1fbff",
+                    "on-primary-fixed": "#160066",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#dae1e3",
+                    "inverse-surface": "#283236",
+                    "primary-container": "#6c5ce7",
+                    "outline-variant": "#c8c4d7",
+                    "surface-bright": "#f1fbff",
+                    "surface-tint": "#5847d2",
+                    "secondary": "#586062",
+                    "error": "#ba1a1a",
+                    "inverse-on-surface": "#e7f3f7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "xl": "32px",
+                    "base": "8px",
+                    "gutter": "24px",
+                    "margin-desktop": "32px",
+                    "sm": "8px",
+                    "margin-mobile": "16px",
+                    "md": "16px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .tab-active {
+            position: relative;
+        }
+        .tab-active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background-color: #5341cd;
+            border-radius: 99px;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="w-full h-16 sticky top-0 z-50 bg-surface border-b border-outline-variant flex items-center justify-between px-margin-mobile">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="event">event</span>
+<h1 class="font-title-lg text-title-lg text-on-surface">Events</h1>
+</div>
+<div class="flex items-center gap-base">
+<button class="p-base hover:bg-surface-container-high rounded-full transition-all">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-highest">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a church administrator, wearing a friendly expression. The lighting is soft and natural, reflecting a warm and approachable communal environment. The background is a slightly blurred, modern office interior with subtle wood accents and soft violet highlights consistent with the GetPro brand aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_x7swSAl0LQyLPZ2GrpdnwYR_9B3QCk7ZFInxzX1-DDzJ7LIUL1hFPiTCS297eXXuG4CTVOThRpeRmEiQ6mnz7gRRLecTrEHCZGMUrPWEmdd4nYD3oIr8XMtxy4boVXe7XODoV3t8nDEiGVcXGA3MoTKMXofl3KSPM-ziAdQmecH3ZOnQmFxRdKM1C1MPjfYdMKEmSxEAXmi6LrOr4INapUW4HQ1QQBGc3woSFmmU8QVJg8SYgMMDZA"/>
+</div>
+</div>
+</header>
+<main class="pb-32 px-margin-mobile pt-lg">
+<!-- Search & Filter Area -->
+<div class="flex flex-col gap-lg mb-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary transition-all font-body-md text-body-md" placeholder="Search events..." type="text"/>
+</div>
+<!-- Custom Toggle: Upcoming vs Past -->
+<div class="flex items-center bg-surface-container-low p-1 rounded-xl w-fit">
+<button class="px-gutter py-2 rounded-lg font-label-lg text-label-lg transition-all bg-primary text-on-primary shadow-sm" id="btn-upcoming" onclick="toggleEvents('upcoming')">
+                    Upcoming
+                </button>
+<button class="px-gutter py-2 rounded-lg font-label-lg text-label-lg transition-all text-on-surface-variant hover:bg-surface-variant" id="btn-past" onclick="toggleEvents('past')">
+                    Past
+                </button>
+</div>
+</div>
+<!-- Events List Container -->
+<div class="flex flex-col gap-lg" id="events-container">
+<!-- Event Card 1 -->
+<div class="event-card upcoming flex flex-col bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant/30">
+<div class="h-48 relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 hover:scale-105" data-alt="A vibrant outdoor community gathering during a golden hour sunset. People are gathered around long wooden tables decorated with simple floral arrangements. The scene is filled with warm, cinematic lighting and a soft violet color grading. The atmosphere is joyous, communal, and peaceful, perfectly representing a modern church fellowship event." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAJfGzqduFXUSM_-sE4sroeWRSugHdNyo3o5rml1SJPZ3o_4sgGqa1C0wpxKB5PtBKDlfOpJB1y9D5q5PcRZsMPERNfV13z5xRxlFM27hIwnQgLPh_n2iCnT8Mh4hYQEVlJet1tKh1l9QOkfnhAxdQLUkWmPXWvRtgQjuemK9dHO0Ld7bnx--_xGH4uhE8p8OgxeknHEQbAp42SxDKaURL4ns6O0sfkMiF9MqJs0ePo5DnG-3hevgnmSw')"></div>
+<div class="absolute top-4 left-4 flex flex-col gap-xs">
+<span class="px-3 py-1 bg-primary text-on-primary rounded-full font-label-md text-label-md shadow-lg">Featured</span>
+</div>
+</div>
+<div class="p-lg flex flex-col gap-md">
+<div class="flex flex-wrap gap-sm">
+<div class="flex items-center gap-xs px-2 py-1 bg-surface-container rounded-md">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Oct 24, 2024</span>
+</div>
+<div class="flex items-center gap-xs px-2 py-1 bg-surface-container rounded-md">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="schedule">schedule</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">09:00 AM</span>
+</div>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Sunday Morning Worship</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">Join us for our main worship service with powerful ministry and fellowship as we celebrate together.</p>
+</div>
+<div class="flex items-center gap-sm text-outline">
+<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+<span class="font-body-md text-body-md">Main Sanctuary, Lusaka Branch</span>
+</div>
+<div class="pt-sm border-t border-outline-variant/20 flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-surface-variant"></div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-primary-fixed flex items-center justify-center font-label-md text-primary">+12</div>
+</div>
+<button class="bg-primary text-on-primary px-lg py-2 rounded-xl font-title-md text-title-md hover:bg-primary-container transition-colors shadow-md active:scale-95 duration-200">
+                            Manage
+                        </button>
+</div>
+</div>
+</div>
+<!-- Event Card 2 -->
+<div class="event-card upcoming flex flex-col bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant/30">
+<div class="h-48 relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 hover:scale-105" data-alt="A professional conference setting with a modern stage and a large screen displaying a violet gradient design. The audience consists of diverse church leaders engaged in a workshop. The room has high ceilings, industrial chic architecture, and bright, clean lighting. The visual style is modern, corporate, and inspiring, emphasizing leadership and growth." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCthOKvrZzdh0Ihuiah2rBF3_KQEHEJOXL6GhmGznkqC-i5IBr0i0A2uENSfQwwtt5VZYceFKou-bvh09UPRrl1pjiyPVpfPwXG9st-Lj0LONWNEpAZ3Zyn24xa5jO18i7LtPGpo_IfJApq1qj1-2yleXu9292ko9a1RYRPzsj4tRDyzI71PlBFdGR4d8ickm3RsWodrFaTWgefVlFn4GxqoMAg_QKAW1sctUGR7uXTn14OVsAF5vY7fw')"></div>
+</div>
+<div class="p-lg flex flex-col gap-md">
+<div class="flex flex-wrap gap-sm">
+<div class="flex items-center gap-xs px-2 py-1 bg-surface-container rounded-md">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Nov 02, 2024</span>
+</div>
+<div class="flex items-center gap-xs px-2 py-1 bg-surface-container rounded-md">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="schedule">schedule</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">02:00 PM</span>
+</div>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Leadership Workshop</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">Training session for all department heads and potential future leaders in the ministry.</p>
+</div>
+<div class="flex items-center gap-sm text-outline">
+<span class="material-symbols-outlined" data-icon="meeting_room">meeting_room</span>
+<span class="font-body-md text-body-md">Conference Room B</span>
+</div>
+<div class="pt-sm border-t border-outline-variant/20 flex items-center justify-between">
+<div class="flex items-center gap-base">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="group">group</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">45 Registered</span>
+</div>
+<button class="bg-primary text-on-primary px-lg py-2 rounded-xl font-title-md text-title-md hover:bg-primary-container transition-colors shadow-md active:scale-95 duration-200">
+                            Manage
+                        </button>
+</div>
+</div>
+</div>
+<!-- Past Event Card (Hidden by default) -->
+<div class="event-card past hidden flex flex-col bg-surface-container-lowest/70 rounded-2xl overflow-hidden shadow-sm border border-outline-variant/30 grayscale opacity-80">
+<div class="h-40 relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center" data-alt="A wide-angle shot of a successful church youth camp at night around a bonfire. The sparks fly into a deep blue night sky. The scene is emotive and nostalgic, with soft glows of orange and violet light. The style is cinematic and high-contrast, representing a meaningful past memory for the community." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAJMZXagWP3-Bk6lipIHtoj_fFmVIkwTVjTNXeDjQlOkcNEVU3MWN4BHVmxt_ACA1frkJWo8pzYZ7yxQdiA4yql_jUFRXEoGr6mMOGNkZRks_KOsdjl67SP1M6D2FHlAbMBJJDIFHE44FhgQvwEcMHoVfpRG--xqFQbd-aXChxrfAsecLaOPWURU0d5iCLRNPCh7SUs13qlxZGAr0di-j2EyGjcHJoKaBg2CIQ6fpberY4K0qJxzb9NVw')"></div>
+<div class="absolute inset-0 bg-inverse-surface/40 flex items-center justify-center">
+<span class="px-4 py-1 border-2 border-white text-white rounded-full font-label-lg text-label-lg uppercase tracking-widest">Completed</span>
+</div>
+</div>
+<div class="p-lg flex flex-col gap-md">
+<div class="flex flex-wrap gap-sm">
+<div class="flex items-center gap-xs px-2 py-1 bg-surface-container rounded-md">
+<span class="material-symbols-outlined text-[14px] text-outline" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Sep 15, 2024</span>
+</div>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Youth Ignite Night</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">A powerful night of music, word, and engagement with our youth ministry.</p>
+</div>
+<div class="pt-sm border-t border-outline-variant/20 flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-outline">120 Attended</span>
+<button class="text-primary font-title-md text-title-md hover:underline">
+                            View Report
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 right-margin-mobile w-14 h-14 bg-primary-container text-on-primary-container rounded-2xl shadow-xl flex items-center justify-center transition-transform hover:scale-110 active:scale-90 z-40">
+<span class="material-symbols-outlined text-[28px]" data-icon="add">add</span>
+</button>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="fixed bottom-0 left-0 right-0 h-20 bg-surface border-t border-outline-variant/20 flex items-center justify-around px-margin-mobile z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-md text-label-md">Ministries</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" data-icon="event" style="font-variation-settings: 'FILL' 1;">event</span>
+<span class="font-label-md text-label-md font-bold">Events</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="font-label-md text-label-md">Updates</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="assignment_ind">assignment_ind</span>
+<span class="font-label-md text-label-md">Roster</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</button>
+</nav>
+<script>
+        function toggleEvents(type) {
+            const upcomingBtn = document.getElementById('btn-upcoming');
+            const pastBtn = document.getElementById('btn-past');
+            const upcomingCards = document.querySelectorAll('.event-card.upcoming');
+            const pastCards = document.querySelectorAll('.event-card.past');
+
+            if (type === 'upcoming') {
+                upcomingBtn.classList.add('bg-primary', 'text-on-primary', 'shadow-sm');
+                upcomingBtn.classList.remove('text-on-surface-variant', 'hover:bg-surface-variant');
+                
+                pastBtn.classList.remove('bg-primary', 'text-on-primary', 'shadow-sm');
+                pastBtn.classList.add('text-on-surface-variant', 'hover:bg-surface-variant');
+
+                upcomingCards.forEach(card => card.classList.remove('hidden'));
+                pastCards.forEach(card => card.classList.add('hidden'));
+            } else {
+                pastBtn.classList.add('bg-primary', 'text-on-primary', 'shadow-sm');
+                pastBtn.classList.remove('text-on-surface-variant', 'hover:bg-surface-variant');
+                
+                upcomingBtn.classList.remove('bg-primary', 'text-on-primary', 'shadow-sm');
+                upcomingBtn.classList.add('text-on-surface-variant', 'hover:bg-surface-variant');
+
+                pastCards.forEach(card => card.classList.remove('hidden'));
+                upcomingCards.forEach(card => card.classList.add('hidden'));
+            }
+        }
+    </script>
+</body></html>

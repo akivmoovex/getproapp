@@ -1,0 +1,80 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Monthly reports</h1>
+          <p class="church-branch-topbar__subtitle">Submit branch reports to HQ for review</p>
+        </div>
+        <a class="church-btn church-btn--primary" href="/branch/reports/new">Create / continue report</a>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (dashboard.previousMonthMissing) { %>
+      <div class="church-alert church-alert--warning" role="alert">
+        Previous month (<%= dashboard.previousMonthLabel %>) report is missing or not yet submitted.
+      </div>
+      <% } %>
+      <div class="church-branch-stats">
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Current month status</span>
+          <strong class="church-branch-stat-card__value church-branch-stat-card__value--sm"><%= dashboard.currentMonthStatus %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Giving summary (<%= dashboard.currentPeriodLabel %>)</span>
+          <strong class="church-branch-stat-card__value church-branch-stat-card__value--sm"><%= dashboard.givingStatus %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Draft reports</span>
+          <strong class="church-branch-stat-card__value"><%= dashboard.statusCounts.draft || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Submitted reports</span>
+          <strong class="church-branch-stat-card__value"><%= dashboard.statusCounts.submitted || 0 %></strong>
+        </article>
+      </div>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Attendance preview (<%= dashboard.currentPeriodLabel %>)</h2>
+        <p class="church-branch-panel__hint">From submitted attendance records only.</p>
+        <dl class="church-branch-dl church-branch-dl--inline">
+          <div><dt>Sunday avg.</dt><dd><%= dashboard.attendancePreview.sunday_average %></dd></div>
+          <div><dt>Midweek avg.</dt><dd><%= dashboard.attendancePreview.midweek_average %></dd></div>
+          <div><dt>Children avg.</dt><dd><%= dashboard.attendancePreview.children_average %></dd></div>
+          <div><dt>Youth avg.</dt><dd><%= dashboard.attendancePreview.youth_average %></dd></div>
+          <div><dt>Visitors total</dt><dd><%= dashboard.attendancePreview.visitors_total %></dd></div>
+        </dl>
+        <% if (dashboard.draftAttendanceCount > 0) { %>
+        <div class="church-alert church-alert--warning church-alert--compact" role="note">
+          <%= dashboard.draftAttendanceCount %> draft attendance record(s) for this month will not be included until submitted.
+        </div>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Report history</h2>
+        <% if ((dashboard.reports || []).length === 0) { %>
+        <p class="church-branch-empty">No monthly reports yet.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Status</th>
+                <th>Submitted</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% dashboard.reports.forEach(function (r) { %>
+              <tr>
+                <td><%= r.period_month_label %></td>
+                <td><span class="church-status-chip church-status-chip--<%= r.status === 'submitted' || r.status === 'approved' ? 'verified' : 'pending' %>"><%= reportStatusLabel(r.status) %></span></td>
+                <td><%= r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB') : '—' %></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/reports/<%= r.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

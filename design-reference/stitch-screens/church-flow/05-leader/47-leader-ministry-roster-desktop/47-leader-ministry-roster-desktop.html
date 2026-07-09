@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Youth Ministry | Roster Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<!-- Shared Component Styling Execution & Token Integration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#5341cd",
+                    "tertiary": "#57595b",
+                    "on-tertiary-container": "#f7f8f9",
+                    "primary-fixed": "#e4dfff",
+                    "secondary": "#586062",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-secondary-container": "#5d6466",
+                    "on-primary-fixed": "#160066",
+                    "background": "#f1fbff",
+                    "surface-container": "#e4f0f4",
+                    "surface-tint": "#5847d2",
+                    "on-background": "#131d21",
+                    "surface-container-low": "#eaf5fa",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f1fbff",
+                    "on-error-container": "#93000a",
+                    "on-primary-container": "#faf6ff",
+                    "primary-container": "#6c5ce7",
+                    "on-surface-variant": "#474554",
+                    "on-secondary-fixed": "#161d1f",
+                    "inverse-surface": "#283236",
+                    "tertiary-container": "#707273",
+                    "surface-variant": "#d9e4e9",
+                    "secondary-fixed": "#dde4e6",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed-dim": "#c6bfff",
+                    "outline": "#787586",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#c8c4d7",
+                    "secondary-container": "#dae1e3",
+                    "surface-bright": "#f1fbff",
+                    "inverse-on-surface": "#e7f3f7",
+                    "on-surface": "#131d21",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#c6bfff",
+                    "surface-container-high": "#dfeaef",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d1dce0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "gutter": "24px",
+                    "margin-desktop": "32px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "base": "8px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "title-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"]
+            },
+            "fontSize": {
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed overflow-hidden">
+<!-- NavigationDrawer (Shared Component) -->
+<!-- Executing "style_component_shape": "h-full w-[280px] fixed left-0 top-0" -->
+<aside class="hidden lg:flex flex-col h-full w-[280px] fixed left-0 top-0 bg-inverse-surface py-6 shadow-sm z-50">
+<!-- Profile Header: Executing "header_layout": "left_align" -->
+<div class="px-6 mb-8 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center overflow-hidden border-2 border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of Grace Mwansa, a smiling woman in her late 30s with short, stylish hair. She is wearing a modern lavender blouse, exuding leadership and warmth. The background is a soft, blurred church office environment with warm morning light filtering through windows, maintaining a clean, high-end corporate aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjDGN3JPV0PoTgruP2mtmEXZE1AUZ1cJud17vVG3-VLEQiwjbv6XJsF8eouPBratGE1UxEOAVUW4iwKI1H5b_WFaUR_YraGLx2uZIiML66AS5w22wz6iukfqJBnMzm0kvX-lHuWYwksuON3vTlTLDHm42fVdo6EiYqTiOFcNwqyJHcbpplfjd2C7ULLkpQmpTxnMjKe0fgs5KHnTkT-fYgoIoad2dyyyrV3G5pNJGiMjRZGgVn3bH-YQ"/>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg text-primary-fixed leading-tight">Grace Mwansa</h2>
+<p class="font-label-lg text-label-lg text-tertiary-fixed-dim">Department Leader</p>
+</div>
+</div>
+<nav class="flex-1 px-2">
+<!-- DASHBOARD -->
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<!-- ROSTER (ACTIVE) -->
+<!-- Executing "style_active_navigation": "flex items-center gap-4 bg-primary-container text-on-primary-container rounded-lg px-4 py-3 mx-2 my-1" -->
+<a class="flex items-center gap-4 bg-primary-container text-on-primary-container rounded-lg px-4 py-3 mx-2 my-1 scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-lg text-label-lg">Roster</span>
+</a>
+<!-- ATTENDANCE -->
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-lg text-label-lg">Attendance</span>
+</a>
+<!-- REPORTS -->
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-lg text-label-lg">Reports</span>
+</a>
+<!-- REQUESTS -->
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:text-white px-4 py-3 mx-2 my-1 hover:bg-on-tertiary-fixed-variant transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+<span class="font-label-lg text-label-lg">Requests</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed mb-4">Youth Ministry</h1>
+<button class="w-full py-3 px-4 rounded-xl bg-on-tertiary-fixed-variant text-white flex items-center justify-center gap-2 font-label-lg text-label-lg hover:bg-opacity-80 transition-all">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                Logout
+            </button>
+</div>
+</aside>
+<!-- Content Canvas -->
+<main class="lg:ml-[280px] min-h-screen flex flex-col relative">
+<!-- TopAppBar (Shared Component) -->
+<!-- Executing "style_shell_layout": "flex justify-between items-center w-full px-4 md:px-8 h-16 sticky top-0 z-40" -->
+<header class="flex justify-between items-center w-full px-4 md:px-8 h-16 sticky top-0 z-40 bg-surface dark:bg-surface-dim border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<button class="lg:hidden p-2 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-title-lg text-title-lg font-bold text-primary">Roster Management</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex bg-surface-container-low border border-outline-variant rounded-full px-4 py-1.5 items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 font-body-md text-body-md text-on-surface w-48" placeholder="Quick search members..." type="text"/>
+</div>
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-all relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-primary-fixed border border-primary">
+<img class="w-full h-full object-cover" data-alt="A small square avatar photo of Grace Mwansa, focused on her face. She has a warm, confident expression. The style matches the design system's soft, modern look with clean lines and a professional church-administrative vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3_GWbNH3w3D1Sw6j6eW0PMWQBfLx_ik9uhoq5WHldE5S3ti8Ted-JUzH1PcU1HM7TGy5mUw6d1Z2KsL27bCjqvJbpcLCM5kOsNJzqkNptl4Z_J3RgfAdwq2qctk4XorYOJPKMJdm_7shLb7bnkKnT0bVYeHisZGz0zYGoeiZo4UJD4z6OW80pnFR4AG-OzDoT7b_-WPN8zHp9Q5nVuuNLJSMC81BkV-GPd1mgEjc_5kb1G7l7ihgvTQ"/>
+</div>
+</div>
+</header>
+<!-- Main Workspace -->
+<div class="flex-1 p-6 md:p-8 overflow-y-auto max-h-[calc(100vh-64px)] hide-scrollbar">
+<!-- Statistics Bento Header -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<span class="p-2 bg-primary-fixed text-on-primary-fixed-variant rounded-xl material-symbols-outlined" data-icon="groups">groups</span>
+<span class="text-green-600 font-label-lg flex items-center">+4%</span>
+</div>
+<p class="font-label-lg text-on-surface-variant uppercase tracking-wider">Total Members</p>
+<h3 class="font-display-lg text-display-lg text-on-surface mt-1">124</h3>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<span class="p-2 bg-secondary-fixed text-on-secondary-fixed-variant rounded-xl material-symbols-outlined" data-icon="verified">verified</span>
+<span class="text-on-surface-variant font-label-lg">Target: 90%</span>
+</div>
+<p class="font-label-lg text-on-surface-variant uppercase tracking-wider">Avg Attendance</p>
+<h3 class="font-display-lg text-display-lg text-on-surface mt-1">82%</h3>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<span class="p-2 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-xl material-symbols-outlined" data-icon="volunteer_activism">volunteer_activism</span>
+</div>
+<p class="font-label-lg text-on-surface-variant uppercase tracking-wider">Active Volunteers</p>
+<h3 class="font-display-lg text-display-lg text-on-surface mt-1">18</h3>
+</div>
+<div class="bg-primary-container text-on-primary-container rounded-2xl p-6 shadow-md relative overflow-hidden">
+<div class="relative z-10">
+<p class="font-title-md text-title-md mb-2">New Requests</p>
+<p class="font-body-md text-body-md opacity-80 mb-4">4 pending student registrations require approval.</p>
+<button class="bg-white text-primary font-label-lg px-4 py-2 rounded-lg shadow-sm hover:bg-surface-bright transition-colors">Review Now</button>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10">
+<span class="material-symbols-outlined text-[120px]" data-icon="pending_actions">pending_actions</span>
+</div>
+</div>
+</div>
+<!-- Main Roster Table Container -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-sm overflow-hidden flex flex-col">
+<!-- Table Filters/Header -->
+<div class="p-6 border-b border-outline-variant flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-md text-headline-md text-on-surface">Member Roster</h2>
+<span class="px-2 py-0.5 bg-surface-variant text-on-surface-variant rounded font-label-md">47 active leaders</span>
+</div>
+<div class="flex flex-wrap items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container border border-outline-variant rounded-xl font-label-lg text-on-surface-variant hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+                            Filters
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container border border-outline-variant rounded-xl font-label-lg text-on-surface-variant hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                            Export
+                        </button>
+<button class="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-xl font-label-lg shadow-sm hover:bg-primary-container transition-all">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                            Add Member
+                        </button>
+</div>
+</div>
+<!-- Table Content -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-6 py-4 font-label-lg text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Member Name</th>
+<th class="px-6 py-4 font-label-lg text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Phone Number</th>
+<th class="px-6 py-4 font-label-lg text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Role</th>
+<th class="px-6 py-4 font-label-lg text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Status</th>
+<th class="px-6 py-4 font-label-lg text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Attendance</th>
+<th class="px-6 py-4 font-label-lg text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Notes</th>
+<th class="px-6 py-4 font-label-lg text-on-surface-variant uppercase tracking-wider border-b border-outline-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-secondary-fixed">
+<img class="w-full h-full object-cover" data-alt="A portrait of a teenage boy, Ethan Miller, smiling in a brightly lit church youth room. He is wearing a simple navy blue t-shirt. The lighting is soft and natural, emphasizing a welcoming community atmosphere. High-resolution digital photography style, clean and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZX-udN9yXdmSXAFlDkvo89bPbppGtvCuP__RO2tVCKiU-vvkv1Imgl4Njlj8b7gxdkz2dXmRaWdV0mZOjCKsbIcCWzAI2PEj_V_l3EIMBskRG0Vfhe-1jJazLMPWjqrTmMW7MwXUxX4g4FmL0U9yqupUq9isI_51u-EGQNV-o_cbaEnb93-9zlD5zBuvnFheCGiXLwsz2Q6ng29hkTvCUm7ezf0plsRahIyPEfgnau_4SJJYGJAvDMA"/>
+</div>
+<div>
+<p class="font-title-md text-on-surface">Ethan Miller</p>
+<p class="font-body-md text-on-surface-variant">ethan.m@email.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-md text-on-surface">(555) 012-3456</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full font-label-md">Student</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="font-body-md text-on-surface">Active</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="w-full max-w-[100px]">
+<div class="flex justify-between items-center mb-1">
+<span class="font-label-md text-on-surface">92%</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-primary h-1.5 rounded-full" style="width: 92%"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="font-body-md text-on-surface-variant truncate max-w-[150px]">Enjoys music and sports.</p>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors" title="Add Note">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+</button>
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors" title="View Profile">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-secondary-fixed">
+<img class="w-full h-full object-cover" data-alt="A warm portrait of Sarah Jenkins, a middle-aged woman with glasses and a kind smile, appearing as a church volunteer. She wears a yellow knit sweater. The background shows a modern church library with soft lighting, reflecting her role as a mentor. Modern corporate aesthetic, high quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjAlsvTQbBQJAeKLlqUm7IZ9k3WA4SNCmeM4WBwoGJoH9VN8o8QqPC39z6rUd-vor1BOZ5pI63ZJfD8X70zYXVeAgBDtRhtcJt0nX0anGBx6Gs0125YmiEzciD8YUc7uxd1R1ZEfMzXdhk23IQ9YVQnxI1BVLK6BOXMR1_TFBVMRpK4DaRWdTV-4Rb6G6wMpxzDNNr9OY9kaXw2n40mEdSRyhX472CnmMxfdGl2Vf03qhNWGGC8--avg"/>
+</div>
+<div>
+<p class="font-title-md text-on-surface">Sarah Jenkins</p>
+<p class="font-body-md text-on-surface-variant">s.jenkins@email.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-md text-on-surface">(555) 098-7654</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full font-label-md">Volunteer</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="font-body-md text-on-surface">Active</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="w-full max-w-[100px]">
+<div class="flex justify-between items-center mb-1">
+<span class="font-label-md text-on-surface">100%</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-primary h-1.5 rounded-full" style="width: 100%"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="font-body-md text-on-surface-variant truncate max-w-[150px]">Small group mentor.</p>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+</button>
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-secondary-fixed">
+<img class="w-full h-full object-cover" data-alt="A portrait of Lucas Thorne, a vibrant teenage student in a grey hoodie. He looks creative and energetic. The lighting is edgy but professional, with cool blue and warm orange tones in the background, suggesting a modern youth event space. Digital photography, professional quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCJX4sk-KiZvFJ3Hrd-OnNeOI8Fu5KqJ3n8PYgXXyTcomhnkM0_KLfRzgprQg9O3GWDousYEq9DJHIqFit_JMfeNNuNTq-DXvMGumrnxUn8jAAVWDGjJTnD1hwM7TP3Y-1xlShlkALQvkpbzBfuPLwi4RTFID3gLbrApnSpcEz7IvinCFAO1W06msYKqtJKWCVqp2hWj0RMnoOmgWfRHCbdEIj6bwBt02Iw1V6IfKj-BlYt_e5NgLK2g"/>
+</div>
+<div>
+<p class="font-title-md text-on-surface">Lucas Thorne</p>
+<p class="font-body-md text-on-surface-variant">l.thorne@email.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-md text-on-surface">(555) 246-8101</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-surface-variant text-on-surface-variant rounded-full font-label-md">Pending</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-orange-400"></span>
+<span class="font-body-md text-on-surface">Pending</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="w-full max-w-[100px]">
+<div class="flex justify-between items-center mb-1">
+<span class="font-label-md text-on-surface-variant">0%</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-primary h-1.5 rounded-full" style="width: 0%"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="font-body-md text-on-surface-variant truncate max-w-[150px]">New registration.</p>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+</button>
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-secondary-fixed">
+<img class="w-full h-full object-cover" data-alt="A portrait of Maya Patel, a joyful young woman in a teal dress, representing a youth leader or senior student. She has a bright, approachable expression. The background is a clean, minimal studio setting with soft grey tones, fitting the structured compassion aesthetic of the design system. Professional photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPHQZkGL5Onc526iPFGUmeYQJgC9eTpMMX7Tn1J6lYLpE2hzs7kJMCzA9yJQAn3_Wl6Rlo50-c496ST438BxUoE5MPmrELqOcQAgy3WUVBHgGc8nfkXoHs34-rwhWaq6w0dR4k2Mnw6aZ0b--Ntfn6n3wvPUzLfSY0jqEgOy6Y0tu6m1wkJRID7aMXrioJvQmjbhntuH1QUOcPBIvFVCQqecjclNSVjMEEd7nory6qVIcRZZNcFh6-Gw"/>
+</div>
+<div>
+<p class="font-title-md text-on-surface">Maya Patel</p>
+<p class="font-body-md text-on-surface-variant">m.patel@email.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-md text-on-surface">(555) 321-4321</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full font-label-md">Student</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="font-body-md text-on-surface">Active</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="w-full max-w-[100px]">
+<div class="flex justify-between items-center mb-1">
+<span class="font-label-md text-on-surface">85%</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-primary h-1.5 rounded-full" style="width: 85%"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="font-body-md text-on-surface-variant truncate max-w-[150px]">Part of youth choir.</p>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+</button>
+<button class="p-2 hover:bg-primary-fixed rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Pagination -->
+<div class="p-6 border-t border-outline-variant flex items-center justify-between">
+<p class="font-label-lg text-on-surface-variant">Showing 1 to 4 of 47 members</p>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-lg border border-outline-variant hover:bg-surface-container-high transition-all disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-10 h-10 rounded-lg bg-primary text-white font-label-lg flex items-center justify-center">1</button>
+<button class="w-10 h-10 rounded-lg border border-outline-variant hover:bg-surface-container-high font-label-lg flex items-center justify-center text-on-surface-variant">2</button>
+<button class="w-10 h-10 rounded-lg border border-outline-variant hover:bg-surface-container-high font-label-lg flex items-center justify-center text-on-surface-variant">3</button>
+<button class="p-2 rounded-lg border border-outline-variant hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Action Floating Panel -->
+<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-low border border-outline-variant rounded-2xl p-6 flex items-start gap-4 hover:border-primary transition-colors cursor-pointer">
+<div class="p-3 bg-white rounded-xl text-primary shadow-sm">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+</div>
+<div>
+<h4 class="font-title-md text-on-surface">Email Group</h4>
+<p class="font-body-md text-on-surface-variant">Send announcement to all active students.</p>
+</div>
+</div>
+<div class="bg-surface-container-low border border-outline-variant rounded-2xl p-6 flex items-start gap-4 hover:border-primary transition-colors cursor-pointer">
+<div class="p-3 bg-white rounded-xl text-primary shadow-sm">
+<span class="material-symbols-outlined" data-icon="assignment_ind">assignment_ind</span>
+</div>
+<div>
+<h4 class="font-title-md text-on-surface">Assign Roles</h4>
+<p class="font-body-md text-on-surface-variant">Bulk update volunteer roles for next Sunday.</p>
+</div>
+</div>
+<div class="bg-surface-container-low border border-outline-variant rounded-2xl p-6 flex items-start gap-4 hover:border-primary transition-colors cursor-pointer">
+<div class="p-3 bg-white rounded-xl text-primary shadow-sm">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+</div>
+<div>
+<h4 class="font-title-md text-on-surface">Roster Trends</h4>
+<p class="font-body-md text-on-surface-variant">View growth patterns and drop-out alerts.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- BottomNavBar (Shared Component - Mobile Only) -->
+<!-- Executing "style_shell_layout": "lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-1 pb-safe" -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-1 pb-safe bg-surface-container-lowest shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md">Dash</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl p-2 scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-md text-label-md">Roster</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-md text-label-md">Check-in</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+<span class="font-label-md text-label-md">Reqs</span>
+</a>
+</nav>
+</main>
+<script>
+        // Simple Interaction logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const tableRows = document.querySelectorAll('tbody tr');
+            tableRows.forEach(row => {
+                row.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) return;
+                    // Potential action: Redirect to profile or open modal
+                    console.log('Row clicked');
+                });
+            });
+            
+            // Search simulation
+            const searchInput = document.querySelector('input[type="text"]');
+            searchInput?.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                tableRows.forEach(row => {
+                    const name = row.querySelector('.font-title-md').textContent.toLowerCase();
+                    row.style.display = name.includes(term) ? '' : 'none';
+                });
+            });
+        });
+    </script>
+</body></html>

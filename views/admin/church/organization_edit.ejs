@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Edit organization | <%= organization.name %> | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'Edit organization', activeNav: activeNav || 'church_platform_orgs' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Edit organization</h1>
+            <p class="admin-dashboard__subtitle muted">
+              <a href="/admin/church/organizations/<%= organization.id %>"><%= organization.name %></a>
+              · <%- include('../../partials/admin/church_status_badge', { status: organization.status }) %>
+            </p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'Organization detail' }) %>
+          </div>
+        </header>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash flash--error" role="alert"><%= error %></div>
+        <% } %>
+
+        <% var f = typeof form !== 'undefined' && form ? form : {}; %>
+        <% var currentSlugVal = typeof currentSlug !== 'undefined' ? currentSlug : (organization.slug || ''); %>
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <dl class="admin-dl">
+            <dt>Current organization slug</dt>
+            <dd><code><%= currentSlugVal %></code></dd>
+            <dt>Status</dt>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: organization.status }) %> <span class="muted">(managed on organization detail)</span></dd>
+            <% if (typeof planSummary !== 'undefined' && planSummary) { %>
+              <dt>Plan</dt>
+              <dd><strong><%= planSummary.planDisplay.label %></strong> (<%= planSummary.planCode %>) · <a href="/admin/church/organizations/<%= organization.id %>/plan">Change plan</a></dd>
+            <% } %>
+          </dl>
+          <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">
+            Branch public URLs are based on branch host slugs, not the organization slug.
+          </p>
+        </section>
+
+        <form method="post" action="/admin/church/organizations/<%= organization.id %>" class="card card--mb-xl" style="padding:1.25rem;" id="organization-edit-form">
+          <h2 class="section-title section-title--flush">Organization metadata</h2>
+          <div class="admin-form-grid">
+            <div class="input-field">
+              <label class="input-field__label" for="organization_name">Organization name *</label>
+              <input id="organization_name" class="input-field__control" name="organization_name" required value="<%= f.organization_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="organization_slug">Organization slug *</label>
+              <input id="organization_slug" class="input-field__control" name="organization_slug" required pattern="[a-z0-9][a-z0-9-]{0,62}" value="<%= f.organization_slug || '' %>" data-current="<%= currentSlugVal %>" />
+              <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">
+                New slug preview: <strong id="slug-preview"><%= f.organization_slug || currentSlugVal %></strong>
+              </p>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="country">Country *</label>
+              <input id="country" class="input-field__control" name="country" required value="<%= f.country || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="city">City</label>
+              <input id="city" class="input-field__control" name="city" value="<%= f.city || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="primary_contact_name">Primary contact name</label>
+              <input id="primary_contact_name" class="input-field__control" name="primary_contact_name" value="<%= f.primary_contact_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="primary_contact_phone">Primary contact phone</label>
+              <input id="primary_contact_phone" class="input-field__control" name="primary_contact_phone" value="<%= f.primary_contact_phone || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="primary_contact_email">Primary contact email</label>
+              <input id="primary_contact_email" class="input-field__control" name="primary_contact_email" type="email" value="<%= f.primary_contact_email || '' %>" />
+            </div>
+          </div>
+
+          <div id="slug-change-warning" class="flash flash--info" role="status" style="display:none;margin-top:1rem;">
+            Changing organization slug affects internal organization identity and display links, but branch public URLs use branch host slugs.
+          </div>
+
+          <div class="admin-toolbar" style="margin-top:1.5rem;">
+            <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save organization' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'Cancel' }) %>
+          </div>
+        </form>
+      </div>
+    </main>
+    <script>
+      (function () {
+        var slugInput = document.getElementById("organization_slug");
+        var preview = document.getElementById("slug-preview");
+        var warning = document.getElementById("slug-change-warning");
+        var current = slugInput ? String(slugInput.getAttribute("data-current") || "").trim().toLowerCase() : "";
+        function syncPreview() {
+          var slug = slugInput ? slugInput.value.trim().toLowerCase() : "";
+          if (preview) preview.textContent = slug || "—";
+          if (warning && slugInput) {
+            warning.style.display = slug && current && slug !== current ? "block" : "none";
+          }
+        }
+        if (slugInput) slugInput.addEventListener("input", syncPreview);
+        syncPreview();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,39 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <div>
+          <a class="church-member-link" href="/member/ministries">&larr; Back to ministries</a>
+          <h1 class="church-member-header__title"><%= ministry.name %></h1>
+          <p class="church-member-header__subtitle"><%= visibilityLabel(ministry.visibility) %></p>
+        </div>
+        <span class="church-status-chip church-status-chip--<%= relationship.relationshipStatus === 'active' ? 'verified' : 'pending' %>"><%= memberRelationshipStatusLabel(relationship.relationshipStatus) %></span>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <section class="church-member-panel">
+        <p><%= ministry.description || 'No description provided.' %></p>
+        <dl class="church-branch-dl">
+          <div><dt>Leader</dt><dd><%= ministry.leader_name || '—' %><% if (ministry.leader_phone) { %> · <%= ministry.leader_phone %><% } %></dd></div>
+          <div><dt>Schedule</dt><dd><%= formatMinistrySchedule(ministry) %></dd></div>
+          <div><dt>Location</dt><dd><%= ministry.location || '—' %></dd></div>
+        </dl>
+      </section>
+      <% if (relationship.openRequest && relationship.openRequest.admin_comment) { %>
+      <section class="church-member-panel">
+        <h2 class="church-member-panel__title">Branch admin note</h2>
+        <p><%= relationship.openRequest.admin_comment %></p>
+        <p class="church-member-list__meta">Status: <%= joinRequestStatusLabel(relationship.openRequest.status) %></p>
+      </section>
+      <% } %>
+      <% if (relationship.canRequestJoin || (relationship.openRequest && relationship.openRequest.status === 'more_info_needed')) { %>
+      <section class="church-member-panel">
+        <h2 class="church-member-panel__title"><%= relationship.openRequest && relationship.openRequest.status === 'more_info_needed' ? 'Update your join request' : 'Request to join' %></h2>
+        <form class="church-form" method="post" action="/member/ministries/<%= ministry.id %>/request-join">
+          <div class="church-field">
+            <label class="church-label" for="message">Message / reason for joining (optional)</label>
+            <textarea class="church-input church-input--textarea" id="message" name="message" rows="4"><%= form.message || '' %></textarea>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Submit request</button>
+        </form>
+      </section>
+      <% } %>
+<%- include('../partials/member_shell_end') %>

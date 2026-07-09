@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Ministries | GetPro Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 10px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#c6bfff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-fixed": "#160066",
+                        "inverse-on-surface": "#e7f3f7",
+                        "inverse-surface": "#283236",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#474554",
+                        "surface-variant": "#d9e4e9",
+                        "surface-container-highest": "#d9e4e9",
+                        "secondary": "#586062",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "tertiary-container": "#707273",
+                        "surface-tint": "#5847d2",
+                        "tertiary": "#57595b",
+                        "surface-bright": "#f1fbff",
+                        "surface": "#f1fbff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-primary-container": "#faf6ff",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#787586",
+                        "on-tertiary-fixed": "#191c1d",
+                        "surface-container-high": "#dfeaef",
+                        "surface-dim": "#d1dce0",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#e4dfff",
+                        "background": "#f1fbff",
+                        "on-secondary-container": "#5d6466",
+                        "surface-container": "#e4f0f4",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-background": "#131d21",
+                        "on-surface": "#131d21",
+                        "primary": "#5341cd",
+                        "on-secondary-fixed": "#161d1f",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#c8c4d7",
+                        "tertiary-fixed": "#e1e3e4",
+                        "primary-container": "#6c5ce7",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "secondary-fixed": "#dde4e6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<!-- NavigationDrawer (The Anchor) -->
+<aside class="h-full w-72 fixed left-0 top-0 hidden md:flex flex-col bg-surface-container-low dark:bg-surface-container z-50">
+<div class="flex flex-col gap-sm p-md h-full">
+<!-- Header/Profile Section -->
+<div class="flex flex-col p-4 mb-4 gap-3">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="A professional and warm studio portrait of a woman named Mary Phiri, who has a kind smile and friendly eyes. She is dressed in smart casual attire suitable for a church community leader. The background is a soft-focus modern church office with warm, natural lighting and a palette of soft whites and violets." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_SDumUjyUI6szwCiLpkbp4OqnVbOqs41JfVEO-IDnl6rrfOd0prAd3mpSeLlSakhD4kzTidE5riIltNXsjUUxObI0DOD7SmlILTDVxU89ZyDpWLAcCf1dYhfJqBlly0aXSG3EGHSfkO7w9OogPjNIbiIOrqBNpE8MCCnlnkUiD9aMeRbOmP7CMVYU7_njBD_l8-6PPFlBbm7GEHrVC6vukhAWHLTq1dPO0K51H_1Fak5Vyuk02c6-Ug"/>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface">Mary Phiri</h2>
+<p class="font-body-md text-on-surface-variant">Kafue Baptist Church</p>
+<span class="inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-xs font-medium bg-primary-container text-on-primary-container">
+                        Verified Member
+                    </span>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-4 py-3 gap-4 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center px-4 py-3 gap-4 bg-secondary-container dark:bg-secondary-fixed-dim text-on-secondary-container dark:text-on-secondary-fixed-variant rounded-full font-bold transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined active-nav-icon" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center px-4 py-3 gap-4 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">calendar_month</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<a class="flex items-center px-4 py-3 gap-4 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">menu_book</span>
+<span class="font-label-lg text-label-lg">Resources</span>
+</a>
+<a class="flex items-center px-4 py-3 gap-4 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">send</span>
+<span class="font-label-lg text-label-lg">Requests</span>
+</a>
+<a class="flex items-center px-4 py-3 gap-4 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">payments</span>
+<span class="font-label-lg text-label-lg">Giving</span>
+</a>
+</nav>
+<!-- Brand Footer -->
+<div class="mt-auto p-4 border-t border-outline-variant/30 text-center">
+<span class="font-headline-lg text-headline-lg text-primary dark:text-primary-fixed-dim font-bold">GetPro Church</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-72 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full z-40 sticky top-0">
+<div class="flex items-center gap-4">
+<button class="md:hidden p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="font-title-lg text-title-lg text-primary dark:text-primary-fixed-dim">Ministries</h1>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden sm:flex relative">
+<input class="bg-surface-container border-none rounded-full py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary w-64" placeholder="Search groups..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+</div>
+<button class="p-2 rounded-full hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden cursor-pointer active:scale-95 duration-150">
+<img class="w-full h-full object-cover" data-alt="A small circular avatar of Mary Phiri showing her face clearly, used as a top navigation profile trigger. The background is simple and clean with soft church office lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_UKfohTbf7PbScdVIYQMKbphXLnqH9EZVY1CM3z69gyV9g9VYRBVQiFHNlxA93TqfV-bJ_dHfT5dUFbhuqi9p2iw80GTBXsYXyrgeTNnV_PrWS5oFhrw89jiApqfKIOK-D-1jMvBU5o3lQxWNm2TuaQneQn9KIK5BWXXhF2knJmM3YC1ZLoPVliMbixPI_7xZHC7w2JUFiLwNQxoAupNNGaQTJJcFrOpPTjKodAZGUv0GZ_T5Dir-pA"/>
+</div>
+</div>
+</header>
+<div class="p-margin-mobile md:p-margin-desktop flex flex-col gap-lg max-w-7xl mx-auto w-full">
+<!-- Welcome Header -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-background">Your Community</h2>
+<p class="text-on-surface-variant font-body-lg">Manage your active involvement and find new ways to serve.</p>
+</div>
+<button class="bg-primary hover:bg-surface-tint text-on-primary px-6 py-2 rounded-full font-label-lg transition-all shadow-md flex items-center gap-2">
+<span class="material-symbols-outlined">add</span>
+                    Find New Ministry
+                </button>
+</section>
+<!-- Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- My Ministries Column (Primary) -->
+<div class="lg:col-span-8 flex flex-col gap-md">
+<div class="flex items-center justify-between mb-2">
+<h3 class="font-title-lg text-title-lg text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">bookmark</span>
+                            My Ministries
+                        </h3>
+<span class="text-label-md text-outline uppercase tracking-wider">3 Active</span>
+</div>
+<!-- Ministry Card 1: Hospitality -->
+<div class="glass-card rounded-xl p-lg flex flex-col md:flex-row gap-lg transition-all hover:shadow-lg border-l-4 border-l-primary group">
+<div class="w-full md:w-48 h-32 rounded-lg overflow-hidden shrink-0">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A warm and welcoming high-definition image of a church hospitality team. A diverse group of people in branded t-shirts are standing in a bright, modern church lobby, holding coffee cups and smiling. The lighting is high-key and inviting, dominated by whites, warm wood tones, and soft violet accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdn01Qjnw7dOSKf1L_sqT-T2HjF9CgwHaEV2E7XTz-3xw_Zq_YP-AGX3TaFEyOaD1dWk6PUJTMcPzkaoFwhSmdgEVOK1kctvYrfDL-PpXw2G2Z9w30Ei501k6XnTMIebdeaG6Z6tM_q4Fu5sOlRiRzxbI_jkBAlVyAsOS4Vy0J_AFqi4LqD_Zx7yzup3uvG8W3k4j_dP7Syfsd9wYumt67_kY8BQFx7TgSMdr9BfQePLukLBhtbwX4Kg"/>
+</div>
+<div class="flex-1 flex flex-col">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">Hospitality & Greeting Team</h4>
+<p class="text-on-surface-variant text-body-md mt-1">Creating a warm first impression for every visitor.</p>
+</div>
+<span class="bg-surface-container-high px-3 py-1 rounded-full text-label-md font-bold text-primary">Volunteer</span>
+</div>
+<div class="mt-auto pt-4 flex flex-wrap gap-4 items-center border-t border-outline-variant/30">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-secondary-fixed">
+<img class="w-full h-full object-cover" data-alt="Portrait of a friendly male leader named David, looking professional and approachable. He is wearing a simple polo shirt against a clean church background with soft lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtMcL5MXQgEJKUqKtYHYEOiFytslJBbG4Ldd4yd-XfpYpR74umFppffkax-M-PRDN3MIaHKzkpuqFdtN_xfWbjt6mPYWOPrCokMd5sgjLY0fN9UpmaOlhjQIQIcraBBgrPaeDtAVHNfkzEA2DpbqRpbDP5s40Ef_b2NJH-BqikWu6rmPHX-UhOe94FghC4ocaknflj_vo_Vs9wcuoejK_oB2_a7XQB3tv9468Wt9vZaZ0Zp08-nOWHog"/>
+</div>
+<div class="text-xs">
+<p class="font-bold text-on-surface">David Mwale</p>
+<p class="text-outline">Ministry Lead</p>
+</div>
+</div>
+<div class="flex gap-2 ml-auto">
+<button class="p-2 rounded-full hover:bg-primary-container/20 text-primary transition-colors" title="Contact Lead">
+<span class="material-symbols-outlined">mail</span>
+</button>
+<button class="bg-primary-container text-on-primary-container px-4 py-1 rounded-full font-label-md transition-all active:scale-95">
+                                        Roster
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Ministry Card 2: Choir -->
+<div class="glass-card rounded-xl p-lg flex flex-col md:flex-row gap-lg transition-all hover:shadow-lg border-l-4 border-l-secondary group">
+<div class="w-full md:w-48 h-32 rounded-lg overflow-hidden shrink-0">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A cinematic, low-angle shot of a church choir practicing in a beautiful sanctuary. Sunlight is streaming through stained glass, creating colorful patterns on the vocalists. The scene is emotive and spiritually uplifting, with a focus on harmony and community. Soft violet and gold color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBv4YWiL0wmqujXmzHqBga5EkvoLKrFWS3cD1MyphS9aWb7Xl-c6sZn3e6PDpeFYrIR1BhYi5cKnD0_YgvytU7aeRKuC69EWcpyh7uPl6USHok9J70Wk8XcHsNFCb8yvfw51o0NGFsG0m1dkSAv4GZl1RIxQR1rP5YZDYkdwu8bZfd9cDC0ExqDhu0LOY9kROFUy066t9HkAGF5IDun-vlZ2jARvJPua_BCbsoUbcmUMJnGMZiYUmjx6w"/>
+</div>
+<div class="flex-1 flex flex-col">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">Adult Sanctuary Choir</h4>
+<p class="text-on-surface-variant text-body-md mt-1">Leading the congregation in worship through hymns and anthems.</p>
+</div>
+<span class="bg-surface-container-high px-3 py-1 rounded-full text-label-md font-bold text-secondary">Member</span>
+</div>
+<div class="mt-auto pt-4 flex flex-wrap gap-4 items-center border-t border-outline-variant/30">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-secondary-fixed">
+<img class="w-full h-full object-cover" data-alt="Portrait of a woman named Sarah with a joyful expression, wearing elegant professional attire. She is in a music room with a piano in the soft-focus background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuApFdGc51Y0OarYoQZqo-4N6DlijyXPH7M8G_nY4c2Tpsat2DIxsJKx3eVMQYSvDBvzicXVVwku_sEYSNRAMsqlC0lR9XZMXPpfHjaAdVbqX-Hvfqta7EnfY4zzn7Inq0PUOgNk8g6jiKdAHQttseXdGRCKDgP5M6u8yt-2M0V8wGXWErpF7BDuYP4hxD77hQjweB0SWSckzDEc-JORvSKZ4Ffu_GmXSs7BTHsmvaDvezFuPvIi2JclbA"/>
+</div>
+<div class="text-xs">
+<p class="font-bold text-on-surface">Sarah Lungu</p>
+<p class="text-outline">Director</p>
+</div>
+</div>
+<div class="flex gap-2 ml-auto">
+<button class="p-2 rounded-full hover:bg-primary-container/20 text-primary transition-colors" title="Message Sarah">
+<span class="material-symbols-outlined">chat_bubble</span>
+</button>
+<button class="bg-surface-variant text-on-surface-variant px-4 py-1 rounded-full font-label-md transition-all active:scale-95">
+                                        Practice Schedule
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Ministry Card 3: Bible Study -->
+<div class="glass-card rounded-xl p-lg flex flex-col md:flex-row gap-lg transition-all hover:shadow-lg border-l-4 border-l-tertiary-container group">
+<div class="w-full md:w-48 h-32 rounded-lg overflow-hidden shrink-0">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A high-quality top-down shot of a wooden table with several open Bibles, notebooks, and coffee mugs. A group of diverse people's hands are visible as they point to scriptures. The atmosphere is intimate, scholarly, and peaceful, with warm morning sunlight illuminating the dust motes and high-quality textures of paper and wood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgClhiK65VtEBsPHu8MpMGpiKrGE5CTPqY0ER_bkUEIAvrnDk3ATeB6NACIXWBDiBhz-mAbpSKSuTgsFuROgVmCGGzaOhext6_AJK6pFZRdOuZjS4KFZgHZa6px636BQvw8RqjYwkJc6c1qK3X6TWLihIdFhrGby3u-Gi9fhcmkx3KwsknO49UoWxgJL6QWVHbPqbtzBLwv8WpyNemgJxKL6YI-tYs03UfHiu0QYSCvPNwNsTyHZyA2Q"/>
+</div>
+<div class="flex-1 flex flex-col">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">Wednesday Evening Bible Study</h4>
+<p class="text-on-surface-variant text-body-md mt-1">Deep dives into the Book of Acts with the Women's Fellowship.</p>
+</div>
+<span class="bg-surface-container-high px-3 py-1 rounded-full text-label-md font-bold text-tertiary">Student</span>
+</div>
+<div class="mt-auto pt-4 flex flex-wrap gap-4 items-center border-t border-outline-variant/30">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-secondary-fixed">
+<img class="w-full h-full object-cover" data-alt="Portrait of an elder woman with wise, gentle features. She is dressed in traditional yet modern Zambian church attire, standing in front of a bookshelf. Warm and dignified lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuClz4QbfOq4U4qWOjFGCdNjga3Bx2oHlT-POR9mTQSqFP9-zKqe50wu6p8K7uxwGP1wN-sM2riv1W7h5JI-u2_D-a3Bkwng-23tyYw-fJED342B7bd_J2pwhUZWByd-eRKgbh9TvcpbFbJK93RYl4O2PTCg7Kk2I7GmFP2rgaeMOgnflGLGBodhtP0X8aUYdeBgdrOOnj5DQoJnJKari5rkHzddb3d7j4sGjIPq9BRP9uhU67OPFJvLYA"/>
+</div>
+<div class="text-xs">
+<p class="font-bold text-on-surface">Mama Banda</p>
+<p class="text-outline">Facilitator</p>
+</div>
+</div>
+<div class="flex gap-2 ml-auto">
+<button class="p-2 rounded-full hover:bg-primary-container/20 text-primary transition-colors" title="Contact facilitator">
+<span class="material-symbols-outlined">call</span>
+</button>
+<button class="bg-surface-variant text-on-surface-variant px-4 py-1 rounded-full font-label-md transition-all active:scale-95">
+                                        Materials
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Discover Ministries Column (Secondary) -->
+<div class="lg:col-span-4 flex flex-col gap-md">
+<div class="flex items-center justify-between mb-2">
+<h3 class="font-title-lg text-title-lg text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">explore</span>
+                            Discover
+                        </h3>
+</div>
+<div class="bg-surface-container-low rounded-xl p-md border border-outline-variant/30">
+<div class="flex flex-col gap-4">
+<p class="text-body-md text-on-surface-variant">Recommended based on your skills and interests.</p>
+<!-- Discovery Item 1 -->
+<div class="p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/20 hover:border-primary/50 cursor-pointer transition-all">
+<div class="flex gap-3">
+<div class="w-12 h-12 rounded bg-primary-container/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary">child_care</span>
+</div>
+<div>
+<h5 class="font-title-md text-on-surface">Kids Ministry Assistant</h5>
+<p class="text-xs text-on-surface-variant">Sunday Mornings • 09:00 AM</p>
+<p class="text-xs text-primary mt-1 font-bold">Urgent Need</p>
+</div>
+</div>
+</div>
+<!-- Discovery Item 2 -->
+<div class="p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/20 hover:border-primary/50 cursor-pointer transition-all">
+<div class="flex gap-3">
+<div class="w-12 h-12 rounded bg-secondary-container/30 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary">laptop_mac</span>
+</div>
+<div>
+<h5 class="font-title-md text-on-surface">Media & Tech Team</h5>
+<p class="text-xs text-on-surface-variant">Rotation Based • Training Provided</p>
+<p class="text-xs text-secondary mt-1 font-bold">Intermediate</p>
+</div>
+</div>
+</div>
+<!-- Discovery Item 3 -->
+<div class="p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/20 hover:border-primary/50 cursor-pointer transition-all">
+<div class="flex gap-3">
+<div class="w-12 h-12 rounded bg-tertiary-container/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-tertiary">handshake</span>
+</div>
+<div>
+<h5 class="font-title-md text-on-surface">Community Outreach</h5>
+<p class="text-xs text-on-surface-variant">Monthly Saturdays • Local District</p>
+<p class="text-xs text-tertiary mt-1 font-bold">New Project</p>
+</div>
+</div>
+</div>
+<button class="w-full py-2 border-2 border-primary text-primary font-label-lg rounded-full hover:bg-primary hover:text-on-primary transition-all">
+                                View All 24 Ministries
+                            </button>
+</div>
+</div>
+<!-- Quick Stats Bento Box -->
+<div class="grid grid-cols-2 gap-md">
+<div class="bg-primary-container p-4 rounded-xl text-on-primary-container">
+<span class="material-symbols-outlined mb-2">schedule</span>
+<p class="text-display-lg text-[32px] leading-tight font-bold">12</p>
+<p class="text-label-md opacity-80 uppercase">Hours Monthly</p>
+</div>
+<div class="bg-secondary-container p-4 rounded-xl text-on-secondary-container">
+<span class="material-symbols-outlined mb-2">star</span>
+<p class="text-display-lg text-[32px] leading-tight font-bold">4.8</p>
+<p class="text-label-md opacity-80 uppercase">Member Rating</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Upcoming Serving Shifts (Bento style) -->
+<section class="mt-md">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-title-lg text-title-lg text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">event_upcoming</span>
+                        Upcoming Assignments
+                    </h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="bg-surface-container-high rounded-xl p-4 flex items-center gap-4 border border-outline-variant/20">
+<div class="bg-primary text-on-primary w-12 h-14 rounded flex flex-col items-center justify-center shrink-0">
+<span class="text-label-md leading-none">OCT</span>
+<span class="text-title-lg font-bold leading-none mt-1">22</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Greeting Shift</p>
+<p class="text-xs text-on-surface-variant">Main Hall • 08:30 AM</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-outline">chevron_right</span>
+</div>
+<div class="bg-surface-container-high rounded-xl p-4 flex items-center gap-4 border border-outline-variant/20">
+<div class="bg-secondary text-on-secondary w-12 h-14 rounded flex flex-col items-center justify-center shrink-0">
+<span class="text-label-md leading-none">OCT</span>
+<span class="text-title-lg font-bold leading-none mt-1">25</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Choir Rehearsal</p>
+<p class="text-xs text-on-surface-variant">Chapel • 06:00 PM</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-outline">chevron_right</span>
+</div>
+<div class="bg-surface-container-high rounded-xl p-4 flex items-center gap-4 border border-outline-variant/20 opacity-60">
+<div class="bg-outline text-on-surface-variant w-12 h-14 rounded flex flex-col items-center justify-center shrink-0">
+<span class="text-label-md leading-none">OCT</span>
+<span class="text-title-lg font-bold leading-none mt-1">29</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Bible Study</p>
+<p class="text-xs text-on-surface-variant">Fellowship Room</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-outline">lock</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Spacer for mobile bottom nav -->
+<div class="h-24 md:hidden"></div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden bg-surface-container dark:bg-surface-container-highest shadow-lg pb-safe">
+<div class="flex justify-around items-center h-20 px-2 w-full">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="font-label-md text-label-md">Groups</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-md text-label-md">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-md text-label-md">Study</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1" href="#">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</div>
+</nav>
+<script>
+        // Micro-interactions and simple state handling
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.classList.add('translate-y-[-4px]');
+            });
+            card.addEventListener('mouseleave', () => {
+                card.classList.remove('translate-y-[-4px]');
+            });
+        });
+
+        // Toggle search focus styling
+        const searchInput = document.querySelector('input[type="text"]');
+        if (searchInput) {
+            searchInput.addEventListener('focus', () => {
+                searchInput.parentElement.classList.add('ring-2', 'ring-primary/50');
+            });
+            searchInput.addEventListener('blur', () => {
+                searchInput.parentElement.classList.remove('ring-2', 'ring-primary/50');
+            });
+        }
+    </script>
+</body></html>

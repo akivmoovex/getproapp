@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Monthly Report Submission - Ecclesia</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c8c4d7",
+                    "on-error": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#707273",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-secondary-container": "#5d6466",
+                    "on-secondary-fixed": "#161d1f",
+                    "background": "#f1fbff",
+                    "on-error-container": "#93000a",
+                    "inverse-surface": "#283236",
+                    "primary-fixed-dim": "#c6bfff",
+                    "error": "#ba1a1a",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "surface-tint": "#5847d2",
+                    "primary": "#5341cd",
+                    "outline": "#787586",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "on-primary-container": "#faf6ff",
+                    "surface-container-high": "#dfeaef",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "surface-bright": "#f1fbff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "tertiary": "#57595b",
+                    "surface-variant": "#d9e4e9",
+                    "on-tertiary": "#ffffff",
+                    "on-background": "#131d21",
+                    "secondary": "#586062",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "surface-container": "#e4f0f4",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-primary": "#ffffff",
+                    "secondary-container": "#dae1e3",
+                    "primary-fixed": "#e4dfff",
+                    "on-surface": "#131d21",
+                    "surface-container-highest": "#d9e4e9",
+                    "surface-dim": "#d1dce0",
+                    "surface-container-low": "#eaf5fa",
+                    "surface": "#f1fbff",
+                    "secondary-fixed": "#dde4e6",
+                    "inverse-primary": "#c6bfff",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-primary-fixed": "#160066",
+                    "on-surface-variant": "#474554",
+                    "inverse-on-surface": "#e7f3f7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "xs": "4px",
+                    "md": "16px",
+                    "gutter": "24px",
+                    "lg": "24px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px",
+                    "xl": "32px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "title-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .step-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #5341cd;
+            box-shadow: 0 0 0 2px rgba(83, 65, 205, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md text-body-md min-h-screen flex flex-col">
+<!-- Top App Bar -->
+<header class="w-full h-16 sticky top-0 z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-4">
+<div class="flex items-center gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-title-lg text-title-lg font-black text-primary">Ecclesia</h1>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A clean, professional headshot of a church administrator for a mobile app profile. The person has a friendly, welcoming expression, wearing business casual attire. The background is a soft, out-of-focus modern office interior with warm wooden accents and natural light. The overall mood is approachable, organized, and community-focused, matching a light-mode corporate aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoeD4JIA_cXaXnznMzn5pGcfLwe0uq_ogmxii87urNb1vLtx0ZkfjZnDVt4xIsKTwYQ5XYOJMilhW2WItIkg2rCdyj-0uWZpinIs70BQVpxTrzhPHcDPpO-v-Ak9IrGorFqkKgyusxYVIn-RQR_vKTMytiwgJCLZ6M5R4iVa4FJm2B3do6lk4X-RMoNzIX1EzbZFQn5z-E6g2cJQzOLSdylqqNQ8C1ibvEM4Pe_jM0Rl2tjVGHmmoJTg"/>
+</div>
+</div>
+</header>
+<main class="flex-1 px-4 py-6 max-w-md mx-auto w-full pb-24">
+<!-- Header Section -->
+<div class="mb-8">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2">Monthly Report</h2>
+<p class="text-on-surface-variant font-body-md">Submitting for: <span class="font-bold text-primary">October 2023</span></p>
+</div>
+<!-- Progress Stepper -->
+<div class="flex justify-between items-center mb-8 px-2">
+<div class="flex flex-col items-center gap-1">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold" id="step-dot-1">1</div>
+<span class="text-[10px] font-bold text-primary">Attendance</span>
+</div>
+<div class="h-[2px] flex-1 bg-primary-fixed-dim mx-2 mb-4"></div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold" id="step-dot-2">2</div>
+<span class="text-[10px] text-on-surface-variant">Ministry</span>
+</div>
+<div class="h-[2px] flex-1 bg-surface-container-highest mx-2 mb-4"></div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold" id="step-dot-3">3</div>
+<span class="text-[10px] text-on-surface-variant">Financial</span>
+</div>
+</div>
+<!-- Form Containers -->
+<form class="space-y-6" id="reportForm">
+<!-- STEP 1: ATTENDANCE (Active) -->
+<section class="step-transition" id="step-1">
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm space-y-6">
+<h3 class="font-title-md text-title-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">group</span>
+                        Service Attendance
+                    </h3>
+<div class="space-y-4">
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-1 ml-1">Main Service Total</label>
+<input class="w-full bg-surface-container-low border-outline-variant rounded-lg p-4 text-body-lg font-body-lg" placeholder="0" type="number"/>
+</div>
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-1 ml-1">First-time Visitors</label>
+<input class="w-full bg-surface-container-low border-outline-variant rounded-lg p-4 text-body-lg font-body-lg" placeholder="0" type="number"/>
+</div>
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-1 ml-1">Small Group Participation</label>
+<input class="w-full bg-surface-container-low border-outline-variant rounded-lg p-4 text-body-lg font-body-lg" placeholder="0" type="number"/>
+</div>
+</div>
+</div>
+</section>
+<!-- STEP 2: MINISTRY (Hidden initially) -->
+<section class="step-transition hidden" id="step-2">
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm space-y-6">
+<h3 class="font-title-md text-title-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">church</span>
+                        Ministry Updates
+                    </h3>
+<div class="space-y-4">
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-1 ml-1">Outreach Events Held</label>
+<input class="w-full bg-surface-container-low border-outline-variant rounded-lg p-4 text-body-lg font-body-lg" placeholder="0" type="number"/>
+</div>
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-1 ml-1">Ministry Notes</label>
+<textarea class="w-full bg-surface-container-low border-outline-variant rounded-lg p-4 text-body-lg font-body-lg resize-none" placeholder="Share highlights or challenges..." rows="4"></textarea>
+</div>
+</div>
+</div>
+</section>
+<!-- STEP 3: FINANCIAL (Hidden initially) -->
+<section class="step-transition hidden" id="step-3">
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm space-y-6">
+<h3 class="font-title-md text-title-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">payments</span>
+                        Financial Overview
+                    </h3>
+<div class="space-y-4">
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-1 ml-1">Tithes &amp; Offerings ($)</label>
+<input class="w-full bg-surface-container-low border-outline-variant rounded-lg p-4 text-body-lg font-body-lg" placeholder="0.00" type="text"/>
+</div>
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-1 ml-1">Building Fund Contributions</label>
+<input class="w-full bg-surface-container-low border-outline-variant rounded-lg p-4 text-body-lg font-body-lg" placeholder="0.00" type="text"/>
+</div>
+<div class="flex items-center gap-3 p-3 bg-primary-container/10 rounded-lg border border-primary-container/20">
+<span class="material-symbols-outlined text-primary">info</span>
+<p class="text-xs text-on-primary-fixed-variant">All financial figures will be verified by the HQ Treasury Team after submission.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Action Buttons -->
+<div class="flex gap-3 mt-8">
+<button class="hidden flex-1 py-4 px-6 rounded-xl border-2 border-primary text-primary font-bold text-title-md hover:bg-primary/5 active:scale-95 transition-all" id="prevBtn" type="button">
+                    Previous
+                </button>
+<button class="flex-[2] py-4 px-6 rounded-xl bg-primary text-on-primary font-bold text-title-md shadow-lg shadow-primary/20 active:scale-95 transition-all" id="nextBtn" type="button">
+                    Next Section
+                </button>
+<button class="hidden flex-[2] py-4 px-6 rounded-xl bg-primary text-on-primary font-bold text-title-md shadow-lg shadow-primary/20 active:scale-95 transition-all" id="submitBtn" type="button">
+                    Submit to HQ
+                </button>
+</div>
+</form>
+</main>
+<!-- Bottom Navigation Shell -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container-lowest md:hidden flex justify-around items-center h-16 px-4 pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Members</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Finance</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bar_chart</span>
+<span class="font-label-md text-label-md">Reports</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">menu</span>
+<span class="font-label-md text-label-md">Menu</span>
+</div>
+</nav>
+<script>
+        let currentStep = 1;
+        const totalSteps = 3;
+        
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        function updateStep(newStep) {
+            // Hide all steps
+            for (let i = 1; i <= totalSteps; i++) {
+                document.getElementById(`step-${i}`).classList.add('hidden');
+                document.getElementById(`step-dot-${i}`).classList.remove('bg-primary', 'text-on-primary');
+                document.getElementById(`step-dot-${i}`).classList.add('bg-surface-container-highest', 'text-on-surface-variant');
+            }
+            
+            // Show current step
+            document.getElementById(`step-${newStep}`).classList.remove('hidden');
+            
+            // Update dots
+            for (let i = 1; i <= newStep; i++) {
+                document.getElementById(`step-dot-${i}`).classList.add('bg-primary', 'text-on-primary');
+                document.getElementById(`step-dot-${i}`).classList.remove('bg-surface-container-highest', 'text-on-surface-variant');
+            }
+
+            // Button Logic
+            if (newStep === 1) {
+                prevBtn.classList.add('hidden');
+            } else {
+                prevBtn.classList.remove('hidden');
+            }
+
+            if (newStep === totalSteps) {
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            currentStep = newStep;
+        }
+
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < totalSteps) updateStep(currentStep + 1);
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 1) updateStep(currentStep - 1);
+        });
+
+        submitBtn.addEventListener('click', () => {
+            // Simulate submission
+            submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Submitting...';
+            submitBtn.disabled = true;
+            
+            setTimeout(() => {
+                alert('Monthly Report submitted successfully to HQ!');
+                window.location.reload();
+            }, 1500);
+        });
+    </script>
+</body></html>

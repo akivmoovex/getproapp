@@ -1,0 +1,43 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/announcements">&larr; Back to announcements</a>
+          <h1 class="church-branch-topbar__title"><%= announcement.title %></h1>
+          <p class="church-branch-topbar__subtitle"><%= announcement.category %> · <%= audienceLabel(announcement.audience) %></p>
+        </div>
+        <span class="church-status-chip church-status-chip--<%= announcement.status === 'published' ? 'verified' : 'pending' %>"><%= announcementStatusLabel(announcement.status) %></span>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <section class="church-branch-panel">
+        <div class="church-branch-review-note">
+          <p><%= announcement.body %></p>
+        </div>
+        <dl class="church-branch-dl">
+          <div><dt>Publish date</dt><dd><%= announcement.publish_at ? new Date(announcement.publish_at).toLocaleString('en-GB') : '—' %></dd></div>
+          <div><dt>Expiry date</dt><dd><%= announcement.expires_at ? new Date(announcement.expires_at).toLocaleString('en-GB') : '—' %></dd></div>
+          <div><dt>Created by</dt><dd><%= announcement.created_by_admin_name || '—' %></dd></div>
+          <div><dt>Last updated</dt><dd><%= new Date(announcement.updated_at).toLocaleString('en-GB') %></dd></div>
+        </dl>
+      </section>
+      <% if (announcement.status !== 'archived') { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Actions</h2>
+        <div class="church-hq-review-actions">
+          <a class="church-btn church-btn--outline" href="/branch/announcements/<%= announcement.id %>/edit">Edit</a>
+          <% if (announcement.status !== 'published') { %>
+          <form method="post" action="/branch/announcements/<%= announcement.id %>/publish">
+            <button class="church-btn church-btn--primary" type="submit">Publish</button>
+          </form>
+          <% } %>
+          <form method="post" action="/branch/announcements/<%= announcement.id %>/archive">
+            <button class="church-btn church-btn--outline" type="submit">Archive</button>
+          </form>
+        </div>
+      </section>
+      <% } %>
+<%- include('../partials/branch_admin_shell_end') %>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Member Profile - Mary Phiri</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .profile-progress-gradient {
+            background: conic-gradient(from 0deg, #5341cd 0% 85%, #e4dfff 85% 100%);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#c6bfff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-fixed": "#160066",
+                        "inverse-on-surface": "#e7f3f7",
+                        "inverse-surface": "#283236",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#474554",
+                        "surface-variant": "#d9e4e9",
+                        "surface-container-highest": "#d9e4e9",
+                        "secondary": "#586062",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "tertiary-container": "#707273",
+                        "surface-tint": "#5847d2",
+                        "tertiary": "#57595b",
+                        "surface-bright": "#f1fbff",
+                        "surface": "#f1fbff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-primary-container": "#faf6ff",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#787586",
+                        "on-tertiary-fixed": "#191c1d",
+                        "surface-container-high": "#dfeaef",
+                        "surface-dim": "#d1dce0",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#e4dfff",
+                        "background": "#f1fbff",
+                        "on-secondary-container": "#5d6466",
+                        "surface-container": "#e4f0f4",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-background": "#131d21",
+                        "on-surface": "#131d21",
+                        "primary": "#5341cd",
+                        "on-secondary-fixed": "#161d1f",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#c8c4d7",
+                        "tertiary-fixed": "#e1e3e4",
+                        "primary-container": "#6c5ce7",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "secondary-fixed": "#dde4e6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col md:flex-row pb-20 md:pb-0 md:pl-72">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim text-primary dark:text-primary-fixed-dim font-title-lg text-title-lg full-width top-0 sticky bg-surface dark:bg-surface-dim flat no shadows flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full z-40">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-primary-fixed cursor-pointer active:scale-95 duration-150">
+<img class="w-full h-full object-cover" data-alt="A warm and professional portrait of Mary Phiri, a Zambian woman in her early 30s, smiling brightly. She is photographed in a sun-drenched outdoor setting with lush green foliage blurred in the background, creating a soft, welcoming atmosphere. Her style is elegant and modern, reflecting a sense of community leadership and personal warmth, consistent with a contemporary church environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAO37X59qhHqrT5E0jkJLacszeEU48ogGg3xu9VooD049j-nUahb1BeAxYAKY1Rk0jpAyFHouNYef-gm3ZHx3L0ZsvsZv8QvasGN26a8Z4lYUL4J0v90HBanMWvSLKz3jJ2rVC4eL0NvsSiLaZq8JGZisXxAqhx4--7gdkoIthKjPtazkPLGYOZLtMzQcrZvl1AEHRuFvDJPhfClIW-KlssM_cGeOffPDy9GwgQZBqhFFuyaK4U9fpLfQ"/>
+</div>
+<span class="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim font-bold">GetPro Church</span>
+</div>
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim cursor-pointer active:scale-95 duration-150 p-2 hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors rounded-full">notifications</button>
+</header>
+<!-- NavigationDrawer (Desktop) -->
+<nav class="bg-surface-container-low dark:bg-surface-container text-primary dark:text-primary-fixed-dim font-label-lg text-label-lg h-full w-72 fixed left-0 top-0 hidden md:flex flex-col bg-surface-container-low dark:bg-surface-container flat no shadows flex flex-col gap-sm p-md z-50">
+<div class="px-md py-xl mb-md">
+<h1 class="font-headline-lg text-headline-lg text-primary dark:text-primary-fixed-dim mb-lg">GetPro Church</h1>
+<div class="flex items-center gap-md p-md rounded-xl bg-surface-container-high">
+<div class="w-12 h-12 rounded-full overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Close up professional headshot of a vibrant African woman with short hair and a confident, kind expression, set against a clean, light-filled studio background with soft purple and teal lighting accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsxrSm6YwzLU15vNsGZtq9PUD1l0Tomup8Cb1RrR_edFv5sMULGP9eeEI6rXwFyM-GWdKRZTudEt_Gw1J_qA4dVyge-gPVLdSk2wMdAzdsg5ZImIu87LUDmvYttVVz1CnCxc_-qXfRwuKUSTEiNlfCOX1DZ8iAgQ06YXvi5kUiGJGCQlDvjInY5iEvo9hocmXwxMLnKtncnXuQH3Y3AhjqklUWrohaIDfuPAAttaqdA9MhzzelfcjvFQ"/>
+</div>
+<div class="overflow-hidden">
+<p class="font-bold truncate text-on-surface">Mary Phiri</p>
+<p class="text-on-surface-variant text-label-md truncate">Kafue Baptist Church</p>
+<span class="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full mt-1 inline-block">Verified Member</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-xs grow">
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full" href="#">
+<span class="material-symbols-outlined">groups</span>
+                Ministries
+            </a>
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+                Events
+            </a>
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+                Resources
+            </a>
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full" href="#">
+<span class="material-symbols-outlined">send</span>
+                Requests
+            </a>
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full" href="#">
+<span class="material-symbols-outlined">payments</span>
+                Giving
+            </a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-lg space-y-lg">
+<!-- Profile Header & Badge -->
+<section class="relative bg-surface-container-lowest rounded-3xl p-lg shadow-sm border border-outline-variant overflow-hidden">
+<div class="flex items-start justify-between">
+<div class="relative">
+<div class="w-24 h-24 rounded-full p-1 profile-progress-gradient shadow-md">
+<div class="w-full h-full rounded-full bg-white p-1 overflow-hidden">
+<img class="w-full h-full object-cover rounded-full" data-alt="A portrait of Mary Phiri, featuring her radiant and authentic personality. The lighting is soft and golden, suggesting early morning or late afternoon sunlight. The composition is focused and intimate, showcasing her as a key member of a compassionate and modern church community, with visual elements of Kafue, Zambia subtly visible in the out-of-focus background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwuvp0sfl3IxBokXTzuSbrlcDb2vgaq9bL-iwpqkybI7Hb5H7QmfxxFfyZEIgguefufy5HY7Yl8zdBXlYQiAA9QciLYxGMKxcKJqqDJlyJ2SH_KR_yMw8AlBmte54HT8Ny1YKedP3NfTDRL8H7Ug3_NDiQ_REFM_XJ7hSJ0b4zyLhQL7iMcwPFlVXz-Pg_n6RnkTuD14a6OPK7S_QOYtdRzOa-b0hSKFx1logyGZYFUGLjR5LKiG1wug"/>
+</div>
+</div>
+<div class="absolute -bottom-1 -right-1 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center border-2 border-surface-container-lowest text-label-md font-bold">85%</div>
+</div>
+<div class="text-right">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile md:text-headline-lg md:font-headline-lg text-on-surface">Mary Phiri</h2>
+<p class="text-on-surface-variant font-body-md">Kafue Baptist Church</p>
+<div class="flex gap-xs mt-sm justify-end">
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-md">Member</span>
+<span class="bg-secondary/10 text-secondary px-3 py-1 rounded-full font-label-md">Volunteer</span>
+</div>
+</div>
+</div>
+<div class="mt-lg">
+<button class="w-full bg-primary text-on-primary py-3 rounded-xl font-title-md flex items-center justify-center gap-base active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined">edit</span>
+                    Edit Profile
+                </button>
+</div>
+</section>
+<!-- Completion Alert -->
+<div class="bg-primary-container/20 border border-primary-container p-md rounded-2xl flex items-center gap-md">
+<span class="material-symbols-outlined text-primary">info</span>
+<div class="flex-1">
+<p class="font-label-lg text-primary">Complete your profile</p>
+<p class="font-body-md text-on-surface-variant">Add a spiritual bio to reach 100%.</p>
+</div>
+<span class="material-symbols-outlined text-primary">chevron_right</span>
+</div>
+<!-- Contact & Details Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Contact Card -->
+<div class="bg-surface-container-lowest p-lg rounded-3xl border border-outline-variant space-y-lg">
+<h3 class="font-title-lg text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">contact_page</span>
+                    Contact Information
+                </h3>
+<div class="space-y-md">
+<div class="flex items-center gap-md group">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container/20 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">call</span>
+</div>
+<div>
+<p class="text-label-md text-on-surface-variant">Phone Number</p>
+<p class="font-title-md text-on-surface">+260 971 000 000</p>
+</div>
+</div>
+<div class="flex items-center gap-md group">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container/20 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">mail</span>
+</div>
+<div>
+<p class="text-label-md text-on-surface-variant">Email Address</p>
+<p class="font-title-md text-on-surface truncate max-w-[200px]">mary.phiri@example.com</p>
+</div>
+</div>
+<div class="flex items-center gap-md group">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container/20 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">location_on</span>
+</div>
+<div>
+<p class="text-label-md text-on-surface-variant">Residential Address</p>
+<p class="font-title-md text-on-surface">Plot 12, Kafue</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Demographics & Interests -->
+<div class="bg-surface-container-lowest p-lg rounded-3xl border border-outline-variant space-y-lg">
+<h3 class="font-title-lg text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">psychology</span>
+                    Personal Details
+                </h3>
+<div class="space-y-md">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">cake</span>
+</div>
+<div>
+<p class="text-label-md text-on-surface-variant">Age Group</p>
+<p class="font-title-md text-on-surface">25-34</p>
+</div>
+</div>
+<div>
+<p class="text-label-md text-on-surface-variant mb-base">Interests &amp; Involvement</p>
+<div class="flex flex-wrap gap-xs">
+<span class="px-3 py-1.5 bg-surface-variant rounded-lg text-on-surface-variant font-label-lg flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">church</span>
+                                Worship
+                            </span>
+<span class="px-3 py-1.5 bg-surface-variant rounded-lg text-on-surface-variant font-label-lg flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">celebration</span>
+                                Youth
+                            </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Emergency Contact Card -->
+<div class="bg-error-container/10 p-lg rounded-3xl border border-error-container/30 space-y-md">
+<h3 class="font-title-lg text-on-error-container flex items-center gap-sm">
+<span class="material-symbols-outlined fill-icon text-error">emergency</span>
+                Emergency Contact
+            </h3>
+<div class="flex items-center justify-between p-md bg-white/50 rounded-2xl border border-error-container/20">
+<div>
+<p class="font-bold text-on-surface">John Phiri</p>
+<p class="text-on-surface-variant font-body-md">+260 971 111 222</p>
+</div>
+<button class="w-12 h-12 rounded-full bg-error-container text-on-error-container flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined">call</span>
+</button>
+</div>
+</div>
+<!-- Recent Activity Mini Section -->
+<section class="space-y-md">
+<h3 class="font-title-lg text-on-surface px-base">Recent Activity</h3>
+<div class="bg-surface-container-lowest rounded-3xl border border-outline-variant overflow-hidden">
+<div class="p-md flex items-center gap-md border-b border-outline-variant/30">
+<div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<div class="flex-1">
+<p class="font-title-md text-on-surface">Monthly Tithe</p>
+<p class="text-label-md text-on-surface-variant">Last paid on Oct 12, 2023</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+<div class="p-md flex items-center gap-md">
+<div class="w-10 h-10 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">volunteer_activism</span>
+</div>
+<div class="flex-1">
+<p class="font-title-md text-on-surface">Youth Camp Volunteer</p>
+<p class="text-label-md text-on-surface-variant">Registered on Sep 28, 2023</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Decorative Map Section -->
+<div class="h-48 rounded-3xl overflow-hidden relative shadow-inner border border-outline-variant">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A stylized, high-quality map view of the Kafue region in Zambia, featuring modern UI map markers. The map aesthetic is clean and minimal, using a light theme color palette of soft greys and vibrant blues to indicate church locations and community hubs, aligning with the professional and organized vibe of GetPro Church software." data-location="Kafue, Zambia" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCPfd6bBoX7K46BE7xdnDkC_axdSjBl8EGAiPf4k2hTTr93mwyw5iesDnOjHK1GsqyHXhgGTlSwmOlGcuZ8Wm_oA5f3oW0tmyLdJtgBF6_OzLUadGI5lTPWvZygOe628W5BVGqUJ2VfQT4gvb7bbTonEzoLn7keH_z4rm6fadyFrz_keJoEj8jSPHGv27fR895tpU5--4r7INpa0USJ7Y4zUvkXusb0SWekHYpd8SlpZ69NrKUB3B0iqw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+<div class="absolute bottom-4 left-4 text-white">
+<p class="font-bold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">place</span>
+                    Kafue Baptist Community
+                </p>
+</div>
+</div>
+<!-- Account Actions -->
+<div class="flex flex-col gap-sm pt-md pb-lg">
+<button class="flex items-center justify-between p-md rounded-2xl bg-surface-container-low text-on-surface-variant hover:bg-surface-variant transition-colors">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-title-md">Account Settings</span>
+</div>
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+<button class="flex items-center justify-between p-md rounded-2xl bg-error-container/10 text-error hover:bg-error-container/20 transition-colors">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-title-md">Sign Out</span>
+</div>
+</button>
+</div>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="bg-surface-container dark:bg-surface-container-highest text-primary dark:text-primary-fixed-dim font-label-md text-label-md fixed bottom-0 w-full z-50 md:hidden pb-safe shadow-lg flex justify-around items-center h-20 px-2 w-full">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span>Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span>Groups</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span>Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span>Study</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined fill-icon">more_horiz</span>
+<span>More</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('button, a').forEach(elem => {
+            elem.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    </script>
+</body></html>

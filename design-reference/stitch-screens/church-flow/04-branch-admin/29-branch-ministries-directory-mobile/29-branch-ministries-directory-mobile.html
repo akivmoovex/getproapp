@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>29-branch-ministries-directory-mobile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "outline": "#787586",
+                        "surface-container-high": "#dfeaef",
+                        "primary": "#5341cd",
+                        "tertiary": "#57595b",
+                        "on-surface-variant": "#474554",
+                        "tertiary-container": "#707273",
+                        "primary-fixed": "#e4dfff",
+                        "on-surface": "#131d21",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#e4f0f4",
+                        "tertiary-fixed": "#e1e3e4",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-fixed": "#191c1d",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#5d6466",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "background": "#f1fbff",
+                        "on-background": "#131d21",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "secondary-fixed": "#dde4e6",
+                        "inverse-primary": "#c6bfff",
+                        "surface-variant": "#d9e4e9",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-container": "#faf6ff",
+                        "on-secondary-fixed": "#161d1f",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d1dce0",
+                        "surface": "#f1fbff",
+                        "on-primary-fixed": "#160066",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "inverse-surface": "#283236",
+                        "primary-container": "#6c5ce7",
+                        "outline-variant": "#c8c4d7",
+                        "surface-bright": "#f1fbff",
+                        "surface-tint": "#5847d2",
+                        "secondary": "#586062",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#e7f3f7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "xl": "32px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "margin-desktop": "32px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- Top AppBar (Mobile Style) -->
+<header class="w-full h-16 sticky top-0 z-50 bg-surface flex items-center px-margin-mobile border-b border-outline-variant">
+<div class="flex items-center gap-md w-full">
+<span class="material-symbols-outlined text-on-surface" data-icon="menu">menu</span>
+<h1 class="font-headline-md text-headline-md text-on-surface flex-1">Ministries</h1>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container-high rounded-full transition-all">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="search">search</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a church administrator, captured in soft, natural morning light within a modern, minimalist church office setting. The person has a warm, approachable expression. The image is crisp with a shallow depth of field, highlighting the individual against a background of light wood textures and soft primary violet accents from the brand palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8CUQTqysRv4pwbT0IsnHvoS6tFlr02uXBiVaoRyicu8kbydZwnQtVKecpXXMEDb_ZWvRZx6_HJezHMrthJQ8ZR_qt50rpR7cONc-yl_drrfjjLipVGirLQFaxegYDJf62Zyh0KiDULvM60az9C_iVaM1ttBvGDwTExqY8l5Oz4M1tsQ7CSu1K_1m1qYlgGuI0WUCecADI_NJHtYZ2Coqai3STi2u4q3J2aMcp9tWGltZntx8PVGSL_Q"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 p-margin-mobile pb-32">
+<!-- Ministry Stats Quick Look (Horizontal Scroll) -->
+<section class="flex gap-md overflow-x-auto no-scrollbar mb-lg">
+<div class="min-w-[140px] bg-primary-container text-on-primary-container p-md rounded-xl shadow-sm">
+<span class="font-label-lg text-label-lg block opacity-80 mb-xs">TOTAL MINISTRIES</span>
+<span class="font-headline-md text-headline-md">12</span>
+</div>
+<div class="min-w-[140px] bg-surface-container-highest text-on-surface p-md rounded-xl border border-outline-variant">
+<span class="font-label-lg text-label-lg block text-on-surface-variant mb-xs">ACTIVE MEMBERS</span>
+<span class="font-headline-md text-headline-md">452</span>
+</div>
+<div class="min-w-[140px] bg-surface-container-highest text-on-surface p-md rounded-xl border border-outline-variant">
+<span class="font-label-lg text-label-lg block text-on-surface-variant mb-xs">NEW RECRUITS</span>
+<span class="font-headline-md text-headline-md">18</span>
+</div>
+</section>
+<!-- Ministry List (Cards) -->
+<div class="grid grid-cols-1 gap-md">
+<!-- Worship Card -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant hover:shadow-md transition-shadow active:scale-[0.98] duration-200">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="music_note">music_note</span>
+</div>
+<span class="bg-success-container/10 text-success px-base py-xs rounded-full font-label-lg text-label-lg border border-primary/20 text-primary">Active</span>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Worship</h3>
+<div class="space-y-xs text-on-surface-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="person">person</span>
+<span class="font-body-md text-body-md">Leader: David Chilufya</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="group">group</span>
+<span class="font-body-md text-body-md">34 Members</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="calendar_today">calendar_today</span>
+<span class="font-body-md text-body-md text-primary font-medium">Saturdays, 14:00</span>
+</div>
+</div>
+</div>
+<!-- Youth Card -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant hover:shadow-md transition-shadow active:scale-[0.98] duration-200">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="rocket_launch">rocket_launch</span>
+</div>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Youth</h3>
+<div class="space-y-xs text-on-surface-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="person">person</span>
+<span class="font-body-md text-body-md">Leader: Sarah Mwamba</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="group">group</span>
+<span class="font-body-md text-body-md">128 Members</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="calendar_today">calendar_today</span>
+<span class="font-body-md text-body-md text-primary font-medium">Fridays, 17:30</span>
+</div>
+</div>
+</div>
+<!-- Women Card -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant hover:shadow-md transition-shadow active:scale-[0.98] duration-200">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="female">female</span>
+</div>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Women</h3>
+<div class="space-y-xs text-on-surface-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="person">person</span>
+<span class="font-body-md text-body-md">Leader: Grace Phiri</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="group">group</span>
+<span class="font-body-md text-body-md">82 Members</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="calendar_today">calendar_today</span>
+<span class="font-body-md text-body-md text-primary font-medium">Tuesdays, 10:00</span>
+</div>
+</div>
+</div>
+<!-- Evangelism Card -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant hover:shadow-md transition-shadow active:scale-[0.98] duration-200">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="public">public</span>
+</div>
+</div>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-xs">Evangelism</h3>
+<div class="space-y-xs text-on-surface-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="person">person</span>
+<span class="font-body-md text-body-md">Leader: Peter Banda</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="group">group</span>
+<span class="font-body-md text-body-md">25 Members</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-body-md" data-icon="calendar_today">calendar_today</span>
+<span class="font-body-md text-body-md text-primary font-medium">Sundays, 15:00</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button (FAB) -->
+<button class="fixed bottom-24 right-margin-mobile w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-xl flex items-center justify-center hover:bg-primary-container transition-colors active:scale-90 duration-150 z-40">
+<span class="material-symbols-outlined text-[32px]" data-icon="add">add</span>
+</button>
+<!-- Bottom Navigation Bar (Mobile Anchor) -->
+<nav class="fixed bottom-0 left-0 w-full bg-surface-container-lowest h-20 flex items-center justify-around px-base border-t border-outline-variant z-50">
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="px-5 py-1 rounded-full group-active:bg-primary/10 transition-colors bg-primary-fixed border-l-4 border-primary-fixed dark:border-primary">
+<span class="material-symbols-outlined text-primary font-bold" data-icon="groups">groups</span>
+</div>
+<span class="font-label-lg text-label-lg text-primary font-bold">Ministries</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="px-5 py-1 rounded-full group-active:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="event">event</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Events</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="px-5 py-1 rounded-full group-active:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="campaign">campaign</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">News</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="px-5 py-1 rounded-full group-active:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="assignment_ind">assignment_ind</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Duty</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="px-5 py-1 rounded-full group-active:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="settings">settings</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Settings</span>
+</a>
+</nav>
+<!-- Interactions Script -->
+<script>
+        document.querySelectorAll('.active\\:scale-\\[0\\.98\\]').forEach(card => {
+            card.addEventListener('touchstart', () => card.classList.add('scale-[0.98]'));
+            card.addEventListener('touchend', () => card.classList.remove('scale-[0.98]'));
+        });
+
+        const fab = document.querySelector('.fixed.bottom-24');
+        fab.addEventListener('click', () => {
+            // Simple visual feedback for demo
+            fab.style.transform = 'rotate(45deg) scale(0.9)';
+            setTimeout(() => {
+                fab.style.transform = '';
+            }, 200);
+        });
+    </script>
+</body></html>

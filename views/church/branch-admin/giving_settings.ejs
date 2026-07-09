@@ -1,0 +1,105 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Giving settings</h1>
+          <p class="church-branch-topbar__subtitle">Manage giving instructions for public and member pages</p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <div class="church-alert church-alert--info" role="note">
+        This page only controls giving instructions shown to members and public visitors. GetPro Church does not process payments in this MVP.
+      </div>
+      <div class="church-branch-panel church-branch-panel--compact">
+        <p class="church-branch-panel__hint">Status: <strong><%= status === 'published' ? 'Published' : 'Draft' %></strong></p>
+      </div>
+      <form class="church-form" method="post" action="/branch/giving-settings">
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Bank account</h2>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="bank_name">Bank name</label>
+              <input class="church-input" id="bank_name" name="bank_name" type="text" value="<%= form.bank_name || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="account_name">Account name</label>
+              <input class="church-input" id="account_name" name="account_name" type="text" value="<%= form.account_name || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="account_number">Account number</label>
+              <input class="church-input" id="account_number" name="account_number" type="text" value="<%= form.account_number || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="branch_code">Branch code</label>
+              <input class="church-input" id="branch_code" name="branch_code" type="text" value="<%= form.branch_code || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="swift_code">SWIFT code (optional)</label>
+              <input class="church-input" id="swift_code" name="swift_code" type="text" value="<%= form.swift_code || '' %>"/>
+            </div>
+          </div>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Mobile money</h2>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="mobile_money_provider_1">Provider 1</label>
+              <input class="church-input" id="mobile_money_provider_1" name="mobile_money_provider_1" type="text" placeholder="MTN / Airtel" value="<%= form.mobile_money_provider_1 || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="mobile_money_number_1">Number 1</label>
+              <input class="church-input" id="mobile_money_number_1" name="mobile_money_number_1" type="text" value="<%= form.mobile_money_number_1 || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="mobile_money_name_1">Registered name 1</label>
+              <input class="church-input" id="mobile_money_name_1" name="mobile_money_name_1" type="text" value="<%= form.mobile_money_name_1 || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="mobile_money_provider_2">Provider 2 (optional)</label>
+              <input class="church-input" id="mobile_money_provider_2" name="mobile_money_provider_2" type="text" value="<%= form.mobile_money_provider_2 || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="mobile_money_number_2">Number 2 (optional)</label>
+              <input class="church-input" id="mobile_money_number_2" name="mobile_money_number_2" type="text" value="<%= form.mobile_money_number_2 || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="mobile_money_name_2">Registered name 2 (optional)</label>
+              <input class="church-input" id="mobile_money_name_2" name="mobile_money_name_2" type="text" value="<%= form.mobile_money_name_2 || '' %>"/>
+            </div>
+          </div>
+        </section>
+        <section class="church-branch-panel">
+          <h2 class="church-branch-panel__title">Giving details</h2>
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="giving_categories">Giving categories (one per line)</label>
+              <textarea class="church-input church-input--textarea" id="giving_categories" name="giving_categories" rows="4" placeholder="Tithes&#10;Offerings&#10;Building fund"><%= form.giving_categories || '' %></textarea>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="giving_instructions">Giving instructions</label>
+              <textarea class="church-input church-input--textarea" id="giving_instructions" name="giving_instructions" rows="4"><%= form.giving_instructions || '' %></textarea>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="qr_code_label">QR code label / placeholder</label>
+              <input class="church-input" id="qr_code_label" name="qr_code_label" type="text" value="<%= form.qr_code_label || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="finance_contact_name">Finance contact name</label>
+              <input class="church-input" id="finance_contact_name" name="finance_contact_name" type="text" value="<%= form.finance_contact_name || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="finance_contact_phone">Finance contact phone</label>
+              <input class="church-input" id="finance_contact_phone" name="finance_contact_phone" type="text" value="<%= form.finance_contact_phone || '' %>"/>
+            </div>
+          </div>
+        </section>
+        <div class="church-branch-actions">
+          <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft">Save Draft</button>
+          <button class="church-btn church-btn--primary" type="submit" name="_intent" value="publish">Publish Giving Information</button>
+        </div>
+      </form>
+<%- include('../partials/branch_admin_shell_end') %>

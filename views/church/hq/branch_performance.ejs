@@ -1,0 +1,105 @@
+<% const p = performance; const b = p.branch; %>
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/hq/branches?period_month=<%= periodMonth %>">&larr; Back to branch registry</a>
+          <h1 class="church-branch-topbar__title"><%= b.name %></h1>
+          <p class="church-branch-topbar__subtitle"><%= p.location %> · <%= organizationName %></p>
+        </div>
+        <% var perfChip = b.status === 'active' ? 'verified' : (b.status === 'archived' ? 'rejected' : 'pending'); %>
+        <span class="church-status-chip church-status-chip--<%= perfChip %>"><%= b.status %></span>
+      </header>
+      <form class="church-form church-form--inline" method="get" action="/hq/branches/<%= b.id %>">
+        <div class="church-field">
+          <label class="church-label" for="period_month">Period</label>
+          <input class="church-input" id="period_month" name="period_month" type="month" value="<%= periodMonth %>"/>
+        </div>
+        <button class="church-btn church-btn--outline" type="submit">Update period</button>
+      </form>
+      <section class="church-branch-panel">
+        <dl class="church-branch-dl">
+          <div><dt>Contact</dt><dd><%= p.contact.name || '—' %><% if (p.contact.phone) { %> · <%= p.contact.phone %><% } %><% if (p.contact.email) { %> · <%= p.contact.email %><% } %></dd></div>
+          <div><dt>Public site</dt><dd><a href="/">View public website</a></dd></div>
+        </dl>
+      </section>
+      <% if ((p.attentionItems || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Attention items</h2>
+        <ul class="church-member-list">
+          <% p.attentionItems.forEach(function (item) { %>
+          <li class="church-member-list__item"><span class="church-status-chip church-status-chip--pending"><%= item.label %></span></li>
+          <% }); %>
+        </ul>
+      </section>
+      <% } %>
+      <div class="church-branch-stats">
+        <article class="church-branch-stat-card"><span class="church-branch-stat-card__label">Active members</span><strong class="church-branch-stat-card__value"><%= p.memberSummary.active %></strong></article>
+        <article class="church-branch-stat-card"><span class="church-branch-stat-card__label">Pending members</span><strong class="church-branch-stat-card__value"><%= p.memberSummary.pending %></strong></article>
+        <article class="church-branch-stat-card"><span class="church-branch-stat-card__label">Suspended</span><strong class="church-branch-stat-card__value"><%= p.memberSummary.suspended %></strong></article>
+        <article class="church-branch-stat-card"><span class="church-branch-stat-card__label">New this month</span><strong class="church-branch-stat-card__value"><%= p.memberSummary.newThisMonth %></strong></article>
+      </div>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Attendance summary · <%= periodMonth %></h2>
+        <% if (p.attendanceSummary.fromReport) { %>
+        <p>Sunday avg: <%= p.attendanceSummary.fromReport.sundayAverage %> · Youth avg: <%= p.attendanceSummary.fromReport.youthAverage %> · Children avg: <%= p.attendanceSummary.fromReport.childrenAverage %> · Visitors: <%= p.attendanceSummary.fromReport.visitorsTotal %></p>
+        <p class="church-branch-panel__hint">From submitted monthly report.</p>
+        <% } else { %>
+        <p>Records this month: <%= p.attendanceSummary.recordCount %> · Adults: <%= p.attendanceSummary.adultsTotal %> · Youth: <%= p.attendanceSummary.youthTotal %> · Children: <%= p.attendanceSummary.childrenTotal %> · Visitors: <%= p.attendanceSummary.visitorsTotal %></p>
+        <% } %>
+        <% if ((p.attendanceSummary.latestRecords || []).length > 0) { %>
+        <ul class="church-member-list">
+          <% p.attendanceSummary.latestRecords.forEach(function (r) { %>
+          <li class="church-member-list__item"><strong><%= r.service_name %></strong> · <%= new Date(r.service_date).toLocaleDateString('en-GB') %> · <%= r.adults_count + r.youth_count + r.children_count %> attended</li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <section class="church-branch-panel" id="reports-summary">
+        <div class="church-member-panel__head">
+          <h2 class="church-branch-panel__title">Reports summary</h2>
+          <a class="church-member-link" href="/hq/branches/<%= b.id %>/reports?period_month=<%= periodMonth %>">Branch reports</a>
+        </div>
+        <% if (p.reportSummary.currentReport) { %>
+        <p>Current month: <strong><%= reportStatusLabel(p.reportSummary.currentReport.status) %></strong><% if (p.reportSummary.currentReport.submitted_at) { %> · Submitted <%= new Date(p.reportSummary.currentReport.submitted_at).toLocaleDateString('en-GB') %><% } %></p>
+        <% if (p.reportSummary.currentReport.hq_review_comment) { %><p>HQ comment: <%= p.reportSummary.currentReport.hq_review_comment %></p><% } %>
+        <% if (p.reportSummary.currentReport.id && p.reportSummary.currentReport.status !== 'draft') { %>
+        <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/reports/<%= p.reportSummary.currentReport.id %>">Open report review</a>
+        <% } %>
+        <% } else { %>
+        <p class="church-branch-empty">No report for <%= periodMonth %> yet.</p>
+        <% } %>
+        <% if ((p.reportSummary.history || []).length > 0) { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Period</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
+            <tbody>
+              <% p.reportSummary.history.forEach(function (r) { %>
+              <tr>
+                <td><%= r.period_year %>-<%= String(r.period_month).padStart(2, '0') %></td>
+                <td><%= reportStatusLabel(r.status) %></td>
+                <td><%= r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB') : '—' %></td>
+                <td><% if (r.status !== 'draft') { %><a href="/hq/reports/<%= r.id %>">Review</a><% } %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Giving summary · <%= periodMonth %></h2>
+        <p class="church-alert church-alert--info" role="note">Reporting summary only — not accounting or payment processing.</p>
+        <p>Status: <%= givingStatusLabel(p.givingSummary.status) %><% if (p.givingSummary.grandTotal) { %> · Total: <%= formatMoney(p.givingSummary.grandTotal) %> <%= p.givingSummary.currencyCode %><% } %></p>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Ministries and activity</h2>
+        <p>Published ministries: <%= p.ministrySummary.publishedMinistries %> · Active departments: <%= p.ministrySummary.activeDepartments %></p>
+        <p>Activity notes submitted/reviewed: <%= p.ministrySummary.activityNotesSubmitted %> · Follow-up requested: <%= p.ministrySummary.followUpRequestedCount %></p>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Requests and prayer</h2>
+        <p>Open member requests: <%= p.requestSummary.openRequests %> · Completed: <%= p.requestSummary.completedRequests %></p>
+        <p>Prayer requests — submitted: <%= p.requestSummary.prayerSubmitted %> · reviewed: <%= p.requestSummary.prayerReviewed %> · closed: <%= p.requestSummary.prayerClosed %></p>
+        <p class="church-branch-panel__hint">Prayer details are not shown here. Use the prayer request queue for review.</p>
+      </section>
+<%- include('../partials/hq_shell_end') %>

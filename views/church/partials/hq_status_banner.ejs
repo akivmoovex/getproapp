@@ -1,0 +1,7 @@
+<% if (typeof statusBanner !== 'undefined' && statusBanner && statusBanner.banners && statusBanner.banners.length > 0) { %>
+  <% statusBanner.banners.forEach(function (banner) { %>
+  <div class="church-alert church-alert--<%= banner.level === 'danger' ? 'error' : 'warning' %>" role="alert">
+    <%= banner.message %>
+  </div>
+  <% }); %>
+<% } %>

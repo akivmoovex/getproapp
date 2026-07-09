@@ -1,0 +1,178 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Dashboard</h1>
+          <p class="church-branch-topbar__subtitle">Welcome, <%= branchAdmin.full_name %>
+            <% if (typeof planContext !== 'undefined' && planContext) { %> · <%- include('../partials/plan_badge', { planContext: planContext }) %><% } %>
+          </p>
+        </div>
+      </header>
+      <%- include('../partials/plan_limit_warnings', { planContext: typeof planContext !== 'undefined' ? planContext : null }) %>
+      <% if (typeof planContext !== 'undefined' && planContext && planContext.planCode === 'free') { %>
+      <p class="church-branch-panel__hint">Organization members: <%= planContext.membersDisplay %> verified (free plan limit applies org-wide).</p>
+      <% } %>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <div class="church-branch-stats">
+        <a class="church-branch-stat-card church-branch-stat-card--link" href="/branch/members?status=pending">
+          <span class="church-branch-stat-card__label">Pending verifications</span>
+          <strong class="church-branch-stat-card__value"><%= counts.pending || 0 %></strong>
+        </a>
+        <a class="church-branch-stat-card church-branch-stat-card--link" href="/branch/members?status=verified">
+          <span class="church-branch-stat-card__label">Verified members</span>
+          <strong class="church-branch-stat-card__value"><%= counts.verified || 0 %></strong>
+        </a>
+        <a class="church-branch-stat-card church-branch-stat-card--link" href="/branch/members?status=suspended">
+          <span class="church-branch-stat-card__label">Suspended members</span>
+          <strong class="church-branch-stat-card__value"><%= counts.suspended || 0 %></strong>
+        </a>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Submitted requests</span>
+          <strong class="church-branch-stat-card__value"><%= requestCounts.submitted || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">In review requests</span>
+          <strong class="church-branch-stat-card__value"><%= requestCounts.in_review || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Published announcements</span>
+          <strong class="church-branch-stat-card__value"><%= announcementCounts.published || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Draft announcements</span>
+          <strong class="church-branch-stat-card__value"><%= announcementCounts.draft || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Upcoming published events</span>
+          <strong class="church-branch-stat-card__value"><%= upcomingPublishedEvents || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Draft events</span>
+          <strong class="church-branch-stat-card__value"><%= eventCounts.draft || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Published ministries</span>
+          <strong class="church-branch-stat-card__value"><%= ministryCounts.published || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Draft ministries</span>
+          <strong class="church-branch-stat-card__value"><%= ministryCounts.draft || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Active departments</span>
+          <strong class="church-branch-stat-card__value"><%= departmentCounts.active || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Archived departments</span>
+          <strong class="church-branch-stat-card__value"><%= departmentCounts.archived || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Confirmed upcoming duties</span>
+          <strong class="church-branch-stat-card__value"><%= confirmedUpcomingDuties || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Draft duties</span>
+          <strong class="church-branch-stat-card__value"><%= dutyCounts.draft || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Cancelled duties</span>
+          <strong class="church-branch-stat-card__value"><%= dutyCounts.cancelled || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Submitted ministry notes</span>
+          <strong class="church-branch-stat-card__value"><%= (activityNoteCounts.submitted || 0) + (activityNoteCounts.reviewed || 0) + (activityNoteCounts.follow_up_requested || 0) %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Follow-up requested notes</span>
+          <strong class="church-branch-stat-card__value"><%= activityNoteCounts.follow_up_requested || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Ministry attendance this month</span>
+          <strong class="church-branch-stat-card__value"><%= ministryAttendanceThisMonth || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Active ministry leaders</span>
+          <strong class="church-branch-stat-card__value"><%= leaderCounts.active || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Inactive ministry leaders</span>
+          <strong class="church-branch-stat-card__value"><%= leaderCounts.inactive || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Ministry join requests pending</span>
+          <strong class="church-branch-stat-card__value"><%= joinRequestCounts.submitted || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Submitted prayer requests</span>
+          <strong class="church-branch-stat-card__value"><%= prayerCounts.submitted || 0 %></strong>
+        </article>
+        <a class="church-branch-stat-card church-branch-stat-card--link" href="/branch/reset-requests?status=submitted">
+          <span class="church-branch-stat-card__label">Password reset requests pending</span>
+          <strong class="church-branch-stat-card__value"><%= (branchResetPendingCounts && branchResetPendingCounts.submitted_total) || 0 %></strong>
+          <span class="church-branch-stat-card__hint">Member: <%= (branchResetPendingCounts && branchResetPendingCounts.member) || 0 %> · Leader: <%= (branchResetPendingCounts && branchResetPendingCounts.ministry_leader) || 0 %></span>
+        </a>
+        <article class="church-branch-stat-card church-branch-stat-card--wide">
+          <span class="church-branch-stat-card__label">Monthly report status</span>
+          <strong class="church-branch-stat-card__value church-branch-stat-card__value--sm"><%= monthlyReportStatus %></strong>
+        </article>
+      </div>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Quick actions</h2>
+        <div class="church-branch-actions">
+          <a class="church-btn church-btn--primary" href="/branch/member-verification">Verify Members</a>
+          <a class="church-btn church-btn--outline" href="/branch/members">View Members</a>
+          <a class="church-btn church-btn--outline" href="/branch/announcements/new">Add Announcement</a>
+          <a class="church-btn church-btn--outline" href="/branch/events/new">Create Event</a>
+          <a class="church-btn church-btn--outline" href="/branch/website-editor">Update Website</a>
+          <a class="church-btn church-btn--outline" href="/branch/requests">Open Requests</a>
+          <a class="church-btn church-btn--outline" href="/branch/reset-requests?status=submitted">Open Reset Inbox</a>
+          <a class="church-btn church-btn--outline" href="/branch/prayer-requests">Prayer Requests</a>
+          <a class="church-btn church-btn--outline" href="/branch/attendance">Record Attendance</a>
+          <a class="church-btn church-btn--outline" href="/branch/giving-summary">Giving Summary</a>
+          <a class="church-btn church-btn--outline" href="/branch/giving-settings">Giving Settings</a>
+          <a class="church-btn church-btn--outline" href="/branch/ministries">Ministries</a>
+          <a class="church-btn church-btn--outline" href="/branch/departments">Departments</a>
+          <a class="church-btn church-btn--outline" href="/branch/duty-roster">Duty Roster</a>
+          <a class="church-btn church-btn--outline" href="/branch/ministry-activity">Review Ministry Activity</a>
+          <a class="church-btn church-btn--outline" href="/branch/ministry-attendance">Ministry Attendance</a>
+          <a class="church-btn church-btn--outline" href="/branch/leaders">Manage Leaders</a>
+          <a class="church-btn church-btn--outline" href="/branch/ministry-join-requests">Review Ministry Join Requests</a>
+          <a class="church-btn church-btn--outline" href="/branch/reports">Monthly reports</a>
+          <a class="church-btn church-btn--outline" href="/branch/activity">View Activity Timeline</a>
+          <a class="church-btn church-btn--outline" href="/branch/account">Account Security</a>
+        </div>
+      </section>
+      <% if ((recentActivity || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <div class="church-branch-panel__head">
+          <h2 class="church-branch-panel__title">Recent activity</h2>
+          <a class="church-member-link" href="/branch/activity">View all</a>
+        </div>
+        <ul class="church-member-list">
+          <% recentActivity.forEach(function (log) { %>
+          <li class="church-member-list__item">
+            <strong><%= actionLabel(log.action) %></strong>
+            <p><%= auditSummary(log) %></p>
+            <span class="church-member-list__meta"><%= actorDisplayFromRow(log) %> · <%= new Date(log.created_at).toLocaleString('en-GB') %></span>
+          </li>
+          <% }); %>
+        </ul>
+      </section>
+      <% } %>
+      <% if ((hqBroadcasts || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">HQ broadcasts</h2>
+        <ul class="church-member-list">
+          <% hqBroadcasts.forEach(function (b) { %>
+          <li class="church-member-list__item">
+            <strong><%= b.title %></strong>
+            <span class="church-status-chip">HQ · <%= b.category %></span>
+            <p><%= b.body %></p>
+            <span class="church-member-list__meta"><%= b.publish_at ? new Date(b.publish_at).toLocaleDateString('en-GB') : '' %></span>
+          </li>
+          <% }); %>
+        </ul>
+      </section>
+      <% } %>
+<%- include('../partials/branch_admin_shell_end') %>

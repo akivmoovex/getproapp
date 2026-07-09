@@ -1,0 +1,30 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <a class="church-branch-back" href="/member/requests">&larr; Back to requests</a>
+        <h1 class="church-member-header__title"><%= requestItem.subject %></h1>
+        <span class="church-status-chip church-status-chip--<%= requestItem.status === 'approved' || requestItem.status === 'completed' ? 'verified' : 'pending' %>"><%= requestStatusLabel(requestItem.status) %></span>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <section class="church-member-panel">
+        <dl class="church-branch-dl">
+          <div><dt>Type</dt><dd><%= requestItem.request_type %></dd></div>
+          <div><dt>Status</dt><dd><%= requestStatusLabel(requestItem.status) %></dd></div>
+          <div><dt>Submitted</dt><dd><%= new Date(requestItem.created_at).toLocaleString('en-GB') %></dd></div>
+          <div><dt>Last updated</dt><dd><%= new Date(requestItem.updated_at).toLocaleString('en-GB') %></dd></div>
+        </dl>
+        <div class="church-branch-review-note">
+          <strong>Description</strong>
+          <p><%= requestItem.description %></p>
+        </div>
+        <% if (requestItem.admin_comment) { %>
+        <div class="church-branch-review-note church-branch-review-note--hq">
+          <strong>Church office comment</strong>
+          <p><%= requestItem.admin_comment %></p>
+        </div>
+        <% } else { %>
+        <p class="church-member-panel__hint">Your request is with church leadership. You will see updates here when available.</p>
+        <% } %>
+      </section>
+<%- include('../partials/member_shell_end') %>

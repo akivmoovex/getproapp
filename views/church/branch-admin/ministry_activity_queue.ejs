@@ -1,0 +1,38 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Ministry activity</h1>
+          <p class="church-branch-topbar__subtitle">Review submitted ministry leader activity notes</p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <div class="church-branch-filter-tabs">
+        <% reviewFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= reviewFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/ministry-activity<%= f === 'all' ? '' : '?review_status=' + f %>"><%= f === 'all' ? 'All' : reviewStatusLabel(f) %></a>
+        <% }); %>
+      </div>
+      <section class="church-branch-panel">
+        <% if ((notes || []).length === 0) { %>
+        <p class="church-branch-empty">No submitted ministry activity notes in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Ministry</th><th>Leader</th><th>Period</th><th>Title</th><th>Review</th><th>Updated</th><th></th></tr></thead>
+            <tbody>
+              <% notes.forEach(function (n) { %>
+              <tr>
+                <td><%= n.ministry_name || '—' %></td>
+                <td><%= n.leader_name || '—' %></td>
+                <td><%= n.period_month %></td>
+                <td><%= n.title %></td>
+                <td><span class="church-status-chip church-status-chip--<%= n.review_status === 'reviewed' ? 'verified' : n.review_status === 'follow_up_requested' ? 'pending' : 'draft' %>"><%= reviewStatusLabel(n.review_status) %></span></td>
+                <td><%= n.updated_at ? new Date(n.updated_at).toLocaleDateString('en-GB') : '—' %></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/ministry-activity/<%= n.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

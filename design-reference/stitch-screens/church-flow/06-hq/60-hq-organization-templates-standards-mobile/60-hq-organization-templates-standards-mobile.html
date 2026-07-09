@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Templates &amp; Standards | ZBU HQ Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#707273",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#57595b",
+                        "surface-container-low": "#eaf5fa",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "on-secondary-container": "#5d6466",
+                        "inverse-primary": "#c6bfff",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#dae1e3",
+                        "inverse-surface": "#283236",
+                        "primary": "#5341cd",
+                        "on-primary-fixed": "#160066",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "background": "#f1fbff",
+                        "surface-dim": "#d1dce0",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "tertiary-fixed": "#e1e3e4",
+                        "surface-tint": "#5847d2",
+                        "surface-container-high": "#dfeaef",
+                        "secondary-fixed": "#dde4e6",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#131d21",
+                        "surface-container": "#e4f0f4",
+                        "primary-fixed": "#e4dfff",
+                        "on-surface-variant": "#474554",
+                        "on-secondary-fixed": "#161d1f",
+                        "outline-variant": "#c8c4d7",
+                        "inverse-on-surface": "#e7f3f7",
+                        "outline": "#787586",
+                        "on-primary-container": "#faf6ff",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "surface-bright": "#f1fbff",
+                        "secondary": "#586062",
+                        "primary-container": "#6c5ce7",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#131d21",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#d9e4e9",
+                        "surface": "#f1fbff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "xs": "4px",
+                        "gutter": "24px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px",
+                        "xl": "32px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "title-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab { font-variation-settings: 'FILL' 1; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c8c4d7; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- Top App Bar (Mobile Profile) -->
+<header class="sticky top-0 z-40 bg-surface-container-lowest flex items-center justify-between h-16 px-margin-mobile border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="account_tree">account_tree</span>
+<h1 class="font-title-lg text-title-lg text-primary tracking-tight">Templates &amp; Standards</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="search">search</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="Close up professional portrait of a Zambian administrator in business casual attire. The background is a blurred modern office with soft blue and white tones consistent with the Zambia Baptist Union brand. The lighting is warm and natural, suggesting competence and approachability." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0LKbxtbit7wKSFJTkEZWQy4NfOxeY5V5lDP4ELKQgOpWl4rdQBavRGDMVi7Q1nXxaCYTZSrAiceLvAptcKkaVMmbeU1Rew5XhmOZCT6Gj20AVAHLmSAWrhwekaprB8YXjeYv68o4szFgrnSL9dKrFGQ-sIlbWt9oZq8DRDs38jmznHzN1cm3dflmXlueBvRnMTuE3s7V_LHAk0J27_0zP5fapPw3FbblbuoALHK0UFBKbWzMrlpy6lQ"/>
+</div>
+</div>
+</header>
+<main class="px-margin-mobile py-lg">
+<!-- Union Compliance Highlight -->
+<section class="mb-lg">
+<div class="relative overflow-hidden rounded-xl bg-primary p-lg text-on-primary shadow-lg transition-transform active:scale-[0.98]">
+<!-- Subtle Background Pattern -->
+<div class="absolute top-0 right-0 w-32 h-32 opacity-10 pointer-events-none translate-x-12 -translate-y-12">
+<span class="material-symbols-outlined text-[120px]" data-icon="verified">verified</span>
+</div>
+<div class="flex justify-between items-start mb-md">
+<div>
+<p class="font-label-lg text-label-lg opacity-80 uppercase tracking-widest">Union Compliance</p>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile font-bold">94.8%</h2>
+</div>
+<span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-label-lg text-label-lg">Active</span>
+</div>
+<div class="w-full bg-on-primary/20 h-2 rounded-full mb-md">
+<div class="bg-on-primary h-full rounded-full transition-all duration-1000" style="width: 94%"></div>
+</div>
+<p class="font-body-md text-body-md opacity-90 leading-relaxed">
+                    Standards adoption across all provinces is trending upwards. 2 new branches integrated this week.
+                </p>
+</div>
+</section>
+<!-- Filter Chips -->
+<section class="mb-lg overflow-x-auto no-scrollbar flex items-center gap-3 pb-2">
+<button class="bg-primary text-on-primary px-lg py-2 rounded-full font-label-lg text-label-lg whitespace-nowrap shadow-md">All Templates</button>
+<button class="bg-surface-container-high text-on-surface-variant px-lg py-2 rounded-full font-label-lg text-label-lg whitespace-nowrap">Reporting</button>
+<button class="bg-surface-container-high text-on-surface-variant px-lg py-2 rounded-full font-label-lg text-label-lg whitespace-nowrap">Announcements</button>
+<button class="bg-surface-container-high text-on-surface-variant px-lg py-2 rounded-full font-label-lg text-label-lg whitespace-nowrap">Compliance</button>
+</section>
+<!-- Template Cards Grid (Bento-like for Mobile) -->
+<section class="grid grid-cols-1 gap-md">
+<!-- Monthly Report Structure -->
+<div class="bg-surface-container-lowest border border-outline-variant p-md rounded-xl flex flex-col gap-md transition-all active:bg-surface-variant/20">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="description">description</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Monthly Report Structure</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Reporting Standard v4.2</p>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-success bg-green-500 animate-pulse"></span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">In Use</span>
+</div>
+<button class="flex items-center gap-1 text-primary font-label-lg text-label-lg py-2 px-4 rounded-lg hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+                        Edit
+                    </button>
+</div>
+</div>
+<!-- Attendance Categories -->
+<div class="bg-surface-container-lowest border border-outline-variant p-md rounded-xl flex flex-col gap-md transition-all active:bg-surface-variant/20">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="group">group</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Attendance Categories</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Membership Standards</p>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-success bg-green-500"></span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">In Use</span>
+</div>
+<button class="flex items-center gap-1 text-primary font-label-lg text-label-lg py-2 px-4 rounded-lg hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+                        Edit
+                    </button>
+</div>
+</div>
+<!-- Standard Request Types -->
+<div class="bg-surface-container-lowest border border-outline-variant p-md rounded-xl flex flex-col gap-md transition-all active:bg-surface-variant/20">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="task_alt">task_alt</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Standard Request Types</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Admin Workflow</p>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-success bg-green-500"></span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">In Use</span>
+</div>
+<button class="flex items-center gap-1 text-primary font-label-lg text-label-lg py-2 px-4 rounded-lg hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+                        Edit
+                    </button>
+</div>
+</div>
+<!-- HQ Broadcast Template -->
+<div class="bg-surface-container-lowest border border-outline-variant p-md rounded-xl flex flex-col gap-md transition-all active:bg-surface-variant/20">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="campaign">campaign</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">HQ Broadcast Template</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Official Communications</p>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-success bg-green-500"></span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">In Use</span>
+</div>
+<button class="flex items-center gap-1 text-primary font-label-lg text-label-lg py-2 px-4 rounded-lg hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+                        Edit
+                    </button>
+</div>
+</div>
+</section>
+<!-- Decorative Asset -->
+<section class="mt-xl opacity-30 text-center">
+<span class="material-symbols-outlined text-surface-variant text-[80px]" data-icon="account_tree">account_tree</span>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 italic">Standardizing Union Governance</p>
+</section>
+</main>
+<!-- FAB for New Template -->
+<button class="fixed bottom-24 right-margin-mobile w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-[0_8px_16px_rgba(83,65,205,0.4)] flex items-center justify-center active:scale-95 transition-transform z-50">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+<!-- Bottom Navigation (Mobile Shell Logic) -->
+<nav class="fixed bottom-0 left-0 right-0 h-20 bg-surface-container-lowest flex items-center justify-around px-2 border-t border-outline-variant z-50">
+<button class="flex flex-col items-center gap-1 w-1/5 py-2 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Dashboard</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-1/5 py-2 transition-all text-primary">
+<span class="material-symbols-outlined active-tab" data-icon="account_tree">account_tree</span>
+<span class="font-label-md text-label-md font-bold">Branch</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-1/5 py-2 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="query_stats">query_stats</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Stats</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-1/5 py-2 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="description">description</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Reports</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-1/5 py-2 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="campaign">campaign</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Broadcast</span>
+</button>
+</nav>
+<script>
+        // Micro-interactions
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('touchstart', function() {
+                this.classList.add('opacity-70');
+            });
+            btn.addEventListener('touchend', function() {
+                this.classList.remove('opacity-70');
+            });
+        });
+
+        // Filter chip logic
+        const chips = document.querySelectorAll('.overflow-x-auto button');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => {
+                    c.classList.remove('bg-primary', 'text-on-primary', 'shadow-md');
+                    c.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+                });
+                chip.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+                chip.classList.add('bg-primary', 'text-on-primary', 'shadow-md');
+            });
+        });
+    </script>
+</body></html>

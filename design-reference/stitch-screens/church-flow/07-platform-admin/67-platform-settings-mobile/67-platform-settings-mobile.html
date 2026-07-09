@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Moovex Admin - Platform Settings</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#d9e4e9",
+                    "tertiary-fixed-dim": "#4bddb7",
+                    "on-background": "#131d21",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#eaf5fa",
+                    "surface-tint": "#5847d2",
+                    "surface-container": "#e4f0f4",
+                    "background": "#f1fbff",
+                    "on-secondary-container": "#5d6466",
+                    "on-tertiary-fixed-variant": "#005140",
+                    "on-primary-fixed": "#160066",
+                    "on-tertiary-fixed": "#002018",
+                    "tertiary-fixed": "#6dfad2",
+                    "on-error": "#ffffff",
+                    "secondary": "#586062",
+                    "primary-fixed": "#e4dfff",
+                    "primary": "#5341cd",
+                    "on-tertiary-container": "#dffff1",
+                    "tertiary": "#006651",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d1dce0",
+                    "inverse-primary": "#c6bfff",
+                    "surface-container-high": "#dfeaef",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#131d21",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "surface-bright": "#f1fbff",
+                    "inverse-on-surface": "#e7f3f7",
+                    "secondary-container": "#dae1e3",
+                    "outline-variant": "#c8c4d7",
+                    "error": "#ba1a1a",
+                    "outline": "#787586",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#dde4e6",
+                    "inverse-surface": "#283236",
+                    "on-secondary-fixed": "#161d1f",
+                    "tertiary-container": "#008167",
+                    "surface-variant": "#d9e4e9",
+                    "primary-container": "#6c5ce7",
+                    "on-surface-variant": "#474554",
+                    "on-primary-container": "#faf6ff",
+                    "surface": "#f1fbff",
+                    "on-error-container": "#93000a",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "unit": "4px",
+                    "sidebar-width": "260px",
+                    "gutter": "16px",
+                    "density-comfortable": "16px",
+                    "margin-desktop": "32px",
+                    "density-compact": "8px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "label-md": ["JetBrains Mono"],
+                    "headline-sm": ["Hanken Grotesk"],
+                    "label-sm": ["JetBrains Mono"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-sm": ["10px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for mobile */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center h-16 w-full px-margin-mobile bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-40">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="arrow_back">arrow_back</span>
+<h1 class="font-headline-sm text-headline-sm text-on-surface font-bold">Settings</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="search">search</span>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="account_circle">account_circle</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow px-margin-mobile py-6 pb-24 max-w-lg mx-auto w-full">
+<!-- Header Hero Section -->
+<section class="mb-8">
+<div class="p-6 bg-primary-container rounded-xl shadow-sm relative overflow-hidden">
+<div class="relative z-10">
+<h2 class="font-headline-md text-headline-md text-on-primary-container mb-1">Platform Admin</h2>
+<p class="font-body-md text-body-md text-on-primary-container/80">Configure global workspace parameters and identity.</p>
+</div>
+<!-- Abstract visual element -->
+<div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+<div class="absolute bottom-0 left-0 -ml-12 -mb-12 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
+</div>
+</section>
+<!-- Branding Group -->
+<section class="mb-8">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-label-md text-label-md text-on-surface-variant tracking-wider uppercase">Branding &amp; Identity</h3>
+<span class="text-xs font-label-md bg-secondary-container text-on-secondary-fixed px-2 py-0.5 rounded">MODIFIED</span>
+</div>
+<div class="space-y-unit bg-surface-container-low rounded-xl overflow-hidden border border-outline-variant/30">
+<!-- Branding Item 1 -->
+<button class="w-full flex items-center justify-between p-4 bg-white hover:bg-surface-variant/10 transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary/10 text-primary">
+<span class="material-symbols-outlined" data-icon="palette">palette</span>
+</div>
+<div class="text-left">
+<p class="font-body-md text-body-md font-semibold text-on-surface">Platform Colors</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Update primary and secondary tokens</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron_right</span>
+</button>
+<!-- Branding Item 2 -->
+<button class="w-full flex items-center justify-between p-4 bg-white hover:bg-surface-variant/10 transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary/10 text-primary">
+<span class="material-symbols-outlined" data-icon="branding_watermark">branding_watermark</span>
+</div>
+<div class="text-left">
+<p class="font-body-md text-body-md font-semibold text-on-surface">Logo &amp; Assets</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">SVG and Raster upload portal</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Templates Group -->
+<section class="mb-8">
+<h3 class="font-label-md text-label-md text-on-surface-variant tracking-wider uppercase mb-4">Email &amp; Communication</h3>
+<div class="space-y-unit bg-surface-container-low rounded-xl overflow-hidden border border-outline-variant/30">
+<!-- Template Item 1 -->
+<button class="w-full flex items-center justify-between p-4 bg-white hover:bg-surface-variant/10 transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-tertiary-container/10 text-tertiary">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+</div>
+<div class="text-left">
+<p class="font-body-md text-body-md font-semibold text-on-surface">System Templates</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Transactional email HTML editor</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron_right</span>
+</button>
+<!-- Template Item 2 -->
+<button class="w-full flex items-center justify-between p-4 bg-white hover:bg-surface-variant/10 transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-tertiary-container/10 text-tertiary">
+<span class="material-symbols-outlined" data-icon="notifications_active">notifications_active</span>
+</div>
+<div class="text-left">
+<p class="font-body-md text-body-md font-semibold text-on-surface">Push Config</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">FCM and APNS integration</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron_right</span>
+</div>
+</button>
+</div>
+</section>
+<!-- Security Group -->
+<section class="mb-8">
+<h3 class="font-label-md text-label-md text-on-surface-variant tracking-wider uppercase mb-4">Security &amp; Access</h3>
+<div class="space-y-unit bg-surface-container-low rounded-xl overflow-hidden border border-outline-variant/30">
+<!-- Security Item 1 -->
+<button class="w-full flex items-center justify-between p-4 bg-white hover:bg-surface-variant/10 transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-on-surface/5 text-on-surface">
+<span class="material-symbols-outlined" data-icon="vpn_key">vpn_key</span>
+</div>
+<div class="text-left">
+<p class="font-body-md text-body-md font-semibold text-on-surface">Authentication</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">SSO, SAML and MFA policies</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron_right</span>
+</button>
+<!-- Security Item 2 -->
+<button class="w-full flex items-center justify-between p-4 bg-white hover:bg-surface-variant/10 transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-on-surface/5 text-on-surface">
+<span class="material-symbols-outlined" data-icon="policy">policy</span>
+</div>
+<div class="text-left">
+<p class="font-body-md text-body-md font-semibold text-on-surface">Audit Logs</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Track every administrator action</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Advanced Toggle Section (Demo for Material style) -->
+<section class="p-4 bg-surface-container rounded-xl border border-dashed border-outline-variant">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="developer_mode">developer_mode</span>
+<span class="font-body-md font-semibold">Enable Developer Preview</span>
+</div>
+<div class="w-12 h-6 bg-outline-variant rounded-full p-1 cursor-pointer transition-colors duration-200" id="toggle-switch">
+<div class="w-4 h-4 bg-white rounded-full transition-transform duration-200 transform translate-x-0"></div>
+</div>
+</div>
+</section>
+<!-- Destructive Zone -->
+<section class="mt-12 mb-8">
+<button class="w-full flex items-center justify-center gap-2 p-4 border border-error/30 text-error rounded-xl font-body-md font-bold hover:bg-error-container/20 active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="delete_forever">delete_forever</span>
+                Reset All Platform Settings
+             </button>
+</section>
+</main>
+<!-- BottomNavBar (The Shell Anchor) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface-container-high border-t border-outline-variant shadow-lg md:hidden">
+<button class="flex flex-col items-center justify-center text-on-surface-variant transition-all duration-150 active:scale-90">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant transition-all duration-150 active:scale-90">
+<span class="material-symbols-outlined" data-icon="corporate_fare">corporate_fare</span>
+<span class="font-label-lg text-label-lg">Orgs</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant transition-all duration-150 active:scale-90">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span class="font-label-lg text-label-lg">Tenants</span>
+</button>
+<!-- ACTIVE STATE: Settings -->
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-all duration-150 active:scale-90">
+<span class="material-symbols-outlined" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</button>
+</nav>
+<!-- Micro-interactions Script -->
+<script>
+        // Toggle Switch Logic
+        const toggle = document.getElementById('toggle-switch');
+        const dot = toggle.querySelector('div');
+        let isActive = false;
+
+        toggle.addEventListener('click', () => {
+            isActive = !isActive;
+            if (isActive) {
+                toggle.classList.replace('bg-outline-variant', 'bg-primary');
+                dot.classList.replace('translate-x-0', 'translate-x-6');
+            } else {
+                toggle.classList.replace('bg-primary', 'bg-outline-variant');
+                dot.classList.replace('translate-x-6', 'translate-x-0');
+            }
+        });
+
+        // Simple feedback on list items
+        const buttons = document.querySelectorAll('main button');
+        buttons.forEach(btn => {
+            btn.addEventListener('touchstart', () => {
+                btn.style.opacity = '0.7';
+            });
+            btn.addEventListener('touchend', () => {
+                btn.style.opacity = '1';
+            });
+        });
+    </script>
+</body></html>

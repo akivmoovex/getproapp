@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>30-branch-ministry-profile-mobile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "outline": "#787586",
+                        "surface-container-high": "#dfeaef",
+                        "primary": "#5341cd",
+                        "tertiary": "#57595b",
+                        "on-surface-variant": "#474554",
+                        "tertiary-container": "#707273",
+                        "primary-fixed": "#e4dfff",
+                        "on-surface": "#131d21",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#e4f0f4",
+                        "tertiary-fixed": "#e1e3e4",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-fixed": "#191c1d",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#5d6466",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "background": "#f1fbff",
+                        "on-background": "#131d21",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "secondary-fixed": "#dde4e6",
+                        "inverse-primary": "#c6bfff",
+                        "surface-variant": "#d9e4e9",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-container": "#faf6ff",
+                        "on-secondary-fixed": "#161d1f",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d1dce0",
+                        "surface": "#f1fbff",
+                        "on-primary-fixed": "#160066",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "inverse-surface": "#283236",
+                        "primary-container": "#6c5ce7",
+                        "outline-variant": "#c8c4d7",
+                        "surface-bright": "#f1fbff",
+                        "surface-tint": "#5847d2",
+                        "secondary": "#586062",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#e7f3f7"
+                    },
+                    "spacing": {
+                        "xs": "4px", "xl": "32px", "base": "8px", "gutter": "24px",
+                        "margin-desktop": "32px", "sm": "8px", "margin-mobile": "16px", "md": "16px", "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"], "title-md": ["Inter"], "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Inter"], "body-lg": ["Inter"], "title-lg": ["Inter"],
+                        "headline-md": ["Inter"], "display-lg": ["Inter"], "label-lg": ["Inter"], "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-xl">
+<!-- Mobile Top AppBar -->
+<header class="bg-surface/90 backdrop-blur-md w-full h-16 sticky top-0 z-50 flex items-center px-margin-mobile border-b border-outline-variant">
+<button aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<h1 class="ml-4 font-title-lg text-title-lg text-on-surface font-black">Worship Ministry</h1>
+<div class="flex-grow"></div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</button>
+</header>
+<main class="px-margin-mobile pt-lg flex flex-col gap-lg">
+<!-- Hero Header Card -->
+<section class="relative h-48 w-full rounded-xl overflow-hidden shadow-sm">
+<div class="bg-cover bg-center w-full h-full" data-alt="A cinematic, high-key photograph of a modern church sanctuary with warm ambient lighting reflecting off a polished wooden stage. In the center, a set of high-end musical instruments like a grand piano and a drum kit are arranged neatly. The atmosphere is peaceful, professional, and spiritual, with a palette dominated by soft whites and deep violets to match a modern corporate aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBDBj-p_ZwOmMEIEGV7J6D01Vn3S3T91ImgnWcVDMwuyUnVloxIO2Ilvc2vok2VQDmd-T4JPDGmGHbBAw-k3f7W0Xa3vfqBhB1PFEiTabOLgudRwVkYDBtmJnU_PSIKatTh7ztR1kNKlkcRvzwb_yGWvUDyTcNLnGnliPW_d1Zqc1lAtUiqEE-EvOFn_YdNmjRkKwE7Ztsm1mDK9_N-Gl9MSW4PnQ52F0P00E_0Ly9mA9pTw0A1x01lHg')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
+<div class="absolute bottom-md left-md">
+<span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-label-lg text-label-lg uppercase tracking-wider mb-2 inline-block">Active Ministry</span>
+<h2 class="text-white font-headline-md text-headline-md">Worship Ministry</h2>
+</div>
+</section>
+<!-- Stats Grid (Bento Style) -->
+<section class="grid grid-cols-2 gap-md">
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-primary mb-2 text-3xl">groups</span>
+<span class="font-headline-md text-headline-md text-on-surface">24</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Members</span>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-primary mb-2 text-3xl">event_available</span>
+<span class="font-headline-md text-headline-md text-on-surface">3</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Weekly Sets</span>
+</div>
+</section>
+<!-- Leader Card -->
+<section class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm">
+<h3 class="font-title-md text-title-md text-on-surface mb-lg">Ministry Leadership</h3>
+<div class="flex items-center gap-md">
+<div class="relative">
+<img class="w-16 h-16 rounded-full object-cover border-2 border-primary-fixed" data-alt="A professional headshot of a kind-looking man in his early 40s with a warm smile, wearing a casual navy blazer. The lighting is soft and studio-quality against a minimalist light gray background, conveying a sense of approachability, trust, and community leadership." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxaiU4YWsIjgNx8OywnCyC7ssmGCX0b6ByqpT21TLzGw2-KyPPSEQSNTXlDrsSl3bd-E7O081Xyp1sj-Y692PmT8YVYB_MHzXfjXxd7nnFgbJSpXSpusHIeNsWX0DiWK0ifqdyWrN8xeU-9OFHRKDCowHQ2ofAchzFMSp0a5HqukfFr1zp44ml-y2oD0j_d0StzqR6f5yIGKBTcLx-VaxEZWw3ds25ZvCtGXm99IxT6y4sh1JMOhJK9Q"/>
+<div class="absolute bottom-0 right-0 bg-primary w-5 h-5 rounded-full flex items-center justify-center border-2 border-surface-container-lowest">
+<span class="material-symbols-outlined text-white text-[12px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">David Chiluba</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Worship Director</p>
+<div class="flex gap-2 mt-2">
+<span class="bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded text-label-md font-label-md">Staff</span>
+<span class="bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded text-label-md font-label-md">10+ Years</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Meeting Schedule -->
+<section class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm">
+<div class="flex justify-between items-center mb-lg">
+<h3 class="font-title-md text-title-md text-on-surface">Meeting Schedule</h3>
+<span class="material-symbols-outlined text-primary">calendar_month</span>
+</div>
+<div class="space-y-md">
+<div class="flex items-start gap-md pb-md border-b border-outline-variant/30">
+<div class="bg-primary-fixed text-on-primary-fixed p-base rounded-lg flex flex-col items-center min-w-[50px]">
+<span class="text-label-md font-label-md">TUE</span>
+<span class="text-title-lg font-title-lg">18</span>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Mid-week Rehearsal</p>
+<p class="font-body-md text-body-md text-on-surface-variant">18:00 - 20:30 • Main Auditorium</p>
+</div>
+</div>
+<div class="flex items-start gap-md">
+<div class="bg-surface-variant text-on-surface-variant p-base rounded-lg flex flex-col items-center min-w-[50px]">
+<span class="text-label-md font-label-md">SUN</span>
+<span class="text-title-lg font-title-lg">23</span>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Sunday Service Sets</p>
+<p class="font-body-md text-body-md text-on-surface-variant">07:30 - 12:30 • Multiple Services</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Action Buttons -->
+<section class="flex flex-col gap-md pt-base">
+<button class="w-full bg-primary text-on-primary font-title-md text-title-md py-lg rounded-xl shadow-md flex items-center justify-center gap-base active:scale-[0.98] transition-transform duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assignment_ind</span>
+                Manage Roster
+            </button>
+<button class="w-full bg-surface-container-highest text-on-surface font-title-md text-title-md py-lg rounded-xl border border-outline-variant flex items-center justify-center gap-base active:scale-[0.98] transition-transform duration-200">
+<span class="material-symbols-outlined">chat_bubble</span>
+                Message Ministry
+            </button>
+</section>
+<!-- Latest Announcements Card (Mini Bento) -->
+<section class="bg-inverse-surface text-on-primary-container p-lg rounded-2xl flex flex-col gap-md overflow-hidden relative">
+
+<div class="relative z-10">
+<div class="flex items-center gap-sm mb-base">
+<span class="material-symbols-outlined text-primary-fixed-dim">campaign</span>
+<h3 class="font-label-lg text-label-lg uppercase tracking-widest text-primary-fixed-dim">Latest Update</h3>
+</div>
+<p class="font-title-md text-title-md text-white">Choir workshop scheduled for next Saturday at the Youth Hall.</p>
+<p class="font-body-md text-body-md text-outline-variant mt-sm">Posted 2 hours ago by David C.</p>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-lg border-t border-outline-variant h-[72px] px-lg flex justify-between items-center z-50 md:hidden">
+<button class="flex flex-col items-center justify-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-md text-label-md">Ministries</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">event</span>
+<span class="font-label-md text-label-md">Events</span>
+</button>
+<!-- Center Action Button -->
+<button class="w-14 h-14 bg-primary text-on-primary rounded-2xl -mt-10 shadow-lg flex items-center justify-center transition-transform active:scale-90">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-primary font-semibold">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assignment_ind</span>
+<span class="font-label-md text-label-md">Roster</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</button>
+</nav>
+<script>
+        // Simple micro-interaction for buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('touchstart', function() {
+                this.classList.add('opacity-80');
+            });
+            button.addEventListener('touchend', function() {
+                this.classList.remove('opacity-80');
+            });
+        });
+    </script>
+</body></html>

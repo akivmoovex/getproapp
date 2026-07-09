@@ -1,0 +1,50 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Member requests</h1>
+          <p class="church-branch-topbar__subtitle">Process online requests from verified members</p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <div class="church-branch-filter-tabs">
+        <% requestFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/requests<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : requestStatusLabel(f) %></a>
+        <% }); %>
+      </div>
+      <section class="church-branch-panel">
+        <% if ((requests || []).length === 0) { %>
+        <p class="church-branch-empty">No member requests in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Member</th>
+                <th>Subject</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% requests.forEach(function (r) { %>
+              <tr>
+                <td><%= r.request_type %></td>
+                <td><%= r.member_name %></td>
+                <td><%= r.subject %></td>
+                <td><%= new Date(r.created_at).toLocaleDateString('en-GB') %></td>
+                <td><span class="church-status-chip church-status-chip--<%= r.status === 'approved' || r.status === 'completed' ? 'verified' : 'pending' %>"><%= requestStatusLabel(r.status) %></span></td>
+                <td><span class="church-status-chip">—</span></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/requests/<%= r.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

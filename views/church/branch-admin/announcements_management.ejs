@@ -1,0 +1,56 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Announcements</h1>
+          <p class="church-branch-topbar__subtitle">Create and publish branch announcements</p>
+        </div>
+        <a class="church-btn church-btn--primary" href="/branch/announcements/new">Add announcement</a>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <div class="church-branch-filter-tabs">
+        <% announcementFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/announcements<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : announcementStatusLabel(f) %></a>
+        <% }); %>
+      </div>
+      <section class="church-branch-panel">
+        <% if ((announcements || []).length === 0) { %>
+        <p class="church-branch-empty">No announcements in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Audience</th>
+                <th>Status</th>
+                <th>Publish</th>
+                <th>Expires</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% announcements.forEach(function (a) { %>
+              <tr>
+                <td><%= a.title %></td>
+                <td><%= a.category %></td>
+                <td><%= audienceLabel(a.audience) %></td>
+                <td><span class="church-status-chip church-status-chip--<%= a.status === 'published' ? 'verified' : 'pending' %>"><%= announcementStatusLabel(a.status) %></span></td>
+                <td><%= a.publish_at ? new Date(a.publish_at).toLocaleDateString('en-GB') : '—' %></td>
+                <td><%= a.expires_at ? new Date(a.expires_at).toLocaleDateString('en-GB') : '—' %></td>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/announcements/<%= a.id %>">View</a>
+                  <% if (a.status !== 'archived') { %>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/announcements/<%= a.id %>/edit">Edit</a>
+                  <% } %>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

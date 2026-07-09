@@ -1,0 +1,54 @@
+<%- include('../partials/leader_shell_start') %>
+      <header class="church-member-header">
+        <div>
+          <h1 class="church-member-header__title">Ministry duties</h1>
+          <p class="church-member-header__subtitle">Confirmed duties linked to <%= ministry ? ministry.name : 'your ministry' %></p>
+        </div>
+      </header>
+      <section class="church-member-panel">
+        <h2 class="church-member-panel__title">Upcoming</h2>
+        <% if ((upcomingDuties || []).length === 0) { %>
+        <p class="church-member-empty">No upcoming duties scheduled for this ministry.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Date</th><th>Service</th><th>Role</th><th>Assigned</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody>
+              <% upcomingDuties.forEach(function (d) { %>
+              <tr>
+                <td><%= formatDutyDate(d.duty_date) %></td>
+                <td><%= d.service_name %></td>
+                <td><%= d.role_name %></td>
+                <td><%= assignedMemberDisplay(d) %></td>
+                <td><span class="church-status-chip church-status-chip--verified"><%= dutyStatusLabel(d.status) %></span></td>
+                <td><%= (d.notes || '—').slice(0, 60) %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+      <section class="church-member-panel">
+        <h2 class="church-member-panel__title">Past</h2>
+        <% if ((pastDuties || []).length === 0) { %>
+        <p class="church-member-empty">No past duties on record.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Date</th><th>Service</th><th>Role</th><th>Assigned</th></tr></thead>
+            <tbody>
+              <% pastDuties.forEach(function (d) { %>
+              <tr>
+                <td><%= formatDutyDate(d.duty_date) %></td>
+                <td><%= d.service_name %></td>
+                <td><%= d.role_name %></td>
+                <td><%= assignedMemberDisplay(d) %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/leader_shell_end') %>

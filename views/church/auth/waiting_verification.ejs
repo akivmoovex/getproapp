@@ -1,0 +1,20 @@
+<%- include('../partials/auth_shell_start') %>
+  <div class="church-auth-card church-auth-card--state">
+    <div class="church-state-icon church-state-icon--pending" aria-hidden="true">
+      <span class="material-symbols-outlined">hourglass_top</span>
+    </div>
+    <h1 class="church-auth-card__title">Waiting for verification</h1>
+    <p class="church-auth-card__subtitle">
+      Hello<%= typeof memberName !== 'undefined' && memberName ? ', ' + memberName : '' %> — your membership application is being reviewed.
+    </p>
+    <p class="church-auth-card__body">
+      Branch leadership will verify your registration soon. Once approved, you will be able to access the member portal. If you have questions, please contact the church office.
+    </p>
+    <form method="post" action="/logout">
+      <button class="church-btn church-btn--outline church-btn--block" type="submit">Sign out</button>
+    </form>
+    <p class="church-auth-card__footer">
+      <a href="/">Return home</a>
+    </p>
+  </div>
+<%- include('../partials/auth_shell_end') %>

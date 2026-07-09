@@ -1,0 +1,564 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Moovex Admin | Super Admin Portal</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#d9e4e9",
+                        "tertiary-fixed-dim": "#4bddb7",
+                        "on-background": "#131d21",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#eaf5fa",
+                        "surface-tint": "#5847d2",
+                        "surface-container": "#e4f0f4",
+                        "background": "#f1fbff",
+                        "on-secondary-container": "#5d6466",
+                        "on-tertiary-fixed-variant": "#005140",
+                        "on-primary-fixed": "#160066",
+                        "on-tertiary-fixed": "#002018",
+                        "tertiary-fixed": "#6dfad2",
+                        "on-error": "#ffffff",
+                        "secondary": "#586062",
+                        "primary-fixed": "#e4dfff",
+                        "primary": "#5341cd",
+                        "on-tertiary-container": "#dffff1",
+                        "tertiary": "#006651",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d1dce0",
+                        "inverse-primary": "#c6bfff",
+                        "surface-container-high": "#dfeaef",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#131d21",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "surface-bright": "#f1fbff",
+                        "inverse-on-surface": "#e7f3f7",
+                        "secondary-container": "#dae1e3",
+                        "outline-variant": "#c8c4d7",
+                        "error": "#ba1a1a",
+                        "outline": "#787586",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#dde4e6",
+                        "inverse-surface": "#283236",
+                        "on-secondary-fixed": "#161d1f",
+                        "tertiary-container": "#008167",
+                        "surface-variant": "#d9e4e9",
+                        "primary-container": "#6c5ce7",
+                        "on-surface-variant": "#474554",
+                        "on-primary-container": "#faf6ff",
+                        "surface": "#f1fbff",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "unit": "4px",
+                        "sidebar-width": "260px",
+                        "gutter": "16px",
+                        "density-comfortable": "16px",
+                        "margin-desktop": "32px",
+                        "density-compact": "8px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "label-md": ["JetBrains Mono"],
+                        "headline-sm": ["Hanken Grotesk"],
+                        "label-sm": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #f1fbff;
+            color: #131d21;
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-indicator {
+            position: absolute;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background-color: #5847d2;
+        }
+        /* Custom scrollbar for high density data */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #eaf5fa;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5341cd;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+<!-- Side Navigation Bar -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-inverse-surface dark:bg-on-background shadow-sm flex flex-col py-lg px-md z-40">
+<div class="mb-10 px-4">
+<h1 class="text-title-lg font-title-lg text-primary-fixed font-extrabold tracking-tight">GetPro Church Admin</h1>
+<p class="font-body-md text-body-md text-on-tertiary-fixed-variant opacity-70">Super Admin Portal</p>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Dashboard Active -->
+<a class="relative flex items-center gap-4 px-4 py-3 transition-colors duration-200 text-on-primary-fixed font-bold border-l-4 border-primary-fixed bg-surface-variant/10 group" href="#">
+<span class="material-symbols-outlined text-primary-fixed" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 transition-colors duration-200 text-on-tertiary-fixed-variant hover:bg-surface-variant/5 hover:text-on-primary-fixed group" href="#">
+<span class="material-symbols-outlined opacity-70 group-hover:opacity-100" data-icon="corporate_fare">corporate_fare</span>
+<span class="font-body-md text-body-md">Organizations</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 transition-colors duration-200 text-on-tertiary-fixed-variant hover:bg-surface-variant/5 hover:text-on-primary-fixed group" href="#">
+<span class="material-symbols-outlined opacity-70 group-hover:opacity-100" data-icon="hub">hub</span>
+<span class="font-body-md text-body-md">Tenants</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 transition-colors duration-200 text-on-tertiary-fixed-variant hover:bg-surface-variant/5 hover:text-on-primary-fixed group" href="#">
+<span class="material-symbols-outlined opacity-70 group-hover:opacity-100" data-icon="payments">payments</span>
+<span class="font-body-md text-body-md">Plans</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 transition-colors duration-200 text-on-tertiary-fixed-variant hover:bg-surface-variant/5 hover:text-on-primary-fixed group" href="#">
+<span class="material-symbols-outlined opacity-70 group-hover:opacity-100" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 transition-colors duration-200 text-on-tertiary-fixed-variant hover:bg-surface-variant/5 hover:text-on-primary-fixed group" href="#">
+<span class="material-symbols-outlined opacity-70 group-hover:opacity-100" data-icon="contact_support">contact_support</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+</nav>
+<div class="mt-auto px-4 py-4 border-t border-white/10 flex items-center gap-3">
+<img class="w-10 h-10 rounded-full border border-primary-fixed/20" data-alt="A professional headshot of a senior platform administrator, aged 40, wearing a minimalist navy blazer. The lighting is soft and corporate, with a clean architectural background in the distance. The style is modern, sharp, and confident, adhering to the high-stakes governance aesthetic of the platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFkk80u68eF2e4Zz71KR5FBNgb546e0xeNT1EBoKV83dJwExRz3NFn9hlR-QPXQEN-tQyJGaB1mhvUB0h2CflBRPqEZndpi_VsRZKWRBFJTEn3OQRo4rKtfKOojEZP_r9xmC2SHhXsh06Q35hOFl5WbSu7MzGDjuJnnFxq1kAnK57pZNs1HRTGSino7Q-ddZOAjD9Jgx_hVWLD9OtuaLSi5psvN5WyFBqUsOh7YFEvVWWsRR5yaLrWLA">
+<div>
+<p class="text-on-primary-fixed font-bold text-body-md">Alex Rivera</p>
+<p class="text-on-tertiary-fixed-variant text-label-sm uppercase tracking-wider">Super Admin</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-[280px] min-h-screen flex flex-col">
+<!-- Top App Bar -->
+<header class="h-16 bg-surface-container-lowest dark:bg-on-background border-b border-outline-variant flex justify-between items-center px-margin-desktop sticky top-0 z-30">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full bg-surface-container border-none rounded-lg pl-10 pr-4 py-2 text-body-md focus:ring-2 focus:ring-primary" placeholder="Search infrastructure, tenants, or logs..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-all duration-150">
+<span class="material-symbols-outlined" data-icon="health_metrics">health_metrics</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-all duration-150 relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant mx-2"></div>
+<button class="flex items-center gap-2 pl-2 pr-1 py-1 hover:bg-surface-container rounded-full transition-all duration-150">
+<span class="font-label-md text-on-surface">System Status: <span class="text-tertiary font-bold">Optimal</span></span>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Canvas Content -->
+<div class="p-margin-desktop space-y-gutter">
+<!-- Dashboard Header -->
+<div class="flex justify-between items-end mb-4">
+<div>
+<h2 class="font-display-lg text-display-lg text-on-background">System Overview</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Real-time governance and multi-tenant performance metrics.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface font-body-md rounded-lg hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="file_download">file_download</span>
+                        Export Report
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container font-bold font-body-md rounded-lg hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+                        New Organization
+                    </button>
+</div>
+</div>
+<!-- Summary KPI Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+<!-- Total Orgs -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<span class="font-label-md text-on-surface-variant uppercase tracking-widest">Organizations</span>
+<span class="material-symbols-outlined text-primary" data-icon="corporate_fare">corporate_fare</span>
+</div>
+<div class="mt-2 font-display-lg text-display-lg leading-none transition-colors">124</div>
+</div>
+<div class="mt-4 flex items-center gap-1 text-tertiary text-label-sm">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span class="">+12% vs last month</span>
+</div>
+</div>
+<!-- Total Branch Tenants -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<span class="font-label-md text-on-surface-variant uppercase tracking-widest">Branch Tenants</span>
+<span class="material-symbols-outlined text-primary" data-icon="hub">hub</span>
+</div>
+<div class="mt-2 font-display-lg text-display-lg leading-none transition-colors">842</div>
+</div>
+<div class="mt-4 flex items-center gap-1 text-tertiary text-label-sm">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span class="">+5.2% expansion</span>
+</div>
+</div>
+<!-- Active Members -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<span class="font-label-md text-on-surface-variant uppercase tracking-widest">Active Members</span>
+<span class="material-symbols-outlined text-primary" data-icon="group">group</span>
+</div>
+<div class="mt-2 font-display-lg text-display-lg leading-none">12.8k</div>
+</div>
+<div class="mt-4 flex items-center gap-1 text-on-secondary-container text-label-sm">
+<span class="material-symbols-outlined text-sm" data-icon="sync">sync</span>
+<span class="">Stable retention</span>
+</div>
+</div>
+<!-- Plans -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<span class="font-label-md text-on-surface-variant uppercase tracking-widest">Paid Plans</span>
+<span class="material-symbols-outlined text-primary" data-icon="payments">payments</span>
+</div>
+<div class="mt-2 font-display-lg text-display-lg leading-none transition-colors">612</div>
+</div>
+<div class="mt-4 flex items-center gap-1 text-primary text-label-sm">
+<span class="font-bold">Enterprise: 142</span>
+</div>
+</div>
+<!-- Support Issues -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<span class="font-label-md text-on-surface-variant uppercase tracking-widest">Open Tickets</span>
+<span class="material-symbols-outlined text-error" data-icon="contact_support">contact_support</span>
+</div>
+<div class="mt-2 font-display-lg text-display-lg leading-none transition-colors">24</div>
+</div>
+<div class="mt-4 flex items-center gap-1 text-error text-label-sm">
+<span class="material-symbols-outlined text-sm" data-icon="warning">warning</span>
+<span class="">4 High Priority</span>
+</div>
+</div>
+</div>
+<!-- Secondary Layout Grid -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Platform Health Widget -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden flex flex-col">
+<div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-headline-sm text-headline-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary" data-icon="monitor_heart">monitor_heart</span>
+                            Platform Health
+                        </h3>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-tertiary-container/20 text-on-tertiary-fixed-variant rounded text-label-sm font-bold">API: 99.98%</span>
+<span class="px-2 py-1 bg-tertiary-container/20 text-on-tertiary-fixed-variant rounded text-label-sm font-bold">DB: 12ms</span>
+</div>
+</div>
+<div class="p-6 h-64 relative flex items-center justify-center bg-surface-container-lowest">
+<!-- Abstract Health Visualization with WebGL-like Shader Vibes -->
+<div class="w-full h-full rounded-lg bg-gradient-to-br from-surface-container-high to-surface-container relative overflow-hidden group">
+<!-- Placeholder for atmospheric background -->
+<div class="absolute inset-0 opacity-20 pointer-events-none">
+<div class="w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-primary/30"></div>
+</div>
+<!-- Simulated Health Chart -->
+<div class="absolute inset-0 flex items-end px-4 py-8 gap-1">
+<div class="flex-1 bg-tertiary/40 h-3/4 rounded-t hover:bg-tertiary transition-all" style="height: 85%;"></div>
+<div class="flex-1 bg-tertiary/40 h-4/5 rounded-t hover:bg-tertiary transition-all" style="height: 88%;"></div>
+<div class="flex-1 bg-tertiary/40 h-2/3 rounded-t hover:bg-tertiary transition-all" style="height: 92%;"></div>
+<div class="flex-1 bg-tertiary/40 h-3/4 rounded-t hover:bg-tertiary transition-all" style="height: 84%;"></div>
+<div class="flex-1 bg-tertiary/40 h-5/6 rounded-t hover:bg-tertiary transition-all" style="height: 95%;"></div>
+<div class="flex-1 bg-tertiary/40 h-3/4 rounded-t hover:bg-tertiary transition-all" style="height: 89%;"></div>
+<div class="flex-1 bg-tertiary/40 h-4/5 rounded-t hover:bg-tertiary transition-all" style="height: 91%;"></div>
+<div class="flex-1 bg-error/40 h-1/4 rounded-t hover:bg-error transition-all" style="height: 32%;"></div>
+<div class="flex-1 bg-tertiary/40 h-3/4 rounded-t hover:bg-tertiary transition-all" style="height: 87%;"></div>
+<div class="flex-1 bg-tertiary/40 h-4/5 rounded-t hover:bg-tertiary transition-all" style="height: 94%;"></div>
+<div class="flex-1 bg-tertiary/40 h-3/4 rounded-t hover:bg-tertiary transition-all" style="height: 98%;"></div>
+<div class="flex-1 bg-tertiary/40 h-4/5 rounded-t hover:bg-tertiary transition-all" style="height: 96%;"></div>
+<div class="flex-1 bg-tertiary/40 h-3/4 rounded-t hover:bg-tertiary transition-all" style="height: 92%;"></div>
+<div class="flex-1 bg-tertiary/40 h-4/5 rounded-t hover:bg-tertiary transition-all" style="height: 95%;"></div>
+</div>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="text-center bg-surface-container-lowest/80 backdrop-blur-md px-8 py-4 rounded-full border border-outline-variant shadow-lg">
+<p class="text-label-md text-on-surface-variant uppercase tracking-tighter">System Reliability</p>
+<h4 class="text-display-lg font-display-lg text-tertiary">99.8%</h4>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Tenant Activity -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col h-[400px]">
+<div class="px-6 py-4 border-b border-outline-variant">
+<h3 class="font-headline-sm text-headline-sm">Recent Activity</h3>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4">
+<!-- Activity Item -->
+<div class="flex gap-4 p-2 hover:bg-surface-container rounded-lg transition-colors group">
+<div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="add_business">add_business</span>
+</div>
+<div class="flex-1">
+<p class="text-body-md font-bold text-on-surface">Global Logistics Corp</p>
+<p class="text-label-sm text-on-surface-variant">New tenant branch provisioned in EU-West-1</p>
+</div>
+<div class="text-label-sm text-outline">2m ago</div>
+</div>
+<div class="flex gap-4 p-2 hover:bg-surface-container rounded-lg transition-colors group">
+<div class="w-10 h-10 rounded bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="upgrade">upgrade</span>
+</div>
+<div class="flex-1">
+<p class="text-body-md font-bold text-on-surface">Innovate Labs</p>
+<p class="text-label-sm text-on-surface-variant">Plan upgraded to Enterprise Tier</p>
+</div>
+<div class="text-label-sm text-outline">14m ago</div>
+</div>
+<div class="flex gap-4 p-2 hover:bg-surface-container rounded-lg transition-colors group">
+<div class="w-10 h-10 rounded bg-error/10 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="report">report</span>
+</div>
+<div class="flex-1">
+<p class="text-body-md font-bold text-on-surface">FinTech Pro</p>
+<p class="text-label-sm text-on-surface-variant">Auth latency spike detected (Region: US-East)</p>
+</div>
+<div class="text-label-sm text-outline">45m ago</div>
+</div>
+<div class="flex gap-4 p-2 hover:bg-surface-container rounded-lg transition-colors group">
+<div class="w-10 h-10 rounded bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+</div>
+<div class="flex-1">
+<p class="text-body-md font-bold text-on-surface">RetailSync</p>
+<p class="text-label-sm text-on-surface-variant">50 new users onboarded to APAC branch</p>
+</div>
+<div class="text-label-sm text-outline">1h ago</div>
+</div>
+<div class="flex gap-4 p-2 hover:bg-surface-container rounded-lg transition-colors group">
+<div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="settings_backup_restore">settings_backup_restore</span>
+</div>
+<div class="flex-1">
+<p class="text-body-md font-bold text-on-surface">System</p>
+<p class="text-label-sm text-on-surface-variant">Automated database backup completed</p>
+</div>
+<div class="text-label-sm text-outline">3h ago</div>
+</div>
+</div>
+<div class="p-4 border-t border-outline-variant">
+<button class="w-full py-2 text-primary font-bold text-label-md hover:bg-primary/5 transition-colors">View Audit Log</button>
+</div>
+</div>
+</div>
+<!-- Organization Data Table -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-headline-sm text-headline-sm">Top Performing Organizations</h3>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-container rounded transition-all"><span class="material-symbols-outlined text-[20px]" data-icon="filter_list">filter_list</span></button>
+<button class="p-2 hover:bg-surface-container rounded transition-all"><span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span></button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant">
+<th class="px-6 py-3 font-label-md text-label-md uppercase tracking-wider border-b border-outline-variant">Organization Name</th>
+<th class="px-6 py-3 font-label-md text-label-md uppercase tracking-wider border-b border-outline-variant">Tenants</th>
+<th class="px-6 py-3 font-label-md text-label-md uppercase tracking-wider border-b border-outline-variant">Plan Type</th>
+<th class="px-6 py-3 font-label-md text-label-md uppercase tracking-wider border-b border-outline-variant">Active Users</th>
+<th class="px-6 py-3 font-label-md text-label-md uppercase tracking-wider border-b border-outline-variant">Health Status</th>
+<th class="px-6 py-3 font-label-md text-label-md uppercase tracking-wider border-b border-outline-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="text-body-md divide-y divide-outline-variant">
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-density-compact">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-bold text-primary">S</div>
+<span class="font-bold text-on-surface">Stark Industries</span>
+</div>
+</td>
+<td class="px-6 py-density-compact">42</td>
+<td class="px-6 py-density-compact">
+<span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-label-sm font-bold">ENTERPRISE</span>
+</td>
+<td class="px-6 py-density-compact">1,240</td>
+<td class="px-6 py-density-compact">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<span class="text-tertiary">Optimal</span>
+</div>
+</td>
+<td class="px-6 py-density-compact text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="open_in_new">open_in_new</span></button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-density-compact">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-bold text-primary">W</div>
+<span class="font-bold text-on-surface">Wayne Enterprises</span>
+</div>
+</td>
+<td class="px-6 py-density-compact">18</td>
+<td class="px-6 py-density-compact">
+<span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-label-sm font-bold">ENTERPRISE</span>
+</td>
+<td class="px-6 py-density-compact">890</td>
+<td class="px-6 py-density-compact">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<span class="text-tertiary">Optimal</span>
+</div>
+</td>
+<td class="px-6 py-density-compact text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="open_in_new">open_in_new</span></button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-density-compact">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-bold text-primary">O</div>
+<span class="font-bold text-on-surface">Oscorp Holding</span>
+</div>
+</td>
+<td class="px-6 py-density-compact">8</td>
+<td class="px-6 py-density-compact">
+<span class="px-2 py-1 bg-secondary-container text-on-secondary-container rounded-full text-label-sm font-bold">BUSINESS</span>
+</td>
+<td class="px-6 py-density-compact">214</td>
+<td class="px-6 py-density-compact">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<span class="text-error">Critical</span>
+</div>
+</td>
+<td class="px-6 py-density-compact text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="open_in_new">open_in_new</span></button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-density-compact">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-bold text-primary">U</div>
+<span class="font-bold text-on-surface">Umbrella Corp</span>
+</div>
+</td>
+<td class="px-6 py-density-compact">122</td>
+<td class="px-6 py-density-compact">
+<span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-label-sm font-bold">ENTERPRISE</span>
+</td>
+<td class="px-6 py-density-compact">4,500</td>
+<td class="px-6 py-density-compact">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<span class="text-tertiary">Optimal</span>
+</div>
+</td>
+<td class="px-6 py-density-compact text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="open_in_new">open_in_new</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Footer / System Metrics -->
+<footer class="mt-auto py-4 px-margin-desktop bg-surface-container border-t border-outline-variant flex justify-between items-center text-label-sm text-on-surface-variant">
+<div class="flex gap-4">
+<span class="">Node: US-E1-04</span>
+<span class="">Version: v2.4.1-stable</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-tertiary"></span> Cluster Healthy</span>
+</div>
+<div class="">© 2024 Moovex Infrastructure Management. Powered by GetPro Church by Moovex. All rights reserved.</div>
+</footer>
+</main>
+<!-- Contextual Floating Action Button -->
+<div class="fixed bottom-8 right-8 z-50">
+<button class="w-14 h-14 bg-primary-container text-on-primary-container rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined text-[28px]" data-icon="support_agent">support_agent</span>
+</button>
+</div>
+<!-- Micro-interaction Scripts -->
+<script>
+        // Simple search focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary/20');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary/20');
+        });
+
+        // Simulating live data updates on KPI cards
+        const kpis = document.querySelectorAll('.font-display-lg');
+        setInterval(() => {
+            const randomCard = Math.floor(Math.random() * kpis.length);
+            const originalVal = kpis[randomCard].innerText;
+            if (originalVal.includes('.')) return; // skip formatted numbers
+            
+            const num = parseInt(originalVal);
+            if (!isNaN(num)) {
+                kpis[randomCard].classList.add('text-primary', 'transition-colors');
+                setTimeout(() => kpis[randomCard].classList.remove('text-primary'), 1000);
+            }
+        }, 8000);
+    </script>
+
+
+</body></html>

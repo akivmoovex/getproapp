@@ -1,0 +1,373 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Consolidated Analytics</h1>
+          <p class="church-branch-topbar__subtitle"><%= organizationName %> · Reporting period <%= periodMonth %></p>
+        </div>
+      </header>
+      <%- include('../partials/plan_premium_notice', { premiumNotice: typeof premiumNotice !== 'undefined' ? premiumNotice : null }) %>
+      <p class="church-branch-panel__hint church-hq-analytics-note">Analytics are based on submitted branch data and reporting summaries. Giving figures are reporting-only, not full accounting.</p>
+      <form class="church-form church-form--inline" method="get" action="<%= typeof focusSection !== 'undefined' && focusSection === 'branch-health' ? '/hq/analytics/branches' : '/hq/analytics' %>">
+        <div class="church-field">
+          <label class="church-label" for="period_month">Period</label>
+          <input class="church-input" id="period_month" name="period_month" type="month" value="<%= periodMonth %>"/>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="compare_month">Compare with</label>
+          <input class="church-input" id="compare_month" name="compare_month" type="month" value="<%= compareMonth %>"/>
+        </div>
+        <button class="church-btn church-btn--primary" type="submit">Apply</button>
+      </form>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Organization summary</h2>
+        <div class="church-branch-stats">
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Total branches</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.summary.totalBranches %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Active branches</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.summary.activeBranches %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Active members</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.summary.activeMembers %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">New members this month</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.summary.newMembersThisMonth %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Pending members</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.summary.pendingMembers %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Submitted reports</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.summary.submittedReportsThisMonth %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Missing reports</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.summary.missingReportsThisMonth %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Attendance records</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.summary.totalAttendanceRecords %></strong>
+          </article>
+          <article class="church-branch-stat-card church-branch-stat-card--wide">
+            <span class="church-branch-stat-card__label">Total giving summary (reporting only)</span>
+            <strong class="church-branch-stat-card__value church-branch-stat-card__value--sm">ZMW <%= formatMoney(analytics.summary.totalGivingAmount) %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Open member requests</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.summary.openMemberRequests %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Ministry activity notes</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.summary.ministryActivityNotesSubmitted %></strong>
+          </article>
+        </div>
+        <% if (analytics.compareSummary) { %>
+        <p class="church-branch-panel__hint">Compared to <%= compareMonth %>: <%= analytics.compareSummary.activeMembers %> active members, <%= analytics.compareSummary.submittedReportsThisMonth %> submitted reports, ZMW <%= formatMoney(analytics.compareSummary.totalGivingAmount) %> giving summary.</p>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel" id="member-analytics">
+        <h2 class="church-branch-panel__title">Member analytics</h2>
+        <% if (!(analytics.members.byBranch || []).length) { %>
+        <p class="church-branch-empty">No branch member data for this period.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Active</th>
+                <th>New this month</th>
+                <th>Pending</th>
+                <th>Suspended</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% analytics.members.byBranch.forEach(function (row) { %>
+              <tr>
+                <td><a href="/hq/branches/<%= row.branch_id %>?period_month=<%= periodMonth %>"><%= row.branch_name %></a></td>
+                <td><%= row.active || 0 %></td>
+                <td><%= row.new_this_month || 0 %></td>
+                <td><%= row.pending || 0 %></td>
+                <td><%= row.suspended || 0 %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+        <% if ((analytics.members.highPendingBranches || []).length > 0) { %>
+        <h3 class="church-branch-panel__subtitle">Branches with pending verifications</h3>
+        <ul class="church-branch-inline-list">
+          <% analytics.members.highPendingBranches.forEach(function (row) { %>
+          <li><%= row.branch_name %> — <%= row.pending %> pending</li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel" id="attendance-analytics">
+        <h2 class="church-branch-panel__title">Attendance analytics</h2>
+        <% if (!(analytics.attendance.byBranch || []).length) { %>
+        <p class="church-branch-empty">No attendance records for this period.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Records</th>
+                <th>Sunday avg</th>
+                <th>Youth avg</th>
+                <th>Children avg</th>
+                <th>Visitors</th>
+                <th>Latest date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% analytics.attendance.byBranch.forEach(function (row) { %>
+              <tr>
+                <td><%= row.branch_name %></td>
+                <td><%= row.recordCount || 0 %></td>
+                <td><%= row.sundayAverage != null ? row.sundayAverage : '—' %></td>
+                <td><%= row.youthAverage != null ? row.youthAverage : '—' %></td>
+                <td><%= row.childrenAverage != null ? row.childrenAverage : '—' %></td>
+                <td><%= row.visitorsTotal || 0 %></td>
+                <td><%= row.latestAttendanceDate ? new Date(row.latestAttendanceDate).toLocaleDateString('en-GB') : '—' %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel" id="reports-analytics">
+        <h2 class="church-branch-panel__title">Reports analytics</h2>
+        <div class="church-branch-stats church-branch-stats--compact">
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Submission rate</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.reports.totals.submissionRate %>%</strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Submitted</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.reports.totals.submitted %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Approved</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.reports.totals.approved %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Changes requested</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.reports.totals.changesRequested %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Missing</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.reports.totals.missing %></strong>
+          </article>
+        </div>
+        <div class="church-branch-actions">
+          <a class="church-btn church-btn--outline church-btn--sm" href="/hq/reports">Review reports</a>
+        </div>
+        <% if ((analytics.reports.missingBranches || []).length > 0) { %>
+        <h3 class="church-branch-panel__subtitle">Missing or incomplete reports</h3>
+        <ul class="church-branch-inline-list">
+          <% analytics.reports.missingBranches.forEach(function (row) { %>
+          <li><a href="/hq/branches/<%= row.branch_id %>?period_month=<%= periodMonth %>#reports-summary"><%= row.branch_name %></a></li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel" id="giving-analytics">
+        <h2 class="church-branch-panel__title">Giving summary analytics</h2>
+        <p class="church-branch-panel__hint">Based on branch-reported summaries only. This is not full accounting.</p>
+        <div class="church-branch-stats church-branch-stats--compact">
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Tithes</span>
+            <strong class="church-branch-stat-card__value church-branch-stat-card__value--sm">ZMW <%= formatMoney(analytics.giving.totals.breakdown.tithes) %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Offerings</span>
+            <strong class="church-branch-stat-card__value church-branch-stat-card__value--sm">ZMW <%= formatMoney(analytics.giving.totals.breakdown.offerings) %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Building fund</span>
+            <strong class="church-branch-stat-card__value church-branch-stat-card__value--sm">ZMW <%= formatMoney(analytics.giving.totals.breakdown.building) %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Missions fund</span>
+            <strong class="church-branch-stat-card__value church-branch-stat-card__value--sm">ZMW <%= formatMoney(analytics.giving.totals.breakdown.missions) %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Special offerings</span>
+            <strong class="church-branch-stat-card__value church-branch-stat-card__value--sm">ZMW <%= formatMoney(analytics.giving.totals.breakdown.special) %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Other giving</span>
+            <strong class="church-branch-stat-card__value church-branch-stat-card__value--sm">ZMW <%= formatMoney(analytics.giving.totals.breakdown.other) %></strong>
+          </article>
+        </div>
+        <% if (!(analytics.giving.byBranch || []).length) { %>
+        <p class="church-branch-empty">No giving summary data for this period.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Status</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% analytics.giving.byBranch.forEach(function (row) { %>
+              <tr>
+                <td><%= row.branch_name %></td>
+                <td><%= givingStatusLabel(row.status) %></td>
+                <td>ZMW <%= formatMoney(row.grandTotal) %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel" id="ministry-analytics">
+        <h2 class="church-branch-panel__title">Ministry and activity analytics</h2>
+        <% if (!(analytics.ministry.byBranch || []).length) { %>
+        <p class="church-branch-empty">No ministry activity data for this period.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Published ministries</th>
+                <th>Active departments</th>
+                <th>Notes submitted</th>
+                <th>Notes reviewed</th>
+                <th>Follow-up requested</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% analytics.ministry.byBranch.forEach(function (row) { %>
+              <tr>
+                <td><%= row.branch_name %></td>
+                <td><%= row.publishedMinistries || 0 %></td>
+                <td><%= row.activeDepartments || 0 %></td>
+                <td><%= row.notesSubmitted || 0 %></td>
+                <td><%= row.notesReviewed || 0 %></td>
+                <td><%= row.followUpRequested || 0 %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel" id="requests-analytics">
+        <h2 class="church-branch-panel__title">Requests and prayer analytics</h2>
+        <p class="church-branch-panel__hint">Prayer request counts by status only — no sensitive details are shown.</p>
+        <div class="church-branch-stats church-branch-stats--compact">
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Open requests</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.requests.totals.openRequests %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Completed requests</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.requests.totals.completedRequests %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Prayer submitted</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.requests.totals.prayerSubmitted %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Prayer reviewed</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.requests.totals.prayerReviewed %></strong>
+          </article>
+          <article class="church-branch-stat-card">
+            <span class="church-branch-stat-card__label">Prayer closed</span>
+            <strong class="church-branch-stat-card__value"><%= analytics.requests.totals.prayerClosed %></strong>
+          </article>
+        </div>
+        <% if (!(analytics.requests.byBranch || []).length) { %>
+        <p class="church-branch-empty">No request or prayer data for this period.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Open requests</th>
+                <th>Completed</th>
+                <th>Prayer submitted</th>
+                <th>Prayer reviewed</th>
+                <th>Prayer closed</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% analytics.requests.byBranch.forEach(function (row) { %>
+              <tr>
+                <td><%= row.branch_name %></td>
+                <td><%= row.openRequests || 0 %></td>
+                <td><%= row.completedRequests || 0 %></td>
+                <td><%= row.prayerSubmitted || 0 %></td>
+                <td><%= row.prayerReviewed || 0 %></td>
+                <td><%= row.prayerClosed || 0 %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel" id="branch-health">
+        <h2 class="church-branch-panel__title">Branch health / attention</h2>
+        <% if (!(analytics.branchHealth || []).length) { %>
+        <p class="church-branch-empty">No branch health data for this period.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Report</th>
+                <th>Pending members</th>
+                <th>Open requests</th>
+                <th>Ministry follow-up</th>
+                <th>Last attendance</th>
+                <th>Giving status</th>
+                <th>Health</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% analytics.branchHealth.forEach(function (row) { %>
+              <tr>
+                <td><strong><%= row.branch_name %></strong></td>
+                <td><%= reportStatusLabel(row.reportStatus === 'missing' ? 'missing' : row.reportStatus) %></td>
+                <td><%= row.pendingMembers || 0 %></td>
+                <td><%= row.openRequests || 0 %></td>
+                <td><%= row.ministryFollowUpCount || 0 %></td>
+                <td><%= row.latestAttendanceDate ? new Date(row.latestAttendanceDate).toLocaleDateString('en-GB') : '—' %></td>
+                <td><%= givingStatusLabel(row.givingStatus) %></td>
+                <td><span class="church-status-chip church-status-chip--<%= healthBadgeClass(row.healthLabel) %>"><%= row.healthLabel %></span></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/hq/branches/<%= row.branch_id %>?period_month=<%= periodMonth %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/hq_shell_end') %>

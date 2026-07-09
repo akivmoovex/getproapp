@@ -1,0 +1,43 @@
+<%- include('../partials/public_shell_start') %>
+    <section class="church-section church-section--page">
+      <div class="church-section__inner">
+        <h1 class="church-section__title">Contact Us</h1>
+        <p class="church-section__subtitle">We would love to hear from you.</p>
+        <div class="church-grid church-grid--events">
+          <% if (contactPhone) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">Phone</h2>
+            <p class="church-card__body"><a href="tel:<%= contactPhone %>"><%= contactPhone %></a></p>
+          </article>
+          <% } %>
+          <% if (contactEmail) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">Email</h2>
+            <p class="church-card__body"><a href="mailto:<%= contactEmail %>"><%= contactEmail %></a></p>
+          </article>
+          <% } %>
+          <% if (officeHours) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">Office hours</h2>
+            <p class="church-card__body church-card__body--pre"><%= officeHours %></p>
+          </article>
+          <% } %>
+          <% if (address) { %>
+          <article class="church-card">
+            <h2 class="church-card__title">Address</h2>
+            <p class="church-card__body"><%= address %></p>
+          </article>
+          <% } %>
+        </div>
+        <% if (mapEmbedPlaceholder) { %>
+        <div class="church-public-block">
+          <h2 class="church-public-block__title">Map</h2>
+          <p class="church-public-block__body"><%= mapEmbedPlaceholder %></p>
+        </div>
+        <% } %>
+        <% if (!contactPhone && !contactEmail && !address) { %>
+        <p class="church-section__subtitle">Contact details will be posted soon.</p>
+        <% } %>
+      </div>
+    </section>
+<%- include('../partials/public_shell_end') %>

@@ -1,0 +1,27 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/departments">&larr; Back to departments</a>
+          <h1 class="church-branch-topbar__title"><%= department.name %></h1>
+          <p class="church-branch-topbar__subtitle"><%= departmentStatusLabel(department.status) %></p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <section class="church-branch-panel">
+        <p><%= department.purpose || 'No purpose provided.' %></p>
+        <dl class="church-branch-dl">
+          <div><dt>Leader</dt><dd><%= department.leader_name || '—' %><% if (department.leader_phone) { %> · <%= department.leader_phone %><% } %></dd></div>
+        </dl>
+      </section>
+      <section class="church-branch-panel">
+        <div class="church-hq-review-actions">
+          <a class="church-btn church-btn--outline" href="/branch/departments/<%= department.id %>/edit">Edit</a>
+          <% if (department.status === 'archived') { %>
+          <form method="post" action="/branch/departments/<%= department.id %>/activate"><button class="church-btn church-btn--primary" type="submit">Activate</button></form>
+          <% } else { %>
+          <form method="post" action="/branch/departments/<%= department.id %>/archive"><button class="church-btn church-btn--outline" type="submit">Archive</button></form>
+          <% } %>
+        </div>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

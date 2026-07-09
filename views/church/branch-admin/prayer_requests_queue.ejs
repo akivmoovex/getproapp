@@ -1,0 +1,45 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Prayer requests</h1>
+          <p class="church-branch-topbar__subtitle">Review and close member prayer requests</p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <section class="church-branch-panel">
+        <% if ((requests || []).length === 0) { %>
+        <p class="church-branch-empty">No prayer requests yet.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Topic</th>
+                <th>Urgency</th>
+                <th>Privacy</th>
+                <th>Member</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% requests.forEach(function (r) { %>
+              <tr>
+                <td><%= r.prayer_topic %></td>
+                <td><%= r.urgency %></td>
+                <td><span class="church-status-chip"><%= privacyLevelLabel(r.privacy_level) %></span></td>
+                <td><%= r.member_display_name %></td>
+                <td><%= new Date(r.created_at).toLocaleDateString('en-GB') %></td>
+                <td><span class="church-status-chip church-status-chip--<%= r.status === 'closed' ? 'verified' : 'pending' %>"><%= prayerStatusLabel(r.status) %></span></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/prayer-requests/<%= r.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

@@ -1,0 +1,23 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <h1 class="church-member-header__title">Announcements</h1>
+        <p class="church-member-header__subtitle"><%= churchName %></p>
+      </header>
+      <section class="church-member-panel">
+        <% if ((announcements || []).length === 0) { %>
+        <p class="church-member-empty">No announcements yet. Your church leadership will post updates here.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% announcements.forEach(function (a) { %>
+          <li class="church-member-list__item">
+            <strong><%= a.title %></strong>
+            <% if (a.source === 'hq') { %><span class="church-status-chip">HQ</span><% } %>
+            <% if (a.category) { %><span class="church-status-chip"><%= a.category %></span><% } %>
+            <p><%= a.body %></p>
+            <span class="church-member-list__meta"><%= a.publish_at ? new Date(a.publish_at).toLocaleDateString('en-GB') : '' %></span>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+<%- include('../partials/member_shell_end') %>

@@ -1,0 +1,38 @@
+<%- include('../partials/public_shell_start') %>
+    <section class="church-section church-section--page">
+      <div class="church-section__inner">
+        <h1 class="church-section__title">Leadership</h1>
+        <p class="church-section__subtitle">Meet the leaders serving <%= churchName %>.</p>
+        <div class="church-grid church-grid--events">
+          <% if (leadership.pastor && leadership.pastor.name) { %>
+          <article class="church-card">
+            <h2 class="church-card__title"><%= leadership.pastor.name %></h2>
+            <p class="church-card__body church-card__body--muted"><%= leadership.pastor.title || 'Pastor' %></p>
+            <% if (leadership.pastor.bio) { %>
+            <p class="church-card__body"><%= leadership.pastor.bio %></p>
+            <% } %>
+          </article>
+          <% } %>
+          <% if (leadership.assistant_pastor && leadership.assistant_pastor.name) { %>
+          <article class="church-card">
+            <h2 class="church-card__title"><%= leadership.assistant_pastor.name %></h2>
+            <p class="church-card__body church-card__body--muted">Assistant Pastor</p>
+          </article>
+          <% } %>
+        </div>
+        <% if (leadership.elders && leadership.elders.length > 0) { %>
+        <div class="church-public-block">
+          <h2 class="church-public-block__title">Elders</h2>
+          <ul class="church-public-list">
+            <% leadership.elders.forEach(function (name) { %>
+            <li><%= name %></li>
+            <% }); %>
+          </ul>
+        </div>
+        <% } %>
+        <% if (!(leadership.pastor && leadership.pastor.name) && !(leadership.elders && leadership.elders.length)) { %>
+        <p class="church-section__subtitle">Leadership information will be posted soon.</p>
+        <% } %>
+      </div>
+    </section>
+<%- include('../partials/public_shell_end') %>

@@ -1,0 +1,47 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/ministries/<%= ministry.id %>">&larr; Back to ministry</a>
+          <h1 class="church-branch-topbar__title"><%= ministry.name %> — Activity</h1>
+        </div>
+      </header>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Activity notes</h2>
+        <% if ((notes || []).length === 0) { %>
+        <p class="church-branch-empty">No submitted activity notes for this ministry.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% notes.forEach(function (n) { %>
+          <li class="church-member-list__item">
+            <strong><%= n.period_month %> — <%= n.title %></strong>
+            <p><%= reviewStatusLabel(n.review_status) %> · <%= n.leader_name || 'Leader' %></p>
+            <a class="church-member-link" href="/branch/ministry-activity/<%= n.id %>">View</a>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Ministry attendance</h2>
+        <% if ((records || []).length === 0) { %>
+        <p class="church-branch-empty">No ministry attendance records yet.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Date</th><th>Meeting</th><th>Total</th><th>Created by</th><th></th></tr></thead>
+            <tbody>
+              <% records.forEach(function (r) { %>
+              <tr>
+                <td><%= r.service_date_display %></td>
+                <td><%= r.service_name %></td>
+                <td><%= r.total_attendance %></td>
+                <td><%= r.created_by_display || '—' %></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/attendance/<%= r.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

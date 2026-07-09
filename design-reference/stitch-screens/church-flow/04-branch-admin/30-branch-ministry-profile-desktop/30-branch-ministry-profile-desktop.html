@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Worship Ministry Profile - Kafue Baptist Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "outline": "#787586",
+                        "surface-container-high": "#dfeaef",
+                        "primary": "#5341cd",
+                        "tertiary": "#57595b",
+                        "on-surface-variant": "#474554",
+                        "tertiary-container": "#707273",
+                        "primary-fixed": "#e4dfff",
+                        "on-surface": "#131d21",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#e4f0f4",
+                        "tertiary-fixed": "#e1e3e4",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-fixed": "#191c1d",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#5d6466",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "background": "#f1fbff",
+                        "on-background": "#131d21",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "secondary-fixed": "#dde4e6",
+                        "inverse-primary": "#c6bfff",
+                        "surface-variant": "#d9e4e9",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-container": "#faf6ff",
+                        "on-secondary-fixed": "#161d1f",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d1dce0",
+                        "surface": "#f1fbff",
+                        "on-primary-fixed": "#160066",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "inverse-surface": "#283236",
+                        "primary-container": "#6c5ce7",
+                        "outline-variant": "#c8c4d7",
+                        "surface-bright": "#f1fbff",
+                        "surface-tint": "#5847d2",
+                        "secondary": "#586062",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#e7f3f7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "xl": "32px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "margin-desktop": "32px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-auto-rows: minmax(100px, auto);
+            gap: 24px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex">
+<!-- Shared SideNavBar Component -->
+<aside class="w-[280px] h-screen sticky top-0 left-0 flex flex-col py-base gap-sm bg-inverse-surface dark:bg-surface-container-lowest shadow-sm z-50 shrink-0">
+<div class="px-gutter mb-lg">
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed dark:text-primary">Kafue Baptist Church</h1>
+<p class="font-body-md text-body-md text-surface-variant opacity-80">Branch Admin HQ</p>
+</div>
+<nav class="flex-1 flex flex-col gap-xs">
+<!-- Active Item: Ministries -->
+<a class="flex items-center gap-md py-base text-primary-fixed dark:text-primary font-bold border-l-4 border-primary-fixed dark:border-primary pl-4 hover:bg-primary/10 transition-colors active:scale-[0.98] duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center gap-md py-base text-surface-variant dark:text-outline pl-5 hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-label-lg text-label-lg">Departments</span>
+</a>
+<a class="flex items-center gap-md py-base text-surface-variant dark:text-outline pl-5 hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">event</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<a class="flex items-center gap-md py-base text-surface-variant dark:text-outline pl-5 hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">assignment_ind</span>
+<span class="font-label-lg text-label-lg">Duty Roster</span>
+</a>
+<a class="flex items-center gap-md py-base text-surface-variant dark:text-outline pl-5 hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="font-label-lg text-label-lg">Announcements</span>
+</a>
+<a class="flex items-center gap-md py-base text-surface-variant dark:text-outline pl-5 hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">web</span>
+<span class="font-label-lg text-label-lg">Website Editor</span>
+</a>
+<a class="flex items-center gap-md py-base text-surface-variant dark:text-outline pl-5 mt-auto hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<div class="px-gutter pt-lg mt-base border-t border-outline/20 flex items-center gap-md">
+<img class="w-10 h-10 rounded-full bg-surface-container" data-alt="A professional headshot of a church branch administrator, with a warm and approachable expression, set against a clean, modern office background. The lighting is soft and natural, emphasizing institutional trust and community leadership. The overall aesthetic is clean and corporate, consistent with the church's modern branding." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCw8zyf66eOnCUWk5usurJadwvSIe7pIixZNkMS_1P1QE2_i7NjyBppvxkmDEZnlfEg2xCcmLxaTpW45Vfe7GONP0lw7Y-G_HkGig8BCuHslY5Qkg_vhl1pS_wpz--PMSm_7Tdqg8ClYINlZVg1k1axHsH4vzw6bI9yL_mMp03BM60sob0y4f_6GZE45Hi8ASfvKQ2psgDupxxU-RLHW4oob-WlDAH4h2MjoMydZDhmC6jqtO_wUbgg3A"/>
+<div>
+<p class="font-label-lg text-label-lg text-primary-fixed">Admin User</p>
+<p class="font-body-md text-xs text-surface-variant">View Profile</p>
+</div>
+</div>
+</aside>
+<div class="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+<!-- Shared TopNavBar Component -->
+<header class="w-full h-16 sticky top-0 z-50 bg-surface dark:bg-background border-b border-outline-variant dark:border-outline flex justify-between items-center px-gutter shrink-0">
+<div class="flex items-center gap-lg">
+<h2 class="font-headline-md text-headline-md font-black text-on-surface dark:text-on-background">GetPro Church Operations</h2>
+<div class="hidden md:flex relative items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline">search</span>
+<input class="bg-surface-container border-none rounded-full py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary w-64" placeholder="Search operations..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-2 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all text-on-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all text-on-surface-variant">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant mx-2"></div>
+<img class="w-8 h-8 rounded-full border border-primary/20" data-alt="A clear, high-resolution circular avatar of a female church administrator with a kind smile, professional attire, and a warm, inviting presence. The background is a soft-focus interior of a modern church library, suggesting knowledge and compassion. The color palette is composed of soft blues and warm wood tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjuRDSk4vtOQY7EKiIPgUaNnENRdkKcXrimkmSBGm3TFaccw158BARtG1gkJ6zXIm5OpT9NGs2k4Okq7kzN94t_CqxTJVvr80G9HhdIMe4tTSVQtLCDvqjNFxdMGZusejw3tfGX2loc-BgfmsV7Rb3ZQy-VgZgIc8O9pDVvUVLGCMrG3hkkjwwG811W5lUHFzLDoysBkOJhW9Q3ti50rKSQdwbW_O-gh84EgU12_wKv7_fLbndxqS5Ug"/>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="p-gutter max-w-7xl mx-auto w-full">
+<!-- Page Header / Hero -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-lg mb-xl">
+<div>
+<nav class="flex items-center gap-xs mb-sm text-outline">
+<span class="font-label-lg text-label-lg">Ministries</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="font-label-lg text-label-lg text-primary">Worship Ministry</span>
+</nav>
+<div class="flex items-center gap-md">
+<div class="p-4 bg-primary-fixed text-primary rounded-2xl shadow-sm">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">music_note</span>
+</div>
+<div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">Worship Ministry</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Central Branch • Music &amp; Production Division</p>
+</div>
+</div>
+</div>
+<div class="flex flex-wrap gap-sm">
+<button class="px-lg py-sm bg-surface-container-highest text-on-surface-variant rounded-full font-label-lg text-label-lg flex items-center gap-sm hover:bg-surface-variant transition-all">
+<span class="material-symbols-outlined text-md">edit</span>
+                        Edit Profile
+                    </button>
+<button class="px-lg py-sm bg-surface-container-highest text-on-surface-variant rounded-full font-label-lg text-label-lg flex items-center gap-sm hover:bg-surface-variant transition-all">
+<span class="material-symbols-outlined text-md">person_add</span>
+                        Assign Role
+                    </button>
+<button class="px-xl py-sm bg-primary text-on-primary rounded-full font-label-lg text-label-lg flex items-center gap-sm hover:opacity-90 shadow-md transition-all">
+<span class="material-symbols-outlined text-md">mail</span>
+                        Message Ministry
+                    </button>
+</div>
+</div>
+<!-- Bento Content Layout -->
+<div class="bento-grid">
+<!-- Overview Card -->
+<section class="col-span-12 md:col-span-8 bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm flex flex-col gap-lg">
+<div class="flex items-center justify-between">
+<h4 class="font-title-lg text-title-lg flex items-center gap-sm text-on-surface">
+<span class="material-symbols-outlined text-primary">info</span>
+                            Overview
+                        </h4>
+<span class="bg-primary/10 text-primary px-sm py-xs rounded-full font-label-md text-label-md">Status: Active</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-xl">
+<div>
+<h5 class="font-label-lg text-label-lg text-primary uppercase tracking-wider mb-xs">Mission</h5>
+<p class="font-body-lg text-body-lg text-on-surface-variant">To lead the congregation into a transformative encounter with God through excellence in music, prayer, and authentic worship expression.</p>
+</div>
+<div>
+<h5 class="font-label-lg text-label-lg text-primary uppercase tracking-wider mb-xs">Vision</h5>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Creating an atmosphere where every soul feels the presence of the Holy Spirit and where musical talent is nurtured for Kingdom service.</p>
+</div>
+</div>
+</section>
+<!-- Leader Details Card -->
+<section class="col-span-12 md:col-span-4 bg-primary-container text-on-primary-container p-xl rounded-xl shadow-md relative overflow-hidden flex flex-col justify-between">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-on-primary-container/10 rounded-full"></div>
+<div>
+<h4 class="font-title-lg text-title-lg mb-lg">Ministry Leader</h4>
+<div class="flex items-center gap-md">
+<img class="w-16 h-16 rounded-full border-2 border-on-primary-container/30 object-cover" data-alt="A professional and warm portrait of Rev. Martha Phiri, an African woman in her late 40s with a gentle and wise gaze. She is wearing elegant, modern pastoral attire. The portrait is set in a sunlit church interior with soft bokeh backgrounds. The photography is sharp, professional, and captures a sense of spiritual leadership and grace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0AL_oJ7Wu-x1xNjYq1UJrGkryW1USfniAYZOjd9mtSDpN3U4-n9S8RiIpQbnHVVko2v6H_FVpRojTLxcyR5AsvfFBCNjfLFeSRHZ1vN977cgCF1NxHeAf_4A2rZCwJNianKKCskAhqJyN12yyF6_FrJtrfKU6fWeKFT8QuCKyQeMIWug4URuwl9-HP_pKHV4glrwJZL-oHKhaodYQZiAMwmgzf2w12pp0TXTjX7ir8ntM5aa6so_JCQ"/>
+<div>
+<h5 class="font-headline-md text-title-lg font-bold">Rev. Martha Phiri</h5>
+<p class="font-body-md opacity-90">Lead Worship Pastor</p>
+</div>
+</div>
+</div>
+<div class="mt-xl flex flex-col gap-sm">
+<div class="flex items-center gap-sm text-body-md">
+<span class="material-symbols-outlined text-sm">mail</span>
+                            m.phiri@kafuebaptist.org
+                        </div>
+<div class="flex items-center gap-sm text-body-md">
+<span class="material-symbols-outlined text-sm">call</span>
+                            +260 977 123 456
+                        </div>
+</div>
+</section>
+<!-- Meeting Schedule -->
+<section class="col-span-12 md:col-span-4 bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">
+<h4 class="font-title-lg text-title-lg flex items-center gap-sm text-on-surface mb-lg">
+<span class="material-symbols-outlined text-primary">schedule</span>
+                        Meeting Schedule
+                    </h4>
+<div class="flex flex-col gap-md">
+<div class="bg-surface-container-low p-md rounded-lg flex items-center justify-between">
+<div>
+<p class="font-label-lg text-label-lg text-primary">Rehearsals</p>
+<p class="font-headline-md text-on-surface">Thursdays</p>
+</div>
+<div class="text-right">
+<p class="font-title-lg text-primary font-bold">18:00</p>
+<p class="font-body-md text-outline">Main Sanctuary</p>
+</div>
+</div>
+<p class="font-body-md text-on-surface-variant px-xs italic">Next session scheduled for June 15th, 2024.</p>
+</div>
+</section>
+<!-- Member Roster -->
+<section class="col-span-12 md:col-span-8 bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+<div class="p-xl flex items-center justify-between border-b border-outline-variant">
+<h4 class="font-title-lg text-title-lg flex items-center gap-sm text-on-surface">
+<span class="material-symbols-outlined text-primary">group</span>
+                            Member Roster
+                            <span class="ml-base text-body-md bg-secondary-container text-on-secondary-container px-base py-xs rounded-full">24 Total</span>
+</h4>
+<button class="text-primary font-label-lg text-label-lg hover:underline">View All Members</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-xl py-md font-label-lg text-label-lg text-on-surface-variant uppercase">Member</th>
+<th class="px-xl py-md font-label-lg text-label-lg text-on-surface-variant uppercase">Role</th>
+<th class="px-xl py-md font-label-lg text-label-lg text-on-surface-variant uppercase">Status</th>
+<th class="px-xl py-md"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-xl py-md">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center font-bold text-xs text-primary">JD</div>
+<span class="font-body-lg font-medium">John Doe</span>
+</div>
+</td>
+<td class="px-xl py-md text-body-md text-on-surface-variant">Lead Vocalist</td>
+<td class="px-xl py-md">
+<span class="bg-green-100 text-green-700 px-sm py-xs rounded-full text-xs font-bold">ACTIVE</span>
+</td>
+<td class="px-xl py-md text-right">
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary">more_vert</span>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-xl py-md">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center font-bold text-xs text-primary">SM</div>
+<span class="font-body-lg font-medium">Sarah Mwansa</span>
+</div>
+</td>
+<td class="px-xl py-md text-body-md text-on-surface-variant">Keyboardist</td>
+<td class="px-xl py-md">
+<span class="bg-green-100 text-green-700 px-sm py-xs rounded-full text-xs font-bold">ACTIVE</span>
+</td>
+<td class="px-xl py-md text-right">
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary">more_vert</span>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-xl py-md">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center font-bold text-xs text-primary">LK</div>
+<span class="font-body-lg font-medium">Luyando Katongo</span>
+</div>
+</td>
+<td class="px-xl py-md text-body-md text-on-surface-variant">Backing Vocals</td>
+<td class="px-xl py-md">
+<span class="bg-amber-100 text-amber-700 px-sm py-xs rounded-full text-xs font-bold">ON LEAVE</span>
+</td>
+<td class="px-xl py-md text-right">
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary">more_vert</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Recent Activity & Reports -->
+<section class="col-span-12 md:col-span-4 bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm flex flex-col gap-lg">
+<h4 class="font-title-lg text-title-lg flex items-center gap-sm text-on-surface">
+<span class="material-symbols-outlined text-primary">history</span>
+                        Recent Activity
+                    </h4>
+<div class="flex flex-col gap-lg">
+<div class="flex gap-md">
+<div class="w-[2px] bg-primary-fixed relative">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary ring-4 ring-primary-fixed"></div>
+</div>
+<div class="pb-base">
+<p class="font-body-md text-on-surface"><span class="font-bold">Setlist updated</span> for Sunday Service</p>
+<p class="text-xs text-outline">2 hours ago</p>
+</div>
+</div>
+<div class="flex gap-md">
+<div class="w-[2px] bg-primary-fixed relative">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary/40"></div>
+</div>
+<div class="pb-base">
+<p class="font-body-md text-on-surface"><span class="font-bold">New member</span> John Doe joined</p>
+<p class="text-xs text-outline">Yesterday</p>
+</div>
+</div>
+<div class="flex gap-md">
+<div class="w-[2px] bg-primary-fixed relative">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary/40"></div>
+</div>
+<div class="pb-base">
+<p class="font-body-md text-on-surface"><span class="font-bold">Equipment Audit</span> completed</p>
+<p class="text-xs text-outline">3 days ago</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Reports Placeholder Section -->
+<section class="col-span-12 md:col-span-8 bg-surface-container-lowest p-xl rounded-xl border-2 border-dashed border-outline-variant flex flex-col items-center justify-center min-h-[300px] text-center gap-md">
+<div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-3xl">bar_chart</span>
+</div>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface">Ministry Reports</h4>
+<p class="font-body-md text-on-surface-variant max-w-sm mt-xs">Detailed analytics, attendance reports, and budget tracking will appear here as the quarter progresses.</p>
+</div>
+<button class="mt-md px-lg py-sm border border-primary text-primary rounded-full font-label-lg text-label-lg hover:bg-primary/5 transition-all">
+                        Generate Custom Report
+                    </button>
+</section>
+</div>
+</main>
+<!-- Footer / Feedback -->
+<footer class="p-xl text-center text-outline font-body-md mt-auto">
+            © 2024 Kafue Baptist Church • Powered by GetPro Church Operations
+        </footer>
+</div>
+<!-- Micro-interactions Script -->
+<script>
+        document.querySelectorAll('button, a').forEach(el => {
+            el.addEventListener('mousedown', () => {
+                el.style.transform = 'scale(0.97)';
+            });
+            el.addEventListener('mouseup', () => {
+                el.style.transform = 'scale(1)';
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body></html>

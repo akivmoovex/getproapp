@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= organization.name %> | Church | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: organization.name, activeNav: activeNav || 'church_platform_orgs' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title"><%= organization.name %></h1>
+            <p class="admin-dashboard__subtitle muted">Organization provisioning summary</p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/organizations/' + organization.id + '/edit', label: 'Edit organization' }) %>
+            <% if (typeof planSummary !== 'undefined' && planSummary && !planSummary.branchLimitReached) { %>
+              <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/branches/new', label: 'Add branch' }) %>
+            <% } else if (typeof planSummary !== 'undefined' && planSummary && planSummary.branchLimitReached) { %>
+              <span class="muted">Branch limit reached — <a href="/admin/church/organizations/<%= organization.id %>/plan">change plan</a> to add more.</span>
+            <% } %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/plan', label: 'Change plan' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations', label: 'All organizations' }) %>
+          </div>
+        </header>
+
+        <% if (typeof provisioned !== 'undefined' && provisioned) { %>
+          <div class="flash flash--info" role="status">
+            Church organization provisioned successfully. Temporary passwords were set as entered. Share them securely.
+          </div>
+        <% } %>
+
+        <% if (typeof statusNotice !== 'undefined' && statusNotice) { %>
+          <div class="flash flash--success" role="status"><%= statusNotice %></div>
+        <% } %>
+        <% if (typeof statusError !== 'undefined' && statusError) { %>
+          <div class="flash flash--error" role="alert"><%= statusError %></div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Organization status</h2>
+          <dl class="admin-dl">
+            <dt>Status</dt>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: organization.status }) %></dd>
+            <% if (organization.status_reason) { %>
+              <dt>Status reason</dt><dd><%= organization.status_reason %></dd>
+            <% } %>
+            <% if (organization.suspended_at) { %>
+              <dt>Suspended at</dt><dd><%= formatDate(organization.suspended_at) %></dd>
+            <% } %>
+            <% if (organization.archived_at) { %>
+              <dt>Archived at</dt><dd><%= formatDate(organization.archived_at) %></dd>
+            <% } %>
+          </dl>
+          <div class="admin-status-actions">
+            <% if (organization.status === 'active') { %>
+            <form class="admin-status-actions__form" method="post" action="/admin/church/organizations/<%= organization.id %>/suspend">
+              <h3>Suspend organization</h3>
+              <p class="muted">Blocks public, member, branch-admin, and leader access. HQ login remains available with a warning banner.</p>
+              <label class="input-field__label" for="org_suspend_reason">Reason (required)</label>
+              <textarea id="org_suspend_reason" name="status_reason" required minlength="3" maxlength="2000" placeholder="Explain why this organization is being suspended"></textarea>
+              <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Suspend organization' }) %>
+            </form>
+            <% } %>
+            <% if (organization.status === 'suspended') { %>
+            <form class="admin-status-actions__form" method="post" action="/admin/church/organizations/<%= organization.id %>/reactivate">
+              <h3>Reactivate organization</h3>
+              <label class="input-field__label" for="org_reactivate_reason">Note (optional)</label>
+              <textarea id="org_reactivate_reason" name="status_reason" maxlength="2000" placeholder="Optional note for audit trail"></textarea>
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Reactivate organization' }) %>
+            </form>
+            <form class="admin-status-actions__form" method="post" action="/admin/church/organizations/<%= organization.id %>/archive">
+              <h3>Archive organization</h3>
+              <p class="muted">Organization must be suspended before archiving. Access remains blocked.</p>
+              <label class="input-field__label" for="org_archive_reason">Reason (required)</label>
+              <textarea id="org_archive_reason" name="status_reason" required minlength="3" maxlength="2000" placeholder="Explain why this organization is being archived"></textarea>
+              <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Archive organization' }) %>
+            </form>
+            <% } %>
+            <% if (organization.status === 'archived') { %>
+              <p class="muted">Archived organizations cannot be reactivated in this release.</p>
+            <% } %>
+          </div>
+        </section>
+
+        <% if (typeof planSummary !== 'undefined' && planSummary) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Plan &amp; usage</h2>
+          <dl class="admin-dl">
+            <dt>Plan</dt><dd><strong><%= planSummary.planDisplay.label %></strong> (<%= planSummary.planCode %>) · <%= planSummary.planStatus %></dd>
+            <dt>Branches</dt><dd><%= planSummary.branchesDisplay %></dd>
+            <dt>Verified members</dt><dd><%= planSummary.membersDisplay %></dd>
+            <dt>Storage</dt><dd><%= planSummary.storageDisplay %></dd>
+          </dl>
+          <% if ((planSummary.warnings || []).length > 0) { %>
+            <ul style="margin-top:0.75rem;">
+              <% planSummary.warnings.forEach(function (w) { %>
+                <li class="muted"><%= w.message %></li>
+              <% }); %>
+            </ul>
+          <% } %>
+          <p style="margin-top:0.75rem;">
+            <a href="/admin/church/organizations/<%= organization.id %>/plan">Manage plan</a>
+          </p>
+        </section>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Organization metadata</h2>
+          <dl class="admin-dl">
+            <dt>Organization slug</dt><dd><code><%= organization.slug %></code></dd>
+            <dt>Country</dt><dd><%= organization.country || '—' %></dd>
+            <dt>City</dt><dd><%= organization.city || '—' %></dd>
+            <dt>Created</dt><dd><%= formatDate(organization.created_at) %></dd>
+          </dl>
+          <p style="margin-top:0.75rem;">
+            <a href="/admin/church/organizations/<%= organization.id %>/edit">Edit organization metadata</a>
+          </p>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Primary contact</h2>
+          <dl class="admin-dl">
+            <dt>Name</dt><dd><%= organization.primary_contact_name || '—' %></dd>
+            <dt>Phone</dt><dd><%= organization.primary_contact_phone || '—' %></dd>
+            <dt>Email</dt><dd><%= organization.primary_contact_email || '—' %></dd>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <div class="admin-toolbar" style="margin-bottom:1rem;">
+            <h2 class="section-title section-title--flush" style="margin:0;flex:1;">HQ admins</h2>
+            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/organizations/' + organization.id + '/hq-admins', label: 'Manage HQ admins' }) %>
+          </div>
+          <dl class="admin-dl">
+            <dt>Active HQ admins</dt><dd><%= typeof activeHqAdminCount !== 'undefined' ? activeHqAdminCount : 0 %></dd>
+          </dl>
+          <% var primaryHq = typeof primaryHqAdmin !== 'undefined' && primaryHqAdmin ? primaryHqAdmin : null; %>
+          <% if (primaryHq) { %>
+            <p class="muted" style="margin-top:0.5rem;">Primary HQ admin summary:</p>
+            <dl class="admin-dl">
+              <dt>Name</dt><dd><%= primaryHq.full_name %></dd>
+              <dt>Email</dt><dd><%= primaryHq.email || '—' %></dd>
+              <dt>Phone</dt><dd><%= primaryHq.phone || '—' %></dd>
+              <dt>Status</dt><dd><%- include('../../partials/admin/church_status_badge', { status: primaryHq.status }) %></dd>
+            </dl>
+          <% } else { %>
+            <p class="muted">No HQ admins.</p>
+          <% } %>
+          <% if (typeof hqLoginHostSlug !== 'undefined' && hqLoginHostSlug) { %>
+            <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">Example HQ login: <code>https://<%= churchPublicHost(hqLoginHostSlug) %>/hq/login</code></p>
+          <% } else { %>
+            <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">HQ login path on branch host: <code>/hq/login</code> (requires at least one branch)</p>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <div class="admin-toolbar" style="margin-bottom:1rem;">
+            <h2 class="section-title section-title--flush" style="margin:0;flex:1;">Branches</h2>
+            <% if (typeof planSummary !== 'undefined' && planSummary && !planSummary.branchLimitReached) { %>
+              <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/organizations/' + organization.id + '/branches/new', label: 'Add branch' }) %>
+            <% } %>
+          </div>
+          <p class="muted" style="margin-bottom:1rem;font-size:0.9rem;">
+            Branch public URLs are based on branch host slugs.
+          </p>
+          <% if (!branches || branches.length === 0) { %>
+            <p class="muted">No branches.</p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>Branch</th><th>Host slug</th><th>Public URL</th><th>Location</th><th>Admin</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                  <% branches.forEach(function (b) { %>
+                    <% var bHost = b.host_slug || b.slug; %>
+                    <tr>
+                      <td><%= b.name %></td>
+                      <td class="muted"><%= bHost %></td>
+                      <td><code><%= churchPublicHost(bHost) %></code></td>
+                      <td><%= [b.city, b.country].filter(Boolean).join(', ') || '—' %></td>
+                      <td><%= b.branch_admin_name || '—' %></td>
+                      <td><%- include('../../partials/admin/church_status_badge', { status: b.status }) %></td>
+                      <td>
+                        <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + b.id, label: 'View' }) %>
+                        <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/branches/' + b.id + '/edit', label: 'Edit' }) %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <%- include('partials/support_notes_panel', {
+          supportNotes: typeof supportNotes !== 'undefined' ? supportNotes : [],
+          supportNoteEntityType: typeof supportNoteEntityType !== 'undefined' ? supportNoteEntityType : 'organization',
+          supportNoteEntityId: typeof supportNoteEntityId !== 'undefined' ? supportNoteEntityId : organization.id,
+          supportNoteReturnTo: typeof supportNoteReturnTo !== 'undefined' ? supportNoteReturnTo : ('/admin/church/organizations/' + organization.id),
+          supportNoteNotice: typeof supportNoteNotice !== 'undefined' ? supportNoteNotice : null,
+          supportNoteError: typeof supportNoteError !== 'undefined' ? supportNoteError : null,
+          formatDate: formatDate
+        }) %>
+      </div>
+    </main>
+  </body>
+</html>

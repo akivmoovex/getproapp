@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Giving Settings | Kafue Baptist Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#dde4e6",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#707273",
+                    "surface-container-low": "#eaf5fa",
+                    "outline": "#787586",
+                    "on-secondary-container": "#5d6466",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#e4dfff",
+                    "inverse-surface": "#283236",
+                    "on-primary-fixed": "#160066",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#d9e4e9",
+                    "secondary-container": "#dae1e3",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "secondary": "#586062",
+                    "surface-dim": "#d1dce0",
+                    "surface-bright": "#f1fbff",
+                    "surface-container-high": "#dfeaef",
+                    "surface-tint": "#5847d2",
+                    "on-surface-variant": "#474554",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-secondary-fixed": "#161d1f",
+                    "on-primary-container": "#faf6ff",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "outline-variant": "#c8c4d7",
+                    "surface-container": "#e4f0f4",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-error": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "inverse-on-surface": "#e7f3f7",
+                    "background": "#f1fbff",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f1fbff",
+                    "primary": "#5341cd",
+                    "on-surface": "#131d21",
+                    "on-background": "#131d21",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "primary-container": "#6c5ce7",
+                    "tertiary": "#57595b",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "xl": "32px",
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "title-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .form-input-focus:focus-within {
+            border-color: #5341cd;
+            box-shadow: 0 0 0 2px rgba(83, 65, 205, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- Top AppBar (Mobile Variant) -->
+<header class="sticky top-0 z-40 flex justify-between items-center w-full px-margin-mobile py-base bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<button class="p-2 -ml-2 rounded-full hover:bg-surface-variant/20 transition-colors">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-title-lg text-title-lg font-black text-primary">Giving Settings</h1>
+</div>
+<div class="flex gap-2">
+<button class="p-2 rounded-full hover:bg-surface-variant/20 transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-variant/20 transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">account_circle</span>
+</button>
+</div>
+</header>
+<main class="px-margin-mobile pt-lg max-w-lg mx-auto">
+<!-- Branch Identity Card -->
+<div class="mb-lg p-md bg-primary-container text-on-primary-container rounded-xl flex items-center gap-4 shadow-sm">
+<div class="h-12 w-12 rounded-full bg-on-primary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">church</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg opacity-80 uppercase tracking-wider">Branch Admin</p>
+<h2 class="font-headline-md text-headline-md">Kafue Baptist Church</h2>
+</div>
+</div>
+<!-- Settings Form -->
+<form class="space-y-xl">
+<!-- Section: Bank Details -->
+<section class="space-y-md">
+<div class="flex items-center gap-2 border-b border-outline-variant pb-2">
+<span class="material-symbols-outlined text-primary">account_balance</span>
+<h3 class="font-title-md text-title-md text-on-surface">Bank Details</h3>
+</div>
+<div class="space-y-lg">
+<div class="relative group">
+<label class="absolute -top-2 left-3 px-1 bg-surface text-label-lg font-label-lg text-primary z-10">Bank Name</label>
+<input class="w-full h-14 px-4 pt-2 bg-transparent border border-outline-variant rounded-lg font-body-lg text-body-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" type="text" value="Zambia National Commercial Bank (ZANACO)"/>
+</div>
+<div class="relative group">
+<label class="absolute -top-2 left-3 px-1 bg-surface text-label-lg font-label-lg text-primary z-10">Account Holder</label>
+<input class="w-full h-14 px-4 pt-2 bg-transparent border border-outline-variant rounded-lg font-body-lg text-body-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" type="text" value="Kafue Baptist Church Main Account"/>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<div class="relative group">
+<label class="absolute -top-2 left-3 px-1 bg-surface text-label-lg font-label-lg text-primary z-10">Account Number</label>
+<input class="w-full h-14 px-4 pt-2 bg-transparent border border-outline-variant rounded-lg font-body-lg text-body-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" type="number" value="58291039485"/>
+</div>
+<div class="relative group">
+<label class="absolute -top-2 left-3 px-1 bg-surface text-label-lg font-label-lg text-primary z-10">Branch Code</label>
+<input class="w-full h-14 px-4 pt-2 bg-transparent border border-outline-variant rounded-lg font-body-lg text-body-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" type="text" value="00124"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Mobile Money -->
+<section class="space-y-md">
+<div class="flex items-center gap-2 border-b border-outline-variant pb-2">
+<span class="material-symbols-outlined text-primary">smartphone</span>
+<h3 class="font-title-md text-title-md text-on-surface">Mobile Money</h3>
+</div>
+<div class="space-y-lg">
+<div class="flex gap-md">
+<div class="flex-1 p-md bg-surface-container rounded-xl border-2 border-primary relative">
+<span class="material-symbols-outlined absolute top-2 right-2 text-primary">check_circle</span>
+<div class="h-10 w-10 mb-2 rounded-lg bg-white p-1">
+<img class="w-full h-full object-contain" data-alt="A clean vector logo of MTN mobile money provider, featuring corporate branding colors in a professional, minimalist style on a white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmWBXBNNV4n4rSB58eyqaakJ-SecGv6k84zpkIq0iZHC8xS4SdVz3X93DsU3ZFBzRES9nCFO4lUU40USx6kumWWbPMiiP8HODEh-lET44LvDnSWk7NsruIYQbJw6XT1wLicZLP31MctqVx0CkKdDk7wxvjnPhvhF9e7nXsaTs6sFya0P81V23wYvsmEvQN8uQ0rjnbeLdbIg9Zyxqc6WflsQUiL75Pv4AS479c7xz-ieF7H-5gOMbpng"/>
+</div>
+<p class="font-label-lg text-label-lg">MTN Mobile Money</p>
+</div>
+<div class="flex-1 p-md bg-surface-container rounded-xl border border-outline-variant grayscale opacity-60">
+<div class="h-10 w-10 mb-2 rounded-lg bg-white p-1">
+<img class="w-full h-full object-contain" data-alt="A professional vector logo for Airtel Money services, showcasing vibrant brand identity colors for a leading telecommunications company in Zambia." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_rW9ICCpNB9vkL1GDctA61U1WLlnwO6fnSOWB0LP1PpYYu4_bkCI93qNIcKWoAH80opp_tGF6vHRNOmy_LQpkYFq-u1p498H3rf33czfTy0iIJNP4cCZtp993LMSa1tYXHtaPaf07ISXepA9WvAGGE1ckibuYl1wSuoHR5QP3cAi0eVIE6o0TzbBqVmTAOByhNSWQmfsnUodskSJUlo9Va67BH2-jDT9JVKaznntINpmXh05e4t5z8A"/>
+</div>
+<p class="font-label-lg text-label-lg">Airtel Money</p>
+</div>
+</div>
+<div class="relative group">
+<label class="absolute -top-2 left-3 px-1 bg-surface text-label-lg font-label-lg text-primary z-10">Registered Number</label>
+<input class="w-full h-14 px-4 pt-2 bg-transparent border border-outline-variant rounded-lg font-body-lg text-body-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" type="tel" value="+260 96 1234567"/>
+</div>
+<div class="relative group">
+<label class="absolute -top-2 left-3 px-1 bg-surface text-label-lg font-label-lg text-primary z-10">Merchant ID / Business Code</label>
+<input class="w-full h-14 px-4 pt-2 bg-transparent border border-outline-variant rounded-lg font-body-lg text-body-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" type="text" value="889911"/>
+</div>
+</div>
+</section>
+<!-- Section: Categories -->
+<section class="space-y-md">
+<div class="flex items-center justify-between border-b border-outline-variant pb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">category</span>
+<h3 class="font-title-md text-title-md text-on-surface">Giving Categories</h3>
+</div>
+<button class="text-primary font-label-lg text-label-lg flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-sm">add</span> ADD NEW
+                    </button>
+</div>
+<div class="space-y-sm">
+<div class="flex items-center justify-between p-md bg-surface-container-low rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-3">
+<div class="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-md">volunteer_activism</span>
+</div>
+<span class="font-body-md text-body-md">Tithes & Offerings</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">drag_indicator</span>
+</div>
+<div class="flex items-center justify-between p-md bg-surface-container-low rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-3">
+<div class="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-md">foundation</span>
+</div>
+<span class="font-body-md text-body-md">Building Fund</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">drag_indicator</span>
+</div>
+<div class="flex items-center justify-between p-md bg-surface-container-low rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-3">
+<div class="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-md">school</span>
+</div>
+<span class="font-body-md text-body-md">Youth Ministry</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">drag_indicator</span>
+</div>
+</div>
+</section>
+<!-- Action Buttons -->
+<div class="pt-lg flex flex-col gap-md">
+<button class="w-full h-14 bg-primary text-on-primary rounded-xl font-title-md text-title-md shadow-md active:scale-[0.98] transition-transform" type="submit">
+                    Save Changes
+                </button>
+<button class="w-full h-12 bg-transparent text-error border border-error rounded-xl font-label-lg text-label-lg active:opacity-70 transition-opacity" type="button">
+                    Discard Changes
+                </button>
+</div>
+</form>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container-highest shadow-lg rounded-t-xl md:hidden">
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:bg-secondary-container/50 scale-95 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:bg-secondary-container/50 scale-95 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 scale-95 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Giving</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:bg-secondary-container/50 scale-95 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">menu</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+<!-- Micro-interaction Script -->
+<script>
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('form-input-focus');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('form-input-focus');
+            });
+        });
+
+        // Simple feedback for the save button
+        document.querySelector('form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.innerText = "Updating...";
+            btn.disabled = true;
+            setTimeout(() => {
+                btn.innerText = "Settings Saved!";
+                btn.classList.replace('bg-primary', 'bg-green-600');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.replace('bg-green-600', 'bg-primary');
+                    btn.disabled = false;
+                }, 2000);
+            }, 1000);
+        });
+    </script>
+</body></html>

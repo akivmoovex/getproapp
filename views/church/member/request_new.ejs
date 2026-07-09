@@ -1,0 +1,34 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <a class="church-branch-back" href="/member/requests">&larr; Back to requests</a>
+        <h1 class="church-member-header__title">Submit a request</h1>
+        <p class="church-member-header__subtitle">Baptism, volunteer registration, and more</p>
+      </header>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <section class="church-member-panel">
+        <form class="church-form" method="post" action="/member/requests">
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="request_type">Request type</label>
+              <select class="church-input" id="request_type" name="request_type" required>
+                <option value="" disabled <%= !form.request_type ? 'selected' : '' %>>Select type</option>
+                <% requestTypes.forEach(function (t) { %>
+                <option value="<%= t %>" <%= form.request_type === t ? 'selected' : '' %>><%= t %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="subject">Subject</label>
+              <input class="church-input" id="subject" name="subject" type="text" required value="<%= form.subject || '' %>"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="description">Description</label>
+              <textarea class="church-input church-input--textarea" id="description" name="description" rows="5" required><%= form.description || '' %></textarea>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Submit request</button>
+        </form>
+      </section>
+<%- include('../partials/member_shell_end') %>

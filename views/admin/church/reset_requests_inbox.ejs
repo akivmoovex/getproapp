@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Password reset requests | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'Reset requests', activeNav: activeNav || 'church_platform_reset_requests' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <% var sm = typeof summary !== 'undefined' && summary ? summary : {}; %>
+        <% var res = typeof results !== 'undefined' && results ? results : { items: [], total: 0, page: 1, limit: 50, totalPages: 0 }; %>
+        <% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
+        <% var validationErrors = typeof validationErrors !== 'undefined' && validationErrors ? validationErrors : []; %>
+
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Password Reset Requests</h1>
+            <p class="admin-dashboard__subtitle muted">Unified support view across members, branch admins, and HQ admins</p>
+            <p class="muted" style="margin-top:0.35rem;">Member reset requests are handled by branch admins. Branch/HQ admin reset requests are handled by platform admins.</p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church', label: 'Church dashboard' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/security', label: 'Church Security' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branch-admin-password-reset-requests?status=submitted', label: 'Branch admin queue' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/hq-admin-password-reset-requests?status=submitted', label: 'HQ admin queue' }) %>
+          </div>
+        </header>
+
+        <% if (validationErrors.length > 0) { %>
+          <div class="flash flash--error" role="alert">
+            <% validationErrors.forEach(function (err) { %><p><%= err %></p><% }); %>
+          </div>
+        <% } %>
+
+        <section class="admin-dashboard__grid card card--mb-xl" style="padding:1.25rem;">
+          <div class="admin-stat admin-stat--pending-highlight">
+            <p class="admin-stat__label">Submitted (pending)</p>
+            <p class="admin-stat__value"><%= sm.submitted != null ? sm.submitted : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Reviewed</p>
+            <p class="admin-stat__value"><%= sm.reviewed != null ? sm.reviewed : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Completed</p>
+            <p class="admin-stat__value"><%= sm.reset_completed != null ? sm.reset_completed : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Rejected</p>
+            <p class="admin-stat__value"><%= sm.rejected != null ? sm.rejected : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Member pending</p>
+            <p class="admin-stat__value"><%= sm.member != null ? sm.member : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Branch admin pending</p>
+            <p class="admin-stat__value"><%= sm.branch_admin != null ? sm.branch_admin : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">HQ admin pending</p>
+            <p class="admin-stat__value"><%= sm.hq_admin != null ? sm.hq_admin : 0 %></p>
+          </div>
+        </section>
+
+        <form method="get" action="/admin/church/reset-requests" class="card card--mb-xl admin-filter-form" style="padding:1rem;">
+          <div class="input-field">
+            <label class="input-field__label" for="request_type">Request type</label>
+            <select id="request_type" class="input-field__control" name="request_type">
+              <% (requestTypes || ['all']).forEach(function (t) { %>
+                <option value="<%= t %>" <%= (f.request_type || 'all') === t ? 'selected' : '' %>><%= t === 'all' ? 'All' : (typeof getResetRequestTypeLabel === 'function' ? getResetRequestTypeLabel(t) : requestTypeLabel(t)) %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="status">Status</label>
+            <select id="status" class="input-field__control" name="status">
+              <% (resetStatuses || ['all']).forEach(function (s) { %>
+                <option value="<%= s %>" <%= (f.status || 'all') === s ? 'selected' : '' %>><%= s === 'all' ? 'All' : (typeof getResetRequestStatusLabel === 'function' ? getResetRequestStatusLabel(s) : passwordResetStatusLabel(s)) %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="organization_id">Organization ID</label>
+            <input id="organization_id" class="input-field__control" name="organization_id" type="number" min="1" value="<%= f.organization_id || '' %>" placeholder="Optional" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="branch_id">Branch ID</label>
+            <input id="branch_id" class="input-field__control" name="branch_id" type="number" min="1" value="<%= f.branch_id || '' %>" placeholder="Optional" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="date_from">Date from</label>
+            <input id="date_from" class="input-field__control" name="date_from" type="date" value="<%= f.date_from || '' %>" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="date_to">Date to</label>
+            <input id="date_to" class="input-field__control" name="date_to" type="date" value="<%= f.date_to || '' %>" />
+          </div>
+          <div class="input-field" style="flex:1;">
+            <label class="input-field__label" for="q">Search</label>
+            <input id="q" class="input-field__control" name="q" type="search" maxlength="100" value="<%= f.q || '' %>" placeholder="Identifier, name, org, branch…" />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="limit">Limit</label>
+            <input id="limit" class="input-field__control" name="limit" type="number" min="1" max="100" value="<%= f.limit || 50 %>" />
+          </div>
+          <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Filter' }) %>
+          <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/reset-requests', label: 'Clear filters' }) %>
+        </form>
+
+        <div class="card card--mb-xl">
+          <p class="muted" style="padding:0.75rem 1rem 0;">Showing <%= res.items.length %> of <%= res.total %> requests<% if (res.totalPages > 1) { %> · page <%= res.page %> of <%= res.totalPages %><% } %></p>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Organization</th>
+                  <th>Branch</th>
+                  <th>Submitted details</th>
+                  <th>Matched account</th>
+                  <th>Status</th>
+                  <th>Resolution date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!res.items || res.items.length === 0) { %>
+                  <tr><td colspan="9" class="muted">No password reset requests in this filter.</td></tr>
+                <% } else { res.items.forEach(function (r) { %>
+                  <tr>
+                    <td><%= formatDateTime(r.created_at) %></td>
+                    <td><%- include('../../partials/reset_request_type_badge', { requestType: r.request_type }) %></td>
+                    <td><a href="/admin/church/organizations/<%= r.organization_id %>"><%= r.organization_name %></a></td>
+                    <td>
+                      <% if (r.branch_id) { %>
+                        <a href="/admin/church/branches/<%= r.branch_id %>"><%= r.branch_name %></a>
+                      <% } else { %>—<% } %>
+                    </td>
+                    <td>
+                      <span class="muted"><%= r.identifier_masked %></span>
+                      <% if (r.submitted_name) { %><br /><%= r.submitted_name %><% } %>
+                      <% if (r.submitted_phone) { %><br /><%= r.submitted_phone %><% } %>
+                      <% if (r.submitted_email) { %><br /><%= r.submitted_email %><% } %>
+                    </td>
+                    <td><%= r.matched_account_id ? (r.matched_account_name || ('#' + r.matched_account_id)) : '—' %></td>
+                    <td><%- include('../../partials/reset_request_status_badge', { status: r.status }) %></td>
+                    <td><%= r.resolved_at ? formatDateTime(r.resolved_at) : '—' %></td>
+                    <td>
+                      <% if (r.request_type === 'member') { %>
+                        <span class="muted" style="display:block;margin-bottom:0.35rem;">Handled by branch admin</span>
+                        <% if (r.detail_url) { %>
+                          <%- include('../../partials/components/button', { variant: 'default', href: r.detail_url, label: r.action_label || 'View request' }) %>
+                        <% } %>
+                      <% } else if (r.detail_url) { %>
+                        <%- include('../../partials/components/button', { variant: 'default', href: r.detail_url, label: r.action_label || 'View request' }) %>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }); } %>
+              </tbody>
+            </table>
+          </div>
+          <% if (res.totalPages > 1) { %>
+            <div class="admin-toolbar" style="padding:0.75rem 1rem 1rem;">
+              <% if (res.page > 1) { %>
+                <%- include('../../partials/components/button', { variant: 'default', href: buildInboxQueryString(Object.assign({}, f, { page: res.page - 1 })), label: 'Previous' }) %>
+              <% } %>
+              <% if (res.page < res.totalPages) { %>
+                <%- include('../../partials/components/button', { variant: 'default', href: buildInboxQueryString(Object.assign({}, f, { page: res.page + 1 })), label: 'Next' }) %>
+              <% } %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

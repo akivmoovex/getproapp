@@ -1,0 +1,49 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/leaders">&larr; Back to leaders</a>
+          <h1 class="church-branch-topbar__title"><%= leader.full_name %></h1>
+          <p class="church-branch-topbar__subtitle"><%= leader.ministry_name || 'No ministry' %> · <%= leaderRoleLabel(leader.role) %></p>
+        </div>
+        <span class="church-status-chip church-status-chip--<%= leader.status === 'active' ? 'verified' : 'pending' %>"><%= leaderStatusLabel(leader.status) %></span>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <section class="church-branch-panel">
+        <dl class="church-branch-dl">
+          <div><dt>Email</dt><dd><%= leader.email || '—' %></dd></div>
+          <div><dt>Phone</dt><dd><%= leader.phone || '—' %></dd></div>
+          <div><dt>Ministry</dt><dd><%= leader.ministry_name || '—' %></dd></div>
+          <div><dt>Activity notes submitted</dt><dd><%= stats.activity_notes || 0 %></dd></div>
+          <div><dt>Attendance records</dt><dd><%= stats.attendance_records || 0 %></dd></div>
+          <div><dt>Last updated</dt><dd><%= leader.updated_at ? new Date(leader.updated_at).toLocaleString('en-GB') : '—' %></dd></div>
+          <% if (leader.last_password_reset_at) { %>
+          <div><dt>Last password reset</dt><dd><%= new Date(leader.last_password_reset_at).toLocaleString('en-GB') %></dd></div>
+          <% } %>
+        </dl>
+        <% if (leader.notes) { %>
+        <h3 class="church-branch-panel__title church-branch-panel__title--sm">Notes</h3>
+        <p><%= leader.notes %></p>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <div class="church-hq-review-actions">
+          <a class="church-btn church-btn--outline" href="/branch/leaders/<%= leader.id %>/edit">Edit</a>
+          <% if (leader.status === 'inactive') { %>
+          <form method="post" action="/branch/leaders/<%= leader.id %>/activate"><button class="church-btn church-btn--primary" type="submit">Activate</button></form>
+          <% } else { %>
+          <form method="post" action="/branch/leaders/<%= leader.id %>/deactivate"><button class="church-btn church-btn--outline" type="submit">Deactivate</button></form>
+          <% } %>
+        </div>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Reset password</h2>
+        <% if (passwordError) { %><div class="church-alert church-alert--error" role="alert"><%= passwordError %></div><% } %>
+        <form class="church-form" method="post" action="/branch/leaders/<%= leader.id %>/reset-password">
+          <div class="church-form-grid">
+            <div class="church-field"><label class="church-label" for="new_password">New password</label><input class="church-input" id="new_password" name="new_password" type="password" required minlength="8" autocomplete="new-password"/></div>
+            <div class="church-field"><label class="church-label" for="confirm_password">Confirm password</label><input class="church-input" id="confirm_password" name="confirm_password" type="password" required minlength="8" autocomplete="new-password"/></div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Reset password</button>
+        </form>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

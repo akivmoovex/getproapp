@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>33-branch-duty-roster-desktop</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c8c4d7; border-radius: 10px; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "error-container": "#ffdad6",
+                      "outline": "#787586",
+                      "surface-container-high": "#dfeaef",
+                      "primary": "#5341cd",
+                      "tertiary": "#57595b",
+                      "on-surface-variant": "#474554",
+                      "tertiary-container": "#707273",
+                      "primary-fixed": "#e4dfff",
+                      "on-surface": "#131d21",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container": "#e4f0f4",
+                      "tertiary-fixed": "#e1e3e4",
+                      "surface-container-low": "#eaf5fa",
+                      "on-tertiary-fixed": "#191c1d",
+                      "primary-fixed-dim": "#c6bfff",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary-container": "#5d6466",
+                      "on-primary-fixed-variant": "#4029ba",
+                      "background": "#f1fbff",
+                      "on-background": "#131d21",
+                      "secondary-fixed-dim": "#c1c8ca",
+                      "tertiary-fixed-dim": "#c5c7c8",
+                      "secondary-fixed": "#dde4e6",
+                      "inverse-primary": "#c6bfff",
+                      "surface-variant": "#d9e4e9",
+                      "on-secondary-fixed-variant": "#41484a",
+                      "on-tertiary-container": "#f7f8f9",
+                      "on-primary": "#ffffff",
+                      "surface-container-highest": "#d9e4e9",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#454748",
+                      "on-primary-container": "#faf6ff",
+                      "on-secondary-fixed": "#161d1f",
+                      "on-error-container": "#93000a",
+                      "surface-dim": "#d1dce0",
+                      "surface": "#f1fbff",
+                      "on-primary-fixed": "#160066",
+                      "on-error": "#ffffff",
+                      "secondary-container": "#dae1e3",
+                      "inverse-surface": "#283236",
+                      "primary-container": "#6c5ce7",
+                      "outline-variant": "#c8c4d7",
+                      "surface-bright": "#f1fbff",
+                      "surface-tint": "#5847d2",
+                      "secondary": "#586062",
+                      "error": "#ba1a1a",
+                      "inverse-on-surface": "#e7f3f7"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "4px",
+                      "xl": "32px",
+                      "base": "8px",
+                      "gutter": "24px",
+                      "margin-desktop": "32px",
+                      "sm": "8px",
+                      "margin-mobile": "16px",
+                      "md": "16px",
+                      "lg": "24px"
+              },
+              "fontFamily": {
+                      "headline-lg": ["Inter"],
+                      "title-md": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "label-md": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "title-lg": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "label-lg": ["Inter"],
+                      "body-md": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex overflow-hidden">
+<!-- SideNavBar (The Anchor) -->
+<aside class="w-[280px] h-screen sticky top-0 left-0 bg-inverse-surface dark:bg-surface-container-lowest flex flex-col py-base gap-sm shadow-sm z-50">
+<div class="px-gutter mb-lg">
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed dark:text-primary">Kafue Baptist Church</h1>
+<p class="font-body-md text-body-md text-surface-variant/80">Branch Admin HQ</p>
+</div>
+<nav class="flex-1 overflow-y-auto px-xs space-y-xs custom-scrollbar">
+<!-- Ministries -->
+<a class="flex items-center gap-md py-sm rounded-lg hover:bg-primary/10 hover:text-primary-fixed-dim transition-colors text-surface-variant dark:text-outline pl-5" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<!-- Departments -->
+<a class="flex items-center gap-md py-sm rounded-lg hover:bg-primary/10 hover:text-primary-fixed-dim transition-colors text-surface-variant dark:text-outline pl-5" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-label-lg text-label-lg">Departments</span>
+</a>
+<!-- Events -->
+<a class="flex items-center gap-md py-sm rounded-lg hover:bg-primary/10 hover:text-primary-fixed-dim transition-colors text-surface-variant dark:text-outline pl-5" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<!-- Duty Roster (ACTIVE) -->
+<a class="flex items-center gap-md py-sm rounded-lg text-primary-fixed dark:text-primary font-bold border-l-4 border-primary-fixed dark:border-primary pl-4 transition-transform duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="assignment_ind" style="font-variation-settings: 'FILL' 1;">assignment_ind</span>
+<span class="font-label-lg text-label-lg">Duty Roster</span>
+</a>
+<!-- Announcements -->
+<a class="flex items-center gap-md py-sm rounded-lg hover:bg-primary/10 hover:text-primary-fixed-dim transition-colors text-surface-variant dark:text-outline pl-5" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="font-label-lg text-label-lg">Announcements</span>
+</a>
+<!-- Website Editor -->
+<a class="flex items-center gap-md py-sm rounded-lg hover:bg-primary/10 hover:text-primary-fixed-dim transition-colors text-surface-variant dark:text-outline pl-5" href="#">
+<span class="material-symbols-outlined" data-icon="web">web</span>
+<span class="font-label-lg text-label-lg">Website Editor</span>
+</a>
+<!-- Settings -->
+<a class="flex items-center gap-md py-sm rounded-lg hover:bg-primary/10 hover:text-primary-fixed-dim transition-colors text-surface-variant dark:text-outline pl-5" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<div class="px-gutter mt-auto pt-lg border-t border-surface-variant/20">
+<div class="flex items-center gap-md">
+<img class="w-10 h-10 rounded-full border-2 border-primary-fixed-dim" data-alt="A professional headshot of a church administrator, a middle-aged man with a friendly smile, wearing a modern charcoal suit. The lighting is soft and corporate, set against a blurred background of a modern architectural church office with high-key primary purple accents and clean white walls." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqA0cA9TrRftW85_UH56Tg64lWUTxzU9c-7SGqAwUGzqgIlATWSG47Kc8RqC4_j4v8QOdm6a29maogiRZnHJKVFY7NfK0Mkb0hCOBsoqP_J3lNCz0TVktcYyz7iXVGddir6CCERwNOika5diCs8X1HkphPXX4l6AsdW-tqOnMDFFbFwH7GjIjPOCp6uJvfTN6DZXOx5h2cqp_AOGKMGU9gV9C-W3YjkwjQPdLTGBOsywWwU6qu-z97IQ"/>
+<div>
+<p class="font-label-lg text-label-lg text-primary-fixed">Admin User</p>
+<p class="text-[10px] text-surface-variant/60 uppercase tracking-widest">Headquarters</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<!-- TopNavBar -->
+<header class="w-full h-16 bg-surface dark:bg-background flex justify-between items-center px-gutter border-b border-outline-variant dark:border-outline sticky top-0 z-40">
+<div class="flex items-center gap-xl">
+<span class="font-headline-md text-headline-md font-black text-on-surface dark:text-on-background">GetPro Church Operations</span>
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-full text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Search members or roles..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-2 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+</header>
+<!-- Page Canvas -->
+<div class="flex-1 overflow-y-auto p-gutter custom-scrollbar space-y-gutter">
+<!-- Header Section with Actions -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-lg">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Duty Roster</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Weekly Management: Oct 24 — Oct 30</p>
+</div>
+<div class="flex items-center gap-md">
+<button class="flex items-center gap-sm px-lg py-2.5 bg-surface-container-high text-primary font-semibold rounded-lg hover:bg-surface-variant transition-all border border-primary/10">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<span>Auto-Generate Roster</span>
+</button>
+<button class="flex items-center gap-sm px-lg py-2.5 bg-primary text-on-primary font-semibold rounded-lg hover:shadow-lg active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span>Add Assignment</span>
+</button>
+</div>
+</section>
+<!-- Date Selector / Quick Filters -->
+<section class="grid grid-cols-7 gap-xs">
+<!-- Simple Date Chips -->
+<div class="flex flex-col items-center py-base rounded-xl bg-surface-container-low border border-outline-variant opacity-60">
+<span class="text-[10px] font-bold uppercase text-outline">Mon</span>
+<span class="font-title-lg text-title-lg">24</span>
+</div>
+<div class="flex flex-col items-center py-base rounded-xl bg-surface-container-low border border-outline-variant opacity-60">
+<span class="text-[10px] font-bold uppercase text-outline">Tue</span>
+<span class="font-title-lg text-title-lg">25</span>
+</div>
+<div class="flex flex-col items-center py-base rounded-xl bg-surface-container-low border border-outline-variant opacity-60">
+<span class="text-[10px] font-bold uppercase text-outline">Wed</span>
+<span class="font-title-lg text-title-lg">26</span>
+</div>
+<div class="flex flex-col items-center py-base rounded-xl bg-primary-fixed border-2 border-primary">
+<span class="text-[10px] font-bold uppercase text-on-primary-fixed-variant">Thu</span>
+<span class="font-title-lg text-title-lg text-on-primary-fixed">27</span>
+</div>
+<div class="flex flex-col items-center py-base rounded-xl bg-surface-container-low border border-outline-variant opacity-60">
+<span class="text-[10px] font-bold uppercase text-outline">Fri</span>
+<span class="font-title-lg text-title-lg">28</span>
+</div>
+<div class="flex flex-col items-center py-base rounded-xl bg-surface-container-low border border-outline-variant opacity-60">
+<span class="text-[10px] font-bold uppercase text-outline">Sat</span>
+<span class="font-title-lg text-title-lg">29</span>
+</div>
+<div class="flex flex-col items-center py-base rounded-xl bg-surface-container-low border border-outline-variant">
+<span class="text-[10px] font-bold uppercase text-primary font-bold">Sun</span>
+<span class="font-title-lg text-title-lg">30</span>
+</div>
+</section>
+<!-- Roster Table -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider">
+<th class="px-lg py-md border-b border-outline-variant">Service Date</th>
+<th class="px-lg py-md border-b border-outline-variant">Role</th>
+<th class="px-lg py-md border-b border-outline-variant">Assigned Person</th>
+<th class="px-lg py-md border-b border-outline-variant">Ministry / Dept</th>
+<th class="px-lg py-md border-b border-outline-variant">Status</th>
+<th class="px-lg py-md border-b border-outline-variant">Notes</th>
+<th class="px-lg py-md border-b border-outline-variant text-center">Actions</th>
+</tr>
+</thead>
+<tbody class="text-body-md">
+<!-- Row 1 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-lg border-b border-outline-variant font-medium">Oct 27, 18:30</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="mic_external_on">mic_external_on</span>
+                                        Worship Team
+                                    </div>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed text-xs font-bold">JS</div>
+                                        Jonathan Sakala
+                                    </div>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<span class="px-sm py-xs bg-surface-variant rounded-full text-[10px] font-bold text-on-surface-variant">MUSIC</span>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<span class="flex items-center gap-xs text-green-600 font-semibold">
+<span class="material-symbols-outlined text-[14px]" data-icon="check_circle">check_circle</span>
+                                        Confirmed
+                                    </span>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant italic text-on-surface-variant/70">Lead vocal for evening service.</td>
+<td class="px-lg py-lg border-b border-outline-variant text-center">
+<button class="opacity-0 group-hover:opacity-100 p-2 hover:bg-surface-container-highest rounded-lg transition-all">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-lg border-b border-outline-variant font-medium">Oct 30, 08:00</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="door_front">door_front</span>
+                                        Ushering
+                                    </div>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-fixed-dim flex items-center justify-center text-on-primary-fixed text-xs font-bold">BM</div>
+                                        Brenda Mwila
+                                    </div>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<span class="px-sm py-xs bg-surface-variant rounded-full text-[10px] font-bold text-on-surface-variant">HOSPITALITY</span>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<span class="flex items-center gap-xs text-amber-600 font-semibold">
+<span class="material-symbols-outlined text-[14px]" data-icon="hourglass_empty">hourglass_empty</span>
+                                        Pending
+                                    </span>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant italic text-on-surface-variant/70">Assigned via auto-gen.</td>
+<td class="px-lg py-lg border-b border-outline-variant text-center">
+<button class="opacity-0 group-hover:opacity-100 p-2 hover:bg-surface-container-highest rounded-lg transition-all">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-lg border-b border-outline-variant font-medium">Oct 30, 08:00</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="videocam">videocam</span>
+                                        Media
+                                    </div>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed text-xs font-bold">CK</div>
+                                        Chris Kaunda
+                                    </div>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<span class="px-sm py-xs bg-surface-variant rounded-full text-[10px] font-bold text-on-surface-variant">TECHNICAL</span>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<span class="flex items-center gap-xs text-green-600 font-semibold">
+<span class="material-symbols-outlined text-[14px]" data-icon="check_circle">check_circle</span>
+                                        Confirmed
+                                    </span>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant italic text-on-surface-variant/70">Main camera operator.</td>
+<td class="px-lg py-lg border-b border-outline-variant text-center">
+<button class="opacity-0 group-hover:opacity-100 p-2 hover:bg-surface-container-highest rounded-lg transition-all">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-lg border-b border-outline-variant font-medium">Oct 30, 10:30</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="child_care">child_care</span>
+                                        Sunday School
+                                    </div>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed text-xs font-bold">ML</div>
+                                        Mary Lungu
+                                    </div>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<span class="px-sm py-xs bg-surface-variant rounded-full text-[10px] font-bold text-on-surface-variant">CHILDREN</span>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant">
+<span class="flex items-center gap-xs text-green-600 font-semibold">
+<span class="material-symbols-outlined text-[14px]" data-icon="check_circle">check_circle</span>
+                                        Confirmed
+                                    </span>
+</td>
+<td class="px-lg py-lg border-b border-outline-variant italic text-on-surface-variant/70">Pre-primary class.</td>
+<td class="px-lg py-lg border-b border-outline-variant text-center">
+<button class="opacity-0 group-hover:opacity-100 p-2 hover:bg-surface-container-highest rounded-lg transition-all">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer/Pagination -->
+<div class="px-lg py-md bg-surface-container-low flex justify-between items-center text-label-lg font-label-lg text-on-surface-variant">
+<p>Showing 1-4 of 18 assignments</p>
+<div class="flex items-center gap-sm">
+<button class="px-3 py-1 bg-surface-container-highest rounded border border-outline-variant hover:bg-surface-variant transition-all">Previous</button>
+<button class="px-3 py-1 bg-primary text-on-primary rounded border border-primary hover:bg-primary-container transition-all">1</button>
+<button class="px-3 py-1 bg-surface-container-highest rounded border border-outline-variant hover:bg-surface-variant transition-all">2</button>
+<button class="px-3 py-1 bg-surface-container-highest rounded border border-outline-variant hover:bg-surface-variant transition-all">Next</button>
+</div>
+</div>
+</section>
+<!-- Bottom Dashboard Widgets (Asymmetric Layout) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Conflict Alert Card -->
+<div class="md:col-span-1 glass-card p-lg rounded-xl flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-sm text-error mb-base">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+<span class="font-label-lg uppercase tracking-wider">Potential Conflicts</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-sm">2 Schedule Clashes</h3>
+<p class="text-body-md text-on-surface-variant mb-lg">Jonathan Sakala is assigned to both Worship and Media for the Oct 30 Morning service.</p>
+</div>
+<button class="w-full py-2 bg-error-container text-on-error-container font-semibold rounded-lg hover:opacity-90 transition-all">Review Conflicts</button>
+</div>
+<!-- Stats Overview (Bento Style) -->
+<div class="md:col-span-2 grid grid-cols-2 gap-md">
+<div class="bg-primary-fixed p-lg rounded-xl border border-primary-fixed-dim">
+<span class="text-on-primary-fixed-variant font-label-lg uppercase block mb-xs">Confirmation Rate</span>
+<div class="flex items-end gap-md">
+<span class="text-[40px] leading-none font-black text-on-primary-fixed">78%</span>
+<span class="text-on-primary-fixed-variant text-sm mb-1">+5% from last week</span>
+</div>
+</div>
+<div class="bg-secondary-fixed p-lg rounded-xl border border-secondary-fixed-dim">
+<span class="text-on-secondary-fixed-variant font-label-lg uppercase block mb-xs">Active Volunteers</span>
+<div class="flex items-end gap-md">
+<span class="text-[40px] leading-none font-black text-on-secondary-fixed">42</span>
+<span class="text-on-secondary-fixed-variant text-sm mb-1">Across 6 Ministries</span>
+</div>
+</div>
+<div class="bg-surface-container-highest col-span-2 p-lg rounded-xl border border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-lg">
+<div class="p-3 bg-primary/10 rounded-full">
+<span class="material-symbols-outlined text-primary" data-icon="analytics">analytics</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md">Roster Health Score</h4>
+<p class="text-body-md text-on-surface-variant">Your current branch coverage is optimal for the upcoming week.</p>
+</div>
+</div>
+<span class="text-primary font-black text-2xl">A+</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Micro-interaction Scripts -->
+<script>
+        // Simple hover effects and interaction feedback
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.classList.add('scale-95');
+                setTimeout(() => this.classList.remove('scale-95'), 100);
+            });
+        });
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary/20', 'border-primary');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary/20', 'border-primary');
+        });
+    </script>
+</body></html>

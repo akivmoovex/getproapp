@@ -1,0 +1,70 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Branch registry</h1>
+          <p class="church-branch-topbar__subtitle">Organization branches for <%= organizationName %> · <%= periodMonth %></p>
+        </div>
+      </header>
+      <form class="church-form church-form--inline" method="get" action="/hq/branches">
+        <div class="church-field church-field--grow">
+          <label class="church-label" for="q">Search</label>
+          <input class="church-input" id="q" name="q" type="search" value="<%= searchQuery || '' %>" placeholder="Branch name, location, pastor, contact"/>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="period_month">Period</label>
+          <input class="church-input" id="period_month" name="period_month" type="month" value="<%= periodMonth %>"/>
+        </div>
+        <% if (statusFilter && statusFilter !== 'all') { %>
+        <input type="hidden" name="status" value="<%= statusFilter %>"/>
+        <% } %>
+        <button class="church-btn church-btn--primary" type="submit">Apply</button>
+      </form>
+      <div class="church-branch-filter-tabs">
+        <% registryFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/hq/branches?status=<%= f %><%= searchQuery ? '&q=' + encodeURIComponent(searchQuery) : '' %>&period_month=<%= periodMonth %>"><%= f === 'all' ? 'All' : f.replace(/_/g, ' ') %></a>
+        <% }); %>
+      </div>
+      <section class="church-branch-panel">
+        <% if ((branches || []).length === 0) { %>
+        <p class="church-branch-empty">No branches match this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Location</th>
+                <th>Contact</th>
+                <th>Members</th>
+                <th>Last report</th>
+                <th>This month</th>
+                <th>Attendance avg</th>
+                <th>Giving</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% branches.forEach(function (b) { %>
+              <tr>
+                <td>
+                  <strong><%= b.name %></strong>
+                  <% if (b.needsAttention) { %><span class="church-status-chip church-status-chip--pending">Needs attention</span><% } %>
+                </td>
+                <td><%= b.location %></td>
+                <td><%= b.contactName || '—' %><% if (b.contactPhone) { %><br/><%= b.contactPhone %><% } %></td>
+                <td><%= b.activeMembers %> active · <%= b.pendingMembers %> pending</td>
+                <td><%= b.latestReportPeriod || '—' %> · <%= b.latestReportStatus ? reportStatusLabel(b.latestReportStatus) : '—' %></td>
+                <td><%= reportStatusLabel(b.currentMonthReportStatus === 'missing' ? 'draft' : b.currentMonthReportStatus) %><% if (b.currentMonthReportStatus === 'missing') { %> (missing)<% } %></td>
+                <td><%= b.lastAttendanceAverage != null ? b.lastAttendanceAverage : '—' %></td>
+                <td><%= givingStatusLabel(b.givingSummaryStatus) %></td>
+                <td><% var branchChip = b.status === 'active' ? 'verified' : (b.status === 'archived' ? 'rejected' : 'pending'); %><span class="church-status-chip church-status-chip--<%= branchChip %>"><%= b.status %></span></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/hq/branches/<%= b.id %>?period_month=<%= periodMonth %>">View performance</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/hq_shell_end') %>

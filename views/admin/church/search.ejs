@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Church Support Search | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'Church Support Search', activeNav: activeNav || 'church_platform_search' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Church Support Search</h1>
+            <p class="admin-dashboard__subtitle muted">Find organizations, branches, admins, members, and ministry leaders across GetPro Church.</p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church', label: 'Church dashboard' }) %>
+          </div>
+        </header>
+
+        <% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
+        <% var s = typeof search !== 'undefined' && search ? search : {}; %>
+        <% if (typeof validationErrors !== 'undefined' && validationErrors && validationErrors.length > 0) { %>
+          <div class="flash flash--error" role="alert"><%= validationErrors.join(' ') %></div>
+        <% } %>
+
+        <form method="get" action="/admin/church/search" class="card card--mb-xl admin-filter-form" style="padding:1rem;">
+          <div class="input-field" style="flex:2;">
+            <label class="input-field__label" for="q">Search</label>
+            <input id="q" class="input-field__control" name="q" type="search" value="<%= f.q || '' %>" placeholder="Name, email, phone, slug, host slug…" autofocus />
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="type">Type</label>
+            <select id="type" class="input-field__control" name="type">
+              <% (searchTypes || ['all']).forEach(function (t) { %>
+                <option value="<%= t %>" <%= (f.type || 'all') === t ? 'selected' : '' %>><%= t.replace(/_/g, ' ') %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="status">Status</label>
+            <select id="status" class="input-field__control" name="status">
+              <% (searchStatuses || ['all']).forEach(function (st) { %>
+                <option value="<%= st %>" <%= (f.status || 'all') === st ? 'selected' : '' %>><%= st.charAt(0).toUpperCase() + st.slice(1) %></option>
+              <% }); %>
+            </select>
+          </div>
+          <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Search' }) %>
+        </form>
+
+        <% if (!s.searchRan && !s.tooShort) { %>
+          <section class="card card--mb-xl" style="padding:1.25rem;">
+            <h2 class="section-title section-title--flush">What you can search</h2>
+            <ul class="muted">
+              <li><strong>Organizations</strong> — name, slug, country, city, primary contact</li>
+              <li><strong>Branches</strong> — name, host slug, location, pastor, contact, organization</li>
+              <li><strong>HQ admins</strong> — name, email, phone, username, organization</li>
+              <li><strong>Branch admins</strong> — name, email, phone, branch, organization</li>
+              <li><strong>Members</strong> — name, email, phone, branch, organization</li>
+              <li><strong>Ministry leaders</strong> — name, email, phone, ministry, branch, organization</li>
+            </ul>
+            <p class="muted" style="margin-top:0.75rem;">Enter at least <%= minSearchLength || 2 %> characters to search. Passwords and private prayer content are never shown.</p>
+          </section>
+
+          <% if (s.recent && ((s.recent.organizations || []).length > 0 || (s.recent.branches || []).length > 0)) { %>
+          <section class="card card--mb-xl" style="padding:1.25rem;">
+            <h2 class="section-title section-title--flush">Recent organizations</h2>
+            <% if (!s.recent.organizations || s.recent.organizations.length === 0) { %>
+              <p class="muted">No organizations yet.</p>
+            <% } else { %>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Name</th><th>Slug</th><th>Status</th><th>Plan</th><th></th></tr></thead>
+                  <tbody>
+                    <% s.recent.organizations.forEach(function (org) { %>
+                      <tr>
+                        <td><%= org.name %></td>
+                        <td class="muted"><%= org.slug %></td>
+                        <td><%- include('../../partials/admin/church_status_badge', { status: org.status }) %></td>
+                        <td><%= getPlanDisplay(org.plan_code || 'free').label %></td>
+                        <td><%- include('../../partials/components/button', { variant: 'default', href: org.link, label: 'View' }) %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } %>
+          </section>
+
+          <section class="card card--mb-xl" style="padding:1.25rem;">
+            <h2 class="section-title section-title--flush">Recent branches</h2>
+            <% if (!s.recent.branches || s.recent.branches.length === 0) { %>
+              <p class="muted">No branches yet.</p>
+            <% } else { %>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Branch</th><th>Host slug</th><th>Organization</th><th>Status</th><th></th></tr></thead>
+                  <tbody>
+                    <% s.recent.branches.forEach(function (br) { %>
+                      <tr>
+                        <td><%= br.name %></td>
+                        <td class="muted"><%= br.host_slug %></td>
+                        <td><%= br.organization_name %></td>
+                        <td><%- include('../../partials/admin/church_status_badge', { status: br.status }) %></td>
+                        <td><%- include('../../partials/components/button', { variant: 'default', href: br.link, label: 'View' }) %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } %>
+          </section>
+          <% } %>
+        <% } else if (s.tooShort) { %>
+          <div class="flash flash--info" role="status">Enter at least <%= minSearchLength || 2 %> characters to search.</div>
+        <% } else if (s.searchRan) { %>
+          <section class="card card--mb-xl" style="padding:1rem;">
+            <h2 class="section-title section-title--flush">Results for “<%= s.q %>”</h2>
+            <p class="muted">
+              <%= s.totals.all || 0 %> total
+              <% if (f.type === 'all') { %>
+                · <%= s.totals.organizations || 0 %> organizations
+                · <%= s.totals.branches || 0 %> branches
+                · <%= s.totals.hq_admins || 0 %> HQ admins
+                · <%= s.totals.branch_admins || 0 %> branch admins
+                · <%= s.totals.members || 0 %> members
+                · <%= s.totals.ministry_leaders || 0 %> ministry leaders
+              <% } %>
+            </p>
+          </section>
+
+          <% var res = s.results || {}; %>
+          <% var showOrgs = f.type === 'all' || f.type === 'organizations'; %>
+          <% var showBranches = f.type === 'all' || f.type === 'branches'; %>
+          <% var showHq = f.type === 'all' || f.type === 'hq_admins'; %>
+          <% var showBa = f.type === 'all' || f.type === 'branch_admins'; %>
+          <% var showMembers = f.type === 'all' || f.type === 'members'; %>
+          <% var showLeaders = f.type === 'all' || f.type === 'ministry_leaders'; %>
+
+          <% if (showOrgs) { %>
+          <section class="card card--mb-xl" style="padding:1.25rem;">
+            <h2 class="section-title section-title--flush">Organizations (<%= (res.organizations && res.organizations.total) || 0 %>)</h2>
+            <% if (!res.organizations || !res.organizations.items || res.organizations.items.length === 0) { %>
+              <p class="muted">No matching organizations.</p>
+            <% } else { %>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Name</th><th>Slug</th><th>Location</th><th>Contact</th><th>Plan</th><th>Status</th><th></th></tr></thead>
+                  <tbody>
+                    <% res.organizations.items.forEach(function (org) { %>
+                      <tr>
+                        <td>
+                          <%= org.name %>
+                          <% if (org.support_note_count > 0) { %>
+                            <br /><span class="muted" style="font-size:0.85rem;"><%= org.support_note_count %> support note<%= org.support_note_count === 1 ? '' : 's' %></span>
+                          <% } %>
+                        </td>
+                        <td class="muted"><%= org.slug %></td>
+                        <td><%= [org.city, org.country].filter(Boolean).join(', ') || '—' %></td>
+                        <td><%= org.primary_contact_name || '—' %><% if (org.primary_contact_email) { %><br /><span class="muted"><%= org.primary_contact_email %></span><% } %></td>
+                        <td><%= getPlanDisplay(org.plan_code || 'free').label %></td>
+                        <td><%- include('../../partials/admin/church_status_badge', { status: org.status }) %></td>
+                        <td><%- include('../../partials/components/button', { variant: 'default', href: org.link, label: 'View' }) %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } %>
+          </section>
+          <% } %>
+
+          <% if (showBranches) { %>
+          <section class="card card--mb-xl" style="padding:1.25rem;">
+            <h2 class="section-title section-title--flush">Branches (<%= (res.branches && res.branches.total) || 0 %>)</h2>
+            <% if (!res.branches || !res.branches.items || res.branches.items.length === 0) { %>
+              <p class="muted">No matching branches.</p>
+            <% } else { %>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Branch</th><th>Host slug</th><th>Organization</th><th>Public URL</th><th>Status</th><th></th></tr></thead>
+                  <tbody>
+                    <% res.branches.items.forEach(function (br) { %>
+                      <tr>
+                        <td>
+                          <%= br.name %>
+                          <% if (br.support_note_count > 0) { %>
+                            <br /><span class="muted" style="font-size:0.85rem;"><%= br.support_note_count %> support note<%= br.support_note_count === 1 ? '' : 's' %></span>
+                          <% } %>
+                        </td>
+                        <td class="muted"><%= br.host_slug %></td>
+                        <td><%= br.organization_name %></td>
+                        <td><code><%= churchPublicHost(br.host_slug) %></code></td>
+                        <td><%- include('../../partials/admin/church_status_badge', { status: br.status }) %></td>
+                        <td><%- include('../../partials/components/button', { variant: 'default', href: br.link, label: 'View' }) %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } %>
+          </section>
+          <% } %>
+
+          <% if (showHq) { %>
+          <section class="card card--mb-xl" style="padding:1.25rem;">
+            <h2 class="section-title section-title--flush">HQ admins (<%= (res.hq_admins && res.hq_admins.total) || 0 %>)</h2>
+            <% if (!res.hq_admins || !res.hq_admins.items || res.hq_admins.items.length === 0) { %>
+              <p class="muted">No matching HQ admins.</p>
+            <% } else { %>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Name</th><th>Organization</th><th>Email / phone</th><th>Role</th><th>Status</th><th></th></tr></thead>
+                  <tbody>
+                    <% res.hq_admins.items.forEach(function (a) { %>
+                      <tr>
+                        <td>
+                          <%= a.full_name %>
+                          <% if (a.support_note_count > 0) { %>
+                            <br /><span class="muted" style="font-size:0.85rem;"><%= a.support_note_count %> support note<%= a.support_note_count === 1 ? '' : 's' %></span>
+                          <% } %>
+                        </td>
+                        <td><%= a.organization_name %></td>
+                        <td><%= a.email || a.phone || '—' %></td>
+                        <td><%= a.role %></td>
+                        <td><%- include('../../partials/admin/church_status_badge', { status: a.status }) %></td>
+                        <td><%- include('../../partials/components/button', { variant: 'default', href: a.link, label: 'View' }) %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } %>
+          </section>
+          <% } %>
+
+          <% if (showBa) { %>
+          <section class="card card--mb-xl" style="padding:1.25rem;">
+            <h2 class="section-title section-title--flush">Branch admins (<%= (res.branch_admins && res.branch_admins.total) || 0 %>)</h2>
+            <% if (!res.branch_admins || !res.branch_admins.items || res.branch_admins.items.length === 0) { %>
+              <p class="muted">No matching branch admins.</p>
+            <% } else { %>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Name</th><th>Branch</th><th>Organization</th><th>Email / phone</th><th>Role</th><th>Status</th><th></th></tr></thead>
+                  <tbody>
+                    <% res.branch_admins.items.forEach(function (a) { %>
+                      <tr>
+                        <td>
+                          <%= a.full_name %>
+                          <% if (a.support_note_count > 0) { %>
+                            <br /><span class="muted" style="font-size:0.85rem;"><%= a.support_note_count %> support note<%= a.support_note_count === 1 ? '' : 's' %></span>
+                          <% } %>
+                        </td>
+                        <td><%= a.branch_name %></td>
+                        <td><%= a.organization_name %></td>
+                        <td><%= a.email || a.phone || '—' %></td>
+                        <td><%= a.role %></td>
+                        <td><%- include('../../partials/admin/church_status_badge', { status: a.status }) %></td>
+                        <td><%- include('../../partials/components/button', { variant: 'default', href: a.link, label: 'View' }) %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } %>
+          </section>
+          <% } %>
+
+          <% if (showMembers) { %>
+          <section class="card card--mb-xl" style="padding:1.25rem;">
+            <h2 class="section-title section-title--flush">Members (<%= (res.members && res.members.total) || 0 %>)</h2>
+            <% if (!res.members || !res.members.items || res.members.items.length === 0) { %>
+              <p class="muted">No matching members.</p>
+            <% } else { %>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Name</th><th>Branch</th><th>Organization</th><th>Email / phone</th><th>Status</th><th></th></tr></thead>
+                  <tbody>
+                    <% res.members.items.forEach(function (m) { %>
+                      <tr>
+                        <td>
+                          <%= m.full_name %>
+                          <% if (m.support_note_count > 0) { %>
+                            <br /><span class="muted" style="font-size:0.85rem;"><%= m.support_note_count %> support note<%= m.support_note_count === 1 ? '' : 's' %></span>
+                          <% } %>
+                        </td>
+                        <td><%= m.branch_name %></td>
+                        <td><%= m.organization_name %></td>
+                        <td><%= m.email || m.phone || '—' %></td>
+                        <td><%- include('../../partials/admin/church_status_badge', { status: m.status }) %></td>
+                        <td>
+                          <%- include('../../partials/components/button', { variant: 'default', href: m.link, label: 'View' }) %>
+                          <% if (m.status === 'pending' || m.status === 'rejected' || m.status === 'suspended') { %>
+                            <span class="muted" style="font-size:0.85rem;display:block;margin-top:0.25rem;">Portal access blocked</span>
+                          <% } %>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+              <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">Member results link to platform support detail. Full member management remains on the branch admin portal.</p>
+            <% } %>
+          </section>
+          <% } %>
+
+          <% if (showLeaders) { %>
+          <section class="card card--mb-xl" style="padding:1.25rem;">
+            <h2 class="section-title section-title--flush">Ministry leaders (<%= (res.ministry_leaders && res.ministry_leaders.total) || 0 %>)</h2>
+            <% if (!res.ministry_leaders || !res.ministry_leaders.items || res.ministry_leaders.items.length === 0) { %>
+              <p class="muted">No matching ministry leaders.</p>
+            <% } else { %>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Name</th><th>Ministry</th><th>Branch</th><th>Organization</th><th>Email / phone</th><th>Status</th><th></th></tr></thead>
+                  <tbody>
+                    <% res.ministry_leaders.items.forEach(function (l) { %>
+                      <tr>
+                        <td>
+                          <%= l.full_name %>
+                          <% if (l.support_note_count > 0) { %>
+                            <br /><span class="muted" style="font-size:0.85rem;"><%= l.support_note_count %> support note<%= l.support_note_count === 1 ? '' : 's' %></span>
+                          <% } %>
+                        </td>
+                        <td><%= l.ministry_name || '—' %></td>
+                        <td><%= l.branch_name %></td>
+                        <td><%= l.organization_name %></td>
+                        <td><%= l.email || l.phone || '—' %></td>
+                        <td><%- include('../../partials/admin/church_status_badge', { status: l.status }) %></td>
+                        <td><%- include('../../partials/components/button', { variant: 'default', href: l.link, label: 'View' }) %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+              <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">Ministry leader results link to platform read-only support detail. Leader management remains on the branch admin portal.</p>
+            <% } %>
+          </section>
+          <% } %>
+
+          <% if ((s.totals.all || 0) === 0) { %>
+            <p class="muted">No results found. Try a different term or filter.</p>
+          <% } %>
+        <% } %>
+      </div>
+    </main>
+  </body>
+</html>

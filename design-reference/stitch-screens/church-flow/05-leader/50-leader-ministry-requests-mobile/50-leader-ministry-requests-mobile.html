@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Ministry Requests - Ecclesia Modern</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#5341cd",
+                        "tertiary": "#57595b",
+                        "on-tertiary-container": "#f7f8f9",
+                        "primary-fixed": "#e4dfff",
+                        "secondary": "#586062",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#e1e3e4",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-secondary-container": "#5d6466",
+                        "on-primary-fixed": "#160066",
+                        "background": "#f1fbff",
+                        "surface-container": "#e4f0f4",
+                        "surface-tint": "#5847d2",
+                        "on-background": "#131d21",
+                        "surface-container-low": "#eaf5fa",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#f1fbff",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#faf6ff",
+                        "primary-container": "#6c5ce7",
+                        "on-surface-variant": "#474554",
+                        "on-secondary-fixed": "#161d1f",
+                        "inverse-surface": "#283236",
+                        "tertiary-container": "#707273",
+                        "surface-variant": "#d9e4e9",
+                        "secondary-fixed": "#dde4e6",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "outline": "#787586",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#c8c4d7",
+                        "secondary-container": "#dae1e3",
+                        "surface-bright": "#f1fbff",
+                        "inverse-on-surface": "#e7f3f7",
+                        "on-surface": "#131d21",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#c6bfff",
+                        "surface-container-high": "#dfeaef",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d1dce0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "gutter": "24px",
+                        "margin-desktop": "32px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "base": "8px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .custom-shadow {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .active-tab-glow {
+            box-shadow: 0 0 15px rgba(108, 92, 231, 0.2);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-24">
+<!-- Top AppBar (JSON Component Map) -->
+<header class="flex justify-between items-center w-full px-4 h-16 sticky top-0 z-40 bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="Close up professional headshot of Grace Mwansa, a young African woman with a warm, confident smile, wearing a professional navy blazer. The background is a soft-focus modern office setting with natural lighting, reflecting a corporate yet compassionate administrative leader personality in a light-mode UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAw1KDl29fe9lULcJBOecaMf7VwLX3nk5y8y8p7RQC0dzRtBnyapCZXmRVZ3EJGynKPCNV5JUNyIIsLMpbPXJMq5K1lrdwDVoLgWwUdmhc025o-ojtmK2OTx21d1Jrnovtd8Ae4orNxj0DMBvVAT95PwCBJW66blAJhGUW-XzYB7bT63zrQd0p0UmShjqe0hp1oGxiJpICVy6YQK5wPCtFKbXao_rGNIJknN2kHjfKy9e7KgUMiyy5b0w"/>
+</div>
+<h1 class="font-title-lg text-title-lg text-primary font-bold">Youth Ministry</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-all text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</header>
+<main class="px-4 py-6 max-w-2xl mx-auto">
+<!-- Dashboard Header -->
+<div class="mb-8">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-1">Requests</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage pending approvals and ministry responses.</p>
+</div>
+<!-- Filter Chips (Status) -->
+<div class="flex gap-2 mb-6 overflow-x-auto no-scrollbar pb-2">
+<button class="px-4 py-2 rounded-full bg-primary text-on-primary font-label-lg text-label-lg whitespace-nowrap active-tab-glow">
+                All Requests
+            </button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant font-label-lg text-label-lg whitespace-nowrap hover:bg-surface-container-high transition-colors">
+                Pending (12)
+            </button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant font-label-lg text-label-lg whitespace-nowrap hover:bg-surface-container-high transition-colors">
+                Approved
+            </button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant font-label-lg text-label-lg whitespace-nowrap hover:bg-surface-container-high transition-colors">
+                Archived
+            </button>
+</div>
+<!-- Request Cards List -->
+<div class="space-y-4">
+<!-- Request Card 1: Pending -->
+<div class="bg-surface-container-lowest rounded-xl p-4 custom-shadow border border-outline-variant hover:border-primary/30 transition-colors group">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined" data-icon="volunteer_activism">volunteer_activism</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-primary uppercase tracking-wider">Volunteer Application</p>
+<h3 class="font-title-md text-title-md text-on-surface">Daniel K. Mumba</h3>
+</div>
+</div>
+<span class="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-bold uppercase rounded tracking-tighter border border-amber-200">
+                        Pending
+                    </span>
+</div>
+<div class="bg-surface-container-low rounded-lg p-3 mb-4">
+<p class="text-body-md text-on-surface-variant leading-relaxed">
+                        "I would like to help with the audio/visual team for the upcoming youth conference next month."
+                    </p>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 py-2.5 bg-primary text-on-primary font-title-md text-sm rounded-lg hover:bg-opacity-90 active:scale-[0.98] transition-all">
+                        Review Application
+                    </button>
+<button class="w-12 flex items-center justify-center border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Request Card 2: Financial -->
+<div class="bg-surface-container-lowest rounded-xl p-4 custom-shadow border border-outline-variant hover:border-primary/30 transition-colors">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Expense Reimbursement</p>
+<h3 class="font-title-md text-title-md text-on-surface">Sarah Lungu</h3>
+</div>
+</div>
+<span class="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-bold uppercase rounded tracking-tighter border border-amber-200">
+                        Pending
+                    </span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low rounded-lg p-3 mb-4">
+<span class="text-body-md text-on-surface-variant">Youth Retreat Supplies</span>
+<span class="font-title-md text-on-surface font-bold">K450.00</span>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 py-2.5 bg-primary text-on-primary font-title-md text-sm rounded-lg hover:bg-opacity-90 active:scale-[0.98] transition-all">
+                        Respond
+                    </button>
+<button class="w-12 flex items-center justify-center border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="attach_file">attach_file</span>
+</button>
+</div>
+</div>
+<!-- Request Card 3: Room Booking -->
+<div class="bg-surface-container-lowest rounded-xl p-4 custom-shadow border border-outline-variant hover:border-primary/30 transition-colors opacity-80">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="meeting_room">meeting_room</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Room Reservation</p>
+<h3 class="font-title-md text-title-md text-on-surface">Mark Chanda</h3>
+</div>
+</div>
+<span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase rounded tracking-tighter border border-emerald-200">
+                        Approved
+                    </span>
+</div>
+<div class="flex items-center gap-2 mb-4 text-body-md text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="calendar_today">calendar_today</span>
+<span>Friday, Oct 24 • Hall B</span>
+</div>
+<button class="w-full py-2.5 border border-primary text-primary font-title-md text-sm rounded-lg hover:bg-primary-fixed transition-colors">
+                    View Details
+                </button>
+</div>
+<!-- Request Card 4: Membership -->
+<div class="bg-surface-container-lowest rounded-xl p-4 custom-shadow border border-outline-variant hover:border-primary/30 transition-colors">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-primary uppercase tracking-wider">New Member Onboarding</p>
+<h3 class="font-title-md text-title-md text-on-surface">Tessa Phiri</h3>
+</div>
+</div>
+<span class="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-bold uppercase rounded tracking-tighter border border-amber-200">
+                        Pending
+                    </span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4 px-1">
+                    Needs department orientation and portal access.
+                </p>
+<div class="flex gap-2">
+<button class="flex-1 py-2.5 bg-primary text-on-primary font-title-md text-sm rounded-lg hover:bg-opacity-90 active:scale-[0.98] transition-all">
+                        Approve Access
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar (JSON Component Map) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-1 pb-safe bg-surface-container-lowest shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl border-t border-outline-variant/10">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md-mobile text-label-md-mobile mt-1">Dash</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md-mobile text-label-md-mobile mt-1">Roster</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-md-mobile text-label-md-mobile mt-1">Check-in</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-md-mobile text-label-md-mobile mt-1">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl p-2 scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+<span class="font-label-md-mobile text-label-md-mobile mt-1">Reqs</span>
+</a>
+</nav>
+<!-- Micro-interaction Script -->
+<script>
+        document.querySelectorAll('button, a').forEach(elem => {
+            elem.addEventListener('click', function(e) {
+                const ripple = document.createElement('div');
+                ripple.classList.add('ripple');
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+
+        // Simple filter toggle logic
+        const filters = document.querySelectorAll('.filter-chip');
+        filters.forEach(filter => {
+            filter.addEventListener('click', () => {
+                filters.forEach(f => {
+                    f.classList.remove('bg-primary', 'text-on-primary', 'active-tab-glow');
+                    f.classList.add('bg-surface-container', 'text-on-surface-variant');
+                });
+                filter.classList.remove('bg-surface-container', 'text-on-surface-variant');
+                filter.classList.add('bg-primary', 'text-on-primary', 'active-tab-glow');
+            });
+        });
+    </script>
+<style>
+        .ripple {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Safe area for mobile notches */
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+</body></html>

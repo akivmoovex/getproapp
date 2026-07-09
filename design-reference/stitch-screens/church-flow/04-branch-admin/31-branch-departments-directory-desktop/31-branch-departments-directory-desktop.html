@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>31-branch-departments-directory-desktop</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1fbff;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "error-container": "#ffdad6",
+                      "outline": "#787586",
+                      "surface-container-high": "#dfeaef",
+                      "primary": "#5341cd",
+                      "tertiary": "#57595b",
+                      "on-surface-variant": "#474554",
+                      "tertiary-container": "#707273",
+                      "primary-fixed": "#e4dfff",
+                      "on-surface": "#131d21",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container": "#e4f0f4",
+                      "tertiary-fixed": "#e1e3e4",
+                      "surface-container-low": "#eaf5fa",
+                      "on-tertiary-fixed": "#191c1d",
+                      "primary-fixed-dim": "#c6bfff",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary-container": "#5d6466",
+                      "on-primary-fixed-variant": "#4029ba",
+                      "background": "#f1fbff",
+                      "on-background": "#131d21",
+                      "secondary-fixed-dim": "#c1c8ca",
+                      "tertiary-fixed-dim": "#c5c7c8",
+                      "secondary-fixed": "#dde4e6",
+                      "inverse-primary": "#c6bfff",
+                      "surface-variant": "#d9e4e9",
+                      "on-secondary-fixed-variant": "#41484a",
+                      "on-tertiary-container": "#f7f8f9",
+                      "on-primary": "#ffffff",
+                      "surface-container-highest": "#d9e4e9",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#454748",
+                      "on-primary-container": "#faf6ff",
+                      "on-secondary-fixed": "#161d1f",
+                      "on-error-container": "#93000a",
+                      "surface-dim": "#d1dce0",
+                      "surface": "#f1fbff",
+                      "on-primary-fixed": "#160066",
+                      "on-error": "#ffffff",
+                      "secondary-container": "#dae1e3",
+                      "inverse-surface": "#283236",
+                      "primary-container": "#6c5ce7",
+                      "outline-variant": "#c8c4d7",
+                      "surface-bright": "#f1fbff",
+                      "surface-tint": "#5847d2",
+                      "secondary": "#586062",
+                      "error": "#ba1a1a",
+                      "inverse-on-surface": "#e7f3f7"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "4px",
+                      "xl": "32px",
+                      "base": "8px",
+                      "gutter": "24px",
+                      "margin-desktop": "32px",
+                      "sm": "8px",
+                      "margin-mobile": "16px",
+                      "md": "16px",
+                      "lg": "24px"
+              },
+              "fontFamily": {
+                      "headline-lg": ["Inter"],
+                      "title-md": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "label-md": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "title-lg": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "label-lg": ["Inter"],
+                      "body-md": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="flex min-h-screen overflow-hidden">
+<!-- Side Navigation Shell -->
+<aside class="w-[280px] h-screen sticky top-0 left-0 bg-inverse-surface dark:bg-surface-container-lowest flex flex-col py-base gap-sm shadow-sm z-50">
+<div class="px-lg py-md mb-base">
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed dark:text-primary">Kafue Baptist Church</h1>
+<p class="font-body-md text-body-md text-surface-variant dark:text-outline">Branch Admin HQ</p>
+</div>
+<nav class="flex-1 px-base space-y-xs overflow-y-auto custom-scrollbar">
+<a class="flex items-center gap-md py-md rounded-lg style_universal_hover text-surface-variant dark:text-outline pl-5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<!-- Active State: Departments -->
+<a class="flex items-center gap-md py-md rounded-lg text-primary-fixed dark:text-primary font-bold border-l-4 border-primary-fixed dark:border-primary pl-4 scale-[0.98] transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+<span class="font-label-lg text-label-lg">Departments</span>
+</a>
+<a class="flex items-center gap-md py-md rounded-lg style_universal_hover text-surface-variant dark:text-outline pl-5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+<a class="flex items-center gap-md py-md rounded-lg style_universal_hover text-surface-variant dark:text-outline pl-5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="assignment_ind">assignment_ind</span>
+<span class="font-label-lg text-label-lg">Duty Roster</span>
+</a>
+<a class="flex items-center gap-md py-md rounded-lg style_universal_hover text-surface-variant dark:text-outline pl-5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="font-label-lg text-label-lg">Announcements</span>
+</a>
+<a class="flex items-center gap-md py-md rounded-lg style_universal_hover text-surface-variant dark:text-outline pl-5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="web">web</span>
+<span class="font-label-lg text-label-lg">Website Editor</span>
+</a>
+<a class="flex items-center gap-md py-md rounded-lg style_universal_hover text-surface-variant dark:text-outline pl-5 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-lg py-md border-t border-outline/20">
+<div class="flex items-center gap-md">
+<img class="w-10 h-10 rounded-full border border-primary/20" data-alt="A professional headshot of a church administrator, middle-aged with a warm and welcoming expression, wearing business casual attire. The lighting is soft and natural, suggesting a brightly lit office environment with subtle church iconography in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsyCBNSyYnd2kUVjHK9P-CRWoH1iWZ83qQ_aOSi16mEXcjfKsHI6HW9R0MqX8hbzNmSDn5FKP4mNyf6E3coL0ki9JI1-qgACWwRBQFH-rzHmDG1Zuh4Ik1ZZQzFKtXrwVYdtTutWxSs8TvFpYx1UmsZtiPxMuVgrEMfJoOPTAWqNU7cpJBtz6pkTajxa7jM58OGCC7CLRtAFt_CJ8JLvcKCwi_jvkFF7nGlrd4sRjhu69bMtJd53VNww"/>
+<div>
+<p class="font-label-lg text-label-lg text-on-primary-container">Admin User</p>
+<p class="text-[10px] text-surface-variant uppercase tracking-wider">Branch Lead</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="w-full h-16 sticky top-0 z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-gutter">
+<div class="flex items-center gap-xl">
+<h2 class="font-headline-md text-headline-md font-black text-on-surface">GetPro Church Operations</h2>
+<div class="relative w-96 hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary/20 placeholder:text-outline" placeholder="Search departments, leaders, or staff..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 overflow-y-auto p-gutter custom-scrollbar">
+<!-- Page Header Section -->
+<div class="flex justify-between items-end mb-xl">
+<div>
+<nav class="flex mb-2 text-label-md text-outline font-label-md">
+<span>Directory</span>
+<span class="mx-2">/</span>
+<span class="text-primary font-semibold">Departments</span>
+</nav>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Departmental Operations</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Manage core church infrastructure, leadership assignments, and operational flow.</p>
+</div>
+<div class="flex gap-md">
+<button class="flex items-center gap-xs px-lg py-2 rounded-lg border border-outline text-on-surface font-label-lg text-label-lg hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="filter_list">filter_list</span>
+                        Filter
+                    </button>
+<button class="flex items-center gap-xs px-lg py-2 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg hover:opacity-90 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+                        New Department
+                    </button>
+</div>
+</div>
+<!-- Stats Overview - Bento Style -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-lg mb-xl">
+<div class="bg-surface-container-lowest p-lg rounded-xl shadow-sm border border-outline-variant/30 flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary p-2 bg-primary/10 rounded-lg" data-icon="corporate_fare">corporate_fare</span>
+<span class="text-label-md text-primary font-label-md">+2 this month</span>
+</div>
+<div class="mt-md">
+<h4 class="font-body-md text-body-md text-outline">Total Departments</h4>
+<p class="font-display-lg text-display-lg text-on-surface">06</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl shadow-sm border border-outline-variant/30 flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary p-2 bg-secondary/10 rounded-lg" data-icon="person_celebrate">person_celebrate</span>
+</div>
+<div class="mt-md">
+<h4 class="font-body-md text-body-md text-outline">Active Staff</h4>
+<p class="font-display-lg text-display-lg text-on-surface">142</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl shadow-sm border border-outline-variant/30 flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-error p-2 bg-error-container/30 rounded-lg" data-icon="assignment_late">assignment_late</span>
+</div>
+<div class="mt-md">
+<h4 class="font-body-md text-body-md text-outline">Open Positions</h4>
+<p class="font-display-lg text-display-lg text-on-surface">08</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-lg rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden relative">
+<div class="relative z-10">
+<h4 class="font-title-md text-title-md text-on-surface mb-2">Efficiency Rate</h4>
+<p class="font-display-lg text-display-lg text-primary">94%</p>
+</div>
+<div class="absolute bottom-0 right-0 w-32 h-32 opacity-10">
+<span class="material-symbols-outlined text-[120px]" data-icon="trending_up">trending_up</span>
+</div>
+</div>
+</div>
+<!-- Departments Table Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
+<div class="px-lg py-md border-b border-outline-variant flex justify-between items-center bg-surface-container-low/50">
+<h3 class="font-title-lg text-title-lg text-on-surface">Department Registry</h3>
+<div class="flex gap-sm">
+<button class="p-1.5 rounded-md hover:bg-surface-variant text-outline transition-colors"><span class="material-symbols-outlined" data-icon="download">download</span></button>
+<button class="p-1.5 rounded-md hover:bg-surface-variant text-outline transition-colors"><span class="material-symbols-outlined" data-icon="print">print</span></button>
+<button class="p-1.5 rounded-md hover:bg-surface-variant text-outline transition-colors"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant bg-surface-container-low/30">
+<th class="px-lg py-4 font-label-lg text-label-lg text-outline uppercase tracking-wider">Department Name</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-outline uppercase tracking-wider">Leader</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-outline uppercase tracking-wider">Purpose</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-outline uppercase tracking-wider">Members/Staff</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-outline uppercase tracking-wider">Status</th>
+<th class="px-lg py-4 font-label-lg text-label-lg text-outline uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/50">
+<!-- Administration -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-5">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="business_center">business_center</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Administration</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full" data-alt="A portrait of a male professional in a light blue dress shirt, looking confident and organized. High-end professional headshot with a blurred corporate office background, bright and clean modern lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH7X2kkS65LqO9dpz8OpevVTswS0jspAGN2sCnXQvaI_qkurKUYjrkr1JjHQQGMKR24Ewclnsq7UUPLcN6bpETjXaOGigRS4BRV9IlJm21OiUahSGfeCnKsJbkboOV0A7CLpo19lC5l4zgdJfrxNrSg6BPqHCMSwoF6WMgoi0OJWDuzR2bkCB5dK51VopfYVMWPJPOgtYlYJl72UekUAdDJwpwLslUJQbPOC_z8ujXfa_o4b-e3kjQEA"/>
+<span class="font-body-md text-body-md text-on-surface">Elder Mark Zulu</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xs truncate">Strategy, oversight, and branch governance.</p>
+</td>
+<td class="px-lg py-5">
+<div class="flex -space-x-2">
+<div class="w-7 h-7 rounded-full bg-surface-variant border-2 border-surface flex items-center justify-center text-[10px] font-bold">AZ</div>
+<div class="w-7 h-7 rounded-full bg-primary-fixed border-2 border-surface flex items-center justify-center text-[10px] font-bold">MK</div>
+<div class="w-7 h-7 rounded-full bg-tertiary-fixed border-2 border-surface flex items-center justify-center text-[10px] font-bold text-outline">+8</div>
+</div>
+</td>
+<td class="px-lg py-5">
+<span class="px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-label-md font-label-md uppercase">Active</span>
+</td>
+<td class="px-lg py-5">
+<div class="flex gap-md opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-primary hover:underline font-label-lg text-label-lg">Edit</button>
+<button class="text-outline hover:text-on-surface font-label-lg text-label-lg">View</button>
+</div>
+</td>
+</tr>
+<!-- Finance -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-5">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Finance</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full" data-alt="A professional woman in her 40s, wearing glasses and a smart dark blazer, looking detail-oriented and trustworthy. Soft natural light from a window hitting her face, clean white office setting, high resolution digital photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbaVsskAdmZ1OAy3RVFYqv5B83_KQs3PfJH4mQzG-i95_r86kd3DNGOz347ZZa31dlM_3RGLFbN4MWXu-szmE8aPJRFcxgNYujZIr9UqeZ6s4ybByq2S0dMMIqoWhVfHaVmNMgPCCTEatsz5yzT78xzxT0EuOROV3ekFNULC9n2MurryISGGtbVZboFlKhe45wiS9CTtrkS3qcdybb-AtJbZ0yBJdYOnf0Gr66kg9GbR1gac2XK6GLAg"/>
+<span class="font-body-md text-body-md text-on-surface">Sarah Mumba</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xs truncate">Treasury, tithes, and financial planning.</p>
+</td>
+<td class="px-lg py-5">
+<div class="flex items-center gap-xs">
+<span class="font-body-md text-body-md text-on-surface font-medium">12</span>
+<span class="text-label-md text-outline">Staff</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<span class="px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-label-md font-label-md uppercase">Active</span>
+</td>
+<td class="px-lg py-5">
+<div class="flex gap-md opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-primary hover:underline font-label-lg text-label-lg">Edit</button>
+<button class="text-outline hover:text-on-surface font-label-lg text-label-lg">View</button>
+</div>
+</td>
+</tr>
+<!-- Media & Tech -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-5">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="video_camera_back">video_camera_back</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Media &amp; Tech</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full" data-alt="A young energetic male tech lead in a black t-shirt, smiling, in a tech-heavy environment with studio lights and computer monitors in the background. Modern cinematic lighting, crisp focus, vibrant colors." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1UvOLSPVse9cqCiKvwhXKTZ-i69syV-xZp6EOYDzKzc7gd0fgkFGVoIZCEdASO4viuycP6cPLG784zjl_CHVjUE0xaDWYercCqbagphmZvr2T_0Zs1kRG_ci4W-8kLHXyCHZxo0efACP4OOy47zUHkthPPQuB2L5HyoxWIB53bTLQclwB203OKJ7YP6rai5aITKOowPwrcVegcGmZv8fZ6PmTEouh_T7xtEYTaMYUNZdGvQP-Sb8LcQ"/>
+<span class="font-body-md text-body-md text-on-surface">Chisomo Banda</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xs truncate">Livestream, sound, and digital presence.</p>
+</td>
+<td class="px-lg py-5">
+<div class="flex items-center gap-xs">
+<span class="font-body-md text-body-md text-on-surface font-medium">28</span>
+<span class="text-label-md text-outline">Volunteers</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<span class="px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-label-md font-label-md uppercase">Active</span>
+</td>
+<td class="px-lg py-5">
+<div class="flex gap-md opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-primary hover:underline font-label-lg text-label-lg">Edit</button>
+<button class="text-outline hover:text-on-surface font-label-lg text-label-lg">View</button>
+</div>
+</td>
+</tr>
+<!-- Hospitality -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-5">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="volunteer_activism">volunteer_activism</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Hospitality</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full" data-alt="An older woman with a very kind and welcoming smile, wearing a traditional vibrant African pattern dress. Soft, warm lighting, high-quality portrait photography, indoor church lobby setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmGkpl42sG0zM-ANKmtCavnbCiFV_WgHP0UxTpwg1CsgJwfWT-6UIuy72h-71u5ihnGxFGi25_9TBmBZf7AYoasjGiNvSL0heWn-7Hidp72ixDy8PzZhzZ7_uxf2TswhqT7TaraaYRHxkRp5iwxfEajFpMLF1tJhUJKP1pSuO04d1kBX9W3tV1Ae4p_NLoctMvZkhanIvxsQfboJTScDMeLOiBuXYX4Ie45IKyByBJSfapk_6QgIM-JA"/>
+<span class="font-body-md text-body-md text-on-surface">Mrs. Joyce Phiri</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xs truncate">Guest reception, catering, and ushering.</p>
+</td>
+<td class="px-lg py-5">
+<div class="flex items-center gap-xs">
+<span class="font-body-md text-body-md text-on-surface font-medium">45</span>
+<span class="text-label-md text-outline">Staff</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<span class="px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-label-md font-label-md uppercase">Active</span>
+</td>
+<td class="px-lg py-5">
+<div class="flex gap-md opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-primary hover:underline font-label-lg text-label-lg">Edit</button>
+<button class="text-outline hover:text-on-surface font-label-lg text-label-lg">View</button>
+</div>
+</td>
+</tr>
+<!-- Security -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-5">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="shield">shield</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Security</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full" data-alt="A focused man in his late 30s, tall and well-built, wearing a professional security uniform. His expression is serious yet helpful. Outdoor setting in the church parking lot during a sunny day, sharp details." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBi7rKOU8mYN3nW9RgDOiSZMbY5OEGqB0F3qqdhdCw2yJdc4a17veS76BLRdbscCLsmw-JIMB0zQK8dNP6-WG55Fwpi83wW6ywLMZz40jkB6nF2bQ-3hqfud9A9RMVJmzH43ZtdWE1weA4t_qafLhNQQ-ppzxRiw5wkKCiXD_3fTvG1Li1FZnnWQLnfWSVHP1KF15sAAQsZxtwRkxi-LGK0aASk6ERMvQ-Hx7nWj49Fan8aSuiTIl9Dsw"/>
+<span class="font-body-md text-body-md text-on-surface">John Tembo</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xs truncate">Premises protection and parking logistics.</p>
+</td>
+<td class="px-lg py-5">
+<div class="flex items-center gap-xs">
+<span class="font-body-md text-body-md text-on-surface font-medium">18</span>
+<span class="text-label-md text-outline">Staff</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<span class="px-3 py-1 rounded-full bg-surface-variant text-on-surface-variant text-label-md font-label-md uppercase">Under Review</span>
+</td>
+<td class="px-lg py-5">
+<div class="flex gap-md opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-primary hover:underline font-label-lg text-label-lg">Edit</button>
+<button class="text-outline hover:text-on-surface font-label-lg text-label-lg">View</button>
+</div>
+</td>
+</tr>
+<!-- Cleaning & Maintenance -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-lg py-5">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="cleaning_services">cleaning_services</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Cleaning &amp; Maintenance</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full" data-alt="A hardworking man in neat work coveralls, holding a clipboard, looking proud and industrious. Indoors in a clean, modern building hallway, bright daylight coming through windows, soft background blur." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaQkzbC7TXbplHRbk3yuCMDpGcQHvvuTs1eNnsythcjAEhw5Y-m9HoIgTMV6MxQj3-HEUBm9fjTsKmn_mlLhYxQgKP1eyv4uEoXKFD6gbvCr-UVuufAJFZ1bwWyz9lX9KEJ3xHOKdW_N5kDVTVSIzfPB6_koxO5Cp1-859SRpZXgF3TULy8pJTRMuOnz9gwIBY26WqeWksgWEGvzNJ3_ar1Q0SQRnfc6o8DghB0sdJOQrb0-EWJ_zMtQ"/>
+<span class="font-body-md text-body-md text-on-surface">Samuel Nyirenda</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xs truncate">Facility care, repairs, and landscaping.</p>
+</td>
+<td class="px-lg py-5">
+<div class="flex items-center gap-xs">
+<span class="font-body-md text-body-md text-on-surface font-medium">31</span>
+<span class="text-label-md text-outline">Staff</span>
+</div>
+</td>
+<td class="px-lg py-5">
+<span class="px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-label-md font-label-md uppercase">Active</span>
+</td>
+<td class="px-lg py-5">
+<div class="flex gap-md opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-primary hover:underline font-label-lg text-label-lg">Edit</button>
+<button class="text-outline hover:text-on-surface font-label-lg text-label-lg">View</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-lg py-md border-t border-outline-variant flex justify-between items-center text-label-md text-outline">
+<span>Showing 6 of 6 departments</span>
+<div class="flex gap-sm">
+<button class="px-3 py-1 rounded border border-outline-variant hover:bg-surface-variant disabled:opacity-50" disabled="">Previous</button>
+<button class="px-3 py-1 rounded border border-outline-variant hover:bg-surface-variant">Next</button>
+</div>
+</div>
+</div>
+<!-- Additional Context - Side-by-Side Asymmetric Layout -->
+<div class="mt-xl grid grid-cols-12 gap-lg pb-xl">
+<!-- Upcoming Dept Meetings -->
+<div class="col-span-12 lg:col-span-7 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 p-lg">
+<div class="flex justify-between items-center mb-lg">
+<h4 class="font-title-lg text-title-lg text-on-surface">Inter-Departmental Sync</h4>
+<span class="text-label-md text-primary bg-primary/10 px-3 py-1 rounded-full">Next: Tomorrow, 10:00 AM</span>
+</div>
+<div class="space-y-md">
+<div class="flex items-center p-md bg-surface-container-low rounded-lg border-l-4 border-primary">
+<div class="w-12 h-12 flex flex-col items-center justify-center bg-white rounded-md shadow-sm mr-md">
+<span class="text-[10px] font-bold text-outline">OCT</span>
+<span class="text-lg font-black text-on-surface leading-none">24</span>
+</div>
+<div class="flex-1">
+<h5 class="font-title-md text-title-md text-on-surface">Quarterly Budget Review</h5>
+<p class="font-body-md text-body-md text-outline">Admin + Finance Department Leads</p>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</button>
+</div>
+<div class="flex items-center p-md bg-surface-container-low/50 rounded-lg border-l-4 border-secondary opacity-80">
+<div class="w-12 h-12 flex flex-col items-center justify-center bg-white rounded-md shadow-sm mr-md">
+<span class="text-[10px] font-bold text-outline">OCT</span>
+<span class="text-lg font-black text-on-surface leading-none">26</span>
+</div>
+<div class="flex-1">
+<h5 class="font-title-md text-title-md text-on-surface">Sunday Service Tech Run</h5>
+<p class="font-body-md text-body-md text-outline">Media &amp; Tech + Hospitality</p>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</button>
+</div>
+</div>
+</div>
+<!-- Open Requests/Tickets -->
+<div class="col-span-12 lg:col-span-5 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 p-lg flex flex-col">
+<h4 class="font-title-lg text-title-lg text-on-surface mb-md">Operational Tickets</h4>
+<div class="space-y-base flex-1">
+<div class="flex justify-between items-start pb-base border-b border-outline-variant/30">
+<div>
+<p class="font-body-md text-body-md text-on-surface">Sound System Repair</p>
+<span class="text-label-md text-outline">Requested by Media</span>
+</div>
+<span class="text-label-md text-error font-semibold">High Priority</span>
+</div>
+<div class="flex justify-between items-start pb-base border-b border-outline-variant/30">
+<div>
+<p class="font-body-md text-body-md text-on-surface">New Usher Uniforms</p>
+<span class="text-label-md text-outline">Requested by Hospitality</span>
+</div>
+<span class="text-label-md text-secondary font-semibold">In Progress</span>
+</div>
+<div class="flex justify-between items-start pb-base">
+<div>
+<p class="font-body-md text-body-md text-on-surface">IT Security Update</p>
+<span class="text-label-md text-outline">Requested by Admin</span>
+</div>
+<span class="text-label-md text-outline font-semibold">Pending</span>
+</div>
+</div>
+<button class="mt-lg w-full py-2 bg-surface-container-high rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-variant transition-colors">
+                        View All Operations (14)
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interaction for hover effects on table rows
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                row.querySelector('.group-hover\\:opacity-100')?.classList.remove('opacity-0');
+                row.querySelector('.group-hover\\:opacity-100')?.classList.add('opacity-100');
+            });
+            row.addEventListener('mouseleave', () => {
+                row.querySelector('.group-hover\\:opacity-100')?.classList.remove('opacity-100');
+                row.querySelector('.group-hover\\:opacity-100')?.classList.add('opacity-0');
+            });
+        });
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        const searchIcon = searchInput?.previousElementSibling;
+        searchInput?.addEventListener('focus', () => {
+            searchIcon.classList.add('text-primary');
+        });
+        searchInput?.addEventListener('blur', () => {
+            searchIcon.classList.remove('text-primary');
+        });
+    </script>
+</body></html>

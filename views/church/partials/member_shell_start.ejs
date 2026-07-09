@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= pageTitle %> — Member Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/church/church.css?v=13"/>
+</head>
+<body class="church-body church-body--member-portal">
+  <div class="church-member-layout">
+    <aside class="church-member-sidebar" aria-label="Member navigation">
+      <div class="church-member-sidebar__brand">
+        <span class="material-symbols-outlined" aria-hidden="true">church</span>
+        <div>
+          <strong>GetPro Church</strong>
+          <span><%= churchName %></span>
+        </div>
+      </div>
+      <nav class="church-member-sidebar__nav">
+        <a href="/member/dashboard" class="church-member-nav-link">Dashboard</a>
+        <a href="/member/profile" class="church-member-nav-link">Profile</a>
+        <a href="/member/account" class="church-member-nav-link">Account</a>
+        <a href="/member/announcements" class="church-member-nav-link">Announcements</a>
+        <a href="/member/events" class="church-member-nav-link">Events</a>
+        <a href="/member/my-ministries" class="church-member-nav-link">My Ministries</a>
+        <a href="/member/ministries" class="church-member-nav-link">Ministries</a>
+        <a href="/member/my-duties" class="church-member-nav-link">My Duties</a>
+        <a href="/member/resources" class="church-member-nav-link">Resources</a>
+        <a href="/member/forms" class="church-member-nav-link">Forms</a>
+        <a href="/member/giving" class="church-member-nav-link">Giving</a>
+        <a href="/member/prayer-request" class="church-member-nav-link">Prayer Request</a>
+        <a href="/member/requests" class="church-member-nav-link">Requests</a>
+      </nav>
+      <div class="church-member-sidebar__footer">
+        <a href="/" class="church-member-nav-link">Public website</a>
+        <form method="post" action="/logout">
+          <button class="church-member-nav-link church-member-nav-link--button" type="submit">Sign out</button>
+        </form>
+      </div>
+    </aside>
+    <div class="church-member-main">
+      <nav class="church-member-bottom-nav" aria-label="Member mobile navigation">
+        <a href="/member/dashboard" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">home</span>Home</a>
+        <a href="/member/announcements" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">campaign</span>News</a>
+        <a href="/member/events" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">event</span>Events</a>
+        <a href="/member/requests" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">inbox</span>Requests</a>
+        <a href="/member/profile" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">person</span>Profile</a>
+      </nav>

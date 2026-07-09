@@ -1,0 +1,18 @@
+<%- include('../partials/auth_shell_start') %>
+  <div class="church-auth-card church-auth-card--state">
+    <div class="church-state-icon" aria-hidden="true">
+      <span class="material-symbols-outlined">mark_email_read</span>
+    </div>
+    <h1 class="church-auth-card__title">Registration submitted</h1>
+    <p class="church-auth-card__subtitle">
+      Thank you for registering with <%= churchName %>. Your membership application is now <strong>pending verification</strong> by branch leadership.
+    </p>
+    <p class="church-auth-card__body">
+      You can sign in at any time to check your status. While your application is pending, you will see a waiting screen instead of the member portal.
+    </p>
+    <div class="church-auth-card__actions">
+      <a class="church-btn church-btn--primary" href="/login">Go to member login</a>
+      <a class="church-btn church-btn--outline" href="/">Return home</a>
+    </div>
+  </div>
+<%- include('../partials/auth_shell_end') %>

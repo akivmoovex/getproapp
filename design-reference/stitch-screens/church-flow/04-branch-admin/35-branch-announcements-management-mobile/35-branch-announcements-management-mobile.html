@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>35-branch-announcements-management-mobile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "outline": "#787586",
+                    "surface-container-high": "#dfeaef",
+                    "primary": "#5341cd",
+                    "tertiary": "#57595b",
+                    "on-surface-variant": "#474554",
+                    "tertiary-container": "#707273",
+                    "primary-fixed": "#e4dfff",
+                    "on-surface": "#131d21",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#e4f0f4",
+                    "tertiary-fixed": "#e1e3e4",
+                    "surface-container-low": "#eaf5fa",
+                    "on-tertiary-fixed": "#191c1d",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-container": "#5d6466",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "background": "#f1fbff",
+                    "on-background": "#131d21",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "secondary-fixed": "#dde4e6",
+                    "inverse-primary": "#c6bfff",
+                    "surface-variant": "#d9e4e9",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-primary": "#ffffff",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-primary-container": "#faf6ff",
+                    "on-secondary-fixed": "#161d1f",
+                    "on-error-container": "#93000a",
+                    "surface-dim": "#d1dce0",
+                    "surface": "#f1fbff",
+                    "on-primary-fixed": "#160066",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#dae1e3",
+                    "inverse-surface": "#283236",
+                    "primary-container": "#6c5ce7",
+                    "outline-variant": "#c8c4d7",
+                    "surface-bright": "#f1fbff",
+                    "surface-tint": "#5847d2",
+                    "secondary": "#586062",
+                    "error": "#ba1a1a",
+                    "inverse-on-surface": "#e7f3f7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "xl": "32px",
+                    "base": "8px",
+                    "gutter": "24px",
+                    "margin-desktop": "32px",
+                    "sm": "8px",
+                    "margin-mobile": "16px",
+                    "md": "16px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .active-nav-item {
+            color: #5341cd;
+            font-weight: 600;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- Top Navigation Bar (Mobile View) -->
+<header class="w-full h-16 sticky top-0 z-50 bg-surface flex justify-between items-center px-margin-mobile border-b border-outline-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="campaign">campaign</span>
+<h1 class="font-headline-md text-headline-md font-black tracking-tight text-on-surface">Announcements</h1>
+</div>
+<div class="flex items-center gap-base">
+<button class="p-base hover:bg-surface-container-high rounded-full transition-all">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-fixed overflow-hidden border border-primary-container">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a friendly African male administrator in a professional modern church setting, soft natural lighting, high-quality corporate headshot with a blurred office background using a palette of soft blues and whites." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFlUOGccrN6_l9mbWSwKzw56QxTRm_-u1UhKm_pZW0dcf1BsdyF89yEm7T6TC5XOrbb1UJucv8OFN8Sh3q6vViZzH9aDfxMlMA8bznjnBpOEiG-8gWWZvZD9T7NwtCjJoNqu04ANelBQKTlCltoGCuXnAmJ3DfnPSdyTHFO5aECsic9mL2iiL3CFtg6TZgAftvF3XsCJYvSuy9YittAuU3M_cF7WscKGwIxafpl0-WO9mC5GCM1x698A"/>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<main class="px-margin-mobile pt-lg flex flex-col gap-lg">
+<!-- Search & Filter Bar (Micro-Interaction Focused) -->
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline" data-icon="search">search</span>
+</div>
+<input class="block w-full pl-10 pr-base py-md bg-surface-container-low border-none rounded-xl font-body-md text-on-surface placeholder-outline focus:ring-2 focus:ring-primary transition-all" placeholder="Search announcements..." type="text"/>
+</div>
+<!-- Announcement Cards (Bento Style Variation) -->
+<div class="flex flex-col gap-md">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest p-lg rounded-xl card-shadow border border-outline-variant flex flex-col gap-md transition-transform active:scale-[0.98]">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-xs">
+<span class="inline-flex items-center px-base py-xs rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-lg text-label-lg w-fit">
+                            Members
+                        </span>
+<h2 class="font-title-lg text-title-lg text-on-surface leading-tight">Annual Branch Covenant Renewal Service</h2>
+</div>
+<button class="text-primary hover:bg-primary/10 p-sm rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="calendar_today">calendar_today</span>
+<p class="font-body-md text-body-md">Oct 24, 2023 • 09:00 AM</p>
+</div>
+<div class="pt-sm border-t border-outline-variant/30 flex justify-between items-center">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-surface-container-lowest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Minimalist abstract church icon representing community growth, vector style, primary violet and white theme, clean lines." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6jrJlelrtLNCno4Na3gCXJNw1G0aSQlSAqz9od1SVulTEkHvtkUkgyxYX6LE3EKb31REnaeiOGD0V-xOsP9gYaNz3Z28v-kymAa3RxeObjqvZp8l4ZyQE7FIqT56X6C3gP7-SGj5FmePMM5V2fz-K6r_t84XcMRghZWEvAEGwSWPiL911x-4sJ9BdVBQY1DphOBZAxKS4h-wX966yHr5WyfySyP8ulC3nugmuG0_UEbaLWHNmXEkSlg"/>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-surface-container-lowest bg-surface-variant flex items-center justify-center text-[10px] font-bold text-on-surface-variant">
+                            +42
+                        </div>
+</div>
+<span class="text-label-md font-label-md text-outline uppercase tracking-wider">Scheduled</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest p-lg rounded-xl card-shadow border border-outline-variant flex flex-col gap-md transition-transform active:scale-[0.98]">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-xs">
+<span class="inline-flex items-center px-base py-xs rounded-full bg-secondary-container text-on-secondary-container font-label-lg text-label-lg w-fit">
+                            Departments
+                        </span>
+<h2 class="font-title-lg text-title-lg text-on-surface leading-tight">Quarterly Leadership Sync &amp; Strategy</h2>
+</div>
+<button class="text-primary hover:bg-primary/10 p-sm rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="calendar_today">calendar_today</span>
+<p class="font-body-md text-body-md">Oct 28, 2023 • 02:00 PM</p>
+</div>
+<div class="pt-sm border-t border-outline-variant/30 flex justify-between items-center">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="group">group</span>
+<span class="text-label-md font-label-md text-error font-bold uppercase tracking-wider">Urgent</span>
+</div>
+</div>
+<!-- Card 3 (Draft State) -->
+<div class="bg-surface-container-low p-lg rounded-xl border border-dashed border-outline flex flex-col gap-md opacity-80">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-xs">
+<span class="inline-flex items-center px-base py-xs rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-lg text-label-lg w-fit">
+                            Youth Ministry
+                        </span>
+<h2 class="font-title-lg text-title-lg text-on-surface leading-tight">Youth Camp 2024 Early Bird Registration</h2>
+</div>
+<button class="text-primary hover:bg-primary/10 p-sm rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="history">history</span>
+<p class="font-body-md text-body-md">Draft saved 2 hours ago</p>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest p-lg rounded-xl card-shadow border border-outline-variant flex flex-col gap-md transition-transform active:scale-[0.98]">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-xs">
+<span class="inline-flex items-center px-base py-xs rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-lg text-label-lg w-fit">
+                            Everyone
+                        </span>
+<h2 class="font-title-lg text-title-lg text-on-surface leading-tight">Community Outreach: Kafue Market Clean-up</h2>
+</div>
+<button class="text-primary hover:bg-primary/10 p-sm rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="calendar_today">calendar_today</span>
+<p class="font-body-md text-body-md">Nov 05, 2023 • 07:30 AM</p>
+</div>
+<div class="pt-sm border-t border-outline-variant/30 flex justify-between items-center">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="public">public</span>
+<span class="text-label-md font-label-md text-on-surface-variant">Global Reach</span>
+</div>
+<span class="text-label-md font-label-md text-outline uppercase tracking-wider">Active</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-lg flex items-center justify-center transition-transform active:scale-90 z-50">
+<span class="material-symbols-outlined text-[28px]" data-icon="add">add</span>
+</button>
+<!-- Bottom Navigation Bar (Mobile Anchor) -->
+<nav class="fixed bottom-0 left-0 right-0 h-20 bg-surface flex items-center justify-around px-base border-t border-outline-variant z-50 md:hidden">
+<div class="flex flex-col items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-lg text-[10px]">Ministries</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-label-lg text-[10px]">Events</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-primary">
+<div class="relative">
+<span class="material-symbols-outlined" data-icon="campaign" style="font-variation-settings: 'FILL' 1;">campaign</span>
+<div class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full border border-surface"></div>
+</div>
+<span class="font-label-lg text-[10px] font-bold">Announcements</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="assignment_ind">assignment_ind</span>
+<span class="font-label-lg text-[10px]">Roster</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-[10px]">Settings</span>
+</div>
+</nav>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.active\\:scale-\\[0\\.98\\]').forEach(card => {
+            card.addEventListener('touchstart', () => card.classList.add('opacity-90'));
+            card.addEventListener('touchend', () => card.classList.remove('opacity-90'));
+        });
+
+        // Search highlight interaction
+        const searchInput = document.querySelector('input');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary/20');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary/20');
+        });
+    </script>
+</body></html>

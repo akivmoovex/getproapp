@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Ministry Roster - Youth Ministry</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-item .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom scrollbar suppression for a cleaner mobile look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#5341cd",
+                        "tertiary": "#57595b",
+                        "on-tertiary-container": "#f7f8f9",
+                        "primary-fixed": "#e4dfff",
+                        "secondary": "#586062",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#e1e3e4",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-secondary-container": "#5d6466",
+                        "on-primary-fixed": "#160066",
+                        "background": "#f1fbff",
+                        "surface-container": "#e4f0f4",
+                        "surface-tint": "#5847d2",
+                        "on-background": "#131d21",
+                        "surface-container-low": "#eaf5fa",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#f1fbff",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#faf6ff",
+                        "primary-container": "#6c5ce7",
+                        "on-surface-variant": "#474554",
+                        "on-secondary-fixed": "#161d1f",
+                        "inverse-surface": "#283236",
+                        "tertiary-container": "#707273",
+                        "surface-variant": "#d9e4e9",
+                        "secondary-fixed": "#dde4e6",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "outline": "#787586",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#c8c4d7",
+                        "secondary-container": "#dae1e3",
+                        "surface-bright": "#f1fbff",
+                        "inverse-on-surface": "#e7f3f7",
+                        "on-surface": "#131d21",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#c6bfff",
+                        "surface-container-high": "#dfeaef",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d1dce0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "gutter": "24px",
+                        "margin-desktop": "32px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "base": "8px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "label-md-mobile": ["10px", {"lineHeight": "14px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-surface sticky top-0 z-40 border-b border-outline-variant flex justify-between items-center w-full px-4 h-16">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of Grace Mwansa, a confident African woman in her early 30s with a warm and approachable expression. She has neatly styled hair and wears a smart-casual blazer. The lighting is soft and natural, emphasizing her friendly role as a Youth Ministry leader in a modern, light-filled office setting. The aesthetic is clean, professional, and corporate." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzSUIleKG00OBjl0rixi3GclcnTXdtJYyS1Wquw8UuQ_sMe2nyRH_aG64OJNKi3Gm3ne6hQoAjLkL-8SDcow02ispXosgZUyrAKW1AtbrhdIjVpj8B37Jq4rDQLvm4nGEaag6faLsbwM9-k15ZelKu13pqasWeAEEdanpynE6Hjk8d_YnMLUKYmum0O6hscRcOm9y9Me3iLlbSAR1UcqpMqB2s5TayS7p8h7ubsXRGsGkxcbjoxheaBw"/>
+</div>
+<h1 class="font-title-lg text-title-lg text-primary font-bold">Youth Ministry</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-all text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</header>
+<!-- NavigationDrawer (Hidden on Mobile) -->
+<aside class="hidden lg:flex flex-col h-full w-[280px] fixed left-0 top-0 py-6 bg-inverse-surface shadow-sm z-50">
+<div class="px-6 mb-8">
+<div class="font-headline-md text-headline-md font-extrabold text-primary-fixed mb-1">Youth Ministry</div>
+<div class="flex items-center gap-3 mt-4">
+<div class="w-12 h-12 rounded-full overflow-hidden border-2 border-primary-fixed">
+<img class="w-full h-full object-cover" data-alt="Grace Mwansa profile photo for administrative dashboard sidebar. The subject is centered with a slight smile, conveying trust and leadership. Background is a soft, blurred church lobby with modern architectural lines. High quality corporate photography style with cool, bright lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB88u7J_ey6TolTGUEgPF0r652JcyzvDyT6nC-1djDJ_OIgeQHKhj2I0f6wB3lwqM_vDRuohBwac9jPHl2ObuztQkOeNJLWNKLa8XwJeW3EQd6tnjejypoPIVU1xbGKtcDxuRieouk-4iCapegUh6Rwn5zlOEyT2phxyQ1BACYVur_IIKiuS1nnwQuFxf9HRmAdeHN7qB-lDQBJX_WH6GHMOTEzLTqDXuI7PC7jPlFIchlVNm8dgLqy9g"/>
+</div>
+<div>
+<p class="font-title-lg text-title-lg text-primary-fixed font-bold leading-none">Grace Mwansa</p>
+<p class="font-label-lg text-label-lg text-tertiary-fixed-dim">Department Leader</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:bg-on-tertiary-fixed-variant hover:text-white px-4 py-3 mx-2 my-1 rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 bg-primary-container text-on-primary-container px-4 py-3 mx-2 my-1 rounded-lg transition-transform active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-lg text-label-lg font-bold">Roster</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:bg-on-tertiary-fixed-variant hover:text-white px-4 py-3 mx-2 my-1 rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-lg text-label-lg">Attendance</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:bg-on-tertiary-fixed-variant hover:text-white px-4 py-3 mx-2 my-1 rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-lg text-label-lg">Reports</span>
+</a>
+<a class="flex items-center gap-4 text-tertiary-fixed-dim hover:bg-on-tertiary-fixed-variant hover:text-white px-4 py-3 mx-2 my-1 rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+<span class="font-label-lg text-label-lg">Requests</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 pb-24 lg:pl-[280px]">
+<!-- Search and Filter Header -->
+<section class="p-4 md:p-8 space-y-4">
+<div class="flex flex-col gap-4">
+<h2 class="font-headline-md text-headline-md text-on-surface font-bold">Ministry Roster</h2>
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full h-14 pl-12 pr-4 rounded-xl border-none bg-surface-container-low focus:ring-2 focus:ring-primary text-body-lg font-body-lg text-on-surface placeholder:text-outline shadow-sm transition-all" placeholder="Search members or roles..." type="text"/>
+</div>
+<div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+<button class="bg-primary text-white px-4 py-2 rounded-full font-label-lg text-label-lg flex items-center gap-2">
+<span>All</span>
+<span class="bg-white/20 px-2 py-0.5 rounded-full text-[10px]">47</span>
+</button>
+<button class="bg-surface-container-high text-on-surface-variant px-4 py-2 rounded-full font-label-lg text-label-lg">Volunteers</button>
+<button class="bg-surface-container-high text-on-surface-variant px-4 py-2 rounded-full font-label-lg text-label-lg">Students</button>
+<button class="bg-surface-container-high text-on-surface-variant px-4 py-2 rounded-full font-label-lg text-label-lg">Parents</button>
+</div>
+</div>
+</section>
+<!-- Member List Container -->
+<section class="px-4 md:px-8 space-y-3">
+<!-- Member Card 1 -->
+<div class="bg-white p-4 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-[#E2E8F0] flex items-center gap-4 active:scale-[0.99] transition-transform">
+<div class="relative">
+<div class="w-14 h-14 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young male youth volunteer with a friendly smile, wearing a casual denim shirt. The lighting is bright and airy, typical of a modern church community center. High resolution photography with a clean, light-mode aesthetic using soft blues and warm skin tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGGd8ZkUlSb4oF2feNmoETedELxREC8zlX5VKJTfO6Q3WIC5OmUIgCOCG2o78xFgaDXEgYgH96p9DEb39YNHjDE46-mrYSo3QawTncZpSngpT7sriveWXHpV2FAef9xn6SCWcKLik378kf1FN53ppAFbnu_kjawlTzLiwoSY9eZ8cC1G0kqrU8uSqWVrupzV9CSog_mZfVIkZD8kbaIJgXT5VFXzuZxO_hLR8XBqeNCHhCiOfCTFvuCA"/>
+</div>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-md text-title-md text-on-surface font-bold truncate">Samuel Okoro</h3>
+<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-label-md text-label-md">Active</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Small Group Lead</p>
+<div class="flex items-center gap-3 mt-2">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span class="font-label-lg text-label-lg">92% Att.</span>
+</div>
+<div class="w-[1px] h-3 bg-outline-variant"></div>
+<span class="font-label-lg text-label-lg text-outline">Joined Jan 2024</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-fixed text-on-primary-fixed-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="chat">chat</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container text-on-secondary-container">
+<span class="material-symbols-outlined text-[20px]" data-icon="call">call</span>
+</button>
+</div>
+</div>
+<!-- Member Card 2 -->
+<div class="bg-white p-4 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-[#E2E8F0] flex items-center gap-4">
+<div class="relative">
+<div class="w-14 h-14 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up portrait of a young woman with curly hair and glasses, looking cheerful. She is wearing a mustard yellow sweater, set against a blurred background of a modern community lounge with vibrant colors. The style is professional lifestyle photography, conveying warmth and approachable leadership." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB08rnPOndHb7IsfCawKPtHEJyMj6zSLLnq7y_QrARIp0IrbYuZH8SzmiM_7RNNEVqJdVrooMJJYewEdZWtquqmo578l8Q1rCpwyRUy9RbxSeknCvoORB--fiNSXsPcUk0WMqyyLg7cEodttlG1QbzpQZoR_ChPrImv_f50PehR-qCg7LN2SurFJTkcTkU6Opmy_PUjXbSh_okxot7TRGVWpwfZJWaHTCdhdjXFZ74IUBwfyoUH6uLhPg"/>
+</div>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-amber-500 border-2 border-white rounded-full"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-md text-title-md text-on-surface font-bold truncate">Maya Chen</h3>
+<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-label-md text-label-md">On Leave</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Music Ministry</p>
+<div class="flex items-center gap-3 mt-2">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span class="font-label-lg text-label-lg">78% Att.</span>
+</div>
+<div class="w-[1px] h-3 bg-outline-variant"></div>
+<span class="font-label-lg text-label-lg text-outline">Joined Nov 2023</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-fixed text-on-primary-fixed-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="chat">chat</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container text-on-secondary-container">
+<span class="material-symbols-outlined text-[20px]" data-icon="call">call</span>
+</button>
+</div>
+</div>
+<!-- Member Card 3 -->
+<div class="bg-white p-4 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-[#E2E8F0] flex items-center gap-4">
+<div class="relative">
+<div class="w-14 h-14 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Professional headshot of a middle-aged man with short beard and a kind expression, wearing a navy polo shirt. Minimalist background with soft bokeh. The image uses a clean, corporate light-mode color palette of navy, white, and soft greys. High clarity and professional lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-4GvF8jwGZaexTLufiUOSmyHyUq98MDXeVlA7BwXVnvtYFiJRtmoLRHYDbRUA5MA6uKGf4XE8mwHaBna-sIG4yEkOcAr6FBhbYia-iQNXWNj5u33GNbeCpC_C4O_trW5h8nZpMq4M4cgHrdTjGF0VjgpMV056c626NxuHx5X6DP9eBmmM8fG4LhZ4MImZfoRKfnGzFwyC9nUrK1_oqw1-8TgVsvnru3uCJj1wlDORxKcPa4CVzMNvAQ"/>
+</div>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-md text-title-md text-on-surface font-bold truncate">David Miller</h3>
+<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-label-md text-label-md">Active</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Tech &amp; Sound</p>
+<div class="flex items-center gap-3 mt-2">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span class="font-label-lg text-label-lg">100% Att.</span>
+</div>
+<div class="w-[1px] h-3 bg-outline-variant"></div>
+<span class="font-label-lg text-label-lg text-outline">Joined Sep 2022</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-fixed text-on-primary-fixed-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="chat">chat</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container text-on-secondary-container">
+<span class="material-symbols-outlined text-[20px]" data-icon="call">call</span>
+</button>
+</div>
+</div>
+<!-- Member Card 4 -->
+<div class="bg-white p-4 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-[#E2E8F0] flex items-center gap-4">
+<div class="relative">
+<div class="w-14 h-14 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Studio portrait of a young adult woman with an energetic smile, wearing a colorful graphic tee and a light jacket. Bright, high-key studio lighting with a soft blue tint in the shadows. The style is modern, youthful, and professional, aligning with a vibrant community church brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAd9LBXkT7Uw0yq6TX9qCfcn2nAW_298Ddg4tMaVZ6OvGjKrKGvYTng-khZWqIY5TDSvLPrnACc_0ngdqPT9wDb49zrs_YWJOdWkP6kKhXOr4zMX4VN_STELoaoz59x5IGui6f-De_5pu6Nn7iFS84Wk-qyLPxm9qeRjvyqchAdVeEGnd7blaaaBOWpA52LnI3rH3OkQ8xy3qQ2eZXLHWKYbsmgBZzamIviXRqbzm56a1DbD1E4ohu1kQ"/>
+</div>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-md text-title-md text-on-surface font-bold truncate">Sarah Jenkins</h3>
+<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-label-md text-label-md">Active</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Logistics Coord.</p>
+<div class="flex items-center gap-3 mt-2">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span class="font-label-lg text-label-lg">85% Att.</span>
+</div>
+<div class="w-[1px] h-3 bg-outline-variant"></div>
+<span class="font-label-lg text-label-lg text-outline">Joined Feb 2024</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-fixed text-on-primary-fixed-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="chat">chat</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container text-on-secondary-container">
+<span class="material-symbols-outlined text-[20px]" data-icon="call">call</span>
+</button>
+</div>
+</div>
+<!-- Member Card 5 -->
+<div class="bg-white p-4 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-[#E2E8F0] flex items-center gap-4 opacity-75">
+<div class="relative">
+<div class="w-14 h-14 rounded-full overflow-hidden grayscale">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young male with a serious but kind look, wearing a grey hoodie. Professional photography style with dramatic yet soft lighting. The background is a clean, neutral architectural surface. Colors are desaturated to match an 'Inactive' or 'Away' status in a light-mode UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB46D6DNSq6lnF-nlccVUSnB7OGmeZIah0kfeVEAy_UNgR5oi6eA8htd8wMku1zrdLZnVSPZieWUAsi212kUna_zTfAh3sE4gVVrQ8sbKf4kcbjDVLRfWpBK2LcItE3tqhgWLyJx7HeOZJ6IB7CZUnlABp1aqCK3ugDYDJkPrrQePPNvlPkdizUTF_70XmsbjeStvJ-vIzjrwuFdYTriZJTDuU3_FACAQCRB_vJRZbIIyF8sHgeic4Rig"/>
+</div>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-outline-variant border-2 border-white rounded-full"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-md text-title-md text-on-surface font-bold truncate">Leo Zhang</h3>
+<span class="bg-surface-container-highest text-on-surface-variant px-2 py-0.5 rounded font-label-md text-label-md">Inactive</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">General Support</p>
+<div class="flex items-center gap-3 mt-2">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="trending_down">trending_down</span>
+<span class="font-label-lg text-label-lg">45% Att.</span>
+</div>
+<div class="w-[1px] h-3 bg-outline-variant"></div>
+<span class="font-label-lg text-label-lg text-outline">Last seen Dec 23</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-fixed text-on-primary-fixed-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="chat">chat</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container text-on-secondary-container">
+<span class="material-symbols-outlined text-[20px]" data-icon="call">call</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Stats Overview for Roster -->
+<section class="p-4 md:p-8 grid grid-cols-2 gap-4">
+<div class="bg-primary-container/10 p-4 rounded-2xl border border-primary-container/20">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary" data-icon="how_to_reg">how_to_reg</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Avg. Attendance</span>
+</div>
+<p class="font-headline-md text-headline-md text-primary font-bold">86.4%</p>
+<p class="font-label-md text-label-md text-outline mt-1">+2.4% from last month</p>
+</div>
+<div class="bg-surface-container-highest/30 p-4 rounded-2xl border border-outline-variant/30">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-tertiary" data-icon="person_add">person_add</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">New Members</span>
+</div>
+<p class="font-headline-md text-headline-md text-tertiary font-bold">5</p>
+<p class="font-label-md text-label-md text-outline mt-1">This quarter</p>
+</div>
+</section>
+</main>
+<!-- FAB for adding new member (Contextual to Roster) -->
+<button class="fixed right-6 bottom-24 lg:bottom-12 bg-primary text-white w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95 z-40">
+<span class="material-symbols-outlined text-2xl" data-icon="person_add">person_add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-1 pb-safe bg-surface-container-lowest shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md-mobile text-label-md-mobile">Dash</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl p-2 scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-md-mobile text-label-md-mobile">Roster</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-md-mobile text-label-md-mobile">Check-in</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-md-mobile text-label-md-mobile">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+<span class="font-label-md-mobile text-label-md-mobile">Reqs</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for active states
+        document.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('touchstart', function() {
+                this.classList.add('opacity-80');
+            });
+            el.addEventListener('touchend', function() {
+                this.classList.remove('opacity-80');
+            });
+        });
+
+        // Search bar interaction
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('scale-[1.01]');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('scale-[1.01]');
+        });
+    </script>
+</body></html>

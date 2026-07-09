@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Member Registration - Kafue Baptist Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#ffffff",
+                    "outline-variant": "#c8c4d7",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-surface-variant": "#474554",
+                    "on-primary-container": "#faf6ff",
+                    "secondary-fixed": "#dde4e6",
+                    "primary": "#5341cd",
+                    "surface-dim": "#d1dce0",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "surface-container-high": "#dfeaef",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-background": "#131d21",
+                    "inverse-on-surface": "#e7f3f7",
+                    "on-primary": "#ffffff",
+                    "surface": "#f1fbff",
+                    "on-secondary-container": "#5d6466",
+                    "on-surface": "#131d21",
+                    "surface-container-low": "#eaf5fa",
+                    "surface-tint": "#5847d2",
+                    "on-primary-fixed": "#160066",
+                    "surface-container-highest": "#d9e4e9",
+                    "primary-fixed": "#e4dfff",
+                    "error": "#ba1a1a",
+                    "background": "#f1fbff",
+                    "inverse-surface": "#283236",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "inverse-primary": "#c6bfff",
+                    "outline": "#787586",
+                    "on-tertiary-fixed": "#191c1d",
+                    "secondary-container": "#dae1e3",
+                    "surface-container": "#e4f0f4",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "tertiary": "#57595b",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#707273",
+                    "tertiary-fixed": "#e1e3e4",
+                    "on-tertiary-container": "#f7f8f9",
+                    "secondary": "#586062",
+                    "on-secondary-fixed": "#161d1f",
+                    "surface-bright": "#f1fbff",
+                    "surface-variant": "#d9e4e9",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "error-container": "#ffdad6",
+                    "primary-container": "#6c5ce7",
+                    "secondary-fixed-dim": "#c1c8ca"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "xl": "32px",
+                    "xs": "4px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .step-transition { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        input:focus ~ label, input:not(:placeholder-shown) ~ label {
+            transform: translateY(-1.5rem) scale(0.85);
+            color: #5341cd;
+        }
+        .registration-card {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-50 bg-surface dark:bg-background">
+<div class="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">
+                Kafue Baptist Church
+            </div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-low p-2 rounded-full transition-colors active:scale-95">
+                    help_outline
+                </button>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex items-center justify-center py-12 px-margin-mobile">
+<div class="w-full max-w-2xl bg-surface-container-lowest rounded-xl registration-card overflow-hidden border border-outline-variant">
+<!-- Progress Header -->
+<div class="bg-primary-container p-8 text-on-primary-container">
+<h1 class="font-headline-md text-headline-md mb-2">Member Registration</h1>
+<p class="font-body-md text-body-md opacity-90">Join our community at Kafue Baptist Church. Please fill in your details below.</p>
+<!-- Stepper UI -->
+<div class="flex items-center mt-8 gap-2">
+<div class="h-1.5 flex-1 rounded-full bg-on-primary-container" id="step-indicator-1"></div>
+<div class="h-1.5 flex-1 rounded-full bg-on-primary-container/30" id="step-indicator-2"></div>
+<div class="h-1.5 flex-1 rounded-full bg-on-primary-container/30" id="step-indicator-3"></div>
+</div>
+</div>
+<!-- Form Content -->
+<form class="p-8 space-y-8" id="registration-form">
+<!-- Step 1: Personal Info -->
+<section class="step-transition" id="step-1">
+<h2 class="font-title-lg text-title-lg text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined">person</span>
+                        Personal Info
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="relative col-span-full">
+<input class="peer w-full border-0 border-b-2 border-outline-variant bg-transparent py-2 px-0 focus:ring-0 focus:border-primary transition-colors" id="full_name" placeholder=" " type="text"/>
+<label class="absolute left-0 top-2 text-on-surface-variant font-body-md transition-all duration-200 pointer-events-none" for="full_name">Full Name</label>
+</div>
+<div class="relative">
+<input class="peer w-full border-0 border-b-2 border-outline-variant bg-transparent py-2 px-0 focus:ring-0 focus:border-primary transition-colors" id="phone" placeholder=" " type="tel"/>
+<label class="absolute left-0 top-2 text-on-surface-variant font-body-md transition-all duration-200 pointer-events-none" for="phone">Phone Number</label>
+</div>
+<div class="relative">
+<input class="peer w-full border-0 border-b-2 border-outline-variant bg-transparent py-2 px-0 focus:ring-0 focus:border-primary transition-colors" id="email" placeholder=" " type="email"/>
+<label class="absolute left-0 top-2 text-on-surface-variant font-body-md transition-all duration-200 pointer-events-none" for="email">Email Address</label>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-label-lg font-label-lg text-outline">Gender</label>
+<div class="flex gap-4">
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="text-primary focus:ring-primary" name="gender" type="radio" value="male"/>
+<span class="text-body-md">Male</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="text-primary focus:ring-primary" name="gender" type="radio" value="female"/>
+<span class="text-body-md">Female</span>
+</label>
+</div>
+</div>
+<div class="relative">
+<select class="w-full border-0 border-b-2 border-outline-variant bg-transparent py-2 px-0 focus:ring-0 focus:border-primary appearance-none text-on-surface" id="age_group">
+<option disabled="" selected="" value="">Select Age Group</option>
+<option>Children (Under 13)</option>
+<option>Youth (13-19)</option>
+<option>Young Adult (20-35)</option>
+<option>Adult (36-60)</option>
+<option>Senior (60+)</option>
+</select>
+</div>
+</div>
+</section>
+<!-- Step 2: Church Info (Hidden by default) -->
+<section class="step-transition hidden" id="step-2">
+<h2 class="font-title-lg text-title-lg text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined">church</span>
+                        Church Info
+                    </h2>
+<div class="space-y-6">
+<div class="relative">
+<input class="peer w-full border-0 border-b-2 border-outline-variant bg-transparent py-2 px-0 focus:ring-0 focus:border-primary transition-colors" id="address" placeholder=" " type="text"/>
+<label class="absolute left-0 top-2 text-on-surface-variant font-body-md transition-all duration-200 pointer-events-none" for="address">Residential Address</label>
+</div>
+<div class="relative">
+<select class="w-full border-0 border-b-2 border-outline-variant bg-transparent py-2 px-0 focus:ring-0 focus:border-primary appearance-none text-on-surface" id="attendance">
+<option disabled="" selected="" value="">Attendance Duration</option>
+<option>First time visitor</option>
+<option>Less than 6 months</option>
+<option>6 months - 1 year</option>
+<option>1 - 5 years</option>
+<option>Over 5 years</option>
+</select>
+</div>
+<div>
+<label class="text-label-lg font-label-lg text-outline block mb-3">Ministry Interests</label>
+<div class="flex flex-wrap gap-2">
+<label class="px-4 py-2 rounded-full border border-outline-variant text-body-md cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary-container has-[:checked]:text-on-primary-container has-[:checked]:border-primary-container">
+<input class="hidden" name="ministry" type="checkbox" value="choir"/>
+                                    Choir &amp; Worship
+                                </label>
+<label class="px-4 py-2 rounded-full border border-outline-variant text-body-md cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary-container has-[:checked]:text-on-primary-container has-[:checked]:border-primary-container">
+<input class="hidden" name="ministry" type="checkbox" value="youth"/>
+                                    Youth Ministry
+                                </label>
+<label class="px-4 py-2 rounded-full border border-outline-variant text-body-md cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary-container has-[:checked]:text-on-primary-container has-[:checked]:border-primary-container">
+<input class="hidden" name="ministry" type="checkbox" value="ushers"/>
+                                    Ushers &amp; Greeting
+                                </label>
+<label class="px-4 py-2 rounded-full border border-outline-variant text-body-md cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary-container has-[:checked]:text-on-primary-container has-[:checked]:border-primary-container">
+<input class="hidden" name="ministry" type="checkbox" value="media"/>
+                                    Media &amp; Tech
+                                </label>
+<label class="px-4 py-2 rounded-full border border-outline-variant text-body-md cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary-container has-[:checked]:text-on-primary-container has-[:checked]:border-primary-container">
+<input class="hidden" name="ministry" type="checkbox" value="outreach"/>
+                                    Outreach &amp; Missions
+                                </label>
+</div>
+</div>
+</div>
+</section>
+<!-- Step 3: Security (Hidden by default) -->
+<section class="step-transition hidden" id="step-3">
+<h2 class="font-title-lg text-title-lg text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined">security</span>
+                        Security
+                    </h2>
+<div class="space-y-6">
+<p class="text-body-md text-on-surface-variant italic">Create a password to manage your member profile and give online.</p>
+<div class="relative">
+<input class="peer w-full border-0 border-b-2 border-outline-variant bg-transparent py-2 px-0 focus:ring-0 focus:border-primary transition-colors" id="password" placeholder=" " type="password"/>
+<label class="absolute left-0 top-2 text-on-surface-variant font-body-md transition-all duration-200 pointer-events-none" for="password">Password</label>
+</div>
+<div class="relative">
+<input class="peer w-full border-0 border-b-2 border-outline-variant bg-transparent py-2 px-0 focus:ring-0 focus:border-primary transition-colors" id="confirm_password" placeholder=" " type="password"/>
+<label class="absolute left-0 top-2 text-on-surface-variant font-body-md transition-all duration-200 pointer-events-none" for="confirm_password">Confirm Password</label>
+</div>
+<div class="flex items-start gap-3 mt-4">
+<input class="mt-1 rounded text-primary focus:ring-primary" id="terms" type="checkbox"/>
+<label class="text-body-md text-on-surface-variant" for="terms">I agree to the privacy policy regarding my personal data usage for church administration.</label>
+</div>
+</div>
+</section>
+<!-- Navigation Buttons -->
+<div class="flex items-center justify-between pt-8 border-t border-outline-variant">
+<button class="hidden px-6 py-2.5 rounded-lg border border-outline text-on-surface font-title-md hover:bg-surface-container-low active:scale-95 transition-all" id="prev-btn" type="button">
+                        Back
+                    </button>
+<div class="flex-grow"></div>
+<button class="px-8 py-3 rounded-lg bg-primary-container text-on-primary-container font-title-md shadow-lg hover:shadow-xl active:scale-95 transition-all" id="next-btn" type="button">
+                        Continue
+                    </button>
+<button class="hidden px-8 py-3 rounded-lg bg-primary-container text-on-primary-container font-title-md shadow-lg hover:shadow-xl active:scale-95 transition-all" id="submit-btn" type="submit">
+                        Submit Registration
+                    </button>
+</div>
+</form>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-auto bg-surface dark:bg-background border-t border-outline-variant dark:border-outline">
+<div class="flex flex-col md:flex-row justify-between items-center py-8 px-margin-mobile md:px-margin-desktop gap-4 max-w-7xl mx-auto">
+<div class="font-label-lg text-label-lg text-secondary dark:text-secondary-fixed-dim">
+                Powered by GetPro Church
+            </div>
+<div class="flex gap-6">
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors cursor-pointer opacity-80 hover:opacity-100" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors cursor-pointer opacity-80 hover:opacity-100" href="#">Terms of Service</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors cursor-pointer opacity-80 hover:opacity-100" href="#">Support</a>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant">
+                © 2024 Kafue Baptist Church
+            </div>
+</div>
+</footer>
+<script>
+        const form = document.getElementById('registration-form');
+        const nextBtn = document.getElementById('next-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const steps = [
+            document.getElementById('step-1'),
+            document.getElementById('step-2'),
+            document.getElementById('step-3')
+        ];
+        const indicators = [
+            document.getElementById('step-indicator-1'),
+            document.getElementById('step-indicator-2'),
+            document.getElementById('step-indicator-3')
+        ];
+
+        let currentStep = 0;
+
+        function updateUI() {
+            steps.forEach((step, idx) => {
+                if (idx === currentStep) {
+                    step.classList.remove('hidden');
+                } else {
+                    step.classList.add('hidden');
+                }
+            });
+
+            indicators.forEach((indicator, idx) => {
+                if (idx <= currentStep) {
+                    indicator.classList.remove('bg-on-primary-container/30');
+                    indicator.classList.add('bg-on-primary-container');
+                } else {
+                    indicator.classList.add('bg-on-primary-container/30');
+                    indicator.classList.remove('bg-on-primary-container');
+                }
+            });
+
+            // Button visibility
+            if (currentStep === 0) {
+                prevBtn.classList.add('hidden');
+            } else {
+                prevBtn.classList.remove('hidden');
+            }
+
+            if (currentStep === steps.length - 1) {
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+            }
+        }
+
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                updateUI();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                updateUI();
+            }
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Registration submitted successfully! Welcome to Kafue Baptist Church.');
+            // In a real app, you'd handle form data here
+        });
+
+        // Interactive Chips Logic
+        document.querySelectorAll('input[name="ministry"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const label = this.closest('label');
+                if (this.checked) {
+                    label.classList.add('bg-primary-container', 'text-on-primary-container', 'border-primary-container');
+                } else {
+                    label.classList.remove('bg-primary-container', 'text-on-primary-container', 'border-primary-container');
+                }
+            });
+        });
+    </script>
+</body></html>

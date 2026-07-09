@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Member Events Calendar | GetPro Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#c6bfff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-fixed": "#160066",
+                        "inverse-on-surface": "#e7f3f7",
+                        "inverse-surface": "#283236",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#474554",
+                        "surface-variant": "#d9e4e9",
+                        "surface-container-highest": "#d9e4e9",
+                        "secondary": "#586062",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "tertiary-container": "#707273",
+                        "surface-tint": "#5847d2",
+                        "tertiary": "#57595b",
+                        "surface-bright": "#f1fbff",
+                        "surface": "#f1fbff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-primary-container": "#faf6ff",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#787586",
+                        "on-tertiary-fixed": "#191c1d",
+                        "surface-container-high": "#dfeaef",
+                        "surface-dim": "#d1dce0",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#e4dfff",
+                        "background": "#f1fbff",
+                        "on-secondary-container": "#5d6466",
+                        "surface-container": "#e4f0f4",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-background": "#131d21",
+                        "on-surface": "#131d21",
+                        "primary": "#5341cd",
+                        "on-secondary-fixed": "#161d1f",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#c8c4d7",
+                        "tertiary-fixed": "#e1e3e4",
+                        "primary-container": "#6c5ce7",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "secondary-fixed": "#dde4e6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- NavigationDrawer Shell (Fixed Left) -->
+<aside class="h-full w-72 fixed left-0 top-0 hidden md:flex flex-col bg-surface-container-low dark:bg-surface-container p-md z-50">
+<div class="mb-xl px-sm">
+<h1 class="font-headline-lg text-headline-lg text-primary dark:text-primary-fixed-dim">GetPro</h1>
+</div>
+<!-- Profile Header (JSON Defined) -->
+<div class="flex flex-col gap-xs mb-xl px-sm">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-full overflow-hidden border-2 border-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged Zambian woman with a warm, welcoming smile, wearing a modest yet elegant business casual attire. The lighting is soft and natural, suggesting a bright office or community center environment. The overall aesthetic is clean, high-fidelity, and trustworthy, aligning with a premium church management platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7xg13v163mcx18mQjQicf--ESI6bp4mQxhlYGAfKE3HXO6s_XvpyT9jv11iQK9KqiXnJa98OO7rdYtM8xdHO46IDGeip8avWYuLgVMuOfR-sfWHw4XI-0rhQ1_TQLjGqrerQ_YvjJ1ZXwSNg5kNXcFFqvRF_jWlpcGDzj-LG4JLHL1Nu1KWaG_xPfhSoSKiV0oQP1AHEDsqUTz03mW-1bBHxjSXQYVh94cBU-C_yFvbW6IZF00CiY1w"/>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Mary Phiri</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Kafue Baptist Church</span>
+</div>
+</div>
+<div class="mt-xs inline-flex px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed rounded-full w-fit">
+<span class="font-label-md text-[10px]">Verified Member</span>
+</div>
+</div>
+<nav class="flex flex-col gap-sm">
+<!-- Dashboard -->
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full font-label-lg text-label-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- Ministries -->
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full font-label-lg text-label-lg" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span>Ministries</span>
+</a>
+<!-- Events (ACTIVE) -->
+<a class="flex items-center gap-md px-md py-3 bg-secondary-container dark:bg-secondary-fixed-dim text-on-secondary-container dark:text-on-secondary-fixed-variant rounded-full font-bold font-label-lg text-label-lg" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+<span>Events</span>
+</a>
+<!-- Resources -->
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full font-label-lg text-label-lg" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Resources</span>
+</a>
+<!-- Requests -->
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full font-label-lg text-label-lg" href="#">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+<span>Requests</span>
+</a>
+<!-- Giving -->
+<a class="flex items-center gap-md px-md py-3 text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 transition-all duration-200 ease-in-out rounded-full font-label-lg text-label-lg" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span>Giving</span>
+</a>
+</nav>
+</aside>
+<!-- Main Canvas -->
+<main class="md:ml-72 min-h-screen pb-20 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full z-40 sticky top-0">
+<div class="flex items-center gap-md">
+<button class="md:hidden p-2 text-on-surface-variant active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h2 class="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim font-bold">Events Calendar</h2>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden sm:block">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full text-body-md focus:ring-2 focus:ring-primary w-64" placeholder="Search events..." type="text"/>
+</div>
+<button class="p-2 text-primary dark:text-primary-fixed-dim hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant cursor-pointer active:scale-95 duration-150">
+<img class="w-full h-full object-cover" data-alt="Close up avatar of Mary Phiri for the top navigation bar, focused on the face with high detail and a soft-lit, airy background typical of a high-end SaaS dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpVBhEo_0Uaq2uOuBJIwbqSuFb1U-PcB9NLIKQZ19ReNc80jo7Z1JQ8EVMFAZruaxqfSxcew_XyPURKgjWA6v-WR5f4ZHG89kmyBK7Ve8fNoAZ0S1r0FpRw2Ko2FyvMIHfYlFJs9aU1wBzh5vdgIHpnpeV4N58wHZ3Zg5D1rEjkcWnpkNu3N0MSnL97GJm31dbp_YRBpjzxCIlnVt5MyiHIQSooOtxVkEFSiNAjF1FJ4C3qZ98-eBeqA"/>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<div class="p-margin-mobile md:p-margin-desktop">
+<!-- Dashboard Controls -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-lg mb-xl">
+<div class="flex items-center gap-sm bg-surface-container rounded-xl p-1">
+<button class="px-6 py-2 bg-primary text-on-primary rounded-lg font-label-lg transition-all active:scale-95">Calendar View</button>
+<button class="px-6 py-2 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg font-label-lg transition-all active:scale-95">List View</button>
+</div>
+<!-- Filter Chips (Ministry) -->
+<div class="flex flex-wrap gap-sm">
+<span class="material-symbols-outlined text-outline self-center mr-xs" data-icon="filter_list">filter_list</span>
+<button class="px-4 py-1.5 bg-primary-container text-on-primary-container rounded-full text-label-md font-bold">All Ministries</button>
+<button class="px-4 py-1.5 bg-surface-container-high text-on-surface-variant border border-outline-variant/30 rounded-full text-label-md hover:bg-surface-variant transition-colors">Youth</button>
+<button class="px-4 py-1.5 bg-surface-container-high text-on-surface-variant border border-outline-variant/30 rounded-full text-label-md hover:bg-surface-variant transition-colors">Worship</button>
+<button class="px-4 py-1.5 bg-surface-container-high text-on-surface-variant border border-outline-variant/30 rounded-full text-label-md hover:bg-surface-variant transition-colors">Outreach</button>
+<button class="px-4 py-1.5 bg-surface-container-high text-on-surface-variant border border-outline-variant/30 rounded-full text-label-md hover:bg-surface-variant transition-colors">Elders</button>
+</div>
+</div>
+<!-- Main Layout: Sidebar and Calendar Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Calendar Section -->
+<div class="lg:col-span-8 bg-surface-container-lowest rounded-3xl border border-outline-variant/30 overflow-hidden">
+<!-- Calendar Header -->
+<div class="flex items-center justify-between p-lg border-b border-outline-variant/20">
+<div class="flex items-center gap-md">
+<h3 class="font-headline-md text-headline-md">October 2023</h3>
+<div class="flex gap-xs">
+<button class="p-1 hover:bg-surface-container-low rounded-full transition-colors active:scale-90">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="p-1 hover:bg-surface-container-low rounded-full transition-colors active:scale-90">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<button class="text-primary font-label-lg hover:underline">Today</button>
+</div>
+<!-- Calendar Body -->
+<div class="calendar-grid bg-outline-variant/10">
+<!-- Day Headers -->
+<div class="bg-surface-container-low p-3 text-center text-label-md text-outline uppercase font-bold border-b border-r border-outline-variant/20">Sun</div>
+<div class="bg-surface-container-low p-3 text-center text-label-md text-outline uppercase font-bold border-b border-r border-outline-variant/20">Mon</div>
+<div class="bg-surface-container-low p-3 text-center text-label-md text-outline uppercase font-bold border-b border-r border-outline-variant/20">Tue</div>
+<div class="bg-surface-container-low p-3 text-center text-label-md text-outline uppercase font-bold border-b border-r border-outline-variant/20">Wed</div>
+<div class="bg-surface-container-low p-3 text-center text-label-md text-outline uppercase font-bold border-b border-r border-outline-variant/20">Thu</div>
+<div class="bg-surface-container-low p-3 text-center text-label-md text-outline uppercase font-bold border-b border-r border-outline-variant/20">Fri</div>
+<div class="bg-surface-container-low p-3 text-center text-label-md text-outline uppercase font-bold border-b border-outline-variant/20">Sat</div>
+<!-- Grid Cells (Loop/Sample) -->
+<!-- Prev Month -->
+<div class="min-h-[120px] p-3 bg-surface-container-lowest/50 text-outline-variant opacity-50 border-b border-r border-outline-variant/20">26</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest/50 text-outline-variant opacity-50 border-b border-r border-outline-variant/20">27</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest/50 text-outline-variant opacity-50 border-b border-r border-outline-variant/20">28</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest/50 text-outline-variant opacity-50 border-b border-r border-outline-variant/20">29</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest/50 text-outline-variant opacity-50 border-b border-r border-outline-variant/20">30</div>
+<!-- Current Month -->
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">1</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-outline-variant/20">
+<span>2</span>
+<div class="mt-2 space-y-1">
+<div class="px-2 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-bold truncate">Youth Night</div>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">3</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">4</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">
+<span>5</span>
+<div class="mt-2 space-y-1">
+<div class="px-2 py-0.5 bg-secondary/10 text-secondary rounded text-[10px] font-bold truncate">Worship Practice</div>
+</div>
+</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">6</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">7</div>
+<div class="min-h-[120px] p-3 bg-primary-container/10 text-on-primary-container border-b border-r border-outline-variant/20 font-bold relative">
+                            8
+                            <div class="mt-2 space-y-1">
+<div class="px-2 py-0.5 bg-primary text-on-primary rounded text-[10px] font-bold truncate shadow-sm">Sunday Service</div>
+</div>
+</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-outline-variant/20">9</div>
+<!-- Row 3... truncated for brevity in demo -->
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">10</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">11</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">12</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">13</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">14</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-r border-outline-variant/20">15</div>
+<div class="min-h-[120px] p-3 bg-surface-container-lowest text-on-surface border-b border-outline-variant/20">16</div>
+</div>
+</div>
+<!-- Upcoming Events Sidebar -->
+<div class="lg:col-span-4 flex flex-col gap-lg">
+<h3 class="font-title-lg text-title-lg text-on-surface px-sm">Upcoming This Week</h3>
+<!-- Event Card 1 -->
+<div class="bg-surface-container-low p-lg rounded-3xl border border-outline-variant/30 hover:border-primary/50 transition-all group cursor-pointer">
+<div class="flex justify-between items-start mb-md">
+<div class="bg-primary/10 text-primary font-bold px-3 py-1 rounded-xl text-label-md">Oct 08</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="more_vert">more_vert</span>
+</div>
+<h4 class="font-title-md text-title-md text-on-surface mb-sm">Main Sunday Service</h4>
+<div class="flex items-center gap-xs text-on-surface-variant mb-base">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="text-label-md">09:00 AM - 11:30 AM</span>
+</div>
+<div class="flex items-center gap-xs text-on-surface-variant mb-lg">
+<span class="material-symbols-outlined text-[18px]" data-icon="location_on">location_on</span>
+<span class="text-label-md">Main Sanctuary</span>
+</div>
+<div class="flex -space-x-2">
+<img class="w-8 h-8 rounded-full border-2 border-surface-container-low" data-alt="Avatar of a church member for event attendees list, high detail, warm tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyLPpEaeZP0EH54ZABOQ3L_f6oFmf-jDj2TgOsnzOCPJ4gelbEJMb1rtthsxUnjY_NjIb7M_FZZxWqPfE81FIMYekAMPI1R1tKpgvC4S6v9VKQU84YhNaHLRJnVz4ef17IX2uIw8Ac24T5LogQ9nFPNPpFYBuIFWEDu7Vbu2vCbyNV0529rRSaZDhLnMdKE05F8lRJBnXs2p1vkZbkXUn3EHEeOxepwT9i7Q8ebHUwPbebAzMQkDNdKg"/>
+<img class="w-8 h-8 rounded-full border-2 border-surface-container-low" data-alt="Avatar of another church member, modern and professional lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAU3pkXK1PQ3yUh3jNGAzent6ZcPfNjdUHaXrsKnvsPqrFGEG7NbS6hi13-Vup-Q4FPeDOPQoJ8yEG2wQkYI_GfuVCXf2s3kIKXc40Jzf-0rWrg0NAY1cicJzzj2jVbimRQk9OZRXwy90xijahJJqdMaVjvMEqcsT_GdLssCnXsY2UJoENEcJodtE7L63HYjI7gNE50yhwtgl-eNw5n6xNH-lmjgqgig9emIB4CixpZy7OWdRoq-ZJHQ"/>
+<img class="w-8 h-8 rounded-full border-2 border-surface-container-low" data-alt="Church member avatar profile shot." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAA9Y1eqCyzV6J6iTrwQuc9g-WYwNxa4xNqytKZpmuOXzP_tWeJzSP0ERHoTpEvQCMEHvD4gXH4QopGUW3eEynnSo8FtiI8JIVqXPSgFuGqOMABz6Siu7cnMjzHI_VedPSr2bxbu9L92naeScFQaPuL3QfnJF_wSaSnurM-hpp53LEcprzS--C_Im9h85TzCtkvOQDRx8BtxUlOonGGjpE3RR7VKLJH_S8xGw804EOr_m6LlMnN18j31w"/>
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-[10px] font-bold border-2 border-surface-container-low">+120</div>
+</div>
+</div>
+<!-- Event Card 2 -->
+<div class="bg-surface-container-low p-lg rounded-3xl border border-outline-variant/30 hover:border-secondary/50 transition-all group cursor-pointer">
+<div class="flex justify-between items-start mb-md">
+<div class="bg-secondary/10 text-secondary font-bold px-3 py-1 rounded-xl text-label-md">Oct 10</div>
+<span class="material-symbols-outlined text-outline group-hover:text-secondary transition-colors" data-icon="more_vert">more_vert</span>
+</div>
+<h4 class="font-title-md text-title-md text-on-surface mb-sm">Mid-Week Bible Study</h4>
+<div class="flex items-center gap-xs text-on-surface-variant mb-base">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="text-label-md">06:00 PM - 07:30 PM</span>
+</div>
+<div class="flex items-center gap-xs text-on-surface-variant mb-lg">
+<span class="material-symbols-outlined text-[18px]" data-icon="videocam">videocam</span>
+<span class="text-label-md">Zoom / In-person</span>
+</div>
+<button class="w-full py-2 bg-secondary text-on-secondary rounded-xl font-label-lg active:scale-95 transition-transform">Register Now</button>
+</div>
+<!-- Event Card 3 -->
+<div class="bg-surface-container-low p-lg rounded-3xl border border-outline-variant/30 hover:border-tertiary/50 transition-all group cursor-pointer">
+<div class="flex justify-between items-start mb-md">
+<div class="bg-tertiary/10 text-tertiary font-bold px-3 py-1 rounded-xl text-label-md">Oct 14</div>
+<span class="material-symbols-outlined text-outline group-hover:text-tertiary transition-colors" data-icon="more_vert">more_vert</span>
+</div>
+<h4 class="font-title-md text-title-md text-on-surface mb-sm">Community Outreach</h4>
+<div class="flex items-center gap-xs text-on-surface-variant mb-base">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+<span class="text-label-md">08:00 AM - 12:00 PM</span>
+</div>
+<div class="flex items-center gap-xs text-on-surface-variant mb-lg">
+<span class="material-symbols-outlined text-[18px]" data-icon="map">map</span>
+<span class="text-label-md" data-location="Kafue Market">Kafue Market</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed rounded-full text-[10px] uppercase font-bold tracking-wider">Outreach</span>
+<span class="text-label-md text-error flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]" data-icon="error">error</span>
+                                5 Spots Left
+                            </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden pb-safe bg-surface-container dark:bg-surface-container-highest shadow-lg flex justify-around items-center h-20 px-2">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-md text-label-md">Groups</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="font-label-md text-label-md">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-md text-label-md">Study</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant/30 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions for the calendar cells
+        document.querySelectorAll('.calendar-grid > div').forEach(cell => {
+            cell.addEventListener('mouseenter', () => {
+                if(!cell.classList.contains('opacity-50')) {
+                    cell.classList.add('bg-surface-container-low');
+                    cell.style.transform = 'scale(1.02)';
+                    cell.style.zIndex = '10';
+                    cell.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+                }
+            });
+            cell.addEventListener('mouseleave', () => {
+                cell.classList.remove('bg-surface-container-low');
+                cell.style.transform = 'scale(1)';
+                cell.style.zIndex = '1';
+            });
+        });
+    </script>
+</body></html>

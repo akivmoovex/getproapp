@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kafue Baptist Church | Faith, Community, and Worship</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#f7f8f9",
+                    "error-container": "#ffdad6",
+                    "on-secondary": "#ffffff",
+                    "tertiary-container": "#707273",
+                    "primary-fixed": "#e4dfff",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-surface-variant": "#474554",
+                    "surface-container-low": "#eaf5fa",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-background": "#131d21",
+                    "surface": "#f1fbff",
+                    "background": "#f1fbff",
+                    "on-surface": "#131d21",
+                    "surface-tint": "#5847d2",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#e4f0f4",
+                    "on-primary-container": "#faf6ff",
+                    "secondary": "#586062",
+                    "surface-variant": "#d9e4e9",
+                    "inverse-on-surface": "#e7f3f7",
+                    "secondary-container": "#dae1e3",
+                    "primary": "#5341cd",
+                    "on-primary-fixed": "#160066",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "on-secondary-container": "#5d6466",
+                    "surface-bright": "#f1fbff",
+                    "error": "#ba1a1a",
+                    "on-tertiary-fixed": "#191c1d",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary-fixed": "#161d1f",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "outline": "#787586",
+                    "outline-variant": "#c8c4d7",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "tertiary": "#57595b",
+                    "secondary-fixed": "#dde4e6",
+                    "surface-dim": "#d1dce0",
+                    "surface-container-high": "#dfeaef",
+                    "inverse-surface": "#283236"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "xl": "32px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "base": "8px",
+                    "md": "16px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1fbff; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .hero-gradient { background: linear-gradient(rgba(83, 65, 205, 0.85), rgba(83, 65, 205, 0.7)), url('placeholder'); background-size: cover; background-position: center; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; }
+    </style>
+</head>
+<body class="text-on-background">
+<!-- TopNavBar -->
+<nav class="bg-surface sticky top-0 z-50 border-b border-outline-variant transition-all duration-300">
+<div class="flex justify-between items-center px-margin-desktop w-full max-w-7xl mx-auto h-16">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary text-3xl">church</span>
+<span class="text-title-lg font-headline-lg text-primary">GetPro Church</span>
+</div>
+<div class="hidden md:flex items-center gap-xl">
+<a class="text-primary font-bold border-b-2 border-primary py-1 font-label-lg text-label-lg" href="#">Features</a>
+<a class="text-secondary hover:text-primary-container transition-colors font-label-lg text-label-lg" href="#">Pricing</a>
+<a class="text-secondary hover:text-primary-container transition-colors font-label-lg text-label-lg" href="#">About Us</a>
+</div>
+<div class="flex items-center gap-md">
+<button class="hidden sm:block text-secondary font-label-lg text-label-lg hover:bg-surface-container-low px-md py-sm rounded-lg transition-colors">Login</button>
+<button class="bg-primary text-on-primary font-label-lg text-label-lg px-lg py-md rounded-full shadow-sm hover:scale-95 transition-transform duration-150 ease-in-out">Get Started</button>
+<button class="md:hidden p-sm text-secondary">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</div>
+</nav>
+<main>
+<!-- Hero Section -->
+<section class="relative min-h-[870px] flex items-center justify-center overflow-hidden">
+
+<div class="absolute inset-0 bg-gradient-to-b from-surface/20 to-surface"></div>
+<div class="relative z-10 w-full max-w-7xl mx-auto px-margin-desktop grid md:grid-cols-2 gap-xl items-center">
+<div class="space-y-lg text-center md:text-left">
+<span class="inline-block bg-primary-container/10 text-primary px-md py-xs rounded-full font-label-lg text-label-lg">Kafue, Zambia</span>
+<h1 class="font-display-lg text-display-lg text-on-background leading-tight">Welcome to Kafue Baptist Church</h1>
+<p class="font-body-lg text-body-lg text-secondary max-w-xl mx-auto md:mx-0">
+                        Join us in our mission to spread love, faith, and community. We are a warm, welcoming family dedicated to the teachings of Christ in the heart of Kafue.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-md justify-center md:justify-start pt-md">
+<button class="bg-primary text-on-primary font-title-md text-title-md px-xl py-lg rounded-xl hover:shadow-lg transition-all active:scale-95">Register as Member</button>
+<button class="bg-surface-container-lowest text-primary border border-outline-variant font-title-md text-title-md px-xl py-lg rounded-xl hover:bg-surface-container transition-all active:scale-95">View Events</button>
+</div>
+</div>
+<div class="hidden md:block relative h-[500px] rounded-[2rem] overflow-hidden shadow-2xl">
+<img class="w-full h-full object-cover" data-alt="A warm and inviting interior of a modern church in Kafue, Zambia. Sunlight streams through large windows onto clean wooden pews and a soft purple floral arrangement on the altar. The atmosphere is serene, bright, and deeply welcoming, with a contemporary minimalist architectural style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvJ65sVyFgF6SmLDhcFCLC21K-icXFMXfNHxyHB1Ozb_cFytY0NL1AJxTzb_Ina0AeS_CJPlBsYSD8vE4uNabR6sF96-dBZUde-tFEUbhrNjQ3AtuuDcv_Fi_pK6pZHLoKumOUL0XpUBvoCvmRB4zvNI1g0tQdVqZe3KpWaZnfjLJ3_ubHDfzDBCUPvBWU5QbZYPHHNLHj0tunI2WLOODr-pAjsGfeR1T8a1xMnq_wdSjg25gngmGPtA"/>
+<div class="absolute bottom-lg left-lg right-lg glass-card p-lg rounded-2xl flex items-center gap-md">
+<div class="bg-primary p-md rounded-full text-on-primary">
+<span class="material-symbols-outlined">schedule</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-secondary uppercase tracking-wider">Join Us This Sunday</p>
+<p class="font-title-md text-title-md text-on-background">08:30 AM &amp; 10:30 AM</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats / Quick Info -->
+<section class="py-xl px-margin-desktop bg-surface-container-lowest border-y border-outline-variant">
+<div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-lg text-center">
+<div class="space-y-xs">
+<p class="font-headline-md text-headline-md text-primary">500+</p>
+<p class="font-body-md text-body-md text-secondary">Members</p>
+</div>
+<div class="space-y-xs">
+<p class="font-headline-md text-headline-md text-primary">12+</p>
+<p class="font-body-md text-body-md text-secondary">Active Ministries</p>
+</div>
+<div class="space-y-xs">
+<p class="font-headline-md text-headline-md text-primary">2</p>
+<p class="font-body-md text-body-md text-secondary">Sunday Services</p>
+</div>
+<div class="space-y-xs">
+<p class="font-headline-md text-headline-md text-primary">24/7</p>
+<p class="font-body-md text-body-md text-secondary">Community Support</p>
+</div>
+</div>
+</section>
+<!-- Ministry Highlights: Bento Grid -->
+<section class="py-xl px-margin-desktop">
+<div class="max-w-7xl mx-auto">
+<div class="flex justify-between items-end mb-xl">
+<div class="space-y-xs">
+<h2 class="font-headline-lg text-headline-lg text-on-background">Our Ministries</h2>
+<p class="font-body-lg text-body-lg text-secondary">Finding your place in the house of God.</p>
+</div>
+<a class="text-primary font-label-lg text-label-lg flex items-center gap-xs group" href="#">
+                        See All Ministries <span class="material-symbols-outlined text-base group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+<div class="bento-grid">
+<!-- Featured Ministry -->
+<div class="col-span-12 md:col-span-8 group relative rounded-3xl overflow-hidden min-h-[400px]">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A joyful group of young adults sitting in a circle under a large baobab tree in Kafue, sharing stories and laughing. The lighting is the golden hour of sunset, casting a warm orange glow. The scene feels communal, vibrant, and filled with youthful energy and faith." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDOvgVJjIlv05WddWc9-0Ub3Ke4H2KRXITZ1vfzAWEVoRYOEmGd4T0LoJ7EhIy5F3bWMF0f6CGChnBdTwBnk7x4LPcZrW4qceMBPPvWdVWc-wgZCiZNID_D7iU8fon1J5rLWC8ELZCGQ_Te2GV1fdRFYvvSWvv91TRsEBsBkrY3gDpgcdHLaZPIEVyADDT_6P0NL8G7lGW5nJPmApmm8OqB7kAMOJHVIVRDiTFfI_Gl6U4wbbjXRCEtA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-xl space-y-md">
+<span class="bg-primary text-on-primary px-md py-xs rounded-full font-label-lg text-label-lg">Youth Focus</span>
+<h3 class="font-headline-md text-headline-md text-white">Youth Fellowship</h3>
+<p class="font-body-md text-body-md text-white/80 max-w-md">Empowering the next generation through word, worship, and social engagement every Saturday at 2:00 PM.</p>
+</div>
+</div>
+<!-- Small Ministry 1 -->
+<div class="col-span-12 md:col-span-4 group bg-surface-container p-xl rounded-3xl flex flex-col justify-between hover:bg-primary-container/10 transition-colors cursor-pointer">
+<div class="space-y-md">
+<div class="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">child_care</span>
+</div>
+<h3 class="font-title-lg text-title-lg">Sunday School</h3>
+<p class="font-body-md text-body-md text-secondary">Nurturing young hearts with biblical foundations in a fun, safe environment.</p>
+</div>
+<span class="material-symbols-outlined text-primary group-hover:translate-x-2 transition-transform">arrow_forward</span>
+</div>
+<!-- Small Ministry 2 -->
+<div class="col-span-12 md:col-span-4 group bg-surface-container p-xl rounded-3xl flex flex-col justify-between hover:bg-primary-container/10 transition-colors cursor-pointer">
+<div class="space-y-md">
+<div class="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">volunteer_activism</span>
+</div>
+<h3 class="font-title-lg text-title-lg">Women's Guild</h3>
+<p class="font-body-md text-body-md text-secondary">A community of sisters supporting each other through prayer and service.</p>
+</div>
+<span class="material-symbols-outlined text-primary group-hover:translate-x-2 transition-transform">arrow_forward</span>
+</div>
+<!-- Medium Ministry -->
+<div class="col-span-12 md:col-span-8 group relative rounded-3xl overflow-hidden min-h-[300px]">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A focused group of diverse men and women singing in a church choir. They are wearing elegant, modest attire in soft lavender and white tones. The lighting is soft and ethereal, highlighting their expressive faces and the sense of spiritual harmony. Minimalist and modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOA6kUYqHUgngxa_xTsAAd7HUfJJiGMT4X6bkZNmZScJvtFum04VDl5W5GDnzeU47tg1UB4QKdnnBzZX2afNknYHq7gktVwgEFOPv9JGsgZ9D4LKyv6QXIi8iQsQ1EGBkHGOUzjpE9pViGFN8dJQPyCOrfqm4dKmxMul8VWXD-eF9U8hr4h6id9uJs0OjrFqyukPDEgn7k47MpQhUWfXBnws7rRCZx25ZcM2dUW-_jhPzuZFWzOKewJw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-xl">
+<h3 class="font-headline-md text-headline-md text-white">Music &amp; Worship</h3>
+<p class="font-body-md text-body-md text-white/80">Leading the congregation into the presence of God every Sunday.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Latest Sermon -->
+<section class="py-xl bg-inverse-surface text-surface">
+<div class="max-w-7xl mx-auto px-margin-desktop">
+<div class="grid md:grid-cols-2 gap-xl items-center">
+<div class="relative aspect-video rounded-3xl overflow-hidden group shadow-2xl">
+<img class="w-full h-full object-cover" data-alt="A high-quality cinematic frame of a pastor speaking passionately behind a sleek glass podium. The background is a soft-focus church interior with warm ambient lighting and a large digital screen displaying 'Walking in Faith'. The style is crisp, professional, and visually compelling." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuUSovsKbnwt0Zgj5eLxWilGwjFTZ7d43J6HXTeiXbDyObSHTAKTJmXxDqkkJ1QC2T0G2BCu3TDrtpE0gIoMrdLQ952ffxZPv_UIMujtmp-hkYIpFFwQjwZnYkP1DmflHivaNeSYR2IVjhqyCG0DGchiJ8In_gDFgqyUPzGtPXD2OxJTL0Fmj5SsDjZ4hpiMK1AlpWvAqdTOjXqpkYY76oKcUVYaF0FFo_r-dNb541hlVmb6scRriXMg"/>
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition-all cursor-pointer">
+<div class="w-20 h-20 bg-primary/90 text-on-primary rounded-full flex items-center justify-center scale-100 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</div>
+<div class="space-y-lg">
+<span class="text-primary-fixed-dim font-label-lg text-label-lg uppercase tracking-widest">Latest Sermon</span>
+<h2 class="font-display-lg text-display-lg">The Power of Persevering Faith</h2>
+<p class="font-body-lg text-body-lg text-surface-variant/80">
+                            Pastor Mutale explores the book of Hebrews, reminding us that even in the quietest seasons, God is working behind the scenes.
+                        </p>
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-surface-variant overflow-hidden border-2 border-primary">
+<img class="w-full h-full object-cover" data-alt="A professional, friendly headshot of a middle-aged African pastor with a warm smile, wearing a clean white shirt. The background is a soft blurred office with books. High-end portrait photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAn3MoZeFgbzNigwoPHQZsvZ0sp0Gdusa1A7kMKL7vELZV_f-YgdJYLT_JuT_XUqno4Wo5OKrdFc6eZG0Mfx1fVhw9STuLFCN8kCUkSpvTsJUntnDghCj_z4UlodFvuiaw0_qsPLaKOOaenoVEdANJy51l2D3Wt9bC7UppoKPfdPTLkuj_tZClXh_OoMugM1vPn9lQipFO2ANmwNXB4ymrPOFbhUKrj2vhuN8Abi9p9cZmSFfiusDEZ5g"/>
+</div>
+<div>
+<p class="font-title-md text-title-md">Ps. David Mutale</p>
+<p class="font-label-md text-label-md text-surface-variant">November 10, 2024</p>
+</div>
+</div>
+<button class="flex items-center gap-sm text-primary-fixed-dim font-title-md text-title-md hover:underline transition-all">
+                            Browse Sermon Archive <span class="material-symbols-outlined">library_music</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Upcoming Events -->
+<section class="py-xl px-margin-desktop bg-surface">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-xl">
+<h2 class="font-headline-lg text-headline-lg">Mark Your Calendar</h2>
+<p class="font-body-lg text-body-lg text-secondary">Join us for these special community gatherings.</p>
+</div>
+<div class="grid md:grid-cols-3 gap-lg">
+<!-- Event 1 -->
+<div class="bg-surface-container-lowest p-lg rounded-3xl shadow-sm border border-outline-variant hover:-translate-y-2 transition-all">
+<div class="bg-primary/10 text-primary w-fit px-md py-sm rounded-xl mb-md">
+<p class="font-label-lg text-label-lg uppercase">Nov 22</p>
+</div>
+<h3 class="font-title-lg text-title-lg mb-sm">Community Outreach Day</h3>
+<p class="font-body-md text-body-md text-secondary mb-lg">Distributing food and supplies to families in the Kafue district. All volunteers welcome.</p>
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-md text-label-md flex items-center gap-xs"><span class="material-symbols-outlined text-base">location_on</span> Main Square</span>
+<span class="font-label-md text-label-md">09:00 AM</span>
+</div>
+</div>
+<!-- Event 2 -->
+<div class="bg-surface-container-lowest p-lg rounded-3xl shadow-sm border border-outline-variant hover:-translate-y-2 transition-all">
+<div class="bg-primary/10 text-primary w-fit px-md py-sm rounded-xl mb-md">
+<p class="font-label-lg text-label-lg uppercase">Nov 25</p>
+</div>
+<h3 class="font-title-lg text-title-lg mb-sm">Night of Worship</h3>
+<p class="font-body-md text-body-md text-secondary mb-lg">A special evening dedicated to prayer and musical adoration with our praise team.</p>
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-md text-label-md flex items-center gap-xs"><span class="material-symbols-outlined text-base">location_on</span> Sanctuary</span>
+<span class="font-label-md text-label-md">06:30 PM</span>
+</div>
+</div>
+<!-- Event 3 -->
+<div class="bg-surface-container-lowest p-lg rounded-3xl shadow-sm border border-outline-variant hover:-translate-y-2 transition-all">
+<div class="bg-primary/10 text-primary w-fit px-md py-sm rounded-xl mb-md">
+<p class="font-label-lg text-label-lg uppercase">Dec 01</p>
+</div>
+<h3 class="font-title-lg text-title-lg mb-sm">Bible Study Seminar</h3>
+<p class="font-body-md text-body-md text-secondary mb-lg">Deep dive into the Parables of Jesus. Bring your Bible and a friend.</p>
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-md text-label-md flex items-center gap-xs"><span class="material-symbols-outlined text-base">location_on</span> Hall B</span>
+<span class="font-label-md text-label-md">05:00 PM</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Giving Teaser -->
+<section class="py-xl px-margin-desktop">
+<div class="max-w-5xl mx-auto bg-primary-container text-on-primary-container rounded-[3rem] p-xl relative overflow-hidden flex flex-col md:flex-row items-center gap-xl">
+<div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+<div class="relative z-10 md:w-2/3 space-y-md">
+<h2 class="font-headline-lg text-headline-lg">Generosity Changes Lives</h2>
+<p class="font-body-lg text-body-lg opacity-90">
+                        Your tithes and offerings help us sustain our local ministries and global outreach programs. Thank you for your faithful support.
+                    </p>
+<div class="flex flex-wrap gap-md">
+<button class="bg-on-primary-container text-primary font-title-md text-title-md px-xl py-md rounded-2xl hover:bg-surface transition-all">Give Online Now</button>
+<button class="border border-on-primary-container/30 font-title-md text-title-md px-xl py-md rounded-2xl hover:bg-white/10 transition-all">Other Ways to Give</button>
+</div>
+</div>
+<div class="relative z-10 md:w-1/3 flex justify-center">
+<div class="w-40 h-40 bg-on-primary-container/20 rounded-full flex items-center justify-center animate-pulse">
+<span class="material-symbols-outlined text-6xl" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Contact & Location -->
+<section class="py-xl px-margin-desktop">
+<div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-xl">
+<div class="space-y-xl">
+<div class="space-y-md">
+<h2 class="font-headline-lg text-headline-lg">Visit Us</h2>
+<p class="font-body-md text-body-md text-secondary">We are located in the heart of Kafue. Come as you are, we'd love to meet you.</p>
+</div>
+<div class="space-y-lg">
+<div class="flex gap-md">
+<span class="material-symbols-outlined text-primary">location_on</span>
+<div>
+<p class="font-title-md text-title-md">Location</p>
+<p class="font-body-md text-body-md text-secondary">Plot 124, Shikoswe Road, Kafue, Zambia</p>
+</div>
+</div>
+<div class="flex gap-md">
+<span class="material-symbols-outlined text-primary">mail</span>
+<div>
+<p class="font-title-md text-title-md">Email Address</p>
+<p class="font-body-md text-body-md text-secondary">office@kafuebaptist.org</p>
+</div>
+</div>
+<div class="flex gap-md">
+<span class="material-symbols-outlined text-primary">phone_in_talk</span>
+<div>
+<p class="font-title-md text-title-md">Phone Number</p>
+<p class="font-body-md text-body-md text-secondary">+260 977 123456</p>
+</div>
+</div>
+</div>
+</div>
+<div class="rounded-3xl overflow-hidden h-[400px] border border-outline-variant shadow-lg relative group">
+<div class="absolute inset-0 bg-surface-container flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A stylized, modern map of Kafue, Zambia, showing the central Shikoswe area. The map uses a minimalist design with a soft lavender and gray color palette. A prominent violet pin marker indicates the location of Kafue Baptist Church." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6c6pdqQgBCs6MIcsH4oZBQhye0XVyUTwPW29MrnSaU-HlePs-wCa04V9p1CCf6hQdVPnxGME7WGD4xieHeC6PKM9M1tE--499AXeZoDxAvLwYe0G27X_-e5PtSmPqo7HYM5wswNtkfy0EJl1SwlZMIlogdcV5it1P_Y_yTRkixGEyD_s9lLaG1KCRa-H6oqSlZ8Ug1lDX7qWQZkP-BQFhiiQ6-bmkjcjVNoLZDQXa6LOkllZdRnITVg"/>
+</div>
+<div class="absolute bottom-md left-md right-md bg-surface p-md rounded-2xl flex items-center justify-between border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="font-body-md text-body-md">Open in Google Maps</span>
+<span class="material-symbols-outlined text-primary">open_in_new</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant">
+<div class="w-full py-xl px-margin-desktop mt-auto flex flex-col md:flex-row justify-between items-center gap-lg max-w-7xl mx-auto">
+<div class="flex flex-col items-center md:items-start gap-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">church</span>
+<span class="font-title-md text-primary font-bold">Kafue Baptist Church</span>
+</div>
+<p class="font-body-md text-body-md text-secondary-fixed-variant">© 2024 GetPro Church Management System. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-lg">
+<a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all opacity-80 hover:opacity-100" href="#">Privacy Policy</a>
+<a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all opacity-80 hover:opacity-100" href="#">Terms of Service</a>
+<a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all opacity-80 hover:opacity-100" href="#">Support</a>
+<a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all opacity-80 hover:opacity-100" href="#">Documentation</a>
+</div>
+<div class="flex items-center gap-md">
+<span class="font-label-md text-label-md text-secondary">Powered by GetPro Church</span>
+</div>
+</div>
+</footer>
+<script>
+        // Simple scroll interaction for navbar
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('shadow-md', 'h-14');
+                nav.classList.remove('h-16');
+            } else {
+                nav.classList.remove('shadow-md', 'h-14');
+                nav.classList.add('h-16');
+            }
+        });
+
+        // Click interaction for bento grid cards
+        document.querySelectorAll('.bento-grid > div').forEach(card => {
+            card.addEventListener('mousedown', () => card.style.transform = 'scale(0.98)');
+            card.addEventListener('mouseup', () => card.style.transform = 'scale(1)');
+        });
+    </script>
+</body></html>

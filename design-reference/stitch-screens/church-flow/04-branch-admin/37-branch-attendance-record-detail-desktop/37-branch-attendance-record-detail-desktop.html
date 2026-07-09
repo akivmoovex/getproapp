@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Attendance Record Detail - ChurchConnect HQ</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid #E2E8F0;
+        }
+        .step-active::before { content: ''; position: absolute; left: 50%; bottom: -24px; transform: translateX(-50%); width: 2px; height: 24px; background: #5341cd; }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#dde4e6",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#707273",
+                    "surface-container-low": "#eaf5fa",
+                    "outline": "#787586",
+                    "on-secondary-container": "#5d6466",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#e4dfff",
+                    "inverse-surface": "#283236",
+                    "on-primary-fixed": "#160066",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#d9e4e9",
+                    "secondary-container": "#dae1e3",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "secondary": "#586062",
+                    "surface-dim": "#d1dce0",
+                    "surface-bright": "#f1fbff",
+                    "surface-container-high": "#dfeaef",
+                    "surface-tint": "#5847d2",
+                    "on-surface-variant": "#474554",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-secondary-fixed": "#161d1f",
+                    "on-primary-container": "#faf6ff",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "outline-variant": "#c8c4d7",
+                    "surface-container": "#e4f0f4",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-error": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "inverse-on-surface": "#e7f3f7",
+                    "background": "#f1fbff",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f1fbff",
+                    "primary": "#5341cd",
+                    "on-surface": "#131d21",
+                    "on-background": "#131d21",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "primary-container": "#6c5ce7",
+                    "tertiary": "#57595b",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "xl": "32px",
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "title-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex overflow-hidden">
+<!-- SideNavBar Shell -->
+<aside class="w-[280px] h-screen sticky left-0 top-0 bg-inverse-surface dark:bg-surface-container-lowest flex flex-col p-md shadow-sm z-50">
+<div class="mb-xl px-4">
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed dark:text-primary">Grace Community</h1>
+<p class="font-label-lg text-label-lg text-surface-variant">HQ Administrator</p>
+</div>
+<nav class="flex-1 flex flex-col gap-sm">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 group" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">how_to_reg</span>
+<span class="font-label-lg text-label-lg">Attendance</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 group" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-lg text-label-lg">Giving</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 group" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-lg text-label-lg">Members</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 group" href="#">
+<span class="material-symbols-outlined">church</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant hover:text-white transition-colors hover:bg-surface-variant/10 group" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline/20 pt-md">
+<button class="w-full mb-md flex items-center justify-center gap-2 bg-primary text-white py-3 rounded-lg font-bold active:scale-95 transition-all">
+<span class="material-symbols-outlined">add</span>
+<span>New Record</span>
+</button>
+<a class="flex items-center gap-3 px-4 py-2 text-surface-variant hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-lg text-label-lg">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-surface-variant hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 h-screen overflow-y-auto relative bg-surface-container-low">
+<!-- TopNavBar Shell -->
+<header class="flex justify-between items-center w-full px-margin-desktop py-base z-40 bg-surface dark:bg-surface-container-high border-b border-outline-variant dark:border-outline sticky top-0">
+<div class="flex items-center gap-4">
+<span class="font-title-lg text-title-lg font-black text-primary dark:text-primary-fixed-dim uppercase tracking-tighter">ChurchConnect HQ</span>
+<div class="h-6 w-px bg-outline-variant mx-2"></div>
+<h2 class="font-title-lg text-title-lg text-on-surface">Kafue Baptist Church</h2>
+</div>
+<div class="flex items-center gap-lg">
+<div class="relative hidden md:block">
+<input class="bg-surface-container-highest border-none rounded-full px-lg py-2 w-64 text-body-md focus:ring-2 focus:ring-primary outline-none" placeholder="Search records..." type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+</div>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">account_circle</button>
+</div>
+</div>
+</header>
+<div class="p-xl max-w-7xl mx-auto">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-lg mb-xl">
+<div>
+<div class="flex items-center gap-2 text-primary font-bold mb-1">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span class="font-label-lg text-label-lg">Back to Attendance Logs</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Sunday Morning Service</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined">calendar_today</span> Oct 22, 2023 • Main Sanctuary
+                    </p>
+</div>
+<div class="flex gap-md">
+<button class="px-lg py-3 rounded-lg border-2 border-primary text-primary font-bold flex items-center gap-2 hover:bg-primary/5 transition-all active:scale-95">
+<span class="material-symbols-outlined">edit</span> Edit Record
+                    </button>
+<button class="px-lg py-3 rounded-lg bg-primary text-white font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-95">
+<span class="material-symbols-outlined">send</span> Submit to HQ
+                    </button>
+</div>
+</div>
+<!-- Status Timeline -->
+<div class="mb-xl flex items-center justify-between px-xl py-lg bg-surface-container-highest rounded-xl">
+<div class="flex items-center gap-md flex-1">
+<div class="flex flex-col items-center gap-2 opacity-100">
+<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+<span class="material-symbols-outlined">check</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface">Created</span>
+</div>
+<div class="h-1 flex-1 bg-primary rounded-full mx-2"></div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center outline outline-offset-2 outline-primary">
+<span class="material-symbols-outlined">edit_document</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Draft</span>
+</div>
+<div class="h-1 flex-1 bg-outline-variant rounded-full mx-2"></div>
+<div class="flex flex-col items-center gap-2 opacity-50">
+<div class="w-10 h-10 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined">fact_check</span>
+</div>
+<span class="font-label-lg text-label-lg">Submitted</span>
+</div>
+</div>
+<div class="ml-xl pl-xl border-l border-outline-variant flex flex-col items-end">
+<span class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-widest">Current Status</span>
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full font-bold text-[12px] mt-1">DRAFT REVIEW</span>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-xl">
+<!-- Bento Grid Breakdown -->
+<div class="col-span-12 lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Main Attendance Card -->
+<div class="col-span-1 md:col-span-3 glass-card rounded-xl p-lg flex flex-col md:flex-row justify-between items-center">
+<div class="mb-md md:mb-0">
+<span class="font-label-lg text-label-lg text-on-surface-variant uppercase">Total Attendance</span>
+<div class="flex items-baseline gap-2">
+<span class="font-display-lg text-display-lg text-primary">482</span>
+<span class="text-green-600 font-bold flex items-center gap-1 text-sm">
+<span class="material-symbols-outlined text-sm">trending_up</span> 12%
+                                </span>
+</div>
+</div>
+<div class="flex flex-wrap justify-center gap-lg">
+<div class="text-center">
+<span class="block font-headline-md text-headline-md text-on-surface">312</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Adults</span>
+</div>
+<div class="text-center">
+<span class="block font-headline-md text-headline-md text-on-surface">94</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Youth</span>
+</div>
+<div class="text-center">
+<span class="block font-headline-md text-headline-md text-on-surface">76</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Children</span>
+</div>
+</div>
+</div>
+<!-- Visitors Card -->
+<div class="bg-surface-container-highest rounded-xl p-lg flex flex-col items-center justify-center text-center">
+<div class="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-md">
+<span class="material-symbols-outlined">person_add</span>
+</div>
+<span class="font-display-lg text-[32px] text-on-surface">24</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Visitors</span>
+</div>
+<!-- New Members Card -->
+<div class="bg-surface-container-highest rounded-xl p-lg flex flex-col items-center justify-center text-center">
+<div class="w-12 h-12 rounded-full bg-secondary-container text-secondary flex items-center justify-center mb-md">
+<span class="material-symbols-outlined">card_membership</span>
+</div>
+<span class="font-display-lg text-[32px] text-on-surface">08</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">New Members</span>
+</div>
+<!-- Volunteers Card -->
+<div class="bg-surface-container-highest rounded-xl p-lg flex flex-col items-center justify-center text-center">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed text-tertiary flex items-center justify-center mb-md">
+<span class="material-symbols-outlined">volunteer_activism</span>
+</div>
+<span class="font-display-lg text-[32px] text-on-surface">32</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Volunteers</span>
+</div>
+<!-- Admin Notes Section -->
+<div class="col-span-1 md:col-span-3 glass-card rounded-xl p-lg">
+<h3 class="font-title-md text-title-md text-on-surface mb-md flex items-center gap-2">
+<span class="material-symbols-outlined">description</span> Administrative Notes
+                        </h3>
+<div class="bg-surface p-md rounded-lg border border-outline-variant text-body-md text-on-surface-variant min-h-[120px]">
+                            Service ran over by 15 minutes due to extended worship. Guest speaker Pastor Mwila from Lusaka was present. 
+                            Three first-time visitors requested follow-up from the hospitality ministry. All volunteer stations were fully staffed. 
+                            Audio-visual team noted a slight feedback issue in the left monitor.
+                        </div>
+</div>
+</div>
+<!-- Metadata Sidebar -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-lg">
+<!-- History & Creation -->
+<div class="glass-card rounded-xl p-lg">
+<h3 class="font-title-md text-title-md text-on-surface mb-lg">Record Lifecycle</h3>
+<div class="flex flex-col gap-lg">
+<div class="flex gap-md">
+<div class="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged male administrator with a warm, welcoming expression, wearing a clean white shirt. The background is a blurred office interior with soft natural lighting, reflecting a corporate yet compassionate church management environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlWBiX_-26hK7w7yKTGqt9ftDgpC8pVj9cwm_JCT04J5qEnpLuB2KUvSHypGbiLUsnot4zG9rnh0-IbfZpaFpwHMWDtQIGQINkN3jVDVc6n2cUXqGSm8tCbGcdTRk7liaexquU-poRLUd--zFzNHJyB7-0Xv_HQPugMrbUsXSG4LdAMAUfbvRqIdXAt8UpbrQfFIVY8lk2a2EhVJMmeHNuw55dWq1tfikWx7ZqjDklPcLaSZfCH3VWSA"/>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface-variant block">Created By</span>
+<span class="font-body-md text-body-md font-bold text-on-surface">David Phiri</span>
+<span class="font-label-md text-label-md text-on-surface-variant block">Oct 22, 2023 • 12:45 PM</span>
+</div>
+</div>
+<div class="flex gap-md">
+<div class="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a young female church staff member with a friendly smile, styled in modern professional attire. The lighting is bright and crisp, highlighting her facial features against a minimalist, high-key studio background that matches the clean white and soft blue UI aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuNWD7_6KcSOKiVnhMuBJND3OkUGcuE-JRcQ8RQABSdwkXEZodnWO_ZPK9lUcptyMzmF8BrxbI8EZbkPDsEqg74BGlWtPiqcMyX5HZzPjJfKsML1fItgvUmXNnUeQTzbVITaJHCTjUi-o0usTfUSgHPw7fUh_PFELe7poK3QVLEC2sRk6lTztqRkPr0Ur1AhwebG8x0LOhXBbztzY31xjbooGowM8astPVcIWiimG9fORGfRcGQFumJA"/>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface-variant block">Last Updated By</span>
+<span class="font-body-md text-body-md font-bold text-on-surface">Sarah Tembo</span>
+<span class="font-label-md text-label-md text-on-surface-variant block">Oct 23, 2023 • 09:12 AM</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-xl py-3 border border-outline text-on-surface-variant font-bold rounded-lg hover:bg-surface-variant/20 transition-all text-label-lg">
+                            VIEW FULL AUDIT LOG
+                        </button>
+</div>
+<!-- Weather/Context Card -->
+<div class="glass-card rounded-xl p-lg overflow-hidden relative">
+<div class="relative z-10">
+<h3 class="font-title-md text-title-md text-on-surface mb-md">Contextual Data</h3>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-3xl text-secondary">sunny</span>
+<div>
+<span class="font-body-md text-body-md text-on-surface block">Sunny, 28°C</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Weather may have boosted turnout</span>
+</div>
+</div>
+</div>
+<div class="absolute right-[-20px] bottom-[-20px] opacity-10">
+<span class="material-symbols-outlined text-[120px]">church</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Bottom NavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container-highest dark:bg-inverse-surface shadow-lg md:hidden rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1" href="#">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Giving</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1" href="#">
+<span class="material-symbols-outlined">menu</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+</main>
+<script>
+        // Micro-interaction for buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('mousedown', () => {
+                button.classList.add('scale-95');
+            });
+            button.addEventListener('mouseup', () => {
+                button.classList.remove('scale-95');
+            });
+        });
+
+        // Search highlight effect
+        const searchInput = document.querySelector('input[type="text"]');
+        if(searchInput) {
+            searchInput.addEventListener('focus', () => {
+                searchInput.parentElement.classList.add('ring-2', 'ring-primary');
+            });
+            searchInput.addEventListener('blur', () => {
+                searchInput.parentElement.classList.remove('ring-2', 'ring-primary');
+            });
+        }
+    </script>
+</body></html>

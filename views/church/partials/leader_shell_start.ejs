@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= pageTitle %> — Ministry Leader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/church/church.css?v=14"/>
+</head>
+<body class="church-body church-body--leader-portal">
+  <div class="church-member-layout">
+    <aside class="church-member-sidebar" aria-label="Leader navigation">
+      <div class="church-member-sidebar__brand">
+        <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+        <div>
+          <strong>Ministry Leader</strong>
+          <span><%= churchName %></span>
+        </div>
+      </div>
+      <nav class="church-member-sidebar__nav">
+        <a href="/leader/dashboard" class="church-member-nav-link">Dashboard</a>
+        <a href="/leader/roster" class="church-member-nav-link">Roster</a>
+        <a href="/leader/duties" class="church-member-nav-link">Duties</a>
+        <a href="/leader/attendance" class="church-member-nav-link">Attendance</a>
+        <a href="/leader/activity-notes" class="church-member-nav-link">Activity Notes</a>
+      </nav>
+      <div class="church-member-sidebar__footer">
+        <a href="/" class="church-member-nav-link">Public website</a>
+        <form method="post" action="/leader/logout">
+          <button class="church-member-nav-link church-member-nav-link--button" type="submit">Sign out</button>
+        </form>
+      </div>
+    </aside>
+    <div class="church-member-main">
+      <nav class="church-member-bottom-nav" aria-label="Leader mobile navigation">
+        <a href="/leader/dashboard" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">home</span>Home</a>
+        <a href="/leader/roster" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">groups</span>Roster</a>
+        <a href="/leader/attendance" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">fact_check</span>Attendance</a>
+        <a href="/leader/activity-notes" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">edit_note</span>Notes</a>
+        <a href="/leader/duties" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">assignment</span>Duties</a>
+      </nav>

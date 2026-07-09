@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<title>Record Attendance - Youth Ministry</title>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .tally-btn:active { transform: scale(0.92); }
+        .submit-gradient {
+            background: linear-gradient(135deg, #6c5ce7 0%, #5341cd 100%);
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#5341cd",
+                    "tertiary": "#57595b",
+                    "on-tertiary-container": "#f7f8f9",
+                    "primary-fixed": "#e4dfff",
+                    "secondary": "#586062",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-secondary-container": "#5d6466",
+                    "on-primary-fixed": "#160066",
+                    "background": "#f1fbff",
+                    "surface-container": "#e4f0f4",
+                    "surface-tint": "#5847d2",
+                    "on-background": "#131d21",
+                    "surface-container-low": "#eaf5fa",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f1fbff",
+                    "on-error-container": "#93000a",
+                    "on-primary-container": "#faf6ff",
+                    "primary-container": "#6c5ce7",
+                    "on-surface-variant": "#474554",
+                    "on-secondary-fixed": "#161d1f",
+                    "inverse-surface": "#283236",
+                    "tertiary-container": "#707273",
+                    "surface-variant": "#d9e4e9",
+                    "secondary-fixed": "#dde4e6",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed-dim": "#c6bfff",
+                    "outline": "#787586",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#c8c4d7",
+                    "secondary-container": "#dae1e3",
+                    "surface-bright": "#f1fbff",
+                    "inverse-on-surface": "#e7f3f7",
+                    "on-surface": "#131d21",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#c6bfff",
+                    "surface-container-high": "#dfeaef",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d1dce0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "gutter": "24px",
+                    "margin-desktop": "32px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "base": "8px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "title-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"]
+            },
+            "fontSize": {
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-32">
+<!-- Top AppBar (Mobile Style) -->
+<header class="flex justify-between items-center w-full px-4 h-16 sticky top-0 z-40 bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<button class="p-2 -ml-2 rounded-full hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-title-lg text-title-lg text-primary font-bold">Record Attendance</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of Grace Mwansa, a young African woman with a warm and inviting smile, dressed in business-casual attire. The background is a soft-focus office setting with warm, natural sunlight filtering through, consistent with a modern corporate yet compassionate ministry brand aesthetic. The lighting is bright and clean, emphasizing organizational trust." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9tYKa0IhW1L4Gs6kuwKijSfVuBgn6MuUcYxILzjTzMZxFQbcuWSCF-5JeXDsdi5TijVNalJmGX3JUZi2sMrqV9lHYD3hwmjmJATMO180DbwxDbBsmYGvSa3KeKOfTeqxiSE-78SFzsebInwRmKCiMLfN0G9DwsDzJwuUtBpesV6AKCjQ6QECkzR0yo5lnKQq7k2UUZjML2rY9RjBVDv-vbROXlTGKmXD9tN0RTLqwvMGyqx1Hb-K9nw"/>
+</button>
+</div>
+</header>
+<main class="p-4 max-w-md mx-auto">
+<!-- Meeting Header Info -->
+<section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm mb-6 border border-outline-variant/30">
+<div class="flex items-center gap-4 mb-4">
+<div class="w-12 h-12 bg-primary-container/10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Session Details</p>
+<h2 class="font-title-lg text-title-lg text-on-surface">Friday Youth Night</h2>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant">Date</label>
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-sm">event</span>
+<span class="font-body-md text-body-md">Oct 27, 2023</span>
+</div>
+</div>
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant">Time</label>
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-body-md text-body-md">18:30 PM</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Tally Counters -->
+<section class="space-y-4 mb-8">
+<h3 class="font-title-md text-title-md text-on-surface px-1">Headcount</h3>
+<!-- Tally Row: Youth -->
+<div class="bg-surface-container-low p-4 rounded-2xl flex items-center justify-between border border-outline-variant/20">
+<div class="flex flex-col">
+<span class="font-title-md text-title-md font-bold">Youth</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Ages 13-18</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="tally-btn w-12 h-12 rounded-full border-2 border-primary-container/30 flex items-center justify-center text-primary-container hover:bg-primary-container/5 transition-all" onclick="decrement('youth-count')">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="font-display-lg text-[32px] w-12 text-center text-primary-container font-bold" id="youth-count">0</span>
+<button class="tally-btn w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-white shadow-md shadow-primary-container/20 transition-all" onclick="increment('youth-count')">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+<!-- Tally Row: Adults -->
+<div class="bg-surface-container-low p-4 rounded-2xl flex items-center justify-between border border-outline-variant/20">
+<div class="flex flex-col">
+<span class="font-title-md text-title-md font-bold">Adults</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Leaders &amp; Volunteers</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="tally-btn w-12 h-12 rounded-full border-2 border-primary-container/30 flex items-center justify-center text-primary-container hover:bg-primary-container/5 transition-all" onclick="decrement('adult-count')">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="font-display-lg text-[32px] w-12 text-center text-primary-container font-bold" id="adult-count">0</span>
+<button class="tally-btn w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-white shadow-md shadow-primary-container/20 transition-all" onclick="increment('adult-count')">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+<!-- Tally Row: Children -->
+<div class="bg-surface-container-low p-4 rounded-2xl flex items-center justify-between border border-outline-variant/20">
+<div class="flex flex-col">
+<span class="font-title-md text-title-md font-bold">Children</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Under 13</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="tally-btn w-12 h-12 rounded-full border-2 border-primary-container/30 flex items-center justify-center text-primary-container hover:bg-primary-container/5 transition-all" onclick="decrement('child-count')">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="font-display-lg text-[32px] w-12 text-center text-primary-container font-bold" id="child-count">0</span>
+<button class="tally-btn w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-white shadow-md shadow-primary-container/20 transition-all" onclick="increment('child-count')">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+<!-- Tally Row: Visitors -->
+<div class="bg-surface-container-low p-4 rounded-2xl flex items-center justify-between border border-outline-variant/20">
+<div class="flex flex-col">
+<span class="font-title-md text-title-md font-bold">Visitors</span>
+<span class="font-label-md text-label-md text-on-surface-variant">First time guests</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="tally-btn w-12 h-12 rounded-full border-2 border-primary-container/30 flex items-center justify-center text-primary-container hover:bg-primary-container/5 transition-all" onclick="decrement('visitor-count')">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="font-display-lg text-[32px] w-12 text-center text-primary-container font-bold" id="visitor-count">0</span>
+<button class="tally-btn w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-white shadow-md shadow-primary-container/20 transition-all" onclick="increment('visitor-count')">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Notes Field -->
+<section class="mb-8">
+<label class="block font-title-md text-title-md text-on-surface mb-2 px-1" for="notes">Session Notes</label>
+<div class="relative">
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-4 focus:ring-2 focus:ring-primary focus:border-transparent outline-none font-body-md text-body-md transition-all placeholder:text-on-surface-variant/50" id="notes" placeholder="Record highlights, prayer requests, or incidents..." rows="4"></textarea>
+<div class="absolute right-3 bottom-3 text-on-surface-variant/40">
+<span class="material-symbols-outlined">edit_note</span>
+</div>
+</div>
+</section>
+<!-- Summary Preview -->
+<section class="bg-primary/5 rounded-2xl p-5 border border-primary/10 flex justify-between items-center mb-10">
+<div>
+<p class="font-label-lg text-label-lg text-primary uppercase">Total Attendance</p>
+<p class="font-display-lg text-display-lg text-primary" id="total-attendance">0</p>
+</div>
+<div class="text-right">
+<span class="material-symbols-outlined text-4xl text-primary/20" style="font-variation-settings: 'FILL' 1;">groups</span>
+</div>
+</section>
+</main>
+<!-- Sticky Submit Button Area -->
+<div class="fixed bottom-0 left-0 w-full p-4 md:p-6 bg-surface/90 backdrop-blur-md border-t border-outline-variant/30 z-50 flex justify-center">
+<button class="w-full max-w-md submit-gradient text-white font-title-md text-title-md py-4 rounded-xl shadow-lg shadow-primary/30 flex items-center justify-center gap-3 active:scale-95 transition-all duration-150" id="submit-btn">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">cloud_upload</span>
+            Submit Record
+        </button>
+</div>
+<!-- Success Toast (Hidden by default) -->
+<div class="fixed top-20 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface px-6 py-3 rounded-full shadow-xl z-[60] flex items-center gap-3 opacity-0 translate-y-[-20px] transition-all duration-300 pointer-events-none" id="toast">
+<span class="material-symbols-outlined text-green-400">check_circle</span>
+<span class="font-label-lg text-label-lg">Attendance record saved!</span>
+</div>
+<!-- Mobile Bottom Nav Shell (Filtered for Transactional suppression, but included as per request for Ecclesia Modern consistency) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full z-10 flex justify-around items-center px-2 py-1 pb-safe bg-surface-container-lowest shadow-[0_-4px_12px_rgba(0,0,0,0.05)] opacity-0 pointer-events-none">
+<!-- Kept for structure but hidden because this is a transactional focus screen -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant p-2">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md-mobile text-label-md-mobile">Dash</span>
+</div>
+</nav>
+<script>
+        const counts = {
+            'youth-count': 0,
+            'adult-count': 0,
+            'child-count': 0,
+            'visitor-count': 0
+        };
+
+        function increment(id) {
+            counts[id]++;
+            updateDisplay(id);
+            updateTotal();
+        }
+
+        function decrement(id) {
+            if (counts[id] > 0) {
+                counts[id]--;
+                updateDisplay(id);
+                updateTotal();
+            }
+        }
+
+        function updateDisplay(id) {
+            const el = document.getElementById(id);
+            el.innerText = counts[id];
+            
+            // Subtle animation
+            el.classList.add('scale-110', 'text-primary');
+            setTimeout(() => {
+                el.classList.remove('scale-110', 'text-primary');
+            }, 100);
+        }
+
+        function updateTotal() {
+            const total = Object.values(counts).reduce((a, b) => a + b, 0);
+            const totalEl = document.getElementById('total-attendance');
+            
+            // Animate total change
+            totalEl.classList.add('opacity-0');
+            setTimeout(() => {
+                totalEl.innerText = total;
+                totalEl.classList.remove('opacity-0');
+            }, 100);
+        }
+
+        document.getElementById('submit-btn').addEventListener('click', () => {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('opacity-0', 'translate-y-[-20px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-20px]');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 3000);
+        });
+
+        // Soft ripple-like effect on tally buttons
+        document.querySelectorAll('.tally-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                let ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    </script>
+<style>
+        .ripple {
+            position: absolute;
+            background: rgba(108, 92, 231, 0.3);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Transition for total count */
+        #total-attendance {
+            transition: all 0.2s ease-in-out;
+        }
+    </style>
+</body></html>

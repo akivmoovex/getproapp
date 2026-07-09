@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>35-branch-announcements-management-desktop</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "outline": "#787586",
+                        "surface-container-high": "#dfeaef",
+                        "primary": "#5341cd",
+                        "tertiary": "#57595b",
+                        "on-surface-variant": "#474554",
+                        "tertiary-container": "#707273",
+                        "primary-fixed": "#e4dfff",
+                        "on-surface": "#131d21",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#e4f0f4",
+                        "tertiary-fixed": "#e1e3e4",
+                        "surface-container-low": "#eaf5fa",
+                        "on-tertiary-fixed": "#191c1d",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#5d6466",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "background": "#f1fbff",
+                        "on-background": "#131d21",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "secondary-fixed": "#dde4e6",
+                        "inverse-primary": "#c6bfff",
+                        "surface-variant": "#d9e4e9",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "on-tertiary-container": "#f7f8f9",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-primary-container": "#faf6ff",
+                        "on-secondary-fixed": "#161d1f",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d1dce0",
+                        "surface": "#f1fbff",
+                        "on-primary-fixed": "#160066",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "inverse-surface": "#283236",
+                        "primary-container": "#6c5ce7",
+                        "outline-variant": "#c8c4d7",
+                        "surface-bright": "#f1fbff",
+                        "surface-tint": "#5847d2",
+                        "secondary": "#586062",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#e7f3f7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "xl": "32px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "margin-desktop": "32px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1fbff; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .active-nav {
+            transform: scale(0.98);
+        }
+        /* Custom scrollbar for data tables */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1fbff;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen text-on-surface">
+<!-- SideNavBar (Shared Component) -->
+<aside class="w-[280px] h-screen sticky top-0 left-0 bg-inverse-surface dark:bg-surface-container-lowest flex flex-col py-base gap-sm shadow-sm z-[60]">
+<!-- Brand Header -->
+<div class="px-gutter mb-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">church</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary-fixed dark:text-primary">Kafue Baptist Church</h1>
+<p class="font-body-md text-body-md text-outline-variant">Branch Admin HQ</p>
+</div>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 px-base">
+<ul class="space-y-xs">
+<!-- Ministries -->
+<li>
+<a class="flex items-center gap-md py-md rounded-lg text-surface-variant dark:text-outline pl-5 hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:fill-current" data-icon="groups">groups</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+</li>
+<!-- Departments -->
+<li>
+<a class="flex items-center gap-md py-md rounded-lg text-surface-variant dark:text-outline pl-5 hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:fill-current" data-icon="account_tree">account_tree</span>
+<span class="font-label-lg text-label-lg">Departments</span>
+</a>
+</li>
+<!-- Events -->
+<li>
+<a class="flex items-center gap-md py-md rounded-lg text-surface-variant dark:text-outline pl-5 hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:fill-current" data-icon="event">event</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</a>
+</li>
+<!-- Duty Roster -->
+<li>
+<a class="flex items-center gap-md py-md rounded-lg text-surface-variant dark:text-outline pl-5 hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:fill-current" data-icon="assignment_ind">assignment_ind</span>
+<span class="font-label-lg text-label-lg">Duty Roster</span>
+</a>
+</li>
+<!-- Announcements (ACTIVE) -->
+<li>
+<a class="flex items-center gap-md py-md rounded-lg text-primary-fixed dark:text-primary font-bold border-l-4 border-primary-fixed dark:border-primary pl-4 transition-transform duration-200 active-nav bg-primary/10 group" href="#">
+<span class="material-symbols-outlined" data-icon="campaign" style="font-variation-settings: 'FILL' 1;">campaign</span>
+<span class="font-label-lg text-label-lg">Announcements</span>
+</a>
+</li>
+<!-- Website Editor -->
+<li>
+<a class="flex items-center gap-md py-md rounded-lg text-surface-variant dark:text-outline pl-5 hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:fill-current" data-icon="web">web</span>
+<span class="font-label-lg text-label-lg">Website Editor</span>
+</a>
+</li>
+<!-- Settings -->
+<li>
+<a class="flex items-center gap-md py-md rounded-lg text-surface-variant dark:text-outline pl-5 hover:bg-primary/10 hover:text-primary-fixed-dim dark:hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:fill-current" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- User Profile -->
+<div class="mt-auto px-gutter py-md border-t border-outline/20">
+<div class="flex items-center gap-md">
+<img class="w-10 h-10 rounded-full object-cover border-2 border-primary-fixed/30" data-alt="A professional studio portrait of a church administrator in a clean office setting, featuring a friendly middle-aged man with short hair wearing a navy blue button-down shirt. The background is a soft-focus bookshelves and a warm, sunlit window, reflecting a modern corporate yet pastoral aesthetic in line with the brand's 'Structured Compassion' philosophy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_dQf4t3Z2mqm0XDXaD5D-rfiXkTXZfy7JhYDkiaEPoxY0eUgiCjHLvQneSxxeYLYUH-7GmRcHEUK1WnGzI8YDoUufq5uR4V52KmRQf1WMf3cHPcjjxQvlfAuRuceRfY8YCZYJkDCztUy6IIYjhOEWZqRHTq2LFn_O8eszUGI3DmzN-W0WJzb4TlB4Z518qTwEvm8GcttJhA5tL5de8bGOv5dVCaShR3GDVD42FTDtwwISVZ_SZN3oZQ"/>
+<div class="overflow-hidden">
+<p class="font-label-lg text-label-lg text-primary-fixed truncate">Admin User</p>
+<p class="font-label-md text-label-md text-outline-variant truncate">Branch Administrator</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0">
+<!-- TopNavBar (Shared Component) -->
+<header class="flex justify-between items-center px-gutter w-full h-16 sticky top-0 z-50 bg-surface dark:bg-background border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-gutter w-1/2">
+<div class="relative w-full max-w-md group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full pl-10 pr-4 py-2 rounded-full border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-surface-container-low font-body-md text-body-md" placeholder="Search announcements..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-2 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all text-on-surface-variant relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full transition-all text-on-surface-variant">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant mx-2"></div>
+<div class="flex items-center gap-sm">
+<span class="font-title-lg text-title-lg text-primary font-black hidden md:block">GetPro</span>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center font-bold text-on-secondary-container text-xs">AU</div>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<section class="p-gutter flex flex-col gap-lg animate-fade-in">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-md">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Announcements Management</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Manage and schedule communications for your branch members and leaders.</p>
+</div>
+<button class="flex items-center gap-sm px-lg py-md bg-primary text-white rounded-xl font-title-md text-title-md shadow-lg shadow-primary/20 hover:shadow-xl hover:bg-primary/90 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+                    Create Announcement
+                </button>
+</div>
+<!-- Dashboard Stats / Cards (Asymmetric Layout) -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<div class="md:col-span-1 bg-surface-container-lowest p-gutter rounded-xl border border-outline-variant shadow-sm flex flex-col gap-sm">
+<span class="material-symbols-outlined text-primary text-3xl">campaign</span>
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Active Today</p>
+<p class="font-display-lg text-display-lg text-on-surface">12</p>
+</div>
+<div class="md:col-span-1 bg-surface-container-lowest p-gutter rounded-xl border border-outline-variant shadow-sm flex flex-col gap-sm">
+<span class="material-symbols-outlined text-secondary text-3xl">schedule</span>
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Scheduled</p>
+<p class="font-display-lg text-display-lg text-on-surface">04</p>
+</div>
+<div class="md:col-span-2 bg-primary-container p-gutter rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-center">
+<div class="relative z-10 text-white">
+<h3 class="font-headline-md text-headline-md font-bold">New Policy Update</h3>
+<p class="font-body-md text-body-md opacity-90 max-w-sm mt-xs">A new global HQ directive regarding youth ministry safety protocols has been published. Please review and cascade to leaders.</p>
+<button class="mt-md px-md py-xs bg-white/20 hover:bg-white/30 rounded-lg font-label-lg text-label-lg transition-colors border border-white/30 backdrop-blur-md">View HQ Alert</button>
+</div>
+<span class="material-symbols-outlined text-[120px] absolute -right-4 -bottom-4 opacity-10 rotate-12 select-none">info</span>
+</div>
+</div>
+<!-- Filters & List Section -->
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
+<!-- Filter Bar -->
+<div class="px-gutter py-md border-b border-outline-variant flex flex-wrap items-center justify-between gap-md">
+<div class="flex items-center gap-base">
+<span class="font-label-lg text-label-lg text-on-surface-variant mr-md">Filter by Audience:</span>
+<button class="px-md py-base rounded-full bg-primary-container text-on-primary-container font-label-lg text-label-lg">All</button>
+<button class="px-md py-base rounded-full hover:bg-surface-variant transition-colors font-label-lg text-label-lg text-on-surface-variant">Public</button>
+<button class="px-md py-base rounded-full hover:bg-surface-variant transition-colors font-label-lg text-label-lg text-on-surface-variant">Members</button>
+<button class="px-md py-base rounded-full hover:bg-surface-variant transition-colors font-label-lg text-label-lg text-on-surface-variant">Leaders</button>
+</div>
+<div class="flex items-center gap-sm">
+<button class="flex items-center gap-xs px-md py-base border border-outline-variant rounded-lg font-label-lg text-label-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                            Date Range
+                        </button>
+<button class="flex items-center gap-xs px-md py-base border border-outline-variant rounded-lg font-label-lg text-label-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                            More Filters
+                        </button>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant">
+<tr>
+<th class="px-gutter py-md font-label-lg text-label-lg text-on-surface-variant">Title</th>
+<th class="px-gutter py-md font-label-lg text-label-lg text-on-surface-variant">Message Snippet</th>
+<th class="px-gutter py-md font-label-lg text-label-lg text-on-surface-variant">Audience</th>
+<th class="px-gutter py-md font-label-lg text-label-lg text-on-surface-variant">Source</th>
+<th class="px-gutter py-md font-label-lg text-label-lg text-on-surface-variant">Publish Date</th>
+<th class="px-gutter py-md font-label-lg text-label-lg text-on-surface-variant">Status</th>
+<th class="px-gutter py-md font-label-lg text-label-lg text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/50">
+<!-- Row 1 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-gutter py-lg">
+<p class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Community Food Bank Drive</p>
+</td>
+<td class="px-gutter py-lg max-w-xs">
+<p class="font-body-md text-body-md text-on-surface-variant truncate">We are collecting non-perishable items for our monthly outreach program...</p>
+</td>
+<td class="px-gutter py-lg">
+<span class="px-base py-xs rounded-lg bg-surface-container-highest text-on-surface-variant font-label-md text-label-md">Public</span>
+</td>
+<td class="px-gutter py-lg">
+<span class="font-body-md text-body-md text-on-surface">Branch</span>
+</td>
+<td class="px-gutter py-lg">
+<p class="font-body-md text-body-md text-on-surface">Oct 12, 2023</p>
+<p class="font-label-md text-label-md text-outline">09:00 AM</p>
+</td>
+<td class="px-gutter py-lg">
+<div class="flex items-center gap-xs text-green-600">
+<span class="w-2 h-2 rounded-full bg-current"></span>
+<span class="font-label-lg text-label-lg">Published</span>
+</div>
+</td>
+<td class="px-gutter py-lg text-right">
+<button class="p-2 hover:bg-surface-variant rounded-lg transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-gutter py-lg">
+<p class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Safety Protocols 2024</p>
+</td>
+<td class="px-gutter py-lg max-w-xs">
+<p class="font-body-md text-body-md text-on-surface-variant truncate">Critical updates to childcare safety measures effective immediately for all...</p>
+</td>
+<td class="px-gutter py-lg">
+<span class="px-base py-xs rounded-lg bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md">Leaders</span>
+</td>
+<td class="px-gutter py-lg">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">verified</span>
+<span class="font-body-md text-body-md font-semibold text-primary">HQ</span>
+</div>
+</td>
+<td class="px-gutter py-lg">
+<p class="font-body-md text-body-md text-on-surface">Oct 14, 2023</p>
+<p class="font-label-md text-label-md text-outline">08:00 AM</p>
+</td>
+<td class="px-gutter py-lg">
+<div class="flex items-center gap-xs text-blue-600">
+<span class="w-2 h-2 rounded-full bg-current"></span>
+<span class="font-label-lg text-label-lg">Scheduled</span>
+</div>
+</td>
+<td class="px-gutter py-lg text-right">
+<button class="p-2 hover:bg-surface-variant rounded-lg transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-gutter py-lg">
+<p class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Mid-Week Prayer Meeting</p>
+</td>
+<td class="px-gutter py-lg max-w-xs">
+<p class="font-body-md text-body-md text-on-surface-variant truncate">Join us this Wednesday at 7 PM for a dedicated time of intercession and worship...</p>
+</td>
+<td class="px-gutter py-lg">
+<span class="px-base py-xs rounded-lg bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-label-md">Members</span>
+</td>
+<td class="px-gutter py-lg">
+<span class="font-body-md text-body-md text-on-surface">Branch</span>
+</td>
+<td class="px-gutter py-lg">
+<p class="font-body-md text-body-md text-on-surface">Oct 11, 2023</p>
+<p class="font-label-md text-label-md text-outline">06:00 PM</p>
+</td>
+<td class="px-gutter py-lg">
+<div class="flex items-center gap-xs text-green-600">
+<span class="w-2 h-2 rounded-full bg-current"></span>
+<span class="font-label-lg text-label-lg">Published</span>
+</div>
+</td>
+<td class="px-gutter py-lg text-right">
+<button class="p-2 hover:bg-surface-variant rounded-lg transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-gutter py-md border-t border-outline-variant flex items-center justify-between">
+<p class="font-body-md text-body-md text-on-surface-variant">Showing 1 to 10 of 42 announcements</p>
+<div class="flex items-center gap-sm">
+<button class="p-2 rounded-lg border border-outline-variant hover:bg-surface-container transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 rounded-lg bg-primary text-white font-label-lg text-label-lg">1</button>
+<button class="w-10 h-10 rounded-lg hover:bg-surface-container font-label-lg text-label-lg">2</button>
+<button class="w-10 h-10 rounded-lg hover:bg-surface-container font-label-lg text-label-lg">3</button>
+<button class="p-2 rounded-lg border border-outline-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Bento Preview Section -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mt-lg">
+<div class="md:col-span-2 bg-surface-container-high rounded-2xl p-gutter flex gap-lg relative overflow-hidden group">
+<div class="flex-1 z-10">
+<h4 class="font-title-lg text-title-lg text-on-surface mb-xs">Announcement Insights</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Your recent announcement "Global Mission Trip" reached 92% of targeted members within 24 hours.</p>
+<div class="flex items-center gap-lg">
+<div>
+<p class="font-headline-md text-headline-md font-bold text-primary">1,240</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Total Views</p>
+</div>
+<div class="w-[1px] h-10 bg-outline-variant"></div>
+<div>
+<p class="font-headline-md text-headline-md font-bold text-primary">84%</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Engagement</p>
+</div>
+</div>
+</div>
+<div class="w-32 h-32 hidden md:block opacity-20 group-hover:opacity-40 transition-opacity">
+<span class="material-symbols-outlined text-[128px] text-primary">trending_up</span>
+</div>
+<div class="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl"></div>
+</div>
+<div class="md:col-span-1 bg-inverse-surface rounded-2xl p-gutter text-white flex flex-col justify-between shadow-xl">
+<div>
+<div class="flex items-center gap-sm mb-sm text-primary-fixed-dim">
+<span class="material-symbols-outlined">lightbulb</span>
+<span class="font-label-lg text-label-lg uppercase font-bold tracking-widest">Admin Tip</span>
+</div>
+<p class="font-title-md text-title-md font-semibold">Schedule for Sunday Morning</p>
+<p class="font-body-md text-body-md text-surface-variant mt-xs">Engagement is 40% higher when announcements are published 2 hours before Sunday service.</p>
+</div>
+<a class="font-label-lg text-label-lg text-primary-fixed hover:underline flex items-center gap-xs mt-md" href="#">
+                        Learn More Strategy
+                        <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+</div>
+</section>
+</main>
+<script>
+        // Simple micro-interaction for filter buttons
+        const filterButtons = document.querySelectorAll('button.rounded-full');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Reset other buttons
+                filterButtons.forEach(b => {
+                    b.classList.remove('bg-primary-container', 'text-on-primary-container');
+                    b.classList.add('text-on-surface-variant', 'hover:bg-surface-variant');
+                });
+                // Set active state
+                this.classList.remove('text-on-surface-variant', 'hover:bg-surface-variant');
+                this.classList.add('bg-primary-container', 'text-on-primary-container');
+            });
+        });
+
+        // Hover effects for rows
+        const tableRows = document.querySelectorAll('tbody tr');
+        tableRows.forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                row.style.transform = "translateX(4px)";
+                row.style.transition = "transform 0.2s ease";
+            });
+            row.addEventListener('mouseleave', () => {
+                row.style.transform = "translateX(0)";
+            });
+        });
+    </script>
+</body></html>

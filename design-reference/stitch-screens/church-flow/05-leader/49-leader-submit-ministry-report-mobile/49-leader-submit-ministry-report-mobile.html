@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Submit Ministry Report - Youth Ministry</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#5341cd",
+                        "tertiary": "#57595b",
+                        "on-tertiary-container": "#f7f8f9",
+                        "primary-fixed": "#e4dfff",
+                        "secondary": "#586062",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#e1e3e4",
+                        "on-tertiary-fixed": "#191c1d",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "on-secondary-container": "#5d6466",
+                        "on-primary-fixed": "#160066",
+                        "background": "#f1fbff",
+                        "surface-container": "#e4f0f4",
+                        "surface-tint": "#5847d2",
+                        "on-background": "#131d21",
+                        "surface-container-low": "#eaf5fa",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#f1fbff",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#faf6ff",
+                        "primary-container": "#6c5ce7",
+                        "on-surface-variant": "#474554",
+                        "on-secondary-fixed": "#161d1f",
+                        "inverse-surface": "#283236",
+                        "tertiary-container": "#707273",
+                        "surface-variant": "#d9e4e9",
+                        "secondary-fixed": "#dde4e6",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "outline": "#787586",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#c8c4d7",
+                        "secondary-container": "#dae1e3",
+                        "surface-bright": "#f1fbff",
+                        "inverse-on-surface": "#e7f3f7",
+                        "on-surface": "#131d21",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#c6bfff",
+                        "surface-container-high": "#dfeaef",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d1dce0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "gutter": "24px",
+                        "margin-desktop": "32px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "base": "8px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim flex justify-between items-center w-full px-4 md:px-8 h-16 sticky top-0 z-40 border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-surface-container-high rounded-full transition-all">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Submit Report</h1>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container-high transition-all rounded-full cursor-pointer">notifications</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary-fixed">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a smiling female department leader, Grace Mwansa, with warm lighting and a clean, minimalist studio background. She is wearing professional attire, and the overall aesthetic is modern, trustworthy, and welcoming to fit a community-focused church management platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvsMz_6hJfD_1uGnxGlO0B6rz_fj4hIduUGXYveqBsnRja2--PmbDyiriQbhK44ZY9ItYNX_KD_v6932ePyc3-o5z_rnJr9fSTZc7ss22D83bujzNOG-tep1nbhKa4RG5rLvmOM3JAiJjHSnkn9DD9lYjNOZOvaNZEXu_qWKWQDpy1VnQ9rGDckg4sMdEIWXarI_FJFjKYAo5QPs-zdwJj1zGhpXTMCTgPM_PitCzXC22WeCY6PpWn-w"/>
+</div>
+</div>
+</header>
+<main class="max-w-2xl mx-auto px-4 py-6 space-y-6">
+<!-- Header Section with Progress (Optional visual) -->
+<div class="bg-primary-container p-6 rounded-xl text-on-primary-container shadow-sm">
+<h2 class="font-title-lg text-title-lg mb-1">Weekly Ministry Summary</h2>
+<p class="font-body-md text-body-md opacity-90">Reporting for: Week of Oct 21 - Oct 27, 2024</p>
+<div class="mt-4 w-full bg-white/20 h-1 rounded-full overflow-hidden">
+<div class="bg-white h-full w-1/4 transition-all duration-500" id="progress-bar"></div>
+</div>
+</div>
+<form class="space-y-6" id="reportForm">
+<!-- Section 1: Activity Highlights -->
+<section class="bg-white p-6 rounded-xl border border-outline-variant shadow-sm space-y-4">
+<div class="flex items-center gap-3 mb-2">
+<div class="bg-primary/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface">Activity Highlights</h3>
+</div>
+<p class="font-body-md text-on-surface-variant mb-4">What were the most impactful moments from your ministry this week?</p>
+<div class="space-y-4">
+<div class="relative group">
+<textarea class="w-full rounded-lg border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest font-body-md p-4 transition-all" name="highlights" placeholder="e.g., Youth outreach went great, 3 new members joined..." rows="4"></textarea>
+</div>
+</div>
+</section>
+<!-- Section 2: Key Stats -->
+<section class="bg-white p-6 rounded-xl border border-outline-variant shadow-sm space-y-6">
+<div class="flex items-center gap-3 mb-2">
+<div class="bg-primary/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface">Key Statistics</h3>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">Total Attendance</label>
+<div class="flex items-center border border-outline-variant rounded-lg bg-surface-container-lowest focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+<span class="material-symbols-outlined text-outline px-3">groups</span>
+<input class="w-full border-none focus:ring-0 bg-transparent py-3 font-body-md" placeholder="0" type="number"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">New Visitors</label>
+<div class="flex items-center border border-outline-variant rounded-lg bg-surface-container-lowest focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+<span class="material-symbols-outlined text-outline px-3">person_add</span>
+<input class="w-full border-none focus:ring-0 bg-transparent py-3 font-body-md" placeholder="0" type="number"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">Small Groups Held</label>
+<div class="flex items-center border border-outline-variant rounded-lg bg-surface-container-lowest focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+<span class="material-symbols-outlined text-outline px-3">meeting_room</span>
+<input class="w-full border-none focus:ring-0 bg-transparent py-3 font-body-md" placeholder="0" type="number"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">Decision/Commits</label>
+<div class="flex items-center border border-outline-variant rounded-lg bg-surface-container-lowest focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+<span class="material-symbols-outlined text-outline px-3">volunteer_activism</span>
+<input class="w-full border-none focus:ring-0 bg-transparent py-3 font-body-md" placeholder="0" type="number"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Challenges & Support -->
+<section class="bg-white p-6 rounded-xl border border-outline-variant shadow-sm space-y-4">
+<div class="flex items-center gap-3 mb-2">
+<div class="bg-primary/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary">support_agent</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface">Challenges &amp; Support</h3>
+</div>
+<p class="font-body-md text-on-surface-variant">Are there any roadblocks or specific areas where you need help from the central admin?</p>
+<div class="space-y-4">
+<div class="relative group">
+<textarea class="w-full rounded-lg border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest font-body-md p-4 transition-all" name="challenges" placeholder="Describe any issues or resource needs..." rows="4"></textarea>
+</div>
+<div class="flex items-center gap-2 p-3 bg-surface-container-low rounded-lg">
+<input class="rounded text-primary focus:ring-primary w-5 h-5" id="urgent" type="checkbox"/>
+<label class="font-body-md text-on-surface select-none" for="urgent">Mark as Urgent Support Request</label>
+</div>
+</div>
+</section>
+<!-- Action Buttons -->
+<div class="pt-4 flex flex-col gap-3">
+<button class="w-full bg-primary-container text-on-primary-container py-4 rounded-xl font-title-md flex justify-center items-center gap-2 shadow-md hover:opacity-90 active:scale-[0.98] transition-all" type="submit">
+<span class="material-symbols-outlined">send</span>
+                    Send to Admin
+                </button>
+<button class="w-full bg-transparent text-secondary border border-secondary-container py-3 rounded-xl font-title-md hover:bg-secondary-container transition-all" type="button">
+                    Save Draft
+                </button>
+</div>
+</form>
+</main>
+<!-- BottomNavBar -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-1 pb-safe bg-surface-container-lowest dark:bg-inverse-surface shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md mt-1">Dash</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md mt-1">Roster</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-label-md text-label-md mt-1">Check-in</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-md text-label-md mt-1">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl p-2 active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+<span class="font-label-md text-label-md mt-1">Reqs</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for form progress
+        const textareas = document.querySelectorAll('textarea');
+        const inputs = document.querySelectorAll('input[type="number"]');
+        const progressBar = document.getElementById('progress-bar');
+        
+        function updateProgress() {
+            let totalFields = textareas.length + inputs.length;
+            let filledFields = 0;
+            
+            textareas.forEach(ta => { if(ta.value.trim().length > 0) filledFields++; });
+            inputs.forEach(inp => { if(inp.value.trim().length > 0) filledFields++; });
+            
+            let percentage = (filledFields / totalFields) * 100;
+            progressBar.style.width = Math.max(25, percentage) + '%';
+        }
+
+        [...textareas, ...inputs].forEach(el => {
+            el.addEventListener('input', updateProgress);
+        });
+
+        // Form submission animation mock
+        document.getElementById('reportForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Sending...';
+            btn.classList.add('opacity-70');
+            
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Submitted Successfully';
+                btn.classList.replace('bg-primary-container', 'bg-green-600');
+                btn.classList.replace('text-on-primary-container', 'text-white');
+            }, 1500);
+        });
+    </script>
+</body></html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kafue Baptist Church - GetPro Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#f7f8f9",
+                    "error-container": "#ffdad6",
+                    "on-secondary": "#ffffff",
+                    "tertiary-container": "#707273",
+                    "primary-fixed": "#e4dfff",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-surface-variant": "#474554",
+                    "surface-container-low": "#eaf5fa",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-background": "#131d21",
+                    "surface": "#f1fbff",
+                    "background": "#f1fbff",
+                    "on-surface": "#131d21",
+                    "surface-tint": "#5847d2",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#e4f0f4",
+                    "on-primary-container": "#faf6ff",
+                    "secondary": "#586062",
+                    "surface-variant": "#d9e4e9",
+                    "inverse-on-surface": "#e7f3f7",
+                    "secondary-container": "#dae1e3",
+                    "primary": "#5341cd",
+                    "on-primary-fixed": "#160066",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "on-secondary-container": "#5d6466",
+                    "surface-bright": "#f1fbff",
+                    "error": "#ba1a1a",
+                    "on-tertiary-fixed": "#191c1d",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary-fixed": "#161d1f",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "outline": "#787586",
+                    "outline-variant": "#c8c4d7",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "tertiary": "#57595b",
+                    "secondary-fixed": "#dde4e6",
+                    "surface-dim": "#d1dce0",
+                    "surface-container-high": "#dfeaef",
+                    "inverse-surface": "#283236"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "xl": "32px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "base": "8px",
+                    "md": "16px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        .bento-item-large { grid-column: span 2; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar (Mobile Specialized) -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 px-md py-sm">
+<nav class="max-w-7xl mx-auto flex justify-between items-center h-12">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">church</span>
+</div>
+<span class="font-headline-md text-title-lg text-primary tracking-tight">GetPro Church</span>
+</div>
+<button class="p-xs text-secondary active:scale-95 transition-transform" id="mobile-menu-btn">
+<span class="material-symbols-outlined text-[28px]">menu</span>
+</button>
+</nav>
+</header>
+<main class="pt-16 pb-xl">
+<!-- Hero Section -->
+<section class="relative h-[751px] flex flex-col justify-end px-margin-mobile pb-xl overflow-hidden">
+<div class="absolute inset-0 z-0">
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent z-10"></div>
+<img class="w-full h-full object-cover" data-alt="A warm and inviting interior of a modern church sanctuary during golden hour. Soft sunlight streams through high windows, illuminating rows of comfortable seating and a minimalist wooden pulpit. The aesthetic is clean and contemporary with a focus on natural materials and a welcoming, serene atmosphere. High-end architectural photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEYqPI9c59LidViSFpkYETom9-g_rsIOckvdaL1J0riga0AuUC7zQ_oOSITxYHbL5HE4YfJA73YyqVh8t_BmBRSwNikKQXFDO39hcxzseNJ6qkh9lyEIw0ERE583aBaRFK6ADgSlcMrhfGPFfH9SC0L9bgUnW69NCQflwdZhVSGP8YQAh62sR1VjOO3roehi4KaZbqDJB0SM1WFVuEsrIs8_tU5yaM9kC2SccT-TfAUkVkGORi6PBxNA"/>
+</div>
+<div class="relative z-20 space-y-md animate-fade-in-up">
+<div class="inline-flex items-center gap-xs px-sm py-1 bg-primary-container/10 border border-primary-container/20 rounded-full">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-label-lg font-label-lg text-primary uppercase tracking-wider">Kafue Baptist Church</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background leading-tight">Welcome home to our community.</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-sm">Experience grace, find community, and grow in faith with us in Kafue.</p>
+<div class="flex flex-col gap-sm pt-md">
+<button class="w-full py-md bg-primary text-on-primary font-label-lg text-title-md rounded-xl shadow-lg active:scale-95 transition-all">
+                        Register as Member
+                    </button>
+<button class="w-full py-md bg-surface-container-lowest border border-outline-variant text-primary font-label-lg text-title-md rounded-xl active:scale-95 transition-all">
+                        Plan a Visit
+                    </button>
+</div>
+</div>
+</section>
+<!-- Service Times - Horizontal Scroller -->
+<section class="py-xl px-margin-mobile space-y-md">
+<div class="flex justify-between items-end">
+<h2 class="font-title-lg text-title-lg text-on-surface">Service Times</h2>
+<span class="font-label-lg text-primary">View Calendar</span>
+</div>
+<div class="flex gap-md overflow-x-auto pb-md snap-x -mx-margin-mobile px-margin-mobile no-scrollbar">
+<div class="flex-shrink-0 w-64 p-md bg-surface-container-lowest border border-outline-variant rounded-2xl snap-center space-y-sm">
+<div class="flex items-center gap-sm text-primary">
+<span class="material-symbols-outlined text-[20px]">sunny</span>
+<span class="font-label-lg">SUNDAY MORNING</span>
+</div>
+<p class="font-headline-md text-headline-md text-on-surface">09:00 AM</p>
+<p class="font-body-md text-on-surface-variant">Main Worship Service &amp; Sunday School</p>
+</div>
+<div class="flex-shrink-0 w-64 p-md bg-primary-container text-on-primary-container rounded-2xl snap-center space-y-sm">
+<div class="flex items-center gap-sm opacity-80">
+<span class="material-symbols-outlined text-[20px]">nightlight</span>
+<span class="font-label-lg">SUNDAY EVENING</span>
+</div>
+<p class="font-headline-md text-headline-md">17:30 PM</p>
+<p class="font-body-md opacity-80">Reflective Worship &amp; Communion</p>
+</div>
+<div class="flex-shrink-0 w-64 p-md bg-surface-container-lowest border border-outline-variant rounded-2xl snap-center space-y-sm">
+<div class="flex items-center gap-sm text-primary">
+<span class="material-symbols-outlined text-[20px]">groups</span>
+<span class="font-label-lg">WEDNESDAY</span>
+</div>
+<p class="font-headline-md text-headline-md text-on-surface">18:00 PM</p>
+<p class="font-body-md text-on-surface-variant">Mid-week Bible Study &amp; Prayer</p>
+</div>
+</div>
+</section>
+<!-- Location Section (Map Interaction) -->
+<section class="py-xl px-margin-mobile">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-3xl overflow-hidden shadow-sm">
+<div class="h-48 relative">
+<div class="absolute inset-0 bg-secondary-container/20 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A clean, minimalist digital map view of the Kafue region in Zambia, featuring soft pastel colors, stylized road networks, and a prominent violet pin marker for the church location. The map style is modern, following Google Maps' latest design tokens with focus on legibility and architectural outlines." data-location="Kafue, Zambia" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALODDOlJH2zP0eXmuwm4bNO8j7JOtg_FtCm8o2IFMQGxYSrx-Fb9bfUYKbpef0ZntJ8eW2QNBUXUaT8JCHSN9r3ktbIKCkfhLlIgFesIX0iuw4BPXV2vpbANiyqUsRk4aoWQX-tUFvBE1hJmImyXsxT2WCZpWds4AgoGqEO9MxteabmIuF3iYykxv0gpgUqfv9QmZlu4zwHKC-hTsBAWEDXNYgtVayVuWXsui-OVoN2rQzv4-sOeKOhA"/>
+</div>
+<button class="absolute bottom-md right-md bg-surface p-sm rounded-full shadow-lg text-primary active:scale-90 transition-transform">
+<span class="material-symbols-outlined">directions</span>
+</button>
+</div>
+<div class="p-lg space-y-sm">
+<h3 class="font-title-lg text-title-lg text-on-surface">Join us this Sunday</h3>
+<p class="font-body-md text-on-surface-variant">Plot 1245, Great North Road, Kafue, Zambia</p>
+<div class="pt-sm flex items-center gap-md">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-primary-container flex items-center justify-center text-on-primary-container text-[10px] font-bold">JD</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-secondary-container flex items-center justify-center text-on-secondary-container text-[10px] font-bold">MK</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-tertiary-container flex items-center justify-center text-on-tertiary-container text-[10px] font-bold">+12</div>
+</div>
+<span class="font-label-md text-secondary">15 members are nearby</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Ministry Highlights (Bento Style) -->
+<section class="py-xl px-margin-mobile space-y-md">
+<h2 class="font-headline-md text-headline-md text-on-surface">Ministries</h2>
+<div class="bento-grid">
+<div class="bento-item-large relative h-40 rounded-3xl overflow-hidden group">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A joyful group of diverse children playing together in a bright, safe church youth center. The lighting is high-key and optimistic, focusing on genuine laughter and interaction. Vibrant colors and soft textures create an atmosphere of care and energy, characteristic of a high-quality church ministry program." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdRoPZuHBrt89r58uFYT6YgNzY9A1BwDpuNTzjgybUi__GOc_1wWew5Ll_5iURxFDOLeczOHblRMsDmMS4tKDOupiOvaYKSYhYyRJVGnW5gLWpN13xX98as3AwlgY6FskwTQBcp0FThZAMvBnBdbpk7pKfctwq1tctb-VLC8aRqZZyq1mg-K-_Cn0l4dgdRmyqckt7qX8_t5DIS2SxbRwbUR6BmqCw2BZjTk0WJ77arKIZoWrqbpq5tg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+<div class="absolute bottom-md left-md">
+<span class="text-on-primary font-title-md text-title-md">Children's Ministry</span>
+</div>
+</div>
+<div class="relative h-44 rounded-3xl overflow-hidden group">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A focused group of young adults engaged in deep conversation in a cozy, cafe-style environment. Warm ambient lighting, soft shadows, and a sense of intimate fellowship. Modern aesthetic with comfortable seating and open Bibles, suggesting a contemporary youth Bible study or life group." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRDTOO8jmAf3yewGkVU0n16lHNhlXM9ktx8ZbU4FVBI3VFbDsAmWIsDhSi3IuVulL6pgjzBs0B1KupRh-tQ1KPfQLF3g13ZIrhXSycAXw_fBgyucql1utMbR13Z0cQxE-52sBwVqNVvGwKM2dq-izX_wxTFsQFX31V_B-49-ZcgUMFXbm8NAD-827mXRA55BOU9NMTRvBO-XmxbgOIjr_erE6dtXUcjghS69HB4OSCbvHeSs1GaATpwA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+<div class="absolute bottom-md left-md">
+<span class="text-on-primary font-title-md text-title-md">Youth &amp; Young Adults</span>
+</div>
+</div>
+<div class="relative h-44 rounded-3xl overflow-hidden group">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A close-up of a church choir or worship team singing with passion. Soft stage lighting with blue and violet hues, capturing the emotional and spiritual intensity of contemporary worship. High-end concert photography style, focusing on the atmosphere of praise and communal worship." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBij05eJo1Ms9uaAKE8SDWKtr7dHzUbuU0QIIzuE821h95pqdR6dTZ4ltbp3KgMy0abKrC-rLjCwzArC8OJyqaVQJNMfgIm_guGtcbxtoaHRu3YHIWIm3BBB4MdtJhx57Z2QaqFlS1YOiBVHzpuCxLc8zMbQidFhBeHUVZOmIwytXnn5dWgCZpd_AZIzQHY7n528R9IoZAkyNup7EmDmyjKy0K0hZOVYEsZcB07h3cPqXOqh7zxrYYZlg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+<div class="absolute bottom-md left-md">
+<span class="text-on-primary font-title-md text-title-md">Worship Arts</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Events Section -->
+<section class="py-xl px-margin-mobile space-y-md">
+<h2 class="font-headline-md text-headline-md text-on-surface">Upcoming Events</h2>
+<div class="space-y-md">
+<!-- Event Item -->
+<div class="flex items-center gap-md p-md bg-surface-container-low border border-outline-variant/30 rounded-2xl active:bg-surface-container-high transition-colors">
+<div class="flex-shrink-0 w-16 h-16 bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col items-center justify-center text-primary">
+<span class="font-label-lg uppercase opacity-60">Nov</span>
+<span class="font-headline-md text-headline-md -mt-1">24</span>
+</div>
+<div class="flex-1 overflow-hidden">
+<h4 class="font-title-md text-title-md text-on-surface truncate">Annual Praise Night</h4>
+<p class="font-body-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 18:00 • Main Hall
+                        </p>
+</div>
+<span class="material-symbols-outlined text-secondary opacity-40">chevron_right</span>
+</div>
+<!-- Event Item -->
+<div class="flex items-center gap-md p-md bg-surface-container-low border border-outline-variant/30 rounded-2xl active:bg-surface-container-high transition-colors">
+<div class="flex-shrink-0 w-16 h-16 bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col items-center justify-center text-primary">
+<span class="font-label-lg uppercase opacity-60">Dec</span>
+<span class="font-headline-md text-headline-md -mt-1">02</span>
+</div>
+<div class="flex-1 overflow-hidden">
+<h4 class="font-title-md text-title-md text-on-surface truncate">Community Food Drive</h4>
+<p class="font-body-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 09:00 • Outreach Center
+                        </p>
+</div>
+<span class="material-symbols-outlined text-secondary opacity-40">chevron_right</span>
+</div>
+</div>
+<button class="w-full py-md font-label-lg text-primary">See All Events</button>
+</section>
+<!-- Giving Teaser -->
+<section class="py-xl px-margin-mobile">
+<div class="relative p-xl bg-inverse-surface rounded-[40px] overflow-hidden">
+<div class="absolute top-[-20%] right-[-20%] w-64 h-64 bg-primary-container rounded-full blur-[80px] opacity-20"></div>
+<div class="relative z-10 space-y-md text-center">
+<div class="w-16 h-16 mx-auto bg-primary/20 rounded-2xl flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container text-[32px]" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-primary-container">Support our Mission</h2>
+<p class="font-body-md text-secondary-fixed-dim">Your generosity helps us serve our community and share the gospel across Kafue.</p>
+<button class="px-xl py-md bg-primary text-on-primary rounded-full font-label-lg text-title-md active:scale-95 transition-transform">
+                        Give Online
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant py-xl px-margin-mobile">
+<div class="flex flex-col items-center gap-lg">
+<div class="flex items-center gap-sm">
+<div class="w-6 h-6 bg-secondary/20 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-secondary">church</span>
+</div>
+<span class="font-title-md text-primary">Kafue Baptist Church</span>
+</div>
+<div class="flex flex-wrap justify-center gap-md">
+<a class="font-label-lg text-secondary active:text-primary" href="#">About</a>
+<a class="font-label-lg text-secondary active:text-primary" href="#">Connect</a>
+<a class="font-label-lg text-secondary active:text-primary" href="#">Contact</a>
+<a class="font-label-lg text-secondary active:text-primary" href="#">Privacy</a>
+</div>
+<div class="text-center space-y-xs">
+<p class="font-body-md text-secondary-fixed-variant opacity-60">© 2024 Kafue Baptist Church. All rights reserved.</p>
+<p class="font-label-md text-primary font-semibold tracking-wide">Powered by GetPro Church</p>
+</div>
+</div>
+</footer>
+<!-- FAB for quick contact -->
+<button class="fixed bottom-lg right-lg w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-2xl flex items-center justify-center z-40 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[24px]">chat_bubble</span>
+</button>
+<!-- Mobile Menu Modal (Hidden by default) -->
+<div class="fixed inset-0 z-[60] bg-surface translate-x-full transition-transform duration-300 ease-in-out" id="mobile-menu">
+<div class="p-md flex justify-end">
+<button class="p-xs text-secondary" id="close-menu-btn">
+<span class="material-symbols-outlined text-[32px]">close</span>
+</button>
+</div>
+<div class="px-xl py-lg space-y-xl">
+<div class="space-y-md">
+<p class="font-label-lg text-primary uppercase tracking-widest">Navigation</p>
+<nav class="flex flex-col gap-lg">
+<a class="font-headline-md text-headline-md text-on-surface" href="#">Home</a>
+<a class="font-headline-md text-headline-md text-on-surface" href="#">Ministries</a>
+<a class="font-headline-md text-headline-md text-on-surface" href="#">Events</a>
+<a class="font-headline-md text-headline-md text-on-surface" href="#">Give</a>
+<a class="font-headline-md text-headline-md text-on-surface" href="#">Sermons</a>
+</nav>
+</div>
+<hr class="border-outline-variant"/>
+<div class="space-y-md">
+<button class="w-full py-md bg-primary text-on-primary rounded-xl font-label-lg">Register as Member</button>
+<button class="w-full py-md border border-outline-variant text-on-surface rounded-xl font-label-lg">Login to GetPro</button>
+</div>
+</div>
+</div>
+<script>
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const closeBtn = document.getElementById('close-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+
+        menuBtn.addEventListener('click', () => {
+            menu.classList.remove('translate-x-full');
+        });
+
+        closeBtn.addEventListener('click', () => {
+            menu.classList.add('translate-x-full');
+        });
+
+        // Simple scroll observer for header glass effect
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 20) {
+                header.classList.add('shadow-md');
+            } else {
+                header.classList.remove('shadow-md');
+            }
+        });
+    </script>
+</body></html>

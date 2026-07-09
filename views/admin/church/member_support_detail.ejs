@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= member.full_name %> | Member support | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: member.full_name, activeNav: activeNav || 'church_platform_search' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <% var sum = typeof summary !== 'undefined' && summary ? summary : {}; %>
+        <% var ctx = typeof loginContext !== 'undefined' && loginContext ? loginContext : {}; %>
+        <% var host = typeof branchHostSlug !== 'undefined' ? branchHostSlug : (branch.host_slug || branch.slug); %>
+
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title"><%= member.full_name %></h1>
+            <p class="admin-dashboard__subtitle muted">
+              <a href="/admin/church/organizations/<%= organization.id %>"><%= organization.name %></a>
+              · <a href="/admin/church/branches/<%= branch.id %>"><%= branch.name %></a>
+              · <%- include('../../partials/admin/church_status_badge', { status: member.status }) %>
+            </p>
+            <p class="muted">Registered <%= formatDate(member.created_at) %> · Last updated <%= formatDate(member.updated_at) %></p>
+          </div>
+          <div class="admin-toolbar">
+            <% if (typeof returnTo !== 'undefined' && returnTo) { %>
+              <%- include('../../partials/components/button', { variant: 'default', href: returnTo, label: 'Back to search' }) %>
+            <% } else { %>
+              <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/search', label: 'Church search' }) %>
+            <% } %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id, label: 'View branch' }) %>
+          </div>
+        </header>
+
+        <% if (typeof flashNotice !== 'undefined' && flashNotice) { %>
+          <div class="flash flash--success" role="status"><%= flashNotice %></div>
+        <% } %>
+        <% if (typeof statusActionError !== 'undefined' && statusActionError) { %>
+          <div class="flash flash--error" role="alert"><%= statusActionError %></div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Login and access context</h2>
+          <dl class="admin-dl">
+            <dt>Access summary</dt>
+            <dd>
+              <% if (ctx.can_access_member_portal) { %>
+                <span class="flash flash--success" style="display:inline-block;padding:0.35rem 0.75rem;margin:0;">Can access member portal</span>
+              <% } else { %>
+                <span class="flash flash--error" style="display:inline-block;padding:0.35rem 0.75rem;margin:0;"><%= ctx.access_summary %></span>
+              <% } %>
+            </dd>
+            <dt>Member status</dt>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: member.status }) %> — <%= ctx.member_status_meaning %></dd>
+            <dt>Organization status</dt>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: organization.status }) %></dd>
+            <dt>Branch status</dt>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: branch.status }) %></dd>
+            <dt>Member login URL</dt>
+            <dd><code>https://<%= churchPublicHost(host) %>/login</code></dd>
+            <dt>Branch admin URL</dt>
+            <dd><code>https://<%= churchPublicHost(host) %>/branch/login</code></dd>
+            <dt>Public branch URL</dt>
+            <dd><code>https://<%= churchPublicHost(host) %>/</code></dd>
+            <%- include('./partials/login_protection_summary', { loginProtection: typeof loginProtection !== 'undefined' ? loginProtection : null, formatDate: formatDate }) %>
+          </dl>
+          <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">Read-only support view. Profile edits remain on the branch admin portal.</p>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Reset password</h2>
+          <% if (typeof resetError !== 'undefined' && resetError) { %>
+            <div class="flash flash--error" role="alert"><%= resetError %></div>
+          <% } %>
+          <p class="muted">Password will not be shown after saving. Share it securely.</p>
+          <form method="post" action="/admin/church/members/<%= member.id %>/reset-password" class="admin-form-grid" style="margin-top:1rem;">
+            <div class="input-field">
+              <label class="input-field__label" for="new_password">New password *</label>
+              <input id="new_password" class="input-field__control" name="new_password" type="password" required minlength="8" autocomplete="new-password" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="confirm_password">Confirm password *</label>
+              <input id="confirm_password" class="input-field__control" name="confirm_password" type="password" required minlength="8" autocomplete="new-password" />
+            </div>
+            <div class="input-field">
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Reset password' }) %>
+            </div>
+          </form>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Status actions</h2>
+          <% if (member.status === 'verified') { %>
+            <form method="post" action="/admin/church/members/<%= member.id %>/suspend">
+              <div class="input-field">
+                <label class="input-field__label" for="suspend_reason">Suspend reason *</label>
+                <textarea id="suspend_reason" class="input-field__control" name="reason" rows="3" required minlength="3" placeholder="Why is this member being suspended?"></textarea>
+              </div>
+              <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Suspend member' }) %>
+            </form>
+          <% } else if (member.status === 'suspended') { %>
+            <form method="post" action="/admin/church/members/<%= member.id %>/reactivate">
+              <div class="input-field">
+                <label class="input-field__label" for="reactivate_reason">Reactivate reason (optional)</label>
+                <textarea id="reactivate_reason" class="input-field__control" name="reason" rows="3" placeholder="Optional note for reactivation"></textarea>
+              </div>
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Reactivate member' }) %>
+            </form>
+          <% } else if (member.status === 'pending' || member.status === 'rejected') { %>
+            <form method="post" action="/admin/church/members/<%= member.id %>/verify">
+              <div class="input-field">
+                <label class="input-field__label" for="verify_reason">Verify reason (optional)</label>
+                <textarea id="verify_reason" class="input-field__control" name="reason" rows="3" placeholder="Optional verification note"></textarea>
+              </div>
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Verify member' }) %>
+            </form>
+          <% } else { %>
+            <p class="muted">No status actions available for this member.</p>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Contact and profile</h2>
+          <dl class="admin-dl">
+            <dt>Email</dt><dd><%= member.email || '—' %></dd>
+            <dt>Phone</dt><dd><%= member.phone || '—' %></dd>
+            <dt>Gender</dt><dd><%= member.gender || '—' %></dd>
+            <dt>Age group</dt><dd><%= member.age_group || '—' %></dd>
+            <dt>Area / address</dt><dd><%= member.address_area || '—' %></dd>
+            <dt>Attendance duration</dt><dd><%= member.attendance_duration || '—' %></dd>
+            <dt>Ministry interest</dt><dd><%= member.ministry_interest || '—' %></dd>
+            <dt>Emergency contact</dt>
+            <dd>
+              <%= member.emergency_contact_name || '—' %>
+              <% if (member.emergency_contact_phone) { %> · <%= member.emergency_contact_phone %><% } %>
+            </dd>
+            <% if (member.review_comment) { %>
+              <dt>Review comment</dt><dd><%= member.review_comment %></dd>
+            <% } %>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Organization and branch</h2>
+          <dl class="admin-dl">
+            <dt>Organization</dt>
+            <dd>
+              <a href="/admin/church/organizations/<%= organization.id %>"><%= organization.name %></a>
+              · <%= organization.slug %>
+              · <%= getPlanDisplay(organization.plan_code || 'free').label %>
+            </dd>
+            <dt>Branch</dt>
+            <dd><a href="/admin/church/branches/<%= branch.id %>"><%= branch.name %></a> · <%= host %></dd>
+          </dl>
+          <div class="admin-toolbar" style="margin-top:1rem;">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'View organization' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id, label: 'View branch' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: 'https://' + churchPublicHost(host) + '/', label: 'Public site', extraAttrs: 'target="_blank" rel="noopener noreferrer"' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id + '/admins', label: 'Branch admins' }) %>
+          </div>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Ministries</h2>
+          <% if (!sum.active_ministries || sum.active_ministries.length === 0) { %>
+            <p class="muted">No active ministry assignments.</p>
+          <% } else { %>
+            <ul class="admin-list">
+              <% sum.active_ministries.forEach(function (m) { %>
+                <li><strong><%= m.name %></strong> · <%= m.role || 'member' %> · joined <%= formatDate(m.joined_at) %></li>
+              <% }); %>
+            </ul>
+          <% } %>
+          <% if (sum.pending_join_requests && sum.pending_join_requests.length > 0) { %>
+            <h3 class="section-title" style="margin-top:1rem;">Pending join requests</h3>
+            <ul class="admin-list">
+              <% sum.pending_join_requests.forEach(function (r) { %>
+                <li><strong><%= r.ministry_name %></strong> · <%= joinRequestStatusLabel(r.status) %> · <%= formatDate(r.created_at) %></li>
+              <% }); %>
+            </ul>
+          <% } %>
+          <% if (sum.closed_join_requests && sum.closed_join_requests.length > 0) { %>
+            <h3 class="section-title" style="margin-top:1rem;">Previous join requests</h3>
+            <ul class="admin-list">
+              <% sum.closed_join_requests.forEach(function (r) { %>
+                <li><strong><%= r.ministry_name %></strong> · <%= joinRequestStatusLabel(r.status) %> · <%= formatDate(r.created_at) %></li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Online requests</h2>
+          <% if (!sum.member_requests || sum.member_requests.length === 0) { %>
+            <p class="muted">No online requests submitted.</p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>Subject</th><th>Type</th><th>Status</th><th>Submitted</th></tr></thead>
+                <tbody>
+                  <% sum.member_requests.forEach(function (r) { %>
+                    <tr>
+                      <td><%= r.subject %></td>
+                      <td><%= r.request_type %></td>
+                      <td><%= memberRequestStatusLabel(r.status) %></td>
+                      <td><%= formatDate(r.created_at) %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Prayer requests</h2>
+          <% var ps = sum.prayer_summary || {}; %>
+          <p class="muted">Counts only — prayer content is not shown on platform support views.</p>
+          <dl class="admin-dl">
+            <dt>Submitted</dt><dd><%= ps.submitted || 0 %></dd>
+            <dt>Reviewed</dt><dd><%= ps.reviewed || 0 %></dd>
+            <dt>Closed</dt><dd><%= ps.closed || 0 %></dd>
+            <dt>Total</dt><dd><%= ps.total || 0 %></dd>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Duties</h2>
+          <p class="muted">Past confirmed duties: <%= sum.past_duty_count || 0 %></p>
+          <% if (!sum.upcoming_duties || sum.upcoming_duties.length === 0) { %>
+            <p class="muted">No upcoming confirmed duties.</p>
+          <% } else { %>
+            <ul class="admin-list">
+              <% sum.upcoming_duties.forEach(function (d) { %>
+                <li><strong><%= d.service_name %></strong> · <%= d.role_name %> · <%= formatDate(d.duty_date) %></li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </section>
+
+        <% if (member.admin_notes) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Branch admin notes</h2>
+          <% if (member.last_admin_note_at) { %>
+            <p class="muted">Last note <%= formatDate(member.last_admin_note_at) %></p>
+          <% } %>
+          <pre class="admin-pre" style="white-space:pre-wrap;font-family:inherit;"><%= member.admin_notes %></pre>
+          <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">Read-only. Notes are managed by branch admins.</p>
+        </section>
+        <% } %>
+
+        <%- include('partials/support_notes_panel', {
+          supportNotes: typeof supportNotes !== 'undefined' ? supportNotes : [],
+          supportNoteEntityType: typeof supportNoteEntityType !== 'undefined' ? supportNoteEntityType : 'member',
+          supportNoteEntityId: typeof supportNoteEntityId !== 'undefined' ? supportNoteEntityId : member.id,
+          supportNoteReturnTo: typeof supportNoteReturnTo !== 'undefined' ? supportNoteReturnTo : ('/admin/church/members/' + member.id),
+          supportNoteNotice: typeof supportNoteNotice !== 'undefined' ? supportNoteNotice : null,
+          supportNoteError: typeof supportNoteError !== 'undefined' ? supportNoteError : null,
+          formatDate: formatDate
+        }) %>
+
+        <% if (typeof auditLogs !== 'undefined' && auditLogs && auditLogs.length > 0) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Recent activity</h2>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>When</th><th>Action</th><th>Actor</th></tr></thead>
+              <tbody>
+                <% auditLogs.forEach(function (log) { %>
+                  <tr>
+                    <td><%= formatDate(log.created_at) %></td>
+                    <td><%= actionLabel(log.action) %></td>
+                    <td><%= log.actor_name || log.actor_type || '—' %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <% } %>
+      </div>
+    </main>
+  </body>
+</html>

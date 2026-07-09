@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GetPro Church - Branch Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed-variant": "#4029ba",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#787586",
+                    "on-tertiary-fixed": "#191c1d",
+                    "inverse-primary": "#c6bfff",
+                    "tertiary": "#57595b",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#dae1e3",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "surface-container": "#e4f0f4",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "surface-variant": "#d9e4e9",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#f1fbff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "on-tertiary-container": "#f7f8f9",
+                    "tertiary-container": "#707273",
+                    "on-secondary-fixed": "#161d1f",
+                    "secondary": "#586062",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "primary-container": "#6c5ce7",
+                    "outline-variant": "#c8c4d7",
+                    "on-surface-variant": "#474554",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#dfeaef",
+                    "on-error-container": "#93000a",
+                    "on-background": "#131d21",
+                    "primary": "#5341cd",
+                    "secondary-fixed": "#dde4e6",
+                    "on-primary-container": "#faf6ff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "surface-dim": "#d1dce0",
+                    "on-surface": "#131d21",
+                    "inverse-on-surface": "#e7f3f7",
+                    "surface": "#f1fbff",
+                    "on-primary": "#ffffff",
+                    "surface-container-highest": "#d9e4e9",
+                    "inverse-surface": "#283236",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#e4dfff",
+                    "background": "#f1fbff",
+                    "surface-tint": "#5847d2",
+                    "on-primary-fixed": "#160066"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "gutter": "24px",
+                    "margin-desktop": "32px",
+                    "margin-mobile": "16px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "sm": "8px",
+                    "xl": "32px",
+                    "xs": "4px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-md": ["Inter"],
+                    "title-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1fbff; /* surface */
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c8c4d7;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #787586;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen overflow-hidden">
+<!-- SideNavBar Shell -->
+<aside class="fixed left-0 top-0 bottom-0 flex flex-col z-40 py-lg bg-inverse-surface dark:bg-surface-container-lowest shadow-sm h-screen w-[280px]">
+<!-- Brand Identity Header -->
+<div class="px-xl mb-xl">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">church</span>
+</div>
+<div class="flex flex-col">
+<span class="text-headline-md font-headline-md text-primary-fixed-dim">Grace Community</span>
+<span class="text-label-lg font-label-lg text-secondary-fixed-dim/60">Main Branch</span>
+</div>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 space-y-xs overflow-y-auto">
+<!-- Dashboard (Active) -->
+<a class="flex items-center gap-md bg-primary-container text-on-primary-container rounded-full mx-md px-lg py-md translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined active-icon" data-icon="dashboard">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<!-- Members -->
+<a class="flex items-center gap-md text-secondary-fixed-dim dark:text-secondary mx-md px-lg py-md hover:bg-surface-variant/10 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-lg text-label-lg">Members</span>
+</a>
+<!-- Ministries -->
+<a class="flex items-center gap-md text-secondary-fixed-dim dark:text-secondary mx-md px-lg py-md hover:bg-surface-variant/10 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="church">church</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</a>
+<!-- Attendance -->
+<a class="flex items-center gap-md text-secondary-fixed-dim dark:text-secondary mx-md px-lg py-md hover:bg-surface-variant/10 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+<span class="font-label-lg text-label-lg">Attendance</span>
+</a>
+<!-- Giving -->
+<a class="flex items-center gap-md text-secondary-fixed-dim dark:text-secondary mx-md px-lg py-md hover:bg-surface-variant/10 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="volunteer_activism">volunteer_activism</span>
+<span class="font-label-lg text-label-lg">Giving</span>
+</a>
+<!-- Reports -->
+<a class="flex items-center gap-md text-secondary-fixed-dim dark:text-secondary mx-md px-lg py-md hover:bg-surface-variant/10 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-lg text-label-lg">Reports</span>
+</a>
+<div class="mx-xl my-lg h-px bg-outline-variant/20"></div>
+<button class="flex items-center justify-center gap-sm bg-primary-fixed text-on-primary-fixed rounded-xl mx-xl py-md font-title-md text-title-md hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined">add</span>
+                New Entry
+            </button>
+</nav>
+<!-- Footer Navigation -->
+<div class="mt-auto pt-lg border-t border-outline-variant/10 space-y-xs">
+<a class="flex items-center gap-md text-secondary-fixed-dim dark:text-secondary mx-md px-lg py-md hover:bg-surface-variant/10 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+<a class="flex items-center gap-md text-secondary-fixed-dim dark:text-secondary mx-md px-lg py-md hover:bg-surface-variant/10 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span class="font-label-lg text-label-lg">Support</span>
+</a>
+<a class="flex items-center gap-md text-error mx-md px-lg py-md hover:bg-error-container/10 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-[280px] flex-1 flex flex-col h-screen overflow-y-auto">
+<!-- Header -->
+<header class="h-16 flex items-center justify-between px-margin-desktop bg-surface sticky top-0 z-30">
+<div class="flex items-center gap-md">
+<h1 class="font-headline-md text-headline-md text-on-surface">Admin Dashboard</h1>
+<span class="px-sm py-xs bg-surface-container-high rounded text-on-surface-variant font-label-md text-label-md">kafuebaptist.church.getproapp.org</span>
+</div>
+<div class="flex items-center gap-lg">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-md text-outline">search</span>
+<input class="pl-xl pr-md py-sm bg-surface-container-low border-none rounded-full w-64 text-body-md focus:ring-2 focus:ring-primary transition-all" placeholder="Search members, giving, etc..." type="text"/>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged church administrator with a friendly expression. They are wearing a sharp charcoal suit in a bright, modern office with soft daylight coming from the window. The style is clean corporate photography with a soft focus background and a warm, compassionate mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfRA-m5cAA6xZnh2JhHCAlpHqzQYtTQMzFgRPSHe--xF2-9CVIiFcrKuPwBGu1H8C1PjgSK_kPz2KfcK51TxKEx2CJVu8HNoJ4-cpHR1vlTZIEBBafMOLNLyUdObMvu-RtZS8eQjyGp7AB7EA_0wL4Al8zR042r7505Zlf2sxvYXayg9iHU1qVtcbE5tRUTn0jTXl7153Cm4PXqewkP8vFwWemcix90kz536CZEMF8YCkYDtdcvPCC6A"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Dashboard Content Container -->
+<div class="p-margin-desktop space-y-xl max-w-7xl">
+<!-- Bento Summary Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Total Members -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 flex flex-col gap-sm shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-secondary font-label-lg uppercase tracking-wider">Total Members</span>
+<div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+</div>
+</div>
+<div class="flex items-baseline gap-sm">
+<span class="font-headline-lg text-headline-lg text-on-surface">1,284</span>
+<span class="text-on-success font-label-md flex items-center text-green-600">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> 4%
+                        </span>
+</div>
+<span class="text-secondary text-body-md">+12 this month</span>
+</div>
+<!-- Recent Attendance -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 flex flex-col gap-sm shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-secondary font-label-lg uppercase tracking-wider">Attendance</span>
+<div class="w-10 h-10 rounded-full bg-secondary-container text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+</div>
+</div>
+<div class="flex items-baseline gap-sm">
+<span class="font-headline-lg text-headline-lg text-on-surface">842</span>
+<span class="text-secondary-fixed-variant font-label-md flex items-center">
+                            Last Sunday
+                        </span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full mt-xs overflow-hidden">
+<div class="bg-primary h-full" style="width: 65%;"></div>
+</div>
+</div>
+<!-- Monthly Giving -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 flex flex-col gap-sm shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-secondary font-label-lg uppercase tracking-wider">Monthly Giving</span>
+<div class="w-10 h-10 rounded-full bg-green-50 text-green-700 flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">payments</span>
+</div>
+</div>
+<div class="flex items-baseline gap-sm">
+<span class="font-headline-lg text-headline-lg text-on-surface">K84,200</span>
+<span class="text-green-600 font-label-md flex items-center">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Target met
+                        </span>
+</div>
+<span class="text-secondary text-body-md">92% of ZK 91,500 target</span>
+</div>
+<!-- Active Ministries -->
+<div class="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant/30 flex flex-col gap-sm shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-secondary font-label-lg uppercase tracking-wider">Ministries</span>
+<div class="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">diversity_1</span>
+</div>
+</div>
+<div class="flex items-baseline gap-sm">
+<span class="font-headline-lg text-headline-lg text-on-surface">24</span>
+<span class="text-secondary text-label-md">Departments</span>
+</div>
+<div class="flex -space-x-2 mt-xs">
+<div class="w-6 h-6 rounded-full border-2 border-surface bg-primary/20 flex items-center justify-center text-[10px] font-bold">YM</div>
+<div class="w-6 h-6 rounded-full border-2 border-surface bg-secondary/20 flex items-center justify-center text-[10px] font-bold">WM</div>
+<div class="w-6 h-6 rounded-full border-2 border-surface bg-tertiary/20 flex items-center justify-center text-[10px] font-bold"> choir </div>
+<div class="w-6 h-6 rounded-full border-2 border-surface bg-outline-variant flex items-center justify-center text-[10px] font-bold">+21</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Recent Activity Table -->
+<div class="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden">
+<div class="p-lg flex items-center justify-between border-b border-outline-variant/10">
+<h2 class="font-title-lg text-title-lg text-on-surface">Recent Activity</h2>
+<button class="text-primary font-label-lg hover:underline transition-all">View All Activity</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low text-on-surface-variant font-label-lg text-label-lg">
+<tr>
+<th class="px-lg py-md">Member / Activity</th>
+<th class="px-lg py-md">Category</th>
+<th class="px-lg py-md">Amount / Status</th>
+<th class="px-lg py-md">Date</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-primary-fixed-dim text-on-primary-fixed flex items-center justify-center text-[12px] font-bold">JM</div>
+<div>
+<div class="text-on-surface font-title-md">Joseph Mvula</div>
+<div class="text-secondary text-body-md">New Registration</div>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="px-md py-xs bg-primary/5 text-primary rounded-full font-label-md">Membership</span>
+</td>
+<td class="px-lg py-md">
+<span class="text-green-600 font-label-md">Completed</span>
+</td>
+<td class="px-lg py-md text-secondary text-body-md">2 hours ago</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-[12px] font-bold">TN</div>
+<div>
+<div class="text-on-surface font-title-md">Teresa Ng'andu</div>
+<div class="text-secondary text-body-md">Tithe Offering</div>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="px-md py-xs bg-green-50 text-green-700 rounded-full font-label-md">Giving</span>
+</td>
+<td class="px-lg py-md">
+<span class="text-on-surface font-title-md">K 1,500</span>
+</td>
+<td class="px-lg py-md text-secondary text-body-md">5 hours ago</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center text-[12px] font-bold">CB</div>
+<div>
+<div class="text-on-surface font-title-md">Chibesa Banda</div>
+<div class="text-secondary text-body-md">Ministry Update</div>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="px-md py-xs bg-secondary-container text-secondary-fixed-variant rounded-full font-label-md">Ministries</span>
+</td>
+<td class="px-lg py-md">
+<span class="text-secondary font-label-md">Choir Admin</span>
+</td>
+<td class="px-lg py-md text-secondary text-body-md">Yesterday</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center text-[12px] font-bold">LK</div>
+<div>
+<div class="text-on-surface font-title-md">Loveness Kalaba</div>
+<div class="text-secondary text-body-md">New Registration</div>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="px-md py-xs bg-primary/5 text-primary rounded-full font-label-md">Membership</span>
+</td>
+<td class="px-lg py-md">
+<span class="text-green-600 font-label-md">Completed</span>
+</td>
+<td class="px-lg py-md text-secondary text-body-md">Oct 24, 2024</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Quick Actions & Insights -->
+<div class="space-y-gutter">
+<!-- Quick Actions -->
+<div class="bg-inverse-surface rounded-xl p-lg shadow-md text-white">
+<h3 class="font-title-md text-title-md mb-md text-primary-fixed-dim">Branch Quick Actions</h3>
+<div class="grid grid-cols-1 gap-sm">
+<button class="flex items-center gap-md p-md bg-white/5 hover:bg-white/10 rounded-lg transition-all text-left">
+<div class="w-10 h-10 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined">person_add</span>
+</div>
+<div>
+<div class="font-label-lg text-label-lg">Add New Member</div>
+<div class="text-secondary-fixed-dim text-[11px]">Register a new congregant</div>
+</div>
+</button>
+<button class="flex items-center gap-md p-md bg-white/5 hover:bg-white/10 rounded-lg transition-all text-left">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined">how_to_reg</span>
+</div>
+<div>
+<div class="font-label-lg text-label-lg">Log Attendance</div>
+<div class="text-secondary-fixed-dim text-[11px]">Update last service records</div>
+</div>
+</button>
+<button class="flex items-center gap-md p-md bg-white/5 hover:bg-white/10 rounded-lg transition-all text-left">
+<div class="w-10 h-10 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined">volunteer_activism</span>
+</div>
+<div>
+<div class="font-label-lg text-label-lg">Record Giving</div>
+<div class="text-secondary-fixed-dim text-[11px]">Enter tithe or donation</div>
+</div>
+</button>
+</div>
+</div>
+<!-- Visual Insight Card -->
+<div class="bg-surface-container-lowest rounded-xl p-lg border border-outline-variant/30 shadow-sm">
+<div class="flex items-center justify-between mb-lg">
+<h3 class="font-title-md text-title-md text-on-surface">Weekly Attendance</h3>
+<span class="text-secondary text-label-md">Oct 2024</span>
+</div>
+<div class="flex items-end justify-between h-32 gap-xs">
+<div class="flex flex-col items-center flex-1 gap-xs">
+<div class="w-full bg-primary/10 rounded-t h-[40%] hover:bg-primary/30 transition-all cursor-help" title="Wk 1: 720"></div>
+<span class="text-[10px] text-outline font-bold">Wk 1</span>
+</div>
+<div class="flex flex-col items-center flex-1 gap-xs">
+<div class="w-full bg-primary/20 rounded-t h-[60%] hover:bg-primary/40 transition-all cursor-help" title="Wk 2: 780"></div>
+<span class="text-[10px] text-outline font-bold">Wk 2</span>
+</div>
+<div class="flex flex-col items-center flex-1 gap-xs">
+<div class="w-full bg-primary/40 rounded-t h-[85%] hover:bg-primary/60 transition-all cursor-help" title="Wk 3: 820"></div>
+<span class="text-[10px] text-outline font-bold">Wk 3</span>
+</div>
+<div class="flex flex-col items-center flex-1 gap-xs">
+<div class="w-full bg-primary rounded-t h-[95%] hover:opacity-80 transition-all cursor-help" title="Wk 4: 842"></div>
+<span class="text-[10px] text-primary font-bold">Wk 4</span>
+</div>
+</div>
+<p class="text-body-md text-secondary mt-lg italic">
+                            "Attendance is up by 15% compared to the same period last month."
+                        </p>
+</div>
+</div>
+</div>
+<!-- Promotion / Announcement Area -->
+<section class="relative bg-primary-container text-on-primary-container rounded-2xl overflow-hidden shadow-xl p-xl flex flex-col md:flex-row items-center justify-between gap-xl">
+<div class="z-10 max-w-lg space-y-md">
+<span class="px-md py-xs bg-white/20 rounded-full font-label-lg text-label-lg">CMS UPDATES</span>
+<h2 class="font-headline-lg text-headline-lg">Automate Your Outreach</h2>
+<p class="text-body-lg text-on-primary-container/80">Connect with members instantly through our new integrated SMS and Email notification system. Schedule reminders for small groups or sending birthday blessings with one click.</p>
+<div class="flex items-center gap-md">
+<button class="bg-on-primary-container text-primary-container px-xl py-md rounded-full font-title-md text-title-md hover:bg-surface transition-colors">Setup Now</button>
+<button class="text-on-primary-container border border-on-primary-container/30 px-xl py-md rounded-full font-title-md text-title-md hover:bg-white/10 transition-colors">Learn More</button>
+</div>
+</div>
+<div class="w-full md:w-1/3 aspect-video rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center p-md">
+<img class="w-full h-full object-cover rounded-lg shadow-lg" data-alt="A futuristic, clean 3D render of a smartphone displaying a sleek messaging interface for a church community. Floating 3D emojis like a heart and a folded hands icon surround the phone. The background is a soft gradient of violet and deep blue, matching the brand's premium enterprise aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeH95I3QlXU4uMStLdhZ1xfXh6Fc1gq0G6bfGftQEpKhei4hqfGDquOadtygXsgrkfnE9q85waalEyJ5YnAN6_66_LC0yZ1Kn5Q09gAKl7RpFEG-E0Wy4ocF1_Syifal8THM_1j7bE5SojY5-9KVqxWMP_q7gCeJDtrj2rKXVVnKAn6hKHWKZ4ZxlHXjY7KvOmQHKVf7oBjJSYVUabbu4b-8JC_t7-3v3BypZi5MGBWTPOLynkNSzIhw"/>
+</div>
+</section>
+</div>
+<!-- Footer Shell -->
+<footer class="w-full py-xl px-margin-desktop mt-auto flex flex-col md:flex-row justify-between items-center gap-lg bg-surface-container-lowest border-t border-outline-variant">
+<div class="flex items-center gap-md">
+<span class="font-title-md text-primary font-bold">GetPro Church</span>
+<span class="text-secondary font-body-md">© 2024 GetPro Church Management System. All rights reserved.</span>
+</div>
+<div class="flex items-center gap-lg">
+<a class="text-secondary-fixed-variant font-body-md hover:text-primary underline transition-all opacity-80 hover:opacity-100" href="#">Privacy Policy</a>
+<a class="text-secondary-fixed-variant font-body-md hover:text-primary underline transition-all opacity-80 hover:opacity-100" href="#">Terms of Service</a>
+<a class="text-secondary-fixed-variant font-body-md hover:text-primary underline transition-all opacity-80 hover:opacity-100" href="#">Support</a>
+<a class="text-secondary-fixed-variant font-body-md hover:text-primary underline transition-all opacity-80 hover:opacity-100" href="#">Documentation</a>
+</div>
+</footer>
+</main>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.hover\\:bg-surface-container-low').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+            card.style.transition = 'transform 0.2s ease-out, background-color 0.2s ease-in-out';
+        });
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('w-80');
+            searchInput.classList.replace('w-64', 'w-80');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.classList.replace('w-80', 'w-64');
+        });
+    </script>
+</body></html>

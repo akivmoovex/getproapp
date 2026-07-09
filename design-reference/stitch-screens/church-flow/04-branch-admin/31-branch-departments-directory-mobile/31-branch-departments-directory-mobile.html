@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>31-branch-departments-directory-mobile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "outline": "#787586",
+                    "surface-container-high": "#dfeaef",
+                    "primary": "#5341cd",
+                    "tertiary": "#57595b",
+                    "on-surface-variant": "#474554",
+                    "tertiary-container": "#707273",
+                    "primary-fixed": "#e4dfff",
+                    "on-surface": "#131d21",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#e4f0f4",
+                    "tertiary-fixed": "#e1e3e4",
+                    "surface-container-low": "#eaf5fa",
+                    "on-tertiary-fixed": "#191c1d",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-container": "#5d6466",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "background": "#f1fbff",
+                    "on-background": "#131d21",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "secondary-fixed": "#dde4e6",
+                    "inverse-primary": "#c6bfff",
+                    "surface-variant": "#d9e4e9",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "on-tertiary-container": "#f7f8f9",
+                    "on-primary": "#ffffff",
+                    "surface-container-highest": "#d9e4e9",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-primary-container": "#faf6ff",
+                    "on-secondary-fixed": "#161d1f",
+                    "on-error-container": "#93000a",
+                    "surface-dim": "#d1dce0",
+                    "surface": "#f1fbff",
+                    "on-primary-fixed": "#160066",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#dae1e3",
+                    "inverse-surface": "#283236",
+                    "primary-container": "#6c5ce7",
+                    "outline-variant": "#c8c4d7",
+                    "surface-bright": "#f1fbff",
+                    "surface-tint": "#5847d2",
+                    "secondary": "#586062",
+                    "error": "#ba1a1a",
+                    "inverse-on-surface": "#e7f3f7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "xl": "32px",
+                    "base": "8px",
+                    "gutter": "24px",
+                    "margin-desktop": "32px",
+                    "sm": "8px",
+                    "margin-mobile": "16px",
+                    "md": "16px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom hide scrollbar for horizontal chips */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- Mobile Top App Bar -->
+<header class="bg-surface sticky top-0 z-50 flex items-center h-16 px-margin-mobile border-b border-outline-variant">
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="ml-4 font-title-lg text-title-lg text-on-surface">Departments</h1>
+<div class="ml-auto flex gap-xs">
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow p-margin-mobile pb-32">
+<!-- Quick Filters / Chips -->
+<div class="flex overflow-x-auto gap-base mb-lg no-scrollbar">
+<div class="bg-primary text-on-primary px-lg py-xs rounded-full font-label-lg text-label-lg whitespace-nowrap">All Departments</div>
+<div class="bg-surface-container-high text-on-surface-variant px-lg py-xs rounded-full font-label-lg text-label-lg whitespace-nowrap">Ministry Only</div>
+<div class="bg-surface-container-high text-on-surface-variant px-lg py-xs rounded-full font-label-lg text-label-lg whitespace-nowrap">Support Staff</div>
+<div class="bg-surface-container-high text-on-surface-variant px-lg py-xs rounded-full font-label-lg text-label-lg whitespace-nowrap">Leadership</div>
+</div>
+<!-- Directory List -->
+<div class="flex flex-col gap-md">
+<!-- Department Card: Finance -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-sm shadow-sm active:scale-[0.98] transition-transform duration-200">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-primary-fixed text-on-primary-fixed flex items-center justify-center rounded-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">payments</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Finance</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Central Administration</p>
+</div>
+</div>
+<button class="text-outline hover:text-primary">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="h-[1px] bg-outline-variant w-full my-xs"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-base">
+<div class="w-8 h-8 rounded-full bg-cover bg-center border border-outline-variant" data-alt="A professional headshot of a middle-aged woman with a warm smile, wearing a professional navy blue blazer. She is set against a clean, softly lit office environment that suggests authority and trustworthiness. The lighting is high-key and natural, adhering to a modern corporate administrative aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAE8xlGSmjf3hG4Cj-5pr46VFcQ4CqptW_ANog3nZ3tjmhvhnQrT5MMIlSWIwTuxsbwZQDs-zHF9oMVXGG8lxYeaPbr_nwwKavvS5fJTXPAb2rKcWY-S1YjBqRiS9Fav3oIgxVgEFInn1_C0YQchMPpfJ9hc55-rskIrA-a2-h2r2Iz2RoW7OnxzdVQTSXyXZXp1-EbaCgxfzPGVkFDeUMuul5BrlJXrZebYa_NlJqxYVmxl3-pGcwmPA')"></div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider">Leader</span>
+<span class="font-body-md text-body-md text-on-surface">Sarah J. Mwale</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider">Staff</span>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">groups</span>
+<span class="font-body-md text-body-md text-on-surface">8 Members</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Department Card: Media -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-sm shadow-sm active:scale-[0.98] transition-transform duration-200">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-secondary-container text-on-secondary-container flex items-center justify-center rounded-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">videocam</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Media &amp; Tech</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Production Ministry</p>
+</div>
+</div>
+<button class="text-outline hover:text-primary">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="h-[1px] bg-outline-variant w-full my-xs"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-base">
+<div class="w-8 h-8 rounded-full bg-cover bg-center border border-outline-variant" data-alt="A close-up portrait of a young man with glasses and a creative flair, wearing a casual grey hoodie. He has a focused and friendly expression, positioned in a creative studio with subtle colored accent lights in the background. The visual style is contemporary and tech-oriented, matching a modern church media department vibe." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAjUJv7YwoOljHXbE67dyZNkBeeff_Aw6WawroA67Il8ni-2WDJwi3QLnK8Ny8JTl7ye2GjwrEBPDt2dfpDTnp3FRehXXRMhixP5MmHOdipCu1oed6i15y_Ms6D6Y5TIocsyPZ5l_w2ZXmN0xPIsYmVzvtQkJBLj2D96oP3SlM_AN_1-4cuPlkdooc8GE-lTOye-OnjbdWCF0dGf0R_WcGw_1O_W81o8T2b0reWn2fvMi7yJqhcjGMQDg')"></div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider">Leader</span>
+<span class="font-body-md text-body-md text-on-surface">David Chanda</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider">Staff</span>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">groups</span>
+<span class="font-body-md text-body-md text-on-surface">15 Members</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Department Card: Hospitality -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-sm shadow-sm active:scale-[0.98] transition-transform duration-200">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center rounded-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Hospitality</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Member Care</p>
+</div>
+</div>
+<button class="text-outline hover:text-primary">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="h-[1px] bg-outline-variant w-full my-xs"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-base">
+<div class="w-8 h-8 rounded-full bg-cover bg-center border border-outline-variant" data-alt="A portrait of a kind-faced elderly man with grey hair and a gentle smile, dressed in a soft pastel shirt. The background is a bright, airy church foyer with warm, natural sunlight streaming in. The mood is welcoming and compassionate, reflecting the values of a hospitality ministry in a structured community environment." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBC0zBkxZQg88miTIpVUcy5nDdLh9F4MzWBmddKJsIB4u6-ONAtS55rJg5mM_UzGgoRvyjp7SvszGnCDf3mkOo29soTOnHAg2yCVePbLmnAdjU7fe7h5x6tskVLW5H8yf3bDsurjAqt-5XsEGKbXhXcNgKEJ5Cy-bbTg3NORv1y_wbbYPm_tBceSIUmmNSF_s9uZ_K9dNQYUg5K1f_iRZdBB1JfnnD4rLw06kB3Q4aC-BAmZbu0hRjKaw')"></div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider">Leader</span>
+<span class="font-body-md text-body-md text-on-surface">Elder Moses Zulu</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider">Staff</span>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">groups</span>
+<span class="font-body-md text-body-md text-on-surface">22 Members</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Department Card: Administration -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-sm shadow-sm active:scale-[0.98] transition-transform duration-200">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-primary-container text-on-primary-container flex items-center justify-center rounded-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">General Admin</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">HQ Operations</p>
+</div>
+</div>
+<button class="text-outline hover:text-primary">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="h-[1px] bg-outline-variant w-full my-xs"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-base">
+<div class="w-8 h-8 rounded-full bg-cover bg-center border border-outline-variant" data-alt="A sharp, professional portrait of a woman in her late 20s, wearing a crisp white blouse and elegant glasses. She looks directly at the camera with confidence and efficiency. The setting is a modern, minimalist office with clean lines and soft grey tones. The lighting is diffused and professional, emphasizing a modern corporate and administrative aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCBd1VIGNYYHzOMIl3_UjT2GJiBXsH45bFjM1s8_-INvPRu9O53FVSLOZP45c_E4x1_fV45Xyg0El8kZoOnFfUKeJBzaBUkCqqt2g9dwmNjA9yTvZby9sdKoQUfdfjZj6YrHrvfLU6ePoA-4I-Fq-FzNIVUtxR1NFPLiAgNro8H2Usi3OM_pAJITgtT6W9NJNLZvvnefXen59mZl6R6mKdo5XabrrylNYgeM9QJJo8zAg33nCU0myOqrQ')"></div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider">Leader</span>
+<span class="font-body-md text-body-md text-on-surface">Bwalya Kaunda</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider">Staff</span>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">groups</span>
+<span class="font-body-md text-body-md text-on-surface">5 Members</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 right-margin-mobile w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-xl flex items-center justify-center active:scale-90 transition-transform duration-150 z-50">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</button>
+<!-- Bottom Navigation Bar (Context: Top-level Directory) -->
+<nav class="fixed bottom-0 left-0 right-0 h-20 bg-surface-container flex items-center justify-around px-base border-t border-outline-variant/30 z-50 md:hidden">
+<div class="flex flex-col items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-lg text-label-lg">Ministries</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+<span class="font-label-lg text-label-lg font-bold">Departments</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined">event</span>
+<span class="font-label-lg text-label-lg">Events</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined">assignment_ind</span>
+<span class="font-label-lg text-label-lg">Roster</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</div>
+</nav>
+<script>
+        // Simple Interaction logic for active state feeling
+        document.querySelectorAll('.bg-surface-container-lowest').forEach(card => {
+            card.addEventListener('touchstart', () => {
+                card.classList.add('bg-surface-container-high');
+            });
+            card.addEventListener('touchend', () => {
+                card.classList.remove('bg-surface-container-high');
+            });
+        });
+
+        // FAB ripple/pop effect on click
+        const fab = document.querySelector('button.fixed.bottom-24');
+        fab.addEventListener('click', () => {
+            fab.animate([
+                { transform: 'scale(1)' },
+                { transform: 'scale(1.15)' },
+                { transform: 'scale(1)' }
+            ], {
+                duration: 200,
+                easing: 'ease-out'
+            });
+        });
+    </script>
+</body></html>

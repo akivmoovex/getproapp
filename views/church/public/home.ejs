@@ -1,0 +1,126 @@
+<%- include('../partials/public_shell_start') %>
+    <section class="church-hero" id="welcome">
+      <div class="church-hero__inner">
+        <div class="church-hero__copy">
+          <% if (isVerticalApex) { %>
+          <span class="church-eyebrow">GetPro Church vertical</span>
+          <% } else if (heroSubtitle) { %>
+          <span class="church-eyebrow"><%= heroSubtitle %></span>
+          <% } else { %>
+          <span class="church-eyebrow">Welcome home</span>
+          <% } %>
+          <h1 class="church-hero__title"><%= heroTitle || churchName %></h1>
+          <p class="church-hero__lead"><%= welcomeMessage %></p>
+          <div class="church-hero__cta">
+            <% if (!isVerticalApex && !(typeof isPreview !== 'undefined' && isPreview)) { %>
+            <a class="church-btn church-btn--primary church-btn--lg" href="/register">Register as Member</a>
+            <a class="church-btn church-btn--outline church-btn--lg" href="/login">Member Login</a>
+            <% } else if (isVerticalApex) { %>
+            <a class="church-btn church-btn--primary church-btn--lg" href="https://kafuebaptist.church.getproapp.org/register">View sample branch registration</a>
+            <% } %>
+          </div>
+        </div>
+        <div class="church-hero__panel" aria-label="Service information">
+          <div class="church-card">
+            <div class="church-card__icon-wrap">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+            </div>
+            <h2 class="church-card__title">Service Times</h2>
+            <p class="church-card__body church-card__body--pre"><%= serviceTimes %></p>
+          </div>
+          <div class="church-card">
+            <div class="church-card__icon-wrap">
+              <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+            </div>
+            <h2 class="church-card__title">Location</h2>
+            <p class="church-card__body"><%= locationText %></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="church-section" id="events">
+      <div class="church-section__inner">
+        <div class="church-section__header">
+          <h2 class="church-section__title">Upcoming Events</h2>
+          <p class="church-section__subtitle">Stay connected with what is happening in our community.</p>
+        </div>
+        <% if (typeof publicAnnouncements !== 'undefined' && publicAnnouncements.length > 0) { %>
+        <div class="church-section__header church-section__header--compact">
+          <h3 class="church-section__title church-section__title--sm">Latest announcements</h3>
+        </div>
+        <div class="church-grid church-grid--events">
+          <% publicAnnouncements.forEach(function (a) { %>
+          <article class="church-card church-card--event">
+            <span class="material-symbols-outlined church-card__event-icon" aria-hidden="true">campaign</span>
+            <h3 class="church-card__title"><%= a.title %><% if (a.source === 'hq') { %> <span class="church-status-chip">HQ</span><% } %></h3>
+            <p class="church-card__body"><%= a.body %></p>
+          </article>
+          <% }); %>
+        </div>
+        <% } %>
+        <div class="church-grid church-grid--events">
+          <% (upcomingEvents || []).forEach(function (event) { %>
+          <article class="church-card church-card--event">
+            <span class="material-symbols-outlined church-card__event-icon" aria-hidden="true">event</span>
+            <h3 class="church-card__title"><%= event.title %></h3>
+            <p class="church-card__body"><%= event.when %></p>
+            <% if (event.description) { %>
+            <p class="church-card__body church-card__body--muted"><%= event.description %></p>
+            <% } %>
+          </article>
+          <% }); %>
+        </div>
+      </div>
+    </section>
+
+    <% if (typeof publicMinistries !== 'undefined' && publicMinistries.length > 0) { %>
+    <section class="church-section church-section--muted" id="ministries">
+      <div class="church-section__inner">
+        <div class="church-section__header">
+          <h2 class="church-section__title">Ministries</h2>
+          <p class="church-section__subtitle"><a href="/ministries">View all ministries</a></p>
+        </div>
+        <div class="church-grid church-grid--events">
+          <%- include('../partials/ministry_cards', { ministries: publicMinistries }) %>
+        </div>
+      </div>
+    </section>
+    <% } %>
+
+    <section class="church-section church-section--muted" id="resources">
+      <div class="church-section__inner">
+        <div class="church-section__header">
+          <h2 class="church-section__title">Sermons &amp; Resources</h2>
+          <p class="church-section__subtitle">Messages and study materials from <%= churchName %>.</p>
+        </div>
+        <div class="church-card">
+          <span class="material-symbols-outlined church-card__event-icon" aria-hidden="true">menu_book</span>
+          <p class="church-card__body"><a href="/sermons">View sermons &amp; resources</a> — new content will be published here soon.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="church-section church-section--muted" id="giving">
+      <div class="church-section__inner church-giving">
+        <div class="church-giving__copy">
+          <h2 class="church-section__title">Giving</h2>
+          <p class="church-section__subtitle"><%= givingTeaser %></p>
+        </div>
+        <div class="church-card church-card--giving">
+          <span class="material-symbols-outlined church-card__event-icon" aria-hidden="true">volunteer_activism</span>
+          <p class="church-card__body"><a href="/giving">View giving information</a> — online payments are not part of the MVP.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="church-section" id="visit">
+      <div class="church-section__inner church-visit">
+        <h2 class="church-section__title">Plan Your Visit</h2>
+        <p class="church-section__subtitle">We would love to meet you. Join us for worship, prayer, and fellowship.</p>
+        <% if (!isVerticalApex && !(typeof isPreview !== 'undefined' && isPreview)) { %>
+        <a class="church-btn church-btn--primary" href="/register">Register as Member</a>
+        <% } %>
+      </div>
+    </section>
+<%- include('../partials/public_shell_end') %>

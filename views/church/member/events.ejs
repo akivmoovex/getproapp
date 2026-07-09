@@ -1,0 +1,21 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header">
+        <h1 class="church-member-header__title">Events</h1>
+        <p class="church-member-header__subtitle">Upcoming church events</p>
+      </header>
+      <section class="church-member-panel">
+        <% if ((events || []).length === 0) { %>
+        <p class="church-member-empty">No upcoming events scheduled. Check back soon.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% events.forEach(function (ev) { %>
+          <li class="church-member-list__item">
+            <strong><%= ev.title %></strong>
+            <p><%= ev.description %></p>
+            <span class="church-member-list__meta"><%= new Date(ev.event_date).toLocaleDateString('en-GB') %><%= ev.start_time || ev.event_time ? ' · ' + (ev.start_time || ev.event_time) : '' %><%= ev.end_time ? ' – ' + ev.end_time : '' %><%= ev.location || ev.location_text ? ' · ' + (ev.location || ev.location_text) : '' %></span>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+<%- include('../partials/member_shell_end') %>

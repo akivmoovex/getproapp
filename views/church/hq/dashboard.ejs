@@ -1,0 +1,118 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">HQ Dashboard</h1>
+          <p class="church-branch-topbar__subtitle">Welcome, <%= hqAdmin.full_name %>
+            <% if (typeof planContext !== 'undefined' && planContext) { %> · <%- include('../partials/plan_badge', { planContext: planContext }) %><% } %>
+          </p>
+        </div>
+      </header>
+      <%- include('../partials/plan_limit_warnings', { planContext: typeof planContext !== 'undefined' ? planContext : null }) %>
+      <% if (typeof planContext !== 'undefined' && planContext && !planContext.hqBroadcastsEnabled) { %>
+      <div class="church-alert church-alert--info" role="status">
+        HQ Broadcast Center and Consolidated Analytics are premium features on the <%= planContext.planDisplay.label %> plan. Preview access is enabled in this MVP; upgrade required in production.
+      </div>
+      <% } %>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <div class="church-branch-stats">
+        <a class="church-branch-stat-card church-branch-stat-card--link" href="/hq/branches">
+          <span class="church-branch-stat-card__label">Total branches</span>
+          <strong class="church-branch-stat-card__value"><%= branchCount %></strong>
+        </a>
+        <a class="church-branch-stat-card church-branch-stat-card--link" href="/hq/branches?status=submitted_reports">
+          <span class="church-branch-stat-card__label">Branches with submitted reports</span>
+          <strong class="church-branch-stat-card__value"><%= registryStats.branchesWithSubmittedReports || 0 %></strong>
+        </a>
+        <a class="church-branch-stat-card church-branch-stat-card--link" href="/hq/branches?status=missing_current_report">
+          <span class="church-branch-stat-card__label">Missing current month report</span>
+          <strong class="church-branch-stat-card__value"><%= registryStats.branchesMissingCurrentReport || 0 %></strong>
+        </a>
+        <a class="church-branch-stat-card church-branch-stat-card--link" href="/hq/branches?status=needing_attention">
+          <span class="church-branch-stat-card__label">Branches needing attention</span>
+          <strong class="church-branch-stat-card__value"><%= registryStats.branchesNeedingAttention || 0 %></strong>
+        </a>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Submitted reports (org)</span>
+          <strong class="church-branch-stat-card__value"><%= statusCounts.submitted || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Approved reports</span>
+          <strong class="church-branch-stat-card__value"><%= statusCounts.approved || 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Changes requested</span>
+          <strong class="church-branch-stat-card__value"><%= statusCounts.changes_requested || 0 %></strong>
+        </article>
+        <a class="church-branch-stat-card church-branch-stat-card--link" href="/hq/broadcasts?status=published">
+          <span class="church-branch-stat-card__label">Published broadcasts</span>
+          <strong class="church-branch-stat-card__value"><%= broadcastCounts.published || 0 %></strong>
+        </a>
+        <a class="church-branch-stat-card church-branch-stat-card--link" href="/hq/broadcasts?status=draft">
+          <span class="church-branch-stat-card__label">Draft broadcasts</span>
+          <strong class="church-branch-stat-card__value"><%= broadcastCounts.draft || 0 %></strong>
+        </a>
+        <a class="church-branch-stat-card church-branch-stat-card--link" href="/hq/broadcasts?status=archived">
+          <span class="church-branch-stat-card__label">Archived broadcasts</span>
+          <strong class="church-branch-stat-card__value"><%= broadcastCounts.archived || 0 %></strong>
+        </a>
+      </div>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Quick actions</h2>
+        <div class="church-branch-actions">
+          <a class="church-btn church-btn--primary" href="/hq/reports">Review Monthly Reports</a>
+          <a class="church-btn church-btn--outline" href="/hq/branches">View Branch Registry</a>
+          <a class="church-btn church-btn--outline" href="/hq/broadcasts">Broadcast Center<% if (typeof planContext !== 'undefined' && planContext && !planContext.hqBroadcastsEnabled) { %> <span class="church-plan-lock">Premium</span><% } %></a>
+          <a class="church-btn church-btn--outline" href="/hq/analytics">Consolidated Analytics<% if (typeof planContext !== 'undefined' && planContext && !planContext.consolidatedAnalyticsEnabled) { %> <span class="church-plan-lock">Premium</span><% } %></a>
+          <a class="church-btn church-btn--outline" href="/hq/audit">Global Audit Trail</a>
+          <a class="church-btn church-btn--outline" href="/hq/account">Account Security</a>
+        </div>
+      </section>
+      <% if ((recentActivity || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Recent organization activity</h2>
+        <ul class="church-member-list">
+          <% recentActivity.forEach(function (log) { %>
+          <li class="church-member-list__item">
+            <strong><%= actionLabel(log.action) %></strong>
+            <p><%= auditSummary(log) %></p>
+            <span class="church-member-list__meta"><%= log.branch_name || '—' %> · <%= actorDisplayFromRow(log) %> · <%= new Date(log.created_at).toLocaleString('en-GB') %></span>
+          </li>
+          <% }); %>
+        </ul>
+        <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/audit">View audit trail</a>
+      </section>
+      <% } %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Recent report activity</h2>
+        <% if ((recentReports || []).length === 0) { %>
+        <p class="church-branch-empty">No submitted or reviewed reports yet.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Period</th>
+                <th>Status</th>
+                <th>Submitted</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% recentReports.forEach(function (r) { %>
+              <tr>
+                <td><a href="/hq/branches/<%= r.branch_id %>"><%= r.branch_name %></a></td>
+                <td><%= r.period_month_label %></td>
+                <td><span class="church-status-chip church-status-chip--<%= r.status === 'approved' ? 'verified' : 'pending' %>"><%= reportStatusLabel(r.status) %></span></td>
+                <td><%= r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB') : '—' %></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/hq/reports/<%= r.id %>">Review</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/hq_shell_end') %>

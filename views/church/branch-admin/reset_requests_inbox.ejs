@@ -1,0 +1,143 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <% var sm = typeof summary !== 'undefined' && summary ? summary : {}; %>
+      <% var res = typeof results !== 'undefined' && results ? results : { items: [], total: 0, page: 1, limit: 50, totalPages: 0 }; %>
+      <% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
+      <% var validationErrors = typeof validationErrors !== 'undefined' && validationErrors ? validationErrors : []; %>
+
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Reset Inbox</h1>
+          <p class="church-branch-topbar__subtitle">Unified branch support view for members and ministry leaders</p>
+          <p class="church-branch-topbar__hint">Member and ministry leader password resets are handled manually by branch admins.</p>
+        </div>
+        <div class="church-branch-topbar__actions">
+          <a class="church-btn church-btn--outline church-btn--sm" href="/branch/password-reset-requests">Member Reset Queue</a>
+          <a class="church-btn church-btn--outline church-btn--sm" href="/branch/leader-password-reset-requests">Ministry Leader Reset Queue</a>
+        </div>
+      </header>
+
+      <% if (validationErrors.length > 0) { %>
+      <div class="church-alert church-alert--error" role="alert">
+        <% validationErrors.forEach(function (err) { %><p><%= err %></p><% }); %>
+      </div>
+      <% } %>
+
+      <section class="church-branch-stat-grid">
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Submitted</span>
+          <strong class="church-branch-stat-card__value"><%= sm.submitted != null ? sm.submitted : 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Reviewed</span>
+          <strong class="church-branch-stat-card__value"><%= sm.reviewed != null ? sm.reviewed : 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Completed</span>
+          <strong class="church-branch-stat-card__value"><%= sm.reset_completed != null ? sm.reset_completed : 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Rejected</span>
+          <strong class="church-branch-stat-card__value"><%= sm.rejected != null ? sm.rejected : 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Member requests</span>
+          <strong class="church-branch-stat-card__value"><%= sm.member != null ? sm.member : 0 %></strong>
+        </article>
+        <article class="church-branch-stat-card">
+          <span class="church-branch-stat-card__label">Ministry leader requests</span>
+          <strong class="church-branch-stat-card__value"><%= sm.ministry_leader != null ? sm.ministry_leader : 0 %></strong>
+        </article>
+      </section>
+
+      <form method="get" action="/branch/reset-requests" class="church-branch-panel church-branch-filter-form">
+        <div class="church-field">
+          <label class="church-label" for="request_type">Request type</label>
+          <select id="request_type" class="church-input" name="request_type">
+            <% (requestTypes || ['all']).forEach(function (t) { %>
+              <option value="<%= t %>" <%= (f.request_type || 'all') === t ? 'selected' : '' %>><%= t === 'all' ? 'All' : (typeof getResetRequestTypeLabel === 'function' ? getResetRequestTypeLabel(t) : requestTypeLabel(t)) %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="status">Status</label>
+          <select id="status" class="church-input" name="status">
+            <% (resetStatuses || ['all']).forEach(function (s) { %>
+              <option value="<%= s %>" <%= (f.status || 'all') === s ? 'selected' : '' %>><%= s === 'all' ? 'All' : (typeof getResetRequestStatusLabel === 'function' ? getResetRequestStatusLabel(s) : passwordResetStatusLabel(s)) %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="date_from">Date from</label>
+          <input id="date_from" class="church-input" name="date_from" type="date" value="<%= f.date_from || '' %>" />
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="date_to">Date to</label>
+          <input id="date_to" class="church-input" name="date_to" type="date" value="<%= f.date_to || '' %>" />
+        </div>
+        <div class="church-field church-field--grow">
+          <label class="church-label" for="q">Search</label>
+          <input id="q" class="church-input" name="q" type="search" maxlength="100" value="<%= f.q || '' %>" placeholder="Identifier, name, ministry…" />
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="limit">Limit</label>
+          <input id="limit" class="church-input" name="limit" type="number" min="1" max="100" value="<%= f.limit || 50 %>" />
+        </div>
+        <div class="church-field church-field--actions">
+          <button class="church-btn church-btn--primary" type="submit">Filter</button>
+          <a class="church-btn church-btn--outline" href="/branch/reset-requests">Clear filters</a>
+        </div>
+      </form>
+
+      <section class="church-branch-panel">
+        <p class="church-branch-panel__meta">Showing <%= res.items.length %> of <%= res.total %> requests<% if (res.totalPages > 1) { %> · page <%= res.page %> of <%= res.totalPages %><% } %></p>
+        <% if ((res.items || []).length === 0) { %>
+        <p class="church-branch-empty">No password reset requests match these filters.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Submitted details</th>
+                <th>Matched account</th>
+                <th>Ministry</th>
+                <th>Status</th>
+                <th>Resolution date</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% res.items.forEach(function (row) { %>
+              <tr>
+                <td><%= formatDate(row.created_at) %></td>
+                <td><%- include('../../partials/reset_request_type_badge', { requestType: row.request_type, getResetRequestTypeLabel: getResetRequestTypeLabel, getResetRequestTypeClass: getResetRequestTypeClass }) %></td>
+                <td>
+                  <div><%= row.identifier_masked || '—' %></div>
+                  <% if (row.submitted_name) { %><div class="muted"><%= row.submitted_name %></div><% } %>
+                  <% if (row.submitted_phone) { %><div class="muted"><%= row.submitted_phone %></div><% } %>
+                  <% if (row.submitted_email) { %><div class="muted"><%= row.submitted_email %></div><% } %>
+                </td>
+                <td><%= row.matched_account_name || '—' %></td>
+                <td><%= row.related_ministry_name || '—' %></td>
+                <td><%- include('../../partials/reset_request_status_badge', { status: row.status, getResetRequestStatusLabel: getResetRequestStatusLabel, getResetRequestStatusClass: getResetRequestStatusClass }) %></td>
+                <td><%= row.resolved_at ? formatDateTime(row.resolved_at) : '—' %></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="<%= row.detail_url %>">View request</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% if (res.totalPages > 1) { %>
+        <nav class="church-branch-pagination" aria-label="Reset request pages">
+          <% if (res.page > 1) { %>
+          <a class="church-btn church-btn--outline church-btn--sm" href="<%= buildInboxQueryString(Object.assign({}, f, { page: res.page - 1 })) %>">Previous</a>
+          <% } %>
+          <% if (res.page < res.totalPages) { %>
+          <a class="church-btn church-btn--outline church-btn--sm" href="<%= buildInboxQueryString(Object.assign({}, f, { page: res.page + 1 })) %>">Next</a>
+          <% } %>
+        </nav>
+        <% } %>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

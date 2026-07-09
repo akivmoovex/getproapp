@@ -1,0 +1,26 @@
+<% ministries.forEach(function (m) { %>
+<article class="church-card church-card--event">
+  <h2 class="church-card__title"><%= m.name %></h2>
+  <% if (m.description) { %><p class="church-card__body"><%= m.description %></p><% } %>
+  <% if (m.leader_name) { %><p class="church-card__body church-card__body--muted">Leader: <%= m.leader_name %></p><% } %>
+  <% if (m.meeting_day || m.meeting_time) { %>
+  <p class="church-card__body church-card__body--muted"><%= [m.meeting_day, m.meeting_time].filter(Boolean).join(' · ') %><% if (m.location) { %> · <%= m.location %><% } %></p>
+  <% } else if (m.location) { %>
+  <p class="church-card__body church-card__body--muted"><%= m.location %></p>
+  <% } %>
+  <% if (typeof visibilityLabel !== 'undefined' && m.visibility) { %>
+  <p class="church-card__body church-card__body--muted">Visibility: <%= visibilityLabel(m.visibility) %></p>
+  <% } %>
+  <% if (m.member_relationship_label) { %>
+  <span class="church-status-chip church-status-chip--<%= m.member_relationship_status === 'active' ? 'verified' : 'pending' %>"><%= m.member_relationship_label %></span>
+  <% } else if (m.assignment_status) { %>
+  <span class="church-status-chip"><%= m.assignment_status === 'interested' ? 'Interested' : m.assignment_status %></span>
+  <% } %>
+  <div class="church-member-actions church-member-actions--card">
+    <a class="church-btn church-btn--outline church-btn--sm" href="/member/ministries/<%= m.id %>">View</a>
+    <% if (m.can_request_join) { %>
+    <a class="church-btn church-btn--primary church-btn--sm" href="/member/ministries/<%= m.id %>">Request to join</a>
+    <% } %>
+  </div>
+</article>
+<% }); %>

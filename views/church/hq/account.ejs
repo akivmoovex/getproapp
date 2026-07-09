@@ -1,0 +1,53 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Account &amp; security</h1>
+          <p class="church-branch-topbar__subtitle">Manage your HQ admin sign-in credentials</p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Account details</h2>
+        <dl class="church-branch-dl">
+          <div><dt>Name</dt><dd><%= account.full_name || hqAdmin.full_name %></dd></div>
+          <div><dt>Email</dt><dd><%= account.email || '—' %></dd></div>
+          <div><dt>Phone</dt><dd><%= account.phone || '—' %></dd></div>
+          <div><dt>Role</dt><dd><%= hqAdminRoleLabel(account.role) %></dd></div>
+          <div><dt>Account status</dt><dd>
+              <% if (account.status === 'active') { %>
+              <span class="church-status-chip church-status-chip--verified">Active</span>
+              <% } else { %>
+              <span class="church-status-chip"><%= account.status || 'Unknown' %></span>
+              <% } %>
+          </dd></div>
+          <div><dt>Organization</dt><dd><%= account.organization_name || organizationName %></dd></div>
+          <div><dt>Last password change</dt><dd><% if (account.password_changed_at) { %><%= new Date(account.password_changed_at).toLocaleString('en-GB') %><% } else { %>Not recorded<% } %></dd></div>
+        </dl>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Change password</h2>
+        <p class="church-branch-panel__hint">Your current session stays active after a successful change. Use your new password the next time you sign in.</p>
+        <form class="church-form" method="post" action="/hq/account/change-password" autocomplete="off">
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="current_password">Current password</label>
+              <input class="church-input" id="current_password" name="current_password" type="password" required autocomplete="current-password"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="new_password">New password</label>
+              <input class="church-input" id="new_password" name="new_password" type="password" required minlength="8" autocomplete="new-password"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="confirm_password">Confirm new password</label>
+              <input class="church-input" id="confirm_password" name="confirm_password" type="password" required minlength="8" autocomplete="new-password"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Save new password</button>
+        </form>
+      </section>
+<%- include('../partials/hq_shell_end') %>

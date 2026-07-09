@@ -1,0 +1,37 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Ministry join requests</h1>
+          <p class="church-branch-topbar__subtitle">Review member requests to join ministries</p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <div class="church-branch-filter-tabs">
+        <% joinRequestFilters.forEach(function (f) { %>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/ministry-join-requests<%= f === 'all' && !ministryFilterId ? '' : '?' + (f !== 'all' ? 'status=' + f : '') + (ministryFilterId ? (f !== 'all' ? '&' : '') + 'ministry_id=' + ministryFilterId : '') %>"><%= f === 'all' ? 'All' : joinRequestStatusLabel(f) %></a>
+        <% }); %>
+      </div>
+      <section class="church-branch-panel">
+        <% if ((joinRequests || []).length === 0) { %>
+        <p class="church-branch-empty">No ministry join requests in this filter.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Member</th><th>Ministry</th><th>Submitted</th><th>Status</th><th>Message</th><th></th></tr></thead>
+            <tbody>
+              <% joinRequests.forEach(function (r) { %>
+              <tr>
+                <td><%= r.member_name %></td>
+                <td><%= r.ministry_name %></td>
+                <td><%= new Date(r.created_at).toLocaleDateString('en-GB') %></td>
+                <td><span class="church-status-chip church-status-chip--<%= r.status === 'approved' ? 'verified' : 'pending' %>"><%= joinRequestStatusLabel(r.status) %></span></td>
+                <td><%= r.message ? (r.message.length > 60 ? r.message.slice(0, 60) + '…' : r.message) : '—' %></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/ministry-join-requests/<%= r.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Create church organization | <%= _bn %> Admin</title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app<%- bodyEmbedClass %>">
+    <%- include('../../partials/admin_nav', { navTitle: 'Create organization', activeNav: activeNav || 'church_platform_orgs' }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Create church organization</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Provisions organization, first branch tenant, HQ admin, and branch admin in one transaction.
+            </p>
+          </div>
+        </header>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+
+        <% var f = typeof form !== 'undefined' && form ? form : {}; %>
+        <form method="post" action="/admin/church/organizations" class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">1. Organization details</h2>
+          <div class="admin-form-grid">
+            <div class="input-field">
+              <label class="input-field__label" for="organization_name">Organization name *</label>
+              <input id="organization_name" class="input-field__control" name="organization_name" required value="<%= f.organization_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="organization_slug">Organization slug *</label>
+              <input id="organization_slug" class="input-field__control" name="organization_slug" required pattern="[a-z0-9][a-z0-9-]{0,62}" value="<%= f.organization_slug || '' %>" />
+              <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">Lowercase URL-safe identifier (also used for church host routing).</p>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="country">Country *</label>
+              <input id="country" class="input-field__control" name="country" required value="<%= f.country || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="city">City</label>
+              <input id="city" class="input-field__control" name="city" value="<%= f.city || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="primary_contact_name">Primary contact name</label>
+              <input id="primary_contact_name" class="input-field__control" name="primary_contact_name" value="<%= f.primary_contact_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="primary_contact_phone">Primary contact phone</label>
+              <input id="primary_contact_phone" class="input-field__control" name="primary_contact_phone" value="<%= f.primary_contact_phone || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="primary_contact_email">Primary contact email</label>
+              <input id="primary_contact_email" class="input-field__control" name="primary_contact_email" type="email" value="<%= f.primary_contact_email || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="plan_code">Plan</label>
+              <select id="plan_code" class="input-field__control" name="plan_code">
+                <% (planCodes || ['free']).forEach(function (code) { %>
+                  <option value="<%= code %>" <%= (f.plan_code || 'free') === code ? 'selected' : '' %>><%= code %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+
+          <h2 class="section-title">2. First branch</h2>
+          <div class="admin-form-grid">
+            <div class="input-field">
+              <label class="input-field__label" for="branch_name">Branch name *</label>
+              <input id="branch_name" class="input-field__control" name="branch_name" required value="<%= f.branch_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_host_slug">Branch host slug *</label>
+              <input id="branch_host_slug" class="input-field__control" name="branch_host_slug" required pattern="[a-z0-9][a-z0-9-]{0,62}" value="<%= f.branch_host_slug || f.organization_slug || '' %>" />
+              <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">
+                Public host preview: <strong id="host-preview"><%= (f.branch_host_slug || f.organization_slug) ? churchPublicHost(f.branch_host_slug || f.organization_slug) : '—' %></strong>
+              </p>
+              <p class="muted" style="font-size:0.85rem;">Unique public host for this branch tenant.</p>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_city">Branch city</label>
+              <input id="branch_city" class="input-field__control" name="branch_city" value="<%= f.branch_city || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="pastor_name">Pastor name</label>
+              <input id="pastor_name" class="input-field__control" name="pastor_name" value="<%= f.pastor_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="contact_phone">Contact phone</label>
+              <input id="contact_phone" class="input-field__control" name="contact_phone" value="<%= f.contact_phone || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="contact_email">Contact email</label>
+              <input id="contact_email" class="input-field__control" name="contact_email" type="email" value="<%= f.contact_email || '' %>" />
+            </div>
+          </div>
+
+          <h2 class="section-title">3. Initial HQ admin</h2>
+          <div class="admin-form-grid">
+            <div class="input-field">
+              <label class="input-field__label" for="hq_full_name">Full name *</label>
+              <input id="hq_full_name" class="input-field__control" name="hq_full_name" required value="<%= f.hq_full_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="hq_email">Email</label>
+              <input id="hq_email" class="input-field__control" name="hq_email" type="email" value="<%= f.hq_email || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="hq_phone">Phone</label>
+              <input id="hq_phone" class="input-field__control" name="hq_phone" value="<%= f.hq_phone || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="hq_temporary_password">Temporary password *</label>
+              <input id="hq_temporary_password" class="input-field__control" name="hq_temporary_password" type="password" required minlength="8" autocomplete="new-password" />
+              <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">Minimum 8 characters. Not shown again after creation.</p>
+            </div>
+          </div>
+
+          <h2 class="section-title">4. Initial branch admin</h2>
+          <div class="admin-form-grid">
+            <div class="input-field">
+              <label class="input-field__label" for="branch_admin_full_name">Full name *</label>
+              <input id="branch_admin_full_name" class="input-field__control" name="branch_admin_full_name" required value="<%= f.branch_admin_full_name || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_admin_email">Email</label>
+              <input id="branch_admin_email" class="input-field__control" name="branch_admin_email" type="email" value="<%= f.branch_admin_email || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_admin_phone">Phone</label>
+              <input id="branch_admin_phone" class="input-field__control" name="branch_admin_phone" value="<%= f.branch_admin_phone || '' %>" />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="branch_admin_temporary_password">Temporary password *</label>
+              <input id="branch_admin_temporary_password" class="input-field__control" name="branch_admin_temporary_password" type="password" required minlength="8" autocomplete="new-password" />
+            </div>
+          </div>
+
+          <div class="admin-toolbar" style="margin-top:1.5rem;">
+            <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Provision organization' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations', label: 'Cancel' }) %>
+          </div>
+        </form>
+      </div>
+    </main>
+    <script>
+      (function () {
+        var orgSlug = document.getElementById("organization_slug");
+        var branchSlug = document.getElementById("branch_host_slug");
+        var preview = document.getElementById("host-preview");
+        var churchHostSuffix = "<%= 'church.' + (process.env.BASE_DOMAIN || 'getproapp.org') %>";
+        function syncPreview() {
+          var slug = (branchSlug && branchSlug.value.trim()) || (orgSlug && orgSlug.value.trim()) || "";
+          slug = slug.toLowerCase();
+          if (preview) preview.textContent = slug ? slug + "." + churchHostSuffix : "—";
+        }
+        if (orgSlug) {
+          orgSlug.addEventListener("input", function () {
+            if (branchSlug && !branchSlug.dataset.touched) branchSlug.value = orgSlug.value.toLowerCase();
+            syncPreview();
+          });
+        }
+        if (branchSlug) {
+          branchSlug.addEventListener("input", function () {
+            branchSlug.dataset.touched = "1";
+            syncPreview();
+          });
+        }
+        syncPreview();
+      })();
+    </script>
+  </body>
+</html>
