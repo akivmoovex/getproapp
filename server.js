@@ -114,6 +114,14 @@ const adminRoutes = require("./src/routes/admin");
 const companyPortalRoutes = require("./src/routes/companyPortal");
 const clientPortalRoutes = require("./src/routes/clientPortal");
 const churchRoutes = require("./src/routes/church");
+const blessboardAdminRoutes = require("./src/routes/blessboardAdmin");
+const { isBlessBoardApexHost } = require("./src/church/blessBoardApexHost");
+const {
+  shouldRedirectGetProChurchAdmin,
+  redirectGetProChurchAdminToBlessBoard,
+  shouldBlockBlessBoardAdminOnBranchHost,
+} = require("./src/church/getProChurchAdminRedirect");
+const { renderBlessBoardAdminHostNotFound } = require("./src/church/requireBlessBoardApexHost");
 const { createAttachChurchContext } = require("./src/church/attachChurchContext");
 const { ensureChurchSchema } = require("./src/db/pg/ensureChurchSchema");
 const { seedChurchSampleOrganizationIfMissing } = require("./src/seeds/seedChurchSampleOrganization");
@@ -344,7 +352,18 @@ app.use("/admin", (req, res, next) => {
   res.setHeader("X-Robots-Tag", "noindex, nofollow");
   next();
 });
-app.use("/admin", adminRoutes({ db }));
+app.use("/admin", (req, res, next) => {
+  if (shouldBlockBlessBoardAdminOnBranchHost(req)) {
+    return renderBlessBoardAdminHostNotFound(req, res);
+  }
+  if (isBlessBoardApexHost(req)) {
+    return blessboardAdminRoutes()(req, res, next);
+  }
+  if (shouldRedirectGetProChurchAdmin(req)) {
+    return redirectGetProChurchAdminToBlessBoard(req, res);
+  }
+  return adminRoutes({ db })(req, res, next);
+});
 
 // Healthcheck (with DEBUG_HOST=1, see also /api/debug/host)
 app.get("/healthz", (req, res) => {

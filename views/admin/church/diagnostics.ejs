@@ -19,8 +19,9 @@
             </p>
           </div>
           <div class="admin-toolbar">
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church', label: 'Church dashboard' }) %>
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/new', label: 'Provision church' }) %>
+            <% var _dashHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/dashboard' : '/admin/church'; %>
+            <%- include('../../partials/components/button', { variant: 'default', href: _dashHref, label: 'Church dashboard' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/churches/new', label: 'Provision church' }) %>
           </div>
         </header>
 
@@ -107,7 +108,7 @@
         <section class="card card--mb-xl" style="padding:1.25rem;">
           <h2 class="section-title section-title--flush">Pilot launch docs</h2>
           <ul>
-            <li><a href="/admin/church/organizations/new">Provision Kafue Baptist</a> (manual — do not hard-code in seed)</li>
+            <li><a href="/admin/churches/new">Provision Kafue Baptist</a> (manual — do not hard-code in seed)</li>
             <li>Smoke test checklist: <code>docs/blessboard-pilot-smoke-test.md</code></li>
             <li>Branch admin training: <code>docs/blessboard-branch-admin-training.md</code></li>
           </ul>

@@ -1,4 +1,8 @@
 <% 
+  if (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) {
+%>
+<%- include('blessboard_admin_nav', { navTitle: typeof navTitle !== 'undefined' ? navTitle : '', activeNav: typeof activeNav !== 'undefined' ? activeNav : '' }) %>
+<% } else {
   const _adminBn = typeof brandProductName !== 'undefined' ? brandProductName : 'Pro-online';
   const nav = typeof adminNav !== 'undefined' ? adminNav : {};
   const isViewer = !!nav.isViewer;
@@ -64,14 +68,6 @@
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'finance_summary' ? 'admin-nav__link--active' : '' %>" href="/admin/finance/summary">Finance summary</a>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'finance_cfo' ? 'admin-nav__link--active' : '' %>" href="/admin/finance/cfo">Finance (CFO)</a>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'db' ? 'admin-nav__link--active' : '' %>" href="/admin/db">DB</a>
-        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && (activeNav === 'church_platform' || activeNav === 'church_platform_orgs' || activeNav === 'church_platform_branches') ? 'admin-nav__link--active' : '' %>" href="/admin/church">Church</a>
-        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform_search' ? 'admin-nav__link--active' : '' %>" href="/admin/church/search">Church search</a>
-        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform_support_notes' ? 'admin-nav__link--active' : '' %>" href="/admin/church/support-notes">Support notes</a>
-        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform_diagnostics' ? 'admin-nav__link--active' : '' %>" href="/admin/church/diagnostics">Diagnostics</a>
-        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform_security' ? 'admin-nav__link--active' : '' %>" href="/admin/church/security">Church Security</a>
-        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform_reset_requests' ? 'admin-nav__link--active' : '' %>" href="/admin/church/reset-requests">Reset Requests<% var _resetPending = typeof churchResetPendingCounts !== 'undefined' && churchResetPendingCounts ? churchResetPendingCounts : null; if (_resetPending && _resetPending.submitted_total > 0) { %><span class="church-nav-count">(<%= _resetPending.submitted_total %>)</span><% } %></a>
-        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform_branch_admin_resets' ? 'admin-nav__link--active' : '' %>" href="/admin/church/branch-admin-password-reset-requests">Branch Admin Resets</a>
-        <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform_hq_admin_resets' ? 'admin-nav__link--active' : '' %>" href="/admin/church/hq-admin-password-reset-requests">HQ Admin Resets</a>
       <% } %>
       <% if (scoped) { %>
         <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'dashboard' ? 'admin-nav__link--active' : '' %>" href="/admin/dashboard">Dashboard</a>
@@ -115,5 +111,6 @@
     </nav>
   </div>
 </header>
+<% } %>
 <% } %>
 <%- include('page_nav_loading') %>

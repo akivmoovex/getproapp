@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BlessBoard Admin | <%= _bn %></title>
+    <link rel="stylesheet" href="<%= asset('styles') %>" />
+  </head>
+  <body class="admin-app">
+    <main class="admin-main">
+      <div class="container admin-main__pad" style="max-width:28rem;margin:4rem auto;">
+        <header class="admin-dashboard__header" style="text-align:center;margin-bottom:1.5rem;">
+          <h1 class="admin-dashboard__title">BlessBoard Admin</h1>
+          <p class="admin-dashboard__subtitle muted">Powered by GetPro</p>
+        </header>
+        <section class="card" style="padding:1.5rem;">
+          <% if (error) { %>
+          <div class="flash flash--error" role="alert"><%= error %></div>
+          <% } %>
+          <form method="post" action="/admin/login">
+            <div class="input-field">
+              <label class="input-field__label" for="username">Username</label>
+              <input id="username" class="input-field__control" name="username" type="text" autocomplete="username" required />
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="password">Password</label>
+              <input id="password" class="input-field__control" name="password" type="password" autocomplete="current-password" required />
+            </div>
+            <div class="admin-toolbar" style="margin-top:1rem;">
+              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Sign in' }) %>
+              <%- include('../partials/components/button', { variant: 'default', href: cancelHref || '/', label: 'Back to site' }) %>
+            </div>
+          </form>
+          <p class="muted" style="margin-top:1rem;font-size:0.9rem;">
+            Church branch admins sign in at <code>yourchurch.blessboard.com/branch/login</code>.
+          </p>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

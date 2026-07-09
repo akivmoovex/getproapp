@@ -62,7 +62,7 @@ const registerAdminChurchMemberPasswordResetRequestRoutes = require("./admin/adm
 const registerAdminChurchMinistryLeaderSupportRoutes = require("./admin/adminChurchMinistryLeaderSupport");
 const registerAdminFinanceCfoRoutes = require("./admin/adminFinanceCfo");
 
-module.exports = function adminRoutes({ db }) {
+module.exports = function adminRoutes({ db, mountChurchPlatform = process.env.NODE_ENV === "test" } = {}) {
   const router = express.Router();
   const projectIntakeUpload = multer({
     storage: multer.memoryStorage(),
@@ -215,7 +215,7 @@ module.exports = function adminRoutes({ db }) {
           res.locals.adminRegionSwitch = null;
         }
       }
-      if (isSuperAdmin(u.role)) {
+      if (mountChurchPlatform && isSuperAdmin(u.role)) {
         const pool = getPgPool();
         res.locals.churchResetPendingCounts = formatResetRequestCounts(
           await platformResetRequestsInboxRepo.getPendingResetRequestCounts(pool)
@@ -248,12 +248,15 @@ module.exports = function adminRoutes({ db }) {
   registerAdminFieldAgentAdjustmentsRoutes(router);
   registerAdminIntakeRoutes(router, { projectIntakeUpload });
   registerAdminDbToolsRoutes(router);
-  registerAdminChurchPlatformRoutes(router);
-  registerAdminChurchBranchAdminPasswordResetRoutes(router);
-  registerAdminChurchHqAdminPasswordResetRoutes(router);
-  registerAdminChurchResetRequestsInboxRoutes(router);
-  registerAdminChurchMemberPasswordResetRequestRoutes(router);
-  registerAdminChurchMinistryLeaderSupportRoutes(router);
+
+  if (mountChurchPlatform) {
+    registerAdminChurchPlatformRoutes(router);
+    registerAdminChurchBranchAdminPasswordResetRoutes(router);
+    registerAdminChurchHqAdminPasswordResetRoutes(router);
+    registerAdminChurchResetRequestsInboxRoutes(router);
+    registerAdminChurchMemberPasswordResetRequestRoutes(router);
+    registerAdminChurchMinistryLeaderSupportRoutes(router);
+  }
 
   return router;
 };

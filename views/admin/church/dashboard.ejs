@@ -19,11 +19,14 @@
             </p>
           </div>
           <div class="admin-toolbar">
+            <% var _churchesNew = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/new' : '/admin/church/organizations/new'; %>
+            <% var _churchesList = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches' : '/admin/church/organizations'; %>
+            <% var _diagnostics = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/diagnostics' : '/admin/church/diagnostics'; %>
             <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/search', label: 'Support search' }) %>
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/new', label: 'Create church organization' }) %>
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations', label: 'All organizations' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: _churchesNew, label: 'Create church organization' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: _churchesList, label: 'All organizations' }) %>
             <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches', label: 'All branches' }) %>
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/diagnostics', label: 'Diagnostics' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: _diagnostics, label: 'Diagnostics' }) %>
           </div>
         </header>
 

@@ -95,6 +95,7 @@ const {
   FAILURE_REASONS,
 } = require("../../church/platformSecurityValidation");
 const { gatherChurchProductionDiagnostics } = require("../../services/church/churchProductionDiagnostics");
+const { organizationAdminDetailPath } = require("../../church/blessboardAdminPaths");
 
 function formatDate(value) {
   if (!value) return "—";
@@ -1072,7 +1073,8 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
   });
 
   router.get("/church/branches/new", requireSuperAdmin, (req, res) => {
-    res.redirect("/admin/church/organizations/new");
+    const target = req.blessboardAdminMode ? "/admin/churches/new" : "/admin/church/organizations/new";
+    res.redirect(target);
   });
 
   router.get("/church/organizations/new", requireSuperAdmin, (req, res) => {
@@ -1123,9 +1125,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         };
       }
 
-      return res.redirect(
-        `/admin/church/organizations/${result.organization.id}?provisioned=1`
-      );
+      return res.redirect(organizationAdminDetailPath(req, result.organization.id, "?provisioned=1"));
     } catch (err) {
       if (err && (err.code === "DUPLICATE_ORG_SLUG" || err.code === "DUPLICATE_HOST_SLUG")) {
         return res.status(400).render("admin/church/organization_form", {

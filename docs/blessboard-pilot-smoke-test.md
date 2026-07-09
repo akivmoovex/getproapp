@@ -6,7 +6,7 @@ Manual checklist for production verification before and after onboarding **Kafue
 
 Run after every deploy and again after provisioning the pilot church. Do not invite real church staff until all **Pilot** rows pass.
 
-Super admin diagnostics (no secrets): `https://getproapp.org/admin/church/diagnostics`
+Super admin diagnostics (no secrets): `https://blessboard.com/admin/diagnostics`
 
 ---
 
@@ -26,7 +26,7 @@ Super admin diagnostics (no secrets): `https://getproapp.org/admin/church/diagno
 
 ## Pilot — Kafue Baptist (after provisioning)
 
-Provision first via `https://getproapp.org/admin/church/organizations/new` (see [blessboard-church-onboarding.md](./blessboard-church-onboarding.md)).
+Provision first via `https://blessboard.com/admin/churches/new` (see [blessboard-church-onboarding.md](./blessboard-church-onboarding.md)).
 
 | # | URL | Expected status | Expected marker text | If it fails | Suggested fix |
 |---|-----|-----------------|----------------------|-------------|---------------|
@@ -56,8 +56,9 @@ Provision first via `https://getproapp.org/admin/church/organizations/new` (see 
 | # | URL | Expected status | Expected marker text | If it fails | Suggested fix |
 |---|-----|-----------------|----------------------|-------------|---------------|
 | 17 | https://getproapp.org | 200 | GetPro marketing / platform home (not BlessBoard church UI) | Shows church or wrong product | Verify `BASE_DOMAIN=getproapp.org`; church middleware must not hijack platform apex |
-| 18 | https://getproapp.org/admin/church | 302 → login or 200 dashboard | BlessBoard admin (super admin) | 403 for super admin | Use super admin account; not tenant manager |
-| 19 | https://getproapp.org/admin/church/diagnostics | 302 or 200 | “BlessBoard production diagnostics”, no secrets | Exposes DATABASE_URL | Report bug — diagnostics must never show connection strings |
+| 18 | https://blessboard.com/admin/login | 302 → login or 200 dashboard | BlessBoard Admin, Powered by GetPro | Wrong product | Must be blessboard.com apex, not church subdomain |
+| 19 | https://blessboard.com/admin/diagnostics | 302 or 200 | “BlessBoard production diagnostics”, no secrets | Exposes DATABASE_URL | Super admin only; never on getproapp.org |
+| 20 | https://getproapp.org/admin/church/organizations/new | 302 | Redirect to blessboard.com/admin/churches/new | Cannot GET /admin/church/... | Deploy latest code to blessboard.com Node app |
 
 ---
 

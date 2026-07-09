@@ -133,7 +133,7 @@ In **Website editor → Site settings**:
 - SSL or domain errors in the browser
 - Cannot reset branch admin password
 
-Platform super admin console: `https://getproapp.org/admin/church`
+Platform super admin console: `https://blessboard.com/admin`
 
 ---
 

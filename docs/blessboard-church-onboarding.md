@@ -1,6 +1,6 @@
 # BlessBoard Church Onboarding
 
-Platform super admins create new BlessBoard churches from the GetPro admin console. Each church gets a public subdomain at **`<slug>.blessboard.com`**.
+Platform super admins create new BlessBoard churches from the **BlessBoard platform admin** on `blessboard.com`. Each church gets a public subdomain at **`<slug>.blessboard.com`**.
 
 **Last updated:** 2026-07-10
 
@@ -10,26 +10,28 @@ Platform super admins create new BlessBoard churches from the GetPro admin conso
 
 | Role | Access |
 |------|--------|
-| **GetPro super admin** | Full provisioning at `/admin/church/organizations/new` |
-| **Church HQ admin** | Read-only branch registry — cannot create branches |
+| **BlessBoard platform admin (GetPro super admin)** | Full provisioning at `https://blessboard.com/admin/churches/new` |
+| **Church HQ admin** | Read-only branch registry on branch host — cannot create branches |
 | **Branch admin** | Manages content for their branch only |
 
 HQ admins log in on a branch host at `/hq/login`. Branch admins log in at `/branch/login`.
+
+> **Note:** Legacy URLs on `getproapp.org/admin/church/*` redirect to `blessboard.com/admin/*`.
 
 ---
 
 ## How to create a church
 
-### 1. Sign in as super admin
+### 1. Sign in as BlessBoard platform admin
 
-Open the GetPro admin console on your platform host (e.g. `getproapp.org/admin/login`).
+Open `https://blessboard.com/admin/login` with a GetPro **super admin** account.
 
 ### 2. Open the onboarding form
 
 | Route | Purpose |
 |-------|---------|
-| `/admin/church/organizations/new` | Primary onboarding form |
-| `/admin/church/branches/new` | Redirects to the form above |
+| `https://blessboard.com/admin/churches/new` | Primary onboarding form |
+| `/admin/church/branches/new` | Redirects to the form above (internal alias) |
 
 ### 3. Fill in the form
 
@@ -131,7 +133,7 @@ After onboarding, the branch admin signs in and manages:
 
 ## Example: add kafuebaptist.blessboard.com
 
-1. Super admin → `/admin/church/organizations/new`
+1. Super admin → `https://blessboard.com/admin/churches/new`
 2. Organization name: **Kafue Baptist Church**
 3. Organization slug: `kafuebaptist` (or different internal slug)
 4. Branch host slug: **`kafuebaptist`** ← this becomes the subdomain

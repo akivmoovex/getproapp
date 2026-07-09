@@ -33,12 +33,53 @@ Confirm in Hostinger **Environment variables**:
 
 ### Post-deploy super admin diagnostics
 
-Open `https://getproapp.org/admin/church/diagnostics` (super admin only). Confirm:
+Open `https://blessboard.com/admin/diagnostics` (super admin only). Confirm:
 
 - Database reachable: **Yes**
 - Latest migration label: **090_church_operational_readiness.sql**
 - Demo branch: **Yes**
 - No SESSION_SECRET length warning
+
+---
+
+## Hostinger deployment architecture
+
+**Recommended:** One shared Git repo / codebase. Product behavior is selected by **hostname** at runtime:
+
+| Host | Product |
+|------|---------|
+| `getproapp.org` | GetPro / Pro-online platform admin |
+| `blessboard.com` | BlessBoard platform admin + landing |
+| `*.blessboard.com` | Church public sites + branch/member portals |
+
+### Which Node.js app folder should run BlessBoard admin?
+
+BlessBoard platform admin (`/admin/login`, `/admin/churches`, `/admin/diagnostics`) must be served from the **blessboard.com** Node.js app folder:
+
+- `/home/u549637099/domains/blessboard.com/nodejs` (or your blessboard.com app root)
+
+That folder must deploy the **same repo** as getproapp.org (branch V4), with:
+
+- `DATABASE_URL` / `GETPRO_DATABASE_URL` (same PostgreSQL as GetPro)
+- `SESSION_SECRET` (≥ 32 characters)
+- `BASE_DOMAIN=getproapp.org`
+- `CHURCH_HOST_DOMAIN=blessboard.com`
+
+### getproapp.org folder
+
+The getproapp.org Node.js app continues to run GetPro admin only. Legacy BlessBoard routes redirect to blessboard.com:
+
+- `/admin/church/*` → `https://blessboard.com/admin/...` (302)
+
+You do **not** need getproapp.org to carry BlessBoard admin code for provisioning to work — deploy the latest codebase to **both** Hostinger Node apps, or point both domains at one Node process if Hostinger allows multiple domains on one app.
+
+### Same codebase vs separate deployments
+
+| Approach | Recommendation |
+|----------|----------------|
+| **Same repo, two Hostinger Node apps** | ✅ Supported — both pull V4; hostname routing selects product |
+| **Same repo, one Node app, both domains attached** | ✅ Best if available — single deploy, no version drift |
+| **Different code versions per domain** | ❌ Avoid — causes “Cannot GET /admin/church/...” on getproapp.org |
 
 ---
 
@@ -101,16 +142,17 @@ Latest church migrations include `089_church_sermons_resources.sql` (sermons/res
 
 ## Pilot church provisioning (Kafue Baptist)
 
-Do **not** add Kafue Baptist to production seed. Provision via super admin only:
+Do **not** add Kafue Baptist to production seed. Provision via BlessBoard platform admin only:
 
-1. `https://getproapp.org/admin/church/organizations/new`
-2. Organization name: **Kafue Baptist Church**
-3. Branch host slug: **`kafuebaptist`**
-4. City: **Kafue**, Country: **Zambia**
-5. Branch admin + HQ admin credentials
-6. Check **Publish starter website content**
-7. Submit → copy welcome handoff from organization detail page
-8. Run [blessboard-pilot-smoke-test.md](./blessboard-pilot-smoke-test.md) pilot section
+1. `https://blessboard.com/admin/login` (super admin)
+2. `https://blessboard.com/admin/churches/new`
+3. Organization name: **Kafue Baptist Church**
+4. Branch host slug: **`kafuebaptist`**
+5. City: **Kafue**, Country: **Zambia**
+6. Branch admin + HQ admin credentials
+7. Check **Publish starter website content**
+8. Submit → copy welcome handoff from `https://blessboard.com/admin/churches/:id`
+9. Run [blessboard-pilot-smoke-test.md](./blessboard-pilot-smoke-test.md) pilot section
 
 Full form guide: [blessboard-church-onboarding.md](./blessboard-church-onboarding.md#example-add-kafuebaptistblessboardcom)
 
@@ -215,7 +257,10 @@ After restart, check logs for:
 | `https://demo.blessboard.com/register` | Member registration form |
 | `https://demo.blessboard.com/branch/login` | Branch admin login |
 | `https://getproapp.org` | GetPro platform unchanged |
-| `https://getproapp.org/admin/church` | Super admin church console |
+| `https://blessboard.com/admin/login` | BlessBoard platform admin login |
+| `https://blessboard.com/admin/churches/new` | New church provisioning |
+| `https://blessboard.com/admin/diagnostics` | Production diagnostics (super admin) |
+| `https://getproapp.org/admin/church/organizations/new` | Redirects to blessboard.com/admin/churches/new |
 | `https://unknownslug.blessboard.com` | Church not found (404) |
 
 ---

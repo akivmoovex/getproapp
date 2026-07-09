@@ -1,0 +1,29 @@
+<header class="admin-header" role="banner">
+  <div class="container admin-header__inner">
+    <div class="admin-header__top">
+      <a href="/admin/dashboard" class="admin-header__brand">
+        <div class="logo" aria-hidden="true"></div>
+        <span class="admin-header__brand-text">
+          <span class="admin-header__product">BlessBoard</span>
+          <span class="admin-header__badge">Admin</span>
+        </span>
+      </a>
+      <% if (typeof navTitle !== 'undefined' && navTitle) { %>
+        <p class="admin-header__subtitle"><%= navTitle %></p>
+      <% } %>
+    </div>
+    <p class="muted" style="margin:0 0 0.5rem;font-size:0.85rem;">Powered by GetPro</p>
+    <nav class="admin-nav" aria-label="BlessBoard admin navigation">
+      <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform' ? 'admin-nav__link--active' : '' %>" href="/admin/dashboard">Dashboard</a>
+      <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && (activeNav === 'church_platform_orgs' || activeNav === 'church_platform_branches') ? 'admin-nav__link--active' : '' %>" href="/admin/churches">Churches</a>
+      <a class="admin-nav__link" href="/admin/churches/new">New church</a>
+      <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform_search' ? 'admin-nav__link--active' : '' %>" href="/admin/church/search">Search</a>
+      <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform_diagnostics' ? 'admin-nav__link--active' : '' %>" href="/admin/diagnostics">Diagnostics</a>
+      <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform_security' ? 'admin-nav__link--active' : '' %>" href="/admin/church/security">Security</a>
+      <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform_reset_requests' ? 'admin-nav__link--active' : '' %>" href="/admin/church/reset-requests">Reset requests<% var _resetPending = typeof churchResetPendingCounts !== 'undefined' && churchResetPendingCounts ? churchResetPendingCounts : null; if (_resetPending && _resetPending.submitted_total > 0) { %><span class="church-nav-count">(<%= _resetPending.submitted_total %>)</span><% } %></a>
+      <form method="post" action="/admin/logout" style="display:inline;margin-left:auto;">
+        <button type="submit" class="admin-nav__link" style="background:none;border:none;cursor:pointer;">Log out</button>
+      </form>
+    </nav>
+  </div>
+</header>
