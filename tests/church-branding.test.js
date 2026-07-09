@@ -61,6 +61,6 @@ test("BlessBoard branding on branch public homepage footer", { skip: !require(".
 test("branch homepage uses blessboard.com sample link on vertical apex only", async () => {
   const app = makeVerticalApexApp();
   const res = await request(app).get("/");
-  assert.match(res.text, /kafuebaptist\.blessboard\.com/);
+  assert.match(res.text, /demo\.blessboard\.com/);
   assert.doesNotMatch(res.text, /kafuebaptist\.church\.getproapp\.org/);
 });

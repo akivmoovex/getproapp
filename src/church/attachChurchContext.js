@@ -1,9 +1,32 @@
 "use strict";
 
 const { getPgPool } = require("../db/pg");
-const { parseChurchHost } = require("./host");
+const { parseChurchHost, normalizeHostFromRequest } = require("./host");
 const organizationsRepo = require("../db/pg/church/organizationsRepo");
 const branchesRepo = require("../db/pg/church/branchesRepo");
+
+function logChurchHostResolution(req, parsed, branch) {
+  if (
+    process.env.GETPRO_LOG_CHURCH_HOST !== "1" &&
+    process.env.GETPRO_DEBUG_ROUTING !== "1" &&
+    process.env.DEBUG_HOST !== "1"
+  ) {
+    return;
+  }
+  const host = normalizeHostFromRequest(req);
+  const slug = parsed && parsed.kind === "branch" ? parsed.hostSlug || parsed.orgSlug : null;
+  const branchId = branch && branch.id != null ? branch.id : null;
+  const orgId =
+    branch && branch.organization_id != null
+      ? branch.organization_id
+      : parsed && parsed.organization && parsed.organization.id != null
+        ? parsed.organization.id
+        : null;
+  // eslint-disable-next-line no-console
+  console.log(
+    `[church-host] host=${host} kind=${parsed ? parsed.kind : "none"} slug=${slug || "(none)"} branchId=${branchId || "(none)"} orgId=${orgId || "(none)"}`
+  );
+}
 
 /**
  * Attach req.churchContext and req.isChurchHost for church vertical hosts.
@@ -33,6 +56,7 @@ function createAttachChurchContext() {
           orgSlug: null,
         };
         res.locals.churchContext = req.churchContext;
+        logChurchHostResolution(req, parsed, null);
         return next();
       }
 
@@ -47,6 +71,7 @@ function createAttachChurchContext() {
           branch: null,
         };
         res.locals.churchContext = req.churchContext;
+        logChurchHostResolution(req, parsed, null);
         return next();
       }
 
@@ -68,6 +93,7 @@ function createAttachChurchContext() {
         branch,
       };
       res.locals.churchContext = req.churchContext;
+      logChurchHostResolution(req, parsed, branch);
       return next();
     } catch (e) {
       return next(e);
@@ -75,4 +101,4 @@ function createAttachChurchContext() {
   };
 }
 
-module.exports = { createAttachChurchContext };
+module.exports = { createAttachChurchContext, logChurchHostResolution };

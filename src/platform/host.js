@@ -22,6 +22,23 @@ function resolveHostname(req) {
   return String(req.hostname || "").toLowerCase();
 }
 
+function getBlessBoardHostDomain() {
+  return String(process.env.CHURCH_HOST_DOMAIN || "blessboard.com")
+    .toLowerCase()
+    .trim();
+}
+
+/** BlessBoard product hosts must never participate in GetPro BASE_DOMAIN subdomain routing. */
+function isBlessBoardProductHost(host) {
+  const h = String(host || "")
+    .toLowerCase()
+    .trim()
+    .split(":")[0];
+  const churchDomain = getBlessBoardHostDomain();
+  if (!h || !churchDomain) return false;
+  return h === churchDomain || h === `www.${churchDomain}` || h.endsWith(`.${churchDomain}`);
+}
+
 function getSubdomain(req) {
   if (req.query && req.query.subdomain) {
     return sanitizeSubdomain(req.query.subdomain);
@@ -30,12 +47,14 @@ function getSubdomain(req) {
   const host = resolveHostname(req);
   if (!host || host === "localhost") return null;
 
+  if (isBlessBoardProductHost(host)) return null;
+
   const baseDomain = (process.env.BASE_DOMAIN || "").toLowerCase().trim();
   if (!baseDomain) return null;
 
   if (host === baseDomain || host === `www.${baseDomain}`) return null;
 
-  if (!host.endsWith(baseDomain)) return null;
+  if (!host.endsWith(`.${baseDomain}`)) return null;
 
   const prefix = host.slice(0, host.length - baseDomain.length);
   const trimmed = prefix.endsWith(".") ? prefix.slice(0, -1) : prefix;
@@ -59,4 +78,4 @@ function getClientCountryCode(req) {
   return "";
 }
 
-module.exports = { getSubdomain, resolveHostname, getClientCountryCode };
+module.exports = { getSubdomain, resolveHostname, getClientCountryCode, isBlessBoardProductHost };

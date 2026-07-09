@@ -92,7 +92,7 @@ const { ensureCompaniesDirectoryFlagsSchema } = require("./src/db/pg/ensureCompa
 const { ensureTenantDirectoryOptionLists } = require("./src/db/pg/ensureTenantDirectoryOptionLists");
 const { tenantHomeHrefFromPrefix } = require("./src/lib/tenantHomeHref");
 const { opsHrefMiddleware, marketingApexLoginRedirectTarget } = require("./src/lib/marketingOperationalUrls");
-const { getSubdomain, resolveHostname } = require("./src/platform/host");
+const { getSubdomain, resolveHostname, isBlessBoardProductHost } = require("./src/platform/host");
 const { formatHostTenantDebugLine, listExplicitRegionalHostExamples } = require("./src/platform/tenantHostRouting");
 
 const {
@@ -117,6 +117,7 @@ const churchRoutes = require("./src/routes/church");
 const { createAttachChurchContext } = require("./src/church/attachChurchContext");
 const { ensureChurchSchema } = require("./src/db/pg/ensureChurchSchema");
 const { seedChurchSampleOrganizationIfMissing } = require("./src/seeds/seedChurchSampleOrganization");
+const { seedChurchDemoOrganizationIfMissing } = require("./src/seeds/seedChurchDemoOrganization");
 const apiRoutes = require("./src/routes/api");
 const { runProductionStartupChecks } = require("./src/startup/productionStartupChecks");
 const companiesRepo = require("./src/db/pg/companiesRepo");
@@ -255,7 +256,7 @@ app.use(createAttachChurchContext());
 app.use(async (req, res, next) => {
   try {
     req.isPlatformTenant = false;
-    if (req.isChurchHost) {
+    if (req.isChurchHost || isBlessBoardProductHost(resolveHostname(req))) {
       return next();
     }
     const sub = req.subdomain;
@@ -533,6 +534,7 @@ ensureAdminUser({ pool: pgPoolForBoot })
     await ensureTenantDirectoryOptionLists(pgPoolForBoot);
     await ensureChurchSchema(pgPoolForBoot);
     await seedChurchSampleOrganizationIfMissing(pgPoolForBoot);
+    await seedChurchDemoOrganizationIfMissing(pgPoolForBoot);
     await seedBuiltinUsers(pgPoolForBoot);
     await seedManagerUsers(pgPoolForBoot);
     await seedFieldAgentUser(pgPoolForBoot);

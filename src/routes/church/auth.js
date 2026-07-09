@@ -29,12 +29,14 @@ const {
   recordPasswordResetSubmission,
 } = require("../../services/church/passwordResetRateLimitService");
 
+const { renderChurchNotFound } = require("../../church/churchStatusAccess");
+
 function requireChurchBranchHost(req, res, next) {
   if (!req.churchContext || req.churchContext.kind !== "branch") {
     return res.status(404).type("text").send("Not found");
   }
   if (!req.churchContext.organization || !req.churchContext.branch) {
-    return res.status(404).type("text").send("Church organization not found.");
+    return renderChurchNotFound(req, res);
   }
   return next();
 }

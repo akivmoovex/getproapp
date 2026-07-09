@@ -174,6 +174,7 @@ async function seedChurchSampleOrganizationIfMissing(pool) {
     await branchesRepo.createBranch(pool, {
       organization_id: org.id,
       slug: "main",
+      host_slug: SAMPLE_ORG_SLUG,
       name: "Kafue Baptist Church",
       welcome_message:
         "Welcome to Kafue Baptist Church — a Christ-centered community in Kafue, Zambia. We are glad you are here.",

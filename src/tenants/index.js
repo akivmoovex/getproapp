@@ -1,4 +1,4 @@
-const { resolveHostname, getClientCountryCode } = require("../platform/host");
+const { resolveHostname, getClientCountryCode, isBlessBoardProductHost } = require("../platform/host");
 const { STAGES } = require("./tenantStages");
 const { getOrSet, getOrSetAsync, metaTtlMs, stageTtlMs } = require("./tenantMetadataCache");
 const { getPgPool } = require("../db/pg");
@@ -283,7 +283,7 @@ async function setApexTenantPg(pool, req, res) {
 function createAttachTenantByHost() {
   return async function attachTenantByHost(req, res, next) {
     try {
-      if (req.isChurchHost) {
+      if (req.isChurchHost || isBlessBoardProductHost(host)) {
         return next();
       }
 

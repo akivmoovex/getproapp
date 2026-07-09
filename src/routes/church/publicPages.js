@@ -42,7 +42,7 @@ function buildVerticalApexLocals() {
     heroSubtitle: "A GetPro-powered platform",
     welcomeMessage:
       "BlessBoard helps churches engage members, manage branches, track attendance, summarize giving, and submit monthly reports — powered by GetPro.",
-    serviceTimes: "Explore a live sample branch at kafuebaptist.blessboard.com",
+    serviceTimes: "Explore the live demo church at demo.blessboard.com",
     locationText: "Multi-tenant church platform at blessboard.com",
     upcomingEvents: [
       { title: "Community Welcome Day", when: "First Sunday monthly · 12:30 PM" },
