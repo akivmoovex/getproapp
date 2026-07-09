@@ -91,10 +91,22 @@ You do **not** need getproapp.org to carry BlessBoard admin code for provisionin
 | `SESSION_SECRET` | **Yes** | Express session signing |
 | `BASE_DOMAIN` | Recommended | Platform host (e.g. `getproapp.org`) |
 | `CHURCH_HOST_DOMAIN` | Optional | Default `blessboard.com` |
+| `GETPRO_PG_POOL_MAX` | Recommended | Default **5** (lower than before to reduce Supabase connection pressure) |
+| `GETPRO_PG_CONNECT_TIMEOUT_MS` | Optional | Default 10000 — increase to 15000 if Supabase is slow |
+| `GETPRO_PG_IDLE_MS` | Optional | Default 30000 |
 | `GETPRO_PG_SSL` | If Supabase | `strict`, `no-verify`, or `off` |
 | `NODE_ENV` | Recommended | `production` |
 
 Never commit secrets. Set in Hostinger **Environment variables** panel.
+
+### Supabase / connection pressure
+
+If public church sites return **503 temporarily unavailable** during deploy or restart:
+
+1. Check Supabase connection limits (use **pooler** URL if available).
+2. Set `GETPRO_PG_POOL_MAX=5` (default) — avoid raising above 10 on Hostinger multi-worker setups.
+3. Only one worker runs heavy bootstrap at a time (PostgreSQL advisory lock).
+4. Verify `https://blessboard.com/admin/diagnostics` — **Demo branch lookup** should be **Yes** when healthy.
 
 ---
 

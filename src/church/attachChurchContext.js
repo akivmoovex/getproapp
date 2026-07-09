@@ -1,9 +1,16 @@
 "use strict";
 
-const { getPgPool } = require("../db/pg");
 const { parseChurchHost, normalizeHostFromRequest } = require("./host");
 const organizationsRepo = require("../db/pg/church/organizationsRepo");
 const branchesRepo = require("../db/pg/church/branchesRepo");
+const {
+  logChurchDbResolutionFailure,
+  renderChurchServiceUnavailable,
+} = require("./churchDbResilience");
+
+function churchPgPool() {
+  return require("../db/pg").getPgPool();
+}
 
 function logChurchHostResolution(req, parsed, branch) {
   if (
@@ -75,15 +82,20 @@ function createAttachChurchContext() {
         return next();
       }
 
-      const pool = getPgPool();
+      const pool = churchPgPool();
       let branch = null;
       let organization = null;
       if (pool) {
-        branch = await branchesRepo.findBranchByHostSlug(pool, hostSlug);
-        if (branch) {
-          organization = await organizationsRepo.findOrganizationById(pool, branch.organization_id);
-        } else {
-          organization = await organizationsRepo.findOrganizationBySlug(pool, hostSlug);
+        try {
+          branch = await branchesRepo.findBranchByHostSlug(pool, hostSlug);
+          if (branch) {
+            organization = await organizationsRepo.findOrganizationById(pool, branch.organization_id);
+          } else {
+            organization = await organizationsRepo.findOrganizationBySlug(pool, hostSlug);
+          }
+        } catch (error) {
+          logChurchDbResolutionFailure(req, parsed, hostSlug, error);
+          return renderChurchServiceUnavailable(req, res);
         }
       }
 

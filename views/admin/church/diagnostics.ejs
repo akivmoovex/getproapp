@@ -55,9 +55,25 @@
           <dl class="admin-dl">
             <dt>Configured</dt><dd><%= diagnostics.databaseConfigured ? 'Yes' : 'No' %></dd>
             <dt>Reachable</dt><dd><%= diagnostics.databaseReachable ? 'Yes' : 'No' %></dd>
+            <% if (diagnostics.databaseErrorKind) { %>
+            <dt>Error kind</dt><dd><code><%= diagnostics.databaseErrorKind %></code></dd>
+            <% } %>
             <% if (diagnostics.databaseError) { %>
             <dt>Error</dt><dd class="muted"><%= diagnostics.databaseError %></dd>
             <% } %>
+            <% if (diagnostics.poolConfig) { %>
+            <dt>Pool max</dt><dd><%= diagnostics.poolConfig.max %></dd>
+            <dt>Pool connectionTimeoutMs</dt><dd><%= diagnostics.poolConfig.connectionTimeoutMillis %></dd>
+            <dt>Pool idleTimeoutMs</dt><dd><%= diagnostics.poolConfig.idleTimeoutMillis %></dd>
+            <% } %>
+            <dt>church_branches table</dt>
+            <dd><%= diagnostics.churchBranchesTable && diagnostics.churchBranchesTable.ok ? 'Reachable' : 'Not reachable' %>
+              <% if (diagnostics.churchBranchesTable && diagnostics.churchBranchesTable.message) { %> — <%= diagnostics.churchBranchesTable.message %><% } %>
+            </dd>
+            <dt>Demo branch lookup (demo.blessboard.com)</dt>
+            <dd><%= diagnostics.demoBranchLookup && diagnostics.demoBranchLookup.ok ? 'Yes' : 'No' %>
+              <% if (diagnostics.demoBranchLookup && diagnostics.demoBranchLookup.message) { %> — <%= diagnostics.demoBranchLookup.message %><% } %>
+            </dd>
             <dt>Demo branch (host_slug=demo)</dt>
             <dd><%= diagnostics.demoBranch.ok ? 'Yes' : 'No' %> — <%= diagnostics.demoBranch.message %></dd>
             <dt>Pilot branch (kafuebaptist)</dt>

@@ -312,6 +312,14 @@ function isPgConfigured() {
   return connectionStringFromEnv().length > 0;
 }
 
+function getPoolRuntimeConfig() {
+  return {
+    max: Number(process.env.GETPRO_PG_POOL_MAX) || 5,
+    idleTimeoutMillis: Number(process.env.GETPRO_PG_IDLE_MS) || 30000,
+    connectionTimeoutMillis: Number(process.env.GETPRO_PG_CONNECT_TIMEOUT_MS) || 10000,
+  };
+}
+
 /**
  * Returns a singleton Pool, or null if no connection string is set.
  * `server.js` requires a connection string at boot; null is for tests/helpers only.
@@ -321,16 +329,21 @@ function getPgPool() {
   if (!pool) {
     logPgStartupDiagnostics();
     const { connectionString, ssl } = getPoolConnectionOptions();
+    const runtime = getPoolRuntimeConfig();
     const config = {
       connectionString,
-      max: Number(process.env.GETPRO_PG_POOL_MAX) || 10,
-      idleTimeoutMillis: Number(process.env.GETPRO_PG_IDLE_MS) || 30000,
-      connectionTimeoutMillis: Number(process.env.GETPRO_PG_CONNECT_TIMEOUT_MS) || 10000,
+      max: runtime.max,
+      idleTimeoutMillis: runtime.idleTimeoutMillis,
+      connectionTimeoutMillis: runtime.connectionTimeoutMillis,
     };
     if (ssl !== undefined) {
       config.ssl = ssl;
     }
     pool = new Pool(config);
+    // eslint-disable-next-line no-console
+    console.log(
+      `[getpro] PostgreSQL pool: max=${runtime.max} idleTimeoutMs=${runtime.idleTimeoutMillis} connectionTimeoutMs=${runtime.connectionTimeoutMillis}`
+    );
     pool.on("error", (err) => {
       // eslint-disable-next-line no-console
       console.error("[getpro] PostgreSQL pool error:", err.message);
@@ -357,4 +370,5 @@ module.exports = {
   getDatabaseUrlEnvName,
   summarizeDatabaseUrlEnv,
   getStartupProcessSnapshot,
+  getPoolRuntimeConfig,
 };

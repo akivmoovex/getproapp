@@ -1,8 +1,9 @@
 "use strict";
 
 const { getChurchHostDomain, parseChurchHostFromDedicatedDomain } = require("../../church/host");
-const { getPgPool, isPgConfigured } = require("../../db/pg/pool");
+const { getPgPool, isPgConfigured, getPoolRuntimeConfig } = require("../../db/pg/pool");
 const branchesRepo = require("../../db/pg/church/branchesRepo");
+const { classifyPgError } = require("../../church/churchDbResilience");
 
 const LATEST_CHURCH_MIGRATION = "090_church_operational_readiness.sql";
 
@@ -30,12 +31,57 @@ function sessionSecretWarning() {
 }
 
 async function checkDatabaseReachable(pool) {
-  if (!pool) return { ok: false, error: "PostgreSQL is not configured." };
+  if (!pool) return { ok: false, error: "PostgreSQL is not configured.", errorKind: "not_configured" };
   try {
     await pool.query("SELECT 1 AS ok");
     return { ok: true };
   } catch (err) {
-    return { ok: false, error: err.message || "Database query failed." };
+    const classified = classifyPgError(err);
+    return { ok: false, error: classified.message, errorKind: classified.kind };
+  }
+}
+
+async function checkChurchBranchesTable(pool) {
+  if (!pool) return { ok: false, message: "Database not configured." };
+  try {
+    await pool.query(`SELECT 1 FROM public.church_branches LIMIT 1`);
+    return { ok: true, message: "Reachable." };
+  } catch (err) {
+    const classified = classifyPgError(err);
+    return { ok: false, message: classified.message, errorKind: classified.kind };
+  }
+}
+
+async function checkDemoBranchLookup(pool) {
+  if (!pool) {
+    return { ok: false, host: "demo.blessboard.com", slug: "demo", message: "Database not configured." };
+  }
+  try {
+    const branch = await branchesRepo.findBranchByHostSlug(pool, "demo");
+    if (!branch) {
+      return {
+        ok: false,
+        host: "demo.blessboard.com",
+        slug: "demo",
+        message: "No branch with host_slug=demo.",
+      };
+    }
+    return {
+      ok: true,
+      host: "demo.blessboard.com",
+      slug: "demo",
+      message: `Resolved branch id=${branch.id}, status=${branch.status}.`,
+      branchId: branch.id,
+    };
+  } catch (err) {
+    const classified = classifyPgError(err);
+    return {
+      ok: false,
+      host: "demo.blessboard.com",
+      slug: "demo",
+      message: classified.message,
+      errorKind: classified.kind,
+    };
   }
 }
 
@@ -146,14 +192,29 @@ async function gatherChurchProductionDiagnostics() {
   const pool = getPgPool();
   const churchDomain = getChurchHostDomain();
   const dbCheck = await checkDatabaseReachable(pool);
+  const churchBranchesTable = await checkChurchBranchesTable(pool);
+  const demoBranchLookup = await checkDemoBranchLookup(pool);
   const schema = await checkSchemaFeatures(pool);
   const demoBranch = await checkDemoBranch(pool);
   const pilotBranch = await checkPilotBranch(pool, "kafuebaptist");
+  const poolConfig = getPoolRuntimeConfig();
 
   const warnings = [];
   const sessionWarn = sessionSecretWarning();
   if (sessionWarn) warnings.push(sessionWarn);
-  if (!dbCheck.ok) warnings.push("Database is not reachable.");
+  if (!dbCheck.ok) {
+    warnings.push(
+      dbCheck.errorKind === "timeout"
+        ? `Database timeout: ${dbCheck.error}`
+        : "Database is not reachable."
+    );
+  }
+  if (!churchBranchesTable.ok) {
+    warnings.push(`church_branches table: ${churchBranchesTable.message}`);
+  }
+  if (!demoBranchLookup.ok) {
+    warnings.push(`Demo branch lookup (demo.blessboard.com): ${demoBranchLookup.message}`);
+  }
   if (!schema.memberRegistrationColumn.ok) warnings.push(schema.memberRegistrationColumn.message);
   if (!schema.contactSubmissionsTable.ok) warnings.push(schema.contactSubmissionsTable.message);
   if (!demoBranch.ok) warnings.push(`Demo branch: ${demoBranch.message}`);
@@ -167,6 +228,10 @@ async function gatherChurchProductionDiagnostics() {
     databaseConfigured: isPgConfigured(),
     databaseReachable: dbCheck.ok,
     databaseError: dbCheck.ok ? null : dbCheck.error,
+    databaseErrorKind: dbCheck.ok ? null : dbCheck.errorKind || "other",
+    poolConfig,
+    churchBranchesTable,
+    demoBranchLookup,
     latestChurchMigration: LATEST_CHURCH_MIGRATION,
     churchHostDomain: churchDomain,
     baseDomain: process.env.BASE_DOMAIN || "(unset)",
@@ -187,4 +252,6 @@ module.exports = {
   LATEST_CHURCH_MIGRATION,
   deploymentLabel,
   sessionSecretWarning,
+  checkDemoBranchLookup,
+  checkChurchBranchesTable,
 };

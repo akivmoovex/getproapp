@@ -126,6 +126,7 @@ const { createAttachChurchContext } = require("./src/church/attachChurchContext"
 const { ensureChurchSchema } = require("./src/db/pg/ensureChurchSchema");
 const { seedChurchSampleOrganizationIfMissing } = require("./src/seeds/seedChurchSampleOrganization");
 const { seedChurchDemoOrganizationIfMissing } = require("./src/seeds/seedChurchDemoOrganization");
+const { runBootstrapWithAdvisoryLock } = require("./src/startup/runBootstrapWithAdvisoryLock");
 const apiRoutes = require("./src/routes/api");
 const { runProductionStartupChecks } = require("./src/startup/productionStartupChecks");
 const companiesRepo = require("./src/db/pg/companiesRepo");
@@ -539,34 +540,51 @@ app.use("/", publicModule.router);
 const pgPoolForBoot = getPgPool();
 
 async function bootstrapAfterListen(pool) {
-  await ensureAdminUser({ pool });
-  await ensureFieldAgentSchema(pool);
-  await ensureTenantPhoneRulesSchema(pool);
-  await ensureContentLocaleSchema(pool);
-  await ensureEulaKindSchema(pool);
-  await ensureIntakeDealSchema(pool);
-  await ensureCrmCsrFifoSchema(pool);
-  await ensureIntakeAssignmentDealFeeSchema(pool);
-  await ensureTenantCommerceSettingsSchema(pool);
-  await ensureFieldAgentPayRunsSchema(pool);
-  await ensureCompaniesDirectoryFlagsSchema(pool);
-  await ensureTenantDirectoryOptionLists(pool);
-  await ensureChurchSchema(pool);
-  try {
-    await seedChurchSampleOrganizationIfMissing(pool);
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error("[getpro] Church sample seed warning:", err.message);
-  }
-  try {
-    await seedChurchDemoOrganizationIfMissing(pool);
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error("[getpro] BlessBoard demo seed warning:", err.message);
-  }
-  await seedBuiltinUsers(pool);
-  await seedManagerUsers(pool);
-  await seedFieldAgentUser(pool);
+  await runBootstrapWithAdvisoryLock(pool, async () => {
+    await ensureAdminUser({ pool });
+    await ensureFieldAgentSchema(pool);
+    await ensureTenantPhoneRulesSchema(pool);
+    await ensureContentLocaleSchema(pool);
+    await ensureEulaKindSchema(pool);
+    await ensureIntakeDealSchema(pool);
+    await ensureCrmCsrFifoSchema(pool);
+    await ensureIntakeAssignmentDealFeeSchema(pool);
+    await ensureTenantCommerceSettingsSchema(pool);
+    await ensureFieldAgentPayRunsSchema(pool);
+    await ensureCompaniesDirectoryFlagsSchema(pool);
+    await ensureTenantDirectoryOptionLists(pool);
+    await ensureChurchSchema(pool);
+    try {
+      await seedChurchSampleOrganizationIfMissing(pool);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[getpro] Church sample seed warning:", err.message);
+    }
+    try {
+      await seedChurchDemoOrganizationIfMissing(pool);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[getpro] BlessBoard demo seed warning:", err.message);
+    }
+    try {
+      await seedBuiltinUsers(pool);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[getpro] Builtin users seed warning:", err.message);
+    }
+    try {
+      await seedManagerUsers(pool);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[getpro] Manager users seed warning:", err.message);
+    }
+    try {
+      await seedFieldAgentUser(pool);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[getpro] Field agent seed warning:", err.message);
+    }
+  });
 }
 
 app.listen(port, host, () => {
@@ -584,12 +602,18 @@ app.listen(port, host, () => {
 
 void bootstrapAfterListen(pgPoolForBoot).catch((err) => {
   // eslint-disable-next-line no-console
-  console.error("Failed to initialize admin user:", err.message);
+  console.error("[getpro] Bootstrap error:", err.message);
   if (/ADMIN_PASSWORD/i.test(String(err.message))) {
     // eslint-disable-next-line no-console
     console.error(
       "→ On Hostinger (and most hosts), .env is not deployed. Add ADMIN_PASSWORD in hPanel → Advanced → Environment variables, then redeploy."
     );
+    process.exit(1);
+  }
+  if (/timeout|timed out|connection terminated|econnrefused|too many clients/i.test(String(err.message))) {
+    // eslint-disable-next-line no-console
+    console.error("[getpro] Bootstrap DB pressure — HTTP server continues; public pages degrade gracefully.");
+    return;
   }
   process.exit(1);
 });
