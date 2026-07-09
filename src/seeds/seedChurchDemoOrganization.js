@@ -17,17 +17,41 @@ async function seedDemoBranchAdminIfMissing(pool, org, branch) {
   const existing = await branchAdminsRepo.findBranchAdminByEmailForBranch(pool, branch.id, DEMO_BRANCH_ADMIN_EMAIL);
   if (existing) return existing;
 
+  const username = DEMO_BRANCH_ADMIN_EMAIL.toLowerCase();
+  const byUsername = await pool.query(
+    `SELECT * FROM public.church_branch_admins
+     WHERE branch_id = $1 AND lower(trim(username)) = $2
+     LIMIT 1`,
+    [branch.id, username]
+  );
+  if (byUsername.rows[0]) return byUsername.rows[0];
+
   const passwordHash = await bcrypt.hash("testpass123", 12);
-  return branchAdminsRepo.createBranchAdmin(pool, {
-    organization_id: org.id,
-    branch_id: branch.id,
-    full_name: "Demo Branch Admin",
-    email: DEMO_BRANCH_ADMIN_EMAIL,
-    phone: "0977111222",
-    password_hash: passwordHash,
-    role: "branch_admin",
-    status: "active",
-  });
+  try {
+    return await branchAdminsRepo.createBranchAdmin(pool, {
+      organization_id: org.id,
+      branch_id: branch.id,
+      full_name: "Demo Branch Admin",
+      email: DEMO_BRANCH_ADMIN_EMAIL,
+      phone: "0977111222",
+      password_hash: passwordHash,
+      role: "branch_admin",
+      status: "active",
+    });
+  } catch (err) {
+    if (/church_branch_admins_branch_username_unique|duplicate key value/i.test(String(err.message))) {
+      const retry = await branchAdminsRepo.findBranchAdminByEmailForBranch(pool, branch.id, DEMO_BRANCH_ADMIN_EMAIL);
+      if (retry) return retry;
+      const retryUsername = await pool.query(
+        `SELECT * FROM public.church_branch_admins
+         WHERE branch_id = $1 AND lower(trim(username)) = $2
+         LIMIT 1`,
+        [branch.id, username]
+      );
+      if (retryUsername.rows[0]) return retryUsername.rows[0];
+    }
+    throw err;
+  }
 }
 
 async function seedDemoPublicContentIfMissing(pool, org, branch) {

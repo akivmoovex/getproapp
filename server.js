@@ -519,47 +519,59 @@ app.use("/", publicModule.router);
 
 const pgPoolForBoot = getPgPool();
 
-ensureAdminUser({ pool: pgPoolForBoot })
-  .then(async () => {
-    await ensureFieldAgentSchema(pgPoolForBoot);
-    await ensureTenantPhoneRulesSchema(pgPoolForBoot);
-    await ensureContentLocaleSchema(pgPoolForBoot);
-    await ensureEulaKindSchema(pgPoolForBoot);
-    await ensureIntakeDealSchema(pgPoolForBoot);
-    await ensureCrmCsrFifoSchema(pgPoolForBoot);
-    await ensureIntakeAssignmentDealFeeSchema(pgPoolForBoot);
-    await ensureTenantCommerceSettingsSchema(pgPoolForBoot);
-    await ensureFieldAgentPayRunsSchema(pgPoolForBoot);
-    await ensureCompaniesDirectoryFlagsSchema(pgPoolForBoot);
-    await ensureTenantDirectoryOptionLists(pgPoolForBoot);
-    await ensureChurchSchema(pgPoolForBoot);
-    await seedChurchSampleOrganizationIfMissing(pgPoolForBoot);
-    await seedChurchDemoOrganizationIfMissing(pgPoolForBoot);
-    await seedBuiltinUsers(pgPoolForBoot);
-    await seedManagerUsers(pgPoolForBoot);
-    await seedFieldAgentUser(pgPoolForBoot);
-    app.listen(port, host, () => {
-      // eslint-disable-next-line no-console
-      console.log(`GetPro listening on ${host}:${port}`);
-      const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
-      if (base) {
-        const examples = listExplicitRegionalHostExamples(base);
-        // eslint-disable-next-line no-console
-        console.log(
-          `[getpro] Subdomain routing (platform tenants): demo.${base}→tenant demo, zm.${base}→tenant zm, il.${base}→tenant il. Examples: ${examples.join(", ")}. Requires reverse proxy to forward Host / X-Forwarded-Host unchanged.`
-        );
-      }
-    });
-  })
-  .catch((err) => {
+async function bootstrapAfterListen(pool) {
+  await ensureAdminUser({ pool });
+  await ensureFieldAgentSchema(pool);
+  await ensureTenantPhoneRulesSchema(pool);
+  await ensureContentLocaleSchema(pool);
+  await ensureEulaKindSchema(pool);
+  await ensureIntakeDealSchema(pool);
+  await ensureCrmCsrFifoSchema(pool);
+  await ensureIntakeAssignmentDealFeeSchema(pool);
+  await ensureTenantCommerceSettingsSchema(pool);
+  await ensureFieldAgentPayRunsSchema(pool);
+  await ensureCompaniesDirectoryFlagsSchema(pool);
+  await ensureTenantDirectoryOptionLists(pool);
+  await ensureChurchSchema(pool);
+  try {
+    await seedChurchSampleOrganizationIfMissing(pool);
+  } catch (err) {
     // eslint-disable-next-line no-console
-    console.error("Failed to initialize admin user:", err.message);
-    if (/ADMIN_PASSWORD/i.test(String(err.message))) {
-      // eslint-disable-next-line no-console
-      console.error(
-        "→ On Hostinger (and most hosts), .env is not deployed. Add ADMIN_PASSWORD in hPanel → Advanced → Environment variables, then redeploy."
-      );
-    }
-    process.exit(1);
-  });
+    console.error("[getpro] Church sample seed warning:", err.message);
+  }
+  try {
+    await seedChurchDemoOrganizationIfMissing(pool);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[getpro] BlessBoard demo seed warning:", err.message);
+  }
+  await seedBuiltinUsers(pool);
+  await seedManagerUsers(pool);
+  await seedFieldAgentUser(pool);
+}
+
+app.listen(port, host, () => {
+  // eslint-disable-next-line no-console
+  console.log(`GetPro listening on ${host}:${port}`);
+  const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
+  if (base) {
+    const examples = listExplicitRegionalHostExamples(base);
+    // eslint-disable-next-line no-console
+    console.log(
+      `[getpro] Subdomain routing (platform tenants): demo.${base}→tenant demo, zm.${base}→tenant zm, il.${base}→tenant il. Examples: ${examples.join(", ")}. Requires reverse proxy to forward Host / X-Forwarded-Host unchanged.`
+    );
+  }
+});
+
+void bootstrapAfterListen(pgPoolForBoot).catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error("Failed to initialize admin user:", err.message);
+  if (/ADMIN_PASSWORD/i.test(String(err.message))) {
+    // eslint-disable-next-line no-console
+    console.error(
+      "→ On Hostinger (and most hosts), .env is not deployed. Add ADMIN_PASSWORD in hPanel → Advanced → Environment variables, then redeploy."
+    );
+  }
+  process.exit(1);
+});
 
