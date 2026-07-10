@@ -9,6 +9,7 @@ const BLESSBOARD_ADMIN = {
   churches: "/admin/churches",
   churchesNew: "/admin/churches/new",
   churchDetail: (id) => `/admin/churches/${id}`,
+  churchEdit: (id) => `/admin/churches/${id}/edit`,
   diagnostics: "/admin/diagnostics",
 };
 
@@ -29,6 +30,8 @@ function rewriteBlessBoardAdminPathToInternal(method, path) {
   if (p === "/churches/new" || p === "/churches/new/") return "/church/organizations/new";
   const detail = p.match(/^\/churches\/(\d+)\/?$/);
   if (detail) return `/church/organizations/${detail[1]}`;
+  const edit = p.match(/^\/churches\/(\d+)\/edit\/?$/);
+  if (edit) return `/church/organizations/${edit[1]}/edit`;
   if (method === "POST" && (p === "/churches" || p === "/churches/")) return "/church/organizations";
   return null;
 }
@@ -93,6 +96,18 @@ function organizationAdminDetailPath(req, organizationId, query = "") {
   return `/admin/church/organizations/${organizationId}${query}`;
 }
 
+/**
+ * Organization edit URL for current admin context.
+ * @param {import("express").Request} req
+ * @param {number|string} organizationId
+ */
+function organizationAdminEditPath(req, organizationId) {
+  if (req && req.blessboardAdminMode) {
+    return BLESSBOARD_ADMIN.churchEdit(organizationId);
+  }
+  return `/admin/church/organizations/${organizationId}/edit`;
+}
+
 module.exports = {
   BLESSBOARD_ADMIN,
   LEGACY_GETPRO_CHURCH_ADMIN_PREFIX,
@@ -100,4 +115,5 @@ module.exports = {
   mapLegacyGetProChurchAdminPathToBlessBoard,
   isBlessBoardPlatformAdminPath,
   organizationAdminDetailPath,
+  organizationAdminEditPath,
 };

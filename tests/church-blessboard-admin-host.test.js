@@ -278,3 +278,405 @@ test("non-super admin cannot use blessboard.com/admin/login", async () => {
   assert.match(res.text, /super admin/i);
   await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [userId]);
 });
+
+function branchEditPayload(branch, hostSlug) {
+  return {
+    branch_name: branch.name || "Main Branch",
+    branch_host_slug: hostSlug,
+    pastor_name: branch.pastor_name || "",
+    contact_phone: branch.contact_phone || "",
+    contact_email: branch.contact_email || "",
+    member_registration_enabled: "1",
+  };
+}
+
+test(
+  "blessboard.com/admin/churches/:id/edit renders for authenticated super admin",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    await ensureChurchSchema(pool);
+    const seed = require("../src/seeds/seedChurchDemoOrganization");
+    const { organization, branch } = await seed.seedChurchDemoOrganizationIfMissing(pool);
+    const app = createProductionLikeApp();
+    const login = await superAdminLoginAgent(app);
+    const res = await login.agent
+      .get(`/admin/churches/${organization.id}/edit`)
+      .set("Host", "blessboard.com");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /Edit church details|Edit organization/i);
+    assert.match(res.text, /BlessBoard Admin|BlessBoard/);
+    assert.match(res.text, new RegExp(branch.host_slug || "demo", "i"));
+    assert.match(res.text, /Member registration/i);
+    await login.pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [login.userId]);
+  }
+);
+
+test(
+  "blessboard POST valid edit updates church name and details",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    await ensureChurchSchema(pool);
+    const suffix = makeSuffix("bbedit");
+    const hash = await bcrypt.hash("superpw123456", 12);
+    const superName = `bb_edit_${suffix}`;
+    const superId = await adminUsersRepo.insertUser(pool, {
+      username: superName,
+      passwordHash: hash,
+      role: ROLES.SUPER_ADMIN,
+      tenantId: null,
+      displayName: "",
+    });
+    const organizationsRepo = require("../src/db/pg/church/organizationsRepo");
+    const branchesRepo = require("../src/db/pg/church/branchesRepo");
+    const org = await organizationsRepo.createOrganization(pool, {
+      platform_tenant_id: 1,
+      slug: `bborg${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28),
+      name: `BB Edit Org ${suffix}`,
+      status: "active",
+    });
+    await pool.query(
+      `UPDATE public.church_organizations SET country = $2, city = $3 WHERE id = $1`,
+      [org.id, "Zambia", "Lusaka"]
+    );
+    const hostSlug = `bbhost${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28);
+    const branch = await branchesRepo.createBranch(pool, {
+      organization_id: org.id,
+      slug: hostSlug,
+      host_slug: hostSlug,
+      name: "Primary Branch",
+    });
+
+    const app = createProductionLikeApp();
+    const agent = request.agent(app);
+    await agent
+      .post("/admin/login")
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({ username: superName, password: "superpw123456" })
+      .expect(302);
+
+    const updated = await agent
+      .post(`/admin/churches/${org.id}/edit`)
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({
+        organization_name: "BlessBoard Updated Name",
+        organization_slug: org.slug,
+        country: "Zambia",
+        city: "Kitwe",
+        primary_contact_name: "Updated Contact",
+        primary_contact_email: "updated@example.com",
+        ...branchEditPayload(branch, hostSlug),
+      });
+    assert.equal(updated.status, 302);
+    assert.match(updated.headers.location, /\/admin\/churches\/\d+\?notice=updated/);
+
+    const refreshed = await organizationsRepo.findOrganizationById(pool, org.id);
+    assert.equal(refreshed.name, "BlessBoard Updated Name");
+    assert.equal(refreshed.city, "Kitwe");
+    const refreshedBranch = await branchesRepo.findBranchByHostSlug(pool, hostSlug);
+    assert.equal(refreshedBranch.name, "Primary Branch");
+
+    await pool.query(`DELETE FROM public.church_audit_logs WHERE organization_id = $1`, [org.id]);
+    await pool.query(`DELETE FROM public.church_branches WHERE organization_id = $1`, [org.id]);
+    await pool.query(`DELETE FROM public.church_organizations WHERE id = $1`, [org.id]);
+    await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [superId]);
+  }
+);
+
+test(
+  "blessboard POST invalid host slug re-renders with error",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    await ensureChurchSchema(pool);
+    const suffix = makeSuffix("bbslug");
+    const hash = await bcrypt.hash("superpw123456", 12);
+    const superName = `bb_slug_${suffix}`;
+    const superId = await adminUsersRepo.insertUser(pool, {
+      username: superName,
+      passwordHash: hash,
+      role: ROLES.SUPER_ADMIN,
+      tenantId: null,
+      displayName: "",
+    });
+    const organizationsRepo = require("../src/db/pg/church/organizationsRepo");
+    const branchesRepo = require("../src/db/pg/church/branchesRepo");
+    const org = await organizationsRepo.createOrganization(pool, {
+      platform_tenant_id: 1,
+      slug: `bbslugorg${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28),
+      name: `BB Slug Org ${suffix}`,
+      status: "active",
+    });
+    await pool.query(`UPDATE public.church_organizations SET country = $2 WHERE id = $1`, [
+      org.id,
+      "Zambia",
+    ]);
+    const hostSlug = `bbslugbr${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28);
+    const branch = await branchesRepo.createBranch(pool, {
+      organization_id: org.id,
+      slug: hostSlug,
+      host_slug: hostSlug,
+      name: "Branch",
+    });
+
+    const app = createProductionLikeApp();
+    const agent = request.agent(app);
+    await agent
+      .post("/admin/login")
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({ username: superName, password: "superpw123456" })
+      .expect(302);
+
+    const bad = await agent
+      .post(`/admin/churches/${org.id}/edit`)
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({
+        organization_name: org.name,
+        organization_slug: org.slug,
+        country: "Zambia",
+        branch_name: branch.name,
+        branch_host_slug: "INVALID SLUG",
+      });
+    assert.equal(bad.status, 400);
+    assert.match(bad.text, /host slug|slug/i);
+
+    await pool.query(`DELETE FROM public.church_audit_logs WHERE organization_id = $1`, [org.id]);
+    await pool.query(`DELETE FROM public.church_branches WHERE organization_id = $1`, [org.id]);
+    await pool.query(`DELETE FROM public.church_organizations WHERE id = $1`, [org.id]);
+    await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [superId]);
+  }
+);
+
+test(
+  "blessboard duplicate host slug rejected unless current branch slug",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    await ensureChurchSchema(pool);
+    const suffix = makeSuffix("bbdup");
+    const hash = await bcrypt.hash("superpw123456", 12);
+    const superName = `bb_dup_${suffix}`;
+    const superId = await adminUsersRepo.insertUser(pool, {
+      username: superName,
+      passwordHash: hash,
+      role: ROLES.SUPER_ADMIN,
+      tenantId: null,
+      displayName: "",
+    });
+    const organizationsRepo = require("../src/db/pg/church/organizationsRepo");
+    const branchesRepo = require("../src/db/pg/church/branchesRepo");
+    const orgA = await organizationsRepo.createOrganization(pool, {
+      platform_tenant_id: 1,
+      slug: `bbdupa${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28),
+      name: `Org A ${suffix}`,
+      status: "active",
+    });
+    const orgB = await organizationsRepo.createOrganization(pool, {
+      platform_tenant_id: 1,
+      slug: `bbdupb${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28),
+      name: `Org B ${suffix}`,
+      status: "active",
+    });
+    await pool.query(`UPDATE public.church_organizations SET country = 'Zambia' WHERE id = ANY($1::int[])`, [
+      [orgA.id, orgB.id],
+    ]);
+    const hostA = `bbdupa${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28);
+    const hostB = `bbdupb${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28);
+    const branchA = await branchesRepo.createBranch(pool, {
+      organization_id: orgA.id,
+      slug: hostA,
+      host_slug: hostA,
+      name: "Branch A",
+    });
+    const branchB = await branchesRepo.createBranch(pool, {
+      organization_id: orgB.id,
+      slug: hostB,
+      host_slug: hostB,
+      name: "Branch B",
+    });
+
+    const app = createProductionLikeApp();
+    const agent = request.agent(app);
+    await agent
+      .post("/admin/login")
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({ username: superName, password: "superpw123456" })
+      .expect(302);
+
+    const dup = await agent
+      .post(`/admin/churches/${orgA.id}/edit`)
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({
+        organization_name: orgA.name,
+        organization_slug: orgA.slug,
+        country: "Zambia",
+        ...branchEditPayload(branchA, hostB),
+      });
+    assert.equal(dup.status, 400);
+    assert.match(dup.text, /already in use/i);
+
+    const same = await agent
+      .post(`/admin/churches/${orgA.id}/edit`)
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({
+        organization_name: "Same Slug OK",
+        organization_slug: orgA.slug,
+        country: "Zambia",
+        ...branchEditPayload(branchA, hostA),
+      });
+    assert.equal(same.status, 302);
+
+    await pool.query(`DELETE FROM public.church_audit_logs WHERE organization_id = ANY($1::int[])`, [
+      [orgA.id, orgB.id],
+    ]);
+    await pool.query(`DELETE FROM public.church_branches WHERE organization_id = ANY($1::int[])`, [
+      [orgA.id, orgB.id],
+    ]);
+    await pool.query(`DELETE FROM public.church_organizations WHERE id = ANY($1::int[])`, [
+      [orgA.id, orgB.id],
+    ]);
+    await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [superId]);
+  }
+);
+
+test(
+  "blessboard member_registration_enabled can be toggled",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    await ensureChurchSchema(pool);
+    const suffix = makeSuffix("bbreg");
+    const hash = await bcrypt.hash("superpw123456", 12);
+    const superName = `bb_reg_${suffix}`;
+    const superId = await adminUsersRepo.insertUser(pool, {
+      username: superName,
+      passwordHash: hash,
+      role: ROLES.SUPER_ADMIN,
+      tenantId: null,
+      displayName: "",
+    });
+    const organizationsRepo = require("../src/db/pg/church/organizationsRepo");
+    const branchesRepo = require("../src/db/pg/church/branchesRepo");
+    const org = await organizationsRepo.createOrganization(pool, {
+      platform_tenant_id: 1,
+      slug: `bbregorg${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28),
+      name: `Reg Org ${suffix}`,
+      status: "active",
+    });
+    await pool.query(`UPDATE public.church_organizations SET country = $2 WHERE id = $1`, [
+      org.id,
+      "Zambia",
+    ]);
+    const hostSlug = `bbregbr${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28);
+    const branch = await branchesRepo.createBranch(pool, {
+      organization_id: org.id,
+      slug: hostSlug,
+      host_slug: hostSlug,
+      name: "Branch",
+      member_registration_enabled: true,
+    });
+
+    const app = createProductionLikeApp();
+    const agent = request.agent(app);
+    await agent
+      .post("/admin/login")
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({ username: superName, password: "superpw123456" })
+      .expect(302);
+
+    const disabled = await agent
+      .post(`/admin/churches/${org.id}/edit`)
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({
+        organization_name: org.name,
+        organization_slug: org.slug,
+        country: "Zambia",
+        branch_name: branch.name,
+        branch_host_slug: hostSlug,
+      });
+    assert.equal(disabled.status, 302);
+    let row = await pool.query(
+      `SELECT member_registration_enabled FROM public.church_branches WHERE id = $1`,
+      [branch.id]
+    );
+    assert.equal(row.rows[0].member_registration_enabled, false);
+
+    const enabled = await agent
+      .post(`/admin/churches/${org.id}/edit`)
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({
+        organization_name: org.name,
+        organization_slug: org.slug,
+        country: "Zambia",
+        branch_name: branch.name,
+        branch_host_slug: hostSlug,
+        member_registration_enabled: "1",
+      });
+    assert.equal(enabled.status, 302);
+    row = await pool.query(
+      `SELECT member_registration_enabled FROM public.church_branches WHERE id = $1`,
+      [branch.id]
+    );
+    assert.equal(row.rows[0].member_registration_enabled, true);
+
+    await pool.query(`DELETE FROM public.church_audit_logs WHERE organization_id = $1`, [org.id]);
+    await pool.query(`DELETE FROM public.church_branches WHERE organization_id = $1`, [org.id]);
+    await pool.query(`DELETE FROM public.church_organizations WHERE id = $1`, [org.id]);
+    await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [superId]);
+  }
+);
+
+test(
+  "blessboard legacy /admin/church/organizations/:id/edit redirects to canonical edit",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    await ensureChurchSchema(pool);
+    const seed = require("../src/seeds/seedChurchDemoOrganization");
+    const { organization } = await seed.seedChurchDemoOrganizationIfMissing(pool);
+    const app = createProductionLikeApp();
+    const login = await superAdminLoginAgent(app);
+    const res = await login.agent
+      .get(`/admin/church/organizations/${organization.id}/edit`)
+      .set("Host", "blessboard.com");
+    assert.equal(res.status, 302);
+    assert.equal(res.headers.location, `/admin/churches/${organization.id}/edit`);
+    await login.pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [login.userId]);
+  }
+);
+
+test("demo.blessboard.com/admin/churches/:id/edit returns 404", async () => {
+  const app = createProductionLikeApp();
+  const res = await request(app)
+    .get("/admin/churches/3/edit")
+    .set("Host", "demo.blessboard.com");
+  assert.equal(res.status, 404);
+  assert.match(res.text, /Church not found|not found/i);
+});
+
+test("getproapp.org/admin/church/organizations/:id/edit redirects to blessboard.com", async () => {
+  const prev = process.env.BASE_DOMAIN;
+  process.env.BASE_DOMAIN = "getproapp.org";
+  try {
+    const app = createProductionLikeApp();
+    const res = await request(app)
+      .get("/admin/church/organizations/3/edit")
+      .set("Host", "getproapp.org");
+    assert.equal(res.status, 302);
+    assert.equal(res.headers.location, "https://blessboard.com/admin/churches/3/edit");
+  } finally {
+    if (prev !== undefined) process.env.BASE_DOMAIN = prev;
+    else delete process.env.BASE_DOMAIN;
+  }
+});

@@ -271,8 +271,10 @@ After restart, check logs for:
 | `https://getproapp.org` | GetPro platform unchanged |
 | `https://blessboard.com/admin/login` | BlessBoard platform admin login |
 | `https://blessboard.com/admin/churches/new` | New church provisioning |
+| `https://blessboard.com/admin/churches/:id/edit` | Edit church details (org + primary branch subdomain/contact/registration) |
 | `https://blessboard.com/admin/diagnostics` | Production diagnostics (super admin) |
 | `https://getproapp.org/admin/church/organizations/new` | Redirects to blessboard.com/admin/churches/new |
+| `https://getproapp.org/admin/church/organizations/:id/edit` | Redirects to blessboard.com/admin/churches/:id/edit |
 | `https://unknownslug.blessboard.com` | Church not found (404) |
 
 ---
@@ -283,9 +285,10 @@ See [blessboard-church-onboarding.md](./blessboard-church-onboarding.md).
 
 Quick steps:
 
-1. `/admin/church/organizations/new`
+1. `https://blessboard.com/admin/churches/new`
 2. Set branch host slug (e.g. `kafuebaptist`)
 3. Provision → test `https://kafuebaptist.blessboard.com`
+4. Edit organization/subdomain/contact at `https://blessboard.com/admin/churches/:id/edit` (use branch website editor for public content)
 
 ---
 

@@ -17,8 +17,11 @@ const {
   updateBranchFormFromBody,
   branchToUpdateForm,
   validateUpdateOrganizationBody,
+  validateUpdateChurchOrganizationEditBody,
   updateOrganizationFormFromBody,
   organizationToUpdateForm,
+  churchOrganizationEditFormFromBody,
+  churchOrganizationEditFormFromRecords,
 } = require("../../church/platformProvisioningValidation");
 const { buildProvisionWelcomePack } = require("../../services/church/provisionWelcomeService");
 const { validatePlanUpdateBody } = require("../../church/churchPlanValidation");
@@ -95,7 +98,8 @@ const {
   FAILURE_REASONS,
 } = require("../../church/platformSecurityValidation");
 const { gatherChurchProductionDiagnostics } = require("../../services/church/churchProductionDiagnostics");
-const { organizationAdminDetailPath } = require("../../church/blessboardAdminPaths");
+const { organizationAdminDetailPath, organizationAdminEditPath } = require("../../church/blessboardAdminPaths");
+const { classifyPgError } = require("../../church/churchDbResilience");
 
 function formatDate(value) {
   if (!value) return "—";
@@ -148,6 +152,8 @@ function organizationStatusNotice(req) {
     updated: "Organization updated successfully.",
     slug_changed:
       "Organization updated. Organization slug changed — internal identity and display links are updated. Branch public URLs use branch host slugs and are unchanged.",
+    host_slug_changed:
+      "Church updated. Branch host slug changed — the public URL is now on the new subdomain. Configure DNS/SSL for the new host before sharing links.",
   };
   return map[notice] || null;
 }
@@ -527,26 +533,192 @@ async function renderBranchAdminDetail(req, res, extra) {
 
 async function renderOrganizationEdit(req, res, extra) {
   const organizationId = Number(req.params.organizationId);
-  const pool = getPgPool();
-  const organization = await platformProvisioningRepo.findOrganizationByIdForPlatform(pool, organizationId);
-  if (!organization) {
+  if (!Number.isFinite(organizationId) || organizationId <= 0) {
     return res.status(404).type("text").send("Organization not found.");
   }
-  const planSummary = await platformProvisioningRepo.getOrganizationPlanSummary(pool, organizationId);
-  const currentSlug = String(organization.slug || "").trim().toLowerCase();
-  return res.status(extra && extra.statusCode ? extra.statusCode : 200).render("admin/church/organization_edit", {
-    organization,
-    planSummary,
-    form: (extra && extra.form) || organizationToUpdateForm(organization),
-    error: (extra && extra.error) || null,
-    currentSlug,
-    formatDate,
-    churchPublicHost,
-    getPlanDisplay,
-    statusBadgeClass,
-    statusLabel,
-    activeNav: "church_platform_orgs",
-  });
+
+  try {
+    const pool = getPgPool();
+    const organization = await platformProvisioningRepo.findOrganizationByIdForPlatform(pool, organizationId);
+    if (!organization) {
+      return res.status(404).type("text").send("Organization not found.");
+    }
+    const branches = await platformProvisioningRepo.listBranchesForOrganization(pool, organizationId);
+    const primaryBranch = branches && branches.length > 0 ? branches[0] : null;
+    const planSummary = await platformProvisioningRepo.getOrganizationPlanSummary(pool, organizationId);
+    const currentSlug = String(organization.slug || "").trim().toLowerCase();
+    const currentHostSlug = primaryBranch
+      ? String(primaryBranch.host_slug || primaryBranch.slug || "")
+          .trim()
+          .toLowerCase()
+      : "";
+    const defaultForm = primaryBranch
+      ? churchOrganizationEditFormFromRecords(organization, primaryBranch)
+      : organizationToUpdateForm(organization);
+
+    return res.status(extra && extra.statusCode ? extra.statusCode : 200).render("admin/church/organization_edit", {
+      organization,
+      primaryBranch,
+      planSummary,
+      form: (extra && extra.form) || defaultForm,
+      error: (extra && extra.error) || null,
+      currentSlug,
+      currentHostSlug,
+      organizationDetailPath: organizationAdminDetailPath(req, organizationId),
+      organizationEditPath: organizationAdminEditPath(req, organizationId),
+      formatDate,
+      churchPublicHost,
+      getPlanDisplay,
+      statusBadgeClass,
+      statusLabel,
+      activeNav: "church_platform_orgs",
+    });
+  } catch (err) {
+    const classified = classifyPgError(err);
+    // eslint-disable-next-line no-console
+    console.error("[admin] organization edit render failed", {
+      organizationId,
+      kind: classified.kind,
+      message: classified.message,
+    });
+    return res.status(503).type("text").send("Database is temporarily unavailable. Please try again shortly.");
+  }
+}
+
+async function handleOrganizationEditPost(req, res, next) {
+  const organizationId = Number(req.params.organizationId);
+  if (!Number.isFinite(organizationId) || organizationId <= 0) {
+    return res.status(404).type("text").send("Organization not found.");
+  }
+
+  try {
+    const pool = getPgPool();
+    const organization = await platformProvisioningRepo.findOrganizationByIdForPlatform(pool, organizationId);
+    if (!organization) {
+      return res.status(404).type("text").send("Organization not found.");
+    }
+
+    const branches = await platformProvisioningRepo.listBranchesForOrganization(pool, organizationId);
+    const primaryBranch = branches && branches.length > 0 ? branches[0] : null;
+
+    const validation = primaryBranch
+      ? validateUpdateChurchOrganizationEditBody(req.body)
+      : (() => {
+          const orgValidation = validateUpdateOrganizationBody(req.body);
+          if (!orgValidation.ok) {
+            return { ok: false, error: orgValidation.error, form: orgValidation.form };
+          }
+          return {
+            ok: true,
+            form: orgValidation.form,
+            organizationData: orgValidation.data,
+            branchData: null,
+            memberRegistrationEnabled: null,
+          };
+        })();
+
+    if (!validation.ok) {
+      return renderOrganizationEdit(req, res, {
+        statusCode: 400,
+        error: validation.error,
+        form: validation.form,
+      });
+    }
+
+    const available = await platformProvisioningRepo.checkOrganizationSlugAvailableForUpdate(
+      pool,
+      validation.organizationData.slug,
+      organizationId
+    );
+    if (!available) {
+      return renderOrganizationEdit(req, res, {
+        statusCode: 400,
+        error: "Organization slug is already in use.",
+        form: validation.form,
+      });
+    }
+
+    if (primaryBranch && validation.branchData) {
+      const hostAvailable = await platformProvisioningRepo.checkBranchHostSlugAvailableForUpdate(
+        pool,
+        validation.branchData.host_slug,
+        primaryBranch.id
+      );
+      if (!hostAvailable) {
+        return renderOrganizationEdit(req, res, {
+          statusCode: 400,
+          error: "Branch host slug is already in use.",
+          form: validation.form,
+        });
+      }
+    }
+
+    const orgResult = await platformProvisioningRepo.updateOrganizationMetadataForPlatform(
+      pool,
+      organizationId,
+      validation.organizationData,
+      platformAdminId(req)
+    );
+
+    let branchResult = null;
+    if (primaryBranch && validation.branchData) {
+      branchResult = await platformProvisioningRepo.updateBranchMetadataForPlatform(
+        pool,
+        primaryBranch.id,
+        validation.branchData,
+        platformAdminId(req)
+      );
+
+      const desiredRegistration = validation.memberRegistrationEnabled === true;
+      const currentRegistration = primaryBranch.member_registration_enabled !== false;
+      if (desiredRegistration !== currentRegistration) {
+        await branchesRepo.updateBranchMemberRegistrationEnabled(
+          pool,
+          primaryBranch.id,
+          desiredRegistration,
+          platformAdminId(req)
+        );
+      }
+    }
+
+    let notice = "updated";
+    if (orgResult.slugChanged && branchResult && branchResult.hostSlugChanged) {
+      notice = "host_slug_changed";
+    } else if (orgResult.slugChanged) {
+      notice = "slug_changed";
+    } else if (branchResult && branchResult.hostSlugChanged) {
+      notice = "host_slug_changed";
+    }
+
+    return res.redirect(organizationAdminDetailPath(req, organizationId, `?notice=${notice}`));
+  } catch (err) {
+    if (err && err.code === "DUPLICATE_ORG_SLUG") {
+      return renderOrganizationEdit(req, res, {
+        statusCode: 400,
+        error: err.message,
+        form: churchOrganizationEditFormFromBody(req.body),
+      });
+    }
+    if (err && err.code === "DUPLICATE_HOST_SLUG") {
+      return renderOrganizationEdit(req, res, {
+        statusCode: 400,
+        error: err.message,
+        form: churchOrganizationEditFormFromBody(req.body),
+      });
+    }
+    const classified = classifyPgError(err);
+    // eslint-disable-next-line no-console
+    console.error("[admin] organization edit save failed", {
+      organizationId,
+      kind: classified.kind,
+      message: classified.message,
+    });
+    return renderOrganizationEdit(req, res, {
+      statusCode: 503,
+      error: "Database is temporarily unavailable. Please try again shortly.",
+      form: churchOrganizationEditFormFromBody(req.body),
+    });
+  }
 }
 
 async function loadOrganizationForAdminRoutes(pool, organizationId) {
@@ -1177,7 +1349,21 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
       if (!Number.isFinite(organizationId) || organizationId <= 0) {
         return res.status(404).type("text").send("Organization not found.");
       }
+      if (req.blessboardAdminMode) {
+        const original = String(req.originalUrl || req.url || "");
+        if (original.includes("/admin/church/organizations/")) {
+          return res.redirect(302, organizationAdminEditPath(req, organizationId));
+        }
+      }
       return renderOrganizationEdit(req, res);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.post("/church/organizations/:organizationId/edit", requireSuperAdmin, async (req, res, next) => {
+    try {
+      return handleOrganizationEditPost(req, res, next);
     } catch (err) {
       next(err);
     }
@@ -1185,56 +1371,9 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
 
   router.post("/church/organizations/:organizationId", requireSuperAdmin, async (req, res, next) => {
     try {
-      const organizationId = Number(req.params.organizationId);
-      if (!Number.isFinite(organizationId) || organizationId <= 0) {
-        return res.status(404).type("text").send("Organization not found.");
-      }
-      const pool = getPgPool();
-      const organization = await platformProvisioningRepo.findOrganizationByIdForPlatform(pool, organizationId);
-      if (!organization) {
-        return res.status(404).type("text").send("Organization not found.");
-      }
-
-      const validation = validateUpdateOrganizationBody(req.body);
-      if (!validation.ok) {
-        return renderOrganizationEdit(req, res, {
-          statusCode: 400,
-          error: validation.error,
-          form: validation.form,
-        });
-      }
-
-      const available = await platformProvisioningRepo.checkOrganizationSlugAvailableForUpdate(
-        pool,
-        validation.data.slug,
-        organizationId
-      );
-      if (!available) {
-        return renderOrganizationEdit(req, res, {
-          statusCode: 400,
-          error: "Organization slug is already in use.",
-          form: validation.form,
-        });
-      }
-
-      const result = await platformProvisioningRepo.updateOrganizationMetadataForPlatform(
-        pool,
-        organizationId,
-        validation.data,
-        platformAdminId(req)
-      );
-
-      const notice = result.slugChanged ? "slug_changed" : "updated";
-      return res.redirect(`/admin/church/organizations/${organizationId}?notice=${notice}`);
+      return handleOrganizationEditPost(req, res, next);
     } catch (err) {
-      if (err && err.code === "DUPLICATE_ORG_SLUG") {
-        return renderOrganizationEdit(req, res, {
-          statusCode: 400,
-          error: err.message,
-          form: updateOrganizationFormFromBody(req.body),
-        });
-      }
-      return next(err);
+      next(err);
     }
   });
 

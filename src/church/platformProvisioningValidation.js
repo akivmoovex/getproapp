@@ -406,6 +406,59 @@ function validateUpdateOrganizationBody(body) {
   };
 }
 
+function churchOrganizationEditFormFromBody(body) {
+  const orgForm = updateOrganizationFormFromBody(body);
+  const branchForm = updateBranchFormFromBody(body);
+  return {
+    ...orgForm,
+    ...branchForm,
+    member_registration_enabled: parseBooleanField(
+      body && body.member_registration_enabled,
+      true
+    ),
+  };
+}
+
+function churchOrganizationEditFormFromRecords(organization, branch) {
+  const orgForm = organizationToUpdateForm(organization);
+  const branchForm = branchToUpdateForm(branch);
+  return {
+    ...orgForm,
+    ...branchForm,
+    member_registration_enabled: branch ? branch.member_registration_enabled !== false : true,
+  };
+}
+
+function validateUpdateChurchOrganizationEditBody(body) {
+  const orgValidation = validateUpdateOrganizationBody(body);
+  if (!orgValidation.ok) {
+    return {
+      ok: false,
+      error: orgValidation.error,
+      form: churchOrganizationEditFormFromBody(body),
+    };
+  }
+
+  const branchValidation = validateUpdateBranchBody(body);
+  if (!branchValidation.ok) {
+    return {
+      ok: false,
+      error: branchValidation.error,
+      form: churchOrganizationEditFormFromBody(body),
+    };
+  }
+
+  const form = churchOrganizationEditFormFromBody(body);
+
+  return {
+    ok: true,
+    form,
+    organizationData: orgValidation.data,
+    branchData: branchValidation.data,
+    memberRegistrationEnabled: form.member_registration_enabled,
+  };
+}
+
 function validateAddBranchBody(body, organization) {
   const form = addBranchFormFromBody(body);
   if (!form.branch_name) {
@@ -463,10 +516,13 @@ module.exports = {
   validateAddBranchBody,
   validateUpdateBranchBody,
   validateUpdateOrganizationBody,
+  validateUpdateChurchOrganizationEditBody,
   updateBranchFormFromBody,
   updateOrganizationFormFromBody,
   branchToUpdateForm,
   organizationToUpdateForm,
+  churchOrganizationEditFormFromBody,
+  churchOrganizationEditFormFromRecords,
   addBranchFormFromBody,
   formFromBody,
   validateBranchHostSlugField,

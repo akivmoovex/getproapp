@@ -218,8 +218,10 @@
                       <td><%= org.status %></td>
                       <td><%= formatDate(org.created_at) %></td>
                       <td>
-                        <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + org.id, label: 'View' }) %>
-                        <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + org.id + '/edit', label: 'Edit' }) %>
+                        <% var _viewHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + org.id : '/admin/church/organizations/' + org.id; %>
+                        <% var _editHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + org.id + '/edit' : '/admin/church/organizations/' + org.id + '/edit'; %>
+                        <%- include('../../partials/components/button', { variant: 'default', href: _viewHref, label: 'View' }) %>
+                        <%- include('../../partials/components/button', { variant: 'default', href: _editHref, label: 'Edit' }) %>
                       </td>
                     </tr>
                   <% }); %>

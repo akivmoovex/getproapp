@@ -59,6 +59,10 @@ Provision first via `https://blessboard.com/admin/churches/new` (see [blessboard
 | 18 | https://blessboard.com/admin/login | 302 → login or 200 dashboard | BlessBoard Admin, Powered by GetPro | Wrong product | Must be blessboard.com apex, not church subdomain |
 | 19 | https://blessboard.com/admin/diagnostics | 302 or 200 | “BlessBoard production diagnostics”, no secrets | Exposes DATABASE_URL | Super admin only; never on getproapp.org |
 | 20 | https://getproapp.org/admin/church/organizations/new | 302 | Redirect to blessboard.com/admin/churches/new | Cannot GET /admin/church/... | Deploy latest code to blessboard.com Node app |
+| 21 | https://blessboard.com/admin/churches/:id/edit | 200 (super admin) | Edit church details, current public URLs, member registration toggle | 404 on blessboard apex | Super admin login; use demo org id from `/admin/churches` |
+| 22 | https://blessboard.com/admin/church/organizations/:id/edit | 302 | Redirect to `/admin/churches/:id/edit` | Shows legacy URL without redirect | Deploy latest blessboard.com code |
+| 23 | https://demo.blessboard.com/admin/churches/:id/edit | 404 | Platform admin blocked on branch hosts | Exposes edit form on subdomain | Host guard — apex only |
+| 24 | https://getproapp.org/admin/church/organizations/:id/edit | 302 | Redirect to blessboard.com/admin/churches/:id/edit | 404 on getpro | Deploy latest code to both Node apps |
 
 ---
 
@@ -74,7 +78,7 @@ Provision first via `https://blessboard.com/admin/churches/new` (see [blessboard
 ## Automated subset (local / CI)
 
 ```bash
-npm test -- tests/church-pilot-launch.test.js tests/church-operational-readiness.test.js tests/church-onboarding.test.js tests/church-blessboard-subdomains.test.js
+npm test -- tests/church-pilot-launch.test.js tests/church-operational-readiness.test.js tests/church-onboarding.test.js tests/church-blessboard-subdomains.test.js tests/church-blessboard-admin-host.test.js
 ```
 
 ---

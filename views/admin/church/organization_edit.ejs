@@ -4,23 +4,30 @@
     <%- include('../../partials/brand_resolve') %>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Edit organization | <%= organization.name %> | <%= _bn %> Admin</title>
+    <% var _pageTitle = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? 'Edit church details' : 'Edit organization'; %>
+    <title><%= _pageTitle %> | <%= organization.name %> | <%= _bn %> Admin</title>
     <link rel="stylesheet" href="<%= asset('styles') %>" />
   </head>
   <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../../partials/admin_nav', { navTitle: 'Edit organization', activeNav: activeNav || 'church_platform_orgs' }) %>
+    <%- include('../../partials/admin_nav', { navTitle: _pageTitle, activeNav: activeNav || 'church_platform_orgs' }) %>
     <main class="admin-main">
       <div class="container admin-main__pad">
+        <% var orgId = organization.id; %>
+        <% var detailHref = typeof organizationDetailPath !== 'undefined' ? organizationDetailPath : ((typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + orgId : '/admin/church/organizations/' + orgId); %>
+        <% var editHref = typeof organizationEditPath !== 'undefined' ? organizationEditPath : ((typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + orgId + '/edit' : '/admin/church/organizations/' + orgId + '/edit'); %>
         <header class="admin-dashboard__header">
           <div>
-            <h1 class="admin-dashboard__title">Edit organization</h1>
+            <h1 class="admin-dashboard__title"><%= _pageTitle %></h1>
             <p class="admin-dashboard__subtitle muted">
-              <a href="/admin/church/organizations/<%= organization.id %>"><%= organization.name %></a>
+              <a href="<%= detailHref %>"><%= organization.name %></a>
               · <%- include('../../partials/admin/church_status_badge', { status: organization.status }) %>
+              <% if (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode && typeof blessboardPoweredBy !== 'undefined') { %>
+                · <%= blessboardPoweredBy %>
+              <% } %>
             </p>
           </div>
           <div class="admin-toolbar">
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'Organization detail' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: detailHref, label: 'Church detail' }) %>
           </div>
         </header>
 
@@ -30,27 +37,44 @@
 
         <% var f = typeof form !== 'undefined' && form ? form : {}; %>
         <% var currentSlugVal = typeof currentSlug !== 'undefined' ? currentSlug : (organization.slug || ''); %>
+        <% var currentHost = typeof currentHostSlug !== 'undefined' ? currentHostSlug : ''; %>
+        <% if (typeof primaryBranch !== 'undefined' && primaryBranch && !currentHost) { currentHost = primaryBranch.host_slug || primaryBranch.slug || ''; } %>
+
+        <% if (typeof primaryBranch !== 'undefined' && primaryBranch && currentHost) { %>
+          <section class="card card--mb-xl" style="padding:1rem;">
+            <h2 class="section-title section-title--flush">Current URLs</h2>
+            <dl class="admin-dl">
+              <dt>Public site</dt>
+              <dd><code>https://<%= churchPublicHost(currentHost) %>/</code></dd>
+              <dt>Branch admin login</dt>
+              <dd><code>https://<%= churchPublicHost(currentHost) %>/branch/login</code></dd>
+              <dt>Member registration</dt>
+              <dd><code>https://<%= churchPublicHost(currentHost) %>/register</code></dd>
+            </dl>
+            <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">
+              Use the branch website editor for public site content. Use this form for organization, subdomain, contact, and registration settings.
+            </p>
+          </section>
+        <% } %>
+
         <section class="card card--mb-xl" style="padding:1rem;">
           <dl class="admin-dl">
             <dt>Current organization slug</dt>
             <dd><code><%= currentSlugVal %></code></dd>
             <dt>Status</dt>
-            <dd><%- include('../../partials/admin/church_status_badge', { status: organization.status }) %> <span class="muted">(managed on organization detail)</span></dd>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: organization.status }) %> <span class="muted">(managed on church detail)</span></dd>
             <% if (typeof planSummary !== 'undefined' && planSummary) { %>
               <dt>Plan</dt>
-              <dd><strong><%= planSummary.planDisplay.label %></strong> (<%= planSummary.planCode %>) · <a href="/admin/church/organizations/<%= organization.id %>/plan">Change plan</a></dd>
+              <dd><strong><%= planSummary.planDisplay.label %></strong> (<%= planSummary.planCode %>) · <a href="<%= detailHref %>/plan">Change plan</a></dd>
             <% } %>
           </dl>
-          <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">
-            Branch public URLs are based on branch host slugs, not the organization slug.
-          </p>
         </section>
 
-        <form method="post" action="/admin/church/organizations/<%= organization.id %>" class="card card--mb-xl" style="padding:1.25rem;" id="organization-edit-form">
-          <h2 class="section-title section-title--flush">Organization metadata</h2>
+        <form method="post" action="<%= editHref %>" class="card card--mb-xl" style="padding:1.25rem;" id="organization-edit-form">
+          <h2 class="section-title section-title--flush">Organization</h2>
           <div class="admin-form-grid">
             <div class="input-field">
-              <label class="input-field__label" for="organization_name">Organization name *</label>
+              <label class="input-field__label" for="organization_name">Church / organization name *</label>
               <input id="organization_name" class="input-field__control" name="organization_name" required value="<%= f.organization_name || '' %>" />
             </div>
             <div class="input-field">
@@ -86,9 +110,50 @@
             Changing organization slug affects internal organization identity and display links, but branch public URLs use branch host slugs.
           </div>
 
+          <% if (typeof primaryBranch !== 'undefined' && primaryBranch) { %>
+            <h2 class="section-title" style="margin-top:1.75rem;">Primary branch</h2>
+            <div class="admin-form-grid">
+              <div class="input-field">
+                <label class="input-field__label" for="branch_name">Branch display name *</label>
+                <input id="branch_name" class="input-field__control" name="branch_name" required value="<%= f.branch_name || '' %>" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="branch_host_slug">Host slug (subdomain) *</label>
+                <input id="branch_host_slug" class="input-field__control" name="branch_host_slug" required pattern="[a-z0-9][a-z0-9-]{0,62}" value="<%= f.branch_host_slug || '' %>" data-current="<%= currentHost %>" />
+                <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">
+                  New public URL preview: <strong id="host-preview">https://<%= f.branch_host_slug ? churchPublicHost(f.branch_host_slug) : churchPublicHost(currentHost) %>/</strong>
+                </p>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="pastor_name">Pastor name</label>
+                <input id="pastor_name" class="input-field__control" name="pastor_name" value="<%= f.pastor_name || '' %>" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="contact_phone">Branch contact phone</label>
+                <input id="contact_phone" class="input-field__control" name="contact_phone" value="<%= f.contact_phone || '' %>" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="contact_email">Branch contact email</label>
+                <input id="contact_email" class="input-field__control" name="contact_email" type="email" value="<%= f.contact_email || '' %>" />
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="member_registration_enabled">Member registration</label>
+                <label class="input-field__checkbox" style="display:flex;align-items:center;gap:0.5rem;margin-top:0.35rem;">
+                  <input id="member_registration_enabled" type="checkbox" name="member_registration_enabled" value="1" <%= f.member_registration_enabled !== false ? 'checked' : '' %> />
+                  <span>Allow public member registration at <code>/register</code></span>
+                </label>
+              </div>
+            </div>
+
+            <div id="host-slug-warning" class="flash flash--info" role="status" style="display:none;margin-top:1rem;">
+              Changing host slug changes the branch public URL (for example, demo → demo2 becomes <strong>https://demo2.blessboard.com</strong>).
+              Configure DNS and SSL for the new subdomain before sharing links. Old URLs will not redirect automatically.
+            </div>
+          <% } %>
+
           <div class="admin-toolbar" style="margin-top:1.5rem;">
-            <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save organization' }) %>
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'Cancel' }) %>
+            <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save changes' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: detailHref, label: 'Cancel' }) %>
           </div>
         </form>
       </div>
@@ -99,15 +164,32 @@
         var preview = document.getElementById("slug-preview");
         var warning = document.getElementById("slug-change-warning");
         var current = slugInput ? String(slugInput.getAttribute("data-current") || "").trim().toLowerCase() : "";
-        function syncPreview() {
+        function syncSlugPreview() {
           var slug = slugInput ? slugInput.value.trim().toLowerCase() : "";
           if (preview) preview.textContent = slug || "—";
           if (warning && slugInput) {
             warning.style.display = slug && current && slug !== current ? "block" : "none";
           }
         }
-        if (slugInput) slugInput.addEventListener("input", syncPreview);
-        syncPreview();
+        if (slugInput) slugInput.addEventListener("input", syncSlugPreview);
+        syncSlugPreview();
+
+        var branchSlug = document.getElementById("branch_host_slug");
+        var hostPreview = document.getElementById("host-preview");
+        var hostWarning = document.getElementById("host-slug-warning");
+        var currentHost = branchSlug ? String(branchSlug.getAttribute("data-current") || "").trim().toLowerCase() : "";
+        function syncHostPreview() {
+          if (!branchSlug) return;
+          var slug = branchSlug.value.trim().toLowerCase();
+          if (hostPreview) {
+            hostPreview.textContent = slug ? "https://" + slug + ".blessboard.com/" : "—";
+          }
+          if (hostWarning) {
+            hostWarning.style.display = slug && currentHost && slug !== currentHost ? "block" : "none";
+          }
+        }
+        if (branchSlug) branchSlug.addEventListener("input", syncHostPreview);
+        syncHostPreview();
       })();
     </script>
   </body>

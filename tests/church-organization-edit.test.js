@@ -54,12 +54,6 @@ async function adminLoginAgent(app, username, password) {
   return agent;
 }
 
-async function cleanupOrg(pool, orgId) {
-  await pool.query(`DELETE FROM public.church_audit_logs WHERE organization_id = $1`, [orgId]);
-  await pool.query(`DELETE FROM public.church_branches WHERE organization_id = $1`, [orgId]);
-  await pool.query(`DELETE FROM public.church_organizations WHERE id = $1`, [orgId]);
-}
-
 async function seedOrgWithBranch(pool, suffix, opts = {}) {
   const oldOrgSlug = `oldorg${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28);
   const hostSlug = `branchhost${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28);
@@ -91,6 +85,23 @@ async function seedOrgWithBranch(pool, suffix, opts = {}) {
   });
   const refreshed = await organizationsRepo.findOrganizationById(pool, org.id);
   return { org: refreshed, branch, oldOrgSlug, hostSlug };
+}
+
+function branchEditPayload(branch, hostSlug) {
+  return {
+    branch_name: branch.name || "Main Branch",
+    branch_host_slug: hostSlug,
+    pastor_name: branch.pastor_name || "",
+    contact_phone: branch.contact_phone || "",
+    contact_email: branch.contact_email || "",
+    member_registration_enabled: "1",
+  };
+}
+
+async function cleanupOrg(pool, orgId) {
+  await pool.query(`DELETE FROM public.church_audit_logs WHERE organization_id = $1`, [orgId]);
+  await pool.query(`DELETE FROM public.church_branches WHERE organization_id = $1`, [orgId]);
+  await pool.query(`DELETE FROM public.church_organizations WHERE id = $1`, [orgId]);
 }
 
 test("reserved organization slug rejected on update validation", () => {
@@ -171,6 +182,7 @@ test(
       organization_name: org.name,
       organization_slug: other.oldOrgSlug,
       country: "Zambia",
+      ...branchEditPayload(branch, hostSlug),
     });
     assert.equal(dupSlug.status, 400);
 
@@ -178,6 +190,7 @@ test(
       organization_name: org.name,
       organization_slug: "admin",
       country: "Zambia",
+      ...branchEditPayload(branch, hostSlug),
     });
     assert.equal(reserved.status, 400);
 
@@ -191,6 +204,7 @@ test(
       primary_contact_email: "john@example.com",
       plan_code: "pro",
       status: "active",
+      ...branchEditPayload(branch, hostSlug),
     });
     assert.equal(updated.status, 302);
     assert.match(updated.headers.location, /notice=slug_changed/);
@@ -236,6 +250,7 @@ test(
       organization_slug: newOrgSlug,
       country: "Zambia",
       primary_contact_name: "Suspended Contact",
+      ...branchEditPayload(branch, hostSlug),
     });
     assert.equal(suspendedEdit.status, 302);
     const stillSuspended = await organizationsRepo.findOrganizationById(pool, org.id);

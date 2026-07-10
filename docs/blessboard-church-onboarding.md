@@ -56,6 +56,30 @@ On success you are redirected to the organization detail page with:
 
 ---
 
+## How to edit church details (after onboarding)
+
+Platform super admins edit organization, subdomain, contact, and registration settings at:
+
+| Route | Purpose |
+|-------|---------|
+| `https://blessboard.com/admin/churches/:id/edit` | Edit church / organization metadata and primary branch settings |
+| `/admin/church/organizations/:id/edit` | Legacy alias — redirects to `/admin/churches/:id/edit` on blessboard.com |
+
+Use **church detail edit** for:
+
+- Church / organization name and internal slug
+- Primary branch display name and **host slug** (subdomain)
+- City, country, contact email/phone
+- Member registration enabled/disabled
+
+Use the **branch website editor** (`/branch/website-editor` on the branch host) for public site content (about, leadership, homepage copy, events, sermons).
+
+> Changing **host slug** changes the public URL (for example `demo` → `demo2` becomes `https://demo2.blessboard.com`). Configure DNS/SSL for the new subdomain before sharing links.
+
+Legacy URLs on `getproapp.org/admin/church/organizations/:id/edit` redirect to `https://blessboard.com/admin/churches/:id/edit`.
+
+---
+
 ## What gets created (transactional)
 
 In one database transaction:

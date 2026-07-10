@@ -17,7 +17,9 @@
             <p class="admin-dashboard__subtitle muted">Organization provisioning summary</p>
           </div>
           <div class="admin-toolbar">
-            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/organizations/' + organization.id + '/edit', label: 'Edit organization' }) %>
+            <% var _detailHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + organization.id : '/admin/church/organizations/' + organization.id; %>
+            <% var _editHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + organization.id + '/edit' : '/admin/church/organizations/' + organization.id + '/edit'; %>
+            <%- include('../../partials/components/button', { variant: 'primary', href: _editHref, label: (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? 'Edit church details' : 'Edit organization' }) %>
             <% if (typeof planSummary !== 'undefined' && planSummary && !planSummary.branchLimitReached) { %>
               <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/branches/new', label: 'Add branch' }) %>
             <% } else if (typeof planSummary !== 'undefined' && planSummary && planSummary.branchLimitReached) { %>
@@ -167,7 +169,7 @@
             <dt>Created</dt><dd><%= formatDate(organization.created_at) %></dd>
           </dl>
           <p style="margin-top:0.75rem;">
-            <a href="/admin/church/organizations/<%= organization.id %>/edit">Edit organization metadata</a>
+            <a href="<%= (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + organization.id + '/edit' : '/admin/church/organizations/' + organization.id + '/edit' %>">Edit church details</a>
           </p>
         </section>
 
