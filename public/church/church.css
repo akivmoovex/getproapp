@@ -2557,6 +2557,8 @@ a.church-branch-stat-card--link:hover {
   padding: 12px;
   border-radius: var(--church-radius-2xl);
   background: var(--church-surface-container-low);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .church-member-announcement-card__icon {
@@ -9278,6 +9280,8 @@ a.church-branch-stat-card--link:hover {
   margin: 4px 0 0;
   color: var(--church-muted);
   font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .church-member-events-layout {

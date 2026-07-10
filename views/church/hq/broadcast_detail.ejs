@@ -3,7 +3,7 @@
         <div>
           <a class="church-branch-back" href="/hq/broadcasts">&larr; Back to broadcasts</a>
           <h1 class="church-branch-topbar__title"><%= broadcast.title %></h1>
-          <p class="church-branch-topbar__subtitle"><%= broadcast.category %> · <%= broadcastAudienceLabel(broadcast.audience) %></p>
+          <p class="church-branch-topbar__subtitle"><%= broadcast.category %> · <%= broadcastAudienceLabel(broadcast.audience) %> · <%= priorityLabel(broadcast.priority || 'normal') %></p>
         </div>
         <span class="church-status-chip church-status-chip--<%= broadcast.status === 'published' ? 'verified' : 'pending' %>"><%= broadcastStatusLabel(broadcast.status) %></span>
       </header>
@@ -16,8 +16,27 @@
       <section class="church-branch-panel">
         <div class="church-branch-review-note">
           <p><%= broadcast.body %></p>
+          <% if (broadcast.action_url) { %>
+          <p><a class="church-btn church-btn--outline church-btn--sm" href="<%= broadcast.action_url %>" target="_blank" rel="noopener noreferrer"><%= broadcast.action_label || 'Open link' %></a></p>
+          <% } %>
+          <% if ((attachments || []).length) { %>
+          <ul class="church-branch-inline-list">
+            <% attachments.forEach(function (file) { %>
+            <li>
+              <a href="/hq/broadcasts/<%= broadcast.id %>/attachments/<%= file.id %>/download"><%= file.original_filename %></a>
+              <% if (typeof file.download_count !== 'undefined') { %>
+              <span class="church-branch-panel__hint">(<%= file.download_count %> member download<%= file.download_count === 1 ? '' : 's' %>)</span>
+              <% } %>
+            </li>
+            <% }); %>
+          </ul>
+          <% } %>
         </div>
         <dl class="church-branch-dl">
+          <div><dt>Priority</dt><dd><%= priorityLabel(broadcast.priority || 'normal') %></dd></div>
+          <div><dt>Pinned</dt><dd><%= broadcast.is_pinned ? 'Yes' : 'No' %></dd></div>
+          <div><dt>Featured</dt><dd><%= broadcast.is_featured ? 'Yes' : 'No' %></dd></div>
+          <div><dt>Featured until</dt><dd><%= broadcast.featured_until ? new Date(broadcast.featured_until).toLocaleString('en-GB') : '—' %></dd></div>
           <div><dt>Audience</dt><dd><%= broadcastAudienceLabel(broadcast.audience) %></dd></div>
           <div><dt>Target scope</dt><dd><%= targetScopeLabel(broadcast.target_scope) %></dd></div>
           <div><dt>Target branches</dt>
@@ -41,15 +60,102 @@
           <div><dt>Last updated</dt><dd><%= new Date(broadcast.updated_at).toLocaleString('en-GB') %></dd></div>
         </dl>
       </section>
+      <% if (analytics) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">In-app delivery analytics</h2>
+        <p class="church-branch-panel__hint">
+          These figures reflect in-app targeting and reading only. They do not mean the broadcast was emailed, texted, or otherwise externally delivered.
+          Audience counts are a <strong>current estimate</strong> based on today’s membership and roles, which can change over time.
+        </p>
+        <dl class="church-branch-dl">
+          <div>
+            <dt>Current estimated audience</dt>
+            <dd><%= analytics.current_estimated_audience %> <%= analytics.recipient_label %> · <%= analytics.branch_count %> branch(es)</dd>
+          </div>
+          <div>
+            <dt>Seen</dt>
+            <dd><%= analytics.seen_count %> unique member<%= analytics.seen_count === 1 ? '' : 's' %></dd>
+          </div>
+          <div>
+            <dt>Read</dt>
+            <dd><%= analytics.read_count %> unique member<%= analytics.read_count === 1 ? '' : 's' %></dd>
+          </div>
+          <div>
+            <dt>Unread (estimated)</dt>
+            <dd>
+              <% if (analytics.audience_is_person_based && analytics.unread_estimated != null) { %>
+              <%= analytics.unread_estimated %>
+              <% } else { %>
+              —
+              <% } %>
+            </dd>
+          </div>
+          <div>
+            <dt>Read percentage</dt>
+            <dd>
+              <% if (analytics.read_percentage != null) { %>
+              <%= analytics.read_percentage %>%
+              <% } else { %>
+              —
+              <% } %>
+            </dd>
+          </div>
+          <% if (analytics.tracks_attachment_downloads) { %>
+          <div>
+            <dt>Attachment downloads</dt>
+            <dd><%= analytics.attachment_download_count %> (member downloads)</dd>
+          </div>
+          <% } %>
+        </dl>
+        <details class="church-branch-panel__hint" style="margin-top:0.75rem">
+          <summary>Metric definitions</summary>
+          <ul>
+            <li><strong>Current estimated audience</strong> — people (or public sites) who currently match this broadcast’s audience and branch targeting. Not a historical snapshot of who was eligible at publish time.</li>
+            <li><strong>Seen</strong> — unique members for whom this broadcast appeared in the member feed (or was opened), per in-app receipt tracking.</li>
+            <li><strong>Read</strong> — unique members who opened the announcement detail (or were otherwise marked read).</li>
+            <li><strong>Unread (estimated)</strong> — current estimated audience minus read, never below zero. Not available for public-site audience estimates.</li>
+            <li><strong>Read percentage</strong> — read ÷ current estimated audience.</li>
+            <li><strong>Attachment downloads</strong> — times members downloaded an attachment through the member portal. HQ admin downloads are not counted.</li>
+          </ul>
+        </details>
+        <% if ((analytics.by_branch || []).length) { %>
+        <h3 class="church-branch-panel__title" style="margin-top:1.25rem;font-size:1rem">Breakdown by branch</h3>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Current estimated audience</th>
+                <th>Seen</th>
+                <th>Read</th>
+                <th>Unread (est.)</th>
+                <th>Read %</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% analytics.by_branch.forEach(function (row) { %>
+              <tr>
+                <td><%= row.branch_name %></td>
+                <td><%= row.current_estimated_audience %></td>
+                <td><%= row.seen_count %></td>
+                <td><%= row.read_count %></td>
+                <td><%= row.unread_estimated != null ? row.unread_estimated : '—' %></td>
+                <td><%= row.read_percentage != null ? row.read_percentage + '%' : '—' %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+      <% } %>
       <% if (broadcast.status !== 'archived') { %>
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Actions</h2>
         <div class="church-hq-review-actions">
           <a class="church-btn church-btn--outline" href="/hq/broadcasts/<%= broadcast.id %>/edit">Edit</a>
           <% if (broadcast.status !== 'published') { %>
-          <form method="post" action="/hq/broadcasts/<%= broadcast.id %>/publish">
-            <button class="church-btn church-btn--primary" type="submit">Publish</button>
-          </form>
+          <a class="church-btn church-btn--primary" href="/hq/broadcasts/<%= broadcast.id %>/confirm-publish">Review &amp; publish</a>
           <% } %>
           <form method="post" action="/hq/broadcasts/<%= broadcast.id %>/archive">
             <button class="church-btn church-btn--outline" type="submit">Archive</button>

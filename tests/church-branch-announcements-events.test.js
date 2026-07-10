@@ -48,6 +48,8 @@ function makeApp(ctx, isChurchHost = true) {
 
 async function cleanup(pool, branchIds, orgIds) {
   for (const branchId of branchIds) {
+    await pool.query(`DELETE FROM public.church_feed_item_reads WHERE branch_id = $1`, [branchId]);
+    await pool.query(`DELETE FROM public.church_announcement_attachments WHERE branch_id = $1`, [branchId]);
     await pool.query(`DELETE FROM public.church_audit_logs WHERE branch_id = $1`, [branchId]);
     await pool.query(`DELETE FROM public.church_events WHERE branch_id = $1`, [branchId]);
     await pool.query(`DELETE FROM public.church_announcements WHERE branch_id = $1`, [branchId]);

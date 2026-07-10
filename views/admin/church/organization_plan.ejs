@@ -37,10 +37,6 @@
               <p class="admin-stat__label">Verified members</p>
               <p class="admin-stat__value"><%= planSummary.membersDisplay %></p>
             </div>
-            <div class="admin-stat">
-              <p class="admin-stat__label">Storage (placeholder)</p>
-              <p class="admin-stat__value"><%= planSummary.storageDisplay %></p>
-            </div>
           </div>
           <% if ((planSummary.warnings || []).length > 0) { %>
             <ul style="margin-top:1rem;">

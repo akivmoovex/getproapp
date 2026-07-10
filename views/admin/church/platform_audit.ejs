@@ -1,0 +1,94 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Audit log', activeNav: activeNav || 'church_platform_audit', pageTitle: 'Audit log' }) %>
+<% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Platform audit log</h1>
+            <p class="admin-dashboard__subtitle muted">In-app church activity across organizations. Passwords, tokens, and secrets are not stored in these events.</p>
+          </div>
+        </header>
+
+        <form method="get" action="/admin/church/audit" class="admin-filter-form card card--mb-xl" style="padding:1rem;">
+          <div class="input-field">
+            <label class="input-field__label" for="organization_id">Organization</label>
+            <select id="organization_id" class="input-field__control" name="organization_id">
+              <option value="">All organizations</option>
+              <% (organizations || []).forEach(function (o) { %>
+              <option value="<%= o.id %>" <%= Number(f.organizationId) === Number(o.id) ? 'selected' : '' %>><%= o.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="q">Search</label>
+            <input id="q" class="input-field__control" name="q" type="search" value="<%= f.q || '' %>" placeholder="Action, actor, target…"/>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="action_group">Action group</label>
+            <select id="action_group" class="input-field__control" name="action_group">
+              <% (auditActionGroups || []).forEach(function (g) { %>
+              <option value="<%= g.id %>" <%= f.actionGroup === g.id ? 'selected' : '' %>><%= g.label %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="actor_type">Actor type</label>
+            <select id="actor_type" class="input-field__control" name="actor_type">
+              <option value="">All</option>
+              <% (auditActorTypes || []).forEach(function (t) { %>
+              <option value="<%= t %>" <%= f.actorType === t ? 'selected' : '' %>><%= actorTypeLabel(t) %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="date_from">From</label>
+            <input id="date_from" class="input-field__control" name="date_from" type="date" value="<%= f.dateFrom || '' %>"/>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="date_to">To</label>
+            <input id="date_to" class="input-field__control" name="date_to" type="date" value="<%= f.dateTo || '' %>"/>
+          </div>
+          <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Apply' }) %>
+          <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/audit', label: 'Clear' }) %>
+        </form>
+
+        <section class="card card--mb-xl">
+          <p class="muted" style="padding:0.75rem 1rem;"><%= total %> event(s) · page <%= f.page || 1 %> of <%= totalPages %></p>
+          <% if (!(logs || []).length) { %>
+          <p class="muted" style="padding:1rem;">No audit events match these filters.</p>
+          <% } else { %>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Organization</th>
+                  <th>Actor</th>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th>Summary</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% logs.forEach(function (log) { %>
+                <tr>
+                  <td><%= new Date(log.created_at).toLocaleString('en-GB') %></td>
+                  <td style="overflow-wrap:anywhere;"><%= log.organization_name || '—' %></td>
+                  <td><%= actorTypeLabel(log.actor_type) %><br/><span class="muted"><%= actorDisplayFromRow(log) %></span></td>
+                  <td><%= actionLabel(log.action) %></td>
+                  <td><%= targetTypeLabel(log.entity_type) %><br/><span class="muted"><%= targetLabelFromRow(log) %></span></td>
+                  <td style="overflow-wrap:anywhere;"><%= auditSummary(log) %></td>
+                  <td><%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/audit/' + log.id, label: 'View' }) %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <% if (totalPages > 1) { %>
+          <div class="admin-toolbar" style="padding:1rem;">
+            <% if (prevUrl) { %><%- include('../../partials/components/button', { variant: 'default', href: prevUrl, label: 'Previous' }) %><% } %>
+            <% if (nextUrl) { %><%- include('../../partials/components/button', { variant: 'default', href: nextUrl, label: 'Next' }) %><% } %>
+          </div>
+          <% } %>
+          <% } %>
+        </section>
+<%- include('../../partials/platform_admin_shell_end') %>

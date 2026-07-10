@@ -1,0 +1,109 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Church users', activeNav: activeNav || 'church_platform_users', pageTitle: 'Church users' }) %>
+<% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Church users</h1>
+            <p class="admin-dashboard__subtitle muted">HQ and branch administrators across organizations. Passwords and reset tokens are never shown.</p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/dashboard', label: 'Dashboard' }) %>
+          </div>
+        </header>
+
+        <form method="get" action="/admin/church/users" class="admin-filter-form card card--mb-xl" style="padding:1rem;">
+          <div class="input-field">
+            <label class="input-field__label" for="q">Search</label>
+            <input id="q" class="input-field__control" name="q" type="search" value="<%= f.q || '' %>" placeholder="Name, email, phone, organization…"/>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="account_type">Account type</label>
+            <select id="account_type" class="input-field__control" name="account_type">
+              <option value="all" <%= !f.account_type || f.account_type === 'all' ? 'selected' : '' %>>All</option>
+              <option value="hq_admin" <%= f.account_type === 'hq_admin' ? 'selected' : '' %>>HQ admin</option>
+              <option value="branch_admin" <%= f.account_type === 'branch_admin' ? 'selected' : '' %>>Branch admin</option>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="status">Status</label>
+            <select id="status" class="input-field__control" name="status">
+              <option value="all" <%= !f.status || f.status === 'all' ? 'selected' : '' %>>All</option>
+              <option value="active" <%= f.status === 'active' ? 'selected' : '' %>>Active</option>
+              <option value="inactive" <%= f.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+              <option value="suspended" <%= f.status === 'suspended' ? 'selected' : '' %>>Suspended</option>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="organization_id">Organization</label>
+            <select id="organization_id" class="input-field__control" name="organization_id">
+              <option value="">All organizations</option>
+              <% (organizations || []).forEach(function (o) { %>
+              <option value="<%= o.id %>" <%= Number(f.organization_id) === Number(o.id) ? 'selected' : '' %>><%= o.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="role">Role</label>
+            <select id="role" class="input-field__control" name="role">
+              <option value="">All roles</option>
+              <% (roleOptions || []).forEach(function (r) { %>
+              <option value="<%= r %>" <%= f.role === r ? 'selected' : '' %>><%= r %></option>
+              <% }); %>
+            </select>
+          </div>
+          <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Apply filters' }) %>
+          <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/users', label: 'Clear' }) %>
+        </form>
+
+        <p class="muted card card--mb-xl" style="padding:0.75rem 1rem;"><%= totalCount %> account(s) · page <%= page %> of <%= totalPages %></p>
+
+        <div class="card card--mb-xl">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Role</th>
+                  <th>Organization</th>
+                  <th>Branch</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!(users || []).length) { %>
+                <tr><td colspan="8" class="muted">No administrators match these filters.</td></tr>
+                <% } else { users.forEach(function (u) { %>
+                <tr>
+                  <td style="overflow-wrap:anywhere;"><%= u.full_name %></td>
+                  <td><%= u.account_type === 'hq_admin' ? 'HQ admin' : 'Branch admin' %></td>
+                  <td><%= u.role %></td>
+                  <td style="overflow-wrap:anywhere;"><%= u.organization_name %></td>
+                  <td><%= u.branch_name || '—' %></td>
+                  <td style="overflow-wrap:anywhere;"><%= u.email %></td>
+                  <td><%- include('../../partials/admin/church_status_badge', { status: u.status }) %></td>
+                  <td>
+                    <% if (u.account_type === 'hq_admin') { %>
+                    <%- include('../../partials/components/button', { variant: 'default', href: '/admin/churches/' + u.organization_id + '/hq-admins/' + u.id, label: 'View' }) %>
+                    <% } else { %>
+                    <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + u.branch_id + '/admins/' + u.id, label: 'View' }) %>
+                    <% } %>
+                  </td>
+                </tr>
+                <% }); } %>
+              </tbody>
+            </table>
+          </div>
+          <% if (totalPages > 1) { %>
+          <div class="admin-toolbar" style="padding:1rem;">
+            <% if (page > 1) { %>
+            <%- include('../../partials/components/button', { variant: 'default', href: prevUrl, label: 'Previous' }) %>
+            <% } %>
+            <% if (page < totalPages) { %>
+            <%- include('../../partials/components/button', { variant: 'default', href: nextUrl, label: 'Next' }) %>
+            <% } %>
+          </div>
+          <% } %>
+        </div>
+<%- include('../../partials/platform_admin_shell_end') %>

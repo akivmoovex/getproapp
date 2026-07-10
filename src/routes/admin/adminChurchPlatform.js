@@ -84,7 +84,9 @@ const {
 const { memberStatusLabel } = require("../../church/memberDirectoryValidation");
 const { memberRequestStatusLabel } = require("../../church/requestProcessingValidation");
 const { joinRequestStatusLabel } = require("../../church/ministryJoinRequestValidation");
-const { actionLabel } = require("../../church/auditLogFormatting");
+const { actionLabel, actorTypeLabel, targetTypeLabel, actorDisplayFromRow, targetLabelFromRow, auditSummary, formatMetadataForDisplay, parseAuditFilters, AUDIT_ACTOR_TYPES, AUDIT_ACTION_GROUPS } = require("../../church/auditLogFormatting");
+const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
+const platformUsersRepo = require("../../db/pg/church/platformUsersRepo");
 const { getLoginProtectionSummaryForAccount } = require("../../db/pg/church/loginAttemptsRepo");
 const platformSecurityRepo = require("../../db/pg/church/platformSecurityRepo");
 const branchAdminPasswordResetRequestsRepo = require("../../db/pg/church/branchAdminPasswordResetRequestsRepo");
@@ -2294,6 +2296,184 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
       return res.redirect(`/admin/church/branches/${branchId}?notice=archived`);
     } catch (err) {
       next(err);
+    }
+  });
+
+  function buildPlatformUsersQuery(filters, page) {
+    const f = filters || {};
+    const pageNum = page != null ? Number(page) || 1 : Number(f.page) || 1;
+    const params = new URLSearchParams();
+    if (f.q) params.set("q", f.q);
+    if (f.account_type && f.account_type !== "all") params.set("account_type", f.account_type);
+    if (f.status && f.status !== "all") params.set("status", f.status);
+    if (f.organization_id) params.set("organization_id", String(f.organization_id));
+    if (f.branch_id) params.set("branch_id", String(f.branch_id));
+    if (f.role) params.set("role", f.role);
+    if (pageNum > 1) params.set("page", String(pageNum));
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  }
+
+  function buildPlatformAuditQuery(filters, page) {
+    const f = filters || {};
+    const pageNum = page != null ? Number(page) || 1 : Number(f.page) || 1;
+    const params = new URLSearchParams();
+    if (f.organizationId) params.set("organization_id", String(f.organizationId));
+    if (f.q) params.set("q", f.q);
+    if (f.actionGroup && f.actionGroup !== "all") params.set("action_group", f.actionGroup);
+    if (f.actorType) params.set("actor_type", f.actorType);
+    if (f.targetType) params.set("target_type", f.targetType);
+    if (f.dateFrom) params.set("date_from", f.dateFrom);
+    if (f.dateTo) params.set("date_to", f.dateTo);
+    if (pageNum > 1) params.set("page", String(pageNum));
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  }
+
+  router.get("/church/users", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const listed = await platformUsersRepo.listPlatformChurchAdmins(pool, {
+        q: req.query.q,
+        account_type: req.query.account_type,
+        status: req.query.status,
+        organization_id: req.query.organization_id,
+        branch_id: req.query.branch_id,
+        role: req.query.role,
+        page: req.query.page,
+        limit: 20,
+      });
+      const organizations = await platformProvisioningRepo.listChurchOrganizations(pool, { limit: 500 });
+      const roleOptions = Array.from(new Set([...(HQ_ADMIN_ROLES || []), ...(BRANCH_ADMIN_ROLES || [])]));
+      return res.render("admin/church/platform_users", {
+        users: listed.rows,
+        filters: listed.filters,
+        page: listed.page,
+        totalPages: listed.totalPages,
+        totalCount: listed.total,
+        organizations: organizations || [],
+        roleOptions,
+        prevUrl:
+          listed.page > 1 ? `/admin/church/users${buildPlatformUsersQuery(listed.filters, listed.page - 1)}` : null,
+        nextUrl:
+          listed.page < listed.totalPages
+            ? `/admin/church/users${buildPlatformUsersQuery(listed.filters, listed.page + 1)}`
+            : null,
+        formatDate,
+        statusBadgeClass,
+        statusLabel,
+        activeNav: "church_platform_users",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.get("/church/roles", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const counts = await platformUsersRepo.countAdminsByRole(pool);
+      const roles = [
+        {
+          id: "hq_admin",
+          scope: "Organization (HQ)",
+          description: "Organization headquarters administrator",
+          access: "HQ console: broadcasts, branches registry, org reports, audit",
+          active_count: counts["hq:hq_admin"] || 0,
+        },
+        {
+          id: "branch_admin",
+          scope: "Branch",
+          description: "Branch administrator for a single church branch",
+          access: "Branch console: members, announcements, attendance, giving, website",
+          active_count: counts["branch:branch_admin"] || 0,
+        },
+        {
+          id: "super_admin",
+          scope: "Platform",
+          description: "BlessBoard platform super administrator (code-defined)",
+          access: "Platform Admin Console on blessboard.com",
+          active_count: "—",
+        },
+      ];
+      return res.render("admin/church/platform_roles", {
+        roles,
+        activeNav: "church_platform_roles",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.get("/church/audit", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const parsed = parseAuditFilters(req.query);
+      if (!parsed.ok) {
+        return res.status(400).type("text").send(parsed.error);
+      }
+      const pool = getPgPool();
+      const filters = { ...parsed.filters };
+      if (filters.organizationId) {
+        const orgs = await platformProvisioningRepo.listChurchOrganizations(pool, {});
+        const ok = orgs.some((o) => Number(o.id) === Number(filters.organizationId));
+        if (!ok) {
+          return res.status(400).type("text").send("Invalid organization filter.");
+        }
+      }
+      const [logs, total, organizations] = await Promise.all([
+        auditLogsRepo.listAuditLogsForPlatform(pool, filters),
+        auditLogsRepo.countAuditLogsForPlatform(pool, filters),
+        platformProvisioningRepo.listChurchOrganizations(pool, {}),
+      ]);
+      const totalPages = Math.max(Math.ceil(total / filters.limit) || 1, 1);
+      const page = Math.min(filters.page, totalPages);
+      return res.render("admin/church/platform_audit", {
+        logs,
+        filters: { ...filters, page },
+        total,
+        totalPages,
+        organizations: organizations || [],
+        auditActorTypes: AUDIT_ACTOR_TYPES,
+        auditActionGroups: AUDIT_ACTION_GROUPS,
+        actionLabel,
+        actorTypeLabel,
+        targetTypeLabel,
+        actorDisplayFromRow,
+        targetLabelFromRow,
+        auditSummary,
+        prevUrl: page > 1 ? `/admin/church/audit${buildPlatformAuditQuery(filters, page - 1)}` : null,
+        nextUrl: page < totalPages ? `/admin/church/audit${buildPlatformAuditQuery(filters, page + 1)}` : null,
+        activeNav: "church_platform_audit",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.get("/church/audit/:auditId", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const auditId = Number(req.params.auditId);
+      if (!Number.isFinite(auditId) || auditId <= 0) {
+        return res.status(404).type("text").send("Audit event not found.");
+      }
+      const pool = getPgPool();
+      const log = await auditLogsRepo.findAuditLogByIdForPlatform(pool, auditId);
+      if (!log) {
+        return res.status(404).type("text").send("Audit event not found.");
+      }
+      return res.render("admin/church/platform_audit_detail", {
+        log,
+        actionLabel,
+        actorTypeLabel,
+        targetTypeLabel,
+        actorDisplayFromRow,
+        targetLabelFromRow,
+        auditSummary,
+        formatMetadataForDisplay,
+        activeNav: "church_platform_audit",
+      });
+    } catch (err) {
+      return next(err);
     }
   });
 };

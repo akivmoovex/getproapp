@@ -6,8 +6,27 @@ const memberRequestsRepo = require("../../db/pg/church/memberRequestsRepo");
 const prayerRequestsRepo = require("../../db/pg/church/prayerRequestsRepo");
 const announcementsRepo = require("../../db/pg/church/announcementsRepo");
 const hqBroadcastsRepo = require("../../db/pg/church/hqBroadcastsRepo");
-const { mergeAnnouncementFeed } = require("../../church/announcementFeed");
-const { MEMBER_HQ_AUDIENCES } = require("../../church/hqBroadcastValidation");
+const feedItemReadsRepo = require("../../db/pg/church/feedItemReadsRepo");
+const broadcastAttachmentsRepo = require("../../db/pg/church/broadcastAttachmentsRepo");
+const memberAnnouncementFeedRepo = require("../../db/pg/church/memberAnnouncementFeedRepo");
+const {
+  mergeAnnouncementFeed,
+  partitionAnnouncementFeed,
+  isActivelyFeatured,
+  priorityDisplay,
+  attachmentTypeLabel,
+} = require("../../church/announcementFeed");
+const {
+  MEMBER_HQ_AUDIENCES,
+  BROADCAST_PRIORITIES,
+  BROADCAST_CATEGORIES,
+  priorityLabel,
+} = require("../../church/hqBroadcastValidation");
+const { ANNOUNCEMENT_CATEGORIES } = require("../../church/announcementsEventsValidation");
+const {
+  absolutePathForStoredFilename,
+  absolutePathForAnnouncementStoredFilename,
+} = require("../../church/hqBroadcastUploads");
 const eventsRepo = require("../../db/pg/church/eventsRepo");
 const givingSettingsRepo = require("../../db/pg/church/givingSettingsRepo");
 const ministriesRepo = require("../../db/pg/church/ministriesRepo");
@@ -101,6 +120,7 @@ function memberPortalLocals(req, extra) {
   const memberName = req.churchMember.full_name;
   const navActive = (extra && extra.navActive) || resolveMemberNavActive(req);
   const shellTitle = (extra && extra.shellTitle) || memberShellTitle(navActive, null);
+  const categoryOptions = Array.from(new Set([...(ANNOUNCEMENT_CATEGORIES || []), ...(BROADCAST_CATEGORIES || [])]));
   return {
     churchName: branch.name || org.name,
     pageTitle: branch.name || org.name,
@@ -112,8 +132,81 @@ function memberPortalLocals(req, extra) {
     memberAvatarUrl: "/church/images/member/avatar-member.jpg",
     navActive,
     shellTitle,
+    priorityDisplay,
+    priorityLabel,
+    attachmentTypeLabel,
+    isActivelyFeatured,
+    priorities: BROADCAST_PRIORITIES,
+    categoryOptions,
     ...(extra || {}),
   };
+}
+
+function parseMemberAnnouncementFilters(query) {
+  return memberAnnouncementFeedRepo.normalizeMemberFeedOpts({
+    q: query && query.q,
+    source: query && query.source,
+    priority: query && query.priority,
+    category: query && query.category,
+    read_status: query && (query.read_status || query.read),
+    pinned_only: query && (query.pinned_only || query.pinned),
+    page: query && query.page,
+    limit: 20,
+  });
+}
+
+function buildMemberAnnouncementsQuery(filters, page) {
+  const f = filters || {};
+  const pageNum = page != null ? Number(page) || 1 : Number(f.page) || 1;
+  const params = new URLSearchParams();
+  if (f.q) params.set("q", f.q);
+  if (f.source && f.source !== "all") params.set("source", f.source);
+  if (f.priority) params.set("priority", f.priority);
+  if (f.category) params.set("category", f.category);
+  if (f.read_status && f.read_status !== "all") params.set("read_status", f.read_status);
+  if (f.pinned_only) params.set("pinned_only", "1");
+  if (pageNum > 1) params.set("page", String(pageNum));
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+function isSafeHttpUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+  try {
+    const parsed = new URL(raw);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+async function attachFilesToFeedItems(pool, orgId, branchId, items) {
+  const list = Array.isArray(items) ? items : [];
+  return Promise.all(
+    list.map(async (item) => {
+      const source = item.source === "hq" ? "hq" : "branch";
+      const attachments =
+        source === "hq"
+          ? await broadcastAttachmentsRepo.listAttachmentsForBroadcast(pool, item.id, orgId)
+          : await broadcastAttachmentsRepo.listAttachmentsForAnnouncement(pool, item.id, branchId);
+      return {
+        ...item,
+        source,
+        attachments: (attachments || []).map((file) => ({
+          id: file.id,
+          original_filename: file.original_filename,
+          mime_type: file.mime_type,
+          file_type_label: attachmentTypeLabel(file.mime_type, file.original_filename),
+        })),
+        action_url: isSafeHttpUrl(item.action_url) ? item.action_url : null,
+        action_label: item.action_label || null,
+        detail_path: `/member/announcements/${source}/${item.id}`,
+        priority_meta: priorityDisplay(item.priority),
+        is_actively_featured: isActivelyFeatured(item),
+      };
+    })
+  );
 }
 
 function flashFromQuery(req) {
@@ -475,20 +568,167 @@ function registerMemberPortalRoutes(router) {
     try {
       const branch = req.churchContext.branch;
       const org = req.churchContext.organization;
+      const memberId = req.churchMember.member_id;
       const pool = getPgPool();
-      const [branchAnnouncements, hqBroadcasts] = await Promise.all([
-        announcementsRepo.listVisibleAnnouncementsForMember(pool, branch.id, { limit: 50 }),
-        hqBroadcastsRepo.listVisibleBroadcastsForBranch(pool, org.id, branch.id, {
-          audiences: MEMBER_HQ_AUDIENCES,
-          limit: 50,
-        }),
-      ]);
-      const announcements = mergeAnnouncementFeed(branchAnnouncements, hqBroadcasts, 50);
-      return res.render("church/member/announcements", memberPortalLocals(req, { announcements }));
+      const listFilters = parseMemberAnnouncementFilters(req.query || {});
+      const listed = await memberAnnouncementFeedRepo.listVisibleMemberFeed(pool, {
+        organizationId: org.id,
+        branchId: branch.id,
+        memberId,
+        audiences: MEMBER_HQ_AUDIENCES,
+        ...listFilters,
+      });
+      const withFiles = await attachFilesToFeedItems(pool, org.id, branch.id, listed.rows);
+      const sections = partitionAnnouncementFeed(withFiles);
+      const unreadCount = await memberAnnouncementFeedRepo.countUnreadVisibleMemberFeed(pool, {
+        organizationId: org.id,
+        branchId: branch.id,
+        memberId,
+        audiences: MEMBER_HQ_AUDIENCES,
+        q: listFilters.q,
+        source: listFilters.source,
+        priority: listFilters.priority,
+        category: listFilters.category,
+        pinned_only: listFilters.pinned_only,
+      });
+
+      // List view marks seen only for the current page — full read happens on detail open.
+      await feedItemReadsRepo.markFeedItemsSeen(pool, {
+        organization_id: org.id,
+        branch_id: branch.id,
+        member_id: memberId,
+        items: withFiles.map((item) => ({
+          source_type: item.source === "hq" ? "hq_broadcast" : "announcement",
+          source_id: item.id,
+        })),
+      });
+
+      return res.render(
+        "church/member/announcements",
+        memberPortalLocals(req, {
+          announcements: sections.list,
+          featuredAnnouncements: sections.featured,
+          pinnedAnnouncements: sections.pinned,
+          remainingAnnouncements: sections.remaining,
+          unreadCount,
+          listFilters: {
+            ...listFilters,
+            page: listed.page,
+          },
+          page: listed.page,
+          totalPages: listed.totalPages,
+          totalCount: listed.total,
+          buildMemberAnnouncementsQuery,
+        })
+      );
     } catch (e) {
       return next(e);
     }
   });
+
+  router.get(
+    "/member/announcements/:source/:announcementId",
+    requireVerifiedMemberSession,
+    ensureMemberAccountActive,
+    async (req, res, next) => {
+      try {
+        const source = String(req.params.source || "").trim();
+        const announcementId = Number(req.params.announcementId);
+        if (!["hq", "branch"].includes(source) || !Number.isFinite(announcementId) || announcementId <= 0) {
+          return res.status(404).type("text").send("Announcement not found.");
+        }
+        const branch = req.churchContext.branch;
+        const org = req.churchContext.organization;
+        const memberId = req.churchMember.member_id;
+        const pool = getPgPool();
+
+        let item = null;
+        if (source === "hq") {
+          item = await hqBroadcastsRepo.findVisibleBroadcastForBranch(pool, org.id, branch.id, announcementId, {
+            audiences: MEMBER_HQ_AUDIENCES,
+          });
+        } else {
+          item = await announcementsRepo.findVisibleAnnouncementForMember(pool, branch.id, announcementId);
+        }
+        if (!item) {
+          return res.status(404).type("text").send("Announcement not found.");
+        }
+
+        const [enriched] = await attachFilesToFeedItems(pool, org.id, branch.id, [{ ...item, source }]);
+        await feedItemReadsRepo.markFeedItemRead(pool, {
+          organization_id: org.id,
+          branch_id: branch.id,
+          member_id: memberId,
+          source_type: source === "hq" ? "hq_broadcast" : "announcement",
+          source_id: announcementId,
+        });
+
+        return res.render(
+          "church/member/announcement_detail",
+          memberPortalLocals(req, {
+            announcement: { ...enriched, is_read: true },
+            shellTitle: "Announcement",
+          })
+        );
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.get(
+    "/member/announcements/:source/:announcementId/attachments/:attachmentId/download",
+    requireVerifiedMemberSession,
+    ensureMemberAccountActive,
+    async (req, res, next) => {
+      try {
+        const source = String(req.params.source || "").trim();
+        const announcementId = Number(req.params.announcementId);
+        const attachmentId = Number(req.params.attachmentId);
+        if (
+          !["hq", "branch"].includes(source) ||
+          !Number.isFinite(announcementId) ||
+          !Number.isFinite(attachmentId)
+        ) {
+          return res.status(404).type("text").send("Attachment not found.");
+        }
+        const branch = req.churchContext.branch;
+        const org = req.churchContext.organization;
+        const pool = getPgPool();
+
+        let visible = null;
+        if (source === "hq") {
+          visible = await hqBroadcastsRepo.findVisibleBroadcastForBranch(pool, org.id, branch.id, announcementId, {
+            audiences: MEMBER_HQ_AUDIENCES,
+          });
+        } else {
+          visible = await announcementsRepo.findVisibleAnnouncementForMember(pool, branch.id, announcementId);
+        }
+        if (!visible) return res.status(404).type("text").send("Attachment not found.");
+
+        let attachment = null;
+        let abs = null;
+        if (source === "hq") {
+          attachment = await broadcastAttachmentsRepo.findBroadcastAttachmentById(pool, attachmentId, org.id);
+          if (!attachment || Number(attachment.broadcast_id) !== announcementId) {
+            return res.status(404).type("text").send("Attachment not found.");
+          }
+          abs = absolutePathForStoredFilename(attachment.stored_filename);
+          await broadcastAttachmentsRepo.incrementBroadcastAttachmentDownloadCount(pool, attachmentId, org.id);
+        } else {
+          attachment = await broadcastAttachmentsRepo.findAnnouncementAttachmentById(pool, attachmentId, branch.id);
+          if (!attachment || Number(attachment.announcement_id) !== announcementId) {
+            return res.status(404).type("text").send("Attachment not found.");
+          }
+          abs = absolutePathForAnnouncementStoredFilename(attachment.stored_filename);
+        }
+        if (!abs) return res.status(404).type("text").send("Attachment not found.");
+        return res.download(abs, attachment.original_filename);
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
 
   router.get("/member/events", requireVerifiedMemberSession, ensureMemberAccountActive, async (req, res, next) => {
     try {

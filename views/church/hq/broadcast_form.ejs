@@ -8,7 +8,7 @@
       <% if (error) { %>
       <div class="church-alert church-alert--error" role="alert"><%= error %></div>
       <% } %>
-      <form class="church-form" method="post" action="<%= isEdit ? '/hq/broadcasts/' + broadcastId : '/hq/broadcasts' %>">
+      <form class="church-form" method="post" action="<%= isEdit ? '/hq/broadcasts/' + broadcastId : '/hq/broadcasts' %>" enctype="multipart/form-data" id="hq-broadcast-form">
         <section class="church-branch-panel">
           <div class="church-field church-field--full">
             <label class="church-label" for="title">Title</label>
@@ -24,6 +24,14 @@
               <select class="church-input" id="category" name="category">
                 <% categories.forEach(function (c) { %>
                 <option value="<%= c %>" <%= form.category === c ? 'selected' : '' %>><%= c %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="priority">Priority</label>
+              <select class="church-input" id="priority" name="priority">
+                <% priorities.forEach(function (p) { %>
+                <option value="<%= p %>" <%= form.priority === p ? 'selected' : '' %>><%= priorityLabel(p) %></option>
                 <% }); %>
               </select>
             </div>
@@ -52,6 +60,55 @@
               <input class="church-input" id="expires_at" name="expires_at" type="datetime-local" value="<%= form.expires_at || '' %>"/>
             </div>
           </div>
+
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-checkbox-row">
+                <input type="checkbox" name="is_pinned" value="1" <%= form.is_pinned ? 'checked' : '' %>/>
+                <span>Pinned</span>
+              </label>
+            </div>
+            <div class="church-field">
+              <label class="church-checkbox-row">
+                <input type="checkbox" name="is_featured" id="is_featured" value="1" <%= form.is_featured ? 'checked' : '' %>/>
+                <span>Featured</span>
+              </label>
+            </div>
+          </div>
+          <div class="church-field" id="featured-until-field" hidden>
+            <label class="church-label" for="featured_until">Featured until (optional)</label>
+            <input class="church-input" id="featured_until" name="featured_until" type="datetime-local" value="<%= form.featured_until || '' %>"/>
+          </div>
+
+          <div class="church-form-grid" id="action-link-fields">
+            <div class="church-field">
+              <label class="church-label" for="action_label">Action label (optional)</label>
+              <input class="church-input" id="action_label" name="action_label" type="text" maxlength="200" value="<%= form.action_label || '' %>" placeholder="e.g. Register now"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="action_url">Action URL</label>
+              <input class="church-input" id="action_url" name="action_url" type="url" maxlength="2000" placeholder="https://" value="<%= form.action_url || '' %>"/>
+            </div>
+          </div>
+
+          <div class="church-field church-field--full">
+            <label class="church-label" for="attachments">Attachments</label>
+            <p class="church-branch-panel__hint">PDF, PNG, JPG, DOC, or DOCX · up to <%= maxAttachmentMb %> MB each · max <%= maxAttachments %> files</p>
+            <input class="church-input" id="attachments" name="attachments" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,application/pdf,image/png,image/jpeg,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple/>
+          </div>
+          <% if ((attachments || []).length) { %>
+          <ul class="church-branch-inline-list">
+            <% attachments.forEach(function (file) { %>
+            <li>
+              <a href="/hq/broadcasts/<%= broadcastId %>/attachments/<%= file.id %>/download"><%= file.original_filename %></a>
+              <form class="church-inline-form" method="post" action="/hq/broadcasts/<%= broadcastId %>/attachments/<%= file.id %>/delete" style="display:inline">
+                <button class="church-btn church-btn--ghost church-btn--sm" type="submit">Remove</button>
+              </form>
+            </li>
+            <% }); %>
+          </ul>
+          <% } %>
+
           <div class="church-field church-field--full" id="branch-targets-panel">
             <label class="church-label">Target branches</label>
             <p class="church-branch-panel__hint">Required when target scope is “Selected branches”. Only branches in your organization are listed.</p>
@@ -66,8 +123,37 @@
           </div>
         </section>
         <div class="church-branch-actions">
-          <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft">Save draft</button>
-          <button class="church-btn church-btn--primary" type="submit" name="_intent" value="publish">Publish</button>
+          <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft"><%= (typeof broadcastStatus !== 'undefined' && broadcastStatus === 'published') ? 'Save changes' : 'Save draft' %></button>
+          <% if (typeof broadcastStatus !== 'undefined' && broadcastStatus === 'published') { %>
+          <button class="church-btn church-btn--primary" type="submit" name="_intent" value="review">Review audience change</button>
+          <% } else { %>
+          <button class="church-btn church-btn--primary" type="submit" name="_intent" value="review" id="hq-broadcast-publish-btn">Publish</button>
+          <% } %>
         </div>
       </form>
+      <script>
+        (function () {
+          var featured = document.getElementById('is_featured');
+          var featuredUntil = document.getElementById('featured-until-field');
+          function syncFeatured() {
+            if (!featured || !featuredUntil) return;
+            featuredUntil.hidden = !featured.checked;
+            if (!featured.checked) {
+              var input = document.getElementById('featured_until');
+              if (input) input.value = '';
+            }
+          }
+          if (featured) {
+            featured.addEventListener('change', syncFeatured);
+            syncFeatured();
+          }
+          var form = document.getElementById('hq-broadcast-form');
+          if (form) {
+            form.addEventListener('submit', function () {
+              var buttons = form.querySelectorAll('button[type="submit"]');
+              buttons.forEach(function (btn) { btn.disabled = true; });
+            });
+          }
+        })();
+      </script>
 <%- include('../partials/hq_shell_end') %>

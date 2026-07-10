@@ -1,0 +1,27 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/announcements/<%= announcement.id %>">&larr; Back to announcement</a>
+          <h1 class="church-branch-topbar__title">Confirm publish</h1>
+          <p class="church-branch-topbar__subtitle">Review estimated audience before publishing</p>
+        </div>
+      </header>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title"><%= announcement.title %></h2>
+        <p><%= announcement.body %></p>
+        <dl class="church-branch-dl">
+          <div><dt>Audience</dt><dd><%= audienceLabel(announcement.audience) %></dd></div>
+          <div><dt>Priority</dt><dd><%= priorityLabel(announcement.priority || 'normal') %></dd></div>
+          <div><dt>Estimated audience</dt><dd><strong><%= audienceEstimate.estimated_recipients %></strong> <%= audienceEstimate.recipient_label %></dd></div>
+        </dl>
+      </section>
+      <div class="church-branch-actions">
+        <a class="church-btn church-btn--outline" href="/branch/announcements/<%= announcement.id %>/edit">Edit</a>
+        <form method="post" action="/branch/announcements/<%= announcement.id %>/publish">
+          <button class="church-btn church-btn--primary" type="submit">Confirm publish</button>
+        </form>
+      </div>
+<%- include('../partials/branch_admin_shell_end') %>

@@ -209,6 +209,11 @@ function parseAuditFilters(query) {
     branchIdRaw != null && String(branchIdRaw).trim() !== ""
       ? Number(branchIdRaw)
       : null;
+  const organizationIdRaw = query && query.organization_id;
+  const organizationId =
+    organizationIdRaw != null && String(organizationIdRaw).trim() !== ""
+      ? Number(organizationIdRaw)
+      : null;
   const dateFrom = parseOptionalDate(query && query.date_from);
   const dateTo = parseOptionalDate(query && query.date_to);
 
@@ -227,6 +232,7 @@ function parseAuditFilters(query) {
       actorType: actorType && AUDIT_ACTOR_TYPES.includes(actorType) ? actorType : "",
       targetType: targetType || "",
       branchId: Number.isFinite(branchId) && branchId > 0 ? branchId : null,
+      organizationId: Number.isFinite(organizationId) && organizationId > 0 ? organizationId : null,
       dateFrom: dateFrom.value,
       dateTo: dateTo.value,
     },

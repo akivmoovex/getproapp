@@ -10,12 +10,62 @@
       <% if (notice) { %>
       <div class="church-alert church-alert--success" role="status"><%= notice %></div>
       <% } %>
+      <% var lf = typeof listFilters !== 'undefined' && listFilters ? listFilters : { status: statusFilter || 'all', q: searchQuery || '', priority: '', audience: '', target_scope: '', date_from: '', date_to: '', page: page || 1 }; %>
+      <form class="church-form church-form--inline" method="get" action="/hq/broadcasts">
+        <div class="church-field church-field--grow">
+          <label class="church-label" for="q">Search</label>
+          <input class="church-input" id="q" name="q" type="search" value="<%= lf.q || '' %>" placeholder="Title or body"/>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="priority">Priority</label>
+          <select class="church-input" id="priority" name="priority">
+            <option value="">All priorities</option>
+            <% (priorities || []).forEach(function (p) { %>
+            <option value="<%= p %>" <%= lf.priority === p ? 'selected' : '' %>><%= priorityLabel(p) %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="audience">Audience</label>
+          <select class="church-input" id="audience" name="audience">
+            <option value="">All audiences</option>
+            <% (audiences || []).forEach(function (a) { %>
+            <option value="<%= a %>" <%= lf.audience === a ? 'selected' : '' %>><%= broadcastAudienceLabel(a) %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="target_scope">Target scope</label>
+          <select class="church-input" id="target_scope" name="target_scope">
+            <option value="">All scopes</option>
+            <% (targetScopes || []).forEach(function (s) { %>
+            <option value="<%= s %>" <%= lf.target_scope === s ? 'selected' : '' %>><%= targetScopeLabel(s) %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="date_from">From date</label>
+          <input class="church-input" id="date_from" name="date_from" type="date" value="<%= lf.date_from || '' %>"/>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="date_to">To date</label>
+          <input class="church-input" id="date_to" name="date_to" type="date" value="<%= lf.date_to || '' %>"/>
+        </div>
+        <% if (lf.status && lf.status !== 'all') { %>
+        <input type="hidden" name="status" value="<%= lf.status %>"/>
+        <% } %>
+        <div class="church-field" style="align-self:flex-end">
+          <button class="church-btn church-btn--outline" type="submit">Apply filters</button>
+          <a class="church-btn church-btn--ghost" href="/hq/broadcasts">Clear</a>
+        </div>
+      </form>
       <div class="church-branch-filter-tabs">
         <% broadcastFilters.forEach(function (f) { %>
-        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/hq/broadcasts<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : broadcastStatusLabel(f) %></a>
+        <a class="church-branch-filter-tab <%= lf.status === f ? 'church-branch-filter-tab--active' : '' %>" href="/hq/broadcasts<%= buildListQuery(Object.assign({}, lf, { status: f }), 1) %>"><%= f === 'all' ? 'All' : broadcastStatusLabel(f) %></a>
         <% }); %>
       </div>
       <section class="church-branch-panel">
+        <p class="church-branch-panel__hint"><%= totalCount %> broadcast(s) · page <%= page %> of <%= totalPages %></p>
         <% if ((broadcasts || []).length === 0) { %>
         <p class="church-branch-empty">No broadcasts in this filter.</p>
         <% } else { %>
@@ -24,6 +74,7 @@
             <thead>
               <tr>
                 <th>Title</th>
+                <th>Priority</th>
                 <th>Category</th>
                 <th>Audience</th>
                 <th>Target</th>
@@ -38,7 +89,12 @@
             <tbody>
               <% broadcasts.forEach(function (b) { %>
               <tr>
-                <td><%= b.title %></td>
+                <td>
+                  <%= b.title %>
+                  <% if (b.is_featured) { %><span class="church-status-chip">Featured</span><% } %>
+                  <% if (b.is_pinned) { %><span class="church-status-chip">Pinned</span><% } %>
+                </td>
+                <td><%= priorityLabel(b.priority || 'normal') %></td>
                 <td><%= b.category %></td>
                 <td><%= broadcastAudienceLabel(b.audience) %></td>
                 <td><%= targetScopeLabel(b.target_scope) %></td>
@@ -58,6 +114,16 @@
             </tbody>
           </table>
         </div>
+        <% if (totalPages > 1) { %>
+        <div class="church-branch-actions">
+          <% if (page > 1) { %>
+          <a class="church-btn church-btn--outline church-btn--sm" href="/hq/broadcasts<%= buildListQuery(lf, page - 1) %>">Previous</a>
+          <% } %>
+          <% if (page < totalPages) { %>
+          <a class="church-btn church-btn--outline church-btn--sm" href="/hq/broadcasts<%= buildListQuery(lf, page + 1) %>">Next</a>
+          <% } %>
+        </div>
+        <% } %>
         <% } %>
       </section>
 <%- include('../partials/hq_shell_end') %>

@@ -34,7 +34,7 @@ async function seedChurchSampleHqAdminIfMissing(pool, org) {
 
 async function seedChurchSampleMemberPortalContentIfMissing(pool, org, branch) {
   const existing = await announcementsRepo.listAnnouncementsForBranch(pool, branch.id, { status: "all" });
-  if (existing.length > 0) return;
+  if ((existing.rows || existing).length > 0) return;
 
   await announcementsRepo.createAnnouncementForBranch(pool, {
     organization_id: org.id,

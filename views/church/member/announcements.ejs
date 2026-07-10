@@ -1,43 +1,129 @@
 <%- include('../partials/member_shell_start') %>
+      <% var lf = typeof listFilters !== 'undefined' && listFilters ? listFilters : { q: '', source: 'all', priority: '', category: '', read_status: 'all', pinned_only: false, page: 1 }; %>
+      <% var buildQ = typeof buildMemberAnnouncementsQuery === 'function' ? buildMemberAnnouncementsQuery : function () { return ''; }; %>
       <header class="church-member-header church-member-header--page">
         <div>
           <h1 class="church-member-header__title church-show-mobile-only">Announcements</h1>
           <p class="church-member-header__subtitle"><%= churchName %></p>
+          <% if (typeof unreadCount !== 'undefined' && unreadCount > 0) { %>
+          <p class="church-member-header__subtitle" aria-live="polite"><%= unreadCount %> unread</p>
+          <% } %>
         </div>
       </header>
 
-      <div class="church-member-filters" role="tablist" aria-label="Announcement filters">
-        <button type="button" class="church-member-filter church-member-filter--active" data-filter="all">All</button>
-        <button type="button" class="church-member-filter" data-filter="branch">Branch</button>
-        <button type="button" class="church-member-filter" data-filter="hq">HQ</button>
+      <form class="church-form church-form--inline" method="get" action="/member/announcements" role="search">
+        <div class="church-field church-field--grow">
+          <label class="church-label" for="q">Search</label>
+          <input class="church-input" id="q" name="q" type="search" value="<%= lf.q || '' %>" placeholder="Search title or body"/>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="source">Source</label>
+          <select class="church-input" id="source" name="source">
+            <option value="all" <%= !lf.source || lf.source === 'all' ? 'selected' : '' %>>All</option>
+            <option value="hq" <%= lf.source === 'hq' ? 'selected' : '' %>>HQ</option>
+            <option value="branch" <%= lf.source === 'branch' ? 'selected' : '' %>>Branch</option>
+          </select>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="priority">Priority</label>
+          <select class="church-input" id="priority" name="priority">
+            <option value="">All priorities</option>
+            <% (priorities || []).forEach(function (p) { %>
+            <option value="<%= p %>" <%= lf.priority === p ? 'selected' : '' %>><%= priorityLabel(p) %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="category">Category</label>
+          <select class="church-input" id="category" name="category">
+            <option value="">All categories</option>
+            <% (categoryOptions || []).forEach(function (c) { %>
+            <option value="<%= c %>" <%= lf.category === c ? 'selected' : '' %>><%= c %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="read_status">Read status</label>
+          <select class="church-input" id="read_status" name="read_status">
+            <option value="all" <%= !lf.read_status || lf.read_status === 'all' ? 'selected' : '' %>>All</option>
+            <option value="unread" <%= lf.read_status === 'unread' ? 'selected' : '' %>>Unread</option>
+            <option value="read" <%= lf.read_status === 'read' ? 'selected' : '' %>>Read</option>
+          </select>
+        </div>
+        <div class="church-field" style="align-self:flex-end">
+          <label class="church-label">
+            <input type="checkbox" name="pinned_only" value="1" <%= lf.pinned_only ? 'checked' : '' %>/>
+            Pinned only
+          </label>
+        </div>
+        <div class="church-field" style="align-self:flex-end">
+          <button class="church-btn church-btn--outline" type="submit">Apply filters</button>
+          <a class="church-btn church-btn--ghost" href="/member/announcements">Clear</a>
+        </div>
+      </form>
+
+      <div class="church-member-filters" role="navigation" aria-label="Announcement source">
+        <a class="church-member-filter <%= !lf.source || lf.source === 'all' ? 'church-member-filter--active' : '' %>" href="/member/announcements<%= buildQ(Object.assign({}, lf, { source: 'all' }), 1) %>">All</a>
+        <a class="church-member-filter <%= lf.source === 'branch' ? 'church-member-filter--active' : '' %>" href="/member/announcements<%= buildQ(Object.assign({}, lf, { source: 'branch' }), 1) %>">Branch</a>
+        <a class="church-member-filter <%= lf.source === 'hq' ? 'church-member-filter--active' : '' %>" href="/member/announcements<%= buildQ(Object.assign({}, lf, { source: 'hq' }), 1) %>">HQ</a>
       </div>
 
       <% if ((announcements || []).length === 0) { %>
       <section class="church-member-panel">
-        <p class="church-member-empty">No announcements yet. Your church leadership will post updates here.</p>
+        <p class="church-member-empty"><%= (typeof totalCount !== 'undefined' && totalCount === 0 && (lf.q || lf.priority || lf.category || lf.read_status !== 'all' || lf.pinned_only || (lf.source && lf.source !== 'all'))) ? 'No announcements match these filters.' : 'No announcements yet. Your church leadership will post updates here.' %></p>
       </section>
       <% } else { %>
-      <% var featured = announcements[0]; %>
-      <section class="church-member-ann-featured church-show-desktop-only">
+      <p class="church-member-list__meta"><%= typeof totalCount !== 'undefined' ? totalCount : announcements.length %> announcement(s)<% if (typeof page !== 'undefined' && typeof totalPages !== 'undefined') { %> · page <%= page %> of <%= totalPages %><% } %></p>
+      <% var featuredList = typeof featuredAnnouncements !== 'undefined' ? featuredAnnouncements : []; %>
+      <% var listItems = [].concat(typeof pinnedAnnouncements !== 'undefined' ? pinnedAnnouncements : [], typeof remainingAnnouncements !== 'undefined' ? remainingAnnouncements : []); %>
+      <% if (!listItems.length && !featuredList.length) { listItems = announcements; } %>
+
+      <% if (featuredList.length) { %>
+      <section class="church-member-ann-featured church-show-desktop-only" aria-label="Featured announcements">
+        <% var featured = featuredList[0]; %>
         <article class="church-member-ann-hero">
           <img src="/church/images/member/announcement-featured.jpg" alt=""/>
           <div class="church-member-ann-hero__body">
             <span class="church-status-chip"><%= featured.source === 'hq' ? 'HQ' : (featured.category || 'Branch') %></span>
-            <h2><%= featured.title %></h2>
+            <span class="church-status-chip" aria-label="Featured">Featured</span>
+            <% if (!featured.is_read) { %><span class="church-status-chip" aria-label="Unread">Unread</span><% } else { %><span class="church-status-chip church-status-chip--verified" aria-label="Read">Read</span><% } %>
+            <% var fp = featured.priority_meta || priorityDisplay(featured.priority); %>
+            <% if (fp.key !== 'normal') { %>
+            <span class="church-status-chip" aria-label="Priority <%= fp.label %>">
+              <span class="material-symbols-outlined" aria-hidden="true" style="font-size:1rem;vertical-align:middle"><%= fp.icon %></span>
+              <%= fp.label %>
+            </span>
+            <% } %>
+            <h2><a href="<%= featured.detail_path %>"><%= featured.title %></a></h2>
             <p><%= featured.body %></p>
+            <% if (featured.action_url) { %>
+            <p><a class="church-btn church-btn--primary church-btn--sm" href="<%= featured.action_url %>" target="_blank" rel="noopener noreferrer"><%= featured.action_label || 'Open link' %></a></p>
+            <% } %>
+            <% if ((featured.attachments || []).length) { %>
+            <ul class="church-member-list">
+              <% featured.attachments.forEach(function (file) { %>
+              <li>
+                <a href="<%= featured.detail_path %>/attachments/<%= file.id %>/download"><%= file.original_filename %></a>
+                <span class="church-member-list__meta"><%= file.file_type_label %></span>
+              </li>
+              <% }); %>
+            </ul>
+            <% } %>
             <span class="church-member-list__meta"><%= featured.publish_at ? new Date(featured.publish_at).toLocaleDateString('en-GB') : '' %></span>
           </div>
         </article>
         <div class="church-member-ann-side">
-          <% announcements.slice(1, 3).forEach(function (a) { %>
+          <% featuredList.slice(1, 3).forEach(function (a) { %>
           <article class="church-member-ann-side__card" data-source="<%= a.source === 'hq' ? 'hq' : 'branch' %>">
-            <span class="church-status-chip"><%= a.source === 'hq' ? 'HQ' : (a.category || 'Branch') %></span>
-            <h3><%= a.title %></h3>
+            <span class="church-status-chip">Featured</span>
+            <% if (!a.is_read) { %><span class="church-status-chip" aria-label="Unread">Unread</span><% } %>
+            <h3><a href="<%= a.detail_path %>"><%= a.title %></a></h3>
             <p><%= a.body %></p>
           </article>
           <% }); %>
         </div>
       </section>
+      <% } %>
 
       <section class="church-member-panel">
         <div class="church-member-table-wrap church-show-desktop-only">
@@ -46,15 +132,43 @@
               <tr>
                 <th>Status</th>
                 <th>Title</th>
+                <th>Priority</th>
                 <th>Category</th>
                 <th>Date</th>
               </tr>
             </thead>
             <tbody>
-              <% announcements.forEach(function (a) { %>
+              <% listItems.forEach(function (a) { %>
               <tr data-source="<%= a.source === 'hq' ? 'hq' : 'branch' %>">
-                <td><span class="church-status-chip church-status-chip--verified">Published</span></td>
-                <td><strong><%= a.title %></strong><p class="church-member-table__excerpt"><%= a.body %></p></td>
+                <td>
+                  <% if (a.is_read) { %>
+                  <span class="church-status-chip church-status-chip--verified" aria-label="Read">Read</span>
+                  <% } else { %>
+                  <span class="church-status-chip" aria-label="Unread">Unread</span>
+                  <% } %>
+                  <% if (a.is_pinned) { %><span class="church-status-chip" aria-label="Pinned">Pinned</span><% } %>
+                </td>
+                <td>
+                  <strong><a href="<%= a.detail_path %>"><%= a.title %></a></strong>
+                  <p class="church-member-table__excerpt"><%= a.body %></p>
+                  <% if (a.action_url) { %>
+                  <p><a class="church-btn church-btn--outline church-btn--sm" href="<%= a.action_url %>" target="_blank" rel="noopener noreferrer"><%= a.action_label || 'Open link' %></a></p>
+                  <% } %>
+                  <% if ((a.attachments || []).length) { %>
+                  <p class="church-member-list__meta">
+                    <% a.attachments.forEach(function (file, idx) { %>
+                    <a href="<%= a.detail_path %>/attachments/<%= file.id %>/download"><%= file.original_filename %></a> (<%= file.file_type_label %>)<% if (idx < a.attachments.length - 1) { %>; <% } %>
+                    <% }); %>
+                  </p>
+                  <% } %>
+                </td>
+                <td>
+                  <% var pm = a.priority_meta || priorityDisplay(a.priority); %>
+                  <span class="church-status-chip" aria-label="Priority <%= pm.label %>">
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size:1rem;vertical-align:middle"><%= pm.icon %></span>
+                    <%= pm.label %>
+                  </span>
+                </td>
                 <td><%= a.category || (a.source === 'hq' ? 'HQ' : 'Branch') %></td>
                 <td><%= a.publish_at ? new Date(a.publish_at).toLocaleDateString('en-GB') : '' %></td>
               </tr>
@@ -63,41 +177,49 @@
           </table>
         </div>
         <ul class="church-member-list church-show-mobile-only">
-          <% announcements.forEach(function (a) { %>
+          <% (featuredList.concat(listItems)).forEach(function (a) { %>
           <li class="church-member-announcement-card" data-source="<%= a.source === 'hq' ? 'hq' : 'branch' %>">
             <div class="church-member-announcement-card__icon">
               <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
             </div>
             <div>
-              <strong><%= a.title %></strong>
+              <strong><a href="<%= a.detail_path %>"><%= a.title %></a></strong>
               <% if (a.source === 'hq') { %><span class="church-status-chip">HQ</span><% } %>
+              <% if (a.is_actively_featured) { %><span class="church-status-chip" aria-label="Featured">Featured</span><% } %>
+              <% if (a.is_pinned && !a.is_actively_featured) { %><span class="church-status-chip" aria-label="Pinned">Pinned</span><% } %>
+              <% if (!a.is_read) { %><span class="church-status-chip" aria-label="Unread">Unread</span><% } else { %><span class="church-status-chip church-status-chip--verified" aria-label="Read">Read</span><% } %>
+              <% var mpm = a.priority_meta || priorityDisplay(a.priority); %>
+              <span class="church-status-chip" aria-label="Priority <%= mpm.label %>">
+                <span class="material-symbols-outlined" aria-hidden="true" style="font-size:1rem;vertical-align:middle"><%= mpm.icon %></span>
+                <%= mpm.label %>
+              </span>
               <% if (a.category) { %><span class="church-status-chip"><%= a.category %></span><% } %>
               <p><%= a.body %></p>
+              <% if (a.action_url) { %>
+              <p><a class="church-btn church-btn--primary church-btn--sm" href="<%= a.action_url %>" target="_blank" rel="noopener noreferrer"><%= a.action_label || 'Open link' %></a></p>
+              <% } %>
+              <% if ((a.attachments || []).length) { %>
+              <p class="church-member-list__meta">
+                <% a.attachments.forEach(function (file, idx) { %>
+                <a href="<%= a.detail_path %>/attachments/<%= file.id %>/download"><%= file.original_filename %></a> (<%= file.file_type_label %>)<% if (idx < a.attachments.length - 1) { %>; <% } %>
+                <% }); %>
+              </p>
+              <% } %>
               <span class="church-member-list__meta"><%= a.publish_at ? new Date(a.publish_at).toLocaleDateString('en-GB') : '' %></span>
             </div>
           </li>
           <% }); %>
         </ul>
+        <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+        <div class="church-member-actions" style="margin-top:1rem">
+          <% if (page > 1) { %>
+          <a class="church-btn church-btn--outline church-btn--sm" href="/member/announcements<%= buildQ(lf, page - 1) %>">Previous</a>
+          <% } %>
+          <% if (page < totalPages) { %>
+          <a class="church-btn church-btn--outline church-btn--sm" href="/member/announcements<%= buildQ(lf, page + 1) %>">Next</a>
+          <% } %>
+        </div>
+        <% } %>
       </section>
       <% } %>
-      <script>
-        (function () {
-          var filters = document.querySelectorAll('.church-member-filter');
-          if (!filters.length) return;
-          filters.forEach(function (btn) {
-            btn.addEventListener('click', function () {
-              filters.forEach(function (b) { b.classList.remove('church-member-filter--active'); });
-              btn.classList.add('church-member-filter--active');
-              var key = btn.getAttribute('data-filter');
-              document.querySelectorAll('[data-source]').forEach(function (el) {
-                if (key === 'all' || el.getAttribute('data-source') === key) {
-                  el.style.display = '';
-                } else {
-                  el.style.display = 'none';
-                }
-              });
-            });
-          });
-        })();
-      </script>
 <%- include('../partials/member_shell_end') %>

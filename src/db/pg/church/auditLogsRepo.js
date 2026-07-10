@@ -49,6 +49,10 @@ function buildFilterClause(opts, params, { organizationId, branchId }) {
     params.push(branchId);
     clauses.push(`a.branch_id = $${params.length}`);
   }
+  if (opts.organizationId != null && organizationId == null) {
+    params.push(opts.organizationId);
+    clauses.push(`a.organization_id = $${params.length}`);
+  }
   if (opts.branchId != null) {
     params.push(opts.branchId);
     clauses.push(`a.branch_id = $${params.length}`);
@@ -132,6 +136,31 @@ async function listAuditLogsForOrganization(pool, organizationId, opts = {}) {
   return queryAuditLogs(pool, opts, { organizationId });
 }
 
+/**
+ * Platform-wide audit list (super-admin). Optional organizationId filter via opts.
+ */
+async function listAuditLogsForPlatform(pool, opts = {}) {
+  return queryAuditLogs(pool, opts, {
+    organizationId: opts.organizationId != null ? opts.organizationId : null,
+  });
+}
+
+async function countAuditLogsForPlatform(pool, opts = {}) {
+  return countAuditLogs(pool, opts, {
+    organizationId: opts.organizationId != null ? opts.organizationId : null,
+  });
+}
+
+async function findAuditLogByIdForPlatform(pool, auditId) {
+  const r = await pool.query(
+    `${AUDIT_SELECT}
+     WHERE a.id = $1
+     LIMIT 1`,
+    [auditId]
+  );
+  return mapAuditRow(r.rows[0] ?? null);
+}
+
 async function countAuditLogsForBranch(pool, branchId, opts = {}) {
   return countAuditLogs(pool, opts, { branchId });
 }
@@ -204,6 +233,9 @@ module.exports = {
   findAuditLogByIdForBranch,
   listAuditLogsForOrganization,
   findAuditLogByIdForOrganization,
+  listAuditLogsForPlatform,
+  countAuditLogsForPlatform,
+  findAuditLogByIdForPlatform,
   countAuditLogsForBranch,
   countAuditLogsForOrganization,
   listRecentAuditLogsForBranch,

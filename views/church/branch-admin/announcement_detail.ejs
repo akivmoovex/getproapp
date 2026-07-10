@@ -3,7 +3,7 @@
         <div>
           <a class="church-branch-back" href="/branch/announcements">&larr; Back to announcements</a>
           <h1 class="church-branch-topbar__title"><%= announcement.title %></h1>
-          <p class="church-branch-topbar__subtitle"><%= announcement.category %> · <%= audienceLabel(announcement.audience) %></p>
+          <p class="church-branch-topbar__subtitle"><%= announcement.category %> · <%= audienceLabel(announcement.audience) %> · <%= priorityLabel(announcement.priority || 'normal') %></p>
         </div>
         <span class="church-status-chip church-status-chip--<%= announcement.status === 'published' ? 'verified' : 'pending' %>"><%= announcementStatusLabel(announcement.status) %></span>
       </header>
@@ -16,23 +16,41 @@
       <section class="church-branch-panel">
         <div class="church-branch-review-note">
           <p><%= announcement.body %></p>
+          <% if (announcement.attachment_url) { %>
+          <p><a href="<%= announcement.attachment_url %>" target="_blank" rel="noopener noreferrer"><%= announcement.attachment_label || 'Attachment' %></a></p>
+          <% } %>
+          <% if (announcement.action_url) { %>
+          <p><a class="church-btn church-btn--outline church-btn--sm" href="<%= announcement.action_url %>" target="_blank" rel="noopener noreferrer"><%= announcement.action_label || 'Open link' %></a></p>
+          <% } %>
         </div>
         <dl class="church-branch-dl">
+          <div><dt>Priority</dt><dd><%= priorityLabel(announcement.priority || 'normal') %></dd></div>
+          <div><dt>Pinned</dt><dd><%= announcement.is_pinned ? 'Yes' : 'No' %></dd></div>
+          <div><dt>Featured</dt><dd><%= announcement.is_featured ? 'Yes' : 'No' %></dd></div>
+          <div><dt>Featured until</dt><dd><%= announcement.featured_until ? new Date(announcement.featured_until).toLocaleString('en-GB') : '—' %></dd></div>
           <div><dt>Publish date</dt><dd><%= announcement.publish_at ? new Date(announcement.publish_at).toLocaleString('en-GB') : '—' %></dd></div>
           <div><dt>Expiry date</dt><dd><%= announcement.expires_at ? new Date(announcement.expires_at).toLocaleString('en-GB') : '—' %></dd></div>
           <div><dt>Created by</dt><dd><%= announcement.created_by_admin_name || '—' %></dd></div>
           <div><dt>Last updated</dt><dd><%= new Date(announcement.updated_at).toLocaleString('en-GB') %></dd></div>
         </dl>
       </section>
+      <% if (analytics) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Delivery analytics</h2>
+        <dl class="church-branch-dl">
+          <div><dt>Estimated audience</dt><dd><%= analytics.estimated_recipients %> <%= analytics.recipient_label %></dd></div>
+          <div><dt>Member reads</dt><dd><%= analytics.read_count %></dd></div>
+          <div><dt>Read rate</dt><dd><%= analytics.read_rate != null ? analytics.read_rate + '%' : '—' %></dd></div>
+        </dl>
+      </section>
+      <% } %>
       <% if (announcement.status !== 'archived') { %>
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Actions</h2>
         <div class="church-hq-review-actions">
           <a class="church-btn church-btn--outline" href="/branch/announcements/<%= announcement.id %>/edit">Edit</a>
           <% if (announcement.status !== 'published') { %>
-          <form method="post" action="/branch/announcements/<%= announcement.id %>/publish">
-            <button class="church-btn church-btn--primary" type="submit">Publish</button>
-          </form>
+          <a class="church-btn church-btn--primary" href="/branch/announcements/<%= announcement.id %>/confirm-publish">Review &amp; publish</a>
           <% } %>
           <form method="post" action="/branch/announcements/<%= announcement.id %>/archive">
             <button class="church-btn church-btn--outline" type="submit">Archive</button>

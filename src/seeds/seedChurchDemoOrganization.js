@@ -226,7 +226,7 @@ async function seedDemoPublicContentIfMissing(pool, org, branch) {
   const existingAnnouncements = await announcementsRepo.listAnnouncementsForBranch(pool, branch.id, {
     status: "all",
   });
-  if (existingAnnouncements.length > 0) return;
+  if ((existingAnnouncements.rows || existingAnnouncements).length > 0) return;
 
   await announcementsRepo.createAnnouncementForBranch(pool, {
     organization_id: org.id,

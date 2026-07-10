@@ -1,0 +1,20 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Audit event', activeNav: activeNav || 'church_platform_audit', pageTitle: 'Audit event' }) %>
+        <header class="admin-dashboard__header">
+          <div>
+            <a class="muted" href="/admin/church/audit">&larr; Back to audit log</a>
+            <h1 class="admin-dashboard__title"><%= actionLabel(log.action) %></h1>
+            <p class="admin-dashboard__subtitle muted"><%= new Date(log.created_at).toLocaleString('en-GB') %></p>
+          </div>
+        </header>
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <dl class="admin-dl">
+            <div><dt>Organization</dt><dd><%= log.organization_name || '—' %></dd></div>
+            <div><dt>Branch</dt><dd><%= log.branch_name || '—' %></dd></div>
+            <div><dt>Actor</dt><dd><%= actorTypeLabel(log.actor_type) %> — <%= actorDisplayFromRow(log) %></dd></div>
+            <div><dt>Action</dt><dd><%= actionLabel(log.action) %></dd></div>
+            <div><dt>Entity</dt><dd><%= targetTypeLabel(log.entity_type) %> — <%= targetLabelFromRow(log) %></dd></div>
+            <div><dt>Summary</dt><dd style="overflow-wrap:anywhere;"><%= auditSummary(log) %></dd></div>
+            <div><dt>Safe metadata</dt><dd><pre style="white-space:pre-wrap;overflow-wrap:anywhere;margin:0;"><%= formatMetadataForDisplay(log.metadata_json) %></pre></dd></div>
+          </dl>
+        </section>
+<%- include('../../partials/platform_admin_shell_end') %>

@@ -1,0 +1,39 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Roles', activeNav: activeNav || 'church_platform_roles', pageTitle: 'Roles' }) %>
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Roles reference</h1>
+            <p class="admin-dashboard__subtitle muted">Church platform roles are defined in application code. This screen is read-only.</p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/users', label: 'Users' }) %>
+          </div>
+        </header>
+
+        <div class="card card--mb-xl">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  <th>Scope</th>
+                  <th>Description</th>
+                  <th>Main access</th>
+                  <th>Active users</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (roles || []).forEach(function (r) { %>
+                <tr>
+                  <td><code><%= r.id %></code></td>
+                  <td><%= r.scope %></td>
+                  <td><%= r.description %></td>
+                  <td><%= r.access %></td>
+                  <td><%= r.active_count %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="muted">Platform super-admin accounts are managed separately and are not editable here.</p>
+<%- include('../../partials/platform_admin_shell_end') %>

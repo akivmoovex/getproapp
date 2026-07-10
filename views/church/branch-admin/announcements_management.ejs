@@ -9,12 +9,23 @@
       <% if (notice) { %>
       <div class="church-alert church-alert--success" role="status"><%= notice %></div>
       <% } %>
+      <form class="church-form church-form--inline" method="get" action="/branch/announcements">
+        <% if (statusFilter && statusFilter !== 'all') { %>
+        <input type="hidden" name="status" value="<%= statusFilter %>"/>
+        <% } %>
+        <div class="church-field">
+          <label class="church-label" for="q">Search</label>
+          <input class="church-input" id="q" name="q" type="search" value="<%= searchQuery || '' %>" placeholder="Title, body, or category"/>
+        </div>
+        <button class="church-btn church-btn--outline" type="submit">Search</button>
+      </form>
       <div class="church-branch-filter-tabs">
         <% announcementFilters.forEach(function (f) { %>
-        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/announcements<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : announcementStatusLabel(f) %></a>
+        <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/announcements<%= buildListQuery(f, searchQuery, 1) %>"><%= f === 'all' ? 'All' : announcementStatusLabel(f) %></a>
         <% }); %>
       </div>
       <section class="church-branch-panel">
+        <p class="church-branch-panel__hint"><%= totalCount %> announcement(s) · page <%= page %> of <%= totalPages %></p>
         <% if ((announcements || []).length === 0) { %>
         <p class="church-branch-empty">No announcements in this filter.</p>
         <% } else { %>
@@ -23,6 +34,7 @@
             <thead>
               <tr>
                 <th>Title</th>
+                <th>Priority</th>
                 <th>Category</th>
                 <th>Audience</th>
                 <th>Status</th>
@@ -34,7 +46,12 @@
             <tbody>
               <% announcements.forEach(function (a) { %>
               <tr>
-                <td><%= a.title %></td>
+                <td>
+                  <%= a.title %>
+                  <% if (a.is_featured) { %><span class="church-status-chip">Featured</span><% } %>
+                  <% if (a.is_pinned) { %><span class="church-status-chip">Pinned</span><% } %>
+                </td>
+                <td><%= priorityLabel(a.priority || 'normal') %></td>
                 <td><%= a.category %></td>
                 <td><%= audienceLabel(a.audience) %></td>
                 <td><span class="church-status-chip church-status-chip--<%= a.status === 'published' ? 'verified' : 'pending' %>"><%= announcementStatusLabel(a.status) %></span></td>
@@ -51,6 +68,16 @@
             </tbody>
           </table>
         </div>
+        <% if (totalPages > 1) { %>
+        <div class="church-branch-actions">
+          <% if (page > 1) { %>
+          <a class="church-btn church-btn--outline church-btn--sm" href="/branch/announcements<%= buildListQuery(statusFilter, searchQuery, page - 1) %>">Previous</a>
+          <% } %>
+          <% if (page < totalPages) { %>
+          <a class="church-btn church-btn--outline church-btn--sm" href="/branch/announcements<%= buildListQuery(statusFilter, searchQuery, page + 1) %>">Next</a>
+          <% } %>
+        </div>
+        <% } %>
         <% } %>
       </section>
 <%- include('../partials/branch_admin_shell_end') %>

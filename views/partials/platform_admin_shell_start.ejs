@@ -55,21 +55,29 @@
           <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
           <span>Dashboard</span>
         </a>
-        <a href="/admin/churches" class="<%= navClass(['church_platform_orgs', 'church_platform_branches']) %>">
+        <a href="/admin/churches" class="<%= navClass('church_platform_orgs') %>">
           <span class="material-symbols-outlined" aria-hidden="true">apartment</span>
           <span>Organizations</span>
         </a>
         <a href="/admin/church/branches" class="<%= navClass('church_platform_branches') %>">
           <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
-          <span>Tenants</span>
+          <span>Branches</span>
         </a>
-        <a href="/admin/churches" class="<%= navClass('church_platform_plans') %>">
-          <span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span>
-          <span>Plans</span>
+        <a href="/admin/church/users" class="<%= navClass('church_platform_users') %>">
+          <span class="material-symbols-outlined" aria-hidden="true">group</span>
+          <span>Users</span>
+        </a>
+        <a href="/admin/church/roles" class="<%= navClass('church_platform_roles') %>">
+          <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+          <span>Roles</span>
+        </a>
+        <a href="/admin/church/audit" class="<%= navClass('church_platform_audit') %>">
+          <span class="material-symbols-outlined" aria-hidden="true">history</span>
+          <span>Audit log</span>
         </a>
         <a href="/admin/church/security" class="<%= navClass('church_platform_security') %>">
-          <span class="material-symbols-outlined" aria-hidden="true">settings</span>
-          <span>Settings</span>
+          <span class="material-symbols-outlined" aria-hidden="true">security</span>
+          <span>Security</span>
         </a>
         <a href="/admin/diagnostics" class="<%= navClass('church_platform_diagnostics') %>">
           <span class="material-symbols-outlined" aria-hidden="true">monitor_heart</span>
@@ -120,10 +128,10 @@
       <header class="church-branch-desktop-topbar church-platform-desktop-topbar" aria-label="<%= _navTitle %>">
         <div class="church-branch-desktop-topbar__left">
           <h1 class="church-branch-desktop-topbar__title"><%= _navTitle %></h1>
-          <label class="church-branch-search church-show-desktop-only">
+          <form class="church-branch-search church-show-desktop-only" method="get" action="/admin/church/search" role="search">
             <span class="material-symbols-outlined" aria-hidden="true">search</span>
-            <input type="search" placeholder="Search organizations..." disabled aria-label="Search"/>
-          </label>
+            <input id="platform-top-search" type="search" name="q" placeholder="Search organizations, admins…" aria-label="Support search"/>
+          </form>
         </div>
         <div class="church-branch-desktop-topbar__actions">
           <a class="church-branch-desktop-topbar__icon" href="/admin/churches/new" aria-label="Create church">
@@ -149,11 +157,15 @@
         </div>
         <nav class="church-drawer__nav church-drawer__nav--admin">
           <a href="/admin/dashboard" class="<%= navClass('church_platform') %>"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span><span>Dashboard</span></a>
-          <a href="/admin/churches" class="<%= navClass(['church_platform_orgs', 'church_platform_branches']) %>"><span class="material-symbols-outlined" aria-hidden="true">apartment</span><span>Organizations</span></a>
-          <a href="/admin/church/branches" class="<%= navClass('church_platform_branches') %>"><span class="material-symbols-outlined" aria-hidden="true">account_tree</span><span>Tenants</span></a>
-          <a href="/admin/church/security" class="<%= navClass('church_platform_security') %>"><span class="material-symbols-outlined" aria-hidden="true">settings</span><span>Settings</span></a>
+          <a href="/admin/churches" class="<%= navClass('church_platform_orgs') %>"><span class="material-symbols-outlined" aria-hidden="true">apartment</span><span>Organizations</span></a>
+          <a href="/admin/church/branches" class="<%= navClass('church_platform_branches') %>"><span class="material-symbols-outlined" aria-hidden="true">account_tree</span><span>Branches</span></a>
+          <a href="/admin/church/users" class="<%= navClass('church_platform_users') %>"><span class="material-symbols-outlined" aria-hidden="true">group</span><span>Users</span></a>
+          <a href="/admin/church/roles" class="<%= navClass('church_platform_roles') %>"><span class="material-symbols-outlined" aria-hidden="true">badge</span><span>Roles</span></a>
+          <a href="/admin/church/audit" class="<%= navClass('church_platform_audit') %>"><span class="material-symbols-outlined" aria-hidden="true">history</span><span>Audit log</span></a>
+          <a href="/admin/church/security" class="<%= navClass('church_platform_security') %>"><span class="material-symbols-outlined" aria-hidden="true">security</span><span>Security</span></a>
           <a href="/admin/diagnostics" class="<%= navClass('church_platform_diagnostics') %>"><span class="material-symbols-outlined" aria-hidden="true">monitor_heart</span><span>Support</span></a>
           <a href="/admin/church/search" class="<%= navClass('church_platform_search') %>"><span class="material-symbols-outlined" aria-hidden="true">search</span><span>Search</span></a>
+          <a href="/admin/church/reset-requests" class="<%= navClass('church_platform_reset_requests') %>"><span class="material-symbols-outlined" aria-hidden="true">lock_reset</span><span>Reset requests</span></a>
           <a href="/admin/churches/new" class="church-branch-nav-link"><span class="material-symbols-outlined" aria-hidden="true">add</span><span>New church</span></a>
         </nav>
         <div class="church-drawer__actions">
@@ -169,14 +181,14 @@
         <a href="/admin/churches" class="<%= bottomClass('church_platform_orgs') %>">
           <span class="material-symbols-outlined">apartment</span>Churches
         </a>
-        <a href="/admin/churches/new" class="church-branch-bottom-nav__link">
-          <span class="material-symbols-outlined">add_circle</span>New
+        <a href="/admin/church/users" class="<%= bottomClass('church_platform_users') %>">
+          <span class="material-symbols-outlined">group</span>Users
         </a>
-        <a href="/admin/diagnostics" class="<%= bottomClass('church_platform_diagnostics') %>">
-          <span class="material-symbols-outlined">monitor_heart</span>Support
+        <a href="/admin/church/audit" class="<%= bottomClass('church_platform_audit') %>">
+          <span class="material-symbols-outlined">history</span>Audit
         </a>
         <a href="/admin/church/security" class="<%= bottomClass('church_platform_security') %>">
-          <span class="material-symbols-outlined">settings</span>More
+          <span class="material-symbols-outlined">menu</span>More
         </a>
       </nav>
       <div class="church-branch-content church-platform-content">

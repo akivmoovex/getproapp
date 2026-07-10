@@ -1,0 +1,58 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header church-member-header--page">
+        <div>
+          <a class="church-branch-back" href="/member/announcements">&larr; Back to announcements</a>
+          <h1 class="church-member-header__title"><%= announcement.title %></h1>
+          <p class="church-member-header__subtitle"><%= churchName %></p>
+        </div>
+      </header>
+
+      <section class="church-member-panel">
+        <div class="church-member-list__meta" style="margin-bottom:0.75rem">
+          <span class="church-status-chip"><%= announcement.source === 'hq' ? 'HQ' : 'Branch' %></span>
+          <% if (announcement.is_actively_featured) { %><span class="church-status-chip" aria-label="Featured">Featured</span><% } %>
+          <% if (announcement.is_pinned) { %><span class="church-status-chip" aria-label="Pinned">Pinned</span><% } %>
+          <% if (announcement.is_read) { %>
+          <span class="church-status-chip church-status-chip--verified" aria-label="Read">Read</span>
+          <% } else { %>
+          <span class="church-status-chip" aria-label="Unread">Unread</span>
+          <% } %>
+          <% var pm = announcement.priority_meta || priorityDisplay(announcement.priority); %>
+          <span class="church-status-chip" aria-label="Priority <%= pm.label %>">
+            <span class="material-symbols-outlined" aria-hidden="true" style="font-size:1rem;vertical-align:middle"><%= pm.icon %></span>
+            <%= pm.label %>
+          </span>
+          <% if (announcement.category) { %><span class="church-status-chip"><%= announcement.category %></span><% } %>
+        </div>
+
+        <p><%= announcement.body %></p>
+
+        <% if (announcement.action_url) { %>
+        <p style="margin-top:1rem">
+          <a class="church-btn church-btn--primary" href="<%= announcement.action_url %>" target="_blank" rel="noopener noreferrer">
+            <%= announcement.action_label || 'Open link' %>
+          </a>
+        </p>
+        <% } %>
+
+        <% if ((announcement.attachments || []).length) { %>
+        <div style="margin-top:1.25rem">
+          <h2 class="church-member-section__title" style="font-size:1rem">Attachments</h2>
+          <ul class="church-member-list">
+            <% announcement.attachments.forEach(function (file) { %>
+            <li>
+              <a href="/member/announcements/<%= announcement.source %>/<%= announcement.id %>/attachments/<%= file.id %>/download">
+                <%= file.original_filename %>
+              </a>
+              <span class="church-member-list__meta"><%= file.file_type_label %></span>
+            </li>
+            <% }); %>
+          </ul>
+        </div>
+        <% } %>
+
+        <p class="church-member-list__meta" style="margin-top:1rem">
+          <%= announcement.publish_at ? new Date(announcement.publish_at).toLocaleString('en-GB') : '' %>
+        </p>
+      </section>
+<%- include('../partials/member_shell_end') %>

@@ -28,6 +28,14 @@
               </select>
             </div>
             <div class="church-field">
+              <label class="church-label" for="priority">Priority</label>
+              <select class="church-input" id="priority" name="priority">
+                <% priorities.forEach(function (p) { %>
+                <option value="<%= p %>" <%= form.priority === p ? 'selected' : '' %>><%= priorityLabel(p) %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field">
               <label class="church-label" for="audience">Audience</label>
               <select class="church-input" id="audience" name="audience">
                 <% audiences.forEach(function (a) { %>
@@ -44,10 +52,39 @@
               <input class="church-input" id="expires_at" name="expires_at" type="datetime-local" value="<%= form.expires_at || '' %>"/>
             </div>
           </div>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-checkbox-row">
+                <input type="checkbox" name="is_pinned" value="1" <%= form.is_pinned ? 'checked' : '' %>/>
+                <span>Pinned</span>
+              </label>
+            </div>
+            <div class="church-field">
+              <label class="church-checkbox-row">
+                <input type="checkbox" name="is_featured" value="1" <%= form.is_featured ? 'checked' : '' %>/>
+                <span>Featured</span>
+              </label>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="featured_until">Featured until (optional)</label>
+              <input class="church-input" id="featured_until" name="featured_until" type="datetime-local" value="<%= form.featured_until || '' %>"/>
+            </div>
+          </div>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="action_url">Action link URL (optional)</label>
+              <input class="church-input" id="action_url" name="action_url" type="url" maxlength="2000" placeholder="https://" value="<%= form.action_url || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="action_label">Action link label</label>
+              <input class="church-input" id="action_label" name="action_label" type="text" maxlength="200" value="<%= form.action_label || '' %>"/>
+            </div>
+          </div>
+          <p class="church-branch-panel__hint">File attachments use the platform upload flow (PDF, PNG, JPG, DOC, DOCX; max 5 MB each). Upload controls are available after the draft is saved.</p>
         </section>
         <div class="church-branch-actions">
           <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft">Save draft</button>
-          <button class="church-btn church-btn--primary" type="submit" name="_intent" value="publish">Publish</button>
+          <button class="church-btn church-btn--primary" type="submit" name="_intent" value="review">Review &amp; publish</button>
         </div>
       </form>
 <%- include('../partials/branch_admin_shell_end') %>

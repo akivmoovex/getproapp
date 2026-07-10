@@ -53,6 +53,8 @@ function makeApp(ctx, isChurchHost = true) {
 
 async function cleanup(pool, orgIds) {
   for (const orgId of orgIds) {
+    await pool.query(`DELETE FROM public.church_feed_item_reads WHERE organization_id = $1`, [orgId]);
+    await pool.query(`DELETE FROM public.church_hq_broadcast_attachments WHERE organization_id = $1`, [orgId]);
     await pool.query(`DELETE FROM public.church_audit_logs WHERE organization_id = $1`, [orgId]);
     await pool.query(`DELETE FROM public.church_hq_broadcast_targets WHERE organization_id = $1`, [orgId]);
     await pool.query(`DELETE FROM public.church_hq_broadcasts WHERE organization_id = $1`, [orgId]);
@@ -84,8 +86,14 @@ test("unauthenticated visitor redirects to /hq/login", async () => {
 test(
   "HQ broadcast center targeting and visibility",
   { skip: !isPgConfigured() },
-  async () => {
+  async (t) => {
     const pool = getPgPool();
+    try {
+      await pool.query("SELECT 1");
+    } catch (e) {
+      t.skip(`PostgreSQL unreachable (${e.code || e.message})`);
+      return;
+    }
     await ensureCanonicalTenantsForTests(pool);
     await ensureChurchSchema(pool);
     const suffix = makeSuffix("hqbc");
@@ -193,9 +201,21 @@ test(
       category: "Urgent",
       audience: "all_logged_in",
       target_scope: "all_branches",
-      _intent: "publish",
+      _intent: "review",
     });
     assert.equal(publishAllRes.status, 303);
+    assert.match(publishAllRes.headers.location || "", /\/confirm-publish$/);
+    const allMatch = /\/hq\/broadcasts\/(\d+)\/confirm-publish/.exec(publishAllRes.headers.location || "");
+    assert.ok(allMatch);
+    const confirmAllPage = await hqAgent.get(`/hq/broadcasts/${allMatch[1]}/confirm-publish`);
+    assert.equal(confirmAllPage.status, 200);
+    assert.match(confirmAllPage.text, /Estimated audience/);
+    const tokenAll = /name="_publish_token" value="([^"]+)"/.exec(confirmAllPage.text);
+    assert.ok(tokenAll);
+    const confirmAll = await hqAgent.post(`/hq/broadcasts/${allMatch[1]}/publish`).type("form").send({
+      _publish_token: tokenAll[1],
+    });
+    assert.equal(confirmAll.status, 303);
 
     const publishSelectedRes = await hqAgent.post("/hq/broadcasts").type("form").send({
       title: `Selected Branch Broadcast ${suffix}`,
@@ -204,9 +224,19 @@ test(
       audience: "public",
       target_scope: "selected_branches",
       branch_ids: String(branchA1.id),
-      _intent: "publish",
+      _intent: "review",
     });
     assert.equal(publishSelectedRes.status, 303);
+    const selectedMatch = /\/hq\/broadcasts\/(\d+)\/confirm-publish/.exec(publishSelectedRes.headers.location || "");
+    assert.ok(selectedMatch);
+    const confirmSelectedPage = await hqAgent.get(`/hq/broadcasts/${selectedMatch[1]}/confirm-publish`);
+    const tokenSelected = /name="_publish_token" value="([^"]+)"/.exec(confirmSelectedPage.text);
+    assert.ok(tokenSelected);
+    const confirmSelected = await hqAgent
+      .post(`/hq/broadcasts/${selectedMatch[1]}/publish`)
+      .type("form")
+      .send({ _publish_token: tokenSelected[1] });
+    assert.equal(confirmSelected.status, 303);
 
     const publicOnA1 = await hqBroadcastsRepo.listVisibleBroadcastsForBranch(
       pool,
