@@ -5,11 +5,12 @@
   var rest = sermons.slice(1);
   var showingDemoSermons = typeof hasDbSermons !== 'undefined' ? !hasDbSermons : true;
   var demoMedia = typeof sermonDemoMedia !== 'undefined' && sermonDemoMedia ? sermonDemoMedia : {
+    demoVideoEmbedUrl: 'https://www.youtube-nocookie.com/embed/M7lc1UVf-VE',
     videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/M7lc1UVf-VE',
     audioUrl: '/church/demo-media/sermon-demo.mp3',
     pdfUrl: '/church/demo-media/sermon-notes-demo.pdf'
   };
-  var videoEmbed = (featured && (featured.videoEmbedUrl || featured.videoUrl)) || demoMedia.videoEmbedUrl;
+  var videoEmbed = (featured && (featured.videoEmbedUrl || featured.videoUrl)) || demoMedia.demoVideoEmbedUrl || demoMedia.videoEmbedUrl;
   var audioSrc = (featured && featured.audioUrl) || demoMedia.audioUrl;
   var pdfSrc = (featured && featured.pdfUrl) || demoMedia.pdfUrl;
   var resourceCards = (typeof sermonResourceCards !== 'undefined' && sermonResourceCards && sermonResourceCards.length)
@@ -44,21 +45,40 @@
     <p class="home-mobile-design">Growing together through Word and Spirit.</p>
   </header>
 
-  <div class="church-sermons-filters home-desktop-design" aria-hidden="true">
-    <button type="button">Series <span class="material-symbols-outlined">expand_more</span></button>
-    <button type="button">Topic <span class="material-symbols-outlined">expand_more</span></button>
-    <button type="button">Speaker <span class="material-symbols-outlined">expand_more</span></button>
-    <label class="church-sermons-search">
-      <span class="material-symbols-outlined" aria-hidden="true">search</span>
-      <input type="search" placeholder="Search sermons..." aria-label="Search sermons"/>
-    </label>
+  <div class="church-sermons-toolbar sermons-toolbar home-desktop-design" aria-label="Sermon filters">
+    <div class="church-sermons-filter-row sermons-filter-row">
+      <button type="button" class="church-sermons-filter-pill">Series <span class="material-symbols-outlined" aria-hidden="true">expand_more</span></button>
+      <button type="button" class="church-sermons-filter-pill">Topic <span class="material-symbols-outlined" aria-hidden="true">expand_more</span></button>
+      <button type="button" class="church-sermons-filter-pill">Speaker <span class="material-symbols-outlined" aria-hidden="true">expand_more</span></button>
+      <label class="church-sermons-sort-control sermons-sort-control">
+        <span class="church-sermons-control-label">Sort</span>
+        <select aria-label="Sort sermons" disabled>
+          <option>Newest first</option>
+          <option>Oldest first</option>
+          <option>Title A–Z</option>
+        </select>
+      </label>
+      <label class="church-sermons-search sermons-search-control">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <input type="search" placeholder="Search sermons..." aria-label="Search sermons"/>
+      </label>
+    </div>
   </div>
 
-  <label class="church-sermons-series-select home-mobile-design">
-    <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
-    <span>All Series</span>
-    <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
-  </label>
+  <div class="church-sermons-toolbar sermons-toolbar home-mobile-design" aria-label="Sermon filters">
+    <label class="church-sermons-series-select">
+      <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+      <span>All Series</span>
+      <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+    </label>
+    <label class="church-sermons-sort-control sermons-sort-control">
+      <span class="church-sermons-control-label">Sort</span>
+      <select aria-label="Sort sermons" disabled>
+        <option>Newest first</option>
+        <option>Oldest first</option>
+      </select>
+    </label>
+  </div>
 
   <% if (!featured) { %>
   <div class="church-empty-state">
@@ -85,16 +105,18 @@
           referrerpolicy="strict-origin-when-cross-origin"
         ></iframe>
       </div>
-      <span class="church-sermon-badge">LATEST SERMON</span>
+      <span class="church-sermon-badge">FEATURED VIDEO</span>
     </div>
     <div class="church-sermon-featured-mobile__body">
       <h2><%= featured.title %></h2>
       <p class="church-sermon-meta">
         <% if (featured.speaker) { %><span class="material-symbols-outlined" aria-hidden="true">person</span> <%= featured.speaker %><% } %>
         <% if (featured.date) { %> · <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span> <%= featured.date %><% } %>
+        <% if (featured.duration) { %> · <span class="material-symbols-outlined" aria-hidden="true">schedule</span> <%= featured.duration %><% } %>
       </p>
       <% if (featured.description) { %><p><%= featured.description %></p><% } %>
-      <div class="church-sermon-media-panel">
+      <% if (showingDemoSermons) { %><p class="church-sermon-demo-note">Demo media — replace with your church sermon video.</p><% } %>
+      <div class="church-sermon-media-panel media-resource-actions">
         <p class="church-sermon-media-panel__label"><span class="material-symbols-outlined" aria-hidden="true">headphones</span> Listen to audio</p>
         <audio class="church-sermon-audio" controls preload="metadata">
           <source src="<%= audioSrc %>" type="audio/mpeg"/>
@@ -127,14 +149,17 @@
         </div>
       </div>
       <div class="church-sermon-featured-desktop__copy">
-        <span class="church-sermon-badge">LATEST SERMON</span>
+        <span class="church-sermon-badge">FEATURED VIDEO</span>
         <h2><%= featured.title %></h2>
         <p class="church-sermon-meta">
           <% if (featured.speaker) { %><span class="material-symbols-outlined" aria-hidden="true">person</span> <%= featured.speaker %><% } %>
           <% if (featured.date) { %> · <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span> <%= featured.date %><% } %>
+          <% if (featured.duration) { %> · <span class="material-symbols-outlined" aria-hidden="true">schedule</span> <%= featured.duration %><% } %>
         </p>
         <% if (featured.description) { %><p class="church-sermon-featured-desktop__desc"><%= featured.description %></p><% } %>
-        <div class="church-sermon-media-panel">
+        <% if (showingDemoSermons) { %><p class="church-sermon-demo-note">Demo media — replace with your church sermon video.</p><% } %>
+        <a class="church-btn church-btn--primary church-btn--sm" href="#sermon-video">Watch sermon</a>
+        <div class="church-sermon-media-panel media-resource-actions">
           <p class="church-sermon-media-panel__label"><span class="material-symbols-outlined" aria-hidden="true">headphones</span> Listen to audio</p>
           <audio class="church-sermon-audio" controls preload="metadata">
             <source src="<%= audioSrc %>" type="audio/mpeg"/>

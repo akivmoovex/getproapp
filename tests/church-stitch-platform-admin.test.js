@@ -113,12 +113,12 @@ test("platform admin localized assets exist", () => {
   }
 });
 
-test("platform admin shell references church.css?v=44", () => {
+test("platform admin shell references church.css?v=45", () => {
   const text = fs.readFileSync(
     path.join(__dirname, "../views/partials/platform_admin_shell_start.ejs"),
     "utf8"
   );
-  assert.match(text, /church\.css\?v=44/);
+  assert.match(text, /church\.css\?v=45/);
   assert.match(text, /data-platform-shell="stitch-v42"/);
   assert.match(text, /BlessBoard Admin/);
   assert.match(text, /Powered by GetPro/);
@@ -128,9 +128,9 @@ test("platform admin shell references church.css?v=44", () => {
   assert.match(text, /\/admin\/diagnostics/);
 });
 
-test("blessboard login uses church.css?v=44", () => {
+test("blessboard login uses church.css?v=45", () => {
   const text = fs.readFileSync(path.join(__dirname, "../views/admin/blessboard_login.ejs"), "utf8");
-  assert.match(text, /church\.css\?v=44/);
+  assert.match(text, /church\.css\?v=45/);
   assert.match(text, /BlessBoard Admin/);
   assert.match(text, /Powered by GetPro/);
 });
@@ -194,7 +194,7 @@ test("platform admin blocked on branch host while public church shell still load
     path.join(__dirname, "../views/church/partials/branch_admin_shell_start.ejs"),
     "utf8"
   );
-  assert.match(shell, /church\.css\?v=44/);
+  assert.match(shell, /church\.css\?v=45/);
 });
 
 test(
@@ -252,7 +252,7 @@ test(
       for (const screen of screens) {
         const res = await agent.get(screen.path).set("Host", "blessboard.com");
         assert.equal(res.status, 200, `${screen.path} should be 200`);
-        assert.match(res.text, /church\.css\?v=44/, `${screen.path} CSS v43`);
+        assert.match(res.text, /church\.css\?v=45/, `${screen.path} CSS v43`);
         assert.match(res.text, /data-platform-shell="stitch-v42"/);
         assert.match(res.text, /BlessBoard Admin/);
         assert.match(res.text, /Powered by GetPro/);

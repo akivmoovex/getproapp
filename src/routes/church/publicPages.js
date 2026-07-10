@@ -75,13 +75,23 @@ function mapDemoEventCard(item, index) {
   };
 }
 
-/** Demo media until Phase 2 upload/storage (video_url / audio_url / pdf_url). */
+/**
+ * Demo media until Phase 2 upload/storage (video_url / audio_url / pdf_url).
+ * Replace demoVideoEmbedUrl with the church’s real YouTube embed when available.
+ * Neutral youtube-nocookie placeholder (not a licensed sermon); UI labels it as demo media.
+ */
 const SERMON_DEMO_MEDIA = {
-  // Public YouTube sample (iframe API demo) — churches override via media_url / video_url
-  videoEmbedUrl: "https://www.youtube-nocookie.com/embed/M7lc1UVf-VE",
+  demoVideoEmbedUrl: "https://www.youtube-nocookie.com/embed/M7lc1UVf-VE",
   audioUrl: "/church/demo-media/sermon-demo.mp3",
   pdfUrl: "/church/demo-media/sermon-notes-demo.pdf",
+  title: "Faith, Hope & Purpose",
+  speaker: "Guest Speaker",
+  date: "Demo · ~60 min",
+  description: "A sample motivational message for demonstrating BlessBoard sermon media.",
+  durationLabel: "~60s audio demo",
 };
+// Back-compat alias used by enrich/fallback helpers
+SERMON_DEMO_MEDIA.videoEmbedUrl = SERMON_DEMO_MEDIA.demoVideoEmbedUrl;
 
 function youtubeEmbedFromUrl(raw) {
   const url = String(raw || "").trim();
@@ -122,14 +132,15 @@ function enrichSermonMedia(item) {
 function fallbackSermonSamples(churchName) {
   return [
     {
-      title: "The Sovereign Grace of God",
-      speaker: "Pastor John Phiri",
-      date: "Oct 27, 2024",
-      category: "Faith Foundations",
+      title: SERMON_DEMO_MEDIA.title,
+      speaker: SERMON_DEMO_MEDIA.speaker,
+      date: SERMON_DEMO_MEDIA.date,
+      category: "Demo Media",
       icon: "menu_book",
-      description: "Understanding our divine calling in a modern world and how to remain steadfast in faith.",
-      media_url: SERMON_DEMO_MEDIA.videoEmbedUrl,
+      description: SERMON_DEMO_MEDIA.description,
+      media_url: SERMON_DEMO_MEDIA.demoVideoEmbedUrl,
       mediaType: "video",
+      duration: SERMON_DEMO_MEDIA.durationLabel,
     },
     {
       title: "Foundations of Community",

@@ -5,27 +5,25 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=44` (Public sermons media demo)
+**CSS bundle:** `/church/church.css?v=45` (Sermons media + toolbar alignment)
 
-**Last updated:** 2026-07-10 (Public sermons YouTube / MP3 / PDF demo)
+**Last updated:** 2026-07-10 (Sermons media demo length + sort alignment)
 
-### Public sermons media demo (v44)
+### Public sermons media demo (v44–v45)
 
 **Route:** `/sermons`  
 **Stitch:** `06-public-sermons-resources-desktop.png` / `06-public-sermons-resources-mobile.png`
 
-**Added inside existing featured + resource layout (no full redesign):**
-- Featured YouTube embed (`youtube-nocookie.com`), DB `media_url` / future `video_url` can override
-- HTML5 `<audio controls>` for MP3 listening
-- Download MP3 + Download PDF Notes buttons
-- Three resource cards: Video / Audio / PDF with Watch · Listen · Download
-
-**Demo assets:** `public/church/demo-media/sermon-demo.mp3`, `sermon-notes-demo.pdf`  
-**Phase 2:** upload/storage + DB fields `video_url`, `audio_url`, `pdf_url`, `media_type`, `duration`, `speaker`, `sermon_date` (speaker/date already exist)
+**Media:**
+- Featured YouTube embed via single fallback `SERMON_DEMO_MEDIA.demoVideoEmbedUrl` (`youtube-nocookie.com`)
+- Demo title: “Faith, Hope & Purpose” — clearly labeled demo media
+- HTML5 audio: `public/church/demo-media/sermon-demo.mp3` (~60s generated neutral tone bed)
+- PDF: `public/church/demo-media/sermon-notes-demo.pdf`
+- Toolbar/sort row vertically aligned (`sermons-toolbar`, `sermons-filter-row`, `sermons-sort-control`)
 
 **Screenshots:** `test-results/blessboard-public-screens-visual/sermons-media-mobile.png`, `sermons-media-desktop.png`
 
-**Remaining differences:** placeholder YouTube (`M7lc1UVf-VE` iframe API sample) / MP3 / PDF until churches add real URLs; native audio UI varies by browser; Stitch still shows static poster art rather than a live player.
+**Remaining differences:** configurable demo YouTube until church adds real URL; audio/PDF are placeholders until Phase 2 upload/storage; native audio chrome varies by browser; Stitch shows static poster art.
 
 ### Desktop public menu hotfix (v39)
 

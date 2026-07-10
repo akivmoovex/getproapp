@@ -6271,9 +6271,162 @@ a.church-branch-stat-card--link:hover {
   max-width: 40rem;
 }
 
+/* Sermons toolbar / sort alignment (v45) */
+.church-sermons-toolbar.sermons-toolbar,
+.sermons-toolbar {
+  margin-bottom: var(--church-space-xl);
+}
+
+.church-sermons-filter-row.sermons-filter-row,
+.sermons-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.church-sermons-filter-pill,
+.church-sermons-filters > button {
+  box-sizing: border-box;
+  min-height: 44px;
+  height: 44px;
+  border: 1px solid var(--church-outline);
+  background: #fff;
+  border-radius: 10px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--church-navy);
+  font-weight: 500;
+  font: inherit;
+  line-height: 1.2;
+  cursor: default;
+}
+
+@media (min-width: 1100px) {
+  .church-sermons-filter-row.sermons-filter-row,
+  .sermons-filter-row {
+    flex-wrap: nowrap;
+  }
+
+  .church-sermons-search.sermons-search-control,
+  .sermons-search-control {
+    flex: 1 1 auto;
+    min-width: 12rem;
+    max-width: 22rem;
+  }
+
+  .church-sermons-sort-control.sermons-sort-control,
+  .sermons-sort-control {
+    flex: 0 0 auto;
+  }
+}
+
+.church-sermons-sort-control.sermons-sort-control,
+.sermons-sort-control {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 10rem;
+}
+
+.church-sermons-control-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--church-muted);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.church-sermons-sort-control select {
+  box-sizing: border-box;
+  min-height: 44px;
+  height: 44px;
+  width: 100%;
+  min-width: 9rem;
+  border: 1px solid var(--church-outline);
+  background: #fff;
+  border-radius: 10px;
+  padding: 0 12px;
+  color: var(--church-navy);
+  font: inherit;
+  line-height: 1.2;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%235c6b73' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+.church-sermons-search.sermons-search-control,
+.sermons-search-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 44px;
+  height: 44px;
+  background: #fff;
+  border: 1px solid var(--church-outline);
+  border-radius: 10px;
+  padding: 0 14px;
+  min-width: 16rem;
+  flex: 1 1 14rem;
+}
+
+.church-sermons-search.sermons-search-control input,
+.sermons-search-control input {
+  border: none;
+  outline: none;
+  width: 100%;
+  background: transparent;
+  font: inherit;
+  line-height: 1.2;
+  height: 100%;
+}
+
+.church-sermons-toolbar.home-mobile-design {
+  display: none;
+  gap: 10px;
+}
+
+@media (max-width: 899px) {
+  .church-sermons-toolbar.home-mobile-design {
+    display: grid !important;
+  }
+
+  .church-sermons-toolbar.home-desktop-design {
+    display: none !important;
+  }
+}
+
+.church-sermons-toolbar .church-sermons-series-select {
+  margin-bottom: 0;
+  box-sizing: border-box;
+  min-height: 44px;
+  height: 44px;
+  padding: 0 14px;
+}
+
+.church-sermons-toolbar .church-sermons-sort-control {
+  width: 100%;
+}
+
+.church-sermon-demo-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--church-muted);
+  font-style: italic;
+}
+
 .church-sermons-filters {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--church-space-sm);
   margin-bottom: var(--church-space-xl);
 }
@@ -10385,6 +10538,7 @@ a.church-branch-bento-stat:hover {
 /* --- Platform admin Batch E (Stitch 62–68) — church.css?v=42 --- */
 /* --- Apex homepage menu fix — church.css?v=43 --- */
 /* --- Public sermons media demo — church.css?v=44 --- */
+/* --- Sermons media + toolbar alignment — church.css?v=45 --- */
 
 .church-sermon-hash-target {
   scroll-margin-top: 72px;
