@@ -9369,3 +9369,38 @@ a.church-branch-stat-card--link:hover {
     display: none !important;
   }
 }
+
+/* Batch C overflow fix — keep mobile viewport from expanding */
+.church-body--member-portal,
+.church-member-main,
+.church-member-content {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+.church-member-dash-main,
+.church-member-section,
+.church-member-event-bento,
+.church-member-dash-grid {
+  min-width: 0;
+}
+
+.church-member-event-scroller {
+  max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  .church-member-bento.church-member-bento--mobile-4 {
+    display: grid !important;
+    padding: 0 16px;
+    margin-bottom: 8px;
+  }
+
+  .church-member-mobile-topbar {
+    display: flex !important;
+  }
+
+  .church-member-welcome {
+    display: block !important;
+  }
+}

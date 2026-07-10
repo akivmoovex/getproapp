@@ -130,6 +130,7 @@ public/church/images/
   sermons/      # v36 — done
   giving/       # Batch A — QR JPGs present; wire + transparency check
   auth/         # Batch B — login bg, submitted, waiting, forgot illustrations
+  member/       # Batch C — avatars, heroes, events, ministries, resources
   ministries/   # icons via Material Symbols (no photo set)
 ```
 
@@ -155,12 +156,33 @@ Localized from Stitch HTML `aida-public` URLs into `public/church/images/auth/`.
 
 ---
 
+## Batch C — Member portal assets (v40)
+
+Localized into `public/church/images/member/` (Stitch downloads + reused public church photos).
+
+| Screen | Design element | PNG file | Current asset | Exact asset found? | Action |
+|--------|----------------|----------|---------------|--------------------|--------|
+| Dashboard / shell | Member avatar | `14-member-dashboard-*.png` | `member/avatar-member.jpg` (from Stitch Mary Phiri) | Yes | Wired in sidebar + mobile top bar |
+| Dashboard desktop | Hero garden image | `14-member-dashboard-desktop.png` | `member/dashboard-hero-garden.jpg` | Yes (Stitch HTML) | Wired |
+| Dashboard / events | Event card photos | `14` / `17` | `member/event-1..3.jpg`, `event-featured.jpg` | Reused from `events/` | Wired |
+| Announcements | Featured hero | `16-member-announcements-desktop.png` | `member/announcement-featured.jpg` | Reused from sermons | Wired |
+| My ministries | Cover photos | `18-member-my-ministries-*.png` | `member/ministry-*.jpg` | Reused homepage/leadership | Wired |
+| My ministries | Leader avatars | `18-member-my-ministries-desktop.png` | `member/avatar-leader-*.jpg` | Reused homepage avatars | Wired |
+| Resources | Hero + thumbs | `19-member-resources-study-*.png` | `member/resource-*.jpg` | Reused sermons | Wired |
+| Profile | Area map | `15-member-profile-mobile.png` | `member/profile-map-kafue.jpg` | Reused homepage map | Wired |
+| Forms | Row icons | `20-member-forms-documents-mobile.png` | Material Symbols | Yes (icons) | Wired |
+| Requests / prayer / giving | — | *(no PNG in 03-member-portal)* | Shell + form layouts | N/A | Shell-aligned only |
+
+**Not created:** `/member/learning` assets (no Stitch PNG / route).
+
+---
+
 ## Batch status (assets)
 
 | Batch | Scope | CSS | Asset status |
 |-------|--------|-----|--------------|
-| A | Giving + public remaining | v37 | QR JPGs localized; wire + transparency check in progress |
-| B | Auth | v38 | Export from Stitch when batch starts |
-| C | Member | v39 | Export from Stitch when batch starts |
-| D | Branch admin | v40 | Export from Stitch when batch starts |
-| E | Platform / HQ | v41 | Export from Stitch when batch starts |
+| A | Giving + public remaining | v37–v38 | Complete |
+| B | Auth | v38 | Complete |
+| C | Member | v40 | Complete — `public/church/images/member/` |
+| D | Branch admin | v41 | Export from Stitch when batch starts |
+| E | Platform / HQ | v42 | Export from Stitch when batch starts |

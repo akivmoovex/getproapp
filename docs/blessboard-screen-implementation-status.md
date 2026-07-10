@@ -5,9 +5,9 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=39` (desktop public menu hotfix after Batch B Auth)
+**CSS bundle:** `/church/church.css?v=40` (Batch C Member Portal)
 
-**Last updated:** 2026-07-10 (Desktop public menu/header hotfix — Batch C not started)
+**Last updated:** 2026-07-10 (Batch C — Member Portal pixel-fidelity)
 
 ### Desktop public menu hotfix (v39)
 
@@ -54,7 +54,7 @@ Regression guards live in `tests/church-visual-design.test.js` (CSS v35 shells, 
 | Public homepage (apex) | Close | Partial | Desktop SaaS uses Stitch assets; apex has no dedicated mobile PNG |
 | Branch public homepage | Close | Close | Mobile = church PNG; desktop = SaaS PNG via CSS split |
 | Auth screens | Close | Close | Batch B Stitch dual layouts; CSS v38 |
-| Member portal | Partial | Partial → improved | Mobile top bar, bento quick actions, announcement cards |
+| Member portal | Close | Close | Batch C Stitch shell + screens 14–20; CSS v40 |
 | Branch admin | Partial | Needs mobile fix | Functional; sidebar layout differs from Stitch density |
 | HQ / Leader / Platform | Partial | Partial | Implemented; not fully restyled this pass |
 
@@ -306,7 +306,7 @@ npm run test:ui
 - `views/church/public/leadership.ejs` — featured pastor, elders, ministry leaders, admin tiles
 - `public/church/church.css` — About/Leadership fidelity styles; cache `?v=35`
 - `public/church/images/about/*`, `public/church/images/leadership/*` — Stitch assets
-- All church shells referencing `church.css?v=39`
+- All church shells referencing `church.css?v=40`
 - `tests/church-visual-design.test.js` — CSS version + About/Leadership markers
 - `scripts/screenshot-blessboard-about-leadership.js`
 - `docs/blessboard-screen-implementation-status.md` — This file
@@ -336,16 +336,46 @@ npm run test:ui
 
 ---
 
+## Batch C — Member Portal (v40)
+
+| Screen | Device | PNG | Route | View | CSS version | Match status | Remaining differences |
+|--------|--------|-----|-------|------|-------------|--------------|----------------------|
+| Dashboard | Desktop | `14-member-dashboard-desktop.png` | `/member/dashboard` | `church/member/dashboard.ejs` | v40 | Close | Brand: church name + BlessBoard/Powered by GetPro (not GetPro Church); demo DB content differs; giving “Your Impact” is info CTA (no payment processing) |
+| Dashboard | Mobile | `14-member-dashboard-mobile.png` | `/member/dashboard` | `church/member/dashboard.ejs` | v40 | Close | Bottom nav uses Home/Groups/Events/Study/More (Stitch-aligned); More opens overflow panel |
+| Profile | Desktop | `15-member-profile-desktop.png` | `/member/profile` | `church/member/profile.ejs` | v40 | Close | Completion % from filled fields; avatar is shared demo asset (no per-member upload) |
+| Profile | Mobile | `15-member-profile-mobile.png` | `/member/profile` | `church/member/profile.ejs` | v40 | Close | Same; map is localized Kafue asset |
+| Announcements | Desktop | `16-member-announcements-desktop.png` | `/member/announcements` | `church/member/announcements.ejs` | v40 | Close | Featured image is shared asset; filter tabs are client-side only |
+| Announcements | Mobile | `16-member-announcements-mobile.png` | `/member/announcements` | `church/member/announcements.ejs` | v40 | Close | DB/demo copy differs from Stitch sample |
+| Events | Desktop | `17-member-events-calendar-desktop.png` | `/member/events` | `church/member/events.ejs` | v40 | Close | Month calendar is lightweight (no event detail drawer); photos are shared assets |
+| Events | Mobile | `17-member-events-calendar-mobile.png` | `/member/events` | `church/member/events.ejs` | v40 | Close | Horizontal scroller cards; no dedicated event detail route |
+| My ministries | Desktop | `18-member-my-ministries-desktop.png` | `/member/my-ministries` | `church/member/my_ministries.ejs` | v40 | Close | Cover/leader images are placeholders; schedule fields depend on DB |
+| My ministries | Mobile | `18-member-my-ministries-mobile.png` | `/member/my-ministries` | `church/member/my_ministries.ejs` | v40 | Close | Same |
+| Resources | Desktop | `19-member-resources-study-desktop.png` | `/member/resources` | `church/member/resources.ejs` | v40 | Close | Filter pills are visual only; progress widget is illustrative |
+| Resources | Mobile | `19-member-resources-study-mobile.png` | `/member/resources` | `church/member/resources.ejs` | v40 | Close | Row list when empty/published from branch |
+| Forms | Mobile | `20-member-forms-documents-mobile.png` | `/member/forms` | `church/member/forms.ejs` | v40 | Close | Search UI present but disabled (no client filter yet); desktop has no Stitch PNG |
+| Forms | Desktop | *(missing PNG)* | `/member/forms` | `church/member/forms.ejs` | v40 | Implemented | Missing PNG pair |
+| Requests status | — | *(no PNG)* | `/member/requests` | `church/member/requests.ejs` | v40 | Shell-aligned | No Stitch PNG in set |
+| Submit request | — | *(no PNG)* | `/member/requests/new` | `church/member/request_new.ejs` | v40 | Shell-aligned | No Stitch PNG in set |
+| Prayer request | — | *(no PNG)* | `/member/prayer-request` | `church/member/prayer_request.ejs` | v40 | Shell-aligned | No Stitch PNG in set |
+| Giving | — | *(no PNG)* | `/member/giving` | `church/member/giving.ejs` | v40 | Shell-aligned | No Stitch PNG; no payment processing |
+| Learning | — | *(no PNG)* | `/member/learning` | — | — | Missing | Route not created (no Stitch PNG) |
+
+**Screenshots:** `test-results/blessboard-stitch-visual/member/` via `node scripts/screenshot-blessboard-all-screens.js --batch=C` (requires Postgres for verified member seed).
+
+**Shell:** Light 288px sidebar, desktop top bar, mobile top bar + Stitch bottom nav, CSS `?v=40`.
+
+---
+
 ## Screens still not matching (priority follow-ups)
 
-1. **Member portal (Batch C)** — dashboard and portal pages vs Stitch
-2. **Branch admin (Batch D)** — dashboard density vs Stitch
-3. **Platform / HQ admin (Batch E)** — apex admin vs Stitch
-4. **Events calendar grid** — month view widget not implemented
-5. **Sermons** — real media players vs demo cards
-6. **Branch admin login** — no dedicated Stitch PNG in auth set
-7. **Leadership photo uploads** — website editor photo fields not wired
-8. **Contact form** — works; Stitch subject dropdown not required for DB submit
-9. **Stitch bottom tab bars** — product uses drawer + FAB instead (intentional)
+1. **Branch admin (Batch D)** — dashboard density vs Stitch
+2. **Platform / HQ admin (Batch E)** — apex admin vs Stitch
+3. **Events calendar** — richer month widget / detail drawer vs lightweight grid
+4. **Sermons** — real media players vs demo cards
+5. **Branch admin login** — no dedicated Stitch PNG in auth set
+6. **Leadership photo uploads** — website editor photo fields not wired
+7. **Member avatar upload** — shared demo avatar until profile photo feature exists
+8. **Forms desktop PNG** — missing from export set
+9. **Contact form** — works; Stitch subject dropdown not required for DB submit
 
 Stitch HTML for About/Leadership lives under `design-reference/stitch-screens/church-flow/01-public-website/`.

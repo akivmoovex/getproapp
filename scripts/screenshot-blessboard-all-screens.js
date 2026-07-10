@@ -16,6 +16,18 @@ const session = require("express-session");
 const { chromium } = require("playwright");
 
 const churchRoutes = require("../src/routes/church");
+const { AGE_GROUP_OPTIONS } = require("../src/church/memberRegistration");
+const {
+  REQUEST_TYPES,
+  PRAYER_PRIVACY_LEVELS,
+  PRAYER_URGENCY_LEVELS,
+  requestStatusLabel,
+} = require("../src/church/memberPortalValidation");
+const {
+  joinRequestStatusLabel,
+  memberRelationshipStatusLabel,
+} = require("../src/church/ministryJoinRequestValidation");
+const { formatDutyDate } = require("../src/church/dutyRosterValidation");
 
 const PORT = 4185;
 const ROOT = path.join(__dirname, "../test-results/blessboard-stitch-visual");
@@ -42,20 +54,227 @@ const BATCHES = {
   C: {
     outDir: "member",
     pages: [
-      { path: "/member/dashboard", name: "dashboard", verifiedMemberSession: true },
-      { path: "/member/profile", name: "profile", verifiedMemberSession: true },
-      { path: "/member/announcements", name: "announcements", verifiedMemberSession: true },
-      { path: "/member/events", name: "events", verifiedMemberSession: true },
-      { path: "/member/my-ministries", name: "ministries", verifiedMemberSession: true },
-      { path: "/member/resources", name: "resources", verifiedMemberSession: true },
-      { path: "/member/forms", name: "forms", verifiedMemberSession: true },
-      { path: "/member/requests/new", name: "requests-new", verifiedMemberSession: true },
-      { path: "/member/requests", name: "requests-status", verifiedMemberSession: true },
-      { path: "/member/prayer-request", name: "prayer", verifiedMemberSession: true },
-      { path: "/member/giving", name: "giving", verifiedMemberSession: true },
+      { path: "/member/dashboard", name: "dashboard", verifiedMemberSession: true, fixture: "dashboard" },
+      { path: "/member/profile", name: "profile", verifiedMemberSession: true, fixture: "profile" },
+      { path: "/member/announcements", name: "announcements", verifiedMemberSession: true, fixture: "announcements" },
+      { path: "/member/events", name: "events", verifiedMemberSession: true, fixture: "events" },
+      { path: "/member/my-ministries", name: "ministries", verifiedMemberSession: true, fixture: "my_ministries" },
+      { path: "/member/resources", name: "resources", verifiedMemberSession: true, fixture: "resources" },
+      { path: "/member/forms", name: "forms", verifiedMemberSession: true, fixture: "forms" },
+      { path: "/member/requests/new", name: "requests-new", verifiedMemberSession: true, fixture: "request_new" },
+      { path: "/member/requests", name: "requests-status", verifiedMemberSession: true, fixture: "requests" },
+      { path: "/member/prayer-request", name: "prayer", verifiedMemberSession: true, fixture: "prayer_request" },
+      { path: "/member/giving", name: "giving", verifiedMemberSession: true, fixture: "giving" },
     ],
   },
 };
+
+function memberFixtureLocals(fixtureKey) {
+  const churchName = "Kafue Baptist Church";
+  const memberName = "Mary Phiri";
+  const base = {
+    churchName,
+    pageTitle: churchName,
+    organization: { id: 1, name: churchName, status: "active" },
+    branch: { id: 1, name: churchName, status: "active", host_slug: "demo" },
+    member: {
+      member_id: 9002,
+      organization_id: 1,
+      branch_id: 1,
+      status: "verified",
+      full_name: memberName,
+    },
+    memberName,
+    memberInitials: "MP",
+    memberAvatarUrl: "/church/images/member/avatar-member.jpg",
+    notice: null,
+    error: null,
+  };
+
+  const events = [
+    {
+      title: "Sunday Worship Celebration",
+      description: "Join us for a powerful morning of worship.",
+      event_date: new Date().toISOString(),
+      start_time: "09:00",
+      location: "Main Sanctuary",
+    },
+    {
+      title: "Mid-week Bible Study",
+      description: "Grow together in the Word.",
+      event_date: new Date(Date.now() + 2 * 86400000).toISOString(),
+      start_time: "18:30",
+      location: "Room 204",
+    },
+    {
+      title: "Youth Outreach Night",
+      description: "Community outreach for youth.",
+      event_date: new Date(Date.now() + 4 * 86400000).toISOString(),
+      start_time: "19:00",
+      location: "Community Hall",
+    },
+  ];
+
+  const announcements = [
+    {
+      title: "Applications open for Kenya 2025",
+      body: "Be part of our international outreach team this summer.",
+      category: "Mission Trip",
+      source: "branch",
+      publish_at: new Date().toISOString(),
+    },
+    {
+      title: "Parking Lot Renovation",
+      body: "East entrance will be closed this coming Wednesday.",
+      category: "Building Update",
+      source: "hq",
+      publish_at: new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      title: "Choir Rehearsal Reminder",
+      body: "Saturday rehearsal starts at 15:00 in the sanctuary.",
+      category: "Worship",
+      source: "branch",
+      publish_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+    },
+  ];
+
+  const ministries = [
+    {
+      id: 1,
+      name: "Children's Ministry",
+      description: "Helping kids grow in faith through fun activities.",
+      member_relationship_label: "Volunteer",
+      leader_name: "Sarah Banda",
+      meeting_schedule: "Sundays 09:00",
+    },
+    {
+      id: 2,
+      name: "Worship Team",
+      description: "Lifting spirits through choir and instrumental music.",
+      member_relationship_label: "Member",
+      leader_name: "David Mwale",
+      meeting_schedule: "Saturdays 15:00",
+    },
+  ];
+
+  const map = {
+    dashboard: {
+      ...base,
+      navActive: "dashboard",
+      shellTitle: "Member Dashboard",
+      announcements,
+      events,
+      myMinistries: ministries,
+      memberRelationshipStatusLabel,
+      ministryInterest: "Worship",
+      upcomingDuties: [],
+      formatDutyDate,
+    },
+    profile: {
+      ...base,
+      navActive: "profile",
+      shellTitle: "Member Profile",
+      profile: {
+        full_name: memberName,
+        email: "mary.phiri@example.com",
+        phone: "0977123456",
+        gender: "female",
+        age_group: "Adult (36-60)",
+        address_area: "Kafue Central",
+        ministry_interest: "Worship",
+        emergency_contact_name: "John Phiri",
+        emergency_contact_phone: "0977000000",
+      },
+      ageGroupOptions: AGE_GROUP_OPTIONS,
+      ministryInterestOptions: [],
+    },
+    announcements: {
+      ...base,
+      navActive: "announcements",
+      shellTitle: "Announcements",
+      announcements,
+    },
+    events: {
+      ...base,
+      navActive: "events",
+      shellTitle: "Events",
+      events,
+    },
+    my_ministries: {
+      ...base,
+      navActive: "ministries",
+      shellTitle: "My Ministries",
+      activeMinistries: ministries,
+      pendingRequests: [],
+      closedRequests: [],
+      interestMatches: [],
+      ministryInterest: "Worship",
+      joinRequestStatusLabel,
+      memberRelationshipStatusLabel,
+    },
+    resources: {
+      ...base,
+      navActive: "resources",
+      shellTitle: "Resource Library",
+      resources: [
+        { title: "Psalm 23 Study Notes", meta: "Study Guide", icon: "menu_book", file_url: "#" },
+        { title: "Sunday Sermon Recap", meta: "Sermon Notes", icon: "mic", external_url: "#" },
+        { title: "Family Devotional", meta: "Audio", icon: "headphones" },
+      ],
+    },
+    forms: {
+      ...base,
+      navActive: "forms",
+      shellTitle: "Forms & Documents",
+      formItems: [
+        { title: "Membership Form", meta: "Online Form", icon: "description" },
+        { title: "Baptism Application", meta: "PDF Download", icon: "picture_as_pdf", file_url: "#" },
+        { title: "Volunteer Application", meta: "Online Form", icon: "assignment" },
+      ],
+    },
+    request_new: {
+      ...base,
+      navActive: "requests",
+      shellTitle: "Requests",
+      requestTypes: REQUEST_TYPES,
+      form: {},
+    },
+    requests: {
+      ...base,
+      navActive: "requests",
+      shellTitle: "Requests",
+      requests: [
+        {
+          id: 1,
+          subject: "Baptism enquiry",
+          request_type: "Baptism",
+          status: "submitted",
+          created_at: new Date().toISOString(),
+        },
+      ],
+      requestStatusLabel,
+    },
+    prayer_request: {
+      ...base,
+      navActive: "requests",
+      shellTitle: "Requests",
+      privacyLevels: PRAYER_PRIVACY_LEVELS,
+      urgencyLevels: PRAYER_URGENCY_LEVELS,
+      form: {},
+    },
+    giving: {
+      ...base,
+      navActive: "giving",
+      shellTitle: "Giving Information",
+      givingDisplay: {
+        hasPublishedSettings: false,
+      },
+    },
+  };
+
+  return map[fixtureKey] || base;
+}
 
 function makeBranchApp(options = {}) {
   const app = express();
@@ -99,6 +318,29 @@ function makeBranchApp(options = {}) {
     }
     next();
   });
+
+  if (options.useFixtures) {
+    app.get("/__fixture/:key", (req, res) => {
+      const key = req.params.key;
+      const viewMap = {
+        dashboard: "church/member/dashboard",
+        profile: "church/member/profile",
+        announcements: "church/member/announcements",
+        events: "church/member/events",
+        my_ministries: "church/member/my_ministries",
+        resources: "church/member/resources",
+        forms: "church/member/forms",
+        request_new: "church/member/request_new",
+        requests: "church/member/requests",
+        prayer_request: "church/member/prayer_request",
+        giving: "church/member/giving",
+      };
+      const view = viewMap[key];
+      if (!view) return res.status(404).send("unknown fixture");
+      return res.render(view, memberFixtureLocals(key));
+    });
+  }
+
   app.use(churchRoutes());
   return app;
 }
@@ -200,16 +442,17 @@ async function main() {
   fs.mkdirSync(outDir, { recursive: true });
 
   let memberSeed = null;
+  let useFixtures = false;
   if (batchKey === "C") {
     try {
       memberSeed = await ensureScreenshotMember();
       if (!memberSeed) {
-        console.warn("PG not configured — cannot capture authenticated Batch C screenshots.");
+        useFixtures = true;
+        console.warn("PG not configured — capturing Batch C via fixture renders with demo content.");
         fs.writeFileSync(
           path.join(outDir, "README.txt"),
-          "Batch C requires Postgres so ensureMemberAccountActive can resolve the verified member.\n"
+          "Captured via EJS fixture renders because Postgres was not configured.\nRe-run with PG configured for live DB-backed screenshots.\n"
         );
-        process.exit(0);
       }
     } catch (err) {
       console.error("Could not seed screenshot member:", err);
@@ -227,19 +470,21 @@ async function main() {
         verifiedMemberSession: !!item.verifiedMemberSession,
         churchContext: memberSeed ? memberSeed.churchContext : undefined,
         memberSession: memberSeed ? memberSeed.memberSession : undefined,
+        useFixtures,
       });
       const server = http.createServer(app);
       await new Promise((r) => server.listen(port, "127.0.0.1", r));
       const page = await browser.newPage();
       const base = `http://127.0.0.1:${port}`;
+      const urlPath = useFixtures && item.fixture ? `/__fixture/${item.fixture}` : item.path;
       try {
-        await shot(page, `${base}${item.path}`, 390, 844, path.join(outDir, `${item.name}-mobile.png`));
-        await shot(page, `${base}${item.path}`, 1440, 900, path.join(outDir, `${item.name}-desktop.png`));
+        await shot(page, `${base}${urlPath}`, 390, 844, path.join(outDir, `${item.name}-mobile.png`));
+        await shot(page, `${base}${urlPath}`, 1440, 900, path.join(outDir, `${item.name}-desktop.png`));
       } catch (err) {
         console.error(`Failed ${item.name}:`, err.message);
         fs.writeFileSync(
           path.join(outDir, `${item.name}-ERROR.txt`),
-          `${item.path}\n${err.stack || err.message}\n`
+          `${urlPath}\n${err.stack || err.message}\n`
         );
       } finally {
         await page.close();

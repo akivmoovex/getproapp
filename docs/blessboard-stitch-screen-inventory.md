@@ -87,34 +87,37 @@ Folder: `02-authentication/`
 
 Folder: `03-member-portal/`
 
-| File | Module | Screen | Device | Expected route | Current view | Status |
-|------|--------|--------|--------|----------------|--------------|--------|
-| `14-member-dashboard-desktop.png` | Member | Dashboard | Desktop | `/member/dashboard` | `church/member/dashboard.ejs` | Partial |
-| `14-member-dashboard-mobile.png` | Member | Dashboard | Mobile | `/member/dashboard` | `church/member/dashboard.ejs` | Partial |
-| `15-member-profile-desktop.png` | Member | Profile | Desktop | `/member/profile` | `church/member/profile.ejs` | Partial |
-| `15-member-profile-mobile.png` | Member | Profile | Mobile | `/member/profile` | `church/member/profile.ejs` | Partial |
-| `16-member-announcements-desktop.png` | Member | Announcements | Desktop | `/member/announcements` | `church/member/announcements.ejs` | Partial |
-| `16-member-announcements-mobile.png` | Member | Announcements | Mobile | `/member/announcements` | `church/member/announcements.ejs` | Partial |
-| `17-member-events-calendar-desktop.png` | Member | Events | Desktop | `/member/events` | `church/member/events.ejs` | Partial |
-| `17-member-events-calendar-mobile.png` | Member | Events | Mobile | `/member/events` | `church/member/events.ejs` | Partial |
-| `18-member-my-ministries-desktop.png` | Member | My ministries | Desktop | `/member/my-ministries` | `church/member/my_ministries.ejs` | Partial |
-| `18-member-my-ministries-mobile.png` | Member | My ministries | Mobile | `/member/my-ministries` | `church/member/my_ministries.ejs` | Partial |
-| `19-member-resources-study-desktop.png` | Member | Resources | Desktop | `/member/resources` | `church/member/resources.ejs` | Partial |
-| `19-member-resources-study-mobile.png` | Member | Resources | Mobile | `/member/resources` | `church/member/resources.ejs` | Partial |
-| `20-member-forms-documents-mobile.png` | Member | Forms | Mobile | `/member/forms` | `church/member/forms.ejs` | Partial; Missing PNG pair (desktop) |
-| *(no desktop PNG)* | Member | Forms | Desktop | `/member/forms` | `church/member/forms.ejs` | Partial; Missing PNG pair |
+**Exact filenames confirmed** (13 PNGs). No `20-member-forms-documents-desktop.png`. No learning/certificates PNG or `/member/learning` route.
+
+| PNG | Screen | Device | Route | View | Status |
+|-----|--------|--------|-------|------|--------|
+| `14-member-dashboard-desktop.png` | Dashboard | Desktop | `/member/dashboard` | `church/member/dashboard.ejs` | Aligned (Batch C) |
+| `14-member-dashboard-mobile.png` | Dashboard | Mobile | `/member/dashboard` | `church/member/dashboard.ejs` | Aligned (Batch C) |
+| `15-member-profile-desktop.png` | Profile | Desktop | `/member/profile` | `church/member/profile.ejs` | Aligned (Batch C) |
+| `15-member-profile-mobile.png` | Profile | Mobile | `/member/profile` | `church/member/profile.ejs` | Aligned (Batch C) |
+| `16-member-announcements-desktop.png` | Announcements | Desktop | `/member/announcements` | `church/member/announcements.ejs` | Aligned (Batch C) |
+| `16-member-announcements-mobile.png` | Announcements | Mobile | `/member/announcements` | `church/member/announcements.ejs` | Aligned (Batch C) |
+| `17-member-events-calendar-desktop.png` | Events | Desktop | `/member/events` | `church/member/events.ejs` | Aligned (Batch C) |
+| `17-member-events-calendar-mobile.png` | Events | Mobile | `/member/events` | `church/member/events.ejs` | Aligned (Batch C) |
+| `18-member-my-ministries-desktop.png` | My ministries | Desktop | `/member/my-ministries` | `church/member/my_ministries.ejs` | Aligned (Batch C) |
+| `18-member-my-ministries-mobile.png` | My ministries | Mobile | `/member/my-ministries` | `church/member/my_ministries.ejs` | Aligned (Batch C) |
+| `19-member-resources-study-desktop.png` | Resources | Desktop | `/member/resources` | `church/member/resources.ejs` | Aligned (Batch C) |
+| `19-member-resources-study-mobile.png` | Resources | Mobile | `/member/resources` | `church/member/resources.ejs` | Aligned (Batch C) |
+| `20-member-forms-documents-mobile.png` | Forms | Mobile | `/member/forms` | `church/member/forms.ejs` | Aligned (Batch C); Missing PNG pair (desktop) |
+| *(no desktop PNG)* | Forms | Desktop | `/member/forms` | `church/member/forms.ejs` | Implemented; Missing PNG pair |
 
 ### Member routes without PNG in this set
 
 | Route | Current view | Status |
 |-------|--------------|--------|
-| `/member/requests` | `church/member/requests.ejs` | Missing PNG / Partial |
-| `/member/requests/new` | `church/member/request_new.ejs` | Missing PNG / Partial |
-| `/member/prayer-request` | `church/member/prayer_request.ejs` | Missing PNG / Partial |
-| `/member/giving` | `church/member/giving.ejs` | Missing PNG / Partial |
+| `/member/requests` | `church/member/requests.ejs` | Missing PNG / Shell-aligned (Batch C) |
+| `/member/requests/new` | `church/member/request_new.ejs` | Missing PNG / Shell-aligned (Batch C) |
+| `/member/prayer-request` | `church/member/prayer_request.ejs` | Missing PNG / Shell-aligned (Batch C) |
+| `/member/giving` | `church/member/giving.ejs` | Missing PNG / Shell-aligned (Batch C) |
 | `/member/ministries` | `church/member/ministries.ejs` | Missing PNG / Partial |
+| `/member/learning` | — | Missing route / no Stitch PNG |
 
-**Batch:** C (Member) — CSS v39.
+**Batch:** C (Member) — CSS v40.
 
 ---
 
@@ -327,15 +330,11 @@ Confirmed working routes from the codebase (representative set):
 
 | Batch | Scope | CSS | Status |
 |-------|--------|-----|--------|
-| A | Giving + public remaining | v37 | Complete |
-| B | Auth | v38 | Pending |
-| C | Member | v39 | Pending |
-| D | Branch admin | v40 | Pending |
-| E | Platform/HQ | v41 | Pending |
-| B | Auth | v38 | Pending |
-| C | Member | v39 | Pending |
-| D | Branch admin | v40 | Pending |
-| E | Platform / HQ | v41 | Pending |
+| A | Giving + public remaining | v37–v38 | Complete |
+| B | Auth | v38 | Complete |
+| C | Member | v40 | Complete |
+| D | Branch admin | v41 | Pending |
+| E | Platform / HQ | v42 | Pending |
 
 ---
 
