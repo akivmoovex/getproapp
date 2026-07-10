@@ -1,18 +1,6 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <%- include('../../partials/brand_resolve') %>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <% var _pageTitle = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? 'Edit church details' : 'Edit organization'; %>
-    <title><%= _pageTitle %> | <%= organization.name %> | <%= _bn %> Admin</title>
-    <link rel="stylesheet" href="<%= asset('styles') %>" />
-  </head>
-  <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../../partials/admin_nav', { navTitle: _pageTitle, activeNav: activeNav || 'church_platform_orgs' }) %>
-    <main class="admin-main">
-      <div class="container admin-main__pad">
-        <% var orgId = organization.id; %>
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Edit organization', activeNav: activeNav || 'church_platform_orgs', pageTitle: 'Edit organization' }) %>
+<% var orgId = organization.id; %>
+<% var _pageTitle = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? 'Edit church details' : 'Edit organization'; %>
         <% var detailHref = typeof organizationDetailPath !== 'undefined' ? organizationDetailPath : ((typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + orgId : '/admin/church/organizations/' + orgId); %>
         <% var editHref = typeof organizationEditPath !== 'undefined' ? organizationEditPath : ((typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + orgId + '/edit' : '/admin/church/organizations/' + orgId + '/edit'); %>
         <header class="admin-dashboard__header">
@@ -156,9 +144,7 @@
             <%- include('../../partials/components/button', { variant: 'default', href: detailHref, label: 'Cancel' }) %>
           </div>
         </form>
-      </div>
-    </main>
-    <script>
+<script>
       (function () {
         var slugInput = document.getElementById("organization_slug");
         var preview = document.getElementById("slug-preview");
@@ -192,5 +178,4 @@
         syncHostPreview();
       })();
     </script>
-  </body>
-</html>
+<%- include('../../partials/platform_admin_shell_end') %>

@@ -101,6 +101,7 @@ module.exports = function blessboardAdminRoutes() {
     res.locals.blessboardPoweredBy = BLESSBOARD_POWERED_BY;
     res.locals.embed = false;
     res.locals.bodyEmbedClass = "";
+    res.locals.adminUser = (req.session && req.session.adminUser) || null;
     res.locals.asset = res.locals.asset || ((k) => `/${String(k || "").replace(/^\//, "")}`);
     next();
   });

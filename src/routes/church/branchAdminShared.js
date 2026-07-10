@@ -2,15 +2,88 @@
 
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
 
+function resolveBranchAdminNavActive(req) {
+  const p = String((req && req.path) || "");
+  if (p === "/branch/dashboard" || p === "/branch") return "dashboard";
+  if (p.startsWith("/branch/account")) return "account";
+  if (p.startsWith("/branch/member-verification")) return "verification";
+  if (p.startsWith("/branch/members")) return "members";
+  if (p.startsWith("/branch/requests")) return "requests";
+  if (p.startsWith("/branch/reset-requests") || p.startsWith("/branch/password-reset") || p.startsWith("/branch/leader-password-reset")) {
+    return "reset";
+  }
+  if (p.startsWith("/branch/prayer-requests")) return "prayer";
+  if (p.startsWith("/branch/announcements")) return "announcements";
+  if (p.startsWith("/branch/events")) return "events";
+  if (p.startsWith("/branch/website-editor") || p.startsWith("/branch/site")) return "website";
+  if (p.startsWith("/branch/contact-submissions")) return "contact";
+  if (p.startsWith("/branch/sermons")) return "sermons";
+  if (p.startsWith("/branch/resources")) return "resources";
+  if (p.startsWith("/branch/attendance")) return "attendance";
+  if (p.startsWith("/branch/giving-summary")) return "giving-summary";
+  if (p.startsWith("/branch/giving-settings")) return "giving-settings";
+  if (p.startsWith("/branch/ministries")) return "ministries";
+  if (p.startsWith("/branch/departments")) return "departments";
+  if (p.startsWith("/branch/duty-roster")) return "duty";
+  if (p.startsWith("/branch/ministry-activity")) return "ministry-activity";
+  if (p.startsWith("/branch/ministry-attendance")) return "ministry-attendance";
+  if (p.startsWith("/branch/leaders")) return "leaders";
+  if (p.startsWith("/branch/ministry-join-requests")) return "join-requests";
+  if (p.startsWith("/branch/reports")) return "reports";
+  if (p.startsWith("/branch/activity")) return "activity";
+  return "";
+}
+
+function branchAdminShellTitle(navActive) {
+  const titles = {
+    dashboard: "Branch Dashboard",
+    account: "Account",
+    verification: "Member Verification",
+    members: "Members",
+    requests: "Requests",
+    reset: "Reset Inbox",
+    prayer: "Prayer Requests",
+    announcements: "Announcements",
+    events: "Events Management",
+    website: "Website Editor",
+    contact: "Contact Submissions",
+    sermons: "Sermons",
+    resources: "Resources",
+    attendance: "Attendance",
+    "giving-summary": "Giving Summary",
+    "giving-settings": "Giving Settings",
+    ministries: "Ministries",
+    departments: "Departments",
+    duty: "Duty Roster",
+    "ministry-activity": "Ministry Activity",
+    "ministry-attendance": "Ministry Attendance",
+    leaders: "Leaders",
+    "join-requests": "Join Requests",
+    reports: "Reports",
+    activity: "Activity",
+  };
+  return titles[navActive] || "Branch Admin";
+}
+
 function branchAdminLocals(req, extra) {
   const org = req.churchContext.organization;
   const branch = req.churchContext.branch;
+  const navActive = (extra && extra.navActive) || resolveBranchAdminNavActive(req);
+  const shellTitle = (extra && extra.shellTitle) || branchAdminShellTitle(navActive);
+  const adminName =
+    (req.churchBranchAdmin && req.churchBranchAdmin.full_name) ||
+    (extra && extra.branchAdmin && extra.branchAdmin.full_name) ||
+    "Branch Admin";
   return {
     churchName: branch.name || org.name,
     pageTitle: branch.name || org.name,
     organization: org,
     branch,
     branchAdmin: req.churchBranchAdmin || null,
+    navActive,
+    shellTitle,
+    adminName,
+    adminAvatarUrl: "/church/images/branch-admin/avatar-pastor-stitch.jpg",
     ...(extra || {}),
   };
 }

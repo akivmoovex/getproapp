@@ -5,6 +5,8 @@
  *   node scripts/screenshot-blessboard-all-screens.js --batch=A
  *   node scripts/screenshot-blessboard-all-screens.js --batch=B
  *   node scripts/screenshot-blessboard-all-screens.js --batch=C
+ *   node scripts/screenshot-blessboard-all-screens.js --batch=D
+ *   node scripts/screenshot-blessboard-all-screens.js --batch=E
  */
 "use strict";
 
@@ -65,6 +67,32 @@ const BATCHES = {
       { path: "/member/requests", name: "requests-status", verifiedMemberSession: true, fixture: "requests" },
       { path: "/member/prayer-request", name: "prayer", verifiedMemberSession: true, fixture: "prayer_request" },
       { path: "/member/giving", name: "giving", verifiedMemberSession: true, fixture: "giving" },
+    ],
+  },
+  D: {
+    outDir: "branch-admin",
+    pages: [
+      { path: "/branch/dashboard", name: "dashboard", branchAdminSession: true, fixture: "ba_dashboard" },
+      { path: "/branch/member-verification", name: "member-verification", branchAdminSession: true, fixture: "ba_verification" },
+      { path: "/branch/website-editor", name: "website-editor", branchAdminSession: true, fixture: "ba_website" },
+      { path: "/branch/events", name: "events", branchAdminSession: true, fixture: "ba_events" },
+      { path: "/branch/sermons", name: "sermons", branchAdminSession: true, fixture: "ba_sermons" },
+      { path: "/branch/resources", name: "resources", branchAdminSession: true, fixture: "ba_resources" },
+      { path: "/branch/contact-submissions", name: "contact-submissions", branchAdminSession: true, fixture: "ba_contact" },
+      { path: "/branch/members", name: "members", branchAdminSession: true, fixture: "ba_members" },
+      { path: "/branch/reports", name: "reports", branchAdminSession: true, fixture: "ba_reports" },
+    ],
+  },
+  E: {
+    outDir: "platform-admin",
+    pages: [
+      { path: "/admin/login", name: "admin-login", fixture: "pa_login", platformFixture: true },
+      { path: "/admin/dashboard", name: "dashboard", fixture: "pa_dashboard", platformFixture: true },
+      { path: "/admin/churches", name: "churches-list", fixture: "pa_orgs", platformFixture: true },
+      { path: "/admin/churches/new", name: "church-new", fixture: "pa_org_new", platformFixture: true },
+      { path: "/admin/churches/1", name: "church-detail", fixture: "pa_org_detail", platformFixture: true },
+      { path: "/admin/churches/1/edit", name: "church-edit", fixture: "pa_org_edit", platformFixture: true },
+      { path: "/admin/diagnostics", name: "diagnostics", fixture: "pa_diagnostics", platformFixture: true },
     ],
   },
 };
@@ -276,6 +304,409 @@ function memberFixtureLocals(fixtureKey) {
   return map[fixtureKey] || base;
 }
 
+
+function branchAdminFixtureLocals(fixtureKey) {
+  const churchName = "Kafue Baptist Church";
+  const admin = {
+    admin_id: 1,
+    organization_id: 1,
+    branch_id: 1,
+    full_name: "Pastor John Banda",
+    role: "branch_admin",
+    status: "active",
+  };
+  const base = {
+    churchName,
+    pageTitle: churchName,
+    organization: { id: 1, name: churchName, status: "active" },
+    branch: { id: 1, name: churchName, status: "active", host_slug: "demo", member_registration_enabled: true },
+    branchAdmin: admin,
+    adminName: admin.full_name,
+    adminAvatarUrl: "/church/images/branch-admin/avatar-pastor-stitch.jpg",
+    notice: null,
+    error: null,
+    planContext: null,
+  };
+  const zeroCounts = { pending: 3, verified: 128, suspended: 1 };
+  const map = {
+    ba_dashboard: {
+      ...base,
+      navActive: "dashboard",
+      shellTitle: "Branch Dashboard",
+      counts: zeroCounts,
+      requestCounts: { submitted: 4, in_review: 2 },
+      announcementCounts: { published: 6, draft: 1 },
+      upcomingPublishedEvents: 3,
+      eventCounts: { draft: 1 },
+      ministryCounts: { published: 8, draft: 0 },
+      departmentCounts: { active: 5, archived: 1 },
+      confirmedUpcomingDuties: 2,
+      dutyCounts: { draft: 0, cancelled: 0 },
+      activityNoteCounts: { submitted: 1, reviewed: 2, follow_up_requested: 0 },
+      ministryAttendanceThisMonth: 42,
+      leaderCounts: { active: 7, inactive: 1 },
+      joinRequestCounts: { submitted: 2 },
+      prayerCounts: { submitted: 3 },
+      branchResetPendingCounts: { submitted_total: 1, member: 1, ministry_leader: 0 },
+      monthlyReportStatus: "Draft ready",
+      recentActivity: [
+        {
+          action: "member_verified",
+          created_at: new Date().toISOString(),
+        },
+        {
+          action: "announcement_published",
+          created_at: new Date(Date.now() - 3600000).toISOString(),
+        },
+      ],
+      hqBroadcasts: [],
+      actionLabel: (a) => ({
+        member_verified: "Member verified",
+        announcement_published: "Announcement published",
+      }[a] || a),
+      auditSummary: (log) =>
+        log.action === "member_verified"
+          ? "A pending registration was approved."
+          : "A branch announcement went live.",
+      actorDisplayFromRow: () => "Pastor John Banda",
+    },
+    ba_verification: {
+      ...base,
+      navActive: "verification",
+      shellTitle: "Member Verification",
+      pendingMembers: [
+        {
+          id: 1,
+          full_name: "Grace Tembo",
+          phone: "0977111000",
+          email: "grace@example.com",
+          age_group: "Adult (36-60)",
+          ministry_interest: "Worship",
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 2,
+          full_name: "Chanda Mwale",
+          phone: "0977222000",
+          email: "chanda@example.com",
+          age_group: "Youth (18-35)",
+          ministry_interest: "Youth",
+          created_at: new Date().toISOString(),
+        },
+      ],
+    },
+    ba_website: {
+      ...base,
+      navActive: "website",
+      shellTitle: "Website Editor",
+      status: "published",
+      lastPublishedAt: new Date().toISOString(),
+      content: {},
+      form: {},
+    },
+    ba_events: {
+      ...base,
+      navActive: "events",
+      shellTitle: "Events Management",
+      eventFilters: ["all", "published", "draft", "cancelled"],
+      statusFilter: "all",
+      eventStatusLabel: (s) => String(s).charAt(0).toUpperCase() + String(s).slice(1),
+      visibilityLabel: (v) => v || "Public",
+      formatEventTimeRange: (ev) => ev.start_time || "",
+      events: [
+        {
+          id: 1,
+          title: "Sunday Worship Celebration",
+          event_date: new Date().toISOString(),
+          start_time: "09:00",
+          location: "Main Sanctuary",
+          visibility: "public",
+          status: "published",
+        },
+        {
+          id: 2,
+          title: "Youth Outreach Night",
+          event_date: new Date(Date.now() + 86400000 * 3).toISOString(),
+          start_time: "19:00",
+          location: "Community Hall",
+          visibility: "members",
+          status: "draft",
+        },
+      ],
+    },
+    ba_sermons: {
+      ...base,
+      navActive: "sermons",
+      shellTitle: "Sermons",
+      sermonFilters: ["all", "published", "draft"],
+      statusFilter: "all",
+      sermons: [
+        { id: 1, title: "Walking in Faith", speaker: "Pastor John", category: "Sunday", status: "published" },
+      ],
+    },
+    ba_resources: {
+      ...base,
+      navActive: "resources",
+      shellTitle: "Resources",
+      resourceFilters: ["all", "published", "draft"],
+      resourceTypes: ["study", "document", "form"],
+      statusFilter: "all",
+      resourceTypeFilter: "all",
+      resources: [
+        { id: 1, title: "Membership Form", resource_type: "form", visibility: "members", status: "published" },
+      ],
+    },
+    ba_contact: {
+      ...base,
+      navActive: "contact",
+      shellTitle: "Contact Submissions",
+      statusFilter: "all",
+      contactStatusLabel: (s) => String(s).charAt(0).toUpperCase() + String(s).slice(1),
+      submissions: [
+        {
+          id: 1,
+          full_name: "Visitor One",
+          email: "visitor@example.com",
+          phone: "",
+          status: "new",
+          created_at: new Date().toISOString(),
+        },
+      ],
+    },
+    ba_members: {
+      ...base,
+      navActive: "members",
+      shellTitle: "Members",
+      searchQuery: "",
+      memberFilters: ["all", "pending", "verified", "suspended"],
+      statusFilter: "all",
+      memberStatusLabel: (s) => String(s).charAt(0).toUpperCase() + String(s).slice(1),
+      members: [
+        {
+          id: 1,
+          full_name: "Mary Phiri",
+          email: "mary@example.com",
+          phone: "0977123456",
+          status: "verified",
+          age_group: "Adult (36-60)",
+          created_at: new Date().toISOString(),
+        },
+      ],
+    },
+    ba_reports: {
+      ...base,
+      navActive: "reports",
+      shellTitle: "Reports",
+      dashboard: {
+        previousMonthMissing: false,
+        previousMonthLabel: "June 2026",
+        currentMonthStatus: "Draft",
+        currentPeriodLabel: "July 2026",
+        givingStatus: "Not submitted",
+        statusCounts: { draft: 1, submitted: 2 },
+        attendancePreview: {
+          sunday_average: 120,
+          midweek_average: 45,
+          children_average: 30,
+          youth_average: 22,
+          visitors_total: 8,
+        },
+        draftAttendanceCount: 0,
+        reports: [],
+      },
+    },
+  };
+  return map[fixtureKey] || base;
+}
+
+
+function platformAdminFixtureLocals(fixtureKey) {
+  const { getPlanDisplay } = require("../src/church/churchPlans");
+  const { churchPublicHost } = require("../src/church/platformProvisioningValidation");
+  const { ORG_BRANCH_STATUSES } = require("../src/church/platformStatusValidation");
+  const { statusLabel, statusBadgeClass } = require("../src/church/churchStatusAccess");
+  const formatDate = (v) => {
+    if (!v) return "—";
+    try { return new Date(v).toLocaleDateString("en-GB"); } catch { return String(v); }
+  };
+  const adminUser = { username: "superadmin", display_name: "Platform Admin", role: "super_admin" };
+  const base = {
+    blessboardAdminMode: true,
+    adminUser,
+    bodyEmbedClass: "",
+    asset: (k) => `/${String(k || "").replace(/^\//, "")}`,
+    _bn: "BlessBoard",
+    notice: null,
+    error: null,
+    getPlanDisplay,
+    churchPublicHost,
+    formatDate,
+    statusLabel,
+    statusBadgeClass,
+    orgBranchStatuses: ORG_BRANCH_STATUSES,
+    churchResetPendingCounts: { submitted_total: 0 },
+  };
+  const org = {
+    id: 1,
+    name: "Kafue Baptist Church",
+    slug: "kafuebaptist",
+    country: "Zambia",
+    city: "Kafue",
+    primary_contact_name: "Pastor John Banda",
+    primary_contact_email: "pastor@example.com",
+    plan_code: "standard",
+    branch_count: 1,
+    status: "active",
+    created_at: new Date().toISOString(),
+  };
+  const map = {
+    pa_login: { error: null, cancelHref: "/" },
+    pa_dashboard: {
+      ...base,
+      activeNav: "church_platform",
+      navTitle: "Platform Dashboard",
+      summary: {
+        total_organizations: 12,
+        active_organizations: 11,
+        total_branches: 18,
+        active_branches: 17,
+        free_plan_count: 4,
+        standard_plan_count: 6,
+        pro_plan_count: 2,
+        recentOrganizations: [org],
+      },
+      recentSupportNotes: [],
+      securitySummary: { locked_total: 0, failed_attempts_last_24h: 2 },
+      branchAdminPasswordResetCounts: { submitted: 1, reviewed: 3 },
+      hqAdminPasswordResetCounts: { submitted: 0, reviewed: 1 },
+      unifiedResetSummary: { submitted_total: 1, member: 0, branch_admin: 1, hq_admin: 0 },
+      churchResetPendingCounts: { submitted_total: 1 },
+    },
+    pa_orgs: {
+      ...base,
+      activeNav: "church_platform_orgs",
+      navTitle: "Organization Governance",
+      organizations: [org],
+      q: "",
+      statusFilter: "all",
+    },
+    pa_org_new: {
+      ...base,
+      activeNav: "church_platform_orgs",
+      navTitle: "Create New Organization",
+      form: {},
+      error: null,
+      planCodes: ["free", "standard", "pro"],
+    },
+    pa_org_detail: {
+      ...base,
+      activeNav: "church_platform",
+      navTitle: "BlessBoard Admin",
+      organization: { ...org, status_reason: null, suspended_at: null, archived_at: null, primary_contact_phone: "" },
+      branches: [{ id: 1, name: "Main", slug: "main", host_slug: "kafuebaptist", status: "active", created_at: new Date().toISOString() }],
+      hqAdmins: [],
+      branchAdmins: [],
+      primaryHqAdmin: null,
+      activeHqAdminCount: 0,
+      hqLoginHostSlug: "kafuebaptist",
+      planSummary: {
+        branchLimitReached: false,
+        planDisplay: getPlanDisplay("standard"),
+        planCode: "standard",
+        planStatus: "active",
+        branchesDisplay: "1 / 5",
+        membersDisplay: "12 / 200",
+        storageDisplay: "0.2 GB",
+        warnings: [],
+      },
+      provisioned: false,
+      welcomePack: null,
+      statusNotice: null,
+      statusError: null,
+      supportNotes: [],
+      supportNoteNotice: null,
+      supportNoteError: null,
+      supportNoteReturnTo: "/admin/churches/1",
+    },
+    pa_org_edit: {
+      ...base,
+      activeNav: "church_platform_orgs",
+      navTitle: "Edit organization",
+      organization: org,
+      form: {
+        organization_name: org.name,
+        organization_slug: org.slug,
+        country: org.country,
+        city: org.city,
+        primary_contact_name: org.primary_contact_name,
+        primary_contact_email: org.primary_contact_email,
+        status: org.status,
+      },
+      organizationDetailPath: "/admin/churches/1",
+      currentSlug: org.slug,
+      error: null,
+    },
+    pa_diagnostics: {
+      ...base,
+      activeNav: "church_platform_diagnostics",
+      navTitle: "Support Monitoring",
+      diagnostics: {
+        warnings: [],
+        deploymentLabel: "local-dev",
+        nodeEnv: "test",
+        checkedAt: new Date().toISOString(),
+        latestChurchMigration: "2026_church_schema",
+        churchHostDomain: "blessboard.com",
+        baseDomain: "blessboard.com",
+        databaseConfigured: true,
+        databaseReachable: true,
+        databaseErrorKind: null,
+        databaseError: null,
+        poolConfig: { max: 10, connectionTimeoutMillis: 5000, idleTimeoutMillis: 10000 },
+        churchBranchesTable: { ok: true, message: "ok" },
+        demoBranchLookup: { ok: true, message: "ok" },
+        demoBranch: { ok: true, message: "present" },
+        pilotBranch: { ok: true, message: "present" },
+        schema: {
+          memberRegistrationColumn: { ok: true, message: "ok" },
+          contactSubmissionsTable: { ok: true, message: "ok" },
+        },
+        sessionSecretConfigured: true,
+        sessionSecretLengthOk: true,
+        sessionSecretWarning: null,
+        hostResolutionSamples: [
+          { host: "blessboard.com", label: "Apex", parsedKind: "apex", parsedSlug: null },
+          { host: "demo.blessboard.com", label: "Demo", parsedKind: "branch", parsedSlug: "demo" },
+        ],
+      },
+    },
+  };
+  return map[fixtureKey] || base;
+}
+
+function makePlatformAdminApp() {
+  const app = express();
+  app.set("view engine", "ejs");
+  app.set("views", path.join(__dirname, "../views"));
+  app.use("/church", express.static(path.join(__dirname, "../public/church")));
+  app.get("/__fixture/:key", (req, res) => {
+    const key = req.params.key;
+    const viewMap = {
+      pa_login: "admin/blessboard_login",
+      pa_dashboard: "admin/church/dashboard",
+      pa_orgs: "admin/church/organizations",
+      pa_org_new: "admin/church/organization_form",
+      pa_org_detail: "admin/church/organization_detail",
+      pa_org_edit: "admin/church/organization_edit",
+      pa_diagnostics: "admin/church/diagnostics",
+    };
+    const view = viewMap[key];
+    if (!view) return res.status(404).send("unknown fixture");
+    return res.render(view, platformAdminFixtureLocals(key));
+  });
+  return app;
+}
+
 function makeBranchApp(options = {}) {
   const app = express();
   app.set("view engine", "ejs");
@@ -316,6 +747,10 @@ function makeBranchApp(options = {}) {
     if (options.verifiedMemberSession && options.memberSession) {
       req.session.churchMember = options.memberSession;
     }
+    if (options.branchAdminSession && options.branchAdminSessionData) {
+      req.session.churchBranchAdmin = options.branchAdminSessionData;
+      req.churchBranchAdmin = options.branchAdminSessionData;
+    }
     next();
   });
 
@@ -334,10 +769,22 @@ function makeBranchApp(options = {}) {
         requests: "church/member/requests",
         prayer_request: "church/member/prayer_request",
         giving: "church/member/giving",
+        ba_dashboard: "church/branch-admin/dashboard",
+        ba_verification: "church/branch-admin/verification_queue",
+        ba_website: "church/branch-admin/website_editor",
+        ba_events: "church/branch-admin/events_management",
+        ba_sermons: "church/branch-admin/sermons_management",
+        ba_resources: "church/branch-admin/resources_management",
+        ba_contact: "church/branch-admin/contact_submissions",
+        ba_members: "church/branch-admin/members_directory",
+        ba_reports: "church/branch-admin/reports_dashboard",
       };
       const view = viewMap[key];
       if (!view) return res.status(404).send("unknown fixture");
-      return res.render(view, memberFixtureLocals(key));
+      const locals = String(key).startsWith("ba_")
+        ? branchAdminFixtureLocals(key)
+        : memberFixtureLocals(key);
+      return res.render(view, locals);
     });
   }
 
@@ -434,7 +881,7 @@ async function main() {
   const batchKey = arg ? arg.split("=")[1].toUpperCase() : "A";
   const batch = BATCHES[batchKey];
   if (!batch) {
-    console.error("Unknown batch. Use A, B, or C.");
+    console.error("Unknown batch. Use A, B, C, D, or E.");
     process.exit(1);
   }
 
@@ -442,6 +889,7 @@ async function main() {
   fs.mkdirSync(outDir, { recursive: true });
 
   let memberSeed = null;
+  let branchAdminSeed = null;
   let useFixtures = false;
   if (batchKey === "C") {
     try {
@@ -460,18 +908,48 @@ async function main() {
     }
   }
 
+  if (batchKey === "D") {
+    useFixtures = true;
+    console.warn("Capturing Batch D via fixture renders (safe without PG / avoids auth DB reload).");
+    fs.writeFileSync(
+      path.join(outDir, "README.txt"),
+      "Captured via EJS fixture renders for Branch Admin Batch D.\nRe-run with PG + live login for DB-backed screenshots.\n"
+    );
+    branchAdminSeed = {
+      admin_id: 1,
+      organization_id: 1,
+      branch_id: 1,
+      full_name: "Pastor John Banda",
+      role: "branch_admin",
+      status: "active",
+    };
+  }
+
+  if (batchKey === "E") {
+    useFixtures = true;
+    console.warn("Capturing Batch E via platform admin fixture renders.");
+    fs.writeFileSync(
+      path.join(outDir, "README.txt"),
+      "Captured via EJS fixture renders for Platform Admin Batch E.\nRe-run with PG + super admin login on blessboard.com for live screenshots.\n"
+    );
+  }
+
   const browser = await chromium.launch();
   let port = PORT;
 
   try {
     for (const item of batch.pages) {
-      const app = makeBranchApp({
-        pendingMemberSession: !!item.pendingMemberSession,
-        verifiedMemberSession: !!item.verifiedMemberSession,
-        churchContext: memberSeed ? memberSeed.churchContext : undefined,
-        memberSession: memberSeed ? memberSeed.memberSession : undefined,
-        useFixtures,
-      });
+      const app = item.platformFixture
+        ? makePlatformAdminApp()
+        : makeBranchApp({
+            pendingMemberSession: !!item.pendingMemberSession,
+            verifiedMemberSession: !!item.verifiedMemberSession,
+            branchAdminSession: !!item.branchAdminSession,
+            churchContext: memberSeed ? memberSeed.churchContext : undefined,
+            memberSession: memberSeed ? memberSeed.memberSession : undefined,
+            branchAdminSessionData: branchAdminSeed || undefined,
+            useFixtures,
+          });
       const server = http.createServer(app);
       await new Promise((r) => server.listen(port, "127.0.0.1", r));
       const page = await browser.newPage();

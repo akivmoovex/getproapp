@@ -1,8 +1,15 @@
 <%- include('../partials/branch_admin_shell_start') %>
-      <header class="church-branch-topbar">
+<%
+  var covers = [
+    '/church/images/branch-admin/event-cover-1.jpg',
+    '/church/images/branch-admin/event-cover-2.jpg',
+    '/church/images/branch-admin/event-cover-3.jpg'
+  ];
+%>
+      <header class="church-branch-page-hero">
         <div>
-          <h1 class="church-branch-topbar__title">Events</h1>
-          <p class="church-branch-topbar__subtitle">Manage branch events and calendar items</p>
+          <h1 class="church-branch-page-hero__title church-show-mobile-only">Events</h1>
+          <p class="church-branch-page-hero__subtitle">Manage branch events and calendar items</p>
         </div>
         <a class="church-btn church-btn--primary" href="/branch/events/new">Create event</a>
       </header>
@@ -14,43 +21,39 @@
         <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/events<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : eventStatusLabel(f) %></a>
         <% }); %>
       </div>
+
+      <% if ((events || []).length === 0) { %>
       <section class="church-branch-panel">
-        <% if ((events || []).length === 0) { %>
         <p class="church-branch-empty">No events in this filter.</p>
-        <% } else { %>
-        <div class="church-branch-table-wrap">
-          <table class="church-branch-table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Location</th>
-                <th>Visibility</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <% events.forEach(function (ev) { %>
-              <tr>
-                <td><%= ev.title %></td>
-                <td><%= new Date(ev.event_date).toLocaleDateString('en-GB') %></td>
-                <td><%= formatEventTimeRange(ev) %></td>
-                <td><%= ev.location || '—' %></td>
-                <td><%= visibilityLabel(ev.visibility) %></td>
-                <td><span class="church-status-chip church-status-chip--<%= ev.status === 'published' ? 'verified' : 'pending' %>"><%= eventStatusLabel(ev.status) %></span></td>
-                <td>
-                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/events/<%= ev.id %>">View</a>
-                  <% if (ev.status !== 'cancelled') { %>
-                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/events/<%= ev.id %>/edit">Edit</a>
-                  <% } %>
-                </td>
-              </tr>
-              <% }); %>
-            </tbody>
-          </table>
-        </div>
-        <% } %>
+        <a class="church-btn church-btn--outline" href="/branch/events/new">Create event</a>
       </section>
+      <% } else { %>
+      <div class="church-branch-event-grid">
+        <% events.forEach(function (ev, i) { %>
+        <article class="church-branch-event-card">
+          <div class="church-branch-event-card__media" style="background-image:url('<%= covers[i % covers.length] %>')"></div>
+          <div class="church-branch-event-card__body">
+            <span class="church-status-chip church-status-chip--<%= ev.status === 'published' ? 'verified' : 'pending' %>"><%= eventStatusLabel(ev.status) %></span>
+            <h2><%= ev.title %></h2>
+            <p class="church-member-list__meta">
+              <%= new Date(ev.event_date).toLocaleDateString('en-GB') %>
+              <%= formatEventTimeRange(ev) ? ' · ' + formatEventTimeRange(ev) : '' %>
+              <%= ev.location ? ' · ' + ev.location : '' %>
+            </p>
+            <p class="church-member-list__meta"><%= visibilityLabel(ev.visibility) %></p>
+            <div class="church-branch-event-card__actions">
+              <a class="church-btn church-btn--outline church-btn--sm" href="/branch/events/<%= ev.id %>">View</a>
+              <% if (ev.status !== 'cancelled') { %>
+              <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/events/<%= ev.id %>/edit">Edit</a>
+              <% } %>
+            </div>
+          </div>
+        </article>
+        <% }); %>
+        <a class="church-branch-event-card church-branch-event-card--create" href="/branch/events/new">
+          <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+          <span>Create New Event</span>
+        </a>
+      </div>
+      <% } %>
 <%- include('../partials/branch_admin_shell_end') %>

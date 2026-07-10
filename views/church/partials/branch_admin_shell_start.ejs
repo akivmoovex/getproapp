@@ -1,29 +1,61 @@
+<%
+  var _shellTitle = typeof shellTitle !== 'undefined' ? shellTitle : 'Branch Admin';
+  var _church = typeof churchName !== 'undefined' ? churchName : 'Church';
+  var _adminName = typeof adminName !== 'undefined' ? adminName : ((typeof branchAdmin !== 'undefined' && branchAdmin && branchAdmin.full_name) ? branchAdmin.full_name : 'Branch Admin');
+  var _avatar = typeof adminAvatarUrl !== 'undefined' ? adminAvatarUrl : '/church/images/branch-admin/avatar-pastor-stitch.jpg';
+  var _nav = typeof navActive !== 'undefined' ? navActive : '';
+  function bottomClass(key) {
+    return 'church-branch-bottom-nav__link' + (_nav === key ? ' church-branch-bottom-nav__link--active' : '');
+  }
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title><%= pageTitle %> — BlessBoard Branch Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=40"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/church/church.css?v=42"/>
 </head>
-<body class="church-body church-body--branch-admin">
+<body class="church-body church-body--branch-admin" data-branch-shell="stitch-v41">
   <div class="church-branch-layout">
     <aside class="church-branch-sidebar church-branch-sidebar--desktop" aria-label="Branch admin navigation">
-      <%- include('./sidebar_brand', { portalLabel: 'Branch Admin', contextName: churchName }) %>
+      <div class="church-branch-sidebar__brand">
+        <span class="church-branch-sidebar__brand-icon" aria-hidden="true">
+          <span class="material-symbols-outlined">church</span>
+        </span>
+        <div>
+          <a class="church-branch-brand-link" href="/branch/dashboard"><%= _church %></a>
+          <span class="church-branch-brand-sub">Branch Admin · BlessBoard</span>
+        </div>
+      </div>
+      <div class="church-branch-sidebar__profile">
+        <img class="church-branch-sidebar__avatar" src="<%= _avatar %>" alt="" width="40" height="40"/>
+        <div>
+          <p class="church-branch-sidebar__name"><%= _adminName %></p>
+          <p class="church-branch-sidebar__role"><%= _church %></p>
+        </div>
+      </div>
       <nav class="church-branch-sidebar__nav">
         <%- include('./branch_admin_nav') %>
       </nav>
       <div class="church-branch-sidebar__footer">
-        <a href="/" class="church-branch-nav-link">Public website</a>
+        <a href="/" class="church-branch-nav-link">
+          <span class="material-symbols-outlined" aria-hidden="true">public</span>
+          <span>Public website</span>
+        </a>
         <% if (typeof branchAdmin !== 'undefined' && branchAdmin) { %>
         <form method="post" action="/branch/logout">
-          <button class="church-branch-nav-link church-branch-nav-link--button" type="submit">Sign out</button>
+          <button class="church-branch-nav-link church-branch-nav-link--button" type="submit">
+            <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+            <span>Sign out</span>
+          </button>
         </form>
         <% } %>
+        <p class="church-branch-powered">Powered by GetPro</p>
       </div>
     </aside>
     <div class="church-branch-main">
@@ -32,8 +64,33 @@
           <span class="material-symbols-outlined" aria-hidden="true">menu</span>
         </button>
         <div class="church-branch-mobile-topbar__brand">
-          <strong>BlessBoard Admin</strong>
-          <span><%= churchName %></span>
+          <img class="church-branch-mobile-topbar__avatar" src="<%= _avatar %>" alt="" width="36" height="36"/>
+          <div>
+            <strong>BlessBoard Admin</strong>
+            <span><%= _church %></span>
+          </div>
+        </div>
+        <a class="church-branch-mobile-topbar__icon" href="/branch/member-verification" aria-label="Verifications">
+          <span class="material-symbols-outlined">notifications</span>
+        </a>
+      </header>
+      <header class="church-branch-desktop-topbar" aria-label="<%= _shellTitle %>">
+        <div class="church-branch-desktop-topbar__left">
+          <h1 class="church-branch-desktop-topbar__title"><%= _shellTitle %></h1>
+          <label class="church-branch-search church-show-desktop-only">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input type="search" placeholder="Search members or events..." disabled aria-label="Search"/>
+          </label>
+        </div>
+        <div class="church-branch-desktop-topbar__actions">
+          <a class="church-branch-desktop-topbar__icon" href="/branch/member-verification" aria-label="Notifications">
+            <span class="material-symbols-outlined">notifications</span>
+            <span class="church-branch-desktop-topbar__dot" aria-hidden="true"></span>
+          </a>
+          <a class="church-branch-desktop-topbar__profile" href="/branch/account">
+            <img src="<%= _avatar %>" alt="" width="32" height="32"/>
+            <span>Profile</span>
+          </a>
         </div>
       </header>
       <div class="church-drawer-overlay" id="church-branch-drawer-overlay" hidden></div>
@@ -56,3 +113,36 @@
           <% } %>
         </div>
       </aside>
+      <nav class="church-branch-bottom-nav" aria-label="Branch admin mobile navigation">
+        <a href="/branch/dashboard" class="<%= bottomClass('dashboard') %>">
+          <span class="material-symbols-outlined">home</span>Home
+        </a>
+        <a href="/branch/members" class="<%= bottomClass('members') %>">
+          <span class="material-symbols-outlined">group</span>Members
+        </a>
+        <a href="/branch/events" class="<%= bottomClass('events') %>">
+          <span class="material-symbols-outlined">event</span>Events
+        </a>
+        <a href="/branch/attendance" class="<%= bottomClass('attendance') %>">
+          <span class="material-symbols-outlined">qr_code_scanner</span>Check-in
+        </a>
+        <details class="church-branch-more">
+          <summary class="church-branch-bottom-nav__link church-branch-more__summary">
+            <span class="material-symbols-outlined">more_horiz</span>More
+          </summary>
+          <div class="church-branch-more__panel">
+            <a href="/branch/member-verification">Verification</a>
+            <a href="/branch/ministries">Ministries</a>
+            <a href="/branch/reports">Reports</a>
+            <a href="/branch/website-editor">Website Editor</a>
+            <a href="/branch/announcements">Announcements</a>
+            <a href="/branch/requests">Requests</a>
+            <a href="/branch/sermons">Sermons</a>
+            <a href="/branch/resources">Resources</a>
+            <a href="/branch/contact-submissions">Contact</a>
+            <a href="/branch/giving-settings">Giving Settings</a>
+            <a href="/branch/account">Account</a>
+          </div>
+        </details>
+      </nav>
+      <div class="church-branch-content">

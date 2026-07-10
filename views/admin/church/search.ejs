@@ -1,17 +1,5 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <%- include('../../partials/brand_resolve') %>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Church Support Search | <%= _bn %> Admin</title>
-    <link rel="stylesheet" href="<%= asset('styles') %>" />
-  </head>
-  <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../../partials/admin_nav', { navTitle: 'Church Support Search', activeNav: activeNav || 'church_platform_search' }) %>
-    <main class="admin-main">
-      <div class="container admin-main__pad">
-        <header class="admin-dashboard__header">
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Church Support Search', activeNav: activeNav || 'church_platform_search', pageTitle: 'Church Support Search' }) %>
+<header class="admin-dashboard__header">
           <div>
             <h1 class="admin-dashboard__title">Church Support Search</h1>
             <p class="admin-dashboard__subtitle muted">Find organizations, branches, admins, members, and ministry leaders across BlessBoard.</p>
@@ -346,7 +334,4 @@
             <p class="muted">No results found. Try a different term or filter.</p>
           <% } %>
         <% } %>
-      </div>
-    </main>
-  </body>
-</html>
+<%- include('../../partials/platform_admin_shell_end') %>

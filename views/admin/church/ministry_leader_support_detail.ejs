@@ -1,17 +1,5 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <%- include('../../partials/brand_resolve') %>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title><%= leader.full_name %> | Ministry leader support | <%= _bn %> Admin</title>
-    <link rel="stylesheet" href="<%= asset('styles') %>" />
-  </head>
-  <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../../partials/admin_nav', { navTitle: leader.full_name, activeNav: activeNav || 'church_platform_search' }) %>
-    <main class="admin-main">
-      <div class="container admin-main__pad">
-        <% var ctx = typeof loginContext !== 'undefined' && loginContext ? loginContext : {}; %>
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'BlessBoard Admin', activeNav: activeNav || 'church_platform', pageTitle: 'BlessBoard Admin' }) %>
+<% var ctx = typeof loginContext !== 'undefined' && loginContext ? loginContext : {}; %>
         <% var host = typeof branchHostSlug !== 'undefined' ? branchHostSlug : (branch.host_slug || branch.slug); %>
         <% var act = typeof activitySummary !== 'undefined' && activitySummary ? activitySummary : {}; %>
         <% var attempts = typeof loginAttempts !== 'undefined' && loginAttempts ? loginAttempts : []; %>
@@ -235,7 +223,4 @@
             <% } %>
           </div>
         </section>
-      </div>
-    </main>
-  </body>
-</html>
+<%- include('../../partials/platform_admin_shell_end') %>

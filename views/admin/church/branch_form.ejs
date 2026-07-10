@@ -1,17 +1,5 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <%- include('../../partials/brand_resolve') %>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Add branch | <%= organization.name %> | <%= _bn %> Admin</title>
-    <link rel="stylesheet" href="<%= asset('styles') %>" />
-  </head>
-  <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../../partials/admin_nav', { navTitle: 'Add branch', activeNav: activeNav || 'church_platform_orgs' }) %>
-    <main class="admin-main">
-      <div class="container admin-main__pad">
-        <header class="admin-dashboard__header">
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Create branch', activeNav: activeNav || 'church_platform_branches', pageTitle: 'Create branch' }) %>
+<header class="admin-dashboard__header">
           <div>
             <h1 class="admin-dashboard__title">Add branch</h1>
             <p class="admin-dashboard__subtitle muted"><%= organization.name %></p>
@@ -99,9 +87,7 @@
             <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'Cancel' }) %>
           </div>
         </form>
-      </div>
-    </main>
-    <script>
+<script>
       (function () {
         var branchSlug = document.getElementById("branch_host_slug");
         var preview = document.getElementById("host-preview");
@@ -114,5 +100,4 @@
         syncPreview();
       })();
     </script>
-  </body>
-</html>
+<%- include('../../partials/platform_admin_shell_end') %>

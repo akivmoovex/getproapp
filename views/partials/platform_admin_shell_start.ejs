@@ -1,0 +1,197 @@
+<%
+  var _bbMode = typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode;
+  var _pageTitle = typeof pageTitle !== 'undefined' && pageTitle
+    ? pageTitle
+    : (typeof navTitle !== 'undefined' && navTitle ? navTitle : 'BlessBoard Admin');
+  var _navTitle = typeof navTitle !== 'undefined' ? navTitle : 'BlessBoard Admin';
+  var _active = typeof activeNav !== 'undefined' ? activeNav : 'church_platform';
+  var _adminName = (typeof adminUser !== 'undefined' && adminUser && (adminUser.display_name || adminUser.username))
+    ? (adminUser.display_name || adminUser.username)
+    : 'Platform Admin';
+  var _avatar = '/church/images/admin/avatar-admin.jpg';
+  function navClass(keys) {
+    var list = Array.isArray(keys) ? keys : [keys];
+    return 'church-branch-nav-link' + (list.indexOf(_active) >= 0 ? ' church-branch-nav-link--active' : '');
+  }
+  function bottomClass(key) {
+    return 'church-branch-bottom-nav__link' + (_active === key || (_active && String(_active).indexOf(key) >= 0) ? ' church-branch-bottom-nav__link--active' : '');
+  }
+%>
+<% if (_bbMode) { %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('./brand_resolve') %>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title><%= _pageTitle %> — BlessBoard Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/church/church.css?v=42"/>
+</head>
+<body class="church-body church-body--platform-admin" data-platform-shell="stitch-v42">
+  <div class="church-branch-layout church-platform-layout">
+    <aside class="church-branch-sidebar church-branch-sidebar--desktop church-platform-sidebar" aria-label="BlessBoard admin navigation">
+      <div class="church-branch-sidebar__brand">
+        <span class="church-branch-sidebar__brand-icon" aria-hidden="true">
+          <span class="material-symbols-outlined">dashboard_customize</span>
+        </span>
+        <div>
+          <a class="church-branch-brand-link" href="/admin/dashboard">BlessBoard Admin</a>
+          <span class="church-branch-brand-sub">Platform · Powered by GetPro</span>
+        </div>
+      </div>
+      <div class="church-branch-sidebar__profile">
+        <img class="church-branch-sidebar__avatar" src="<%= _avatar %>" alt="" width="40" height="40"/>
+        <div>
+          <p class="church-branch-sidebar__name"><%= _adminName %></p>
+          <p class="church-branch-sidebar__role">Super admin</p>
+        </div>
+      </div>
+      <nav class="church-branch-sidebar__nav">
+        <a href="/admin/dashboard" class="<%= navClass('church_platform') %>">
+          <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="/admin/churches" class="<%= navClass(['church_platform_orgs', 'church_platform_branches']) %>">
+          <span class="material-symbols-outlined" aria-hidden="true">apartment</span>
+          <span>Organizations</span>
+        </a>
+        <a href="/admin/church/branches" class="<%= navClass('church_platform_branches') %>">
+          <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
+          <span>Tenants</span>
+        </a>
+        <a href="/admin/churches" class="<%= navClass('church_platform_plans') %>">
+          <span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span>
+          <span>Plans</span>
+        </a>
+        <a href="/admin/church/security" class="<%= navClass('church_platform_security') %>">
+          <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+          <span>Settings</span>
+        </a>
+        <a href="/admin/diagnostics" class="<%= navClass('church_platform_diagnostics') %>">
+          <span class="material-symbols-outlined" aria-hidden="true">monitor_heart</span>
+          <span>Support</span>
+        </a>
+        <a href="/admin/church/search" class="<%= navClass('church_platform_search') %>">
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          <span>Search</span>
+        </a>
+        <a href="/admin/church/reset-requests" class="<%= navClass('church_platform_reset_requests') %>">
+          <span class="material-symbols-outlined" aria-hidden="true">lock_reset</span>
+          <span>Reset requests</span>
+          <% var _resetPending = typeof churchResetPendingCounts !== 'undefined' && churchResetPendingCounts ? churchResetPendingCounts : null; if (_resetPending && _resetPending.submitted_total > 0) { %>
+          <span class="church-nav-count"><%= _resetPending.submitted_total %></span>
+          <% } %>
+        </a>
+      </nav>
+      <div class="church-branch-sidebar__footer">
+        <a href="/admin/churches/new" class="church-branch-nav-link church-platform-nav-cta">
+          <span class="material-symbols-outlined" aria-hidden="true">add</span>
+          <span>New church</span>
+        </a>
+        <form method="post" action="/admin/logout">
+          <button class="church-branch-nav-link church-branch-nav-link--button" type="submit">
+            <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+            <span>Sign out</span>
+          </button>
+        </form>
+        <p class="church-branch-powered">Powered by GetPro</p>
+      </div>
+    </aside>
+    <div class="church-branch-main">
+      <header class="church-branch-mobile-topbar church-platform-mobile-topbar" aria-label="BlessBoard admin mobile navigation">
+        <button type="button" class="church-branch-mobile-topbar__menu" id="church-platform-menu-btn" aria-label="Open admin menu" aria-expanded="false" aria-controls="church-platform-drawer">
+          <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+        </button>
+        <div class="church-branch-mobile-topbar__brand">
+          <img class="church-branch-mobile-topbar__avatar" src="<%= _avatar %>" alt="" width="36" height="36"/>
+          <div>
+            <strong>BlessBoard Admin</strong>
+            <span><%= _navTitle %></span>
+          </div>
+        </div>
+        <a class="church-branch-mobile-topbar__icon" href="/admin/churches/new" aria-label="Create church">
+          <span class="material-symbols-outlined">add</span>
+        </a>
+      </header>
+      <header class="church-branch-desktop-topbar church-platform-desktop-topbar" aria-label="<%= _navTitle %>">
+        <div class="church-branch-desktop-topbar__left">
+          <h1 class="church-branch-desktop-topbar__title"><%= _navTitle %></h1>
+          <label class="church-branch-search church-show-desktop-only">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input type="search" placeholder="Search organizations..." disabled aria-label="Search"/>
+          </label>
+        </div>
+        <div class="church-branch-desktop-topbar__actions">
+          <a class="church-branch-desktop-topbar__icon" href="/admin/churches/new" aria-label="Create church">
+            <span class="material-symbols-outlined">add</span>
+          </a>
+          <a class="church-branch-desktop-topbar__icon" href="/admin/diagnostics" aria-label="Diagnostics">
+            <span class="material-symbols-outlined">notifications</span>
+            <span class="church-branch-desktop-topbar__dot" aria-hidden="true"></span>
+          </a>
+          <span class="church-branch-desktop-topbar__profile">
+            <img src="<%= _avatar %>" alt="" width="32" height="32"/>
+            <span>Profile</span>
+          </span>
+        </div>
+      </header>
+      <div class="church-drawer-overlay" id="church-platform-drawer-overlay" hidden></div>
+      <aside class="church-drawer church-drawer--admin" id="church-platform-drawer" aria-label="BlessBoard admin mobile menu" aria-hidden="true">
+        <div class="church-drawer__head">
+          <p class="church-drawer__title">BlessBoard Admin</p>
+          <button type="button" class="church-drawer__close" id="church-platform-drawer-close" aria-label="Close admin menu">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+          </button>
+        </div>
+        <nav class="church-drawer__nav church-drawer__nav--admin">
+          <a href="/admin/dashboard" class="<%= navClass('church_platform') %>"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span><span>Dashboard</span></a>
+          <a href="/admin/churches" class="<%= navClass(['church_platform_orgs', 'church_platform_branches']) %>"><span class="material-symbols-outlined" aria-hidden="true">apartment</span><span>Organizations</span></a>
+          <a href="/admin/church/branches" class="<%= navClass('church_platform_branches') %>"><span class="material-symbols-outlined" aria-hidden="true">account_tree</span><span>Tenants</span></a>
+          <a href="/admin/church/security" class="<%= navClass('church_platform_security') %>"><span class="material-symbols-outlined" aria-hidden="true">settings</span><span>Settings</span></a>
+          <a href="/admin/diagnostics" class="<%= navClass('church_platform_diagnostics') %>"><span class="material-symbols-outlined" aria-hidden="true">monitor_heart</span><span>Support</span></a>
+          <a href="/admin/church/search" class="<%= navClass('church_platform_search') %>"><span class="material-symbols-outlined" aria-hidden="true">search</span><span>Search</span></a>
+          <a href="/admin/churches/new" class="church-branch-nav-link"><span class="material-symbols-outlined" aria-hidden="true">add</span><span>New church</span></a>
+        </nav>
+        <div class="church-drawer__actions">
+          <form method="post" action="/admin/logout">
+            <button class="church-btn church-btn--primary church-btn--block" type="submit">Sign out</button>
+          </form>
+        </div>
+      </aside>
+      <nav class="church-branch-bottom-nav" aria-label="BlessBoard admin mobile navigation">
+        <a href="/admin/dashboard" class="<%= bottomClass('church_platform') %>">
+          <span class="material-symbols-outlined">home</span>Home
+        </a>
+        <a href="/admin/churches" class="<%= bottomClass('church_platform_orgs') %>">
+          <span class="material-symbols-outlined">apartment</span>Churches
+        </a>
+        <a href="/admin/churches/new" class="church-branch-bottom-nav__link">
+          <span class="material-symbols-outlined">add_circle</span>New
+        </a>
+        <a href="/admin/diagnostics" class="<%= bottomClass('church_platform_diagnostics') %>">
+          <span class="material-symbols-outlined">monitor_heart</span>Support
+        </a>
+        <a href="/admin/church/security" class="<%= bottomClass('church_platform_security') %>">
+          <span class="material-symbols-outlined">settings</span>More
+        </a>
+      </nav>
+      <div class="church-branch-content church-platform-content">
+<% } else { %>
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('./brand_resolve') %>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title><%= _pageTitle %> | <%= typeof _bn !== 'undefined' ? _bn : 'Admin' %></title>
+    <link rel="stylesheet" href="<%= typeof asset === 'function' ? asset('styles') : '/styles.css' %>" />
+  </head>
+  <body class="admin-app<%= typeof bodyEmbedClass !== 'undefined' ? bodyEmbedClass : '' %>">
+    <%- include('./admin_nav', { navTitle: _navTitle, activeNav: _active }) %>
+    <main class="admin-main">
+      <div class="container admin-main__pad">
+<% } %>

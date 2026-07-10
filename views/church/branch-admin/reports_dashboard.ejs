@@ -1,8 +1,8 @@
 <%- include('../partials/branch_admin_shell_start') %>
-      <header class="church-branch-topbar">
+      <header class="church-branch-page-hero">
         <div>
-          <h1 class="church-branch-topbar__title">Monthly reports</h1>
-          <p class="church-branch-topbar__subtitle">Submit branch reports to HQ for review</p>
+          <h1 class="church-branch-page-hero__title church-show-mobile-only">Monthly reports</h1>
+          <p class="church-branch-page-hero__subtitle">Submit branch reports to HQ for review</p>
         </div>
         <a class="church-btn church-btn--primary" href="/branch/reports/new">Create / continue report</a>
       </header>
@@ -35,6 +35,7 @@
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Attendance preview (<%= dashboard.currentPeriodLabel %>)</h2>
         <p class="church-branch-panel__hint">From submitted attendance records only.</p>
+        <% if (dashboard.attendancePreview) { %>
         <dl class="church-branch-dl church-branch-dl--inline">
           <div><dt>Sunday avg.</dt><dd><%= dashboard.attendancePreview.sunday_average %></dd></div>
           <div><dt>Midweek avg.</dt><dd><%= dashboard.attendancePreview.midweek_average %></dd></div>
@@ -42,6 +43,9 @@
           <div><dt>Youth avg.</dt><dd><%= dashboard.attendancePreview.youth_average %></dd></div>
           <div><dt>Visitors total</dt><dd><%= dashboard.attendancePreview.visitors_total %></dd></div>
         </dl>
+        <% } else { %>
+        <p class="church-branch-empty">No submitted attendance records for this period yet.</p>
+        <% } %>
         <% if (dashboard.draftAttendanceCount > 0) { %>
         <div class="church-alert church-alert--warning church-alert--compact" role="note">
           <%= dashboard.draftAttendanceCount %> draft attendance record(s) for this month will not be included until submitted.

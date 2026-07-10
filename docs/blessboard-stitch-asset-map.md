@@ -111,10 +111,9 @@ Export from Stitch when each batch starts (do not block Batch A):
 | Batch | Module | Likely assets | Notes |
 |-------|--------|---------------|--------|
 | C | Member | Dashboard avatars, event thumbs, ministry cards, form icons | From `14`–`20` Stitch HTML |
-| D | Branch admin | Dashboard chart imagery, member avatars, ministry covers, report visuals | From `25`–`45` (+ misfiled `04-branch-admin-dashboard-*`) |
 | E | Leader / HQ / Platform | Leader roster photos, HQ broadcast art, platform dashboard charts | From `46`–`50`, `58`–`61` (mobile only), `62`–`68` |
 
-Until exported, those screens remain **Partial** with functional EJS and placeholder/CSS treatment.
+Until exported, Batch E screens remain **Partial** with functional EJS and placeholder/CSS treatment.
 
 ---
 
@@ -131,6 +130,8 @@ public/church/images/
   giving/       # Batch A — QR JPGs present; wire + transparency check
   auth/         # Batch B — login bg, submitted, waiting, forgot illustrations
   member/       # Batch C — avatars, heroes, events, ministries, resources
+  branch-admin/ # Batch D — pastor avatar, map, event covers, sermon/resource thumbs
+  admin/        # Batch E — platform admin avatar + provision map
   ministries/   # icons via Material Symbols (no photo set)
 ```
 
@@ -177,6 +178,41 @@ Localized into `public/church/images/member/` (Stitch downloads + reused public 
 
 ---
 
+## Batch D — Branch admin assets (v41)
+
+Localized into `public/church/images/branch-admin/`.
+
+| Screen | Design element | PNG file | Current asset | Exact asset found? | Action |
+|--------|----------------|----------|---------------|--------------------|--------|
+| Shell / dashboard | Admin avatar | `25-branch-admin-dashboard-*.png` | `branch-admin/avatar-pastor-stitch.jpg` | Yes (Stitch / shared) | Wired in sidebar + top bars |
+| Dashboard | Branch map | `25-branch-admin-dashboard-desktop.png` | `branch-admin/map-kafue.jpg` | Reused / localized | Wired |
+| Events management | Event covers | `32-branch-events-management-*.png` | `branch-admin/event-cover-1..3.jpg` | Reused events assets | Wired |
+| Sermons (no PNG) | Thumb | — | `branch-admin/sermon-thumb.jpg` | Reused sermons | Shell-aligned |
+| Resources (no PNG) | Thumb | — | `branch-admin/resource-thumb.jpg` | Reused | Shell-aligned |
+| Verification / nav | Icons | `26-*.png` | Material Symbols | Yes | Wired |
+| Charts / budget ring | Desktop/mobile dash | `25-*.png` | CSS + Material (no live chart lib) | Partial | Static/demo treatment |
+
+**Brand note:** Stitch uses “Ecclesia Branch / HQ Admin Portal”; product uses church name + **Branch Admin · BlessBoard** and **Powered by GetPro**.
+
+---
+
+
+
+## Batch E — Platform admin assets (v42)
+
+Localized into `public/church/images/admin/`.
+
+| Screen | Design element | PNG file | Current asset | Exact asset found? | Action |
+|--------|----------------|----------|---------------|--------------------|--------|
+| Shell / dashboard | Admin avatar | `62-platform-admin-dashboard-*.png` | `admin/avatar-admin.jpg` | Yes (Stitch HTML) | Wired in sidebar + top bars |
+| Create organization | Map / onboarding visual | `64-platform-create-church-organization-mobile.png` | `admin/provision-map.jpg` | Yes (Stitch HTML) | Wired in onboarding card |
+| Organizations / diagnostics | Icons | `63` / `68` | Material Symbols | Yes | Wired |
+| Charts / MRR | Dashboard / orgs | `62` / `63` | CSS only (no live chart lib) | Partial | Static/demo treatment |
+| HQ avatars | `58`–`61` mobile | — | Not exported this batch | Missing | HQ shell uses Material + existing church assets |
+
+**Brand note:** Stitch uses “Moovex/GetPro”; product uses **BlessBoard Admin** + **Powered by GetPro**.
+
+
 ## Batch status (assets)
 
 | Batch | Scope | CSS | Asset status |
@@ -184,5 +220,5 @@ Localized into `public/church/images/member/` (Stitch downloads + reused public 
 | A | Giving + public remaining | v37–v38 | Complete |
 | B | Auth | v38 | Complete |
 | C | Member | v40 | Complete — `public/church/images/member/` |
-| D | Branch admin | v41 | Export from Stitch when batch starts |
-| E | Platform / HQ | v42 | Export from Stitch when batch starts |
+| D | Branch admin | v41 | Complete — `public/church/images/branch-admin/` |
+| E | Platform / HQ | v42 | Complete — `public/church/images/admin/` |

@@ -1,32 +1,25 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <%- include('../../partials/brand_resolve') %>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Create church organization | <%= _bn %> Admin</title>
-    <link rel="stylesheet" href="<%= asset('styles') %>" />
-  </head>
-  <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../../partials/admin_nav', { navTitle: 'Create organization', activeNav: activeNav || 'church_platform_orgs' }) %>
-    <main class="admin-main">
-      <div class="container admin-main__pad">
-        <header class="admin-dashboard__header">
-          <div>
-            <h1 class="admin-dashboard__title">Create church organization</h1>
-            <p class="admin-dashboard__subtitle muted">
-              Provisions organization, first branch at <strong>&lt;slug&gt;.blessboard.com</strong>, HQ admin, branch admin, and starter website content.
-            </p>
-          </div>
-        </header>
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Create New Organization', activeNav: activeNav || 'church_platform_orgs', pageTitle: 'Create church organization' }) %>
+<% var _bb = typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode; %>
+<% var _listHref = _bb ? '/admin/churches' : '/admin/church/organizations'; %>
+<% var _formAction = _bb ? '/admin/churches' : '/admin/church/organizations'; %>
+<p class="church-platform-back"><a href="<%= _listHref %>">← Back to organizations</a></p>
+<header class="church-platform-page-hero">
+  <div>
+    <h1 class="church-platform-page-hero__title">Initialize Organization</h1>
+    <p class="church-platform-page-hero__subtitle">
+      Provisions organization, first branch at <strong>&lt;slug&gt;.blessboard.com</strong>, HQ admin, branch admin, and starter website content.
+    </p>
+  </div>
+</header>
 
-        <% if (typeof error !== 'undefined' && error) { %>
-          <div class="flash" role="alert"><%= error %></div>
-        <% } %>
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+<% } %>
 
-        <% var f = typeof form !== 'undefined' && form ? form : {}; %>
-        <form method="post" action="/admin/church/organizations" class="card card--mb-xl" style="padding:1.25rem;">
-          <h2 class="section-title section-title--flush">1. Organization details</h2>
+<% var f = typeof form !== 'undefined' && form ? form : {}; %>
+<div class="church-platform-provision-grid">
+<form method="post" action="<%= _formAction %>" class="church-platform-panel church-platform-panel--form">
+  <h2 class="church-platform-panel__title"><span class="material-symbols-outlined" aria-hidden="true">apartment</span> Organization Identity</h2>
           <div class="admin-form-grid">
             <div class="input-field">
               <label class="input-field__label" for="organization_name">Organization name *</label>
@@ -175,13 +168,22 @@
           </div>
 
           <div class="admin-toolbar" style="margin-top:1.5rem;">
-            <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Provision organization' }) %>
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations', label: 'Cancel' }) %>
+            <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Create Organization' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: _listHref, label: 'Cancel' }) %>
           </div>
         </form>
-      </div>
-    </main>
-    <script>
+<aside class="church-platform-onboarding-card">
+  <h2>Onboarding Guide</h2>
+  <p>A top-level organization owns HQ settings, branch tenants, and the first admin accounts.</p>
+  <ul>
+    <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Unique subdomain validation</li>
+    <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> HQ + branch admin bootstrap</li>
+    <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Starter website content</li>
+  </ul>
+  <img class="church-platform-onboarding-card__map" src="/church/images/admin/provision-map.jpg" alt="" width="640" height="360"/>
+</aside>
+</div>
+<script>
       (function () {
         var orgSlug = document.getElementById("organization_slug");
         var branchSlug = document.getElementById("branch_host_slug");
@@ -207,5 +209,4 @@
         syncPreview();
       })();
     </script>
-  </body>
-</html>
+<%- include('../../partials/platform_admin_shell_end') %>

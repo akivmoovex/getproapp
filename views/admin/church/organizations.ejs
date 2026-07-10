@@ -1,93 +1,86 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <%- include('../../partials/brand_resolve') %>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Church organizations | <%= _bn %> Admin</title>
-    <link rel="stylesheet" href="<%= asset('styles') %>" />
-  </head>
-  <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../../partials/admin_nav', { navTitle: 'Church organizations', activeNav: activeNav || 'church_platform_orgs' }) %>
-    <main class="admin-main">
-      <div class="container admin-main__pad">
-        <header class="admin-dashboard__header">
-          <div>
-            <h1 class="admin-dashboard__title">Church organizations</h1>
-            <p class="admin-dashboard__subtitle muted">Registry of provisioned church organizations on BlessBoard.</p>
-          </div>
-          <div class="admin-toolbar">
-            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/organizations/new', label: 'Create organization' }) %>
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church', label: 'Church dashboard' }) %>
-          </div>
-        </header>
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Organization Governance', activeNav: activeNav || 'church_platform_orgs', pageTitle: 'Church organizations' }) %>
+<% var _bb = typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode; %>
+<% var _newHref = _bb ? '/admin/churches/new' : '/admin/church/organizations/new'; %>
+<% var _dashHref = _bb ? '/admin/dashboard' : '/admin/church'; %>
+<% var _listAction = _bb ? '/admin/churches' : '/admin/church/organizations'; %>
+<header class="church-platform-page-hero">
+  <div>
+    <h1 class="church-platform-page-hero__title">Organization Governance</h1>
+    <p class="church-platform-page-hero__subtitle">Manage, audit, and provision church networks across BlessBoard.</p>
+  </div>
+  <div class="church-platform-page-hero__actions">
+    <a class="church-btn church-btn--primary" href="<%= _newHref %>"><span class="material-symbols-outlined" aria-hidden="true">add</span> Create New Organization</a>
+    <a class="church-btn church-btn--outline" href="<%= _dashHref %>">Dashboard</a>
+  </div>
+</header>
 
-        <form method="get" action="/admin/church/organizations" class="admin-filter-form card card--mb-xl" style="padding:1rem;">
-          <div class="input-field">
-            <label class="input-field__label" for="q">Search</label>
-            <input id="q" class="input-field__control" name="q" type="search" value="<%= typeof q !== 'undefined' ? q : '' %>" placeholder="Name, slug, country…" />
-          </div>
-          <div class="input-field">
-            <label class="input-field__label" for="status">Status</label>
-            <select id="status" class="input-field__control" name="status">
-              <option value="all" <%= (typeof statusFilter === 'undefined' || statusFilter === 'all') ? 'selected' : '' %>>All</option>
-              <% (orgBranchStatuses || ['active','suspended','archived']).forEach(function (s) { %>
-                <option value="<%= s %>" <%= statusFilter === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
-              <% }); %>
-            </select>
-          </div>
-          <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Search' }) %>
-        </form>
+<form method="get" action="<%= _listAction %>" class="church-platform-panel church-platform-filters">
+  <label class="church-field">
+    <span class="church-field__label">Search</span>
+    <input class="church-input" id="q" name="q" type="search" value="<%= typeof q !== 'undefined' ? q : '' %>" placeholder="Name, slug, country…"/>
+  </label>
+  <label class="church-field">
+    <span class="church-field__label">Status</span>
+    <select class="church-input" id="status" name="status">
+      <option value="all" <%= (typeof statusFilter === 'undefined' || statusFilter === 'all') ? 'selected' : '' %>>All</option>
+      <% (orgBranchStatuses || ['active','suspended','archived']).forEach(function (s) { %>
+        <option value="<%= s %>" <%= statusFilter === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
+      <% }); %>
+    </select>
+  </label>
+  <button class="church-btn church-btn--outline" type="submit">Filters</button>
+</form>
 
-        <div class="card card--mb-xl">
-          <div class="table-wrap">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Organization</th>
-                  <th>Slug</th>
-                  <th>Location</th>
-                  <th>Primary contact</th>
-                  <th>Plan</th>
-                  <th>Branches</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <% if (!organizations || organizations.length === 0) { %>
-                  <tr><td colspan="9" class="muted">No organizations found.</td></tr>
-                <% } else { organizations.forEach(function (org) { %>
-                  <tr>
-                    <td><%= org.name %></td>
-                    <td class="muted"><%= org.slug %></td>
-                    <td><%= [org.city, org.country].filter(Boolean).join(', ') || '—' %></td>
-                    <td>
-                      <% if (org.primary_contact_name || org.primary_contact_email) { %>
-                        <%= org.primary_contact_name || '—' %><% if (org.primary_contact_email) { %><br /><span class="muted"><%= org.primary_contact_email %></span><% } %>
-                      <% } else { %>
-                        —
-                      <% } %>
-                    </td>
-                    <td><%= getPlanDisplay(org.plan_code || 'free').label %></td>
-                    <td><%= org.branch_count || 0 %></td>
-                    <td><%- include('../../partials/admin/church_status_badge', { status: org.status }) %></td>
-                    <td><%= formatDate(org.created_at) %></td>
-                    <td>
-                      <% var _viewHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + org.id : '/admin/church/organizations/' + org.id; %>
-                      <% var _editHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + org.id + '/edit' : '/admin/church/organizations/' + org.id + '/edit'; %>
-                      <%- include('../../partials/components/button', { variant: 'default', href: _viewHref, label: 'View' }) %>
-                      <%- include('../../partials/components/button', { variant: 'default', href: _editHref, label: 'Edit' }) %>
-                      <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + org.id + '/plan', label: 'Plan' }) %>
-                    </td>
-                  </tr>
-                <% }); } %>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </main>
-  </body>
-</html>
+<section class="church-platform-panel">
+  <div class="church-platform-table-wrap">
+    <table class="church-platform-table">
+      <thead>
+        <tr>
+          <th>Organization</th>
+          <th>Country</th>
+          <th>HQ contact</th>
+          <th>Branches</th>
+          <th>Plan</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!organizations || organizations.length === 0) { %>
+          <tr><td colspan="8" class="church-platform-empty">No organizations found.</td></tr>
+        <% } else { organizations.forEach(function (org) { %>
+          <tr>
+            <td>
+              <div class="church-platform-org-cell">
+                <span class="church-platform-org-icon" aria-hidden="true"><span class="material-symbols-outlined">church</span></span>
+                <div>
+                  <strong><%= org.name %></strong>
+                  <span class="church-platform-meta">ID: <%= org.slug %></span>
+                </div>
+              </div>
+            </td>
+            <td><%= org.country || '—' %></td>
+            <td>
+              <% if (org.primary_contact_name || org.primary_contact_email) { %>
+                <%= org.primary_contact_name || '—' %><% if (org.primary_contact_email) { %><br /><span class="church-platform-meta"><%= org.primary_contact_email %></span><% } %>
+              <% } else { %>—<% } %>
+            </td>
+            <td><span class="church-platform-chip"><%= org.branch_count || 0 %> units</span></td>
+            <td><span class="church-platform-chip church-platform-chip--plan"><%= getPlanDisplay(org.plan_code || 'free').label %></span></td>
+            <td><%- include('../../partials/admin/church_status_badge', { status: org.status }) %></td>
+            <td><%= formatDate(org.created_at) %></td>
+            <td>
+              <% var _viewHref = _bb ? '/admin/churches/' + org.id : '/admin/church/organizations/' + org.id; %>
+              <% var _editHref = _bb ? '/admin/churches/' + org.id + '/edit' : '/admin/church/organizations/' + org.id + '/edit'; %>
+              <a class="church-btn church-btn--ghost church-btn--sm" href="<%= _viewHref %>">View</a>
+              <a class="church-btn church-btn--ghost church-btn--sm" href="<%= _editHref %>">Edit</a>
+              <a class="church-btn church-btn--ghost church-btn--sm" href="/admin/church/organizations/<%= org.id %>/plan">Plan</a>
+            </td>
+          </tr>
+        <% }); } %>
+      </tbody>
+    </table>
+  </div>
+</section>
+<%- include('../../partials/platform_admin_shell_end') %>

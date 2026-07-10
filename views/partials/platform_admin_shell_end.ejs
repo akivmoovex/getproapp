@@ -1,0 +1,39 @@
+<%
+  var _bbMode = typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode;
+%>
+<% if (_bbMode) { %>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var btn = document.getElementById('church-platform-menu-btn');
+      var drawer = document.getElementById('church-platform-drawer');
+      var overlay = document.getElementById('church-platform-drawer-overlay');
+      var closeBtn = document.getElementById('church-platform-drawer-close');
+      if (!btn || !drawer || !overlay) return;
+      function openDrawer() {
+        drawer.setAttribute('aria-hidden', 'false');
+        overlay.hidden = false;
+        btn.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('church-drawer-open');
+      }
+      function closeDrawer() {
+        drawer.setAttribute('aria-hidden', 'true');
+        overlay.hidden = true;
+        btn.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('church-drawer-open');
+      }
+      btn.addEventListener('click', openDrawer);
+      closeBtn && closeBtn.addEventListener('click', closeDrawer);
+      overlay.addEventListener('click', closeDrawer);
+    })();
+  </script>
+</body>
+</html>
+<% } else { %>
+      </div>
+    </main>
+  </body>
+</html>
+<% } %>

@@ -1,7 +1,7 @@
 # BlessBoard Stitch Screen Inventory
 
 **Last updated:** 2026-07-10  
-**CSS freeze baseline:** v36; Batch A v37; Batch B Auth v38; desktop menu hotfix v39; Batch C starts v40  
+**CSS freeze baseline:** v36; Batch A v37; Batch B Auth v38; desktop menu hotfix v39; Batch C v40; Batch D Branch Admin v41; Batch E Platform Admin v42  
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 **Unique PNGs in this inventory:** 110 (excludes Finder-style duplicate folders named `* 2` / `* 3`)
 
@@ -43,8 +43,8 @@ Folder: `01-public-website/`
 | `07-public-giving-information-mobile.png` | Public | Giving | Mobile | `/giving` | `church/public/giving.ejs` | Close (v37 Batch A) |
 | `08-public-contact-desktop.png` | Public | Contact | Desktop | `/contact` | `church/public/contact.ejs` | Close |
 | `08-public-contact-mobile.png` | Public | Contact | Mobile | `/contact` | `church/public/contact.ejs` | Close |
-| `04-branch-admin-dashboard-desktop.png` | Branch admin | Dashboard (misfiled) | Desktop | `/branch/dashboard` | `church/branch-admin/dashboard.ejs` | Partial; **MISFILED** under `01-public-website` |
-| `04-branch-admin-dashboard-mobile.png` | Branch admin | Dashboard (misfiled) | Mobile | `/branch/dashboard` | `church/branch-admin/dashboard.ejs` | Partial; **MISFILED** under `01-public-website` |
+| `04-branch-admin-dashboard-desktop.png` | Branch admin | Dashboard (misfiled) | Desktop | `/branch/dashboard` | `church/branch-admin/dashboard.ejs` | Aligned (Batch D); **MISFILED** under `01-public-website` |
+| `04-branch-admin-dashboard-mobile.png` | Branch admin | Dashboard (misfiled) | Mobile | `/branch/dashboard` | `church/branch-admin/dashboard.ejs` | Aligned (Batch D); **MISFILED** under `01-public-website` |
 
 **Notes**
 
@@ -127,58 +127,62 @@ Folder: `04-branch-admin/` (screens 25–45). Also see misfiled `04-branch-admin
 
 | File | Module | Screen | Device | Expected route | Current view | Status |
 |------|--------|--------|--------|----------------|--------------|--------|
-| `25-branch-admin-dashboard-desktop.png` | Branch admin | Dashboard | Desktop | `/branch/dashboard` | `church/branch-admin/dashboard.ejs` | Partial |
-| `25-branch-admin-dashboard-mobile.png` | Branch admin | Dashboard | Mobile | `/branch/dashboard` | `church/branch-admin/dashboard.ejs` | Partial |
-| `26-branch-member-verification-queue-desktop.png` | Branch admin | Member verification | Desktop | `/branch/member-verification` | `church/branch-admin/verification_queue.ejs` | Partial |
-| `26-branch-member-verification-queue-mobile.png` | Branch admin | Member verification | Mobile | `/branch/member-verification` | `church/branch-admin/verification_queue.ejs` | Partial |
-| `27-branch-member-profile-desktop.png` | Branch admin | Member profile | Desktop | `/branch/members/:id` | `church/branch-admin/member_profile.ejs` | Partial |
-| `27-branch-member-profile-mobile.png` | Branch admin | Member profile | Mobile | `/branch/members/:id` | `church/branch-admin/member_profile.ejs` | Partial |
-| `28-branch-member-directory-desktop.png` | Branch admin | Members directory | Desktop | `/branch/members` | `church/branch-admin/members_directory.ejs` | Partial |
-| `28-branch-member-directory-mobile.png` | Branch admin | Members directory | Mobile | `/branch/members` | `church/branch-admin/members_directory.ejs` | Partial |
-| `29-branch-ministries-directory-desktop.png` | Branch admin | Ministries | Desktop | `/branch/ministries` | `church/branch-admin/ministries_directory.ejs` | Partial |
-| `29-branch-ministries-directory-mobile.png` | Branch admin | Ministries | Mobile | `/branch/ministries` | `church/branch-admin/ministries_directory.ejs` | Partial |
-| `30-branch-ministry-profile-desktop.png` | Branch admin | Ministry profile | Desktop | `/branch/ministries/:id` | `church/branch-admin/ministry_profile.ejs` | Partial |
-| `30-branch-ministry-profile-mobile.png` | Branch admin | Ministry profile | Mobile | `/branch/ministries/:id` | `church/branch-admin/ministry_profile.ejs` | Partial |
-| `31-branch-departments-directory-desktop.png` | Branch admin | Departments | Desktop | `/branch/departments` | `church/branch-admin/departments_directory.ejs` | Partial |
-| `31-branch-departments-directory-mobile.png` | Branch admin | Departments | Mobile | `/branch/departments` | `church/branch-admin/departments_directory.ejs` | Partial |
-| `32-branch-events-management-desktop.png` | Branch admin | Events | Desktop | `/branch/events` | `church/branch-admin/events_management.ejs` | Partial |
-| `32-branch-events-management-mobile.png` | Branch admin | Events | Mobile | `/branch/events` | `church/branch-admin/events_management.ejs` | Partial |
-| `33-branch-duty-roster-desktop.png` | Branch admin | Duty roster | Desktop | `/branch/duty-roster` | `church/branch-admin/duty_roster.ejs` | Partial |
-| `33-branch-duty-roster-mobile.png` | Branch admin | Duty roster | Mobile | `/branch/duty-roster` | `church/branch-admin/duty_roster.ejs` | Partial |
-| `34-branch-website-editor-desktop.png` | Branch admin | Website editor | Desktop | `/branch/website-editor` | `church/branch-admin/website_editor.ejs` | Partial |
-| `34-branch-website-editor-mobile.png` | Branch admin | Website editor | Mobile | `/branch/website-editor` | `church/branch-admin/website_editor.ejs` | Partial |
-| `35-branch-announcements-management-desktop.png` | Branch admin | Announcements | Desktop | `/branch/announcements` | `church/branch-admin/announcements_management.ejs` | Partial |
-| `35-branch-announcements-management-mobile.png` | Branch admin | Announcements | Mobile | `/branch/announcements` | `church/branch-admin/announcements_management.ejs` | Partial |
-| `36-branch-attendance-tracker-desktop.png` | Branch admin | Attendance | Desktop | `/branch/attendance` | `church/branch-admin/attendance_tracker.ejs` | Partial |
-| `36-branch-attendance-tracker-mobile.png` | Branch admin | Attendance | Mobile | `/branch/attendance` | `church/branch-admin/attendance_tracker.ejs` | Partial |
-| `37-branch-attendance-record-detail-desktop.png` | Branch admin | Attendance detail | Desktop | `/branch/attendance/:id` | `church/branch-admin/attendance_record_detail.ejs` | Partial |
-| `37-branch-attendance-record-detail-mobile.png` | Branch admin | Attendance detail | Mobile | `/branch/attendance/:id` | `church/branch-admin/attendance_record_detail.ejs` | Partial |
-| `38-branch-giving-settings-desktop.png` | Branch admin | Giving settings | Desktop | `/branch/giving-settings` | `church/branch-admin/giving_settings.ejs` | Partial |
-| `38-branch-giving-settings-mobile.png` | Branch admin | Giving settings | Mobile | `/branch/giving-settings` | `church/branch-admin/giving_settings.ejs` | Partial |
-| `39-branch-giving-summary-desktop.png` | Branch admin | Giving summary | Desktop | `/branch/giving-summary` | `church/branch-admin/giving_summary.ejs` | Partial |
-| `39-branch-giving-summary-mobile.png` | Branch admin | Giving summary | Mobile | `/branch/giving-summary` | `church/branch-admin/giving_summary.ejs` | Partial |
-| `40-branch-reports-dashboard-desktop.png` | Branch admin | Reports | Desktop | `/branch/reports` | `church/branch-admin/reports_dashboard.ejs` | Partial |
-| `40-branch-reports-dashboard-mobile.png` | Branch admin | Reports | Mobile | `/branch/reports` | `church/branch-admin/reports_dashboard.ejs` | Partial |
-| `41-branch-submit-monthly-report-desktop.png` | Branch admin | Submit monthly report | Desktop | `/branch/reports/new` | `church/branch-admin/submit_monthly_report.ejs` | Partial |
-| `41-branch-submit-monthly-report-mobile.png` | Branch admin | Submit monthly report | Mobile | `/branch/reports/new` | `church/branch-admin/submit_monthly_report.ejs` | Partial |
-| `42-branch-report-history-desktop.png` | Branch admin | Report history | Desktop | `/branch/reports` (history) | `church/branch-admin/reports_dashboard.ejs` | Partial |
-| `42-branch-report-history-mobile.png` | Branch admin | Report history | Mobile | `/branch/reports` (history) | `church/branch-admin/reports_dashboard.ejs` | Partial |
-| `43-branch-report-details-desktop.png` | Branch admin | Report details | Desktop | `/branch/reports/:id` | `church/branch-admin/report_details.ejs` | Partial |
-| `43-branch-report-details-mobile.png` | Branch admin | Report details | Mobile | `/branch/reports/:id` | `church/branch-admin/report_details.ejs` | Partial |
-| `44-branch-request-workflow-queue-desktop.png` | Branch admin | Requests queue | Desktop | `/branch/requests` | `church/branch-admin/requests_queue.ejs` | Partial |
-| `44-branch-request-workflow-queue-mobile.png` | Branch admin | Requests queue | Mobile | `/branch/requests` | `church/branch-admin/requests_queue.ejs` | Partial |
-| `45-branch-request-details-desktop.png` | Branch admin | Request details | Desktop | `/branch/requests/:id` | `church/branch-admin/request_detail.ejs` | Partial |
-| `45-branch-request-details-mobile.png` | Branch admin | Request details | Mobile | `/branch/requests/:id` | `church/branch-admin/request_detail.ejs` | Partial |
+| `25-branch-admin-dashboard-desktop.png` | Branch admin | Dashboard | Desktop | `/branch/dashboard` | `church/branch-admin/dashboard.ejs` | Aligned (Batch D) |
+| `25-branch-admin-dashboard-mobile.png` | Branch admin | Dashboard | Mobile | `/branch/dashboard` | `church/branch-admin/dashboard.ejs` | Aligned (Batch D) |
+| `26-branch-member-verification-queue-desktop.png` | Branch admin | Member verification | Desktop | `/branch/member-verification` | `church/branch-admin/verification_queue.ejs` | Aligned (Batch D) |
+| `26-branch-member-verification-queue-mobile.png` | Branch admin | Member verification | Mobile | `/branch/member-verification` | `church/branch-admin/verification_queue.ejs` | Aligned (Batch D) |
+| `27-branch-member-profile-desktop.png` | Branch admin | Member profile | Desktop | `/branch/members/:id` | `church/branch-admin/member_profile.ejs` | Aligned (Batch D shell) |
+| `27-branch-member-profile-mobile.png` | Branch admin | Member profile | Mobile | `/branch/members/:id` | `church/branch-admin/member_profile.ejs` | Aligned (Batch D shell) |
+| `28-branch-member-directory-desktop.png` | Branch admin | Members directory | Desktop | `/branch/members` | `church/branch-admin/members_directory.ejs` | Aligned (Batch D) |
+| `28-branch-member-directory-mobile.png` | Branch admin | Members directory | Mobile | `/branch/members` | `church/branch-admin/members_directory.ejs` | Aligned (Batch D) |
+| `29-branch-ministries-directory-desktop.png` | Branch admin | Ministries | Desktop | `/branch/ministries` | `church/branch-admin/ministries_directory.ejs` | Aligned (Batch D shell) |
+| `29-branch-ministries-directory-mobile.png` | Branch admin | Ministries | Mobile | `/branch/ministries` | `church/branch-admin/ministries_directory.ejs` | Aligned (Batch D shell) |
+| `30-branch-ministry-profile-desktop.png` | Branch admin | Ministry profile | Desktop | `/branch/ministries/:id` | `church/branch-admin/ministry_profile.ejs` | Aligned (Batch D shell) |
+| `30-branch-ministry-profile-mobile.png` | Branch admin | Ministry profile | Mobile | `/branch/ministries/:id` | `church/branch-admin/ministry_profile.ejs` | Aligned (Batch D shell) |
+| `31-branch-departments-directory-desktop.png` | Branch admin | Departments | Desktop | `/branch/departments` | `church/branch-admin/departments_directory.ejs` | Aligned (Batch D shell) |
+| `31-branch-departments-directory-mobile.png` | Branch admin | Departments | Mobile | `/branch/departments` | `church/branch-admin/departments_directory.ejs` | Aligned (Batch D shell) |
+| `32-branch-events-management-desktop.png` | Branch admin | Events | Desktop | `/branch/events` | `church/branch-admin/events_management.ejs` | Aligned (Batch D) |
+| `32-branch-events-management-mobile.png` | Branch admin | Events | Mobile | `/branch/events` | `church/branch-admin/events_management.ejs` | Aligned (Batch D) |
+| `33-branch-duty-roster-desktop.png` | Branch admin | Duty roster | Desktop | `/branch/duty-roster` | `church/branch-admin/duty_roster.ejs` | Aligned (Batch D shell) |
+| `33-branch-duty-roster-mobile.png` | Branch admin | Duty roster | Mobile | `/branch/duty-roster` | `church/branch-admin/duty_roster.ejs` | Aligned (Batch D shell) |
+| `34-branch-website-editor-desktop.png` | Branch admin | Website editor | Desktop | `/branch/website-editor` | `church/branch-admin/website_editor.ejs` | Aligned (Batch D) |
+| `34-branch-website-editor-mobile.png` | Branch admin | Website editor | Mobile | `/branch/website-editor` | `church/branch-admin/website_editor.ejs` | Aligned (Batch D) |
+| `35-branch-announcements-management-desktop.png` | Branch admin | Announcements | Desktop | `/branch/announcements` | `church/branch-admin/announcements_management.ejs` | Aligned (Batch D shell) |
+| `35-branch-announcements-management-mobile.png` | Branch admin | Announcements | Mobile | `/branch/announcements` | `church/branch-admin/announcements_management.ejs` | Aligned (Batch D shell) |
+| `36-branch-attendance-tracker-desktop.png` | Branch admin | Attendance | Desktop | `/branch/attendance` | `church/branch-admin/attendance_tracker.ejs` | Aligned (Batch D shell) |
+| `36-branch-attendance-tracker-mobile.png` | Branch admin | Attendance | Mobile | `/branch/attendance` | `church/branch-admin/attendance_tracker.ejs` | Aligned (Batch D shell) |
+| `37-branch-attendance-record-detail-desktop.png` | Branch admin | Attendance detail | Desktop | `/branch/attendance/:id` | `church/branch-admin/attendance_record_detail.ejs` | Aligned (Batch D shell) |
+| `37-branch-attendance-record-detail-mobile.png` | Branch admin | Attendance detail | Mobile | `/branch/attendance/:id` | `church/branch-admin/attendance_record_detail.ejs` | Aligned (Batch D shell) |
+| `38-branch-giving-settings-desktop.png` | Branch admin | Giving settings | Desktop | `/branch/giving-settings` | `church/branch-admin/giving_settings.ejs` | Aligned (Batch D shell) |
+| `38-branch-giving-settings-mobile.png` | Branch admin | Giving settings | Mobile | `/branch/giving-settings` | `church/branch-admin/giving_settings.ejs` | Aligned (Batch D shell) |
+| `39-branch-giving-summary-desktop.png` | Branch admin | Giving summary | Desktop | `/branch/giving-summary` | `church/branch-admin/giving_summary.ejs` | Aligned (Batch D shell) |
+| `39-branch-giving-summary-mobile.png` | Branch admin | Giving summary | Mobile | `/branch/giving-summary` | `church/branch-admin/giving_summary.ejs` | Aligned (Batch D shell) |
+| `40-branch-reports-dashboard-desktop.png` | Branch admin | Reports | Desktop | `/branch/reports` | `church/branch-admin/reports_dashboard.ejs` | Aligned (Batch D) |
+| `40-branch-reports-dashboard-mobile.png` | Branch admin | Reports | Mobile | `/branch/reports` | `church/branch-admin/reports_dashboard.ejs` | Aligned (Batch D) |
+| `41-branch-submit-monthly-report-desktop.png` | Branch admin | Submit monthly report | Desktop | `/branch/reports/new` | `church/branch-admin/submit_monthly_report.ejs` | Aligned (Batch D shell) |
+| `41-branch-submit-monthly-report-mobile.png` | Branch admin | Submit monthly report | Mobile | `/branch/reports/new` | `church/branch-admin/submit_monthly_report.ejs` | Aligned (Batch D shell) |
+| `42-branch-report-history-desktop.png` | Branch admin | Report history | Desktop | `/branch/reports` (history) | `church/branch-admin/reports_dashboard.ejs` | Aligned (Batch D) |
+| `42-branch-report-history-mobile.png` | Branch admin | Report history | Mobile | `/branch/reports` (history) | `church/branch-admin/reports_dashboard.ejs` | Aligned (Batch D) |
+| `43-branch-report-details-desktop.png` | Branch admin | Report details | Desktop | `/branch/reports/:id` | `church/branch-admin/report_details.ejs` | Aligned (Batch D shell) |
+| `43-branch-report-details-mobile.png` | Branch admin | Report details | Mobile | `/branch/reports/:id` | `church/branch-admin/report_details.ejs` | Aligned (Batch D shell) |
+| `44-branch-request-workflow-queue-desktop.png` | Branch admin | Requests queue | Desktop | `/branch/requests` | `church/branch-admin/requests_queue.ejs` | Aligned (Batch D shell) |
+| `44-branch-request-workflow-queue-mobile.png` | Branch admin | Requests queue | Mobile | `/branch/requests` | `church/branch-admin/requests_queue.ejs` | Aligned (Batch D shell) |
+| `45-branch-request-details-desktop.png` | Branch admin | Request details | Desktop | `/branch/requests/:id` | `church/branch-admin/request_detail.ejs` | Aligned (Batch D shell) |
+| `45-branch-request-details-mobile.png` | Branch admin | Request details | Mobile | `/branch/requests/:id` | `church/branch-admin/request_detail.ejs` | Aligned (Batch D shell) |
 
 ### Branch admin routes without dedicated Stitch PNG in this export
 
 | Route | Current view | Status |
 |-------|--------------|--------|
-| `/branch/sermons` | `church/branch-admin/sermons_management.ejs` | Missing PNG |
-| `/branch/resources` | `church/branch-admin/resources_management.ejs` | Missing PNG |
-| `/branch/contact-submissions` | `church/branch-admin/contact_submissions.ejs` | Missing PNG |
+| `/branch/sermons` | `church/branch-admin/sermons_management.ejs` | Missing PNG / Shell-aligned (Batch D) |
+| `/branch/resources` | `church/branch-admin/resources_management.ejs` | Missing PNG / Shell-aligned (Batch D) |
+| `/branch/contact-submissions` | `church/branch-admin/contact_submissions.ejs` | Missing PNG / Shell-aligned (Batch D) |
+| `/branch/login` | `church/branch-admin/login.ejs` | Missing PNG (auth works; no Stitch branch-login PNG) |
+| `/branch/settings` | — | Missing route / no Stitch PNG named settings |
+| `/branch/site` | — | Missing route (covered by `/branch/website-editor`) |
+| `/branch/forms` | — | Missing route / no Stitch PNG |
 
-**Batch:** D (Branch admin) — CSS v40.
+**Batch:** D (Branch admin) — CSS v41. Complete.
 
 ---
 
@@ -207,14 +211,14 @@ Folder: `06-hq/` — **mobile PNGs only** (58–61). Missing PNG pair for deskto
 
 | File | Module | Screen | Device | Expected route | Current view | Status |
 |------|--------|--------|--------|----------------|--------------|--------|
-| `58-hq-global-audit-trail-mobile.png` | HQ | Global audit trail | Mobile | `/hq/audit` | `church/hq/audit_trail.ejs` | Partial; Missing PNG pair (desktop) |
-| `59-hq-permission-role-management-mobile.png` | HQ | Permission / role management | Mobile | `/hq/*` | *(HQ account / org controls)* | Partial; Missing PNG pair (desktop) |
-| `60-hq-organization-templates-standards-mobile.png` | HQ | Organization templates / standards | Mobile | `/hq/*` | *(HQ templates / standards)* | Partial; Missing PNG pair (desktop) |
-| `61-hq-broadcast-center-mobile.png` | HQ | Broadcast center | Mobile | `/hq/broadcasts` | `church/hq/broadcasts.ejs` | Partial; Missing PNG pair (desktop) |
+| `58-hq-global-audit-trail-mobile.png` | HQ | Global audit trail | Mobile | `/hq/audit` | `church/hq/audit_trail.ejs` | Shell-aligned (Batch E HQ); Missing PNG pair (desktop) |
+| `59-hq-permission-role-management-mobile.png` | HQ | Permission / role management | Mobile | `/hq/*` | *(HQ account / org controls)* | Partial / route gap; Missing PNG pair (desktop) |
+| `60-hq-organization-templates-standards-mobile.png` | HQ | Organization templates / standards | Mobile | `/hq/*` | *(HQ templates / standards)* | Partial / route gap; Missing PNG pair (desktop) |
+| `61-hq-broadcast-center-mobile.png` | HQ | Broadcast center | Mobile | `/hq/broadcasts` | `church/hq/broadcasts.ejs` | Shell-aligned (Batch E HQ); Missing PNG pair (desktop) |
 
 Related HQ routes also include `/hq/dashboard`, `/hq/reports`, `/hq/branches`, `/hq/analytics` (implemented; not all have PNGs in this export).
 
-**Batch:** E (Platform / HQ) — CSS v41.
+**Batch:** E (Platform / HQ) — CSS v42. Complete (platform 62–68; HQ mobile shell-aligned).
 
 ---
 
@@ -224,24 +228,24 @@ Folder: `07-platform-admin/` — maps to **blessboard.com** apex admin (not bran
 
 | File | Module | Screen | Device | Expected route | Current view | Status |
 |------|--------|--------|--------|----------------|--------------|--------|
-| `62-platform-admin-dashboard-desktop.png` | Platform | Admin dashboard | Desktop | `/admin/dashboard` | `admin/church/dashboard.ejs` (via rewrite) | Partial |
-| `62-platform-admin-dashboard-mobile.png` | Platform | Admin dashboard | Mobile | `/admin/dashboard` | `admin/church/dashboard.ejs` | Partial |
-| `63-platform-church-organizations-desktop.png` | Platform | Churches list | Desktop | `/admin/churches` | `admin/church/organizations.ejs` | Partial |
-| `63-platform-church-organizations-mobile.png` | Platform | Churches list | Mobile | `/admin/churches` | `admin/church/organizations.ejs` | Partial |
-| `64-platform-create-church-organization-desktop.png` | Platform | Create church | Desktop | `/admin/churches/new` | `admin/church/organization_form.ejs` | Partial |
-| `64-platform-create-church-organization-mobile.png` | Platform | Create church | Mobile | `/admin/churches/new` | `admin/church/organization_form.ejs` | Partial |
-| `65-platform-branch-tenants-desktop.png` | Platform | Branch tenants | Desktop | `/admin/churches/:id` / branches | `admin/church/branches.ejs` (+ org detail) | Partial |
-| `65-platform-branch-tenants-mobile.png` | Platform | Branch tenants | Mobile | `/admin/churches/:id` / branches | `admin/church/branches.ejs` | Partial |
-| `66-platform-plans-limits-desktop.png` | Platform | Plans / limits | Desktop | `/admin/churches/:id/plan` | `admin/church/organization_plan.ejs` | Partial |
-| `66-platform-plans-limits-mobile.png` | Platform | Plans / limits | Mobile | `/admin/churches/:id/plan` | `admin/church/organization_plan.ejs` | Partial |
-| `67-platform-settings-desktop.png` | Platform | Settings | Desktop | `/admin/*` settings | `admin/church/security.ejs` / related | Partial |
-| `67-platform-settings-mobile.png` | Platform | Settings | Mobile | `/admin/*` settings | `admin/church/security.ejs` / related | Partial |
-| `68-platform-support-monitoring-desktop.png` | Platform | Support / diagnostics | Desktop | `/admin/diagnostics` | `admin/church/diagnostics.ejs` | Partial |
-| `68-platform-support-monitoring-mobile.png` | Platform | Support / diagnostics | Mobile | `/admin/diagnostics` | `admin/church/diagnostics.ejs` | Partial |
+| `62-platform-admin-dashboard-desktop.png` | Platform | Admin dashboard | Desktop | `/admin/dashboard` | `admin/church/dashboard.ejs` (via rewrite) | Aligned (Batch E) |
+| `62-platform-admin-dashboard-mobile.png` | Platform | Admin dashboard | Mobile | `/admin/dashboard` | `admin/church/dashboard.ejs` | Aligned (Batch E) |
+| `63-platform-church-organizations-desktop.png` | Platform | Churches list | Desktop | `/admin/churches` | `admin/church/organizations.ejs` | Aligned (Batch E) |
+| `63-platform-church-organizations-mobile.png` | Platform | Churches list | Mobile | `/admin/churches` | `admin/church/organizations.ejs` | Aligned (Batch E) |
+| `64-platform-create-church-organization-desktop.png` | Platform | Create church | Desktop | `/admin/churches/new` | `admin/church/organization_form.ejs` | Aligned (Batch E) |
+| `64-platform-create-church-organization-mobile.png` | Platform | Create church | Mobile | `/admin/churches/new` | `admin/church/organization_form.ejs` | Aligned (Batch E) |
+| `65-platform-branch-tenants-desktop.png` | Platform | Branch tenants | Desktop | `/admin/churches/:id` / branches | `admin/church/branches.ejs` (+ org detail) | Aligned (Batch E) |
+| `65-platform-branch-tenants-mobile.png` | Platform | Branch tenants | Mobile | `/admin/churches/:id` / branches | `admin/church/branches.ejs` | Aligned (Batch E) |
+| `66-platform-plans-limits-desktop.png` | Platform | Plans / limits | Desktop | `/admin/churches/:id/plan` | `admin/church/organization_plan.ejs` | Aligned (Batch E) |
+| `66-platform-plans-limits-mobile.png` | Platform | Plans / limits | Mobile | `/admin/churches/:id/plan` | `admin/church/organization_plan.ejs` | Aligned (Batch E) |
+| `67-platform-settings-desktop.png` | Platform | Settings | Desktop | `/admin/*` settings | `admin/church/security.ejs` / related | Aligned (Batch E) |
+| `67-platform-settings-mobile.png` | Platform | Settings | Mobile | `/admin/*` settings | `admin/church/security.ejs` / related | Aligned (Batch E) |
+| `68-platform-support-monitoring-desktop.png` | Platform | Support / diagnostics | Desktop | `/admin/diagnostics` | `admin/church/diagnostics.ejs` | Aligned (Batch E) |
+| `68-platform-support-monitoring-mobile.png` | Platform | Support / diagnostics | Mobile | `/admin/diagnostics` | `admin/church/diagnostics.ejs` | Aligned (Batch E) |
 
 Canonical apex paths: see `src/church/blessboardAdminPaths.js` (`/admin/dashboard`, `/admin/churches`, `/admin/churches/new`, `/admin/diagnostics`).
 
-**Batch:** E (Platform / HQ) — CSS v41.
+**Batch:** E (Platform / HQ) — CSS v42. Complete (platform 62–68; HQ mobile shell-aligned).
 
 ---
 
@@ -334,7 +338,7 @@ Confirmed working routes from the codebase (representative set):
 | B | Auth | v38 | Complete |
 | C | Member | v40 | Complete |
 | D | Branch admin | v41 | Pending |
-| E | Platform / HQ | v42 | Pending |
+| E | Platform / HQ | v42 | Complete |
 
 ---
 

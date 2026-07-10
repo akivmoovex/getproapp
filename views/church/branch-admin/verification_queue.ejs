@@ -1,48 +1,127 @@
 <%- include('../partials/branch_admin_shell_start') %>
-      <header class="church-branch-topbar">
+<%
+  var pendingCount = (pendingMembers || []).length;
+  function initials(name) {
+    return String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('') || '?';
+  }
+%>
+      <header class="church-branch-page-hero">
         <div>
-          <h1 class="church-branch-topbar__title">Member verification queue</h1>
-          <p class="church-branch-topbar__subtitle">Review pending registrations for <%= churchName %></p>
+          <p class="church-branch-breadcrumb church-show-desktop-only">Members / Verification Queue</p>
+          <h1 class="church-branch-page-hero__title">Member Verification Queue</h1>
+          <p class="church-branch-page-hero__subtitle">Review and manage pending registrations for <%= churchName %>.</p>
+        </div>
+        <div class="church-branch-page-hero__actions">
+          <a class="church-btn church-btn--outline" href="/branch/members">All members</a>
         </div>
       </header>
       <% if (notice) { %>
       <div class="church-alert church-alert--success" role="status"><%= notice %></div>
       <% } %>
       <%- include('../partials/plan_limit_warnings', { planContext: typeof planContext !== 'undefined' ? planContext : null }) %>
-      <section class="church-branch-panel">
-        <% if ((pendingMembers || []).length === 0) { %>
-        <p class="church-branch-empty">No pending member registrations right now.</p>
+
+      <div class="church-branch-bento-stats church-branch-bento-stats--4">
+        <article class="church-branch-bento-stat">
+          <span class="church-branch-bento-stat__icon"><span class="material-symbols-outlined" aria-hidden="true">assignment</span></span>
+          <span class="church-branch-bento-stat__label">Pending</span>
+          <strong class="church-branch-bento-stat__value"><%= pendingCount %></strong>
+        </article>
+        <article class="church-branch-bento-stat">
+          <span class="church-branch-bento-stat__icon church-branch-bento-stat__icon--info"><span class="material-symbols-outlined" aria-hidden="true">group</span></span>
+          <span class="church-branch-bento-stat__label">In queue</span>
+          <strong class="church-branch-bento-stat__value"><%= pendingCount %></strong>
+        </article>
+        <article class="church-branch-bento-stat">
+          <span class="church-branch-bento-stat__icon church-branch-bento-stat__icon--warn"><span class="material-symbols-outlined" aria-hidden="true">priority_high</span></span>
+          <span class="church-branch-bento-stat__label">Needs review</span>
+          <strong class="church-branch-bento-stat__value"><%= pendingCount %></strong>
+        </article>
+        <article class="church-branch-bento-stat">
+          <span class="church-branch-bento-stat__icon church-branch-bento-stat__icon--ok"><span class="material-symbols-outlined" aria-hidden="true">church</span></span>
+          <span class="church-branch-bento-stat__label">Branch</span>
+          <strong class="church-branch-bento-stat__value church-branch-bento-stat__value--sm"><%= churchName %></strong>
+        </article>
+      </div>
+
+      <section class="church-branch-panel church-branch-panel--glass">
+        <% if (pendingCount === 0) { %>
+        <div class="church-empty-state church-empty-state--compact">
+          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">how_to_reg</span>
+          <p class="church-empty-state__body">No pending member registrations right now.</p>
+        </div>
         <% } else { %>
-        <div class="church-branch-table-wrap">
+        <div class="church-branch-table-wrap church-show-desktop-only">
           <table class="church-branch-table">
             <thead>
               <tr>
-                <th>Full name</th>
+                <th>Member name</th>
                 <th>Phone</th>
                 <th>Email</th>
-                <th>Age group</th>
-                <th>Ministry interest</th>
                 <th>Submitted</th>
                 <th>Status</th>
-                <th></th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               <% pendingMembers.forEach(function (m) { %>
               <tr>
-                <td><%= m.full_name %></td>
+                <td>
+                  <div class="church-branch-member-cell">
+                    <span class="church-branch-avatar-initials" aria-hidden="true"><%= initials(m.full_name) %></span>
+                    <div>
+                      <strong><%= m.full_name %></strong>
+                      <span class="church-member-list__meta"><%= m.ministry_interest ? ('Interest: ' + m.ministry_interest) : (m.age_group || '') %></span>
+                    </div>
+                  </div>
+                </td>
                 <td><%= m.phone %></td>
                 <td><%= m.email %></td>
-                <td><%= m.age_group %></td>
-                <td><%= m.ministry_interest || '—' %></td>
-                <td><%= new Date(m.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></td>
+                <td><%= new Date(m.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></td>
                 <td><span class="church-status-chip church-status-chip--pending">Pending</span></td>
-                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/members/<%= m.id %>">View</a></td>
+                <td>
+                  <div class="church-branch-row-actions">
+                    <a class="church-branch-icon-btn" href="/branch/members/<%= m.id %>" aria-label="View <%= m.full_name %>">
+                      <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                    </a>
+                    <a class="church-branch-icon-btn" href="/branch/members/<%= m.id %>" aria-label="Review <%= m.full_name %>">
+                      <span class="material-symbols-outlined" aria-hidden="true">check</span>
+                    </a>
+                  </div>
+                </td>
               </tr>
               <% }); %>
             </tbody>
           </table>
         </div>
+        <ul class="church-branch-card-list church-show-mobile-only">
+          <% pendingMembers.forEach(function (m) { %>
+          <li class="church-branch-person-card">
+            <div class="church-branch-member-cell">
+              <span class="church-branch-avatar-initials" aria-hidden="true"><%= initials(m.full_name) %></span>
+              <div>
+                <strong><%= m.full_name %></strong>
+                <span class="church-status-chip church-status-chip--pending">Pending</span>
+                <p><%= m.email %> · <%= m.phone %></p>
+                <span class="church-member-list__meta"><%= m.age_group %> · <%= new Date(m.created_at).toLocaleDateString('en-GB') %></span>
+              </div>
+            </div>
+            <a class="church-btn church-btn--outline church-btn--sm" href="/branch/members/<%= m.id %>">Review</a>
+          </li>
+          <% }); %>
+        </ul>
         <% } %>
+      </section>
+
+      <section class="church-branch-checklist church-show-desktop-only" aria-label="Verification checklist">
+        <div class="church-branch-checklist__head">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          <strong>Verification Checklist</strong>
+        </div>
+        <p>Before approving a registration, confirm:</p>
+        <ul>
+          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Contact information is valid and unique.</li>
+          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Ministry interest matches available ministries.</li>
+          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> No duplicate profiles exist for this branch.</li>
+        </ul>
       </section>
 <%- include('../partials/branch_admin_shell_end') %>

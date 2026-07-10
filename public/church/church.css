@@ -9404,3 +9404,1360 @@ a.church-branch-stat-card--link:hover {
     display: block !important;
   }
 }
+
+
+/* --- Branch admin Batch D (Stitch 25–45) — church.css?v=41 --- */
+
+.church-body--branch-admin {
+  background: #f1fbff;
+  color: var(--church-navy);
+  overflow-x: hidden;
+}
+
+.church-branch-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+.church-branch-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: #283236;
+  color: #d9e4e9;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  gap: 8px;
+  z-index: 40;
+}
+
+.church-branch-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 8px;
+}
+
+.church-branch-sidebar__brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--church-primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.church-branch-sidebar__brand-icon .material-symbols-outlined {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.church-branch-brand-link {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #e4dfff;
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+.church-branch-brand-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #d9e4e9;
+  opacity: 0.85;
+}
+
+.church-branch-sidebar__profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin: 4px 4px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.church-branch-sidebar__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.church-branch-sidebar__name {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.church-branch-sidebar__role {
+  margin: 2px 0 0;
+  font-size: 0.6875rem;
+  color: #d9e4e9;
+  opacity: 0.8;
+}
+
+.church-branch-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.church-branch-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #d9e4e9;
+  text-decoration: none;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.church-branch-nav-link .material-symbols-outlined {
+  font-size: 20px;
+  opacity: 0.9;
+}
+
+.church-branch-nav-link:hover {
+  background: rgba(217, 228, 233, 0.1);
+  color: #fff;
+}
+
+.church-branch-nav-link--active {
+  background: var(--church-primary-container);
+  color: #faf6ff;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(108, 92, 231, 0.35);
+}
+
+.church-branch-nav-link--active .material-symbols-outlined {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.church-branch-nav-link .church-nav-count {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.6875rem;
+}
+
+.church-branch-sidebar__footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(200, 196, 215, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.church-branch-powered {
+  margin: 8px 14px 0;
+  font-size: 0.625rem;
+  color: rgba(217, 228, 233, 0.65);
+}
+
+.church-branch-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: none;
+  padding: 0;
+  background: #f1fbff;
+}
+
+.church-branch-desktop-topbar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  min-height: 72px;
+  padding: 12px 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(241, 251, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(200, 196, 215, 0.3);
+}
+
+.church-branch-desktop-topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+  flex: 1;
+}
+
+.church-branch-desktop-topbar__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--church-navy);
+  white-space: nowrap;
+}
+
+.church-branch-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 28rem;
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(200, 196, 215, 0.45);
+}
+
+.church-branch-search input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font: inherit;
+  outline: none;
+}
+
+.church-branch-desktop-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.church-branch-desktop-topbar__icon {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--church-on-surface-variant);
+  text-decoration: none;
+}
+
+.church-branch-desktop-topbar__dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ba1a1a;
+  border: 1px solid #f1fbff;
+}
+
+.church-branch-desktop-topbar__profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(200, 196, 215, 0.4);
+  text-decoration: none;
+  color: var(--church-navy);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.church-branch-desktop-topbar__profile img {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.church-branch-content {
+  padding: 24px 32px 48px;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.church-branch-mobile-topbar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 64px;
+  padding: 0 16px;
+  background: rgba(241, 251, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(200, 196, 215, 0.35);
+}
+
+.church-branch-mobile-topbar__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.church-branch-mobile-topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.church-branch-mobile-topbar__brand strong {
+  display: block;
+  font-size: 0.9375rem;
+  color: var(--church-primary);
+}
+
+.church-branch-mobile-topbar__brand span {
+  display: block;
+  font-size: 0.6875rem;
+  color: var(--church-muted);
+}
+
+.church-branch-mobile-topbar__icon {
+  color: var(--church-primary);
+  display: inline-flex;
+}
+
+.church-branch-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 25;
+  height: 72px;
+  padding: 0 6px;
+  align-items: center;
+  justify-content: space-around;
+  background: var(--church-surface-container);
+  box-shadow: 0 -4px 16px rgba(19, 29, 33, 0.08);
+}
+
+.church-branch-bottom-nav__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 56px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--church-muted);
+  text-decoration: none;
+}
+
+.church-branch-bottom-nav__link--active {
+  background: var(--church-primary-container);
+  color: #faf6ff;
+}
+
+.church-branch-bottom-nav__link--active .material-symbols-outlined {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.church-branch-more { position: relative; }
+.church-branch-more__summary { list-style: none; cursor: pointer; }
+.church-branch-more__summary::-webkit-details-marker { display: none; }
+
+.church-branch-more__panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  min-width: 200px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid rgba(200, 196, 215, 0.45);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(19, 29, 33, 0.12);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+}
+
+.church-branch-more__panel a {
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--church-navy);
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.church-branch-more__panel a:hover {
+  background: var(--church-surface-container-low);
+}
+
+.church-branch-page-hero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.church-branch-page-hero__eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--church-primary);
+}
+
+.church-branch-page-hero__title {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--church-navy);
+}
+
+.church-branch-page-hero__subtitle {
+  margin: 6px 0 0;
+  color: var(--church-muted);
+}
+
+.church-branch-breadcrumb {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--church-muted);
+}
+
+.church-branch-bento-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.church-branch-bento-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid rgba(200, 196, 215, 0.35);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 1px 3px rgba(19, 29, 33, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+a.church-branch-bento-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(19, 29, 33, 0.08);
+}
+
+.church-branch-bento-stat__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(83, 65, 205, 0.1);
+  color: var(--church-primary);
+}
+
+.church-branch-bento-stat__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--church-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.church-branch-bento-stat__value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--church-navy);
+}
+
+.church-branch-bento-stat__value--sm {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.church-branch-dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(240px, 4fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.church-branch-panel--glass {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  border-color: rgba(226, 232, 240, 0.65);
+  box-shadow: 0 1px 3px rgba(19, 29, 33, 0.04);
+}
+
+.church-branch-actions--compact { gap: 10px; }
+
+.church-branch-kv {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.church-branch-kv li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.875rem;
+}
+
+.church-branch-kv span { color: var(--church-muted); }
+
+.church-branch-map {
+  display: block;
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.church-branch-metrics-more { margin-top: 8px; }
+.church-branch-metrics-more > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--church-primary);
+  margin-bottom: 12px;
+}
+
+.church-branch-event-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.church-branch-event-card {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid rgba(200, 196, 215, 0.35);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.church-branch-event-card__media {
+  height: 140px;
+  background-size: cover;
+  background-position: center;
+}
+
+.church-branch-event-card__body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  flex: 1;
+}
+
+.church-branch-event-card__body h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.church-branch-event-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.church-branch-event-card--create {
+  border-style: dashed;
+  border-width: 2px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 220px;
+  text-decoration: none;
+  color: var(--church-muted);
+  padding: 24px;
+}
+
+.church-branch-event-card--create .material-symbols-outlined { font-size: 36px; }
+
+.church-branch-card-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.church-branch-person-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--church-surface-container-low);
+}
+
+.church-branch-person-card p {
+  margin: 6px 0;
+  color: var(--church-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+/* Dashboard Stitch refinements (Batch D) */
+.church-branch-dash-hero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.church-branch-dash-hero__pulse {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.church-branch-dash-hero__pulse-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--church-navy);
+}
+
+.church-branch-dash-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(83, 65, 205, 0.12);
+  color: var(--church-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.church-branch-dash-hero__title {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--church-navy);
+}
+
+.church-branch-dash-hero__subtitle,
+.church-branch-dash-hero__welcome {
+  margin: 6px 0 0;
+  color: var(--church-muted);
+}
+
+.church-branch-dash-hero__plan { margin: 8px 0 0; }
+
+.church-branch-bento-stat__hint {
+  font-size: 0.75rem;
+  color: var(--church-muted);
+}
+
+.church-branch-bento-stat--warn .church-branch-bento-stat__value { color: #c2410c; }
+.church-branch-bento-stat--warn .church-branch-bento-stat__icon {
+  background: rgba(194, 65, 12, 0.12);
+  color: #c2410c;
+}
+.church-branch-bento-stat--ok .church-branch-bento-stat__value { color: #15803d; }
+.church-branch-bento-stat--ok .church-branch-bento-stat__icon {
+  background: rgba(21, 128, 61, 0.12);
+  color: #15803d;
+}
+.church-branch-bento-stat--accent .church-branch-bento-stat__value { color: var(--church-primary); }
+
+.church-branch-bento-stat--budget {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--church-primary);
+  color: #fff;
+  border: none;
+}
+.church-branch-bento-stat--budget .church-branch-bento-stat__label,
+.church-branch-bento-stat--budget .church-branch-bento-stat__hint,
+.church-branch-bento-stat--budget .church-branch-bento-stat__value {
+  color: #fff;
+}
+.church-branch-bento-stat__budget-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.church-branch-bento-stat__ring {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  border: 4px solid rgba(255, 255, 255, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.church-branch-bento-stat__ring .material-symbols-outlined {
+  font-size: 28px;
+  color: #fff;
+}
+
+.church-branch-panel--actions {
+  background: var(--church-primary);
+  border: none;
+  color: #fff;
+}
+.church-branch-panel__title--on-dark { color: #fff; }
+.church-branch-actions--stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.church-btn--ghost-light {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  padding: 12px 14px;
+  text-decoration: none;
+  font-weight: 600;
+}
+.church-btn--ghost-light:hover { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.church-btn--on-purple {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #fff;
+  color: var(--church-primary);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-decoration: none;
+  font-weight: 700;
+}
+.church-btn--on-purple:hover { background: #f5f3ff; color: var(--church-primary); }
+
+.church-branch-quick-icons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.church-branch-quick-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--church-navy);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+.church-branch-quick-icon .material-symbols-outlined {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(83, 65, 205, 0.12);
+  color: var(--church-primary);
+  font-size: 24px;
+}
+
+.church-branch-urgent-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.church-branch-kv--compact { margin-top: 12px; margin-bottom: 0; }
+
+.church-branch-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 88px;
+  z-index: 45;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--church-primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgba(83, 65, 205, 0.35);
+}
+.church-branch-fab .material-symbols-outlined { font-size: 28px; }
+@media (min-width: 1024px) {
+  .church-branch-fab { bottom: 28px; right: 28px; border-radius: 999px; }
+}
+
+.church-branch-page-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.church-branch-bento-stat__icon--info {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+.church-branch-bento-stat__icon--warn {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+.church-branch-bento-stat__icon--ok {
+  background: rgba(21, 128, 61, 0.12);
+  color: #15803d;
+}
+
+.church-branch-member-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.church-branch-avatar-initials {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(83, 65, 205, 0.15);
+  color: var(--church-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.church-branch-row-actions {
+  display: flex;
+  gap: 6px;
+}
+.church-branch-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--church-primary);
+  text-decoration: none;
+  background: rgba(83, 65, 205, 0.08);
+}
+.church-branch-icon-btn:hover { background: rgba(83, 65, 205, 0.16); }
+
+.church-branch-checklist {
+  margin-top: 20px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px dashed rgba(83, 65, 205, 0.35);
+  background: rgba(83, 65, 205, 0.06);
+}
+.church-branch-checklist__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--church-primary);
+}
+.church-branch-checklist p {
+  margin: 0 0 10px;
+  color: var(--church-muted);
+  font-size: 0.875rem;
+}
+.church-branch-checklist ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.church-branch-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--church-navy);
+}
+.church-branch-checklist li .material-symbols-outlined {
+  color: #15803d;
+  font-size: 18px;
+  margin-top: 1px;
+}
+
+.church-drawer--admin .church-branch-nav-link { color: var(--church-navy); }
+.church-drawer--admin .church-branch-nav-link--active {
+  background: rgba(108, 92, 231, 0.12);
+  color: var(--church-primary);
+  box-shadow: none;
+}
+
+@media (min-width: 1024px) {
+  .church-branch-desktop-topbar { display: flex; }
+}
+
+@media (max-width: 1023px) {
+  .church-branch-bento-stats,
+  .church-branch-dash-grid,
+  .church-branch-event-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 960px) {
+  .church-branch-layout { grid-template-columns: 1fr; }
+  .church-branch-sidebar--desktop { display: none; }
+  .church-branch-desktop-topbar { display: none !important; }
+  .church-branch-mobile-topbar { display: flex; }
+  .church-branch-bottom-nav { display: flex; }
+  .church-branch-content { padding: 16px 16px 96px; }
+  .church-branch-bento-stats,
+  .church-branch-event-grid,
+  .church-branch-dash-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* --- Platform admin Batch E (Stitch 62–68) — church.css?v=42 --- */
+
+.church-body--platform-admin,
+.church-body--platform-login {
+  background: #f4f6fb;
+  color: var(--church-navy);
+  overflow-x: hidden;
+}
+
+.church-platform-layout { min-height: 100vh; }
+
+.church-platform-sidebar .church-platform-nav-cta {
+  background: rgba(108, 92, 231, 0.18);
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.church-platform-content { padding: 24px 28px 48px; }
+@media (max-width: 960px) {
+  .church-platform-content { padding: 16px 16px 96px; }
+}
+
+.church-platform-page-hero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.church-platform-page-hero__eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--church-primary);
+}
+.church-platform-page-hero__title {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  color: var(--church-navy);
+}
+.church-platform-page-hero__subtitle {
+  margin: 6px 0 0;
+  color: var(--church-muted);
+  max-width: 42rem;
+}
+.church-platform-page-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.church-platform-bento-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.church-platform-bento-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid rgba(200, 196, 215, 0.35);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 1px 3px rgba(19, 29, 33, 0.04);
+}
+.church-platform-bento-stat__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(83, 65, 205, 0.1);
+  color: var(--church-primary);
+}
+.church-platform-bento-stat__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--church-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.church-platform-bento-stat__value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.church-platform-bento-stat__hint {
+  font-size: 0.75rem;
+  color: var(--church-muted);
+}
+
+.church-platform-panel {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid rgba(200, 196, 215, 0.35);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(19, 29, 33, 0.04);
+}
+.church-platform-panel__title {
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.church-platform-panel--search,
+.church-platform-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+.church-platform-search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  align-items: flex-end;
+}
+.church-field--grow { flex: 1; min-width: 200px; }
+
+.church-platform-table-wrap { overflow-x: auto; }
+.church-platform-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.church-platform-table th {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--church-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid rgba(200, 196, 215, 0.45);
+}
+.church-platform-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid rgba(200, 196, 215, 0.28);
+  vertical-align: middle;
+}
+.church-platform-org-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.church-platform-org-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(83, 65, 205, 0.12);
+  color: var(--church-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.church-platform-meta {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--church-muted);
+}
+.church-platform-chip {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(13, 148, 136, 0.12);
+  color: #0f766e;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.church-platform-chip--plan {
+  background: rgba(83, 65, 205, 0.12);
+  color: var(--church-primary);
+}
+.church-platform-empty {
+  text-align: center;
+  color: var(--church-muted);
+  padding: 24px !important;
+}
+
+.church-platform-back { margin: 0 0 12px; }
+.church-platform-back a {
+  color: var(--church-primary);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.8125rem;
+}
+
+.church-platform-provision-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.church-platform-onboarding-card {
+  background: var(--church-primary);
+  color: #fff;
+  border-radius: 20px;
+  padding: 24px;
+}
+.church-platform-onboarding-card h2 { margin: 0 0 10px; font-size: 1.25rem; }
+.church-platform-onboarding-card p { margin: 0 0 16px; opacity: 0.92; font-size: 0.9rem; }
+.church-platform-onboarding-card ul {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.church-platform-onboarding-card li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 0.875rem;
+}
+.church-platform-onboarding-card li .material-symbols-outlined {
+  color: #86efac;
+  font-size: 18px;
+}
+.church-platform-onboarding-card__map {
+  width: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  max-height: 140px;
+}
+
+/* Bridge legacy admin classes inside platform shell */
+.church-body--platform-admin .admin-dashboard__header,
+.church-body--platform-admin .admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.church-body--platform-admin .admin-dashboard__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+.church-body--platform-admin .admin-dashboard__subtitle,
+.church-body--platform-admin .muted {
+  color: var(--church-muted);
+}
+.church-body--platform-admin .card,
+.church-body--platform-admin .card--mb-xl {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid rgba(200, 196, 215, 0.35);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(19, 29, 33, 0.04);
+}
+.church-body--platform-admin .admin-dashboard__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+.church-body--platform-admin .admin-stat {
+  background: var(--church-surface-container-low, #f8fafc);
+  border-radius: 14px;
+  padding: 14px;
+}
+.church-body--platform-admin .admin-stat__label {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--church-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.church-body--platform-admin .admin-stat__value {
+  margin: 6px 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.church-body--platform-admin .table-wrap { overflow-x: auto; }
+.church-body--platform-admin .table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.church-body--platform-admin .table th,
+.church-body--platform-admin .table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(200, 196, 215, 0.3);
+  text-align: left;
+}
+.church-body--platform-admin .input-field { margin-bottom: 12px; }
+.church-body--platform-admin .input-field__label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.church-body--platform-admin .input-field__control,
+.church-body--platform-admin .church-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(200, 196, 215, 0.7);
+  background: #fff;
+  font: inherit;
+}
+.church-body--platform-admin .admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+.church-body--platform-admin .admin-dl {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr;
+  gap: 8px 16px;
+}
+.church-body--platform-admin .admin-dl dt { color: var(--church-muted); font-weight: 600; }
+.church-body--platform-admin .flash {
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+.church-body--platform-admin .flash--success { background: rgba(21, 128, 61, 0.12); color: #166534; }
+.church-body--platform-admin .flash--error,
+.church-body--platform-admin .flash[role="alert"] { background: rgba(185, 28, 28, 0.1); color: #991b1b; }
+
+.church-platform-login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(108, 92, 231, 0.18), transparent 40%),
+    linear-gradient(180deg, #f1fbff 0%, #f4f6fb 100%);
+}
+.church-platform-login__card {
+  width: min(100%, 420px);
+  background: #fff;
+  border-radius: 24px;
+  padding: 32px 28px;
+  border: 1px solid rgba(200, 196, 215, 0.35);
+  box-shadow: 0 16px 40px rgba(19, 29, 33, 0.08);
+}
+.church-platform-login__brand {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.church-platform-login__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--church-primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.church-platform-login__brand h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.church-platform-login__brand p {
+  margin: 6px 0 0;
+  color: var(--church-muted);
+  font-size: 0.875rem;
+}
+.church-platform-login__form { display: grid; gap: 14px; }
+.church-platform-login__actions { display: grid; gap: 10px; margin-top: 8px; }
+.church-platform-login__hint {
+  margin: 18px 0 0;
+  font-size: 0.8125rem;
+  color: var(--church-muted);
+  text-align: center;
+}
+
+@media (max-width: 1023px) {
+  .church-platform-bento-stats,
+  .church-platform-provision-grid,
+  .church-body--platform-admin .admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

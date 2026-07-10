@@ -1,17 +1,5 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <%- include('../../partials/brand_resolve') %>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Branch admins | <%= branch.name %> | <%= _bn %> Admin</title>
-    <link rel="stylesheet" href="<%= asset('styles') %>" />
-  </head>
-  <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../../partials/admin_nav', { navTitle: 'Branch admins', activeNav: activeNav || 'church_platform_branches' }) %>
-    <main class="admin-main">
-      <div class="container admin-main__pad">
-        <header class="admin-dashboard__header">
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Branch admins', activeNav: activeNav || 'church_platform_branches', pageTitle: 'Branch admins' }) %>
+<header class="admin-dashboard__header">
           <div>
             <h1 class="admin-dashboard__title">Branch admins</h1>
             <p class="admin-dashboard__subtitle muted">
@@ -73,7 +61,4 @@
             </table>
           </div>
         </div>
-      </div>
-    </main>
-  </body>
-</html>
+<%- include('../../partials/platform_admin_shell_end') %>

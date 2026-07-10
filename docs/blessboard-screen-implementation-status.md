@@ -5,7 +5,7 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=40` (Batch C Member Portal)
+**CSS bundle:** `/church/church.css?v=42` (Batch E Platform Admin)
 
 **Last updated:** 2026-07-10 (Batch C — Member Portal pixel-fidelity)
 
@@ -306,7 +306,7 @@ npm run test:ui
 - `views/church/public/leadership.ejs` — featured pastor, elders, ministry leaders, admin tiles
 - `public/church/church.css` — About/Leadership fidelity styles; cache `?v=35`
 - `public/church/images/about/*`, `public/church/images/leadership/*` — Stitch assets
-- All church shells referencing `church.css?v=40`
+- All church shells referencing `church.css?v=42`
 - `tests/church-visual-design.test.js` — CSS version + About/Leadership markers
 - `scripts/screenshot-blessboard-about-leadership.js`
 - `docs/blessboard-screen-implementation-status.md` — This file
@@ -362,20 +362,76 @@ npm run test:ui
 
 **Screenshots:** `test-results/blessboard-stitch-visual/member/` via `node scripts/screenshot-blessboard-all-screens.js --batch=C` (requires Postgres for verified member seed).
 
-**Shell:** Light 288px sidebar, desktop top bar, mobile top bar + Stitch bottom nav, CSS `?v=40`.
+**Shell:** Light 288px sidebar, desktop top bar, mobile top bar + Stitch bottom nav, CSS `?v=40` (later bumped to v41 with Batch D).
 
 ---
 
+## Batch D — Branch Admin (v41)
+
+| Screen | Device | PNG | Route | View | CSS version | Match status | Remaining differences |
+|--------|--------|-----|-------|------|-------------|--------------|----------------------|
+| Dashboard | Desktop | `25-branch-admin-dashboard-desktop.png` | `/branch/dashboard` | `church/branch-admin/dashboard.ejs` | v41 | Close | Brand: church name + BlessBoard (not Ecclesia); DB counts differ from Stitch sample; no live chart library; search disabled; FAB + purple Quick Actions panel are Stitch-aligned |
+| Dashboard | Mobile | `25-branch-admin-dashboard-mobile.png` | `/branch/dashboard` | `church/branch-admin/dashboard.ejs` | v41 | Close | Daily Pulse + icon quick actions; budget/report card is status CTA (no fake USD budget); bottom nav Home/Members/Events/Check-in/More |
+| Member verification | Desktop | `26-branch-member-verification-queue-desktop.png` | `/branch/member-verification` | `church/branch-admin/verification_queue.ejs` | v41 | Close | Export/Filter buttons not invented; approve/reject are review links into member profile (auth-safe); checklist is guidance only |
+| Member verification | Mobile | `26-branch-member-verification-queue-mobile.png` | `/branch/member-verification` | `church/branch-admin/verification_queue.ejs` | v41 | Close | Card list vs desktop table; demo pending rows in fixtures |
+| Website editor | Desktop/Mobile | `34-branch-website-editor-*.png` | `/branch/website-editor` | `church/branch-admin/website_editor.ejs` | v41 | Close | Form fields are product schema; photo upload fields not fully wired; brand secondary GetPro |
+| Events | Desktop/Mobile | `32-branch-events-management-*.png` | `/branch/events` | `church/branch-admin/events_management.ejs` | v41 | Close | Cover images are shared assets; filters are real status filters |
+| Members directory | Desktop/Mobile | `28-branch-member-directory-*.png` | `/branch/members` | `church/branch-admin/members_directory.ejs` | v41 | Close | DB content differs; search is real |
+| Reports | Desktop/Mobile | `40-branch-reports-dashboard-*.png` | `/branch/reports` | `church/branch-admin/reports_dashboard.ejs` | v41 | Close | Attendance preview empty-state when no submitted records; charts not live |
+| Sermons | — | *(no PNG)* | `/branch/sermons` | `church/branch-admin/sermons_management.ejs` | v41 | Shell-aligned | Missing Stitch PNG |
+| Resources | — | *(no PNG)* | `/branch/resources` | `church/branch-admin/resources_management.ejs` | v41 | Shell-aligned | Missing Stitch PNG |
+| Contact submissions | — | *(no PNG)* | `/branch/contact-submissions` | `church/branch-admin/contact_submissions.ejs` | v41 | Shell-aligned | Missing Stitch PNG |
+| Ministries / attendance / giving / requests / duty | Desktop/Mobile | `29`–`33`, `35`–`39`, `41`–`45` | matching `/branch/*` | matching views | v41 | Shell-aligned | Share Batch D shell; deeper pixel pass deferred where density differs |
+| Branch login | — | *(no PNG)* | `/branch/login` | `church/branch-admin/login.ejs` | v41 | Working | No dedicated Stitch PNG |
+| `/branch/settings`, `/branch/site`, `/branch/forms` | — | — | — | — | — | Missing | Not invented |
+
+**Screenshots:** `test-results/blessboard-stitch-visual/branch-admin/` via `node scripts/screenshot-blessboard-all-screens.js --batch=D` (fixture renders when PG unavailable; README notes live DB re-run).
+
+**Shell:** Dark 280px sidebar (`#283236`), desktop top bar + disabled search, mobile top bar + drawer, bottom nav, CSS `?v=41`, `data-branch-shell="stitch-v41"`.
+
+**Auth:** Unauthenticated `/branch/*` → `/branch/login`. Session `churchBranchAdmin` remains branch-scoped. Production auth not weakened.
+
+---
+
+
+
+## Batch E — Platform / HQ Admin (v42)
+
+| Screen | Device | PNG | Route | View | CSS version | Match status | Remaining differences |
+|--------|--------|-----|-------|------|-------------|--------------|----------------------|
+| Admin login | Desktop/Mobile | *(no dedicated Stitch PNG)* | `/admin/login` | `admin/blessboard_login.ejs` | v42 | Close | Stitch set has no apex login PNG; BlessBoard Admin + Powered by GetPro |
+| Dashboard | Desktop | `62-platform-admin-dashboard-desktop.png` | `/admin/dashboard` | `admin/church/dashboard.ejs` | v42 | Close | Brand BlessBoard (not Moovex); real org/plan counts (no fake MRR chart); search disabled in top bar |
+| Dashboard | Mobile | `62-platform-admin-dashboard-mobile.png` | `/admin/dashboard` | `admin/church/dashboard.ejs` | v42 | Close | Bottom nav + drawer; security/reset panels remain product-real |
+| Organizations | Desktop/Mobile | `63-platform-church-organizations-*.png` | `/admin/churches` | `admin/church/organizations.ejs` | v42 | Close | No fake MRR/chart strip; filters are real status/search; brand BlessBoard |
+| Create church | Desktop/Mobile | `64-platform-create-church-organization-*.png` | `/admin/churches/new` | `admin/church/organization_form.ejs` | v42 | Close | Product provisioning fields (HQ+branch admins/passwords) exceed Stitch sample; onboarding card + map asset; slug → `.blessboard.com` |
+| Church detail | Desktop/Mobile | `65` (nearest) | `/admin/churches/:id` | `admin/church/organization_detail.ejs` | v42 | Shell-aligned | Uses platform shell; welcome handoff still clears after first view |
+| Church edit | Desktop/Mobile | — | `/admin/churches/:id/edit` | `admin/church/organization_edit.ejs` | v42 | Shell-aligned | Functional edit form in platform shell |
+| Branch tenants | Desktop/Mobile | `65-platform-branch-tenants-*.png` | `/admin/church/branches` | `admin/church/branches.ejs` | v42 | Shell-aligned | Shell + existing table; deeper pixel pass deferred |
+| Plans / limits | Desktop/Mobile | `66-platform-plans-limits-*.png` | `/admin/churches/:id/plan` | `admin/church/organization_plan.ejs` | v42 | Shell-aligned | Real plan limits (not Stitch pricing tiles) |
+| Settings / security | Desktop/Mobile | `67-platform-settings-*.png` | `/admin/church/security` | `admin/church/security.ejs` | v42 | Shell-aligned | Product security diagnostics vs Stitch settings mock |
+| Diagnostics | Desktop/Mobile | `68-platform-support-monitoring-*.png` | `/admin/diagnostics` | `admin/church/diagnostics.ejs` | v42 | Close | Real production fields; never shows DATABASE_URL / SESSION_SECRET values / passwords |
+| HQ audit / broadcasts | Mobile | `58`, `61` | `/hq/audit`, `/hq/broadcasts` | `church/hq/*` | v42 | Shell-aligned | HQ shell bumped to v42; no desktop PNG pairs |
+| HQ permissions / templates | Mobile | `59`, `60` | — | — | — | Missing / route gap | Not invented |
+
+**Screenshots:** `test-results/blessboard-stitch-visual/platform-admin/` via `node scripts/screenshot-blessboard-all-screens.js --batch=E` (fixture renders; README notes live apex login re-run).
+
+**Shell:** Dark 280px sidebar, desktop top bar, mobile drawer + bottom nav, `church.css?v=42`, `data-platform-shell="stitch-v42"`. Dual-mode: GetPro-mounted `/admin/church/*` keeps legacy `styles.css` admin shell when not on blessboard apex.
+
+**Auth / host:** Apex-only on blessboard.com; branch hosts 404; getproapp.org legacy church admin redirects to blessboard.com. Production auth not weakened.
+
+
 ## Screens still not matching (priority follow-ups)
 
-1. **Branch admin (Batch D)** — dashboard density vs Stitch
-2. **Platform / HQ admin (Batch E)** — apex admin vs Stitch
+1. **Leader portal** — Stitch `05-leader` screens 46–50 (next visual batch if needed)
+2. **HQ permissions / templates** — Stitch 59–60 lack routes; not invented
 3. **Events calendar** — richer month widget / detail drawer vs lightweight grid
 4. **Sermons** — real media players vs demo cards
 5. **Branch admin login** — no dedicated Stitch PNG in auth set
 6. **Leadership photo uploads** — website editor photo fields not wired
 7. **Member avatar upload** — shared demo avatar until profile photo feature exists
 8. **Forms desktop PNG** — missing from export set
-9. **Contact form** — works; Stitch subject dropdown not required for DB submit
+9. **Branch admin secondary screens** — ministries/attendance/giving/request detail deeper pixel pass
+10. **Platform secondary screens** — tenants/plans/settings deeper pixel pass vs shell-aligned
+11. **Contact form** — works; Stitch subject dropdown not required for DB submit
 
 Stitch HTML for About/Leadership lives under `design-reference/stitch-screens/church-flow/01-public-website/`.

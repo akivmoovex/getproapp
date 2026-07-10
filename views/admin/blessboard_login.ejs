@@ -1,42 +1,46 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <%- include('../partials/brand_resolve') %>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>BlessBoard Admin | <%= _bn %></title>
-    <link rel="stylesheet" href="<%= asset('styles') %>" />
-  </head>
-  <body class="admin-app">
-    <main class="admin-main">
-      <div class="container admin-main__pad" style="max-width:28rem;margin:4rem auto;">
-        <header class="admin-dashboard__header" style="text-align:center;margin-bottom:1.5rem;">
-          <h1 class="admin-dashboard__title">BlessBoard Admin</h1>
-          <p class="admin-dashboard__subtitle muted">Powered by GetPro</p>
-        </header>
-        <section class="card" style="padding:1.5rem;">
-          <% if (error) { %>
-          <div class="flash flash--error" role="alert"><%= error %></div>
-          <% } %>
-          <form method="post" action="/admin/login">
-            <div class="input-field">
-              <label class="input-field__label" for="username">Username</label>
-              <input id="username" class="input-field__control" name="username" type="text" autocomplete="username" required />
-            </div>
-            <div class="input-field">
-              <label class="input-field__label" for="password">Password</label>
-              <input id="password" class="input-field__control" name="password" type="password" autocomplete="current-password" required />
-            </div>
-            <div class="admin-toolbar" style="margin-top:1rem;">
-              <%- include('../partials/components/button', { variant: 'primary', type: 'submit', label: 'Sign in' }) %>
-              <%- include('../partials/components/button', { variant: 'default', href: cancelHref || '/', label: 'Back to site' }) %>
-            </div>
-          </form>
-          <p class="muted" style="margin-top:1rem;font-size:0.9rem;">
-            Church branch admins sign in at <code>yourchurch.blessboard.com/branch/login</code>.
-          </p>
-        </section>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>BlessBoard Admin — Sign in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/church/church.css?v=42"/>
+</head>
+<body class="church-body church-body--platform-login" data-platform-shell="stitch-v42">
+  <main class="church-platform-login">
+    <section class="church-platform-login__card">
+      <div class="church-platform-login__brand">
+        <span class="church-platform-login__icon" aria-hidden="true">
+          <span class="material-symbols-outlined">dashboard_customize</span>
+        </span>
+        <h1>BlessBoard Admin</h1>
+        <p>Powered by GetPro</p>
       </div>
-    </main>
-  </body>
+      <% if (typeof error !== 'undefined' && error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <form method="post" action="/admin/login" class="church-platform-login__form">
+        <label class="church-field">
+          <span class="church-field__label">Username</span>
+          <input class="church-input" id="username" name="username" type="text" autocomplete="username" required/>
+        </label>
+        <label class="church-field">
+          <span class="church-field__label">Password</span>
+          <input class="church-input" id="password" name="password" type="password" autocomplete="current-password" required/>
+        </label>
+        <div class="church-platform-login__actions">
+          <button class="church-btn church-btn--primary church-btn--block" type="submit">Sign in</button>
+          <a class="church-btn church-btn--outline church-btn--block" href="<%= typeof cancelHref !== 'undefined' && cancelHref ? cancelHref : '/' %>">Back to site</a>
+        </div>
+      </form>
+      <p class="church-platform-login__hint">
+        Church branch admins sign in at <code>yourchurch.blessboard.com/branch/login</code>.
+      </p>
+    </section>
+  </main>
+</body>
 </html>

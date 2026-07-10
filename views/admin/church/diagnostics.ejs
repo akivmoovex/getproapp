@@ -1,29 +1,17 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <%- include('../../partials/brand_resolve') %>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>BlessBoard diagnostics | <%= _bn %> Admin</title>
-    <link rel="stylesheet" href="<%= asset('styles') %>" />
-  </head>
-  <body class="admin-app<%- bodyEmbedClass %>">
-    <%- include('../../partials/admin_nav', { navTitle: 'BlessBoard diagnostics', activeNav: activeNav || 'church_platform_diagnostics' }) %>
-    <main class="admin-main">
-      <div class="container admin-main__pad">
-        <header class="admin-dashboard__header">
-          <div>
-            <h1 class="admin-dashboard__title">BlessBoard production diagnostics</h1>
-            <p class="admin-dashboard__subtitle muted">
-              Super admin only. No secrets are displayed on this page.
-            </p>
-          </div>
-          <div class="admin-toolbar">
-            <% var _dashHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/dashboard' : '/admin/church'; %>
-            <%- include('../../partials/components/button', { variant: 'default', href: _dashHref, label: 'Church dashboard' }) %>
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/churches/new', label: 'Provision church' }) %>
-          </div>
-        </header>
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Support Monitoring', activeNav: activeNav || 'church_platform_diagnostics', pageTitle: 'BlessBoard diagnostics' }) %>
+<% var _dashHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/dashboard' : '/admin/church'; %>
+<header class="church-platform-page-hero">
+  <div>
+    <h1 class="church-platform-page-hero__title">Support Monitoring</h1>
+    <p class="church-platform-page-hero__subtitle">
+      Super admin only. No secrets are displayed on this page.
+    </p>
+  </div>
+  <div class="church-platform-page-hero__actions">
+    <a class="church-btn church-btn--outline" href="<%= _dashHref %>">Dashboard</a>
+    <a class="church-btn church-btn--primary" href="/admin/churches/new">Provision church</a>
+  </div>
+</header>
 
         <% if (diagnostics.warnings && diagnostics.warnings.length) { %>
         <section class="card card--mb-xl" style="padding:1rem;border-left:4px solid #c0392b;">
@@ -129,7 +117,4 @@
             <li>Branch admin training: <code>docs/blessboard-branch-admin-training.md</code></li>
           </ul>
         </section>
-      </div>
-    </main>
-  </body>
-</html>
+<%- include('../../partials/platform_admin_shell_end') %>
