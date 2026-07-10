@@ -62,5 +62,7 @@ test("branch homepage uses blessboard.com sample link on vertical apex only", as
   const app = makeVerticalApexApp();
   const res = await request(app).get("/");
   assert.match(res.text, /demo\.blessboard\.com/);
+  assert.match(res.text, /Start Free Trial|Get Started Free|View Demo/);
   assert.doesNotMatch(res.text, /kafuebaptist\.church\.getproapp\.org/);
+  assert.doesNotMatch(res.text, /GetPro Church/);
 });

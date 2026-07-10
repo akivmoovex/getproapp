@@ -50,9 +50,9 @@ function fallbackSermonSamples(churchName) {
 
 function applyDemoEventFallbacks(locals) {
   locals.upcomingEvents = [
-    { title: "Sunday Worship Service", when: locals.serviceTimes.split("\n")[0] || "Sunday · 9:00 AM" },
-    { title: "Mid-week Bible Study", when: "Wednesday · 6:00 PM", description: "Prayer and study in the main hall." },
-    { title: "Community Fellowship", when: "First Friday monthly · 6:30 PM", description: "Food, fellowship, and connection." },
+    { title: "Annual Praise Night", when: "Nov 24 · 18:00 · Main Hall" },
+    { title: "Community Food Drive", when: "Dec 02 · 09:00 · Outreach Center" },
+    { title: "Mid-week Bible Study", when: "Wednesday · 18:00 · Main Hall", description: "Prayer and study." },
   ];
   locals.hasDbEvents = false;
 }
@@ -73,19 +73,15 @@ function buildVerticalApexLocals() {
     metaDescription: BLESSBOARD_TAGLINE,
     isVerticalApex: true,
     activePage: "home",
-    heroTitle: BLESSBOARD_NAME,
-    heroSubtitle: "A GetPro-powered platform",
+    heroTitle: "Empower Your Church with BlessBoard",
+    heroSubtitle: "Next Generation CMS",
     welcomeMessage:
-      "BlessBoard helps churches engage members, manage branches, track attendance, summarize giving, and submit monthly reports — powered by GetPro.",
+      "A modern, all-in-one management platform designed to help your ministry thrive. Manage members, coordinate activities, and track growth with structured compassion.",
     serviceTimes: "Explore the live demo church at demo.blessboard.com",
     locationText: "Multi-tenant church platform at blessboard.com",
-    upcomingEvents: [
-      { title: "Community Welcome Day", when: "First Sunday monthly · 12:30 PM" },
-      { title: "Leadership Training", when: "Quarterly · Saturday 2:00 PM" },
-    ],
-    givingTeaser:
-      "Track giving summaries and monthly reports without online payment processing in the MVP phase.",
-    footerMessage: "Member registration and login are available on your branch church site.",
+    upcomingEvents: [],
+    givingTeaser: "",
+    footerMessage: "© BlessBoard. Powered by GetPro.",
     blessboardPublicUrl: BLESSBOARD_PUBLIC_URL,
   };
 }

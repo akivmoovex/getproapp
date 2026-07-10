@@ -1,6 +1,7 @@
 "use strict";
 
 const path = require("path");
+const fs = require("fs");
 const express = require("express");
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -69,13 +70,67 @@ const branchPublicRoutes = [
   { path: "/registration-submitted", markers: ["Registration submitted", "Powered by GetPro"] },
 ];
 
-test("BlessBoard apex homepage includes updated CSS bundle v32", async () => {
+test("BlessBoard apex homepage includes updated CSS bundle v33", async () => {
   const app = makeVerticalApexApp();
   const res = await request(app).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=32/);
+  assert.match(res.text, /church\.css\?v=33/);
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
   assert.match(res.text, /Powered by GetPro/);
+});
+
+test("BlessBoard apex homepage matches desktop Stitch design markers", async () => {
+  const app = makeVerticalApexApp();
+  const res = await request(app).get("/");
+  assert.equal(res.status, 200);
+  assert.match(res.text, />Features</);
+  assert.match(res.text, />Pricing</);
+  assert.match(res.text, />About Us</);
+  assert.match(res.text, /Start Free Trial|Get Started Free/);
+  assert.match(res.text, /Powerful Tools for Modern Ministry/);
+  assert.match(res.text, /bb-saas-cta/);
+  assert.match(res.text, /Ready to Transform Your Church Management/);
+  assert.match(res.text, /Member Management/);
+  assert.match(res.text, /Attendance Tracking/);
+  assert.doesNotMatch(res.text, /GetPro Church/);
+  assert.doesNotMatch(res.text, /Register as Member/);
+});
+
+test("demo branch homepage matches mobile Stitch design markers", async () => {
+  const app = makeBranchApp();
+  const res = await request(app).get("/");
+  assert.equal(res.status, 200);
+  assert.match(res.text, /Register as Member/);
+  assert.match(res.text, /Plan a Visit/);
+  assert.match(res.text, /Service Times/);
+  assert.match(res.text, /Join us this Sunday/);
+  assert.match(res.text, /Ministries/);
+  assert.match(res.text, /Upcoming Events/);
+  assert.match(res.text, /Support our Mission/);
+  assert.match(res.text, /church-branch-mobile-hero/);
+  assert.match(res.text, /church-service-scroller/);
+  assert.match(res.text, /church-location-card/);
+  assert.match(res.text, /church-home-giving/);
+  assert.match(res.text, /church-fab-chat/);
+  assert.doesNotMatch(res.text, /GetPro Church/);
+  assert.doesNotMatch(res.text, /bb-saas-hero/);
+});
+
+test("branch homepage includes mobile drawer and branch hero markup", async () => {
+  const app = makeBranchApp();
+  const res = await request(app).get("/");
+  assert.equal(res.status, 200);
+  assert.match(res.text, /church-mobile-menu-btn/);
+  assert.match(res.text, /church-mobile-drawer/);
+  assert.match(res.text, /church-branch-mobile-hero/);
+  assert.match(res.text, /church-service-scroller/);
+  assert.match(res.text, /church-brand-mark/);
+});
+
+test("branch homepage does not use legacy horizontal mobile nav strip", async () => {
+  const app = makeBranchApp();
+  const res = await request(app).get("/");
+  assert.doesNotMatch(res.text, /church-public-mobile-nav/);
 });
 
 test("branch public pages render priority screen layout markers", { skip: !isPgConfigured() }, async () => {
@@ -90,23 +145,6 @@ test("branch public pages render priority screen layout markers", { skip: !isPgC
   }
 });
 
-test("branch homepage includes mobile drawer and branch hero markup", { skip: !isPgConfigured() }, async () => {
-  const app = makeBranchApp();
-  const res = await request(app).get("/");
-  assert.equal(res.status, 200);
-  assert.match(res.text, /church-mobile-menu-btn/);
-  assert.match(res.text, /church-mobile-drawer/);
-  assert.match(res.text, /church-branch-mobile-hero/);
-  assert.match(res.text, /church-service-scroller/);
-  assert.match(res.text, /church-brand-mark/);
-});
-
-test("branch homepage does not use legacy horizontal mobile nav strip", { skip: !isPgConfigured() }, async () => {
-  const app = makeBranchApp();
-  const res = await request(app).get("/");
-  assert.doesNotMatch(res.text, /church-public-mobile-nav/);
-});
-
 test("sermons page uses sermon cards from DB when available", { skip: !isPgConfigured() }, async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/sermons");
@@ -115,7 +153,6 @@ test("sermons page uses sermon cards from DB when available", { skip: !isPgConfi
 });
 
 test("branch admin shell includes mobile drawer and topbar markup", () => {
-  const fs = require("fs");
   const shell = fs.readFileSync(
     path.join(__dirname, "../views/church/partials/branch_admin_shell_start.ejs"),
     "utf8"
@@ -123,11 +160,19 @@ test("branch admin shell includes mobile drawer and topbar markup", () => {
   assert.match(shell, /church-branch-menu-btn/);
   assert.match(shell, /church-branch-drawer/);
   assert.match(shell, /church-branch-mobile-topbar/);
-  assert.match(shell, /church\.css\?v=32/);
+  assert.match(shell, /church\.css\?v=33/);
 });
 
 test("platform host does not expose branch-only public events route", async () => {
   const app = makePlatformApp();
   const res = await request(app).get("/events");
   assert.equal(res.status, 404);
+});
+
+test("getproapp.org / platform host remains unchanged for church homepage", async () => {
+  const app = makePlatformApp();
+  const res = await request(app).get("/");
+  assert.equal(res.status, 404);
+  assert.doesNotMatch(res.text, /Powerful Tools for Modern Ministry/);
+  assert.doesNotMatch(res.text, /bb-saas-hero/);
 });

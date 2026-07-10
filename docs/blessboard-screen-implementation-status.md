@@ -5,9 +5,9 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=31` (priority public pages, branch admin mobile drawer, member resources/forms polish)
+**CSS bundle:** `/church/church.css?v=33` (public homepage pixel pass: apex SaaS desktop + branch mobile)
 
-**Last updated:** 2026-07-10 (priority screen pass)
+**Last updated:** 2026-07-10 (public homepage Stitch pass)
 
 ---
 
@@ -16,13 +16,14 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 | Area | Desktop | Mobile | Notes |
 |------|---------|--------|-------|
 | Public website shell | Partial → improved | Partial → improved | Hamburger drawer, brand mark, 1280px max-width |
-| Branch public homepage | Partial | Partial → improved | Full-bleed mobile hero, service scroller, bento ministries |
+| Public homepage (apex) | Close | Partial | SaaS landing matches desktop Stitch; no dedicated apex-mobile PNG |
+| Branch public homepage | Partial | Close | Mobile Stitch layout implemented; desktop branch content remains church-site layout |
 | Auth screens | Partial | Partial | Card polish, brand lockup; layout closer to Stitch |
 | Member portal | Partial | Partial → improved | Mobile top bar, bento quick actions, announcement cards |
 | Branch admin | Partial | Needs mobile fix | Functional; sidebar layout differs from Stitch density |
 | HQ / Leader / Platform | Partial | Partial | Implemented; not fully restyled this pass |
 
-**Playwright:** Available (`npm run test:ui`) but no BlessBoard visual snapshot suite added yet. Use manual checklist below at **390px** and **1440px**.
+**Playwright:** Available (`npm run test:ui`). Homepage QA screenshots: `node scripts/screenshot-blessboard-home.js` → `tmp/blessboard-home-screenshots/` (390px + 1440px).
 
 ---
 
@@ -34,10 +35,10 @@ Statuses: **Matches** · **Partial** · **Placeholder** · **Missing** · **Need
 
 | Screen | Device | PNG File | Current Route | Current View | Match Status | Missing Design Items |
 |--------|--------|----------|---------------|--------------|--------------|----------------------|
-| Public homepage (BlessBoard apex) | Desktop | `01-public-website/01-public-home-desktop/01-public-home-desktop.png` | `/` (blessboard.com) | `views/church/public/home.ejs` | Partial | Marketing hero mesh; demo CTA styling |
-| Public homepage (BlessBoard apex) | Mobile | `01-public-website/01-public-home-mobile/01-public-home-mobile.png` | `/` | `home.ejs` | Partial | Apex uses desktop hero on mobile (no branch full-bleed) |
-| Public homepage (branch) | Desktop | `01-public-website/01-public-home-desktop/01-public-home-desktop.png` | `/` (demo.blessboard.com) | `home.ejs` | Partial | Photo hero background; map location card; event date badges |
-| Public homepage (branch) | Mobile | `01-public-website/01-public-home-mobile/01-public-home-mobile.png` | `/` | `home.ejs` | Partial | Hero + scroller added; map card, avatar stack, richer event rows still missing |
+| Public homepage (BlessBoard apex) | Desktop | `01-public-website/01-public-home-desktop/01-public-home-desktop.png` | `/` (blessboard.com) | `views/church/public/home.ejs` + `home_apex.ejs` | Close | SaaS nav/hero/bento/CTA/footer implemented. Remaining: exact Stitch photo assets (using Unsplash placeholders + CSS mock directory) |
+| Public homepage (BlessBoard apex) | Mobile | `01-public-website/01-public-home-mobile/01-public-home-mobile.png` | `/` | `home.ejs` | Partial | Apex mobile stacks SaaS sections; PNG is branch church mobile, not apex marketing |
+| Public homepage (branch) | Desktop | `01-public-website/01-public-home-desktop/01-public-home-desktop.png` | `/` (demo.blessboard.com) | `home.ejs` + `home_branch.ejs` | Partial | Desktop PNG is apex SaaS; branch desktop keeps church-site hero + sections (intentional host split) |
+| Public homepage (branch) | Mobile | `01-public-website/01-public-home-mobile/01-public-home-mobile.png` | `/` | `home_branch.ejs` | Close | Full mobile Stitch structure. Remaining: original Stitch hero/map/ministry photos (Unsplash + map placeholder); nearby avatars are decorative placeholders |
 | About | Desktop | `01-public-website/02-public-about-desktop/02-public-about-desktop.png` | `/about` | `views/church/public/about.ejs` | Partial | Photo hero polish; value rows use plain text split |
 | About | Mobile | `01-public-website/02-public-about-mobile/02-public-about-mobile.png` | `/about` | `about.ejs` | Partial | Page hero, story card, mission/vision cards added |
 | Leadership | Desktop | `01-public-website/03-public-leadership-desktop/03-public-leadership-desktop.png` | `/leadership` | `views/church/public/leadership.ejs` | Partial | Initials avatars; real photos not wired |
@@ -148,10 +149,13 @@ Compare side-by-side with PNG at these widths (browser devtools):
 # Unit / render smoke tests (includes visual markers)
 npm test -- tests/church-visual-design.test.js tests/church-branding.test.js
 
+# Homepage screenshots (390 + 1440)
+node scripts/screenshot-blessboard-home.js
+
 # Full test suite
 npm test
 
-# Optional Playwright (general UI suite; no BlessBoard snapshots yet)
+# Optional Playwright (general UI suite)
 npm run test:ui
 ```
 
@@ -178,27 +182,27 @@ npm run test:ui
 
 ## Files changed in this visual pass
 
-- `public/church/church.css` — v31 styles for about, leadership, contact, events, sermons, resources, branch admin mobile
-- `views/church/public/about.ejs`, `leadership.ejs`, `contact.ejs`, `events.ejs`, `sermons.ejs`
-- `views/church/partials/public_page_hero.ejs`, `branch_admin_nav.ejs`
-- `views/church/partials/branch_admin_shell_start.ejs`, `branch_admin_shell_end.ejs` — mobile drawer
-- `views/church/partials/public_shell_start.ejs` — Events nav link
-- `views/church/member/resources.ejs`, `forms.ejs`
-- `src/routes/church/publicPages.js` — `/events` route, sermon samples, event fallbacks
-- `tests/church-visual-design.test.js`, `tests/church-mvp-placeholder-screens.test.js`
+- `public/church/church.css` — v33 apex SaaS + branch mobile homepage styles
+- `views/church/public/home.ejs` — apex vs branch split
+- `views/church/partials/home_apex.ejs`, `home_branch.ejs` — homepage layouts
+- `views/church/partials/public_shell_start.ejs`, `public_shell_end.ejs` — apex/branch header & footer
+- `src/routes/church/publicPages.js` — apex copy + demo event badges
+- `tests/church-visual-design.test.js`, `tests/church-branding.test.js`
+- `scripts/screenshot-blessboard-home.js`
 - `docs/blessboard-screen-implementation-status.md` — This file
 
 ---
 
 ## Screens still not matching (priority follow-ups)
 
-1. **Public Giving** — method icon cards need Stitch polish
-2. **Public Ministries page** — image tiles and filters
-3. **Events calendar grid** — month view widget not implemented
-4. **Sermons** — real media/archive integration vs demo cards
-5. **Leadership** — real photo uploads from website editor
-6. **Contact form** — backend submission not wired (display-only)
-7. **Branch admin dashboard** — mobile stat card layout vs Stitch density
-8. **HQ / Leader portals** — not restyled this pass
+1. **Original Stitch photo assets** — hero congregation, map, ministry tile photos not checked into `public/church/images/` (Unsplash / CSS placeholders used)
+2. **Public Giving** — method icon cards need Stitch polish
+3. **Public Ministries page** — image tiles and filters
+4. **Events calendar grid** — month view widget not implemented
+5. **Sermons** — real media/archive integration vs demo cards
+6. **Leadership** — real photo uploads from website editor
+7. **Contact form** — backend submission not wired (display-only)
+8. **Branch admin dashboard** — mobile stat card density vs Stitch
+9. **HQ / Leader portals** — not restyled this pass
 
-No PNG references are missing for the core flows listed above; extended branch-admin and HQ PNGs exist under `design-reference/stitch-screens/church-flow/` for future passes.
+No PNG references are missing for the core public homepage flows; Stitch HTML lives under `design-reference/stitch-screens/church-flow/01-public-website/`.
