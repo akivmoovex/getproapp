@@ -255,7 +255,11 @@ function registerHqAdminRoutes(router) {
     try {
       const org = req.churchContext.organization;
       const pool = getPgPool();
-      const row = await hqAdminsRepo.findHqAdminById(req.churchHqAdmin.hq_admin_id);
+      const row = await hqAdminsRepo.findHqAdminById(pool, req.churchHqAdmin.hq_admin_id);
+      if (!row) {
+        clearChurchHqAdminSession(req);
+        return res.redirect("/hq/login");
+      }
       const account = buildHqAdminAccountView(row, org.name);
       return res.render(
         "church/hq/account",
@@ -267,7 +271,29 @@ function registerHqAdminRoutes(router) {
         })
       );
     } catch (e) {
-      return next(e);
+      console.error("[church:hq-account] failed to load account", {
+        message: e && e.message ? String(e.message).slice(0, 200) : "unknown",
+      });
+      try {
+        return res.status(500).render(
+          "church/hq/account",
+          hqAdminLocals(req, {
+            account: {
+              full_name: (req.churchHqAdmin && req.churchHqAdmin.full_name) || "HQ Admin",
+              email: "",
+              phone: "",
+              role: (req.churchHqAdmin && req.churchHqAdmin.role) || "hq_admin",
+              status: (req.churchHqAdmin && req.churchHqAdmin.status) || "",
+              organization_name: (req.churchContext && req.churchContext.organization && req.churchContext.organization.name) || "",
+            },
+            hqAdminRoleLabel,
+            error: "We could not load your account. Please try again.",
+            notice: null,
+          })
+        );
+      } catch (_) {
+        return next(e);
+      }
     }
   });
 
@@ -279,7 +305,7 @@ function registerHqAdminRoutes(router) {
       const validation = validateChangePasswordBody(req.body || {});
 
       if (!validation.ok) {
-        const row = await hqAdminsRepo.findHqAdminById(adminId);
+        const row = await hqAdminsRepo.findHqAdminById(pool, adminId);
         return res.status(400).render(
           "church/hq/account",
           hqAdminLocals(req, {

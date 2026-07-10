@@ -312,7 +312,11 @@ function registerBranchAdminRoutes(router) {
     try {
       const branch = req.churchContext.branch;
       const pool = getPgPool();
-      const row = await branchAdminsRepo.findBranchAdminById(req.churchBranchAdmin.admin_id);
+      const row = await branchAdminsRepo.findBranchAdminById(pool, req.churchBranchAdmin.admin_id);
+      if (!row) {
+        clearChurchBranchAdminSession(req);
+        return res.redirect("/branch/login");
+      }
       const account = buildBranchAdminAccountView(row, branch.name);
       return res.render(
         "church/branch-admin/account",
@@ -336,7 +340,7 @@ function registerBranchAdminRoutes(router) {
       const validation = validateChangePasswordBody(req.body || {});
 
       if (!validation.ok) {
-        const row = await branchAdminsRepo.findBranchAdminById(adminId);
+        const row = await branchAdminsRepo.findBranchAdminById(pool, adminId);
         return res.status(400).render(
           "church/branch-admin/account",
           branchAdminLocals(req, {
