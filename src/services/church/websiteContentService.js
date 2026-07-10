@@ -220,11 +220,15 @@ function validateForPublish(content) {
 
 function preparePublicViewModel(org, branch, content, extra = {}) {
   const merged = mergeWithFallbacks(content, org, branch);
-  const churchName = branch.name || org.name;
+  const organizationName = (org && org.name) || "";
+  const branchName = (branch && branch.name) || "";
+  const churchName = branchName || organizationName || "Our Church";
   const leadership = merged.leadership_json || defaultLeadership();
   return {
     pageTitle: merged.homepage_hero_title || churchName,
     churchName,
+    organizationName,
+    branchName,
     heroTitle: merged.homepage_hero_title || churchName,
     heroSubtitle: merged.homepage_hero_subtitle || "",
     welcomeMessage: merged.welcome_message,

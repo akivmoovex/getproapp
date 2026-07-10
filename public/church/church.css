@@ -19,6 +19,8 @@
   --church-on-surface-variant: #474554;
   --church-text: #131d21;
   --church-outline: #c8c4d7;
+  --church-getpro-orange: #f59e0b;
+  --church-powered-by-gray: #6b7280;
   --church-radius: 8px;
   --church-radius-lg: 16px;
   --church-radius-xl: 12px;
@@ -120,8 +122,61 @@
   font-size: 0.72rem;
   font-weight: 500;
   line-height: 1.2;
-  opacity: 0.72;
+  opacity: 1;
   letter-spacing: 0.01em;
+}
+
+.bb-powered-by {
+  display: inline;
+  font-weight: 500;
+}
+
+.bb-powered-by__label {
+  color: var(--church-powered-by-gray);
+  font-weight: 500;
+}
+
+.bb-powered-by__getpro {
+  color: var(--church-getpro-orange);
+  font-weight: 700;
+}
+
+.brand-lockup--compact .bb-powered-by__getpro {
+  font-size: inherit;
+  font-weight: 700;
+}
+
+/* Dark drawer / dark chrome: keep GetPro orange readable */
+.church-drawer .bb-powered-by__label,
+.church-drawer__actions .bb-powered-by__label {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.church-drawer .bb-powered-by__getpro,
+.church-drawer__actions .bb-powered-by__getpro {
+  color: var(--church-getpro-orange);
+}
+
+.church-sidebar-brand .bb-powered-by__label {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.church-sidebar-brand .bb-powered-by__getpro {
+  color: var(--church-getpro-orange);
+}
+
+.church-footer__powered-line .bb-powered-by__label,
+.church-footer__copy .bb-powered-by__label,
+.church-footer__powered-sub .bb-powered-by__label,
+.church-auth-footer__powered .bb-powered-by__label {
+  color: var(--church-powered-by-gray);
+}
+
+.church-footer__powered-line .bb-powered-by__getpro,
+.church-footer__copy .bb-powered-by__getpro,
+.church-footer__powered-sub .bb-powered-by__getpro,
+.church-auth-footer__powered .bb-powered-by__getpro {
+  color: var(--church-getpro-orange);
 }
 
 .church-brand--compact {
@@ -12566,5 +12621,230 @@ a.church-branch-bento-stat:hover {
   .church-leader-join-request-detail-grid {
     grid-template-columns: 1fr 1fr;
     align-items: start;
+  }
+}
+
+/* —— Public church finder (apex) —— */
+.bb-finder {
+  padding: 32px var(--church-margin-mobile) 64px;
+  background: linear-gradient(180deg, var(--church-surface) 0%, #fff 40%);
+  min-height: 60vh;
+}
+
+.bb-finder__inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.bb-finder__header {
+  margin-bottom: 24px;
+}
+
+.bb-finder__eyebrow {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--church-primary);
+}
+
+.bb-finder__title {
+  margin: 0 0 10px;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  line-height: 1.15;
+  color: var(--church-navy);
+}
+
+.bb-finder__lead,
+.bb-finder__meta,
+.bb-finder__count {
+  color: var(--church-muted);
+}
+
+.bb-finder__form {
+  margin-bottom: 28px;
+}
+
+.bb-finder__label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.bb-finder__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bb-finder__input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--church-outline);
+  border-radius: 999px;
+  font: inherit;
+  background: #fff;
+}
+
+.bb-finder__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.bb-finder__card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid var(--church-outline);
+  border-radius: var(--church-radius-lg);
+}
+
+.bb-finder__card-body {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.bb-finder__mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--church-violet) 14%, #fff);
+  color: var(--church-primary);
+  flex-shrink: 0;
+}
+
+.bb-finder__mark--lg {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 12px;
+}
+
+.bb-finder__name {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  color: var(--church-navy);
+}
+
+.bb-finder__services {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  color: var(--church-text);
+  white-space: pre-wrap;
+}
+
+.bb-finder__empty {
+  text-align: center;
+  padding: 40px 16px;
+}
+
+.bb-finder__empty h2,
+.bb-finder__empty .bb-finder__title {
+  margin-bottom: 12px;
+}
+
+.bb-finder__hints {
+  text-align: left;
+  display: inline-block;
+  margin: 0 0 16px;
+  color: var(--church-muted);
+}
+
+.bb-finder__empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.bb-finder__pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  color: var(--church-muted);
+}
+
+.bb-finder__back {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.bb-finder__org {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.bb-remembered {
+  margin-top: 8px;
+  padding: 16px 18px;
+  border-radius: var(--church-radius-lg);
+  background: color-mix(in srgb, var(--church-violet) 8%, #fff);
+  border: 1px solid color-mix(in srgb, var(--church-violet) 22%, #fff);
+}
+
+.bb-remembered__label {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--church-primary);
+}
+
+.bb-remembered__church {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--church-navy);
+}
+
+.bb-remembered__branch {
+  margin: 2px 0 14px;
+  color: var(--church-muted);
+}
+
+.bb-remembered__clear {
+  margin-top: 10px;
+}
+
+.bb-remembered__clear-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--church-muted);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.bb-tenant-branch-label {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--church-muted);
+}
+
+@media (min-width: 768px) {
+  .bb-finder {
+    padding: 48px 24px 80px;
   }
 }

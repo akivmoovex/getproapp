@@ -114,19 +114,19 @@ test("member portal localized assets exist", () => {
   }
 });
 
-test("member shell references church.css?v=46", () => {
+test("member shell references church.css?v=47", () => {
   const text = fs.readFileSync(
     path.join(__dirname, "../views/church/partials/member_shell_start.ejs"),
     "utf8"
   );
-  assert.match(text, /church\.css\?v=46/);
+  assert.match(text, /church\.css\?v=47/);
   assert.match(text, /church-member-sidebar/);
   assert.match(text, /church-member-desktop-topbar/);
   assert.match(text, /church-member-bottom-nav/);
   assert.match(text, /Groups/);
   assert.match(text, /Study/);
   assert.match(text, /More/);
-  assert.match(text, /Powered by GetPro/);
+  assert.match(text, /Powered by[\s\S]{0,120}?GetPro/);
   assert.doesNotMatch(text, /GetPro Church/);
 });
 
@@ -155,7 +155,7 @@ test("unauthenticated member routes redirect to /login", async () => {
 test("public pages still render on branch host", async () => {
   const res = await request(makeBranchApp()).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=46/);
+  assert.match(res.text, /church\.css\?v=47/);
 });
 
 test("branch admin unauthenticated still redirects", async () => {
@@ -251,7 +251,7 @@ test(
       for (const screen of screens) {
         const res = await agent.get(screen.path);
         assert.equal(res.status, 200, `${screen.path} should be 200`);
-        assert.match(res.text, /church\.css\?v=46/, `${screen.path} CSS v43`);
+        assert.match(res.text, /church\.css\?v=47/, `${screen.path} CSS v43`);
         assert.match(res.text, /data-member-shell="stitch-v40"/);
         assert.match(res.text, /Groups/);
         assert.match(res.text, /Study/);
@@ -260,7 +260,7 @@ test(
           assert.match(res.text, marker, `${screen.path} missing ${marker}`);
         }
         assert.doesNotMatch(res.text, /GetPro Church/);
-        assert.match(res.text, /Powered by GetPro/);
+        assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
       }
     } finally {
       await pool.query(`DELETE FROM public.church_audit_logs WHERE branch_id = $1`, [branch.id]);

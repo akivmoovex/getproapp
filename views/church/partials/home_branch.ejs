@@ -60,13 +60,16 @@
   <div class="church-branch-mobile-hero__content">
     <div class="church-branch-mobile-hero__badge">
       <span class="church-branch-mobile-hero__badge-dot"></span>
-      <span>Kafue Baptist Church</span>
+      <span><%= churchName %></span>
     </div>
-    <h1 class="church-branch-mobile-hero__title">Welcome home to our community.</h1>
-    <p class="church-branch-mobile-hero__lead">Experience grace, find community, and grow in faith with us in Kafue.</p>
+    <h1 class="church-branch-mobile-hero__title"><%= heroTitle || 'Welcome home to our community.' %></h1>
+    <p class="church-branch-mobile-hero__lead"><%= welcomeMessage %></p>
+    <% if (typeof branchName !== 'undefined' && branchName) { %>
+    <p class="bb-tenant-branch-label"><%= branchName %></p>
+    <% } %>
     <div class="church-branch-mobile-hero__cta">
-      <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="/register">Register as Member</a>
-      <a class="church-btn church-btn--outline church-btn--block church-btn--mobile-pill" href="/contact">Plan a Visit</a>
+      <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="/login">Member Login</a>
+      <a class="church-btn church-btn--outline church-btn--block church-btn--mobile-pill" href="/register">Register as a Member</a>
     </div>
   </div>
 </section>

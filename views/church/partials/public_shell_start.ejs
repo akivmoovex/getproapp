@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=46"/>
+  <link rel="stylesheet" href="/church/church.css?v=47"/>
 </head>
 <%
   var isPreviewMode = typeof isPreview !== 'undefined' && isPreview;
@@ -26,13 +26,13 @@
     <div class="church-header__inner">
       <%- include('./brand_lockup', { href: '/' }) %>
       <nav class="church-nav church-nav--apex" aria-label="Primary">
-        <a href="/#features" class="church-nav__active">Features</a>
-        <a href="/#pricing">Pricing</a>
-        <a href="/#about">About Us</a>
+        <a href="/churches" class="<%= typeof activePage !== 'undefined' && activePage === 'churches' ? 'church-nav__active' : '' %>">Find Church</a>
+        <a href="/#features">Features</a>
+        <a href="/#about">About</a>
       </nav>
       <div class="church-header__actions">
-        <a class="church-btn church-btn--ghost" href="https://demo.blessboard.com/login">Login</a>
-        <a class="church-btn church-btn--primary church-btn--pill" href="https://demo.blessboard.com/register">Get Started</a>
+        <a class="church-btn church-btn--ghost" href="/churches?for=admin">Church Administrator Login</a>
+        <a class="church-btn church-btn--primary church-btn--pill" href="/churches">Find Your Church</a>
       </div>
       <button type="button" class="church-menu-btn" id="church-mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="church-mobile-drawer">
         <span class="material-symbols-outlined" aria-hidden="true">menu</span>
@@ -48,15 +48,15 @@
       </button>
     </div>
     <nav class="church-drawer__nav">
+      <a href="/churches">Find Your Church</a>
       <a href="/#features">Features</a>
-      <a href="/#pricing">Pricing</a>
-      <a href="/#about">About Us</a>
-      <a href="/admin/login">Admin Login</a>
+      <a href="/#about">About</a>
+      <a href="/churches?for=admin">Church Administrator Login</a>
     </nav>
     <div class="church-drawer__actions">
-      <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="https://demo.blessboard.com/register">Get Started</a>
-      <a class="church-btn church-btn--outline church-btn--block church-btn--mobile-pill" href="https://demo.blessboard.com/login">Login</a>
-      <p class="church-footer__powered">BlessBoard<span class="church-footer__powered-sub">Powered by GetPro</span></p>
+      <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="/churches">Find Your Church</a>
+      <a class="church-btn church-btn--outline church-btn--block church-btn--mobile-pill" href="/churches?for=admin">Church Administrator Login</a>
+      <p class="church-footer__powered">BlessBoard<span class="church-footer__powered-sub"><%- include('./powered_by_getpro') %></span></p>
     </div>
   </aside>
   <% } %>
@@ -85,8 +85,8 @@
       </nav>
       <div class="church-header__actions">
         <% if (!isPreviewMode) { %>
-        <a class="church-btn church-btn--ghost" href="/login">Login</a>
-        <a class="church-btn church-btn--primary church-btn--pill" href="/register">Register</a>
+        <a class="church-btn church-btn--ghost" href="/login">Member Login</a>
+        <a class="church-btn church-btn--primary church-btn--pill" href="/register">Register as a Member</a>
         <% } %>
       </div>
       <% if (!isPreviewMode) { %>
@@ -118,9 +118,9 @@
       <a href="/contact" class="<%= activePage === 'contact' ? 'church-drawer__link--active' : '' %>">Contact</a>
     </nav>
     <div class="church-drawer__actions">
-      <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="/register">Register as Member</a>
+      <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="/register">Register as a Member</a>
       <a class="church-btn church-btn--outline church-btn--block church-btn--mobile-pill" href="/login">Member Login</a>
-      <p class="church-footer__powered">BlessBoard<span class="church-footer__powered-sub">Powered by GetPro</span></p>
+      <p class="church-footer__powered">BlessBoard<span class="church-footer__powered-sub"><%- include('./powered_by_getpro') %></span></p>
     </div>
   </aside>
   <% } %>

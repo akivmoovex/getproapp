@@ -84,7 +84,7 @@ test(
     const res = await request(app).get("/").set("Host", "demo.blessboard.com");
     assert.equal(res.status, 200);
     assert.match(res.text, /BlessBoard Demo Church/i);
-    assert.match(res.text, /Powered by GetPro/);
+    assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
     assert.doesNotMatch(res.text, /Church not found/i);
     assert.doesNotMatch(res.text, /platform fallback/);
     assert.doesNotMatch(res.text, /GetPro Church/);

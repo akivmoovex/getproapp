@@ -62,7 +62,7 @@ test("/sermons loads polished resource cards on branch church host", async () =>
   assert.equal(res.status, 200);
   assert.match(res.text, /Sermons &amp; Resources|Sermons & Resources|Media Library/);
   assert.match(res.text, /church-sermon-card|FEATURED VIDEO|LATEST SERMON|Study Resources/);
-  assert.match(res.text, /church\.css\?v=46|Powered by GetPro/);
+  assert.match(res.text, /church\.css\?v=47|bb-powered-by__getpro|Powered by[\s\S]{0,120}?GetPro/);
   assert.match(res.text, /youtube-nocookie\.com\/embed\//);
   assert.match(res.text, /<audio[^>]*controls/);
   assert.match(res.text, /Download MP3/);

@@ -109,7 +109,7 @@ test("blessboard.com renders BlessBoard landing page", async () => {
   const res = await request(app).get("/");
   assert.equal(res.status, 200);
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
-  assert.match(res.text, /Powered by GetPro/);
+  assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
   assert.doesNotMatch(res.text, /platform fallback/);
 });
 
@@ -155,7 +155,7 @@ test("unknownslug.blessboard.com shows BlessBoard church-not-found page", async 
   assert.match(res.text, /Church not found/i);
   assert.match(res.text, /BlessBoard/);
   assert.match(res.text, /unknownslug/);
-  assert.match(res.text, /Powered by GetPro/);
+  assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
   assert.doesNotMatch(res.text, /platform fallback/);
   assert.doesNotMatch(res.text, /GetPro Church/);
 });

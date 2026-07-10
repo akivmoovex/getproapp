@@ -1,0 +1,82 @@
+<%- include('../partials/public_shell_start') %>
+
+<section class="bb-finder bb-finder--branches">
+  <div class="bb-finder__inner">
+    <header class="bb-finder__header">
+      <div class="bb-finder__org">
+        <div class="bb-finder__mark bb-finder__mark--lg" aria-hidden="true">
+          <span class="material-symbols-outlined">church</span>
+        </div>
+        <div>
+          <p class="bb-finder__eyebrow">Select a branch</p>
+          <h1 class="bb-finder__title"><%= church.name %></h1>
+          <% var orgLoc = [church.city, church.country].filter(Boolean); %>
+          <% if (orgLoc.length) { %>
+          <p class="bb-finder__meta"><%= orgLoc.join(', ') %></p>
+          <% } %>
+        </div>
+      </div>
+    </header>
+
+    <% if (branches.length > 4) { %>
+    <form class="bb-finder__form" method="get" action="/churches/<%= encodeURIComponent(church.slug) %>/branches" role="search">
+      <% if (intent === 'admin') { %>
+      <input type="hidden" name="for" value="admin"/>
+      <% } %>
+      <label class="bb-finder__label" for="branch-search-q">Filter branches</label>
+      <div class="bb-finder__row">
+        <input
+          id="branch-search-q"
+          class="bb-finder__input"
+          type="search"
+          name="q"
+          value="<%= branchFilter || '' %>"
+          placeholder="Branch name or town"
+          maxlength="80"
+        />
+        <button type="submit" class="church-btn church-btn--primary church-btn--pill">Filter</button>
+      </div>
+    </form>
+    <% } %>
+
+    <% if (!branches.length) { %>
+    <div class="bb-finder__empty" role="status">
+      <h2>No matching branches</h2>
+      <p>Try a different filter, or <a href="/churches/<%= encodeURIComponent(church.slug) %>/branches<%= intent === 'admin' ? '?for=admin' : '' %>">show all branches</a>.</p>
+    </div>
+    <% } else { %>
+    <ul class="bb-finder__list">
+      <% branches.forEach(function (branch) { %>
+      <li class="bb-finder__card bb-finder__card--branch">
+        <div class="bb-finder__card-body">
+          <div>
+            <h2 class="bb-finder__name"><%= branch.name %></h2>
+            <p class="bb-finder__meta">
+              <% var bLoc = [branch.location_text, branch.city, branch.country].filter(Boolean); %>
+              <% if (bLoc.length) { %><%= bLoc[0] %><% if (bLoc.length > 1 && bLoc[0] !== branch.location_text) { %> · <%= [branch.city, branch.country].filter(Boolean).join(', ') %><% } %><% } else { %>Location not listed<% } %>
+            </p>
+            <% if (branch.service_times) { %>
+            <p class="bb-finder__services"><%= branch.service_times %></p>
+            <% } %>
+          </div>
+        </div>
+        <form method="post" action="/churches/<%= encodeURIComponent(church.slug) %>/branches/<%= encodeURIComponent(branch.slug) %>/open">
+          <% if (intent === 'admin') { %>
+          <input type="hidden" name="for" value="admin"/>
+          <% } %>
+          <button type="submit" class="church-btn church-btn--primary church-btn--pill">
+            <%= intent === 'admin' ? 'Continue to Admin Login' : 'Open Branch Homepage' %>
+          </button>
+        </form>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+
+    <p class="bb-finder__back">
+      <a href="/churches<%= intent === 'admin' ? '?for=admin' : '' %>">Choose another church</a>
+    </p>
+  </div>
+</section>
+
+<%- include('../partials/public_shell_end') %>

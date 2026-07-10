@@ -62,9 +62,9 @@ test("/login renders without 500/503", async () => {
   const res = await request(makeBranchApp()).get("/login");
   assert.equal(res.status, 200);
   assert.doesNotMatch(res.text, /Service Unavailable|503/);
-  assert.match(res.text, /church\.css\?v=46/);
+  assert.match(res.text, /church\.css\?v=47/);
   assert.match(res.text, /Member Access/);
-  assert.match(res.text, /Powered by GetPro/);
+  assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
   assert.doesNotMatch(res.text, /GetPro Church/);
 });
 
@@ -72,7 +72,7 @@ test("/register renders without 500/503", async () => {
   const res = await request(makeBranchApp()).get("/register");
   assert.equal(res.status, 200);
   assert.match(res.text, /Member Registration|Join Our Community/);
-  assert.match(res.text, /Powered by GetPro/);
+  assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
   assert.doesNotMatch(res.text, /GetPro Church/);
 });
 
@@ -81,7 +81,7 @@ test("/registration-submitted renders", async () => {
   assert.equal(res.status, 200);
   assert.match(res.text, /Registration Submitted/);
   assert.match(res.text, /registration-submitted\.jpg/);
-  assert.match(res.text, /Powered by GetPro/);
+  assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
 });
 
 test("/forgot-password renders", async () => {
@@ -89,7 +89,7 @@ test("/forgot-password renders", async () => {
   assert.equal(res.status, 200);
   assert.match(res.text, /Forgot Password\?/);
   assert.match(res.text, /forgot-password\.jpg/);
-  assert.match(res.text, /Powered by GetPro/);
+  assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
 });
 
 test("/waiting-verification renders for pending member session", async () => {
@@ -129,7 +129,7 @@ test("/waiting-verification renders for pending member session", async () => {
   const res = await request(sessionApp).get("/waiting-verification");
   assert.equal(res.status, 200);
   assert.match(res.text, /Verification in Progress|Pending Verification/);
-  assert.match(res.text, /Powered by GetPro/);
+  assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
   assert.doesNotMatch(res.text, /GetPro Church/);
 });
 
@@ -137,7 +137,7 @@ test("register_closed renders when member_registration_enabled=false", async () 
   const res = await request(makeBranchApp({ member_registration_enabled: false })).get("/register");
   assert.equal(res.status, 200);
   assert.match(res.text, /Registration is currently closed/i);
-  assert.match(res.text, /Powered by GetPro/);
+  assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
 });
 
 test("protected member routes redirect to /login", async () => {

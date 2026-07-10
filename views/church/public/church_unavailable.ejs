@@ -1,0 +1,26 @@
+<%- include('../partials/public_shell_start') %>
+
+<section class="bb-finder">
+  <div class="bb-finder__inner">
+    <div class="bb-finder__empty" role="status">
+      <div class="bb-finder__mark bb-finder__mark--lg" aria-hidden="true">
+        <span class="material-symbols-outlined">church</span>
+      </div>
+      <% if (typeof church !== 'undefined' && church && church.name) { %>
+      <p class="bb-finder__eyebrow"><%= church.name %></p>
+      <% } %>
+      <h1 class="bb-finder__title"><%= message || 'We could not find that church.' %></h1>
+      <ul class="bb-finder__hints">
+        <li>Check spelling</li>
+        <li>Search by town</li>
+        <li>Try the church or branch slug if you know it</li>
+      </ul>
+      <div class="bb-finder__empty-actions">
+        <a class="church-btn church-btn--primary church-btn--pill" href="/churches">Find Your Church</a>
+        <a class="church-btn church-btn--outline church-btn--pill" href="/contact">Contact support</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/public_shell_end') %>

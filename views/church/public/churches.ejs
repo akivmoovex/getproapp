@@ -1,0 +1,98 @@
+<%- include('../partials/public_shell_start') %>
+
+<section class="bb-finder">
+  <div class="bb-finder__inner">
+    <header class="bb-finder__header">
+      <p class="bb-finder__eyebrow"><%= intent === 'admin' ? 'Church administrators' : 'Members &amp; visitors' %></p>
+      <h1 class="bb-finder__title"><%= intent === 'admin' ? 'Find your church to sign in' : 'Find Your Church' %></h1>
+      <p class="bb-finder__lead">
+        <% if (intent === 'admin') { %>
+          Search for your church, then continue to the branch administrator login on your church site.
+        <% } else { %>
+          Search by church name, branch, town, or slug. We only show active churches that are available online.
+        <% } %>
+      </p>
+    </header>
+
+    <form class="bb-finder__form" method="get" action="/churches" role="search">
+      <% if (intent === 'admin') { %>
+      <input type="hidden" name="for" value="admin"/>
+      <% } %>
+      <label class="bb-finder__label" for="church-search-q">Search churches</label>
+      <div class="bb-finder__row">
+        <input
+          id="church-search-q"
+          class="bb-finder__input"
+          type="search"
+          name="q"
+          value="<%= searchQuery || '' %>"
+          placeholder="Church name, branch, town, or slug"
+          maxlength="80"
+          autocomplete="organization"
+        />
+        <button type="submit" class="church-btn church-btn--primary church-btn--pill">Search</button>
+      </div>
+    </form>
+
+    <% if (dbUnavailable) { %>
+    <div class="bb-finder__empty" role="status">
+      <h2>Directory temporarily unavailable</h2>
+      <p>Please try again shortly.</p>
+    </div>
+    <% } else if (noResults) { %>
+    <div class="bb-finder__empty" role="status">
+      <h2>We could not find that church.</h2>
+      <ul class="bb-finder__hints">
+        <li>Check spelling</li>
+        <li>Search by town</li>
+        <li>Try the church or branch slug if you know it</li>
+      </ul>
+      <p>Need help? <a href="/">Return home</a> or ask your church administrator.</p>
+      <a class="church-btn church-btn--outline church-btn--pill" href="/churches<%= intent === 'admin' ? '?for=admin' : '' %>">Clear search</a>
+    </div>
+    <% } else if (typeof emptyDirectory !== 'undefined' && emptyDirectory) { %>
+    <div class="bb-finder__empty" role="status">
+      <h2>No churches are available online yet</h2>
+      <p>Check back soon, or ask your church administrator whether your congregation is on BlessBoard.</p>
+    </div>
+    <% } else if (churches.length) { %>
+    <p class="bb-finder__count"><%= total %> church<%= total === 1 ? '' : 'es' %> found</p>
+    <ul class="bb-finder__list">
+      <% churches.forEach(function (church) { %>
+      <li class="bb-finder__card">
+        <div class="bb-finder__card-body">
+          <div class="bb-finder__mark" aria-hidden="true">
+            <span class="material-symbols-outlined">church</span>
+          </div>
+          <div>
+            <h2 class="bb-finder__name"><%= church.name %></h2>
+            <p class="bb-finder__meta">
+              <% var locParts = [church.city, church.country].filter(Boolean); %>
+              <% if (locParts.length) { %><%= locParts.join(', ') %> · <% } %>
+              <%= church.active_branch_count %> active branch<%= church.active_branch_count === 1 ? '' : 'es' %>
+            </p>
+          </div>
+        </div>
+        <a
+          class="church-btn church-btn--primary church-btn--pill"
+          href="/churches/<%= encodeURIComponent(church.slug) %><%= intent === 'admin' ? '?for=admin' : '' %>"
+        >
+          <%= intent === 'admin' ? 'Continue' : 'Select' %>
+        </a>
+      </li>
+      <% }); %>
+    </ul>
+    <% if (prevUrl || nextUrl) { %>
+    <nav class="bb-finder__pager" aria-label="Search results pages">
+      <% if (prevUrl) { %><a href="<%= prevUrl %>">Previous</a><% } %>
+      <span>Page <%= page %> of <%= totalPages %></span>
+      <% if (nextUrl) { %><a href="<%= nextUrl %>">Next</a><% } %>
+    </nav>
+    <% } %>
+    <% } %>
+
+    <p class="bb-finder__back"><a href="/">Back to BlessBoard home</a></p>
+  </div>
+</section>
+
+<%- include('../partials/public_shell_end') %>

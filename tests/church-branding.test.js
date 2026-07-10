@@ -45,7 +45,7 @@ test("BlessBoard branding on vertical apex homepage", async () => {
   const res = await request(app).get("/");
   assert.equal(res.status, 200);
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
-  assert.match(res.text, /Powered by GetPro/);
+  assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
   assert.doesNotMatch(res.text, /GetPro Church/);
   assert.match(res.text, /<title>BlessBoard \| BlessBoard<\/title>/);
 });
@@ -54,15 +54,18 @@ test("BlessBoard branding on branch public homepage footer", { skip: !require(".
   const app = makeBranchApp();
   const res = await request(app).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /Powered by GetPro/);
+  assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
   assert.doesNotMatch(res.text, /GetPro Church/);
 });
 
-test("branch homepage uses blessboard.com sample link on vertical apex only", async () => {
+test("apex homepage promotes Find Your Church, not tenant member login as primary CTA", async () => {
   const app = makeVerticalApexApp();
   const res = await request(app).get("/");
-  assert.match(res.text, /demo\.blessboard\.com/);
-  assert.match(res.text, /Start Free Trial|Get Started Free|View Demo/);
+  assert.match(res.text, /Find Your Church/);
+  assert.match(res.text, /Church Administrator Login/);
+  assert.doesNotMatch(res.text, /Start Free Trial|Get Started Free|View Demo/);
+  assert.doesNotMatch(res.text, /https:\/\/demo\.blessboard\.com\/login/);
+  assert.doesNotMatch(res.text, /https:\/\/demo\.blessboard\.com\/register/);
   assert.doesNotMatch(res.text, /kafuebaptist\.church\.getproapp\.org/);
   assert.doesNotMatch(res.text, /GetPro Church/);
 });

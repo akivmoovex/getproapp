@@ -23,6 +23,7 @@ const {
   BLESSBOARD_TAGLINE,
   BLESSBOARD_PUBLIC_URL,
 } = require("../../church/branding");
+const { resolveRememberedChurch } = require("./publicChurchDirectory");
 
 function formatPublicEventWhen(ev) {
   const date = ev.event_date instanceof Date ? ev.event_date : new Date(ev.event_date);
@@ -220,23 +221,25 @@ function branchPublicLocalsWithoutDb(org, branch, activePage) {
   return locals;
 }
 
-function buildVerticalApexLocals() {
+function buildVerticalApexLocals(extra = {}) {
   return {
     pageTitle: BLESSBOARD_NAME,
     churchName: BLESSBOARD_NAME,
     metaDescription: BLESSBOARD_TAGLINE,
     isVerticalApex: true,
     activePage: "home",
-    heroTitle: "Empower Your Church with BlessBoard",
-    heroSubtitle: "Next Generation CMS",
+    heroTitle: "Find and connect with your church",
+    heroSubtitle: "BlessBoard",
     welcomeMessage:
-      "A modern, all-in-one management platform designed to help your ministry thrive. Manage members, coordinate activities, and track growth with structured compassion.",
-    serviceTimes: "Explore the live demo church at demo.blessboard.com",
-    locationText: "Multi-tenant church platform at blessboard.com",
+      "BlessBoard helps members find their church, open the right branch homepage, and sign in or register with their congregation.",
+    serviceTimes: "",
+    locationText: "",
     upcomingEvents: [],
     givingTeaser: "",
     footerMessage: "© BlessBoard. Powered by GetPro.",
     blessboardPublicUrl: BLESSBOARD_PUBLIC_URL,
+    rememberedChurch: null,
+    ...extra,
   };
 }
 
@@ -348,7 +351,9 @@ function registerPublicPagesRoutes(router) {
     try {
       const ctx = req.churchContext;
       if (ctx.kind === "vertical-apex") {
-        return res.render("church/public/home", buildVerticalApexLocals());
+        const pool = getPgPool();
+        const rememberedChurch = await resolveRememberedChurch(req, res, pool);
+        return res.render("church/public/home", buildVerticalApexLocals({ rememberedChurch }));
       }
       if (ctx.kind !== "branch" || !ctx.branch || !ctx.organization) {
         if (ctx.kind === "branch") {

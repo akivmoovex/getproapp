@@ -1,33 +1,121 @@
-<%# BlessBoard apex / desktop SaaS landing — matches 01-public-home-desktop.png %>
+<%# BlessBoard apex platform entrance — Find Your Church flow %>
 <%
-  var saasRegisterHref = isVerticalApex ? 'https://demo.blessboard.com/register' : '/register';
-  var saasDemoHref = isVerticalApex ? 'https://demo.blessboard.com' : '/';
-  var saasLoginHref = isVerticalApex ? 'https://demo.blessboard.com/login' : '/login';
+  var isApex = typeof isVerticalApex !== 'undefined' && isVerticalApex;
+  var remembered = typeof rememberedChurch !== 'undefined' ? rememberedChurch : null;
 %>
-<section class="bb-saas-hero home-desktop-design" id="<%= isVerticalApex ? 'welcome' : 'welcome-desktop' %>">
+<% if (isApex) { %>
+<section class="bb-saas-hero home-desktop-design bb-apex-hero" id="welcome">
   <div class="bb-saas-hero__inner">
     <div class="bb-saas-hero__copy">
-      <span class="bb-saas-pill">Next Generation CMS</span>
+      <span class="bb-saas-pill">BlessBoard</span>
       <h1 class="bb-saas-hero__title">
-        Empower Your Church with <span class="bb-saas-hero__brand">BlessBoard</span>
+        Find and connect with <span class="bb-saas-hero__brand">your church</span>
       </h1>
       <p class="bb-saas-hero__lead">
-        A modern, all-in-one management platform designed to help your ministry thrive. Manage members, coordinate activities, and track growth with structured compassion.
+        BlessBoard helps members find their church, open the right branch homepage, and sign in or register with their congregation.
       </p>
+
+      <% if (remembered) { %>
+      <div class="bb-remembered" data-remembered-church="1">
+        <p class="bb-remembered__label">Continue to your church</p>
+        <p class="bb-remembered__church"><%= remembered.churchName %></p>
+        <p class="bb-remembered__branch"><%= remembered.branchName %></p>
+        <div class="bb-saas-hero__cta">
+          <a class="church-btn church-btn--primary church-btn--lg bb-saas-btn--pill" href="<%= remembered.continueUrl %>">
+            Continue
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          </a>
+          <a class="church-btn church-btn--outline church-btn--lg bb-saas-btn--pill" href="/churches">Choose another church</a>
+        </div>
+        <form method="post" action="/churches/preference/clear" class="bb-remembered__clear">
+          <button type="submit" class="bb-remembered__clear-btn">Forget this church</button>
+        </form>
+      </div>
+      <% } else { %>
       <div class="bb-saas-hero__cta">
-        <a class="church-btn church-btn--primary church-btn--lg bb-saas-btn--pill" href="<%= saasRegisterHref %>">
-          Start Free Trial
+        <a class="church-btn church-btn--primary church-btn--lg bb-saas-btn--pill" href="/churches">
+          Find Your Church
           <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
         </a>
-        <a class="church-btn church-btn--outline church-btn--lg bb-saas-btn--pill" href="<%= saasDemoHref %>">View Demo</a>
+        <a class="church-btn church-btn--outline church-btn--lg bb-saas-btn--pill" href="/churches?for=admin">Church Administrator Login</a>
       </div>
-      <div class="bb-saas-proof">
-        <div class="bb-saas-proof__avatars" aria-hidden="true">
-          <img class="bb-saas-proof__avatar" src="/church/images/homepage/desktop-avatar-1.jpg" alt="" width="40" height="40"/>
-          <img class="bb-saas-proof__avatar" src="/church/images/homepage/desktop-avatar-2.jpg" alt="" width="40" height="40"/>
-          <img class="bb-saas-proof__avatar" src="/church/images/homepage/desktop-avatar-3.jpg" alt="" width="40" height="40"/>
+      <% } %>
+    </div>
+    <div class="bb-saas-hero__visual">
+      <div class="bb-saas-hero__glow" aria-hidden="true"></div>
+      <div class="bb-saas-hero__frame">
+        <img
+          class="bb-saas-hero__img"
+          src="/church/images/homepage/desktop-hero-auditorium.jpg"
+          alt="Welcoming church congregation during a modern service"
+          width="800"
+          height="600"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bb-saas-features home-desktop-design" id="features">
+  <div class="bb-saas-features__inner">
+    <div class="bb-saas-features__header">
+      <h2 class="bb-saas-features__title">How BlessBoard helps</h2>
+      <p class="bb-saas-features__subtitle">
+        Find your church, open your branch site, then log in or register as a member — without guessing the right address.
+      </p>
+    </div>
+    <div class="bb-saas-bento">
+      <article class="bb-saas-bento__card">
+        <div class="bb-saas-bento__icon bb-saas-bento__icon--primary">
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
         </div>
-        <p class="bb-saas-proof__text">Trusted by <strong>500+</strong> growing ministries</p>
+        <h3>Find your church</h3>
+        <p>Search by church name, branch, or town among active congregations on BlessBoard.</p>
+      </article>
+      <article class="bb-saas-bento__card">
+        <div class="bb-saas-bento__icon bb-saas-bento__icon--secondary">
+          <span class="material-symbols-outlined" aria-hidden="true">home</span>
+        </div>
+        <h3>Open your branch</h3>
+        <p>Go straight to your church’s public homepage with the right branch context.</p>
+      </article>
+      <article class="bb-saas-bento__card">
+        <div class="bb-saas-bento__icon bb-saas-bento__icon--tertiary">
+          <span class="material-symbols-outlined" aria-hidden="true">login</span>
+        </div>
+        <h3>Sign in or register</h3>
+        <p>Use Member Login or Register as a Member on your church site — your congregation stays in context.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="bb-saas-cta home-desktop-design" id="pricing">
+  <div class="bb-saas-cta__inner">
+    <div class="bb-saas-cta__card">
+      <h2>Ready to connect with your church?</h2>
+      <p>Search the BlessBoard directory and open your congregation’s homepage.</p>
+      <div class="bb-saas-cta__actions">
+        <a class="church-btn church-btn--lg bb-saas-btn--pill bb-saas-btn--cta-primary" href="/churches">Find Your Church</a>
+        <a class="church-btn church-btn--lg bb-saas-btn--pill bb-saas-btn--cta-outline" href="/churches?for=admin">Church Administrator Login</a>
+      </div>
+    </div>
+  </div>
+</section>
+<% } else { %>
+<%# Tenant desktop fallback — keep relative member actions on the branch host %>
+<section class="bb-saas-hero home-desktop-design" id="welcome-desktop">
+  <div class="bb-saas-hero__inner">
+    <div class="bb-saas-hero__copy">
+      <span class="bb-saas-pill"><%= typeof organizationName !== 'undefined' && organizationName ? organizationName : churchName %></span>
+      <h1 class="bb-saas-hero__title"><%= heroTitle || churchName %></h1>
+      <p class="bb-saas-hero__lead"><%= welcomeMessage %></p>
+      <% if (typeof branchName !== 'undefined' && branchName) { %>
+      <p class="bb-tenant-branch-label">Branch: <%= branchName %></p>
+      <% } %>
+      <div class="bb-saas-hero__cta">
+        <a class="church-btn church-btn--primary church-btn--lg bb-saas-btn--pill" href="/login">Member Login</a>
+        <a class="church-btn church-btn--outline church-btn--lg bb-saas-btn--pill" href="/register">Register as a Member</a>
       </div>
     </div>
     <div class="bb-saas-hero__visual">
@@ -40,100 +128,8 @@
           width="800"
           height="600"
         />
-        <div class="bb-saas-stat glass-card">
-          <div class="bb-saas-stat__icon">
-            <span class="material-symbols-outlined" aria-hidden="true">trending_up</span>
-          </div>
-          <div>
-            <p class="bb-saas-stat__label">Ministry Growth</p>
-            <p class="bb-saas-stat__value">+24% New Members this month</p>
-          </div>
-        </div>
       </div>
     </div>
   </div>
 </section>
-
-<section class="bb-saas-features home-desktop-design" id="features">
-  <div class="bb-saas-features__inner">
-    <div class="bb-saas-features__header">
-      <h2 class="bb-saas-features__title">Powerful Tools for Modern Ministry</h2>
-      <p class="bb-saas-features__subtitle">
-        We've built an ecosystem that handles the complexity of administration so you can focus on your calling.
-      </p>
-    </div>
-    <div class="bb-saas-bento">
-      <article class="bb-saas-bento__card bb-saas-bento__card--wide">
-        <div class="bb-saas-bento__split">
-          <div class="bb-saas-bento__copy">
-            <div class="bb-saas-bento__icon bb-saas-bento__icon--primary">
-              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">group</span>
-            </div>
-            <h3>Member Management</h3>
-            <p>Track spiritual journeys, family relationships, and life events. Our centralized database ensures you never lose touch with your community.</p>
-            <ul class="bb-saas-bento__checks">
-              <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Detailed Member Profiles</li>
-              <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Automated Follow-ups</li>
-            </ul>
-          </div>
-          <div class="bb-saas-bento__mock">
-            <img
-              class="bb-saas-bento__shot"
-              src="/church/images/homepage/desktop-feature-directory.jpg"
-              alt="Member directory dashboard preview"
-              width="512"
-              height="279"
-            />
-          </div>
-        </div>
-      </article>
-      <article class="bb-saas-bento__card">
-        <div class="bb-saas-bento__icon bb-saas-bento__icon--secondary">
-          <span class="material-symbols-outlined" aria-hidden="true">event_available</span>
-        </div>
-        <h3>Attendance Tracking</h3>
-        <p>Quick mobile check-ins and automated reporting for services, groups, and events.</p>
-      </article>
-      <article class="bb-saas-bento__card">
-        <div class="bb-saas-bento__icon bb-saas-bento__icon--tertiary">
-          <span class="material-symbols-outlined" aria-hidden="true">bar_chart</span>
-        </div>
-        <h3>Advanced Reporting</h3>
-        <p>Visual data that helps you understand trends and make informed decisions for growth.</p>
-      </article>
-      <article class="bb-saas-bento__card bb-saas-bento__card--wide">
-        <div class="bb-saas-bento__split bb-saas-bento__split--coord">
-          <div class="bb-saas-bento__illus">
-            <img
-              class="bb-saas-bento__shot"
-              src="/church/images/homepage/desktop-feature-coordination.jpg"
-              alt="Ministry coordination illustration"
-              width="512"
-              height="279"
-            />
-          </div>
-          <div class="bb-saas-bento__copy">
-            <div class="bb-saas-bento__icon bb-saas-bento__icon--primary">
-              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">volunteer_activism</span>
-            </div>
-            <h3>Ministry Coordination</h3>
-            <p>Empower your volunteers with scheduling tools, group communication, and task management built for ministry speed.</p>
-          </div>
-        </div>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="bb-saas-cta home-desktop-design" id="pricing">
-  <div class="bb-saas-cta__inner">
-    <div class="bb-saas-cta__card">
-      <h2>Ready to Transform Your Church Management?</h2>
-      <p>Join hundreds of churches that have streamlined their administration and focused back on their mission.</p>
-      <div class="bb-saas-cta__actions">
-        <a class="church-btn church-btn--lg bb-saas-btn--pill bb-saas-btn--cta-primary" href="<%= saasRegisterHref %>">Get Started Free</a>
-        <a class="church-btn church-btn--lg bb-saas-btn--pill bb-saas-btn--cta-outline" href="<%= saasDemoHref %>">Schedule a Tour</a>
-      </div>
-    </div>
-  </div>
-</section>
+<% } %>

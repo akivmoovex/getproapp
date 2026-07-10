@@ -56,14 +56,17 @@ function normalizeSlug(value) {
 function churchPublicHost(slug) {
   const domain = getChurchHostDomain();
   const s = normalizeSlug(slug);
-  return s ? `${s}.${domain}` : "";
+  if (!s || !SLUG_PATTERN.test(s)) return "";
+  return `${s}.${domain}`;
 }
 
 function churchPublicUrl(slug, path = "") {
   const host = churchPublicHost(slug);
   if (!host) return "";
   const suffix = String(path || "").trim();
-  return suffix ? `https://${host}${suffix.startsWith("/") ? suffix : `/${suffix}`}` : `https://${host}`;
+  // Only allow relative path suffixes — never scheme-relative or absolute URLs.
+  if (suffix && (!suffix.startsWith("/") || suffix.startsWith("//"))) return "";
+  return suffix ? `https://${host}${suffix}` : `https://${host}`;
 }
 
 function validateSlugField(value, label, reservedSet = RESERVED_SLUGS) {

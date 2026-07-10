@@ -108,17 +108,17 @@ test("branch admin localized assets exist", () => {
   }
 });
 
-test("branch admin shell references church.css?v=46", () => {
+test("branch admin shell references church.css?v=47", () => {
   const text = fs.readFileSync(
     path.join(__dirname, "../views/church/partials/branch_admin_shell_start.ejs"),
     "utf8"
   );
-  assert.match(text, /church\.css\?v=46/);
+  assert.match(text, /church\.css\?v=47/);
   assert.match(text, /data-branch-shell="stitch-v41"/);
   assert.match(text, /church-branch-sidebar/);
   assert.match(text, /church-branch-desktop-topbar/);
   assert.match(text, /church-branch-bottom-nav/);
-  assert.match(text, /Powered by GetPro/);
+  assert.match(text, /Powered by[\s\S]{0,120}?GetPro/);
   assert.doesNotMatch(text, /GetPro Church/);
 });
 
@@ -174,7 +174,7 @@ test("public and member shells still on v41", () => {
     "views/church/partials/auth_shell_start.ejs",
   ]) {
     const text = fs.readFileSync(path.join(__dirname, "..", rel), "utf8");
-    assert.match(text, /church\.css\?v=46/, `${rel} should use v41`);
+    assert.match(text, /church\.css\?v=47/, `${rel} should use v41`);
   }
 });
 
@@ -259,12 +259,12 @@ test(
       for (const screen of screens) {
         const res = await agent.get(screen.path);
         assert.equal(res.status, 200, `${screen.path} should be 200`);
-        assert.match(res.text, /church\.css\?v=46/, `${screen.path} CSS v43`);
+        assert.match(res.text, /church\.css\?v=47/, `${screen.path} CSS v43`);
         assert.match(res.text, /data-branch-shell="stitch-v41"/);
         assert.match(res.text, /Dashboard/);
         assert.match(res.text, /Members/);
         assert.match(res.text, /Events/);
-        assert.match(res.text, /Powered by GetPro/);
+        assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
         assert.doesNotMatch(res.text, /GetPro Church/);
         for (const marker of screen.markers) {
           assert.match(res.text, marker, `${screen.path} missing ${marker}`);

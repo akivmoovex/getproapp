@@ -12,7 +12,7 @@
         <p class="admin-header__subtitle"><%= navTitle %></p>
       <% } %>
     </div>
-    <p class="muted" style="margin:0 0 0.5rem;font-size:0.85rem;">Powered by GetPro</p>
+    <p class="muted" style="margin:0 0 0.5rem;font-size:0.85rem;"><%- include('../church/partials/powered_by_getpro') %></p>
     <nav class="admin-nav" aria-label="BlessBoard admin navigation">
       <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && activeNav === 'church_platform' ? 'admin-nav__link--active' : '' %>" href="/admin/dashboard">Dashboard</a>
       <a class="admin-nav__link <%= typeof activeNav !== 'undefined' && (activeNav === 'church_platform_orgs' || activeNav === 'church_platform_branches') ? 'admin-nav__link--active' : '' %>" href="/admin/churches">Churches</a>

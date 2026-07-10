@@ -11,7 +11,7 @@
           <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">church</span>
           <span>BlessBoard</span>
         </div>
-        <p class="church-footer__copy">© <%= new Date().getFullYear() %> BlessBoard. Powered by GetPro. All rights reserved.</p>
+        <p class="church-footer__copy">© <%= new Date().getFullYear() %> BlessBoard. <%- include('./powered_by_getpro') %>. All rights reserved.</p>
       </div>
       <div class="church-footer__links">
         <a href="#">Privacy Policy</a>
@@ -39,7 +39,7 @@
       </div>
       <div class="church-footer__branch-meta">
         <p>© <%= new Date().getFullYear() %> <%= churchName %>. All rights reserved.</p>
-        <p class="church-footer__powered-line">Powered by GetPro</p>
+        <p class="church-footer__powered-line"><%- include('./powered_by_getpro') %></p>
       </div>
     </div>
   </footer>
