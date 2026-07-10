@@ -5,13 +5,13 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=34` (homepage pixel fidelity: Stitch assets localized)
+**CSS bundle:** `/church/church.css?v=35` (About + Leadership pixel fidelity; homepage remains v34 layout)
 
-**Last updated:** 2026-07-10 (homepage regression guards)
+**Last updated:** 2026-07-10 (About / Leadership visual pass + link confirmation)
 
-### Homepage v34 status
+### Homepage v34 status (unchanged layout; CSS cache bumped to v35)
 
-Homepage **v34 is visually aligned to the Stitch PNGs** (`01-public-home-desktop.png` / `01-public-home-mobile.png`).
+Homepage remains visually aligned to the Stitch PNGs (`01-public-home-desktop.png` / `01-public-home-mobile.png`).
 
 Remaining known differences are **intentional / documented** (not regressions):
 - Brand text uses **BlessBoard** (+ Powered by GetPro) where PNGs say GetPro Church
@@ -20,7 +20,15 @@ Remaining known differences are **intentional / documented** (not regressions):
 - Nearby avatars are initials placeholders
 - Apex mobile has no dedicated marketing PNG (branch mobile PNG is the mobile target)
 
-Regression guards live in `tests/church-visual-design.test.js` (CSS v34 shells, asset files, layout markers).
+### About + Leadership v35 status
+
+About and Leadership are aligned to Stitch section order and layout for:
+- `02-public-about-desktop.png` / `02-public-about-mobile.png`
+- `03-public-leadership-desktop.png` / `03-public-leadership-mobile.png`
+
+**Routes confirmed working** on branch host (`demo.blessboard.com`): `/about`, `/leadership` (200). Nav + mobile drawer include About and Leadership. Footer About/Contact links are valid. Apex-only admin provisioning and getproapp.org isolation covered by existing host tests.
+
+Regression guards live in `tests/church-visual-design.test.js` (CSS v35 shells, About/Leadership assets + markers, nav/drawer hrefs).
 
 ---
 
@@ -36,7 +44,9 @@ Regression guards live in `tests/church-visual-design.test.js` (CSS v34 shells, 
 | Branch admin | Partial | Needs mobile fix | Functional; sidebar layout differs from Stitch density |
 | HQ / Leader / Platform | Partial | Partial | Implemented; not fully restyled this pass |
 
-**Playwright:** `node scripts/screenshot-blessboard-home.js` → `test-results/blessboard-homepage-visual/` (`implemented-home-mobile.png`, `implemented-home-desktop.png`).
+**Playwright:**
+- `node scripts/screenshot-blessboard-home.js` → `test-results/blessboard-homepage-visual/`
+- `node scripts/screenshot-blessboard-about-leadership.js` → `test-results/blessboard-about-leadership-visual/` (`about-mobile.png`, `about-desktop.png`, `leadership-mobile.png`, `leadership-desktop.png`)
 
 ---
 
@@ -62,6 +72,40 @@ Assets localized from Stitch HTML `aida-public` URLs into `public/church/images/
 
 ---
 
+## About + Leadership asset mapping
+
+Assets localized from Stitch HTML `aida-public` URLs into `public/church/images/about/` and `public/church/images/leadership/`.
+
+| Screen | Design Element | PNG Reference | Current Asset | Correct Asset Found? | Action |
+|--------|----------------|---------------|---------------|----------------------|--------|
+| About mobile | Hero church exterior | `02-public-about-mobile.png` | `about/about-mobile-hero.jpg` | Yes | Wired |
+| About mobile | Find Us map area | `02-public-about-mobile.png` | `about/about-map.jpg` | Yes (Stitch light map placeholder) | Wired + purple pin overlay |
+| About desktop | Kafue Main Branch photo | `02-public-about-desktop.png` | `about/about-branch-building.jpg` | Yes | Wired |
+| About desktop | Service Culture collage ×4 | `02-public-about-desktop.png` | `about/about-culture-1..4.jpg` | Yes | Wired |
+| About desktop | Values icons | `02-public-about-desktop.png` | Material Symbols | Yes (icons, not bitmaps) | Wired |
+| Leadership mobile | Featured pastor photo | `03-public-leadership-mobile.png` | `leadership/pastor-mobile.jpg` | Yes | Wired |
+| Leadership mobile | Ministry leader photos | `03-public-leadership-mobile.png` | `leadership/ministry-m1..m3.jpg` | Yes | Wired |
+| Leadership desktop | Senior pastor photo | `03-public-leadership-desktop.png` | `leadership/pastor-desktop.jpg` | Yes | Wired |
+| Leadership desktop | Assistant pastor photo | `03-public-leadership-desktop.png` | `leadership/assistant-desktop.jpg` | Yes | Wired |
+| Leadership desktop | Elder portraits ×4 | `03-public-leadership-desktop.png` | `leadership/elder-1..4.jpg` | Yes | Wired |
+| Leadership desktop | Ministry leader avatars | `03-public-leadership-desktop.png` | `leadership/ministry-1..3.jpg` | Yes | Wired |
+
+**Missing / recommend export from Stitch if available:**
+- Higher-resolution culture collage and pastor photos if Stitch has larger than ~512px exports
+- Optional: real interactive map tile (current Stitch asset is a pale placeholder)
+
+**Routes / links (confirmed):**
+- `demo.blessboard.com/about` → 200
+- `demo.blessboard.com/leadership` → 200
+- Public nav + mobile drawer → `/about`, `/leadership`
+- Branch footer → `/about`, `/contact` (no broken routes)
+- `getproapp.org/about` → not a BlessBoard branch page
+- `unknownslug.blessboard.com` → friendly Church not found
+- `demo.blessboard.com/admin/churches/new` → 404 (apex-only)
+- Unauthenticated `/branch/*` and `/member/*` → redirect to login
+
+---
+
 ## Screen mapping
 
 Statuses: **Matches** · **Close** · **Partial** · **Placeholder** · **Missing** · **Needs mobile fix** · **Needs desktop fix**
@@ -74,10 +118,10 @@ Statuses: **Matches** · **Close** · **Partial** · **Placeholder** · **Missin
 | Public homepage (BlessBoard apex) | Mobile | `01-public-website/01-public-home-mobile/01-public-home-mobile.png` | `/` | `home.ejs` | Partial | Apex mobile shows SaaS stack; PNG is branch church mobile |
 | Public homepage (branch) | Desktop | `01-public-website/01-public-home-desktop/01-public-home-desktop.png` | `/` (demo.blessboard.com) | `home_branch.ejs` includes `home_apex` | Close | Same SaaS desktop layout as apex at ≥900px |
 | Public homepage (branch) | Mobile | `01-public-website/01-public-home-mobile/01-public-home-mobile.png` | `/` | `home_branch.ejs` | Close | Map asset includes phone chrome (CSS-cropped); nearby avatars are initials placeholders |
-| About | Desktop | `01-public-website/02-public-about-desktop/02-public-about-desktop.png` | `/about` | `views/church/public/about.ejs` | Partial | Photo hero polish; value rows use plain text split |
-| About | Mobile | `01-public-website/02-public-about-mobile/02-public-about-mobile.png` | `/about` | `about.ejs` | Partial | Page hero, story card, mission/vision cards added |
-| Leadership | Desktop | `01-public-website/03-public-leadership-desktop/03-public-leadership-desktop.png` | `/leadership` | `views/church/public/leadership.ejs` | Partial | Initials avatars; real photos not wired |
-| Leadership | Mobile | `01-public-website/03-public-leadership-mobile/03-public-leadership-mobile.png` | `/leadership` | `leadership.ejs` | Partial | Featured pastor card + leader rows |
+| About | Desktop | `01-public-website/02-public-about-desktop/02-public-about-desktop.png` | `/about` | `views/church/public/about.ejs` | Close | BlessBoard brand (PNG: GetPro Church); Stitch images ~512–1024px |
+| About | Mobile | `01-public-website/02-public-about-mobile/02-public-about-mobile.png` | `/about` | `about.ejs` | Close | Map is Stitch light placeholder + pin; bottom tab bar not used (drawer + FAB instead) |
+| Leadership | Desktop | `01-public-website/03-public-leadership-desktop/03-public-leadership-desktop.png` | `/leadership` | `views/church/public/leadership.ejs` | Close | DB names override Stitch demo names when published; photos from Stitch assets |
+| Leadership | Mobile | `01-public-website/03-public-leadership-mobile/03-public-leadership-mobile.png` | `/leadership` | `leadership.ejs` | Close | Ministry leader names are layout demo unless editor adds them; bottom tab bar not used |
 | Ministries | Desktop | `01-public-website/04-public-ministries-desktop/04-public-ministries-desktop.png` | `/ministries` | `views/church/public/ministries.ejs` | Partial | Image tiles, filter chips |
 | Ministries | Mobile | *(no dedicated PNG in export set)* | `/ministries` | `ministries.ejs` | Partial | Bento tiles on homepage only |
 | Events / Calendar | Desktop | `01-public-website/05-public-events-calendar-desktop/05-public-events-calendar-desktop.png` | `/events` | `views/church/public/events.ejs` | Partial | List/cards; no calendar grid widget |
@@ -187,6 +231,12 @@ npm test -- tests/church-visual-design.test.js tests/church-branding.test.js
 # Homepage screenshots (390 + 1440)
 node scripts/screenshot-blessboard-home.js
 
+# About + Leadership screenshots (390 + 1440)
+node scripts/screenshot-blessboard-about-leadership.js
+
+# Targeted tests for this pass
+node --test tests/church-visual-design.test.js tests/church-branding.test.js tests/church-blessboard-admin-host.test.js
+
 # Full test suite
 npm test
 
@@ -200,6 +250,8 @@ npm run test:ui
 |-----|----------|
 | http://localhost:3000/ with `Host: blessboard.com` | BlessBoard apex homepage |
 | http://localhost:3000/ with `Host: demo.blessboard.com` | Demo branch homepage + mobile drawer |
+| http://localhost:3000/about with demo host | About (Stitch dual layout) |
+| http://localhost:3000/leadership with demo host | Leadership (Stitch dual layout) |
 | http://localhost:3000/register with demo host | Registration form |
 | http://localhost:3000/login | Login with brand lockup |
 | http://localhost:3000/ with `Host: getproapp.org` | GetPro platform (unchanged) |
@@ -210,34 +262,37 @@ npm run test:ui
 |-----|----------|
 | https://blessboard.com | BlessBoard landing |
 | https://demo.blessboard.com | Demo church site |
+| https://demo.blessboard.com/about | About page |
+| https://demo.blessboard.com/leadership | Leadership page |
 | https://demo.blessboard.com/register | Member registration |
+| https://blessboard.com/admin/churches/new | Provisioning (after admin login) |
 | https://getproapp.org | GetPro platform |
 
 ---
 
-## Files changed in this visual pass
+## Files changed in About / Leadership visual pass (v35)
 
-- `public/church/church.css` — v33 apex SaaS + branch mobile homepage styles
-- `views/church/public/home.ejs` — apex vs branch split
-- `views/church/partials/home_apex.ejs`, `home_branch.ejs` — homepage layouts
-- `views/church/partials/public_shell_start.ejs`, `public_shell_end.ejs` — apex/branch header & footer
-- `src/routes/church/publicPages.js` — apex copy + demo event badges
-- `tests/church-visual-design.test.js`, `tests/church-branding.test.js`
-- `scripts/screenshot-blessboard-home.js`
+- `views/church/public/about.ejs` — dual mobile/desktop Stitch layouts
+- `views/church/public/leadership.ejs` — featured pastor, elders, ministry leaders, admin tiles
+- `public/church/church.css` — About/Leadership fidelity styles; cache `?v=35`
+- `public/church/images/about/*`, `public/church/images/leadership/*` — Stitch assets
+- All church shells referencing `church.css?v=35`
+- `tests/church-visual-design.test.js` — v35 + About/Leadership markers
+- `scripts/screenshot-blessboard-about-leadership.js`
 - `docs/blessboard-screen-implementation-status.md` — This file
 
 ---
 
 ## Screens still not matching (priority follow-ups)
 
-1. **Original Stitch photo assets** — hero congregation, map, ministry tile photos not checked into `public/church/images/` (Unsplash / CSS placeholders used)
-2. **Public Giving** — method icon cards need Stitch polish
-3. **Public Ministries page** — image tiles and filters
-4. **Events calendar grid** — month view widget not implemented
-5. **Sermons** — real media/archive integration vs demo cards
-6. **Leadership** — real photo uploads from website editor
-7. **Contact form** — backend submission not wired (display-only)
-8. **Branch admin dashboard** — mobile stat card density vs Stitch
-9. **HQ / Leader portals** — not restyled this pass
+1. **Public Giving** — method icon cards need Stitch polish
+2. **Public Ministries page** — image tiles and filters
+3. **Events calendar grid** — month view widget not implemented
+4. **Sermons** — real media/archive integration vs demo cards
+5. **Leadership photo uploads** — website editor photo fields not wired; Stitch photos used as layout assets
+6. **Contact form** — backend submission not wired (display-only)
+7. **Branch admin dashboard** — mobile stat card density vs Stitch
+8. **HQ / Leader portals** — not restyled this pass
+9. **Stitch bottom tab bars** on About/Leadership mobile PNGs — product uses drawer + FAB instead (intentional)
 
-No PNG references are missing for the core public homepage flows; Stitch HTML lives under `design-reference/stitch-screens/church-flow/01-public-website/`.
+Stitch HTML for About/Leadership lives under `design-reference/stitch-screens/church-flow/01-public-website/`.

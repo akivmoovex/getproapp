@@ -1,64 +1,186 @@
 <%- include('../partials/public_shell_start') %>
-    <%- include('../partials/public_page_hero', { heroTitle: aboutTitle || 'About Us', heroSubtitle: 'Discover the heart of ' + churchName + '.' }) %>
-    <section class="church-section church-section--page church-section--content">
-      <div class="church-section__inner">
-        <article class="church-content-card">
-          <div class="church-content-card__head">
-            <span class="church-content-card__icon" aria-hidden="true"><span class="material-symbols-outlined">history_edu</span></span>
-            <h2 class="church-content-card__title">Our Story</h2>
-          </div>
-          <p class="church-content-card__body"><%= aboutBody %></p>
-        </article>
-        <div class="church-mission-grid">
-          <% if (missionText) { %>
-          <article class="church-mission-card church-mission-card--primary">
-            <span class="material-symbols-outlined church-mission-card__icon" aria-hidden="true">rocket_launch</span>
-            <h2 class="church-mission-card__title">Our Mission</h2>
-            <p class="church-mission-card__body"><%= missionText %></p>
-          </article>
-          <% } %>
-          <% if (visionText) { %>
-          <article class="church-mission-card">
-            <span class="material-symbols-outlined church-mission-card__icon church-mission-card__icon--accent" aria-hidden="true">visibility</span>
-            <h2 class="church-mission-card__title">Our Vision</h2>
-            <p class="church-mission-card__body"><%= visionText %></p>
-          </article>
-          <% } %>
-        </div>
-        <% if (valuesText) { %>
-        <div class="church-values-section">
-          <h2 class="church-section__title church-section__title--sm">Core Values</h2>
-          <div class="church-values-list">
-            <% valuesText.split('\n').map(function (line) { return line.trim(); }).filter(Boolean).forEach(function (line, idx) { %>
-            <% var parts = line.split('|').map(function (p) { return p.trim(); }); %>
-            <% var valueTitle = parts[0] || line; %>
-            <% var valueBody = parts[1] || ''; %>
-            <article class="church-value-row">
-              <span class="church-value-row__icon material-symbols-outlined" aria-hidden="true"><%= ['favorite', 'groups', 'auto_stories', 'volunteer_activism'][idx % 4] %></span>
-              <div>
-                <h3 class="church-value-row__title"><%= valueTitle %></h3>
-                <% if (valueBody) { %><p class="church-value-row__body"><%= valueBody %></p><% } %>
-              </div>
-            </article>
-            <% }); %>
-          </div>
-        </div>
-        <% } %>
-        <% if (address || locationText) { %>
-        <div class="church-location-card">
-          <h2 class="church-section__title church-section__title--sm">Find Us</h2>
-          <div class="church-location-card__map" aria-hidden="true">
-            <span class="church-location-card__pin material-symbols-outlined">location_on</span>
-          </div>
-          <div class="church-location-card__body">
-            <h3 class="church-location-card__name"><%= churchName %></h3>
-            <p class="church-location-card__address"><%= address || locationText %></p>
-            <% if (contactPhone) { %>
-            <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="tel:<%= contactPhone %>">Get Directions</a>
-            <% } %>
-          </div>
-        </div>
-        <% } %>
+<%
+  var storyBody = aboutBody || ('Rooted in the vibrant community of ' + churchName + ', we began as a small gathering of believers with a deep desire to share Christ\'s love.');
+  var missionBody = missionText || 'To make disciples of Jesus Christ who love God, love people, and serve the community with compassionate hearts and structured excellence.';
+  var visionBody = visionText || ('A transformed community where every person experiences the grace of God and the fellowship of a caring church family.');
+  var findAddress = address || locationText || 'Plot 452, Lusaka Road, Kafue, Zambia';
+  var valueRows = [];
+  if (valuesText) {
+    valuesText.split('\n').map(function (line) { return line.trim(); }).filter(Boolean).forEach(function (line) {
+      var parts = line.split('|').map(function (p) { return p.trim(); });
+      valueRows.push({ title: parts[0] || line, body: parts[1] || '' });
+    });
+  }
+  if (valueRows.length === 0) {
+    valueRows = [
+      { title: 'Structured Compassion', body: 'We combine reliable organization with pastoral warmth.' },
+      { title: 'Community First', body: 'We believe in being a hub for local connection and support.' },
+      { title: 'Biblical Integrity', body: 'Our foundation is built on the timeless truths of Scripture.' }
+    ];
+  }
+  var desktopValues = [
+    { icon: 'menu_book', title: 'Biblical Authority', body: 'The Word of God is our ultimate guide in all matters of life and practice.' },
+    { icon: 'diversity_3', title: 'Radical Hospitality', body: 'We believe in creating a space where everyone feels seen, heard, and loved.' },
+    { icon: 'volunteer_activism', title: 'Sacrificial Service', body: 'Following Christ\'s example, we serve our community without expecting anything in return.' },
+    { icon: 'auto_awesome', title: 'Spiritual Growth', body: 'We are committed to lifelong discipleship and constant renewal of the mind.' }
+  ];
+  var mobileValueIcons = ['favorite', 'groups', 'auto_stories', 'volunteer_activism'];
+%>
+
+<%# —— Mobile layout (02-public-about-mobile) —— %>
+<section class="church-about-mobile-hero home-mobile-design church-page-hero" aria-label="About hero">
+  <div class="church-about-mobile-hero__media" aria-hidden="true">
+    <img src="/church/images/about/about-mobile-hero.jpg" alt="" width="286" height="512"/>
+  </div>
+  <div class="church-about-mobile-hero__content">
+    <h1 class="church-page-hero__title"><%= aboutTitle || 'About Us' %></h1>
+    <p class="church-page-hero__subtitle">Discover the heart of <%= churchName %>.</p>
+  </div>
+</section>
+
+<section class="church-about-mobile home-mobile-design">
+  <div class="church-about-mobile__inner">
+    <article class="church-content-card">
+      <div class="church-content-card__head">
+        <span class="church-content-card__icon" aria-hidden="true"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">history_edu</span></span>
+        <h2 class="church-content-card__title">Our Story</h2>
       </div>
-    </section>
+      <p class="church-content-card__body"><%= storyBody %></p>
+    </article>
+
+    <div class="church-mission-grid church-mission-grid--mobile">
+      <article class="church-mission-card church-mission-card--primary">
+        <span class="material-symbols-outlined church-mission-card__icon" aria-hidden="true">rocket_launch</span>
+        <h2 class="church-mission-card__title">Our Mission</h2>
+        <p class="church-mission-card__body"><%= missionBody %></p>
+      </article>
+      <article class="church-mission-card">
+        <span class="material-symbols-outlined church-mission-card__icon church-mission-card__icon--accent" aria-hidden="true">visibility</span>
+        <h2 class="church-mission-card__title">Our Vision</h2>
+        <p class="church-mission-card__body"><%= visionBody %></p>
+      </article>
+    </div>
+
+    <div class="church-values-section">
+      <h2 class="church-section__title church-section__title--sm">Core Values</h2>
+      <div class="church-values-list">
+        <% valueRows.forEach(function (row, idx) { %>
+        <article class="church-value-row">
+          <span class="church-value-row__icon material-symbols-outlined" style="font-variation-settings: 'FILL' 1;" aria-hidden="true"><%= mobileValueIcons[idx % mobileValueIcons.length] %></span>
+          <div>
+            <h3 class="church-value-row__title"><%= row.title %></h3>
+            <% if (row.body) { %><p class="church-value-row__body"><%= row.body %></p><% } %>
+          </div>
+        </article>
+        <% }); %>
+      </div>
+    </div>
+
+    <div class="church-about-find">
+      <h2 class="church-section__title church-section__title--sm">Find Us</h2>
+      <div class="church-about-find__card">
+        <div class="church-about-find__map">
+          <img src="/church/images/about/about-map.jpg" alt="Map of church location" width="512" height="279"/>
+          <span class="church-about-find__pin material-symbols-outlined" aria-hidden="true">location_on</span>
+        </div>
+        <div class="church-about-find__body">
+          <h3><%= churchName %></h3>
+          <p><%= findAddress %></p>
+          <a class="church-btn church-btn--primary church-btn--block church-btn--pill" href="<%= contactPhone ? ('tel:' + contactPhone) : '/contact' %>">
+            <span class="material-symbols-outlined" aria-hidden="true">directions</span>
+            Get Directions
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%# —— Desktop layout (02-public-about-desktop) —— %>
+<section class="church-about-desktop-hero home-desktop-design">
+  <span class="bb-saas-pill">OUR JOURNEY</span>
+  <h1 class="church-about-desktop-hero__title">Rooted in Grace,<br/><span>Growing in Community</span></h1>
+  <p class="church-about-desktop-hero__lead"><%= churchName %> is more than just a building; we are a family dedicated to sharing the transformative power of the Gospel in our community and beyond.</p>
+</section>
+
+<section class="church-about-desktop home-desktop-design">
+  <div class="church-about-bento">
+    <article class="church-about-bento__story">
+      <h2>The Church Story</h2>
+      <p><%= storyBody %></p>
+      <div class="church-about-stats">
+        <div class="church-about-stat"><strong>1988</strong><span>Year Founded</span></div>
+        <div class="church-about-stat"><strong>1,200+</strong><span>Members</span></div>
+      </div>
+    </article>
+    <article class="church-about-bento__mission">
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">rocket_launch</span>
+      <h3>Our Mission</h3>
+      <p><%= missionBody %></p>
+    </article>
+    <article class="church-about-bento__vision">
+      <h3>Our Vision</h3>
+      <p><%= visionBody %></p>
+    </article>
+    <article class="church-about-bento__branch">
+      <img src="/church/images/about/about-branch-building.jpg" alt="<%= churchName %> building" width="512" height="279"/>
+      <div class="church-about-bento__branch-meta">
+        <h3><%= churchName %></h3>
+        <p><span class="material-symbols-outlined" aria-hidden="true">location_on</span> <%= findAddress %></p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="church-about-values home-desktop-design">
+  <div class="church-about-values__inner">
+    <div class="church-about-values__head">
+      <h2>Our Values</h2>
+      <p>The non-negotiable principles that guide everything we do as a body of believers.</p>
+    </div>
+    <div class="church-about-values__grid">
+      <% desktopValues.forEach(function (v) { %>
+      <article class="church-about-value-card">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;" aria-hidden="true"><%= v.icon %></span>
+        <h4><%= v.title %></h4>
+        <p><%= v.body %></p>
+      </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<section class="church-about-culture home-desktop-design">
+  <div class="church-about-culture__inner">
+    <div class="church-about-culture__copy">
+      <h2>Service Culture</h2>
+      <p>At <%= churchName %>, Sunday is the highlight of our week, but the church lives through the week in our Growth Groups. Our service culture is defined by excellence, joy, and spiritual depth.</p>
+      <ul class="church-about-culture__checks">
+        <li>
+          <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+          <div><strong>Excellence in Worship</strong><span>We offer our best to God with joyful, Spirit-led gatherings.</span></div>
+        </li>
+        <li>
+          <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+          <div><strong>Authentic Connection</strong><span>We grow together through fellowship, prayer, and shared life.</span></div>
+        </li>
+      </ul>
+    </div>
+    <div class="church-about-culture__grid" aria-hidden="true">
+      <img src="/church/images/about/about-culture-1.jpg" alt="" width="512" height="279"/>
+      <img src="/church/images/about/about-culture-2.jpg" alt="" width="512" height="279"/>
+      <img src="/church/images/about/about-culture-3.jpg" alt="" width="512" height="279"/>
+      <img src="/church/images/about/about-culture-4.jpg" alt="" width="512" height="279"/>
+    </div>
+  </div>
+</section>
+
+<section class="church-about-cta home-desktop-design">
+  <h2>Want to learn more?</h2>
+  <p>Whether you have questions about faith or want to find a place to serve, we'd love to connect with you.</p>
+  <div class="church-about-cta__actions">
+    <a class="church-btn church-btn--lg bb-saas-btn--pill church-about-cta__primary" href="/contact">Visit Us Sunday</a>
+    <a class="church-btn church-btn--lg bb-saas-btn--pill church-about-cta__outline" href="/contact">Contact Us</a>
+  </div>
+</section>
 <%- include('../partials/public_shell_end') %>

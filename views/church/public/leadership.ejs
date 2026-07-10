@@ -1,56 +1,175 @@
 <%- include('../partials/public_shell_start') %>
-    <section class="church-section church-section--page church-section--content">
-      <div class="church-section__inner">
-        <header class="church-page-intro">
-          <h1 class="church-section__title">Our Leadership</h1>
-          <p class="church-section__subtitle">Guided by faith, serving with love. Meet the heart of <%= churchName %>.</p>
-        </header>
-        <% if (leadership.pastor && leadership.pastor.name) { %>
-        <% var pastorInitials = leadership.pastor.name.split(' ').filter(Boolean).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase(); %>
-        <article class="church-leader-feature">
-          <div class="church-leader-feature__media">
-            <div class="church-leader-avatar church-leader-avatar--lg" aria-hidden="true"><%= pastorInitials %></div>
-          </div>
-          <div class="church-leader-feature__body">
-            <span class="church-leader-feature__badge"><%= leadership.pastor.title || 'Senior Pastor' %></span>
-            <h2 class="church-leader-feature__name"><%= leadership.pastor.name %></h2>
-            <% if (leadership.pastor.bio) { %>
-            <p class="church-leader-feature__bio"><%= leadership.pastor.bio %></p>
-            <% } %>
-          </div>
-        </article>
-        <% } %>
-        <div class="church-leader-grid">
-          <% if (leadership.assistant_pastor && leadership.assistant_pastor.name) { %>
-          <% var apInitials = leadership.assistant_pastor.name.split(' ').filter(Boolean).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase(); %>
-          <article class="church-leader-row">
-            <div class="church-leader-avatar" aria-hidden="true"><%= apInitials %></div>
-            <div class="church-leader-row__body">
-              <h3 class="church-leader-row__name"><%= leadership.assistant_pastor.name %></h3>
-              <p class="church-leader-row__role">Assistant Pastor</p>
-            </div>
-          </article>
-          <% } %>
-          <% if (leadership.elders && leadership.elders.length > 0) { %>
-          <% leadership.elders.forEach(function (name) { %>
-          <% var elderInitials = String(name).split(' ').filter(Boolean).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase(); %>
-          <article class="church-leader-row">
-            <div class="church-leader-avatar" aria-hidden="true"><%= elderInitials %></div>
-            <div class="church-leader-row__body">
-              <h3 class="church-leader-row__name"><%= name %></h3>
-              <p class="church-leader-row__role">Elder</p>
-            </div>
-          </article>
-          <% }); %>
-          <% } %>
+<%
+  function initials(name) {
+    return String(name || '').split(' ').filter(Boolean).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase() || '?';
+  }
+  var pastor = (leadership && leadership.pastor) || {};
+  var assistant = (leadership && leadership.assistant_pastor) || {};
+  var elders = (leadership && leadership.elders) || [];
+  var hasPastor = !!(pastor && pastor.name);
+  var hasAssistant = !!(assistant && assistant.name);
+  var hasElders = elders && elders.length > 0;
+  var hasAny = hasPastor || hasAssistant || hasElders;
+
+  var displayPastor = hasPastor ? pastor : {
+    name: 'Dr. Samuel Chiluba',
+    title: 'Senior Pastor',
+    bio: 'Serving as our Lead Pastor, bringing a vision of community growth and spiritual deepening through inclusive outreach and dedicated teaching.'
+  };
+  var displayAssistant = hasAssistant ? assistant : {
+    name: 'Rev. Martha Phiri',
+    bio: 'Focusing on congregational care and discipleship programs.'
+  };
+  var displayElders = hasElders ? elders.map(function (name, idx) {
+    return { name: name, role: ['Board Secretary', 'Missions Oversight', 'Finance & Stewardship', 'Community Care'][idx % 4] };
+  }) : [
+    { name: 'John Mwansa', role: 'Board Secretary' },
+    { name: 'Grace Lungu', role: 'Missions Oversight' },
+    { name: 'Bwalya Tembo', role: 'Finance & Stewardship' },
+    { name: 'Mary Katongo', role: 'Community Care' }
+  ];
+  var ministryLeaders = [
+    { name: 'Isaac Banda', role: 'Youth Ministry', photo: '/church/images/leadership/ministry-1.jpg', mphoto: '/church/images/leadership/ministry-m1.jpg', action: 'Office Hours' },
+    { name: 'Sarah Mulenga', role: 'Worship & Arts', photo: '/church/images/leadership/ministry-2.jpg', mphoto: '/church/images/leadership/ministry-m2.jpg', action: 'Playlists' },
+    { name: 'Esther Zimba', role: "Children's Church", photo: '/church/images/leadership/ministry-3.jpg', mphoto: '/church/images/leadership/ministry-m3.jpg', action: 'Curriculum' }
+  ];
+  var elderPhotos = [
+    '/church/images/leadership/elder-1.jpg',
+    '/church/images/leadership/elder-2.jpg',
+    '/church/images/leadership/elder-3.jpg',
+    '/church/images/leadership/elder-4.jpg'
+  ];
+%>
+
+<section class="church-leadership-page">
+  <header class="church-page-intro church-leadership-intro">
+    <h1 class="church-section__title">Our Leadership</h1>
+    <p class="church-section__subtitle">Guided by faith, serving with love. Meet the heart of <%= churchName %>.</p>
+  </header>
+
+  <%# —— Mobile featured pastor (03-public-leadership-mobile) —— %>
+  <article class="church-leader-mobile-feature home-mobile-design">
+    <div class="church-leader-mobile-feature__media">
+      <img src="/church/images/leadership/pastor-mobile.jpg" alt="<%= displayPastor.name %>" width="286" height="512"/>
+      <div class="church-leader-mobile-feature__overlay">
+        <span class="church-leader-feature__badge"><%= displayPastor.title || 'Senior Pastor' %></span>
+        <h2><%= displayPastor.name %></h2>
+        <div class="church-leader-mobile-feature__actions">
+          <a class="church-btn church-btn--outline church-btn--pill" href="/contact"><span class="material-symbols-outlined" aria-hidden="true">call</span> Call</a>
+          <a class="church-btn church-btn--primary church-btn--pill" href="/contact"><span class="material-symbols-outlined" aria-hidden="true">mail</span> Email</a>
         </div>
-        <% if (!(leadership.pastor && leadership.pastor.name) && !(leadership.elders && leadership.elders.length) && !(leadership.assistant_pastor && leadership.assistant_pastor.name)) { %>
-        <div class="church-empty-state">
-          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">diversity_3</span>
-          <p class="church-empty-state__title">Leadership information coming soon</p>
-          <p class="church-empty-state__body">Profiles for pastors and ministry leaders will be posted here.</p>
-        </div>
-        <% } %>
       </div>
-    </section>
+    </div>
+  </article>
+
+  <%# —— Desktop featured pastors (03-public-leadership-desktop) —— %>
+  <div class="church-leader-desktop-feature home-desktop-design">
+    <article class="church-leader-feature church-leader-feature--photo">
+      <div class="church-leader-feature__media">
+        <img src="/church/images/leadership/pastor-desktop.jpg" alt="<%= displayPastor.name %>" width="512" height="279"/>
+        <span class="church-leader-feature__badge"><%= displayPastor.title || 'Senior Pastor' %></span>
+      </div>
+      <div class="church-leader-feature__body">
+        <h2 class="church-leader-feature__name"><%= displayPastor.name %></h2>
+        <% if (displayPastor.bio) { %>
+        <p class="church-leader-feature__bio"><%= displayPastor.bio %></p>
+        <% } %>
+        <a class="church-btn church-btn--ghost church-leader-contact" href="/contact">
+          <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+          Contact <%= (displayPastor.name || '').replace(/^(Dr\.|Rev\.|Pastor)\s+/i, '').split(' ')[0] || 'Pastor' %>
+        </a>
+      </div>
+    </article>
+    <article class="church-leader-assistant">
+      <div class="church-leader-assistant__media">
+        <img src="/church/images/leadership/assistant-desktop.jpg" alt="<%= displayAssistant.name %>" width="512" height="279"/>
+        <span class="church-leader-assistant__badge">Assistant Pastor</span>
+      </div>
+      <div class="church-leader-assistant__body">
+        <h3><%= displayAssistant.name %></h3>
+        <p><%= displayAssistant.bio || 'Focusing on congregational care and discipleship programs.' %></p>
+        <a class="church-leader-assistant__link" href="/contact">View Bio <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+      </div>
+    </article>
+  </div>
+
+  <%# —— Elders (desktop primary; also shown on mobile as compact rows) —— %>
+  <section class="church-elders home-desktop-design">
+    <div class="church-elders__head">
+      <h2><span class="material-symbols-outlined" aria-hidden="true">groups</span> Our Elders</h2>
+      <span>Wisdom and Governance</span>
+    </div>
+    <div class="church-elders__grid">
+      <% displayElders.slice(0, 4).forEach(function (elder, idx) { %>
+      <article class="church-elder-card">
+        <div class="church-elder-card__photo">
+          <img src="<%= elderPhotos[idx % elderPhotos.length] %>" alt="<%= elder.name || elder %>" width="512" height="286"/>
+        </div>
+        <h4><%= elder.name || elder %></h4>
+        <p><%= elder.role || 'Elder' %></p>
+        <a class="church-elder-card__mail" href="/contact" aria-label="Contact <%= elder.name || elder %>">
+          <span class="material-symbols-outlined" aria-hidden="true">contact_mail</span>
+        </a>
+      </article>
+      <% }); %>
+    </div>
+  </section>
+
+  <%# —— Ministry leaders —— %>
+  <section class="church-ministry-leaders">
+    <div class="church-ministry-leaders__head">
+      <h2><span class="material-symbols-outlined" aria-hidden="true">diversity_3</span> Ministry Leaders</h2>
+    </div>
+
+    <div class="church-ministry-leaders__mobile home-mobile-design">
+      <% ministryLeaders.forEach(function (m) { %>
+      <article class="church-ministry-leader-row">
+        <img src="<%= m.mphoto %>" alt="<%= m.name %>" width="512" height="279"/>
+        <div class="church-ministry-leader-row__body">
+          <h3><%= m.name %></h3>
+          <p><%= m.role %></p>
+          <div class="church-ministry-leader-row__actions">
+            <a href="/contact"><span class="material-symbols-outlined" aria-hidden="true">chat_bubble</span> Message</a>
+            <a href="/contact"><span class="material-symbols-outlined" aria-hidden="true">info</span> <%= m.action %></a>
+          </div>
+        </div>
+      </article>
+      <% }); %>
+    </div>
+
+    <div class="church-ministry-leaders__desktop home-desktop-design">
+      <% ministryLeaders.forEach(function (m) { %>
+      <article class="church-ministry-leader-card">
+        <img src="<%= m.photo %>" alt="<%= m.name %>" width="512" height="286"/>
+        <div>
+          <h3><%= m.name %></h3>
+          <p><%= m.role %></p>
+          <a href="/contact"><span class="material-symbols-outlined" aria-hidden="true">mail</span> Connect</a>
+        </div>
+      </article>
+      <% }); %>
+    </div>
+  </section>
+
+  <%# —— Mobile administration tiles —— %>
+  <section class="church-admin-tiles home-mobile-design">
+    <h2>Administration</h2>
+    <div class="church-admin-tiles__grid">
+      <article class="church-admin-tile church-admin-tile--light">
+        <span class="material-symbols-outlined" aria-hidden="true">account_balance</span>
+        <h3>Finance Office</h3>
+        <p>Treasury &amp; Giving</p>
+      </article>
+      <article class="church-admin-tile church-admin-tile--dark">
+        <span class="material-symbols-outlined" aria-hidden="true">description</span>
+        <h3>Secretariat</h3>
+        <p>Bookings &amp; Comms</p>
+      </article>
+    </div>
+  </section>
+
+  <% if (!hasAny) { %>
+  <p class="church-leadership-fallback-note home-desktop-design">Showing sample leadership layout. Publish leadership details in the website editor to replace demo names.</p>
+  <% } %>
+</section>
 <%- include('../partials/public_shell_end') %>

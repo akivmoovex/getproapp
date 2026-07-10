@@ -58,8 +58,8 @@ function makePlatformApp() {
 
 const branchPublicRoutes = [
   { path: "/", markers: ["church-menu-btn", "Powered by GetPro"] },
-  { path: "/about", markers: ["church-page-hero", "Our Story", "Powered by GetPro"] },
-  { path: "/leadership", markers: ["Our Leadership", "church-page-intro", "Powered by GetPro"] },
+  { path: "/about", markers: ["Our Story", "Our Mission", "Our Vision", "Core Values", "Find Us", "Powered by GetPro"] },
+  { path: "/leadership", markers: ["Our Leadership", "Ministry Leaders", "Powered by GetPro"] },
   { path: "/contact", markers: ["church-contact-layout", "Get in Touch", "Powered by GetPro"] },
   { path: "/events", markers: ["Events &amp; Calendar", "church-event-row", "Powered by GetPro"] },
   { path: "/sermons", markers: ["church-sermon-grid", "church-sermon-card", "Powered by GetPro"] },
@@ -79,7 +79,25 @@ const HOMEPAGE_ASSETS = [
   "mobile-ministry-worship.jpg",
 ];
 
-test("church public shells reference church.css?v=34", () => {
+const ABOUT_ASSETS = [
+  "about-mobile-hero.jpg",
+  "about-map.jpg",
+  "about-branch-building.jpg",
+  "about-culture-1.jpg",
+  "about-culture-2.jpg",
+  "about-culture-3.jpg",
+  "about-culture-4.jpg",
+];
+
+const LEADERSHIP_ASSETS = [
+  "pastor-desktop.jpg",
+  "pastor-mobile.jpg",
+  "assistant-desktop.jpg",
+  "elder-1.jpg",
+  "ministry-1.jpg",
+];
+
+test("church public shells reference church.css?v=35", () => {
   const publicShells = [
     "views/church/partials/public_shell_start.ejs",
     "views/church/partials/auth_shell_start.ejs",
@@ -89,7 +107,7 @@ test("church public shells reference church.css?v=34", () => {
   ];
   for (const rel of publicShells) {
     const text = fs.readFileSync(path.join(__dirname, "..", rel), "utf8");
-    assert.match(text, /church\.css\?v=34/, `${rel} should load church.css?v=34`);
+    assert.match(text, /church\.css\?v=35/, `${rel} should load church.css?v=35`);
   }
 });
 
@@ -100,6 +118,21 @@ test("homepage Stitch assets exist on disk", () => {
   }
 });
 
+test("about and leadership Stitch assets exist on disk", () => {
+  for (const file of ABOUT_ASSETS) {
+    assert.ok(
+      fs.existsSync(path.join(__dirname, "../public/church/images/about", file)),
+      `missing about asset ${file}`
+    );
+  }
+  for (const file of LEADERSHIP_ASSETS) {
+    assert.ok(
+      fs.existsSync(path.join(__dirname, "../public/church/images/leadership", file)),
+      `missing leadership asset ${file}`
+    );
+  }
+});
+
 test("homepage CSS references ministry tile assets", () => {
   const css = fs.readFileSync(path.join(__dirname, "../public/church/church.css"), "utf8");
   assert.match(css, /mobile-ministry-children\.jpg/);
@@ -107,11 +140,11 @@ test("homepage CSS references ministry tile assets", () => {
   assert.match(css, /mobile-ministry-worship\.jpg/);
 });
 
-test("BlessBoard apex homepage includes updated CSS bundle v34", async () => {
+test("BlessBoard apex homepage includes updated CSS bundle v35", async () => {
   const app = makeVerticalApexApp();
   const res = await request(app).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=34/);
+  assert.match(res.text, /church\.css\?v=35/);
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
   assert.match(res.text, /Powered by GetPro/);
 });
@@ -208,7 +241,7 @@ test("branch admin shell includes mobile drawer and topbar markup", () => {
   assert.match(shell, /church-branch-menu-btn/);
   assert.match(shell, /church-branch-drawer/);
   assert.match(shell, /church-branch-mobile-topbar/);
-  assert.match(shell, /church\.css\?v=34/);
+  assert.match(shell, /church\.css\?v=35/);
 });
 
 test("platform host does not expose branch-only public events route", async () => {
@@ -223,4 +256,82 @@ test("getproapp.org / platform host remains unchanged for church homepage", asyn
   assert.equal(res.status, 404);
   assert.doesNotMatch(res.text, /Powerful Tools for Modern Ministry/);
   assert.doesNotMatch(res.text, /bb-saas-hero/);
+});
+
+test("about page includes Stitch section markers and assets", async () => {
+  const app = makeBranchApp();
+  const res = await request(app).get("/about");
+  assert.equal(res.status, 200);
+  assert.match(res.text, /church\.css\?v=35/);
+  assert.match(res.text, /Our Story/);
+  assert.match(res.text, /Our Mission/);
+  assert.match(res.text, /Our Vision/);
+  assert.match(res.text, /Core Values/);
+  assert.match(res.text, /Find Us/);
+  assert.match(res.text, /OUR JOURNEY/);
+  assert.match(res.text, /Rooted in Grace/);
+  assert.match(res.text, /The Church Story/);
+  assert.match(res.text, /Our Values/);
+  assert.match(res.text, /Service Culture/);
+  assert.match(res.text, /Want to learn more/);
+  assert.match(res.text, /about-mobile-hero\.jpg/);
+  assert.match(res.text, /about-branch-building\.jpg/);
+  assert.match(res.text, /about-culture-1\.jpg/);
+  assert.match(res.text, /href="\/about"/);
+  assert.match(res.text, /href="\/leadership"/);
+  assert.doesNotMatch(res.text, /GetPro Church/);
+});
+
+test("leadership page includes Stitch section markers and assets", async () => {
+  const app = makeBranchApp();
+  const res = await request(app).get("/leadership");
+  assert.equal(res.status, 200);
+  assert.match(res.text, /church\.css\?v=35/);
+  assert.match(res.text, /Our Leadership/);
+  assert.match(res.text, /Ministry Leaders/);
+  assert.match(res.text, /Our Elders/);
+  assert.match(res.text, /Administration/);
+  assert.match(res.text, /pastor-mobile\.jpg/);
+  assert.match(res.text, /pastor-desktop\.jpg/);
+  assert.match(res.text, /assistant-desktop\.jpg/);
+  assert.match(res.text, /href="\/about"/);
+  assert.match(res.text, /href="\/leadership"/);
+  assert.doesNotMatch(res.text, /GetPro Church/);
+});
+
+test("public nav and mobile drawer include About and Leadership links", async () => {
+  const shell = fs.readFileSync(
+    path.join(__dirname, "../views/church/partials/public_shell_start.ejs"),
+    "utf8"
+  );
+  assert.match(shell, /href="\/about"/);
+  assert.match(shell, /href="\/leadership"/);
+  assert.match(shell, />About</);
+  assert.match(shell, />Leadership</);
+  assert.match(shell, /church-mobile-drawer/);
+  const footer = fs.readFileSync(
+    path.join(__dirname, "../views/church/partials/public_shell_end.ejs"),
+    "utf8"
+  );
+  assert.match(footer, /href="\/about"/);
+  assert.match(footer, /href="\/contact"/);
+  assert.doesNotMatch(footer, /href="\/broken/);
+});
+
+test("all church shells reference church.css?v=35", () => {
+  const shells = [
+    "views/church/partials/public_shell_start.ejs",
+    "views/church/partials/auth_shell_start.ejs",
+    "views/church/partials/member_shell_start.ejs",
+    "views/church/partials/leader_shell_start.ejs",
+    "views/church/partials/hq_shell_start.ejs",
+    "views/church/partials/branch_admin_shell_start.ejs",
+    "views/church/public/not_found.ejs",
+    "views/church/public/unavailable.ejs",
+    "views/church/public/service_unavailable.ejs",
+  ];
+  for (const rel of shells) {
+    const text = fs.readFileSync(path.join(__dirname, "..", rel), "utf8");
+    assert.match(text, /church\.css\?v=35/, `${rel} should load church.css?v=35`);
+  }
 });
