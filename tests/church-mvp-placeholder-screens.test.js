@@ -60,9 +60,9 @@ test("/sermons loads polished resource cards on branch church host", async () =>
   const app = makeApp(activeBranchCtx);
   const res = await request(app).get("/sermons");
   assert.equal(res.status, 200);
-  assert.match(res.text, /Sermons &amp; Resources|Sermons & Resources/);
-  assert.match(res.text, /church-sermon-card/);
-  assert.match(res.text, /Back to homepage/i);
+  assert.match(res.text, /Sermons &amp; Resources|Sermons & Resources|Media Library/);
+  assert.match(res.text, /church-sermon-card|LATEST SERMON|Study Resources/);
+  assert.match(res.text, /church\.css\?v=36|Powered by GetPro/);
 });
 
 test(

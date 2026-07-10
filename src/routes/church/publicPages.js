@@ -34,26 +34,86 @@ function formatPublicEventWhen(ev) {
   return [dateStr, timeStr, loc].filter(Boolean).join(" · ");
 }
 
+function mapPublicEventCard(ev, index) {
+  const date = ev.event_date instanceof Date ? ev.event_date : new Date(ev.event_date);
+  const validDate = !Number.isNaN(date.getTime());
+  const start = ev.start_time || ev.event_time || "";
+  const end = ev.end_time || "";
+  const timeStr = start && end ? `${start} – ${end}` : start || end || "";
+  const loc = ev.location || ev.location_text || "";
+  const category = String(ev.category || ev.ministry_name || "Community").trim() || "Community";
+  return {
+    title: ev.title,
+    when: formatPublicEventWhen(ev),
+    description: ev.description,
+    day: validDate ? String(date.getDate()).padStart(2, "0") : "—",
+    month: validDate ? date.toLocaleDateString("en-GB", { month: "short" }).toUpperCase() : "SOON",
+    time: timeStr || "See details",
+    location: loc || "Church campus",
+    category,
+    image: `/church/images/events/event-${(index % 4) + 1}.jpg`,
+    featured: index === 0,
+  };
+}
+
+function mapDemoEventCard(item, index) {
+  const parts = String(item.when || "").split("·").map((p) => p.trim());
+  const datePart = parts[0] || "";
+  const dayMatch = datePart.match(/(\d{1,2})/);
+  const monthMatch = datePart.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/i);
+  return {
+    title: item.title,
+    when: item.when,
+    description: item.description || "",
+    day: dayMatch ? dayMatch[1].padStart(2, "0") : String(index + 1).padStart(2, "0"),
+    month: monthMatch ? monthMatch[1].toUpperCase() : "SOON",
+    time: parts[1] || "See details",
+    location: parts[2] || "Church campus",
+    category: index === 0 ? "Worship" : index === 1 ? "Community" : "Youth",
+    image: `/church/images/events/event-${(index % 4) + 1}.jpg`,
+    featured: index === 0,
+  };
+}
+
 function fallbackSermonSamples(churchName) {
   return [
     {
-      title: "Sermons coming soon",
+      title: "The Sovereign Grace of God",
+      speaker: "Pastor John Phiri",
+      date: "Oct 27, 2024",
+      category: "Faith Foundations",
+      icon: "menu_book",
+      description: "Understanding our divine calling in a modern world and how to remain steadfast in faith.",
+      media_url: null,
+    },
+    {
+      title: "Foundations of Community",
+      speaker: "Elder Mutale",
+      date: "Oct 20, 2024",
+      category: "Community Life",
+      icon: "groups",
+      description: "Building a church family that loves, serves, and grows together.",
+      media_url: null,
+    },
+    {
+      title: "Walking in Purpose",
       speaker: churchName,
-      date: "",
-      category: "Announcement",
-      icon: "info",
-      description: "Published sermons will appear here when branch leadership adds them.",
+      date: "Oct 13, 2024",
+      category: "The Book of Romans",
+      icon: "auto_stories",
+      description: "Living out the gospel with clarity and courage.",
       media_url: null,
     },
   ];
 }
 
 function applyDemoEventFallbacks(locals) {
-  locals.upcomingEvents = [
+  const demo = [
     { title: "Annual Praise Night", when: "Nov 24 · 18:00 · Main Hall" },
     { title: "Community Food Drive", when: "Dec 02 · 09:00 · Outreach Center" },
     { title: "Mid-week Bible Study", when: "Wednesday · 18:00 · Main Hall", description: "Prayer and study." },
   ];
+  locals.upcomingEvents = demo.map(mapDemoEventCard);
   locals.hasDbEvents = false;
 }
 
@@ -136,11 +196,7 @@ async function loadBranchPublicLocals(req, activePage) {
       limit: activePage === "events" ? 24 : 6,
     });
     if (publicEvents.length > 0) {
-      locals.upcomingEvents = publicEvents.map((ev) => ({
-        title: ev.title,
-        when: formatPublicEventWhen(ev),
-        description: ev.description,
-      }));
+      locals.upcomingEvents = publicEvents.map(mapPublicEventCard);
       locals.hasDbEvents = true;
     } else {
       applyDemoEventFallbacks(locals);

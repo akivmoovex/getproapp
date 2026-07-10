@@ -1,85 +1,194 @@
 <%- include('../partials/public_shell_start') %>
-    <%- include('../partials/public_page_hero', { heroTitle: 'Get in Touch', heroSubtitle: 'We would love to hear from you.' }) %>
-    <section class="church-section church-section--page church-section--content">
-      <div class="church-section__inner">
-        <% if (contactSubmitted) { %>
-        <div class="church-alert church-alert--success church-contact-alert" role="status">
-          Thank you for your message. The church office will respond as soon as possible.
-        </div>
-        <% } %>
-        <% if (contactError) { %>
-        <div class="church-alert church-alert--error church-contact-alert" role="alert"><%= contactError %></div>
-        <% } %>
-        <div class="church-contact-quick">
-          <% if (contactPhone) { %>
-          <a class="church-contact-quick__btn church-contact-quick__btn--primary" href="tel:<%= contactPhone %>">
-            <span class="material-symbols-outlined" aria-hidden="true">call</span>
-            <span>Call Us</span>
-          </a>
-          <% } %>
-          <% if (contactEmail) { %>
-          <a class="church-contact-quick__btn" href="mailto:<%= contactEmail %>">
-            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
-            <span>Email Us</span>
-          </a>
-          <% } %>
-        </div>
-        <div class="church-contact-layout">
-          <div class="church-contact-info">
-            <% if (address || locationText) { %>
-            <div class="church-location-card church-location-card--compact">
-              <div class="church-location-card__map church-location-card__map--short" aria-hidden="true">
-                <span class="church-location-card__pin material-symbols-outlined">location_on</span>
-              </div>
-              <div class="church-location-card__body">
-                <h3 class="church-location-card__name"><%= churchName %></h3>
-                <p class="church-location-card__address"><%= address || locationText %></p>
-              </div>
-            </div>
-            <% } %>
-            <% if (officeHours) { %>
-            <article class="church-content-card">
-              <div class="church-content-card__head">
-                <span class="church-content-card__icon" aria-hidden="true"><span class="material-symbols-outlined">schedule</span></span>
-                <h2 class="church-content-card__title">Office Hours</h2>
-              </div>
-              <p class="church-content-card__body church-card__body--pre"><%= officeHours %></p>
-            </article>
-            <% } %>
-          </div>
-          <aside class="church-contact-form-panel">
-            <h2 class="church-contact-form-panel__title">Send a Message</h2>
-            <form class="church-form" action="/contact" method="post">
-              <div class="church-field">
-                <label class="church-label" for="full_name">Full Name</label>
-                <input class="church-input" id="full_name" name="full_name" type="text" required placeholder="Your name" value="<%= (contactForm && contactForm.full_name) || '' %>"/>
-              </div>
-              <div class="church-field">
-                <label class="church-label" for="email">Email Address</label>
-                <input class="church-input" id="email" name="email" type="email" placeholder="example@email.com" value="<%= (contactForm && contactForm.email) || '' %>"/>
-              </div>
-              <div class="church-field">
-                <label class="church-label" for="phone">Phone (optional if email provided)</label>
-                <input class="church-input" id="phone" name="phone" type="tel" placeholder="+260 ..." value="<%= (contactForm && contactForm.phone) || '' %>"/>
-              </div>
-              <div class="church-field">
-                <label class="church-label" for="message">Message</label>
-                <textarea class="church-input church-input--textarea" id="message" name="message" rows="4" required placeholder="How can we help you?"><%= (contactForm && contactForm.message) || '' %></textarea>
-              </div>
-              <button class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" type="submit">
-                <span class="material-symbols-outlined" aria-hidden="true">send</span>
-                Send Message
-              </button>
-            </form>
-          </aside>
-        </div>
-        <% if (!contactPhone && !contactEmail && !address && !locationText) { %>
-        <div class="church-empty-state">
-          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">mail</span>
-          <p class="church-empty-state__title">Contact details coming soon</p>
-          <p class="church-empty-state__body">Phone, email, and office hours will be posted here.</p>
-        </div>
-        <% } %>
+<%
+  var findAddress = address || locationText || 'Plot 452, Main Street, Kafue, Zambia';
+  var hoursText = officeHours || 'Mon - Fri: 08:00 - 17:00\nSaturday: 09:00 - 12:00\nSunday: Services Only';
+  var hoursLines = String(hoursText).split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+  var phonePrimary = contactPhone || '';
+  var emailPrimary = contactEmail || '';
+%>
+
+<%# —— Mobile (08-public-contact-mobile) —— %>
+<section class="church-contact-mobile home-mobile-design">
+  <header class="church-contact-mobile__intro">
+    <h1>Get in Touch</h1>
+    <p>We would love to hear from you. Reach out for prayer, information, or just to say hello.</p>
+  </header>
+
+  <% if (contactSubmitted) { %>
+  <div class="church-alert church-alert--success church-contact-alert" role="status">
+    Thank you for your message. The church office will respond as soon as possible.
+  </div>
+  <% } %>
+  <% if (contactError) { %>
+  <div class="church-alert church-alert--error church-contact-alert" role="alert"><%= contactError %></div>
+  <% } %>
+
+  <div class="church-contact-quick">
+    <a class="church-contact-quick__btn church-contact-quick__btn--primary" href="<%= phonePrimary ? ('tel:' + phonePrimary) : '/contact' %>">
+      <span class="material-symbols-outlined" aria-hidden="true">call</span>
+      <span>Call Us</span>
+    </a>
+    <a class="church-contact-quick__btn" href="<%= emailPrimary ? ('mailto:' + emailPrimary) : '/contact' %>">
+      <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+      <span>Email Us</span>
+    </a>
+  </div>
+
+  <div class="church-contact-mobile-map">
+    <img src="/church/images/contact/contact-map-mobile.jpg" alt="Map of <%= churchName %>" width="512" height="279"/>
+    <span class="church-contact-mobile-map__label"><%= findAddress.split(',')[0] %>, Kafue Central</span>
+  </div>
+
+  <article class="church-contact-hours-card">
+    <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+    <div>
+      <h2>Office Hours</h2>
+      <ul>
+        <% hoursLines.forEach(function (line) {
+          var parts = line.split(':');
+          var label = parts[0] ? parts[0].trim() : line;
+          var value = parts.length > 1 ? parts.slice(1).join(':').trim() : '';
+        %>
+        <li><span><%= label %></span><strong><%= value || line %></strong></li>
+        <% }); %>
+      </ul>
+    </div>
+  </article>
+
+  <div class="church-contact-form-panel church-contact-form-panel--mobile">
+    <h2 class="church-contact-form-panel__title">Send a Message</h2>
+    <form class="church-form" action="/contact" method="post">
+      <div class="church-field">
+        <label class="church-label" for="m_full_name">Full Name</label>
+        <input class="church-input" id="m_full_name" name="full_name" type="text" required placeholder="Your Name" value="<%= (contactForm && contactForm.full_name) || '' %>"/>
       </div>
-    </section>
+      <div class="church-field">
+        <label class="church-label" for="m_email">Email Address</label>
+        <input class="church-input" id="m_email" name="email" type="email" placeholder="example@email.com" value="<%= (contactForm && contactForm.email) || '' %>"/>
+      </div>
+      <div class="church-field">
+        <label class="church-label" for="m_phone">Phone (optional if email provided)</label>
+        <input class="church-input" id="m_phone" name="phone" type="tel" placeholder="+260 ..." value="<%= (contactForm && contactForm.phone) || '' %>"/>
+      </div>
+      <div class="church-field">
+        <label class="church-label" for="m_message">Message</label>
+        <textarea class="church-input church-input--textarea" id="m_message" name="message" rows="4" required placeholder="How can we help you?"><%= (contactForm && contactForm.message) || '' %></textarea>
+      </div>
+      <button class="church-btn church-btn--primary church-btn--block church-btn--pill" type="submit">
+        <span class="material-symbols-outlined" aria-hidden="true">send</span>
+        Send Message
+      </button>
+    </form>
+  </div>
+</section>
+
+<%# —— Desktop (08-public-contact-desktop) —— %>
+<section class="church-contact-desktop home-desktop-design">
+  <header class="church-contact-desktop__hero">
+    <h1>Get in Touch with Our Family</h1>
+    <p>Whether you have a question about our ministries, need prayer support, or want to learn more about joining our community, we are here to welcome you with open arms.</p>
+  </header>
+
+  <% if (contactSubmitted) { %>
+  <div class="church-alert church-alert--success church-contact-alert" role="status">
+    Thank you for your message. The church office will respond as soon as possible.
+  </div>
+  <% } %>
+  <% if (contactError) { %>
+  <div class="church-alert church-alert--error church-contact-alert" role="alert"><%= contactError %></div>
+  <% } %>
+
+  <div class="church-contact-desktop__grid">
+    <div class="church-contact-desktop__left">
+      <article class="church-contact-info-card">
+        <h2>Contact Information</h2>
+        <ul class="church-contact-info-list">
+          <li>
+            <span class="church-contact-info-list__icon material-symbols-outlined" aria-hidden="true">location_on</span>
+            <div>
+              <strong>Our Address</strong>
+              <p><%= findAddress %></p>
+            </div>
+          </li>
+          <li>
+            <span class="church-contact-info-list__icon material-symbols-outlined" aria-hidden="true">call</span>
+            <div>
+              <strong>Phone Number</strong>
+              <p><%= phonePrimary || 'Contact the church office for phone details.' %></p>
+            </div>
+          </li>
+          <li>
+            <span class="church-contact-info-list__icon material-symbols-outlined" aria-hidden="true">mail</span>
+            <div>
+              <strong>Email Support</strong>
+              <p><%= emailPrimary || 'Contact the church office for email details.' %></p>
+            </div>
+          </li>
+          <li>
+            <span class="church-contact-info-list__icon material-symbols-outlined" aria-hidden="true">schedule</span>
+            <div>
+              <strong>Office Hours</strong>
+              <p class="church-card__body--pre"><%= hoursText %></p>
+            </div>
+          </li>
+        </ul>
+      </article>
+
+      <div class="church-contact-desktop-map">
+        <img src="/church/images/contact/contact-map-desktop.jpg" alt="Map of <%= churchName %>" width="1024" height="559"/>
+        <div class="church-contact-desktop-map__bar">
+          <span>KAFUE, ZAMBIA</span>
+          <a class="church-btn church-btn--primary church-btn--sm" href="<%= phonePrimary ? ('tel:' + phonePrimary) : '/contact' %>">Get Directions</a>
+        </div>
+      </div>
+    </div>
+
+    <aside class="church-contact-form-panel church-contact-form-panel--desktop">
+      <h2 class="church-contact-form-panel__title">Send us a Message</h2>
+      <p class="church-contact-form-panel__note">We'd love to hear from you. Fill out the form below and our team will get back to you shortly.</p>
+      <form class="church-form" action="/contact" method="post">
+        <div class="church-form-row church-form-row--2">
+          <div class="church-field">
+            <label class="church-label" for="d_full_name">Full Name</label>
+            <input class="church-input" id="d_full_name" name="full_name" type="text" required placeholder="John Doe" value="<%= (contactForm && contactForm.full_name) || '' %>"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="d_email">Email Address</label>
+            <input class="church-input" id="d_email" name="email" type="email" placeholder="john@example.com" value="<%= (contactForm && contactForm.email) || '' %>"/>
+          </div>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="d_phone">Phone (optional if email provided)</label>
+          <input class="church-input" id="d_phone" name="phone" type="tel" placeholder="+260 ..." value="<%= (contactForm && contactForm.phone) || '' %>"/>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="d_message">Your Message</label>
+          <textarea class="church-input church-input--textarea" id="d_message" name="message" rows="5" required placeholder="How can we help or pray for you today?"><%= (contactForm && contactForm.message) || '' %></textarea>
+        </div>
+        <div class="church-contact-form-panel__footer">
+          <button class="church-btn church-btn--primary" type="submit">
+            <span class="material-symbols-outlined" aria-hidden="true">send</span>
+            Send Message
+          </button>
+          <span>We typically respond within 24 business hours.</span>
+        </div>
+      </form>
+    </aside>
+  </div>
+
+  <section class="church-contact-sunday">
+    <h2>Join Us This Sunday</h2>
+    <p>Experience worship and community at our weekly services. Everyone is welcome exactly as they are.</p>
+    <div class="church-contact-sunday__cards">
+      <article>
+        <span>MORNING SERVICE</span>
+        <strong>08:30 AM - 10:30 AM</strong>
+      </article>
+      <article>
+        <span>MID-DAY SERVICE</span>
+        <strong>11:00 AM - 01:00 PM</strong>
+      </article>
+    </div>
+  </section>
+</section>
 <%- include('../partials/public_shell_end') %>

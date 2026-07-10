@@ -5,9 +5,9 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=35` (About + Leadership pixel fidelity; homepage remains v34 layout)
+**CSS bundle:** `/church/church.css?v=36` (Contact, Ministries, Events, Sermons + prior About/Leadership/homepage)
 
-**Last updated:** 2026-07-10 (About / Leadership visual pass + link confirmation)
+**Last updated:** 2026-07-10 (Contact / Ministries / Events / Sermons visual pass)
 
 ### Homepage v34 status (unchanged layout; CSS cache bumped to v35)
 
@@ -46,7 +46,23 @@ Regression guards live in `tests/church-visual-design.test.js` (CSS v35 shells, 
 
 **Playwright:**
 - `node scripts/screenshot-blessboard-home.js` → `test-results/blessboard-homepage-visual/`
-- `node scripts/screenshot-blessboard-about-leadership.js` → `test-results/blessboard-about-leadership-visual/` (`about-mobile.png`, `about-desktop.png`, `leadership-mobile.png`, `leadership-desktop.png`)
+- `node scripts/screenshot-blessboard-about-leadership.js` → `test-results/blessboard-about-leadership-visual/`
+- `node scripts/screenshot-blessboard-public-screens.js` → `test-results/blessboard-public-screens-visual/` (contact/ministries/events/sermons × mobile+desktop)
+
+### Contact / Ministries / Events / Sermons asset mapping (v36)
+
+| Screen | Design Element | PNG Reference | Current Asset | Correct Asset Found? | Action |
+|--------|----------------|---------------|---------------|----------------------|--------|
+| Contact desktop | Map | `08-public-contact-desktop.png` | `contact/contact-map-desktop.jpg` | Yes | Wired |
+| Contact mobile | Map | `08-public-contact-mobile.png` | `contact/contact-map-mobile.jpg` | Yes | Wired |
+| Ministries | Icons | `04-public-ministries-desktop.png` | Material Symbols | Yes (icons) | Wired; no photo assets in Stitch HTML |
+| Ministries mobile | — | *(no PNG)* | Same bento stack | N/A | Desktop design stacked for mobile |
+| Events desktop | Card photos ×4 | `05-public-events-calendar-desktop.png` | `events/event-1..4.jpg` | Yes | Wired |
+| Events mobile | Featured photo | `05-public-events-calendar-mobile.png` | `events/event-featured-mobile.jpg` | Yes | Wired |
+| Sermons desktop | Featured + thumbs | `06-public-sermons-resources-desktop.png` | `sermons/sermon-featured-desktop.jpg`, `sermon-1..3.jpg` | Yes | Wired |
+| Sermons mobile | Featured + thumbs | `06-public-sermons-resources-mobile.png` | `sermons/sermon-featured-mobile.jpg`, `sermon-thumb-1..2.jpg` | Yes | Wired |
+
+**Missing from export set:** `04-public-ministries-mobile.png` (not present). Calendar month-grid widget and live sermon media players are not implemented.
 
 ---
 
@@ -122,16 +138,16 @@ Statuses: **Matches** · **Close** · **Partial** · **Placeholder** · **Missin
 | About | Mobile | `01-public-website/02-public-about-mobile/02-public-about-mobile.png` | `/about` | `about.ejs` | Close | Map is Stitch light placeholder + pin; bottom tab bar not used (drawer + FAB instead) |
 | Leadership | Desktop | `01-public-website/03-public-leadership-desktop/03-public-leadership-desktop.png` | `/leadership` | `views/church/public/leadership.ejs` | Close | DB names override Stitch demo names when published; photos from Stitch assets |
 | Leadership | Mobile | `01-public-website/03-public-leadership-mobile/03-public-leadership-mobile.png` | `/leadership` | `leadership.ejs` | Close | Ministry leader names are layout demo unless editor adds them; bottom tab bar not used |
-| Ministries | Desktop | `01-public-website/04-public-ministries-desktop/04-public-ministries-desktop.png` | `/ministries` | `views/church/public/ministries.ejs` | Partial | Image tiles, filter chips |
-| Ministries | Mobile | *(no dedicated PNG in export set)* | `/ministries` | `ministries.ejs` | Partial | Bento tiles on homepage only |
-| Events / Calendar | Desktop | `01-public-website/05-public-events-calendar-desktop/05-public-events-calendar-desktop.png` | `/events` | `views/church/public/events.ejs` | Partial | List/cards; no calendar grid widget |
-| Events / Calendar | Mobile | `01-public-website/05-public-events-calendar-mobile/05-public-events-calendar-mobile.png` | `/events` | `events.ejs` | Partial | Stacked event rows; demo fallback events |
-| Sermons / Resources | Desktop | `01-public-website/06-public-sermons-resources-desktop/06-public-sermons-resources-desktop.png` | `/sermons` | `views/church/public/sermons.ejs` | Partial | DB-backed via `church_sermons`; media upload not wired |
-| Sermons / Resources | Mobile | `01-public-website/06-public-sermons-resources-mobile/06-public-sermons-resources-mobile.png` | `/sermons` | `sermons.ejs` | Partial | Seeded demo sermons render as cards |
+| Ministries | Desktop | `01-public-website/04-public-ministries-desktop/04-public-ministries-desktop.png` | `/ministries` | `views/church/public/ministries.ejs` | Close | Icon bento layout; no dedicated mobile PNG in export |
+| Ministries | Mobile | *(no dedicated PNG in export set)* | `/ministries` | `ministries.ejs` | Close | Stacked bento from desktop design; no mobile PNG |
+| Events / Calendar | Desktop | `01-public-website/05-public-events-calendar-desktop/05-public-events-calendar-desktop.png` | `/events` | `views/church/public/events.ejs` | Close | Photo cards + filters; calendar toggle is visual-only |
+| Events / Calendar | Mobile | `01-public-website/05-public-events-calendar-mobile/05-public-events-calendar-mobile.png` | `/events` | `events.ejs` | Close | Featured + list cards; bottom tab bar not used |
+| Sermons / Resources | Desktop | `01-public-website/06-public-sermons-resources-desktop/06-public-sermons-resources-desktop.png` | `/sermons` | `views/church/public/sermons.ejs` | Close | Featured hero + grid + study sidebar; filters visual-only |
+| Sermons / Resources | Mobile | `01-public-website/06-public-sermons-resources-mobile/06-public-sermons-resources-mobile.png` | `/sermons` | `sermons.ejs` | Close | Featured + recent list + study resources |
 | Giving information | Desktop | `01-public-website/07-public-giving-information-desktop/07-public-giving-information-desktop.png` | `/giving` | `views/church/public/giving.ejs` | Partial | Method icons, bank detail cards |
 | Giving information | Mobile | `01-public-website/07-public-giving-information-mobile/07-public-giving-information-mobile.png` | `/giving` | `giving.ejs` | Partial | Stacked method cards |
-| Contact | Desktop | `01-public-website/08-public-contact-desktop/08-public-contact-desktop.png` | `/contact` | `views/church/public/contact.ejs` | Partial | Two-column layout; form display-only |
-| Contact | Mobile | `01-public-website/08-public-contact-mobile/08-public-contact-mobile.png` | `/contact` | `contact.ejs` | Partial | Quick action tiles, map card, form panel |
+| Contact | Desktop | `01-public-website/08-public-contact-desktop/08-public-contact-desktop.png` | `/contact` | `views/church/public/contact.ejs` | Close | Info + map + form + Sunday CTA; form posts to DB |
+| Contact | Mobile | `01-public-website/08-public-contact-mobile/08-public-contact-mobile.png` | `/contact` | `contact.ejs` | Close | Quick actions, map, hours, form; bottom tab bar not used |
 
 ### Authentication
 
@@ -276,7 +292,7 @@ npm run test:ui
 - `views/church/public/leadership.ejs` — featured pastor, elders, ministry leaders, admin tiles
 - `public/church/church.css` — About/Leadership fidelity styles; cache `?v=35`
 - `public/church/images/about/*`, `public/church/images/leadership/*` — Stitch assets
-- All church shells referencing `church.css?v=35`
+- All church shells referencing `church.css?v=36`
 - `tests/church-visual-design.test.js` — v35 + About/Leadership markers
 - `scripts/screenshot-blessboard-about-leadership.js`
 - `docs/blessboard-screen-implementation-status.md` — This file

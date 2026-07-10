@@ -1,43 +1,108 @@
 <%- include('../partials/public_shell_start') %>
-    <%- include('../partials/public_page_hero', { heroTitle: 'Ministries', heroSubtitle: 'Find a place to serve and grow at ' + churchName + '.' }) %>
-    <section class="church-section church-section--page church-section--content">
-      <div class="church-section__inner">
-        <% if ((ministries || []).length === 0) { %>
-        <div class="church-empty-state">
-          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">groups</span>
-          <p class="church-empty-state__title">Ministries coming soon</p>
-          <p class="church-empty-state__body">Published ministries will appear here when branch leadership adds them.</p>
-        </div>
+<%
+  var ministryList = ministries || [];
+  var iconFor = function (name) {
+    var n = String(name || '').toLowerCase();
+    if (n.indexOf('worship') >= 0) return 'music_note';
+    if (n.indexOf('prayer') >= 0) return 'volunteer_activism';
+    if (n.indexOf('youth') >= 0) return 'rocket_launch';
+    if (n.indexOf('children') >= 0 || n.indexOf('kids') >= 0) return 'sentiment_satisfied';
+    if (n.indexOf('women') >= 0) return 'auto_awesome';
+    if (n.indexOf('men') >= 0) return 'open_with';
+    if (n.indexOf('outreach') >= 0 || n.indexOf('mission') >= 0) return 'public';
+    if (n.indexOf('hospital') >= 0 || n.indexOf('welcome') >= 0) return 'restaurant';
+    return 'groups';
+  };
+  var featured = ministryList.slice(0, 2);
+  var rest = ministryList.slice(2);
+  if (ministryList.length === 0) {
+    featured = [
+      { name: 'Worship', description: 'Lead the congregation in Spirit-filled praise every Sunday and midweek gathering.' },
+      { name: 'Prayer', description: 'Intercede for our church family, city, and the nations through dedicated prayer teams.' }
+    ];
+    rest = [
+      { name: 'Youth', description: 'Discipleship and fellowship for teens growing in faith.' },
+      { name: 'Children', description: 'Age-appropriate teaching and care for our youngest members.' },
+      { name: 'Women', description: 'Bible study, mentoring, and community for women of all ages.' },
+      { name: 'Men', description: 'Brotherhood, accountability, and service opportunities.' },
+      { name: 'Outreach', description: 'Local missions, mercy ministry, and community partnerships.' },
+      { name: 'Hospitality', description: 'Welcome guests and create a warm church family experience.' }
+    ];
+  }
+%>
+
+<section class="church-ministries-hero">
+  <span class="church-ministries-hero__eyebrow">OUR COMMUNITY</span>
+  <h1>Growing Together in Faith</h1>
+  <p>Explore the various ministries at <%= churchName %>. Whether you're looking to serve, connect, or grow, there's a place for you here.</p>
+</section>
+
+<section class="church-ministries-page">
+  <% if ((ministries || []).length === 0) { %>
+  <p class="church-ministries-fallback-note">Showing sample ministry layout. Publish ministries in the website editor to replace demo cards.</p>
+  <% } %>
+
+  <% if ((ministryFilters || []).length > 1) { %>
+  <div class="church-ministry-filters" role="tablist" aria-label="Filter ministries">
+    <% ministryFilters.forEach(function (filter) { %>
+    <button class="church-ministry-filter<%= filter.key === 'all' ? ' is-active' : '' %>" type="button" data-ministry-filter="<%= filter.key %>"><%= filter.label %></button>
+    <% }); %>
+  </div>
+  <% } %>
+
+  <div class="church-ministries-bento church-ministry-grid" id="ministry-grid">
+    <div class="church-ministries-bento__featured">
+      <% featured.forEach(function (m, idx) { %>
+      <article class="church-ministry-feature<%= idx === 1 ? ' church-ministry-feature--accent' : '' %>" data-ministry-filter="<%= (m.meeting_day || 'general').toLowerCase().replace(/\s+/g, '-') %>">
+        <span class="church-ministry-feature__icon material-symbols-outlined" aria-hidden="true"><%= iconFor(m.name) %></span>
+        <h2><%= m.name %></h2>
+        <p><%= m.description || 'Join this ministry to serve and grow with our church family.' %></p>
+        <% if (idx === 1) { %>
+        <a class="church-btn church-btn--light" href="/contact">Submit Request</a>
         <% } else { %>
-        <% if ((ministryFilters || []).length > 1) { %>
-        <div class="church-ministry-filters" role="tablist" aria-label="Filter ministries">
-          <% ministryFilters.forEach(function (filter) { %>
-          <button class="church-ministry-filter<%= filter.key === 'all' ? ' is-active' : '' %>" type="button" data-ministry-filter="<%= filter.key %>"><%= filter.label %></button>
-          <% }); %>
-        </div>
+        <a class="church-ministry-feature__link" href="/contact">Learn More <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
         <% } %>
-        <div class="church-ministry-grid" id="ministry-grid">
-          <%- include('../partials/public_ministry_tiles') %>
-        </div>
-        <% } %>
-      </div>
-    </section>
-    <% if ((ministries || []).length > 0 && (ministryFilters || []).length > 1) { %>
-    <script>
-      (function () {
-        var buttons = document.querySelectorAll("[data-ministry-filter]");
-        var tiles = document.querySelectorAll(".church-ministry-tile");
-        buttons.forEach(function (btn) {
-          btn.addEventListener("click", function () {
-            var key = btn.getAttribute("data-ministry-filter");
-            buttons.forEach(function (b) { b.classList.toggle("is-active", b === btn); });
-            tiles.forEach(function (tile) {
-              var match = key === "all" || tile.getAttribute("data-ministry-filter") === key;
-              tile.style.display = match ? "" : "none";
-            });
-          });
+      </article>
+      <% }); %>
+    </div>
+    <div class="church-ministries-bento__grid">
+      <% rest.forEach(function (m) { %>
+      <article class="church-ministry-mini" data-ministry-filter="<%= (m.meeting_day || 'general').toLowerCase().replace(/\s+/g, '-') %>">
+        <span class="church-ministry-mini__icon material-symbols-outlined" aria-hidden="true"><%= iconFor(m.name) %></span>
+        <h3><%= m.name %></h3>
+        <p><%= m.description || 'Connect and serve with this ministry team.' %></p>
+        <a href="/contact">Join Us <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></a>
+      </article>
+      <% }); %>
+    </div>
+  </div>
+
+  <div class="church-ministries-cta">
+    <h2>Not sure where to start?</h2>
+    <p>Our team is here to help you find the right group or ministry where your talents can flourish.</p>
+    <div class="church-ministries-cta__actions">
+      <a class="church-btn church-btn--primary" href="/contact">Contact Ministry Leader</a>
+      <a class="church-btn church-btn--ghost" href="/contact">Download Ministry Guide</a>
+    </div>
+  </div>
+</section>
+
+<% if ((ministries || []).length > 0 && (ministryFilters || []).length > 1) { %>
+<script>
+  (function () {
+    var buttons = document.querySelectorAll("[data-ministry-filter]");
+    var tiles = document.querySelectorAll(".church-ministry-feature, .church-ministry-mini");
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var key = btn.getAttribute("data-ministry-filter");
+        buttons.forEach(function (b) { b.classList.toggle("is-active", b === btn); });
+        tiles.forEach(function (tile) {
+          var match = key === "all" || tile.getAttribute("data-ministry-filter") === key;
+          tile.style.display = match ? "" : "none";
         });
-      })();
-    </script>
-    <% } %>
+      });
+    });
+  })();
+</script>
+<% } %>
 <%- include('../partials/public_shell_end') %>
