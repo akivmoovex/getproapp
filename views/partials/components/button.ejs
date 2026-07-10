@@ -11,10 +11,13 @@
   - label, text: visible label (label wins)
   - innerHtml: raw inner markup (use rarely; prefer label)
   - fullWidth: boolean → btn-block + c-button--full-width
-  - id, name, value, form: native attributes when applicable
+  - id, name, value, formId (or string form): HTML form= attribute when applicable
   - ariaLabel: string
   - size: 'sm' | 'lg' | 'icon'
   - className, extraAttrs: appended to root element
+
+  Note: Do not treat a parent-scope `form` object (common in admin create/edit pages)
+  as the HTML form= attribute — that becomes form="[object Object]" and breaks submit.
 -%>
 <%
   var _variant = typeof variant !== 'undefined' ? String(variant) : 'primary';
@@ -34,7 +37,13 @@
   var _id = typeof id !== 'undefined' && id ? String(id) : '';
   var _name = typeof name !== 'undefined' && name ? String(name) : '';
   var _value = typeof value !== 'undefined' && value !== null && value !== '' ? String(value) : '';
-  var _form = typeof form !== 'undefined' && form ? String(form) : '';
+  // Only accept an explicit string form id (formId preferred). Ignore object `form` locals.
+  var _form =
+    typeof formId === 'string' && formId
+      ? formId
+      : typeof form === 'string' && form
+        ? form
+        : '';
   var _fullWidth = typeof fullWidth !== 'undefined' && !!fullWidth;
   var _hidden = typeof hidden !== 'undefined' && !!hidden;
 

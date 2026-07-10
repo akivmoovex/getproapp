@@ -1,6 +1,10 @@
 <%- include('../../partials/platform_admin_shell_start', { navTitle: 'BlessBoard Admin', activeNav: activeNav || 'church_platform', pageTitle: 'BlessBoard Admin' }) %>
 <% var _hqBase = typeof hqAdminsBasePath !== 'undefined' && hqAdminsBasePath ? hqAdminsBasePath : ('/admin/church/organizations/' + organization.id + '/hq-admins'); %>
 <% var _orgDetail = typeof organizationDetailPath !== 'undefined' && organizationDetailPath ? organizationDetailPath : ('/admin/church/organizations/' + organization.id); %>
+<% var _formValues = typeof form !== 'undefined' && form ? form : {}; %>
+<% var _formAction = typeof formAction !== 'undefined' && formAction
+  ? formAction
+  : (mode === 'edit' && admin ? (_hqBase + '/' + admin.id) : _hqBase); %>
 <header class="admin-dashboard__header">
           <div>
             <h1 class="admin-dashboard__title"><%= mode === 'edit' ? 'Edit HQ admin' : 'Add HQ admin' %></h1>
@@ -29,29 +33,25 @@
           <div class="flash flash--error" role="alert"><%= error %></div>
         <% } %>
 
-        <% var f = typeof form !== 'undefined' && form ? form : {}; %>
-        <% var _formAction = typeof formAction !== 'undefined' && formAction
-          ? formAction
-          : (mode === 'edit' && admin ? (_hqBase + '/' + admin.id) : _hqBase); %>
-        <form method="post" action="<%= _formAction %>" class="card card--mb-xl" style="padding:1.25rem;">
+        <form id="hq-admin-create-form" method="post" action="<%= _formAction %>" class="card card--mb-xl" style="padding:1.25rem;" novalidate>
           <div class="admin-form-grid">
             <div class="input-field">
               <label class="input-field__label" for="full_name">Full name *</label>
-              <input id="full_name" class="input-field__control" name="full_name" required value="<%= f.full_name || '' %>" />
+              <input id="full_name" class="input-field__control" name="full_name" required value="<%= _formValues.full_name || '' %>" autocomplete="name" />
             </div>
             <div class="input-field">
-              <label class="input-field__label" for="email">Email</label>
-              <input id="email" class="input-field__control" name="email" type="email" value="<%= f.email || '' %>" />
+              <label class="input-field__label" for="email">Email *</label>
+              <input id="email" class="input-field__control" name="email" type="email" required value="<%= _formValues.email || '' %>" autocomplete="email" />
             </div>
             <div class="input-field">
               <label class="input-field__label" for="phone">Phone</label>
-              <input id="phone" class="input-field__control" name="phone" value="<%= f.phone || '' %>" />
+              <input id="phone" class="input-field__control" name="phone" value="<%= _formValues.phone || '' %>" autocomplete="tel" />
             </div>
             <div class="input-field">
               <label class="input-field__label" for="role">Role</label>
               <select id="role" class="input-field__control" name="role">
                 <% (hqAdminRoles || ['hq_admin']).forEach(function (r) { %>
-                  <option value="<%= r %>" <%= (f.role || 'hq_admin') === r ? 'selected' : '' %>><%= r %></option>
+                  <option value="<%= r %>" <%= (_formValues.role || 'hq_admin') === r ? 'selected' : '' %>><%= r %></option>
                 <% }); %>
               </select>
             </div>
@@ -68,14 +68,14 @@
             <% } %>
             <div class="input-field" style="grid-column:1/-1;">
               <label class="input-field__label" for="notes">Notes</label>
-              <textarea id="notes" class="input-field__control" name="notes" rows="3"><%= f.notes || '' %></textarea>
+              <textarea id="notes" class="input-field__control" name="notes" rows="3"><%= _formValues.notes || '' %></textarea>
             </div>
           </div>
 
-          <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">Email or phone is required for login. HQ admins are created by BlessBoard platform admin (not branch admin).</p>
+          <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">HQ admins are created by BlessBoard platform admin (not branch admin).</p>
 
           <div class="admin-toolbar" style="margin-top:1.5rem;">
-            <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: mode === 'edit' ? 'Save changes' : 'Create HQ admin' }) %>
+            <button type="submit" class="c-button btn btn--primary"><%= mode === 'edit' ? 'Save changes' : 'Create HQ Admin' %></button>
             <%- include('../../partials/components/button', { variant: 'default', href: mode === 'edit' && admin ? (_hqBase + '/' + admin.id) : _hqBase, label: 'Cancel' }) %>
           </div>
         </form>

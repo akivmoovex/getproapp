@@ -112,7 +112,7 @@ test("create HQ admin validation requires matching passwords", () => {
     confirm_password: "differentpass",
   });
   assert.equal(result.ok, false);
-  assert.match(result.error, /confirmation does not match/i);
+  assert.match(result.error, /Passwords do not match/i);
 });
 
 test("tenant manager cannot list HQ admins", async () => {

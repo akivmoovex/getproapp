@@ -1545,16 +1545,26 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
   });
 
   router.post("/church/organizations/:organizationId/hq-admins", requireSuperAdmin, async (req, res, next) => {
+    const organizationId = Number(req.params.organizationId);
+    console.log("[blessboard:hq-admin] POST create received", {
+      organizationId: Number.isFinite(organizationId) ? organizationId : null,
+      hasEmail: Boolean(req.body && req.body.email),
+      hasName: Boolean(req.body && (req.body.full_name || req.body.name)),
+    });
     try {
-      const organizationId = Number(req.params.organizationId);
       const pool = getPgPool();
       const organization = await loadOrganizationForAdminRoutes(pool, organizationId);
       if (!organization) {
+        console.log("[blessboard:hq-admin] create failed: organization not found", { organizationId });
         return res.status(404).type("text").send("Organization not found.");
       }
 
       const validation = validateCreateHqAdminBody(req.body);
       if (!validation.ok) {
+        console.log("[blessboard:hq-admin] validation failed", {
+          organizationId,
+          error: validation.error,
+        });
         return renderHqAdminForm(req, res, {
           statusCode: 400,
           mode: "create",
@@ -1568,16 +1578,20 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         phone: validation.data.phone,
       });
       if (conflict) {
+        console.log("[blessboard:hq-admin] duplicate admin", {
+          organizationId,
+          email: validation.data.email,
+        });
         return renderHqAdminForm(req, res, {
           statusCode: 400,
           mode: "create",
-          error: "Email or phone is already in use for this organization.",
+          error: "An admin with this email already exists.",
           form: validation.form,
         });
       }
 
       const passwordHash = await hashHqAdminPassword(validation.data.temporary_password);
-      await platformProvisioningRepo.createHqAdminForPlatform(
+      const created = await platformProvisioningRepo.createHqAdminForPlatform(
         pool,
         organizationId,
         {
@@ -1591,16 +1605,25 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         platformAdminId(req)
       );
 
+      console.log("[blessboard:hq-admin] create success", {
+        organizationId,
+        hqAdminId: created && created.id ? created.id : null,
+      });
       return res.redirect(`${organizationAdminDetailPath(req, organizationId)}?notice=hq_admin_created`);
     } catch (err) {
       if (err && err.code === "DUPLICATE_LOGIN") {
+        console.log("[blessboard:hq-admin] duplicate admin (constraint)", { organizationId });
         return renderHqAdminForm(req, res, {
           statusCode: 400,
           mode: "create",
-          error: err.message,
+          error: "An admin with this email already exists.",
           form: hqCreateFormFromBody(req.body),
         });
       }
+      console.log("[blessboard:hq-admin] create failed", {
+        organizationId,
+        message: err && err.message ? String(err.message).slice(0, 200) : "unknown",
+      });
       return next(err);
     }
   });

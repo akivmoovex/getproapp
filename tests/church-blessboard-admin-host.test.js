@@ -784,11 +784,16 @@ test(
       .get(`/admin/churches/${organization.id}/hq-admins/new`)
       .set("Host", "blessboard.com");
     assert.equal(res.status, 200);
-    assert.match(res.text, /Add HQ admin/i);
+    assert.match(res.text, /Add HQ admin|Create HQ Admin/i);
     assert.match(res.text, new RegExp(organization.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-    assert.match(res.text, /temporary_password|Temporary password/i);
-    assert.match(res.text, /confirm_password|Confirm password/i);
+    assert.match(res.text, /method="post"/i);
     assert.match(res.text, new RegExp(`action="/admin/churches/${organization.id}/hq-admins"`));
+    assert.match(res.text, /name="full_name"/);
+    assert.match(res.text, /name="email"/);
+    assert.match(res.text, /name="temporary_password"/);
+    assert.match(res.text, /name="confirm_password"/);
+    assert.match(res.text, /<button[^>]*type="submit"[^>]*>[\s\S]*Create HQ Admin/i);
+    assert.doesNotMatch(res.text, /form="\[object Object\]"/i);
     await login.pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [login.userId]);
   }
 );
@@ -836,7 +841,20 @@ test(
         confirm_password: "DifferentPass1!",
       });
     assert.equal(mismatch.status, 400);
-    assert.match(mismatch.text, /confirmation does not match/i);
+    assert.match(mismatch.text, /Passwords do not match/i);
+
+    const missing = await login.agent
+      .post(`/admin/churches/${org.id}/hq-admins`)
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({
+        full_name: "",
+        email: "",
+        temporary_password: "HqAdminPass1!",
+        confirm_password: "HqAdminPass1!",
+      });
+    assert.equal(missing.status, 400);
+    assert.match(missing.text, /Name is required|Email is required/i);
 
     const dup = await login.agent
       .post(`/admin/churches/${org.id}/hq-admins`)
@@ -849,7 +867,7 @@ test(
         confirm_password: "HqAdminPass1!",
       });
     assert.equal(dup.status, 400);
-    assert.match(dup.text, /already in use/i);
+    assert.match(dup.text, /already exists/i);
 
     const row = await pool.query(
       `SELECT id, role, status FROM public.church_hq_admins WHERE organization_id = $1 AND lower(trim(email)) = $2`,

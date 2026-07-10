@@ -47,19 +47,19 @@ function validateCreateHqAdminBody(body) {
   const form = createFormFromBody(body);
 
   if (!form.full_name) {
-    return { ok: false, error: "Full name is required.", form };
+    return { ok: false, error: "Name is required.", form };
   }
-  if (!form.email && !form.phone) {
-    return { ok: false, error: "Email or phone is required.", form };
+  if (!form.email) {
+    return { ok: false, error: "Email is required.", form };
   }
-  if (form.email && !looksLikeEmail(form.email)) {
+  if (!looksLikeEmail(form.email)) {
     return { ok: false, error: "Enter a valid email address.", form };
   }
   if (form.temporary_password.length < 8) {
-    return { ok: false, error: "Temporary password must be at least 8 characters.", form };
+    return { ok: false, error: "Password must be at least 8 characters.", form };
   }
   if (form.temporary_password !== form.confirm_password) {
-    return { ok: false, error: "Password confirmation does not match.", form };
+    return { ok: false, error: "Passwords do not match.", form };
   }
   if (!HQ_ADMIN_ROLES.includes(form.role)) {
     return { ok: false, error: "Invalid role.", form };
