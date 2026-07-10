@@ -32,6 +32,18 @@ const registerAdminChurchMemberPasswordResetRequestRoutes = require("./admin/adm
 const registerAdminChurchMinistryLeaderSupportRoutes = require("./admin/adminChurchMinistryLeaderSupport");
 
 function blessboardAdminPathRewrite(req, res, next) {
+  // Legacy /admin/church/organizations/... → canonical /admin/churches/...
+  const legacyOrg = String(req.path || "").match(/^\/church\/organizations(\/.*)?$/);
+  if (legacyOrg) {
+    const suffix = legacyOrg[1] || "";
+    const qs = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+    if (req.method === "GET" || req.method === "HEAD") {
+      return res.redirect(302, `/admin/churches${suffix}${qs}`);
+    }
+    // POST/PUT/etc.: keep handling on the internal church platform routes
+    return next();
+  }
+
   const rewritten = rewriteBlessBoardAdminPathToInternal(req.method, req.path);
   if (rewritten) {
     const qs = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";

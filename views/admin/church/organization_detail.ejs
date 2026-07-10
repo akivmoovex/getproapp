@@ -173,7 +173,10 @@
         <section class="card card--mb-xl" style="padding:1.25rem;">
           <div class="admin-toolbar" style="margin-bottom:1rem;">
             <h2 class="section-title section-title--flush" style="margin:0;flex:1;">HQ admins</h2>
-            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/organizations/' + organization.id + '/hq-admins', label: 'Manage HQ admins' }) %>
+            <% var _hqAdminsHref = typeof hqAdminsBasePath !== 'undefined' && hqAdminsBasePath ? hqAdminsBasePath : ('/admin/church/organizations/' + organization.id + '/hq-admins'); %>
+            <% var _hqAdminNewHref = typeof hqAdminNewPath !== 'undefined' && hqAdminNewPath ? hqAdminNewPath : (_hqAdminsHref + '/new'); %>
+            <%- include('../../partials/components/button', { variant: 'primary', href: _hqAdminNewHref, label: 'Create HQ Admin' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: _hqAdminsHref, label: 'Manage HQ admins' }) %>
           </div>
           <dl class="admin-dl">
             <dt>Active HQ admins</dt><dd><%= typeof activeHqAdminCount !== 'undefined' ? activeHqAdminCount : 0 %></dd>

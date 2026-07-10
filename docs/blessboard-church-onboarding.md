@@ -108,6 +108,22 @@ Legacy URLs on `getproapp.org/admin/church/organizations/:id/edit` redirect to `
 
 ---
 
+## Create HQ admin (platform admin)
+
+HQ admins are created by **BlessBoard platform admin** on the apex host — not by branch admins.
+
+| Action | Canonical URL |
+|--------|----------------|
+| Create form | `https://blessboard.com/admin/churches/:id/hq-admins/new` |
+| Submit | `POST /admin/churches/:id/hq-admins` |
+| Church detail | `https://blessboard.com/admin/churches/:id` |
+
+Legacy path `GET /admin/church/organizations/:id/hq-admins/new` redirects to the canonical create form on `blessboard.com`. Stored in `church_hq_admins` with role `hq_admin`.
+
+Do not use `/admin/*` on branch hosts (`demo.blessboard.com`, etc.).
+
+---
+
 ## What gets created (transactional)
 
 In one database transaction:

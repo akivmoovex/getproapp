@@ -1,15 +1,17 @@
 <%- include('../../partials/platform_admin_shell_start', { navTitle: 'BlessBoard Admin', activeNav: activeNav || 'church_platform', pageTitle: 'BlessBoard Admin' }) %>
+<% var _hqBase = typeof hqAdminsBasePath !== 'undefined' && hqAdminsBasePath ? hqAdminsBasePath : ('/admin/church/organizations/' + organization.id + '/hq-admins'); %>
+<% var _orgDetail = typeof organizationDetailPath !== 'undefined' && organizationDetailPath ? organizationDetailPath : ('/admin/church/organizations/' + organization.id); %>
 <header class="admin-dashboard__header">
           <div>
             <h1 class="admin-dashboard__title"><%= admin.full_name %></h1>
             <p class="admin-dashboard__subtitle muted">
-              <a href="/admin/church/organizations/<%= organization.id %>"><%= organization.name %></a>
+              <a href="<%= _orgDetail %>"><%= organization.name %></a>
               · <%- include('../../partials/admin/church_status_badge', { status: admin.status }) %>
             </p>
           </div>
           <div class="admin-toolbar">
-            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/organizations/' + organization.id + '/hq-admins/' + admin.id + '/edit', label: 'Edit' }) %>
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/hq-admins', label: 'All HQ admins' }) %>
+            <%- include('../../partials/components/button', { variant: 'primary', href: _hqBase + '/' + admin.id + '/edit', label: 'Edit' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: _hqBase, label: 'All HQ admins' }) %>
           </div>
         </header>
 
@@ -26,7 +28,7 @@
             <dt>Role</dt><dd><%= admin.role %></dd>
             <dt>Status</dt><dd><%- include('../../partials/admin/church_status_badge', { status: admin.status }) %></dd>
             <dt>Notes</dt><dd><%= admin.notes || '—' %></dd>
-            <dt>Organization</dt><dd><a href="/admin/church/organizations/<%= organization.id %>"><%= organization.name %></a></dd>
+            <dt>Organization</dt><dd><a href="<%= _orgDetail %>"><%= organization.name %></a></dd>
             <% if (hqLoginHostSlug) { %>
               <dt>Example HQ login URL</dt><dd><code>https://<%= churchPublicHost(hqLoginHostSlug) %>/hq/login</code></dd>
             <% } else { %>
@@ -45,11 +47,11 @@
           <h2 class="section-title section-title--flush">Status actions</h2>
           <div class="admin-toolbar">
             <% if (admin.status === 'active') { %>
-              <form method="post" action="/admin/church/organizations/<%= organization.id %>/hq-admins/<%= admin.id %>/deactivate">
+              <form method="post" action="<%= _hqBase %>/<%= admin.id %>/deactivate">
                 <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Deactivate' }) %>
               </form>
             <% } else { %>
-              <form method="post" action="/admin/church/organizations/<%= organization.id %>/hq-admins/<%= admin.id %>/activate">
+              <form method="post" action="<%= _hqBase %>/<%= admin.id %>/activate">
                 <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Activate' }) %>
               </form>
             <% } %>
@@ -61,7 +63,7 @@
           <% if (typeof resetError !== 'undefined' && resetError) { %>
             <div class="flash flash--error" role="alert"><%= resetError %></div>
           <% } %>
-          <form method="post" action="/admin/church/organizations/<%= organization.id %>/hq-admins/<%= admin.id %>/reset-password">
+          <form method="post" action="<%= _hqBase %>/<%= admin.id %>/reset-password">
             <div class="admin-form-grid">
               <div class="input-field">
                 <label class="input-field__label" for="new_password">New password *</label>
@@ -83,7 +85,7 @@
           supportNotes: typeof supportNotes !== 'undefined' ? supportNotes : [],
           supportNoteEntityType: typeof supportNoteEntityType !== 'undefined' ? supportNoteEntityType : 'hq_admin',
           supportNoteEntityId: typeof supportNoteEntityId !== 'undefined' ? supportNoteEntityId : admin.id,
-          supportNoteReturnTo: typeof supportNoteReturnTo !== 'undefined' ? supportNoteReturnTo : ('/admin/church/organizations/' + organization.id + '/hq-admins/' + admin.id),
+          supportNoteReturnTo: typeof supportNoteReturnTo !== 'undefined' ? supportNoteReturnTo : (_hqBase + '/' + admin.id),
           supportNoteNotice: typeof supportNoteNotice !== 'undefined' ? supportNoteNotice : null,
           supportNoteError: typeof supportNoteError !== 'undefined' ? supportNoteError : null,
           formatDate: formatDate

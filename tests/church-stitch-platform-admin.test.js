@@ -156,6 +156,20 @@ test("demo.blessboard.com/admin/churches/new returns 404", async () => {
   assert.equal(res.status, 404);
 });
 
+test("demo.blessboard.com/admin/churches/:id/hq-admins/new returns 404", async () => {
+  const app = createProductionLikeApp();
+  const res = await request(app).get("/admin/churches/3/hq-admins/new").set("Host", "demo.blessboard.com");
+  assert.equal(res.status, 404);
+  assert.doesNotMatch(res.text, /Add HQ admin/i);
+});
+
+test("unauthenticated /admin/churches/:id/hq-admins/new redirects to login on apex", async () => {
+  const app = createProductionLikeApp();
+  const res = await request(app).get("/admin/churches/3/hq-admins/new").set("Host", "blessboard.com");
+  assert.ok([302, 303].includes(res.status));
+  assert.match(String(res.headers.location || ""), /\/admin\/login/);
+});
+
 test("getproapp.org old church admin route redirects to blessboard.com", async () => {
   const prev = process.env.BASE_DOMAIN;
   process.env.BASE_DOMAIN = "getproapp.org";

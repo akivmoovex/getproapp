@@ -99,8 +99,20 @@ test("create HQ admin validation requires password", () => {
     full_name: "HQ User",
     email: "hq@example.com",
     temporary_password: "short",
+    confirm_password: "short",
   });
   assert.equal(result.ok, false);
+});
+
+test("create HQ admin validation requires matching passwords", () => {
+  const result = validateCreateHqAdminBody({
+    full_name: "HQ User",
+    email: "hq@example.com",
+    temporary_password: "longenough1",
+    confirm_password: "differentpass",
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.error, /confirmation does not match/i);
 });
 
 test("tenant manager cannot list HQ admins", async () => {
@@ -187,9 +199,12 @@ test(
       phone: "0977222000",
       role: "hq_admin",
       temporary_password: secondPassword,
+      confirm_password: secondPassword,
       notes: "Added by platform admin",
     });
     assert.equal(created.status, 302);
+    assert.match(String(created.headers.location || ""), new RegExp(`/admin/church/organizations/${org.id}`));
+    assert.match(String(created.headers.location || ""), /notice=hq_admin_created/);
 
     const secondAdminRow = await pool.query(
       `SELECT * FROM public.church_hq_admins WHERE organization_id = $1 AND lower(trim(email)) = $2 LIMIT 1`,
@@ -204,6 +219,7 @@ test(
       full_name: "Duplicate HQ Admin",
       email: secondEmail,
       temporary_password: "anotherpass123",
+      confirm_password: "anotherpass123",
     });
     assert.equal(dup.status, 400);
 

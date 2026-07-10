@@ -1,9 +1,17 @@
 <%- include('../../partials/platform_admin_shell_start', { navTitle: 'BlessBoard Admin', activeNav: activeNav || 'church_platform', pageTitle: 'BlessBoard Admin' }) %>
+<% var _hqBase = typeof hqAdminsBasePath !== 'undefined' && hqAdminsBasePath ? hqAdminsBasePath : ('/admin/church/organizations/' + organization.id + '/hq-admins'); %>
+<% var _orgDetail = typeof organizationDetailPath !== 'undefined' && organizationDetailPath ? organizationDetailPath : ('/admin/church/organizations/' + organization.id); %>
 <header class="admin-dashboard__header">
           <div>
             <h1 class="admin-dashboard__title"><%= mode === 'edit' ? 'Edit HQ admin' : 'Add HQ admin' %></h1>
             <p class="admin-dashboard__subtitle muted">
-              <a href="/admin/church/organizations/<%= organization.id %>"><%= organization.name %></a>
+              <a href="<%= _orgDetail %>"><%= organization.name %></a>
+              <% if (organization.slug) { %>
+                · slug <code><%= organization.slug %></code>
+              <% } %>
+              <% if (typeof hqLoginHostSlug !== 'undefined' && hqLoginHostSlug) { %>
+                · host <code><%= hqLoginHostSlug %></code>
+              <% } %>
               <% if (mode === 'edit' && admin) { %>
                 · <%- include('../../partials/admin/church_status_badge', { status: admin.status }) %>
               <% } %>
@@ -11,9 +19,9 @@
           </div>
           <div class="admin-toolbar">
             <% if (mode === 'edit' && admin) { %>
-              <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/hq-admins/' + admin.id, label: 'HQ admin detail' }) %>
+              <%- include('../../partials/components/button', { variant: 'default', href: _hqBase + '/' + admin.id, label: 'HQ admin detail' }) %>
             <% } %>
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/hq-admins', label: 'All HQ admins' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: _hqBase, label: 'All HQ admins' }) %>
           </div>
         </header>
 
@@ -22,10 +30,10 @@
         <% } %>
 
         <% var f = typeof form !== 'undefined' && form ? form : {}; %>
-        <% var formAction = mode === 'edit' && admin
-          ? '/admin/church/organizations/' + organization.id + '/hq-admins/' + admin.id
-          : '/admin/church/organizations/' + organization.id + '/hq-admins'; %>
-        <form method="post" action="<%= formAction %>" class="card card--mb-xl" style="padding:1.25rem;">
+        <% var _formAction = typeof formAction !== 'undefined' && formAction
+          ? formAction
+          : (mode === 'edit' && admin ? (_hqBase + '/' + admin.id) : _hqBase); %>
+        <form method="post" action="<%= _formAction %>" class="card card--mb-xl" style="padding:1.25rem;">
           <div class="admin-form-grid">
             <div class="input-field">
               <label class="input-field__label" for="full_name">Full name *</label>
@@ -53,6 +61,10 @@
               <input id="temporary_password" class="input-field__control" name="temporary_password" type="password" required minlength="8" autocomplete="new-password" />
               <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">Minimum 8 characters. Share securely after creation.</p>
             </div>
+            <div class="input-field">
+              <label class="input-field__label" for="confirm_password">Confirm password *</label>
+              <input id="confirm_password" class="input-field__control" name="confirm_password" type="password" required minlength="8" autocomplete="new-password" />
+            </div>
             <% } %>
             <div class="input-field" style="grid-column:1/-1;">
               <label class="input-field__label" for="notes">Notes</label>
@@ -60,11 +72,11 @@
             </div>
           </div>
 
-          <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">Email or phone is required for login.</p>
+          <p class="muted" style="margin-top:0.75rem;font-size:0.9rem;">Email or phone is required for login. HQ admins are created by BlessBoard platform admin (not branch admin).</p>
 
           <div class="admin-toolbar" style="margin-top:1.5rem;">
             <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: mode === 'edit' ? 'Save changes' : 'Create HQ admin' }) %>
-            <%- include('../../partials/components/button', { variant: 'default', href: mode === 'edit' && admin ? '/admin/church/organizations/' + organization.id + '/hq-admins/' + admin.id : '/admin/church/organizations/' + organization.id + '/hq-admins', label: 'Cancel' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: mode === 'edit' && admin ? (_hqBase + '/' + admin.id) : _hqBase, label: 'Cancel' }) %>
           </div>
         </form>
 <%- include('../../partials/platform_admin_shell_end') %>

@@ -32,6 +32,12 @@ function rewriteBlessBoardAdminPathToInternal(method, path) {
   if (detail) return `/church/organizations/${detail[1]}`;
   const edit = p.match(/^\/churches\/(\d+)\/edit\/?$/);
   if (edit) return `/church/organizations/${edit[1]}/edit`;
+  // Nested church resources (hq-admins, branches, plan, etc.)
+  const nested = p.match(/^\/churches\/(\d+)(\/.+)$/);
+  if (nested) {
+    const suffix = nested[2].replace(/\/+$/, "") || "";
+    return `/church/organizations/${nested[1]}${suffix}`;
+  }
   if (method === "POST" && (p === "/churches" || p === "/churches/")) return "/church/organizations";
   return null;
 }
@@ -108,6 +114,38 @@ function organizationAdminEditPath(req, organizationId) {
   return `/admin/church/organizations/${organizationId}/edit`;
 }
 
+/**
+ * HQ admins list URL for current admin context.
+ * @param {import("express").Request} req
+ * @param {number|string} organizationId
+ */
+function organizationHqAdminsPath(req, organizationId) {
+  if (req && req.blessboardAdminMode) {
+    return `/admin/churches/${organizationId}/hq-admins`;
+  }
+  return `/admin/church/organizations/${organizationId}/hq-admins`;
+}
+
+/**
+ * Create HQ admin form URL for current admin context.
+ * @param {import("express").Request} req
+ * @param {number|string} organizationId
+ */
+function organizationHqAdminNewPath(req, organizationId) {
+  return `${organizationHqAdminsPath(req, organizationId)}/new`;
+}
+
+/**
+ * HQ admin detail URL for current admin context.
+ * @param {import("express").Request} req
+ * @param {number|string} organizationId
+ * @param {number|string} adminId
+ * @param {string} [query]
+ */
+function organizationHqAdminDetailPath(req, organizationId, adminId, query = "") {
+  return `${organizationHqAdminsPath(req, organizationId)}/${adminId}${query}`;
+}
+
 module.exports = {
   BLESSBOARD_ADMIN,
   LEGACY_GETPRO_CHURCH_ADMIN_PREFIX,
@@ -116,4 +154,7 @@ module.exports = {
   isBlessBoardPlatformAdminPath,
   organizationAdminDetailPath,
   organizationAdminEditPath,
+  organizationHqAdminsPath,
+  organizationHqAdminNewPath,
+  organizationHqAdminDetailPath,
 };

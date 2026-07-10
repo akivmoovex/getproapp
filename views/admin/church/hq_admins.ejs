@@ -1,15 +1,17 @@
 <%- include('../../partials/platform_admin_shell_start', { navTitle: 'HQ admins', activeNav: activeNav || 'church_platform_orgs', pageTitle: 'HQ admins' }) %>
+<% var _hqBase = typeof hqAdminsBasePath !== 'undefined' && hqAdminsBasePath ? hqAdminsBasePath : ('/admin/church/organizations/' + organization.id + '/hq-admins'); %>
+<% var _orgDetail = typeof organizationDetailPath !== 'undefined' && organizationDetailPath ? organizationDetailPath : ('/admin/church/organizations/' + organization.id); %>
 <header class="admin-dashboard__header">
           <div>
             <h1 class="admin-dashboard__title">HQ admins</h1>
             <p class="admin-dashboard__subtitle muted">
-              <a href="/admin/church/organizations/<%= organization.id %>"><%= organization.name %></a>
+              <a href="<%= _orgDetail %>"><%= organization.name %></a>
               · <%= activeHqAdminCount != null ? activeHqAdminCount : 0 %> active
             </p>
           </div>
           <div class="admin-toolbar">
-            <%- include('../../partials/components/button', { variant: 'primary', href: '/admin/church/organizations/' + organization.id + '/hq-admins/new', label: 'Add HQ admin' }) %>
-            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'Organization detail' }) %>
+            <%- include('../../partials/components/button', { variant: 'primary', href: _hqBase + '/new', label: 'Add HQ admin' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: _orgDetail, label: 'Organization detail' }) %>
           </div>
         </header>
 
@@ -58,8 +60,8 @@
                     <td><%- include('../../partials/admin/church_status_badge', { status: a.status }) %></td>
                     <td><%= formatDate(a.updated_at || a.created_at) %></td>
                     <td>
-                      <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/hq-admins/' + a.id, label: 'View' }) %>
-                      <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/hq-admins/' + a.id + '/edit', label: 'Edit' }) %>
+                      <%- include('../../partials/components/button', { variant: 'default', href: _hqBase + '/' + a.id, label: 'View' }) %>
+                      <%- include('../../partials/components/button', { variant: 'default', href: _hqBase + '/' + a.id + '/edit', label: 'Edit' }) %>
                     </td>
                   </tr>
                 <% }); } %>

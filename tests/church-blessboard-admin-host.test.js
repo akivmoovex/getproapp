@@ -720,3 +720,147 @@ test("getproapp.org/admin/church/organizations/:id/edit redirects to blessboard.
     else delete process.env.BASE_DOMAIN;
   }
 });
+
+test("rewrite maps /admin/churches/:id/hq-admins/new to internal org path", () => {
+  const { rewriteBlessBoardAdminPathToInternal, mapLegacyGetProChurchAdminPathToBlessBoard } = require("../src/church/blessboardAdminPaths");
+  assert.equal(
+    rewriteBlessBoardAdminPathToInternal("GET", "/churches/3/hq-admins/new"),
+    "/church/organizations/3/hq-admins/new"
+  );
+  assert.equal(
+    rewriteBlessBoardAdminPathToInternal("POST", "/churches/3/hq-admins"),
+    "/church/organizations/3/hq-admins"
+  );
+  assert.equal(
+    mapLegacyGetProChurchAdminPathToBlessBoard("/admin/church/organizations/3/hq-admins/new"),
+    "/admin/churches/3/hq-admins/new"
+  );
+});
+
+test("unauthenticated GET /admin/churches/:id/hq-admins/new redirects to login", async () => {
+  const app = createProductionLikeApp();
+  const res = await request(app).get("/admin/churches/3/hq-admins/new").set("Host", "blessboard.com");
+  assert.equal(res.status, 302);
+  assert.match(String(res.headers.location || ""), /\/admin\/login/);
+});
+
+test("demo.blessboard.com/admin/churches/:id/hq-admins/new returns platform-admin guidance", async () => {
+  const app = createProductionLikeApp();
+  const res = await request(app)
+    .get("/admin/churches/3/hq-admins/new")
+    .set("Host", "demo.blessboard.com");
+  assert.equal(res.status, 404);
+  assert.doesNotMatch(res.text, /Church not found/i);
+  assert.match(res.text, /platform admin is only available at/i);
+});
+
+test(
+  "blessboard.com legacy HQ admin new URL redirects to canonical",
+  { skip: !isPgConfigured() },
+  async () => {
+    const app = createProductionLikeApp();
+    const login = await superAdminLoginAgent(app);
+    const res = await login.agent
+      .get("/admin/church/organizations/3/hq-admins/new")
+      .set("Host", "blessboard.com")
+      .redirects(0);
+    assert.equal(res.status, 302);
+    assert.equal(res.headers.location, "/admin/churches/3/hq-admins/new");
+    await login.pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [login.userId]);
+  }
+);
+
+test(
+  "blessboard.com/admin/churches/:id/hq-admins/new renders create form",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    await ensureChurchSchema(pool);
+    const seed = require("../src/seeds/seedChurchDemoOrganization");
+    const { organization } = await seed.seedChurchDemoOrganizationIfMissing(pool);
+    const app = createProductionLikeApp();
+    const login = await superAdminLoginAgent(app);
+    const res = await login.agent
+      .get(`/admin/churches/${organization.id}/hq-admins/new`)
+      .set("Host", "blessboard.com");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /Add HQ admin/i);
+    assert.match(res.text, new RegExp(organization.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(res.text, /temporary_password|Temporary password/i);
+    assert.match(res.text, /confirm_password|Confirm password/i);
+    assert.match(res.text, new RegExp(`action="/admin/churches/${organization.id}/hq-admins"`));
+    await login.pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [login.userId]);
+  }
+);
+
+test(
+  "blessboard.com POST /admin/churches/:id/hq-admins creates HQ admin",
+  { skip: !isPgConfigured() },
+  async () => {
+    const pool = getPgPool();
+    await ensureChurchSchema(pool);
+    await ensureCanonicalTenantsForTests(pool);
+    const suffix = makeSuffix("bbhq");
+    const organizationsRepo = require("../src/db/pg/church/organizationsRepo");
+    const org = await organizationsRepo.createOrganization(pool, {
+      platform_tenant_id: 1,
+      slug: `bbhq${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 28),
+      name: `BB HQ Org ${suffix}`,
+      status: "active",
+    });
+    const app = createProductionLikeApp();
+    const login = await superAdminLoginAgent(app);
+    const email = `hq_${suffix}@example.com`;
+    const created = await login.agent
+      .post(`/admin/churches/${org.id}/hq-admins`)
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({
+        full_name: "BlessBoard HQ Admin",
+        email,
+        role: "hq_admin",
+        temporary_password: "HqAdminPass1!",
+        confirm_password: "HqAdminPass1!",
+      });
+    assert.equal(created.status, 302);
+    assert.equal(created.headers.location, `/admin/churches/${org.id}?notice=hq_admin_created`);
+
+    const mismatch = await login.agent
+      .post(`/admin/churches/${org.id}/hq-admins`)
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({
+        full_name: "Mismatch HQ",
+        email: `mismatch_${suffix}@example.com`,
+        temporary_password: "HqAdminPass1!",
+        confirm_password: "DifferentPass1!",
+      });
+    assert.equal(mismatch.status, 400);
+    assert.match(mismatch.text, /confirmation does not match/i);
+
+    const dup = await login.agent
+      .post(`/admin/churches/${org.id}/hq-admins`)
+      .set("Host", "blessboard.com")
+      .type("form")
+      .send({
+        full_name: "Dup HQ",
+        email,
+        temporary_password: "HqAdminPass1!",
+        confirm_password: "HqAdminPass1!",
+      });
+    assert.equal(dup.status, 400);
+    assert.match(dup.text, /already in use/i);
+
+    const row = await pool.query(
+      `SELECT id, role, status FROM public.church_hq_admins WHERE organization_id = $1 AND lower(trim(email)) = $2`,
+      [org.id, email]
+    );
+    assert.equal(row.rows.length, 1);
+    assert.equal(row.rows[0].role, "hq_admin");
+    assert.equal(row.rows[0].status, "active");
+
+    await pool.query(`DELETE FROM public.church_hq_admins WHERE organization_id = $1`, [org.id]);
+    await pool.query(`DELETE FROM public.church_organizations WHERE id = $1`, [org.id]);
+    await login.pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [login.userId]);
+  }
+);

@@ -98,7 +98,8 @@ const {
   FAILURE_REASONS,
 } = require("../../church/platformSecurityValidation");
 const { gatherChurchProductionDiagnostics } = require("../../services/church/churchProductionDiagnostics");
-const { organizationAdminDetailPath, organizationAdminEditPath } = require("../../church/blessboardAdminPaths");
+const { organizationAdminDetailPath, organizationAdminEditPath, organizationHqAdminsPath, organizationHqAdminDetailPath } = require("../../church/blessboardAdminPaths");
+const { hashHqAdminPassword } = require("../../church/hqAuth");
 const { classifyPgError } = require("../../church/churchDbResilience");
 
 function formatDate(value) {
@@ -150,6 +151,7 @@ function organizationStatusNotice(req) {
     reactivated: "Organization reactivated successfully.",
     archived: "Organization archived successfully.",
     updated: "Organization updated successfully.",
+    hq_admin_created: "HQ admin created.",
     slug_changed:
       "Organization updated. Organization slug changed — internal identity and display links are updated. Branch public URLs use branch host slugs and are unchanged.",
     host_slug_changed:
@@ -186,7 +188,7 @@ function branchAdminNotice(req) {
 function hqAdminNotice(req) {
   const notice = String(req.query.notice || "").trim();
   const map = {
-    created: "HQ admin created. Temporary password was set as entered. Share it securely.",
+    created: "HQ admin created.",
     updated: "HQ admin updated successfully.",
     activated: "HQ admin activated successfully.",
     deactivated: "HQ admin deactivated successfully.",
@@ -350,7 +352,7 @@ async function renderOrganizationDetail(req, res, extra) {
     detail.hqAdmins && detail.hqAdmins.length > 0
       ? detail.hqAdmins.find((a) => a.status === "active") || detail.hqAdmins[0]
       : null;
-  const orgReturnTo = `/admin/church/organizations/${organizationId}`;
+  const orgReturnTo = organizationAdminDetailPath(req, organizationId);
   const notesPanel = await supportNotesPanelData(pool, "organization", organizationId, orgReturnTo);
   let welcomePack = null;
   const provisioned = String(req.query.provisioned || "") === "1";
@@ -384,6 +386,9 @@ async function renderOrganizationDetail(req, res, extra) {
     statusBadgeClass,
     statusLabel,
     orgBranchStatuses: ORG_BRANCH_STATUSES,
+    hqAdminsBasePath: organizationHqAdminsPath(req, organizationId),
+    hqAdminNewPath: `${organizationHqAdminsPath(req, organizationId)}/new`,
+    organizationDetailPath: organizationAdminDetailPath(req, organizationId),
     activeNav: "church_platform_orgs",
   });
 }
@@ -748,6 +753,8 @@ async function renderHqAdminsList(req, res, extra) {
     churchPublicHost,
     statusBadgeClass,
     statusLabel,
+    hqAdminsBasePath: organizationHqAdminsPath(req, organizationId),
+    organizationDetailPath: organizationAdminDetailPath(req, organizationId),
     activeNav: "church_platform_orgs",
   });
 }
@@ -761,6 +768,12 @@ async function renderHqAdminForm(req, res, extra) {
   }
   const mode = extra && extra.mode ? extra.mode : "create";
   const admin = extra && extra.admin ? extra.admin : null;
+  const hqAdminsBasePath = organizationHqAdminsPath(req, organizationId);
+  const formAction =
+    mode === "edit" && admin
+      ? organizationHqAdminDetailPath(req, organizationId, admin.id)
+      : hqAdminsBasePath;
+  const hqLoginHostSlug = await platformProvisioningRepo.getExampleBranchHostSlugForOrganization(pool, organizationId);
   return res.status(extra && extra.statusCode ? extra.statusCode : 200).render("admin/church/hq_admin_form", {
     organization,
     mode,
@@ -771,6 +784,11 @@ async function renderHqAdminForm(req, res, extra) {
     error: (extra && extra.error) || null,
     hqAdminRoles: HQ_ADMIN_ROLES,
     formatDate,
+    churchPublicHost,
+    hqLoginHostSlug,
+    hqAdminsBasePath,
+    formAction,
+    organizationDetailPath: organizationAdminDetailPath(req, organizationId),
     activeNav: "church_platform_orgs",
   });
 }
@@ -784,7 +802,7 @@ async function renderHqAdminDetail(req, res, extra) {
     return res.status(404).type("text").send("HQ admin not found.");
   }
   const hqLoginHostSlug = await platformProvisioningRepo.getExampleBranchHostSlugForOrganization(pool, organizationId);
-  const hqReturnTo = `/admin/church/organizations/${organizationId}/hq-admins/${adminId}`;
+  const hqReturnTo = organizationHqAdminDetailPath(req, organizationId, adminId);
   const notesPanel = await supportNotesPanelData(pool, "hq_admin", adminId, hqReturnTo);
   return res.status(extra && extra.statusCode ? extra.statusCode : 200).render("admin/church/hq_admin_detail", {
     organization: {
@@ -804,6 +822,8 @@ async function renderHqAdminDetail(req, res, extra) {
     churchPublicHost,
     statusBadgeClass,
     statusLabel,
+    hqAdminsBasePath: organizationHqAdminsPath(req, organizationId),
+    organizationDetailPath: organizationAdminDetailPath(req, organizationId),
     activeNav: "church_platform_orgs",
   });
 }
@@ -1556,8 +1576,8 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         });
       }
 
-      const passwordHash = await bcrypt.hash(validation.data.temporary_password, 12);
-      const admin = await platformProvisioningRepo.createHqAdminForPlatform(
+      const passwordHash = await hashHqAdminPassword(validation.data.temporary_password);
+      await platformProvisioningRepo.createHqAdminForPlatform(
         pool,
         organizationId,
         {
@@ -1571,7 +1591,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         platformAdminId(req)
       );
 
-      return res.redirect(`/admin/church/organizations/${organizationId}/hq-admins/${admin.id}?notice=created`);
+      return res.redirect(`${organizationAdminDetailPath(req, organizationId)}?notice=hq_admin_created`);
     } catch (err) {
       if (err && err.code === "DUPLICATE_LOGIN") {
         return renderHqAdminForm(req, res, {
@@ -1656,7 +1676,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         platformAdminId(req)
       );
 
-      return res.redirect(`/admin/church/organizations/${organizationId}/hq-admins/${adminId}?notice=updated`);
+      return res.redirect(`${organizationHqAdminDetailPath(req, organizationId, adminId)}?notice=updated`);
     } catch (err) {
       if (err && err.code === "DUPLICATE_LOGIN") {
         const organizationId = Number(req.params.organizationId);
@@ -1688,7 +1708,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
           return res.status(404).type("text").send("HQ admin not found.");
         }
         await platformProvisioningRepo.activateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId(req));
-        return res.redirect(`/admin/church/organizations/${organizationId}/hq-admins/${adminId}?notice=activated`);
+        return res.redirect(`${organizationHqAdminDetailPath(req, organizationId, adminId)}?notice=activated`);
       } catch (err) {
         next(err);
       }
@@ -1708,7 +1728,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
           return res.status(404).type("text").send("HQ admin not found.");
         }
         await platformProvisioningRepo.deactivateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId(req));
-        return res.redirect(`/admin/church/organizations/${organizationId}/hq-admins/${adminId}?notice=deactivated`);
+        return res.redirect(`${organizationHqAdminDetailPath(req, organizationId, adminId)}?notice=deactivated`);
       } catch (err) {
         next(err);
       }
@@ -1733,7 +1753,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
           return renderHqAdminDetail(req, res, { statusCode: 400, resetError: validation.error });
         }
 
-        const passwordHash = await bcrypt.hash(validation.new_password, 12);
+        const passwordHash = await hashHqAdminPassword(validation.new_password);
         await platformProvisioningRepo.resetHqAdminPasswordForPlatform(
           pool,
           adminId,
@@ -1742,7 +1762,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
           platformAdminId(req)
         );
 
-        return res.redirect(`/admin/church/organizations/${organizationId}/hq-admins/${adminId}?notice=password_reset`);
+        return res.redirect(`${organizationHqAdminDetailPath(req, organizationId, adminId)}?notice=password_reset`);
       } catch (err) {
         next(err);
       }

@@ -327,8 +327,10 @@ After restart, check logs for:
 | `https://blessboard.com/admin/login` | BlessBoard platform admin login |
 | `https://blessboard.com/admin/churches/new` | New church provisioning |
 | `https://blessboard.com/admin/churches/:id/edit` | Edit church details |
+| `https://blessboard.com/admin/churches/:id/hq-admins/new` | Create HQ admin (platform admin) |
 | `https://blessboard.com/admin/diagnostics` | Production diagnostics (super admin) |
 | `https://getproapp.org/admin/church/organizations/new` | Redirects to blessboard.com/admin/churches/new |
+| `https://getproapp.org/admin/church/organizations/:id/hq-admins/new` | Redirects to blessboard.com/admin/churches/:id/hq-admins/new |
 | `https://unknownslug.blessboard.com` | Church not found (404) |
 
 ---
