@@ -67,6 +67,10 @@
           <span class="material-symbols-outlined" aria-hidden="true">group</span>
           <span>Users</span>
         </a>
+        <a href="/admin/church/members" class="<%= navClass('church_platform_members') %>">
+          <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+          <span>Members</span>
+        </a>
         <a href="/admin/church/roles" class="<%= navClass('church_platform_roles') %>">
           <span class="material-symbols-outlined" aria-hidden="true">badge</span>
           <span>Roles</span>
@@ -101,6 +105,7 @@
           <span>New church</span>
         </a>
         <form method="post" action="/admin/logout">
+          <%- include('../admin/church/partials/csrf_field') %>
           <button class="church-branch-nav-link church-branch-nav-link--button" type="submit">
             <span class="material-symbols-outlined" aria-hidden="true">logout</span>
             <span>Sign out</span>
@@ -160,6 +165,7 @@
           <a href="/admin/churches" class="<%= navClass('church_platform_orgs') %>"><span class="material-symbols-outlined" aria-hidden="true">apartment</span><span>Organizations</span></a>
           <a href="/admin/church/branches" class="<%= navClass('church_platform_branches') %>"><span class="material-symbols-outlined" aria-hidden="true">account_tree</span><span>Branches</span></a>
           <a href="/admin/church/users" class="<%= navClass('church_platform_users') %>"><span class="material-symbols-outlined" aria-hidden="true">group</span><span>Users</span></a>
+          <a href="/admin/church/members" class="<%= navClass('church_platform_members') %>"><span class="material-symbols-outlined" aria-hidden="true">groups</span><span>Members</span></a>
           <a href="/admin/church/roles" class="<%= navClass('church_platform_roles') %>"><span class="material-symbols-outlined" aria-hidden="true">badge</span><span>Roles</span></a>
           <a href="/admin/church/audit" class="<%= navClass('church_platform_audit') %>"><span class="material-symbols-outlined" aria-hidden="true">history</span><span>Audit log</span></a>
           <a href="/admin/church/security" class="<%= navClass('church_platform_security') %>"><span class="material-symbols-outlined" aria-hidden="true">security</span><span>Security</span></a>
@@ -170,6 +176,7 @@
         </nav>
         <div class="church-drawer__actions">
           <form method="post" action="/admin/logout">
+            <%- include('../admin/church/partials/csrf_field') %>
             <button class="church-btn church-btn--primary church-btn--block" type="submit">Sign out</button>
           </form>
         </div>

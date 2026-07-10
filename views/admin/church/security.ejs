@@ -178,6 +178,7 @@
                           <a href="<%= row.detail_link %>">View</a>
                         <% } %>
                         <form method="post" action="/admin/church/security/unlock<%= buildSecurityReturnQuery(f).replace('/admin/church/security', '') %>" style="display:inline;margin-left:0.5rem;">
+                          <%- include('partials/csrf_field') %>
                           <input type="hidden" name="account_type" value="<%= row.account_type %>" />
                           <input type="hidden" name="account_id" value="<%= row.account_id %>" />
                           <button type="submit" class="btn btn--default btn--sm">Unlock</button>

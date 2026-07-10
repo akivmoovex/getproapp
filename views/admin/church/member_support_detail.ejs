@@ -65,6 +65,7 @@
           <% } %>
           <p class="muted">Password will not be shown after saving. Share it securely.</p>
           <form method="post" action="/admin/church/members/<%= member.id %>/reset-password" class="admin-form-grid" style="margin-top:1rem;">
+            <%- include('partials/csrf_field') %>
             <div class="input-field">
               <label class="input-field__label" for="new_password">New password *</label>
               <input id="new_password" class="input-field__control" name="new_password" type="password" required minlength="8" autocomplete="new-password" />
@@ -83,6 +84,7 @@
           <h2 class="section-title section-title--flush">Status actions</h2>
           <% if (member.status === 'verified') { %>
             <form method="post" action="/admin/church/members/<%= member.id %>/suspend">
+              <%- include('partials/csrf_field') %>
               <div class="input-field">
                 <label class="input-field__label" for="suspend_reason">Suspend reason *</label>
                 <textarea id="suspend_reason" class="input-field__control" name="reason" rows="3" required minlength="3" placeholder="Why is this member being suspended?"></textarea>
@@ -91,6 +93,7 @@
             </form>
           <% } else if (member.status === 'suspended') { %>
             <form method="post" action="/admin/church/members/<%= member.id %>/reactivate">
+              <%- include('partials/csrf_field') %>
               <div class="input-field">
                 <label class="input-field__label" for="reactivate_reason">Reactivate reason (optional)</label>
                 <textarea id="reactivate_reason" class="input-field__control" name="reason" rows="3" placeholder="Optional note for reactivation"></textarea>
@@ -99,6 +102,7 @@
             </form>
           <% } else if (member.status === 'pending' || member.status === 'rejected') { %>
             <form method="post" action="/admin/church/members/<%= member.id %>/verify">
+              <%- include('partials/csrf_field') %>
               <div class="input-field">
                 <label class="input-field__label" for="verify_reason">Verify reason (optional)</label>
                 <textarea id="verify_reason" class="input-field__control" name="reason" rows="3" placeholder="Optional verification note"></textarea>

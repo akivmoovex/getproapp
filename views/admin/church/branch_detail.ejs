@@ -52,6 +52,7 @@
           <div class="admin-status-actions">
             <% if (branch.status === 'active') { %>
             <form class="admin-status-actions__form" method="post" action="/admin/church/branches/<%= branch.id %>/suspend">
+              <%- include('partials/csrf_field') %>
               <h3>Suspend branch</h3>
               <p class="muted">Blocks this branch host public site, member, branch-admin, and leader access.</p>
               <label class="input-field__label" for="branch_suspend_reason">Reason (required)</label>
@@ -61,12 +62,14 @@
             <% } %>
             <% if (branch.status === 'suspended') { %>
             <form class="admin-status-actions__form" method="post" action="/admin/church/branches/<%= branch.id %>/reactivate">
+              <%- include('partials/csrf_field') %>
               <h3>Reactivate branch</h3>
               <label class="input-field__label" for="branch_reactivate_reason">Note (optional)</label>
               <textarea id="branch_reactivate_reason" name="status_reason" maxlength="2000" placeholder="Optional note for audit trail"></textarea>
               <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Reactivate branch' }) %>
             </form>
             <form class="admin-status-actions__form" method="post" action="/admin/church/branches/<%= branch.id %>/archive">
+              <%- include('partials/csrf_field') %>
               <h3>Archive branch</h3>
               <label class="input-field__label" for="branch_archive_reason">Reason (required)</label>
               <textarea id="branch_archive_reason" name="status_reason" required minlength="3" maxlength="2000" placeholder="Explain why this branch is being archived"></textarea>

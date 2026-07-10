@@ -1,0 +1,3 @@
+<% if (typeof platformAdminCsrfToken !== 'undefined' && platformAdminCsrfToken) { %>
+<input type="hidden" name="<%= typeof platformAdminCsrfField !== 'undefined' && platformAdminCsrfField ? platformAdminCsrfField : '_csrf' %>" value="<%= platformAdminCsrfToken %>"/>
+<% } %>

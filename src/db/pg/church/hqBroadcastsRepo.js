@@ -165,6 +165,25 @@ async function listBroadcastsForOrganization(pool, organizationId, opts = {}) {
   };
 }
 
+/**
+ * Safe recent broadcast rows for platform org overview (no body/content).
+ * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ * @param {{ limit?: number }} [opts]
+ */
+async function listRecentBroadcastSummariesForOrganization(pool, organizationId, opts = {}) {
+  const limit = Math.min(Math.max(Number(opts.limit) || 5, 1), 20);
+  const r = await pool.query(
+    `SELECT id, title, status, created_at, publish_at, priority
+     FROM public.church_hq_broadcasts
+     WHERE organization_id = $1
+     ORDER BY COALESCE(publish_at, created_at) DESC NULLS LAST, id DESC
+     LIMIT $2`,
+    [organizationId, limit]
+  );
+  return r.rows;
+}
+
 async function listBroadcastTargets(pool, broadcastId, organizationId) {
   const r = await pool.query(
     `SELECT t.*, br.name AS branch_name, br.slug AS branch_slug
@@ -614,6 +633,7 @@ module.exports = {
   createBroadcastForOrganization,
   updateBroadcastForOrganization,
   listBroadcastsForOrganization,
+  listRecentBroadcastSummariesForOrganization,
   findBroadcastByIdForOrganization,
   publishBroadcastForOrganization,
   archiveBroadcastForOrganization,

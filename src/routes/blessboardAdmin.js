@@ -24,6 +24,10 @@ const {
   BLESSBOARD_ADMIN,
 } = require("../church/blessboardAdminPaths");
 const { BLESSBOARD_NAME, BLESSBOARD_POWERED_BY } = require("../church/branding");
+const {
+  attachPlatformAdminCsrfLocals,
+  requirePlatformAdminCsrf,
+} = require("../church/platformAdminCsrf");
 const registerAdminChurchPlatformRoutes = require("./admin/adminChurchPlatform");
 const registerAdminChurchBranchAdminPasswordResetRoutes = require("./admin/adminChurchBranchAdminPasswordResetRequests");
 const registerAdminChurchHqAdminPasswordResetRoutes = require("./admin/adminChurchHqAdminPasswordResetRequests");
@@ -93,7 +97,7 @@ function registerBlessBoardAdminAuthRoutes(router) {
     return res.redirect(BLESSBOARD_ADMIN.dashboard);
   });
 
-  router.post("/logout", (req, res) => {
+  router.post("/logout", requirePlatformAdminCsrf, (req, res) => {
     req.session.destroy(() => res.redirect(302, "/"));
   });
 }
@@ -128,6 +132,11 @@ module.exports = function blessboardAdminRoutes() {
   router.use((req, res, next) => {
     if (req.path.startsWith("/login")) return next();
     return requireSuperAdmin(req, res, next);
+  });
+
+  router.use((req, res, next) => {
+    if (req.path.startsWith("/login")) return next();
+    return attachPlatformAdminCsrfLocals(req, res, next);
   });
 
   router.use(async (req, res, next) => {

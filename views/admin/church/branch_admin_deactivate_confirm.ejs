@@ -1,0 +1,44 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Deactivate branch admin', activeNav: activeNav || 'church_platform_branches', pageTitle: 'Confirm branch admin deactivation' }) %>
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Confirm branch admin deactivation</h1>
+            <p class="admin-dashboard__subtitle muted"><%= admin.full_name %> · <%= branch.name %></p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id + '/admins/' + admin.id, label: 'Cancel' }) %>
+          </div>
+        </header>
+
+        <% if (typeof statusError !== 'undefined' && statusError) { %>
+          <div class="flash flash--error" role="alert"><%= statusError %></div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Administrator</h2>
+          <dl class="admin-dl">
+            <dt>Name</dt><dd style="overflow-wrap:anywhere;"><%= admin.full_name %></dd>
+            <dt>Email</dt><dd style="overflow-wrap:anywhere;"><%= admin.email || '—' %></dd>
+            <dt>Current status</dt><dd><%- include('../../partials/admin/church_status_badge', { status: admin.status }) %></dd>
+            <dt>Branch</dt><dd><a href="/admin/church/branches/<%= branch.id %>"><%= branch.name %></a></dd>
+            <dt>Organization</dt><dd><a href="/admin/church/organizations/<%= branch.organization_id %>"><%= branch.organization_name || ('#' + branch.organization_id) %></a></dd>
+          </dl>
+          <ul class="admin-list" style="margin-top:1rem;">
+            <li>Deactivation sets status to inactive (existing account model).</li>
+            <li>Login is rejected while inactive.</li>
+            <li>Existing sessions are cleared on the next protected branch-admin request.</li>
+            <li>An audit event is recorded with previous status, new status, and reason.</li>
+          </ul>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <form method="post" action="/admin/church/branches/<%= branch.id %>/admins/<%= admin.id %>/deactivate">
+            <%- include('partials/csrf_field') %>
+            <label class="input-field__label" for="deactivate_reason">Reason (required)</label>
+            <textarea id="deactivate_reason" name="status_reason" required minlength="3" maxlength="2000" placeholder="Why is this branch admin being deactivated?"><%= typeof formReason !== 'undefined' ? formReason : '' %></textarea>
+            <div class="admin-toolbar" style="margin-top:1rem;">
+              <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Confirm deactivate' }) %>
+              <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + branch.id + '/admins/' + admin.id, label: 'Cancel' }) %>
+            </div>
+          </form>
+        </section>
+<%- include('../../partials/platform_admin_shell_end') %>

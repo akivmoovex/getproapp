@@ -245,9 +245,10 @@ test(
     assert.equal(updatedAdmin.full_name, "Second HQ Admin Updated");
     assert.equal(updatedAdmin.phone, "0977333000");
 
-    const deactivated = await superAgent.post(
-      `/admin/church/organizations/${org.id}/hq-admins/${secondAdmin.id}/deactivate`
-    );
+    const deactivated = await superAgent
+      .post(`/admin/church/organizations/${org.id}/hq-admins/${secondAdmin.id}/deactivate`)
+      .type("form")
+      .send({ status_reason: "No longer needs HQ access" });
     assert.equal(deactivated.status, 302);
     const inactiveAdmin = await hqAdminsRepo.findHqAdminById(pool, secondAdmin.id);
     assert.equal(inactiveAdmin.status, "inactive");

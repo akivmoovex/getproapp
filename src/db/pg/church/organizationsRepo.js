@@ -57,6 +57,57 @@ async function getOrganizationUsageCounts(pool, organizationId) {
 }
 
 /**
+ * Administrator counts for platform organization overview (single round-trip).
+ * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ */
+async function getOrganizationAdminCounts(pool, organizationId) {
+  const r = await pool.query(
+    `SELECT
+       (SELECT COUNT(*)::int FROM public.church_hq_admins WHERE organization_id = $1) AS hq_admin_count,
+       (SELECT COUNT(*)::int FROM public.church_hq_admins WHERE organization_id = $1 AND status = 'active') AS active_hq_admin_count,
+       (SELECT COUNT(*)::int FROM public.church_branch_admins WHERE organization_id = $1) AS branch_admin_count,
+       (SELECT COUNT(*)::int FROM public.church_branch_admins WHERE organization_id = $1 AND status = 'active') AS active_branch_admin_count`,
+    [organizationId]
+  );
+  const row = r.rows[0] || {};
+  return {
+    hq_admin_count: row.hq_admin_count || 0,
+    active_hq_admin_count: row.active_hq_admin_count || 0,
+    branch_admin_count: row.branch_admin_count || 0,
+    active_branch_admin_count: row.active_branch_admin_count || 0,
+  };
+}
+
+/**
+ * Submitted password-reset requests scoped to one organization.
+ * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ */
+async function countSubmittedResetRequestsForOrganization(pool, organizationId) {
+  const r = await pool.query(
+    `SELECT
+       (SELECT COUNT(*)::int FROM public.church_member_password_reset_requests
+         WHERE organization_id = $1 AND status = 'submitted') AS member_submitted,
+       (SELECT COUNT(*)::int FROM public.church_branch_admin_password_reset_requests
+         WHERE organization_id = $1 AND status = 'submitted') AS branch_admin_submitted,
+       (SELECT COUNT(*)::int FROM public.church_hq_admin_password_reset_requests
+         WHERE organization_id = $1 AND status = 'submitted') AS hq_admin_submitted`,
+    [organizationId]
+  );
+  const row = r.rows[0] || {};
+  const member = row.member_submitted || 0;
+  const branchAdmin = row.branch_admin_submitted || 0;
+  const hqAdmin = row.hq_admin_submitted || 0;
+  return {
+    member_submitted: member,
+    branch_admin_submitted: branchAdmin,
+    hq_admin_submitted: hqAdmin,
+    total_submitted: member + branchAdmin + hqAdmin,
+  };
+}
+
+/**
  * @param {import("pg").Pool} pool
  * @param {number} organizationId
  * @param {{ plan_code: string, plan_status?: string, plan_notes?: string | null }} fields
@@ -218,6 +269,7 @@ async function updateOrganizationStatus(db, organizationId, newStatus, opts = {}
           previous_status: previousStatus,
           new_status: newStatus,
           reason: reason || null,
+          result: "ok",
           organization_id: organizationId,
         },
       });
@@ -403,6 +455,8 @@ module.exports = {
   findOrganizationByIdForPlatform,
   checkOrganizationSlugAvailableForUpdate,
   getOrganizationUsageCounts,
+  getOrganizationAdminCounts,
+  countSubmittedResetRequestsForOrganization,
   updateOrganizationPlan,
   updateOrganizationMetadataForPlatform,
   createOrganization,

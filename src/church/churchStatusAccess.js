@@ -39,7 +39,7 @@ function getHqStatusBanner(churchContext) {
       level: org.status === "archived" ? "danger" : "warning",
       message:
         org.status === "suspended"
-          ? "This organization is suspended. Member, branch, and leader access is blocked. HQ access is read-only where noted."
+          ? "This organization is suspended. Member, branch-admin, leader, and public access on branch hosts is blocked. HQ login remains available; HQ write actions are not blocked by this status gate."
           : "This organization is archived. Operational access is limited.",
     });
   }
@@ -92,7 +92,7 @@ function isHqPath(path) {
 
 /**
  * Blocks public, member, branch-admin, and leader routes when org/branch is not active.
- * HQ routes remain accessible (MVP: login + read with banner).
+ * HQ routes remain accessible (login and writes are not blocked by this gate).
  */
 function isPlatformAdminPath(path) {
   return String(path || "").startsWith("/admin");

@@ -70,6 +70,7 @@
           <% } %>
           <p class="muted">Password will not be shown after saving. Share it securely.</p>
           <form method="post" action="/admin/church/ministry-leaders/<%= leader.id %>/reset-password" class="admin-form-grid" style="margin-top:1rem;">
+            <%- include('partials/csrf_field') %>
             <div class="input-field">
               <label class="input-field__label" for="new_password">New password *</label>
               <input id="new_password" class="input-field__control" name="new_password" type="password" required minlength="8" autocomplete="new-password" />
@@ -88,6 +89,7 @@
           <h2 class="section-title section-title--flush">Status actions</h2>
           <% if (leader.status === 'active') { %>
             <form method="post" action="/admin/church/ministry-leaders/<%= leader.id %>/deactivate">
+              <%- include('partials/csrf_field') %>
               <div class="input-field">
                 <label class="input-field__label" for="deactivate_reason">Deactivate reason *</label>
                 <textarea id="deactivate_reason" class="input-field__control" name="reason" rows="3" required minlength="3" maxlength="500" placeholder="Why is this leader being deactivated?"></textarea>
@@ -96,6 +98,7 @@
             </form>
           <% } else if (leader.status === 'inactive') { %>
             <form method="post" action="/admin/church/ministry-leaders/<%= leader.id %>/activate">
+              <%- include('partials/csrf_field') %>
               <div class="input-field">
                 <label class="input-field__label" for="activate_reason">Activate reason (optional)</label>
                 <textarea id="activate_reason" class="input-field__control" name="reason" rows="3" maxlength="500" placeholder="Optional note for activation"></textarea>
@@ -116,6 +119,7 @@
           <% if (lockInfo.is_locked) { %>
             <p class="muted">This leader account has an active login lock.</p>
             <form method="post" action="/admin/church/ministry-leaders/<%= leader.id %>/unlock-login" style="margin-top:1rem;">
+              <%- include('partials/csrf_field') %>
               <div class="input-field">
                 <label class="input-field__label" for="unlock_reason">Unlock reason (optional)</label>
                 <textarea id="unlock_reason" class="input-field__control" name="reason" rows="2" maxlength="500" placeholder="Optional note for unlock"></textarea>

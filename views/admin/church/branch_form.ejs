@@ -25,6 +25,7 @@
         <% var f = typeof form !== 'undefined' && form ? form : {}; %>
         <% var blocked = typeof branchLimitBlocked !== 'undefined' && branchLimitBlocked; %>
         <form method="post" action="/admin/church/organizations/<%= organization.id %>/branches" class="card card--mb-xl" style="padding:1.25rem;">
+          <%- include('partials/csrf_field') %>
           <h2 class="section-title section-title--flush">1. Branch details</h2>
           <div class="admin-form-grid">
             <div class="input-field">

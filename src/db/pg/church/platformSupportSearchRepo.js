@@ -4,7 +4,7 @@ const { normalizePhone } = require("./membersRepo");
 
 const ORG_BRANCH_STATUSES = new Set(["active", "suspended", "archived"]);
 const ADMIN_STATUSES = new Set(["active", "inactive"]);
-const MEMBER_STATUSES = new Set(["pending", "verified", "rejected", "inactive"]);
+const MEMBER_STATUSES = new Set(["pending", "verified", "rejected", "suspended"]);
 
 function ilikePattern(q) {
   return `%${String(q || "").trim()}%`;
@@ -260,7 +260,8 @@ async function searchBranchAdmins(pool, q, status, limit) {
 }
 
 async function searchMembers(pool, q, status, limit) {
-  if (!statusApplies("member", status)) {
+  const memberStatus = status === "inactive" ? "suspended" : status;
+  if (!statusApplies("member", memberStatus)) {
     return { items: [], total: 0 };
   }
   const pattern = ilikePattern(q);
@@ -276,7 +277,7 @@ async function searchMembers(pool, q, status, limit) {
   const phoneClause = phoneMatchClause(params, q, ["m.phone_normalized"]);
   if (phoneClause) matchParts.push(phoneClause);
   const clauses = [`(${matchParts.join(" OR ")})`];
-  appendStatusFilter(clauses, params, "m.status", status, "member");
+  appendStatusFilter(clauses, params, "m.status", memberStatus, "member");
   params.push(limit);
 
   const r = await pool.query(

@@ -19,6 +19,7 @@
 <% var f = typeof form !== 'undefined' && form ? form : {}; %>
 <div class="church-platform-provision-grid">
 <form method="post" action="<%= _formAction %>" class="church-platform-panel church-platform-panel--form">
+  <%- include('partials/csrf_field') %>
   <h2 class="church-platform-panel__title"><span class="material-symbols-outlined" aria-hidden="true">apartment</span> Organization Identity</h2>
           <div class="admin-form-grid">
             <div class="input-field">

@@ -729,12 +729,12 @@ async function updateBranchAdminForPlatform(pool, adminId, branchId, fields, pla
   return branchAdminsRepo.updateBranchAdminForPlatform(pool, adminId, branchId, fields, platformAdminId);
 }
 
-async function activateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId) {
-  return branchAdminsRepo.activateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId);
+async function activateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId, opts = {}) {
+  return branchAdminsRepo.activateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId, opts);
 }
 
-async function deactivateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId) {
-  return branchAdminsRepo.deactivateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId);
+async function deactivateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId, opts = {}) {
+  return branchAdminsRepo.deactivateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId, opts);
 }
 
 async function resetBranchAdminPasswordForPlatform(pool, adminId, branchId, passwordHash, platformAdminId) {
@@ -783,12 +783,12 @@ async function updateHqAdminForPlatform(pool, adminId, organizationId, fields, p
   return hqAdminsRepo.updateHqAdminForPlatform(pool, adminId, organizationId, fields, platformAdminId);
 }
 
-async function activateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId) {
-  return hqAdminsRepo.activateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId);
+async function activateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId, opts = {}) {
+  return hqAdminsRepo.activateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId, opts);
 }
 
-async function deactivateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId) {
-  return hqAdminsRepo.deactivateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId);
+async function deactivateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId, opts = {}) {
+  return hqAdminsRepo.deactivateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId, opts);
 }
 
 async function resetHqAdminPasswordForPlatform(pool, adminId, organizationId, passwordHash, platformAdminId) {

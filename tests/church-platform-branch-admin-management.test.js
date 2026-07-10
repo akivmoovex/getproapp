@@ -236,9 +236,10 @@ test(
     assert.equal(updatedAdmin.full_name, "Second Admin Updated");
     assert.equal(updatedAdmin.phone, "0977333000");
 
-    const deactivated = await superAgent.post(
-      `/admin/church/branches/${branch.id}/admins/${secondAdmin.id}/deactivate`
-    );
+    const deactivated = await superAgent
+      .post(`/admin/church/branches/${branch.id}/admins/${secondAdmin.id}/deactivate`)
+      .type("form")
+      .send({ status_reason: "No longer needs branch access" });
     assert.equal(deactivated.status, 302);
     const inactiveAdmin = await branchAdminsRepo.findBranchAdminById(pool, secondAdmin.id);
     assert.equal(inactiveAdmin.status, "inactive");

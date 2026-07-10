@@ -39,6 +39,23 @@ function validateReactivateBody(body) {
   return { ok: true, reason: reason || null };
 }
 
+function validateAdminDeactivateBody(body) {
+  const reason = normalizeStatusReason(body && (body.status_reason || body.reason));
+  if (reason.length < REASON_MIN_LENGTH) {
+    return {
+      ok: false,
+      error: "Please enter a reason for deactivating (at least 3 characters).",
+      reason,
+    };
+  }
+  return { ok: true, reason };
+}
+
+function validateAdminActivateBody(body) {
+  const reason = normalizeStatusReason(body && (body.status_reason || body.reason));
+  return { ok: true, reason: reason || null };
+}
+
 function assertCanSuspendOrganization(org) {
   if (!org) return { ok: false, error: "Organization not found." };
   if (org.status !== "active") {
@@ -132,6 +149,8 @@ module.exports = {
   validateSuspendBody,
   validateArchiveBody,
   validateReactivateBody,
+  validateAdminDeactivateBody,
+  validateAdminActivateBody,
   assertCanSuspendOrganization,
   assertCanArchiveOrganization,
   assertCanReactivateOrganization,

@@ -75,6 +75,7 @@
         <section class="card card--mb-xl" style="padding:1.25rem;">
           <h2 class="section-title section-title--flush">Change plan</h2>
           <form method="post" action="/admin/church/organizations/<%= planSummary.organization.id %>/plan" class="admin-form-grid">
+            <%- include('partials/csrf_field') %>
             <div class="input-field">
               <label class="input-field__label" for="plan_code">Plan</label>
               <select id="plan_code" class="input-field__control" name="plan_code">

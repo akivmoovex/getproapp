@@ -1,0 +1,121 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Church members', activeNav: activeNav || 'church_platform_members', pageTitle: 'Church members' }) %>
+<% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Church members</h1>
+            <p class="admin-dashboard__subtitle muted">Read-only platform directory for support. Passwords, tokens, and secrets are never shown.</p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/search', label: 'Support search' }) %>
+          </div>
+        </header>
+
+        <form method="get" action="/admin/church/members" class="admin-filter-form card card--mb-xl" style="padding:1rem;" role="search">
+          <div class="input-field">
+            <label class="input-field__label" for="q">Search</label>
+            <input id="q" class="input-field__control" name="q" type="search" value="<%= f.q || '' %>" placeholder="Name, email, phone, organization, branch…"/>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="status">Membership status</label>
+            <select id="status" class="input-field__control" name="status">
+              <% (memberStatuses || ['all','pending','verified','rejected','suspended']).forEach(function (s) { %>
+              <option value="<%= s %>" <%= (!f.status && s === 'all') || f.status === s ? 'selected' : '' %>><%= s === 'all' ? 'All statuses' : (typeof memberStatusLabel === 'function' ? memberStatusLabel(s) : s) %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="organization_id">Organization</label>
+            <select id="organization_id" class="input-field__control" name="organization_id">
+              <option value="">All organizations</option>
+              <% (organizations || []).forEach(function (o) { %>
+              <option value="<%= o.id %>" <%= Number(f.organization_id) === Number(o.id) ? 'selected' : '' %>><%= o.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="branch_id">Branch</label>
+            <select id="branch_id" class="input-field__control" name="branch_id">
+              <option value="">All branches</option>
+              <% (branches || []).forEach(function (b) { %>
+              <option value="<%= b.id %>" <%= Number(f.branch_id) === Number(b.id) ? 'selected' : '' %>><%= b.name %><% if (b.organization_name) { %> · <%= b.organization_name %><% } %></option>
+              <% }); %>
+            </select>
+          </div>
+          <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Apply filters' }) %>
+          <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/members', label: 'Clear' }) %>
+        </form>
+
+        <p class="muted card card--mb-xl" style="padding:0.75rem 1rem;"><%= totalCount %> member(s) · page <%= page %> of <%= totalPages %></p>
+
+        <div class="card card--mb-xl church-show-desktop-only">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Organization</th>
+                  <th>Branch</th>
+                  <th>Membership</th>
+                  <th>Verification</th>
+                  <th>Account</th>
+                  <th>Joined</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!(members || []).length) { %>
+                <tr><td colspan="8" class="muted">No members match these filters.</td></tr>
+                <% } else { members.forEach(function (m) { %>
+                <tr>
+                  <td style="overflow-wrap:anywhere;"><%= m.full_name %></td>
+                  <td style="overflow-wrap:anywhere;"><a href="/admin/church/organizations/<%= m.organization_id %>"><%= m.organization_name %></a></td>
+                  <td style="overflow-wrap:anywhere;"><a href="/admin/church/branches/<%= m.branch_id %>"><%= m.branch_name %></a></td>
+                  <td><%- include('../../partials/admin/church_status_badge', { status: m.membership_status }) %></td>
+                  <td><%= m.verification_status %></td>
+                  <td><%= m.account_status %></td>
+                  <td><%= formatDate(m.created_at) %></td>
+                  <td><%- include('../../partials/components/button', { variant: 'default', href: m.link, label: 'View' }) %></td>
+                </tr>
+                <% }); } %>
+              </tbody>
+            </table>
+          </div>
+          <% if (totalPages > 1) { %>
+          <div class="admin-toolbar" style="padding:1rem;">
+            <% if (page > 1) { %>
+            <%- include('../../partials/components/button', { variant: 'default', href: prevUrl, label: 'Previous' }) %>
+            <% } %>
+            <% if (page < totalPages) { %>
+            <%- include('../../partials/components/button', { variant: 'default', href: nextUrl, label: 'Next' }) %>
+            <% } %>
+          </div>
+          <% } %>
+        </div>
+
+        <div class="church-show-mobile-only card card--mb-xl" style="padding:0;">
+          <% if (!(members || []).length) { %>
+          <p class="muted" style="padding:1rem;">No members match these filters.</p>
+          <% } else { members.forEach(function (m) { %>
+          <article class="church-mobile-list-card" style="padding:1rem;border-bottom:1px solid rgba(0,0,0,0.08);">
+            <h2 class="section-title section-title--flush" style="overflow-wrap:anywhere;"><%= m.full_name %></h2>
+            <p class="muted" style="overflow-wrap:anywhere;margin:0.35rem 0;"><%= m.organization_name %> · <%= m.branch_name %></p>
+            <p style="margin:0.35rem 0;">
+              <%- include('../../partials/admin/church_status_badge', { status: m.membership_status }) %>
+              · <%= m.verification_status %> · <%= m.account_status %>
+            </p>
+            <p class="muted" style="margin:0.35rem 0;">Joined <%= formatDate(m.created_at) %></p>
+            <%- include('../../partials/components/button', { variant: 'default', href: m.link, label: 'View member' }) %>
+          </article>
+          <% }); } %>
+          <% if (totalPages > 1) { %>
+          <div class="admin-toolbar" style="padding:1rem;">
+            <% if (page > 1) { %>
+            <%- include('../../partials/components/button', { variant: 'default', href: prevUrl, label: 'Previous' }) %>
+            <% } %>
+            <% if (page < totalPages) { %>
+            <%- include('../../partials/components/button', { variant: 'default', href: nextUrl, label: 'Next' }) %>
+            <% } %>
+          </div>
+          <% } %>
+        </div>
+<%- include('../../partials/platform_admin_shell_end') %>

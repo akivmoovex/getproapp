@@ -30,6 +30,8 @@ const {
   validateSuspendBody,
   validateArchiveBody,
   validateReactivateBody,
+  validateAdminDeactivateBody,
+  validateAdminActivateBody,
   assertCanSuspendOrganization,
   assertCanArchiveOrganization,
   assertCanReactivateOrganization,
@@ -67,6 +69,7 @@ const {
   MIN_SEARCH_LENGTH,
 } = require("../../church/platformSupportSearchValidation");
 const platformMemberSupportRepo = require("../../db/pg/church/platformMemberSupportRepo");
+const platformMembersRepo = require("../../db/pg/church/platformMembersRepo");
 const platformSupportNotesRepo = require("../../db/pg/church/platformSupportNotesRepo");
 const { parseMemberSupportParams } = require("../../church/platformMemberSupportValidation");
 const { validateCreateSupportNoteBody } = require("../../church/platformSupportNotesValidation");
@@ -86,6 +89,8 @@ const { memberRequestStatusLabel } = require("../../church/requestProcessingVali
 const { joinRequestStatusLabel } = require("../../church/ministryJoinRequestValidation");
 const { actionLabel, actorTypeLabel, targetTypeLabel, actorDisplayFromRow, targetLabelFromRow, auditSummary, formatMetadataForDisplay, parseAuditFilters, AUDIT_ACTOR_TYPES, AUDIT_ACTION_GROUPS } = require("../../church/auditLogFormatting");
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
+const hqBroadcastsRepo = require("../../db/pg/church/hqBroadcastsRepo");
+const organizationsRepo = require("../../db/pg/church/organizationsRepo");
 const platformUsersRepo = require("../../db/pg/church/platformUsersRepo");
 const { getLoginProtectionSummaryForAccount } = require("../../db/pg/church/loginAttemptsRepo");
 const platformSecurityRepo = require("../../db/pg/church/platformSecurityRepo");
@@ -103,6 +108,10 @@ const { gatherChurchProductionDiagnostics } = require("../../services/church/chu
 const { organizationAdminDetailPath, organizationAdminEditPath, organizationHqAdminsPath, organizationHqAdminDetailPath } = require("../../church/blessboardAdminPaths");
 const { hashHqAdminPassword } = require("../../church/hqAuth");
 const { classifyPgError } = require("../../church/churchDbResilience");
+const {
+  attachPlatformAdminCsrfLocals,
+  requirePlatformAdminCsrfOnMutations,
+} = require("../../church/platformAdminCsrf");
 
 function formatDate(value) {
   if (!value) return "—";
@@ -307,9 +316,8 @@ async function renderMemberSupportDetail(req, res, extra = {}) {
     return res.status(404).type("text").send("Member not found.");
   }
   const hostSlug = branchesRepo.branchHostSlug(detail.branch);
-  const memberReturnTo =
-    parsed.data.returnTo || `/admin/church/members/${parsed.data.memberId}`;
-  const notesPanel = await supportNotesPanelData(pool, "member", parsed.data.memberId, memberReturnTo);
+  const notesPanel = await supportNotesPanelData(pool, "member", parsed.data.memberId, `/admin/church/members/${parsed.data.memberId}`);
+  const statusLabels = platformMembersRepo.deriveMemberStatusLabels(detail.member.status);
   return res.status(extra.statusCode || 200).render("admin/church/member_support_detail", {
     detail,
     member: detail.member,
@@ -319,8 +327,12 @@ async function renderMemberSupportDetail(req, res, extra = {}) {
     loginContext: detail.loginContext,
     loginProtection: getLoginProtectionSummaryForAccount(detail.member),
     auditLogs: detail.auditLogs || [],
+    passwordResetRequests: detail.passwordResetRequests || [],
+    membershipStatus: statusLabels.membership_status,
+    verificationStatus: statusLabels.verification_status,
+    accountStatus: statusLabels.account_status,
     branchHostSlug: hostSlug,
-    returnTo: parsed.data.returnTo,
+    returnTo: parsed.data.returnTo || "/admin/church/members",
     flashNotice: memberSupportNotice(req) || extra.flashNotice || null,
     resetError: extra.resetError || null,
     statusActionError: extra.statusActionError || null,
@@ -336,7 +348,7 @@ async function renderMemberSupportDetail(req, res, extra = {}) {
     memberRequestStatusLabel,
     joinRequestStatusLabel,
     actionLabel,
-    activeNav: "church_platform_search",
+    activeNav: "church_platform_members",
   });
 }
 
@@ -347,15 +359,30 @@ async function renderOrganizationDetail(req, res, extra) {
   if (!detail) {
     return res.status(404).type("text").send("Organization not found.");
   }
-  const planSummary = await platformProvisioningRepo.getOrganizationPlanSummary(pool, organizationId);
-  const activeHqAdminCount = await platformProvisioningRepo.countActiveHqAdminsForOrganization(pool, organizationId);
-  const hqLoginHostSlug = await platformProvisioningRepo.getExampleBranchHostSlugForOrganization(pool, organizationId);
+  const [
+    planSummary,
+    usageCounts,
+    adminCounts,
+    hqLoginHostSlug,
+    recentAuditEvents,
+    recentBroadcasts,
+    pendingResetRequests,
+    notesPanel,
+  ] = await Promise.all([
+    platformProvisioningRepo.getOrganizationPlanSummary(pool, organizationId),
+    organizationsRepo.getOrganizationUsageCounts(pool, organizationId),
+    organizationsRepo.getOrganizationAdminCounts(pool, organizationId),
+    platformProvisioningRepo.getExampleBranchHostSlugForOrganization(pool, organizationId),
+    auditLogsRepo.listRecentAuditLogsForOrganization(pool, organizationId, { limit: 8 }),
+    hqBroadcastsRepo.listRecentBroadcastSummariesForOrganization(pool, organizationId, { limit: 5 }),
+    organizationsRepo.countSubmittedResetRequestsForOrganization(pool, organizationId),
+    supportNotesPanelData(pool, "organization", organizationId, organizationAdminDetailPath(req, organizationId)),
+  ]);
+  const activeHqAdminCount = adminCounts.active_hq_admin_count;
   const primaryHqAdmin =
     detail.hqAdmins && detail.hqAdmins.length > 0
       ? detail.hqAdmins.find((a) => a.status === "active") || detail.hqAdmins[0]
       : null;
-  const orgReturnTo = organizationAdminDetailPath(req, organizationId);
-  const notesPanel = await supportNotesPanelData(pool, "organization", organizationId, orgReturnTo);
   let welcomePack = null;
   const provisioned = String(req.query.provisioned || "") === "1";
   if (
@@ -373,6 +400,11 @@ async function renderOrganizationDetail(req, res, extra) {
     hqAdmins: detail.hqAdmins,
     primaryHqAdmin,
     activeHqAdminCount,
+    adminCounts,
+    usageCounts,
+    recentAuditEvents: recentAuditEvents || [],
+    recentBroadcasts: recentBroadcasts || [],
+    pendingResetRequests,
     hqLoginHostSlug,
     planSummary,
     formatDate,
@@ -387,9 +419,62 @@ async function renderOrganizationDetail(req, res, extra) {
     ...notesPanel,
     statusBadgeClass,
     statusLabel,
+    actionLabel,
     orgBranchStatuses: ORG_BRANCH_STATUSES,
     hqAdminsBasePath: organizationHqAdminsPath(req, organizationId),
     hqAdminNewPath: `${organizationHqAdminsPath(req, organizationId)}/new`,
+    organizationDetailPath: organizationAdminDetailPath(req, organizationId),
+    activeNav: "church_platform_orgs",
+  });
+}
+
+const ORGANIZATION_SUSPEND_EFFECTS = [
+  "Public branch and organization pages on church hosts return unavailable (HTTP 503).",
+  "Member login and member portal access are blocked; member sessions are cleared on the next non-HQ request.",
+  "Branch-admin login and branch console access are blocked; branch-admin sessions are cleared on the next non-HQ request.",
+  "Ministry leader access on branch hosts is blocked.",
+  "Member-facing broadcast and attachment access on branch hosts is blocked by the same gate.",
+  "HQ login remains available and shows a status banner.",
+  "HQ write actions are not blocked by the organization status gate in this release.",
+  "BlessBoard platform admin can still view and manage the organization.",
+  "Organization data is preserved; suspension is reversible via reactivation.",
+];
+
+async function loadOrganizationStatusConfirmContext(pool, organizationId) {
+  const org = await platformProvisioningRepo.findChurchOrganizationById(pool, organizationId);
+  if (!org) return null;
+  const [usageCounts, adminCounts] = await Promise.all([
+    organizationsRepo.getOrganizationUsageCounts(pool, organizationId),
+    organizationsRepo.getOrganizationAdminCounts(pool, organizationId),
+  ]);
+  return { organization: org, usageCounts, adminCounts };
+}
+
+async function renderOrganizationSuspendConfirm(req, res, extra = {}) {
+  const organizationId = Number(req.params.organizationId);
+  if (!Number.isFinite(organizationId) || organizationId <= 0) {
+    return res.status(404).type("text").send("Organization not found.");
+  }
+  const pool = getPgPool();
+  const ctx =
+    extra.organization && extra.usageCounts && extra.adminCounts
+      ? extra
+      : await loadOrganizationStatusConfirmContext(pool, organizationId);
+  if (!ctx || !ctx.organization) {
+    return res.status(404).type("text").send("Organization not found.");
+  }
+  const usageCounts = ctx.usageCounts || (await organizationsRepo.getOrganizationUsageCounts(pool, organizationId));
+  const adminCounts = ctx.adminCounts || (await organizationsRepo.getOrganizationAdminCounts(pool, organizationId));
+  return res.status(extra.statusCode || 200).render("admin/church/organization_suspend_confirm", {
+    organization: ctx.organization,
+    usageCounts,
+    adminCounts,
+    suspendEffects: ORGANIZATION_SUSPEND_EFFECTS,
+    statusError: extra.statusError || null,
+    formReason: extra.formReason || "",
+    formatDate,
+    statusBadgeClass,
+    statusLabel,
     organizationDetailPath: organizationAdminDetailPath(req, organizationId),
     activeNav: "church_platform_orgs",
   });
@@ -835,6 +920,9 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
    * Platform church provisioning — super admin only (`requireSuperAdmin` → `canAccessSuperConsole`).
    * Not exposed on branch church hosts, member portal, branch admin, or HQ portal.
    */
+  router.use(attachPlatformAdminCsrfLocals);
+  router.use(requirePlatformAdminCsrfOnMutations);
+
   router.get("/church", requireSuperAdmin, async (req, res, next) => {
     try {
       const pool = getPgPool();
@@ -900,6 +988,67 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
       });
     } catch (err) {
       next(err);
+    }
+  });
+
+  function buildPlatformMembersQuery(filters, page) {
+    const params = new URLSearchParams();
+    if (filters.q) params.set("q", filters.q);
+    if (filters.status && filters.status !== "all") params.set("status", filters.status);
+    if (filters.organization_id) params.set("organization_id", String(filters.organization_id));
+    if (filters.branch_id) params.set("branch_id", String(filters.branch_id));
+    if (page && page > 1) params.set("page", String(page));
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  }
+
+  router.get("/church/members", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const validated = await platformMembersRepo.validateMemberDirectoryFilters(pool, req.query);
+      if (!validated.ok) {
+        return res.status(400).type("text").send(validated.error);
+      }
+      const listed = await platformMembersRepo.listPlatformMembers(pool, {
+        q: req.query.q,
+        status: req.query.status,
+        organization_id: validated.organization_id,
+        branch_id: validated.branch_id,
+        page: req.query.page,
+        limit: 20,
+      });
+      const [organizations, branches] = await Promise.all([
+        platformProvisioningRepo.listChurchOrganizations(pool, {}),
+        platformProvisioningRepo.listChurchBranches(pool, {}),
+      ]);
+      const branchOptions = (branches || []).filter((b) =>
+        listed.filters.organization_id ? Number(b.organization_id) === Number(listed.filters.organization_id) : true
+      );
+      return res.render("admin/church/platform_members", {
+        members: listed.rows,
+        filters: listed.filters,
+        page: listed.page,
+        totalPages: listed.totalPages,
+        totalCount: listed.total,
+        organizations: organizations || [],
+        branches: branchOptions,
+        memberStatuses: platformMembersRepo.MEMBER_STATUSES,
+        prevUrl:
+          listed.page > 1
+            ? `/admin/church/members${buildPlatformMembersQuery(listed.filters, listed.page - 1)}`
+            : null,
+        nextUrl:
+          listed.page < listed.totalPages
+            ? `/admin/church/members${buildPlatformMembersQuery(listed.filters, listed.page + 1)}`
+            : null,
+        formatDate,
+        statusBadgeClass,
+        statusLabel,
+        memberStatusLabel,
+        activeNav: "church_platform_members",
+      });
+    } catch (err) {
+      return next(err);
     }
   });
 
@@ -1365,6 +1514,14 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
     }
   });
 
+  router.get("/church/organizations/:organizationId/suspend", requireSuperAdmin, async (req, res, next) => {
+    try {
+      return renderOrganizationSuspendConfirm(req, res);
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.get("/church/organizations/:organizationId/edit", requireSuperAdmin, async (req, res, next) => {
     try {
       const organizationId = Number(req.params.organizationId);
@@ -1402,21 +1559,36 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
   router.post("/church/organizations/:organizationId/suspend", requireSuperAdmin, async (req, res, next) => {
     try {
       const organizationId = Number(req.params.organizationId);
+      if (!Number.isFinite(organizationId) || organizationId <= 0) {
+        return res.status(404).type("text").send("Organization not found.");
+      }
       const pool = getPgPool();
       const org = await platformProvisioningRepo.findChurchOrganizationById(pool, organizationId);
+      if (!org) {
+        return res.status(404).type("text").send("Organization not found.");
+      }
       const validation = validateSuspendBody(req.body);
       const transition = assertCanSuspendOrganization(org);
       if (!transition.ok) {
-        return renderOrganizationDetail(req, res, { statusCode: 400, statusError: transition.error });
+        return renderOrganizationSuspendConfirm(req, res, {
+          statusCode: 400,
+          statusError: transition.error,
+          organization: org,
+        });
       }
       if (!validation.ok) {
-        return renderOrganizationDetail(req, res, { statusCode: 400, statusError: validation.error });
+        return renderOrganizationSuspendConfirm(req, res, {
+          statusCode: 400,
+          statusError: validation.error,
+          organization: org,
+          formReason: validation.reason,
+        });
       }
       await platformProvisioningRepo.suspendOrganization(pool, organizationId, {
         reason: validation.reason,
         platformAdminId: platformAdminId(req),
       });
-      return res.redirect(`/admin/church/organizations/${organizationId}?notice=suspended`);
+      return res.redirect(`${organizationAdminDetailPath(req, organizationId)}?notice=suspended`);
     } catch (err) {
       next(err);
     }
@@ -1425,8 +1597,14 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
   router.post("/church/organizations/:organizationId/reactivate", requireSuperAdmin, async (req, res, next) => {
     try {
       const organizationId = Number(req.params.organizationId);
+      if (!Number.isFinite(organizationId) || organizationId <= 0) {
+        return res.status(404).type("text").send("Organization not found.");
+      }
       const pool = getPgPool();
       const org = await platformProvisioningRepo.findChurchOrganizationById(pool, organizationId);
+      if (!org) {
+        return res.status(404).type("text").send("Organization not found.");
+      }
       const validation = validateReactivateBody(req.body);
       const transition = assertCanReactivateOrganization(org);
       if (!transition.ok) {
@@ -1436,7 +1614,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         reason: validation.reason,
         platformAdminId: platformAdminId(req),
       });
-      return res.redirect(`/admin/church/organizations/${organizationId}?notice=reactivated`);
+      return res.redirect(`${organizationAdminDetailPath(req, organizationId)}?notice=reactivated`);
     } catch (err) {
       next(err);
     }
@@ -1732,8 +1910,51 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         if (!admin) {
           return res.status(404).type("text").send("HQ admin not found.");
         }
-        await platformProvisioningRepo.activateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId(req));
+        const validation = validateAdminActivateBody(req.body);
+        await platformProvisioningRepo.activateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId(req), {
+          reason: validation.reason,
+        });
         return res.redirect(`${organizationHqAdminDetailPath(req, organizationId, adminId)}?notice=activated`);
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  router.get(
+    "/church/organizations/:organizationId/hq-admins/:adminId/deactivate",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const organizationId = Number(req.params.organizationId);
+        const adminId = Number(req.params.adminId);
+        const pool = getPgPool();
+        const admin = await platformProvisioningRepo.findHqAdminByIdForPlatform(pool, adminId, organizationId);
+        if (!admin) {
+          return res.status(404).type("text").send("HQ admin not found.");
+        }
+        if (admin.status !== "active") {
+          return res.redirect(`${organizationHqAdminDetailPath(req, organizationId, adminId)}?notice=already_inactive`);
+        }
+        const org = await platformProvisioningRepo.findChurchOrganizationById(pool, organizationId);
+        const activeHqAdminCount = await platformProvisioningRepo.countActiveHqAdminsForOrganization(
+          pool,
+          organizationId
+        );
+        return res.render("admin/church/hq_admin_deactivate_confirm", {
+          admin,
+          organization: org,
+          activeHqAdminCount,
+          isLastActiveHqAdmin: activeHqAdminCount <= 1,
+          statusError: null,
+          formReason: "",
+          formatDate,
+          statusBadgeClass,
+          statusLabel,
+          hqAdminsBasePath: organizationHqAdminsPath(req, organizationId),
+          organizationDetailPath: organizationAdminDetailPath(req, organizationId),
+          activeNav: "church_platform_orgs",
+        });
       } catch (err) {
         next(err);
       }
@@ -1752,7 +1973,55 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         if (!admin) {
           return res.status(404).type("text").send("HQ admin not found.");
         }
-        await platformProvisioningRepo.deactivateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId(req));
+        const validation = validateAdminDeactivateBody(req.body);
+        const activeHqAdminCount = await platformProvisioningRepo.countActiveHqAdminsForOrganization(
+          pool,
+          organizationId
+        );
+        const org = await platformProvisioningRepo.findChurchOrganizationById(pool, organizationId);
+        if (!validation.ok) {
+          return res.status(400).render("admin/church/hq_admin_deactivate_confirm", {
+            admin,
+            organization: org,
+            activeHqAdminCount,
+            isLastActiveHqAdmin: activeHqAdminCount <= 1,
+            statusError: validation.error,
+            formReason: validation.reason,
+            formatDate,
+            statusBadgeClass,
+            statusLabel,
+            hqAdminsBasePath: organizationHqAdminsPath(req, organizationId),
+            organizationDetailPath: organizationAdminDetailPath(req, organizationId),
+            activeNav: "church_platform_orgs",
+          });
+        }
+        try {
+          await platformProvisioningRepo.deactivateHqAdminForPlatform(
+            pool,
+            adminId,
+            organizationId,
+            platformAdminId(req),
+            { reason: validation.reason }
+          );
+        } catch (err) {
+          if (err && err.code === "LAST_HQ_ADMIN") {
+            return res.status(400).render("admin/church/hq_admin_deactivate_confirm", {
+              admin,
+              organization: org,
+              activeHqAdminCount,
+              isLastActiveHqAdmin: true,
+              statusError: err.message,
+              formReason: validation.reason,
+              formatDate,
+              statusBadgeClass,
+              statusLabel,
+              hqAdminsBasePath: organizationHqAdminsPath(req, organizationId),
+              organizationDetailPath: organizationAdminDetailPath(req, organizationId),
+              activeNav: "church_platform_orgs",
+            });
+          }
+          throw err;
+        }
         return res.redirect(`${organizationHqAdminDetailPath(req, organizationId, adminId)}?notice=deactivated`);
       } catch (err) {
         next(err);
@@ -2176,8 +2445,40 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
       if (!admin) {
         return res.status(404).type("text").send("Branch admin not found.");
       }
-      await platformProvisioningRepo.activateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId(req));
+      const validation = validateAdminActivateBody(req.body);
+      await platformProvisioningRepo.activateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId(req), {
+        reason: validation.reason,
+      });
       return res.redirect(`/admin/church/branches/${branchId}/admins/${adminId}?notice=activated`);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get("/church/branches/:branchId/admins/:adminId/deactivate", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const branchId = Number(req.params.branchId);
+      const adminId = Number(req.params.adminId);
+      const pool = getPgPool();
+      const admin = await platformProvisioningRepo.findBranchAdminByIdForPlatform(pool, adminId, branchId);
+      if (!admin) {
+        return res.status(404).type("text").send("Branch admin not found.");
+      }
+      if (admin.status !== "active") {
+        return res.redirect(`/admin/church/branches/${branchId}/admins/${adminId}?notice=already_inactive`);
+      }
+      const branch = await platformProvisioningRepo.findChurchBranchById(pool, branchId);
+      return res.render("admin/church/branch_admin_deactivate_confirm", {
+        admin,
+        branch,
+        statusError: null,
+        formReason: "",
+        formatDate,
+        statusBadgeClass,
+        statusLabel,
+        churchPublicHost,
+        activeNav: "church_platform_branches",
+      });
     } catch (err) {
       next(err);
     }
@@ -2192,7 +2493,24 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
       if (!admin) {
         return res.status(404).type("text").send("Branch admin not found.");
       }
-      await platformProvisioningRepo.deactivateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId(req));
+      const validation = validateAdminDeactivateBody(req.body);
+      const branch = await platformProvisioningRepo.findChurchBranchById(pool, branchId);
+      if (!validation.ok) {
+        return res.status(400).render("admin/church/branch_admin_deactivate_confirm", {
+          admin,
+          branch,
+          statusError: validation.error,
+          formReason: validation.reason,
+          formatDate,
+          statusBadgeClass,
+          statusLabel,
+          churchPublicHost,
+          activeNav: "church_platform_branches",
+        });
+      }
+      await platformProvisioningRepo.deactivateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId(req), {
+        reason: validation.reason,
+      });
       return res.redirect(`/admin/church/branches/${branchId}/admins/${adminId}?notice=deactivated`);
     } catch (err) {
       next(err);

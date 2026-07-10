@@ -34,6 +34,7 @@
         <% } %>
 
         <form id="hq-admin-create-form" method="post" action="<%= _formAction %>" class="card card--mb-xl" style="padding:1.25rem;" novalidate>
+          <%- include('partials/csrf_field') %>
           <div class="admin-form-grid">
             <div class="input-field">
               <label class="input-field__label" for="full_name">Full name *</label>

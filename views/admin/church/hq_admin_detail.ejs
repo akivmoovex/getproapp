@@ -47,11 +47,10 @@
           <h2 class="section-title section-title--flush">Status actions</h2>
           <div class="admin-toolbar">
             <% if (admin.status === 'active') { %>
-              <form method="post" action="<%= _hqBase %>/<%= admin.id %>/deactivate">
-                <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Deactivate' }) %>
-              </form>
+              <%- include('../../partials/components/button', { variant: 'default', href: _hqBase + '/' + admin.id + '/deactivate', label: 'Deactivate…' }) %>
             <% } else { %>
               <form method="post" action="<%= _hqBase %>/<%= admin.id %>/activate">
+                <%- include('partials/csrf_field') %>
                 <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Activate' }) %>
               </form>
             <% } %>
@@ -64,6 +63,7 @@
             <div class="flash flash--error" role="alert"><%= resetError %></div>
           <% } %>
           <form method="post" action="<%= _hqBase %>/<%= admin.id %>/reset-password">
+            <%- include('partials/csrf_field') %>
             <div class="admin-form-grid">
               <div class="input-field">
                 <label class="input-field__label" for="new_password">New password *</label>

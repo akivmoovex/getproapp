@@ -351,6 +351,9 @@ async function updateHqAdminForPlatform(pool, adminId, organizationId, fields, p
           hq_admin_id: adminId,
           changed_fields: changedFields,
           role: updated.role,
+          previous_role: existing.role,
+          new_role: updated.role,
+          result: "ok",
         },
       });
     }
@@ -365,7 +368,7 @@ async function updateHqAdminForPlatform(pool, adminId, organizationId, fields, p
   }
 }
 
-async function setHqAdminStatusForPlatform(pool, adminId, organizationId, newStatus, platformAdminId) {
+async function setHqAdminStatusForPlatform(pool, adminId, organizationId, newStatus, platformAdminId, opts = {}) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -379,6 +382,21 @@ async function setHqAdminStatusForPlatform(pool, adminId, organizationId, newSta
       return existing;
     }
 
+    if (newStatus === "inactive" && existing.status === "active") {
+      const activeCount = await countActiveHqAdminsForOrganization(client, organizationId);
+      if (activeCount <= 1) {
+        throw Object.assign(new Error("Cannot deactivate the last active HQ administrator for this organization."), {
+          code: "LAST_HQ_ADMIN",
+        });
+      }
+    }
+
+    const reason =
+      opts.reason != null
+        ? String(opts.reason)
+            .trim()
+            .slice(0, 2000)
+        : null;
     const isActive = newStatus === "active";
     const r = await client.query(
       `UPDATE public.church_hq_admins
@@ -409,6 +427,8 @@ async function setHqAdminStatusForPlatform(pool, adminId, organizationId, newSta
         hq_admin_id: adminId,
         previous_status: existing.status,
         new_status: newStatus,
+        reason: reason || null,
+        result: "ok",
         role: updated.role,
       },
     });
@@ -423,12 +443,12 @@ async function setHqAdminStatusForPlatform(pool, adminId, organizationId, newSta
   }
 }
 
-async function activateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId) {
-  return setHqAdminStatusForPlatform(pool, adminId, organizationId, "active", platformAdminId);
+async function activateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId, opts = {}) {
+  return setHqAdminStatusForPlatform(pool, adminId, organizationId, "active", platformAdminId, opts);
 }
 
-async function deactivateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId) {
-  return setHqAdminStatusForPlatform(pool, adminId, organizationId, "inactive", platformAdminId);
+async function deactivateHqAdminForPlatform(pool, adminId, organizationId, platformAdminId, opts = {}) {
+  return setHqAdminStatusForPlatform(pool, adminId, organizationId, "inactive", platformAdminId, opts);
 }
 
 /**

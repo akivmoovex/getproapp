@@ -361,6 +361,9 @@ async function updateBranchAdminForPlatform(pool, adminId, branchId, fields, pla
           branch_admin_id: adminId,
           changed_fields: changedFields,
           role: updated.role,
+          previous_role: existing.role,
+          new_role: updated.role,
+          result: "ok",
         },
       });
     }
@@ -375,7 +378,7 @@ async function updateBranchAdminForPlatform(pool, adminId, branchId, fields, pla
   }
 }
 
-async function setBranchAdminStatusForPlatform(pool, adminId, branchId, newStatus, platformAdminId) {
+async function setBranchAdminStatusForPlatform(pool, adminId, branchId, newStatus, platformAdminId, opts = {}) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -389,6 +392,12 @@ async function setBranchAdminStatusForPlatform(pool, adminId, branchId, newStatu
       return existing;
     }
 
+    const reason =
+      opts.reason != null
+        ? String(opts.reason)
+            .trim()
+            .slice(0, 2000)
+        : null;
     const isActive = newStatus === "active";
     const r = await client.query(
       `UPDATE public.church_branch_admins
@@ -422,6 +431,8 @@ async function setBranchAdminStatusForPlatform(pool, adminId, branchId, newStatu
         branch_admin_id: adminId,
         previous_status: existing.status,
         new_status: newStatus,
+        reason: reason || null,
+        result: "ok",
         role: updated.role,
       },
     });
@@ -436,12 +447,12 @@ async function setBranchAdminStatusForPlatform(pool, adminId, branchId, newStatu
   }
 }
 
-async function activateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId) {
-  return setBranchAdminStatusForPlatform(pool, adminId, branchId, "active", platformAdminId);
+async function activateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId, opts = {}) {
+  return setBranchAdminStatusForPlatform(pool, adminId, branchId, "active", platformAdminId, opts);
 }
 
-async function deactivateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId) {
-  return setBranchAdminStatusForPlatform(pool, adminId, branchId, "inactive", platformAdminId);
+async function deactivateBranchAdminForPlatform(pool, adminId, branchId, platformAdminId, opts = {}) {
+  return setBranchAdminStatusForPlatform(pool, adminId, branchId, "inactive", platformAdminId, opts);
 }
 
 /**

@@ -80,6 +80,29 @@
           <div class="flash flash--error" role="alert"><%= statusError %></div>
         <% } %>
 
+        <% var usage = typeof usageCounts !== 'undefined' && usageCounts ? usageCounts : {}; %>
+        <% var admins = typeof adminCounts !== 'undefined' && adminCounts ? adminCounts : {}; %>
+        <% var resets = typeof pendingResetRequests !== 'undefined' && pendingResetRequests ? pendingResetRequests : {}; %>
+        <% var _suspendHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? ('/admin/churches/' + organization.id + '/suspend') : ('/admin/church/organizations/' + organization.id + '/suspend'); %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Overview</h2>
+          <dl class="admin-dl">
+            <dt>Status</dt>
+            <dd><%- include('../../partials/admin/church_status_badge', { status: organization.status }) %></dd>
+            <dt>Branches</dt><dd><%= usage.branches_count || 0 %></dd>
+            <dt>Members (verified / total)</dt><dd><%= usage.active_members_count || 0 %> / <%= usage.total_members_count || 0 %></dd>
+            <dt>Active HQ administrators</dt><dd><%= admins.active_hq_admin_count || 0 %></dd>
+            <dt>Active branch administrators</dt><dd><%= admins.active_branch_admin_count || 0 %></dd>
+            <dt>Submitted password-reset requests</dt>
+            <dd>
+              <%= resets.total_submitted || 0 %>
+              <% if ((resets.total_submitted || 0) > 0) { %>
+                · <a href="/admin/church/reset-requests">Open reset inbox</a>
+              <% } %>
+            </dd>
+          </dl>
+        </section>
+
         <section class="card card--mb-xl" style="padding:1.25rem;">
           <h2 class="section-title section-title--flush">Organization status</h2>
           <dl class="admin-dl">
@@ -97,22 +120,22 @@
           </dl>
           <div class="admin-status-actions">
             <% if (organization.status === 'active') { %>
-            <form class="admin-status-actions__form" method="post" action="/admin/church/organizations/<%= organization.id %>/suspend">
+            <div class="admin-status-actions__form">
               <h3>Suspend organization</h3>
-              <p class="muted">Blocks public, member, branch-admin, and leader access. HQ login remains available with a warning banner.</p>
-              <label class="input-field__label" for="org_suspend_reason">Reason (required)</label>
-              <textarea id="org_suspend_reason" name="status_reason" required minlength="3" maxlength="2000" placeholder="Explain why this organization is being suspended"></textarea>
-              <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Suspend organization' }) %>
-            </form>
+              <p class="muted">Blocks public, member, branch-admin, and leader access. HQ login remains available with a warning banner. HQ write actions are not blocked in this release.</p>
+              <%- include('../../partials/components/button', { variant: 'default', href: _suspendHref, label: 'Suspend organization…' }) %>
+            </div>
             <% } %>
             <% if (organization.status === 'suspended') { %>
             <form class="admin-status-actions__form" method="post" action="/admin/church/organizations/<%= organization.id %>/reactivate">
+              <%- include('partials/csrf_field') %>
               <h3>Reactivate organization</h3>
               <label class="input-field__label" for="org_reactivate_reason">Note (optional)</label>
               <textarea id="org_reactivate_reason" name="status_reason" maxlength="2000" placeholder="Optional note for audit trail"></textarea>
               <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Reactivate organization' }) %>
             </form>
             <form class="admin-status-actions__form" method="post" action="/admin/church/organizations/<%= organization.id %>/archive">
+              <%- include('partials/csrf_field') %>
               <h3>Archive organization</h3>
               <p class="muted">Organization must be suspended before archiving. Access remains blocked.</p>
               <label class="input-field__label" for="org_archive_reason">Reason (required)</label>
@@ -133,7 +156,6 @@
             <dt>Plan</dt><dd><strong><%= planSummary.planDisplay.label %></strong> (<%= planSummary.planCode %>) · <%= planSummary.planStatus %></dd>
             <dt>Branches</dt><dd><%= planSummary.branchesDisplay %></dd>
             <dt>Verified members</dt><dd><%= planSummary.membersDisplay %></dd>
-            <dt>Storage</dt><dd><%= planSummary.storageDisplay %></dd>
           </dl>
           <% if ((planSummary.warnings || []).length > 0) { %>
             <ul style="margin-top:0.75rem;">
@@ -230,6 +252,54 @@
                         <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + b.id, label: 'View' }) %>
                         <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/branches/' + b.id + '/edit', label: 'Edit' }) %>
                       </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Recent audit events</h2>
+          <% var audits = typeof recentAuditEvents !== 'undefined' && recentAuditEvents ? recentAuditEvents : []; %>
+          <% if (!audits.length) { %>
+            <p class="muted">No recent audit events for this organization.</p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>When</th><th>Action</th><th>Actor</th><th>Target</th></tr></thead>
+                <tbody>
+                  <% audits.forEach(function (log) { %>
+                    <tr>
+                      <td><%= formatDate(log.created_at) %></td>
+                      <td><%= typeof actionLabel === 'function' ? actionLabel(log.action) : log.action %></td>
+                      <td class="muted"><%= log.actor_type || '—' %></td>
+                      <td style="overflow-wrap:anywhere;"><%= log.target_label || '—' %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top:0.75rem;"><a href="/admin/church/audit?organization_id=<%= organization.id %>">View organization audit</a></p>
+          <% } %>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Recent HQ broadcasts</h2>
+          <% var broadcasts = typeof recentBroadcasts !== 'undefined' && recentBroadcasts ? recentBroadcasts : []; %>
+          <% if (!broadcasts.length) { %>
+            <p class="muted">No HQ broadcasts for this organization.</p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>Title</th><th>Status</th><th>Updated</th></tr></thead>
+                <tbody>
+                  <% broadcasts.forEach(function (b) { %>
+                    <tr>
+                      <td style="overflow-wrap:anywhere;"><%= b.title %></td>
+                      <td><%- include('../../partials/admin/church_status_badge', { status: b.status }) %></td>
+                      <td><%= formatDate(b.publish_at || b.created_at) %></td>
                     </tr>
                   <% }); %>
                 </tbody>

@@ -32,6 +32,7 @@
   <% } %>
 
   <form method="post" action="/admin/church/support-notes" style="margin-top:1.25rem;">
+    <%- include('csrf_field') %>
     <input type="hidden" name="entity_type" value="<%= supportNoteEntityType %>" />
     <input type="hidden" name="entity_id" value="<%= supportNoteEntityId %>" />
     <input type="hidden" name="return_to" value="<%= supportNoteReturnTo %>" />

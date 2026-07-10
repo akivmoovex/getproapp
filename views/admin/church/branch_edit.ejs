@@ -28,6 +28,7 @@
         </section>
 
         <form method="post" action="/admin/church/branches/<%= branch.id %>" class="card card--mb-xl" style="padding:1.25rem;" id="branch-edit-form">
+          <%- include('partials/csrf_field') %>
           <h2 class="section-title section-title--flush">Branch metadata</h2>
           <div class="admin-form-grid">
             <div class="input-field">

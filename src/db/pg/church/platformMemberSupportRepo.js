@@ -5,6 +5,7 @@ const memberMinistriesRepo = require("./memberMinistriesRepo");
 const ministryJoinRequestsRepo = require("./ministryJoinRequestsRepo");
 const memberRequestsRepo = require("./memberRequestsRepo");
 const dutyRosterRepo = require("./dutyRosterRepo");
+const memberPasswordResetRequestsRepo = require("./memberPasswordResetRequestsRepo");
 
 const MEMBER_DETAIL_SQL = `
   SELECT m.id, m.organization_id, m.branch_id, m.platform_tenant_id,
@@ -308,10 +309,11 @@ async function findMemberSupportDetailById(pool, memberId) {
   const organization = mapOrganizationRow(row);
   const branch = mapBranchRow(row);
 
-  const [summary, loginContext, auditLogs] = await Promise.all([
+  const [summary, loginContext, auditLogs, passwordResetRequests] = await Promise.all([
     getMemberSupportSummary(pool, id, branch.id),
     Promise.resolve(getMemberLoginContextForSupport(member, organization, branch)),
     listMemberAuditEventsForSupport(pool, id, branch.id, 5),
+    memberPasswordResetRequestsRepo.listRecentMemberPasswordResetRequestsForMember(pool, id, { limit: 5 }),
   ]);
 
   return {
@@ -321,6 +323,7 @@ async function findMemberSupportDetailById(pool, memberId) {
     summary,
     loginContext,
     auditLogs,
+    passwordResetRequests,
   };
 }
 

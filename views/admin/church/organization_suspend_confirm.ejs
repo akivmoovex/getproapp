@@ -1,0 +1,59 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Confirm suspension', activeNav: activeNav || 'church_platform_orgs', pageTitle: 'Confirm organization suspension' }) %>
+<% var usage = typeof usageCounts !== 'undefined' && usageCounts ? usageCounts : {}; %>
+<% var admins = typeof adminCounts !== 'undefined' && adminCounts ? adminCounts : {}; %>
+<% var detailHref = typeof organizationDetailPath !== 'undefined' && organizationDetailPath ? organizationDetailPath : ('/admin/church/organizations/' + organization.id); %>
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Confirm organization suspension</h1>
+            <p class="admin-dashboard__subtitle muted"><%= organization.name %></p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: detailHref, label: 'Cancel' }) %>
+          </div>
+        </header>
+
+        <% if (typeof statusError !== 'undefined' && statusError) { %>
+          <div class="flash flash--error" role="alert"><%= statusError %></div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Organization</h2>
+          <dl class="admin-dl">
+            <dt>Name</dt><dd style="overflow-wrap:anywhere;"><%= organization.name %></dd>
+            <dt>Current status</dt><dd><%- include('../../partials/admin/church_status_badge', { status: organization.status }) %></dd>
+            <dt>Organization slug</dt><dd><code><%= organization.slug %></code></dd>
+            <dt>Branches</dt><dd><%= usage.branches_count || 0 %></dd>
+            <dt>Verified members</dt><dd><%= usage.active_members_count || 0 %></dd>
+            <dt>Total members</dt><dd><%= usage.total_members_count || 0 %></dd>
+            <dt>Active HQ administrators</dt><dd><%= admins.active_hq_admin_count || 0 %></dd>
+            <dt>Active branch administrators</dt><dd><%= admins.active_branch_admin_count || 0 %></dd>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">What suspension does</h2>
+          <ul class="admin-list">
+            <% (suspendEffects || []).forEach(function (effect) { %>
+              <li><%= effect %></li>
+            <% }); %>
+          </ul>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Confirm</h2>
+          <% if (organization.status !== 'active') { %>
+            <p class="muted">Only active organizations can be suspended.</p>
+            <%- include('../../partials/components/button', { variant: 'default', href: detailHref, label: 'Back to organization' }) %>
+          <% } else { %>
+            <form method="post" action="/admin/church/organizations/<%= organization.id %>/suspend" class="admin-status-actions__form">
+              <%- include('partials/csrf_field') %>
+              <label class="input-field__label" for="org_suspend_reason">Reason (required)</label>
+              <textarea id="org_suspend_reason" name="status_reason" required minlength="3" maxlength="2000" placeholder="Explain why this organization is being suspended"><%= typeof formReason !== 'undefined' ? formReason : '' %></textarea>
+              <div class="admin-toolbar" style="margin-top:1rem;">
+                <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Confirm suspend organization' }) %>
+                <%- include('../../partials/components/button', { variant: 'default', href: detailHref, label: 'Cancel' }) %>
+              </div>
+            </form>
+          <% } %>
+        </section>
+<%- include('../../partials/platform_admin_shell_end') %>

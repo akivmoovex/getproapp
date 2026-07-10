@@ -719,6 +719,17 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
         }
         const deleted = await broadcastAttachmentsRepo.deleteBroadcastAttachment(pool, attachmentId, org.id);
         if (deleted) unlinkStoredFilename(deleted.stored_filename);
+        await recordHqAudit(pool, req, {
+          action: "hq_broadcast_attachment_deleted",
+          entityType: "hq_broadcast_attachment",
+          entityId: attachmentId,
+          metadata: {
+            broadcast_id: broadcastId,
+            organization_id: org.id,
+            original_filename: deleted ? deleted.original_filename : null,
+            result: deleted ? "ok" : "missing",
+          },
+        });
         return res.redirect(303, `/hq/broadcasts/${broadcastId}/edit`);
       } catch (e) {
         return next(e);
