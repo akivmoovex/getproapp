@@ -74,7 +74,9 @@ async function upsertDemoBranchAdmin(pool) {
            status = 'active',
            password_changed_at = now(),
            password_changed_by = 'system',
-           updated_at = now()
+           updated_at = now(),
+           failed_login_attempts = 0,
+           login_locked_until = null
        WHERE id = $1 AND branch_id = $2`,
       [existing.id, branch.id, DEMO_ADMIN_NAME, email, username, passwordHash]
     );

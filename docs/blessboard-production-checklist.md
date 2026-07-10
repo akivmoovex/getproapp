@@ -99,7 +99,7 @@ Branch hosts requesting `/admin/*` render `platform_admin_not_available.ejs` wit
 | Login | https://demo.blessboard.com/branch/login |
 | Email | `admin@demo.blessboard.com` |
 | Role | Branch admin for the demo church only |
-| Create/update | `npm run church:demo-admin` (manual; requires `DATABASE_URL`) |
+| Create/update | `npm run church:demo-admin` on the **server** (manual; requires `DATABASE_URL`). Local script changes do not update production until run there. |
 
 This is **not** a BlessBoard platform admin. Change the temporary password before sharing outside the team. Platform admin: https://blessboard.com/admin/login.
 

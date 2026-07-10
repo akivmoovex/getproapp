@@ -31,7 +31,7 @@ For the existing demo church (`demo.blessboard.com`):
 | Email | `admin@demo.blessboard.com` |
 | Role | `branch_admin` (church branch admin — **not** BlessBoard platform admin) |
 
-Create or refresh the account (idempotent, manual only):
+Create or refresh the account (idempotent, manual only). **Must be run against the production database** (e.g. on Hostinger SSH / Node app shell). Creating the script locally does not update production until you run it there.
 
 ```bash
 npm run church:demo-admin
@@ -39,6 +39,8 @@ npm run church:demo-admin
 ```
 
 Requires `DATABASE_URL`. Optional overrides: `DEMO_CHURCH_ADMIN_EMAIL`, `DEMO_CHURCH_ADMIN_PASSWORD`, `DEMO_CHURCH_ADMIN_NAME`, `DEMO_CHURCH_SLUG`.
+
+If login fails with the documented temporary password, the admin row likely still has an older seed password — re-run `npm run church:demo-admin` on the server to reset it.
 
 Default temporary password is set by the script / env — **change it before sharing outside the team**.
 
