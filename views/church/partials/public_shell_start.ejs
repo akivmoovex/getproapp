@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=42"/>
+  <link rel="stylesheet" href="/church/church.css?v=43"/>
 </head>
 <%
   var isPreviewMode = typeof isPreview !== 'undefined' && isPreview;
@@ -26,16 +26,39 @@
     <div class="church-header__inner">
       <%- include('./brand_lockup', { href: '/' }) %>
       <nav class="church-nav church-nav--apex" aria-label="Primary">
-        <a href="#features" class="church-nav__active">Features</a>
-        <a href="#pricing">Pricing</a>
-        <a href="#about">About Us</a>
+        <a href="/#features" class="church-nav__active">Features</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="/#about">About Us</a>
       </nav>
       <div class="church-header__actions">
         <a class="church-btn church-btn--ghost" href="https://demo.blessboard.com/login">Login</a>
         <a class="church-btn church-btn--primary church-btn--pill" href="https://demo.blessboard.com/register">Get Started</a>
       </div>
+      <button type="button" class="church-menu-btn" id="church-mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="church-mobile-drawer">
+        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+      </button>
     </div>
   </header>
+  <div class="church-drawer-overlay" id="church-drawer-overlay" hidden></div>
+  <aside class="church-drawer church-drawer--apex" id="church-mobile-drawer" aria-label="Mobile navigation" aria-hidden="true">
+    <div class="church-drawer__head">
+      <p class="church-drawer__title">BlessBoard</p>
+      <button type="button" class="church-drawer__close" id="church-drawer-close" aria-label="Close menu">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </div>
+    <nav class="church-drawer__nav">
+      <a href="/#features">Features</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/#about">About Us</a>
+      <a href="/admin/login">Admin Login</a>
+    </nav>
+    <div class="church-drawer__actions">
+      <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="https://demo.blessboard.com/register">Get Started</a>
+      <a class="church-btn church-btn--outline church-btn--block church-btn--mobile-pill" href="https://demo.blessboard.com/login">Login</a>
+      <p class="church-footer__powered">BlessBoard<span class="church-footer__powered-sub">Powered by GetPro</span></p>
+    </div>
+  </aside>
   <% } %>
 
   <% if (!isVerticalApex) { %>

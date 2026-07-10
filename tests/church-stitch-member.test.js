@@ -114,12 +114,12 @@ test("member portal localized assets exist", () => {
   }
 });
 
-test("member shell references church.css?v=42", () => {
+test("member shell references church.css?v=43", () => {
   const text = fs.readFileSync(
     path.join(__dirname, "../views/church/partials/member_shell_start.ejs"),
     "utf8"
   );
-  assert.match(text, /church\.css\?v=42/);
+  assert.match(text, /church\.css\?v=43/);
   assert.match(text, /church-member-sidebar/);
   assert.match(text, /church-member-desktop-topbar/);
   assert.match(text, /church-member-bottom-nav/);
@@ -155,7 +155,7 @@ test("unauthenticated member routes redirect to /login", async () => {
 test("public pages still render on branch host", async () => {
   const res = await request(makeBranchApp()).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=42/);
+  assert.match(res.text, /church\.css\?v=43/);
 });
 
 test("branch admin unauthenticated still redirects", async () => {
@@ -251,7 +251,7 @@ test(
       for (const screen of screens) {
         const res = await agent.get(screen.path);
         assert.equal(res.status, 200, `${screen.path} should be 200`);
-        assert.match(res.text, /church\.css\?v=42/, `${screen.path} CSS v41`);
+        assert.match(res.text, /church\.css\?v=43/, `${screen.path} CSS v43`);
         assert.match(res.text, /data-member-shell="stitch-v40"/);
         assert.match(res.text, /Groups/);
         assert.match(res.text, /Study/);

@@ -4484,9 +4484,22 @@ a.church-branch-stat-card--link:hover {
     padding: 32px 20px;
   }
 
-  .church-body--apex .church-header--apex .church-nav--apex {
-    display: none;
+  .church-body--apex .church-header--apex .church-nav--apex,
+  .church-body--apex .church-header--apex .church-header__actions {
+    display: none !important;
   }
+
+  .church-body--apex .church-menu-btn {
+    display: inline-flex !important;
+    margin-left: auto;
+  }
+}
+
+/* Apex hash targets clear sticky header */
+.church-body--apex #features,
+.church-body--apex #pricing,
+.church-body--apex #about {
+  scroll-margin-top: 72px;
 }
 
 /* Events: only two Stitch rows on mobile home */
@@ -10370,6 +10383,7 @@ a.church-branch-bento-stat:hover {
 
 
 /* --- Platform admin Batch E (Stitch 62–68) — church.css?v=42 --- */
+/* --- Apex homepage menu fix — church.css?v=43 --- */
 
 .church-body--platform-admin,
 .church-body--platform-login {

@@ -5,7 +5,7 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=42` (Batch E Platform Admin)
+**CSS bundle:** `/church/church.css?v=43` (Apex homepage menu fix)
 
 **Last updated:** 2026-07-10 (Batch C — Member Portal pixel-fidelity)
 

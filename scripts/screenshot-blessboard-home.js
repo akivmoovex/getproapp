@@ -47,10 +47,17 @@ function makeApp(kind) {
   return app;
 }
 
-async function shot(page, url, width, height, file) {
+async function shot(page, url, width, height, file, { openMenu = false } = {}) {
   await page.setViewportSize({ width, height });
   await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(800);
+  if (openMenu) {
+    const btn = page.locator("#church-mobile-menu-btn");
+    if (await btn.count()) {
+      await btn.click();
+      await page.waitForTimeout(400);
+    }
+  }
   await page.screenshot({ path: file, fullPage: true });
   console.log("Wrote", file);
 }
@@ -76,6 +83,11 @@ async function main() {
     await shot(page, `http://127.0.0.1:${PORT + 1}/`, 1440, 900, path.join(OUT_DIR, "branch-desktop-1440.png"));
     await shot(page, `http://127.0.0.1:${PORT + 1}/`, 1440, 900, path.join(OUT_DIR, "menu-fix-desktop.png"));
     await shot(page, `http://127.0.0.1:${PORT + 1}/`, 390, 844, path.join(OUT_DIR, "menu-fix-mobile.png"));
+    await shot(page, `http://127.0.0.1:${PORT}/`, 1440, 900, path.join(OUT_DIR, "apex-menu-fix-desktop.png"));
+    await shot(page, `http://127.0.0.1:${PORT}/`, 390, 844, path.join(OUT_DIR, "apex-menu-fix-mobile.png"), {
+      openMenu: true,
+    });
+    await shot(page, `http://127.0.0.1:${PORT + 1}/`, 1440, 900, path.join(OUT_DIR, "branch-menu-regression-desktop.png"));
   } finally {
     await browser.close();
     apexServer.close();
