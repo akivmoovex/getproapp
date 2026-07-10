@@ -225,8 +225,31 @@ function flashFromQuery(req) {
     prayer_submitted: "Your prayer request has been submitted.",
     join_request_submitted: "Your ministry join request has been submitted.",
     password_changed: "Password updated. Use your new password next time you log in.",
+    announcement_marked_read: "Marked as read.",
   };
   return map[notice] || null;
+}
+
+/**
+ * Safe internal return path for mark-read redirects only.
+ * @param {unknown} raw
+ * @param {string} fallback
+ */
+function safeMemberAnnouncementReturnPath(raw, fallback) {
+  const value = String(raw || "").trim();
+  if (!value.startsWith("/member/announcements")) return fallback;
+  if (value.includes("://") || value.includes("\\") || value.includes("//")) return fallback;
+  if (/[\r\n\0]/.test(value)) return fallback;
+  return value.slice(0, 300);
+}
+
+async function loadVisibleMemberAnnouncement(pool, { source, announcementId, orgId, branchId }) {
+  if (source === "hq") {
+    return hqBroadcastsRepo.findVisibleBroadcastForBranch(pool, orgId, branchId, announcementId, {
+      audiences: MEMBER_HQ_AUDIENCES,
+    });
+  }
+  return announcementsRepo.findVisibleAnnouncementForMember(pool, branchId, announcementId);
 }
 
 function buildAccountView(row) {
@@ -601,17 +624,6 @@ function registerMemberPortalRoutes(router) {
         pinned_only: listFilters.pinned_only,
       });
 
-      // List view marks seen only for the current page — full read happens on detail open.
-      await feedItemReadsRepo.markFeedItemsSeen(pool, {
-        organization_id: org.id,
-        branch_id: branch.id,
-        member_id: memberId,
-        items: withFiles.map((item) => ({
-          source_type: item.source === "hq" ? "hq_broadcast" : "announcement",
-          source_id: item.id,
-        })),
-      });
-
       return res.render(
         "church/member/announcements",
         memberPortalLocals(req, {
@@ -651,19 +663,65 @@ function registerMemberPortalRoutes(router) {
         const memberId = req.churchMember.member_id;
         const pool = getPgPool();
 
-        let item = null;
-        if (source === "hq") {
-          item = await hqBroadcastsRepo.findVisibleBroadcastForBranch(pool, org.id, branch.id, announcementId, {
-            audiences: MEMBER_HQ_AUDIENCES,
-          });
-        } else {
-          item = await announcementsRepo.findVisibleAnnouncementForMember(pool, branch.id, announcementId);
-        }
+        const item = await loadVisibleMemberAnnouncement(pool, {
+          source,
+          announcementId,
+          orgId: org.id,
+          branchId: branch.id,
+        });
         if (!item) {
           return res.status(404).type("text").send("Announcement not found.");
         }
 
         const [enriched] = await attachFilesToFeedItems(pool, org.id, branch.id, [{ ...item, source }]);
+        const sourceType = source === "hq" ? "hq_broadcast" : "announcement";
+        const receipts = await feedItemReadsRepo.listReceiptsForMember(pool, memberId, [
+          { source_type: sourceType, source_id: announcementId },
+        ]);
+        const receipt = receipts.get(`${sourceType}:${announcementId}`);
+        const isRead = Boolean(receipt && receipt.read_at);
+
+        return res.render(
+          "church/member/announcement_detail",
+          memberPortalLocals(req, {
+            announcement: { ...enriched, is_read: isRead },
+            shellTitle: "Announcement",
+            notice: flashFromQuery(req),
+          })
+        );
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.post(
+    "/member/announcements/:source/:announcementId/read",
+    requireVerifiedMemberSession,
+    ensureMemberAccountActive,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        const source = String(req.params.source || "").trim();
+        const announcementId = Number(req.params.announcementId);
+        if (!["hq", "branch"].includes(source) || !Number.isFinite(announcementId) || announcementId <= 0) {
+          return res.status(404).type("text").send("Announcement not found.");
+        }
+        const branch = req.churchContext.branch;
+        const org = req.churchContext.organization;
+        const memberId = req.churchMember.member_id;
+        const pool = getPgPool();
+
+        const item = await loadVisibleMemberAnnouncement(pool, {
+          source,
+          announcementId,
+          orgId: org.id,
+          branchId: branch.id,
+        });
+        if (!item) {
+          return res.status(404).type("text").send("Announcement not found.");
+        }
+
         await feedItemReadsRepo.markFeedItemRead(pool, {
           organization_id: org.id,
           branch_id: branch.id,
@@ -672,13 +730,10 @@ function registerMemberPortalRoutes(router) {
           source_id: announcementId,
         });
 
-        return res.render(
-          "church/member/announcement_detail",
-          memberPortalLocals(req, {
-            announcement: { ...enriched, is_read: true },
-            shellTitle: "Announcement",
-          })
-        );
+        const fallback = `/member/announcements/${source}/${announcementId}`;
+        const returnTo = safeMemberAnnouncementReturnPath(req.body && req.body.return_to, fallback);
+        const sep = returnTo.includes("?") ? "&" : "?";
+        return res.redirect(303, `${returnTo}${sep}notice=announcement_marked_read`);
       } catch (e) {
         return next(e);
       }

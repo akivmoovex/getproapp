@@ -23,6 +23,7 @@ const MEMBER_MUTATIONS = [
   "/member/ministries/:ministryId/request-join",
   "/member/prayer-request",
   "/member/requests",
+  "/member/announcements/:source/:announcementId/read",
 ];
 
 function read(rel) {
@@ -82,6 +83,7 @@ test("member forms and shells include CSRF field or inject", () => {
     "views/church/member/ministry_detail.ejs",
     "views/church/member/prayer_request.ejs",
     "views/church/member/request_new.ejs",
+    "views/church/member/announcement_detail.ejs",
     "views/church/partials/member_shell_start.ejs",
     "views/church/partials/member_shell_end.ejs",
     "views/church/auth/waiting_verification.ejs",

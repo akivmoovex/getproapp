@@ -7,15 +7,19 @@
         </div>
       </header>
 
-      <section class="church-member-panel">
+      <% if (typeof notice !== 'undefined' && notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+
+      <section class="church-member-panel" data-member-announcement-detail data-announcement-read="<%= announcement.is_read ? '1' : '0' %>">
         <div class="church-member-list__meta" style="margin-bottom:0.75rem">
           <span class="church-status-chip"><%= announcement.source === 'hq' ? 'HQ' : 'Branch' %></span>
           <% if (announcement.is_actively_featured) { %><span class="church-status-chip" aria-label="Featured">Featured</span><% } %>
           <% if (announcement.is_pinned) { %><span class="church-status-chip" aria-label="Pinned">Pinned</span><% } %>
           <% if (announcement.is_read) { %>
-          <span class="church-status-chip church-status-chip--verified" aria-label="Read">Read</span>
+          <span class="church-status-chip church-status-chip--verified" aria-label="Read" data-announcement-read-status>Read</span>
           <% } else { %>
-          <span class="church-status-chip" aria-label="Unread">Unread</span>
+          <span class="church-status-chip" aria-label="Unread" data-announcement-read-status>Unread</span>
           <% } %>
           <% var pm = announcement.priority_meta || priorityDisplay(announcement.priority); %>
           <span class="church-status-chip" aria-label="Priority <%= pm.label %>">
@@ -26,6 +30,22 @@
         </div>
 
         <p><%= announcement.body %></p>
+
+        <% if (!announcement.is_read) { %>
+        <form
+          class="church-form"
+          method="post"
+          action="/member/announcements/<%= announcement.source %>/<%= announcement.id %>/read"
+          data-member-mark-read-form
+          style="margin-top:1rem"
+        >
+          <%- include('../partials/csrf_field') %>
+          <input type="hidden" name="return_to" value="/member/announcements/<%= announcement.source %>/<%= announcement.id %>"/>
+          <button class="church-btn church-btn--outline church-btn--sm" type="submit" data-member-mark-read-button>
+            Mark as read
+          </button>
+        </form>
+        <% } %>
 
         <% if (announcement.action_url) { %>
         <p style="margin-top:1rem">
@@ -55,4 +75,24 @@
           <%= announcement.publish_at ? new Date(announcement.publish_at).toLocaleString('en-GB') : '' %>
         </p>
       </section>
+      <% if (!announcement.is_read) { %>
+      <script>
+        (function () {
+          var form = document.querySelector("[data-member-mark-read-form]");
+          if (!form || form.getAttribute("data-auto-submitted") === "1") return;
+          // Progressive enhancement: after the member intentionally opens detail, mark read once.
+          // Does not run on list rendering or link prefetch of the GET page alone beyond this open.
+          form.setAttribute("data-auto-submitted", "1");
+          var btn = form.querySelector("[data-member-mark-read-button]");
+          if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Marking as read…";
+          }
+          window.setTimeout(function () {
+            if (typeof form.requestSubmit === "function") form.requestSubmit();
+            else form.submit();
+          }, 0);
+        })();
+      </script>
+      <% } %>
 <%- include('../partials/member_shell_end') %>

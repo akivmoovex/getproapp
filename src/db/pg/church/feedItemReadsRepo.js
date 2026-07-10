@@ -1,8 +1,9 @@
 "use strict";
 
 /**
- * List may mark items as seen (first_seen_at) without marking fully read.
- * Detail view should call markFeedItemRead.
+ * Receipt helpers for member announcement/broadcast feed items.
+ * Explicit POST mark-read sets read_at (and first_seen_at when absent).
+ * GET list/detail routes must not write receipts.
  */
 
 /**
@@ -74,7 +75,8 @@ async function markFeedItemRead(pool, entry) {
        first_seen_at, read_at, created_at, updated_at
      ) VALUES ($1, $2, $3, $4, $5, now(), now(), now(), now())
      ON CONFLICT (member_id, source_type, source_id) DO UPDATE
-       SET read_at = COALESCE(public.church_feed_item_reads.read_at, now()),
+       SET first_seen_at = COALESCE(public.church_feed_item_reads.first_seen_at, now()),
+           read_at = COALESCE(public.church_feed_item_reads.read_at, now()),
            updated_at = now()`,
     [
       entry.organization_id,

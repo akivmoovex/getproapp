@@ -285,7 +285,7 @@ test(
     assert.ok(paged.totalPages >= 2);
 
     const seenCount = await feedItemReadsRepo.countSeenForSource(pool, org.id, "hq_broadcast", broadcastId);
-    assert.equal(seenCount, 1);
+    assert.equal(seenCount, 0);
     const readCountBefore = await feedItemReadsRepo.countReadsForSource(pool, org.id, "hq_broadcast", broadcastId);
     assert.equal(readCountBefore, 0);
 
@@ -293,8 +293,24 @@ test(
     assert.equal(detail.status, 200);
     assert.match(detail.text, /Urgent Featured/);
     assert.match(detail.text, /Register now/);
+    assert.match(detail.text, /data-member-mark-read-form|Mark as read/);
+    assert.equal(await feedItemReadsRepo.countReadsForSource(pool, org.id, "hq_broadcast", broadcastId), 0);
+
+    const csrf =
+      (detail.text.match(/name="_csrf"\s+value="([^"]+)"/) ||
+        detail.text.match(/name='_csrf'\s+value='([^']+)'/) ||
+        [])[1] || "";
+    assert.ok(csrf);
+    const markRead = await memberAgent
+      .post(`/member/announcements/hq/${broadcastId}/read`)
+      .type("form")
+      .send({ _csrf: csrf, return_to: `/member/announcements/hq/${broadcastId}` });
+    assert.equal(markRead.status, 303);
+
     const readCount = await feedItemReadsRepo.countReadsForSource(pool, org.id, "hq_broadcast", broadcastId);
     assert.equal(readCount, 1);
+    const seenAfter = await feedItemReadsRepo.countSeenForSource(pool, org.id, "hq_broadcast", broadcastId);
+    assert.equal(seenAfter, 1);
 
     const hqDetail = await hqAgent.get(`/hq/broadcasts/${broadcastId}`);
     assert.equal(hqDetail.status, 200);

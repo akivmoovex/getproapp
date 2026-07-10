@@ -382,9 +382,22 @@ test(
       password: "testpass123",
     });
 
-    // Member can open allowed detail (marks read) and download.
+    // Member can open allowed detail without writing a read receipt, then mark read explicitly.
     const detailOk = await memberAgent.get(`/member/announcements/hq/${broadcastId}`);
     assert.equal(detailOk.status, 200);
+    assert.match(detailOk.text, /data-member-mark-read-form|Mark as read/);
+    const readsAfterGet = await feedItemReadsRepo.countReadsForSource(pool, orgA.id, "hq_broadcast", broadcastId);
+    assert.equal(readsAfterGet, 0);
+    const csrf =
+      (detailOk.text.match(/name="_csrf"\s+value="([^"]+)"/) ||
+        detailOk.text.match(/name='_csrf'\s+value='([^']+)'/) ||
+        [])[1] || "";
+    assert.ok(csrf);
+    const markRead = await memberAgent
+      .post(`/member/announcements/hq/${broadcastId}/read`)
+      .type("form")
+      .send({ _csrf: csrf, return_to: `/member/announcements/hq/${broadcastId}` });
+    assert.equal(markRead.status, 303);
     const dlOk = await memberAgent.get(
       `/member/announcements/hq/${broadcastId}/attachments/${attachment.id}/download`
     );
@@ -423,8 +436,19 @@ test(
     const readBefore = await feedItemReadsRepo.countReadsForSource(pool, orgB.id, "hq_broadcast", foreign.id);
     assert.equal(readBefore, 0);
 
-    // Duplicate read records are not created.
-    await memberAgent.get(`/member/announcements/hq/${broadcastId}`);
+    // Duplicate mark-read does not create duplicate receipts.
+    const detailAgain = await memberAgent.get(`/member/announcements/hq/${broadcastId}`);
+    assert.equal(detailAgain.status, 200);
+    assert.match(detailAgain.text, /aria-label="Read"|data-announcement-read="1"/);
+    assert.doesNotMatch(detailAgain.text, /data-member-mark-read-form/);
+    const csrf2 =
+      (detailOk.text.match(/name="_csrf"\s+value="([^"]+)"/) ||
+        detailOk.text.match(/name='_csrf'\s+value='([^']+)'/) ||
+        [])[1] || csrf;
+    await memberAgent
+      .post(`/member/announcements/hq/${broadcastId}/read`)
+      .type("form")
+      .send({ _csrf: csrf2, return_to: `/member/announcements/hq/${broadcastId}` });
     const receiptCount = await pool.query(
       `SELECT COUNT(*)::int AS c FROM public.church_feed_item_reads
        WHERE member_id = $1 AND source_type = 'hq_broadcast' AND source_id = $2`,
