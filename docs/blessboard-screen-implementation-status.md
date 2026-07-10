@@ -5,9 +5,24 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=45` (Sermons media + toolbar alignment)
+**CSS bundle:** `/church/church.css?v=46` (Giving QR visibility)
 
-**Last updated:** 2026-07-10 (Sermons media demo length + sort alignment)
+**Last updated:** 2026-07-10 (Giving QR desktop/mobile visibility)
+
+### Giving QR visibility (v46)
+
+**Route:** `/giving`  
+**Issue:** Stitch assets `giving-qr-desktop.jpg` / `giving-qr-mobile.jpg` are lifestyle photos (not QR codes), and CSS used `object-fit: cover` on a square crop — so no real QR was visible.
+
+**Fix:**
+- Added square demo QR: `public/church/images/giving/giving-qr-demo.png`
+- Wired `qrImageUrl` / `isDemoQr` via `prepareGivingDisplay` (DB URL fields if present, else demo)
+- `.giving-qr-image` uses `object-fit: contain`, ~190–220px, visible on desktop + mobile
+- Demo note: “Demo QR code. Replace this with the church’s real giving QR before launch.”
+
+**Screenshots:** `test-results/blessboard-public-screens-visual/giving-qr-desktop.png`, `giving-qr-mobile.png`
+
+**Phase 2:** real `giving_qr_url` upload/storage; payment processing not on this page.
 
 ### Public sermons media demo (v44–v45)
 
@@ -179,8 +194,8 @@ Statuses: **Matches** · **Close** · **Partial** · **Placeholder** · **Missin
 | Events / Calendar | Mobile | `01-public-website/05-public-events-calendar-mobile/05-public-events-calendar-mobile.png` | `/events` | `events.ejs` | Close | Featured + list cards; bottom tab bar not used |
 | Sermons / Resources | Desktop | `01-public-website/06-public-sermons-resources-desktop/06-public-sermons-resources-desktop.png` | `/sermons` | `views/church/public/sermons.ejs` | Close | Featured YouTube + audio/PDF downloads + resource cards (v44); filters visual-only |
 | Sermons / Resources | Mobile | `01-public-website/06-public-sermons-resources-mobile/06-public-sermons-resources-mobile.png` | `/sermons` | `sermons.ejs` | Close | Same media demo stacked; Stitch poster art replaced by live embed |
-| Giving information | Desktop | `01-public-website/07-public-giving-information-desktop/07-public-giving-information-desktop.png` | `/giving` | `views/church/public/giving.ejs` | Close | Stitch bento + QR; DB settings override demo; brand BlessBoard |
-| Giving information | Mobile | `01-public-website/07-public-giving-information-mobile/07-public-giving-information-mobile.png` | `/giving` | `giving.ejs` | Close | Accordion methods + QR hero; bottom tab bar not used |
+| Giving information | Desktop | `01-public-website/07-public-giving-information-desktop/07-public-giving-information-desktop.png` | `/giving` | `views/church/public/giving.ejs` | Close | Real square demo QR (`giving-qr-demo.png`); Stitch JPGs are lifestyle photos; DB can override via `giving_qr_url` |
+| Giving information | Mobile | `01-public-website/07-public-giving-information-mobile/07-public-giving-information-mobile.png` | `/giving` | `giving.ejs` | Close | Same demo QR hero; accordion methods; no payment processing |
 | Contact | Desktop | `01-public-website/08-public-contact-desktop/08-public-contact-desktop.png` | `/contact` | `views/church/public/contact.ejs` | Close | Info + map + form + Sunday CTA; form posts to DB |
 | Contact | Mobile | `01-public-website/08-public-contact-mobile/08-public-contact-mobile.png` | `/contact` | `contact.ejs` | Close | Quick actions, map, hours, form; bottom tab bar not used |
 

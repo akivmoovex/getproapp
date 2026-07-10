@@ -39,6 +39,10 @@
   var financePhone = gd.financeContactPhone || contactPhone || '';
   var financeEmail = contactEmail || '';
   var showingDemo = gd.source === 'generic' || (!gd.hasPublishedSettings && !bank && !gd.givingBankDetails);
+  var qrSrc = (gd.qrImageUrl && String(gd.qrImageUrl).trim()) || '/church/images/giving/giving-qr-demo.png';
+  var isDemoQr = typeof gd.isDemoQr === 'boolean' ? gd.isDemoQr : true;
+  var qrAlt = 'Giving QR code for ' + churchName;
+  var qrLabel = (gd.qrCodeLabel && String(gd.qrCodeLabel).trim()) || 'Scan to give';
 %>
 
 <%# —— Mobile (07-public-giving-information-mobile) —— %>
@@ -48,13 +52,24 @@
     <p>Your generosity enables us to serve the community and share the Gospel.</p>
   </header>
 
-  <article class="church-giving-qr-card church-giving-qr-card--mobile">
-    <div class="church-giving-qr-card__frame">
-      <img src="/church/images/giving/giving-qr-mobile.jpg" alt="QR code for giving" width="512" height="512"/>
+  <section class="giving-qr-card church-giving-qr-card church-giving-qr-card--mobile" aria-label="Giving QR code">
+    <p class="giving-qr-card__eyebrow"><%= qrLabel %></p>
+    <div class="church-giving-qr-card__frame giving-qr-card__frame">
+      <img
+        class="giving-qr-image"
+        src="<%= qrSrc %>"
+        alt="<%= qrAlt %>"
+        width="220"
+        height="220"
+        decoding="async"
+      />
     </div>
     <h2>Quick Scan to Give</h2>
-    <p>Works with all major banking apps</p>
-  </article>
+    <p>Scan this QR code with your mobile money or banking app</p>
+    <% if (isDemoQr) { %>
+    <p class="giving-qr-note">Demo QR code. Replace this with the church’s real giving QR before launch.</p>
+    <% } %>
+  </section>
 
   <details class="church-giving-accordion" open>
     <summary>
@@ -148,12 +163,23 @@
       </div>
     </article>
 
-    <article class="church-giving-card-stitch church-giving-card-stitch--qr">
-      <div class="church-giving-qr-card__frame church-giving-qr-card__frame--desktop">
-        <img src="/church/images/giving/giving-qr-desktop.jpg" alt="QR code for giving" width="512" height="512"/>
+    <article class="giving-qr-card church-giving-card-stitch church-giving-card-stitch--qr" aria-label="Giving QR code">
+      <p class="giving-qr-card__eyebrow"><%= qrLabel %></p>
+      <div class="church-giving-qr-card__frame church-giving-qr-card__frame--desktop giving-qr-card__frame">
+        <img
+          class="giving-qr-image"
+          src="<%= qrSrc %>"
+          alt="<%= qrAlt %>"
+          width="220"
+          height="220"
+          decoding="async"
+        />
       </div>
       <h2>Scan to Give</h2>
       <p>Open your banking app and scan this code to give securely.</p>
+      <% if (isDemoQr) { %>
+      <p class="giving-qr-note">Demo QR code. Replace this with the church’s real giving QR before launch.</p>
+      <% } %>
       <span class="church-giving-secure"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span> Secure Encryption</span>
     </article>
 

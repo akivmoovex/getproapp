@@ -122,8 +122,8 @@ Folder: `01-public-website/` · CSS v36 / Giving v37
 | `05-public-events-calendar-mobile.png` | Public | Events calendar | Mobile | `/events` | Close match | — | no batch screenshot |
 | `06-public-sermons-resources-desktop.png` | Public | Sermons / resources | Desktop | `/sermons` | Close match | `public-screens/sermons-media-desktop.png` | live YouTube/MP3/PDF demo (~60s audio); Stitch static poster; demo media until Phase 2; toolbar sort aligned v45 |
 | `06-public-sermons-resources-mobile.png` | Public | Sermons / resources | Mobile | `/sermons` | Close match | `public-screens/sermons-media-mobile.png` | same as desktop; browser audio chrome differs |
-| `07-public-giving-information-desktop.png` | Public | Giving | Desktop | `/giving` | Close match | `public-giving/giving-desktop.png` | brand / DB content vs Stitch sample; no payment processing |
-| `07-public-giving-information-mobile.png` | Public | Giving | Mobile | `/giving` | Close match | `public-giving/giving-mobile.png` | brand / DB content vs Stitch sample; no payment processing |
+| `07-public-giving-information-desktop.png` | Public | Giving | Desktop | `/giving` | Close match | `public-screens/giving-qr-desktop.png` | square demo QR visible; Stitch JPG assets are lifestyle photos; no payment processing |
+| `07-public-giving-information-mobile.png` | Public | Giving | Mobile | `/giving` | Close match | `public-screens/giving-qr-mobile.png` | same demo QR; browser layout vs Stitch accordion chrome |
 | `08-public-contact-desktop.png` | Public | Contact | Desktop | `/contact` | Close match | — | no batch screenshot; no live map integration |
 | `08-public-contact-mobile.png` | Public | Contact | Mobile | `/contact` | Close match | — | no batch screenshot; no live map integration |
 | `04-branch-admin-dashboard-desktop.png` | Branch admin | Dashboard (misfiled) | Desktop | `/branch/dashboard` | Close match | `branch-admin/dashboard-desktop.png` | Misfiled under public; duplicate of `25-*` |

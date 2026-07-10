@@ -138,6 +138,12 @@ function prepareGivingDisplay(publishedSettings, websiteFallback, opts = {}) {
     const categories = Array.isArray(publishedSettings.giving_categories_json)
       ? publishedSettings.giving_categories_json
       : [];
+    const qrFromSettings = String(
+      publishedSettings.giving_qr_url ||
+        publishedSettings.qr_code_url ||
+        publishedSettings.mobile_money_qr_url ||
+        ""
+    ).trim();
     return {
       source: "settings",
       hasPublishedSettings: true,
@@ -153,7 +159,9 @@ function prepareGivingDisplay(publishedSettings, websiteFallback, opts = {}) {
         : null,
       mobileMoney: mobileMoneyEntries(publishedSettings),
       categories,
-      qrCodeLabel: publishedSettings.qr_code_label || "",
+      qrCodeLabel: publishedSettings.qr_code_label || "Scan to give",
+      qrImageUrl: qrFromSettings || "/church/images/giving/giving-qr-demo.png",
+      isDemoQr: !qrFromSettings,
       financeContactName: publishedSettings.finance_contact_name || "",
       financeContactPhone: publishedSettings.finance_contact_phone || "",
     };
@@ -167,6 +175,13 @@ function prepareGivingDisplay(publishedSettings, websiteFallback, opts = {}) {
     wf.givingInstructions ||
     wf.givingQrPlaceholder;
 
+  const DEMO_QR = "/church/images/giving/giving-qr-demo.png";
+  const websiteQrRaw = String(wf.givingQrPlaceholder || "").trim();
+  const websiteQrLooksLikeUrl =
+    websiteQrRaw.startsWith("/") ||
+    /^https?:\/\//i.test(websiteQrRaw) ||
+    /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(websiteQrRaw);
+
   if (audience === "member") {
     return {
       source: "none",
@@ -176,6 +191,8 @@ function prepareGivingDisplay(publishedSettings, websiteFallback, opts = {}) {
       mobileMoney: [],
       categories: [],
       qrCodeLabel: "",
+      qrImageUrl: "",
+      isDemoQr: true,
       financeContactName: "",
       financeContactPhone: "",
     };
@@ -189,7 +206,9 @@ function prepareGivingDisplay(publishedSettings, websiteFallback, opts = {}) {
       bank: null,
       mobileMoney: [],
       categories: [],
-      qrCodeLabel: "",
+      qrCodeLabel: websiteQrLooksLikeUrl ? "Scan to give" : websiteQrRaw || "Scan to give",
+      qrImageUrl: websiteQrLooksLikeUrl ? websiteQrRaw : DEMO_QR,
+      isDemoQr: !websiteQrLooksLikeUrl,
       financeContactName: "",
       financeContactPhone: "",
       givingBankDetails: wf.givingBankDetails || "",
@@ -206,7 +225,9 @@ function prepareGivingDisplay(publishedSettings, websiteFallback, opts = {}) {
     bank: null,
     mobileMoney: [],
     categories: ["Tithes", "Offerings", "Building fund", "Missions"],
-    qrCodeLabel: "",
+    qrCodeLabel: "Scan to give",
+    qrImageUrl: DEMO_QR,
+    isDemoQr: true,
     financeContactName: "",
     financeContactPhone: "",
   };

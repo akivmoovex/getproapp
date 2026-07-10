@@ -91,8 +91,8 @@ Localized targets: `public/church/images/giving/`
 
 | Screen | Design element | PNG file | Current asset | Exact asset found? | Action |
 |--------|----------------|----------|---------------|--------------------|--------|
-| Giving desktop | QR / scan card | `07-public-giving-information-desktop.png` | `giving/giving-qr-desktop.jpg` | Yes from Stitch HTML | Wire in Batch A |
-| Giving mobile | QR hero | `07-public-giving-information-mobile.png` | `giving/giving-qr-mobile.jpg` | Yes | Wire |
+| Giving desktop | QR / scan card | `07-public-giving-information-desktop.png` | `giving/giving-qr-demo.png` (square demo); Stitch `giving-qr-desktop.jpg` is lifestyle photo | Demo QR wired | Done (v46) |
+| Giving mobile | QR hero | `07-public-giving-information-mobile.png` | `giving/giving-qr-demo.png`; Stitch `giving-qr-mobile.jpg` is lifestyle photo | Demo QR wired | Done (v46) |
 | Giving desktop | Transparency / landscape photo | `07-public-giving-information-desktop.png` | `giving/giving-transparency.jpg` (if 2nd URL) **or** Material/CSS only | Check — desktop Stitch HTML has **one** `aida-public` URL (serene Kafue landscape background); mobile has **one** (portrait/headshot). Confirm whether QR is CSS/Material-generated vs a separate downloadable bitmap before inventing a second file | Check / Wire |
 | Ministries | icons only | `04-public-ministries-desktop.png` | Material Symbols | Yes | Done |
 | Public not-found | — | no PNG | — | Missing PNG | — |

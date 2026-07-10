@@ -72,6 +72,8 @@ async function main() {
     }
     await shot(page, `${base}/sermons`, 390, 844, path.join(OUT_DIR, "sermons-media-mobile.png"));
     await shot(page, `${base}/sermons`, 1440, 900, path.join(OUT_DIR, "sermons-media-desktop.png"));
+    await shot(page, `${base}/giving`, 1440, 900, path.join(OUT_DIR, "giving-qr-desktop.png"));
+    await shot(page, `${base}/giving`, 390, 844, path.join(OUT_DIR, "giving-qr-mobile.png"));
     const stitchDir = path.join(__dirname, "../test-results/blessboard-stitch-visual/public-sermons");
     fs.mkdirSync(stitchDir, { recursive: true });
     await shot(page, `${base}/sermons`, 390, 844, path.join(stitchDir, "sermons-media-mobile.png"));

@@ -6841,29 +6841,48 @@ a.church-branch-stat-card--link:hover {
   line-height: 1.5;
 }
 
-.church-giving-qr-card--mobile {
+.church-giving-qr-card--mobile,
+.giving-qr-card.church-giving-qr-card--mobile {
   background: var(--church-primary-container);
   color: #fff;
   border-radius: 20px;
   padding: var(--church-space-xl);
   text-align: center;
   margin-bottom: var(--church-space-lg);
+  display: block;
 }
 
-.church-giving-qr-card__frame {
+.giving-qr-card__eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.95;
+}
+
+.church-giving-qr-card__frame,
+.giving-qr-card__frame {
   background: #fff;
   border-radius: 16px;
   padding: 16px;
-  display: inline-block;
-  margin-bottom: var(--church-space-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--church-space-md);
+  max-width: 100%;
 }
 
-.church-giving-qr-card__frame img {
-  width: 10rem;
-  height: 10rem;
-  object-fit: cover;
+.church-giving-qr-card__frame img,
+.giving-qr-image {
+  width: 190px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
   display: block;
   border-radius: 8px;
+  background: #fff;
 }
 
 .church-giving-qr-card--mobile h2 {
@@ -6871,10 +6890,18 @@ a.church-branch-stat-card--link:hover {
   font-size: 1.125rem;
 }
 
-.church-giving-qr-card--mobile p {
+.church-giving-qr-card--mobile > p:not(.giving-qr-note):not(.giving-qr-card__eyebrow) {
   margin: 0;
   opacity: 0.85;
   font-size: 0.875rem;
+}
+
+.giving-qr-note {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  opacity: 0.9;
+  font-style: italic;
 }
 
 .church-giving-accordion {
@@ -7152,25 +7179,42 @@ a.church-branch-stat-card--link:hover {
   gap: 6px;
 }
 
-.church-giving-card-stitch--qr {
+.church-giving-card-stitch--qr,
+.giving-qr-card.church-giving-card-stitch--qr {
   background: var(--church-primary-container);
   border: none;
   color: #fff;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .church-giving-qr-card__frame--desktop {
   margin: 0 auto var(--church-space-md);
 }
 
+.church-giving-card-stitch--qr .giving-qr-image {
+  width: 220px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+}
+
 .church-giving-card-stitch--qr h2 {
   margin: 0 0 6px;
 }
 
-.church-giving-card-stitch--qr > p {
+.church-giving-card-stitch--qr > p:not(.giving-qr-note):not(.giving-qr-card__eyebrow) {
   margin: 0 0 var(--church-space-md);
   opacity: 0.9;
   font-size: 0.875rem;
+}
+
+.church-giving-card-stitch--qr .giving-qr-note {
+  margin: 0 0 var(--church-space-md);
+  max-width: 16rem;
 }
 
 .church-giving-secure {
@@ -10539,6 +10583,7 @@ a.church-branch-bento-stat:hover {
 /* --- Apex homepage menu fix — church.css?v=43 --- */
 /* --- Public sermons media demo — church.css?v=44 --- */
 /* --- Sermons media + toolbar alignment — church.css?v=45 --- */
+/* --- Giving QR visibility fix — church.css?v=46 --- */
 
 .church-sermon-hash-target {
   scroll-margin-top: 72px;
