@@ -70,6 +70,12 @@ async function main() {
       await shot(page, `${base}/${name}`, 390, 844, path.join(OUT_DIR, `${name}-mobile.png`));
       await shot(page, `${base}/${name}`, 1440, 900, path.join(OUT_DIR, `${name}-desktop.png`));
     }
+    await shot(page, `${base}/sermons`, 390, 844, path.join(OUT_DIR, "sermons-media-mobile.png"));
+    await shot(page, `${base}/sermons`, 1440, 900, path.join(OUT_DIR, "sermons-media-desktop.png"));
+    const stitchDir = path.join(__dirname, "../test-results/blessboard-stitch-visual/public-sermons");
+    fs.mkdirSync(stitchDir, { recursive: true });
+    await shot(page, `${base}/sermons`, 390, 844, path.join(stitchDir, "sermons-media-mobile.png"));
+    await shot(page, `${base}/sermons`, 1440, 900, path.join(stitchDir, "sermons-media-desktop.png"));
   } finally {
     await browser.close();
     server.close();

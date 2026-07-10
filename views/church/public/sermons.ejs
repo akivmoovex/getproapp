@@ -4,6 +4,21 @@
   var featured = sermons[0] || null;
   var rest = sermons.slice(1);
   var showingDemoSermons = typeof hasDbSermons !== 'undefined' ? !hasDbSermons : true;
+  var demoMedia = typeof sermonDemoMedia !== 'undefined' && sermonDemoMedia ? sermonDemoMedia : {
+    videoEmbedUrl: 'https://www.youtube-nocookie.com/embed/M7lc1UVf-VE',
+    audioUrl: '/church/demo-media/sermon-demo.mp3',
+    pdfUrl: '/church/demo-media/sermon-notes-demo.pdf'
+  };
+  var videoEmbed = (featured && (featured.videoEmbedUrl || featured.videoUrl)) || demoMedia.videoEmbedUrl;
+  var audioSrc = (featured && featured.audioUrl) || demoMedia.audioUrl;
+  var pdfSrc = (featured && featured.pdfUrl) || demoMedia.pdfUrl;
+  var resourceCards = (typeof sermonResourceCards !== 'undefined' && sermonResourceCards && sermonResourceCards.length)
+    ? sermonResourceCards
+    : [
+        { title: 'Video Sermon', mediaType: 'Video', description: 'Watch the featured message with an embedded player.', actionLabel: 'Watch', href: '#sermon-video', icon: 'play_circle' },
+        { title: 'Audio Sermon', mediaType: 'Audio', description: 'Listen on this page or download the MP3 for offline use.', actionLabel: 'Listen', href: '#sermon-audio', icon: 'headphones' },
+        { title: 'PDF Study Notes', mediaType: 'PDF', description: 'Download printable notes with scripture and reflection prompts.', actionLabel: 'Download', href: pdfSrc, download: true, icon: 'picture_as_pdf' }
+      ];
   var thumbs = [
     '/church/images/sermons/sermon-1.jpg',
     '/church/images/sermons/sermon-2.jpg',
@@ -15,9 +30,9 @@
     '/church/images/sermons/sermon-1.jpg'
   ];
   var studyResources = [
-    { title: 'Weekly Study Guide', meta: 'PDF · 1.2 MB', icon: 'picture_as_pdf', tone: 'pdf' },
-    { title: 'John 1:1-18 Notes', meta: 'DOCX · 840 KB', icon: 'description', tone: 'doc' },
-    { title: 'Ministry Overview', meta: 'PPTX · 2.1 MB', icon: 'slideshow', tone: 'ppt' }
+    { title: 'Weekly Study Guide', meta: 'PDF · 1.2 MB', icon: 'picture_as_pdf', tone: 'pdf', href: pdfSrc },
+    { title: 'John 1:1-18 Notes', meta: 'PDF · Notes', icon: 'description', tone: 'doc', href: pdfSrc },
+    { title: 'Ministry Overview', meta: 'PDF · Study', icon: 'slideshow', tone: 'ppt', href: pdfSrc }
   ];
 %>
 
@@ -53,11 +68,23 @@
   </div>
   <% } else { %>
 
-  <%# Mobile featured %>
-  <article class="church-sermon-featured-mobile home-mobile-design">
-    <div class="church-sermon-featured-mobile__media">
-      <img src="/church/images/sermons/sermon-featured-mobile.jpg" alt="" width="512" height="279"/>
-      <button type="button" class="church-sermon-play" aria-label="Play sermon"><span class="material-symbols-outlined">play_arrow</span></button>
+  <%# Shared hash targets (mobile/desktop featured are both in DOM; avoid duplicate IDs) %>
+  <div id="sermon-video" class="church-sermon-hash-target" tabindex="-1"></div>
+  <div id="sermon-audio" class="church-sermon-hash-target" tabindex="-1"></div>
+
+  <%# Mobile featured with live media %>
+  <article class="church-sermon-featured-mobile home-mobile-design church-sermon-featured--media">
+    <div class="church-sermon-featured-mobile__media church-sermon-video">
+      <div class="church-sermon-video__frame">
+        <iframe
+          src="<%= videoEmbed %>"
+          title="<%= featured.title %> video"
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          referrerpolicy="strict-origin-when-cross-origin"
+        ></iframe>
+      </div>
       <span class="church-sermon-badge">LATEST SERMON</span>
     </div>
     <div class="church-sermon-featured-mobile__body">
@@ -67,30 +94,81 @@
         <% if (featured.date) { %> · <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span> <%= featured.date %><% } %>
       </p>
       <% if (featured.description) { %><p><%= featured.description %></p><% } %>
-    </div>
-  </article>
-
-  <%# Desktop featured %>
-  <article class="church-sermon-featured-desktop home-desktop-design">
-    <img src="/church/images/sermons/sermon-featured-desktop.jpg" alt="" width="1024" height="559"/>
-    <div class="church-sermon-featured-desktop__overlay">
-      <span class="church-sermon-badge">LATEST SERMON</span>
-      <h2><%= featured.title %></h2>
-      <p class="church-sermon-meta">
-        <% if (featured.speaker) { %><span class="material-symbols-outlined" aria-hidden="true">person</span> <%= featured.speaker %><% } %>
-        <% if (featured.date) { %> · <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span> <%= featured.date %><% } %>
-      </p>
-      <div class="church-sermon-featured-desktop__actions">
-        <% if (featured.media_url) { %>
-        <a class="church-btn church-btn--light" href="<%= featured.media_url %>" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> Watch Now</a>
-        <a class="church-btn church-btn--ghost-light" href="<%= featured.media_url %>" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined" aria-hidden="true">headphones</span> Listen</a>
-        <% } else { %>
-        <span class="church-btn church-btn--light"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> Watch Now</span>
-        <span class="church-btn church-btn--ghost-light"><span class="material-symbols-outlined" aria-hidden="true">headphones</span> Listen</span>
-        <% } %>
+      <div class="church-sermon-media-panel">
+        <p class="church-sermon-media-panel__label"><span class="material-symbols-outlined" aria-hidden="true">headphones</span> Listen to audio</p>
+        <audio class="church-sermon-audio" controls preload="metadata">
+          <source src="<%= audioSrc %>" type="audio/mpeg"/>
+        </audio>
+        <div class="church-sermon-download-row">
+          <a class="church-btn church-btn--outline church-btn--sm" href="<%= audioSrc %>" download>
+            <span class="material-symbols-outlined" aria-hidden="true">download</span> Download MP3
+          </a>
+          <a class="church-btn church-btn--outline church-btn--sm" href="<%= pdfSrc %>" download>
+            <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span> Download PDF Notes
+          </a>
+        </div>
       </div>
     </div>
   </article>
+
+  <%# Desktop featured with live media %>
+  <article class="church-sermon-featured-desktop home-desktop-design church-sermon-featured--media">
+    <div class="church-sermon-featured-desktop__grid">
+      <div class="church-sermon-video">
+        <div class="church-sermon-video__frame">
+          <iframe
+            src="<%= videoEmbed %>"
+            title="<%= featured.title %> video"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"
+          ></iframe>
+        </div>
+      </div>
+      <div class="church-sermon-featured-desktop__copy">
+        <span class="church-sermon-badge">LATEST SERMON</span>
+        <h2><%= featured.title %></h2>
+        <p class="church-sermon-meta">
+          <% if (featured.speaker) { %><span class="material-symbols-outlined" aria-hidden="true">person</span> <%= featured.speaker %><% } %>
+          <% if (featured.date) { %> · <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span> <%= featured.date %><% } %>
+        </p>
+        <% if (featured.description) { %><p class="church-sermon-featured-desktop__desc"><%= featured.description %></p><% } %>
+        <div class="church-sermon-media-panel">
+          <p class="church-sermon-media-panel__label"><span class="material-symbols-outlined" aria-hidden="true">headphones</span> Listen to audio</p>
+          <audio class="church-sermon-audio" controls preload="metadata">
+            <source src="<%= audioSrc %>" type="audio/mpeg"/>
+          </audio>
+          <div class="church-sermon-download-row">
+            <a class="church-btn church-btn--outline church-btn--sm" href="<%= audioSrc %>" download>
+              <span class="material-symbols-outlined" aria-hidden="true">download</span> Download MP3
+            </a>
+            <a class="church-btn church-btn--outline church-btn--sm" href="<%= pdfSrc %>" download>
+              <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span> Download PDF Notes
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <div class="church-sermon-resource-cards" aria-label="Resource types">
+    <% resourceCards.forEach(function (card) { %>
+    <article class="church-sermon-resource-card">
+      <div class="church-sermon-resource-card__head">
+        <span class="material-symbols-outlined" aria-hidden="true"><%= card.icon || 'folder' %></span>
+        <span class="church-sermon-type-badge church-sermon-type-badge--<%= String(card.mediaType || '').toLowerCase() %>"><%= card.mediaType %></span>
+      </div>
+      <h3><%= card.title %></h3>
+      <p><%= card.description %></p>
+      <% if (card.download) { %>
+      <a class="church-btn church-btn--primary church-btn--sm" href="<%= card.href %>" download><%= card.actionLabel %></a>
+      <% } else { %>
+      <a class="church-btn church-btn--primary church-btn--sm" href="<%= card.href %>"><%= card.actionLabel %></a>
+      <% } %>
+    </article>
+    <% }); %>
+  </div>
 
   <div class="church-sermons-layout">
     <div class="church-sermons-main">
@@ -128,8 +206,8 @@
             <h3><%= item.title %></h3>
             <p><%= [item.date, item.category].filter(Boolean).join(' · ') %></p>
             <div class="church-sermon-recent__actions">
-              <a href="<%= item.media_url || '/contact' %>"><span class="material-symbols-outlined" aria-hidden="true">headphones</span> LISTEN</a>
-              <a href="<%= item.media_url || '/contact' %>"><span class="material-symbols-outlined" aria-hidden="true">download</span> MP3</a>
+              <a href="#sermon-audio"><span class="material-symbols-outlined" aria-hidden="true">headphones</span> LISTEN</a>
+              <a href="<%= item.audioUrl || audioSrc %>" download><span class="material-symbols-outlined" aria-hidden="true">download</span> MP3</a>
             </div>
           </div>
         </article>
@@ -148,7 +226,7 @@
             <h3><%= r.title %></h3>
             <p><%= r.meta %></p>
           </div>
-          <a href="/contact" aria-label="Download <%= r.title %>"><span class="material-symbols-outlined" aria-hidden="true">download</span></a>
+          <a href="<%= r.href || pdfSrc %>" download aria-label="Download <%= r.title %>"><span class="material-symbols-outlined" aria-hidden="true">download</span></a>
         </article>
         <% }); %>
       </div>
@@ -168,7 +246,7 @@
     <a class="church-btn church-btn--primary" href="/contact"><span class="material-symbols-outlined" aria-hidden="true">mail</span> Contact Office</a>
   </div>
   <% if (showingDemoSermons) { %>
-  <p class="church-leadership-fallback-note">Showing sample sermon layout. Publish sermons in branch admin to replace demo messages.</p>
+  <p class="church-leadership-fallback-note">Showing sample sermon layout with demo media. Publish sermons in branch admin to replace demo messages. Phase 2: upload/storage for video_url, audio_url, and pdf_url.</p>
   <% } %>
   <% } %>
 </section>

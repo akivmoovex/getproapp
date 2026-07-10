@@ -5,9 +5,27 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=43` (Apex homepage menu fix)
+**CSS bundle:** `/church/church.css?v=44` (Public sermons media demo)
 
-**Last updated:** 2026-07-10 (Batch C — Member Portal pixel-fidelity)
+**Last updated:** 2026-07-10 (Public sermons YouTube / MP3 / PDF demo)
+
+### Public sermons media demo (v44)
+
+**Route:** `/sermons`  
+**Stitch:** `06-public-sermons-resources-desktop.png` / `06-public-sermons-resources-mobile.png`
+
+**Added inside existing featured + resource layout (no full redesign):**
+- Featured YouTube embed (`youtube-nocookie.com`), DB `media_url` / future `video_url` can override
+- HTML5 `<audio controls>` for MP3 listening
+- Download MP3 + Download PDF Notes buttons
+- Three resource cards: Video / Audio / PDF with Watch · Listen · Download
+
+**Demo assets:** `public/church/demo-media/sermon-demo.mp3`, `sermon-notes-demo.pdf`  
+**Phase 2:** upload/storage + DB fields `video_url`, `audio_url`, `pdf_url`, `media_type`, `duration`, `speaker`, `sermon_date` (speaker/date already exist)
+
+**Screenshots:** `test-results/blessboard-public-screens-visual/sermons-media-mobile.png`, `sermons-media-desktop.png`
+
+**Remaining differences:** placeholder YouTube (`M7lc1UVf-VE` iframe API sample) / MP3 / PDF until churches add real URLs; native audio UI varies by browser; Stitch still shows static poster art rather than a live player.
 
 ### Desktop public menu hotfix (v39)
 
@@ -156,8 +174,8 @@ Statuses: **Matches** · **Close** · **Partial** · **Placeholder** · **Missin
 | Ministries | Mobile | *(no dedicated PNG in export set)* | `/ministries` | `ministries.ejs` | Close | Stacked bento from desktop design; no mobile PNG |
 | Events / Calendar | Desktop | `01-public-website/05-public-events-calendar-desktop/05-public-events-calendar-desktop.png` | `/events` | `views/church/public/events.ejs` | Close | Photo cards + filters; calendar toggle is visual-only |
 | Events / Calendar | Mobile | `01-public-website/05-public-events-calendar-mobile/05-public-events-calendar-mobile.png` | `/events` | `events.ejs` | Close | Featured + list cards; bottom tab bar not used |
-| Sermons / Resources | Desktop | `01-public-website/06-public-sermons-resources-desktop/06-public-sermons-resources-desktop.png` | `/sermons` | `views/church/public/sermons.ejs` | Close | Featured hero + grid + study sidebar; filters visual-only |
-| Sermons / Resources | Mobile | `01-public-website/06-public-sermons-resources-mobile/06-public-sermons-resources-mobile.png` | `/sermons` | `sermons.ejs` | Close | Featured + recent list + study resources |
+| Sermons / Resources | Desktop | `01-public-website/06-public-sermons-resources-desktop/06-public-sermons-resources-desktop.png` | `/sermons` | `views/church/public/sermons.ejs` | Close | Featured YouTube + audio/PDF downloads + resource cards (v44); filters visual-only |
+| Sermons / Resources | Mobile | `01-public-website/06-public-sermons-resources-mobile/06-public-sermons-resources-mobile.png` | `/sermons` | `sermons.ejs` | Close | Same media demo stacked; Stitch poster art replaced by live embed |
 | Giving information | Desktop | `01-public-website/07-public-giving-information-desktop/07-public-giving-information-desktop.png` | `/giving` | `views/church/public/giving.ejs` | Close | Stitch bento + QR; DB settings override demo; brand BlessBoard |
 | Giving information | Mobile | `01-public-website/07-public-giving-information-mobile/07-public-giving-information-mobile.png` | `/giving` | `giving.ejs` | Close | Accordion methods + QR hero; bottom tab bar not used |
 | Contact | Desktop | `01-public-website/08-public-contact-desktop/08-public-contact-desktop.png` | `/contact` | `views/church/public/contact.ejs` | Close | Info + map + form + Sunday CTA; form posts to DB |
@@ -425,7 +443,7 @@ npm run test:ui
 1. **Leader portal** — Stitch `05-leader` screens 46–50 (next visual batch if needed)
 2. **HQ permissions / templates** — Stitch 59–60 lack routes; not invented
 3. **Events calendar** — richer month widget / detail drawer vs lightweight grid
-4. **Sermons** — real media players vs demo cards
+4. **Sermons** — Phase 2 upload/storage for real church media URLs (demo YouTube/MP3/PDF wired in v44)
 5. **Branch admin login** — no dedicated Stitch PNG in auth set
 6. **Leadership photo uploads** — website editor photo fields not wired
 7. **Member avatar upload** — shared demo avatar until profile photo feature exists

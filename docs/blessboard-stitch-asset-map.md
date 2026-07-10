@@ -65,8 +65,9 @@ All paths below are under `public/church/images/`.
 
 | Screen | Design element | PNG file | Current asset | Exact asset found? | Action |
 |--------|----------------|----------|---------------|--------------------|--------|
-| Sermons desktop | Featured + grid | `06-public-sermons-resources-desktop.png` | `sermons/sermon-featured-desktop.jpg`, `sermon-1.jpg` … `sermon-3.jpg` | Yes | Done |
+| Sermons desktop | Featured + grid | `06-public-sermons-resources-desktop.png` | `sermons/sermon-featured-desktop.jpg`, `sermon-1.jpg` … `sermon-3.jpg` | Yes | Done (featured now uses live embed; thumbs remain) |
 | Sermons mobile | Featured + thumbs | `06-public-sermons-resources-mobile.png` | `sermons/sermon-featured-mobile.jpg`, `sermon-thumb-1.jpg`, `sermon-thumb-2.jpg` | Yes | Done |
+| Sermons media demo | YouTube / MP3 / PDF | — | `demo-media/sermon-demo.mp3`, `demo-media/sermon-notes-demo.pdf` | Yes (placeholders) | Wired in v44; Phase 2 upload/storage |
 
 ### Ministries (`04-public-ministries-desktop`)
 

@@ -120,8 +120,8 @@ Folder: `01-public-website/` · CSS v36 / Giving v37
 | *(no mobile PNG)* | Public | Ministries | Mobile | `/ministries` | Missing PNG pair | — | Missing PNG pair; stacked desktop layout on mobile |
 | `05-public-events-calendar-desktop.png` | Public | Events calendar | Desktop | `/events` | Close match | — | no batch screenshot; calendar toggle visual-only |
 | `05-public-events-calendar-mobile.png` | Public | Events calendar | Mobile | `/events` | Close match | — | no batch screenshot |
-| `06-public-sermons-resources-desktop.png` | Public | Sermons / resources | Desktop | `/sermons` | Close match | — | no batch screenshot; no live media players |
-| `06-public-sermons-resources-mobile.png` | Public | Sermons / resources | Mobile | `/sermons` | Close match | — | no batch screenshot |
+| `06-public-sermons-resources-desktop.png` | Public | Sermons / resources | Desktop | `/sermons` | Close match | `public-screens/sermons-media-desktop.png` | live YouTube/MP3/PDF demo; Stitch shows static poster; demo media until Phase 2 upload |
+| `06-public-sermons-resources-mobile.png` | Public | Sermons / resources | Mobile | `/sermons` | Close match | `public-screens/sermons-media-mobile.png` | same as desktop; browser audio chrome differs |
 | `07-public-giving-information-desktop.png` | Public | Giving | Desktop | `/giving` | Close match | `public-giving/giving-desktop.png` | brand / DB content vs Stitch sample; no payment processing |
 | `07-public-giving-information-mobile.png` | Public | Giving | Mobile | `/giving` | Close match | `public-giving/giving-mobile.png` | brand / DB content vs Stitch sample; no payment processing |
 | `08-public-contact-desktop.png` | Public | Contact | Desktop | `/contact` | Close match | — | no batch screenshot; no live map integration |

@@ -75,6 +75,50 @@ function mapDemoEventCard(item, index) {
   };
 }
 
+/** Demo media until Phase 2 upload/storage (video_url / audio_url / pdf_url). */
+const SERMON_DEMO_MEDIA = {
+  // Public YouTube sample (iframe API demo) — churches override via media_url / video_url
+  videoEmbedUrl: "https://www.youtube-nocookie.com/embed/M7lc1UVf-VE",
+  audioUrl: "/church/demo-media/sermon-demo.mp3",
+  pdfUrl: "/church/demo-media/sermon-notes-demo.pdf",
+};
+
+function youtubeEmbedFromUrl(raw) {
+  const url = String(raw || "").trim();
+  if (!url) return null;
+  if (/youtube-nocookie\.com\/embed\//i.test(url) || /youtube\.com\/embed\//i.test(url)) {
+    return url.replace("youtube.com/embed/", "youtube-nocookie.com/embed/");
+  }
+  let id = null;
+  const watch = url.match(/[?&]v=([\w-]{6,})/);
+  const short = url.match(/youtu\.be\/([\w-]{6,})/);
+  const embed = url.match(/\/embed\/([\w-]{6,})/);
+  if (watch) id = watch[1];
+  else if (short) id = short[1];
+  else if (embed) id = embed[1];
+  if (!id) return null;
+  return `https://www.youtube-nocookie.com/embed/${id}`;
+}
+
+function enrichSermonMedia(item) {
+  const mediaUrl = item.media_url || item.videoUrl || item.audioUrl || null;
+  const videoEmbedUrl =
+    youtubeEmbedFromUrl(item.video_url || item.videoUrl || mediaUrl) || SERMON_DEMO_MEDIA.videoEmbedUrl;
+  const audioUrl = item.audio_url || item.audioUrl || SERMON_DEMO_MEDIA.audioUrl;
+  const pdfUrl = item.pdf_url || item.pdfUrl || SERMON_DEMO_MEDIA.pdfUrl;
+  const mediaType = item.media_type || item.mediaType || (youtubeEmbedFromUrl(mediaUrl) ? "video" : "audio");
+  return {
+    ...item,
+    videoUrl: videoEmbedUrl,
+    videoEmbedUrl,
+    audioUrl,
+    pdfUrl,
+    mediaType,
+    downloadLabel: item.downloadLabel || "Download MP3",
+    media_url: mediaUrl || videoEmbedUrl,
+  };
+}
+
 function fallbackSermonSamples(churchName) {
   return [
     {
@@ -84,7 +128,8 @@ function fallbackSermonSamples(churchName) {
       category: "Faith Foundations",
       icon: "menu_book",
       description: "Understanding our divine calling in a modern world and how to remain steadfast in faith.",
-      media_url: null,
+      media_url: SERMON_DEMO_MEDIA.videoEmbedUrl,
+      mediaType: "video",
     },
     {
       title: "Foundations of Community",
@@ -93,7 +138,8 @@ function fallbackSermonSamples(churchName) {
       category: "Community Life",
       icon: "groups",
       description: "Building a church family that loves, serves, and grows together.",
-      media_url: null,
+      media_url: SERMON_DEMO_MEDIA.audioUrl,
+      mediaType: "audio",
     },
     {
       title: "Walking in Purpose",
@@ -102,7 +148,44 @@ function fallbackSermonSamples(churchName) {
       category: "The Book of Romans",
       icon: "auto_stories",
       description: "Living out the gospel with clarity and courage.",
-      media_url: null,
+      media_url: SERMON_DEMO_MEDIA.pdfUrl,
+      mediaType: "pdf",
+    },
+  ].map(enrichSermonMedia);
+}
+
+function sermonResourceCards(featured) {
+  const videoUrl = (featured && featured.videoEmbedUrl) || SERMON_DEMO_MEDIA.videoEmbedUrl;
+  const audioUrl = (featured && featured.audioUrl) || SERMON_DEMO_MEDIA.audioUrl;
+  const pdfUrl = (featured && featured.pdfUrl) || SERMON_DEMO_MEDIA.pdfUrl;
+  return [
+    {
+      title: "Video Sermon",
+      mediaType: "Video",
+      description: "Watch the featured message with an embedded player.",
+      actionLabel: "Watch",
+      href: "#sermon-video",
+      icon: "play_circle",
+    },
+    {
+      title: "Audio Sermon",
+      mediaType: "Audio",
+      description: "Listen on this page or download the MP3 for offline use.",
+      actionLabel: "Listen",
+      href: "#sermon-audio",
+      icon: "headphones",
+    },
+    {
+      title: "PDF Study Notes",
+      mediaType: "PDF",
+      description: "Download printable notes with scripture and reflection prompts.",
+      actionLabel: "Download",
+      href: pdfUrl,
+      download: true,
+      icon: "picture_as_pdf",
+      videoUrl,
+      audioUrl,
+      pdfUrl,
     },
   ];
 }
@@ -437,8 +520,14 @@ function registerPublicPagesRoutes(router) {
           published = [];
         }
       }
-      locals.sermonSamples = published.length > 0 ? published : fallbackSermonSamples(locals.churchName);
+      const samples =
+        published.length > 0
+          ? published.map(enrichSermonMedia)
+          : fallbackSermonSamples(locals.churchName);
+      locals.sermonSamples = samples;
       locals.hasDbSermons = published.length > 0;
+      locals.sermonDemoMedia = SERMON_DEMO_MEDIA;
+      locals.sermonResourceCards = sermonResourceCards(samples[0] || null);
       return res.render("church/public/sermons", locals);
     } catch (e) {
       return next(e);
