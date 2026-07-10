@@ -318,7 +318,7 @@ test("giving page renders polished BlessBoard layout without PG", async () => {
   const res = await request(app).get("/giving");
   assert.equal(res.status, 200);
   assert.match(res.text, /church-giving-page/);
-  assert.match(res.text, /Contact the church office/);
+  assert.match(res.text, /Ways to Give|Support Our Ministry|Finance Office|Contact Finance Office/);
 });
 
 test("ministries page renders polished tile grid without PG", async () => {

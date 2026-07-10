@@ -1,7 +1,16 @@
   </main>
-  <footer class="church-footer church-footer--auth">
-    <div class="church-footer__inner">
-      <p class="church-footer__powered">BlessBoard<span class="church-footer__powered-sub">Powered by GetPro</span></p>
+  <footer class="church-auth-footer">
+    <div class="church-auth-footer__inner">
+      <p class="church-auth-footer__brand">
+        <span class="church-auth-footer__church"><%= churchName %></span>
+        <span class="church-auth-footer__powered">Powered by GetPro</span>
+      </p>
+      <nav class="church-auth-footer__links" aria-label="Legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="/contact">Support</a>
+      </nav>
+      <p class="church-auth-footer__copy">&copy; <%= new Date().getFullYear() %> <%= churchName %></p>
     </div>
   </footer>
 </body>

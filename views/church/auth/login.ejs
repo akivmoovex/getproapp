@@ -1,27 +1,61 @@
-<%- include('../partials/auth_shell_start') %>
-  <div class="church-auth-card">
-    <h1 class="church-auth-card__title">Member Login</h1>
-    <p class="church-auth-card__subtitle">Sign in with the email or phone number you used to register.</p>
-    <% if (error) { %>
-    <div class="church-alert church-alert--error" role="alert"><%= error %></div>
-    <% } %>
-    <form class="church-form" method="post" action="/login">
-      <div class="church-field">
-        <label class="church-label" for="identifier">Email or phone</label>
-        <input class="church-input" id="identifier" name="identifier" type="text" autocomplete="username" required value="<%= typeof identifier !== 'undefined' ? identifier : '' %>"/>
+<%- include('../partials/auth_shell_start', { authBodyClass: 'church-body--auth-login' }) %>
+  <div class="church-auth-stage church-auth-stage--login">
+    <div class="church-auth-stage__bg" aria-hidden="true">
+      <img src="/church/images/auth/login-bg-desktop.jpg" alt=""/>
+    </div>
+
+    <div class="church-auth-card church-auth-card--stitch church-auth-login" data-auth-screen="login">
+      <div class="church-auth-login__brand">
+        <div class="church-auth-login__mark" aria-hidden="true">
+          <span class="material-symbols-outlined">church</span>
+        </div>
+        <h1 class="church-auth-login__church home-mobile-design"><%= churchName %></h1>
+        <p class="church-auth-login__welcome home-mobile-design">Welcome back! Please enter your details to access your member portal.</p>
+        <h1 class="church-auth-login__title home-desktop-design">Member Access</h1>
+        <p class="church-auth-login__welcome home-desktop-design">Welcome back to your church family</p>
       </div>
-      <div class="church-field">
-        <label class="church-label" for="password">Password</label>
-        <input class="church-input" id="password" name="password" type="password" autocomplete="current-password" required/>
-      </div>
-      <button class="church-btn church-btn--primary church-btn--block" type="submit">Sign in</button>
-    </form>
-    <p class="church-auth-card__footer">
-      <a href="/forgot-password">Forgot password?</a>
-    </p>
-    <p class="church-auth-card__footer">
-      New here?
-      <a href="/register">Register as a member</a>
-    </p>
+
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+
+      <form class="church-auth-form" method="post" action="/login">
+        <div class="church-auth-field">
+          <label class="church-auth-label" for="identifier">Email or Phone Number</label>
+          <div class="church-auth-input-wrap">
+            <span class="material-symbols-outlined church-auth-input-wrap__icon" aria-hidden="true">mail</span>
+            <input class="church-auth-input" id="identifier" name="identifier" type="text" autocomplete="username" required placeholder="name@example.com" value="<%= typeof identifier !== 'undefined' ? identifier : '' %>"/>
+          </div>
+        </div>
+
+        <div class="church-auth-field">
+          <div class="church-auth-label-row">
+            <label class="church-auth-label" for="password">Password</label>
+            <a class="church-auth-link" href="/forgot-password">Forgot password?</a>
+          </div>
+          <div class="church-auth-input-wrap">
+            <span class="material-symbols-outlined church-auth-input-wrap__icon" aria-hidden="true">lock</span>
+            <input class="church-auth-input" id="password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••"/>
+          </div>
+        </div>
+
+        <div class="church-auth-info home-mobile-design" role="note">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          <p>Access is available after your branch admin verifies your membership.</p>
+        </div>
+
+        <button class="church-btn church-btn--primary church-btn--block church-auth-submit" type="submit">
+          Login
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </button>
+      </form>
+
+      <div class="church-auth-login__divider" aria-hidden="true"></div>
+      <p class="church-auth-card__footer church-auth-login__footer">
+        <span class="home-mobile-design">Don't have an account?</span>
+        <span class="home-desktop-design">Not a member yet?</span>
+        <a href="/register">Register as Member</a>
+      </p>
+    </div>
   </div>
 <%- include('../partials/auth_shell_end') %>

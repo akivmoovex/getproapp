@@ -64,10 +64,11 @@ const branchPublicRoutes = [
   { path: "/events", markers: ["Upcoming Events", "Church Events", "church-event-card", "Powered by GetPro"] },
   { path: "/sermons", markers: ["Sermons &amp; Resources", "Media Library", "LATEST SERMON", "Powered by GetPro"] },
   { path: "/ministries", markers: ["Growing Together in Faith", "church-ministries-bento", "Powered by GetPro"] },
-  { path: "/giving", markers: ["church-giving-page", "Giving", "Powered by GetPro"] },
-  { path: "/login", markers: ["Member Login", "Powered by GetPro", "brand-lockup"] },
-  { path: "/register", markers: ["Member Registration", "Powered by GetPro"] },
-  { path: "/registration-submitted", markers: ["Registration submitted", "Powered by GetPro"] },
+  { path: "/giving", markers: ["Ways to Give", "Support Our Ministry", "church-giving-page", "Powered by GetPro"] },
+  { path: "/login", markers: ["Member Access", "Powered by GetPro", "data-auth-screen=\"login\""] },
+  { path: "/register", markers: ["Member Registration", "Powered by GetPro", "data-auth-screen=\"register\""] },
+  { path: "/registration-submitted", markers: ["Registration Submitted", "Powered by GetPro", "data-auth-screen=\"registration-submitted\""] },
+  { path: "/forgot-password", markers: ["Forgot Password?", "Powered by GetPro", "data-auth-screen=\"forgot-password\""] },
 ];
 
 const HOMEPAGE_ASSETS = [
@@ -107,7 +108,9 @@ const SERMON_ASSETS = [
   "sermon-3.jpg",
 ];
 
-test("church public shells reference church.css?v=36", () => {
+const GIVING_ASSETS = ["giving-qr-desktop.jpg", "giving-qr-mobile.jpg"];
+
+test("church public shells reference church.css?v=38", () => {
   const publicShells = [
     "views/church/partials/public_shell_start.ejs",
     "views/church/partials/auth_shell_start.ejs",
@@ -117,7 +120,7 @@ test("church public shells reference church.css?v=36", () => {
   ];
   for (const rel of publicShells) {
     const text = fs.readFileSync(path.join(__dirname, "..", rel), "utf8");
-    assert.match(text, /church\.css\?v=36/, `${rel} should load church.css?v=36`);
+    assert.match(text, /church\.css\?v=38/, `${rel} should load church.css?v=38`);
   }
 });
 
@@ -153,6 +156,9 @@ test("contact events and sermons Stitch assets exist on disk", () => {
   for (const file of SERMON_ASSETS) {
     assert.ok(fs.existsSync(path.join(__dirname, "../public/church/images/sermons", file)), `missing ${file}`);
   }
+  for (const file of GIVING_ASSETS) {
+    assert.ok(fs.existsSync(path.join(__dirname, "../public/church/images/giving", file)), `missing ${file}`);
+  }
 });
 
 test("homepage CSS references ministry tile assets", () => {
@@ -162,11 +168,11 @@ test("homepage CSS references ministry tile assets", () => {
   assert.match(css, /mobile-ministry-worship\.jpg/);
 });
 
-test("BlessBoard apex homepage includes updated CSS bundle v36", async () => {
+test("BlessBoard apex homepage includes updated CSS bundle v38", async () => {
   const app = makeVerticalApexApp();
   const res = await request(app).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=36/);
+  assert.match(res.text, /church\.css\?v=38/);
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
   assert.match(res.text, /Powered by GetPro/);
 });
@@ -263,7 +269,7 @@ test("branch admin shell includes mobile drawer and topbar markup", () => {
   assert.match(shell, /church-branch-menu-btn/);
   assert.match(shell, /church-branch-drawer/);
   assert.match(shell, /church-branch-mobile-topbar/);
-  assert.match(shell, /church\.css\?v=36/);
+  assert.match(shell, /church\.css\?v=38/);
 });
 
 test("platform host does not expose branch-only public events route", async () => {
@@ -284,7 +290,7 @@ test("about page includes Stitch section markers and assets", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/about");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=36/);
+  assert.match(res.text, /church\.css\?v=38/);
   assert.match(res.text, /Our Story/);
   assert.match(res.text, /Our Mission/);
   assert.match(res.text, /Our Vision/);
@@ -308,7 +314,7 @@ test("leadership page includes Stitch section markers and assets", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/leadership");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=36/);
+  assert.match(res.text, /church\.css\?v=38/);
   assert.match(res.text, /Our Leadership/);
   assert.match(res.text, /Ministry Leaders/);
   assert.match(res.text, /Our Elders/);
@@ -349,7 +355,7 @@ test("contact page includes Stitch section markers and assets", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/contact");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=36/);
+  assert.match(res.text, /church\.css\?v=38/);
   assert.match(res.text, /Get in Touch/);
   assert.match(res.text, /Send a Message|Send us a Message/);
   assert.match(res.text, /Office Hours/);
@@ -363,7 +369,7 @@ test("ministries page includes Stitch section markers", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/ministries");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=36/);
+  assert.match(res.text, /church\.css\?v=38/);
   assert.match(res.text, /Growing Together in Faith/);
   assert.match(res.text, /OUR COMMUNITY/);
   assert.match(res.text, /church-ministries-bento/);
@@ -375,7 +381,7 @@ test("events page includes Stitch section markers and assets", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/events");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=36/);
+  assert.match(res.text, /church\.css\?v=38/);
   assert.match(res.text, /Upcoming Events|Church Events/);
   assert.match(res.text, /church-event-card|church-event-mobile-card|church-event-featured/);
   assert.match(res.text, /event-1\.jpg|event-featured-mobile\.jpg/);
@@ -386,7 +392,7 @@ test("sermons page includes Stitch section markers and assets", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/sermons");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=36/);
+  assert.match(res.text, /church\.css\?v=38/);
   assert.match(res.text, /Media Library|Sermons &amp; Resources/);
   assert.match(res.text, /LATEST SERMON/);
   assert.match(res.text, /Study Resources/);
@@ -394,7 +400,63 @@ test("sermons page includes Stitch section markers and assets", async () => {
   assert.doesNotMatch(res.text, /GetPro Church/);
 });
 
-test("all church shells reference church.css?v=36", () => {
+test("giving page includes Stitch section markers and assets", async () => {
+  const app = makeBranchApp();
+  const res = await request(app).get("/giving");
+  assert.equal(res.status, 200);
+  assert.match(res.text, /church\.css\?v=38/);
+  assert.match(res.text, /Ways to Give/);
+  assert.match(res.text, /Support Our Ministry/);
+  assert.match(res.text, /Bank Transfer/);
+  assert.match(res.text, /Mobile Money/);
+  assert.match(res.text, /Scan to Give|Quick Scan to Give/);
+  assert.match(res.text, /giving-qr-desktop\.jpg|giving-qr-mobile\.jpg/);
+  assert.match(res.text, /church-giving-page/);
+  assert.doesNotMatch(res.text, /GetPro Church/);
+});
+
+test("auth Stitch assets exist on disk", () => {
+  const dir = path.join(__dirname, "../public/church/images/auth");
+  for (const file of [
+    "login-bg-desktop.jpg",
+    "registration-submitted.jpg",
+    "waiting-verification.jpg",
+    "forgot-password.jpg",
+  ]) {
+    assert.ok(fs.existsSync(path.join(dir, file)), `missing auth asset ${file}`);
+  }
+});
+
+test("member auth pages include Stitch markers and BlessBoard secondary branding", async () => {
+  const app = makeBranchApp();
+  const login = await request(app).get("/login");
+  assert.equal(login.status, 200);
+  assert.match(login.text, /church\.css\?v=38/);
+  assert.match(login.text, /Member Access/);
+  assert.match(login.text, /Powered by GetPro/);
+  assert.match(login.text, /login-bg-desktop\.jpg/);
+  assert.doesNotMatch(login.text, /GetPro Church/);
+
+  const register = await request(app).get("/register");
+  assert.equal(register.status, 200);
+  assert.match(register.text, /Member Registration|Join Our Community/);
+  assert.match(register.text, /Powered by GetPro/);
+  assert.doesNotMatch(register.text, /GetPro Church/);
+
+  const submitted = await request(app).get("/registration-submitted");
+  assert.equal(submitted.status, 200);
+  assert.match(submitted.text, /Registration Submitted/);
+  assert.match(submitted.text, /registration-submitted\.jpg/);
+  assert.match(submitted.text, /Powered by GetPro/);
+
+  const forgot = await request(app).get("/forgot-password");
+  assert.equal(forgot.status, 200);
+  assert.match(forgot.text, /Forgot Password\?/);
+  assert.match(forgot.text, /forgot-password\.jpg/);
+  assert.match(forgot.text, /Powered by GetPro/);
+});
+
+test("all church shells reference church.css?v=38", () => {
   const shells = [
     "views/church/partials/public_shell_start.ejs",
     "views/church/partials/auth_shell_start.ejs",
@@ -408,6 +470,6 @@ test("all church shells reference church.css?v=36", () => {
   ];
   for (const rel of shells) {
     const text = fs.readFileSync(path.join(__dirname, "..", rel), "utf8");
-    assert.match(text, /church\.css\?v=36/, `${rel} should load church.css?v=36`);
+    assert.match(text, /church\.css\?v=38/, `${rel} should load church.css?v=38`);
   }
 });

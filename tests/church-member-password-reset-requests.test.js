@@ -113,8 +113,8 @@ test("public forgot-password page loads on active branch host", async () => {
   });
   const res = await request(app).get("/forgot-password");
   assert.equal(res.status, 200);
-  assert.match(res.text, /Forgot password/i);
-  assert.match(res.text, /Submit request/i);
+  assert.match(res.text, /Forgot Password\?/i);
+  assert.match(res.text, /Submit Reset Request/i);
 });
 
 test(

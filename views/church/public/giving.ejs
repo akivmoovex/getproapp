@@ -1,38 +1,236 @@
 <%- include('../partials/public_shell_start') %>
-    <%- include('../partials/public_page_hero', { heroTitle: 'Giving', heroSubtitle: 'Support the ministry of ' + churchName + '.' }) %>
-    <section class="church-section church-section--page church-section--content">
-      <div class="church-section__inner church-giving-page">
-        <div class="church-giving-intro">
-          <p class="church-section__subtitle">Your generosity helps us serve the community. Online payments are not available yet — please use the options below or contact the church office.</p>
+<%
+  var gd = typeof givingDisplay !== 'undefined' && givingDisplay ? givingDisplay : { source: 'generic', categories: [] };
+  var intro = (gd.givingInstructions && String(gd.givingInstructions).trim())
+    || ('Your generosity supports our ministry, community outreach, and the spread of the Gospel. Thank you for your faithful partnership with ' + churchName + '.');
+  var bank = gd.bank || null;
+  var bankText = gd.givingBankDetails || '';
+  var mobileMoney = (gd.mobileMoney && gd.mobileMoney.length) ? gd.mobileMoney : [];
+  if (mobileMoney.length === 0 && gd.givingMobileMoney) {
+    String(gd.givingMobileMoney).split('\n').map(function (l) { return l.trim(); }).filter(Boolean).forEach(function (line) {
+      var parts = line.split(':');
+      mobileMoney.push({ provider: (parts[0] || 'Mobile Money').trim(), number: parts.slice(1).join(':').trim() || line, name: churchName });
+    });
+  }
+  if (mobileMoney.length === 0) {
+    mobileMoney = [
+      { provider: 'MTN Mobile Money', number: '+260 962 123456', name: churchName },
+      { provider: 'Airtel Money', number: '+260 977 654321', name: churchName }
+    ];
+  }
+  var categories = (gd.categories && gd.categories.length) ? gd.categories : [];
+  if (categories.length === 0 && gd.givingCategories) {
+    categories = String(gd.givingCategories).split(/[\n,]/).map(function (c) { return c.trim(); }).filter(Boolean);
+  }
+  if (categories.length === 0) {
+    categories = ['Tithes', 'Offerings', 'Missions', 'Building Fund', 'Youth Ministry'];
+  }
+  var accountName = (bank && bank.account_name) || churchName;
+  var bankName = (bank && bank.bank_name) || (bankText ? bankText.split('\n')[0] : 'Zambia National Commercial Bank (ZANACO)');
+  var accountNumber = (bank && bank.account_number) || '5821 0000 4567 890';
+  var branchSwift = [(bank && bank.branch_code) || 'Kafue Branch', (bank && bank.swift_code) || 'ZNCBZMLU'].filter(Boolean).join(' / ');
+  if (!bank && bankText) {
+    var lines = String(bankText).split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+    if (lines[0]) bankName = lines[0].replace(/^Bank[:\s]*/i, '');
+    if (lines[1]) accountName = lines[1].replace(/^Account(?:\s*name)?[:\s]*/i, '') || accountName;
+    if (lines[2]) accountNumber = lines[2].replace(/^Account(?:\s*number)?[:\s]*/i, '');
+  }
+  var financeName = gd.financeContactName || '';
+  var financePhone = gd.financeContactPhone || contactPhone || '';
+  var financeEmail = contactEmail || '';
+  var showingDemo = gd.source === 'generic' || (!gd.hasPublishedSettings && !bank && !gd.givingBankDetails);
+%>
+
+<%# —— Mobile (07-public-giving-information-mobile) —— %>
+<section class="church-giving-mobile home-mobile-design">
+  <header class="church-giving-mobile__intro">
+    <h1>Support Our Ministry</h1>
+    <p>Your generosity enables us to serve the community and share the Gospel.</p>
+  </header>
+
+  <article class="church-giving-qr-card church-giving-qr-card--mobile">
+    <div class="church-giving-qr-card__frame">
+      <img src="/church/images/giving/giving-qr-mobile.jpg" alt="QR code for giving" width="512" height="512"/>
+    </div>
+    <h2>Quick Scan to Give</h2>
+    <p>Works with all major banking apps</p>
+  </article>
+
+  <details class="church-giving-accordion" open>
+    <summary>
+      <span class="church-giving-accordion__icon material-symbols-outlined" aria-hidden="true">smartphone</span>
+      <span>Mobile Money</span>
+      <span class="material-symbols-outlined church-giving-accordion__chevron" aria-hidden="true">expand_more</span>
+    </summary>
+    <div class="church-giving-accordion__body">
+      <% mobileMoney.forEach(function (mm) { %>
+      <div class="church-giving-mm-row">
+        <div>
+          <span class="church-giving-mm-row__label"><%= mm.provider %></span>
+          <strong><%= mm.number %></strong>
+          <% if (mm.name) { %><span class="church-giving-mm-row__meta">Registered as: <%= mm.name %></span><% } %>
         </div>
-        <div class="church-giving-options">
-          <%- include('../partials/giving_details') %>
-        </div>
-        <div class="church-giving-fallback">
-          <article class="church-giving-card church-giving-card--office">
-            <span class="material-symbols-outlined church-giving-card__icon" aria-hidden="true">support_agent</span>
-            <div>
-              <h2 class="church-giving-card__title">Contact the church office</h2>
-              <p class="church-giving-card__body">
-                Need giving instructions or a receipt?
-                <% if (contactPhone || contactEmail) { %>
-                  <% if (contactPhone) { %>Call <a href="tel:<%= contactPhone %>"><%= contactPhone %></a><% } %>
-                  <% if (contactPhone && contactEmail) { %> or <% } %>
-                  <% if (contactEmail) { %>email <a href="mailto:<%= contactEmail %>"><%= contactEmail %></a><% } %>.
-                <% } else { %>
-                  Visit our <a href="/contact">contact page</a> to reach branch leadership.
-                <% } %>
-              </p>
-            </div>
-          </article>
-          <article class="church-giving-card church-giving-card--notice">
-            <span class="material-symbols-outlined church-giving-card__icon" aria-hidden="true">info</span>
-            <div>
-              <h2 class="church-giving-card__title">Display-only giving page</h2>
-              <p class="church-giving-card__body">Branch leadership can publish bank, mobile money, and category details from the branch admin giving settings.</p>
-            </div>
-          </article>
+        <button type="button" class="church-giving-copy" data-copy="<%= mm.number %>" aria-label="Copy <%= mm.provider %> number">
+          <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+        </button>
+      </div>
+      <% }); %>
+    </div>
+  </details>
+
+  <details class="church-giving-accordion" open>
+    <summary>
+      <span class="church-giving-accordion__icon material-symbols-outlined" aria-hidden="true">account_balance</span>
+      <span>Bank Transfer</span>
+      <span class="material-symbols-outlined church-giving-accordion__chevron" aria-hidden="true">expand_more</span>
+    </summary>
+    <div class="church-giving-accordion__body">
+      <div class="church-giving-bank-mobile">
+        <div><span>BANK NAME</span><strong><%= bankName %></strong></div>
+        <div><span>ACCOUNT NAME</span><strong><%= accountName %></strong></div>
+        <div class="church-giving-bank-mobile__acct">
+          <div><span>ACCOUNT NUMBER</span><strong><%= accountNumber %></strong></div>
+          <button type="button" class="church-btn church-btn--primary church-btn--sm church-giving-copy" data-copy="<%= accountNumber %>">
+            <span class="material-symbols-outlined" aria-hidden="true">content_copy</span> Copy
+          </button>
         </div>
       </div>
-    </section>
+    </div>
+  </details>
+
+  <article class="church-giving-instructions-card">
+    <h2><span class="material-symbols-outlined" aria-hidden="true">info</span> Instructions</h2>
+    <ol>
+      <li>Use your <strong>Full Name</strong> or <strong>Member ID</strong> as the reference for tracking.</li>
+      <li>For specific ministries (e.g., Youth, Building Fund), please include the ministry name in the reference.</li>
+      <li>Screenshots of transactions can be sent to the Finance Office for confirmation.</li>
+    </ol>
+  </article>
+
+  <a class="church-giving-finance-cta" href="/contact">
+    <span class="material-symbols-outlined" aria-hidden="true">contact_support</span>
+    Contact Finance Office
+  </a>
+  <p class="church-giving-finance-hours">Available Mon - Fri, 08:00 - 17:00</p>
+  <% if (showingDemo) { %>
+  <p class="church-leadership-fallback-note">Showing sample giving layout. Publish giving settings in branch admin to replace demo details.</p>
+  <% } %>
+</section>
+
+<%# —— Desktop (07-public-giving-information-desktop) —— %>
+<section class="church-giving-desktop home-desktop-design">
+  <header class="church-giving-desktop__intro">
+    <h1>Ways to Give</h1>
+    <p><%= intro %></p>
+  </header>
+
+  <div class="church-giving-bento church-giving-page">
+    <article class="church-giving-card-stitch church-giving-card-stitch--bank">
+      <div class="church-giving-card-stitch__head">
+        <span class="material-symbols-outlined" aria-hidden="true">account_balance</span>
+        <div>
+          <h2>Bank Transfer</h2>
+          <p>Direct Deposit / Wire Transfer</p>
+        </div>
+      </div>
+      <div class="church-giving-bank-grid">
+        <div><span>ACCOUNT NAME</span><strong><%= accountName %></strong></div>
+        <div>
+          <span>ACCOUNT NUMBER</span>
+          <strong class="church-giving-inline-copy"><%= accountNumber %>
+            <button type="button" class="church-giving-copy" data-copy="<%= accountNumber %>" aria-label="Copy account number">
+              <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+            </button>
+          </strong>
+        </div>
+        <div><span>BANK NAME</span><strong><%= bankName %></strong></div>
+        <div><span>BRANCH / SWIFT CODE</span><strong><%= branchSwift %></strong></div>
+      </div>
+    </article>
+
+    <article class="church-giving-card-stitch church-giving-card-stitch--qr">
+      <div class="church-giving-qr-card__frame church-giving-qr-card__frame--desktop">
+        <img src="/church/images/giving/giving-qr-desktop.jpg" alt="QR code for giving" width="512" height="512"/>
+      </div>
+      <h2>Scan to Give</h2>
+      <p>Open your banking app and scan this code to give securely.</p>
+      <span class="church-giving-secure"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span> Secure Encryption</span>
+    </article>
+
+    <article class="church-giving-card-stitch church-giving-card-stitch--mm">
+      <div class="church-giving-card-stitch__head">
+        <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
+        <div><h2>Mobile Money</h2></div>
+      </div>
+      <% mobileMoney.forEach(function (mm) { %>
+      <div class="church-giving-mm-row church-giving-mm-row--desktop">
+        <div>
+          <strong><%= mm.number %></strong>
+          <span class="church-giving-mm-row__meta"><%= mm.provider %><% if (mm.name) { %> · Registered as: <%= mm.name %><% } %></span>
+        </div>
+        <button type="button" class="church-giving-copy" data-copy="<%= mm.number %>" aria-label="Copy number">
+          <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+        </button>
+      </div>
+      <% }); %>
+    </article>
+
+    <article class="church-giving-card-stitch church-giving-card-stitch--cats">
+      <div class="church-giving-card-stitch__head">
+        <span class="material-symbols-outlined" aria-hidden="true">category</span>
+        <div><h2>Giving Categories</h2></div>
+      </div>
+      <ul class="church-giving-cat-pills">
+        <% categories.forEach(function (cat, idx) { %>
+        <li class="church-giving-cat-pills__item church-giving-cat-pills__item--<%= idx % 4 %>"><%= cat %></li>
+        <% }); %>
+      </ul>
+      <p class="church-giving-cat-note">*Please include the category name in your transfer reference/description.</p>
+    </article>
+
+    <article class="church-giving-card-stitch church-giving-card-stitch--steps">
+      <div class="church-giving-card-stitch__head">
+        <span class="material-symbols-outlined" aria-hidden="true">info</span>
+        <div><h2>Instructions for Giving</h2></div>
+      </div>
+      <ol class="church-giving-steps">
+        <li><span>01</span><div>Choose a giving method (bank transfer, mobile money, or QR).</div></li>
+        <li><span>02</span><div>Include your full name and giving category in the payment reference.</div></li>
+        <li><span>03</span><div>Keep your receipt or screenshot for your records.</div></li>
+        <li><span>04</span><div>Contact the finance office if you need a formal acknowledgment.</div></li>
+      </ol>
+    </article>
+
+    <article class="church-giving-card-stitch church-giving-card-stitch--office">
+      <h2>Finance Office</h2>
+      <p>Questions about giving or receipts?</p>
+      <% if (financeEmail) { %><p><span>Email</span><strong><%= financeEmail %></strong></p><% } %>
+      <% if (financePhone) { %><p><span>Phone</span><strong><%= financePhone %></strong></p><% } %>
+      <% if (financeName) { %><p><span>Contact</span><strong><%= financeName %></strong></p><% } %>
+      <a class="church-btn church-btn--primary" href="/contact">Send Message</a>
+    </article>
+  </div>
+
+  <aside class="church-giving-transparency">
+    <div>
+      <h2><span class="material-symbols-outlined" aria-hidden="true">verified_user</span> Financial Transparency</h2>
+      <p><%= churchName %> is committed to faithful stewardship. Giving details are published by branch leadership for display only — online payments are not processed on this page.</p>
+    </div>
+  </aside>
+  <% if (showingDemo) { %>
+  <p class="church-leadership-fallback-note home-desktop-design">Showing sample giving layout. Publish giving settings in branch admin to replace demo details.</p>
+  <% } %>
+</section>
+
+<script>
+  (function () {
+    document.querySelectorAll(".church-giving-copy").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var value = btn.getAttribute("data-copy") || "";
+        if (!value || !navigator.clipboard) return;
+        navigator.clipboard.writeText(value).catch(function () {});
+      });
+    });
+  })();
+</script>
 <%- include('../partials/public_shell_end') %>

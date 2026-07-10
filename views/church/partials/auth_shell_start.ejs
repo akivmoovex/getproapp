@@ -3,18 +3,20 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title><%= pageTitle %> — BlessBoard Member Access</title>
+  <title><%= typeof pageTitle !== 'undefined' && pageTitle ? pageTitle : churchName %> — BlessBoard Member Access</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=36"/>
+  <link rel="stylesheet" href="/church/church.css?v=38"/>
 </head>
-<body class="church-body church-body--auth">
-  <header class="church-header church-header--auth">
-    <div class="church-header__inner">
-      <%- include('./brand_lockup') %>
-      <a class="church-btn church-btn--ghost" href="/">Back to home</a>
+<body class="church-body church-body--auth<%= typeof authBodyClass !== 'undefined' && authBodyClass ? ' ' + authBodyClass : '' %>">
+  <header class="church-auth-topbar">
+    <div class="church-auth-topbar__inner">
+      <a class="church-auth-topbar__brand" href="/"><%= churchName %></a>
+      <a class="church-auth-topbar__help" href="/contact" aria-label="Help and support">
+        <span class="material-symbols-outlined" aria-hidden="true">help_outline</span>
+      </a>
     </div>
   </header>
-  <main class="church-auth-main">
+  <main class="church-auth-main church-auth-main--stitch">

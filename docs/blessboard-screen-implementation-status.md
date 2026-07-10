@@ -5,9 +5,9 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=36` (Contact, Ministries, Events, Sermons + prior About/Leadership/homepage)
+**CSS bundle:** `/church/church.css?v=38` (Batch B Auth + Batch A Giving + prior public screens)
 
-**Last updated:** 2026-07-10 (Contact / Ministries / Events / Sermons visual pass)
+**Last updated:** 2026-07-10 (Batch B — Authentication visual pass)
 
 ### Homepage v34 status (unchanged layout; CSS cache bumped to v35)
 
@@ -39,7 +39,7 @@ Regression guards live in `tests/church-visual-design.test.js` (CSS v35 shells, 
 | Public website shell | Close | Close | Dual header/footer for branch home |
 | Public homepage (apex) | Close | Partial | Desktop SaaS uses Stitch assets; apex has no dedicated mobile PNG |
 | Branch public homepage | Close | Close | Mobile = church PNG; desktop = SaaS PNG via CSS split |
-| Auth screens | Partial | Partial | Card polish, brand lockup; layout closer to Stitch |
+| Auth screens | Close | Close | Batch B Stitch dual layouts; CSS v38 |
 | Member portal | Partial | Partial → improved | Mobile top bar, bento quick actions, announcement cards |
 | Branch admin | Partial | Needs mobile fix | Functional; sidebar layout differs from Stitch density |
 | HQ / Leader / Platform | Partial | Partial | Implemented; not fully restyled this pass |
@@ -144,8 +144,8 @@ Statuses: **Matches** · **Close** · **Partial** · **Placeholder** · **Missin
 | Events / Calendar | Mobile | `01-public-website/05-public-events-calendar-mobile/05-public-events-calendar-mobile.png` | `/events` | `events.ejs` | Close | Featured + list cards; bottom tab bar not used |
 | Sermons / Resources | Desktop | `01-public-website/06-public-sermons-resources-desktop/06-public-sermons-resources-desktop.png` | `/sermons` | `views/church/public/sermons.ejs` | Close | Featured hero + grid + study sidebar; filters visual-only |
 | Sermons / Resources | Mobile | `01-public-website/06-public-sermons-resources-mobile/06-public-sermons-resources-mobile.png` | `/sermons` | `sermons.ejs` | Close | Featured + recent list + study resources |
-| Giving information | Desktop | `01-public-website/07-public-giving-information-desktop/07-public-giving-information-desktop.png` | `/giving` | `views/church/public/giving.ejs` | Partial | Method icons, bank detail cards |
-| Giving information | Mobile | `01-public-website/07-public-giving-information-mobile/07-public-giving-information-mobile.png` | `/giving` | `giving.ejs` | Partial | Stacked method cards |
+| Giving information | Desktop | `01-public-website/07-public-giving-information-desktop/07-public-giving-information-desktop.png` | `/giving` | `views/church/public/giving.ejs` | Close | Stitch bento + QR; DB settings override demo; brand BlessBoard |
+| Giving information | Mobile | `01-public-website/07-public-giving-information-mobile/07-public-giving-information-mobile.png` | `/giving` | `giving.ejs` | Close | Accordion methods + QR hero; bottom tab bar not used |
 | Contact | Desktop | `01-public-website/08-public-contact-desktop/08-public-contact-desktop.png` | `/contact` | `views/church/public/contact.ejs` | Close | Info + map + form + Sunday CTA; form posts to DB |
 | Contact | Mobile | `01-public-website/08-public-contact-mobile/08-public-contact-mobile.png` | `/contact` | `contact.ejs` | Close | Quick actions, map, hours, form; bottom tab bar not used |
 
@@ -153,16 +153,16 @@ Statuses: **Matches** · **Close** · **Partial** · **Placeholder** · **Missin
 
 | Screen | Device | PNG File | Current Route | Current View | Match Status | Missing Design Items |
 |--------|--------|----------|---------------|--------------|--------------|----------------------|
-| Member login | Desktop | `02-authentication/09-auth-member-login-desktop/09-auth-member-login-desktop.png` | `/login` | `views/church/auth/login.ejs` | Partial | Centered card width, illustration |
-| Member login | Mobile | `02-authentication/09-auth-member-login-mobile/09-auth-member-login-mobile.png` | `/login` | `login.ejs` | Partial | Rounded-xl full-width card (CSS added) |
-| Member registration | Desktop | `02-authentication/10-auth-member-registration-desktop/10-auth-member-registration-desktop.png` | `/register` | `views/church/auth/register.ejs` | Partial | Step sections, progress indicator |
-| Member registration | Mobile | `02-authentication/10-auth-member-registration-mobile/10-auth-member-registration-mobile.png` | `/register` | `register.ejs` | Partial | Mobile form spacing |
-| Registration submitted | Desktop | `02-authentication/11-auth-registration-submitted-desktop/11-auth-registration-submitted-desktop.png` | `/registration-submitted` | `views/church/auth/registration_submitted.ejs` | Partial | Success illustration sizing |
-| Registration submitted | Mobile | `02-authentication/11-auth-registration-submitted-mobile/11-auth-registration-submitted-mobile.png` | `/registration-submitted` | `registration_submitted.ejs` | Partial | — |
-| Waiting verification | Desktop | `02-authentication/12-auth-waiting-verification-desktop/12-auth-waiting-verification-desktop.png` | `/waiting-verification` | `views/church/auth/waiting_verification.ejs` | Partial | Status timeline |
-| Waiting verification | Mobile | `02-authentication/12-auth-waiting-verification-mobile/12-auth-waiting-verification-mobile.png` | `/waiting-verification` | `waiting_verification.ejs` | Partial | — |
-| Forgot password | Desktop | `02-authentication/13-auth-forgot-password-desktop/13-auth-forgot-password-desktop.png` | `/forgot-password` | `views/church/auth/forgot_password.ejs` | Partial | — |
-| Forgot password | Mobile | `02-authentication/13-auth-forgot-password-mobile/13-auth-forgot-password-mobile.png` | `/forgot-password` | `forgot_password.ejs` | Partial | — |
+| Member login | Desktop | `02-authentication/09-auth-member-login-desktop/09-auth-member-login-desktop.png` | `/login` | `views/church/auth/login.ejs` | Close (v38) | Brand: Powered by GetPro (not GetPro Church); autofill chrome |
+| Member login | Mobile | `02-authentication/09-auth-member-login-mobile/09-auth-member-login-mobile.png` | `/login` | `login.ejs` | Close (v38) | Same brand rule |
+| Member registration | Desktop | `02-authentication/10-auth-member-registration-desktop/10-auth-member-registration-desktop.png` | `/register` | `views/church/auth/register.ejs` | Close (v38) | Product enums; single-page (no multi-step Continue) |
+| Member registration | Mobile | `02-authentication/10-auth-member-registration-mobile/10-auth-member-registration-mobile.png` | `/register` | `register.ejs` | Close (v38) | Same |
+| Registration submitted | Desktop | `02-authentication/11-auth-registration-submitted-desktop/11-auth-registration-submitted-desktop.png` | `/registration-submitted` | `views/church/auth/registration_submitted.ejs` | Close (v38) | No fake Submission ID/timestamp |
+| Registration submitted | Mobile | `02-authentication/11-auth-registration-submitted-mobile/11-auth-registration-submitted-mobile.png` | `/registration-submitted` | `registration_submitted.ejs` | Close (v38) | Icon-led mobile (hero desktop-only) |
+| Waiting verification | Desktop | `02-authentication/12-auth-waiting-verification-desktop/12-auth-waiting-verification-desktop.png` | `/waiting-verification` | `views/church/auth/waiting_verification.ejs` | Close (v38) | Needs pending session; no Stitch reference ID |
+| Waiting verification | Mobile | `02-authentication/12-auth-waiting-verification-mobile/12-auth-waiting-verification-mobile.png` | `/waiting-verification` | `waiting_verification.ejs` | Close (v38) | Same |
+| Forgot password | Desktop | `02-authentication/13-auth-forgot-password-desktop/13-auth-forgot-password-desktop.png` | `/forgot-password` | `views/church/auth/forgot_password.ejs` | Close (v38) | Extra optional fields for branch review flow |
+| Forgot password | Mobile | `02-authentication/13-auth-forgot-password-mobile/13-auth-forgot-password-mobile.png` | `/forgot-password` | `forgot_password.ejs` | Close (v38) | Same; tips adapted (no email-link promise) |
 
 ### Member portal
 
@@ -292,23 +292,46 @@ npm run test:ui
 - `views/church/public/leadership.ejs` — featured pastor, elders, ministry leaders, admin tiles
 - `public/church/church.css` — About/Leadership fidelity styles; cache `?v=35`
 - `public/church/images/about/*`, `public/church/images/leadership/*` — Stitch assets
-- All church shells referencing `church.css?v=36`
-- `tests/church-visual-design.test.js` — v35 + About/Leadership markers
+- All church shells referencing `church.css?v=38`
+- `tests/church-visual-design.test.js` — CSS version + About/Leadership markers
 - `scripts/screenshot-blessboard-about-leadership.js`
 - `docs/blessboard-screen-implementation-status.md` — This file
 
 ---
 
+## Batch B — Authentication (v38)
+
+| Screen | Device | PNG | Route | View | CSS version | Match status | Remaining differences |
+|--------|--------|-----|-------|------|-------------|--------------|----------------------|
+| Member login | Desktop | `09-auth-member-login-desktop.png` | `/login` | `church/auth/login.ejs` | v38 | Close | Brand: church name + Powered by GetPro (not “GetPro Church”); Stitch submission IDs not shown |
+| Member login | Mobile | `09-auth-member-login-mobile.png` | `/login` | `church/auth/login.ejs` | v38 | Close | Same brand rule; browser autofill may alter input chrome |
+| Registration | Desktop | `10-auth-member-registration-desktop.png` | `/register` | `church/auth/register.ejs` | v38 | Close | Age/attendance option labels come from product enums (not Stitch sample lists); single-page form (no multi-step Continue) |
+| Registration | Mobile | `10-auth-member-registration-mobile.png` | `/register` | `church/auth/register.ejs` | v38 | Close | Same enum / single-page differences |
+| Registration submitted | Desktop | `11-auth-registration-submitted-desktop.png` | `/registration-submitted` | `church/auth/registration_submitted.ejs` | v38 | Close | No fake Submission ID / timestamp (honest status meta); brand footer differs from Stitch |
+| Registration submitted | Mobile | `11-auth-registration-submitted-mobile.png` | `/registration-submitted` | `church/auth/registration_submitted.ejs` | v38 | Close | Same; desktop hero image hidden on mobile per Stitch mobile (icon-led) |
+| Waiting verification | Desktop | `12-auth-waiting-verification-desktop.png` | `/waiting-verification` | `church/auth/waiting_verification.ejs` | v38 | Close | Requires pending member session; no Stitch reference ID; branch location from DB |
+| Waiting verification | Mobile | `12-auth-waiting-verification-mobile.png` | `/waiting-verification` | `church/auth/waiting_verification.ejs` | v38 | Close | Illustration from Stitch mobile HTML; copy adapted to product |
+| Forgot password | Desktop | `13-auth-forgot-password-desktop.png` | `/forgot-password` | `church/auth/forgot_password.ejs` | v38 | Close | Product keeps optional name/phone/email fields (admin review flow); Stitch shows identifier-only |
+| Forgot password | Mobile | `13-auth-forgot-password-mobile.png` | `/forgot-password` | `church/auth/forgot_password.ejs` | v38 | Close | Same field set; tips adapted (no email-link promise — branch reviews requests) |
+
+**Screenshots:** `test-results/blessboard-stitch-visual/auth/` via `node scripts/screenshot-blessboard-all-screens.js --batch=B`
+
+**Waiting-verification screenshot note:** script seeds a pending `churchMember` session. Live: log in as a pending member.
+
+**Out of Batch B PNG set (kept working):** `/branch/login`, `blessboard.com/admin/login`, `/forgot-password-submitted`, `register_closed.ejs`.
+
+---
+
 ## Screens still not matching (priority follow-ups)
 
-1. **Public Giving** — method icon cards need Stitch polish
-2. **Public Ministries page** — image tiles and filters
-3. **Events calendar grid** — month view widget not implemented
-4. **Sermons** — real media/archive integration vs demo cards
-5. **Leadership photo uploads** — website editor photo fields not wired; Stitch photos used as layout assets
-6. **Contact form** — backend submission not wired (display-only)
-7. **Branch admin dashboard** — mobile stat card density vs Stitch
-8. **HQ / Leader portals** — not restyled this pass
-9. **Stitch bottom tab bars** on About/Leadership mobile PNGs — product uses drawer + FAB instead (intentional)
+1. **Member portal (Batch C)** — dashboard and portal pages vs Stitch
+2. **Branch admin (Batch D)** — dashboard density vs Stitch
+3. **Platform / HQ admin (Batch E)** — apex admin vs Stitch
+4. **Events calendar grid** — month view widget not implemented
+5. **Sermons** — real media players vs demo cards
+6. **Branch admin login** — no dedicated Stitch PNG in auth set
+7. **Leadership photo uploads** — website editor photo fields not wired
+8. **Contact form** — works; Stitch subject dropdown not required for DB submit
+9. **Stitch bottom tab bars** — product uses drawer + FAB instead (intentional)
 
 Stitch HTML for About/Leadership lives under `design-reference/stitch-screens/church-flow/01-public-website/`.

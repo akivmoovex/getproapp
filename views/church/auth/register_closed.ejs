@@ -1,13 +1,18 @@
-<%- include('../partials/auth_shell_start') %>
-  <div class="church-auth-card church-auth-card--wide">
-    <h1 class="church-auth-card__title">Registration is currently closed</h1>
-    <p class="church-auth-card__subtitle">
-      <%= churchName %> is not accepting new member registrations online at this time.
-      Please contact the church office if you would like to visit or get connected.
-    </p>
-    <div class="church-auth-card__actions">
-      <a class="church-btn church-btn--primary" href="/contact">Contact the church</a>
-      <a class="church-btn church-btn--outline" href="/">Back to homepage</a>
+<%- include('../partials/auth_shell_start', { authBodyClass: 'church-body--auth-register' }) %>
+  <div class="church-auth-stage">
+    <div class="church-auth-card church-auth-card--stitch church-auth-card--wide church-auth-card--state" data-auth-screen="register-closed">
+      <div class="church-auth-forgot__icon" aria-hidden="true">
+        <span class="material-symbols-outlined">lock</span>
+      </div>
+      <h1 class="church-auth-card__title">Registration is currently closed</h1>
+      <p class="church-auth-card__subtitle">
+        <%= churchName %> is not accepting new member registrations online at this time.
+        Please contact the church office if you would like to visit or get connected.
+      </p>
+      <div class="church-auth-card__actions church-auth-card__actions--pair">
+        <a class="church-btn church-btn--primary" href="/contact">Contact the church</a>
+        <a class="church-btn church-btn--outline" href="/">Back to homepage</a>
+      </div>
     </div>
   </div>
 <%- include('../partials/auth_shell_end') %>

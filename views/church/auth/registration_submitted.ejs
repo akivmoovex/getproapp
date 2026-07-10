@@ -1,18 +1,54 @@
-<%- include('../partials/auth_shell_start') %>
-  <div class="church-auth-card church-auth-card--state">
-    <div class="church-state-icon" aria-hidden="true">
-      <span class="material-symbols-outlined">mark_email_read</span>
-    </div>
-    <h1 class="church-auth-card__title">Registration submitted</h1>
-    <p class="church-auth-card__subtitle">
-      Thank you for registering with <%= churchName %>. Your membership application is now <strong>pending verification</strong> by branch leadership.
-    </p>
-    <p class="church-auth-card__body">
-      You can sign in at any time to check your status. While your application is pending, you will see a waiting screen instead of the member portal.
-    </p>
-    <div class="church-auth-card__actions">
-      <a class="church-btn church-btn--primary" href="/login">Go to member login</a>
-      <a class="church-btn church-btn--outline" href="/">Return home</a>
+<%- include('../partials/auth_shell_start', { authBodyClass: 'church-body--auth-submitted' }) %>
+  <div class="church-auth-stage">
+    <div class="church-auth-card church-auth-card--stitch church-auth-card--state church-auth-submitted" data-auth-screen="registration-submitted">
+      <div class="church-auth-submitted__hero home-desktop-design">
+        <img src="/church/images/auth/registration-submitted.jpg" alt="" width="1024" height="572"/>
+      </div>
+
+      <div class="church-auth-submitted__icon" aria-hidden="true">
+        <span class="material-symbols-outlined">check_circle</span>
+      </div>
+
+      <p class="church-auth-submitted__eyebrow home-mobile-design">Success</p>
+      <h1 class="church-auth-card__title">Registration Submitted</h1>
+      <p class="church-auth-card__subtitle">
+        Thank you for joining our community. Your registration has been received and is currently
+        <strong class="church-auth-emphasis">pending administrator verification</strong>.
+      </p>
+
+      <div class="church-auth-meta-box" role="group" aria-label="Submission details">
+        <div class="church-auth-meta-row">
+          <span>Church</span>
+          <strong><%= churchName %></strong>
+        </div>
+        <div class="church-auth-meta-row">
+          <span>Status</span>
+          <strong>Pending verification</strong>
+        </div>
+        <div class="church-auth-meta-row">
+          <span>Est. Processing Time</span>
+          <strong>24 – 48 Hours</strong>
+        </div>
+      </div>
+
+      <div class="church-auth-next-steps">
+        <div class="church-auth-next-steps__title">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          Next Steps
+        </div>
+        <p>You will be able to sign in and check your status while your application is reviewed. Once approved, you will have full access to the member portal.</p>
+      </div>
+
+      <div class="church-auth-card__actions church-auth-card__actions--pair">
+        <a class="church-btn church-btn--primary" href="/">
+          <span class="material-symbols-outlined" aria-hidden="true">home</span>
+          Return Home
+        </a>
+        <a class="church-btn church-btn--outline" href="/contact">
+          <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+          Contact Office
+        </a>
+      </div>
     </div>
   </div>
 <%- include('../partials/auth_shell_end') %>
