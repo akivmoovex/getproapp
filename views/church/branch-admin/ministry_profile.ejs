@@ -93,9 +93,11 @@
         <div class="church-hq-review-actions">
           <a class="church-btn church-btn--outline" href="/branch/ministries/<%= ministry.id %>/edit">Edit</a>
           <% if (ministry.status !== 'published') { %>
-          <form method="post" action="/branch/ministries/<%= ministry.id %>/publish"><button class="church-btn church-btn--primary" type="submit">Publish</button></form>
+          <form method="post" action="/branch/ministries/<%= ministry.id %>/publish">
+        <%- include('../partials/csrf_field') %><button class="church-btn church-btn--primary" type="submit">Publish</button></form>
           <% } %>
-          <form method="post" action="/branch/ministries/<%= ministry.id %>/archive"><button class="church-btn church-btn--outline" type="submit">Archive</button></form>
+          <form method="post" action="/branch/ministries/<%= ministry.id %>/archive">
+        <%- include('../partials/csrf_field') %><button class="church-btn church-btn--outline" type="submit">Archive</button></form>
         </div>
       </section>
       <% } %>

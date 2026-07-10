@@ -33,6 +33,7 @@
         <a href="/" class="church-branch-nav-link">Public website</a>
         <% if (typeof hqAdmin !== 'undefined' && hqAdmin) { %>
         <form method="post" action="/hq/logout">
+          <%- include('./csrf_field') %>
           <button class="church-branch-nav-link church-branch-nav-link--button" type="submit">Sign out</button>
         </form>
         <% } %>

@@ -20,6 +20,7 @@
       <section class="church-branch-panel church-branch-panel--compact">
         <h2 class="church-branch-panel__title">Site settings</h2>
         <form class="church-form" method="post" action="/branch/site-settings">
+        <%- include('../partials/csrf_field') %>
           <label class="church-checkbox">
             <input type="checkbox" name="member_registration_enabled" value="on" <%= branch.member_registration_enabled !== false ? 'checked' : '' %> />
             Member registration enabled on <code>/register</code>
@@ -29,6 +30,7 @@
         </form>
       </section>
       <form class="church-form" method="post" action="/branch/website-editor">
+        <%- include('../partials/csrf_field') %>
         <section class="church-branch-panel">
           <h2 class="church-branch-panel__title">Homepage</h2>
           <div class="church-form-grid">

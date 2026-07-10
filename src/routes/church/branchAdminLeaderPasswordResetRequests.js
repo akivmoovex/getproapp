@@ -20,6 +20,7 @@ const {
   recordBranchAudit,
 } = require("./branchAdminShared");
 const { loadResetTimelineForDetail } = require("../../church/resetRequestTimeline");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 
 async function loadLeaderPasswordResetDetail(pool, req, requestId, error) {
   const branch = req.churchContext.branch;
@@ -122,7 +123,7 @@ module.exports = function registerBranchAdminLeaderPasswordResetRequestsRoutes(r
   router.post(
     "/branch/leader-password-reset-requests/:requestId/mark-reviewed",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const requestId = Number(req.params.requestId);
@@ -191,7 +192,7 @@ module.exports = function registerBranchAdminLeaderPasswordResetRequestsRoutes(r
   router.post(
     "/branch/leader-password-reset-requests/:requestId/reset-password",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const requestId = Number(req.params.requestId);
@@ -294,7 +295,7 @@ module.exports = function registerBranchAdminLeaderPasswordResetRequestsRoutes(r
   router.post(
     "/branch/leader-password-reset-requests/:requestId/reject",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const requestId = Number(req.params.requestId);

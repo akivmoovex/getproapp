@@ -21,6 +21,7 @@ const {
   recordBranchAudit,
 } = require("./branchAdminShared");
 const { loadResetTimelineForDetail } = require("../../church/resetRequestTimeline");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 
 function maskIdentifier(value) {
   return maskLoginIdentifier(String(value || ""));
@@ -123,7 +124,7 @@ module.exports = function registerBranchAdminPasswordResetRequestsRoutes(router)
   router.post(
     "/branch/password-reset-requests/:requestId/mark-reviewed",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const requestId = Number(req.params.requestId);
@@ -191,7 +192,7 @@ module.exports = function registerBranchAdminPasswordResetRequestsRoutes(router)
   router.post(
     "/branch/password-reset-requests/:requestId/reset-password",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const requestId = Number(req.params.requestId);
@@ -291,7 +292,7 @@ module.exports = function registerBranchAdminPasswordResetRequestsRoutes(router)
   router.post(
     "/branch/password-reset-requests/:requestId/reject",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const requestId = Number(req.params.requestId);

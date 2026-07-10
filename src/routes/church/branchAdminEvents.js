@@ -4,6 +4,7 @@ const { getPgPool } = require("../../db/pg");
 const eventsRepo = require("../../db/pg/church/eventsRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   EVENT_VISIBILITIES,
   eventStatusLabel,
@@ -100,7 +101,7 @@ module.exports = function registerBranchAdminEventsRoutes(router) {
     );
   });
 
-  router.post("/branch/events", requireChurchBranchHost, requireChurchBranchAdminSession, async (req, res, next) => {
+  router.post("/branch/events", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const validation = validateEventBody(req.body || {});
       const intent = String(req.body._intent || "draft").trim();
@@ -219,7 +220,7 @@ module.exports = function registerBranchAdminEventsRoutes(router) {
   router.post(
     "/branch/events/:eventId",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const eventId = Number(req.params.eventId);
@@ -288,7 +289,7 @@ module.exports = function registerBranchAdminEventsRoutes(router) {
   router.post(
     "/branch/events/:eventId/publish",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const eventId = Number(req.params.eventId);
@@ -336,7 +337,7 @@ module.exports = function registerBranchAdminEventsRoutes(router) {
   router.post(
     "/branch/events/:eventId/cancel",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const eventId = Number(req.params.eventId);

@@ -26,9 +26,11 @@
         <div class="church-hq-review-actions">
           <a class="church-btn church-btn--outline" href="/branch/duty-roster/<%= duty.id %>/edit">Edit</a>
           <% if (duty.status !== 'confirmed') { %>
-          <form method="post" action="/branch/duty-roster/<%= duty.id %>/confirm"><button class="church-btn church-btn--primary" type="submit">Confirm</button></form>
+          <form method="post" action="/branch/duty-roster/<%= duty.id %>/confirm">
+        <%- include('../partials/csrf_field') %><button class="church-btn church-btn--primary" type="submit">Confirm</button></form>
           <% } %>
-          <form method="post" action="/branch/duty-roster/<%= duty.id %>/cancel"><button class="church-btn church-btn--outline" type="submit">Cancel duty</button></form>
+          <form method="post" action="/branch/duty-roster/<%= duty.id %>/cancel">
+        <%- include('../partials/csrf_field') %><button class="church-btn church-btn--outline" type="submit">Cancel duty</button></form>
         </div>
       </section>
       <% } %>

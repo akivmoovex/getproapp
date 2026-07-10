@@ -47,6 +47,7 @@
             </div>
             <% if (announcement.status !== 'archived') { %>
             <form class="church-inline-form" method="post" action="/branch/announcements/<%= announcement.id %>/attachments/<%= file.id %>/delete" onsubmit="return confirm('Remove this attachment?');">
+              <%- include('../partials/csrf_field') %>
               <input type="hidden" name="_return" value="detail"/>
               <button class="church-btn church-btn--ghost church-btn--sm" type="submit">Remove</button>
             </form>

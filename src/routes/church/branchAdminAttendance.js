@@ -5,6 +5,7 @@ const attendanceRepo = require("../../db/pg/church/attendanceRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
 const { ATTENDANCE_TYPES, validateAttendanceBody } = require("../../church/attendanceValidation");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   branchAdminLocals,
   flashFromQuery,
@@ -46,7 +47,7 @@ module.exports = function registerBranchAdminAttendanceRoutes(router) {
     }
   });
 
-  router.post("/branch/attendance", requireChurchBranchHost, requireChurchBranchAdminSession, async (req, res, next) => {
+  router.post("/branch/attendance", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const validation = validateAttendanceBody(req.body || {});
       const branch = req.churchContext.branch;
@@ -130,7 +131,7 @@ module.exports = function registerBranchAdminAttendanceRoutes(router) {
   router.post(
     "/branch/attendance/:recordId/update-status",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const branch = req.churchContext.branch;

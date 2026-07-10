@@ -29,6 +29,7 @@ const {
 } = require("../../church/requestProcessingValidation");
 const { joinRequestStatusLabel } = require("../../church/ministryJoinRequestValidation");
 const { formatDutyDate, dutyStatusLabel } = require("../../church/dutyRosterValidation");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   branchAdminLocals,
   flashFromQuery,
@@ -250,7 +251,7 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
   router.post(
     "/branch/members/:memberId",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const memberId = Number(req.params.memberId);
@@ -409,23 +410,23 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
     }
   }
 
-  router.post("/branch/members/:memberId/approve", requireChurchBranchHost, requireChurchBranchAdminSession, (req, res, next) =>
+  router.post("/branch/members/:memberId/approve", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, (req, res, next) =>
     handleMemberAction(req, res, next, "approve")
   );
-  router.post("/branch/members/:memberId/reject", requireChurchBranchHost, requireChurchBranchAdminSession, (req, res, next) =>
+  router.post("/branch/members/:memberId/reject", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, (req, res, next) =>
     handleMemberAction(req, res, next, "reject")
   );
   router.post(
     "/branch/members/:memberId/request-more-info",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     (req, res, next) => handleMemberAction(req, res, next, "request-more-info")
   );
 
   router.post(
     "/branch/members/:memberId/verify",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const memberId = Number(req.params.memberId);
@@ -461,7 +462,7 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
   router.post(
     "/branch/members/:memberId/suspend",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const memberId = Number(req.params.memberId);
@@ -502,7 +503,7 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
   router.post(
     "/branch/members/:memberId/reactivate",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const memberId = Number(req.params.memberId);
@@ -535,7 +536,7 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
   router.post(
     "/branch/members/:memberId/add-note",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const memberId = Number(req.params.memberId);

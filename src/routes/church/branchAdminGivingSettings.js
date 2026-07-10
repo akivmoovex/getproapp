@@ -4,6 +4,7 @@ const { getPgPool } = require("../../db/pg");
 const givingSettingsRepo = require("../../db/pg/church/givingSettingsRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   settingsFromForm,
   formFromSettings,
@@ -52,7 +53,7 @@ module.exports = function registerBranchAdminGivingSettingsRoutes(router) {
   router.post(
     "/branch/giving-settings",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const org = req.churchContext.organization;

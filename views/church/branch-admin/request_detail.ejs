@@ -44,11 +44,13 @@
         <div class="church-hq-review-actions">
           <% if (requestItem.status === 'submitted' || requestItem.status === 'more_info_needed') { %>
           <form class="church-form" method="post" action="/branch/requests/<%= requestItem.id %>/start-review">
+        <%- include('../partials/csrf_field') %>
             <button class="church-btn church-btn--outline" type="submit">Start Review</button>
           </form>
           <% } %>
           <% if (['submitted', 'in_review'].includes(requestItem.status)) { %>
           <form class="church-form" method="post" action="/branch/requests/<%= requestItem.id %>/approve">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
               <label class="church-label" for="approve_comment">Comment (optional)</label>
               <textarea class="church-input church-input--textarea" id="approve_comment" name="admin_comment" rows="2"></textarea>
@@ -56,6 +58,7 @@
             <button class="church-btn church-btn--primary" type="submit">Approve</button>
           </form>
           <form class="church-form" method="post" action="/branch/requests/<%= requestItem.id %>/reject">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
               <label class="church-label" for="reject_comment">Rejection comment (required)</label>
               <textarea class="church-input church-input--textarea" id="reject_comment" name="admin_comment" rows="2" required></textarea>
@@ -63,6 +66,7 @@
             <button class="church-btn church-btn--outline" type="submit">Reject</button>
           </form>
           <form class="church-form" method="post" action="/branch/requests/<%= requestItem.id %>/request-more-info">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
               <label class="church-label" for="more_info_comment">Information needed (required)</label>
               <textarea class="church-input church-input--textarea" id="more_info_comment" name="admin_comment" rows="2" required></textarea>
@@ -72,6 +76,7 @@
           <% } %>
           <% if (requestItem.status === 'approved') { %>
           <form class="church-form" method="post" action="/branch/requests/<%= requestItem.id %>/complete">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
               <label class="church-label" for="complete_comment">Completion note (optional)</label>
               <textarea class="church-input church-input--textarea" id="complete_comment" name="admin_comment" rows="2"></textarea>

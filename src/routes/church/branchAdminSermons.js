@@ -5,6 +5,7 @@ const sermonsRepo = require("../../db/pg/church/sermonsRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
 const { branchAdminLocals, flashFromQuery, noticeMessage } = require("./branchAdminShared");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 
 const SERMON_NOTICES = {
   sermon_created: "Sermon saved.",
@@ -74,7 +75,7 @@ module.exports = function registerBranchAdminSermonsRoutes(router) {
     );
   });
 
-  router.post("/branch/sermons", requireChurchBranchHost, requireChurchBranchAdminSession, async (req, res, next) => {
+  router.post("/branch/sermons", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const branch = req.churchContext.branch;
       const org = req.churchContext.organization;
@@ -135,7 +136,7 @@ module.exports = function registerBranchAdminSermonsRoutes(router) {
     }
   });
 
-  router.post("/branch/sermons/:sermonId", requireChurchBranchHost, requireChurchBranchAdminSession, async (req, res, next) => {
+  router.post("/branch/sermons/:sermonId", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const branch = req.churchContext.branch;
       const pool = getPgPool();

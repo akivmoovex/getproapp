@@ -61,6 +61,7 @@
       <section class="church-member-panel" id="profile-form">
         <h2 class="church-member-panel__title">Update profile</h2>
         <form class="church-form" method="post" action="/member/profile">
+          <%- include('../partials/csrf_field') %>
           <div class="church-form-grid">
             <div class="church-field church-field--full">
               <label class="church-label" for="full_name">Full name</label>

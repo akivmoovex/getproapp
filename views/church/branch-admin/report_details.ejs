@@ -119,6 +119,7 @@
       <div class="church-branch-form-actions">
         <a class="church-btn church-btn--outline" href="/branch/reports/new?period_month=<%= encodeURIComponent(report.period_month_label) %>">Edit report</a>
         <form method="post" action="/branch/reports/<%= report.id %>/submit" style="display:inline">
+        <%- include('../partials/csrf_field') %>
           <button class="church-btn church-btn--primary" type="submit"><%= report.status === 'changes_requested' ? 'Resubmit to HQ' : 'Submit to HQ' %></button>
         </form>
       </div>

@@ -4,6 +4,7 @@ const { getPgPool } = require("../../db/pg");
 const prayerRequestsRepo = require("../../db/pg/church/prayerRequestsRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   canTransitionPrayer,
   prayerRequestStatusLabel,
@@ -163,14 +164,14 @@ module.exports = function registerBranchAdminPrayerRequestsRoutes(router) {
   router.post(
     "/branch/prayer-requests/:prayerRequestId/mark-reviewed",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     (req, res, next) => handlePrayerStatus(req, res, next, "reviewed", "prayer_request_reviewed", "prayer_reviewed")
   );
 
   router.post(
     "/branch/prayer-requests/:prayerRequestId/close",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     (req, res, next) => handlePrayerStatus(req, res, next, "closed", "prayer_request_closed", "prayer_closed")
   );
 };

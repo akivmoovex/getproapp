@@ -18,6 +18,7 @@
         <div class="church-alert church-alert--error" role="alert"><%= error %></div>
         <% } %>
         <form class="church-form" method="post" action="/branch/giving-summary">
+        <%- include('../partials/csrf_field') %>
           <div class="church-form-grid">
             <div class="church-field church-field--full">
               <label class="church-label" for="period_month">Month</label>

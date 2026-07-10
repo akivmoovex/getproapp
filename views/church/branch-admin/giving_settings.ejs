@@ -18,6 +18,7 @@
         <p class="church-branch-panel__hint">Status: <strong><%= status === 'published' ? 'Published' : 'Draft' %></strong></p>
       </div>
       <form class="church-form" method="post" action="/branch/giving-settings">
+        <%- include('../partials/csrf_field') %>
         <section class="church-branch-panel">
           <h2 class="church-branch-panel__title">Bank account</h2>
           <div class="church-form-grid">

@@ -10,6 +10,7 @@
       <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
       <section class="church-branch-panel">
         <form class="church-form" method="post" action="<%= isEdit ? '/branch/resources/' + resourceId : '/branch/resources' %>">
+        <%- include('../partials/csrf_field') %>
           <div class="church-form-grid">
             <div class="church-field church-field--full">
               <label class="church-label" for="title">Title</label>

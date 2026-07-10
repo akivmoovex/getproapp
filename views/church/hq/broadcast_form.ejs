@@ -127,6 +127,7 @@
             <li class="church-hq-wrap">
               <a href="/hq/broadcasts/<%= broadcastId %>/attachments/<%= file.id %>/download"><%= file.original_filename %></a>
               <form class="church-inline-form" method="post" action="/hq/broadcasts/<%= broadcastId %>/attachments/<%= file.id %>/delete" style="display:inline">
+                <%- include('../partials/csrf_field') %>
                 <button class="church-btn church-btn--ghost church-btn--sm" type="submit">Remove</button>
               </form>
             </li>

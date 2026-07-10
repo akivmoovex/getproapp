@@ -33,6 +33,7 @@
         <h2 class="church-branch-panel__title">Change password</h2>
         <p class="church-branch-panel__hint">Your current session stays active after a successful change. Use your new password the next time you sign in.</p>
         <form class="church-form" method="post" action="/hq/account/change-password" autocomplete="off">
+        <%- include('../partials/csrf_field') %>
           <div class="church-form-grid">
             <div class="church-field church-field--full">
               <label class="church-label" for="current_password">Current password</label>

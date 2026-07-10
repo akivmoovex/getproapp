@@ -28,6 +28,7 @@
       <section class="church-member-panel">
         <h2 class="church-member-panel__title"><%= relationship.openRequest && relationship.openRequest.status === 'more_info_needed' ? 'Update your join request' : 'Request to join' %></h2>
         <form class="church-form" method="post" action="/member/ministries/<%= ministry.id %>/request-join">
+          <%- include('../partials/csrf_field') %>
           <div class="church-field">
             <label class="church-label" for="message">Message / reason for joining (optional)</label>
             <textarea class="church-input church-input--textarea" id="message" name="message" rows="4"><%= form.message || '' %></textarea>

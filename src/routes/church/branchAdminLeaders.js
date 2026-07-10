@@ -6,6 +6,7 @@ const ministriesRepo = require("../../db/pg/church/ministriesRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { hashLeaderPassword } = require("../../church/leaderAuth");
 const { requireChurchBranchHost } = require("./auth");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   LEADER_ROLES,
   leaderRoleLabel,
@@ -131,7 +132,7 @@ module.exports = function registerBranchAdminLeadersRoutes(router) {
     }
   });
 
-  router.post("/branch/leaders", requireChurchBranchHost, requireChurchBranchAdminSession, async (req, res, next) => {
+  router.post("/branch/leaders", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const validation = validateLeaderCreateBody(req.body || {});
       const org = req.churchContext.organization;
@@ -279,7 +280,7 @@ module.exports = function registerBranchAdminLeadersRoutes(router) {
   router.post(
     "/branch/leaders/:leaderId",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const leaderId = Number(req.params.leaderId);
@@ -368,7 +369,7 @@ module.exports = function registerBranchAdminLeadersRoutes(router) {
   router.post(
     "/branch/leaders/:leaderId/activate",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const leaderId = Number(req.params.leaderId);
@@ -406,7 +407,7 @@ module.exports = function registerBranchAdminLeadersRoutes(router) {
   router.post(
     "/branch/leaders/:leaderId/deactivate",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const leaderId = Number(req.params.leaderId);
@@ -444,7 +445,7 @@ module.exports = function registerBranchAdminLeadersRoutes(router) {
   router.post(
     "/branch/leaders/:leaderId/reset-password",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const leaderId = Number(req.params.leaderId);

@@ -4,6 +4,7 @@ const { getPgPool } = require("../../db/pg");
 const departmentsRepo = require("../../db/pg/church/departmentsRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   departmentStatusLabel,
   validateDepartmentBody,
@@ -77,7 +78,7 @@ module.exports = function registerBranchAdminDepartmentsRoutes(router) {
   router.post(
     "/branch/departments",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const validation = validateDepartmentBody(req.body || {});
@@ -186,7 +187,7 @@ module.exports = function registerBranchAdminDepartmentsRoutes(router) {
   router.post(
     "/branch/departments/:departmentId",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const departmentId = Number(req.params.departmentId);
@@ -247,7 +248,7 @@ module.exports = function registerBranchAdminDepartmentsRoutes(router) {
   router.post(
     "/branch/departments/:departmentId/activate",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const departmentId = Number(req.params.departmentId);
@@ -283,7 +284,7 @@ module.exports = function registerBranchAdminDepartmentsRoutes(router) {
   router.post(
     "/branch/departments/:departmentId/archive",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const departmentId = Number(req.params.departmentId);

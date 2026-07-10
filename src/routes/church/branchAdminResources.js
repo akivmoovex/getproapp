@@ -5,6 +5,7 @@ const resourcesRepo = require("../../db/pg/church/resourcesRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
 const { branchAdminLocals, flashFromQuery, noticeMessage } = require("./branchAdminShared");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 
 const RESOURCE_NOTICES = {
   resource_created: "Resource saved.",
@@ -72,7 +73,7 @@ module.exports = function registerBranchAdminResourcesRoutes(router) {
     );
   });
 
-  router.post("/branch/resources", requireChurchBranchHost, requireChurchBranchAdminSession, async (req, res, next) => {
+  router.post("/branch/resources", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const branch = req.churchContext.branch;
       const org = req.churchContext.organization;
@@ -132,7 +133,7 @@ module.exports = function registerBranchAdminResourcesRoutes(router) {
     }
   });
 
-  router.post("/branch/resources/:resourceId", requireChurchBranchHost, requireChurchBranchAdminSession, async (req, res, next) => {
+  router.post("/branch/resources/:resourceId", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const branch = req.churchContext.branch;
       const pool = getPgPool();

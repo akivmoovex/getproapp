@@ -4,6 +4,7 @@ const { getPgPool } = require("../../db/pg");
 const givingSummariesRepo = require("../../db/pg/church/givingSummariesRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   validateGivingSummaryBody,
   formatPeriodMonth,
@@ -52,7 +53,7 @@ module.exports = function registerBranchAdminGivingRoutes(router) {
   router.post(
     "/branch/giving-summary",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const validation = validateGivingSummaryBody(req.body || {});

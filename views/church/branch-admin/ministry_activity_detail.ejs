@@ -33,6 +33,7 @@
       </section>
       <section class="church-branch-panel">
         <form class="church-form" method="post" action="/branch/ministry-activity/<%= note.id %>/mark-reviewed">
+        <%- include('../partials/csrf_field') %>
           <div class="church-field church-field--full">
             <label class="church-label" for="review_comment">Comment (optional for review)</label>
             <textarea class="church-input church-input--textarea" id="review_comment" name="admin_comment" rows="2"></textarea>
@@ -40,6 +41,7 @@
           <button class="church-btn church-btn--primary" type="submit">Mark reviewed</button>
         </form>
         <form class="church-form church-form--spaced" method="post" action="/branch/ministry-activity/<%= note.id %>/request-follow-up">
+        <%- include('../partials/csrf_field') %>
           <div class="church-field church-field--full">
             <label class="church-label" for="follow_up_comment">Follow-up comment (required)</label>
             <textarea class="church-input church-input--textarea" id="follow_up_comment" name="admin_comment" rows="2" required></textarea>

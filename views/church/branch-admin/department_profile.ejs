@@ -18,9 +18,11 @@
         <div class="church-hq-review-actions">
           <a class="church-btn church-btn--outline" href="/branch/departments/<%= department.id %>/edit">Edit</a>
           <% if (department.status === 'archived') { %>
-          <form method="post" action="/branch/departments/<%= department.id %>/activate"><button class="church-btn church-btn--primary" type="submit">Activate</button></form>
+          <form method="post" action="/branch/departments/<%= department.id %>/activate">
+        <%- include('../partials/csrf_field') %><button class="church-btn church-btn--primary" type="submit">Activate</button></form>
           <% } else { %>
-          <form method="post" action="/branch/departments/<%= department.id %>/archive"><button class="church-btn church-btn--outline" type="submit">Archive</button></form>
+          <form method="post" action="/branch/departments/<%= department.id %>/archive">
+        <%- include('../partials/csrf_field') %><button class="church-btn church-btn--outline" type="submit">Archive</button></form>
           <% } %>
         </div>
       </section>

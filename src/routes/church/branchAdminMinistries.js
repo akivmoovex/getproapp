@@ -18,6 +18,7 @@ const {
 } = require("../../church/ministriesDepartmentsValidation");
 const { reviewStatusLabel } = require("../../church/ministryActivityReviewValidation");
 const { leaderRoleLabel } = require("../../church/leaderManagementValidation");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   branchAdminLocals,
   flashFromQuery,
@@ -96,7 +97,7 @@ module.exports = function registerBranchAdminMinistriesRoutes(router) {
     );
   });
 
-  router.post("/branch/ministries", requireChurchBranchHost, requireChurchBranchAdminSession, async (req, res, next) => {
+  router.post("/branch/ministries", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const intent = String(req.body._intent || "draft").trim();
       const validation = validateMinistryBody(req.body, { forPublish: intent === "publish" });
@@ -227,7 +228,7 @@ module.exports = function registerBranchAdminMinistriesRoutes(router) {
   router.post(
     "/branch/ministries/:ministryId",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const ministryId = Number(req.params.ministryId);
@@ -293,7 +294,7 @@ module.exports = function registerBranchAdminMinistriesRoutes(router) {
   router.post(
     "/branch/ministries/:ministryId/publish",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const ministryId = Number(req.params.ministryId);
@@ -341,7 +342,7 @@ module.exports = function registerBranchAdminMinistriesRoutes(router) {
   router.post(
     "/branch/ministries/:ministryId/archive",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const ministryId = Number(req.params.ministryId);

@@ -13,6 +13,7 @@
       <div class="church-alert church-alert--error" role="alert"><%= error %></div>
       <% } %>
       <form class="church-form" method="post" action="<%= reportId ? '/branch/reports/' + reportId + '/save-draft' : '/branch/reports' %>">
+        <%- include('../partials/csrf_field') %>
         <section class="church-branch-panel">
           <h2 class="church-branch-panel__title">Report period</h2>
           <div class="church-field church-field--narrow">

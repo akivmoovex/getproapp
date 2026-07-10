@@ -9,6 +9,7 @@
       <div class="church-alert church-alert--error" role="alert"><%= error %></div>
       <% } %>
       <form class="church-form" method="post" action="<%= isEdit ? '/branch/events/' + eventId : '/branch/events' %>">
+        <%- include('../partials/csrf_field') %>
         <section class="church-branch-panel">
           <div class="church-field church-field--full">
             <label class="church-label" for="title">Event title</label>

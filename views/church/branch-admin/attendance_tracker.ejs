@@ -14,6 +14,7 @@
         <div class="church-alert church-alert--error" role="alert"><%= error %></div>
         <% } %>
         <form class="church-form" method="post" action="/branch/attendance">
+        <%- include('../partials/csrf_field') %>
           <div class="church-form-grid">
             <div class="church-field">
               <label class="church-label" for="attendance_type">Attendance type</label>

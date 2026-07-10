@@ -4,6 +4,7 @@ const { getPgPool } = require("../../db/pg");
 const websiteContentRepo = require("../../db/pg/church/websiteContentRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   contentFromForm,
   formFromContent,
@@ -58,7 +59,7 @@ module.exports = function registerBranchAdminWebsiteEditorRoutes(router) {
   router.post(
     "/branch/website-editor",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const org = req.churchContext.organization;

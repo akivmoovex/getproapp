@@ -5,6 +5,7 @@ const contactSubmissionsRepo = require("../../db/pg/church/contactSubmissionsRep
 const branchesRepo = require("../../db/pg/church/branchesRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   validateContactStatusUpdate,
   contactStatusLabel,
@@ -21,7 +22,7 @@ module.exports = function registerBranchAdminSiteSettingsRoutes(router) {
   router.post(
     "/branch/site-settings",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const branch = req.churchContext.branch;
@@ -124,7 +125,7 @@ module.exports = function registerBranchAdminSiteSettingsRoutes(router) {
   router.post(
     "/branch/contact-submissions/:submissionId",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const submissionId = Number(req.params.submissionId);

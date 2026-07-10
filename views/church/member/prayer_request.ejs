@@ -11,6 +11,7 @@
       <% } %>
       <section class="church-member-panel church-member-panel--glass">
         <form class="church-form" method="post" action="/member/prayer-request">
+          <%- include('../partials/csrf_field') %>
           <div class="church-form-grid">
             <div class="church-field church-field--full">
               <label class="church-label" for="prayer_topic">Prayer topic</label>

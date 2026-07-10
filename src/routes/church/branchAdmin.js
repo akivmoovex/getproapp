@@ -72,6 +72,7 @@ const churchPlanService = require("../../services/church/churchPlanService");
 const { authenticateWithLoginProtection } = require("../../services/church/churchLoginProtectionService");
 const branchAdminPasswordResetRequestsRepo = require("../../db/pg/church/branchAdminPasswordResetRequestsRepo");
 const { maskLoginIdentifier } = require("../../church/loginProtection");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   validatePublicBranchAdminForgotPasswordBody,
   PUBLIC_SUCCESS_MESSAGE,
@@ -303,7 +304,7 @@ function registerBranchAdminRoutes(router) {
     );
   });
 
-  router.post("/branch/logout", requireChurchBranchAdminSession, (req, res) => {
+  router.post("/branch/logout", requireChurchBranchAdminSession, requireChurchSessionCsrf, (req, res) => {
     clearChurchBranchAdminSession(req);
     return res.redirect(303, "/branch/login");
   });
@@ -332,7 +333,7 @@ function registerBranchAdminRoutes(router) {
     }
   });
 
-  router.post("/branch/account/change-password", requireChurchBranchAdminSession, async (req, res, next) => {
+  router.post("/branch/account/change-password", requireChurchBranchAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const branch = req.churchContext.branch;
       const pool = getPgPool();

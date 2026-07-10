@@ -18,6 +18,7 @@
         <h2 class="church-branch-panel__title">Message</h2>
         <p class="church-card__body church-card__body--pre"><%= submission.message %></p>
         <form class="church-form" method="post" action="/branch/contact-submissions/<%= submission.id %>">
+        <%- include('../partials/csrf_field') %>
           <div class="church-field">
             <label class="church-label" for="status">Update status</label>
             <select class="church-input" id="status" name="status">

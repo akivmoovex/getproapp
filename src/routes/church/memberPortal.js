@@ -48,6 +48,10 @@ const {
   hashMemberPassword,
   verifyMemberPassword,
 } = require("../../church/memberAuth");
+const {
+  churchSessionCsrfLocals,
+  requireChurchSessionCsrf,
+} = require("../../church/churchSessionCsrf");
 const { requireChurchBranchHost } = require("./auth");
 const {
   AGE_GROUP_OPTIONS,
@@ -121,6 +125,9 @@ function memberPortalLocals(req, extra) {
   const navActive = (extra && extra.navActive) || resolveMemberNavActive(req);
   const shellTitle = (extra && extra.shellTitle) || memberShellTitle(navActive, null);
   const categoryOptions = Array.from(new Set([...(ANNOUNCEMENT_CATEGORIES || []), ...(BROADCAST_CATEGORIES || [])]));
+  const csrf = req.churchMember
+    ? churchSessionCsrfLocals(req)
+    : { churchCsrfToken: "", churchCsrfField: "_csrf" };
   return {
     churchName: branch.name || org.name,
     pageTitle: branch.name || org.name,
@@ -138,6 +145,7 @@ function memberPortalLocals(req, extra) {
     isActivelyFeatured,
     priorities: BROADCAST_PRIORITIES,
     categoryOptions,
+    ...csrf,
     ...(extra || {}),
   };
 }
@@ -416,6 +424,7 @@ function registerMemberPortalRoutes(router) {
     "/member/account/change-password",
     requireVerifiedMemberSession,
     ensureMemberAccountActive,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const branch = req.churchContext.branch;
@@ -498,7 +507,7 @@ function registerMemberPortalRoutes(router) {
     }
   );
 
-  router.post("/member/profile", requireVerifiedMemberSession, ensureMemberAccountActive, async (req, res, next) => {
+  router.post("/member/profile", requireVerifiedMemberSession, ensureMemberAccountActive, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const validation = validateProfileBody(req.body || {});
       const branch = req.churchContext.branch;
@@ -799,6 +808,7 @@ function registerMemberPortalRoutes(router) {
   router.post(
     "/member/ministries/:ministryId/request-join",
     requireVerifiedMemberSession, ensureMemberAccountActive,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const ministryId = Number(req.params.ministryId);
@@ -1009,7 +1019,7 @@ function registerMemberPortalRoutes(router) {
     );
   });
 
-  router.post("/member/prayer-request", requireVerifiedMemberSession, ensureMemberAccountActive, async (req, res, next) => {
+  router.post("/member/prayer-request", requireVerifiedMemberSession, ensureMemberAccountActive, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const validation = validatePrayerRequestBody(req.body || {});
       if (!validation.ok) {
@@ -1077,7 +1087,7 @@ function registerMemberPortalRoutes(router) {
     );
   });
 
-  router.post("/member/requests", requireVerifiedMemberSession, ensureMemberAccountActive, async (req, res, next) => {
+  router.post("/member/requests", requireVerifiedMemberSession, ensureMemberAccountActive, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const validation = validateMemberRequestBody(req.body || {});
       if (!validation.ok) {

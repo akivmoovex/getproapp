@@ -49,6 +49,7 @@
         </a>
         <% if (typeof branchAdmin !== 'undefined' && branchAdmin) { %>
         <form method="post" action="/branch/logout">
+          <%- include('./csrf_field') %>
           <button class="church-branch-nav-link church-branch-nav-link--button" type="submit">
             <span class="material-symbols-outlined" aria-hidden="true">logout</span>
             <span>Sign out</span>
@@ -108,6 +109,7 @@
           <a class="church-btn church-btn--outline church-btn--block" href="/">Public website</a>
           <% if (typeof branchAdmin !== 'undefined' && branchAdmin) { %>
           <form method="post" action="/branch/logout">
+          <%- include('./csrf_field') %>
             <button class="church-btn church-btn--primary church-btn--block" type="submit">Sign out</button>
           </form>
           <% } %>

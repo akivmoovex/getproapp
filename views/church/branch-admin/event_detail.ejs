@@ -32,10 +32,12 @@
           <a class="church-btn church-btn--outline" href="/branch/events/<%= eventItem.id %>/edit">Edit</a>
           <% if (eventItem.status !== 'published') { %>
           <form method="post" action="/branch/events/<%= eventItem.id %>/publish">
+        <%- include('../partials/csrf_field') %>
             <button class="church-btn church-btn--primary" type="submit">Publish</button>
           </form>
           <% } %>
           <form method="post" action="/branch/events/<%= eventItem.id %>/cancel">
+        <%- include('../partials/csrf_field') %>
             <button class="church-btn church-btn--outline" type="submit">Cancel event</button>
           </form>
         </div>

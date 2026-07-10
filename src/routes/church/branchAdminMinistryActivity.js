@@ -6,6 +6,7 @@ const attendanceRepo = require("../../db/pg/church/attendanceRepo");
 const ministriesRepo = require("../../db/pg/church/ministriesRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   REVIEW_STATUSES,
   reviewStatusLabel,
@@ -103,7 +104,7 @@ module.exports = function registerBranchAdminMinistryActivityRoutes(router) {
   router.post(
     "/branch/ministry-activity/:noteId/mark-reviewed",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const noteId = Number(req.params.noteId);
@@ -153,7 +154,7 @@ module.exports = function registerBranchAdminMinistryActivityRoutes(router) {
   router.post(
     "/branch/ministry-activity/:noteId/request-follow-up",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const noteId = Number(req.params.noteId);

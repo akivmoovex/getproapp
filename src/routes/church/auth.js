@@ -11,6 +11,10 @@ const {
   verifyMemberPassword,
 } = require("../../church/memberAuth");
 const {
+  churchSessionCsrfLocals,
+  requireChurchSessionCsrf,
+} = require("../../church/churchSessionCsrf");
+const {
   validateRegistrationBody,
   AGE_GROUP_OPTIONS,
   ATTENDANCE_DURATION_OPTIONS,
@@ -45,11 +49,16 @@ function requireChurchBranchHost(req, res, next) {
 function branchAuthLocals(req, extra) {
   const org = req.churchContext.organization;
   const branch = req.churchContext.branch;
+  const member = getChurchMemberSession(req);
+  const csrf = member
+    ? churchSessionCsrfLocals(req)
+    : { churchCsrfToken: "", churchCsrfField: "_csrf" };
   return {
     churchName: branch.name || org.name,
     pageTitle: branch.name || org.name,
     organization: org,
     branch,
+    ...csrf,
     ...(extra || {}),
   };
 }
@@ -302,9 +311,15 @@ function registerChurchAuthRoutes(router) {
     );
   });
 
-  router.post("/logout", (req, res) => {
-    clearChurchMemberSession(req);
-    return res.redirect(303, "/");
+  router.post("/logout", (req, res, next) => {
+    const member = getChurchMemberSession(req);
+    if (!member) {
+      return res.redirect(303, "/");
+    }
+    return requireChurchSessionCsrf(req, res, () => {
+      clearChurchMemberSession(req);
+      return res.redirect(303, "/");
+    });
   });
 
   router.get("/forgot-password", (req, res) => {

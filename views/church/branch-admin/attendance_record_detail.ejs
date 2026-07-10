@@ -44,6 +44,7 @@
           <% } %>
           <% if (record.status === 'draft') { %>
           <form class="church-form church-form--spaced" method="post" action="/branch/attendance/<%= record.id %>/update-status">
+        <%- include('../partials/csrf_field') %>
             <input type="hidden" name="status" value="submitted"/>
             <button class="church-btn church-btn--primary church-btn--block" type="submit">Mark as submitted</button>
           </form>

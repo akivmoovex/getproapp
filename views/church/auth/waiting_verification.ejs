@@ -67,6 +67,7 @@
       </div>
 
       <form class="church-auth-waiting__logout" method="post" action="/logout">
+        <%- include('../partials/csrf_field') %>
         <button class="church-btn church-btn--ghost church-btn--block" type="submit">Sign out</button>
       </form>
 

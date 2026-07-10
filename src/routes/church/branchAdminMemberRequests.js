@@ -4,6 +4,7 @@ const { getPgPool } = require("../../db/pg");
 const memberRequestsRepo = require("../../db/pg/church/memberRequestsRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   canTransitionRequest,
   resolveMemberRequestAction,
@@ -173,31 +174,31 @@ module.exports = function registerBranchAdminMemberRequestsRoutes(router) {
   router.post(
     "/branch/requests/:requestId/start-review",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     (req, res, next) => handleRequestAction(req, res, next, "start-review")
   );
   router.post(
     "/branch/requests/:requestId/approve",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     (req, res, next) => handleRequestAction(req, res, next, "approve")
   );
   router.post(
     "/branch/requests/:requestId/reject",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     (req, res, next) => handleRequestAction(req, res, next, "reject")
   );
   router.post(
     "/branch/requests/:requestId/request-more-info",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     (req, res, next) => handleRequestAction(req, res, next, "request-more-info")
   );
   router.post(
     "/branch/requests/:requestId/complete",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     (req, res, next) => handleRequestAction(req, res, next, "complete")
   );
 };

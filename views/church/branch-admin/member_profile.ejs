@@ -16,16 +16,19 @@
         <div class="church-hq-review-actions">
           <a class="church-btn church-btn--outline" href="/branch/members/<%= member.id %>/edit">Edit profile</a>
           <% if (member.status !== 'verified') { %>
-          <form method="post" action="/branch/members/<%= member.id %>/verify"><button class="church-btn church-btn--primary" type="submit">Verify</button></form>
+          <form method="post" action="/branch/members/<%= member.id %>/verify">
+        <%- include('../partials/csrf_field') %><button class="church-btn church-btn--primary" type="submit">Verify</button></form>
           <% } %>
           <% if (member.status === 'verified') { %>
           <form class="church-form" method="post" action="/branch/members/<%= member.id %>/suspend">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field"><label class="church-label" for="suspend_reason">Suspend reason (optional)</label><input class="church-input" id="suspend_reason" name="suspend_reason" type="text"/></div>
             <button class="church-btn church-btn--outline" type="submit">Suspend</button>
           </form>
           <% } %>
           <% if (member.status === 'suspended') { %>
-          <form method="post" action="/branch/members/<%= member.id %>/reactivate"><button class="church-btn church-btn--primary" type="submit">Reactivate</button></form>
+          <form method="post" action="/branch/members/<%= member.id %>/reactivate">
+        <%- include('../partials/csrf_field') %><button class="church-btn church-btn--primary" type="submit">Reactivate</button></form>
           <% } %>
         </div>
       </section>
@@ -34,16 +37,19 @@
         <h2 class="church-branch-panel__title">Verification review</h2>
         <div class="church-hq-review-actions">
           <form class="church-form" method="post" action="/branch/members/<%= member.id %>/approve">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full"><label class="church-label" for="review_comment_approve">Comment (optional)</label><textarea class="church-input church-input--textarea" id="review_comment_approve" name="review_comment" rows="2"></textarea></div>
             <input type="hidden" name="redirect_to" value="profile"/>
             <button class="church-btn church-btn--primary" type="submit">Approve</button>
           </form>
           <form class="church-form" method="post" action="/branch/members/<%= member.id %>/reject">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full"><label class="church-label" for="review_comment_reject">Rejection comment (optional)</label><textarea class="church-input church-input--textarea" id="review_comment_reject" name="review_comment" rows="2"></textarea></div>
             <input type="hidden" name="redirect_to" value="profile"/>
             <button class="church-btn church-btn--outline" type="submit">Reject</button>
           </form>
           <form class="church-form" method="post" action="/branch/members/<%= member.id %>/request-more-info">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full"><label class="church-label" for="review_comment_more">Information needed (required)</label><textarea class="church-input church-input--textarea" id="review_comment_more" name="review_comment" rows="2" required></textarea></div>
             <input type="hidden" name="redirect_to" value="profile"/>
             <button class="church-btn church-btn--ghost" type="submit">Request more information</button>
@@ -132,6 +138,7 @@
         <p class="church-branch-empty">No admin notes yet.</p>
         <% } %>
         <form class="church-form" method="post" action="/branch/members/<%= member.id %>/add-note">
+        <%- include('../partials/csrf_field') %>
           <div class="church-field church-field--full"><label class="church-label" for="note">Add note</label><textarea class="church-input church-input--textarea" id="note" name="note" rows="3" required></textarea></div>
           <button class="church-btn church-btn--primary" type="submit">Save note</button>
         </form>

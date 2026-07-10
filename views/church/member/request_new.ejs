@@ -9,6 +9,7 @@
       <% } %>
       <section class="church-member-panel church-member-panel--glass">
         <form class="church-form" method="post" action="/member/requests">
+          <%- include('../partials/csrf_field') %>
           <div class="church-form-grid">
             <div class="church-field church-field--full">
               <label class="church-label" for="request_type">Request type</label>

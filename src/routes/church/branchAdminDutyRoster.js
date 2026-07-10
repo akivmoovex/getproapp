@@ -7,6 +7,7 @@ const ministriesRepo = require("../../db/pg/church/ministriesRepo");
 const departmentsRepo = require("../../db/pg/church/departmentsRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   ROLE_EXAMPLES,
   dutyStatusLabel,
@@ -139,7 +140,7 @@ module.exports = function registerBranchAdminDutyRosterRoutes(router) {
     }
   });
 
-  router.post("/branch/duty-roster", requireChurchBranchHost, requireChurchBranchAdminSession, async (req, res, next) => {
+  router.post("/branch/duty-roster", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const intent = String(req.body._intent || "draft").trim();
       const validation = validateDutyBody(req.body, { forConfirm: intent === "confirm" });
@@ -289,7 +290,7 @@ module.exports = function registerBranchAdminDutyRosterRoutes(router) {
   router.post(
     "/branch/duty-roster/:dutyId",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const dutyId = Number(req.params.dutyId);
@@ -405,7 +406,7 @@ module.exports = function registerBranchAdminDutyRosterRoutes(router) {
   router.post(
     "/branch/duty-roster/:dutyId/confirm",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const dutyId = Number(req.params.dutyId);
@@ -458,7 +459,7 @@ module.exports = function registerBranchAdminDutyRosterRoutes(router) {
   router.post(
     "/branch/duty-roster/:dutyId/cancel",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const dutyId = Number(req.params.dutyId);

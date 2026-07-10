@@ -29,9 +29,11 @@
         <div class="church-hq-review-actions">
           <a class="church-btn church-btn--outline" href="/branch/leaders/<%= leader.id %>/edit">Edit</a>
           <% if (leader.status === 'inactive') { %>
-          <form method="post" action="/branch/leaders/<%= leader.id %>/activate"><button class="church-btn church-btn--primary" type="submit">Activate</button></form>
+          <form method="post" action="/branch/leaders/<%= leader.id %>/activate">
+        <%- include('../partials/csrf_field') %><button class="church-btn church-btn--primary" type="submit">Activate</button></form>
           <% } else { %>
-          <form method="post" action="/branch/leaders/<%= leader.id %>/deactivate"><button class="church-btn church-btn--outline" type="submit">Deactivate</button></form>
+          <form method="post" action="/branch/leaders/<%= leader.id %>/deactivate">
+        <%- include('../partials/csrf_field') %><button class="church-btn church-btn--outline" type="submit">Deactivate</button></form>
           <% } %>
         </div>
       </section>
@@ -39,6 +41,7 @@
         <h2 class="church-branch-panel__title">Reset password</h2>
         <% if (passwordError) { %><div class="church-alert church-alert--error" role="alert"><%= passwordError %></div><% } %>
         <form class="church-form" method="post" action="/branch/leaders/<%= leader.id %>/reset-password">
+        <%- include('../partials/csrf_field') %>
           <div class="church-form-grid">
             <div class="church-field"><label class="church-label" for="new_password">New password</label><input class="church-input" id="new_password" name="new_password" type="password" required minlength="8" autocomplete="new-password"/></div>
             <div class="church-field"><label class="church-label" for="confirm_password">Confirm password</label><input class="church-input" id="confirm_password" name="confirm_password" type="password" required minlength="8" autocomplete="new-password"/></div>

@@ -94,6 +94,7 @@
         <h2 class="church-branch-panel__title">Review actions</h2>
         <div class="church-hq-review-actions">
           <form class="church-form" method="post" action="/hq/reports/<%= report.id %>/approve">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
               <label class="church-label" for="approve_comment">Approval comment (optional)</label>
               <textarea class="church-input church-input--textarea" id="approve_comment" name="hq_review_comment" rows="2"></textarea>
@@ -101,6 +102,7 @@
             <button class="church-btn church-btn--primary" type="submit">Approve report</button>
           </form>
           <form class="church-form" method="post" action="/hq/reports/<%= report.id %>/request-changes">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
               <label class="church-label" for="changes_comment">Changes requested comment (required)</label>
               <textarea class="church-input church-input--textarea" id="changes_comment" name="hq_review_comment" rows="3" required></textarea>

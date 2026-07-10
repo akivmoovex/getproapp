@@ -11,6 +11,7 @@
       The full member portal is coming in the next phase. Announcements, events, ministries, and resources will appear here soon.
     </p>
     <form method="post" action="/logout">
+      <%- include('../partials/csrf_field') %>
       <button class="church-btn church-btn--outline church-btn--block" type="submit">Sign out</button>
     </form>
     <p class="church-auth-card__footer">

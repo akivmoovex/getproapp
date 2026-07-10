@@ -10,6 +10,7 @@ const {
   reportStatusLabel,
 } = require("../../church/monthlyReportValidation");
 const monthlyReportsService = require("../../services/church/monthlyReportsService");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   branchAdminLocals,
   flashFromQuery,
@@ -218,7 +219,7 @@ module.exports = function registerBranchAdminReportsRoutes(router) {
     }
   });
 
-  router.post("/branch/reports", requireChurchBranchHost, requireChurchBranchAdminSession, (req, res, next) =>
+  router.post("/branch/reports", requireChurchBranchHost, requireChurchBranchAdminSession, requireChurchSessionCsrf, (req, res, next) =>
     handleSaveDraft(req, res, next, null)
   );
 
@@ -247,7 +248,7 @@ module.exports = function registerBranchAdminReportsRoutes(router) {
   router.post(
     "/branch/reports/:reportId/save-draft",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     (req, res, next) => {
       const reportId = Number(req.params.reportId);
       if (!Number.isFinite(reportId) || reportId <= 0) {
@@ -263,7 +264,7 @@ module.exports = function registerBranchAdminReportsRoutes(router) {
   router.post(
     "/branch/reports/:reportId/submit",
     requireChurchBranchHost,
-    requireChurchBranchAdminSession,
+    requireChurchBranchAdminSession, requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const reportId = Number(req.params.reportId);

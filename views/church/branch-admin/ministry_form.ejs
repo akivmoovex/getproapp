@@ -7,6 +7,7 @@
       </header>
       <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
       <form class="church-form" method="post" action="<%= isEdit ? '/branch/ministries/' + ministryId : '/branch/ministries' %>">
+        <%- include('../partials/csrf_field') %>
         <section class="church-branch-panel">
           <div class="church-form-grid">
             <div class="church-field"><label class="church-label" for="name">Name</label><input class="church-input" id="name" name="name" type="text" required value="<%= form.name || '' %>"/></div>

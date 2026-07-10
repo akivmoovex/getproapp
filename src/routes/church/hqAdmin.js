@@ -39,6 +39,7 @@ const churchPlanService = require("../../services/church/churchPlanService");
 const { authenticateWithLoginProtection } = require("../../services/church/churchLoginProtectionService");
 const hqAdminPasswordResetRequestsRepo = require("../../db/pg/church/hqAdminPasswordResetRequestsRepo");
 const { maskLoginIdentifier } = require("../../church/loginProtection");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const {
   validatePublicHqAdminForgotPasswordBody,
   PUBLIC_SUCCESS_MESSAGE,
@@ -246,7 +247,7 @@ function registerHqAdminRoutes(router) {
     );
   });
 
-  router.post("/hq/logout", requireChurchHqAdminSession, (req, res) => {
+  router.post("/hq/logout", requireChurchHqAdminSession, requireChurchSessionCsrf, (req, res) => {
     clearChurchHqAdminSession(req);
     return res.redirect(303, "/hq/login");
   });
@@ -297,7 +298,7 @@ function registerHqAdminRoutes(router) {
     }
   });
 
-  router.post("/hq/account/change-password", requireChurchHqAdminSession, async (req, res, next) => {
+  router.post("/hq/account/change-password", requireChurchHqAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const org = req.churchContext.organization;
       const pool = getPgPool();
@@ -467,7 +468,7 @@ function registerHqAdminRoutes(router) {
     }
   });
 
-  router.post("/hq/reports/:reportId/approve", requireChurchHqAdminSession, async (req, res, next) => {
+  router.post("/hq/reports/:reportId/approve", requireChurchHqAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const reportId = Number(req.params.reportId);
       if (!Number.isFinite(reportId) || reportId <= 0) {
@@ -514,7 +515,7 @@ function registerHqAdminRoutes(router) {
     }
   });
 
-  router.post("/hq/reports/:reportId/request-changes", requireChurchHqAdminSession, async (req, res, next) => {
+  router.post("/hq/reports/:reportId/request-changes", requireChurchHqAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const reportId = Number(req.params.reportId);
       if (!Number.isFinite(reportId) || reportId <= 0) {

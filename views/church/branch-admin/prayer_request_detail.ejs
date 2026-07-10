@@ -36,6 +36,7 @@
         <div class="church-hq-review-actions">
           <% if (prayerItem.status === 'submitted') { %>
           <form class="church-form" method="post" action="/branch/prayer-requests/<%= prayerItem.id %>/mark-reviewed">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
               <label class="church-label" for="review_comment">Comment (optional)</label>
               <textarea class="church-input church-input--textarea" id="review_comment" name="admin_comment" rows="2"></textarea>
@@ -44,6 +45,7 @@
           </form>
           <% } %>
           <form class="church-form" method="post" action="/branch/prayer-requests/<%= prayerItem.id %>/close">
+        <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
               <label class="church-label" for="close_comment">Close note (optional)</label>
               <textarea class="church-input church-input--textarea" id="close_comment" name="admin_comment" rows="2"></textarea>

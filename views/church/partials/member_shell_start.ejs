@@ -98,6 +98,7 @@
           <span>Public website</span>
         </a>
         <form method="post" action="/logout">
+          <%- include('./csrf_field') %>
           <button class="church-member-nav-link church-member-nav-link--button" type="submit">
             <span class="material-symbols-outlined" aria-hidden="true">logout</span>
             <span>Sign out</span>
@@ -155,6 +156,7 @@
             <a href="/member/account">Account</a>
             <a href="/">Public website</a>
             <form method="post" action="/logout">
+              <%- include('./csrf_field') %>
               <button type="submit">Sign out</button>
             </form>
           </div>
