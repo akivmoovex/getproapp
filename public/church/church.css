@@ -4144,3 +4144,282 @@ a.church-branch-stat-card--link:hover {
     font-size: 0.75rem;
   }
 }
+
+/* --- Public homepage pixel fidelity v34 --- */
+
+.home-mobile-design { display: none; }
+.home-desktop-design { display: block; }
+
+.church-body--branch-home .church-header--branch.home-mobile-design {
+  display: none;
+}
+
+.church-body--branch-home .church-footer--branch.home-mobile-design {
+  display: none;
+}
+
+.church-body--branch-home .church-fab-chat.home-mobile-design {
+  display: none !important;
+}
+
+@media (max-width: 899px) {
+  .home-desktop-design { display: none !important; }
+  .home-mobile-design { display: block !important; }
+
+  .church-body--branch-home .church-header--branch.home-mobile-design {
+    display: block !important;
+  }
+
+  .church-body--branch-home .church-header--branch .church-header__inner {
+    height: 48px;
+    padding: 8px 16px;
+  }
+
+  .church-body--branch-home .church-menu-btn {
+    display: inline-flex !important;
+    margin-left: auto;
+  }
+
+  .church-body--branch-home .church-footer--branch.home-mobile-design {
+    display: block !important;
+  }
+
+  .church-body--branch-home .church-fab-chat.home-mobile-design {
+    display: inline-flex !important;
+  }
+
+  .church-branch-mobile-hero.home-mobile-design {
+    display: flex !important;
+  }
+
+  .church-body--apex .home-desktop-design {
+    display: block !important;
+  }
+
+  .church-body--apex .bb-saas-hero,
+  .church-body--apex .bb-saas-features,
+  .church-body--apex .bb-saas-cta {
+    display: block !important;
+  }
+}
+
+@media (min-width: 900px) {
+  .home-mobile-design { display: none !important; }
+  .home-desktop-design { display: block !important; }
+
+  .church-body--branch-home .church-header--apex.home-desktop-design {
+    display: block !important;
+  }
+
+  .church-body--branch-home .church-footer--apex.home-desktop-design {
+    display: block !important;
+  }
+
+  .church-body--branch-home .church-menu-btn {
+    display: none !important;
+  }
+}
+
+/* Mobile hero — Stitch sanctuary asset */
+.church-branch-mobile-hero__media {
+  background: none;
+}
+
+.church-branch-mobile-hero__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+}
+
+.church-branch-mobile-hero__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    #f1fbff 0%,
+    rgba(241, 251, 255, 0.92) 18%,
+    rgba(241, 251, 255, 0.55) 42%,
+    rgba(241, 251, 255, 0.12) 68%,
+    transparent 100%
+  );
+  z-index: 1;
+}
+
+.church-branch-mobile-hero__content {
+  z-index: 2;
+}
+
+.church-branch-mobile-hero__title {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  max-width: none;
+}
+
+.church-branch-mobile-hero__lead {
+  max-width: none;
+}
+
+/* Map card — Stitch map asset, crop to map area (exclude phone chrome) */
+.church-location-card__map {
+  height: 12rem;
+  overflow: hidden;
+  background: #eaf5fa;
+}
+
+.church-location-card__map-img {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 220%;
+  height: 220%;
+  max-width: none;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  object-position: center 55%;
+}
+
+.church-location-card__nav {
+  z-index: 2;
+  background: #fff;
+  color: var(--church-primary);
+}
+
+/* Ministry tiles — Stitch assets */
+.church-bento-tile--photo-1 .church-bento-tile__bg {
+  background:
+    linear-gradient(to top, rgba(19, 29, 33, 0.7), transparent 55%),
+    url("/church/images/homepage/mobile-ministry-children.jpg") center / cover no-repeat;
+}
+
+.church-bento-tile--photo-2 .church-bento-tile__bg {
+  background:
+    linear-gradient(to top, rgba(19, 29, 33, 0.7), transparent 55%),
+    url("/church/images/homepage/mobile-ministry-youth.jpg") center / cover no-repeat;
+}
+
+.church-bento-tile--photo-3 .church-bento-tile__bg {
+  background:
+    linear-gradient(to top, rgba(19, 29, 33, 0.7), transparent 55%),
+    url("/church/images/homepage/mobile-ministry-worship.jpg") center / cover no-repeat;
+}
+
+.church-bento-tile--wide {
+  min-height: 10rem;
+}
+
+.church-bento-tile:not(.church-bento-tile--wide) {
+  min-height: 11rem;
+}
+
+/* Desktop SaaS refinements */
+.bb-saas-hero {
+  min-height: 720px;
+  padding: 72px 32px 80px;
+}
+
+.bb-saas-hero__title {
+  font-size: clamp(2.5rem, 4vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  max-width: 14ch;
+}
+
+.bb-saas-hero__lead {
+  max-width: 32rem;
+  margin-bottom: 32px;
+}
+
+.bb-saas-proof__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 2px solid #f1fbff;
+  margin-left: -12px;
+  object-fit: cover;
+  display: block;
+}
+
+.bb-saas-proof__avatar:first-child {
+  margin-left: 0;
+}
+
+.bb-saas-hero__frame {
+  border-radius: 16px;
+}
+
+.bb-saas-hero__img {
+  aspect-ratio: 4 / 3;
+}
+
+.bb-saas-bento__shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 4px 16px rgba(19, 29, 33, 0.08);
+}
+
+.bb-saas-bento__mock,
+.bb-saas-bento__illus {
+  background: #eaf5fa;
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bb-saas-bento__illus {
+  position: relative;
+}
+
+.bb-saas-features {
+  padding: 80px 32px;
+}
+
+.bb-saas-cta {
+  padding: 80px 32px;
+}
+
+.bb-saas-cta__card {
+  padding: 64px;
+}
+
+@media (max-width: 899px) {
+  .church-body--apex .bb-saas-hero {
+    min-height: 0;
+    padding: 32px 16px;
+  }
+
+  .church-body--apex .bb-saas-hero__title {
+    max-width: none;
+  }
+
+  .church-body--apex .bb-saas-features,
+  .church-body--apex .bb-saas-cta {
+    padding: 48px 16px;
+  }
+
+  .church-body--apex .bb-saas-cta__card {
+    padding: 32px 20px;
+  }
+
+  .church-body--apex .church-header--apex .church-nav--apex {
+    display: none;
+  }
+}
+
+/* Events: only two Stitch rows on mobile home */
+.church-home-events__list .church-event-row:nth-child(n + 3) {
+  display: none;
+}
+
+.church-home-giving__card p {
+  max-width: 20rem;
+  margin-left: auto;
+  margin-right: auto;
+}

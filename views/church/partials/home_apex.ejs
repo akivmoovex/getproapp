@@ -1,5 +1,10 @@
-<%# BlessBoard apex SaaS landing — matches 01-public-home-desktop.png %>
-<section class="bb-saas-hero" id="welcome">
+<%# BlessBoard apex / desktop SaaS landing — matches 01-public-home-desktop.png %>
+<%
+  var saasRegisterHref = isVerticalApex ? 'https://demo.blessboard.com/register' : '/register';
+  var saasDemoHref = isVerticalApex ? 'https://demo.blessboard.com' : '/';
+  var saasLoginHref = isVerticalApex ? 'https://demo.blessboard.com/login' : '/login';
+%>
+<section class="bb-saas-hero home-desktop-design" id="<%= isVerticalApex ? 'welcome' : 'welcome-desktop' %>">
   <div class="bb-saas-hero__inner">
     <div class="bb-saas-hero__copy">
       <span class="bb-saas-pill">Next Generation CMS</span>
@@ -10,17 +15,17 @@
         A modern, all-in-one management platform designed to help your ministry thrive. Manage members, coordinate activities, and track growth with structured compassion.
       </p>
       <div class="bb-saas-hero__cta">
-        <a class="church-btn church-btn--primary church-btn--lg bb-saas-btn--pill" href="https://demo.blessboard.com/register">
+        <a class="church-btn church-btn--primary church-btn--lg bb-saas-btn--pill" href="<%= saasRegisterHref %>">
           Start Free Trial
           <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
         </a>
-        <a class="church-btn church-btn--outline church-btn--lg bb-saas-btn--pill" href="https://demo.blessboard.com">View Demo</a>
+        <a class="church-btn church-btn--outline church-btn--lg bb-saas-btn--pill" href="<%= saasDemoHref %>">View Demo</a>
       </div>
       <div class="bb-saas-proof">
         <div class="bb-saas-proof__avatars" aria-hidden="true">
-          <span class="bb-saas-proof__avatar bb-saas-proof__avatar--1"></span>
-          <span class="bb-saas-proof__avatar bb-saas-proof__avatar--2"></span>
-          <span class="bb-saas-proof__avatar bb-saas-proof__avatar--3"></span>
+          <img class="bb-saas-proof__avatar" src="/church/images/homepage/desktop-avatar-1.jpg" alt="" width="40" height="40"/>
+          <img class="bb-saas-proof__avatar" src="/church/images/homepage/desktop-avatar-2.jpg" alt="" width="40" height="40"/>
+          <img class="bb-saas-proof__avatar" src="/church/images/homepage/desktop-avatar-3.jpg" alt="" width="40" height="40"/>
         </div>
         <p class="bb-saas-proof__text">Trusted by <strong>500+</strong> growing ministries</p>
       </div>
@@ -30,7 +35,7 @@
       <div class="bb-saas-hero__frame">
         <img
           class="bb-saas-hero__img"
-          src="https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&amp;fit=crop&amp;w=1200&amp;q=80"
+          src="/church/images/homepage/desktop-hero-auditorium.jpg"
           alt="Welcoming church congregation during a modern service"
           width="800"
           height="600"
@@ -49,7 +54,7 @@
   </div>
 </section>
 
-<section class="bb-saas-features" id="features">
+<section class="bb-saas-features home-desktop-design" id="features">
   <div class="bb-saas-features__inner">
     <div class="bb-saas-features__header">
       <h2 class="bb-saas-features__title">Powerful Tools for Modern Ministry</h2>
@@ -71,13 +76,14 @@
               <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Automated Follow-ups</li>
             </ul>
           </div>
-          <div class="bb-saas-bento__mock" aria-hidden="true">
-            <div class="bb-saas-mock-dir">
-              <div class="bb-saas-mock-dir__head">Family Directory</div>
-              <div class="bb-saas-mock-dir__row"><span></span><div><strong>Johnson Family</strong><small>Active · 4 members</small></div></div>
-              <div class="bb-saas-mock-dir__row"><span></span><div><strong>Mwansa Household</strong><small>New · Follow-up due</small></div></div>
-              <div class="bb-saas-mock-dir__row"><span></span><div><strong>Tembo Family</strong><small>Active · Youth</small></div></div>
-            </div>
+          <div class="bb-saas-bento__mock">
+            <img
+              class="bb-saas-bento__shot"
+              src="/church/images/homepage/desktop-feature-directory.jpg"
+              alt="Member directory dashboard preview"
+              width="512"
+              height="279"
+            />
           </div>
         </div>
       </article>
@@ -97,10 +103,14 @@
       </article>
       <article class="bb-saas-bento__card bb-saas-bento__card--wide">
         <div class="bb-saas-bento__split bb-saas-bento__split--coord">
-          <div class="bb-saas-bento__illus" aria-hidden="true">
-            <div class="bb-saas-coord-orb"></div>
-            <div class="bb-saas-coord-orb bb-saas-coord-orb--2"></div>
-            <div class="bb-saas-coord-orb bb-saas-coord-orb--3"></div>
+          <div class="bb-saas-bento__illus">
+            <img
+              class="bb-saas-bento__shot"
+              src="/church/images/homepage/desktop-feature-coordination.jpg"
+              alt="Ministry coordination illustration"
+              width="512"
+              height="279"
+            />
           </div>
           <div class="bb-saas-bento__copy">
             <div class="bb-saas-bento__icon bb-saas-bento__icon--primary">
@@ -115,14 +125,14 @@
   </div>
 </section>
 
-<section class="bb-saas-cta" id="pricing">
+<section class="bb-saas-cta home-desktop-design" id="pricing">
   <div class="bb-saas-cta__inner">
     <div class="bb-saas-cta__card">
       <h2>Ready to Transform Your Church Management?</h2>
       <p>Join hundreds of churches that have streamlined their administration and focused back on their mission.</p>
       <div class="bb-saas-cta__actions">
-        <a class="church-btn church-btn--lg bb-saas-btn--pill bb-saas-btn--cta-primary" href="https://demo.blessboard.com/register">Get Started Free</a>
-        <a class="church-btn church-btn--lg bb-saas-btn--pill bb-saas-btn--cta-outline" href="https://demo.blessboard.com">Schedule a Tour</a>
+        <a class="church-btn church-btn--lg bb-saas-btn--pill bb-saas-btn--cta-primary" href="<%= saasRegisterHref %>">Get Started Free</a>
+        <a class="church-btn church-btn--lg bb-saas-btn--pill bb-saas-btn--cta-outline" href="<%= saasDemoHref %>">Schedule a Tour</a>
       </div>
     </div>
   </div>

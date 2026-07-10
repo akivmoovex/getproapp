@@ -12,7 +12,7 @@ const { chromium } = require("playwright");
 
 const churchRoutes = require("../src/routes/church");
 
-const OUT_DIR = path.join(__dirname, "../tmp/blessboard-home-screenshots");
+const OUT_DIR = path.join(__dirname, "../test-results/blessboard-homepage-visual");
 const PORT = 4179;
 
 function makeApp(kind) {
@@ -50,7 +50,7 @@ function makeApp(kind) {
 async function shot(page, url, width, height, file) {
   await page.setViewportSize({ width, height });
   await page.goto(url, { waitUntil: "networkidle", timeout: 60_000 });
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(800);
   await page.screenshot({ path: file, fullPage: true });
   console.log("Wrote", file);
 }
@@ -70,34 +70,10 @@ async function main() {
   const page = await browser.newPage();
 
   try {
-    await shot(
-      page,
-      `http://127.0.0.1:${PORT}/`,
-      1440,
-      900,
-      path.join(OUT_DIR, "apex-desktop-1440.png")
-    );
-    await shot(
-      page,
-      `http://127.0.0.1:${PORT}/`,
-      390,
-      844,
-      path.join(OUT_DIR, "apex-mobile-390.png")
-    );
-    await shot(
-      page,
-      `http://127.0.0.1:${PORT + 1}/`,
-      390,
-      844,
-      path.join(OUT_DIR, "branch-mobile-390.png")
-    );
-    await shot(
-      page,
-      `http://127.0.0.1:${PORT + 1}/`,
-      1440,
-      900,
-      path.join(OUT_DIR, "branch-desktop-1440.png")
-    );
+    await shot(page, `http://127.0.0.1:${PORT}/`, 1440, 900, path.join(OUT_DIR, "implemented-home-desktop.png"));
+    await shot(page, `http://127.0.0.1:${PORT + 1}/`, 390, 844, path.join(OUT_DIR, "implemented-home-mobile.png"));
+    await shot(page, `http://127.0.0.1:${PORT}/`, 390, 844, path.join(OUT_DIR, "apex-mobile-390.png"));
+    await shot(page, `http://127.0.0.1:${PORT + 1}/`, 1440, 900, path.join(OUT_DIR, "branch-desktop-1440.png"));
   } finally {
     await browser.close();
     apexServer.close();

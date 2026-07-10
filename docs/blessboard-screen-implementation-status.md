@@ -5,9 +5,22 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=33` (public homepage pixel pass: apex SaaS desktop + branch mobile)
+**CSS bundle:** `/church/church.css?v=34` (homepage pixel fidelity: Stitch assets localized)
 
-**Last updated:** 2026-07-10 (public homepage Stitch pass)
+**Last updated:** 2026-07-10 (homepage regression guards)
+
+### Homepage v34 status
+
+Homepage **v34 is visually aligned to the Stitch PNGs** (`01-public-home-desktop.png` / `01-public-home-mobile.png`).
+
+Remaining known differences are **intentional / documented** (not regressions):
+- Brand text uses **BlessBoard** (+ Powered by GetPro) where PNGs say GetPro Church
+- Map asset is the Stitch export cropped via CSS (source includes phone chrome)
+- Stitch source images are ~512px; PNG exports may look sharper
+- Nearby avatars are initials placeholders
+- Apex mobile has no dedicated marketing PNG (branch mobile PNG is the mobile target)
+
+Regression guards live in `tests/church-visual-design.test.js` (CSS v34 shells, asset files, layout markers).
 
 ---
 
@@ -15,30 +28,52 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 
 | Area | Desktop | Mobile | Notes |
 |------|---------|--------|-------|
-| Public website shell | Partial → improved | Partial → improved | Hamburger drawer, brand mark, 1280px max-width |
-| Public homepage (apex) | Close | Partial | SaaS landing matches desktop Stitch; no dedicated apex-mobile PNG |
-| Branch public homepage | Partial | Close | Mobile Stitch layout implemented; desktop branch content remains church-site layout |
+| Public website shell | Close | Close | Dual header/footer for branch home |
+| Public homepage (apex) | Close | Partial | Desktop SaaS uses Stitch assets; apex has no dedicated mobile PNG |
+| Branch public homepage | Close | Close | Mobile = church PNG; desktop = SaaS PNG via CSS split |
 | Auth screens | Partial | Partial | Card polish, brand lockup; layout closer to Stitch |
 | Member portal | Partial | Partial → improved | Mobile top bar, bento quick actions, announcement cards |
 | Branch admin | Partial | Needs mobile fix | Functional; sidebar layout differs from Stitch density |
 | HQ / Leader / Platform | Partial | Partial | Implemented; not fully restyled this pass |
 
-**Playwright:** Available (`npm run test:ui`). Homepage QA screenshots: `node scripts/screenshot-blessboard-home.js` → `tmp/blessboard-home-screenshots/` (390px + 1440px).
+**Playwright:** `node scripts/screenshot-blessboard-home.js` → `test-results/blessboard-homepage-visual/` (`implemented-home-mobile.png`, `implemented-home-desktop.png`).
+
+---
+
+## Public homepage asset mapping
+
+Assets localized from Stitch HTML `aida-public` URLs into `public/church/images/homepage/`.
+
+| Design Element | PNG Reference | Current Asset Used | Correct Asset Found? | Action |
+|----------------|---------------|--------------------|----------------------|--------|
+| Desktop hero auditorium | `01-public-home-desktop.png` | `desktop-hero-auditorium.jpg` | Yes (from Stitch HTML) | Wired |
+| Desktop social avatars | desktop PNG | `desktop-avatar-1/2/3.jpg` | Yes | Wired |
+| Desktop member directory shot | desktop PNG | `desktop-feature-directory.jpg` | Yes | Wired |
+| Desktop coordination illustration | desktop PNG | `desktop-feature-coordination.jpg` | Yes | Wired |
+| Mobile hero sanctuary | `01-public-home-mobile.png` | `mobile-hero-sanctuary.jpg` | Yes | Wired |
+| Mobile map card | mobile PNG | `mobile-map-kafue.jpg` | Yes (full phone mock in export) | Cropped via CSS to map area; chrome may still peek |
+| Ministry — Children | mobile PNG | `mobile-ministry-children.jpg` | Yes | Wired |
+| Ministry — Youth | mobile PNG | `mobile-ministry-youth.jpg` | Yes | Wired |
+| Ministry — Worship | mobile PNG | `mobile-ministry-worship.jpg` | Yes | Wired |
+
+**Missing / recommend export from Stitch if available:**
+- Clean map crop without phone chrome/search bar (`mobile-map-kafue-clean.png`)
+- Higher-resolution desktop hero if Stitch has a larger export than 512px
 
 ---
 
 ## Screen mapping
 
-Statuses: **Matches** · **Partial** · **Placeholder** · **Missing** · **Needs mobile fix** · **Needs desktop fix**
+Statuses: **Matches** · **Close** · **Partial** · **Placeholder** · **Missing** · **Needs mobile fix** · **Needs desktop fix**
 
 ### Public website
 
 | Screen | Device | PNG File | Current Route | Current View | Match Status | Missing Design Items |
 |--------|--------|----------|---------------|--------------|--------------|----------------------|
-| Public homepage (BlessBoard apex) | Desktop | `01-public-website/01-public-home-desktop/01-public-home-desktop.png` | `/` (blessboard.com) | `views/church/public/home.ejs` + `home_apex.ejs` | Close | SaaS nav/hero/bento/CTA/footer implemented. Remaining: exact Stitch photo assets (using Unsplash placeholders + CSS mock directory) |
-| Public homepage (BlessBoard apex) | Mobile | `01-public-website/01-public-home-mobile/01-public-home-mobile.png` | `/` | `home.ejs` | Partial | Apex mobile stacks SaaS sections; PNG is branch church mobile, not apex marketing |
-| Public homepage (branch) | Desktop | `01-public-website/01-public-home-desktop/01-public-home-desktop.png` | `/` (demo.blessboard.com) | `home.ejs` + `home_branch.ejs` | Partial | Desktop PNG is apex SaaS; branch desktop keeps church-site hero + sections (intentional host split) |
-| Public homepage (branch) | Mobile | `01-public-website/01-public-home-mobile/01-public-home-mobile.png` | `/` | `home_branch.ejs` | Close | Full mobile Stitch structure. Remaining: original Stitch hero/map/ministry photos (Unsplash + map placeholder); nearby avatars are decorative placeholders |
+| Public homepage (BlessBoard apex) | Desktop | `01-public-website/01-public-home-desktop/01-public-home-desktop.png` | `/` (blessboard.com) | `home.ejs` + `home_apex.ejs` | Close | Brand text BlessBoard (PNG says GetPro Church); Stitch source images are ~512px |
+| Public homepage (BlessBoard apex) | Mobile | `01-public-website/01-public-home-mobile/01-public-home-mobile.png` | `/` | `home.ejs` | Partial | Apex mobile shows SaaS stack; PNG is branch church mobile |
+| Public homepage (branch) | Desktop | `01-public-website/01-public-home-desktop/01-public-home-desktop.png` | `/` (demo.blessboard.com) | `home_branch.ejs` includes `home_apex` | Close | Same SaaS desktop layout as apex at ≥900px |
+| Public homepage (branch) | Mobile | `01-public-website/01-public-home-mobile/01-public-home-mobile.png` | `/` | `home_branch.ejs` | Close | Map asset includes phone chrome (CSS-cropped); nearby avatars are initials placeholders |
 | About | Desktop | `01-public-website/02-public-about-desktop/02-public-about-desktop.png` | `/about` | `views/church/public/about.ejs` | Partial | Photo hero polish; value rows use plain text split |
 | About | Mobile | `01-public-website/02-public-about-mobile/02-public-about-mobile.png` | `/about` | `about.ejs` | Partial | Page hero, story card, mission/vision cards added |
 | Leadership | Desktop | `01-public-website/03-public-leadership-desktop/03-public-leadership-desktop.png` | `/leadership` | `views/church/public/leadership.ejs` | Partial | Initials avatars; real photos not wired |

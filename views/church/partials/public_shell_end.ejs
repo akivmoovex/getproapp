@@ -1,6 +1,10 @@
   </main>
-  <% if (isVerticalApex) { %>
-  <footer class="church-footer church-footer--apex" id="about">
+  <%
+    var isPreviewMode = typeof isPreview !== 'undefined' && isPreview;
+    var isBranchHome = !isVerticalApex && activePage === 'home' && !isPreviewMode;
+  %>
+  <% if (isVerticalApex || isBranchHome) { %>
+  <footer class="church-footer church-footer--apex<%= isBranchHome ? ' home-desktop-design' : '' %>" id="about">
     <div class="church-footer__inner church-footer__inner--apex">
       <div class="church-footer__brand-block">
         <div class="church-footer__brand-row">
@@ -17,8 +21,9 @@
       </div>
     </div>
   </footer>
-  <% } else { %>
-  <footer class="church-footer church-footer--branch">
+  <% } %>
+  <% if (!isVerticalApex) { %>
+  <footer class="church-footer church-footer--branch<%= isBranchHome ? ' home-mobile-design' : '' %>">
     <div class="church-footer__inner church-footer__inner--branch">
       <div class="church-footer__branch-brand">
         <span class="church-footer__branch-icon" aria-hidden="true">
@@ -38,8 +43,8 @@
       </div>
     </div>
   </footer>
-  <% if (!(typeof isPreview !== 'undefined' && isPreview)) { %>
-  <a class="church-fab-chat" href="/contact" aria-label="Contact us">
+  <% if (!isPreviewMode) { %>
+  <a class="church-fab-chat home-mobile-design" href="/contact" aria-label="Contact us">
     <span class="material-symbols-outlined" aria-hidden="true">chat_bubble</span>
   </a>
   <% } %>
