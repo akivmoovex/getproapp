@@ -337,7 +337,7 @@ Confirmed working routes from the codebase (representative set):
 | A | Giving + public remaining | v37–v38 | Complete |
 | B | Auth | v38 | Complete |
 | C | Member | v40 | Complete |
-| D | Branch admin | v41 | Pending |
+| D | Branch admin | v41 | Complete |
 | E | Platform / HQ | v42 | Complete |
 
 ---
@@ -355,4 +355,4 @@ Confirmed working routes from the codebase (representative set):
 | 07 Platform admin | 14 |
 | **Total (excl. `* 2` / `* 3` duplicates)** | **110** |
 
-See also: [`docs/blessboard-stitch-asset-map.md`](blessboard-stitch-asset-map.md), [`docs/blessboard-screen-implementation-status.md`](blessboard-screen-implementation-status.md).
+See also: [`docs/blessboard-stitch-asset-map.md`](blessboard-stitch-asset-map.md), [`docs/blessboard-screen-implementation-status.md`](blessboard-screen-implementation-status.md), [`docs/blessboard-final-stitch-parity-report.md`](blessboard-final-stitch-parity-report.md).
