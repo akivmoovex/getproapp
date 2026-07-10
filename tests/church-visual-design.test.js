@@ -334,6 +334,7 @@ test("public nav and mobile drawer include About and Leadership links", async ()
   assert.match(shell, /href="\/contact"/);
   assert.match(shell, />About</);
   assert.match(shell, />Leadership</);
+  assert.match(shell, />Sermons</);
   assert.match(shell, /church-mobile-drawer/);
   const footer = fs.readFileSync(
     path.join(__dirname, "../views/church/partials/public_shell_end.ejs"),

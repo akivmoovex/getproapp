@@ -2,7 +2,31 @@
 
 Deploy and operate BlessBoard (`blessboard.com`, `*.blessboard.com`) alongside GetPro (`getproapp.org`).
 
-**Last updated:** 2026-07-10
+**Last updated:** 2026-07-10 (public visual freeze CSS **v36** — pre–Kafue Baptist)
+
+---
+
+## Pilot freeze gate (before Kafue Baptist)
+
+Public visual work is frozen at **`/church/church.css?v=36`**. Do not ship new visual features before the pilot.
+
+1. Deploy latest code to blessboard.com (and getproapp.org if separate Node app).
+2. Run [blessboard-pilot-smoke-test.md](./blessboard-pilot-smoke-test.md) **Pilot freeze checklist** (F1–F14) on live hosts.
+3. Confirm `npm test` is green in CI / local.
+4. Only then provision Kafue Baptist at `https://blessboard.com/admin/churches/new`.
+
+### Freeze audit summary (2026-07-10)
+
+| Item | Result |
+|------|--------|
+| Demo public pages (home, about, leadership, ministries, events, sermons, contact, giving) | Pass (tests + markers) |
+| Desktop nav + mobile drawer | Pass (Sermons restored on desktop nav) |
+| Footer real routes | Pass (`/about`, `/contact`); Privacy/Terms `#` stubs only |
+| Contact submit / register / branch login / website editor / contact submissions | Pass (automated) |
+| Apex `/admin/churches/new` | Pass |
+| getproapp.org unchanged / unknownslug friendly 404 | Pass |
+| CSS `?v=36` / no primary “GetPro Church” | Pass |
+| **Go / no-go** | **GO** for Kafue Baptist provisioning after live F1–F14 |
 
 ---
 
@@ -14,12 +38,12 @@ Use this sequence for every production deploy of branch **V4** (operational read
 |------|--------|--------|
 | 1 | **Pull latest V4** — SSH or Hostinger Git deploy: `git fetch && git checkout V4 && git pull origin V4` | `git log -1` shows expected commit |
 | 2 | **Install dependencies** — `npm ci` (preferred) or `npm install` | No install errors |
-| 3 | **Build assets** — `npm run build` or `npm run build:assets` | CSS/JS bundles present |
+| 3 | **Build assets** — `npm run build` or `npm run build:assets` | CSS/JS bundles present; public pages load `church.css?v=36` |
 | 4 | **Run migrations** — automatic on boot via `ensureChurchSchema`; optional manual check below | Logs show schema ensured; migration **090** features present |
 | 5 | **Run seed/demo script if needed** — demo seed is idempotent on boot; manual trigger only if demo missing | `demo.blessboard.com` resolves |
 | 6 | **Restart Node app** — hPanel → Node.js → **Restart** | Process PID / uptime resets |
 | 7 | **Verify logs** — PostgreSQL connected, church schema ensured, demo seed ok | No unhandled startup errors |
-| 8 | **Test URLs** — run [blessboard-pilot-smoke-test.md](./blessboard-pilot-smoke-test.md) | Demo + getproapp.org pass before pilot provision |
+| 8 | **Test URLs** — run [blessboard-pilot-smoke-test.md](./blessboard-pilot-smoke-test.md) freeze + public rows | Demo + getproapp.org pass before pilot provision |
 
 ### Environment check before restart
 
@@ -178,21 +202,24 @@ After onboarding **`kafuebaptist`** (or any new slug), run this checklist:
 |------|----------------|----------|
 | 1 | `https://kafuebaptist.blessboard.com` | Public homepage loads |
 | 2 | `/about` | About/mission content from website editor |
-| 3 | `/contact` | Contact form + church details |
-| 4 | Submit contact form | Success message; appears in branch admin **Contact submissions** |
-| 5 | `/register` | Member registration form (if enabled) |
-| 6 | Submit member registration | Redirect to `/registration-submitted`; pending in branch admin queue |
-| 7 | `/branch/login` | Branch admin login works |
-| 8 | `/branch/member-verification` | Pending member visible |
-| 9 | `/branch/sermons` → add sermon | Saves and can publish |
-| 10 | `/branch/resources` → add resource | Saves and can publish |
-| 11 | Public `/sermons` and `/about` | Updated content visible |
-| 12 | `https://getproapp.org` | GetPro platform unchanged |
+| 3 | `/leadership` | Leadership page |
+| 4 | `/ministries` `/events` `/sermons` `/giving` | Public pages load |
+| 5 | `/contact` | Contact form + church details |
+| 6 | Submit contact form | Success message; appears in branch admin **Contact submissions** |
+| 7 | `/register` | Member registration form (if enabled) |
+| 8 | Submit member registration | Redirect to `/registration-submitted`; pending in branch admin queue |
+| 9 | `/branch/login` | Branch admin login works |
+| 10 | `/branch/member-verification` | Pending member visible |
+| 11 | `/branch/website-editor` | Edit and publish public content |
+| 12 | `/branch/sermons` → add sermon | Saves and can publish |
+| 13 | `/branch/resources` → add resource | Saves and can publish |
+| 14 | Public `/sermons` and `/about` | Updated content visible |
+| 15 | `https://getproapp.org` | GetPro platform unchanged |
 
 ### Automated smoke subset
 
 ```bash
-npm test -- tests/church-operational-readiness.test.js tests/church-onboarding.test.js tests/church-blessboard-subdomains.test.js
+npm test -- tests/church-operational-readiness.test.js tests/church-onboarding.test.js tests/church-blessboard-subdomains.test.js tests/church-visual-design.test.js
 ```
 
 ## Seed command
@@ -264,17 +291,22 @@ After restart, check logs for:
 | URL | Expected |
 |-----|----------|
 | `https://blessboard.com` | BlessBoard landing, Powered by GetPro |
-| `https://demo.blessboard.com` | Demo church homepage |
-| `https://demo.blessboard.com/about` | DB-backed about content |
+| `https://demo.blessboard.com` | Demo church homepage (`church.css?v=36`) |
+| `https://demo.blessboard.com/about` | About |
+| `https://demo.blessboard.com/leadership` | Leadership |
+| `https://demo.blessboard.com/ministries` | Ministries |
+| `https://demo.blessboard.com/events` | Events |
+| `https://demo.blessboard.com/sermons` | Sermons |
+| `https://demo.blessboard.com/contact` | Contact |
+| `https://demo.blessboard.com/giving` | Giving |
 | `https://demo.blessboard.com/register` | Member registration form |
 | `https://demo.blessboard.com/branch/login` | Branch admin login |
 | `https://getproapp.org` | GetPro platform unchanged |
 | `https://blessboard.com/admin/login` | BlessBoard platform admin login |
 | `https://blessboard.com/admin/churches/new` | New church provisioning |
-| `https://blessboard.com/admin/churches/:id/edit` | Edit church details (org + primary branch subdomain/contact/registration) |
+| `https://blessboard.com/admin/churches/:id/edit` | Edit church details |
 | `https://blessboard.com/admin/diagnostics` | Production diagnostics (super admin) |
 | `https://getproapp.org/admin/church/organizations/new` | Redirects to blessboard.com/admin/churches/new |
-| `https://getproapp.org/admin/church/organizations/:id/edit` | Redirects to blessboard.com/admin/churches/:id/edit |
 | `https://unknownslug.blessboard.com` | Church not found (404) |
 
 ---
@@ -348,7 +380,7 @@ curl -I -H "Host: demo.blessboard.com" https://your-server/
 
 ```bash
 # Targeted tests
-npm test -- tests/church-onboarding.test.js tests/church-content-management.test.js tests/church-blessboard-subdomains.test.js
+npm test -- tests/church-onboarding.test.js tests/church-content-management.test.js tests/church-blessboard-subdomains.test.js tests/church-visual-design.test.js
 
 # Full suite
 npm test
