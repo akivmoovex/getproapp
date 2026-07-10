@@ -82,6 +82,16 @@ BlessBoard platform admin (`/admin/login`, `/admin/churches`, `/admin/diagnostic
 
 - `/home/u549637099/domains/blessboard.com/nodejs` (or your blessboard.com app root)
 
+**Host rules (do not confuse):**
+
+| Host | Correct admin | Incorrect |
+|------|---------------|-----------|
+| `blessboard.com` | `/admin/login`, `/admin/dashboard`, `/admin/churches`, `/admin/diagnostics` | — |
+| `demo.blessboard.com` (and other branch hosts) | `/branch/login`, `/branch/dashboard` | `/admin/*` — returns **404 guidance** (not “Church not found”) |
+| `getproapp.org` | GetPro `/admin/*`; legacy `/admin/church/*` redirects to blessboard.com | BlessBoard platform UI |
+
+Branch hosts requesting `/admin/*` render `platform_admin_not_available.ejs` with links to `https://blessboard.com/admin/login` and `/branch/login`. Unknown church subdomains still use the friendly **Church not found** page for public routes only.
+
 That folder must deploy the **same repo** as getproapp.org (branch V4), with:
 
 - `DATABASE_URL` / `GETPRO_DATABASE_URL` (same PostgreSQL as GetPro)
@@ -301,6 +311,7 @@ After restart, check logs for:
 | `https://demo.blessboard.com/giving` | Giving |
 | `https://demo.blessboard.com/register` | Member registration form |
 | `https://demo.blessboard.com/branch/login` | Branch admin login |
+| `https://demo.blessboard.com/admin/dashboard` | 404 guidance (platform admin apex-only; not “Church not found”) |
 | `https://getproapp.org` | GetPro platform unchanged |
 | `https://blessboard.com/admin/login` | BlessBoard platform admin login |
 | `https://blessboard.com/admin/churches/new` | New church provisioning |

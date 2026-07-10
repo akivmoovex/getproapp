@@ -3,11 +3,10 @@
 const { isBlessBoardApexHost } = require("./blessBoardApexHost");
 
 function renderBlessBoardAdminHostNotFound(req, res) {
-  return res.status(404).render("church/public/not_found", {
-    pageTitle: "Page not found",
-    requestedSlug: null,
+  return res.status(404).render("church/public/platform_admin_not_available", {
+    pageTitle: "Platform admin not available",
     requestedHost: req.headers.host || "",
-    metaDescription: "This admin area is only available on blessboard.com.",
+    metaDescription: "BlessBoard platform admin is only available at blessboard.com.",
   });
 }
 

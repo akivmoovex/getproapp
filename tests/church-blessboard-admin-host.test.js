@@ -139,19 +139,57 @@ test(
   }
 );
 
-test("demo.blessboard.com/admin/churches/new returns friendly not found", async () => {
+test("demo.blessboard.com/admin/churches/new returns platform-admin guidance, not church not found", async () => {
   const app = createProductionLikeApp();
   const res = await request(app).get("/admin/churches/new").set("Host", "demo.blessboard.com");
   assert.equal(res.status, 404);
-  assert.match(res.text, /Church not found|not found/i);
+  assert.doesNotMatch(res.text, /Church not found/i);
+  assert.match(res.text, /platform admin is only available at/i);
+  assert.match(res.text, /blessboard\.com\/admin\/login/);
+  assert.match(res.text, /href="\/branch\/login"/);
+  assert.doesNotMatch(res.text, /Provision a new church|Create church organization/i);
 });
 
-test("kafuebaptist.blessboard.com/admin/churches/new returns friendly not found", async () => {
+test("demo.blessboard.com/admin/dashboard returns platform-admin guidance, not church not found", async () => {
+  const app = createProductionLikeApp();
+  const res = await request(app).get("/admin/dashboard").set("Host", "demo.blessboard.com");
+  assert.equal(res.status, 404);
+  assert.doesNotMatch(res.text, /Church not found/i);
+  assert.match(res.text, /BlessBoard platform admin is only available at/i);
+  assert.match(res.text, /https:\/\/blessboard\.com\/admin\/login/);
+  assert.match(res.text, /href="\/branch\/login"/);
+  assert.doesNotMatch(res.text, /church-platform-sidebar|Platform Dashboard/i);
+});
+
+test("demo.blessboard.com/admin/login returns platform-admin guidance", async () => {
+  const app = createProductionLikeApp();
+  const res = await request(app).get("/admin/login").set("Host", "demo.blessboard.com");
+  assert.equal(res.status, 404);
+  assert.doesNotMatch(res.text, /Church not found/i);
+  assert.match(res.text, /blessboard\.com\/admin\/login/);
+  assert.match(res.text, /\/branch\/login/);
+});
+
+test(
+  "blessboard.com/admin/dashboard redirects unauthenticated users to login",
+  { skip: !isPgConfigured() },
+  async () => {
+    const app = createProductionLikeApp();
+    const res = await request(app).get("/admin/dashboard").set("Host", "blessboard.com");
+    assert.equal(res.status, 302);
+    assert.equal(res.headers.location, "/admin/login");
+  }
+);
+
+test("kafuebaptist.blessboard.com/admin/churches/new returns platform-admin guidance", async () => {
   const app = createProductionLikeApp();
   const res = await request(app)
     .get("/admin/churches/new")
     .set("Host", "kafuebaptist.blessboard.com");
   assert.equal(res.status, 404);
+  assert.doesNotMatch(res.text, /Church not found/i);
+  assert.match(res.text, /platform admin is only available at/i);
+  assert.match(res.text, /\/branch\/login/);
 });
 
 test("getproapp.org/admin/church/organizations/new redirects to blessboard.com", async () => {
@@ -656,13 +694,15 @@ test(
   }
 );
 
-test("demo.blessboard.com/admin/churches/:id/edit returns 404", async () => {
+test("demo.blessboard.com/admin/churches/:id/edit returns platform-admin guidance", async () => {
   const app = createProductionLikeApp();
   const res = await request(app)
     .get("/admin/churches/3/edit")
     .set("Host", "demo.blessboard.com");
   assert.equal(res.status, 404);
-  assert.match(res.text, /Church not found|not found/i);
+  assert.doesNotMatch(res.text, /Church not found/i);
+  assert.match(res.text, /platform admin is only available at/i);
+  assert.match(res.text, /\/branch\/login/);
 });
 
 test("getproapp.org/admin/church/organizations/:id/edit redirects to blessboard.com", async () => {

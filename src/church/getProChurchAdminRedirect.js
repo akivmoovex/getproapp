@@ -2,10 +2,7 @@
 
 const { normalizeHostFromRequest } = require("./host");
 const { isBlessBoardApexHost, blessBoardAdminUrl } = require("./blessBoardApexHost");
-const {
-  mapLegacyGetProChurchAdminPathToBlessBoard,
-  isBlessBoardPlatformAdminPath,
-} = require("./blessboardAdminPaths");
+const { mapLegacyGetProChurchAdminPathToBlessBoard } = require("./blessboardAdminPaths");
 
 function isGetProPlatformApexHost(req) {
   const base = String(process.env.BASE_DOMAIN || "")
@@ -36,12 +33,17 @@ function redirectGetProChurchAdminToBlessBoard(req, res) {
   return res.redirect(302, blessBoardAdminUrl(`${targetPath}${qs}`));
 }
 
+/**
+ * Block all /admin/* on BlessBoard branch hosts (demo.*, kafuebaptist.*, etc.).
+ * Platform admin is apex-only; branch staff use /branch/login.
+ * Do not fall through to church public 404 ("Church not found").
+ */
 function shouldBlockBlessBoardAdminOnBranchHost(req) {
   if (isBlessBoardApexHost(req)) return false;
   if (!req.isChurchHost || !req.churchContext || req.churchContext.kind !== "branch") {
     return false;
   }
-  return isBlessBoardPlatformAdminPath(req.path);
+  return true;
 }
 
 module.exports = {

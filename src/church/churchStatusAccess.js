@@ -94,10 +94,17 @@ function isHqPath(path) {
  * Blocks public, member, branch-admin, and leader routes when org/branch is not active.
  * HQ routes remain accessible (MVP: login + read with banner).
  */
+function isPlatformAdminPath(path) {
+  return String(path || "").startsWith("/admin");
+}
+
 function churchOperationalAccessGate(req, res, next) {
   if (!req.isChurchHost || !req.churchContext) return next();
   if (req.churchContext.kind === "vertical-apex") return next();
   if (isHqPath(req.path)) return next();
+  // /admin/* on branch hosts is handled by the apex-admin guard in server.js —
+  // never treat it as a missing church site.
+  if (isPlatformAdminPath(req.path)) return next();
 
   const block = getChurchAccessBlock(req.churchContext);
   if (!block) return next();

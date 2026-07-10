@@ -149,8 +149,13 @@ Assets localized from Stitch HTML `aida-public` URLs into `public/church/images/
 - Branch footer → `/about`, `/contact` (no broken routes)
 - `getproapp.org/about` → not a BlessBoard branch page
 - `unknownslug.blessboard.com` → friendly Church not found
-- `demo.blessboard.com/admin/churches/new` → 404 (apex-only)
+- `demo.blessboard.com/admin/churches/new` → 404 guidance (“platform admin only at blessboard.com”), **not** “Church not found”
+- `demo.blessboard.com/admin/dashboard` → same 404 guidance + links to blessboard.com/admin/login and /branch/login
 - Unauthenticated `/branch/*` and `/member/*` → redirect to login
+
+### Platform admin host guard
+
+Platform admin routes are **apex-only** (`blessboard.com`). Branch admins must use `/branch/login`. Branch hosts requesting `/admin/*` receive helpful 404 guidance (`views/church/public/platform_admin_not_available.ejs`), not the church slug not-found page.
 
 ---
 
