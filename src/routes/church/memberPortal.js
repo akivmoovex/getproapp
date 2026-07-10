@@ -53,16 +53,65 @@ const {
 } = require("../../church/ministryJoinRequestValidation");
 const { validateChangePasswordBody } = require("../../church/memberAccountValidation");
 
+function resolveMemberNavActive(req) {
+  const p = String((req && req.path) || "");
+  if (p.startsWith("/member/dashboard")) return "dashboard";
+  if (p.startsWith("/member/profile") || p.startsWith("/member/account")) return "profile";
+  if (p.startsWith("/member/announcements")) return "announcements";
+  if (p.startsWith("/member/events")) return "events";
+  if (p.startsWith("/member/my-ministries") || p.startsWith("/member/ministries")) return "ministries";
+  if (p.startsWith("/member/forms")) return "forms";
+  if (p.startsWith("/member/resources")) return "resources";
+  if (p.startsWith("/member/requests") || p.startsWith("/member/prayer-request")) return "requests";
+  if (p.startsWith("/member/giving")) return "giving";
+  if (p.startsWith("/member/my-duties")) return "duties";
+  return "";
+}
+
+function memberInitials(name) {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!parts.length) return "M";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function memberShellTitle(navActive, extraTitle) {
+  if (extraTitle) return extraTitle;
+  const titles = {
+    dashboard: "Member Dashboard",
+    profile: "Member Profile",
+    announcements: "Announcements",
+    events: "Events",
+    ministries: "My Ministries",
+    resources: "Resource Library",
+    forms: "Forms & Documents",
+    requests: "Requests",
+    giving: "Giving Information",
+    duties: "My Duties",
+  };
+  return titles[navActive] || "Member Portal";
+}
+
 function memberPortalLocals(req, extra) {
   const org = req.churchContext.organization;
   const branch = req.churchContext.branch;
+  const memberName = req.churchMember.full_name;
+  const navActive = (extra && extra.navActive) || resolveMemberNavActive(req);
+  const shellTitle = (extra && extra.shellTitle) || memberShellTitle(navActive, null);
   return {
     churchName: branch.name || org.name,
     pageTitle: branch.name || org.name,
     organization: org,
     branch,
     member: req.churchMember,
-    memberName: req.churchMember.full_name,
+    memberName,
+    memberInitials: memberInitials(memberName),
+    memberAvatarUrl: "/church/images/member/avatar-member.jpg",
+    navActive,
+    shellTitle,
     ...(extra || {}),
   };
 }

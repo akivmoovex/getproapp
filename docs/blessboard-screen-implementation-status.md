@@ -5,9 +5,23 @@ Visual alignment pass against Stitch exports in `design-reference/stitch-screens
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 (Recommended copy location for deployment-only assets: `public/design-references/blessboard/` — not required; PNGs remain in repo under `design-reference/`.)
 
-**CSS bundle:** `/church/church.css?v=38` (Batch B Auth + Batch A Giving + prior public screens)
+**CSS bundle:** `/church/church.css?v=39` (desktop public menu hotfix after Batch B Auth)
 
-**Last updated:** 2026-07-10 (Batch B — Authentication visual pass)
+**Last updated:** 2026-07-10 (Desktop public menu/header hotfix — Batch C not started)
+
+### Desktop public menu hotfix (v39)
+
+**Issue:** On `demo.blessboard.com` (branch host), the homepage desktop header reused the apex SaaS nav (`Features` / `Pricing` / `About Us`) and hid the branch church nav. That produced a broken mixture vs a clean branch public header.
+
+**Fix:** Branch hosts always use one branch public header:
+- Desktop (≥900px): BlessBoard lockup + centered church nav + Login / Register; hamburger hidden
+- Mobile (<900px): church name + hamburger drawer (unchanged link set)
+
+Apex (`blessboard.com`) keeps Features / Pricing / About Us.
+
+**Screenshots:** `test-results/blessboard-homepage-visual/menu-fix-desktop.png`, `menu-fix-mobile.png`
+
+**Remaining differences from Stitch `01-public-home-desktop.png`:** Stitch shows SaaS nav (Features/Pricing/About Us) because that PNG is the platform homepage. Branch desktop body still uses the SaaS content layout from that PNG, but the header correctly uses Option B church links. Brand text is BlessBoard / Powered by GetPro (not “GetPro Church”).
 
 ### Homepage v34 status (unchanged layout; CSS cache bumped to v35)
 
@@ -292,7 +306,7 @@ npm run test:ui
 - `views/church/public/leadership.ejs` — featured pastor, elders, ministry leaders, admin tiles
 - `public/church/church.css` — About/Leadership fidelity styles; cache `?v=35`
 - `public/church/images/about/*`, `public/church/images/leadership/*` — Stitch assets
-- All church shells referencing `church.css?v=38`
+- All church shells referencing `church.css?v=39`
 - `tests/church-visual-design.test.js` — CSS version + About/Leadership markers
 - `scripts/screenshot-blessboard-about-leadership.js`
 - `docs/blessboard-screen-implementation-status.md` — This file

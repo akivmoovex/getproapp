@@ -1,8 +1,16 @@
 <%- include('../partials/member_shell_start') %>
-      <header class="church-member-header">
-        <h1 class="church-member-header__title">Forms &amp; Documents</h1>
-        <p class="church-member-header__subtitle">Church forms and downloadable documents</p>
+      <header class="church-member-header church-member-header--page">
+        <div>
+          <h1 class="church-member-header__title">Forms &amp; Documents</h1>
+          <p class="church-member-header__subtitle">Church forms and downloadable documents</p>
+        </div>
       </header>
+
+      <div class="church-member-search" role="search">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <input class="church-member-search__input" type="search" placeholder="Search forms and documents" aria-label="Search forms" disabled/>
+      </div>
+
       <section class="church-member-panel">
         <% if ((formItems || []).length === 0) { %>
         <div class="church-empty-state church-empty-state--compact">
@@ -11,18 +19,20 @@
           <a class="church-btn church-btn--outline" href="/member/requests/new">Submit an online request instead</a>
         </div>
         <% } else { %>
-        <div class="church-resource-list">
+        <div class="church-resource-list church-resource-list--forms">
           <% formItems.forEach(function (item) { %>
-          <article class="church-resource-row">
-            <span class="church-resource-row__icon material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+          <article class="church-resource-row church-resource-row--form">
+            <span class="church-resource-row__icon material-symbols-outlined" aria-hidden="true"><%= item.icon || 'description' %></span>
             <div class="church-resource-row__body">
               <h2 class="church-resource-row__title"><%= item.title %></h2>
-              <p class="church-resource-row__meta"><%= item.meta %></p>
+              <p class="church-resource-row__meta"><%= item.meta || (item.file_url ? 'PDF Download' : 'Online Form') %></p>
             </div>
             <% if (item.file_url || item.external_url) { %>
-            <a class="church-member-link" href="<%= item.file_url || item.external_url %>" target="_blank" rel="noopener noreferrer">Open</a>
+            <a class="church-member-link" href="<%= item.file_url || item.external_url %>" target="_blank" rel="noopener noreferrer" aria-label="Open <%= item.title %>">
+              <span class="material-symbols-outlined" aria-hidden="true"><%= item.file_url ? 'picture_as_pdf' : 'chevron_right' %></span>
+            </a>
             <% } else { %>
-            <span class="church-resource-row__badge">Available</span>
+            <span class="material-symbols-outlined church-resource-row__chevron" aria-hidden="true">chevron_right</span>
             <% } %>
           </article>
           <% }); %>

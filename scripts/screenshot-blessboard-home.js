@@ -74,6 +74,8 @@ async function main() {
     await shot(page, `http://127.0.0.1:${PORT + 1}/`, 390, 844, path.join(OUT_DIR, "implemented-home-mobile.png"));
     await shot(page, `http://127.0.0.1:${PORT}/`, 390, 844, path.join(OUT_DIR, "apex-mobile-390.png"));
     await shot(page, `http://127.0.0.1:${PORT + 1}/`, 1440, 900, path.join(OUT_DIR, "branch-desktop-1440.png"));
+    await shot(page, `http://127.0.0.1:${PORT + 1}/`, 1440, 900, path.join(OUT_DIR, "menu-fix-desktop.png"));
+    await shot(page, `http://127.0.0.1:${PORT + 1}/`, 390, 844, path.join(OUT_DIR, "menu-fix-mobile.png"));
   } finally {
     await browser.close();
     apexServer.close();

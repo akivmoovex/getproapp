@@ -1,7 +1,7 @@
 # BlessBoard Stitch Screen Inventory
 
 **Last updated:** 2026-07-10  
-**CSS freeze baseline:** v36; Batch A complete at v37; Batch B Auth complete at v38; Batch C starts v39  
+**CSS freeze baseline:** v36; Batch A v37; Batch B Auth v38; desktop menu hotfix v39; Batch C starts v40  
 **Design reference root:** `design-reference/stitch-screens/church-flow/`  
 **Unique PNGs in this inventory:** 110 (excludes Finder-style duplicate folders named `* 2` / `* 3`)
 

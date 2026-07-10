@@ -1,23 +1,103 @@
 <%- include('../partials/member_shell_start') %>
-      <header class="church-member-header">
-        <h1 class="church-member-header__title">Announcements</h1>
-        <p class="church-member-header__subtitle"><%= churchName %></p>
+      <header class="church-member-header church-member-header--page">
+        <div>
+          <h1 class="church-member-header__title church-show-mobile-only">Announcements</h1>
+          <p class="church-member-header__subtitle"><%= churchName %></p>
+        </div>
       </header>
+
+      <div class="church-member-filters" role="tablist" aria-label="Announcement filters">
+        <button type="button" class="church-member-filter church-member-filter--active" data-filter="all">All</button>
+        <button type="button" class="church-member-filter" data-filter="branch">Branch</button>
+        <button type="button" class="church-member-filter" data-filter="hq">HQ</button>
+      </div>
+
+      <% if ((announcements || []).length === 0) { %>
       <section class="church-member-panel">
-        <% if ((announcements || []).length === 0) { %>
         <p class="church-member-empty">No announcements yet. Your church leadership will post updates here.</p>
-        <% } else { %>
-        <ul class="church-member-list">
-          <% announcements.forEach(function (a) { %>
-          <li class="church-member-list__item">
-            <strong><%= a.title %></strong>
-            <% if (a.source === 'hq') { %><span class="church-status-chip">HQ</span><% } %>
-            <% if (a.category) { %><span class="church-status-chip"><%= a.category %></span><% } %>
+      </section>
+      <% } else { %>
+      <% var featured = announcements[0]; %>
+      <section class="church-member-ann-featured church-show-desktop-only">
+        <article class="church-member-ann-hero">
+          <img src="/church/images/member/announcement-featured.jpg" alt=""/>
+          <div class="church-member-ann-hero__body">
+            <span class="church-status-chip"><%= featured.source === 'hq' ? 'HQ' : (featured.category || 'Branch') %></span>
+            <h2><%= featured.title %></h2>
+            <p><%= featured.body %></p>
+            <span class="church-member-list__meta"><%= featured.publish_at ? new Date(featured.publish_at).toLocaleDateString('en-GB') : '' %></span>
+          </div>
+        </article>
+        <div class="church-member-ann-side">
+          <% announcements.slice(1, 3).forEach(function (a) { %>
+          <article class="church-member-ann-side__card" data-source="<%= a.source === 'hq' ? 'hq' : 'branch' %>">
+            <span class="church-status-chip"><%= a.source === 'hq' ? 'HQ' : (a.category || 'Branch') %></span>
+            <h3><%= a.title %></h3>
             <p><%= a.body %></p>
-            <span class="church-member-list__meta"><%= a.publish_at ? new Date(a.publish_at).toLocaleDateString('en-GB') : '' %></span>
+          </article>
+          <% }); %>
+        </div>
+      </section>
+
+      <section class="church-member-panel">
+        <div class="church-member-table-wrap church-show-desktop-only">
+          <table class="church-member-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% announcements.forEach(function (a) { %>
+              <tr data-source="<%= a.source === 'hq' ? 'hq' : 'branch' %>">
+                <td><span class="church-status-chip church-status-chip--verified">Published</span></td>
+                <td><strong><%= a.title %></strong><p class="church-member-table__excerpt"><%= a.body %></p></td>
+                <td><%= a.category || (a.source === 'hq' ? 'HQ' : 'Branch') %></td>
+                <td><%= a.publish_at ? new Date(a.publish_at).toLocaleDateString('en-GB') : '' %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <ul class="church-member-list church-show-mobile-only">
+          <% announcements.forEach(function (a) { %>
+          <li class="church-member-announcement-card" data-source="<%= a.source === 'hq' ? 'hq' : 'branch' %>">
+            <div class="church-member-announcement-card__icon">
+              <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+            </div>
+            <div>
+              <strong><%= a.title %></strong>
+              <% if (a.source === 'hq') { %><span class="church-status-chip">HQ</span><% } %>
+              <% if (a.category) { %><span class="church-status-chip"><%= a.category %></span><% } %>
+              <p><%= a.body %></p>
+              <span class="church-member-list__meta"><%= a.publish_at ? new Date(a.publish_at).toLocaleDateString('en-GB') : '' %></span>
+            </div>
           </li>
           <% }); %>
         </ul>
-        <% } %>
       </section>
+      <% } %>
+      <script>
+        (function () {
+          var filters = document.querySelectorAll('.church-member-filter');
+          if (!filters.length) return;
+          filters.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              filters.forEach(function (b) { b.classList.remove('church-member-filter--active'); });
+              btn.classList.add('church-member-filter--active');
+              var key = btn.getAttribute('data-filter');
+              document.querySelectorAll('[data-source]').forEach(function (el) {
+                if (key === 'all' || el.getAttribute('data-source') === key) {
+                  el.style.display = '';
+                } else {
+                  el.style.display = 'none';
+                }
+              });
+            });
+          });
+        })();
+      </script>
 <%- include('../partials/member_shell_end') %>

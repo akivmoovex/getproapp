@@ -1,18 +1,23 @@
 <%- include('../partials/member_shell_start') %>
-      <header class="church-member-header">
-        <h1 class="church-member-header__title">Giving information</h1>
-        <p class="church-member-header__subtitle">How to give to <%= churchName %></p>
+      <header class="church-member-header church-member-header--page">
+        <div>
+          <h1 class="church-member-header__title church-show-mobile-only">Giving information</h1>
+          <p class="church-member-header__subtitle">How to give to <%= churchName %></p>
+        </div>
       </header>
       <% if (givingDisplay.hasPublishedSettings) { %>
       <div class="church-alert church-alert--info" role="note">
         BlessBoard does not process payments in this MVP. Use the details below to give directly to the church.
       </div>
-      <section class="church-member-panel">
+      <section class="church-member-panel church-member-panel--glass">
         <%- include('../partials/giving_details') %>
       </section>
       <% } else { %>
       <section class="church-member-panel">
-        <p class="church-member-empty">Giving information has not been published by your branch yet. Please contact the church office.</p>
+        <div class="church-empty-state church-empty-state--compact">
+          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">payments</span>
+          <p class="church-empty-state__body">Giving information has not been published by your branch yet. Please contact the church office.</p>
+        </div>
       </section>
       <% } %>
 <%- include('../partials/member_shell_end') %>

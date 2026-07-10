@@ -1,21 +1,84 @@
 <%- include('../partials/member_shell_start') %>
-      <header class="church-member-header">
-        <h1 class="church-member-header__title">Events</h1>
-        <p class="church-member-header__subtitle">Upcoming church events</p>
+<%
+  var eventImages = [
+    '/church/images/member/event-1.jpg',
+    '/church/images/member/event-2.jpg',
+    '/church/images/member/event-3.jpg',
+    '/church/images/member/event-featured.jpg'
+  ];
+  var now = new Date();
+  var year = now.getFullYear();
+  var month = now.getMonth();
+  var first = new Date(year, month, 1);
+  var startPad = first.getDay();
+  var daysInMonth = new Date(year, month + 1, 0).getDate();
+  var monthLabel = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  var eventDays = {};
+  (events || []).forEach(function (ev) {
+    var d = new Date(ev.event_date);
+    if (d.getMonth() === month && d.getFullYear() === year) {
+      eventDays[d.getDate()] = true;
+    }
+  });
+%>
+      <header class="church-member-header church-member-header--page">
+        <div>
+          <h1 class="church-member-header__title church-show-mobile-only">Events</h1>
+          <p class="church-member-header__subtitle">Upcoming church events at <%= churchName %></p>
+        </div>
       </header>
-      <section class="church-member-panel">
-        <% if ((events || []).length === 0) { %>
-        <p class="church-member-empty">No upcoming events scheduled. Check back soon.</p>
-        <% } else { %>
-        <ul class="church-member-list">
-          <% events.forEach(function (ev) { %>
-          <li class="church-member-list__item">
-            <strong><%= ev.title %></strong>
-            <p><%= ev.description %></p>
-            <span class="church-member-list__meta"><%= new Date(ev.event_date).toLocaleDateString('en-GB') %><%= ev.start_time || ev.event_time ? ' · ' + (ev.start_time || ev.event_time) : '' %><%= ev.end_time ? ' – ' + ev.end_time : '' %><%= ev.location || ev.location_text ? ' · ' + (ev.location || ev.location_text) : '' %></span>
-          </li>
-          <% }); %>
-        </ul>
-        <% } %>
-      </section>
+
+      <div class="church-member-events-layout">
+        <section class="church-member-panel church-member-calendar church-show-desktop-only">
+          <div class="church-member-calendar__head">
+            <h2 class="church-member-panel__title"><%= monthLabel %></h2>
+          </div>
+          <div class="church-member-calendar__weekdays">
+            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+          </div>
+          <div class="church-member-calendar__grid">
+            <% for (var i = 0; i < startPad; i++) { %><span class="church-member-calendar__day church-member-calendar__day--empty"></span><% } %>
+            <% for (var day = 1; day <= daysInMonth; day++) { %>
+            <span class="church-member-calendar__day<%= eventDays[day] ? ' church-member-calendar__day--event' : '' %><%= day === now.getDate() ? ' church-member-calendar__day--today' : '' %>"><%= day %></span>
+            <% } %>
+          </div>
+        </section>
+
+        <section class="church-member-panel">
+          <h2 class="church-member-panel__title">Upcoming</h2>
+          <% if ((events || []).length === 0) { %>
+          <p class="church-member-empty">No upcoming events scheduled. Check back soon.</p>
+          <% } else { %>
+          <div class="church-member-event-scroller church-show-mobile-only">
+            <% events.forEach(function (ev, i) { %>
+            <article class="church-member-event-card">
+              <div class="church-member-event-card__media" style="background-image:url('<%= eventImages[i % eventImages.length] %>')"></div>
+              <div class="church-member-event-card__body">
+                <p class="church-member-event-card__when"><%= new Date(ev.event_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) %><%= ev.start_time || ev.event_time ? ' · ' + (ev.start_time || ev.event_time) : '' %></p>
+                <h3 class="church-member-event-card__title"><%= ev.title %></h3>
+                <% if (ev.description) { %><p><%= ev.description %></p><% } %>
+                <span class="church-member-list__meta"><%= ev.location || ev.location_text || '' %></span>
+              </div>
+            </article>
+            <% }); %>
+          </div>
+          <ul class="church-member-list church-show-desktop-only">
+            <% events.forEach(function (ev, i) { %>
+            <li class="church-member-event-row church-member-event-row--static">
+              <div class="church-member-event-row__date">
+                <strong><%= new Date(ev.event_date).getDate() %></strong>
+                <span><%= new Date(ev.event_date).toLocaleDateString('en-GB', { month: 'short' }) %></span>
+              </div>
+              <div class="church-member-event-row__media" style="background-image:url('<%= eventImages[i % eventImages.length] %>')"></div>
+              <div>
+                <h3><%= ev.title %></h3>
+                <p><%= ev.description || '' %></p>
+                <span class="church-member-list__meta"><%= new Date(ev.event_date).toLocaleDateString('en-GB') %><%= ev.start_time || ev.event_time ? ' · ' + (ev.start_time || ev.event_time) : '' %><%= ev.location || ev.location_text ? ' · ' + (ev.location || ev.location_text) : '' %></span>
+              </div>
+            </li>
+            <% }); %>
+          </ul>
+          <% } %>
+        </section>
+      </div>
 <%- include('../partials/member_shell_end') %>

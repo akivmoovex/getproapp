@@ -1,15 +1,65 @@
 <%- include('../partials/member_shell_start') %>
-      <header class="church-member-header">
-        <h1 class="church-member-header__title">My profile</h1>
-        <p class="church-member-header__subtitle">Update your contact and ministry details</p>
-      </header>
+<%
+  var filled = 0;
+  var fields = ['full_name','email','phone','gender','age_group','address_area','ministry_interest','emergency_contact_name','emergency_contact_phone'];
+  fields.forEach(function (f) { if (profile && profile[f]) filled += 1; });
+  var completion = Math.round((filled / fields.length) * 100);
+%>
       <% if (notice) { %>
       <div class="church-alert church-alert--success" role="status"><%= notice %></div>
       <% } %>
       <% if (error) { %>
       <div class="church-alert church-alert--error" role="alert"><%= error %></div>
       <% } %>
-      <section class="church-member-panel">
+
+      <section class="church-member-profile-hero">
+        <div class="church-member-profile-hero__avatar-wrap">
+          <div class="church-member-profile-ring" style="--profile-pct: <%= completion %>">
+            <img class="church-member-profile-hero__avatar" src="<%= typeof memberAvatarUrl !== 'undefined' ? memberAvatarUrl : '/church/images/member/avatar-member.jpg' %>" alt="" width="120" height="120"/>
+          </div>
+          <span class="church-member-profile-hero__pct"><%= completion %>%</span>
+        </div>
+        <div>
+          <h1 class="church-member-header__title"><%= profile.full_name || memberName %></h1>
+          <p class="church-member-header__subtitle">
+            <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+            Verified member · <%= churchName %>
+          </p>
+          <a class="church-btn church-btn--primary church-btn--sm church-show-desktop-only" href="#profile-form">Edit Profile</a>
+        </div>
+      </section>
+
+      <div class="church-member-profile-bento">
+        <article class="church-member-panel church-member-panel--glass">
+          <h2 class="church-member-panel__title">Contact</h2>
+          <ul class="church-member-kv">
+            <li><span>Email</span><strong><%= profile.email || '—' %></strong></li>
+            <li><span>Phone</span><strong><%= profile.phone || '—' %></strong></li>
+            <li><span>Gender</span><strong><%= profile.gender || '—' %></strong></li>
+            <li><span>Age group</span><strong><%= profile.age_group || '—' %></strong></li>
+          </ul>
+        </article>
+        <article class="church-member-panel church-member-panel--glass">
+          <h2 class="church-member-panel__title">Ministry interest</h2>
+          <p class="church-member-empty"><%= profile.ministry_interest || 'Not set yet' %></p>
+          <a class="church-member-link" href="/member/my-ministries">View my ministries</a>
+        </article>
+        <article class="church-member-panel church-member-panel--glass">
+          <h2 class="church-member-panel__title">Emergency contact</h2>
+          <ul class="church-member-kv">
+            <li><span>Name</span><strong><%= profile.emergency_contact_name || '—' %></strong></li>
+            <li><span>Phone</span><strong><%= profile.emergency_contact_phone || '—' %></strong></li>
+          </ul>
+        </article>
+        <article class="church-member-panel church-member-panel--glass">
+          <h2 class="church-member-panel__title">Address area</h2>
+          <p><%= profile.address_area || '—' %></p>
+          <img class="church-member-profile-map" src="/church/images/member/profile-map-kafue.jpg" alt="Area map" width="640" height="320"/>
+        </article>
+      </div>
+
+      <section class="church-member-panel" id="profile-form">
+        <h2 class="church-member-panel__title">Update profile</h2>
         <form class="church-form" method="post" action="/member/profile">
           <div class="church-form-grid">
             <div class="church-field church-field--full">

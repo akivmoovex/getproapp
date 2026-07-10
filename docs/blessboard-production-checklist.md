@@ -8,7 +8,7 @@ Deploy and operate BlessBoard (`blessboard.com`, `*.blessboard.com`) alongside G
 
 ## Pilot freeze gate (before Kafue Baptist)
 
-Public visual work is frozen at **`/church/church.css?v=38`**. Do not ship new visual features before the pilot.
+Public visual work is frozen at **`/church/church.css?v=39`**. Do not ship new visual features before the pilot.
 
 1. Deploy latest code to blessboard.com (and getproapp.org if separate Node app).
 2. Run [blessboard-pilot-smoke-test.md](./blessboard-pilot-smoke-test.md) **Pilot freeze checklist** (F1–F14) on live hosts.
@@ -38,7 +38,7 @@ Use this sequence for every production deploy of branch **V4** (operational read
 |------|--------|--------|
 | 1 | **Pull latest V4** — SSH or Hostinger Git deploy: `git fetch && git checkout V4 && git pull origin V4` | `git log -1` shows expected commit |
 | 2 | **Install dependencies** — `npm ci` (preferred) or `npm install` | No install errors |
-| 3 | **Build assets** — `npm run build` or `npm run build:assets` | CSS/JS bundles present; public pages load `church.css?v=38` |
+| 3 | **Build assets** — `npm run build` or `npm run build:assets` | CSS/JS bundles present; public pages load `church.css?v=39` |
 | 4 | **Run migrations** — automatic on boot via `ensureChurchSchema`; optional manual check below | Logs show schema ensured; migration **090** features present |
 | 5 | **Run seed/demo script if needed** — demo seed is idempotent on boot; manual trigger only if demo missing | `demo.blessboard.com` resolves |
 | 6 | **Restart Node app** — hPanel → Node.js → **Restart** | Process PID / uptime resets |
@@ -291,7 +291,7 @@ After restart, check logs for:
 | URL | Expected |
 |-----|----------|
 | `https://blessboard.com` | BlessBoard landing, Powered by GetPro |
-| `https://demo.blessboard.com` | Demo church homepage (`church.css?v=38`) |
+| `https://demo.blessboard.com` | Demo church homepage (`church.css?v=39`) |
 | `https://demo.blessboard.com/about` | About |
 | `https://demo.blessboard.com/leadership` | Leadership |
 | `https://demo.blessboard.com/ministries` | Ministries |

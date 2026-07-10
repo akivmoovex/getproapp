@@ -1,13 +1,13 @@
 <%- include('../partials/member_shell_start') %>
-      <header class="church-member-header">
+      <header class="church-member-header church-member-header--page">
         <a class="church-branch-back" href="/member/requests">&larr; Back to requests</a>
-        <h1 class="church-member-header__title">Submit a request</h1>
+        <h1 class="church-member-header__title church-show-mobile-only">Submit a request</h1>
         <p class="church-member-header__subtitle">Baptism, volunteer registration, and more</p>
       </header>
       <% if (error) { %>
       <div class="church-alert church-alert--error" role="alert"><%= error %></div>
       <% } %>
-      <section class="church-member-panel">
+      <section class="church-member-panel church-member-panel--glass">
         <form class="church-form" method="post" action="/member/requests">
           <div class="church-form-grid">
             <div class="church-field church-field--full">

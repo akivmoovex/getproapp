@@ -9,19 +9,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=38"/>
+  <link rel="stylesheet" href="/church/church.css?v=40"/>
 </head>
 <%
   var isPreviewMode = typeof isPreview !== 'undefined' && isPreview;
   var isBranchHome = !isVerticalApex && activePage === 'home' && !isPreviewMode;
+  var homeHref = isPreviewMode ? '/branch/website-preview' : '/';
 %>
 <body class="church-body<%= isVerticalApex ? ' church-body--apex' : ' church-body--branch' %><%= isBranchHome ? ' church-body--branch-home' : '' %>">
   <% if (isPreviewMode) { %>
   <div class="church-preview-banner" role="status">Preview only — not visible to public until published.</div>
   <% } %>
 
-  <% if (isVerticalApex || isBranchHome) { %>
-  <header class="church-header church-header--apex<%= isBranchHome ? ' home-desktop-design' : '' %>">
+  <% if (isVerticalApex) { %>
+  <header class="church-header church-header--apex">
     <div class="church-header__inner">
       <%- include('./brand_lockup', { href: '/' }) %>
       <nav class="church-nav church-nav--apex" aria-label="Primary">
@@ -30,40 +31,41 @@
         <a href="#about">About Us</a>
       </nav>
       <div class="church-header__actions">
-        <a class="church-btn church-btn--ghost" href="<%= isVerticalApex ? 'https://demo.blessboard.com/login' : '/login' %>">Login</a>
-        <a class="church-btn church-btn--primary church-btn--pill" href="<%= isVerticalApex ? 'https://demo.blessboard.com/register' : '/register' %>">Get Started</a>
+        <a class="church-btn church-btn--ghost" href="https://demo.blessboard.com/login">Login</a>
+        <a class="church-btn church-btn--primary church-btn--pill" href="https://demo.blessboard.com/register">Get Started</a>
       </div>
     </div>
   </header>
   <% } %>
 
   <% if (!isVerticalApex) { %>
-  <header class="church-header church-header--branch<%= isBranchHome ? ' home-mobile-design' : '' %>">
+  <header class="church-header church-header--branch<%= isBranchHome ? ' church-header--branch-home' : '' %>">
     <div class="church-header__inner">
-      <a class="church-brand church-brand--branch" href="<%= isPreviewMode ? '/branch/website-preview' : '/' %>">
+      <a class="church-brand church-brand--branch church-brand--branch-mobile" href="<%= homeHref %>">
         <span class="church-brand-mark" aria-hidden="true">
           <span class="material-symbols-outlined">church</span>
         </span>
         <span class="church-brand__text"><%= churchName %></span>
       </a>
-      <% if (!isBranchHome) { %>
-      <nav class="church-nav" aria-label="Primary">
-        <a href="<%= isPreviewMode ? '/branch/website-preview' : '/' %>" class="<%= activePage === 'home' ? 'church-nav__active' : '' %>">Home</a>
+      <div class="church-brand--branch-desktop">
+        <%- include('./brand_lockup', { href: homeHref }) %>
+      </div>
+      <nav class="church-nav church-nav--branch" aria-label="Primary">
+        <a href="<%= homeHref %>" class="<%= activePage === 'home' ? 'church-nav__active' : '' %>">Home</a>
         <a href="/about" class="<%= activePage === 'about' ? 'church-nav__active' : '' %>">About</a>
         <a href="/leadership" class="<%= activePage === 'leadership' ? 'church-nav__active' : '' %>">Leadership</a>
         <a href="/ministries" class="<%= activePage === 'ministries' ? 'church-nav__active' : '' %>">Ministries</a>
         <a href="/events" class="<%= activePage === 'events' ? 'church-nav__active' : '' %>">Events</a>
         <a href="/sermons" class="<%= activePage === 'sermons' ? 'church-nav__active' : '' %>">Sermons</a>
-        <a href="/giving" class="<%= activePage === 'giving' ? 'church-nav__active' : '' %>">Giving</a>
         <a href="/contact" class="<%= activePage === 'contact' ? 'church-nav__active' : '' %>">Contact</a>
+        <a href="/giving" class="<%= activePage === 'giving' ? 'church-nav__active' : '' %>">Giving</a>
       </nav>
       <div class="church-header__actions">
         <% if (!isPreviewMode) { %>
-        <a class="church-btn church-btn--ghost" href="/login">Member Login</a>
-        <a class="church-btn church-btn--primary" href="/register">Register as Member</a>
+        <a class="church-btn church-btn--ghost" href="/login">Login</a>
+        <a class="church-btn church-btn--primary church-btn--pill" href="/register">Register</a>
         <% } %>
       </div>
-      <% } %>
       <% if (!isPreviewMode) { %>
       <button type="button" class="church-menu-btn" id="church-mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="church-mobile-drawer">
         <span class="material-symbols-outlined" aria-hidden="true">menu</span>

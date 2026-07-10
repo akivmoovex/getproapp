@@ -1,7 +1,7 @@
 <%- include('../partials/member_shell_start') %>
-      <header class="church-member-header">
+      <header class="church-member-header church-member-header--page">
         <div>
-          <h1 class="church-member-header__title">My requests</h1>
+          <h1 class="church-member-header__title church-show-mobile-only">My requests</h1>
           <p class="church-member-header__subtitle">Track your online requests</p>
         </div>
         <a class="church-btn church-btn--primary church-btn--sm" href="/member/requests/new">New request</a>
@@ -11,8 +11,11 @@
       <% } %>
       <section class="church-member-panel">
         <% if ((requests || []).length === 0) { %>
-        <p class="church-member-empty">You have not submitted any requests yet.</p>
-        <a class="church-btn church-btn--outline" href="/member/requests/new">Submit a request</a>
+        <div class="church-empty-state church-empty-state--compact">
+          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">inbox</span>
+          <p class="church-empty-state__body">You have not submitted any requests yet.</p>
+          <a class="church-btn church-btn--outline" href="/member/requests/new">Submit a request</a>
+        </div>
         <% } else { %>
         <ul class="church-member-list">
           <% requests.forEach(function (r) { %>

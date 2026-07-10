@@ -1,24 +1,56 @@
 <%- include('../partials/member_shell_start') %>
-      <header class="church-member-header">
-        <h1 class="church-member-header__title">My ministries</h1>
-        <p class="church-member-header__subtitle">Your ministry connections at <%= churchName %></p>
+<%
+  var ministryCovers = [
+    '/church/images/member/ministry-worship.jpg',
+    '/church/images/member/ministry-hospitality.jpg',
+    '/church/images/member/ministry-bible-study.jpg',
+    '/church/images/member/ministry-youth.jpg',
+    '/church/images/member/ministry-children.jpg'
+  ];
+  var leaderAvatars = [
+    '/church/images/member/avatar-leader-1.jpg',
+    '/church/images/member/avatar-leader-2.jpg',
+    '/church/images/member/avatar-member.jpg'
+  ];
+%>
+      <header class="church-member-header church-member-header--page">
+        <div>
+          <h1 class="church-member-header__title church-show-mobile-only">My ministries</h1>
+          <p class="church-member-header__subtitle">Your ministry connections at <%= churchName %></p>
+        </div>
+        <a class="church-btn church-btn--outline church-btn--sm" href="/member/ministries">Browse ministries</a>
       </header>
       <% if (ministryInterest) { %>
       <div class="church-alert church-alert--info" role="note">Profile ministry interest: <%= ministryInterest %></div>
       <% } %>
-      <section class="church-member-panel">
-        <div class="church-member-panel__head">
-          <h2 class="church-member-panel__title">Active ministries</h2>
-          <a class="church-member-link" href="/member/ministries">Browse ministries</a>
-        </div>
+
+      <section class="church-member-section">
+        <h2 class="church-member-section__title">Active ministries</h2>
         <% if ((activeMinistries || []).length === 0) { %>
         <p class="church-member-empty">No approved ministry assignments yet.</p>
         <% } else { %>
-        <div class="church-grid church-grid--events">
-          <%- include('../partials/ministry_cards', { ministries: activeMinistries.map(function (m) { return Object.assign({}, m, { member_relationship_status: 'active', member_relationship_label: memberRelationshipStatusLabel('active'), can_request_join: false }); }), visibilityLabel, memberRelationshipStatusLabel }) %>
+        <div class="church-member-ministry-cards">
+          <% activeMinistries.forEach(function (m, i) { %>
+          <article class="church-member-ministry-card">
+            <div class="church-member-ministry-card__media" style="background-image:url('<%= ministryCovers[i % ministryCovers.length] %>')"></div>
+            <div class="church-member-ministry-card__body">
+              <div class="church-member-ministry-card__leader">
+                <img src="<%= leaderAvatars[i % leaderAvatars.length] %>" alt="" width="36" height="36"/>
+                <span><%= m.leader_name || 'Ministry leader' %></span>
+              </div>
+              <h3><%= m.name %></h3>
+              <span class="church-member-ministry-tile__badge"><%= memberRelationshipStatusLabel('active') %></span>
+              <% if (m.meeting_schedule || m.schedule_text) { %>
+              <p class="church-member-list__meta"><%= m.meeting_schedule || m.schedule_text %></p>
+              <% } %>
+              <a class="church-btn church-btn--outline church-btn--sm" href="/member/ministries/<%= m.id %>">View Details</a>
+            </div>
+          </article>
+          <% }); %>
         </div>
         <% } %>
       </section>
+
       <section class="church-member-panel">
         <h2 class="church-member-panel__title">Pending join requests</h2>
         <% if ((pendingRequests || []).length === 0) { %>
@@ -37,6 +69,7 @@
         </ul>
         <% } %>
       </section>
+
       <% if ((closedRequests || []).length > 0) { %>
       <section class="church-member-panel">
         <h2 class="church-member-panel__title">Previous requests</h2>
@@ -51,11 +84,21 @@
         </ul>
       </section>
       <% } %>
+
       <% if ((interestMatches || []).length > 0) { %>
-      <section class="church-member-panel">
-        <h2 class="church-member-panel__title">Suggested by your profile interest</h2>
-        <div class="church-grid church-grid--events">
-          <%- include('../partials/ministry_cards', { ministries: interestMatches, visibilityLabel, memberRelationshipStatusLabel }) %>
+      <section class="church-member-section">
+        <h2 class="church-member-section__title">Suggested by your profile interest</h2>
+        <div class="church-member-ministry-cards">
+          <% interestMatches.forEach(function (m, i) { %>
+          <article class="church-member-ministry-card">
+            <div class="church-member-ministry-card__media" style="background-image:url('<%= ministryCovers[(i + 2) % ministryCovers.length] %>')"></div>
+            <div class="church-member-ministry-card__body">
+              <h3><%= m.name %></h3>
+              <span class="church-member-ministry-tile__badge">Suggested</span>
+              <a class="church-btn church-btn--primary church-btn--sm" href="/member/ministries/<%= m.id %>">View Details</a>
+            </div>
+          </article>
+          <% }); %>
         </div>
       </section>
       <% } %>

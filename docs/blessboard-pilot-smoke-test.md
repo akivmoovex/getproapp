@@ -28,7 +28,7 @@ Complete this freeze audit on **demo** + platform hosts before provisioning Kafu
 | F10 | Apex provisioning | `blessboard.com/admin/churches/new` | Form after super-admin login; branch host → 404 | Pass (`church-blessboard-admin-host`) |
 | F11 | GetPro unchanged | `getproapp.org` | Not BlessBoard church UI; `/about` not church | Pass |
 | F12 | Unknown slug | `unknownslug.blessboard.com` | Friendly Church not found (not 500) | Pass |
-| F13 | CSS v36 | View source on public shells | `church.css?v=38` | Pass |
+| F13 | CSS v36 | View source on public shells | `church.css?v=39` | Pass |
 | F14 | Branding | Search public HTML | No primary “GetPro Church” | Pass |
 
 ### Demo public URLs (F1)
@@ -74,7 +74,7 @@ node --test \
 | # | URL | Expected status | Expected marker text | If it fails | Suggested fix |
 |---|-----|-----------------|----------------------|-------------|---------------|
 | 1 | https://blessboard.com | 200 | BlessBoard landing, “Powered by GetPro” | SSL error or wrong site | Confirm apex domain on Node.js app; issue SSL; verify `CHURCH_HOST_DOMAIN=blessboard.com` |
-| 2 | https://demo.blessboard.com | 200 | Demo church homepage; `church.css?v=38` | 404 Church not found | Run demo seed on boot; check `church_branches.host_slug = demo` |
+| 2 | https://demo.blessboard.com | 200 | Demo church homepage; `church.css?v=39` | 404 Church not found | Run demo seed on boot; check `church_branches.host_slug = demo` |
 | 3 | https://demo.blessboard.com/about | 200 | About / mission / Stitch sections | 500 or empty page | Apply migration 089+; check `church_branch_website_content` |
 | 4 | https://demo.blessboard.com/leadership | 200 | Our Leadership | 500 | Website content `leadership_json`; public route |
 | 5 | https://demo.blessboard.com/ministries | 200 | Growing Together / ministries | 500 | Ministries query; branch active |

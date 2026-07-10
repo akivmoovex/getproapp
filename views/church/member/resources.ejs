@@ -1,8 +1,46 @@
 <%- include('../partials/member_shell_start') %>
-      <header class="church-member-header">
-        <h1 class="church-member-header__title">Resources &amp; Study</h1>
-        <p class="church-member-header__subtitle">Study notes, devotionals, and church resources</p>
+<%
+  var resourceImages = [
+    '/church/images/member/resource-1.jpg',
+    '/church/images/member/resource-2.jpg',
+    '/church/images/member/resource-3.jpg',
+    '/church/images/member/resource-hero.jpg'
+  ];
+%>
+      <header class="church-member-header church-member-header--page">
+        <div>
+          <h1 class="church-member-header__title church-show-mobile-only">Resources &amp; Study</h1>
+          <p class="church-member-header__subtitle">Study notes, devotionals, and church resources</p>
+        </div>
       </header>
+
+      <section class="church-member-resource-hero church-show-desktop-only">
+        <article class="church-member-resource-hero__feature">
+          <img src="/church/images/member/resource-hero.jpg" alt=""/>
+          <div>
+            <span class="church-status-chip">Featured series</span>
+            <h2>Grow in the Word</h2>
+            <p>Study notes and devotionals published by <%= churchName %> leadership.</p>
+          </div>
+        </article>
+        <article class="church-member-resource-hero__progress">
+          <h3>Daily devotion</h3>
+          <p>Keep a steady rhythm of study this week.</p>
+          <div class="church-member-progress">
+            <div class="church-member-progress__bar" style="width: 60%"></div>
+          </div>
+          <span class="church-member-list__meta">3 of 5 this week</span>
+        </article>
+      </section>
+
+      <div class="church-member-filters">
+        <span class="church-member-filter church-member-filter--active">All Resources</span>
+        <span class="church-member-filter">Sermon Notes</span>
+        <span class="church-member-filter">Study Guides</span>
+        <span class="church-member-filter">Video</span>
+        <span class="church-member-filter">Audio</span>
+      </div>
+
       <section class="church-member-panel">
         <% if ((resources || []).length === 0) { %>
         <div class="church-empty-state church-empty-state--compact">
@@ -10,7 +48,23 @@
           <p class="church-empty-state__body">Study notes and devotionals will appear here when published by branch leadership.</p>
         </div>
         <% } else { %>
-        <div class="church-resource-list">
+        <div class="church-member-resource-grid church-show-desktop-only">
+          <% resources.forEach(function (item, i) { %>
+          <article class="church-member-resource-card">
+            <div class="church-member-resource-card__media" style="background-image:url('<%= resourceImages[i % resourceImages.length] %>')"></div>
+            <div class="church-member-resource-card__body">
+              <span class="church-status-chip"><%= item.meta || 'Resource' %></span>
+              <h2><%= item.title %></h2>
+              <% if (item.file_url || item.external_url) { %>
+              <a class="church-member-link" href="<%= item.file_url || item.external_url %>" target="_blank" rel="noopener noreferrer">Open</a>
+              <% } else { %>
+              <span class="church-resource-row__badge">Available</span>
+              <% } %>
+            </div>
+          </article>
+          <% }); %>
+        </div>
+        <div class="church-resource-list church-show-mobile-only">
           <% resources.forEach(function (item) { %>
           <article class="church-resource-row">
             <span class="church-resource-row__icon material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
