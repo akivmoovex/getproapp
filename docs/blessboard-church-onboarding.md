@@ -20,6 +20,32 @@ HQ admins log in on a branch host at `/hq/login`. Branch admins log in at `/bran
 
 ---
 
+## Demo church branch admin
+
+For the existing demo church (`demo.blessboard.com`):
+
+| Field | Value |
+|-------|--------|
+| Login URL | https://demo.blessboard.com/branch/login |
+| Dashboard | https://demo.blessboard.com/branch/dashboard |
+| Email | `admin@demo.blessboard.com` |
+| Role | `branch_admin` (church branch admin — **not** BlessBoard platform admin) |
+
+Create or refresh the account (idempotent, manual only):
+
+```bash
+npm run church:demo-admin
+# or: node scripts/create-demo-church-admin.js
+```
+
+Requires `DATABASE_URL`. Optional overrides: `DEMO_CHURCH_ADMIN_EMAIL`, `DEMO_CHURCH_ADMIN_PASSWORD`, `DEMO_CHURCH_ADMIN_NAME`, `DEMO_CHURCH_SLUG`.
+
+Default temporary password is set by the script / env — **change it before sharing outside the team**.
+
+Platform admin remains apex-only: https://blessboard.com/admin/login — do not use `/admin/*` on `demo.blessboard.com`.
+
+---
+
 ## How to create a church
 
 ### 1. Sign in as BlessBoard platform admin

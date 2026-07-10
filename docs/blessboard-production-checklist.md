@@ -92,6 +92,17 @@ BlessBoard platform admin (`/admin/login`, `/admin/churches`, `/admin/diagnostic
 
 Branch hosts requesting `/admin/*` render `platform_admin_not_available.ejs` with links to `https://blessboard.com/admin/login` and `/branch/login`. Unknown church subdomains still use the friendly **Church not found** page for public routes only.
 
+### Demo church branch admin
+
+| Item | Value |
+|------|--------|
+| Login | https://demo.blessboard.com/branch/login |
+| Email | `admin@demo.blessboard.com` |
+| Role | Branch admin for the demo church only |
+| Create/update | `npm run church:demo-admin` (manual; requires `DATABASE_URL`) |
+
+This is **not** a BlessBoard platform admin. Change the temporary password before sharing outside the team. Platform admin: https://blessboard.com/admin/login.
+
 That folder must deploy the **same repo** as getproapp.org (branch V4), with:
 
 - `DATABASE_URL` / `GETPRO_DATABASE_URL` (same PostgreSQL as GetPro)
@@ -310,7 +321,7 @@ After restart, check logs for:
 | `https://demo.blessboard.com/contact` | Contact |
 | `https://demo.blessboard.com/giving` | Giving |
 | `https://demo.blessboard.com/register` | Member registration form |
-| `https://demo.blessboard.com/branch/login` | Branch admin login |
+| `https://demo.blessboard.com/branch/login` | Branch admin login (demo church) |
 | `https://demo.blessboard.com/admin/dashboard` | 404 guidance (platform admin apex-only; not “Church not found”) |
 | `https://getproapp.org` | GetPro platform unchanged |
 | `https://blessboard.com/admin/login` | BlessBoard platform admin login |

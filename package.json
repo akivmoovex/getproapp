@@ -30,6 +30,7 @@
     "test:db:schema": "node scripts/apply-test-db-schema.js",
     "test:pg:isolated": "node scripts/run-node-tests-with-test-db.js",
     "check:pg": "node scripts/check-pg-readiness.js",
+    "church:demo-admin": "node scripts/create-demo-church-admin.js",
     "check:ejs-partials": "node scripts/check-ejs-partials.js",
     "test": "node --test tests",
     "storybook": "storybook dev -p 6006",

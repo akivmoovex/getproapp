@@ -1,6 +1,5 @@
 "use strict";
 
-const bcrypt = require("bcryptjs");
 const organizationsRepo = require("../db/pg/church/organizationsRepo");
 const branchesRepo = require("../db/pg/church/branchesRepo");
 const branchAdminsRepo = require("../db/pg/church/branchAdminsRepo");
@@ -11,10 +10,14 @@ const websiteContentRepo = require("../db/pg/church/websiteContentRepo");
 const sermonsRepo = require("../db/pg/church/sermonsRepo");
 const resourcesRepo = require("../db/pg/church/resourcesRepo");
 const tenantsRepo = require("../db/pg/tenantsRepo");
+const { hashBranchAdminPassword } = require("../church/branchAdminAuth");
 
 const DEMO_ORG_SLUG = "demo";
 const DEMO_HOST_SLUG = "demo";
 const DEMO_BRANCH_ADMIN_EMAIL = "admin@demo.blessboard.com";
+const DEMO_BRANCH_ADMIN_NAME = "Demo Church Admin";
+/** Temporary demo password — prefer `npm run church:demo-admin` to reset/update. */
+const DEMO_BRANCH_ADMIN_PASSWORD = process.env.DEMO_CHURCH_ADMIN_PASSWORD || "DemoAdmin@2026!";
 
 async function seedDemoBranchAdminIfMissing(pool, org, branch) {
   const existing = await branchAdminsRepo.findBranchAdminByEmailForBranch(pool, branch.id, DEMO_BRANCH_ADMIN_EMAIL);
@@ -29,12 +32,12 @@ async function seedDemoBranchAdminIfMissing(pool, org, branch) {
   );
   if (byUsername.rows[0]) return byUsername.rows[0];
 
-  const passwordHash = await bcrypt.hash("testpass123", 12);
+  const passwordHash = await hashBranchAdminPassword(DEMO_BRANCH_ADMIN_PASSWORD);
   try {
     return await branchAdminsRepo.createBranchAdmin(pool, {
       organization_id: org.id,
       branch_id: branch.id,
-      full_name: "Demo Branch Admin",
+      full_name: DEMO_BRANCH_ADMIN_NAME,
       email: DEMO_BRANCH_ADMIN_EMAIL,
       phone: "0977111222",
       password_hash: passwordHash,
