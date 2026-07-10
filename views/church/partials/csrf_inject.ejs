@@ -1,0 +1,23 @@
+<%
+  var _churchCsrfToken = typeof churchCsrfToken !== 'undefined' ? churchCsrfToken : '';
+  var _churchCsrfField = typeof churchCsrfField !== 'undefined' && churchCsrfField ? churchCsrfField : '_csrf';
+%>
+<% if (_churchCsrfToken) { %>
+<template id="church-session-csrf-template">
+  <input type="hidden" name="<%= _churchCsrfField %>" value="<%= _churchCsrfToken %>"/>
+</template>
+<script>
+  (function () {
+    var tpl = document.getElementById("church-session-csrf-template");
+    if (!tpl || !tpl.content) return;
+    var sample = tpl.content.querySelector("input");
+    if (!sample || !sample.value) return;
+    var forms = document.querySelectorAll('form[method="post"], form[method="POST"]');
+    for (var i = 0; i < forms.length; i++) {
+      var form = forms[i];
+      if (form.querySelector('input[name="' + sample.name + '"]')) continue;
+      form.appendChild(sample.cloneNode(true));
+    }
+  })();
+</script>
+<% } %>

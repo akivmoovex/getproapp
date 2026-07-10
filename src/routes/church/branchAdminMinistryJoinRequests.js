@@ -9,6 +9,7 @@ const { requireChurchBranchHost } = require("./auth");
 const {
   JOIN_REQUEST_FILTERS,
   joinRequestStatusLabel,
+  leaderRecommendationLabel,
   validateJoinRequestReviewComment,
 } = require("../../church/ministryJoinRequestValidation");
 const {
@@ -18,6 +19,7 @@ const {
   noticeMessage,
   recordBranchAudit,
 } = require("./branchAdminShared");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 
 async function loadJoinRequestDetail(pool, req, requestId, error) {
   const branch = req.churchContext.branch;
@@ -26,6 +28,7 @@ async function loadJoinRequestDetail(pool, req, requestId, error) {
   return {
     joinRequest: item,
     joinRequestStatusLabel,
+    leaderRecommendationLabel,
     error,
     notice: noticeMessage(flashFromQuery(req, MINISTRY_JOIN_NOTICES)),
   };
@@ -211,18 +214,21 @@ module.exports = function registerBranchAdminMinistryJoinRequestsRoutes(router) 
     "/branch/ministry-join-requests/:requestId/approve",
     requireChurchBranchHost,
     requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
     (req, res, next) => handleJoinRequestAction(req, res, next, "approve")
   );
   router.post(
     "/branch/ministry-join-requests/:requestId/reject",
     requireChurchBranchHost,
     requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
     (req, res, next) => handleJoinRequestAction(req, res, next, "reject")
   );
   router.post(
     "/branch/ministry-join-requests/:requestId/request-more-info",
     requireChurchBranchHost,
     requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
     (req, res, next) => handleJoinRequestAction(req, res, next, "request-more-info")
   );
 };

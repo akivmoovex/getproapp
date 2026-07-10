@@ -1,0 +1,136 @@
+<%- include('../partials/leader_shell_start') %>
+<%
+  var _ministryName = ministry && ministry.name ? ministry.name : '';
+  var _requests = requests || [];
+  var _filters = filters || { q: '', status: 'all', leader_review: 'all', page: 1 };
+  var _pending = typeof pendingCount === 'number' ? pendingCount : 0;
+  var _total = typeof total === 'number' ? total : 0;
+  var _page = typeof page === 'number' ? page : 1;
+  var _totalPages = typeof totalPages === 'number' ? totalPages : 1;
+  var _buildQuery = typeof buildQuery === 'function' ? buildQuery : function () { return ''; };
+  function statusChipClass(status) {
+    if (status === 'approved') return 'church-status-chip church-status-chip--verified';
+    if (status === 'rejected') return 'church-status-chip church-status-chip--rejected';
+    return 'church-status-chip church-status-chip--pending';
+  }
+  function recommendationChipClass(value) {
+    if (value === 'recommend_approval') return 'church-status-chip church-status-chip--verified';
+    if (value === 'do_not_recommend') return 'church-status-chip church-status-chip--rejected';
+    if (value === 'more_info_needed') return 'church-status-chip church-status-chip--pending';
+    return 'church-status-chip';
+  }
+%>
+      <header class="church-leader-page-header" data-leader-join-requests>
+        <div>
+          <p class="church-leader-page-header__eyebrow"><%= _ministryName %></p>
+          <h1 class="church-leader-page-header__title">Leader Join Request Review</h1>
+          <p class="church-leader-page-header__subtitle">Recommend ministry join requests for your branch administrator’s final decision</p>
+        </div>
+        <p class="church-leader-join-requests__pending" data-leader-pending-count aria-live="polite">
+          <span class="church-status-chip church-status-chip--pending"><%= _pending %> awaiting your review</span>
+        </p>
+      </header>
+
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+
+      <section class="church-member-panel church-leader-panel" data-leader-join-requests-panel>
+        <form class="church-leader-join-requests__filters" method="get" action="/leader/requests" data-leader-join-requests-filters>
+          <label class="church-leader-roster-search">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <span class="visually-hidden">Search members</span>
+            <input
+              type="search"
+              name="q"
+              class="church-leader-roster-search__input"
+              placeholder="Search by name, email, or phone…"
+              value="<%= _filters.q || '' %>"
+              autocomplete="off"
+            />
+          </label>
+          <div class="church-leader-join-requests__filter-row">
+            <label class="church-field">
+              <span class="church-label">Final status</span>
+              <select class="church-input" name="status">
+                <option value="all"<%= _filters.status === 'all' ? ' selected' : '' %>>All statuses</option>
+                <option value="submitted"<%= _filters.status === 'submitted' ? ' selected' : '' %>>Submitted</option>
+                <option value="more_info_needed"<%= _filters.status === 'more_info_needed' ? ' selected' : '' %>>More info needed</option>
+                <option value="approved"<%= _filters.status === 'approved' ? ' selected' : '' %>>Approved</option>
+                <option value="rejected"<%= _filters.status === 'rejected' ? ' selected' : '' %>>Rejected</option>
+              </select>
+            </label>
+            <label class="church-field">
+              <span class="church-label">Your recommendation</span>
+              <select class="church-input" name="leader_review">
+                <option value="all"<%= _filters.leader_review === 'all' ? ' selected' : '' %>>All reviews</option>
+                <option value="not_reviewed"<%= _filters.leader_review === 'not_reviewed' ? ' selected' : '' %>>Not reviewed</option>
+                <option value="recommend_approval"<%= _filters.leader_review === 'recommend_approval' ? ' selected' : '' %>>Recommend approval</option>
+                <option value="do_not_recommend"<%= _filters.leader_review === 'do_not_recommend' ? ' selected' : '' %>>Do not recommend</option>
+                <option value="more_info_needed"<%= _filters.leader_review === 'more_info_needed' ? ' selected' : '' %>>More info needed</option>
+              </select>
+            </label>
+            <button class="church-btn church-btn--primary" type="submit">Apply</button>
+          </div>
+        </form>
+
+        <% if (_requests.length === 0) { %>
+          <p class="church-member-empty" data-leader-empty="join-requests">No ministry join requests match your filters for this ministry.</p>
+        <% } else { %>
+          <div class="church-branch-table-wrap church-show-desktop-only" data-leader-join-requests-desktop>
+            <table class="church-branch-table church-leader-join-requests-table">
+              <thead>
+                <tr>
+                  <th scope="col">Member</th>
+                  <th scope="col">Submitted</th>
+                  <th scope="col">Final status</th>
+                  <th scope="col">Your recommendation</th>
+                  <th scope="col"><span class="visually-hidden">Open</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% _requests.forEach(function (r) { %>
+                <tr>
+                  <td>
+                    <strong><%= r.member_name %></strong>
+                    <div class="church-leader-join-requests__meta"><%= r.member_email || '—' %></div>
+                  </td>
+                  <td><%= new Date(r.created_at).toLocaleDateString('en-GB') %></td>
+                  <td><span class="<%= statusChipClass(r.status) %>"><%= joinRequestStatusLabel(r.status) %></span></td>
+                  <td><span class="<%= recommendationChipClass(r.leader_recommendation) %>"><%= leaderRecommendationLabel(r.leader_recommendation) %></span></td>
+                  <td><a class="church-btn church-btn--outline church-btn--sm" href="/leader/requests/<%= r.id %>">Review</a></td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="church-leader-join-requests-mobile church-show-mobile-only" data-leader-join-requests-mobile>
+            <% _requests.forEach(function (r) { %>
+            <article class="church-leader-join-request-card">
+              <div class="church-leader-join-request-card__header">
+                <strong><%= r.member_name %></strong>
+                <span class="<%= statusChipClass(r.status) %>"><%= joinRequestStatusLabel(r.status) %></span>
+              </div>
+              <p class="church-leader-join-requests__meta"><%= r.member_email || '—' %> · <%= new Date(r.created_at).toLocaleDateString('en-GB') %></p>
+              <p><span class="<%= recommendationChipClass(r.leader_recommendation) %>"><%= leaderRecommendationLabel(r.leader_recommendation) %></span></p>
+              <a class="church-btn church-btn--outline church-btn--sm" href="/leader/requests/<%= r.id %>">Review</a>
+            </article>
+            <% }) %>
+          </div>
+
+          <% if (_totalPages > 1) { %>
+          <nav class="church-leader-join-requests__pagination" aria-label="Join request pages" data-leader-join-requests-pagination>
+            <p class="church-leader-join-requests__meta">Showing page <%= _page %> of <%= _totalPages %> (<%= _total %> total)</p>
+            <div class="church-leader-join-requests__pager">
+              <% if (_page > 1) { %>
+              <a class="church-btn church-btn--outline church-btn--sm" href="/leader/requests<%= _buildQuery(_filters, _page - 1) %>">Previous</a>
+              <% } %>
+              <% if (_page < _totalPages) { %>
+              <a class="church-btn church-btn--outline church-btn--sm" href="/leader/requests<%= _buildQuery(_filters, _page + 1) %>">Next</a>
+              <% } %>
+            </div>
+          </nav>
+          <% } %>
+        <% } %>
+      </section>
+<%- include('../partials/leader_shell_end') %>

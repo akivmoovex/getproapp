@@ -78,6 +78,7 @@
           <a class="church-btn church-btn--primary" href="/branch/announcements/<%= announcement.id %>/confirm-publish">Review &amp; publish</a>
           <% } %>
           <form method="post" action="/branch/announcements/<%= announcement.id %>/archive">
+            <%- include('../partials/csrf_field') %>
             <button class="church-btn church-btn--outline" type="submit">Archive</button>
           </form>
         </div>

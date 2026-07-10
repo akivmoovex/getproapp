@@ -1,9 +1,11 @@
 "use strict";
 
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
+const { churchSessionCsrfLocals } = require("../../church/churchSessionCsrf");
 
 function inferLeaderActiveNav(req) {
   const p = String((req && req.path) || "");
+  if (p.startsWith("/leader/requests")) return "requests";
   if (p.startsWith("/leader/roster")) return "roster";
   if (p.startsWith("/leader/duties")) return "duties";
   if (p.startsWith("/leader/attendance")) return "attendance";
@@ -16,6 +18,7 @@ function leaderPortalLocals(req, extra) {
   const org = req.churchContext.organization;
   const branch = req.churchContext.branch;
   const extraObj = extra && typeof extra === "object" ? extra : {};
+  const csrf = req.churchLeader ? churchSessionCsrfLocals(req) : { churchCsrfToken: "", churchCsrfField: "_csrf" };
   return {
     churchName: branch.name || org.name,
     pageTitle: extraObj.pageTitle || branch.name || org.name,
@@ -24,6 +27,7 @@ function leaderPortalLocals(req, extra) {
     leader: req.churchLeader || null,
     leaderName: req.churchLeader ? req.churchLeader.full_name : "",
     activeNav: extraObj.activeNav != null ? extraObj.activeNav : inferLeaderActiveNav(req),
+    ...csrf,
     ...extraObj,
   };
 }

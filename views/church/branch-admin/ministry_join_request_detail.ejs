@@ -37,6 +37,23 @@
             <p><%= joinRequest.admin_comment %></p>
           </div>
           <% } %>
+          <div class="church-branch-review-note" data-branch-leader-recommendation>
+            <strong>Leader recommendation</strong>
+            <% if (joinRequest.leader_recommendation) { %>
+            <p>
+              <%= typeof leaderRecommendationLabel === 'function'
+                ? leaderRecommendationLabel(joinRequest.leader_recommendation)
+                : joinRequest.leader_recommendation %>
+              <% if (joinRequest.leader_reviewer_name) { %> · <%= joinRequest.leader_reviewer_name %><% } %>
+              <% if (joinRequest.leader_reviewed_at) { %> · <%= new Date(joinRequest.leader_reviewed_at).toLocaleString('en-GB') %><% } %>
+            </p>
+            <% if (joinRequest.leader_comment) { %>
+            <p><%= joinRequest.leader_comment %></p>
+            <% } %>
+            <% } else { %>
+            <p>Not reviewed by a ministry leader yet.</p>
+            <% } %>
+          </div>
         </section>
       </div>
       <% if (['submitted', 'more_info_needed'].includes(joinRequest.status)) { %>
@@ -44,9 +61,11 @@
         <h2 class="church-branch-panel__title">Actions</h2>
         <div class="church-hq-review-actions">
           <form class="church-form" method="post" action="/branch/ministry-join-requests/<%= joinRequest.id %>/approve">
+            <%- include('../partials/csrf_field') %>
             <button class="church-btn church-btn--primary" type="submit">Approve</button>
           </form>
           <form class="church-form" method="post" action="/branch/ministry-join-requests/<%= joinRequest.id %>/reject">
+            <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
               <label class="church-label" for="reject_comment">Rejection comment (required)</label>
               <textarea class="church-input church-input--textarea" id="reject_comment" name="admin_comment" rows="2" required></textarea>
@@ -54,6 +73,7 @@
             <button class="church-btn church-btn--outline" type="submit">Reject</button>
           </form>
           <form class="church-form" method="post" action="/branch/ministry-join-requests/<%= joinRequest.id %>/request-more-info">
+            <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
               <label class="church-label" for="more_info_comment">Information needed (required)</label>
               <textarea class="church-input church-input--textarea" id="more_info_comment" name="admin_comment" rows="2" required></textarea>

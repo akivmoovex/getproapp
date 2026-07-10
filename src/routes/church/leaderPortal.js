@@ -24,6 +24,8 @@ const {
 } = require("../../church/leaderActivityNotesValidation");
 const { formatDutyDate, assignedMemberDisplay, dutyStatusLabel } = require("../../church/dutyRosterValidation");
 const { leaderPortalLocals, flashFromQuery, recordLeaderAudit } = require("./leaderShared");
+const registerLeaderJoinRequestRoutes = require("./leaderJoinRequests");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 const { authenticateWithLoginProtection } = require("../../services/church/churchLoginProtectionService");
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
 const ministryLeaderPasswordResetRequestsRepo = require("../../db/pg/church/ministryLeaderPasswordResetRequestsRepo");
@@ -170,7 +172,7 @@ function registerLeaderPortalRoutes(router) {
     }
   });
 
-  router.post("/leader/logout", requireChurchLeaderSession, (req, res) => {
+  router.post("/leader/logout", requireChurchLeaderSession, requireChurchSessionCsrf, (req, res) => {
     clearChurchLeaderSession(req);
     return res.redirect(303, "/leader/login");
   });
@@ -413,7 +415,7 @@ function registerLeaderPortalRoutes(router) {
     }
   });
 
-  router.post("/leader/attendance", requireChurchLeaderSession, ensureLeaderStillActive, requireLeaderMinistry, async (req, res, next) => {
+  router.post("/leader/attendance", requireChurchLeaderSession, ensureLeaderStillActive, requireLeaderMinistry, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const leader = req.churchLeader;
       const org = req.churchContext.organization;
@@ -521,6 +523,7 @@ function registerLeaderPortalRoutes(router) {
     requireChurchLeaderSession,
     ensureLeaderStillActive,
     requireLeaderMinistry,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const leader = req.churchLeader;
@@ -574,6 +577,12 @@ function registerLeaderPortalRoutes(router) {
       }
     }
   );
+
+  registerLeaderJoinRequestRoutes(router, {
+    requireChurchLeaderSession,
+    ensureLeaderStillActive,
+    requireLeaderMinistry,
+  });
 }
 
 module.exports = registerLeaderPortalRoutes;

@@ -32,6 +32,7 @@ const {
   noticeMessage,
   recordBranchAudit,
 } = require("./branchAdminShared");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 
 const ANNOUNCEMENT_FILTERS = ["all", "draft", "published", "archived"];
 
@@ -217,6 +218,7 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
     requireChurchBranchHost,
     requireChurchBranchAdminSession,
     withAnnouncementUpload,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const validation = validateAnnouncementBody(req.body || {});
@@ -441,6 +443,7 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
     requireChurchBranchHost,
     requireChurchBranchAdminSession,
     withAnnouncementUpload,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const announcementId = Number(req.params.announcementId);
@@ -595,6 +598,7 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
     "/branch/announcements/:announcementId/attachments/:attachmentId/delete",
     requireChurchBranchHost,
     requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const announcementId = Number(req.params.announcementId);
@@ -660,6 +664,7 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
     "/branch/announcements/:announcementId/publish",
     requireChurchBranchHost,
     requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const announcementId = Number(req.params.announcementId);
@@ -717,6 +722,7 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
     "/branch/announcements/:announcementId/archive",
     requireChurchBranchHost,
     requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const announcementId = Number(req.params.announcementId);

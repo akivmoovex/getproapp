@@ -21,6 +21,7 @@
       <div class="church-branch-actions">
         <a class="church-btn church-btn--outline" href="/branch/announcements/<%= announcement.id %>/edit">Edit</a>
         <form method="post" action="/branch/announcements/<%= announcement.id %>/publish">
+          <%- include('../partials/csrf_field') %>
           <button class="church-btn church-btn--primary" type="submit">Confirm publish</button>
         </form>
       </div>

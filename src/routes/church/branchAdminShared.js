@@ -1,6 +1,7 @@
 "use strict";
 
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
+const { churchSessionCsrfLocals } = require("../../church/churchSessionCsrf");
 
 function resolveBranchAdminNavActive(req) {
   const p = String((req && req.path) || "");
@@ -74,6 +75,9 @@ function branchAdminLocals(req, extra) {
     (req.churchBranchAdmin && req.churchBranchAdmin.full_name) ||
     (extra && extra.branchAdmin && extra.branchAdmin.full_name) ||
     "Branch Admin";
+  const csrf = req.churchBranchAdmin
+    ? churchSessionCsrfLocals(req)
+    : { churchCsrfToken: "", churchCsrfField: "_csrf" };
   return {
     churchName: branch.name || org.name,
     pageTitle: branch.name || org.name,
@@ -84,6 +88,7 @@ function branchAdminLocals(req, extra) {
     shellTitle,
     adminName,
     adminAvatarUrl: "/church/images/branch-admin/avatar-pastor-stitch.jpg",
+    ...csrf,
     ...(extra || {}),
   };
 }

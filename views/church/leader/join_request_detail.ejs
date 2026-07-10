@@ -1,0 +1,96 @@
+<%- include('../partials/leader_shell_start') %>
+<%
+  var _ministryName = ministry && ministry.name ? ministry.name : '';
+  var r = joinRequest;
+  var _canReview = !!canReview;
+  var _form = form || { recommendation: '', leader_comment: '' };
+  function statusChipClass(status) {
+    if (status === 'approved') return 'church-status-chip church-status-chip--verified';
+    if (status === 'rejected') return 'church-status-chip church-status-chip--rejected';
+    return 'church-status-chip church-status-chip--pending';
+  }
+  function recommendationChipClass(value) {
+    if (value === 'recommend_approval') return 'church-status-chip church-status-chip--verified';
+    if (value === 'do_not_recommend') return 'church-status-chip church-status-chip--rejected';
+    if (value === 'more_info_needed') return 'church-status-chip church-status-chip--pending';
+    return 'church-status-chip';
+  }
+%>
+      <header class="church-leader-page-header" data-leader-join-request-detail>
+        <div>
+          <a class="church-leader-back" href="/leader/requests">&larr; Back to join requests</a>
+          <p class="church-leader-page-header__eyebrow"><%= _ministryName %></p>
+          <h1 class="church-leader-page-header__title"><%= r.member_name %></h1>
+          <p class="church-leader-page-header__subtitle">Ministry join request · recommendation only</p>
+        </div>
+        <span class="<%= statusChipClass(r.status) %>"><%= joinRequestStatusLabel(r.status) %></span>
+      </header>
+
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+
+      <div class="church-leader-join-request-detail-grid">
+        <section class="church-member-panel church-leader-panel">
+          <h2 class="church-leader-panel__title">Member</h2>
+          <dl class="church-branch-dl" data-leader-join-request-member>
+            <div><dt>Name</dt><dd><%= r.member_name %></dd></div>
+            <div><dt>Email</dt><dd><%= r.member_email || '—' %></dd></div>
+            <div><dt>Phone</dt><dd><%= r.member_phone || '—' %></dd></div>
+            <div><dt>Submitted</dt><dd><%= new Date(r.created_at).toLocaleString('en-GB') %></dd></div>
+            <div><dt>Final status</dt><dd><span class="<%= statusChipClass(r.status) %>"><%= joinRequestStatusLabel(r.status) %></span></dd></div>
+          </dl>
+          <% if (r.message) { %>
+          <div class="church-branch-review-note" data-leader-join-request-message>
+            <strong>Member message</strong>
+            <p><%= r.message %></p>
+          </div>
+          <% } %>
+          <% if (r.admin_comment) { %>
+          <div class="church-branch-review-note church-branch-review-note--hq" data-leader-join-request-admin-comment>
+            <strong>Branch admin comment</strong>
+            <p><%= r.admin_comment %></p>
+          </div>
+          <% } %>
+        </section>
+
+        <section class="church-member-panel church-leader-panel" data-leader-recommendation>
+          <h2 class="church-leader-panel__title">Your recommendation</h2>
+          <p class="church-leader-join-requests__meta">You can recommend only. Branch administrators make the final approval or rejection and add members to the roster.</p>
+          <dl class="church-branch-dl">
+            <div>
+              <dt>Current recommendation</dt>
+              <dd><span class="<%= recommendationChipClass(r.leader_recommendation) %>"><%= leaderRecommendationLabel(r.leader_recommendation) %></span></dd>
+            </div>
+            <% if (r.leader_comment) { %>
+            <div><dt>Your comment</dt><dd><%= r.leader_comment %></dd></div>
+            <% } %>
+            <% if (r.leader_reviewed_at) { %>
+            <div><dt>Reviewed</dt><dd><%= new Date(r.leader_reviewed_at).toLocaleString('en-GB') %></dd></div>
+            <% } %>
+          </dl>
+
+          <% if (_canReview) { %>
+          <form class="church-form" method="post" action="/leader/requests/<%= r.id %>/recommend" data-leader-recommend-form>
+            <%- include('../partials/csrf_field') %>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="recommendation">Recommendation</label>
+              <select class="church-input" id="recommendation" name="recommendation" required>
+                <option value=""<%= !_form.recommendation ? ' selected' : '' %>>Choose…</option>
+                <option value="recommend_approval"<%= _form.recommendation === 'recommend_approval' ? ' selected' : '' %>>Recommend approval</option>
+                <option value="do_not_recommend"<%= _form.recommendation === 'do_not_recommend' ? ' selected' : '' %>>Do not recommend</option>
+                <option value="more_info_needed"<%= _form.recommendation === 'more_info_needed' ? ' selected' : '' %>>More info needed</option>
+              </select>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="leader_comment">Comment</label>
+              <textarea class="church-input church-input--textarea" id="leader_comment" name="leader_comment" rows="3" maxlength="2000"><%= _form.leader_comment || '' %></textarea>
+              <p class="church-leader-join-requests__meta">Required when you do not recommend or need more information.</p>
+            </div>
+            <button class="church-btn church-btn--primary" type="submit">Save recommendation</button>
+          </form>
+          <% } else { %>
+          <p class="church-member-empty" data-leader-recommend-closed>This request is closed for leader recommendation. Final status is managed by the branch administrator.</p>
+          <% } %>
+        </section>
+      </div>
+<%- include('../partials/leader_shell_end') %>

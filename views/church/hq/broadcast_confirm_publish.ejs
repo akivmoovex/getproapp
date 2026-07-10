@@ -56,6 +56,7 @@
       <div class="church-branch-actions church-hq-form-actions">
         <a class="church-btn church-btn--outline" href="/hq/broadcasts/<%= broadcast.id %>/edit">Edit</a>
         <form method="post" action="/hq/broadcasts/<%= broadcast.id %>/publish" id="hq-confirm-publish-form">
+          <%- include('../partials/csrf_field') %>
           <input type="hidden" name="_publish_token" value="<%= publishToken %>"/>
           <button class="church-btn church-btn--primary" type="submit" id="hq-confirm-publish-btn"><%= typeof expandMode !== 'undefined' && expandMode ? 'Confirm audience change' : 'Confirm publish' %></button>
         </form>

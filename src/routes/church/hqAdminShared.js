@@ -2,6 +2,7 @@
 
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
 const { getHqStatusBanner } = require("../../church/churchStatusAccess");
+const { churchSessionCsrfLocals } = require("../../church/churchSessionCsrf");
 
 function inferHqActiveNav(req) {
   const p = String((req && req.path) || "");
@@ -19,6 +20,9 @@ function hqAdminLocals(req, extra) {
   const org = req.churchContext.organization;
   const branch = req.churchContext.branch;
   const extraObj = extra && typeof extra === "object" ? extra : {};
+  const csrf = req.churchHqAdmin
+    ? churchSessionCsrfLocals(req)
+    : { churchCsrfToken: "", churchCsrfField: "_csrf" };
   return {
     churchName: org.name,
     organizationName: org.name,
@@ -28,6 +32,7 @@ function hqAdminLocals(req, extra) {
     hqAdmin: req.churchHqAdmin || null,
     statusBanner: getHqStatusBanner(req.churchContext),
     activeNav: extraObj.activeNav != null ? extraObj.activeNav : inferHqActiveNav(req),
+    ...csrf,
     ...extraObj,
   };
 }

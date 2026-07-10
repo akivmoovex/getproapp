@@ -107,7 +107,7 @@ test("leader dashboard and roster routes remain unchanged", () => {
   );
   assert.match(src, /router\.get\("\/leader\/dashboard"/);
   assert.match(src, /router\.get\("\/leader\/roster"/);
-  assert.doesNotMatch(src, /\/leader\/requests/);
+  assert.match(src, /registerLeaderJoinRequestRoutes/);
 });
 
 test(
@@ -199,8 +199,8 @@ test(
 
     const emptyDash = await agent.get("/leader/dashboard");
     assert.equal(emptyDash.status, 200);
-    assert.match(emptyDash.text, /data-leader-shell="stitch-v4[78]"/);
-    assert.match(emptyDash.text, /church\.css\?v=4[78]/);
+    assert.match(emptyDash.text, /data-leader-shell="stitch-v4[789]"/);
+    assert.match(emptyDash.text, /church\.css\?v=4[789]/);
     assert.match(emptyDash.text, /Youth Ministry/);
     assert.match(emptyDash.text, /Grace Mwansa/);
     assert.match(emptyDash.text, /data-leader-dashboard-stats/);
@@ -211,8 +211,10 @@ test(
     assert.match(emptyDash.text, /href="\/leader\/attendance"/);
     assert.match(emptyDash.text, /href="\/leader\/duties"/);
     assert.match(emptyDash.text, /href="\/leader\/activity-notes"/);
-    assert.doesNotMatch(emptyDash.text, /Leader Requests|\/leader\/requests|View Requests/i);
-    assert.doesNotMatch(emptyDash.text, /password_hash|session_id|csrf/i);
+    assert.match(emptyDash.text, /href="\/leader\/requests"/);
+    assert.doesNotMatch(emptyDash.text, /Camp request|Mentor request|Expense request|AI triage/i);
+    assert.doesNotMatch(emptyDash.text, /password_hash|session_id/i);
+    assert.match(emptyDash.text, /name="_csrf"|church-session-csrf-template/);
     assert.doesNotMatch(emptyDash.text, /Choir Ministry/);
     assert.match(emptyDash.text, /church-leader-stat-grid|church-leader-hero|church-leader-quick-action/);
     assert.match(emptyDash.text, /church-member-nav-link--active/);
@@ -223,7 +225,8 @@ test(
     assert.equal(emptyRoster.req.path, "/leader/roster");
     assert.match(emptyRoster.text, /data-leader-empty="roster"/);
     assert.match(emptyRoster.text, /No members assigned to this ministry yet/);
-    assert.doesNotMatch(emptyRoster.text, /password_hash|\/leader\/requests/i);
+    assert.doesNotMatch(emptyRoster.text, /password_hash/i);
+    assert.match(emptyRoster.text, /href="\/leader\/requests"/);
     assert.match(emptyRoster.text, /church-member-nav-link--active/);
 
     const memberHash = await bcrypt.hash("MemberPass123!", 12);

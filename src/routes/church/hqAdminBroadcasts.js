@@ -31,6 +31,7 @@ const {
 const { hqAdminLocals, flashFromQuery, BROADCAST_NOTICES, noticeMessage, recordHqAudit } = require("./hqAdminShared");
 const churchPlanService = require("../../services/church/churchPlanService");
 const { loadBroadcastDeliveryAnalytics } = require("../../church/broadcastDeliveryAnalytics");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 
 const broadcastUpload = multer({
   storage: multer.memoryStorage(),
@@ -283,6 +284,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
     requireChurchBranchHost,
     requireChurchHqAdminSession,
     withBroadcastUpload,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const validation = validateBroadcastBody(req.body || {});
@@ -534,6 +536,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
     requireChurchBranchHost,
     requireChurchHqAdminSession,
     withBroadcastUpload,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const broadcastId = Number(req.params.broadcastId);
@@ -700,6 +703,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
     "/hq/broadcasts/:broadcastId/attachments/:attachmentId/delete",
     requireChurchBranchHost,
     requireChurchHqAdminSession,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const broadcastId = Number(req.params.broadcastId);
@@ -741,6 +745,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
     "/hq/broadcasts/:broadcastId/publish",
     requireChurchBranchHost,
     requireChurchHqAdminSession,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const broadcastId = Number(req.params.broadcastId);
@@ -851,6 +856,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
     "/hq/broadcasts/:broadcastId/archive",
     requireChurchBranchHost,
     requireChurchHqAdminSession,
+    requireChurchSessionCsrf,
     async (req, res, next) => {
       try {
         const broadcastId = Number(req.params.broadcastId);

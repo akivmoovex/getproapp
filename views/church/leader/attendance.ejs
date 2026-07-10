@@ -19,6 +19,7 @@
       <% if (error) { %><div class="church-alert church-alert--error" role="alert" data-leader-attendance-error><%= error %></div><% } %>
 
       <form class="church-form church-leader-attendance-form" method="post" action="/leader/attendance" data-leader-attendance-form>
+        <%- include('../partials/csrf_field') %>
         <input type="hidden" name="attendance_type" value="Ministry meeting"/>
 
         <section class="church-member-panel church-leader-panel" data-leader-attendance-session>

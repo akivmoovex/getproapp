@@ -215,7 +215,7 @@ test(
 
     const attendanceGet = await agent.get("/leader/attendance");
     assert.equal(attendanceGet.status, 200);
-    assert.match(attendanceGet.text, /data-leader-shell="stitch-v48"/);
+    assert.match(attendanceGet.text, /data-leader-shell="stitch-v4[89]"/);
     assert.match(attendanceGet.text, /data-leader-attendance-form/);
     assert.match(attendanceGet.text, /data-leader-attendance-counts/);
     assert.match(attendanceGet.text, /data-leader-empty="attendance"/);
