@@ -21,6 +21,7 @@ const feedItemReadsRepo = require("../src/db/pg/church/feedItemReadsRepo");
 const { mergeAnnouncementFeed } = require("../src/church/announcementFeed");
 const { MEMBER_HQ_AUDIENCES } = require("../src/church/hqBroadcastValidation");
 const { ensureCanonicalTenantsForTests } = require("./helpers/pgTestSeed");
+const { churchPgSkipIfUnconfigured, requireChurchPgOrSkip } = require("./helpers/churchPgTest");
 const { TENANT_ZM } = require("../src/tenants/tenantIds");
 const churchRoutes = require("../src/routes/church");
 
@@ -67,15 +68,10 @@ async function cleanup(pool, orgId) {
 
 test(
   "broadcast and announcement enhancements: priority, pin, confirm, search, reads, analytics",
-  { skip: !isPgConfigured() },
+  churchPgSkipIfUnconfigured(),
   async (t) => {
-    const pool = getPgPool();
-    try {
-      await pool.query("SELECT 1");
-    } catch (e) {
-      t.skip(`PostgreSQL unreachable (${e.code || e.message})`);
-      return;
-    }
+    const pool = await requireChurchPgOrSkip(t);
+    if (!pool) return;
     await ensureCanonicalTenantsForTests(pool);
     await ensureChurchSchema(pool);
     const suffix = makeSuffix("bce");

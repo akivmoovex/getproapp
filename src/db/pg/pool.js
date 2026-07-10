@@ -7,9 +7,9 @@ const os = require("os");
  * Used by repositories and by server.js (connect-pg-simple). The HTTP server requires a connection string at boot.
  *
  * Configure with DATABASE_URL (preferred) or GETPRO_DATABASE_URL.
- * Automated tests: set GETPRO_TEST_DB=1 and TEST_DATABASE_URL to use a dedicated Postgres database
- * (never mixed with local dev). When GETPRO_TEST_DB is set, DATABASE_URL/GETPRO_DATABASE_URL are ignored
- * unless TEST_DATABASE_URL is unset (then PG is treated as not configured).
+ * Automated tests: set NODE_ENV=test and/or GETPRO_TEST_DB=1 with TEST_DATABASE_URL to use a dedicated
+ * Postgres database (never mixed with local/production). In test intent mode, DATABASE_URL and
+ * GETPRO_DATABASE_URL are ignored; if TEST_DATABASE_URL is unset, PostgreSQL is treated as not configured.
  * SSL: set GETPRO_PG_SSL to strict | no-verify | off (see README). When unset, Supabase-style hosts default to no-verify.
  * When explicit ssl is set, sslmode=… query params are stripped from the URI so node-pg is not told both “require” and a conflicting Pool.ssl.
  * Do not commit secrets.
@@ -30,12 +30,13 @@ function envStringIsSet(value) {
 /** When true, only TEST_DATABASE_URL is used (isolates CI/local test DB from dev .env). */
 function isGetproTestDbIntent() {
   const v = (process.env.GETPRO_TEST_DB || "").trim().toLowerCase();
-  return v === "1" || v === "true" || v === "yes";
+  if (v === "1" || v === "true" || v === "yes") return true;
+  return String(process.env.NODE_ENV || "").trim().toLowerCase() === "test";
 }
 
 /**
  * Single source for the Postgres connection string (never log the return value).
- * With GETPRO_TEST_DB=1: TEST_DATABASE_URL only (empty if unset — PG tests skip).
+ * With test intent (NODE_ENV=test or GETPRO_TEST_DB=1): TEST_DATABASE_URL only (empty if unset — PG tests skip).
  * Otherwise: DATABASE_URL, then GETPRO_DATABASE_URL.
  * @returns {string}
  */
@@ -371,4 +372,5 @@ module.exports = {
   summarizeDatabaseUrlEnv,
   getStartupProcessSnapshot,
   getPoolRuntimeConfig,
+  isGetproTestDbIntent,
 };

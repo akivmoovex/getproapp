@@ -2,7 +2,7 @@
       <header class="church-branch-topbar">
         <div>
           <a class="church-branch-back" href="/branch/announcements">&larr; Back to announcements</a>
-          <h1 class="church-branch-topbar__title"><%= announcement.title %></h1>
+          <h1 class="church-branch-topbar__title church-hq-wrap"><%= announcement.title %></h1>
           <p class="church-branch-topbar__subtitle"><%= announcement.category %> · <%= audienceLabel(announcement.audience) %> · <%= priorityLabel(announcement.priority || 'normal') %></p>
         </div>
         <span class="church-status-chip church-status-chip--<%= announcement.status === 'published' ? 'verified' : 'pending' %>"><%= announcementStatusLabel(announcement.status) %></span>
@@ -15,12 +15,9 @@
       <% } %>
       <section class="church-branch-panel">
         <div class="church-branch-review-note">
-          <p><%= announcement.body %></p>
-          <% if (announcement.attachment_url) { %>
-          <p><a href="<%= announcement.attachment_url %>" target="_blank" rel="noopener noreferrer"><%= announcement.attachment_label || 'Attachment' %></a></p>
-          <% } %>
+          <p class="church-hq-wrap"><%= announcement.body %></p>
           <% if (announcement.action_url) { %>
-          <p><a class="church-btn church-btn--outline church-btn--sm" href="<%= announcement.action_url %>" target="_blank" rel="noopener noreferrer"><%= announcement.action_label || 'Open link' %></a></p>
+          <p><a class="church-btn church-btn--outline church-btn--sm church-hq-wrap" href="<%= announcement.action_url %>" target="_blank" rel="noopener noreferrer"><%= announcement.action_label || 'Open link' %></a></p>
           <% } %>
         </div>
         <dl class="church-branch-dl">
@@ -30,10 +27,38 @@
           <div><dt>Featured until</dt><dd><%= announcement.featured_until ? new Date(announcement.featured_until).toLocaleString('en-GB') : '—' %></dd></div>
           <div><dt>Publish date</dt><dd><%= announcement.publish_at ? new Date(announcement.publish_at).toLocaleString('en-GB') : '—' %></dd></div>
           <div><dt>Expiry date</dt><dd><%= announcement.expires_at ? new Date(announcement.expires_at).toLocaleString('en-GB') : '—' %></dd></div>
-          <div><dt>Created by</dt><dd><%= announcement.created_by_admin_name || '—' %></dd></div>
+          <div><dt>Created by</dt><dd class="church-hq-wrap"><%= announcement.created_by_admin_name || '—' %></dd></div>
           <div><dt>Last updated</dt><dd><%= new Date(announcement.updated_at).toLocaleString('en-GB') %></dd></div>
         </dl>
       </section>
+
+      <section class="church-branch-panel" data-branch-attachments>
+        <h2 class="church-branch-panel__title">Attachments</h2>
+        <% if ((attachments || []).length) { %>
+        <ul class="church-branch-attachment-list" data-branch-attachment-list>
+          <% attachments.forEach(function (file) { %>
+          <li class="church-branch-attachment-item">
+            <div class="church-branch-attachment-item__meta">
+              <a class="church-hq-wrap" href="/branch/announcements/<%= announcement.id %>/attachments/<%= file.id %>/download"><%= file.original_filename %></a>
+              <p class="church-branch-panel__hint church-hq-wrap">
+                <%= file.mime_type %> · <%= formatAttachmentBytes(file.file_size) %>
+                <% if (file.created_at) { %> · <%= new Date(file.created_at).toLocaleString('en-GB') %><% } %>
+              </p>
+            </div>
+            <% if (announcement.status !== 'archived') { %>
+            <form class="church-inline-form" method="post" action="/branch/announcements/<%= announcement.id %>/attachments/<%= file.id %>/delete" onsubmit="return confirm('Remove this attachment?');">
+              <input type="hidden" name="_return" value="detail"/>
+              <button class="church-btn church-btn--ghost church-btn--sm" type="submit">Remove</button>
+            </form>
+            <% } %>
+          </li>
+          <% }); %>
+        </ul>
+        <% } else { %>
+        <p class="church-branch-empty" data-branch-attachments-empty>No attachments yet.</p>
+        <% } %>
+      </section>
+
       <% if (analytics) { %>
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Delivery analytics</h2>

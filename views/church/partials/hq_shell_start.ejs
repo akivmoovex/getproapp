@@ -8,20 +8,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=46"/>
+  <link rel="stylesheet" href="/church/church.css?v=49"/>
 </head>
-<body class="church-body church-body--hq-admin">
+<body class="church-body church-body--hq-admin" data-hq-shell="stitch-v49">
+<%
+  var _nav = typeof activeNav !== 'undefined' ? activeNav : '';
+  function hqNavClass(key) {
+    return 'church-branch-nav-link' + (_nav === key ? ' church-branch-nav-link--active' : '');
+  }
+%>
   <div class="church-branch-layout church-branch-layout--hq">
     <aside class="church-branch-sidebar church-branch-sidebar--hq" aria-label="HQ admin navigation">
       <%- include('./sidebar_brand', { sidebarIcon: 'corporate_fare', portalLabel: 'HQ', contextName: organizationName }) %>
       <nav class="church-branch-sidebar__nav">
-        <a href="/hq/dashboard" class="church-branch-nav-link">Dashboard</a>
-        <a href="/hq/account" class="church-branch-nav-link">Account</a>
-        <a href="/hq/branches" class="church-branch-nav-link">Branch registry</a>
-        <a href="/hq/broadcasts" class="church-branch-nav-link">Broadcasts<% if (typeof planContext !== 'undefined' && planContext && !planContext.hqBroadcastsEnabled) { %> <span class="church-plan-lock">Premium</span><% } %></a>
-        <a href="/hq/reports" class="church-branch-nav-link">Review Reports</a>
-        <a href="/hq/analytics" class="church-branch-nav-link">Analytics<% if (typeof planContext !== 'undefined' && planContext && !planContext.consolidatedAnalyticsEnabled) { %> <span class="church-plan-lock">Premium</span><% } %></a>
-        <a href="/hq/audit" class="church-branch-nav-link">Audit Trail</a>
+        <a href="/hq/dashboard" class="<%= hqNavClass('dashboard') %>"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span><span>Dashboard</span></a>
+        <a href="/hq/account" class="<%= hqNavClass('account') %>"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span>Account</span></a>
+        <a href="/hq/branches" class="<%= hqNavClass('branches') %>"><span class="material-symbols-outlined" aria-hidden="true">account_tree</span><span>Branch registry</span></a>
+        <a href="/hq/broadcasts" class="<%= hqNavClass('broadcasts') %>"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><span>Broadcasts</span><% if (typeof planContext !== 'undefined' && planContext && !planContext.hqBroadcastsEnabled) { %> <span class="church-plan-lock">Premium</span><% } %></a>
+        <a href="/hq/reports" class="<%= hqNavClass('reports') %>"><span class="material-symbols-outlined" aria-hidden="true">description</span><span>Review Reports</span></a>
+        <a href="/hq/analytics" class="<%= hqNavClass('analytics') %>"><span class="material-symbols-outlined" aria-hidden="true">analytics</span><span>Analytics</span><% if (typeof planContext !== 'undefined' && planContext && !planContext.consolidatedAnalyticsEnabled) { %> <span class="church-plan-lock">Premium</span><% } %></a>
+        <a href="/hq/audit" class="<%= hqNavClass('audit') %>"><span class="material-symbols-outlined" aria-hidden="true">policy</span><span>Audit Trail</span></a>
       </nav>
       <div class="church-branch-sidebar__footer">
         <a href="/" class="church-branch-nav-link">Public website</a>
@@ -32,5 +38,5 @@
         <% } %>
       </div>
     </aside>
-    <div class="church-branch-main">
+    <div class="church-branch-main church-hq-main">
       <%- include('./hq_status_banner') %>

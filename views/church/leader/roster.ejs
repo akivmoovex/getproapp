@@ -1,30 +1,161 @@
 <%- include('../partials/leader_shell_start') %>
-      <header class="church-member-header">
+<%
+  var _ministryName = ministry && ministry.name ? ministry.name : '';
+  var _roster = roster || [];
+  var _rosterCount = _roster.length;
+  function memberInitials(name) {
+    return String(name || '').trim().split(/\s+/).slice(0, 2).map(function (p) { return p.charAt(0); }).join('').toUpperCase() || '?';
+  }
+  function statusLabel(status) {
+    var s = String(status || '').trim();
+    if (!s) return '—';
+    return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ');
+  }
+%>
+      <header class="church-leader-page-header">
         <div>
-          <h1 class="church-member-header__title">Ministry roster</h1>
-          <p class="church-member-header__subtitle"><%= ministry ? ministry.name : '' %></p>
+          <p class="church-leader-page-header__eyebrow"><%= _ministryName %></p>
+          <h1 class="church-leader-page-header__title">Ministry roster</h1>
+          <p class="church-leader-page-header__subtitle">Members assigned to this ministry</p>
         </div>
       </header>
-      <section class="church-member-panel">
-        <% if ((roster || []).length === 0) { %>
-        <p class="church-member-empty">No members assigned to this ministry yet. Ask your branch admin to connect members through the ministry roster.</p>
+
+      <section class="church-member-panel church-leader-panel" data-leader-roster>
+        <% if (_rosterCount === 0) { %>
+          <p class="church-member-empty" data-leader-empty="roster">No members assigned to this ministry yet. Ask your branch admin to connect members through the ministry roster.</p>
         <% } else { %>
-        <div class="church-branch-table-wrap">
-          <table class="church-branch-table">
-            <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
-            <tbody>
-              <% roster.forEach(function (m) { %>
-              <tr>
-                <td><%= m.full_name %></td>
-                <td><%= m.phone || '—' %></td>
-                <td><%= m.email || '—' %></td>
-                <td><%= m.role || 'member' %></td>
-                <td><span class="church-status-chip"><%= m.status %></span></td>
-              </tr>
-              <% }); %>
-            </tbody>
-          </table>
-        </div>
+          <div class="church-leader-roster-toolbar">
+            <label class="church-leader-roster-search">
+              <span class="material-symbols-outlined" aria-hidden="true">search</span>
+              <span class="visually-hidden">Search members</span>
+              <input
+                type="search"
+                id="leader-roster-search"
+                class="church-leader-roster-search__input"
+                placeholder="Search members…"
+                autocomplete="off"
+                data-leader-roster-search
+              />
+            </label>
+            <p class="church-leader-roster-count" data-leader-roster-count aria-live="polite">
+              <span class="church-status-chip"><%= _rosterCount %> member<%= _rosterCount === 1 ? '' : 's' %></span>
+            </p>
+          </div>
+
+          <div class="church-branch-table-wrap church-show-desktop-only" data-leader-roster-desktop>
+            <table class="church-branch-table church-leader-roster-table">
+              <thead>
+                <tr>
+                  <th scope="col">Member</th>
+                  <th scope="col">Phone</th>
+                  <th scope="col">Role</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% _roster.forEach(function (m) { %>
+                <tr
+                  class="church-leader-roster-row"
+                  data-leader-roster-row
+                  data-member-id="<%= m.id %>"
+                  data-search="<%= String(m.full_name || '').toLowerCase() %> <%= String(m.email || '').toLowerCase() %> <%= String(m.phone || '').toLowerCase() %> <%= String(m.role || '').toLowerCase() %> <%= String(m.status || '').toLowerCase() %>"
+                >
+                  <td>
+                    <div class="church-leader-roster-member">
+                      <span class="church-leader-avatar church-leader-avatar--sm" aria-hidden="true"><%= memberInitials(m.full_name) %></span>
+                      <div class="church-leader-roster-member__text">
+                        <strong class="church-leader-roster-member__name"><%= m.full_name %></strong>
+                        <span class="church-leader-roster-member__email"><%= m.email || '—' %></span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="church-leader-roster-phone"><%= m.phone || '—' %></td>
+                  <td><span class="church-status-chip"><%= m.role || 'member' %></span></td>
+                  <td>
+                    <span class="church-leader-status">
+                      <span class="church-leader-status__dot" aria-hidden="true"></span>
+                      <span class="church-leader-status__label"><%= statusLabel(m.status) %></span>
+                    </span>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <ul class="church-leader-roster-cards church-show-mobile-only" data-leader-roster-mobile>
+            <% _roster.forEach(function (m) { %>
+            <li
+              class="church-leader-roster-card"
+              data-leader-roster-row
+              data-member-id="<%= m.id %>"
+              data-search="<%= String(m.full_name || '').toLowerCase() %> <%= String(m.email || '').toLowerCase() %> <%= String(m.phone || '').toLowerCase() %> <%= String(m.role || '').toLowerCase() %> <%= String(m.status || '').toLowerCase() %>"
+            >
+              <div class="church-leader-roster-card__top">
+                <span class="church-leader-avatar" aria-hidden="true"><%= memberInitials(m.full_name) %></span>
+                <div class="church-leader-roster-card__identity">
+                  <strong class="church-leader-roster-member__name"><%= m.full_name %></strong>
+                  <span class="church-leader-roster-card__role"><%= m.role || 'member' %></span>
+                </div>
+                <span class="church-leader-status">
+                  <span class="church-leader-status__dot" aria-hidden="true"></span>
+                  <span class="church-leader-status__label"><%= statusLabel(m.status) %></span>
+                </span>
+              </div>
+              <dl class="church-leader-roster-card__meta">
+                <div>
+                  <dt>Phone</dt>
+                  <dd class="church-leader-roster-phone"><%= m.phone || '—' %></dd>
+                </div>
+                <div>
+                  <dt>Email</dt>
+                  <dd class="church-leader-roster-member__email"><%= m.email || '—' %></dd>
+                </div>
+              </dl>
+            </li>
+            <% }); %>
+          </ul>
+
+          <p class="church-member-empty church-leader-roster-no-match" data-leader-roster-empty hidden>No members match your search.</p>
         <% } %>
       </section>
+
+      <% if (_rosterCount > 0) { %>
+      <script>
+        (function () {
+          var input = document.querySelector("[data-leader-roster-search]");
+          var rows = document.querySelectorAll("[data-leader-roster-row]");
+          var empty = document.querySelector("[data-leader-roster-empty]");
+          var countEl = document.querySelector("[data-leader-roster-count]");
+          if (!input || !rows.length) return;
+          function applyFilter() {
+            var q = String(input.value || "").trim().toLowerCase();
+            var seen = {};
+            var uniqueShown = 0;
+            for (var i = 0; i < rows.length; i++) {
+              var hay = String(rows[i].getAttribute("data-search") || "");
+              var match = !q || hay.indexOf(q) !== -1;
+              rows[i].hidden = !match;
+              if (!match) continue;
+              var id = String(rows[i].getAttribute("data-member-id") || i);
+              if (!seen[id]) {
+                seen[id] = true;
+                uniqueShown += 1;
+              }
+            }
+            if (empty) empty.hidden = uniqueShown > 0;
+            if (countEl) {
+              countEl.innerHTML =
+                '<span class="church-status-chip">' +
+                uniqueShown +
+                " member" +
+                (uniqueShown === 1 ? "" : "s") +
+                (q ? " shown" : "") +
+                "</span>";
+            }
+          }
+          input.addEventListener("input", applyFilter);
+        })();
+      </script>
+      <% } %>
 <%- include('../partials/leader_shell_end') %>

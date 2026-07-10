@@ -8,31 +8,62 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=46"/>
+  <link rel="stylesheet" href="/church/church.css?v=48"/>
 </head>
-<body class="church-body church-body--leader-portal">
-  <div class="church-member-layout">
-    <aside class="church-member-sidebar" aria-label="Leader navigation">
+<body class="church-body church-body--leader-portal" data-leader-shell="stitch-v48">
+<%
+  var _nav = typeof activeNav !== 'undefined' ? activeNav : '';
+  function leaderNavClass(key) {
+    return 'church-member-nav-link' + (_nav === key ? ' church-member-nav-link--active' : '');
+  }
+  function leaderBottomClass(key) {
+    return 'church-member-bottom-nav__link' + (_nav === key ? ' church-member-bottom-nav__link--active' : '');
+  }
+  var _leaderFirst = (typeof leaderName !== 'undefined' && leaderName) ? String(leaderName).trim().split(/\s+/)[0] : 'Leader';
+  var _ministryLabel = (typeof ministry !== 'undefined' && ministry && ministry.name) ? ministry.name : 'Ministry';
+%>
+  <div class="church-member-layout church-leader-layout">
+    <aside class="church-member-sidebar church-leader-sidebar" aria-label="Leader navigation">
       <%- include('./sidebar_brand', { sidebarIcon: 'groups', portalLabel: 'Ministry Leader', contextName: churchName }) %>
+      <% if (typeof leaderName !== 'undefined' && leaderName) { %>
+      <div class="church-leader-sidebar__profile" aria-label="Signed-in leader">
+        <span class="church-leader-avatar" aria-hidden="true"><%= String(leaderName).trim().split(/\s+/).slice(0, 2).map(function (p) { return p.charAt(0); }).join('').toUpperCase() %></span>
+        <div class="church-leader-sidebar__profile-text">
+          <p class="church-leader-sidebar__name"><%= leaderName %></p>
+          <p class="church-leader-sidebar__role">Ministry leader</p>
+        </div>
+      </div>
+      <% } %>
       <nav class="church-member-sidebar__nav">
-        <a href="/leader/dashboard" class="church-member-nav-link">Dashboard</a>
-        <a href="/leader/roster" class="church-member-nav-link">Roster</a>
-        <a href="/leader/duties" class="church-member-nav-link">Duties</a>
-        <a href="/leader/attendance" class="church-member-nav-link">Attendance</a>
-        <a href="/leader/activity-notes" class="church-member-nav-link">Activity Notes</a>
+        <a href="/leader/dashboard" class="<%= leaderNavClass('dashboard') %>"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span><span>Dashboard</span></a>
+        <a href="/leader/roster" class="<%= leaderNavClass('roster') %>"><span class="material-symbols-outlined" aria-hidden="true">groups</span><span>Roster</span></a>
+        <a href="/leader/duties" class="<%= leaderNavClass('duties') %>"><span class="material-symbols-outlined" aria-hidden="true">assignment</span><span>Duties</span></a>
+        <a href="/leader/attendance" class="<%= leaderNavClass('attendance') %>"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span><span>Attendance</span></a>
+        <a href="/leader/activity-notes" class="<%= leaderNavClass('activity-notes') %>"><span class="material-symbols-outlined" aria-hidden="true">edit_note</span><span>Activity Notes</span></a>
       </nav>
       <div class="church-member-sidebar__footer">
+        <p class="church-leader-sidebar__ministry-label">Ministry</p>
+        <p class="church-leader-sidebar__ministry-name"><%= _ministryLabel %></p>
         <a href="/" class="church-member-nav-link">Public website</a>
         <form method="post" action="/leader/logout">
           <button class="church-member-nav-link church-member-nav-link--button" type="submit">Sign out</button>
         </form>
       </div>
     </aside>
-    <div class="church-member-main">
+    <div class="church-member-main church-leader-main">
+      <header class="church-leader-topbar church-show-mobile-only" aria-label="Leader mobile header">
+        <div class="church-leader-topbar__identity">
+          <span class="church-leader-avatar church-leader-avatar--sm" aria-hidden="true"><%= (typeof leaderName !== 'undefined' && leaderName) ? String(leaderName).trim().split(/\s+/).slice(0, 2).map(function (p) { return p.charAt(0); }).join('').toUpperCase() : 'L' %></span>
+          <div>
+            <p class="church-leader-topbar__ministry"><%= _ministryLabel %></p>
+            <p class="church-leader-topbar__leader"><%= typeof leaderName !== 'undefined' && leaderName ? (leaderName + ' · Leader') : 'Leader' %></p>
+          </div>
+        </div>
+      </header>
       <nav class="church-member-bottom-nav" aria-label="Leader mobile navigation">
-        <a href="/leader/dashboard" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">home</span>Home</a>
-        <a href="/leader/roster" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">groups</span>Roster</a>
-        <a href="/leader/attendance" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">fact_check</span>Attendance</a>
-        <a href="/leader/activity-notes" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">edit_note</span>Notes</a>
-        <a href="/leader/duties" class="church-member-bottom-nav__link"><span class="material-symbols-outlined">assignment</span>Duties</a>
+        <a href="/leader/dashboard" class="<%= leaderBottomClass('dashboard') %>"><span class="material-symbols-outlined">home</span>Dash</a>
+        <a href="/leader/roster" class="<%= leaderBottomClass('roster') %>"><span class="material-symbols-outlined">groups</span>Roster</a>
+        <a href="/leader/attendance" class="<%= leaderBottomClass('attendance') %>"><span class="material-symbols-outlined">fact_check</span>Check-in</a>
+        <a href="/leader/activity-notes" class="<%= leaderBottomClass('activity-notes') %>"><span class="material-symbols-outlined">edit_note</span>Notes</a>
+        <a href="/leader/duties" class="<%= leaderBottomClass('duties') %>"><span class="material-symbols-outlined">assignment</span>Duties</a>
       </nav>

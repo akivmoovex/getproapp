@@ -3,6 +3,7 @@
 
 /**
  * Runs node:test with GETPRO_TEST_DB=1 when TEST_DATABASE_URL is set.
+ * Also sets NODE_ENV=test so pool.js prefers TEST_DATABASE_URL.
  * Usage:
  *   GETPRO_TEST_DB=1 TEST_DATABASE_URL=postgres://... npm run test:pg:isolated -- tests/company-field-agent-linkage.test.js
  * Or pass file globs as extra args (default: full tests/ suite).
@@ -15,6 +16,7 @@ const args = ["--test", ...(extra.length ? extra : ["tests"])];
 
 const env = { ...process.env };
 if (!env.GETPRO_TEST_DB) env.GETPRO_TEST_DB = "1";
+if (!env.NODE_ENV) env.NODE_ENV = "test";
 if (!String(env.TEST_DATABASE_URL || "").trim()) {
   // eslint-disable-next-line no-console
   console.error("[getpro] test:pg:isolated: set TEST_DATABASE_URL to your dedicated test database.");

@@ -1,22 +1,29 @@
 <%- include('../partials/hq_shell_start') %>
-      <header class="church-branch-topbar">
+      <header class="church-hq-page-header" data-hq-broadcast-confirm-header>
         <div>
           <a class="church-branch-back" href="/hq/broadcasts/<%= broadcast.id %>/edit">&larr; Back to edit</a>
-          <h1 class="church-branch-topbar__title"><%= typeof expandMode !== 'undefined' && expandMode ? 'Confirm audience change' : 'Confirm publish' %></h1>
-          <p class="church-branch-topbar__subtitle">Review the summary and estimated audience before continuing</p>
+          <h1 class="church-hq-page-header__title"><%= typeof expandMode !== 'undefined' && expandMode ? 'Confirm audience change' : 'Confirm publish' %></h1>
+          <p class="church-hq-page-header__subtitle">Review the summary and estimated audience before continuing</p>
         </div>
       </header>
       <% if (error) { %>
       <div class="church-alert church-alert--error" role="alert"><%= error %></div>
       <% } %>
-      <section class="church-branch-panel">
-        <h2 class="church-branch-panel__title"><%= broadcast.title %></h2>
-        <dl class="church-branch-dl">
+      <section class="church-branch-panel church-hq-panel church-hq-confirm-panel" data-hq-broadcast-confirm>
+        <h2 class="church-branch-panel__title church-hq-wrap"><%= broadcast.title %></h2>
+        <div class="church-hq-confirm-estimate" data-hq-estimated-audience>
+          <p class="church-hq-confirm-estimate__label">Estimated audience</p>
+          <p class="church-hq-confirm-estimate__value"><%= audienceEstimate.estimated_recipients %></p>
+          <p class="church-hq-confirm-estimate__hint">
+            <%= audienceEstimate.recipient_label %>. Estimated from current eligible records. Exact delivery is not guaranteed.
+          </p>
+        </div>
+        <dl class="church-branch-dl church-hq-meta-dl">
           <div><dt>Priority</dt><dd><%= priorityLabel(broadcast.priority || 'normal') %></dd></div>
-          <div><dt>Audience</dt><dd><%= broadcastAudienceLabel(broadcast.audience) %></dd></div>
-          <div><dt>Target scope</dt><dd><%= targetScopeLabel(broadcast.target_scope) %></dd></div>
+          <div><dt>Audience</dt><dd class="church-hq-wrap"><%= broadcastAudienceLabel(broadcast.audience) %></dd></div>
+          <div><dt>Target scope</dt><dd class="church-hq-wrap"><%= targetScopeLabel(broadcast.target_scope) %></dd></div>
           <div><dt>Selected branches</dt>
-            <dd>
+            <dd class="church-hq-wrap">
               <% if (broadcast.target_scope === 'all_branches') { %>
               All branches (<%= audienceEstimate.branch_count %>)
               <% } else if ((targets || []).length === 0) { %>
@@ -36,7 +43,7 @@
           <div><dt>Featured</dt><dd><%= broadcast.is_featured ? 'Yes' : 'No' %><% if (broadcast.is_featured && broadcast.featured_until) { %> until <%= new Date(broadcast.featured_until).toLocaleString('en-GB') %><% } %></dd></div>
           <div><dt>Attachments</dt><dd><%= (attachments || []).length %></dd></div>
           <div><dt>Action link</dt>
-            <dd>
+            <dd class="church-hq-wrap">
               <% if (broadcast.action_url) { %>
               <%= broadcast.action_label || 'Open link' %> · <%= broadcast.action_url %>
               <% } else { %>
@@ -44,17 +51,9 @@
               <% } %>
             </dd>
           </div>
-          <div>
-            <dt>Estimated audience</dt>
-            <dd>
-              <strong><%= audienceEstimate.estimated_recipients %></strong>
-              <%= audienceEstimate.recipient_label %>
-              <p class="church-branch-panel__hint">Estimated from current eligible records. Exact delivery is not guaranteed.</p>
-            </dd>
-          </div>
         </dl>
       </section>
-      <div class="church-branch-actions">
+      <div class="church-branch-actions church-hq-form-actions">
         <a class="church-btn church-btn--outline" href="/hq/broadcasts/<%= broadcast.id %>/edit">Edit</a>
         <form method="post" action="/hq/broadcasts/<%= broadcast.id %>/publish" id="hq-confirm-publish-form">
           <input type="hidden" name="_publish_token" value="<%= publishToken %>"/>

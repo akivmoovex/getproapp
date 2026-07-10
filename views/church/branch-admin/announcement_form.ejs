@@ -8,7 +8,7 @@
       <% if (error) { %>
       <div class="church-alert church-alert--error" role="alert"><%= error %></div>
       <% } %>
-      <form class="church-form" method="post" action="<%= isEdit ? '/branch/announcements/' + announcementId : '/branch/announcements' %>">
+      <form class="church-form" method="post" action="<%= isEdit ? '/branch/announcements/' + announcementId : '/branch/announcements' %>" enctype="multipart/form-data" data-branch-announcement-form>
         <section class="church-branch-panel">
           <div class="church-field church-field--full">
             <label class="church-label" for="title">Title</label>
@@ -80,8 +80,41 @@
               <input class="church-input" id="action_label" name="action_label" type="text" maxlength="200" value="<%= form.action_label || '' %>"/>
             </div>
           </div>
-          <p class="church-branch-panel__hint">File attachments use the platform upload flow (PDF, PNG, JPG, DOC, DOCX; max 5 MB each). Upload controls are available after the draft is saved.</p>
         </section>
+
+        <section class="church-branch-panel" data-branch-attachments>
+          <h2 class="church-branch-panel__title">Attachments</h2>
+          <% if (attachmentError) { %>
+          <div class="church-alert church-alert--error" role="alert" data-branch-attachment-error><%= attachmentError %></div>
+          <% } %>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="attachments">Upload files</label>
+            <p class="church-branch-panel__hint">PDF, PNG, JPG, DOC, or DOCX · up to <%= maxAttachmentMb %> MB each · max <%= maxAttachments %> files</p>
+            <input class="church-input" id="attachments" name="attachments" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,application/pdf,image/png,image/jpeg,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple/>
+          </div>
+          <% if ((attachments || []).length) { %>
+          <ul class="church-branch-attachment-list" data-branch-attachment-list>
+            <% attachments.forEach(function (file) { %>
+            <li class="church-branch-attachment-item">
+              <div class="church-branch-attachment-item__meta">
+                <a class="church-hq-wrap" href="/branch/announcements/<%= announcementId %>/attachments/<%= file.id %>/download"><%= file.original_filename %></a>
+                <p class="church-branch-panel__hint church-hq-wrap">
+                  <%= file.mime_type %> · <%= formatAttachmentBytes(file.file_size) %>
+                  <% if (file.created_at) { %> · <%= new Date(file.created_at).toLocaleString('en-GB') %><% } %>
+                </p>
+              </div>
+              <form class="church-inline-form" method="post" action="/branch/announcements/<%= announcementId %>/attachments/<%= file.id %>/delete" onsubmit="return confirm('Remove this attachment?');">
+                <input type="hidden" name="_return" value="edit"/>
+                <button class="church-btn church-btn--ghost church-btn--sm" type="submit">Remove</button>
+              </form>
+            </li>
+            <% }); %>
+          </ul>
+          <% } else { %>
+          <p class="church-branch-empty" data-branch-attachments-empty>No attachments yet.</p>
+          <% } %>
+        </section>
+
         <div class="church-branch-actions">
           <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft">Save draft</button>
           <button class="church-btn church-btn--primary" type="submit" name="_intent" value="review">Review &amp; publish</button>

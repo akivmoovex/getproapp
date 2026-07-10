@@ -17,6 +17,7 @@ const membersRepo = require("../src/db/pg/church/membersRepo");
 const announcementsRepo = require("../src/db/pg/church/announcementsRepo");
 const eventsRepo = require("../src/db/pg/church/eventsRepo");
 const { ensureCanonicalTenantsForTests } = require("./helpers/pgTestSeed");
+const { churchPgSkipIfUnconfigured, requireChurchPgOrSkip } = require("./helpers/churchPgTest");
 const { TENANT_ZM } = require("../src/tenants/tenantIds");
 const churchRoutes = require("../src/routes/church");
 
@@ -84,9 +85,10 @@ test("unauthenticated visitor redirects to /branch/login", async () => {
 
 test(
   "branch announcements and events management",
-  { skip: !isPgConfigured() },
-  async () => {
-    const pool = getPgPool();
+  churchPgSkipIfUnconfigured(),
+  async (t) => {
+    const pool = await requireChurchPgOrSkip(t);
+    if (!pool) return;
     await ensureCanonicalTenantsForTests(pool);
     await ensureChurchSchema(pool);
     const suffix = makeSuffix("ae");

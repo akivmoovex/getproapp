@@ -24,22 +24,16 @@ const { runBootstrap } = require("../src/startup/bootstrap");
 runBootstrap();
 
 const tenantsRepo = require("../src/db/pg/tenantsRepo");
+const { requireSafeTestDatabaseUrl } = require("../src/db/pg/requireSafeTestDatabase");
 
 function requireTestUrl() {
-  const v = (process.env.GETPRO_TEST_DB || "").trim().toLowerCase();
-  const ok = v === "1" || v === "true" || v === "yes";
-  if (!ok) {
+  try {
+    return requireSafeTestDatabaseUrl({ label: "apply-test-db-schema" }).connectionString;
+  } catch (e) {
     // eslint-disable-next-line no-console
-    console.error("[getpro] apply-test-db-schema: set GETPRO_TEST_DB=1 (refuses to run without test mode).");
+    console.error(e && e.message ? e.message : String(e));
     process.exit(1);
   }
-  const url = (process.env.TEST_DATABASE_URL || "").trim();
-  if (!url) {
-    // eslint-disable-next-line no-console
-    console.error("[getpro] apply-test-db-schema: set TEST_DATABASE_URL to an empty Postgres database.");
-    process.exit(1);
-  }
-  return url;
 }
 
 function listIncrementalSqlFiles(dir) {

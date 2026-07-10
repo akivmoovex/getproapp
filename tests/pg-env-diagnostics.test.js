@@ -5,164 +5,122 @@ const assert = require("node:assert/strict");
 
 const { summarizeDatabaseUrlEnv, getDatabaseUrl, getStartupProcessSnapshot } = require("../src/db/pg/pool");
 
-test("summarizeDatabaseUrlEnv: neither set", () => {
-  const prev = {
-    d: process.env.DATABASE_URL,
-    g: process.env.GETPRO_DATABASE_URL,
-    tdb: process.env.GETPRO_TEST_DB,
-    tu: process.env.TEST_DATABASE_URL,
-  };
-  delete process.env.DATABASE_URL;
-  delete process.env.GETPRO_DATABASE_URL;
-  delete process.env.GETPRO_TEST_DB;
-  delete process.env.TEST_DATABASE_URL;
-  try {
-    assert.deepEqual(summarizeDatabaseUrlEnv(), {
-      hasDatabaseUrl: false,
-      hasGetproDatabaseUrl: false,
-      effectiveSource: "(none)",
-    });
-  } finally {
-    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
-    else delete process.env.DATABASE_URL;
-    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
-    else delete process.env.GETPRO_DATABASE_URL;
-    if (prev.tdb !== undefined) process.env.GETPRO_TEST_DB = prev.tdb;
-    else delete process.env.GETPRO_TEST_DB;
-    if (prev.tu !== undefined) process.env.TEST_DATABASE_URL = prev.tu;
-    else delete process.env.TEST_DATABASE_URL;
+function withEnv(overrides, fn) {
+  const keys = Object.keys(overrides);
+  const prev = {};
+  for (const key of keys) {
+    prev[key] = process.env[key];
+    if (overrides[key] === undefined) delete process.env[key];
+    else process.env[key] = overrides[key];
   }
+  try {
+    return fn();
+  } finally {
+    for (const key of keys) {
+      if (prev[key] === undefined) delete process.env[key];
+      else process.env[key] = prev[key];
+    }
+  }
+}
+
+test("summarizeDatabaseUrlEnv: neither set", () => {
+  withEnv(
+    {
+      NODE_ENV: "development",
+      DATABASE_URL: undefined,
+      GETPRO_DATABASE_URL: undefined,
+      GETPRO_TEST_DB: undefined,
+      TEST_DATABASE_URL: undefined,
+    },
+    () => {
+      assert.deepEqual(summarizeDatabaseUrlEnv(), {
+        hasDatabaseUrl: false,
+        hasGetproDatabaseUrl: false,
+        effectiveSource: "(none)",
+      });
+    }
+  );
 });
 
 test("summarizeDatabaseUrlEnv: DATABASE_URL wins when both set", () => {
-  const prev = {
-    d: process.env.DATABASE_URL,
-    g: process.env.GETPRO_DATABASE_URL,
-    tdb: process.env.GETPRO_TEST_DB,
-    tu: process.env.TEST_DATABASE_URL,
-  };
-  delete process.env.GETPRO_TEST_DB;
-  delete process.env.TEST_DATABASE_URL;
-  process.env.DATABASE_URL = "postgres://u:p@h/db";
-  process.env.GETPRO_DATABASE_URL = "postgres://other/db";
-  try {
-    const s = summarizeDatabaseUrlEnv();
-    assert.equal(s.hasDatabaseUrl, true);
-    assert.equal(s.hasGetproDatabaseUrl, true);
-    assert.equal(s.effectiveSource, "DATABASE_URL");
-  } finally {
-    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
-    else delete process.env.DATABASE_URL;
-    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
-    else delete process.env.GETPRO_DATABASE_URL;
-    if (prev.tdb !== undefined) process.env.GETPRO_TEST_DB = prev.tdb;
-    else delete process.env.GETPRO_TEST_DB;
-    if (prev.tu !== undefined) process.env.TEST_DATABASE_URL = prev.tu;
-    else delete process.env.TEST_DATABASE_URL;
-  }
+  withEnv(
+    {
+      NODE_ENV: "development",
+      GETPRO_TEST_DB: undefined,
+      TEST_DATABASE_URL: undefined,
+      DATABASE_URL: "postgres://u:p@h/db",
+      GETPRO_DATABASE_URL: "postgres://other/db",
+    },
+    () => {
+      const s = summarizeDatabaseUrlEnv();
+      assert.equal(s.hasDatabaseUrl, true);
+      assert.equal(s.hasGetproDatabaseUrl, true);
+      assert.equal(s.effectiveSource, "DATABASE_URL");
+    }
+  );
 });
 
 test("summarizeDatabaseUrlEnv: only GETPRO_DATABASE_URL", () => {
-  const prev = {
-    d: process.env.DATABASE_URL,
-    g: process.env.GETPRO_DATABASE_URL,
-    tdb: process.env.GETPRO_TEST_DB,
-    tu: process.env.TEST_DATABASE_URL,
-  };
-  delete process.env.DATABASE_URL;
-  delete process.env.GETPRO_TEST_DB;
-  delete process.env.TEST_DATABASE_URL;
-  process.env.GETPRO_DATABASE_URL = "postgres://x/y";
-  try {
-    const s = summarizeDatabaseUrlEnv();
-    assert.equal(s.hasDatabaseUrl, false);
-    assert.equal(s.hasGetproDatabaseUrl, true);
-    assert.equal(s.effectiveSource, "GETPRO_DATABASE_URL");
-  } finally {
-    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
-    else delete process.env.DATABASE_URL;
-    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
-    else delete process.env.GETPRO_DATABASE_URL;
-    if (prev.tdb !== undefined) process.env.GETPRO_TEST_DB = prev.tdb;
-    else delete process.env.GETPRO_TEST_DB;
-    if (prev.tu !== undefined) process.env.TEST_DATABASE_URL = prev.tu;
-    else delete process.env.TEST_DATABASE_URL;
-  }
+  withEnv(
+    {
+      NODE_ENV: "development",
+      DATABASE_URL: undefined,
+      GETPRO_TEST_DB: undefined,
+      TEST_DATABASE_URL: undefined,
+      GETPRO_DATABASE_URL: "postgres://x/y",
+    },
+    () => {
+      const s = summarizeDatabaseUrlEnv();
+      assert.equal(s.hasDatabaseUrl, false);
+      assert.equal(s.hasGetproDatabaseUrl, true);
+      assert.equal(s.effectiveSource, "GETPRO_DATABASE_URL");
+    }
+  );
 });
 
 test("getDatabaseUrl: prefers DATABASE_URL over GETPRO_DATABASE_URL", () => {
-  const prev = {
-    d: process.env.DATABASE_URL,
-    g: process.env.GETPRO_DATABASE_URL,
-    tdb: process.env.GETPRO_TEST_DB,
-    tu: process.env.TEST_DATABASE_URL,
-  };
-  delete process.env.GETPRO_TEST_DB;
-  delete process.env.TEST_DATABASE_URL;
-  process.env.DATABASE_URL = "postgres://a/a";
-  process.env.GETPRO_DATABASE_URL = "postgres://b/b";
-  try {
-    assert.equal(getDatabaseUrl(), "postgres://a/a");
-  } finally {
-    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
-    else delete process.env.DATABASE_URL;
-    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
-    else delete process.env.GETPRO_DATABASE_URL;
-    if (prev.tdb !== undefined) process.env.GETPRO_TEST_DB = prev.tdb;
-    else delete process.env.GETPRO_TEST_DB;
-    if (prev.tu !== undefined) process.env.TEST_DATABASE_URL = prev.tu;
-    else delete process.env.TEST_DATABASE_URL;
-  }
+  withEnv(
+    {
+      NODE_ENV: "development",
+      GETPRO_TEST_DB: undefined,
+      TEST_DATABASE_URL: undefined,
+      DATABASE_URL: "postgres://a/a",
+      GETPRO_DATABASE_URL: "postgres://b/b",
+    },
+    () => {
+      assert.equal(getDatabaseUrl(), "postgres://a/a");
+    }
+  );
 });
 
 test("getDatabaseUrl: falls back to GETPRO_DATABASE_URL", () => {
-  const prev = {
-    d: process.env.DATABASE_URL,
-    g: process.env.GETPRO_DATABASE_URL,
-    tdb: process.env.GETPRO_TEST_DB,
-    tu: process.env.TEST_DATABASE_URL,
-  };
-  delete process.env.DATABASE_URL;
-  delete process.env.GETPRO_TEST_DB;
-  delete process.env.TEST_DATABASE_URL;
-  process.env.GETPRO_DATABASE_URL = "postgres://only/this";
-  try {
-    assert.equal(getDatabaseUrl(), "postgres://only/this");
-  } finally {
-    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
-    else delete process.env.DATABASE_URL;
-    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
-    else delete process.env.GETPRO_DATABASE_URL;
-    if (prev.tdb !== undefined) process.env.GETPRO_TEST_DB = prev.tdb;
-    else delete process.env.GETPRO_TEST_DB;
-    if (prev.tu !== undefined) process.env.TEST_DATABASE_URL = prev.tu;
-    else delete process.env.TEST_DATABASE_URL;
-  }
+  withEnv(
+    {
+      NODE_ENV: "development",
+      DATABASE_URL: undefined,
+      GETPRO_TEST_DB: undefined,
+      TEST_DATABASE_URL: undefined,
+      GETPRO_DATABASE_URL: "postgres://only/this",
+    },
+    () => {
+      assert.equal(getDatabaseUrl(), "postgres://only/this");
+    }
+  );
 });
 
 test("getDatabaseUrl: empty when both unset", () => {
-  const prev = {
-    d: process.env.DATABASE_URL,
-    g: process.env.GETPRO_DATABASE_URL,
-    tdb: process.env.GETPRO_TEST_DB,
-    tu: process.env.TEST_DATABASE_URL,
-  };
-  delete process.env.DATABASE_URL;
-  delete process.env.GETPRO_DATABASE_URL;
-  delete process.env.GETPRO_TEST_DB;
-  delete process.env.TEST_DATABASE_URL;
-  try {
-    assert.equal(getDatabaseUrl(), "");
-  } finally {
-    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
-    else delete process.env.DATABASE_URL;
-    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
-    else delete process.env.GETPRO_DATABASE_URL;
-    if (prev.tdb !== undefined) process.env.GETPRO_TEST_DB = prev.tdb;
-    else delete process.env.GETPRO_TEST_DB;
-    if (prev.tu !== undefined) process.env.TEST_DATABASE_URL = prev.tu;
-    else delete process.env.TEST_DATABASE_URL;
-  }
+  withEnv(
+    {
+      NODE_ENV: "development",
+      DATABASE_URL: undefined,
+      GETPRO_DATABASE_URL: undefined,
+      GETPRO_TEST_DB: undefined,
+      TEST_DATABASE_URL: undefined,
+    },
+    () => {
+      assert.equal(getDatabaseUrl(), "");
+    }
+  );
 });
 
 test("getStartupProcessSnapshot: includes startupEntry when provided", () => {
@@ -172,77 +130,63 @@ test("getStartupProcessSnapshot: includes startupEntry when provided", () => {
 });
 
 test("summarizeDatabaseUrlEnv: whitespace-only counts as unset", () => {
-  const prev = {
-    d: process.env.DATABASE_URL,
-    g: process.env.GETPRO_DATABASE_URL,
-    tdb: process.env.GETPRO_TEST_DB,
-    tu: process.env.TEST_DATABASE_URL,
-  };
-  delete process.env.GETPRO_TEST_DB;
-  delete process.env.TEST_DATABASE_URL;
-  process.env.DATABASE_URL = "   ";
-  delete process.env.GETPRO_DATABASE_URL;
-  try {
-    const s = summarizeDatabaseUrlEnv();
-    assert.equal(s.hasDatabaseUrl, false);
-    assert.equal(s.effectiveSource, "(none)");
-  } finally {
-    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
-    else delete process.env.DATABASE_URL;
-    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
-    else delete process.env.GETPRO_DATABASE_URL;
-    if (prev.tdb !== undefined) process.env.GETPRO_TEST_DB = prev.tdb;
-    else delete process.env.GETPRO_TEST_DB;
-    if (prev.tu !== undefined) process.env.TEST_DATABASE_URL = prev.tu;
-    else delete process.env.TEST_DATABASE_URL;
-  }
+  withEnv(
+    {
+      NODE_ENV: "development",
+      GETPRO_TEST_DB: undefined,
+      TEST_DATABASE_URL: undefined,
+      DATABASE_URL: "   ",
+      GETPRO_DATABASE_URL: undefined,
+    },
+    () => {
+      const s = summarizeDatabaseUrlEnv();
+      assert.equal(s.hasDatabaseUrl, false);
+      assert.equal(s.effectiveSource, "(none)");
+    }
+  );
 });
 
 test("getDatabaseUrl: GETPRO_TEST_DB=1 uses TEST_DATABASE_URL only", () => {
-  const prev = {
-    d: process.env.DATABASE_URL,
-    g: process.env.GETPRO_DATABASE_URL,
-    tdb: process.env.GETPRO_TEST_DB,
-    tu: process.env.TEST_DATABASE_URL,
-  };
-  process.env.GETPRO_TEST_DB = "1";
-  process.env.TEST_DATABASE_URL = "postgres://test-only/db";
-  process.env.DATABASE_URL = "postgres://dev-should-not-win/db";
-  delete process.env.GETPRO_DATABASE_URL;
-  try {
-    assert.equal(getDatabaseUrl(), "postgres://test-only/db");
-  } finally {
-    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
-    else delete process.env.DATABASE_URL;
-    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
-    else delete process.env.GETPRO_DATABASE_URL;
-    if (prev.tdb !== undefined) process.env.GETPRO_TEST_DB = prev.tdb;
-    else delete process.env.GETPRO_TEST_DB;
-    if (prev.tu !== undefined) process.env.TEST_DATABASE_URL = prev.tu;
-    else delete process.env.TEST_DATABASE_URL;
-  }
+  withEnv(
+    {
+      NODE_ENV: "development",
+      GETPRO_TEST_DB: "1",
+      TEST_DATABASE_URL: "postgres://test-only/db",
+      DATABASE_URL: "postgres://dev-should-not-win/db",
+      GETPRO_DATABASE_URL: undefined,
+    },
+    () => {
+      assert.equal(getDatabaseUrl(), "postgres://test-only/db");
+    }
+  );
 });
 
 test("getDatabaseUrl: GETPRO_TEST_DB=1 without TEST_DATABASE_URL is empty", () => {
-  const prev = {
-    d: process.env.DATABASE_URL,
-    g: process.env.GETPRO_DATABASE_URL,
-    tdb: process.env.GETPRO_TEST_DB,
-    tu: process.env.TEST_DATABASE_URL,
-  };
-  process.env.GETPRO_TEST_DB = "1";
-  delete process.env.TEST_DATABASE_URL;
-  process.env.DATABASE_URL = "postgres://ignored-when-test-mode-empty/db";
-  try {
-    assert.equal(getDatabaseUrl(), "");
-  } finally {
-    if (prev.d !== undefined) process.env.DATABASE_URL = prev.d;
-    else delete process.env.DATABASE_URL;
-    if (prev.g !== undefined) process.env.GETPRO_DATABASE_URL = prev.g;
-    else delete process.env.GETPRO_DATABASE_URL;
-    if (prev.tdb !== undefined) process.env.GETPRO_TEST_DB = prev.tdb;
-    else delete process.env.GETPRO_TEST_DB;
-    if (prev.tu !== undefined) process.env.TEST_DATABASE_URL = prev.tu;
-    else delete process.env.TEST_DATABASE_URL;
-  }
+  withEnv(
+    {
+      NODE_ENV: "development",
+      GETPRO_TEST_DB: "1",
+      TEST_DATABASE_URL: undefined,
+      DATABASE_URL: "postgres://ignored-when-test-mode-empty/db",
+      GETPRO_DATABASE_URL: undefined,
+    },
+    () => {
+      assert.equal(getDatabaseUrl(), "");
+    }
+  );
+});
+
+test("getDatabaseUrl: NODE_ENV=test prefers TEST_DATABASE_URL", () => {
+  withEnv(
+    {
+      NODE_ENV: "test",
+      GETPRO_TEST_DB: undefined,
+      TEST_DATABASE_URL: "postgres://test-mode/db",
+      DATABASE_URL: "postgres://ignored/db",
+      GETPRO_DATABASE_URL: undefined,
+    },
+    () => {
+      assert.equal(getDatabaseUrl(), "postgres://test-mode/db");
+    }
+  );
 });

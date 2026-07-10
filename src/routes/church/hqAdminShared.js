@@ -3,18 +3,32 @@
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
 const { getHqStatusBanner } = require("../../church/churchStatusAccess");
 
+function inferHqActiveNav(req) {
+  const p = String((req && req.path) || "");
+  if (p.startsWith("/hq/broadcasts")) return "broadcasts";
+  if (p.startsWith("/hq/audit")) return "audit";
+  if (p.startsWith("/hq/branches")) return "branches";
+  if (p.startsWith("/hq/reports")) return "reports";
+  if (p.startsWith("/hq/analytics")) return "analytics";
+  if (p.startsWith("/hq/account")) return "account";
+  if (p.startsWith("/hq/dashboard") || p === "/hq" || p === "/hq/") return "dashboard";
+  return "";
+}
+
 function hqAdminLocals(req, extra) {
   const org = req.churchContext.organization;
   const branch = req.churchContext.branch;
+  const extraObj = extra && typeof extra === "object" ? extra : {};
   return {
     churchName: org.name,
     organizationName: org.name,
-    pageTitle: org.name,
+    pageTitle: extraObj.pageTitle || org.name,
     organization: org,
     branch,
     hqAdmin: req.churchHqAdmin || null,
     statusBanner: getHqStatusBanner(req.churchContext),
-    ...(extra || {}),
+    activeNav: extraObj.activeNav != null ? extraObj.activeNav : inferHqActiveNav(req),
+    ...extraObj,
   };
 }
 

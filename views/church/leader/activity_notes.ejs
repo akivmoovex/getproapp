@@ -1,41 +1,106 @@
 <%- include('../partials/leader_shell_start') %>
-      <header class="church-member-header">
+<%
+  var _ministryName = ministry && ministry.name ? ministry.name : '';
+  var _form = form || {};
+  var _notes = notes || [];
+  var _leaderLabel = typeof leaderName !== 'undefined' && leaderName ? leaderName : 'Ministry leader';
+%>
+      <header class="church-leader-page-header">
         <div>
-          <h1 class="church-member-header__title">Activity notes</h1>
-          <p class="church-member-header__subtitle">Monthly ministry summary for branch review</p>
+          <p class="church-leader-page-header__eyebrow"><%= _ministryName %></p>
+          <h1 class="church-leader-page-header__title">Activity notes</h1>
+          <p class="church-leader-page-header__subtitle">Monthly ministry summary for branch review</p>
         </div>
       </header>
-      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
-      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
-      <form class="church-form" method="post" action="/leader/activity-notes">
-        <section class="church-member-panel">
+
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status" data-leader-notes-notice><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert" data-leader-notes-error><%= error %></div><% } %>
+
+      <form class="church-form church-leader-notes-form" method="post" action="/leader/activity-notes" data-leader-notes-form>
+        <section class="church-member-panel church-leader-panel" data-leader-notes-meta>
+          <h2 class="church-member-panel__title">Report period</h2>
           <div class="church-form-grid">
-            <div class="church-field"><label class="church-label" for="period_month">Period (YYYY-MM)</label><input class="church-input" id="period_month" name="period_month" type="month" required value="<%= form.period_month || '' %>"/></div>
-            <div class="church-field church-field--full"><label class="church-label" for="title">Title</label><input class="church-input" id="title" name="title" type="text" required value="<%= form.title || '' %>"/></div>
-            <div class="church-field church-field--full"><label class="church-label" for="activity_summary">Activity summary</label><textarea class="church-input church-input--textarea" id="activity_summary" name="activity_summary" rows="5"><%= form.activity_summary || '' %></textarea></div>
-            <div class="church-field church-field--full"><label class="church-label" for="challenges">Challenges</label><textarea class="church-input church-input--textarea" id="challenges" name="challenges" rows="3"><%= form.challenges || '' %></textarea></div>
-            <div class="church-field church-field--full"><label class="church-label" for="support_needed">Support needed</label><textarea class="church-input church-input--textarea" id="support_needed" name="support_needed" rows="3"><%= form.support_needed || '' %></textarea></div>
+            <div class="church-field">
+              <label class="church-label" for="period_month">Period</label>
+              <input class="church-input" id="period_month" name="period_month" type="month" required value="<%= _form.period_month || '' %>"/>
+              <p class="church-leader-panel__hint">Use YYYY-MM. Only the current month can be submitted.</p>
+            </div>
+            <div class="church-field">
+              <span class="church-label">Ministry</span>
+              <p class="church-leader-readonly"><%= _ministryName || '—' %></p>
+            </div>
+            <div class="church-field">
+              <span class="church-label">Author</span>
+              <p class="church-leader-readonly church-leader-wrap"><%= _leaderLabel %></p>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="title">Title</label>
+              <input class="church-input" id="title" name="title" type="text" required maxlength="200" value="<%= _form.title || '' %>"/>
+            </div>
           </div>
-          <div class="church-member-actions">
-            <button class="church-btn church-btn--primary" type="submit" name="_intent" value="draft">Save draft</button>
-            <button class="church-btn church-btn--outline" type="submit" name="_intent" value="submit">Submit</button>
+        </section>
+
+        <section class="church-member-panel church-leader-panel" data-leader-notes-summary>
+          <h2 class="church-member-panel__title">Activities &amp; impact</h2>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="activity_summary">Activity summary</label>
+            <textarea class="church-input church-input--textarea" id="activity_summary" name="activity_summary" rows="6" maxlength="5000" placeholder="Summarize meetings, outreach, and ministry activity this month…"><%= _form.activity_summary || '' %></textarea>
+          </div>
+        </section>
+
+        <div class="church-leader-notes-split">
+          <section class="church-member-panel church-leader-panel church-leader-panel--challenge" data-leader-notes-challenges>
+            <h2 class="church-member-panel__title">
+              <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+              Challenges
+            </h2>
+            <div class="church-field church-field--full">
+              <label class="church-label visually-hidden" for="challenges">Challenges</label>
+              <textarea class="church-input church-input--textarea" id="challenges" name="challenges" rows="5" maxlength="3000" placeholder="Describe obstacles or concerns…"><%= _form.challenges || '' %></textarea>
+            </div>
+          </section>
+          <section class="church-member-panel church-leader-panel church-leader-panel--support" data-leader-notes-support>
+            <h2 class="church-member-panel__title">
+              <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
+              Support needed
+            </h2>
+            <div class="church-field church-field--full">
+              <label class="church-label visually-hidden" for="support_needed">Support needed</label>
+              <textarea class="church-input church-input--textarea" id="support_needed" name="support_needed" rows="5" maxlength="3000" placeholder="List resources, approvals, or help needed…"><%= _form.support_needed || '' %></textarea>
+            </div>
+          </section>
+        </div>
+
+        <section class="church-member-panel church-leader-panel">
+          <div class="church-leader-form-actions church-leader-form-actions--notes">
+            <p class="church-leader-form-actions__hint">Save a draft anytime. Submit when the monthly note is ready for branch review.</p>
+            <div class="church-leader-form-actions__buttons">
+              <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft">Save draft</button>
+              <button class="church-btn church-btn--primary" type="submit" name="_intent" value="submit">Submit</button>
+            </div>
           </div>
         </section>
       </form>
-      <section class="church-member-panel">
+
+      <section class="church-member-panel church-leader-panel" data-leader-notes-history>
         <h2 class="church-member-panel__title">Previous notes</h2>
-        <% if ((notes || []).length === 0) { %>
-        <p class="church-member-empty">No activity notes yet.</p>
+        <% if (_notes.length === 0) { %>
+          <p class="church-member-empty" data-leader-empty="activity-notes">No activity notes yet.</p>
         <% } else { %>
-        <ul class="church-member-list">
-          <% notes.forEach(function (n) { %>
-          <li class="church-member-list__item">
-            <strong><%= n.period_month %> — <%= n.title %></strong>
-            <p><span class="church-status-chip"><%= n.status === 'submitted' ? 'Submitted' : 'Draft' %></span></p>
-            <a class="church-member-link" href="/leader/activity-notes?period=<%= n.period_month %>">Edit</a>
-          </li>
-          <% }); %>
-        </ul>
+          <ul class="church-leader-history-cards" data-leader-notes-list>
+            <% _notes.forEach(function (n) { %>
+            <li class="church-leader-history-card">
+              <div class="church-leader-history-card__top">
+                <strong class="church-leader-wrap"><%= n.period_month %> — <%= n.title %></strong>
+                <span class="church-leader-status">
+                  <span class="church-leader-status__dot<%= n.status === 'submitted' ? '' : ' church-leader-status__dot--draft' %>" aria-hidden="true"></span>
+                  <span class="church-leader-status__label"><%= n.status === 'submitted' ? 'Submitted' : 'Draft' %></span>
+                </span>
+              </div>
+              <a class="church-member-link" href="/leader/activity-notes?period=<%= n.period_month %>">Edit</a>
+            </li>
+            <% }); %>
+          </ul>
         <% } %>
       </section>
 <%- include('../partials/leader_shell_end') %>

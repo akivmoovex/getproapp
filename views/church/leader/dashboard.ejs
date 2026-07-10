@@ -1,65 +1,161 @@
 <%- include('../partials/leader_shell_start') %>
-      <header class="church-member-header">
+<%
+  var _ministryName = ministry && ministry.name ? ministry.name : 'Your ministry';
+  var _firstName = (leaderName || '').trim().split(/\s+/)[0] || 'Leader';
+  var _noteLabel = currentNote
+    ? (currentNote.status === 'submitted' ? 'Submitted' : 'Draft saved')
+    : 'Not started';
+  var _dutyCount = (upcomingDuties || []).length;
+  var _broadcastCount = (hqBroadcasts || []).length;
+%>
+      <header class="church-leader-page-header church-show-desktop-only">
         <div>
-          <p class="church-member-header__eyebrow">Ministry leader</p>
-          <h1 class="church-member-header__title">Welcome, <%= leaderName %></h1>
-          <p class="church-member-header__subtitle"><%= ministry ? ministry.name : 'Your ministry' %></p>
+          <p class="church-leader-page-header__eyebrow"><%= _ministryName %></p>
+          <h1 class="church-leader-page-header__title">Dashboard</h1>
         </div>
+        <p class="church-leader-page-header__welcome">Welcome back, <strong><%= _firstName %></strong></p>
       </header>
+
       <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
-      <div class="church-branch-stats">
-        <article class="church-branch-stat-card">
-          <span class="church-branch-stat-card__label">Roster members</span>
-          <strong class="church-branch-stat-card__value"><%= rosterCount || 0 %></strong>
+
+      <section class="church-leader-hero" aria-label="Welcome">
+        <div class="church-leader-hero__copy">
+          <h2 class="church-leader-hero__title">Hello, <%= leaderName || _firstName %></h2>
+          <p class="church-leader-hero__subtitle">Here’s what’s happening in <%= _ministryName %> today.</p>
+        </div>
+        <div class="church-leader-hero__actions">
+          <a class="church-btn church-btn--on-primary" href="/leader/attendance">Record attendance</a>
+        </div>
+      </section>
+
+      <div class="church-leader-stat-grid" data-leader-dashboard-stats>
+        <article class="church-leader-stat-card">
+          <span class="church-leader-stat-card__icon" aria-hidden="true"><span class="material-symbols-outlined">groups</span></span>
+          <div class="church-leader-stat-card__body">
+            <span class="church-leader-stat-card__label">Roster members</span>
+            <strong class="church-leader-stat-card__value"><%= rosterCount || 0 %></strong>
+            <span class="church-leader-stat-card__hint">Assigned to this ministry</span>
+          </div>
         </article>
-        <article class="church-branch-stat-card">
-          <span class="church-branch-stat-card__label">Attendance this month</span>
-          <strong class="church-branch-stat-card__value"><%= attendanceThisMonth || 0 %></strong>
+        <article class="church-leader-stat-card">
+          <span class="church-leader-stat-card__icon" aria-hidden="true"><span class="material-symbols-outlined">fact_check</span></span>
+          <div class="church-leader-stat-card__body">
+            <span class="church-leader-stat-card__label">Attendance this month</span>
+            <strong class="church-leader-stat-card__value"><%= attendanceThisMonth || 0 %></strong>
+            <span class="church-leader-stat-card__hint">Records you submitted</span>
+          </div>
         </article>
-        <article class="church-branch-stat-card">
-          <span class="church-branch-stat-card__label">Upcoming duties</span>
-          <strong class="church-branch-stat-card__value"><%= (upcomingDuties || []).length %></strong>
+        <article class="church-leader-stat-card">
+          <span class="church-leader-stat-card__icon" aria-hidden="true"><span class="material-symbols-outlined">event</span></span>
+          <div class="church-leader-stat-card__body">
+            <span class="church-leader-stat-card__label">Upcoming duties</span>
+            <strong class="church-leader-stat-card__value"><%= _dutyCount %></strong>
+            <span class="church-leader-stat-card__hint"><%= _dutyCount === 0 ? 'None scheduled' : 'Confirmed assignments' %></span>
+          </div>
         </article>
-        <article class="church-branch-stat-card church-branch-stat-card--wide">
-          <span class="church-branch-stat-card__label">Activity note (<%= periodMonth %>)</span>
-          <strong class="church-branch-stat-card__value church-branch-stat-card__value--sm"><%= currentNote ? (currentNote.status === 'submitted' ? 'Submitted' : 'Draft saved') : 'Not started' %></strong>
+        <article class="church-leader-stat-card">
+          <span class="church-leader-stat-card__icon" aria-hidden="true"><span class="material-symbols-outlined">description</span></span>
+          <div class="church-leader-stat-card__body">
+            <span class="church-leader-stat-card__label">Activity note (<%= periodMonth %>)</span>
+            <strong class="church-leader-stat-card__value church-leader-stat-card__value--text"><%= _noteLabel %></strong>
+            <span class="church-leader-stat-card__hint">
+              <% if (!currentNote) { %>Not started yet<% } else if (currentNote.status === 'submitted') { %>Ready for review<% } else { %>Continue your draft<% } %>
+            </span>
+          </div>
         </article>
       </div>
-      <section class="church-member-panel">
-        <h2 class="church-member-panel__title">Quick actions</h2>
-        <div class="church-member-actions">
-          <a class="church-btn church-btn--primary" href="/leader/roster">View Roster</a>
-          <a class="church-btn church-btn--outline" href="/leader/attendance">Record Attendance</a>
-          <a class="church-btn church-btn--outline" href="/leader/duties">View Duties</a>
-          <a class="church-btn church-btn--outline" href="/leader/activity-notes">Submit Activity Note</a>
+
+      <div class="church-leader-dashboard-grid">
+        <div class="church-leader-dashboard-grid__primary">
+          <section class="church-member-panel church-leader-panel">
+            <div class="church-member-panel__head">
+              <h2 class="church-member-panel__title">Upcoming ministry duties</h2>
+              <a class="church-member-link" href="/leader/duties">View all</a>
+            </div>
+            <% if (_dutyCount === 0) { %>
+              <p class="church-member-empty" data-leader-empty="duties">No upcoming duties for this ministry yet.</p>
+            <% } else { %>
+              <ul class="church-leader-activity-list">
+                <% upcomingDuties.forEach(function (d) { %>
+                <li class="church-leader-activity-list__item">
+                  <span class="church-leader-activity-list__icon" aria-hidden="true"><span class="material-symbols-outlined">assignment</span></span>
+                  <div class="church-leader-activity-list__body">
+                    <strong class="church-leader-activity-list__title"><%= d.role_name %> — <%= d.service_name %></strong>
+                    <p class="church-leader-activity-list__meta"><%= formatDutyDate(d.duty_date) %> · <%= assignedMemberDisplay(d) %></p>
+                  </div>
+                </li>
+                <% }); %>
+              </ul>
+            <% } %>
+          </section>
+
+          <% if (_broadcastCount > 0) { %>
+          <section class="church-member-panel church-leader-panel">
+            <div class="church-member-panel__head">
+              <h2 class="church-member-panel__title">HQ broadcasts</h2>
+            </div>
+            <ul class="church-leader-activity-list">
+              <% hqBroadcasts.forEach(function (b) { %>
+              <li class="church-leader-activity-list__item">
+                <span class="church-leader-activity-list__icon" aria-hidden="true"><span class="material-symbols-outlined">campaign</span></span>
+                <div class="church-leader-activity-list__body">
+                  <strong class="church-leader-activity-list__title"><%= b.title %></strong>
+                  <p class="church-leader-activity-list__meta">
+                    <span class="church-status-chip">HQ · <%= b.category %></span>
+                    <% if (b.publish_at) { %> · <%= new Date(b.publish_at).toLocaleDateString('en-GB') %><% } %>
+                  </p>
+                  <% if (b.body) { %><p class="church-leader-activity-list__detail"><%= b.body %></p><% } %>
+                </div>
+              </li>
+              <% }); %>
+            </ul>
+          </section>
+          <% } %>
         </div>
-      </section>
-      <% if ((hqBroadcasts || []).length > 0) { %>
-      <section class="church-member-panel">
-        <h2 class="church-member-panel__title">HQ broadcasts</h2>
-        <ul class="church-member-list">
-          <% hqBroadcasts.forEach(function (b) { %>
-          <li class="church-member-list__item">
-            <strong><%= b.title %></strong>
-            <span class="church-status-chip">HQ · <%= b.category %></span>
-            <p><%= b.body %></p>
-            <span class="church-member-list__meta"><%= b.publish_at ? new Date(b.publish_at).toLocaleDateString('en-GB') : '' %></span>
-          </li>
-          <% }); %>
-        </ul>
-      </section>
-      <% } %>
-      <% if ((upcomingDuties || []).length > 0) { %>
-      <section class="church-member-panel">
-        <h2 class="church-member-panel__title">Upcoming ministry duties</h2>
-        <ul class="church-member-list">
-          <% upcomingDuties.forEach(function (d) { %>
-          <li class="church-member-list__item">
-            <strong><%= d.role_name %> — <%= d.service_name %></strong>
-            <p><%= formatDutyDate(d.duty_date) %> · <%= assignedMemberDisplay(d) %></p>
-          </li>
-          <% }); %>
-        </ul>
-      </section>
-      <% } %>
+
+        <aside class="church-leader-dashboard-grid__aside">
+          <section class="church-member-panel church-leader-panel church-leader-panel--actions">
+            <h2 class="church-member-panel__title">Quick actions</h2>
+            <div class="church-leader-quick-actions" data-leader-quick-actions>
+              <a class="church-leader-quick-action church-leader-quick-action--primary" href="/leader/attendance">
+                <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
+                <span>Record attendance</span>
+              </a>
+              <a class="church-leader-quick-action" href="/leader/roster">
+                <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+                <span>View roster</span>
+              </a>
+              <a class="church-leader-quick-action" href="/leader/duties">
+                <span class="material-symbols-outlined" aria-hidden="true">assignment</span>
+                <span>View duties</span>
+              </a>
+              <a class="church-leader-quick-action" href="/leader/activity-notes">
+                <span class="material-symbols-outlined" aria-hidden="true">edit_note</span>
+                <span>Submit activity note</span>
+              </a>
+            </div>
+          </section>
+
+          <section class="church-member-panel church-leader-panel church-leader-panel--pending">
+            <h2 class="church-member-panel__title">Status snapshot</h2>
+            <ul class="church-leader-pending-list">
+              <li>
+                <span class="church-leader-pending-list__dot" aria-hidden="true"></span>
+                <span><strong><%= rosterCount || 0 %></strong> roster member<%= (rosterCount || 0) === 1 ? '' : 's' %></span>
+              </li>
+              <li>
+                <span class="church-leader-pending-list__dot church-leader-pending-list__dot--muted" aria-hidden="true"></span>
+                <span>Activity note: <strong><%= _noteLabel %></strong></span>
+              </li>
+              <li>
+                <span class="church-leader-pending-list__dot church-leader-pending-list__dot--soft" aria-hidden="true"></span>
+                <span><strong><%= _dutyCount %></strong> upcoming dut<%= _dutyCount === 1 ? 'y' : 'ies' %></span>
+              </li>
+            </ul>
+            <% if ((rosterCount || 0) === 0 && _dutyCount === 0 && !currentNote) { %>
+              <p class="church-member-empty" data-leader-empty="dashboard">Nothing needs attention yet. Use quick actions when you’re ready to record attendance or start an activity note.</p>
+            <% } %>
+          </section>
+        </aside>
+      </div>
 <%- include('../partials/leader_shell_end') %>

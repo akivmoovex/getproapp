@@ -1,15 +1,16 @@
 <%- include('../partials/hq_shell_start') %>
-      <header class="church-branch-topbar">
+      <header class="church-hq-page-header">
         <div>
           <a class="church-branch-back" href="/hq/broadcasts">&larr; Back to broadcasts</a>
-          <h1 class="church-branch-topbar__title"><%= isEdit ? 'Edit broadcast' : 'New broadcast' %></h1>
+          <h1 class="church-hq-page-header__title"><%= isEdit ? 'Edit broadcast' : 'New broadcast' %></h1>
         </div>
       </header>
       <% if (error) { %>
-      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <div class="church-alert church-alert--error" role="alert" data-hq-broadcast-form-error><%= error %></div>
       <% } %>
-      <form class="church-form" method="post" action="<%= isEdit ? '/hq/broadcasts/' + broadcastId : '/hq/broadcasts' %>" enctype="multipart/form-data" id="hq-broadcast-form">
-        <section class="church-branch-panel">
+      <form class="church-form church-hq-broadcast-form" method="post" action="<%= isEdit ? '/hq/broadcasts/' + broadcastId : '/hq/broadcasts' %>" enctype="multipart/form-data" id="hq-broadcast-form" data-hq-broadcast-form>
+        <section class="church-branch-panel church-hq-panel" data-hq-broadcast-section="content">
+          <h2 class="church-branch-panel__title">Main content</h2>
           <div class="church-field church-field--full">
             <label class="church-label" for="title">Title</label>
             <input class="church-input" id="title" name="title" type="text" required maxlength="200" value="<%= form.title || '' %>"/>
@@ -35,6 +36,12 @@
                 <% }); %>
               </select>
             </div>
+          </div>
+        </section>
+
+        <section class="church-branch-panel church-hq-panel" data-hq-broadcast-section="audience">
+          <h2 class="church-branch-panel__title">Audience &amp; targeting</h2>
+          <div class="church-form-grid">
             <div class="church-field">
               <label class="church-label" for="audience">Audience</label>
               <select class="church-input" id="audience" name="audience">
@@ -51,16 +58,23 @@
                 <% }); %>
               </select>
             </div>
-            <div class="church-field">
-              <label class="church-label" for="publish_at">Publish at (optional)</label>
-              <input class="church-input" id="publish_at" name="publish_at" type="datetime-local" value="<%= form.publish_at || '' %>"/>
-            </div>
-            <div class="church-field">
-              <label class="church-label" for="expires_at">Expires at (optional)</label>
-              <input class="church-input" id="expires_at" name="expires_at" type="datetime-local" value="<%= form.expires_at || '' %>"/>
+          </div>
+          <div class="church-field church-field--full" id="branch-targets-panel">
+            <label class="church-label">Target branches</label>
+            <p class="church-branch-panel__hint">Required when target scope is “Selected branches”. Only branches in your organization are listed.</p>
+            <div class="church-hq-branch-checklist">
+              <% (branches || []).forEach(function (br) { %>
+              <label class="church-checkbox-row">
+                <input type="checkbox" name="branch_ids" value="<%= br.id %>" <%= (form.branch_ids || []).some(function (id) { return Number(id) === Number(br.id); }) ? 'checked' : '' %>/>
+                <span class="church-hq-wrap"><%= br.name %><% if (br.location_text) { %> · <%= br.location_text %><% } %></span>
+              </label>
+              <% }); %>
             </div>
           </div>
+        </section>
 
+        <section class="church-branch-panel church-hq-panel" data-hq-broadcast-section="schedule">
+          <h2 class="church-branch-panel__title">Priority, pin &amp; schedule</h2>
           <div class="church-form-grid">
             <div class="church-field">
               <label class="church-checkbox-row">
@@ -74,12 +88,23 @@
                 <span>Featured</span>
               </label>
             </div>
+            <div class="church-field">
+              <label class="church-label" for="publish_at">Publish at (optional)</label>
+              <input class="church-input" id="publish_at" name="publish_at" type="datetime-local" value="<%= form.publish_at || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="expires_at">Expires at (optional)</label>
+              <input class="church-input" id="expires_at" name="expires_at" type="datetime-local" value="<%= form.expires_at || '' %>"/>
+            </div>
           </div>
           <div class="church-field" id="featured-until-field" hidden>
             <label class="church-label" for="featured_until">Featured until (optional)</label>
             <input class="church-input" id="featured_until" name="featured_until" type="datetime-local" value="<%= form.featured_until || '' %>"/>
           </div>
+        </section>
 
+        <section class="church-branch-panel church-hq-panel" data-hq-broadcast-section="actions">
+          <h2 class="church-branch-panel__title">Action link &amp; attachments</h2>
           <div class="church-form-grid" id="action-link-fields">
             <div class="church-field">
               <label class="church-label" for="action_label">Action label (optional)</label>
@@ -90,7 +115,6 @@
               <input class="church-input" id="action_url" name="action_url" type="url" maxlength="2000" placeholder="https://" value="<%= form.action_url || '' %>"/>
             </div>
           </div>
-
           <div class="church-field church-field--full">
             <label class="church-label" for="attachments">Attachments</label>
             <p class="church-branch-panel__hint">PDF, PNG, JPG, DOC, or DOCX · up to <%= maxAttachmentMb %> MB each · max <%= maxAttachments %> files</p>
@@ -99,7 +123,7 @@
           <% if ((attachments || []).length) { %>
           <ul class="church-branch-inline-list">
             <% attachments.forEach(function (file) { %>
-            <li>
+            <li class="church-hq-wrap">
               <a href="/hq/broadcasts/<%= broadcastId %>/attachments/<%= file.id %>/download"><%= file.original_filename %></a>
               <form class="church-inline-form" method="post" action="/hq/broadcasts/<%= broadcastId %>/attachments/<%= file.id %>/delete" style="display:inline">
                 <button class="church-btn church-btn--ghost church-btn--sm" type="submit">Remove</button>
@@ -108,21 +132,9 @@
             <% }); %>
           </ul>
           <% } %>
-
-          <div class="church-field church-field--full" id="branch-targets-panel">
-            <label class="church-label">Target branches</label>
-            <p class="church-branch-panel__hint">Required when target scope is “Selected branches”. Only branches in your organization are listed.</p>
-            <div class="church-hq-branch-checklist">
-              <% (branches || []).forEach(function (br) { %>
-              <label class="church-checkbox-row">
-                <input type="checkbox" name="branch_ids" value="<%= br.id %>" <%= (form.branch_ids || []).some(function (id) { return Number(id) === Number(br.id); }) ? 'checked' : '' %>/>
-                <span><%= br.name %><% if (br.location_text) { %> · <%= br.location_text %><% } %></span>
-              </label>
-              <% }); %>
-            </div>
-          </div>
         </section>
-        <div class="church-branch-actions">
+
+        <div class="church-branch-actions church-hq-form-actions">
           <button class="church-btn church-btn--outline" type="submit" name="_intent" value="draft"><%= (typeof broadcastStatus !== 'undefined' && broadcastStatus === 'published') ? 'Save changes' : 'Save draft' %></button>
           <% if (typeof broadcastStatus !== 'undefined' && broadcastStatus === 'published') { %>
           <button class="church-btn church-btn--primary" type="submit" name="_intent" value="review">Review audience change</button>

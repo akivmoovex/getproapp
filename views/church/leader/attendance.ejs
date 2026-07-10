@@ -1,51 +1,195 @@
 <%- include('../partials/leader_shell_start') %>
-      <header class="church-member-header">
+<%
+  var _ministryName = ministry && ministry.name ? ministry.name : '';
+  var _form = form || {};
+  function countVal(key) {
+    return _form[key] != null ? _form[key] : 0;
+  }
+  var _records = records || [];
+%>
+      <header class="church-leader-page-header">
         <div>
-          <h1 class="church-member-header__title">Record attendance</h1>
-          <p class="church-member-header__subtitle"><%= ministry ? ministry.name : '' %> · Ministry meeting</p>
+          <p class="church-leader-page-header__eyebrow"><%= _ministryName %></p>
+          <h1 class="church-leader-page-header__title">Record attendance</h1>
+          <p class="church-leader-page-header__subtitle">Ministry meeting headcount for branch review</p>
         </div>
       </header>
-      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
-      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
-      <form class="church-form" method="post" action="/leader/attendance">
-        <section class="church-member-panel">
-          <input type="hidden" name="attendance_type" value="Ministry meeting"/>
-          <div class="church-form-grid">
-            <div class="church-field"><label class="church-label" for="service_name">Meeting name</label><input class="church-input" id="service_name" name="service_name" type="text" required value="<%= form.service_name || '' %>"/></div>
-            <div class="church-field"><label class="church-label" for="attendance_date">Date</label><input class="church-input" id="attendance_date" name="attendance_date" type="date" required value="<%= form.attendance_date || '' %>"/></div>
-            <div class="church-field"><label class="church-label" for="adults_count">Adults</label><input class="church-input" id="adults_count" name="adults_count" type="number" min="0" value="<%= form.adults_count != null ? form.adults_count : 0 %>"/></div>
-            <div class="church-field"><label class="church-label" for="youth_count">Youth</label><input class="church-input" id="youth_count" name="youth_count" type="number" min="0" value="<%= form.youth_count != null ? form.youth_count : 0 %>"/></div>
-            <div class="church-field"><label class="church-label" for="children_count">Children</label><input class="church-input" id="children_count" name="children_count" type="number" min="0" value="<%= form.children_count != null ? form.children_count : 0 %>"/></div>
-            <div class="church-field"><label class="church-label" for="first_time_visitors_count">First-time visitors</label><input class="church-input" id="first_time_visitors_count" name="first_time_visitors_count" type="number" min="0" value="<%= form.first_time_visitors_count != null ? form.first_time_visitors_count : 0 %>"/></div>
-            <div class="church-field"><label class="church-label" for="new_members_count">New members</label><input class="church-input" id="new_members_count" name="new_members_count" type="number" min="0" value="<%= form.new_members_count != null ? form.new_members_count : 0 %>"/></div>
-            <div class="church-field"><label class="church-label" for="volunteers_count">Volunteers</label><input class="church-input" id="volunteers_count" name="volunteers_count" type="number" min="0" value="<%= form.volunteers_count != null ? form.volunteers_count : 0 %>"/></div>
-            <div class="church-field church-field--full"><label class="church-label" for="notes">Notes</label><textarea class="church-input church-input--textarea" id="notes" name="notes" rows="3"><%= form.notes || '' %></textarea></div>
+
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status" data-leader-attendance-notice><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert" data-leader-attendance-error><%= error %></div><% } %>
+
+      <form class="church-form church-leader-attendance-form" method="post" action="/leader/attendance" data-leader-attendance-form>
+        <input type="hidden" name="attendance_type" value="Ministry meeting"/>
+
+        <section class="church-member-panel church-leader-panel" data-leader-attendance-session>
+          <h2 class="church-member-panel__title">Session details</h2>
+          <div class="church-form-grid church-leader-attendance-session-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="service_name">Meeting name</label>
+              <input class="church-input" id="service_name" name="service_name" type="text" required maxlength="200" value="<%= _form.service_name || '' %>" autocomplete="off"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="attendance_date">Date</label>
+              <input class="church-input" id="attendance_date" name="attendance_date" type="date" required value="<%= _form.attendance_date || '' %>"/>
+            </div>
           </div>
-          <div class="church-member-actions">
+        </section>
+
+        <section class="church-member-panel church-leader-panel" data-leader-attendance-counts>
+          <div class="church-member-panel__head">
+            <h2 class="church-member-panel__title">Headcount</h2>
+            <p class="church-leader-panel__hint">Enter whole numbers only. Totals update as you type.</p>
+          </div>
+          <div class="church-leader-count-grid">
+            <div class="church-leader-count-card">
+              <label class="church-leader-count-card__label" for="youth_count">Youth</label>
+              <p class="church-leader-count-card__hint">Youth meeting attendees</p>
+              <div class="church-leader-count-card__controls">
+                <button type="button" class="church-leader-count-btn" data-count-step="-1" data-count-target="youth_count" aria-label="Decrease youth count">−</button>
+                <input class="church-input church-leader-count-card__input" id="youth_count" name="youth_count" type="number" min="0" inputmode="numeric" value="<%= countVal('youth_count') %>" data-attendance-count/>
+                <button type="button" class="church-leader-count-btn church-leader-count-btn--plus" data-count-step="1" data-count-target="youth_count" aria-label="Increase youth count">+</button>
+              </div>
+            </div>
+            <div class="church-leader-count-card">
+              <label class="church-leader-count-card__label" for="adults_count">Adults</label>
+              <p class="church-leader-count-card__hint">Adult attendees</p>
+              <div class="church-leader-count-card__controls">
+                <button type="button" class="church-leader-count-btn" data-count-step="-1" data-count-target="adults_count" aria-label="Decrease adults count">−</button>
+                <input class="church-input church-leader-count-card__input" id="adults_count" name="adults_count" type="number" min="0" inputmode="numeric" value="<%= countVal('adults_count') %>" data-attendance-count/>
+                <button type="button" class="church-leader-count-btn church-leader-count-btn--plus" data-count-step="1" data-count-target="adults_count" aria-label="Increase adults count">+</button>
+              </div>
+            </div>
+            <div class="church-leader-count-card">
+              <label class="church-leader-count-card__label" for="children_count">Children</label>
+              <p class="church-leader-count-card__hint">Children present</p>
+              <div class="church-leader-count-card__controls">
+                <button type="button" class="church-leader-count-btn" data-count-step="-1" data-count-target="children_count" aria-label="Decrease children count">−</button>
+                <input class="church-input church-leader-count-card__input" id="children_count" name="children_count" type="number" min="0" inputmode="numeric" value="<%= countVal('children_count') %>" data-attendance-count/>
+                <button type="button" class="church-leader-count-btn church-leader-count-btn--plus" data-count-step="1" data-count-target="children_count" aria-label="Increase children count">+</button>
+              </div>
+            </div>
+            <div class="church-leader-count-card">
+              <label class="church-leader-count-card__label" for="first_time_visitors_count">Visitors</label>
+              <p class="church-leader-count-card__hint">First-time visitors</p>
+              <div class="church-leader-count-card__controls">
+                <button type="button" class="church-leader-count-btn" data-count-step="-1" data-count-target="first_time_visitors_count" aria-label="Decrease visitors count">−</button>
+                <input class="church-input church-leader-count-card__input" id="first_time_visitors_count" name="first_time_visitors_count" type="number" min="0" inputmode="numeric" value="<%= countVal('first_time_visitors_count') %>" data-attendance-count/>
+                <button type="button" class="church-leader-count-btn church-leader-count-btn--plus" data-count-step="1" data-count-target="first_time_visitors_count" aria-label="Increase visitors count">+</button>
+              </div>
+            </div>
+            <div class="church-leader-count-card">
+              <label class="church-leader-count-card__label" for="new_members_count">New members</label>
+              <p class="church-leader-count-card__hint">New members counted</p>
+              <div class="church-leader-count-card__controls">
+                <button type="button" class="church-leader-count-btn" data-count-step="-1" data-count-target="new_members_count" aria-label="Decrease new members count">−</button>
+                <input class="church-input church-leader-count-card__input" id="new_members_count" name="new_members_count" type="number" min="0" inputmode="numeric" value="<%= countVal('new_members_count') %>" data-attendance-count/>
+                <button type="button" class="church-leader-count-btn church-leader-count-btn--plus" data-count-step="1" data-count-target="new_members_count" aria-label="Increase new members count">+</button>
+              </div>
+            </div>
+            <div class="church-leader-count-card">
+              <label class="church-leader-count-card__label" for="volunteers_count">Volunteers</label>
+              <p class="church-leader-count-card__hint">Serving volunteers</p>
+              <div class="church-leader-count-card__controls">
+                <button type="button" class="church-leader-count-btn" data-count-step="-1" data-count-target="volunteers_count" aria-label="Decrease volunteers count">−</button>
+                <input class="church-input church-leader-count-card__input" id="volunteers_count" name="volunteers_count" type="number" min="0" inputmode="numeric" value="<%= countVal('volunteers_count') %>" data-attendance-count/>
+                <button type="button" class="church-leader-count-btn church-leader-count-btn--plus" data-count-step="1" data-count-target="volunteers_count" aria-label="Increase volunteers count">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="church-leader-attendance-total" aria-live="polite">
+            <span class="church-leader-attendance-total__label">Total attendance</span>
+            <strong class="church-leader-attendance-total__value" data-attendance-total>0</strong>
+          </div>
+        </section>
+
+        <section class="church-member-panel church-leader-panel">
+          <h2 class="church-member-panel__title">Session notes</h2>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="notes">Notes <span class="church-label__optional">(optional)</span></label>
+            <textarea class="church-input church-input--textarea" id="notes" name="notes" rows="4" maxlength="2000" placeholder="Record highlights, prayer requests, or logistical notes…"><%= _form.notes || '' %></textarea>
+          </div>
+          <div class="church-leader-form-actions">
+            <p class="church-leader-form-actions__hint">Saved attendance is available to branch leadership for review.</p>
             <button class="church-btn church-btn--primary" type="submit" name="submit_action" value="submit">Save attendance</button>
           </div>
         </section>
       </form>
-      <section class="church-member-panel">
+
+      <section class="church-member-panel church-leader-panel" data-leader-attendance-history>
         <h2 class="church-member-panel__title">Recent ministry attendance</h2>
-        <% if ((records || []).length === 0) { %>
-        <p class="church-member-empty">No attendance records yet for this ministry.</p>
+        <% if (_records.length === 0) { %>
+          <p class="church-member-empty" data-leader-empty="attendance">No attendance records yet for this ministry.</p>
         <% } else { %>
-        <div class="church-branch-table-wrap">
-          <table class="church-branch-table">
-            <thead><tr><th>Date</th><th>Meeting</th><th>Total</th><th>Status</th></tr></thead>
-            <tbody>
-              <% records.forEach(function (r) { %>
-              <tr>
-                <td><%= r.service_date_display %></td>
-                <td><%= r.service_name %></td>
-                <td><%= r.total_attendance %></td>
-                <td><%= r.status %></td>
-              </tr>
-              <% }); %>
-            </tbody>
-          </table>
-        </div>
+          <div class="church-branch-table-wrap church-show-desktop-only" data-leader-attendance-desktop>
+            <table class="church-branch-table">
+              <thead><tr><th>Date</th><th>Meeting</th><th>Total</th><th>Status</th></tr></thead>
+              <tbody>
+                <% _records.forEach(function (r) { %>
+                <tr>
+                  <td><%= r.service_date_display %></td>
+                  <td class="church-leader-wrap"><%= r.service_name %></td>
+                  <td><%= r.total_attendance %></td>
+                  <td>
+                    <span class="church-leader-status">
+                      <span class="church-leader-status__dot" aria-hidden="true"></span>
+                      <span class="church-leader-status__label"><%= r.status === 'submitted' ? 'Submitted' : r.status %></span>
+                    </span>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <ul class="church-leader-history-cards church-show-mobile-only" data-leader-attendance-mobile>
+            <% _records.forEach(function (r) { %>
+            <li class="church-leader-history-card">
+              <div class="church-leader-history-card__top">
+                <strong class="church-leader-wrap"><%= r.service_name %></strong>
+                <span class="church-leader-status">
+                  <span class="church-leader-status__dot" aria-hidden="true"></span>
+                  <span class="church-leader-status__label"><%= r.status === 'submitted' ? 'Submitted' : r.status %></span>
+                </span>
+              </div>
+              <p class="church-leader-history-card__meta"><%= r.service_date_display %> · <%= r.total_attendance %> attended</p>
+            </li>
+            <% }); %>
+          </ul>
         <% } %>
       </section>
+
+      <script>
+        (function () {
+          var form = document.querySelector("[data-leader-attendance-form]");
+          if (!form) return;
+          var totalEl = form.querySelector("[data-attendance-total]");
+          var inputs = form.querySelectorAll("[data-attendance-count]");
+          function readCount(input) {
+            var n = parseInt(String(input.value || "0"), 10);
+            return Number.isFinite(n) && n >= 0 ? n : 0;
+          }
+          function refreshTotal() {
+            var sum = 0;
+            for (var i = 0; i < inputs.length; i++) sum += readCount(inputs[i]);
+            if (totalEl) totalEl.textContent = String(sum);
+          }
+          for (var i = 0; i < inputs.length; i++) {
+            inputs[i].addEventListener("input", refreshTotal);
+            inputs[i].addEventListener("change", refreshTotal);
+          }
+          form.querySelectorAll("[data-count-step]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var id = btn.getAttribute("data-count-target");
+              var step = parseInt(btn.getAttribute("data-count-step") || "0", 10);
+              var input = id ? document.getElementById(id) : null;
+              if (!input) return;
+              var next = readCount(input) + (Number.isFinite(step) ? step : 0);
+              if (next < 0) next = 0;
+              input.value = String(next);
+              refreshTotal();
+            });
+          });
+          refreshTotal();
+        })();
+      </script>
 <%- include('../partials/leader_shell_end') %>

@@ -1,7 +1,10 @@
 "use strict";
 
+const multer = require("multer");
+const fs = require("fs");
 const { getPgPool } = require("../../db/pg");
 const announcementsRepo = require("../../db/pg/church/announcementsRepo");
+const broadcastAttachmentsRepo = require("../../db/pg/church/broadcastAttachmentsRepo");
 const feedItemReadsRepo = require("../../db/pg/church/feedItemReadsRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
@@ -16,6 +19,13 @@ const {
   formatDateTimeLocal,
 } = require("../../church/announcementsEventsValidation");
 const {
+  MAX_ATTACHMENT_BYTES,
+  MAX_ATTACHMENTS_PER_ITEM,
+  saveAnnouncementAttachments,
+  absolutePathForAnnouncementStoredFilename,
+  unlinkAnnouncementStoredFilename,
+} = require("../../church/hqBroadcastUploads");
+const {
   branchAdminLocals,
   flashFromQuery,
   ANNOUNCEMENT_NOTICES,
@@ -24,6 +34,25 @@ const {
 } = require("./branchAdminShared");
 
 const ANNOUNCEMENT_FILTERS = ["all", "draft", "published", "archived"];
+
+const announcementUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_ATTACHMENT_BYTES, files: MAX_ATTACHMENTS_PER_ITEM },
+}).array("attachments", MAX_ATTACHMENTS_PER_ITEM);
+
+function withAnnouncementUpload(req, res, next) {
+  announcementUpload(req, res, (err) => {
+    if (!err) return next();
+    if (err instanceof multer.MulterError) {
+      req.announcementUploadError =
+        err.code === "LIMIT_FILE_SIZE"
+          ? "Each attachment must be 5 MB or smaller."
+          : "Too many or invalid attachment uploads.";
+      return next();
+    }
+    return next(err);
+  });
+}
 
 function formFromAnnouncement(item) {
   if (!item) {
@@ -58,6 +87,13 @@ function formFromAnnouncement(item) {
   };
 }
 
+function formatAttachmentBytes(size) {
+  const n = Number(size) || 0;
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function renderFormLocals(req, extra) {
   return branchAdminLocals(req, {
     categories: ANNOUNCEMENT_CATEGORIES,
@@ -67,6 +103,11 @@ function renderFormLocals(req, extra) {
     announcementStatusLabel,
     priorityLabel,
     formatDateTimeLocal,
+    formatAttachmentBytes,
+    maxAttachments: MAX_ATTACHMENTS_PER_ITEM,
+    maxAttachmentMb: Math.round(MAX_ATTACHMENT_BYTES / (1024 * 1024)),
+    attachments: [],
+    attachmentError: null,
     ...(extra || {}),
   });
 }
@@ -78,6 +119,40 @@ function buildListQuery(statusFilter, q, page) {
   if (page && page > 1) params.set("page", String(page));
   const qs = params.toString();
   return qs ? `?${qs}` : "";
+}
+
+async function processAnnouncementAttachments(pool, { organizationId, branchId, announcementId, adminId, files, uploadError }) {
+  if (uploadError) return { error: uploadError, created: [] };
+  if (!files || !files.length) return { error: null, created: [] };
+  return saveAnnouncementAttachments(pool, {
+    organizationId,
+    branchId,
+    announcementId,
+    adminId,
+    files,
+  });
+}
+
+async function auditAttachmentUploads(pool, req, { announcementId, branchId, created }) {
+  for (const row of created || []) {
+    await recordBranchAudit(pool, req, {
+      action: "announcement_attachment_uploaded",
+      entityType: "announcement_attachment",
+      entityId: row.id,
+      metadata: {
+        announcement_id: announcementId,
+        attachment_id: row.id,
+        original_filename: row.original_filename,
+        mime_type: row.mime_type,
+        file_size: row.file_size,
+        branch_id: branchId,
+      },
+    });
+  }
+}
+
+async function loadAnnouncementAttachments(pool, announcementId, branchId) {
+  return broadcastAttachmentsRepo.listAttachmentsForAnnouncement(pool, announcementId, branchId);
 }
 
 module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
@@ -131,6 +206,7 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
           error: null,
           isEdit: false,
           announcementId: null,
+          attachments: [],
         })
       );
     }
@@ -140,6 +216,7 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
     "/branch/announcements",
     requireChurchBranchHost,
     requireChurchBranchAdminSession,
+    withAnnouncementUpload,
     async (req, res, next) => {
       try {
         const validation = validateAnnouncementBody(req.body || {});
@@ -157,8 +234,10 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
             renderFormLocals(req, {
               form: validation.form,
               error: validation.error,
+              attachmentError: req.announcementUploadError || null,
               isEdit: false,
               announcementId: null,
+              attachments: [],
             })
           );
         }
@@ -170,6 +249,20 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
           status: publishNow ? "published" : "draft",
           publish_at: publishNow ? validation.data.publish_at || new Date() : validation.data.publish_at,
           created_by_admin_id: adminId,
+        });
+
+        const attachResult = await processAnnouncementAttachments(pool, {
+          organizationId: org.id,
+          branchId: branch.id,
+          announcementId: created.id,
+          adminId,
+          files: req.files,
+          uploadError: req.announcementUploadError,
+        });
+        await auditAttachmentUploads(pool, req, {
+          announcementId: created.id,
+          branchId: branch.id,
+          created: attachResult.created,
         });
 
         await recordBranchAudit(pool, req, {
@@ -186,6 +279,21 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
             entityId: created.id,
             metadata: { status: "published", title: created.title },
           });
+        }
+
+        if (attachResult.error) {
+          const attachments = await loadAnnouncementAttachments(pool, created.id, branch.id);
+          return res.status(400).render(
+            "church/branch-admin/announcement_form",
+            renderFormLocals(req, {
+              form: formFromAnnouncement(created),
+              error: null,
+              attachmentError: attachResult.error,
+              isEdit: true,
+              announcementId: created.id,
+              attachments,
+            })
+          );
         }
 
         if (reviewPublish) {
@@ -275,11 +383,13 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
               ? Math.min(100, Math.round((readCount / audienceEstimate.estimated_recipients) * 100))
               : null,
         };
+        const attachments = await loadAnnouncementAttachments(pool, announcementId, branch.id);
         return res.render(
           "church/branch-admin/announcement_detail",
           renderFormLocals(req, {
             announcement: item,
             analytics,
+            attachments,
             notice: noticeMessage(flashFromQuery(req, ANNOUNCEMENT_NOTICES)),
             error: null,
           })
@@ -301,17 +411,15 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
           return res.status(404).type("text").send("Announcement not found.");
         }
         const pool = getPgPool();
-        const item = await announcementsRepo.findAnnouncementByIdForBranch(
-          pool,
-          announcementId,
-          req.churchContext.branch.id
-        );
+        const branch = req.churchContext.branch;
+        const item = await announcementsRepo.findAnnouncementByIdForBranch(pool, announcementId, branch.id);
         if (!item) {
           return res.status(404).type("text").send("Announcement not found.");
         }
         if (item.status === "archived") {
           return res.redirect(303, `/branch/announcements/${announcementId}`);
         }
+        const attachments = await loadAnnouncementAttachments(pool, announcementId, branch.id);
         return res.render(
           "church/branch-admin/announcement_form",
           renderFormLocals(req, {
@@ -319,6 +427,7 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
             error: null,
             isEdit: true,
             announcementId: item.id,
+            attachments,
           })
         );
       } catch (e) {
@@ -331,6 +440,7 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
     "/branch/announcements/:announcementId",
     requireChurchBranchHost,
     requireChurchBranchAdminSession,
+    withAnnouncementUpload,
     async (req, res, next) => {
       try {
         const announcementId = Number(req.params.announcementId);
@@ -341,6 +451,7 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
         const intent = String(req.body._intent || "draft").trim();
         const publishNow = intent === "publish";
         const reviewPublish = intent === "review";
+        const org = req.churchContext.organization;
         const branch = req.churchContext.branch;
         const pool = getPgPool();
         const adminId = req.churchBranchAdmin.admin_id;
@@ -353,14 +464,18 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
           return res.redirect(303, `/branch/announcements/${announcementId}`);
         }
 
+        const existingAttachments = await loadAnnouncementAttachments(pool, announcementId, branch.id);
+
         if (!validation.ok) {
           return res.status(400).render(
             "church/branch-admin/announcement_form",
             renderFormLocals(req, {
               form: validation.form,
               error: validation.error,
+              attachmentError: req.announcementUploadError || null,
               isEdit: true,
               announcementId,
+              attachments: existingAttachments,
             })
           );
         }
@@ -370,12 +485,41 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
           updated_by_admin_id: adminId,
         });
 
+        const attachResult = await processAnnouncementAttachments(pool, {
+          organizationId: org.id,
+          branchId: branch.id,
+          announcementId,
+          adminId,
+          files: req.files,
+          uploadError: req.announcementUploadError,
+        });
+        await auditAttachmentUploads(pool, req, {
+          announcementId,
+          branchId: branch.id,
+          created: attachResult.created,
+        });
+
         await recordBranchAudit(pool, req, {
           action: "announcement_updated",
           entityType: "announcement",
           entityId: announcementId,
           metadata: { status: updated.status, title: updated.title, priority: updated.priority },
         });
+
+        if (attachResult.error) {
+          const attachments = await loadAnnouncementAttachments(pool, announcementId, branch.id);
+          return res.status(400).render(
+            "church/branch-admin/announcement_form",
+            renderFormLocals(req, {
+              form: formFromAnnouncement(updated),
+              error: null,
+              attachmentError: attachResult.error,
+              isEdit: true,
+              announcementId,
+              attachments,
+            })
+          );
+        }
 
         if (reviewPublish) {
           return res.redirect(303, `/branch/announcements/${announcementId}/confirm-publish`);
@@ -403,6 +547,109 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
         }
 
         return res.redirect(303, `/branch/announcements/${announcementId}?notice=announcement_updated`);
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.get(
+    "/branch/announcements/:announcementId/attachments/:attachmentId/download",
+    requireChurchBranchHost,
+    requireChurchBranchAdminSession,
+    async (req, res, next) => {
+      try {
+        const announcementId = Number(req.params.announcementId);
+        const attachmentId = Number(req.params.attachmentId);
+        if (!Number.isFinite(announcementId) || !Number.isFinite(attachmentId)) {
+          return res.status(404).type("text").send("Attachment not found.");
+        }
+        const branch = req.churchContext.branch;
+        const pool = getPgPool();
+        const announcement = await announcementsRepo.findAnnouncementByIdForBranch(
+          pool,
+          announcementId,
+          branch.id
+        );
+        if (!announcement) return res.status(404).type("text").send("Attachment not found.");
+        const attachment = await broadcastAttachmentsRepo.findAnnouncementAttachmentById(
+          pool,
+          attachmentId,
+          branch.id
+        );
+        if (!attachment || Number(attachment.announcement_id) !== announcementId) {
+          return res.status(404).type("text").send("Attachment not found.");
+        }
+        const abs = absolutePathForAnnouncementStoredFilename(attachment.stored_filename);
+        if (!abs || !fs.existsSync(abs)) {
+          return res.status(404).type("text").send("Attachment not found.");
+        }
+        return res.download(abs, attachment.original_filename);
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.post(
+    "/branch/announcements/:announcementId/attachments/:attachmentId/delete",
+    requireChurchBranchHost,
+    requireChurchBranchAdminSession,
+    async (req, res, next) => {
+      try {
+        const announcementId = Number(req.params.announcementId);
+        const attachmentId = Number(req.params.attachmentId);
+        if (!Number.isFinite(announcementId) || !Number.isFinite(attachmentId)) {
+          return res.status(404).type("text").send("Attachment not found.");
+        }
+        const branch = req.churchContext.branch;
+        const pool = getPgPool();
+        const announcement = await announcementsRepo.findAnnouncementByIdForBranch(
+          pool,
+          announcementId,
+          branch.id
+        );
+        if (!announcement || announcement.status === "archived") {
+          return res.redirect(303, `/branch/announcements/${announcementId}`);
+        }
+        const attachment = await broadcastAttachmentsRepo.findAnnouncementAttachmentById(
+          pool,
+          attachmentId,
+          branch.id
+        );
+        if (!attachment || Number(attachment.announcement_id) !== announcementId) {
+          return res.status(404).type("text").send("Attachment not found.");
+        }
+
+        const deleted = await broadcastAttachmentsRepo.deleteAnnouncementAttachment(
+          pool,
+          attachmentId,
+          branch.id
+        );
+        if (deleted && deleted.stored_filename) {
+          unlinkAnnouncementStoredFilename(deleted.stored_filename);
+        }
+
+        await recordBranchAudit(pool, req, {
+          action: "announcement_attachment_deleted",
+          entityType: "announcement_attachment",
+          entityId: attachmentId,
+          metadata: {
+            announcement_id: announcementId,
+            attachment_id: attachmentId,
+            original_filename: attachment.original_filename,
+            mime_type: attachment.mime_type,
+            file_size: attachment.file_size,
+            branch_id: branch.id,
+            result: deleted ? "ok" : "missing",
+          },
+        });
+
+        const returnTo = String(req.body._return || "edit").trim() === "detail" ? "detail" : "edit";
+        if (returnTo === "detail") {
+          return res.redirect(303, `/branch/announcements/${announcementId}`);
+        }
+        return res.redirect(303, `/branch/announcements/${announcementId}/edit`);
       } catch (e) {
         return next(e);
       }
@@ -491,11 +738,13 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
           adminId
         );
         if (!archived) {
+          const attachments = await loadAnnouncementAttachments(pool, announcementId, branch.id);
           return res.status(400).render(
             "church/branch-admin/announcement_detail",
             renderFormLocals(req, {
               announcement: existing,
               analytics: null,
+              attachments,
               error: "Announcement could not be archived.",
               notice: null,
             })

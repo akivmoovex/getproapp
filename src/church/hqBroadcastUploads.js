@@ -9,6 +9,8 @@ const {
   MAX_ATTACHMENTS_PER_ITEM,
   createBroadcastAttachment,
   countAttachmentsForBroadcast,
+  createAnnouncementAttachment,
+  countAttachmentsForAnnouncement,
 } = require("../db/pg/church/broadcastAttachmentsRepo");
 
 const UPLOAD_ROOT = path.join(__dirname, "..", "..", "data", "uploads", "church", "broadcasts");
@@ -25,6 +27,10 @@ const EXT_MIME = {
 
 function ensureUploadRoot() {
   fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
+}
+
+function ensureAnnouncementUploadRoot() {
+  fs.mkdirSync(ANNOUNCEMENT_UPLOAD_ROOT, { recursive: true });
 }
 
 function safeOriginalName(name) {
@@ -141,6 +147,85 @@ function unlinkStoredFilename(storedFilename) {
   }
 }
 
+/**
+ * Save multer memory files for a branch announcement. Skips invalid files.
+ * Storage key: `{branchId}/{announcementId}/{timestamp}_{random}{ext}` under ANNOUNCEMENT_UPLOAD_ROOT.
+ * @returns {Promise<{ saved: number, skipped: number, error: string | null, created: object[] }>}
+ */
+async function saveAnnouncementAttachments(pool, { organizationId, branchId, announcementId, adminId, files }) {
+  const list = Array.isArray(files) ? files : [];
+  if (!list.length) return { saved: 0, skipped: 0, error: null, created: [] };
+
+  const existing = await countAttachmentsForAnnouncement(pool, announcementId, branchId);
+  const remaining = Math.max(MAX_ATTACHMENTS_PER_ITEM - existing, 0);
+  if (remaining <= 0) {
+    return {
+      saved: 0,
+      skipped: list.length,
+      error: `Maximum of ${MAX_ATTACHMENTS_PER_ITEM} attachments allowed.`,
+      created: [],
+    };
+  }
+
+  ensureAnnouncementUploadRoot();
+  const dirRel = `${branchId}/${announcementId}`;
+  const dirAbs = path.join(ANNOUNCEMENT_UPLOAD_ROOT, String(branchId), String(announcementId));
+  fs.mkdirSync(dirAbs, { recursive: true });
+
+  let saved = 0;
+  let skipped = 0;
+  let error = null;
+  const created = [];
+
+  for (const file of list.slice(0, remaining)) {
+    const mime = resolveMime(file);
+    const size = Number(file.size || (file.buffer && file.buffer.length) || 0);
+    if (!mime || !file.buffer || size <= 0 || size > MAX_ATTACHMENT_BYTES) {
+      skipped += 1;
+      continue;
+    }
+    const original = safeOriginalName(file.originalname);
+    const ext = path.extname(original).toLowerCase() || Object.keys(EXT_MIME).find((e) => EXT_MIME[e] === mime) || "";
+    const storedName = `${Date.now()}_${crypto.randomBytes(6).toString("hex")}${ext}`;
+    const storedFilename = `${dirRel}/${storedName}`.replace(/\\/g, "/");
+    const abs = path.join(dirAbs, storedName);
+    fs.writeFileSync(abs, file.buffer);
+    const row = await createAnnouncementAttachment(pool, {
+      organization_id: organizationId,
+      branch_id: branchId,
+      announcement_id: announcementId,
+      original_filename: original,
+      stored_filename: storedFilename,
+      mime_type: mime,
+      file_size: size,
+      created_by_admin_id: adminId,
+    });
+    created.push(row);
+    saved += 1;
+  }
+
+  if (list.length > remaining) {
+    skipped += list.length - remaining;
+    error = `Only ${MAX_ATTACHMENTS_PER_ITEM} attachments are allowed per announcement.`;
+  } else if (skipped && !saved) {
+    error = "One or more attachments were rejected. Use PDF, PNG, JPG, DOC, or DOCX up to 5 MB.";
+  }
+
+  return { saved, skipped, error, created };
+}
+
+function unlinkAnnouncementStoredFilename(storedFilename) {
+  const abs = absolutePathForAnnouncementStoredFilename(storedFilename);
+  if (!abs) return;
+  try {
+    if (fs.existsSync(abs)) fs.unlinkSync(abs);
+  } catch (err) {
+    console.warn("[church] announcement attachment file cleanup failed", {
+      code: err && err.code ? String(err.code) : "unknown",
+    });
+  }
+}
+
 module.exports = {
   UPLOAD_ROOT,
   ANNOUNCEMENT_UPLOAD_ROOT,
@@ -150,5 +235,7 @@ module.exports = {
   absolutePathForStoredFilename,
   absolutePathForAnnouncementStoredFilename,
   saveBroadcastAttachments,
+  saveAnnouncementAttachments,
   unlinkStoredFilename,
+  unlinkAnnouncementStoredFilename,
 };

@@ -104,6 +104,8 @@ const ACTION_LABELS = {
   announcement_updated: "Announcement updated",
   announcement_published: "Announcement published",
   announcement_archived: "Announcement archived",
+  announcement_attachment_uploaded: "Announcement attachment uploaded",
+  announcement_attachment_deleted: "Announcement attachment deleted",
   event_created: "Event created",
   event_updated: "Event updated",
   event_published: "Event published",
@@ -300,8 +302,62 @@ function auditSummary(row) {
   return parts.join(" ");
 }
 
+const SENSITIVE_METADATA_KEYS = new Set([
+  "password",
+  "password_hash",
+  "new_password",
+  "current_password",
+  "confirm_password",
+  "temporary_password",
+  "token",
+  "access_token",
+  "refresh_token",
+  "csrf",
+  "_csrf",
+  "csrf_token",
+  "cookie",
+  "cookies",
+  "session",
+  "session_id",
+  "secret",
+  "secret_answer",
+  "raw_body",
+  "request_body",
+  "database_url",
+  "databaseUrl",
+  "env",
+  "environment",
+]);
+
+function sanitizeMetadataForDisplay(value, depth) {
+  if (depth > 6) return "[omitted]";
+  if (value == null) return value;
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeMetadataForDisplay(item, depth + 1));
+  }
+  if (typeof value !== "object") return value;
+  const out = {};
+  for (const [key, nested] of Object.entries(value)) {
+    const normalized = String(key).toLowerCase().replace(/[\s-]+/g, "_");
+    if (
+      SENSITIVE_METADATA_KEYS.has(normalized) ||
+      normalized.includes("password") ||
+      normalized.includes("token") ||
+      normalized.includes("csrf") ||
+      normalized.includes("cookie") ||
+      normalized.includes("secret") ||
+      normalized.includes("session_id") ||
+      normalized.includes("database_url")
+    ) {
+      continue;
+    }
+    out[key] = sanitizeMetadataForDisplay(nested, depth + 1);
+  }
+  return out;
+}
+
 function formatMetadataForDisplay(raw) {
-  const meta = parseMetadata(raw);
+  const meta = sanitizeMetadataForDisplay(parseMetadata(raw), 0);
   if (!meta || Object.keys(meta).length === 0) return "—";
   try {
     return JSON.stringify(meta, null, 2);
