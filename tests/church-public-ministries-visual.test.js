@@ -83,7 +83,7 @@ test("tenant ministries page renders active nav, hero, empty state, and tenant c
   assert.match(res.text, /Ministry information will be available soon/);
   assert.match(res.text, /bb-ministries-empty/);
   assert.match(res.text, /bb-ministries-cta/);
-  assert.match(res.text, /bb-ministries-desktop|bb-ministries-mobile|bb-ministries-empty/);
+  assert.match(res.text, /church-ministries-desktop|church-ministries-mobile|bb-ministries-empty|bb-ministries-grid/);
   assert.match(res.text, /church-footer--branch/);
   assert.equal(countMatches(res.text, /church-footer--branch/), 1);
   assert.match(res.text, /bb-powered-by__label/);
@@ -94,7 +94,7 @@ test("tenant ministries page renders active nav, hero, empty state, and tenant c
   assert.doesNotMatch(res.text, /member_count|leader_phone/);
   assert.doesNotMatch(res.text, /church-footer--apex/);
   assert.doesNotMatch(res.text, /bb-saas-hero/);
-  assert.doesNotMatch(res.text, /id="ministry-grid"/);
+  assert.doesNotMatch(res.text, /Join Ministry|Contact Leader|Download Guide/);
 });
 
 test("CSS contains ministries page selectors and powered-by colors", () => {
@@ -102,11 +102,9 @@ test("CSS contains ministries page selectors and powered-by colors", () => {
   for (const token of [
     ".bb-public-ministries",
     ".bb-ministries-hero",
-    ".bb-ministries-desktop",
-    ".bb-ministries-mobile",
-    ".bb-ministries-list-card",
+    ".bb-ministries-grid",
     ".bb-ministries-feature",
-    ".bb-ministries-mini",
+    ".bb-ministries-card",
     ".bb-ministries-empty",
     ".bb-ministries-cta",
   ]) {
@@ -211,8 +209,8 @@ test(
     const res = await request(appA).get("/ministries");
     assert.equal(res.status, 200);
     assert.match(res.text, new RegExp(`Very Long Public Ministry Name That Should Wrap Safely ${suffix}`));
-    assert.match(res.text, /bb-ministries-feature|bb-ministries-list-card|bb-ministries-mini/);
-    assert.match(res.text, /bb-ministries-feature__icon|bb-ministries-list-card__icon|material-symbols-outlined/);
+    assert.match(res.text, /bb-ministries-feature|bb-ministries-card/);
+    assert.match(res.text, /bb-ministries-feature__media|bb-ministries-card__media|material-symbols-outlined/);
     assert.match(res.text, /Saturday 10:00/);
     assert.doesNotMatch(res.text, new RegExp(`Draft Ministry ${suffix}`));
     assert.doesNotMatch(res.text, new RegExp(`Members Only Ministry ${suffix}`));

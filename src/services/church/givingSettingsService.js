@@ -160,8 +160,8 @@ function prepareGivingDisplay(publishedSettings, websiteFallback, opts = {}) {
       mobileMoney: mobileMoneyEntries(publishedSettings),
       categories,
       qrCodeLabel: publishedSettings.qr_code_label || "Scan to give",
-      qrImageUrl: qrFromSettings || "/church/images/giving/giving-qr-demo.png",
-      isDemoQr: !qrFromSettings,
+      qrImageUrl: qrFromSettings || "",
+      isDemoQr: false,
       financeContactName: publishedSettings.finance_contact_name || "",
       financeContactPhone: publishedSettings.finance_contact_phone || "",
     };
@@ -175,7 +175,6 @@ function prepareGivingDisplay(publishedSettings, websiteFallback, opts = {}) {
     wf.givingInstructions ||
     wf.givingQrPlaceholder;
 
-  const DEMO_QR = "/church/images/giving/giving-qr-demo.png";
   const websiteQrRaw = String(wf.givingQrPlaceholder || "").trim();
   const websiteQrLooksLikeUrl =
     websiteQrRaw.startsWith("/") ||
@@ -192,7 +191,7 @@ function prepareGivingDisplay(publishedSettings, websiteFallback, opts = {}) {
       categories: [],
       qrCodeLabel: "",
       qrImageUrl: "",
-      isDemoQr: true,
+      isDemoQr: false,
       financeContactName: "",
       financeContactPhone: "",
     };
@@ -207,8 +206,8 @@ function prepareGivingDisplay(publishedSettings, websiteFallback, opts = {}) {
       mobileMoney: [],
       categories: [],
       qrCodeLabel: websiteQrLooksLikeUrl ? "Scan to give" : websiteQrRaw || "Scan to give",
-      qrImageUrl: websiteQrLooksLikeUrl ? websiteQrRaw : DEMO_QR,
-      isDemoQr: !websiteQrLooksLikeUrl,
+      qrImageUrl: websiteQrLooksLikeUrl ? websiteQrRaw : "",
+      isDemoQr: false,
       financeContactName: "",
       financeContactPhone: "",
       givingBankDetails: wf.givingBankDetails || "",
@@ -224,10 +223,10 @@ function prepareGivingDisplay(publishedSettings, websiteFallback, opts = {}) {
     givingInstructions: `Your generosity supports ministry, outreach, and community care at ${churchName}. Contact the church office for giving details.`,
     bank: null,
     mobileMoney: [],
-    categories: ["Tithes", "Offerings", "Building fund", "Missions"],
-    qrCodeLabel: "Scan to give",
-    qrImageUrl: DEMO_QR,
-    isDemoQr: true,
+    categories: [],
+    qrCodeLabel: "",
+    qrImageUrl: "",
+    isDemoQr: false,
     financeContactName: "",
     financeContactPhone: "",
   };

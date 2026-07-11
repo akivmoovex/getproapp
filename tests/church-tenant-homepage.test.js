@@ -80,11 +80,11 @@ test("tenant homepage renders approved section hierarchy without fake content", 
   const order = [
     /data-tenant-home="1"/,
     /bb-tenant-hero/,
+    /id="giving"/,
     /id="announcements"/,
     /id="events"/,
-    /id="ministries"/,
     /id="sermons"/,
-    /id="giving"/,
+    /id="ministries"/,
     /id="visit"/,
   ];
   let cursor = 0;
@@ -104,7 +104,11 @@ test("tenant homepage renders approved section hierarchy without fake content", 
   assert.match(res.text, /No upcoming events have been published yet/);
   assert.match(res.text, /There are no public announcements at this time/);
   assert.match(res.text, /Ministry information will be available soon/);
-  assert.match(res.text, /href="\/giving"[^>]*>Give Online Now</);
+  assert.match(res.text, /href="\/giving"/);
+  assert.match(res.text, /Give Now/);
+  assert.match(res.text, /Join a Service|Join Our Next Service/);
+  assert.match(res.text, /Connected Community|Digital Giving|Already a Member\?/);
+  assert.doesNotMatch(res.text, /Give Online Now|Other Ways to Give|1\.2k\+/);
   assert.match(res.text, /href="\/contact"/);
   assert.match(res.text, /bb-powered-by__label/);
   assert.match(res.text, /bb-powered-by__getpro/);

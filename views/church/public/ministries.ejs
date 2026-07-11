@@ -21,26 +21,50 @@
     if (raw.length <= max) return raw;
     return raw.slice(0, Math.max(0, max - 1)).replace(/\s+\S*$/, '') + '…';
   };
-  var featured = hasRealMinistries ? ministryList.slice(0, 2) : [];
-  var rest = hasRealMinistries ? ministryList.slice(2) : [];
+  var dayTag = function (m) {
+    return String(m.meeting_day || '').trim();
+  };
+  var scheduleLabel = function (m) {
+    var parts = [];
+    if (m.meeting_day) parts.push(m.meeting_day);
+    if (m.meeting_time) parts.push(m.meeting_time);
+    return parts.join(', ');
+  };
+  var featured = hasRealMinistries ? ministryList[0] : null;
+  var secondary = hasRealMinistries ? ministryList.slice(1) : [];
   var filters = (typeof ministryFilters !== 'undefined' && Array.isArray(ministryFilters)) ? ministryFilters : [];
   var showFilters = hasRealMinistries && filters.length > 1;
 %>
 
-<section class="bb-public-ministries" data-ministries-page="1">
+<section class="bb-public-ministries church-ministries-page-root church-ministries-desktop church-ministries-mobile" data-ministries-page="1">
   <section class="bb-ministries-hero" aria-label="Ministries introduction">
     <div class="bb-ministries-hero__inner">
-      <span class="bb-ministries-hero__eyebrow">Our Community</span>
-      <h1 class="bb-ministries-hero__title bb-ministries-hero__title--desktop">
-        Growing Together in <span class="bb-ministries-hero__accent">Faith</span>
+      <span class="bb-ministries-hero__eyebrow">
+        <span class="bb-ministries-hero__eyebrow-desktop">Our Impact</span>
+        <span class="bb-ministries-hero__eyebrow-mobile">Our Community</span>
+      </span>
+      <h1 class="bb-ministries-hero__title">
+        <span class="bb-ministries-hero__title-desktop">Growing Together in Faith and Community</span>
+        <span class="bb-ministries-hero__title-mobile">Ministries for Everyone</span>
       </h1>
-      <h1 class="bb-ministries-hero__title bb-ministries-hero__title--mobile">Our Ministries</h1>
-      <p class="bb-ministries-hero__lead bb-ministries-hero__lead--desktop">
-        Explore the various ministries at <%= orgLabel || churchName %>. Whether you're looking to serve, connect, or grow, there's a place for you here.
+      <p class="bb-ministries-hero__lead">
+        <span class="bb-ministries-hero__lead-desktop">
+          Explore our ministries designed to serve every member of our spiritual family at <%= orgLabel || churchName %>.
+        </span>
+        <span class="bb-ministries-hero__lead-mobile">
+          Find your place in our community and grow your faith through our dedicated ministry groups.
+        </span>
       </p>
-      <p class="bb-ministries-hero__lead bb-ministries-hero__lead--mobile">
-        Find your place in our community and grow your faith through our dedicated ministry groups.
-      </p>
+      <div class="bb-ministries-hero__actions">
+        <a class="church-btn church-btn--public-primary" href="/contact">
+          <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+          Contact Church
+        </a>
+        <a class="church-btn church-btn--public-secondary" href="/events">
+          <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+          View Schedule
+        </a>
+      </div>
     </div>
   </section>
 
@@ -58,97 +82,102 @@
     <% } %>
 
     <% if (!hasRealMinistries) { %>
-    <div class="bb-ministries-empty">
-      <p>Ministry information will be available soon.</p>
-      <a class="church-btn church-btn--primary" href="/contact">Contact Us</a>
+    <div class="bb-ministries-empty church-empty-state church-public-empty-state">
+      <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">groups</span>
+      <p class="church-empty-state__title">Ministry information will be available soon</p>
+      <p class="church-empty-state__body">Published ministries will appear here when branch leadership adds them.</p>
+      <a class="church-btn church-btn--public-primary" href="/contact">Contact Church</a>
     </div>
     <% } else { %>
 
-    <%# Desktop Stitch bento %>
-    <div class="bb-ministries-desktop church-ministries-bento church-ministry-grid" id="ministry-grid" data-ministries-layout="desktop">
-      <div class="bb-ministries-desktop__featured church-ministries-bento__featured">
-        <% featured.forEach(function (m, idx) { %>
-        <article
-          class="bb-ministries-feature church-ministry-feature<%= idx === 1 ? ' bb-ministries-feature--accent church-ministry-feature--accent' : '' %>"
-          data-ministry-filter="<%= (m.meeting_day || 'general').toLowerCase().replace(/\s+/g, '-') %>"
-        >
-          <span class="bb-ministries-feature__icon church-ministry-feature__icon material-symbols-outlined" aria-hidden="true"><%= iconFor(m.name) %></span>
-          <h2 class="bb-ministries-feature__title"><%= m.name %></h2>
-          <% if (m.description) { %>
-          <p class="bb-ministries-feature__desc"><%= shortDesc(m.description, 220) %></p>
+    <div class="bb-ministries-grid church-ministry-grid" id="ministry-grid" data-ministries-layout="responsive">
+      <% if (featured) { %>
+      <article
+        class="bb-ministries-feature church-ministry-feature bb-ministries-feature--featured"
+        data-ministry-filter="<%= (featured.meeting_day || 'general').toLowerCase().replace(/\s+/g, '-') %>"
+      >
+        <div class="bb-ministries-feature__media" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= iconFor(featured.name) %></span>
+        </div>
+        <div class="bb-ministries-feature__body">
+          <div class="bb-ministries-feature__topline">
+            <h2 class="bb-ministries-feature__title"><%= featured.name %></h2>
+            <% if (dayTag(featured)) { %>
+            <span class="bb-ministries-feature__tag"><%= dayTag(featured) %></span>
+            <% } %>
+          </div>
+          <% if (featured.description) { %>
+          <p class="bb-ministries-feature__desc"><%= shortDesc(featured.description, 180) %></p>
           <% } %>
-          <% if (m.meeting_time || m.meeting_day || m.location) { %>
-          <p class="bb-ministries-feature__meta">
-            <% if (m.meeting_day) { %><span><%= m.meeting_day %></span><% } %>
-            <% if (m.meeting_time) { %><span><%= m.meeting_time %></span><% } %>
-            <% if (m.location) { %><span><%= m.location %></span><% } %>
-          </p>
-          <% } %>
-          <% if (idx === 1) { %>
-          <a class="church-btn church-btn--on-primary bb-ministries-feature__btn" href="/contact">Contact Us</a>
-          <% } else { %>
-          <a class="bb-ministries-feature__link church-ministry-feature__link" href="/contact">
-            Learn More <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-          </a>
-          <% } %>
-        </article>
-        <% }); %>
-      </div>
-      <% if (rest.length > 0) { %>
-      <div class="bb-ministries-desktop__grid church-ministries-bento__grid">
-        <% rest.forEach(function (m) { %>
-        <article
-          class="bb-ministries-mini church-ministry-mini"
-          data-ministry-filter="<%= (m.meeting_day || 'general').toLowerCase().replace(/\s+/g, '-') %>"
-        >
-          <span class="bb-ministries-mini__icon church-ministry-mini__icon material-symbols-outlined" aria-hidden="true"><%= iconFor(m.name) %></span>
-          <h3 class="bb-ministries-mini__title"><%= m.name %></h3>
-          <% if (m.description) { %>
-          <p class="bb-ministries-mini__desc"><%= shortDesc(m.description, 110) %></p>
-          <% } %>
-          <a class="bb-ministries-mini__link" href="/contact">
-            Learn More <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
-          </a>
-        </article>
-        <% }); %>
-      </div>
+          <div class="bb-ministries-feature__foot">
+            <% if (scheduleLabel(featured)) { %>
+            <span class="bb-ministries-feature__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+              <%= scheduleLabel(featured) %>
+            </span>
+            <% } %>
+            <a class="bb-ministries-feature__link" href="/contact">
+              Learn More <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+          </div>
+        </div>
+      </article>
       <% } %>
-    </div>
 
-    <%# Mobile Stitch list %>
-    <div class="bb-ministries-mobile" data-ministries-layout="mobile" aria-label="Ministry list">
-      <% ministryList.forEach(function (m) { %>
-      <a
-        class="bb-ministries-list-card"
-        href="/contact"
+      <% secondary.forEach(function (m, idx) { %>
+      <article
+        class="bb-ministries-card church-ministry-mini<%= idx === 0 ? ' bb-ministries-card--accent' : '' %>"
         data-ministry-filter="<%= (m.meeting_day || 'general').toLowerCase().replace(/\s+/g, '-') %>"
       >
-        <span class="bb-ministries-list-card__icon material-symbols-outlined" aria-hidden="true"><%= iconFor(m.name) %></span>
-        <span class="bb-ministries-list-card__body">
-          <span class="bb-ministries-list-card__title"><%= m.name %></span>
+        <div class="bb-ministries-card__media" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= iconFor(m.name) %></span>
+        </div>
+        <div class="bb-ministries-card__body">
+          <div class="bb-ministries-card__topline">
+            <h3 class="bb-ministries-card__title"><%= m.name %></h3>
+            <% if (dayTag(m)) { %>
+            <span class="bb-ministries-card__tag"><%= dayTag(m) %></span>
+            <% } %>
+          </div>
           <% if (m.description) { %>
-          <span class="bb-ministries-list-card__desc"><%= shortDesc(m.description, 72) %></span>
+          <p class="bb-ministries-card__desc"><%= shortDesc(m.description, 120) %></p>
           <% } %>
-        </span>
-        <span class="bb-ministries-list-card__chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
-      </a>
+          <div class="bb-ministries-card__foot">
+            <% if (scheduleLabel(m)) { %>
+            <span class="bb-ministries-card__meta">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+              <%= scheduleLabel(m) %>
+            </span>
+            <% } %>
+            <a class="bb-ministries-card__link" href="/contact">
+              Learn More <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+          </div>
+        </div>
+      </article>
       <% }); %>
     </div>
     <% } %>
 
     <div class="bb-ministries-cta church-ministries-cta">
-      <h2 class="bb-ministries-cta__title bb-ministries-cta__title--desktop">Not sure where to start?</h2>
-      <h2 class="bb-ministries-cta__title bb-ministries-cta__title--mobile">Not sure where you fit?</h2>
-      <p class="bb-ministries-cta__lead bb-ministries-cta__lead--desktop">
-        Our team is here to help you find the right group or ministry where your talents can flourish.
-      </p>
-      <p class="bb-ministries-cta__lead bb-ministries-cta__lead--mobile">
-        Talk with our church team to find the best group for your spiritual journey.
+      <h2 class="bb-ministries-cta__title">
+        <span class="bb-ministries-cta__title-desktop">Still looking for your place?</span>
+        <span class="bb-ministries-cta__title-mobile">Ready to Get Involved?</span>
+      </h2>
+      <p class="bb-ministries-cta__lead">
+        <span class="bb-ministries-cta__lead-desktop">
+          Our team is here to help you find the right group or ministry where your gifts can flourish.
+        </span>
+        <span class="bb-ministries-cta__lead-mobile">
+          Register as a member or contact the church team to find the best fit for your journey.
+        </span>
       </p>
       <div class="bb-ministries-cta__actions church-ministries-cta__actions">
-        <a class="church-btn church-btn--primary bb-ministries-cta__primary" href="/contact">Contact Us</a>
-        <a class="church-btn church-btn--outline bb-ministries-cta__secondary bb-ministries-cta__secondary--desktop" href="/register">Register as a Member</a>
-        <a class="church-btn church-btn--primary bb-ministries-cta__guidance" href="/contact">Get Guidance</a>
+        <a class="church-btn church-btn--public-primary bb-ministries-cta__register" href="/register">Register to Join</a>
+        <a class="church-btn church-btn--public-secondary bb-ministries-cta__contact" href="/contact">
+          <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+          Contact Church
+        </a>
       </div>
     </div>
   </section>
@@ -159,7 +188,7 @@
   (function () {
     var buttons = document.querySelectorAll(".bb-ministries-filter[data-ministry-filter]");
     var tiles = document.querySelectorAll(
-      ".bb-ministries-feature[data-ministry-filter], .bb-ministries-mini[data-ministry-filter], .bb-ministries-list-card[data-ministry-filter]"
+      ".bb-ministries-feature[data-ministry-filter], .bb-ministries-card[data-ministry-filter]"
     );
     buttons.forEach(function (btn) {
       btn.addEventListener("click", function () {

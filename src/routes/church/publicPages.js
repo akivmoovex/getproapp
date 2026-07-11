@@ -35,64 +35,30 @@ function formatPublicEventWhen(ev) {
   return [dateStr, timeStr, loc].filter(Boolean).join(" · ");
 }
 
-function mapPublicEventCard(ev, index) {
+function mapPublicEventCard(ev) {
   const date = ev.event_date instanceof Date ? ev.event_date : new Date(ev.event_date);
   const validDate = !Number.isNaN(date.getTime());
   const start = ev.start_time || ev.event_time || "";
   const end = ev.end_time || "";
   const timeStr = start && end ? `${start} – ${end}` : start || end || "";
-  const loc = ev.location || ev.location_text || "";
-  const category = String(ev.category || ev.ministry_name || "Community").trim() || "Community";
+  const loc = String(ev.location || ev.location_text || "").trim();
+  const category = String(
+    ev.ministry_or_department || ev.category || ev.ministry_name || ""
+  ).trim();
+  const image = String(ev.image_url || ev.imageUrl || ev.cover_image_url || "").trim();
   return {
     title: ev.title,
     when: formatPublicEventWhen(ev),
-    description: ev.description,
-    day: validDate ? String(date.getDate()).padStart(2, "0") : "—",
-    month: validDate ? date.toLocaleDateString("en-GB", { month: "short" }).toUpperCase() : "SOON",
-    time: timeStr || "See details",
-    location: loc || "Church campus",
+    description: String(ev.description || "").trim(),
+    day: validDate ? String(date.getDate()).padStart(2, "0") : "",
+    month: validDate ? date.toLocaleDateString("en-GB", { month: "short" }).toUpperCase() : "",
+    time: timeStr,
+    location: loc,
     category,
-    image: `/church/images/events/event-${(index % 4) + 1}.jpg`,
-    featured: index === 0,
+    image,
+    status: ev.status || "",
   };
 }
-
-function mapDemoEventCard(item, index) {
-  const parts = String(item.when || "").split("·").map((p) => p.trim());
-  const datePart = parts[0] || "";
-  const dayMatch = datePart.match(/(\d{1,2})/);
-  const monthMatch = datePart.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/i);
-  return {
-    title: item.title,
-    when: item.when,
-    description: item.description || "",
-    day: dayMatch ? dayMatch[1].padStart(2, "0") : String(index + 1).padStart(2, "0"),
-    month: monthMatch ? monthMatch[1].toUpperCase() : "SOON",
-    time: parts[1] || "See details",
-    location: parts[2] || "Church campus",
-    category: index === 0 ? "Worship" : index === 1 ? "Community" : "Youth",
-    image: `/church/images/events/event-${(index % 4) + 1}.jpg`,
-    featured: index === 0,
-  };
-}
-
-/**
- * Demo media until Phase 2 upload/storage (video_url / audio_url / pdf_url).
- * Replace demoVideoEmbedUrl with the church’s real YouTube embed when available.
- * Neutral youtube-nocookie placeholder (not a licensed sermon); UI labels it as demo media.
- */
-const SERMON_DEMO_MEDIA = {
-  demoVideoEmbedUrl: "https://www.youtube-nocookie.com/embed/M7lc1UVf-VE",
-  audioUrl: "/church/demo-media/sermon-demo.mp3",
-  pdfUrl: "/church/demo-media/sermon-notes-demo.pdf",
-  title: "Faith, Hope & Purpose",
-  speaker: "Guest Speaker",
-  date: "Demo · ~60 min",
-  description: "A sample motivational message for demonstrating BlessBoard sermon media.",
-  durationLabel: "~60s audio demo",
-};
-// Back-compat alias used by enrich/fallback helpers
-SERMON_DEMO_MEDIA.videoEmbedUrl = SERMON_DEMO_MEDIA.demoVideoEmbedUrl;
 
 function youtubeEmbedFromUrl(raw) {
   const url = String(raw || "").trim();
@@ -114,10 +80,13 @@ function youtubeEmbedFromUrl(raw) {
 function enrichSermonMedia(item) {
   const mediaUrl = item.media_url || item.videoUrl || item.audioUrl || null;
   const videoEmbedUrl =
-    youtubeEmbedFromUrl(item.video_url || item.videoUrl || mediaUrl) || SERMON_DEMO_MEDIA.videoEmbedUrl;
-  const audioUrl = item.audio_url || item.audioUrl || SERMON_DEMO_MEDIA.audioUrl;
-  const pdfUrl = item.pdf_url || item.pdfUrl || SERMON_DEMO_MEDIA.pdfUrl;
-  const mediaType = item.media_type || item.mediaType || (youtubeEmbedFromUrl(mediaUrl) ? "video" : "audio");
+    youtubeEmbedFromUrl(item.video_url || item.videoUrl || mediaUrl) || null;
+  const audioUrl = item.audio_url || item.audioUrl || null;
+  const pdfUrl = item.pdf_url || item.pdfUrl || null;
+  const mediaType =
+    item.media_type ||
+    item.mediaType ||
+    (videoEmbedUrl ? "video" : audioUrl ? "audio" : pdfUrl ? "pdf" : null);
   return {
     ...item,
     videoUrl: videoEmbedUrl,
@@ -125,69 +94,41 @@ function enrichSermonMedia(item) {
     audioUrl,
     pdfUrl,
     mediaType,
-    downloadLabel: item.downloadLabel || "Download MP3",
-    media_url: mediaUrl || videoEmbedUrl,
+    downloadLabel: item.downloadLabel || (audioUrl ? "Download MP3" : "Download"),
+    media_url: mediaUrl || videoEmbedUrl || audioUrl || pdfUrl || null,
   };
 }
 
-function fallbackSermonSamples(churchName) {
-  return [
-    {
-      title: SERMON_DEMO_MEDIA.title,
-      speaker: SERMON_DEMO_MEDIA.speaker,
-      date: SERMON_DEMO_MEDIA.date,
-      category: "Demo Media",
-      icon: "menu_book",
-      description: SERMON_DEMO_MEDIA.description,
-      media_url: SERMON_DEMO_MEDIA.demoVideoEmbedUrl,
-      mediaType: "video",
-      duration: SERMON_DEMO_MEDIA.durationLabel,
-    },
-    {
-      title: "Foundations of Community",
-      speaker: "Elder Mutale",
-      date: "Oct 20, 2024",
-      category: "Community Life",
-      icon: "groups",
-      description: "Building a church family that loves, serves, and grows together.",
-      media_url: SERMON_DEMO_MEDIA.audioUrl,
-      mediaType: "audio",
-    },
-    {
-      title: "Walking in Purpose",
-      speaker: churchName,
-      date: "Oct 13, 2024",
-      category: "The Book of Romans",
-      icon: "auto_stories",
-      description: "Living out the gospel with clarity and courage.",
-      media_url: SERMON_DEMO_MEDIA.pdfUrl,
-      mediaType: "pdf",
-    },
-  ].map(enrichSermonMedia);
-}
-
 function sermonResourceCards(featured) {
-  const videoUrl = (featured && featured.videoEmbedUrl) || SERMON_DEMO_MEDIA.videoEmbedUrl;
-  const audioUrl = (featured && featured.audioUrl) || SERMON_DEMO_MEDIA.audioUrl;
-  const pdfUrl = (featured && featured.pdfUrl) || SERMON_DEMO_MEDIA.pdfUrl;
-  return [
-    {
+  if (!featured) return [];
+  const videoUrl = featured.videoEmbedUrl || null;
+  const audioUrl = featured.audioUrl || null;
+  const pdfUrl = featured.pdfUrl || null;
+  const cards = [];
+  if (videoUrl) {
+    cards.push({
       title: "Video Sermon",
       mediaType: "Video",
       description: "Watch the featured message with an embedded player.",
       actionLabel: "Watch",
       href: "#sermon-video",
       icon: "play_circle",
-    },
-    {
+      videoUrl,
+    });
+  }
+  if (audioUrl) {
+    cards.push({
       title: "Audio Sermon",
       mediaType: "Audio",
       description: "Listen on this page or download the MP3 for offline use.",
       actionLabel: "Listen",
       href: "#sermon-audio",
       icon: "headphones",
-    },
-    {
+      audioUrl,
+    });
+  }
+  if (pdfUrl) {
+    cards.push({
       title: "PDF Study Notes",
       mediaType: "PDF",
       description: "Download printable notes with scripture and reflection prompts.",
@@ -195,21 +136,10 @@ function sermonResourceCards(featured) {
       href: pdfUrl,
       download: true,
       icon: "picture_as_pdf",
-      videoUrl,
-      audioUrl,
       pdfUrl,
-    },
-  ];
-}
-
-function applyDemoEventFallbacks(locals) {
-  const demo = [
-    { title: "Annual Praise Night", when: "Nov 24 · 18:00 · Main Hall" },
-    { title: "Community Food Drive", when: "Dec 02 · 09:00 · Outreach Center" },
-    { title: "Mid-week Bible Study", when: "Wednesday · 18:00 · Main Hall", description: "Prayer and study." },
-  ];
-  locals.upcomingEvents = demo.map(mapDemoEventCard);
-  locals.hasDbEvents = false;
+    });
+  }
+  return cards;
 }
 
 function branchPublicLocalsWithoutDb(org, branch, activePage) {
@@ -219,11 +149,11 @@ function branchPublicLocalsWithoutDb(org, branch, activePage) {
   locals.featuredSermon = null;
   locals.hasDbSermons = false;
   locals.heroImageUrl = "";
-  if (activePage === "events") {
-    applyDemoEventFallbacks(locals);
-  } else if (activePage === "home") {
+  if (activePage === "events" || activePage === "home") {
     locals.upcomingEvents = [];
     locals.hasDbEvents = false;
+  }
+  if (activePage === "home") {
     locals.publicMinistries = [];
   }
   return locals;
@@ -279,7 +209,21 @@ async function loadBranchPublicLocals(req, activePage) {
   try {
     published = await websiteContentRepo.getPublishedWebsiteContentForBranch(pool, branch.id);
   } catch {
-    return branchPublicLocalsWithoutDb(org, branch, activePage);
+    const locals = branchPublicLocalsWithoutDb(org, branch, activePage);
+    if (activePage === "giving") {
+      locals.givingDisplay = prepareGivingDisplay(
+        null,
+        {
+          givingInstructions: locals.givingInstructions,
+          givingBankDetails: locals.givingBankDetails,
+          givingMobileMoney: locals.givingMobileMoney,
+          givingCategories: locals.givingCategories,
+          givingQrPlaceholder: locals.givingQrPlaceholder,
+        },
+        { audience: "public", churchName: locals.churchName }
+      );
+    }
+    return locals;
   }
 
   const merged = published ? mergeWithFallbacks(published, org, branch) : buildBranchFallbacks(org, branch);
@@ -323,8 +267,6 @@ async function loadBranchPublicLocals(req, activePage) {
     if (publicEvents.length > 0) {
       locals.upcomingEvents = publicEvents.map(mapPublicEventCard);
       locals.hasDbEvents = true;
-    } else if (activePage === "events") {
-      applyDemoEventFallbacks(locals);
     } else {
       locals.upcomingEvents = [];
       locals.hasDbEvents = false;
@@ -556,13 +498,10 @@ function registerPublicPagesRoutes(router) {
           published = [];
         }
       }
-      const samples =
-        published.length > 0
-          ? published.map(enrichSermonMedia)
-          : fallbackSermonSamples(locals.churchName);
+      const samples = published.length > 0 ? published.map(enrichSermonMedia) : [];
       locals.sermonSamples = samples;
       locals.hasDbSermons = published.length > 0;
-      locals.sermonDemoMedia = SERMON_DEMO_MEDIA;
+      locals.sermonDemoMedia = null;
       locals.sermonResourceCards = sermonResourceCards(samples[0] || null);
       return res.render("church/public/sermons", locals);
     } catch (e) {

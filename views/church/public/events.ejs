@@ -1,100 +1,91 @@
 <%- include('../partials/public_shell_start') %>
 <%
-  var events = upcomingEvents || [];
-  var categories = ['All Ministries', 'Youth', "Women's", 'Community', 'Worship'];
+  var events = Array.isArray(upcomingEvents) ? upcomingEvents : [];
 %>
 
-<section class="church-events-page">
-  <header class="church-events-page__intro">
-    <div>
-      <h1 class="home-desktop-design">Church Events</h1>
-      <h1 class="home-mobile-design">Upcoming Events</h1>
-      <p class="home-desktop-design">Join our community in worship, fellowship, and service. Find all upcoming gatherings, small groups, and special ministry events here.</p>
-      <p class="home-mobile-design">Stay connected with what is happening at <%= churchName %>.</p>
-    </div>
-    <div class="church-events-view-toggle home-desktop-design" aria-hidden="true">
-      <button type="button" class="is-active" aria-label="List view"><span class="material-symbols-outlined">view_list</span></button>
-      <button type="button" aria-label="Calendar view"><span class="material-symbols-outlined">calendar_month</span></button>
+<section class="church-events-page church-events-desktop church-events-mobile" data-events-page="1">
+  <header class="church-events-page__hero">
+    <div class="church-public-container">
+      <span class="church-public-eyebrow church-events-page__eyebrow">Events</span>
+      <h1 class="church-public-page-title church-events-page__title">Church Events</h1>
+      <p class="church-public-body church-events-page__lead">
+        Join our community in worship, fellowship, and service at <%= churchName %>.
+      </p>
     </div>
   </header>
 
-  <div class="church-events-toolbar">
-    <div class="church-events-filters" role="tablist" aria-label="Filter events">
-      <% categories.forEach(function (cat, idx) { %>
-      <button type="button" class="church-events-filter<%= idx === 0 ? ' is-active' : '' %>" data-event-filter="<%= cat.toLowerCase() %>">
-        <% if (idx === 0) { %>
-        <span class="home-desktop-design">All Ministries</span>
-        <span class="home-mobile-design">All Events</span>
-        <% } else { %><%= cat %><% } %>
-      </button>
+  <div class="church-public-container church-events-page__body">
+    <% if (events.length === 0) { %>
+    <div class="church-empty-state church-public-empty-state">
+      <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">event</span>
+      <p class="church-empty-state__title">No upcoming events yet</p>
+      <p class="church-empty-state__body">New events will appear here when published by church leadership.</p>
+    </div>
+    <% } else { %>
+    <div class="church-events-page__grid" role="list">
+      <% events.forEach(function (event) { %>
+      <article class="church-public-card church-events-page__card" role="listitem">
+        <% if (event.image) { %>
+        <div class="church-events-page__media">
+          <img src="<%= event.image %>" alt="" width="640" height="360" decoding="async"/>
+          <% if (event.day && event.month) { %>
+          <div class="church-events-page__date-badge" aria-hidden="true">
+            <strong><%= event.day %></strong>
+            <span><%= event.month %></span>
+          </div>
+          <% } %>
+          <% if (event.category) { %>
+          <span class="church-events-page__tag"><%= event.category %></span>
+          <% } %>
+        </div>
+        <% } else { %>
+        <div class="church-events-page__media church-events-page__media--fallback" aria-hidden="true">
+          <% if (event.day && event.month) { %>
+          <div class="church-events-page__date-badge church-events-page__date-badge--large">
+            <span><%= event.month %></span>
+            <strong><%= event.day %></strong>
+          </div>
+          <% } else { %>
+          <span class="material-symbols-outlined">event</span>
+          <% } %>
+          <% if (event.category) { %>
+          <span class="church-events-page__tag"><%= event.category %></span>
+          <% } %>
+        </div>
+        <% } %>
+        <div class="church-events-page__card-body">
+          <h2 class="church-events-page__card-title"><%= event.title %></h2>
+          <% if (event.time) { %>
+          <p class="church-public-meta church-events-page__meta">
+            <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+            <span><%= event.time %></span>
+          </p>
+          <% } %>
+          <% if (event.location) { %>
+          <p class="church-public-meta church-events-page__meta">
+            <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+            <span><%= event.location %></span>
+          </p>
+          <% } %>
+          <% if (event.description) { %>
+          <p class="church-public-body church-events-page__summary"><%= event.description %></p>
+          <% } %>
+        </div>
+      </article>
       <% }); %>
     </div>
-    <label class="church-events-search home-desktop-design">
-      <span class="material-symbols-outlined" aria-hidden="true">search</span>
-      <input type="search" placeholder="Search events..." aria-label="Search events"/>
-    </label>
-  </div>
+    <% } %>
 
-  <% if (events.length === 0) { %>
-  <div class="church-empty-state">
-    <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">event</span>
-    <p class="church-empty-state__title">No upcoming events yet</p>
-    <p class="church-empty-state__body">New events will appear here when published by church leadership.</p>
-  </div>
-  <% } else { %>
-
-  <%# Mobile list %>
-  <div class="church-events-mobile home-mobile-design">
-    <% events.forEach(function (event, idx) { %>
-      <% if (event.featured && idx === 0) { %>
-      <article class="church-event-featured">
-        <div class="church-event-featured__media">
-          <img src="/church/images/events/event-featured-mobile.jpg" alt="" width="512" height="279"/>
-          <div class="church-event-card__date"><span><%= event.month || 'SOON' %></span><strong><%= event.day || '—' %></strong></div>
-          <span class="church-event-featured__badge">Special</span>
-        </div>
-        <div class="church-event-featured__body">
-          <h3><%= event.title %></h3>
-          <p><span class="material-symbols-outlined" aria-hidden="true">schedule</span> <%= event.time || event.when %></p>
-          <a class="church-btn church-btn--primary church-btn--block" href="/contact">Register to Attend</a>
-        </div>
-      </article>
-      <% } else { %>
-      <article class="church-event-mobile-card">
-        <div class="church-event-mobile-card__date<%= idx === 0 ? ' church-event-mobile-card__date--accent' : '' %>">
-          <span><%= event.month || 'SOON' %></span>
-          <strong><%= event.day || '—' %></strong>
-        </div>
-        <div class="church-event-mobile-card__body">
-          <h3><%= event.title %></h3>
-          <p><span class="material-symbols-outlined" aria-hidden="true">schedule</span> <%= event.time || event.when %></p>
-          <p><span class="material-symbols-outlined" aria-hidden="true">location_on</span> <%= event.location || 'Church campus' %></p>
-          <a class="church-event-mobile-card__cta" href="/contact">Details <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
-        </div>
-      </article>
-      <% } %>
-    <% }); %>
-    <button type="button" class="church-events-load-more" disabled>Load more events</button>
-  </div>
-
-  <%# Desktop grid %>
-  <div class="church-events-desktop home-desktop-design">
-    <% events.forEach(function (event) { %>
-    <article class="church-event-card">
-      <div class="church-event-card__media">
-        <img src="<%= event.image || '/church/images/events/event-1.jpg' %>" alt="" width="512" height="279"/>
-        <div class="church-event-card__date"><strong><%= event.day || '—' %></strong><span><%= event.month || 'SOON' %></span></div>
-        <span class="church-event-card__tag"><%= event.category || 'Community' %></span>
+    <aside class="church-events-page__cta" aria-labelledby="events-cta-heading">
+      <div class="church-events-page__cta-copy">
+        <h2 id="events-cta-heading" class="church-events-page__cta-title">Want to stay connected?</h2>
+        <p class="church-events-page__cta-body">Register as a member or contact the church office for gathering details.</p>
       </div>
-      <div class="church-event-card__body">
-        <h3><%= event.title %></h3>
-        <p><span class="material-symbols-outlined" aria-hidden="true">schedule</span> <%= event.time || event.when %></p>
-        <p><span class="material-symbols-outlined" aria-hidden="true">location_on</span> <%= event.location || 'Church campus' %></p>
-        <a class="church-btn church-btn--outline church-btn--block" href="/contact">Event Details</a>
+      <div class="church-events-page__cta-actions">
+        <a class="church-btn church-btn--public-primary" href="/register">Register as a Member</a>
+        <a class="church-btn church-btn--public-secondary" href="/contact">Contact Church</a>
       </div>
-    </article>
-    <% }); %>
+    </aside>
   </div>
-  <% } %>
 </section>
 <%- include('../partials/public_shell_end') %>

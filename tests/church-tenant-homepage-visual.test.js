@@ -54,7 +54,7 @@ test("tenant homepage has one main wrapper and valid section hierarchy", async (
   const res = await request(makeTenantApp()).get("/");
   assert.equal(res.status, 200);
   assert.equal(countMatches(res.text, /data-tenant-home="1"/), 1);
-  assert.match(res.text, /class="bb-tenant-home"/);
+  assert.match(res.text, /class="[^"]*bb-tenant-home[^"]*"/);
   assert.match(res.text, /bb-tenant-hero__inner/);
   assert.match(res.text, /bb-tenant-section__inner/);
   assert.match(res.text, /home-desktop-design/);
@@ -63,12 +63,12 @@ test("tenant homepage has one main wrapper and valid section hierarchy", async (
   const order = [
     /data-tenant-home="1"/,
     /id="welcome"|bb-tenant-hero/,
-    /bb-tenant-service/,
+    /bb-tenant-service|bb-tenant-rail__card--service/,
+    /id="giving"/,
     /id="announcements"/,
     /id="events"/,
-    /id="ministries"/,
     /id="sermons"/,
-    /id="giving"/,
+    /id="ministries"/,
     /id="visit"/,
   ];
   let cursor = 0;
@@ -96,15 +96,14 @@ test("hero sits in shared container without duplicate Welcome home outside hero"
 
 test("service information is not duplicated across visible homepage regions", async () => {
   const res = await request(makeTenantApp()).get("/");
-  // Markup may include schedule in hero overlay and mobile schedule card, but Visit Us must not repeat it.
+  // Mobile service card + desktop rail both exist in markup; CSS shows one per breakpoint. Visit Us must not repeat it.
   const visitStart = res.text.indexOf('id="visit"');
   assert.ok(visitStart >= 0);
   const visitChunk = res.text.slice(visitStart, visitStart + 2500);
   assert.doesNotMatch(visitChunk, /Sunday Worship · 10:00 AM/);
-  assert.match(res.text, /bb-tenant-hero__service/);
   assert.match(res.text, /bb-tenant-service__card--schedule/);
-  assert.match(res.text, /bb-tenant-service__card--location/);
-  assert.match(res.text, /bb-tenant-service__grid/);
+  assert.match(res.text, /bb-tenant-rail__card--service/);
+  assert.doesNotMatch(res.text, /bb-tenant-hero__service/);
 });
 
 test("announcement, event, ministry, sermon, giving, and contact wrappers are styled", async () => {
@@ -114,11 +113,13 @@ test("announcement, event, ministry, sermon, giving, and contact wrappers are st
   assert.doesNotMatch(res.text, /<ul class="bb-tenant-announcements__list">/);
   assert.match(res.text, /bb-tenant-events/);
   assert.match(res.text, /bb-tenant-ministries/);
-  assert.match(res.text, /bb-tenant-sermons/);
-  assert.match(res.text, /bb-tenant-sermons__empty|bb-tenant-sermons__panel/);
-  assert.match(res.text, /bb-tenant-giving__card/);
+  assert.match(res.text, /bb-tenant-rail__card--resources|id="sermons"/);
+  assert.match(res.text, /bb-tenant-community|id="giving"/);
+  assert.match(res.text, /Give Now/);
+  assert.match(res.text, /bb-tenant-member/);
   assert.match(res.text, /bb-tenant-visit__grid/);
   assert.match(res.text, /bb-tenant-visit__list|bb-tenant-empty--inline/);
+  assert.doesNotMatch(res.text, /15 members are nearby|Join Ministry|Send Prayer Request form/);
 });
 
 test("tenant header, footer attribution, and apex isolation remain intact", async () => {
@@ -157,14 +158,16 @@ test("CSS defines matching selectors for primary tenant homepage classes", () =>
     ".bb-tenant-section__inner",
     ".bb-tenant-service__card",
     ".bb-tenant-service__card--schedule",
+    ".bb-tenant-hub",
+    ".bb-tenant-rail",
+    ".bb-tenant-community",
+    ".bb-tenant-member",
     ".bb-tenant-announcements__list",
     ".bb-tenant-announcement-card",
     ".bb-tenant-events__grid",
     ".bb-tenant-event-card",
     ".bb-tenant-ministries__grid",
     ".bb-tenant-ministry-card",
-    ".bb-tenant-sermons",
-    ".bb-tenant-giving__card",
     ".bb-tenant-visit__grid",
     ".bb-tenant-empty",
   ];
@@ -173,7 +176,6 @@ test("CSS defines matching selectors for primary tenant homepage classes", () =>
   }
   assert.match(css, /--church-margin-desktop:\s*32px/);
   assert.match(css, /\.bb-tenant-service\s*\{[\s\S]*?display:\s*none/);
-  assert.match(css, /\.bb-tenant-hero__service[\s\S]*display:\s*none/);
 });
 
 test("about page remains unchanged by tenant homepage repair", async () => {
