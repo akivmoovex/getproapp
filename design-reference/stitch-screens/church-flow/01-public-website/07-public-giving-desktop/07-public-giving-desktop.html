@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Giving | Kafue Baptist Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#e4dfff",
+                        "outline": "#787586",
+                        "inverse-on-surface": "#e7f3f7",
+                        "surface": "#f1fbff",
+                        "tertiary-container": "#57595b",
+                        "surface-tint": "#5847d2",
+                        "tertiary-fixed": "#e2e2e4",
+                        "on-secondary-container": "#5e6668",
+                        "tertiary": "#404244",
+                        "error-container": "#ffdad6",
+                        "secondary": "#586062",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-primary-fixed": "#160066",
+                        "inverse-surface": "#283236",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#474554",
+                        "primary-container": "#5341cd",
+                        "on-tertiary-fixed-variant": "#454749",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#c6bfff",
+                        "surface-variant": "#d9e4e9",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-background": "#131d21",
+                        "secondary-container": "#dce4e6",
+                        "glass-white": "rgba(255, 255, 255, 0.7)",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-surface": "#131d21",
+                        "background": "#f1fbff",
+                        "on-primary": "#ffffff",
+                        "surface-bright": "#f1fbff",
+                        "on-tertiary-container": "#cfd0d2",
+                        "tertiary-fixed-dim": "#c5c6c9",
+                        "surface-dim": "#d1dce0",
+                        "surface-sky": "#f1fbff",
+                        "on-error": "#ffffff",
+                        "surface-container": "#e4f0f4",
+                        "outline-variant": "#c8c4d7",
+                        "on-secondary-fixed": "#151d1f",
+                        "surface-container-high": "#dfeaef",
+                        "on-tertiary": "#ffffff",
+                        "brand-orange": "#FF9800",
+                        "on-secondary-fixed-variant": "#40484a",
+                        "secondary-fixed": "#dce4e6",
+                        "on-primary-container": "#d1cbff",
+                        "primary": "#3b22b5",
+                        "surface-container-low": "#eaf5fa",
+                        "secondary-fixed-dim": "#c0c8ca"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "16px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "section-padding": "64px",
+                        "margin-desktop": "32px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "label-md": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #f1fbff;
+            color: #131d21;
+            scroll-behavior: smooth;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(200, 196, 215, 0.3);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .mesh-gradient {
+            background: radial-gradient(at 0% 0%, rgba(83, 65, 205, 0.05) 0px, transparent 50%),
+                        radial-gradient(at 100% 100%, rgba(88, 71, 210, 0.08) 0px, transparent 50%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-body-md text-body-md">
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 w-full z-50 bg-glass-white/70 backdrop-blur-md border-b border-outline-variant/30 shadow-sm">
+<div class="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto w-full">
+<div class="font-title-lg text-title-lg font-bold text-primary">Kafue Baptist Church</div>
+<div class="hidden md:flex items-center space-x-lg">
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors cursor-pointer" href="#">Sermons</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors cursor-pointer" href="#">Events</a>
+<a class="text-primary border-b-2 border-primary pb-1 font-title-md cursor-pointer" href="#">Giving</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors cursor-pointer" href="#">Leadership</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors cursor-pointer" href="#">About</a>
+</div>
+<div class="flex items-center space-x-md">
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container-low rounded-full transition-all">search</button>
+<button class="bg-primary-container text-on-primary px-lg py-sm rounded-lg font-title-md active:scale-95 transition-transform">Connect</button>
+</div>
+</div>
+</nav>
+<main class="flex-grow pt-16 mesh-gradient">
+<!-- Hero Section: Variant A -->
+<header class="relative w-full py-section-padding px-margin-mobile md:px-margin-desktop overflow-hidden">
+<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-xl items-center">
+<div class="md:col-span-7 space-y-md">
+<div class="inline-flex items-center bg-primary-fixed text-on-primary-fixed-variant px-md py-xs rounded-full">
+<span class="material-symbols-outlined text-[18px] mr-2" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+<span class="font-label-lg text-label-lg uppercase tracking-wider">Faithful Stewardship</span>
+</div>
+<h1 class="font-display-lg text-display-lg text-primary max-w-2xl">Support the Vision of Kafue Baptist Church</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+                        Your generosity fuels our mission to serve the community, support global missions, and maintain our sanctuary as a place of spiritual growth.
+                    </p>
+<div class="flex flex-wrap gap-md pt-md">
+<a class="bg-primary text-on-primary px-xl py-md rounded-lg font-title-md hover:shadow-md transition-shadow inline-block" href="#ways-to-give">Explore Ways to Give</a>
+<button class="border border-outline-variant text-primary px-xl py-md rounded-lg font-title-md hover:bg-surface-container-low transition-colors">Our Mission</button>
+</div>
+</div>
+<div class="md:col-span-5 relative">
+<div class="aspect-square rounded-2xl overflow-hidden shadow-xl glass-card p-2">
+<img class="w-full h-full object-cover rounded-xl" data-alt="A warm, serene interior of a modern church sanctuary during golden hour. Soft light filters through stained glass, creating colorful patterns on clean wooden pews. The atmosphere is peaceful and spiritual, following a corporate modern aesthetic with high-key lighting and soft indigo tints to match the church brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmo8LYMLF04WR29bv-sZmooeKZFzeWCMi__CgpvAYbhYkSmtC6WHxiCjUzK89_uOo5-XFKxA0CtDN9Dp_pfTVZ1o6I1CtiqtU0NeV9YKFYbnFWndQx74fT9EoQtHuP5v8vFwEzgfwAaWtHpOxHTejHBsTA1xYIlpqRVgD_OYwX1j1BTczo7unir-2M52Lg9JrkLaSKg_3L7rwxMckIMe3r_q8aJtSUZH89fbQK0WvUivQLlE95irXuMQ"/>
+</div>
+<!-- Decorative Element -->
+<div class="absolute -bottom-6 -left-6 w-32 h-32 bg-primary-fixed/40 rounded-full blur-3xl -z-10"></div>
+</div>
+</div>
+</header>
+<!-- Ways to Give Section -->
+<section class="py-section-padding px-margin-mobile md:px-margin-desktop bg-surface-container-lowest" id="ways-to-give">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-section-padding">
+<h2 class="font-headline-lg text-headline-lg text-inverse-surface mb-xs">Ways to Give</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Secure and convenient methods to support our ministry</p>
+</div>
+<!-- Modular Info Cards: Bento Grid Style -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Bank Transfer Card -->
+<div class="bg-white p-xl rounded-2xl border border-outline-variant/30 shadow-sm flex flex-col hover:shadow-md transition-all">
+<div class="w-12 h-12 bg-primary-fixed flex items-center justify-center rounded-xl mb-lg">
+<span class="material-symbols-outlined text-primary text-[28px]">account_balance</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-inverse-surface mb-md">Bank Transfer</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow mb-lg">
+                            Direct deposits can be made via EFT or at any branch. Please use your name or member ID as the reference for accurate recording.
+                        </p>
+<div class="space-y-sm p-md bg-surface-container-low rounded-lg border border-outline-variant/20">
+<div class="flex justify-between items-center">
+<span class="font-label-lg text-label-lg text-outline">Bank Name</span>
+<span class="font-title-md text-title-md text-on-surface">Standard Chartered</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-label-lg text-label-lg text-outline">Account Holder</span>
+<span class="font-title-md text-title-md text-on-surface">Kafue Baptist Church</span>
+</div>
+</div>
+<button class="mt-lg w-full py-sm border border-primary text-primary rounded-lg font-title-md hover:bg-primary-fixed transition-colors">Request Details</button>
+</div>
+<!-- Mobile Money Card -->
+<div class="bg-white p-xl rounded-2xl border border-outline-variant/30 shadow-sm flex flex-col hover:shadow-md transition-all">
+<div class="w-12 h-12 bg-brand-orange/10 flex items-center justify-center rounded-xl mb-lg">
+<span class="material-symbols-outlined text-brand-orange text-[28px]">smartphone</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-inverse-surface mb-md">Mobile Money</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow mb-lg">
+                            Fast and secure giving through local mobile operators. Dial the shortcode or use the mobile app to contribute instantly.
+                        </p>
+<div class="grid grid-cols-2 gap-sm mb-lg">
+<div class="p-sm text-center border border-outline-variant/20 rounded-lg bg-surface-container-low">
+<p class="font-label-lg text-label-lg text-outline">Airtel Money</p>
+<p class="font-title-md text-title-md text-on-surface">Merchant ID</p>
+</div>
+<div class="p-sm text-center border border-outline-variant/20 rounded-lg bg-surface-container-low">
+<p class="font-label-lg text-label-lg text-outline">MTN MoMo</p>
+<p class="font-title-md text-title-md text-on-surface">Merchant ID</p>
+</div>
+</div>
+<button class="w-full py-sm bg-primary text-on-primary rounded-lg font-title-md active:scale-95 transition-transform">Get Shortcodes</button>
+</div>
+<!-- In-Person Giving Card -->
+<div class="bg-white p-xl rounded-2xl border border-outline-variant/30 shadow-sm flex flex-col hover:shadow-md transition-all">
+<div class="w-12 h-12 bg-secondary-container flex items-center justify-center rounded-xl mb-lg">
+<span class="material-symbols-outlined text-secondary text-[28px]">payments</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-inverse-surface mb-md">In-Person</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow mb-lg">
+                            Envelopes are available at the church office or during our Sunday services. We accept cash, checks, and card payments on-site.
+                        </p>
+<div class="flex items-center p-md bg-surface-container-low rounded-lg mb-lg">
+<span class="material-symbols-outlined text-primary mr-md">schedule</span>
+<div>
+<p class="font-label-lg text-label-lg text-outline">Service Times</p>
+<p class="font-title-md text-title-md text-on-surface">Sunday: 09:00 - 12:00</p>
+</div>
+</div>
+<button class="w-full py-sm border border-outline-variant text-on-surface-variant rounded-lg font-title-md hover:bg-surface-container-low transition-colors">Find Our Location</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Impact Section -->
+<section class="py-section-padding px-margin-mobile md:px-margin-desktop overflow-hidden">
+<div class="max-w-7xl mx-auto glass-card rounded-2xl p-xl md:p-section-padding relative">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-xl items-center">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary mb-md">Where Your Giving Goes</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-lg">
+                            We believe in transparency and accountability. Every contribution is carefully allocated to ensure the maximum impact for our spiritual community and neighbors.
+                        </p>
+<ul class="space-y-md">
+<li class="flex items-start">
+<span class="material-symbols-outlined text-primary mr-md mt-1" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div>
+<h4 class="font-title-md text-title-md text-inverse-surface">Community Outreach</h4>
+<p class="text-on-surface-variant">Supporting local food banks, education programs, and elderly care.</p>
+</div>
+</li>
+<li class="flex items-start">
+<span class="material-symbols-outlined text-primary mr-md mt-1" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div>
+<h4 class="font-title-md text-title-md text-inverse-surface">Missions &amp; Evangelism</h4>
+<p class="text-on-surface-variant">Funding regional and international mission trips and materials.</p>
+</div>
+</li>
+<li class="flex items-start">
+<span class="material-symbols-outlined text-primary mr-md mt-1" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div>
+<h4 class="font-title-md text-title-md text-inverse-surface">Facility Stewardship</h4>
+<p class="text-on-surface-variant">Maintenance of our sanctuary and community center for all to enjoy.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<div class="space-y-md">
+<div class="aspect-[4/5] rounded-xl overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A diverse group of cheerful community volunteers handing out bags of fresh produce and supplies at a local community outreach event. The lighting is bright and sunny, conveying a mood of hope and compassion. The aesthetic is clean and modern, highlighting the church's active involvement in social welfare." src="https://lh3.googleusercontent.com/aida-public/AB6AXuATqVXM-6-0FAxctbSCW7MzFuqDZtrOBgVdjjqps_rXIwU98ETC4PelHruznIcpPWFkLdjQ_gOUEgwx9kVBJzM-B1K9oLO49Vj_wb22XfwWFm4ldGEzM_h2bEmv3Yyq3HCZmQkzjU4Jwcy4woASGtxKGldn06MXIX8Vtd85i250_tgT9xwvwv7Y97pB_qDSziV5CryaTNs36AHdv65gysQ5SZET9LnKyyGpxnbSgd_3tdcbIo61oRGqmQ"/>
+</div>
+<div class="bg-primary text-on-primary p-md rounded-xl text-center">
+<p class="font-display-lg text-[40px] leading-none mb-2">15+</p>
+<p class="font-label-lg text-label-lg">Active Projects</p>
+</div>
+</div>
+<div class="pt-xl space-y-md">
+<div class="bg-primary-fixed text-on-primary-fixed-variant p-md rounded-xl text-center">
+<p class="font-display-lg text-[40px] leading-none mb-2">1.2k</p>
+<p class="font-label-lg text-label-lg">Families Served</p>
+</div>
+<div class="aspect-[4/5] rounded-xl overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A group of young students learning in a bright, modern classroom supported by church education initiatives. The room is filled with colorful educational posters and natural light. The visual style is professional and optimistic, emphasizing the empowerment and growth through community support." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2m7D0yb2-Y1hu88NmGaF4ENh8-pDmEbIco_IQorU6ZnCnBrcli4mFj9jAJKtyegAZcIr23SBoc9zYcGXWxMJKHfsROjL-u2ayNFht5KQjtUYRCZA5NMPge6d_vQMidf8sZgK27UXBn-eQoh6mPR626phtmqPfYE-0yj4SWdGVmEcvreqwHZPUPNmSvLI6MEKGL7CqZTls1PA7iRCySGBQgnBAjHyZW-oIdTGCsI0-YS65-H_aU-3now"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-highest w-full mt-auto border-t border-outline-variant">
+<div class="flex flex-col md:flex-row justify-between items-center py-section-padding px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
+<div class="mb-md md:mb-0">
+<div class="font-title-md text-title-md font-bold text-on-surface mb-xs">Kafue Baptist Church</div>
+<p class="text-on-surface-variant text-sm">© 2024 Kafue Baptist Church. Powered by GetPro</p>
+</div>
+<div class="flex flex-wrap justify-center gap-lg">
+<a class="text-on-surface-variant hover:text-on-surface hover:underline transition-all font-body-md" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-on-surface hover:underline transition-all font-body-md" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-on-surface hover:underline transition-all font-body-md" href="#">Contact Us</a>
+<a class="text-on-surface-variant hover:text-on-surface hover:underline transition-all font-body-md" href="#">Branch Portal</a>
+</div>
+</div>
+</footer>
+<!-- Interactive Layer for Micro-interactions -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Smooth reveal animation for cards
+            const observerOptions = {
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('opacity-100', 'translate-y-0');
+                        entry.target.classList.remove('opacity-0', 'translate-y-10');
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('#ways-to-give .bg-white').forEach(card => {
+                card.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-10');
+                observer.observe(card);
+            });
+        });
+    </script>
+</body></html>

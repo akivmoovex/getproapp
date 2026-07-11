@@ -1,350 +1,268 @@
 <!DOCTYPE html>
 
-<html class="light" lang="en"><head>
+<html class="scroll-smooth" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Leadership | GetPro Church</title>
+<title>Leadership - Kafue Baptist Church</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "on-error": "#ffffff",
-                    "on-tertiary-container": "#f7f8f9",
-                    "error-container": "#ffdad6",
-                    "on-secondary": "#ffffff",
-                    "tertiary-container": "#707273",
-                    "primary-fixed": "#e4dfff",
-                    "on-primary": "#ffffff",
-                    "primary-fixed-dim": "#c6bfff",
-                    "on-surface-variant": "#474554",
-                    "surface-container-low": "#eaf5fa",
-                    "on-secondary-fixed-variant": "#41484a",
-                    "on-background": "#131d21",
-                    "surface": "#f1fbff",
-                    "background": "#f1fbff",
-                    "on-surface": "#131d21",
-                    "surface-tint": "#5847d2",
-                    "surface-container-lowest": "#ffffff",
-                    "surface-container": "#e4f0f4",
-                    "on-primary-container": "#faf6ff",
-                    "secondary": "#586062",
-                    "surface-variant": "#d9e4e9",
-                    "inverse-on-surface": "#e7f3f7",
-                    "secondary-container": "#dae1e3",
-                    "primary": "#5341cd",
-                    "on-primary-fixed": "#160066",
-                    "on-error-container": "#93000a",
-                    "on-primary-fixed-variant": "#4029ba",
-                    "on-secondary-container": "#5d6466",
-                    "surface-bright": "#f1fbff",
-                    "error": "#ba1a1a",
-                    "on-tertiary-fixed": "#191c1d",
-                    "primary-container": "#6c5ce7",
-                    "on-secondary-fixed": "#161d1f",
-                    "surface-container-highest": "#d9e4e9",
-                    "on-tertiary-fixed-variant": "#454748",
-                    "inverse-primary": "#c6bfff",
-                    "tertiary-fixed-dim": "#c5c7c8",
-                    "secondary-fixed-dim": "#c1c8ca",
-                    "outline": "#787586",
-                    "outline-variant": "#c8c4d7",
-                    "on-tertiary": "#ffffff",
-                    "tertiary-fixed": "#e1e3e4",
-                    "tertiary": "#57595b",
-                    "secondary-fixed": "#dde4e6",
-                    "surface-dim": "#d1dce0",
-                    "surface-container-high": "#dfeaef",
-                    "inverse-surface": "#283236"
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#e4dfff",
+                        "outline": "#787586",
+                        "inverse-on-surface": "#e7f3f7",
+                        "surface": "#f1fbff",
+                        "tertiary-container": "#57595b",
+                        "surface-tint": "#5847d2",
+                        "tertiary-fixed": "#e2e2e4",
+                        "on-secondary-container": "#5e6668",
+                        "tertiary": "#404244",
+                        "error-container": "#ffdad6",
+                        "secondary": "#586062",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-primary-fixed": "#160066",
+                        "inverse-surface": "#283236",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#474554",
+                        "primary-container": "#5341cd",
+                        "on-tertiary-fixed-variant": "#454749",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#c6bfff",
+                        "surface-variant": "#d9e4e9",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-background": "#131d21",
+                        "secondary-container": "#dce4e6",
+                        "glass-white": "rgba(255, 255, 255, 0.7)",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-surface": "#131d21",
+                        "background": "#f1fbff",
+                        "on-primary": "#ffffff",
+                        "surface-bright": "#f1fbff",
+                        "on-tertiary-container": "#cfd0d2",
+                        "tertiary-fixed-dim": "#c5c6c9",
+                        "surface-dim": "#d1dce0",
+                        "surface-sky": "#f1fbff",
+                        "on-error": "#ffffff",
+                        "surface-container": "#e4f0f4",
+                        "outline-variant": "#c8c4d7",
+                        "on-secondary-fixed": "#151d1f",
+                        "surface-container-high": "#dfeaef",
+                        "on-tertiary": "#ffffff",
+                        "brand-orange": "#FF9800",
+                        "on-secondary-fixed-variant": "#40484a",
+                        "secondary-fixed": "#dce4e6",
+                        "on-primary-container": "#d1cbff",
+                        "primary": "#3b22b5",
+                        "surface-container-low": "#eaf5fa",
+                        "secondary-fixed-dim": "#c0c8ca"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "section-padding": "64px",
+                        "margin-desktop": "32px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}]
+                    }
+                },
             },
-            "borderRadius": {
-                    "DEFAULT": "0.25rem",
-                    "lg": "0.5rem",
-                    "xl": "0.75rem",
-                    "full": "9999px"
-            },
-            "spacing": {
-                    "lg": "24px",
-                    "xl": "32px",
-                    "xs": "4px",
-                    "sm": "8px",
-                    "base": "8px",
-                    "md": "16px",
-                    "gutter": "24px",
-                    "margin-mobile": "16px",
-                    "margin-desktop": "32px"
-            },
-            "fontFamily": {
-                    "title-lg": ["Inter"],
-                    "body-lg": ["Inter"],
-                    "title-md": ["Inter"],
-                    "label-lg": ["Inter"],
-                    "headline-lg": ["Inter"],
-                    "label-md": ["Inter"],
-                    "headline-md": ["Inter"],
-                    "display-lg": ["Inter"],
-                    "headline-lg-mobile": ["Inter"],
-                    "body-md": ["Inter"]
-            },
-            "fontSize": {
-                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
-                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
-                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
-                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
-                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
-                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
-                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
-                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
-                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
-            }
-          }
         }
-      }
     </script>
 <style>
-      .material-symbols-outlined {
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-      }
-      .glass-card {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-      }
-      .leader-card:hover .leader-overlay {
-        opacity: 1;
-        transform: translateY(0);
-      }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(200, 196, 215, 0.3);
+        }
     </style>
 </head>
-<body class="bg-surface text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
-<!-- Top Navigation -->
-<nav class="bg-surface border-b border-outline-variant fixed top-0 left-0 right-0 z-50 transition-all duration-300">
-<div class="flex justify-between items-center px-margin-desktop w-full max-w-7xl mx-auto h-16">
+<body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-glass-white/70 backdrop-blur-md border-b border-outline-variant/30 shadow-sm">
+<nav class="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto w-full">
+<div class="flex items-center gap-2">
+<span class="font-title-lg text-title-lg font-bold text-primary">Kafue Baptist Church</span>
+</div>
+<div class="hidden md:flex items-center gap-lg">
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors" href="#">Sermons</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors" href="#">Events</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors" href="#">Giving</a>
+<a class="text-primary border-b-2 border-primary pb-1 font-title-md" href="#">Leadership</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-colors" href="#">About</a>
+</div>
 <div class="flex items-center gap-md">
-<span class="material-symbols-outlined text-primary text-3xl" data-icon="church">church</span>
-<span class="text-title-lg font-headline-lg text-primary">GetPro Church</span>
-</div>
-<div class="hidden md:flex items-center gap-xl">
-<a class="text-secondary hover:text-primary transition-colors font-label-lg" href="#">Features</a>
-<a class="text-secondary hover:text-primary transition-colors font-label-lg" href="#">Pricing</a>
-<a class="text-primary font-bold border-b-2 border-primary py-1 font-label-lg" href="#">Leadership</a>
-<a class="text-secondary hover:text-primary transition-colors font-label-lg" href="#">About Us</a>
-</div>
-<div class="flex items-center gap-md">
-<button class="px-lg py-sm rounded-full text-primary font-label-lg hover:bg-surface-container-low transition-all active:scale-95">Login</button>
-<button class="px-lg py-sm rounded-full bg-primary text-on-primary font-label-lg hover:bg-primary-container transition-all shadow-sm active:scale-95">Get Started</button>
-</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-all">search</button>
+<button class="bg-primary text-on-primary px-lg py-2 rounded-lg font-title-md hover:bg-primary-container transition-all active:scale-95">Connect</button>
 </div>
 </nav>
-<main class="pt-24 pb-20 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
-<!-- Header Section -->
-<header class="mb-16 text-center max-w-3xl mx-auto">
-<h1 class="font-display-lg text-display-lg text-on-surface mb-md">Our Leadership</h1>
-<p class="font-body-lg text-body-lg text-secondary">
-                At Kafue Baptist Church, we are led by a dedicated team committed to serving our community with compassion, wisdom, and faith. Meet the hearts behind our mission.
-            </p>
 </header>
-<!-- Bento Grid: Main Leadership -->
-<div class="grid grid-cols-1 md:grid-cols-12 gap-lg mb-20">
-<!-- Senior Pastor - Large Card -->
-<div class="md:col-span-8 bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm flex flex-col md:flex-row group transition-all duration-300 hover:shadow-lg border border-outline-variant/30">
-<div class="md:w-1/2 h-80 md:h-auto overflow-hidden relative">
-<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A warm and approachable portrait of a senior pastor in a sunny, modern church office. He is smiling warmly, wearing a smart-casual blazer. The lighting is soft and natural, emphasizing a welcoming community atmosphere. High-end photography with a shallow depth of field and soft violet and cream tones consistent with a modern light-mode UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCk8XtElnxmUw5zxBMS0FdqXfdN1UmoFGTiuZfYiG-oH9LREmaZ74TbFsD4moMC8zsem2CQ81CpUXotthZik3xJ-pyu2_iH10Muq6YqcsZYaWjGhd0vsKyrQTL58oXumr69Zy3UqYIX9yqI1zNQs_Dx8KEjCB5fWGSiFF_cVsqyfNa6wG0VxevdZY8okaHJ_bTT_gLpentOgAeJ9rWcn-Ye47ir_37Lh-ANyjKGq938zkVVAubfiYgZtw"/>
-<div class="absolute top-md left-md">
-<span class="bg-primary-container text-on-primary-container px-md py-xs rounded-full font-label-md shadow-sm">Senior Pastor</span>
+<main class="pt-16 flex-grow">
+<!-- Hero Section (Variant A) -->
+<section class="relative h-[400px] flex items-center overflow-hidden">
+
+<div class="relative max-w-7xl mx-auto px-margin-desktop w-full z-10">
+<div class="max-w-2xl">
+<span class="inline-block bg-primary-fixed text-on-primary-fixed-variant px-md py-1 rounded-full text-label-lg font-bold mb-md">FAITH &amp; COMMUNITY</span>
+<h1 class="font-display-lg text-display-lg text-primary mb-md leading-tight">Meet Our Church Leadership</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg">Dedicated servants committed to shepherd, teach, and empower our congregation through spiritual guidance and practical grace.</p>
 </div>
 </div>
-<div class="md:w-1/2 p-xl flex flex-col justify-center">
-<h2 class="font-headline-md text-headline-md mb-sm">Dr. Samuel Chiluba</h2>
-<p class="text-secondary font-body-md mb-lg">Serving as our Lead Pastor for 12 years, Samuel brings a vision of community growth and spiritual deepening through inclusive outreach and dedicated teaching.</p>
-<div class="flex items-center gap-md">
-<button class="flex items-center gap-sm px-lg py-md rounded-full bg-surface-container-high text-on-surface font-label-lg hover:bg-primary/10 transition-colors">
-<span class="material-symbols-outlined" data-icon="mail">mail</span>
-                            Contact Samuel
-                        </button>
+</section>
+<!-- Leadership Grid -->
+<div class="max-w-7xl mx-auto px-margin-desktop py-section-padding">
+<!-- Lead Pastor Section -->
+<div class="mb-section-padding">
+<div class="flex items-center gap-md mb-xl">
+<div class="h-1 w-12 bg-primary rounded-full"></div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Lead Pastor</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter items-center">
+<div class="md:col-span-5 aspect-[4/5] rounded-2xl overflow-hidden shadow-md">
+<img class="w-full h-full object-cover" data-alt="A professional and warm portrait of a senior pastor in a modern, light-filled office setting. The pastor is a man in his late 50s, smiling gently, wearing a clean charcoal suit. Soft morning sunlight filters through large windows, highlighting the clean white walls and indoor greenery. The overall aesthetic is bright, corporate-modern, and welcoming, using the church's primary indigo tones for subtle accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCq4s1-jVrUV4865AhXiXzpZuYP5UzpMIocoH2gN7s9t1n5zzJtRY26pTVsGePCI4_sc71BaJp9Sn7DpqvTeGd7dv19vBELz1nIdRycfRPqUgrK7aGXH9mY26M6duLOSoE1mgKFOoAP_LHeJ1ZTzWNgPukWvSPnfjyp8DtEWYkAUABzGwS9DAjbN_HhsD9sXL9S7onlaLHfIEFb0kprlSk7NRmc68Gl5Z50WntrMq6Ti1748JTaeN2cwQ"/>
+</div>
+<div class="md:col-span-7 bg-white p-xl rounded-2xl border border-outline-variant/30 flex flex-col justify-center">
+<h3 class="font-display-lg text-headline-lg text-primary mb-xs">Rev. Dr. Samuel Musonda</h3>
+<p class="font-title-md text-primary-fixed-dim bg-primary px-3 py-1 rounded-lg w-fit mb-lg">Senior Lead Pastor</p>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-xl leading-relaxed">
+                            With over 25 years of ministry experience, Pastor Samuel leads Kafue Baptist Church with a vision for transformative faith and community empowerment. He holds a Doctorate in Theology and is passionate about practical biblical teaching that bridges ancient truths with modern challenges.
+                        </p>
+<div class="flex gap-md">
+<button class="flex items-center gap-2 bg-surface-container-low text-primary px-lg py-3 rounded-lg hover:bg-primary-fixed transition-all">
+<span class="material-symbols-outlined">mail</span>
+<span class="font-label-lg">Contact Pastor</span>
+</button>
 </div>
 </div>
 </div>
-<!-- Assistant Pastor - Medium Card -->
-<div class="md:col-span-4 bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm flex flex-col group transition-all duration-300 hover:shadow-lg border border-outline-variant/30">
+</div>
+<!-- Ministry Leaders Section -->
+<div>
+<div class="flex items-center gap-md mb-xl">
+<div class="h-1 w-12 bg-primary rounded-full"></div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Ministry Leaders</h2>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Leader 1 -->
+<div class="bg-white rounded-2xl border border-outline-variant/30 overflow-hidden hover:shadow-lg transition-all group">
 <div class="h-64 overflow-hidden relative">
-<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A friendly assistant pastor with a bright expression, captured in a modern library setting with soft light filtering through windows. She is wearing a soft violet sweater. The aesthetic is clean, professional, and compassionate, matching the primary brand colors of a modern church management system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHkDznxzquG4R6CSsewuNfhBzUdht-qMKSGRcEHJ_jlo1cxT0G_nfvrOfSh-pB9XSBbm-X5ZRQAt3RWHlQJGdI-pGIB9tcxdG4GtsWfLiE5TzmIAJbfb-7C_WS_xn28jszo5us_9borzK4obYcpuHJtmEuOGp4Y9IhFkePPzIQKfbIMjbb97oJy-OkmyEFtyakKet1F0F4vqWcFZpdBYyOsgThchWVR62Ye2jjQvUEJ3NNF8QRrP0nzw"/>
-<div class="absolute top-md left-md">
-<span class="bg-secondary-container text-on-secondary-container px-md py-xs rounded-full font-label-md shadow-sm">Assistant Pastor</span>
-</div>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Portrait of a young female ministry leader with a friendly expression, standing in a brightly lit modern hall. She has professional attire with soft indigo accents. The lighting is soft and airy, creating a professional yet approachable corporate modern vibe. The background shows blurred architectural elements of a contemporary building." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBO7Sl8TdDIfme7MwG2risV-h7aOvoeG2FVpIv44y9FtTYJ-rf0IrIlKlRJCHboLJbtAd7MNIvBUqt6Pm3q76qZXgBGTVPwBR1Db9ev1eYKIdol_J6gtzwvz1Qg0JgALr2YaqIIMxUTT1Ox-Tj3vCOrum1MRMEjLiXmekHALplb7vIF_pJr_KXBtCk8tiXVSvDuWZR1tt1r8AxPC_WQ6IJ8Nf164cpo7pwBtZvieMvdqDCXraJ4-yUkuw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 </div>
 <div class="p-lg">
-<h3 class="font-title-lg text-title-lg mb-xs">Rev. Martha Phiri</h3>
-<p class="text-secondary font-body-md mb-md">Focusing on congregational care and discipleship programs.</p>
-<a class="text-primary font-label-lg flex items-center gap-xs hover:gap-md transition-all" href="#">
-                        View Bio <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
-</a>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-xs">Sarah Phiri</h4>
+<p class="font-body-md text-primary font-medium mb-lg">Youth Director</p>
+<button class="w-full text-center py-2 border border-outline-variant rounded-lg font-label-lg text-on-surface-variant hover:bg-surface-container-low transition-colors">View Profile</button>
+</div>
+</div>
+<!-- Leader 2 -->
+<div class="bg-white rounded-2xl border border-outline-variant/30 overflow-hidden hover:shadow-lg transition-all group">
+<div class="h-64 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A male worship leader holding an acoustic guitar, standing on a stage with soft purple and blue ambient lighting. The style is clean and professional, focusing on the individual with a shallow depth of field. He is wearing a simple denim shirt, reflecting a modern and relatable ministry leader aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzj9aZrCF_YeCgNlLun3G4MZLFxysGzVAUnZ3BwGvOUV7ZX3X0F3rZw0KWyb8vgITr6gW47ez_Dwk2tYn0dgbSe5X-JXkIqUjARKMoLCaTlzQW8u2shtvogxLFzc_hnGNKwgSS8mJOQADEO1L6mjjZ9rEjx71HgynAosVVxAHLXyx0TVIhGGbFdGfo2Din913Dv1vplAjiiv-T9RZ4dKznwAM8S64qsIVUUc_qBphVYwltE1fh1yR5oA"/>
+</div>
+<div class="p-lg">
+<h4 class="font-title-lg text-title-lg text-on-surface mb-xs">Michael Chanda</h4>
+<p class="font-body-md text-primary font-medium mb-lg">Worship &amp; Arts</p>
+<button class="w-full text-center py-2 border border-outline-variant rounded-lg font-label-lg text-on-surface-variant hover:bg-surface-container-low transition-colors">View Profile</button>
+</div>
+</div>
+<!-- Leader 3 -->
+<div class="bg-white rounded-2xl border border-outline-variant/30 overflow-hidden hover:shadow-lg transition-all group">
+<div class="h-64 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Portrait of a middle-aged woman in a bright administrative office, smiling warmly. She wears professional business casual clothing. The background features organized bookshelves and soft sunlight, evoking a sense of structured compassion and organizational excellence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxBMDQCaZdW8t0bDl2UFYBmnFkaEjDe-1SE1sz99EjTFTWtX8Op-Z4WwDDvsd2GlqYmDVaWjTR9ahZYjgCUS4I366jeiF0DMewRqEz96pAz6RnShAlurRtya9VS4xumAdNCAMvil5DoXkYk6glUa1E710tT57b18FysPak7OSsCIQM2ExlCwwWMJ8FtqA3wdIDWWgN1dN9hhgAgvZWufEMoO3NxA_FqPaweIsFLeIULieyCDo260l69A"/>
+</div>
+<div class="p-lg">
+<h4 class="font-title-lg text-title-lg text-on-surface mb-xs">Grace Zulu</h4>
+<p class="font-body-md text-primary font-medium mb-lg">Womens Ministry</p>
+<button class="w-full text-center py-2 border border-outline-variant rounded-lg font-label-lg text-on-surface-variant hover:bg-surface-container-low transition-colors">View Profile</button>
+</div>
+</div>
+<!-- Leader 4 -->
+<div class="bg-white rounded-2xl border border-outline-variant/30 overflow-hidden hover:shadow-lg transition-all group">
+<div class="h-64 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A male leader for children's ministry standing in a colorful but tastefully designed educational space. He is smiling warmly, wearing a light blue button-down shirt. The environment is bright and inviting, maintaining the high-end corporate modern look while feeling approachable for families." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxfXD1H7Po_y7F5IJ7d7Ir0ylaY3zcDuXCQ08iefLhZqosNyu-8gaRBXYbOkAvrdBQR2qUcP9fUcVWp2XGPNx32QMsISfR6uKMe7fmeZNRQe13oe8z9d6xSaB0eoqq_BA9bJ1gpJ935So7i-V7mapwVcxbwB5AQbspajY7pbK-pwvOqfQNuhJccGqNRtRx0SMrZSzYJbNv_uIHCxIzfeRgGuOUcUhCR1jg8JipbfbHRl6FuiklqF7PCg"/>
+</div>
+<div class="p-lg">
+<h4 class="font-title-lg text-title-lg text-on-surface mb-xs">Daniel Mwale</h4>
+<p class="font-body-md text-primary font-medium mb-lg">Children's Director</p>
+<button class="w-full text-center py-2 border border-outline-variant rounded-lg font-label-lg text-on-surface-variant hover:bg-surface-container-low transition-colors">View Profile</button>
 </div>
 </div>
 </div>
-<!-- Elders Section -->
-<section class="mb-20">
-<div class="flex items-center justify-between mb-lg border-b border-outline-variant/20 pb-md">
-<h2 class="font-headline-md text-headline-md flex items-center gap-sm">
-<span class="material-symbols-outlined text-primary" data-icon="groups">groups</span>
-                    Our Elders
-                </h2>
-<span class="text-secondary font-label-lg">Wisdom and Governance</span>
 </div>
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-lg">
-<!-- Elder 1 -->
-<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 transition-all hover:border-primary/30 group">
-<div class="aspect-square rounded-lg overflow-hidden mb-md relative">
-<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Portrait of a distinguished elder man with graying hair and a kind expression. Professional headshot in a bright, modern architectural setting. Warm, high-key lighting with a professional corporate photography style that feels approachable and trustworthy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjrO_q0Qpognx314fwlCtvmmPu4HlWI2XvbIS8adn2wYgqaX3HHtC4lWk0YfNP73NWRWePjwSbB7zTi6v4YI_6VQvMO3H9nKudJePH_VRX5B4D8AUj2gUkbHXIzv9ssgJsHaXTsLxg2WCrg0RBw-eJfKopVOC4kqz75kOPZc340oonIpUWis6vVqiPihCKTVXbD3RlQ4XVxxp5kkXEzPs2GW41mUL7Go2Pf5rcQB65bdb-Ux6i6N9uzQ"/>
+<!-- Call to Action Section -->
+<div class="mt-section-padding bg-primary rounded-2xl p-xl flex flex-col md:flex-row justify-between items-center gap-lg">
+<div class="text-center md:text-left">
+<h3 class="font-headline-md text-headline-md text-white mb-xs">Want to serve with us?</h3>
+<p class="font-body-lg text-on-primary-container">Discover how you can use your gifts to support our ministry goals.</p>
 </div>
-<h4 class="font-title-md text-title-md text-center">John Mwansa</h4>
-<p class="text-secondary font-label-md text-center mb-md">Board Secretary</p>
-<div class="flex justify-center">
-<button class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container text-secondary hover:bg-primary-container hover:text-on-primary-container transition-all">
-<span class="material-symbols-outlined text-[20px]" data-icon="contact_mail">contact_mail</span>
-</button>
+<button class="bg-white text-primary px-xl py-4 rounded-lg font-title-md hover:bg-surface-container-low transition-all shadow-md">Join a Ministry</button>
 </div>
 </div>
-<!-- Elder 2 -->
-<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 transition-all hover:border-primary/30 group">
-<div class="aspect-square rounded-lg overflow-hidden mb-md relative">
-<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Friendly mature woman with glasses, smiling softly. She is an elder at the church, portrayed in a bright room with light green plants in the background. The mood is calm, seasoned, and welcoming, using a high-quality editorial style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEzMwIcp0S7B-m2Y79H8g4-K95NwogDX3K6oU1qKT8tpoWxu2DOfWBoU17XFbT_7kEMbi5LErUexZ-kE2Le6zVggOkl6b2eKc9rod6piSBGIpdfX_DzchmVkHa4mSB03NlP9cHwvXGZagy7hgZb9_MuG0qmYNuAJPBnRpf-10QAbZ5kOlOlvK0jmcJFqYhqDL_Pr_ka70hTrQFpCymfikAYMNqdndIW22xyCxmMtC4_i0OF2CJcvtfhw"/>
-</div>
-<h4 class="font-title-md text-title-md text-center">Grace Lungu</h4>
-<p class="text-secondary font-label-md text-center mb-md">Missions Oversight</p>
-<div class="flex justify-center">
-<button class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container text-secondary hover:bg-primary-container hover:text-on-primary-container transition-all">
-<span class="material-symbols-outlined text-[20px]" data-icon="contact_mail">contact_mail</span>
-</button>
-</div>
-</div>
-<!-- Elder 3 -->
-<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 transition-all hover:border-primary/30 group">
-<div class="aspect-square rounded-lg overflow-hidden mb-md relative">
-<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Portrait of a middle-aged male church elder with a friendly face, wearing a crisp white shirt. Clean, minimalist background with soft lavender shadows. The lighting is bright and cheerful, suggesting an open-hearted leadership style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAofsRzAuJpuhr4fbGHmpYgGYrKZDxhWRdk0Ikzqbqt2pelE9KIzpsCxQQBHm5Eu3pf3J6hP5MO2h5APo6GfrZuQtD9JP1Ja2CcYA1xMYR86HEK1dzuBmvWSbdD5S5XPV_7hYxtIB6f6zTtoHMZzgVNVW4EA_e43ZnO9Rem6ddNrJlZpiCaHAv1S9zMErww4HDkX6AESdWhJMYOlkHo1qYIkG8RroGY-pnjtU6D3b13gTEefK8P8a7Uaw"/>
-</div>
-<h4 class="font-title-md text-title-md text-center">Bwalya Tembo</h4>
-<p class="text-secondary font-label-md text-center mb-md">Finance &amp; Stewardship</p>
-<div class="flex justify-center">
-<button class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container text-secondary hover:bg-primary-container hover:text-on-primary-container transition-all">
-<span class="material-symbols-outlined text-[20px]" data-icon="contact_mail">contact_mail</span>
-</button>
-</div>
-</div>
-<!-- Elder 4 -->
-<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 transition-all hover:border-primary/30 group">
-<div class="aspect-square rounded-lg overflow-hidden mb-md relative">
-<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Professional headshot of a female elder with a warm, energetic smile. She is in a modern, sunlit church lobby. High-quality digital photography with a soft focus on a background of wood and glass textures, reflecting institutional trust and community warmth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEnlYU-9plylQrQH0CKvT1y2-V7yYoIYSaXaxlWaO4AWJjWlQqf6iOBcOP0uUuoLKzeaCK2AcaGH1F3VJg1eKNaAPUvxNZ2zaO8oBW0nImWi5LoiLItLQZyNYb5hHESLqc6CgGzl7YNK7Ncakv5IdiRZfsX0OAtLgAnyT3F19zgCc-tlVZjS6bLhzM6kWm7-jgfs9tOO9sExbUh3Mz-s3GCmPQwKN59Rg8QeQ_8wQyI9En4ETqfCn11Q"/>
-</div>
-<h4 class="font-title-md text-title-md text-center">Mary Katongo</h4>
-<p class="text-secondary font-label-md text-center mb-md">Spiritual Formation</p>
-<div class="flex justify-center">
-<button class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container text-secondary hover:bg-primary-container hover:text-on-primary-container transition-all">
-<span class="material-symbols-outlined text-[20px]" data-icon="contact_mail">contact_mail</span>
-</button>
-</div>
-</div>
-</div>
-</section>
-<!-- Ministry Leaders - Horizontal Scroll / Grid -->
-<section>
-<div class="flex items-center justify-between mb-lg border-b border-outline-variant/20 pb-md">
-<h2 class="font-headline-md text-headline-md flex items-center gap-sm">
-<span class="material-symbols-outlined text-primary" data-icon="volunteer_activism">volunteer_activism</span>
-                    Ministry Leaders
-                </h2>
-<div class="flex gap-sm">
-<button class="w-8 h-8 rounded-full border border-outline flex items-center justify-center text-secondary hover:bg-surface-container-high transition-colors">
-<span class="material-symbols-outlined text-[18px]" data-icon="chevron_left">chevron_left</span>
-</button>
-<button class="w-8 h-8 rounded-full border border-outline flex items-center justify-center text-secondary hover:bg-surface-container-high transition-colors">
-<span class="material-symbols-outlined text-[18px]" data-icon="chevron_right">chevron_right</span>
-</button>
-</div>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-xl">
-<!-- Youth Leader -->
-<div class="flex gap-md bg-surface-container rounded-xl p-md items-center transition-transform hover:-translate-y-1">
-<div class="w-20 h-20 rounded-full overflow-hidden flex-shrink-0">
-<img class="w-full h-full object-cover" data-alt="Youth leader portrait with a vibrant, energetic vibe. Young man with a modern hairstyle, smiling broadly. Outdoors in a park with soft evening sunlight. Colors are warm and friendly, matching the violet and soft blue palette of the brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBw13i4hHs_aZdEcMBgFBrxSLlKvOllyI-et5QUYhTmKD-dD6-gjAVF__rk1MpcDf-Bi-d2Zfqjhl7erOnzIedF-5o5RmD-wBJfT_1pRwInrY80dWfHhXWi9r0Hr_00HYseOjNwKy8W1B1I92LhkMhY7MkjSnRSgPD34P7fV9s0aHEy_SdRdT3dWnXsa8ejj7cEQ-uaJ5hd1_wWrv5ZlYj1CCe4_KYQgyjWTnb-CiCIiHHvrpu_g_9AKQ"/>
-</div>
-<div>
-<h4 class="font-title-md text-title-md">Isaac Banda</h4>
-<p class="text-secondary font-label-md mb-xs">Youth Ministry</p>
-<span class="text-primary font-label-lg flex items-center gap-xs cursor-pointer hover:underline">
-                            Connect <span class="material-symbols-outlined text-[14px]" data-icon="chat">chat</span>
-</span>
-</div>
-</div>
-<!-- Worship Leader -->
-<div class="flex gap-md bg-surface-container rounded-xl p-md items-center transition-transform hover:-translate-y-1">
-<div class="w-20 h-20 rounded-full overflow-hidden flex-shrink-0">
-<img class="w-full h-full object-cover" data-alt="Worship leader portrait, female, with a calm and soulful expression. She is in a music studio or near a stage with subtle purple stage lighting in the background. Professional and creative aesthetic, emphasizing a spiritual and artistic leadership role." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIyMZmYEbu6z_vFRji6gPx-YjWW-e7IUYQIU0zT1nA05NVplJrWcQneHoKE3Hq-0l3llur7LItUcrHWl1GgT0moPpU3tUoguagB_Hh2JD_L8_V5wkSwvSxigK-sulGL85HaDe7FWtiwH1vsTCE2yQavhMxXrAvXDTsnLu9IBQhAeW9of0wgJIdll_KKqWlFGibXlDFZTZbA-vjD0pkT2ZvM_NVcneNn4Ty7ZNn_UTRnt9ICXeGCf5k8A"/>
-</div>
-<div>
-<h4 class="font-title-md text-title-md">Sarah Mulenga</h4>
-<p class="text-secondary font-label-md mb-xs">Worship &amp; Arts</p>
-<span class="text-primary font-label-lg flex items-center gap-xs cursor-pointer hover:underline">
-                            Connect <span class="material-symbols-outlined text-[14px]" data-icon="chat">chat</span>
-</span>
-</div>
-</div>
-<!-- Children's Leader -->
-<div class="flex gap-md bg-surface-container rounded-xl p-md items-center transition-transform hover:-translate-y-1">
-<div class="w-20 h-20 rounded-full overflow-hidden flex-shrink-0">
-<img class="w-full h-full object-cover" data-alt="Portrait of a cheerful children's ministry leader, female, in a colorful but professional setting. She has a bright, engaging smile that feels safe and encouraging for families. High-key lighting, modern corporate photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDU0CC4iOG0FR0WvjJq5Y4zdTte0T5y_mKaGCGgqvTJhQSdxXFu4V7dDvePIy7mdBp1WEOK0l9Z1CEh6FfEYoBqAreVtXdGyBsu5XxSK87sZpxz2Ky1HwbN9LcgXN0-QBUpS_fJ77PgYhw2BMtsasTKMDR4rQQBYtYj2IOUkRJkRBif_8Bn20IIDxwqvIU-djlLImpG8RfXpGjoJDee3ObT1rIZPW1DMiAYQvZUCtuh2DlTeUmHyNDs0g"/>
-</div>
-<div>
-<h4 class="font-title-md text-title-md">Esther Zimba</h4>
-<p class="text-secondary font-label-md mb-xs">Children's Church</p>
-<span class="text-primary font-label-lg flex items-center gap-xs cursor-pointer hover:underline">
-                            Connect <span class="material-symbols-outlined text-[14px]" data-icon="chat">chat</span>
-</span>
-</div>
-</div>
-</div>
-</section>
 </main>
 <!-- Footer -->
-<footer class="bg-surface-container-lowest border-t border-outline-variant w-full py-xl px-margin-desktop mt-auto flex flex-col md:flex-row justify-between items-center gap-lg">
-<div class="flex flex-col gap-xs items-center md:items-start">
-<span class="font-title-md text-primary font-headline-md">GetPro Church</span>
-<p class="font-body-md text-secondary text-center md:text-left max-w-xs">Empowering ministries with technology and compassion. Leading the future of church management.</p>
+<footer class="w-full mt-auto bg-surface-container-highest border-t border-outline-variant">
+<div class="flex flex-col md:flex-row justify-between items-center py-section-padding px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto w-full">
+<div class="mb-lg md:mb-0 text-center md:text-left">
+<span class="font-title-md text-title-md font-bold text-on-surface block mb-2">Kafue Baptist Church</span>
+<p class="font-body-md text-on-surface-variant">© 2024 Kafue Baptist Church. Powered by GetPro</p>
 </div>
 <div class="flex flex-wrap justify-center gap-xl">
-<a class="font-body-md text-secondary-fixed-variant hover:text-primary transition-all underline decoration-transparent hover:decoration-primary" href="#">Privacy Policy</a>
-<a class="font-body-md text-secondary-fixed-variant hover:text-primary transition-all underline decoration-transparent hover:decoration-primary" href="#">Terms of Service</a>
-<a class="font-body-md text-secondary-fixed-variant hover:text-primary transition-all underline decoration-transparent hover:decoration-primary" href="#">Support</a>
-<a class="font-body-md text-secondary-fixed-variant hover:text-primary transition-all underline decoration-transparent hover:decoration-primary" href="#">Documentation</a>
+<a class="text-on-surface-variant font-body-md hover:text-on-surface hover:underline transition-all" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant font-body-md hover:text-on-surface hover:underline transition-all" href="#">Terms of Service</a>
+<a class="text-on-surface-variant font-body-md hover:text-on-surface hover:underline transition-all" href="#">Contact Us</a>
+<a class="text-on-surface-variant font-body-md hover:text-on-surface hover:underline transition-all" href="#">Branch Portal</a>
 </div>
-<div class="text-body-md text-secondary text-sm">
-            © 2024 GetPro Church Management System. All rights reserved.
-        </div>
+</div>
 </footer>
 <script>
-        // Micro-interaction for navigation scroll effect
-        window.addEventListener('scroll', () => {
-            const nav = document.querySelector('nav');
-            if (window.scrollY > 20) {
-                nav.classList.add('shadow-md', 'bg-opacity-90', 'backdrop-blur-md');
-            } else {
-                nav.classList.remove('shadow-md', 'bg-opacity-90', 'backdrop-blur-md');
-            }
-        });
-
-        // Add interaction effects to buttons
-        document.querySelectorAll('button').forEach(button => {
-            button.addEventListener('mousedown', () => {
-                button.classList.add('scale-95');
-            });
-            button.addEventListener('mouseup', () => {
-                button.classList.remove('scale-95');
+        // Subtle interaction script for card hover effects
+        document.querySelectorAll('.group').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                // Optional JS for complex interactions
             });
         });
     </script>

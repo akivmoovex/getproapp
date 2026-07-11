@@ -1,0 +1,255 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=390, initial-scale=1.0" name="viewport">
+<title>Sermons | Kafue Baptist Church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#e4dfff",
+                        "outline": "#787586",
+                        "inverse-on-surface": "#e7f3f7",
+                        "surface": "#f1fbff",
+                        "tertiary-container": "#57595b",
+                        "surface-tint": "#5847d2",
+                        "tertiary-fixed": "#e2e2e4",
+                        "on-secondary-container": "#5e6668",
+                        "tertiary": "#404244",
+                        "error-container": "#ffdad6",
+                        "secondary": "#586062",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "on-primary-fixed": "#160066",
+                        "inverse-surface": "#283236",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#474554",
+                        "primary-container": "#5341cd",
+                        "on-tertiary-fixed-variant": "#454749",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#c6bfff",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#c6bfff",
+                        "surface-variant": "#d9e4e9",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9e4e9",
+                        "on-background": "#131d21",
+                        "secondary-container": "#dce4e6",
+                        "glass-white": "rgba(255, 255, 255, 0.7)",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-surface": "#131d21",
+                        "background": "#f1fbff",
+                        "on-primary": "#ffffff",
+                        "surface-bright": "#f1fbff",
+                        "on-tertiary-container": "#cfd0d2",
+                        "tertiary-fixed-dim": "#c5c6c9",
+                        "surface-dim": "#d1dce0",
+                        "surface-sky": "#f1fbff",
+                        "on-error": "#ffffff",
+                        "surface-container": "#e4f0f4",
+                        "outline-variant": "#c8c4d7",
+                        "on-secondary-fixed": "#151d1f",
+                        "surface-container-high": "#dfeaef",
+                        "on-tertiary": "#ffffff",
+                        "brand-orange": "#FF9800",
+                        "on-secondary-fixed-variant": "#40484a",
+                        "secondary-fixed": "#dce4e6",
+                        "on-primary-container": "#d1cbff",
+                        "primary": "#3b22b5",
+                        "surface-container-low": "#eaf5fa",
+                        "secondary-fixed-dim": "#c0c8ca"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "16px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "section-padding": "64px",
+                        "margin-desktop": "32px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            width: 390px;
+            margin: 0 auto;
+            background-color: #f1fbff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-effect {
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.7);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-glass-white/70 backdrop-blur-md border-b border-outline-variant/30 shadow-sm flex items-center justify-between h-16 px-margin-mobile">
+<h1 class="font-title-lg text-title-lg font-bold text-primary">Kafue Baptist Church</h1>
+<div class="flex items-center gap-sm">
+<button class="material-symbols-outlined text-primary p-2 active:scale-95 transition-transform" data-icon="search">search</button>
+<button class="material-symbols-outlined text-primary p-2 active:scale-95 transition-transform" data-icon="menu">menu</button>
+</div>
+</header>
+<main class="pt-20 pb-24 px-margin-mobile">
+<!-- Header Section -->
+<section class="mb-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-xs">Sermons</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Faith-building messages from our community.</p>
+</section>
+<!-- Featured Card (Compact) -->
+<section class="mb-xl">
+<div class="relative w-full h-56 rounded-2xl overflow-hidden shadow-md active:scale-[0.98] transition-transform">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A cinematic, high-angle shot of a modern pulpit in a brightly lit, minimalist sanctuary. Soft sunlight streams through high windows, casting gentle shadows across the wooden texture. The overall aesthetic is clean, corporate modern, and serene, with a color palette of soft indigos and warm whites reflecting a spiritual and professional environment." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCRtq2AXVtASn4k9REHTvTEA59pPghLFBFQ9FjEdnTL35K9JW8fqlI6WokjtR4d-7k_EDOEPTAQaVJu-KXLg7hOIcgxOsVulG_GP3VXFpE4ttjNzH3PiqYtDxJLDp31l9A60Ja0GFsHVaonfv-0CV1oNgMcWJXZ0n4dMugCOGEXjg4uTG-s1OXqqZsUPs3G3ZIeZMSgpNzS3gIGV1AndzMs9EFJRim_6yzRGakKg0k7DziFgd7MZiapeQ')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 right-0 p-lg">
+<span class="bg-primary-container text-on-primary-container text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full mb-sm inline-block">Latest Release</span>
+<h3 class="font-title-lg text-title-lg text-white mb-xs">Walking in the Light</h3>
+<div class="flex items-center gap-sm text-white/80 font-body-md text-body-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="person">person</span>
+<span>Rev. John Mwansa</span>
+</div>
+</div>
+<button class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 bg-primary rounded-full flex items-center justify-center text-white shadow-xl">
+<span class="material-symbols-outlined text-[32px] translate-x-0.5" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+</section>
+<!-- Category Filter (Horizontal Scroll) -->
+<section class="mb-lg -mx-margin-mobile px-margin-mobile overflow-x-auto hide-scrollbar flex gap-sm">
+<button class="bg-primary text-white font-title-md text-title-md px-md py-2 rounded-full whitespace-nowrap">All Messages</button>
+<button class="bg-surface-container-high text-on-surface-variant font-title-md text-title-md px-md py-2 rounded-full whitespace-nowrap">The Gospel</button>
+<button class="bg-surface-container-high text-on-surface-variant font-title-md text-title-md px-md py-2 rounded-full whitespace-nowrap">Leadership</button>
+<button class="bg-surface-container-high text-on-surface-variant font-title-md text-title-md px-md py-2 rounded-full whitespace-nowrap">Family Life</button>
+</section>
+<!-- Sermon List Cards -->
+<section class="space-y-md">
+<!-- Sermon Item 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant p-md rounded-2xl flex items-center gap-md shadow-sm active:bg-surface-container-low transition-colors">
+<div class="w-16 h-16 rounded-lg bg-cover bg-center shrink-0" data-alt="A minimalist close-up of an open Bible resting on a clean glass table, illuminated by a soft indigo glow from a nearby window. The focus is sharp on the pages, creating a sense of deep study and spiritual reflection within a modern, light-filled institutional setting." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAcaST5XDOydQn6K9c8GRnAii7GZ2a4WDxA28zsRwFhXscZgVd-UyGpMugMsOY952f82w_7ftjoIyC7ZKbGCjqRtyP6OZOWWlR01TpnruQwX7c8IVE1Qcvf-yzwHMv2LQjQsQBzCShcQ1sBpj9lfpmvDvDADqo1o2ihhixNeNSYY_d4V6tTIcXY4qgJ9pujDHUU3170nQMhq9ybHm53uvijSYk4nf6HYWOn8Xw3ISCFWI00B5d1D8XPnQ')"></div>
+<div class="flex-grow">
+<h4 class="font-title-md text-title-md text-on-surface leading-tight mb-1">Faith in Uncertain Times</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Nov 12, 2024 • 42 mins</p>
+</div>
+<button class="material-symbols-outlined text-outline p-1" data-icon="more_vert">more_vert</button>
+</div>
+<!-- Sermon Item 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant p-md rounded-2xl flex items-center gap-md shadow-sm active:bg-surface-container-low transition-colors">
+<div class="w-16 h-16 rounded-lg bg-cover bg-center shrink-0" data-alt="An abstract representation of community and unity, featuring interlocking soft-edged geometric shapes in shades of lavender and sky blue. The composition is clean and modern, emphasizing the theme of togetherness in a corporate-institutional faith context with glassmorphic textures." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBbzHdzyUKHHmpC3Ehx6qguBGaZ6uhZ_dEoLCj7Nxa2OlAFbYkMf7OxIxAndUe7Sp-bLto8rzbWcxGbI1VdX1fxfjfxmbpm3wUG23U-9wDHMJGkUChaJaj7zzZ2lFuimT2B9AH7aD3WP52LeM0QBOThYkRJ9YnbycnZvHeriphQa5KRZCMrfN1YPORT1Z4AS8albj-JZFwB7x64HfgiLniUPLUNz9FHd3Yca0Lc21wLtpnDpgW8pRX0Rg')"></div>
+<div class="flex-grow">
+<h4 class="font-title-md text-title-md text-on-surface leading-tight mb-1">Building on the Rock</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Nov 05, 2024 • 38 mins</p>
+</div>
+<button class="material-symbols-outlined text-outline p-1" data-icon="more_vert">more_vert</button>
+</div>
+<!-- Sermon Item 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant p-md rounded-2xl flex items-center gap-md shadow-sm active:bg-surface-container-low transition-colors">
+<div class="w-16 h-16 rounded-lg bg-cover bg-center shrink-0" data-alt="A modern church interior showing rows of light-colored wooden pews with a soft-focus background of a digital screen displaying welcoming graphics. The lighting is ethereal and airy, using a primary-indigo and white palette to convey a professional and inviting sanctuary space." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC9dkHVIynLGspTyEd4u7nhd0Y_kQdFH23tlzormvZDe1Q1J3nh7eH-wQpNs_wqhDCag0831iVMSlhWJx9efU1a_xwjI9TgF6yIDocXvqdpEcndVWqysPcPrjZaBymzQXLJ-nv1AzuEyJK4HsHQhV7SvQPHfdzu7edQYZbz1ZqYumc_sDwKF7xbYYgUNH5omjF3sWiC4GEjsAZmh9g-sS5ecM-ONh1lPPsYjK3R9J2fx5e5X6eF3tSvrA')"></div>
+<div class="flex-grow">
+<h4 class="font-title-md text-title-md text-on-surface leading-tight mb-1">The Power of Prayer</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Oct 29, 2024 • 45 mins</p>
+</div>
+<button class="material-symbols-outlined text-outline p-1" data-icon="more_vert">more_vert</button>
+</div>
+<!-- Sermon Item 4 -->
+<div class="bg-surface-container-lowest border border-outline-variant p-md rounded-2xl flex items-center gap-md shadow-sm active:bg-surface-container-low transition-colors">
+<div class="w-16 h-16 rounded-lg bg-cover bg-center shrink-0" data-alt="A serene outdoor scene of a sunrise over a calm river in Zambia, representing spiritual renewal. The colors are soft oranges and deep indigo blues, captured in a clean, high-resolution style that fits a modern church brand identity focusing on structured compassion." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBYaMy8YZl9CGyLbHre4UA8wZUnsKXwdkyQY81Lx4s3rN-XePh7LuxcPEy7-Lfitd6-5R6E5yfOCFtuOfp9b8R7PhenYDgAfYG0UWMZDCJYqT_5_9Tx34JbILO3QGj_n9r6xsnoVUomugMMMzCr0PTCSNv74zH1ecaNIpnUlZ7DLh9Lo963T7eBU0dlo3iu3elEbt7pwqAvf2y05dNYraZwhUPKfDug_miHqJDKhprSozzfDqt_budB5w')"></div>
+<div class="flex-grow">
+<h4 class="font-title-md text-title-md text-on-surface leading-tight mb-1">Grace Reaches All</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Oct 22, 2024 • 40 mins</p>
+</div>
+<button class="material-symbols-outlined text-outline p-1" data-icon="more_vert">more_vert</button>
+</div>
+</section>
+<!-- Load More -->
+<div class="mt-lg text-center">
+<button class="text-primary font-title-md text-title-md py-sm px-lg rounded-xl border border-primary/20 active:bg-primary-fixed transition-colors">
+                View Past Series
+            </button>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Shell) -->
+<nav class="fixed bottom-0 w-full bg-glass-white/90 backdrop-blur-md border-t border-outline-variant/30 flex justify-around items-center h-16 z-50">
+<div class="flex flex-col items-center justify-center w-1/5 text-on-surface-variant cursor-pointer active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[24px]" data-icon="home">home</span>
+<span class="font-label-md text-label-md mt-1">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center w-1/5 text-primary cursor-pointer active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[24px]" data-icon="library_books" style="font-variation-settings: 'FILL' 1;">library_books</span>
+<span class="font-title-md text-label-md mt-1 font-bold">Sermons</span>
+</div>
+<div class="flex flex-col items-center justify-center w-1/5 text-on-surface-variant cursor-pointer active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[24px]" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-md text-label-md mt-1">Events</span>
+</div>
+<div class="flex flex-col items-center justify-center w-1/5 text-on-surface-variant cursor-pointer active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[24px]" data-icon="volunteer_activism">volunteer_activism</span>
+<span class="font-label-md text-label-md mt-1">Giving</span>
+</div>
+<div class="flex flex-col items-center justify-center w-1/5 text-on-surface-variant cursor-pointer active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[24px]" data-icon="account_circle">account_circle</span>
+<span class="font-label-md text-label-md mt-1">Profile</span>
+</div>
+</nav>
+<!-- Floating Action Button (Only on main destinations) -->
+<button class="fixed right-margin-mobile bottom-24 w-14 h-14 bg-primary-container text-on-primary-container rounded-2xl shadow-lg flex items-center justify-center active:scale-90 transition-transform z-40">
+<span class="material-symbols-outlined text-[28px]" data-icon="podcasts">podcasts</span>
+</button>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.active\\:bg-surface-container-low').forEach(card => {
+            card.addEventListener('touchstart', () => {
+                card.style.transform = 'scale(0.98)';
+            });
+            card.addEventListener('touchend', () => {
+                card.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body></html>

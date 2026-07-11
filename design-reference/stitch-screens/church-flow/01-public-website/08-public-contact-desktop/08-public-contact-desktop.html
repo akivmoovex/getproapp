@@ -1,337 +1,364 @@
-<!DOCTYPE html>
-
-<html lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<!DOCTYPE html><html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
 <title>Contact Us - Kafue Baptist Church</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
 <script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "on-error": "#ffffff",
-                    "on-tertiary-container": "#f7f8f9",
-                    "error-container": "#ffdad6",
-                    "on-secondary": "#ffffff",
-                    "tertiary-container": "#707273",
-                    "primary-fixed": "#e4dfff",
-                    "on-primary": "#ffffff",
-                    "primary-fixed-dim": "#c6bfff",
-                    "on-surface-variant": "#474554",
-                    "surface-container-low": "#eaf5fa",
-                    "on-secondary-fixed-variant": "#41484a",
-                    "on-background": "#131d21",
-                    "surface": "#f1fbff",
-                    "background": "#f1fbff",
-                    "on-surface": "#131d21",
-                    "surface-tint": "#5847d2",
-                    "surface-container-lowest": "#ffffff",
-                    "surface-container": "#e4f0f4",
-                    "on-primary-container": "#faf6ff",
-                    "secondary": "#586062",
-                    "surface-variant": "#d9e4e9",
-                    "inverse-on-surface": "#e7f3f7",
-                    "secondary-container": "#dae1e3",
-                    "primary": "#5341cd",
-                    "on-primary-fixed": "#160066",
-                    "on-error-container": "#93000a",
-                    "on-primary-fixed-variant": "#4029ba",
-                    "on-secondary-container": "#5d6466",
-                    "surface-bright": "#f1fbff",
-                    "error": "#ba1a1a",
-                    "on-tertiary-fixed": "#191c1d",
-                    "primary-container": "#6c5ce7",
-                    "on-secondary-fixed": "#161d1f",
-                    "surface-container-highest": "#d9e4e9",
-                    "on-tertiary-fixed-variant": "#454748",
-                    "inverse-primary": "#c6bfff",
-                    "tertiary-fixed-dim": "#c5c7c8",
-                    "secondary-fixed-dim": "#c1c8ca",
-                    "outline": "#787586",
-                    "outline-variant": "#c8c4d7",
-                    "on-tertiary": "#ffffff",
-                    "tertiary-fixed": "#e1e3e4",
-                    "tertiary": "#57595b",
-                    "secondary-fixed": "#dde4e6",
-                    "surface-dim": "#d1dce0",
-                    "surface-container-high": "#dfeaef",
-                    "inverse-surface": "#283236"
-            },
-            "borderRadius": {
-                    "DEFAULT": "0.25rem",
-                    "lg": "0.5rem",
-                    "xl": "0.75rem",
-                    "full": "9999px"
-            },
-            "spacing": {
-                    "lg": "24px",
-                    "xl": "32px",
-                    "xs": "4px",
-                    "sm": "8px",
-                    "base": "8px",
-                    "md": "16px",
-                    "gutter": "24px",
-                    "margin-mobile": "16px",
-                    "margin-desktop": "32px"
-            },
-            "fontFamily": {
-                    "title-lg": ["Inter"],
-                    "body-lg": ["Inter"],
-                    "title-md": ["Inter"],
-                    "label-lg": ["Inter"],
-                    "headline-lg": ["Inter"],
-                    "label-md": ["Inter"],
-                    "headline-md": ["Inter"],
-                    "display-lg": ["Inter"],
-                    "headline-lg-mobile": ["Inter"],
-                    "body-md": ["Inter"]
-            },
-            "fontSize": {
-                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
-                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
-                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
-                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
-                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
-                    "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
-                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
-                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
-                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#586062",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-tertiary-container": "#cfd0d2",
+                        "on-primary": "#ffffff",
+                        "outline": "#787586",
+                        "on-surface-variant": "#474554",
+                        "surface-container-highest": "#d9e4e9",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-background": "#131d21",
+                        "brand-orange": "#FF9800",
+                        "surface-bright": "#f1fbff",
+                        "surface-variant": "#d9e4e9",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#c5c6c9",
+                        "tertiary-fixed": "#e2e2e4",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#f1fbff",
+                        "on-primary-container": "#d1cbff",
+                        "secondary-fixed-dim": "#c0c8ca",
+                        "surface-tint": "#5847d2",
+                        "secondary-container": "#dce4e6",
+                        "primary-container": "#5341cd",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#4029ba",
+                        "background": "#f1fbff",
+                        "surface-container-low": "#eaf5fa",
+                        "glass-white": "rgba(255, 255, 255, 0.7)",
+                        "surface-container-high": "#dfeaef",
+                        "primary-fixed": "#e4dfff",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-sky": "#f1fbff",
+                        "on-secondary-container": "#5e6668",
+                        "on-secondary-fixed": "#151d1f",
+                        "primary": "#3b22b5",
+                        "inverse-on-surface": "#e7f3f7",
+                        "on-surface": "#131d21",
+                        "surface-dim": "#d1dce0",
+                        "on-primary-fixed": "#160066",
+                        "on-secondary-fixed-variant": "#40484a",
+                        "secondary-fixed": "#dce4e6",
+                        "outline-variant": "#c8c4d7",
+                        "on-tertiary-fixed-variant": "#454749",
+                        "tertiary-container": "#57595b",
+                        "surface-container": "#e4f0f4",
+                        "inverse-surface": "#283236",
+                        "inverse-primary": "#c6bfff",
+                        "error": "#ba1a1a",
+                        "tertiary": "#404244"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "xl": "32px",
+                        "gutter": "24px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "section-padding": "64px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
             }
-          },
-        },
-      }
+        }
     </script>
 <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f1fbff;
-        }
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(226, 232, 240, 0.8);
+        .hero-mesh {
+            background: radial-gradient(at 0% 0%, #e4dfff 0%, transparent 50%),
+                        radial-gradient(at 100% 0%, #f1fbff 0%, transparent 50%),
+                        radial-gradient(at 100% 100%, #d1cbff 0%, transparent 50%),
+                        radial-gradient(at 0% 100%, #f1fbff 0%, transparent 50%);
         }
-        .form-input-focus:focus {
-            outline: none;
-            border-color: #5341cd;
-            box-shadow: 0 0 0 2px rgba(83, 65, 205, 0.1);
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(200, 196, 215, 0.3);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col text-on-surface">
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
 <!-- TopNavBar -->
-<header class="bg-surface dark:bg-inverse-surface border-b border-outline-variant dark:border-outline sticky top-0 z-50">
-<nav class="flex justify-between items-center w-full px-lg md:px-margin-desktop py-base max-w-7xl mx-auto">
-<div class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary">
-                Kafue Baptist Church
-            </div>
-<div class="hidden md:flex gap-xl items-center">
-<a class="font-title-md text-title-md text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors duration-200" href="#">Home</a>
-<a class="font-title-md text-title-md text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors duration-200" href="#">About</a>
-<a class="font-title-md text-title-md text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors duration-200" href="#">Leadership</a>
-<a class="font-title-md text-title-md text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors duration-200" href="#">Ministries</a>
-<a class="font-title-md text-title-md text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors duration-200" href="#">Events</a>
-<a class="font-title-md text-title-md text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors duration-200" href="#">Resources</a>
-<a class="font-title-md text-title-md text-primary dark:text-inverse-primary border-b-2 border-primary font-bold pb-1" href="#">Contact</a>
+<nav class="docked full-width top-0 sticky z-50 bg-glass-white/70 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm">
+<div class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto h-16">
+<div class="flex items-center gap-md">
+<span class="font-headline-md text-headline-md font-bold text-primary">Kafue Baptist Church</span>
+</div>
+<div class="hidden md:flex items-center gap-xl">
+<a class="font-title-md text-title-md text-on-surface-variant hover:text-primary hover:bg-surface-container-low/50 transition-colors duration-200" href="#">Home</a>
+<a class="font-title-md text-title-md text-on-surface-variant hover:text-primary hover:bg-surface-container-low/50 transition-colors duration-200" href="#">Ministries</a>
+<a class="font-title-md text-title-md text-on-surface-variant hover:text-primary hover:bg-surface-container-low/50 transition-colors duration-200" href="#">Events</a>
+<a class="font-title-md text-title-md text-on-surface-variant hover:text-primary hover:bg-surface-container-low/50 transition-colors duration-200" href="#">Give</a>
+<a class="font-title-md text-title-md text-on-surface-variant hover:text-primary hover:bg-surface-container-low/50 transition-colors duration-200" href="#">Resources</a>
 </div>
 <div class="flex items-center gap-md">
-<button class="hidden lg:block text-primary font-semibold px-md py-sm rounded-lg hover:bg-surface-container-low transition-colors">Member Login</button>
-<button class="bg-primary text-on-primary px-lg py-sm rounded-lg font-semibold hover:bg-primary-container transition-colors shadow-sm">Register as Member</button>
+<button class="hidden lg:block px-lg py-sm font-label-lg text-label-lg text-primary border border-outline-variant rounded-lg hover:bg-primary-fixed transition-all duration-200">Member Login</button>
+<button class="px-lg py-sm font-label-lg text-label-lg bg-primary text-on-primary rounded-lg shadow-sm hover:opacity-80 active:scale-95 transition-all">Register</button>
+</div>
 </div>
 </nav>
-</header>
-<main class="flex-grow">
-<!-- Hero Section -->
-<section class="relative py-xl px-lg md:px-margin-desktop bg-surface-container-low overflow-hidden">
-<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-xl items-center">
-<div class="z-10">
-<h1 class="font-display-lg text-display-lg text-on-surface mb-md">Get in Touch with Our Family</h1>
-<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
-                        Whether you have a question about our ministries, need prayer support, or want to learn more about joining our community, we are here to welcome you with open arms.
-                    </p>
-</div>
-<div class="hidden lg:block relative h-64">
+<main class="min-h-screen">
+<!-- Page Hero (Variant A) -->
+<section class="relative h-[400px] flex items-center overflow-hidden hero-mesh">
+<div class="absolute inset-0 z-0">
 
+</div>
+<div class="relative z-10 max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop w-full">
+<div class="max-w-2xl">
+<span class="inline-block bg-primary-fixed text-on-primary-fixed-variant px-md py-xs rounded-full font-label-lg text-label-lg mb-md">Connect With Us</span>
+<h1 class="font-display-lg text-display-lg text-on-surface mb-md">We’re Here to <span class="text-primary">Walk With You</span></h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">Whether you have a question about our ministries, need prayer support, or want to visit us, we would love to hear from you.</p>
 </div>
 </div>
 </section>
-<!-- Main Content -->
-<section class="max-w-7xl mx-auto px-lg md:px-margin-desktop py-xl">
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-<!-- Info Column (Left) -->
-<div class="lg:col-span-5 space-y-xl">
-<!-- Contact Details Card -->
-<div class="bg-surface-container-lowest rounded-xl p-xl shadow-sm border border-outline-variant transition-transform hover:scale-[1.01] duration-300">
-<h2 class="font-headline-md text-headline-md mb-lg text-primary">Contact Information</h2>
-<div class="space-y-lg">
-<div class="flex items-start gap-md">
-<div class="bg-primary-fixed text-on-primary-fixed-variant p-sm rounded-lg">
-<span class="material-symbols-outlined">location_on</span>
+<!-- Information Cards Grid -->
+<section class="py-section-padding max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter -mt-24 relative z-20">
+<!-- Phone Card -->
+<div class="glass-card p-xl rounded-xl flex flex-col items-center text-center group hover:shadow-md transition-all duration-300">
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors duration-300">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary" data-icon="call">call</span>
 </div>
-<div>
-<h3 class="font-title-md text-title-md">Our Address</h3>
-<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Plot 452, Main Street, Kafue, Zambia</p>
+<h3 class="font-title-lg text-title-lg mb-xs">Phone</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Call us during office hours for immediate assistance.</p>
+<a class="font-title-md text-title-md text-primary font-bold hover:underline" href="tel:+260123456789">+260 978 456 123</a>
 </div>
+<!-- Email Card -->
+<div class="glass-card p-xl rounded-xl flex flex-col items-center text-center group hover:shadow-md transition-all duration-300">
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors duration-300">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary" data-icon="mail">mail</span>
 </div>
-<div class="flex items-start gap-md">
-<div class="bg-primary-fixed text-on-primary-fixed-variant p-sm rounded-lg">
-<span class="material-symbols-outlined">call</span>
+<h3 class="font-title-lg text-title-lg mb-xs">Email</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Send us an inquiry and we'll get back to you within 24 hours.</p>
+<a class="font-title-md text-title-md text-primary font-bold hover:underline" href="mailto:office@kafuebaptist.org">office@kafuebaptist.org</a>
 </div>
-<div>
-<h3 class="font-title-md text-title-md">Phone Number</h3>
-<p class="font-body-md text-body-md text-on-surface-variant mt-xs">+260 211 456 7890<br/>+260 977 123 456</p>
+<!-- Address Card -->
+<div class="glass-card p-xl rounded-xl flex flex-col items-center text-center group hover:shadow-md transition-all duration-300">
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors duration-300">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary" data-icon="location_on">location_on</span>
 </div>
-</div>
-<div class="flex items-start gap-md">
-<div class="bg-primary-fixed text-on-primary-fixed-variant p-sm rounded-lg">
-<span class="material-symbols-outlined">mail</span>
-</div>
-<div>
-<h3 class="font-title-md text-title-md">Email Support</h3>
-<p class="font-body-md text-body-md text-on-surface-variant mt-xs">info@kafuebaptist.org<br/>prayer@kafuebaptist.org</p>
+<h3 class="font-title-lg text-title-lg mb-xs">Location</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Visit our main sanctuary for services or office inquiries.</p>
+<p class="font-title-md text-title-md text-on-surface font-bold">123 Faith Lane, Kafue, Zambia</p>
 </div>
 </div>
-<div class="flex items-start gap-md">
-<div class="bg-primary-fixed text-on-primary-fixed-variant p-sm rounded-lg">
-<span class="material-symbols-outlined">schedule</span>
-</div>
-<div>
-<h3 class="font-title-md text-title-md">Office Hours</h3>
-<div class="font-body-md text-body-md text-on-surface-variant mt-xs grid grid-cols-2 gap-x-md">
-<span>Mon - Fri:</span> <span>08:00 - 17:00</span>
-<span>Saturday:</span> <span>09:00 - 12:00</span>
-<span>Sunday:</span> <span>Services Only</span>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Map Placeholder -->
-<div class="rounded-xl overflow-hidden shadow-sm border border-outline-variant h-80 relative group">
-<div class="absolute inset-0 bg-surface-container-high transition-opacity duration-300 group-hover:opacity-90" data-alt="A clean, minimalist 2D map illustration showing the town of Kafue in Zambia, with a prominent violet pinpoint marking a church building. The map is designed with soft pastel tones, clean typography, and a modern light-mode aesthetic, reflecting a sense of peace and clarity. The surrounding areas are stylized with soft greens and subtle grays to emphasize the primary location." data-location="Kafue, Zambia" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDpXv9MfoBNa-SzM2nBz06q7c4o5cNFg0zcs7wUGyyir3Z355x88rysoDxe0iH-zrbIbQQwJTQWNeWL4pDtp5Q2aQ026Xqx9CQ0E5Gpu7by_xSDum0BTqLf1V7juJ-uDIkPJNbssZ9d9FA6txIZehxdHHC-28Ub5iIfySangZY26r36XaI7DlWoayPD2jfdHvIbkGDJ-SVH5TbhqqQu51vBVCkdTjXjjWRt2tGl7mZlN46jk1pGB19btw')">
-</div>
-<div class="absolute bottom-4 left-4 right-4 bg-surface-container-lowest/90 backdrop-blur-md p-md rounded-lg flex justify-between items-center">
-<span class="font-label-lg text-label-lg text-primary uppercase tracking-wider">Kafue, Zambia</span>
-<button class="bg-primary text-on-primary px-md py-xs rounded-full text-label-md font-semibold hover:bg-primary-container transition-colors">Get Directions</button>
-</div>
-</div>
-</div>
-<!-- Contact Form Column (Right) -->
-<div class="lg:col-span-7">
-<div class="bg-surface-container-lowest rounded-xl p-xl shadow-md border border-outline-variant/30 h-full">
+</section>
+<!-- Main Content Area: Form & Details -->
+<section class="py-section-padding bg-surface-container-low/30">
+<div class="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-xl">
+<!-- Contact Form Section (8 Cols) -->
+<div class="lg:col-span-7 bg-white p-xl rounded-xl border border-outline-variant/30 shadow-sm">
 <div class="mb-xl">
-<h2 class="font-headline-md text-headline-md text-on-surface mb-xs">Send us a Message</h2>
-<p class="font-body-md text-body-md text-on-surface-variant">We'd love to hear from you. Fill out the form below and our team will get back to you shortly.</p>
+<h2 class="font-headline-md text-headline-md mb-xs">Send a Message</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Fill out the form below and our ministry team will reach out shortly.</p>
 </div>
-<form class="space-y-lg">
+<form action="#" class="space-y-lg">
 <div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
 <div class="space-y-xs">
-<label class="font-label-lg text-label-lg text-on-surface-variant px-xs">Full Name</label>
-<input class="w-full px-md py-sm rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md text-body-md form-input-focus transition-all" placeholder="John Doe" type="text"/>
+<label class="font-label-md text-label-md text-on-surface-variant px-xs">Full Name</label>
+<input class="w-full bg-surface-container-low border-outline-variant rounded-lg p-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="John Doe" type="text">
 </div>
 <div class="space-y-xs">
-<label class="font-label-lg text-label-lg text-on-surface-variant px-xs">Email Address</label>
-<input class="w-full px-md py-sm rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md text-body-md form-input-focus transition-all" placeholder="john@example.com" type="email"/>
+<label class="font-label-md text-label-md text-on-surface-variant px-xs">Email Address</label>
+<input class="w-full bg-surface-container-low border-outline-variant rounded-lg p-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="john@example.com" type="email">
 </div>
 </div>
 <div class="space-y-xs">
-<label class="font-label-lg text-label-lg text-on-surface-variant px-xs">Subject</label>
-<select class="w-full px-md py-sm rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md text-body-md form-input-focus transition-all appearance-none">
+<label class="font-label-md text-label-md text-on-surface-variant px-xs">Subject</label>
+<select class="w-full bg-surface-container-low border-outline-variant rounded-lg p-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all">
 <option>General Inquiry</option>
 <option>Prayer Request</option>
-<option>Membership Questions</option>
-<option>Counseling Support</option>
-<option>Other</option>
+<option>Membership</option>
+<option>Volunteer Opportunities</option>
 </select>
 </div>
 <div class="space-y-xs">
-<label class="font-label-lg text-label-lg text-on-surface-variant px-xs">Your Message</label>
-<textarea class="w-full px-md py-sm rounded-lg border border-outline-variant bg-surface-container-lowest font-body-md text-body-md form-input-focus transition-all resize-none" placeholder="How can we help or pray for you today?" rows="6"></textarea>
+<label class="font-label-md text-label-md text-on-surface-variant px-xs">Message</label>
+<textarea class="w-full bg-surface-container-low border-outline-variant rounded-lg p-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none" placeholder="How can we help you?" rows="5"></textarea>
 </div>
-<div class="flex items-center gap-md pt-md">
-<button class="bg-primary text-on-primary px-xl py-md rounded-xl font-bold text-title-md hover:bg-primary-container transition-all flex items-center gap-sm shadow-lg shadow-primary/20" type="submit">
-                                    Send Message
-                                    <span class="material-symbols-outlined">send</span>
-</button>
-<p class="font-label-md text-label-md text-on-surface-variant max-w-[200px]">We typically respond within 24 business hours.</p>
-</div>
+<button class="w-full bg-primary text-on-primary font-title-md text-title-md py-md rounded-lg hover:opacity-90 transition-all shadow-md" type="submit">Send Message</button>
 </form>
+</div>
+<!-- Modular Info & Map (5 Cols) -->
+<div class="lg:col-span-5 space-y-gutter">
+<!-- Service Times & Office Hours -->
+<div class="bg-primary-container text-on-primary-container p-xl rounded-xl">
+<div class="mb-lg">
+<div class="flex items-center gap-sm mb-sm">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+<h3 class="font-title-lg text-title-lg">Service Times</h3>
+</div>
+<ul class="space-y-xs font-body-md text-body-md opacity-90">
+<li class="flex justify-between border-b border-on-primary-container/20 pb-xs"><span>Sunday Morning</span> <span class="font-bold">08:30 AM</span></li>
+<li class="flex justify-between border-b border-on-primary-container/20 pb-xs"><span>Sunday Main</span> <span class="font-bold">10:30 AM</span></li>
+<li class="flex justify-between"><span>Midweek Prayer (Wed)</span> <span class="font-bold">05:30 PM</span></li>
+</ul>
+</div>
+<div>
+<div class="flex items-center gap-sm mb-sm">
+<span class="material-symbols-outlined" data-icon="business_center">business_center</span>
+<h3 class="font-title-lg text-title-lg">Office Hours</h3>
+</div>
+<ul class="space-y-xs font-body-md text-body-md opacity-90">
+<li class="flex justify-between border-b border-on-primary-container/20 pb-xs"><span>Mon - Fri</span> <span class="font-bold">09:00 AM - 04:30 PM</span></li>
+<li class="flex justify-between"><span>Sat - Sun</span> <span class="font-bold">Closed</span></li>
+</ul>
+</div>
+</div>
+<!-- Map Section -->
+<div class="rounded-xl overflow-hidden border border-outline-variant/30 h-72 shadow-sm relative group">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="A clean, minimalist 3D isometric map rendering of a suburban neighborhood in Kafue, Zambia. The map is designed in a professional UI style with soft blue and grey tones, highlighting a church building with a subtle purple pin. The lighting is bright and airy, consistent with a modern light-mode dashboard aesthetic. Small green parks and stylized roads create a peaceful, organized community layout." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuArYjqLr8t0tmshqNjTl2ezPx7zcAc0eiajcsHQYDU9xbJ2Kq0KnEOLmWj7kS4rLXPIMllfyZ9zsUK7JCGLGk6ZWMenN0H2wdaf1NZaodSb9hKCezHkRbwPAH1Z7fQF-wIaV-UTyI8eiDFXVSzpjpKRdXufC0CooozZ93LwPkK2tdbZzCp5WdoyxJ8-W_EXJ1RlEinojPsVxKum8FT1q9MGiPaG1CoWac9V4tHs_XEkmMnmYJDeUkEgCg')">
+</div>
+<div class="absolute bottom-md left-md right-md">
+<div class="glass-card p-md rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="pin_drop">pin_drop</span>
+<span class="font-label-lg text-label-lg text-on-surface">Get Directions</span>
+</div>
+<button class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 </section>
-<!-- Social Outreach CTA -->
-<section class="bg-inverse-surface text-on-primary-container py-xl">
-<div class="max-w-7xl mx-auto px-lg md:px-margin-desktop text-center">
-<h2 class="font-headline-lg text-headline-lg mb-md">Join Us This Sunday</h2>
-<p class="font-body-lg text-body-lg opacity-90 mb-lg max-w-2xl mx-auto">Experience worship and community at our weekly services. Everyone is welcome exactly as they are.</p>
-<div class="flex flex-wrap justify-center gap-lg">
-<div class="bg-white/10 backdrop-blur-md px-lg py-md rounded-xl border border-white/20">
-<span class="font-label-lg text-label-lg block uppercase tracking-widest opacity-70">Morning Service</span>
-<span class="font-title-lg text-title-lg">08:30 AM - 10:30 AM</span>
+<!-- Newsletter/Community CTA -->
+<section class="py-section-padding">
+<div class="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop">
+<div class="bg-surface-container-high rounded-3xl p-xl md:p-64 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-xl">
+<div class="relative z-10 max-w-xl text-center md:text-left">
+<h2 class="font-display-lg text-display-lg text-on-surface mb-md">Stay Connected With <br>Our Community</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-xl">Join our mailing list to receive weekly updates, sermon notes, and event reminders directly in your inbox.</p>
+<div class="flex flex-col sm:flex-row gap-md">
+<input class="flex-1 bg-white border-outline-variant rounded-lg px-lg py-md outline-none focus:ring-2 focus:ring-primary" placeholder="Enter your email" type="email">
+<button class="bg-primary text-on-primary px-xl py-md rounded-lg font-bold shadow-md hover:opacity-90 transition-all">Subscribe</button>
 </div>
-<div class="bg-white/10 backdrop-blur-md px-lg py-md rounded-xl border border-white/20">
-<span class="font-label-lg text-label-lg block uppercase tracking-widest opacity-70">Mid-day Service</span>
-<span class="font-title-lg text-title-lg">11:00 AM - 01:00 PM</span>
+</div>
+<div class="hidden lg:block relative z-10 w-80 h-80">
+<div class="w-full h-full rounded-2xl rotate-6 border-4 border-white shadow-xl overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A warm, candid photograph of a diverse church community gathering outdoors after a service. People of different ages are smiling and talking, creating a sense of belonging and structured compassion. The lighting is soft golden hour sunlight, giving a welcoming and spiritual atmosphere. The overall image has a clean, professional finish that integrates perfectly into a modern corporate UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBg-uarCPSWik5olUli2O27tdDGH1w_JItmPg0JMZWf7kX0NXL5JDk60jM4Xlyn-G0vh2JGRTb8V4W3v2xFr_ngfK4nUH5fLRKrIGnua5leiizqGfTtQl9OSQyL1eqIjXJsF43-edued8kq6Fz3imKPTlE00M6xmt7qugvKEETxi-LT2Vszbj3SO5WEIynqv1LwqlPKYe-US37PLr0mKD2KnMRs_gbsSr7BcyYLDnufp1D5AU2i6U4KsQ">
+</div>
+<div class="absolute -top-12 -right-12 w-32 h-32 bg-primary-fixed rounded-full -z-10 blur-2xl opacity-50"></div>
 </div>
 </div>
 </div>
 </section>
 </main>
 <!-- Footer -->
-<footer class="bg-surface-container-highest dark:bg-inverse-surface">
-<div class="flex flex-col md:flex-row justify-between items-center w-full px-lg py-xl gap-md max-w-7xl mx-auto">
-<div class="flex flex-col gap-sm">
-<span class="font-title-lg text-title-lg font-bold text-primary">Kafue Baptist Church</span>
-<p class="font-body-md text-body-md text-on-surface-variant">Rooted in Faith, Growing in Love, Reaching the World.</p>
+<footer class="w-full mt-section-padding bg-surface-container-lowest border-t border-outline-variant flat no shadows">
+<div class="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-xl grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-gutter">
+<div class="space-y-md">
+<span class="font-title-md text-title-md font-bold text-primary">Kafue Baptist Church</span>
+<p class="text-on-surface-variant font-body-md text-body-md leading-relaxed">
+                    A vibrant community dedicated to spreading grace, truth, and love throughout the Kafue region and beyond.
+                </p>
+<div class="flex gap-md">
+<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all duration-300" href="#">
+<span class="material-symbols-outlined">public</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all duration-300" href="#">
+<span class="material-symbols-outlined">diversity_3</span>
+</a>
 </div>
-<div class="flex flex-wrap justify-center gap-xl">
-<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors" href="#">Giving</a>
-<a class="font-body-md text-body-md text-primary font-bold" href="#">Contact</a>
-<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors" href="#">Ministries</a>
-<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors" href="#">Events</a>
-<a class="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors" href="#">Resources</a>
 </div>
-<div class="text-right flex flex-col items-center md:items-end gap-xs">
-<div class="flex gap-md mb-xs">
-<a class="text-on-surface-variant hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">face_nod</span></a>
-<a class="text-on-surface-variant hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">alternate_email</span></a>
+<div class="space-y-md">
+<h4 class="font-title-md text-title-md font-bold text-primary">Quick Links</h4>
+<nav class="flex flex-col gap-sm">
+<a class="text-on-surface-variant hover:text-primary underline-offset-4 transition-opacity duration-200" href="#">Ministries</a>
+<a class="text-on-surface-variant hover:text-primary underline-offset-4 transition-opacity duration-200" href="#">Events</a>
+<a class="text-on-surface-variant hover:text-primary underline-offset-4 transition-opacity duration-200" href="#">Sermons</a>
+<a class="text-on-surface-variant hover:text-primary underline-offset-4 transition-opacity duration-200" href="#">Giving</a>
+</nav>
 </div>
-<span class="font-body-md text-body-md text-on-surface-variant opacity-90">Powered by GetPro Church</span>
-<span class="font-label-md text-label-md text-on-surface-variant">© 2024 All Rights Reserved</span>
+<div class="space-y-md">
+<h4 class="font-title-md text-title-md font-bold text-primary">Support</h4>
+<nav class="flex flex-col gap-sm">
+<a class="text-on-surface-variant hover:text-primary underline-offset-4 transition-opacity duration-200" href="#">Contact Us</a>
+<a class="text-on-surface-variant hover:text-primary underline-offset-4 transition-opacity duration-200" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary underline-offset-4 transition-opacity duration-200" href="#">Member Portal</a>
+<a class="text-on-surface-variant hover:text-primary underline-offset-4 transition-opacity duration-200" href="#">Help Desk</a>
+</nav>
+</div>
+<div class="space-y-md">
+<h4 class="font-title-md text-title-md font-bold text-primary">Contact Info</h4>
+<div class="space-y-sm text-on-surface-variant font-body-md">
+<p class="flex items-start gap-xs"><span class="material-symbols-outlined text-sm">location_on</span> 123 Faith Lane, Kafue, Zambia</p>
+<p class="flex items-center gap-xs"><span class="material-symbols-outlined text-sm">call</span> +260 978 456 123</p>
+<p class="flex items-center gap-xs"><span class="material-symbols-outlined text-sm">mail</span> office@kafuebaptist.org</p>
+</div>
+</div>
+</div>
+<div class="border-t border-outline-variant/30 py-lg">
+<div class="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop text-center md:text-left">
+<p class="text-on-surface-variant font-label-lg text-label-lg opacity-70">
+                    © 2024 Kafue Baptist Church. All rights reserved. Powered by GetPro.
+                </p>
 </div>
 </div>
 </footer>
+<!-- FAB (Suppressed on Details/Contact as per instructions, but kept logic in mind for Home/Dashboard) -->
 <script>
-        // Simple form interaction
-        document.querySelector('form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-            const originalContent = btn.innerHTML;
-            
-            btn.disabled = true;
-            btn.innerHTML = 'Sending...';
-            
-            setTimeout(() => {
-                btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Message Sent!';
-                btn.classList.replace('bg-primary', 'bg-green-600');
-                e.target.reset();
-                
-                setTimeout(() => {
-                    btn.disabled = false;
-                    btn.innerHTML = originalContent;
-                    btn.classList.replace('bg-green-600', 'bg-primary');
-                }, 3000);
-            }, 1500);
+        // Micro-interactions and subtle effects
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.glass-card');
+            cards.forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    card.style.setProperty('--mouse-x', `${x}px`);
+                    card.style.setProperty('--mouse-y', `${y}px`);
+                });
+            });
         });
     </script>
 </body></html>

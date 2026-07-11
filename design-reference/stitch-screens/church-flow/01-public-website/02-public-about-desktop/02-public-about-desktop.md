@@ -1,5 +1,5 @@
 ---
-name: Ecclesia Modern
+name: Sacred Structure
 colors:
   surface: '#f1fbff'
   surface-dim: '#d1dce0'
@@ -16,19 +16,19 @@ colors:
   outline: '#787586'
   outline-variant: '#c8c4d7'
   surface-tint: '#5847d2'
-  primary: '#5341cd'
+  primary: '#3b22b5'
   on-primary: '#ffffff'
-  primary-container: '#6c5ce7'
-  on-primary-container: '#faf6ff'
+  primary-container: '#5341cd'
+  on-primary-container: '#d1cbff'
   inverse-primary: '#c6bfff'
   secondary: '#586062'
   on-secondary: '#ffffff'
-  secondary-container: '#dae1e3'
-  on-secondary-container: '#5d6466'
-  tertiary: '#57595b'
+  secondary-container: '#dce4e6'
+  on-secondary-container: '#5e6668'
+  tertiary: '#404244'
   on-tertiary: '#ffffff'
-  tertiary-container: '#707273'
-  on-tertiary-container: '#f7f8f9'
+  tertiary-container: '#57595b'
+  on-tertiary-container: '#cfd0d2'
   error: '#ba1a1a'
   on-error: '#ffffff'
   error-container: '#ffdad6'
@@ -37,17 +37,20 @@ colors:
   primary-fixed-dim: '#c6bfff'
   on-primary-fixed: '#160066'
   on-primary-fixed-variant: '#4029ba'
-  secondary-fixed: '#dde4e6'
-  secondary-fixed-dim: '#c1c8ca'
-  on-secondary-fixed: '#161d1f'
-  on-secondary-fixed-variant: '#41484a'
-  tertiary-fixed: '#e1e3e4'
-  tertiary-fixed-dim: '#c5c7c8'
-  on-tertiary-fixed: '#191c1d'
-  on-tertiary-fixed-variant: '#454748'
+  secondary-fixed: '#dce4e6'
+  secondary-fixed-dim: '#c0c8ca'
+  on-secondary-fixed: '#151d1f'
+  on-secondary-fixed-variant: '#40484a'
+  tertiary-fixed: '#e2e2e4'
+  tertiary-fixed-dim: '#c5c6c9'
+  on-tertiary-fixed: '#191c1e'
+  on-tertiary-fixed-variant: '#454749'
   background: '#f1fbff'
   on-background: '#131d21'
   surface-variant: '#d9e4e9'
+  surface-sky: '#f1fbff'
+  brand-orange: '#FF9800'
+  glass-white: rgba(255, 255, 255, 0.7)
 typography:
   display-lg:
     fontFamily: Inter
@@ -96,11 +99,6 @@ typography:
     fontSize: 11px
     fontWeight: '500'
     lineHeight: 16px
-  headline-lg-mobile:
-    fontFamily: Inter
-    fontSize: 28px
-    fontWeight: '600'
-    lineHeight: 36px
 rounded:
   sm: 0.25rem
   DEFAULT: 0.5rem
@@ -109,7 +107,6 @@ rounded:
   xl: 1.5rem
   full: 9999px
 spacing:
-  base: 8px
   xs: 4px
   sm: 8px
   md: 16px
@@ -118,66 +115,71 @@ spacing:
   gutter: 24px
   margin-mobile: 16px
   margin-desktop: 32px
+  section-padding: 64px
 ---
 
 ## Brand & Style
-The design system is engineered for a multi-tenant church management environment, balancing administrative power with pastoral warmth. The personality is "Structured Compassion"—it must feel as reliable as an enterprise ERP while remaining as approachable as a local community center. 
+The brand identity for Kafue Baptist Church is defined by "Structured Compassion." It balances the warmth and welcoming nature of a faith community with the reliability and organization of a modern institutional portal. 
 
-The aesthetic follows a **Modern Corporate** direction with heavy influences from **Material Design 3**. It prioritizes clarity through high-quality whitespace, a systematic approach to density for data-heavy administrative tasks, and a soft, tactile feel for member-facing interfaces. The goal is to evoke a sense of calm organization and institutional trust.
+The visual style is **Corporate Modern with Glassmorphic accents**. It uses a clean, systematic foundation (Material-inspired) but softens the experience with ethereal background blurs and "hero mesh" gradients. This evokes a sense of "digital sanctuary"—professional enough for administrative tasks (giving, registration) while remaining spiritually inviting through light, airy surfaces and soft indigo tints.
 
 ## Colors
-The palette is anchored by "GetPro Violet," used strategically for primary actions and brand presence. 
+The palette is anchored in **Deep Indigo (#5341cd)**, representing authority and spiritual depth, paired with a very light **Sky Blue surface (#f1fbff)** that prevents the interface from feeling heavy or clinical.
 
-- **Primary (Violet):** Used for main call-to-action buttons, active states, and primary brand markers.
-- **Secondary (Deep Charcoal):** Reserved for navigation shells, sidebars, and headings to provide a grounded, authoritative structure.
-- **Background (Soft Gray):** A deliberate off-white (#F9FAFB) is used for the main canvas to reduce eye strain during long administrative sessions.
-- **Surface:** Pure white (#FFFFFF) is used for cards and containers to create a clear "layer" above the soft gray background.
-- **Semantic Colors:** These follow standard functional patterns but are adjusted for high legibility against white surfaces.
+- **Primary:** Used for main actions, brand accents, and active states.
+- **Secondary:** A cool slate-grey used for secondary text and icons to maintain high legibility without the harshness of pure black.
+- **Tints:** Extensive use of `primary-fixed` (pale lavender) for badges and low-priority containers.
+- **Accents:** A specific `brand-orange` is reserved for partner branding (GetPro) to ensure distinct identity separation.
+- **Backgrounds:** Utilize `surface-sky` as the base canvas, with `surface-container-lowest` (pure white) used to pop key content cards.
 
 ## Typography
-The design system utilizes **Inter** exclusively to ensure a clean, systematic feel across all platforms. 
+The system relies exclusively on **Inter**, utilizing its variable weight range to create hierarchy. 
 
-- **Scale:** A tight typographic scale is used to manage high-density information (member lists, financial reports) while maintaining readability.
-- **Headings:** Use the Deep Charcoal color for all headings to establish a strong visual hierarchy.
-- **Data Tables:** Use `body-md` for row content and `label-lg` (uppercase) for column headers to differentiate between data and metadata.
-- **Line Height:** Generous line heights are applied to body text to ensure the "warm and practical" brand promise is met, preventing the UI from feeling cramped.
+- **Display & Headlines:** Use semi-bold to bold weights with slight negative letter-spacing for a modern, compact look in hero sections.
+- **Body:** Standardized on 16px for readability, with 14px used for denser informational components.
+- **Labels:** Small, all-caps or high-weight styles are used for badges and eyebrow text (e.g., "Welcome Home") to differentiate them from interactive elements.
+- **Responsiveness:** For mobile, `display-lg` should scale down to 32px to ensure readability without excessive wrapping.
 
 ## Layout & Spacing
-The system is built on a strict **8px grid**. All dimensions, padding, and margins must be multiples of 8.
+The layout uses a **Fixed Grid** approach for desktop, centered at a 1280px (`max-w-7xl`) container. 
 
-- **Grid Model:** A 12-column fluid grid for desktop with 24px gutters. For administrative dashboards, use a "Sticky Sidebar" navigation model (280px width) with a fluid content area.
-- **Density:** Provide two density modes. "Standard" for member-facing views (larger padding) and "Compact" for HQ Admin views (smaller padding, specifically in data tables).
-- **Breakpoints:**
-  - Mobile: < 600px (Single column, 16px margins)
-  - Tablet: 600px - 1024px (8 columns, 24px margins)
-  - Desktop: > 1024px (12 columns, 32px margins)
+- **Grid:** A 12-column system is used for feature blocks, often splitting into 8+4 or 4+4+4 configurations.
+- **Rhythm:** Spacing follows an 8px base unit. Section vertical padding is generous (64px to 80px) to maintain the "airy" feel.
+- **Mobile:** Margins shrink to 16px, and multi-column grids collapse into a single-column stack. Components like the navigation bar use a fixed 64px height.
 
 ## Elevation & Depth
-In accordance with Material Design 3 principles, depth is communicated through **Tonal Layers** and **Soft Ambient Shadows**.
+Depth is created through a mix of **Tonal Layering** and **Glassmorphism**:
 
-- **Level 0 (Background):** Soft off-white surface.
-- **Level 1 (Cards/Containers):** White surface with a very subtle 1px border (#E2E8F0) and no shadow. Used for secondary information.
-- **Level 2 (Interactive Cards):** White surface with a soft, diffused shadow (Y: 4px, Blur: 12px, 5% Opacity Black).
-- **Level 3 (Modals/Popovers):** Higher elevation shadow (Y: 8px, Blur: 24px, 10% Opacity Black) to indicate clear separation from the workspace.
-- **Transitions:** Use subtle surface-tint overlays (primary color at 5% opacity) when hovering over list items or interactive table rows.
+- **Level 0 (Background):** `surface-sky` (#f1fbff).
+- **Level 1 (Cards):** Pure white surfaces with a 1px `outline-variant` border. No shadow or very subtle `shadow-sm`.
+- **Level 2 (Floating/Interactive):** Elements like the navigation bar or specific feature cards use `shadow-md` on hover.
+- **Special Elevation:** The "Glass Card" effect uses `backdrop-blur(12px)` and a semi-transparent white background to overlay images, creating a sophisticated layered look.
+- **Hero Depth:** Soft radial gradients (Mesh) provide a sense of atmospheric depth without using hard shadows.
 
 ## Shapes
-The design system uses a **Rounded** shape language to maintain the "warm and approachable" feel. 
+The shape language is consistently **Rounded**.
 
-- **Components:** Standard buttons, input fields, and small cards use a 0.5rem (8px) corner radius.
-- **Containers:** Large dashboard widgets and main content containers use a 1rem (16px) radius.
-- **Special Elements:** Search bars and "Join" buttons for members may use pill-shaped (full-round) styling to feel more inviting.
+- **Standard Buttons & Cards:** Use a 0.5rem (8px) radius.
+- **Larger Containers:** Use 0.75rem to 1rem (12px to 16px) for a softer, more modern appearance.
+- **Badges/Chips:** Use "Full" pill-shaped rounding to distinguish them from actionable buttons.
+- **Media:** Images should always carry the `rounded-xl` (12px) treatment to match the UI container style.
 
 ## Components
-- **Buttons:** 
-  - *Primary:* Filled GetPro Violet with white text. 
-  - *Secondary:* Outlined Violet or Deep Charcoal. 
-  - *Tertiary:* Ghost buttons for low-priority actions.
-- **Navigation Shell:** A vertical sidebar for admins using the Deep Charcoal background. Icons should be "Outlined" style, switching to "Filled" on active states.
-- **Data Tables:** Essential for church management. Features include:
-  - Sticky headers.
-  - Alternating row zebra-striping (optional, very subtle).
-  - Inline status chips (e.g., "Active" in Green, "Inactive" in Gray).
-- **Input Fields:** Outlined style with floating labels. Focus state uses a 2px Violet border. Error states use the Red semantic color for both border and helper text.
-- **Cards:** Used for "Ministry Summaries" or "Member Profiles." Cards should have a consistent padding of 24px and clear internal hierarchy (Title -> Metadata -> Action).
-- **Chips:** Small, rounded indicators for tags (e.g., "Small Group," "Volunteer," "Donor"). Use low-saturation background tints of the primary or semantic colors.
+
+### Buttons
+- **Primary:** Solid `#5341cd` background with white text. 8px border radius. Hover state involves a slight shadow increase and background shift to `primary-container`.
+- **Secondary/Outline:** 1px border using `outline-variant`, primary color text.
+- **Ghost:** No border or background, transitions to `surface-container-low` on hover.
+
+### Cards
+- **Feature Cards:** White background, 1px border, 16px padding.
+- **Glass Cards:** 70% white opacity, 12px blur, used for overlaying text on imagery.
+
+### Badges
+- Small, pill-shaped containers. Primary badge uses `primary-fixed` background with `on-primary-fixed-variant` text.
+
+### Inputs & Fields
+- Not explicitly shown but should follow the 8px rounding, using `outline-variant` for borders and `surface-container-low` for subtle background fills in inactive states.
+
+### Icons
+- Use **Material Symbols Outlined**. Standardize on 20px-24px size. Icons within primary containers should use a "Fill" variation on hover to add interactivity.
