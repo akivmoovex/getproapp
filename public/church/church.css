@@ -33,6 +33,7 @@
   --church-space-xl: 32px;
   --church-max-width: 1280px;
   --church-margin-mobile: 16px;
+  --church-margin-desktop: 32px;
 }
 
 *,
@@ -12990,10 +12991,10 @@ a.church-branch-bento-stat:hover {
   font-weight: 500;
 }
 
-/* --- Tenant public homepage (Stitch church layout, real data) v48 --- */
+/* --- Tenant public homepage (Stitch church layout, real data) v50 --- */
 
-.church-body--branch-home .bb-tenant-home.home-desktop-design.home-mobile-design {
-  display: block !important;
+.church-body--branch-home .bb-tenant-home {
+  display: block;
 }
 
 .church-body--branch-home .church-footer--branch {
@@ -13012,13 +13013,14 @@ a.church-branch-bento-stat:hover {
 
 .bb-tenant-home {
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .bb-tenant-section__inner {
-  width: min(1120px, 100%);
+  width: min(var(--church-max-width), 100%);
   margin: 0 auto;
   padding: 0 var(--church-margin-mobile);
+  box-sizing: border-box;
 }
 
 @media (min-width: 900px) {
@@ -13133,12 +13135,17 @@ a.church-branch-bento-stat:hover {
 }
 
 .bb-tenant-hero__inner {
-  width: min(1120px, 100%);
+  width: min(var(--church-max-width), 100%);
   margin: 0 auto;
   padding: 0 var(--church-margin-mobile);
   display: grid;
   gap: var(--church-space-xl);
   align-items: center;
+  box-sizing: border-box;
+}
+
+.bb-tenant-hero__copy {
+  min-width: 0;
 }
 
 @media (min-width: 900px) {
@@ -13304,7 +13311,7 @@ a.church-branch-bento-stat:hover {
   overflow-wrap: anywhere;
 }
 
-/* Service strip */
+/* Service / visit strip — schedule card is mobile-only; hero overlay is desktop */
 .bb-tenant-service {
   padding: var(--church-space-xl) 0;
   background: var(--church-surface-container-lowest, #fff);
@@ -13313,13 +13320,13 @@ a.church-branch-bento-stat:hover {
 
 .bb-tenant-service__grid {
   display: grid;
-  gap: var(--church-space-lg);
+  gap: var(--church-space-md);
 }
 
 @media (min-width: 700px) {
   .bb-tenant-service__grid {
-    grid-template-columns: 1fr 1fr auto;
-    align-items: center;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    align-items: stretch;
   }
 }
 
@@ -13327,6 +13334,16 @@ a.church-branch-bento-stat:hover {
   display: flex;
   gap: 14px;
   align-items: flex-start;
+  padding: var(--church-space-lg);
+  border: 1px solid var(--church-outline);
+  border-radius: 1.5rem;
+  background: var(--church-surface-container-low, #eaf5fa);
+  min-width: 0;
+}
+
+.bb-tenant-service__card--schedule,
+.bb-tenant-service__card--location {
+  min-width: 0;
 }
 
 .bb-tenant-service__icon {
@@ -13354,13 +13371,44 @@ a.church-branch-bento-stat:hover {
 }
 
 .bb-tenant-service__actions {
-  justify-self: start;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px 0;
 }
 
 @media (min-width: 700px) {
   .bb-tenant-service__actions {
-    justify-self: end;
+    justify-content: flex-end;
+    align-self: center;
   }
+}
+
+/* Desktop Stitch: service summary lives on the hero glass card;
+   location/contact live in Visit Us — hide the mid-page strip to avoid duplicates */
+@media (min-width: 900px) {
+  .bb-tenant-service {
+    display: none;
+  }
+}
+
+/* Mobile Stitch: dedicated service cards; hide hero overlay to avoid duplicate */
+@media (max-width: 899px) {
+  .bb-tenant-hero__service {
+    display: none;
+  }
+}
+
+.bb-tenant-sermons__inner {
+  min-width: 0;
+}
+
+.bb-tenant-visit__copy {
+  min-width: 0;
+}
+
+.bb-tenant-hero__visual--fallback .bb-tenant-hero__fallback {
+  min-height: inherit;
 }
 
 /* Announcements */
@@ -13395,6 +13443,13 @@ a.church-branch-bento-stat:hover {
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 10px;
+}
+
+.bb-tenant-announcement-card__date {
+  font-size: 0.75rem;
+  color: var(--church-muted);
+  font-weight: 500;
+  align-self: center;
 }
 
 .bb-tenant-announcement-card__title {

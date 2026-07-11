@@ -131,9 +131,12 @@ function formFromContent(content) {
 }
 
 function buildBranchFallbacks(org, branch) {
-  const churchName = (branch && branch.name) || (org && org.name) || "Our Church";
+  const organizationName = (org && org.name) || "";
+  const branchName = (branch && branch.name) || "";
+  const churchName = branchName || organizationName || "Our Church";
+  const heroTitle = organizationName ? `Welcome to ${organizationName}` : `Welcome to ${churchName}`;
   return {
-    homepage_hero_title: churchName,
+    homepage_hero_title: heroTitle,
     homepage_hero_subtitle: "Welcome home",
     welcome_message:
       (branch && branch.welcome_message) ||

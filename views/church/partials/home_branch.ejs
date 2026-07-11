@@ -3,7 +3,7 @@
   var orgLabel = (typeof organizationName !== 'undefined' && organizationName) ? organizationName : churchName;
   var branchLabel = (typeof branchName !== 'undefined' && branchName) ? branchName : '';
   var showBranchDistinct = branchLabel && orgLabel && String(branchLabel) !== String(orgLabel);
-  var heroHeading = heroTitle || churchName;
+  var heroHeading = heroTitle || (orgLabel ? ('Welcome to ' + orgLabel) : churchName);
   var heroLead = welcomeMessage || '';
   var heroEyebrow = heroSubtitle || (showBranchDistinct ? branchLabel : (orgLabel || 'Welcome'));
   var events = (typeof upcomingEvents !== 'undefined' && Array.isArray(upcomingEvents)) ? upcomingEvents.slice(0, 6) : [];
@@ -23,12 +23,13 @@
   var visitPhone = (typeof contactPhone !== 'undefined' && contactPhone) ? contactPhone : '';
   var visitEmail = (typeof contactEmail !== 'undefined' && contactEmail) ? contactEmail : '';
   var givingIntro = (typeof givingTeaser !== 'undefined' && givingTeaser) ? givingTeaser : 'Your generosity supports ministry, outreach, and community care.';
-  var hasVisitDetails = !!(visitLocation || visitPhone || visitEmail || serviceInfo);
+  var hasVisitDetails = !!(visitLocation || visitPhone || visitEmail);
   var heroImageUrl = (typeof heroImageUrl !== 'undefined' && heroImageUrl) ? String(heroImageUrl).trim() : '';
   var hasHeroImage = !!heroImageUrl;
+  var showServiceVisitStrip = !!(serviceInfo || visitLocation);
 %>
 
-<section class="bb-tenant-home home-desktop-design home-mobile-design" data-tenant-home="1" data-home-layout="responsive">
+<section class="bb-tenant-home" data-tenant-home="1" data-home-layout="responsive">
   <span class="bb-tenant-home__desktop-marker home-desktop-design" hidden aria-hidden="true"></span>
   <span class="bb-tenant-home__mobile-marker home-mobile-design" hidden aria-hidden="true"></span>
   <%# —— Hero —— %>
@@ -40,15 +41,10 @@
         <% if (heroLead) { %>
         <p class="bb-tenant-hero__lead"><%= heroLead %></p>
         <% } %>
-        <% if (showBranchDistinct) { %>
-        <p class="bb-tenant-branch-label"><%= branchLabel %></p>
-        <% } %>
         <% if (!isPreviewMode) { %>
         <div class="bb-tenant-hero__cta">
           <a class="church-btn church-btn--primary" href="/register">Register as a Member</a>
           <a class="church-btn church-btn--outline" href="/events">View Events</a>
-          <a class="church-btn church-btn--ghost bb-tenant-hero__cta-secondary" href="/login">Member Login</a>
-          <a class="church-btn church-btn--ghost bb-tenant-hero__cta-secondary" href="/contact">Plan a Visit</a>
         </div>
         <% } %>
       </div>
@@ -73,12 +69,12 @@
     </div>
   </section>
 
-  <%# —— Service / visit quick info —— %>
-  <% if (serviceInfo || visitLocation) { %>
-  <section class="bb-tenant-service" aria-label="Service information">
+  <%# —— Service / visit quick info (mobile schedule + shared location card) —— %>
+  <% if (showServiceVisitStrip) { %>
+  <section class="bb-tenant-service" aria-label="Service and visit information">
     <div class="bb-tenant-section__inner bb-tenant-service__grid">
       <% if (serviceInfo) { %>
-      <article class="bb-tenant-service__card">
+      <article class="bb-tenant-service__card bb-tenant-service__card--schedule">
         <div class="bb-tenant-service__icon" aria-hidden="true"><span class="material-symbols-outlined">schedule</span></div>
         <div>
           <h2 class="bb-tenant-service__title">Service Times</h2>
@@ -87,7 +83,7 @@
       </article>
       <% } %>
       <% if (visitLocation) { %>
-      <article class="bb-tenant-service__card">
+      <article class="bb-tenant-service__card bb-tenant-service__card--location">
         <div class="bb-tenant-service__icon" aria-hidden="true"><span class="material-symbols-outlined">location_on</span></div>
         <div>
           <h2 class="bb-tenant-service__title">Location</h2>
@@ -113,7 +109,7 @@
       <div class="bb-tenant-section__head">
         <div>
           <h2 class="bb-tenant-section__title">Announcements</h2>
-          <p class="bb-tenant-section__subtitle">Updates from <%= churchName %>.</p>
+          <p class="bb-tenant-section__subtitle">Updates from <%= orgLabel || churchName %>.</p>
         </div>
       </div>
       <% if (announcements.length === 0) { %>
@@ -121,9 +117,9 @@
         <p>There are no public announcements at this time.</p>
       </div>
       <% } else { %>
-      <ul class="bb-tenant-announcements__list">
+      <div class="bb-tenant-announcements__list" role="list">
         <% announcements.forEach(function (a) { %>
-        <li class="bb-tenant-announcement-card">
+        <article class="bb-tenant-announcement-card" role="listitem">
           <div class="bb-tenant-announcement-card__meta">
             <% if (a.priority && a.priority !== 'normal') { %>
             <span class="bb-tenant-chip bb-tenant-chip--priority"><%= a.priority %></span>
@@ -134,14 +130,17 @@
             <% if (a.category) { %>
             <span class="bb-tenant-chip"><%= a.category %></span>
             <% } %>
+            <% if (a.published_at || a.date) { %>
+            <span class="bb-tenant-announcement-card__date"><%= a.published_at || a.date %></span>
+            <% } %>
           </div>
           <h3 class="bb-tenant-announcement-card__title"><%= a.title %></h3>
           <% if (a.body) { %>
           <p class="bb-tenant-announcement-card__body"><%= String(a.body).length > 180 ? String(a.body).slice(0, 177) + '…' : a.body %></p>
           <% } %>
-        </li>
+        </article>
         <% }); %>
-      </ul>
+      </div>
       <% } %>
     </div>
   </section>
@@ -263,7 +262,7 @@
       <div class="bb-tenant-sermons__empty">
         <span class="bb-tenant-sermons__eyebrow">Sermons &amp; Resources</span>
         <h2 class="bb-tenant-sermons__title">Messages and study resources</h2>
-        <p class="bb-tenant-sermons__lead">Published sermons and resources from <%= churchName %> will appear here.</p>
+        <p class="bb-tenant-sermons__lead">Published sermons and resources from <%= orgLabel || churchName %> will appear here.</p>
         <% if (!isPreviewMode) { %>
         <a class="bb-tenant-inline-link bb-tenant-inline-link--on-dark" href="/sermons">Browse Sermons <span class="material-symbols-outlined" aria-hidden="true">library_music</span></a>
         <% } %>
@@ -329,15 +328,6 @@
             <div>
               <p class="bb-tenant-visit__label">Phone Number</p>
               <p class="bb-tenant-visit__value"><a href="tel:<%= String(visitPhone).replace(/[^\d+]/g, '') %>"><%= visitPhone %></a></p>
-            </div>
-          </li>
-          <% } %>
-          <% if (serviceInfo) { %>
-          <li>
-            <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
-            <div>
-              <p class="bb-tenant-visit__label">Service Times</p>
-              <p class="bb-tenant-visit__value"><%= serviceInfo %></p>
             </div>
           </li>
           <% } %>
