@@ -124,54 +124,15 @@
 </head>
 <body class="bg-background text-on-background font-body-md min-h-screen flex flex-col">
 <!-- TopNavBar -->
-<header class="bg-surface docked full-width top-0 border-b border-outline-variant z-50 sticky">
-<div class="flex justify-between items-center w-full px-lg md:px-margin-desktop py-base max-w-7xl mx-auto">
-<div class="font-headline-md text-headline-md font-bold text-primary">
-                Kafue Baptist Church
-            </div>
-<nav class="hidden md:flex items-center gap-xl">
-<a class="text-on-surface-variant hover:text-primary transition-colors font-title-md text-title-md" href="#">Home</a>
-<a class="text-on-surface-variant hover:text-primary transition-colors font-title-md text-title-md" href="#">About</a>
-<a class="text-on-surface-variant hover:text-primary transition-colors font-title-md text-title-md" href="#">Leadership</a>
-<a class="text-primary border-b-2 border-primary font-bold pb-1 font-title-md text-title-md" href="#">Ministries</a>
-<a class="text-on-surface-variant hover:text-primary transition-colors font-title-md text-title-md" href="#">Events</a>
-<a class="text-on-surface-variant hover:text-primary transition-colors font-title-md text-title-md" href="#">Resources</a>
-</nav>
-<div class="flex items-center gap-md">
-<button class="hidden lg:block text-primary font-label-lg px-md py-sm hover:bg-surface-container-low transition-colors duration-200">Member Login</button>
-<button class="bg-primary text-on-primary font-label-lg px-lg py-sm rounded-lg hover:opacity-90 transition-opacity">Register as Member</button>
-<button class="md:hidden text-on-surface-variant">
-<span class="material-symbols-outlined">menu</span>
-</button>
-</div>
-</div>
-</header>
+<header class="bg-surface dark:bg-inverse-surface border-b border-outline-variant dark:border-outline fixed top-0 w-full z-50 transition-all duration-300" id="top-nav"><div class="flex justify-between items-center px-margin-desktop w-full max-w-7xl mx-auto h-16"><div class="flex items-center gap-sm"><img alt="BlessBoard Logo" class="h-10 w-auto rounded-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYnDY4Keeh22ORyYmrFKppYuzQEXRIj84gNVltZP4-ZFxbKIUAR8kEyj1IGaCLFA_9yQG-pBg98x9JQJcsYC7mum6ctSzPw_FKar2IQwF6ZEQHOTde6wTT2p_On6ujFQY2BrOZw94KSMf4IhYtzpklCDFOh-mPztrq3GD57Y-RYDmMidOEJwhYvZjDanuX5bBHOM1jcYaVPz0Ls316lZOz6vZyrK43PULakNQ_ytaERW6zREU-0dOnHA"/><div class="flex flex-col leading-tight"><span class="font-bold text-on-surface text-title-md">Kafue Baptist Church</span><span class="text-secondary text-label-md">Main Branch</span></div></div><nav class="hidden md:flex items-center gap-xl"><a class="text-secondary hover:text-primary transition-colors font-label-lg text-label-lg px-2 py-1 rounded" href="#">Home</a><a class="text-secondary hover:text-primary transition-colors font-label-lg text-label-lg px-2 py-1 rounded" href="#">About</a><a class="text-secondary hover:text-primary transition-colors font-label-lg text-label-lg px-2 py-1 rounded" href="#">Leadership</a><a class="text-primary font-bold font-label-lg text-label-lg px-2 py-1 rounded" href="#">Ministries</a><a class="text-secondary hover:text-primary transition-colors font-label-lg text-label-lg px-2 py-1 rounded" href="#">Events</a><a class="text-secondary hover:text-primary transition-colors font-label-lg text-label-lg px-2 py-1 rounded" href="#">Resources</a></nav><div class="flex items-center gap-sm"><button class="text-primary font-label-lg text-label-lg hover:bg-surface-container-low px-md py-sm rounded transition-all">Member Login</button><button class="bg-primary text-on-primary font-label-lg text-label-lg px-lg py-sm rounded-lg shadow-sm hover:bg-primary-container transition-all">Register</button></div></div></header>
 <main class="flex-grow">
 <!-- Hero Section -->
-<section class="relative py-xl md:py-32 overflow-hidden bg-primary-container text-on-primary-container">
-<div class="absolute inset-0 opacity-10 pointer-events-none">
-<div class="grid grid-cols-6 h-full w-full">
-<div class="border-r border-on-primary-container"></div>
-<div class="border-r border-on-primary-container"></div>
-<div class="border-r border-on-primary-container"></div>
-<div class="border-r border-on-primary-container"></div>
-<div class="border-r border-on-primary-container"></div>
-<div></div>
-</div>
-</div>
-<div class="max-w-7xl mx-auto px-lg relative z-10 text-center">
-<span class="uppercase tracking-widest font-label-md text-label-md mb-md block">Our Community</span>
-<h1 class="font-display-lg text-display-lg mb-lg">Growing Together in Faith</h1>
-<p class="font-body-lg text-body-lg max-w-2xl mx-auto opacity-90">
-                    Explore the various ministries at Kafue Baptist Church. Whether you're looking to serve, connect, or grow, there's a place for you here.
-                </p>
-</div>
-</section>
+<section class="relative overflow-hidden hero-mesh min-h-[60vh] flex items-center"><div class="max-w-7xl mx-auto px-margin-desktop text-center py-xl z-10"><span class="inline-block px-md py-xs bg-primary-fixed text-on-primary-fixed-variant rounded-full font-label-lg text-label-lg mb-md">Our Community</span><h1 class="font-display-lg text-display-lg text-on-surface mb-lg leading-tight">Growing Together in <span class="text-primary">Faith</span></h1><p class="font-body-lg text-body-lg text-secondary mb-xl max-w-2xl mx-auto">Explore the various ministries at Kafue Baptist Church. Whether you're looking to serve, connect, or grow, there's a place for you here.</p></div><div class="absolute -top-12 -right-12 w-64 h-64 bg-primary-fixed-dim opacity-20 blur-3xl rounded-full"></div></section>
 <!-- Ministry Bento Grid -->
-<section class="max-w-7xl mx-auto px-lg py-xl">
+<section class="py-xl bg-surface-container-lowest">
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
 <!-- Worship Ministry -->
-<div class="group ministry-card-hover lg:col-span-2 lg:row-span-2 bg-surface-container-lowest border border-outline-variant p-xl rounded-xl shadow-sm flex flex-col justify-between transition-all duration-300 hover:shadow-md">
+<div class="group ministry-card-hover lg:col-span-2 lg:row-span-2 bg-surface-container-lowest border border-outline-variant p-xl rounded-xl shadow-sm flex flex-col justify-between transition-all duration-300 hover:shadow-md duration-700 opacity-0 translate-y-4">
 <div>
 <div class="bg-primary-fixed text-on-primary-fixed-variant w-16 h-16 rounded-full flex items-center justify-center mb-xl ministry-icon">
 <span class="material-symbols-outlined text-4xl" data-icon="music_note">music_note</span>
@@ -186,7 +147,7 @@
 </button>
 </div>
 <!-- Youth Ministry -->
-<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md">
+<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md duration-700 opacity-0 translate-y-4">
 <div class="bg-secondary-container text-on-secondary-container w-12 h-12 rounded-lg flex items-center justify-center mb-lg ministry-icon">
 <span class="material-symbols-outlined text-2xl" data-icon="rocket_launch">rocket_launch</span>
 </div>
@@ -197,7 +158,7 @@
 <a class="text-primary font-label-lg hover:underline inline-flex items-center gap-xs" href="#">Join Us <span class="material-symbols-outlined text-sm">open_in_new</span></a>
 </div>
 <!-- Children Ministry -->
-<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md">
+<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md duration-700 opacity-0 translate-y-4">
 <div class="bg-surface-container-high text-on-surface-variant w-12 h-12 rounded-lg flex items-center justify-center mb-lg ministry-icon">
 <span class="material-symbols-outlined text-2xl" data-icon="child_care">child_care</span>
 </div>
@@ -208,7 +169,7 @@
 <a class="text-primary font-label-lg hover:underline inline-flex items-center gap-xs" href="#">Learn More <span class="material-symbols-outlined text-sm">open_in_new</span></a>
 </div>
 <!-- Women Ministry -->
-<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md">
+<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md duration-700 opacity-0 translate-y-4">
 <div class="bg-tertiary-fixed text-on-tertiary-fixed-variant w-12 h-12 rounded-lg flex items-center justify-center mb-lg ministry-icon">
 <span class="material-symbols-outlined text-2xl" data-icon="auto_awesome">auto_awesome</span>
 </div>
@@ -219,7 +180,7 @@
 <a class="text-primary font-label-lg hover:underline inline-flex items-center gap-xs" href="#">Connect <span class="material-symbols-outlined text-sm">open_in_new</span></a>
 </div>
 <!-- Men Ministry -->
-<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md">
+<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md duration-700 opacity-0 translate-y-4">
 <div class="bg-primary-fixed-dim text-on-primary-fixed-variant w-12 h-12 rounded-lg flex items-center justify-center mb-lg ministry-icon">
 <span class="material-symbols-outlined text-2xl" data-icon="fitness_center">fitness_center</span>
 </div>
@@ -230,7 +191,7 @@
 <a class="text-primary font-label-lg hover:underline inline-flex items-center gap-xs" href="#">Join Us <span class="material-symbols-outlined text-sm">open_in_new</span></a>
 </div>
 <!-- Prayer Ministry -->
-<div class="group ministry-card-hover lg:col-span-2 bg-primary text-on-primary p-xl rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.01] relative overflow-hidden">
+<div class="group ministry-card-hover lg:col-span-2 bg-primary text-on-primary p-xl rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.01] relative overflow-hidden duration-700 opacity-0 translate-y-4">
 <div class="absolute -right-12 -bottom-12 opacity-10">
 <span class="material-symbols-outlined text-[160px]" data-icon="folded_hands">folded_hands</span>
 </div>
@@ -248,7 +209,7 @@
 </div>
 </div>
 <!-- Outreach Ministry -->
-<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md">
+<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md duration-700 opacity-0 translate-y-4">
 <div class="bg-secondary-fixed text-on-secondary-fixed-variant w-12 h-12 rounded-lg flex items-center justify-center mb-lg ministry-icon">
 <span class="material-symbols-outlined text-2xl" data-icon="public">public</span>
 </div>
@@ -259,7 +220,7 @@
 <a class="text-primary font-label-lg hover:underline inline-flex items-center gap-xs" href="#">Get Involved <span class="material-symbols-outlined text-sm">open_in_new</span></a>
 </div>
 <!-- Hospitality Ministry -->
-<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md">
+<div class="group ministry-card-hover bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm transition-all duration-300 hover:shadow-md duration-700 opacity-0 translate-y-4">
 <div class="bg-surface-variant text-on-surface-variant w-12 h-12 rounded-lg flex items-center justify-center mb-lg ministry-icon">
 <span class="material-symbols-outlined text-2xl" data-icon="restaurant">restaurant</span>
 </div>
@@ -272,46 +233,10 @@
 </div>
 </section>
 <!-- CTA Section -->
-<section class="bg-surface-container py-xl">
-<div class="max-w-5xl mx-auto px-lg text-center">
-<h2 class="font-headline-lg text-headline-lg mb-md">Not sure where to start?</h2>
-<p class="font-body-lg text-body-lg text-on-surface-variant mb-xl">
-                    Our team is here to help you find the right group or ministry where your talents can flourish.
-                </p>
-<div class="flex flex-col sm:flex-row justify-center gap-md">
-<a class="bg-primary text-on-primary px-xl py-md rounded-lg font-title-md hover:opacity-90 transition-opacity" href="#">Contact Ministry Leader</a>
-<a class="bg-outline-variant text-on-surface px-xl py-md rounded-lg font-title-md hover:bg-outline transition-colors" href="#">Download Ministry Guide</a>
-</div>
-</div>
-</section>
+<section class="py-xl bg-inverse-surface text-on-primary-container overflow-hidden relative"><div class="absolute top-0 right-0 w-96 h-96 bg-primary opacity-10 blur-[100px] rounded-full -mr-48 -mt-48"></div><div class="max-w-7xl mx-auto px-margin-desktop relative z-10"><div class="bg-surface-container-highest/10 backdrop-blur-md border border-white/10 rounded-xl p-xl text-center"><h2 class="font-headline-lg text-headline-lg text-primary-fixed-dim mb-md">Not sure where to start?</h2><p class="font-body-lg text-body-lg text-secondary-fixed-dim mb-xl max-w-2xl mx-auto">Our team is here to help you find the right group or ministry where your talents can flourish.</p><div class="flex flex-col sm:flex-row gap-md justify-center"><button class="bg-primary-fixed text-on-primary-fixed font-title-md text-title-md px-xl py-md rounded-lg hover:bg-primary-container hover:text-on-primary-container transition-all">Contact Ministry Leader</button><button class="border border-outline text-primary-fixed-dim font-title-md text-title-md px-xl py-md rounded-lg hover:bg-white/10 transition-all">Download Ministry Guide</button></div></div></div></section>
 </main>
 <!-- Footer -->
-<footer class="bg-surface-container-highest dark:bg-inverse-surface border-t border-outline-variant">
-<div class="flex flex-col md:flex-row justify-between items-center w-full px-lg py-xl gap-md max-w-7xl mx-auto">
-<div class="flex flex-col items-center md:items-start">
-<span class="font-title-lg text-title-lg font-bold text-primary mb-xs">Kafue Baptist Church</span>
-<p class="text-on-surface-variant font-body-md text-body-md">Powered by GetPro Church</p>
-</div>
-<div class="flex flex-wrap justify-center gap-xl">
-<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Giving</a>
-<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Contact</a>
-<a class="text-primary font-bold font-body-md text-body-md" href="#">Ministries</a>
-<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Events</a>
-<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Resources</a>
-</div>
-<div class="flex gap-md">
-<a class="w-10 h-10 rounded-full border border-outline flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
-<span class="material-symbols-outlined">face_nod</span>
-</a>
-<a class="w-10 h-10 rounded-full border border-outline flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
-<span class="material-symbols-outlined">mail</span>
-</a>
-</div>
-</div>
-<div class="text-center py-md border-t border-outline/10 text-label-md text-on-surface-variant/60">
-            © 2024 Kafue Baptist Church. All rights reserved.
-        </div>
-</footer>
+<footer class="bg-surface-container-lowest border-t border-outline-variant"><div class="w-full py-xl px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-lg max-w-7xl mx-auto"><div class="flex flex-col gap-xs"><div class="flex items-center gap-sm"><img alt="BlessBoard Logo" class="h-10 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYnDY4Keeh22ORyYmrFKppYuzQEXRIj84gNVltZP4-ZFxbKIUAR8kEyj1IGaCLFA_9yQG-pBg98x9JQJcsYC7mum6ctSzPw_FKar2IQwF6ZEQHOTde6wTT2p_On6ujFQY2BrOZw94KSMf4IhYtzpklCDFOh-mPztrq3GD57Y-RYDmMidOEJwhYvZjDanuX5bBHOM1jcYaVPz0Ls316lZOz6vZyrK43PULakNQ_ytaERW6zREU-0dOnHA"/><div class="flex flex-col"><span class="font-bold text-on-surface text-body-lg">Kafue Baptist Church - Main Branch</span><p class="text-label-md"><span class="text-secondary">Powered by</span> <span class="text-brand-orange font-bold">GetPro</span></p></div></div><p class="text-secondary font-body-md text-body-md mt-sm">© 2024 Kafue Baptist Church. All rights reserved.</p></div><div class="flex flex-wrap justify-center gap-xl"><a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all" href="#">Privacy Policy</a><a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all" href="#">Terms of Service</a><a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all" href="#">Support</a><a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all" href="#">Resources</a></div></div></footer>
 <script>
         // Simple Intersection Observer for scroll animations
         const observerOptions = {

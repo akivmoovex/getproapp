@@ -330,7 +330,7 @@ test("ministries page renders polished tile grid without PG", async () => {
   });
   const res = await request(app).get("/ministries");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church-ministry-grid|Ministries coming soon/);
+  assert.match(res.text, /bb-public-ministries|church-ministry-grid|Ministry information will be available soon/);
 });
 
 test("getproapp.org remains unchanged for church routes", async () => {

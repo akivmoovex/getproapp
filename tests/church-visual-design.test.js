@@ -63,7 +63,7 @@ const branchPublicRoutes = [
   { path: "/contact", markers: ["Get in Touch", "Send a Message", "Office Hours", "contact-map-mobile.jpg", "bb-powered-by__getpro"] },
   { path: "/events", markers: ["Upcoming Events", "Church Events", "church-event-card", "bb-powered-by__getpro"] },
   { path: "/sermons", markers: ["Sermons &amp; Resources", "Media Library", "FEATURED VIDEO", "bb-powered-by__getpro"] },
-  { path: "/ministries", markers: ["Growing Together in Faith", "church-ministries-bento", "bb-powered-by__getpro"] },
+  { path: "/ministries", markers: ["Growing Together in Faith", "bb-public-ministries", "bb-powered-by__getpro"] },
   { path: "/giving", markers: ["Ways to Give", "Support Our Ministry", "church-giving-page", "bb-powered-by__getpro"] },
   { path: "/login", markers: ["Member Access", "bb-powered-by__getpro", "data-auth-screen=\"login\""] },
   { path: "/register", markers: ["Member Registration", "bb-powered-by__getpro", "data-auth-screen=\"register\""] },
@@ -110,7 +110,7 @@ const SERMON_ASSETS = [
 
 const GIVING_ASSETS = ["giving-qr-desktop.jpg", "giving-qr-mobile.jpg", "giving-qr-demo.png"];
 
-test("church public shells reference church.css?v=47/48/49/50", () => {
+test("church public shells reference church.css?v=47/48/49/50/51", () => {
   const publicShells = [
     "views/church/partials/public_shell_start.ejs",
     "views/church/partials/auth_shell_start.ejs",
@@ -120,13 +120,13 @@ test("church public shells reference church.css?v=47/48/49/50", () => {
   ];
   for (const rel of publicShells) {
     const text = fs.readFileSync(path.join(__dirname, "..", rel), "utf8");
-    assert.match(text, /church\.css\?v=(?:4[789]|50)/, `${rel} should load church.css?v=47/48/49/50`);
+    assert.match(text, /church\.css\?v=(?:4[789]|50|51)/, `${rel} should load church.css?v=47/48/49/50/51`);
   }
   const publicStart = fs.readFileSync(
     path.join(__dirname, "../views/church/partials/public_shell_start.ejs"),
     "utf8"
   );
-  assert.match(publicStart, /church\.css\?v=50/);
+  assert.match(publicStart, /church\.css\?v=51/);
 });
 
 test("homepage Stitch assets exist on disk", () => {
@@ -173,11 +173,11 @@ test("homepage CSS references ministry tile assets", () => {
   assert.match(css, /mobile-ministry-worship\.jpg/);
 });
 
-test("BlessBoard apex homepage includes updated CSS bundle v50", async () => {
+test("BlessBoard apex homepage includes updated CSS bundle v51", async () => {
   const app = makeVerticalApexApp();
   const res = await request(app).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=50/);
+  assert.match(res.text, /church\.css\?v=51/);
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
   assert.match(res.text, /Powered by[\s\S]{0,120}?GetPro/);
 });
@@ -300,7 +300,7 @@ test("about page includes Stitch section markers and assets", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/about");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=50/);
+  assert.match(res.text, /church\.css\?v=51/);
   assert.match(res.text, /Our Story/);
   assert.match(res.text, /Our Mission/);
   assert.match(res.text, /Our Vision/);
@@ -324,7 +324,7 @@ test("leadership page includes Stitch section markers and assets", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/leadership");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=50/);
+  assert.match(res.text, /church\.css\?v=51/);
   assert.match(res.text, /Our Leadership/);
   assert.match(res.text, /Ministry Leaders/);
   assert.match(res.text, /Our Elders/);
@@ -365,7 +365,7 @@ test("branch desktop public nav is church links, not apex SaaS Features/Pricing"
   const app = makeBranchApp();
   const res = await request(app).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=50/);
+  assert.match(res.text, /church\.css\?v=51/);
   assert.match(res.text, /church-nav--branch/);
   assert.match(res.text, /church-header--branch/);
   assert.doesNotMatch(res.text, /church-header--apex/);
@@ -393,7 +393,7 @@ test("apex desktop nav keeps Find Church Features About with stable hrefs", asyn
   const app = makeVerticalApexApp();
   const res = await request(app).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=50/);
+  assert.match(res.text, /church\.css\?v=51/);
   assert.match(res.text, /church-nav--apex/);
   assert.match(res.text, /href="\/churches"[^>]*>Find Church</);
   assert.match(res.text, /href="\/#features"[^>]*>Features</);
@@ -453,7 +453,7 @@ test("contact page includes Stitch section markers and assets", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/contact");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=50/);
+  assert.match(res.text, /church\.css\?v=51/);
   assert.match(res.text, /Get in Touch/);
   assert.match(res.text, /Send a Message|Send us a Message/);
   assert.match(res.text, /Office Hours/);
@@ -467,11 +467,15 @@ test("ministries page includes Stitch section markers", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/ministries");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=50/);
-  assert.match(res.text, /Growing Together in Faith/);
-  assert.match(res.text, /OUR COMMUNITY/);
-  assert.match(res.text, /church-ministries-bento/);
-  assert.match(res.text, /Not sure where to start/);
+  assert.match(res.text, /church\.css\?v=51/);
+  assert.match(res.text, /data-ministries-page="1"/);
+  assert.match(res.text, /Growing Together in Faith|Our Ministries/);
+  assert.match(res.text, /Our Community/);
+  assert.match(res.text, /bb-public-ministries|church-ministries-bento/);
+  assert.match(res.text, /Not sure where to start|Not sure where you fit/);
+  assert.match(res.text, /Ministry information will be available soon/);
+  assert.doesNotMatch(res.text, /Showing sample ministry layout/);
+  assert.doesNotMatch(res.text, /Download Ministry Guide/);
   assert.doesNotMatch(res.text, /GetPro Church/);
 });
 
@@ -479,7 +483,7 @@ test("events page includes Stitch section markers and assets", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/events");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=50/);
+  assert.match(res.text, /church\.css\?v=51/);
   assert.match(res.text, /Upcoming Events|Church Events/);
   assert.match(res.text, /church-event-card|church-event-mobile-card|church-event-featured/);
   assert.match(res.text, /event-1\.jpg|event-featured-mobile\.jpg/);
@@ -490,7 +494,7 @@ test("sermons page includes Stitch section markers and assets", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/sermons");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=50/);
+  assert.match(res.text, /church\.css\?v=51/);
   assert.match(res.text, /Media Library|Sermons &amp; Resources/);
   assert.match(res.text, /FEATURED VIDEO|LATEST SERMON/);
   assert.match(res.text, /Faith, Hope &amp; Purpose|Faith, Hope & Purpose/);
@@ -528,7 +532,7 @@ test("giving page includes Stitch section markers and assets", async () => {
   const app = makeBranchApp();
   const res = await request(app).get("/giving");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=50/);
+  assert.match(res.text, /church\.css\?v=51/);
   assert.match(res.text, /Ways to Give/);
   assert.match(res.text, /Support Our Ministry/);
   assert.match(res.text, /Bank Transfer/);
