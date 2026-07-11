@@ -4,11 +4,9 @@ const { getPgPool } = require("../../db/pg");
 const membersRepo = require("../../db/pg/church/membersRepo");
 const {
   getChurchMemberSession,
-  setChurchMemberSession,
   clearChurchMemberSession,
   requireChurchMemberSession,
   hashMemberPassword,
-  verifyMemberPassword,
 } = require("../../church/memberAuth");
 const {
   churchSessionCsrfLocals,
@@ -21,7 +19,17 @@ const {
   MINISTRY_INTEREST_OPTIONS,
   isMemberRegistrationEnabled,
 } = require("../../church/memberRegistration");
-const { authenticateWithLoginProtection } = require("../../services/church/churchLoginProtectionService");
+const { revalidateChosenRole, destinationForRole, requireActiveOrganization } = require("../../services/church/tenantUnifiedLoginService");
+const { runTenantUnifiedLoginPost } = require("../../services/church/runTenantUnifiedLogin");
+const {
+  clearAllChurchRoleSessions,
+  applyRoleSession,
+  getPortalChoice,
+  consumePortalChoice,
+  clearPortalChoice,
+  existingSessionDestination,
+  findChosenRole,
+} = require("../../church/tenantLoginSession");
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
 const memberPasswordResetRequestsRepo = require("../../db/pg/church/memberPasswordResetRequestsRepo");
 const { maskLoginIdentifier } = require("../../church/loginProtection");
@@ -34,7 +42,7 @@ const {
   recordPasswordResetSubmission,
 } = require("../../services/church/passwordResetRateLimitService");
 
-const { renderChurchNotFound } = require("../../church/churchStatusAccess");
+const { renderChurchNotFound, renderChurchUnavailable } = require("../../church/churchStatusAccess");
 
 function requireChurchBranchHost(req, res, next) {
   if (!req.churchContext || req.churchContext.kind !== "branch") {
@@ -55,6 +63,8 @@ function branchAuthLocals(req, extra) {
     : { churchCsrfToken: "", churchCsrfField: "_csrf" };
   return {
     churchName: branch.name || org.name,
+    organizationName: org.name,
+    branchName: branch.name,
     pageTitle: branch.name || org.name,
     organization: org,
     branch,
@@ -92,6 +102,7 @@ function registerChurchAuthRoutes(router) {
   router.use("/registration-submitted", requireChurchBranchHost);
   router.use("/waiting-verification", requireChurchBranchHost);
   router.use("/logout", requireChurchBranchHost);
+  router.use("/choose-portal", requireChurchBranchHost);
   router.use("/member", requireChurchBranchHost);
 
   router.get("/register", redirectIfVerifiedMember, (req, res) => {
@@ -194,15 +205,10 @@ function registerChurchAuthRoutes(router) {
   });
 
   router.get("/login", (req, res) => {
-    const member = getChurchMemberSession(req);
-    if (member && Number(member.branch_id) === Number(req.churchContext.branch.id)) {
-      if (member.status === "verified") {
-        return res.redirect("/member/dashboard");
-      }
-      if (member.status === "pending") {
-        return res.redirect("/waiting-verification");
-      }
-    }
+    const existing = existingSessionDestination(req);
+    if (existing) return res.redirect(existing);
+    const choice = getPortalChoice(req);
+    if (choice) return res.redirect("/choose-portal");
     return res.render(
       "church/auth/login",
       branchAuthLocals(req, {
@@ -214,82 +220,151 @@ function registerChurchAuthRoutes(router) {
 
   router.post("/login", async (req, res, next) => {
     try {
+      // Never trust client-posted role, organization_id, branch_id, or redirect.
       const identifier = String((req.body && req.body.identifier) || "").trim();
       const password = String((req.body && req.body.password) || "");
-      const branch = req.churchContext.branch;
-      const org = req.churchContext.organization;
       const pool = getPgPool();
 
-      const renderLoginError = (message) =>
-        res.status(400).render(
-          "church/auth/login",
-          branchAuthLocals(req, {
-            error: message,
-            identifier,
-          })
-        );
-
-      const auth = await authenticateWithLoginProtection(pool, req, {
-        accountType: "member",
-        organizationId: org.id,
-        branchId: branch.id,
+      return await runTenantUnifiedLoginPost(pool, req, res, {
         identifier,
         password,
-        findAccount: (db, ident) => membersRepo.findMemberByEmailOrPhoneForBranch(db, branch.id, ident),
-        verifyPassword: verifyMemberPassword,
-        validateAccountStatus(row) {
-          if (row.status === "rejected") {
-            return {
-              ok: false,
-              error:
-                "Your membership request was not approved. Please contact the church office if you believe this is an error.",
-              clearSession: true,
-            };
-          }
-          if (row.status === "suspended") {
-            return {
-              ok: false,
-              error:
-                "Your member access is currently suspended. Please contact the church office for assistance.",
-              clearSession: true,
-            };
-          }
-          if (row.status !== "pending" && row.status !== "verified") {
-            return {
-              ok: false,
-              error: "Unable to sign in right now. Please contact the church office.",
-              clearSession: true,
-            };
-          }
-          return { ok: true };
-        },
+        renderError: (message) =>
+          res.status(400).render(
+            "church/auth/login",
+            branchAuthLocals(req, {
+              error: message,
+              identifier,
+              loginFormAction: "/login",
+            })
+          ),
       });
+    } catch (e) {
+      return next(e);
+    }
+  });
 
-      if (!auth.ok) {
-        if (auth.clearSession) {
-          clearChurchMemberSession(req);
+  router.get("/choose-portal", async (req, res, next) => {
+    try {
+      const choice = getPortalChoice(req);
+      if (!choice) return res.redirect("/login");
+      const org = req.churchContext.organization;
+      const branch = req.churchContext.branch;
+      if (
+        Number(choice.organization_id) !== Number(org.id) ||
+        Number(choice.branch_id) !== Number(branch.id)
+      ) {
+        clearPortalChoice(req);
+        return res.redirect("/login");
+      }
+      const pool = getPgPool();
+      const orgCheck = await requireActiveOrganization(pool, org);
+      if (!orgCheck.ok) {
+        clearPortalChoice(req);
+        clearAllChurchRoleSessions(req);
+        return renderChurchUnavailable(req, res);
+      }
+      const csrf = churchSessionCsrfLocals(req);
+      return res.render(
+        "church/auth/choose_portal",
+        branchAuthLocals(req, {
+          error: null,
+          roles: choice.roles,
+          ...csrf,
+        })
+      );
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.post("/choose-portal", requireChurchSessionCsrf, async (req, res, next) => {
+    try {
+      const org = req.churchContext.organization;
+      const branch = req.churchContext.branch;
+      const pending = getPortalChoice(req);
+      if (!pending) return res.redirect(303, "/login");
+      if (
+        Number(pending.organization_id) !== Number(org.id) ||
+        Number(pending.branch_id) !== Number(branch.id)
+      ) {
+        clearPortalChoice(req);
+        return res.redirect(303, "/login");
+      }
+
+      const pool = getPgPool();
+      const orgCheck = await requireActiveOrganization(pool, org);
+      if (!orgCheck.ok) {
+        clearPortalChoice(req);
+        clearAllChurchRoleSessions(req);
+        return renderChurchUnavailable(req, res);
+      }
+      const activeOrg = orgCheck.organization;
+
+      const roleType = String((req.body && req.body.role) || "").trim();
+      const selectedMeta = findChosenRole(pending, roleType);
+      if (!selectedMeta) {
+        const csrf = churchSessionCsrfLocals(req);
+        return res.status(400).render(
+          "church/auth/choose_portal",
+          branchAuthLocals(req, {
+            error: "Please choose one of your available portals.",
+            roles: pending.roles,
+            ...csrf,
+          })
+        );
+      }
+
+      // Ignore any client-posted redirect URL. Recheck DB before creating a role session.
+      const rechecked = await revalidateChosenRole(pool, activeOrg, branch, selectedMeta);
+      if (!rechecked.ok) {
+        if (rechecked.orgUnavailable) {
+          clearPortalChoice(req);
+          clearAllChurchRoleSessions(req);
+          return renderChurchUnavailable(req, res);
         }
-        return renderLoginError(auth.error);
+        const csrf = churchSessionCsrfLocals(req);
+        const stillValid = getPortalChoice(req);
+        if (!stillValid) {
+          return res.status(400).render(
+            "church/auth/login",
+            branchAuthLocals(req, {
+              error: rechecked.error || "Unable to sign in right now. Please try again.",
+              identifier: "",
+              loginFormAction: "/login",
+            })
+          );
+        }
+        return res.status(400).render(
+          "church/auth/choose_portal",
+          branchAuthLocals(req, {
+            error: rechecked.error || "That portal is no longer available. Choose another or sign in again.",
+            roles: stillValid.roles,
+            ...csrf,
+          })
+        );
       }
 
-      const row = auth.account;
-      setChurchMemberSession(req, {
-        member_id: row.id,
-        organization_id: row.organization_id,
-        branch_id: row.branch_id,
-        status: row.status,
-        full_name: row.full_name,
-      });
+      // Clear only after successful revalidation to block replay.
+      consumePortalChoice(req);
+      clearAllChurchRoleSessions(req);
+      applyRoleSession(req, rechecked.role);
 
-      if (row.status === "pending") {
-        return res.redirect(303, "/waiting-verification");
-      }
-      if (row.status === "verified") {
-        return res.redirect(303, "/member/dashboard");
+      try {
+        await auditLogsRepo.insertAuditLog(pool, {
+          organization_id: activeOrg.id,
+          branch_id: branch.id,
+          actor_type: rechecked.role.type,
+          actor_id: rechecked.role.accountId,
+          action: "tenant_portal_selected",
+          entity_type: "auth",
+          entity_id: rechecked.role.accountId,
+          metadata_json: { selected_role: rechecked.role.type },
+        });
+      } catch {
+        /* audit must not block */
       }
 
-      clearChurchMemberSession(req);
-      return renderLoginError("Unable to sign in right now. Please contact the church office.");
+      return res.redirect(303, destinationForRole(rechecked.role));
     } catch (e) {
       return next(e);
     }
@@ -313,11 +388,13 @@ function registerChurchAuthRoutes(router) {
 
   router.post("/logout", (req, res, next) => {
     const member = getChurchMemberSession(req);
-    if (!member) {
+    const hasPortalChoice = Boolean(getPortalChoice(req));
+    if (!member && !hasPortalChoice) {
+      clearPortalChoice(req);
       return res.redirect(303, "/");
     }
     return requireChurchSessionCsrf(req, res, () => {
-      clearChurchMemberSession(req);
+      clearAllChurchRoleSessions(req);
       return res.redirect(303, "/");
     });
   });

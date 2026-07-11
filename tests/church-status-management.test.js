@@ -259,7 +259,7 @@ test(
     assert.equal(branchLoginBlocked.status, 503);
 
     const hqLoginAllowed = await request(suspendedApp).get("/hq/login");
-    assert.equal(hqLoginAllowed.status, 200);
+    assert.equal(hqLoginAllowed.status, 503);
 
     const reactivated = await superAgent
       .post(`/admin/church/organizations/${org.id}/reactivate`)

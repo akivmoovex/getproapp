@@ -8,10 +8,8 @@ const givingSummariesRepo = require("../../db/pg/church/givingSummariesRepo");
 const monthlyReportsRepo = require("../../db/pg/church/monthlyReportsRepo");
 const {
   getChurchBranchAdminSession,
-  setChurchBranchAdminSession,
   clearChurchBranchAdminSession,
   requireChurchBranchAdminSession,
-  verifyBranchAdminPassword,
   hashBranchAdminPassword,
 } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
@@ -69,10 +67,10 @@ const ministryLeadersRepo = require("../../db/pg/church/ministryLeadersRepo");
 const ministryJoinRequestsRepo = require("../../db/pg/church/ministryJoinRequestsRepo");
 const { reportStatusLabel } = require("../../church/monthlyReportValidation");
 const churchPlanService = require("../../services/church/churchPlanService");
-const { authenticateWithLoginProtection } = require("../../services/church/churchLoginProtectionService");
 const branchAdminPasswordResetRequestsRepo = require("../../db/pg/church/branchAdminPasswordResetRequestsRepo");
 const { maskLoginIdentifier } = require("../../church/loginProtection");
 const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
+const { clearPortalChoice } = require("../../church/tenantLoginSession");
 const {
   validatePublicBranchAdminForgotPasswordBody,
   PUBLIC_SUCCESS_MESSAGE,
@@ -81,6 +79,7 @@ const {
   gatePasswordResetRequest,
   recordPasswordResetSubmission,
 } = require("../../services/church/passwordResetRateLimitService");
+const { runTenantUnifiedLoginPost } = require("../../services/church/runTenantUnifiedLogin");
 const {
   getResetRequestStatusLabel,
   getResetRequestStatusClass,
@@ -153,55 +152,30 @@ function registerBranchAdminRoutes(router) {
     if (admin && Number(admin.branch_id) === Number(req.churchContext.branch.id)) {
       return res.redirect("/branch/dashboard");
     }
-    return res.render(
-      "church/branch-admin/login",
-      branchAdminLocals(req, {
-        error: null,
-        identifier: "",
-      })
-    );
+    return res.redirect(302, "/login");
   });
 
   router.post("/branch/login", async (req, res, next) => {
     try {
       const identifier = String((req.body && req.body.identifier) || "").trim();
       const password = String((req.body && req.body.password) || "");
-      const branch = req.churchContext.branch;
-      const org = req.churchContext.organization;
       const pool = getPgPool();
 
-      const renderError = (message) =>
-        res.status(400).render(
-          "church/branch-admin/login",
-          branchAdminLocals(req, { error: message, identifier })
-        );
-
-      const auth = await authenticateWithLoginProtection(pool, req, {
-        accountType: "branch_admin",
-        organizationId: org.id,
-        branchId: branch.id,
+      return await runTenantUnifiedLoginPost(pool, req, res, {
         identifier,
         password,
-        findAccount: (db, ident) =>
-          branchAdminsRepo.findBranchAdminByEmailOrPhoneForBranch(db, branch.id, ident),
-        verifyPassword: verifyBranchAdminPassword,
+        renderError: (message) =>
+          res.status(400).render(
+            "church/auth/login",
+            branchAdminLocals(req, {
+              error: message,
+              identifier,
+              organizationName: req.churchContext.organization.name,
+              branchName: req.churchContext.branch.name,
+              loginFormAction: "/login",
+            })
+          ),
       });
-
-      if (!auth.ok) {
-        return renderError(auth.error);
-      }
-
-      const row = auth.account;
-      setChurchBranchAdminSession(req, {
-        admin_id: row.id,
-        organization_id: row.organization_id,
-        branch_id: row.branch_id,
-        full_name: row.full_name || row.display_name || "Branch Admin",
-        role: row.role || "branch_admin",
-        status: row.status,
-      });
-
-      return res.redirect(303, "/branch/dashboard");
     } catch (e) {
       return next(e);
     }
@@ -306,6 +280,7 @@ function registerBranchAdminRoutes(router) {
 
   router.post("/branch/logout", requireChurchBranchAdminSession, requireChurchSessionCsrf, (req, res) => {
     clearChurchBranchAdminSession(req);
+    clearPortalChoice(req);
     return res.redirect(303, "/branch/login");
   });
 

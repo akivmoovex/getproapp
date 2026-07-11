@@ -1,0 +1,45 @@
+<%- include('../partials/auth_shell_start', { authBodyClass: 'church-body--auth-login' }) %>
+  <div class="church-auth-stage church-auth-stage--login">
+    <div class="church-auth-card church-auth-card--stitch" data-auth-screen="choose-portal">
+      <div class="church-auth-login__brand">
+        <div class="church-auth-login__mark" aria-hidden="true">
+          <span class="material-symbols-outlined">apps</span>
+        </div>
+        <h1 class="church-auth-login__title">Choose a portal</h1>
+        <p class="church-auth-login__welcome">
+          Your account has access to more than one portal for
+          <%= typeof organizationName !== 'undefined' ? organizationName : churchName %>.
+        </p>
+      </div>
+
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+
+      <form class="church-auth-form" method="post" action="/choose-portal">
+        <input type="hidden" name="<%= typeof churchCsrfField !== 'undefined' && churchCsrfField ? churchCsrfField : '_csrf' %>" value="<%= typeof churchCsrfToken !== 'undefined' ? churchCsrfToken : '' %>"/>
+        <fieldset class="church-auth-field">
+          <legend class="church-auth-label">Available portals</legend>
+          <ul class="bb-portal-choice-list">
+            <% (roles || []).forEach(function (role) { %>
+            <li class="bb-portal-choice-item">
+              <label class="bb-portal-choice-label">
+                <input type="radio" name="role" value="<%= role.type %>" required/>
+                <span>
+                  <strong><%= role.label %></strong>
+                  <% if (role.type === 'member' && role.status === 'pending') { %>
+                  <span class="bb-portal-choice-meta">Pending verification</span>
+                  <% } %>
+                </span>
+              </label>
+            </li>
+            <% }); %>
+          </ul>
+        </fieldset>
+        <button class="church-btn church-btn--primary church-btn--block church-auth-submit" type="submit">
+          Continue
+        </button>
+      </form>
+    </div>
+  </div>
+<%- include('../partials/auth_shell_end') %>

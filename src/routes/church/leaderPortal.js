@@ -11,10 +11,8 @@ const hqBroadcastsRepo = require("../../db/pg/church/hqBroadcastsRepo");
 const { LEADER_HQ_AUDIENCES } = require("../../church/hqBroadcastValidation");
 const {
   getChurchLeaderSession,
-  setChurchLeaderSession,
   clearChurchLeaderSession,
   requireChurchLeaderSession,
-  verifyLeaderPassword,
 } = require("../../church/leaderAuth");
 const { requireChurchBranchHost } = require("./auth");
 const { validateAttendanceBody } = require("../../church/attendanceValidation");
@@ -26,7 +24,7 @@ const { formatDutyDate, assignedMemberDisplay, dutyStatusLabel } = require("../.
 const { leaderPortalLocals, flashFromQuery, recordLeaderAudit } = require("./leaderShared");
 const registerLeaderJoinRequestRoutes = require("./leaderJoinRequests");
 const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
-const { authenticateWithLoginProtection } = require("../../services/church/churchLoginProtectionService");
+const { clearPortalChoice } = require("../../church/tenantLoginSession");
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
 const ministryLeaderPasswordResetRequestsRepo = require("../../db/pg/church/ministryLeaderPasswordResetRequestsRepo");
 const { maskLoginIdentifier } = require("../../church/loginProtection");
@@ -102,71 +100,32 @@ function registerLeaderPortalRoutes(router) {
     if (leader && Number(leader.branch_id) === Number(req.churchContext.branch.id)) {
       return res.redirect("/leader/dashboard");
     }
-    return res.render(
-      "church/leader/login",
-      leaderPortalLocals(req, { error: null, identifier: "" })
-    );
+    // Preserve bookmark; unified tenant login is the single sign-in experience.
+    return res.redirect(302, "/login");
   });
 
   router.post("/leader/login", async (req, res, next) => {
     try {
       const identifier = String((req.body && req.body.identifier) || "").trim();
       const password = String((req.body && req.body.password) || "");
-      const branch = req.churchContext.branch;
-      const org = req.churchContext.organization;
       const pool = getPgPool();
+      const { runTenantUnifiedLoginPost } = require("../../services/church/runTenantUnifiedLogin");
 
-      const renderError = (message) =>
-        res.status(400).render(
-          "church/leader/login",
-          leaderPortalLocals(req, { error: message, identifier })
-        );
-
-      const auth = await authenticateWithLoginProtection(pool, req, {
-        accountType: "ministry_leader",
-        organizationId: org.id,
-        branchId: branch.id,
+      return await runTenantUnifiedLoginPost(pool, req, res, {
         identifier,
         password,
-        findAccount: (db, ident) =>
-          ministryLeadersRepo.findLeaderByEmailOrPhoneForBranch(db, branch.id, ident),
-        verifyPassword: verifyLeaderPassword,
-        validateAccountStatus(row) {
-          if (row.status === "inactive") {
-            return {
-              ok: false,
-              error:
-                "Your ministry leader access is currently inactive. Please contact the church office for assistance.",
-              clearSession: true,
-            };
-          }
-          if (row.status !== "active") {
-            return {
-              ok: false,
-              error: "Unable to sign in right now. Please contact the church office.",
-              clearSession: true,
-            };
-          }
-          return { ok: true };
-        },
+        renderError: (message) =>
+          res.status(400).render(
+            "church/auth/login",
+            leaderPortalLocals(req, {
+              error: message,
+              identifier,
+              organizationName: req.churchContext.organization.name,
+              branchName: req.churchContext.branch.name,
+              loginFormAction: "/login",
+            })
+          ),
       });
-
-      if (!auth.ok) {
-        return renderError(auth.error);
-      }
-
-      const row = auth.account;
-      setChurchLeaderSession(req, {
-        leader_id: row.id,
-        organization_id: row.organization_id,
-        branch_id: row.branch_id,
-        ministry_id: row.ministry_id,
-        full_name: row.full_name,
-        role: row.role,
-        status: row.status,
-      });
-
-      return res.redirect(303, "/leader/dashboard");
     } catch (e) {
       return next(e);
     }
@@ -174,6 +133,7 @@ function registerLeaderPortalRoutes(router) {
 
   router.post("/leader/logout", requireChurchLeaderSession, requireChurchSessionCsrf, (req, res) => {
     clearChurchLeaderSession(req);
+    clearPortalChoice(req);
     return res.redirect(303, "/leader/login");
   });
 

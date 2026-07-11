@@ -9,17 +9,26 @@
         <div class="church-auth-login__mark" aria-hidden="true">
           <span class="material-symbols-outlined">church</span>
         </div>
-        <h1 class="church-auth-login__church home-mobile-design"><%= churchName %></h1>
-        <p class="church-auth-login__welcome home-mobile-design">Welcome back! Please enter your details to access your member portal.</p>
-        <h1 class="church-auth-login__title home-desktop-design">Member Access</h1>
-        <p class="church-auth-login__welcome home-desktop-design">Welcome back to your church family</p>
+        <h1 class="church-auth-login__church home-mobile-design"><%= typeof organizationName !== 'undefined' && organizationName ? organizationName : churchName %></h1>
+        <% if (typeof branchName !== 'undefined' && branchName) { %>
+        <p class="church-auth-login__branch home-mobile-design"><%= branchName %></p>
+        <% } %>
+        <p class="church-auth-login__welcome home-mobile-design">Sign in to access your church portals.</p>
+        <h1 class="church-auth-login__title home-desktop-design">Sign in</h1>
+        <p class="church-auth-login__welcome home-desktop-design">
+          <%= typeof organizationName !== 'undefined' && organizationName ? organizationName : churchName %>
+          <% if (typeof branchName !== 'undefined' && branchName) { %> · <%= branchName %><% } %>
+        </p>
+        <p class="church-auth-login__note" role="note">
+          Members, ministry leaders, church staff, and administrators use the same sign-in.
+        </p>
       </div>
 
       <% if (error) { %>
       <div class="church-alert church-alert--error" role="alert"><%= error %></div>
       <% } %>
 
-      <form class="church-auth-form" method="post" action="/login">
+      <form class="church-auth-form" method="post" action="<%= typeof loginFormAction !== 'undefined' && loginFormAction ? loginFormAction : '/login' %>" data-unified-login="1">
         <div class="church-auth-field">
           <label class="church-auth-label" for="identifier">Email or Phone Number</label>
           <div class="church-auth-input-wrap">
@@ -39,13 +48,8 @@
           </div>
         </div>
 
-        <div class="church-auth-info home-mobile-design" role="note">
-          <span class="material-symbols-outlined" aria-hidden="true">info</span>
-          <p>Access is available after your branch admin verifies your membership.</p>
-        </div>
-
         <button class="church-btn church-btn--primary church-btn--block church-auth-submit" type="submit">
-          Login
+          Sign in
           <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
         </button>
       </form>
@@ -54,7 +58,7 @@
       <p class="church-auth-card__footer church-auth-login__footer">
         <span class="home-mobile-design">Don't have an account?</span>
         <span class="home-desktop-design">Not a member yet?</span>
-        <a href="/register">Register as Member</a>
+        <a href="/register">Register as a Member</a>
       </p>
     </div>
   </div>

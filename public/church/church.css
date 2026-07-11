@@ -12848,3 +12848,44 @@ a.church-branch-bento-stat:hover {
     padding: 48px 24px 80px;
   }
 }
+
+/* Unified tenant login */
+.church-auth-login__note {
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--church-muted);
+}
+
+.church-auth-login__branch {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--church-muted);
+}
+
+.bb-portal-choice-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.bb-portal-choice-label {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--church-outline);
+  border-radius: var(--church-radius-lg);
+  cursor: pointer;
+  background: #fff;
+}
+
+.bb-portal-choice-meta {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--church-muted);
+  font-weight: 500;
+}

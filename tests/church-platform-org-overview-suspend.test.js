@@ -318,7 +318,7 @@ test(
     assert.equal(branchLogin.status, 503);
 
     const hqLogin = await request(churchApp).get("/hq/login");
-    assert.equal(hqLogin.status, 200);
+    assert.equal(hqLogin.status, 503);
 
     const reactivate = await agent.post(`/admin/church/organizations/${org.id}/reactivate`).type("form").send({
       status_reason: "Review complete",

@@ -25,6 +25,62 @@ function getChurchAccessBlock(churchContext) {
 }
 
 /**
+ * Request-local operational status derived from churchContext (already DB-loaded by attachChurchContext).
+ * Optionally refreshes organization/branch from PostgreSQL once per request when a pool is available
+ * and `forceRefresh` is set — used by authenticated role middleware that must not trust session status.
+ *
+ * @param {import("express").Request} req
+ * @param {{ forceRefresh?: boolean }} [opts]
+ */
+async function resolveOperationalTenantStatus(req, opts = {}) {
+  if (req._churchOperationalStatus && !opts.forceRefresh) {
+    return req._churchOperationalStatus;
+  }
+
+  const ctx = req.churchContext;
+  let organization = ctx && ctx.organization ? ctx.organization : null;
+  let branch = ctx && ctx.branch ? ctx.branch : null;
+
+  if (opts.forceRefresh && organization && organization.id != null) {
+    try {
+      const { getPgPool } = require("../db/pg");
+      const organizationsRepo = require("../db/pg/church/organizationsRepo");
+      const hqBranchesRepo = require("../db/pg/church/hqBranchesRepo");
+      const pool = getPgPool();
+      if (pool) {
+        const freshOrg = await organizationsRepo.findOrganizationById(pool, organization.id);
+        if (freshOrg) {
+          organization = freshOrg;
+          if (ctx) ctx.organization = freshOrg;
+        }
+        if (branch && branch.id != null) {
+          const freshBranch = await hqBranchesRepo.findBranchByIdForOrganization(
+            pool,
+            branch.id,
+            organization.id
+          );
+          if (freshBranch) {
+            branch = freshBranch;
+            if (ctx) ctx.branch = freshBranch;
+          }
+        }
+      }
+    } catch {
+      /* fall through to context values */
+    }
+  }
+
+  const result = {
+    organization,
+    branch,
+    orgActive: isOperationalStatus(organization && organization.status),
+    branchActive: isOperationalStatus(branch && branch.status),
+  };
+  req._churchOperationalStatus = result;
+  return result;
+}
+
+/**
  * @param {{ kind?: string, organization?: { status?: string, name?: string } | null, branch?: { status?: string, name?: string } | null } | null} churchContext
  */
 function getHqStatusBanner(churchContext) {
@@ -39,7 +95,7 @@ function getHqStatusBanner(churchContext) {
       level: org.status === "archived" ? "danger" : "warning",
       message:
         org.status === "suspended"
-          ? "This organization is suspended. Member, branch-admin, leader, and public access on branch hosts is blocked. HQ login remains available; HQ write actions are not blocked by this status gate."
+          ? "This organization is suspended. Public, member, leader, branch-admin, and HQ access on tenant hosts are blocked. Platform administrators use the dedicated Admin Console login."
           : "This organization is archived. Operational access is limited.",
     });
   }
@@ -56,14 +112,21 @@ function getHqStatusBanner(churchContext) {
   return { banners };
 }
 
-function clearOperationalSessions(req) {
+function clearAllChurchPortalSessions(req) {
   try {
     require("./memberAuth").clearChurchMemberSession(req);
     require("./branchAdminAuth").clearChurchBranchAdminSession(req);
     require("./leaderAuth").clearChurchLeaderSession(req);
+    require("./hqAuth").clearChurchHqAdminSession(req);
+    require("./tenantLoginSession").clearPortalChoice(req);
   } catch {
     /* optional in tests */
   }
+}
+
+/** @deprecated use clearAllChurchPortalSessions */
+function clearOperationalSessions(req) {
+  clearAllChurchPortalSessions(req);
 }
 
 function renderChurchUnavailable(req, res) {
@@ -90,29 +153,74 @@ function isHqPath(path) {
   return String(path || "").startsWith("/hq");
 }
 
-/**
- * Blocks public, member, branch-admin, and leader routes when org/branch is not active.
- * HQ routes remain accessible (login and writes are not blocked by this gate).
- */
 function isPlatformAdminPath(path) {
   return String(path || "").startsWith("/admin");
 }
 
+function isChurchLogoutPath(path) {
+  const p = String(path || "");
+  return (
+    p === "/logout" ||
+    p === "/hq/logout" ||
+    p === "/leader/logout" ||
+    p === "/branch/logout"
+  );
+}
+
+function isHqPublicAuthPath(path) {
+  const p = String(path || "");
+  return p === "/hq/login" || p.startsWith("/hq/forgot-password");
+}
+
+function hasAnyChurchPortalSession(req) {
+  try {
+    if (require("./memberAuth").getChurchMemberSession(req)) return true;
+    if (require("./leaderAuth").getChurchLeaderSession(req)) return true;
+    if (require("./branchAdminAuth").getChurchBranchAdminSession(req)) return true;
+    if (require("./hqAuth").getChurchHqAdminSession(req)) return true;
+  } catch {
+    /* optional */
+  }
+  return false;
+}
+
+/**
+ * Blocks public and authenticated church portal access when org/branch is not active.
+ * HQ authenticated routes are blocked when the organization is inactive.
+ * HQ remains allowed when only the selected branch is inactive (org still active).
+ * Logout and HQ public auth paths remain reachable.
+ */
 function churchOperationalAccessGate(req, res, next) {
   if (!req.isChurchHost || !req.churchContext) return next();
   if (req.churchContext.kind === "vertical-apex") return next();
-  if (isHqPath(req.path)) return next();
-  // /admin/* on branch hosts is handled by the apex-admin guard in server.js —
-  // never treat it as a missing church site.
   if (isPlatformAdminPath(req.path)) return next();
+  if (isChurchLogoutPath(req.path)) return next();
+  if (isHqPublicAuthPath(req.path)) return next();
 
-  const block = getChurchAccessBlock(req.churchContext);
-  if (!block) return next();
-  if (block.code === "not_found") {
-    return renderChurchNotFound(req, res);
-  }
-  clearOperationalSessions(req);
-  return renderChurchUnavailable(req, res);
+  const authed = hasAnyChurchPortalSession(req);
+  const hqPortal = isHqPath(req.path);
+
+  return resolveOperationalTenantStatus(req, { forceRefresh: authed })
+    .then((status) => {
+      if (!status.organization || !status.branch) {
+        if (authed) clearAllChurchPortalSessions(req);
+        return renderChurchNotFound(req, res);
+      }
+
+      if (!status.orgActive) {
+        clearAllChurchPortalSessions(req);
+        return renderChurchUnavailable(req, res);
+      }
+
+      // Inactive branch: block public + branch-scoped portals; HQ portal stays allowed.
+      if (!status.branchActive && !hqPortal) {
+        clearAllChurchPortalSessions(req);
+        return renderChurchUnavailable(req, res);
+      }
+
+      return next();
+    })
+    .catch((err) => next(err));
 }
 
 function statusBadgeClass(status) {
@@ -134,10 +242,15 @@ module.exports = {
   isOperationalStatus,
   getChurchAccessBlock,
   getHqStatusBanner,
+  resolveOperationalTenantStatus,
   clearOperationalSessions,
+  clearAllChurchPortalSessions,
+  hasAnyChurchPortalSession,
   renderChurchUnavailable,
   renderChurchNotFound,
   churchOperationalAccessGate,
+  isChurchLogoutPath,
+  isHqPublicAuthPath,
   statusBadgeClass,
   statusLabel,
 };

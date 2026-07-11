@@ -327,7 +327,7 @@ test(
       identifier: secondEmail,
       password: newPassword,
     });
-    assert.equal(hqLoginSuspendedOrg.status, 303);
+    assert.equal(hqLoginSuspendedOrg.status, 503);
 
     await cleanupOrg(pool, org.id);
     await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [superId]);

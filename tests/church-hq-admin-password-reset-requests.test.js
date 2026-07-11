@@ -262,7 +262,7 @@ test(
       identifier: `hq_${suffix}@example.com`,
       password: newPassword,
     });
-    assert.equal(loginNew.status, 303);
+    assert.equal(loginNew.status, 503);
 
     const unmatchedId = unknownRow.rows[0].id;
     const unmatchedReset = await superAgent

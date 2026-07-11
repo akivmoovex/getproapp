@@ -5,10 +5,8 @@ const hqAdminsRepo = require("../../db/pg/church/hqAdminsRepo");
 const monthlyReportsRepo = require("../../db/pg/church/monthlyReportsRepo");
 const {
   getChurchHqAdminSession,
-  setChurchHqAdminSession,
   clearChurchHqAdminSession,
   requireChurchHqAdminSession,
-  verifyHqAdminPassword,
   hashHqAdminPassword,
 } = require("../../church/hqAuth");
 const { requireChurchBranchHost } = require("./auth");
@@ -36,7 +34,8 @@ const {
 } = require("../../church/auditLogFormatting");
 const { parsePeriodMonth } = require("../../church/hqBranchRegistryValidation");
 const churchPlanService = require("../../services/church/churchPlanService");
-const { authenticateWithLoginProtection } = require("../../services/church/churchLoginProtectionService");
+const { runTenantUnifiedLoginPost } = require("../../services/church/runTenantUnifiedLogin");
+const { clearPortalChoice } = require("../../church/tenantLoginSession");
 const hqAdminPasswordResetRequestsRepo = require("../../db/pg/church/hqAdminPasswordResetRequestsRepo");
 const { maskLoginIdentifier } = require("../../church/loginProtection");
 const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
@@ -100,11 +99,18 @@ function registerHqAdminRoutes(router) {
     if (admin && Number(admin.organization_id) === Number(org.id)) {
       return res.redirect("/hq/dashboard");
     }
+    const { isOperationalStatus, renderChurchUnavailable } = require("../../church/churchStatusAccess");
+    if (!isOperationalStatus(org && org.status)) {
+      return renderChurchUnavailable(req, res);
+    }
     return res.render(
-      "church/hq/login",
+      "church/auth/login",
       hqAdminLocals(req, {
         error: null,
         identifier: "",
+        organizationName: org.name,
+        branchName: req.churchContext.branch && req.churchContext.branch.name,
+        loginFormAction: "/hq/login",
       })
     );
   });
@@ -114,40 +120,25 @@ function registerHqAdminRoutes(router) {
       const identifier = String((req.body && req.body.identifier) || "").trim();
       const password = String((req.body && req.body.password) || "");
       const org = req.churchContext.organization;
-      const branch = req.churchContext.branch;
       const pool = getPgPool();
+      const { renderChurchUnavailable } = require("../../church/churchStatusAccess");
 
-      const renderError = (message) =>
-        res.status(400).render(
-          "church/hq/login",
-          hqAdminLocals(req, { error: message, identifier })
-        );
-
-      const auth = await authenticateWithLoginProtection(pool, req, {
-        accountType: "hq_admin",
-        organizationId: org.id,
-        branchId: branch ? branch.id : null,
+      return await runTenantUnifiedLoginPost(pool, req, res, {
         identifier,
         password,
-        findAccount: (db, ident) =>
-          hqAdminsRepo.findHqAdminByEmailOrPhoneForOrganization(db, org.id, ident),
-        verifyPassword: verifyHqAdminPassword,
+        renderUnavailable: () => renderChurchUnavailable(req, res),
+        renderError: (message) =>
+          res.status(400).render(
+            "church/auth/login",
+            hqAdminLocals(req, {
+              error: message,
+              identifier,
+              organizationName: org.name,
+              branchName: req.churchContext.branch && req.churchContext.branch.name,
+              loginFormAction: "/hq/login",
+            })
+          ),
       });
-
-      if (!auth.ok) {
-        return renderError(auth.error);
-      }
-
-      const row = auth.account;
-      setChurchHqAdminSession(req, {
-        hq_admin_id: row.id,
-        organization_id: row.organization_id,
-        full_name: row.full_name || row.display_name || "HQ Admin",
-        role: row.role || "hq_admin",
-        status: row.status,
-      });
-
-      return res.redirect(303, "/hq/dashboard");
     } catch (e) {
       return next(e);
     }
@@ -249,6 +240,7 @@ function registerHqAdminRoutes(router) {
 
   router.post("/hq/logout", requireChurchHqAdminSession, requireChurchSessionCsrf, (req, res) => {
     clearChurchHqAdminSession(req);
+    clearPortalChoice(req);
     return res.redirect(303, "/hq/login");
   });
 

@@ -248,11 +248,7 @@ test(
       identifier: `hqacct_${suffix}@example.com`,
       password: newPassword,
     });
-    assert.equal(hqLoginOnSuspendedOrg.status, 303);
-
-    const accountOnSuspendedOrg = await suspendedAgent.get("/hq/account");
-    assert.equal(accountOnSuspendedOrg.status, 200);
-    assert.match(accountOnSuspendedOrg.text, /suspended|read-only/i);
+    assert.equal(hqLoginOnSuspendedOrg.status, 503);
 
     const memberLoginBlocked = await request(suspendedApp).get("/login");
     assert.equal(memberLoginBlocked.status, 503);

@@ -1,6 +1,13 @@
 "use strict";
 
 const { hashMemberPassword, verifyMemberPassword } = require("./memberAuth");
+const {
+  isOperationalStatus,
+  resolveOperationalTenantStatus,
+  clearAllChurchPortalSessions,
+  renderChurchUnavailable,
+  isChurchLogoutPath,
+} = require("./churchStatusAccess");
 
 const SESSION_KEY = "churchHqAdmin";
 
@@ -49,6 +56,19 @@ async function requireChurchHqAdminSession(req, res, next) {
     return res.redirect("/hq/login");
   }
 
+  // Logout must remain available while suspended — do not depend on live org/account checks.
+  if (isChurchLogoutPath(req.path)) {
+    req.churchHqAdmin = admin;
+    return next();
+  }
+
+  // Prefer request-local status from the operational gate (already refreshed for authed sessions).
+  const status = await resolveOperationalTenantStatus(req);
+  if (!status.orgActive || Number(status.organization && status.organization.id) !== Number(admin.organization_id)) {
+    clearAllChurchPortalSessions(req);
+    return renderChurchUnavailable(req, res);
+  }
+
   try {
     const { getPgPool } = require("../db/pg");
     const hqAdminsRepo = require("../db/pg/church/hqAdminsRepo");
@@ -56,6 +76,10 @@ async function requireChurchHqAdminSession(req, res, next) {
     if (!row || row.status !== "active" || Number(row.organization_id) !== Number(admin.organization_id)) {
       clearChurchHqAdminSession(req);
       return res.redirect("/hq/login");
+    }
+    if (!isOperationalStatus((req.churchContext.organization && req.churchContext.organization.status) || "")) {
+      clearAllChurchPortalSessions(req);
+      return renderChurchUnavailable(req, res);
     }
     req.churchHqAdmin = {
       hq_admin_id: row.id,

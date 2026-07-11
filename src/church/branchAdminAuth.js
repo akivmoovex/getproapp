@@ -54,6 +54,12 @@ async function requireChurchBranchAdminSession(req, res, next) {
     return res.redirect("/branch/login");
   }
 
+  const { isChurchLogoutPath } = require("./churchStatusAccess");
+  if (isChurchLogoutPath(req.path)) {
+    req.churchBranchAdmin = admin;
+    return next();
+  }
+
   try {
     const { getPgPool } = require("../db/pg");
     const branchAdminsRepo = require("../db/pg/church/branchAdminsRepo");
