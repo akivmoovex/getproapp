@@ -1,199 +1,361 @@
 <%
   var isPreviewMode = typeof isPreview !== 'undefined' && isPreview;
-  var homeMinistries = [
-    { name: "Children's Ministry", photo: 1 },
-    { name: "Youth & Young Adults", photo: 2 },
-    { name: "Worship Arts", photo: 3 }
-  ];
-  if (typeof publicMinistries !== 'undefined' && publicMinistries.length) {
-    homeMinistries = publicMinistries.slice(0, 3).map(function (m, idx) {
-      return { name: m.name, photo: (idx % 3) + 1 };
-    });
+  var orgLabel = (typeof organizationName !== 'undefined' && organizationName) ? organizationName : churchName;
+  var branchLabel = (typeof branchName !== 'undefined' && branchName) ? branchName : '';
+  var showBranchDistinct = branchLabel && orgLabel && String(branchLabel) !== String(orgLabel);
+  var heroHeading = heroTitle || churchName;
+  var heroLead = welcomeMessage || '';
+  var heroEyebrow = heroSubtitle || (showBranchDistinct ? branchLabel : (orgLabel || 'Welcome'));
+  var events = (typeof upcomingEvents !== 'undefined' && Array.isArray(upcomingEvents)) ? upcomingEvents.slice(0, 6) : [];
+  var hasRealEvents = typeof hasDbEvents !== 'undefined' ? !!hasDbEvents : false;
+  var announcements = (typeof publicAnnouncements !== 'undefined' && Array.isArray(publicAnnouncements)) ? publicAnnouncements.slice(0, 3) : [];
+  var homeMinistriesList = [];
+  if (typeof publicMinistries !== 'undefined' && publicMinistries && publicMinistries.length) {
+    homeMinistriesList = publicMinistries.slice(0, 4);
+  } else if (typeof ministries !== 'undefined' && Array.isArray(ministries) && ministries.length) {
+    homeMinistriesList = ministries.slice(0, 4);
   }
-  var serviceCards = [
-    {
-      label: 'Sunday Morning',
-      icon: 'sunny',
-      time: '09:00 AM',
-      detail: 'Main Worship Service & Sunday School',
-      accent: false
-    },
-    {
-      label: 'Sunday Evening',
-      icon: 'nightlight',
-      time: '17:30 PM',
-      detail: 'Reflective Worship & Communion',
-      accent: true
-    },
-    {
-      label: 'Wednesday',
-      icon: 'groups',
-      time: '18:00 PM',
-      detail: 'Mid-week Bible Study & Prayer',
-      accent: false
-    }
-  ];
-  var eventsList = [
-    { title: 'Annual Praise Night', when: '18:00 • Main Hall', _badge: { month: 'Nov', day: '24' } },
-    { title: 'Community Food Drive', when: '09:00 • Outreach Center', _badge: { month: 'Dec', day: '02' } }
-  ];
-  var mapAddress = 'Plot 1245, Great North Road, Kafue, Zambia';
-  if (locationText && String(locationText).indexOf('Plot') === 0) {
-    mapAddress = locationText;
-  } else if (address && String(address).indexOf('Plot') === 0) {
-    mapAddress = address;
-  }
+  var ministryIcons = ['groups', 'child_care', 'volunteer_activism', 'music_note', 'menu_book', 'favorite'];
+  var homeFeaturedSermon = (typeof featuredSermon !== 'undefined' && featuredSermon) ? featuredSermon : null;
+  var hasRealSermons = typeof hasDbSermons !== 'undefined' ? !!hasDbSermons : false;
+  var serviceInfo = (typeof serviceTimes !== 'undefined' && serviceTimes) ? String(serviceTimes).trim() : '';
+  var visitLocation = (typeof locationText !== 'undefined' && locationText) ? locationText : ((typeof address !== 'undefined' && address) ? address : '');
+  var visitPhone = (typeof contactPhone !== 'undefined' && contactPhone) ? contactPhone : '';
+  var visitEmail = (typeof contactEmail !== 'undefined' && contactEmail) ? contactEmail : '';
+  var givingIntro = (typeof givingTeaser !== 'undefined' && givingTeaser) ? givingTeaser : 'Your generosity supports ministry, outreach, and community care.';
+  var hasVisitDetails = !!(visitLocation || visitPhone || visitEmail || serviceInfo);
+  var heroImageUrl = (typeof heroImageUrl !== 'undefined' && heroImageUrl) ? String(heroImageUrl).trim() : '';
+  var hasHeroImage = !!heroImageUrl;
 %>
 
-<% if (!isPreviewMode) { %>
-<%# Mobile-only layout matching 01-public-home-mobile.png %>
-<section class="church-branch-mobile-hero home-mobile-design" id="welcome">
-  <div class="church-branch-mobile-hero__media" aria-hidden="true">
-    <img
-      class="church-branch-mobile-hero__img"
-      src="/church/images/homepage/mobile-hero-sanctuary.jpg"
-      alt=""
-      width="286"
-      height="512"
-    />
-  </div>
-  <div class="church-branch-mobile-hero__content">
-    <div class="church-branch-mobile-hero__badge">
-      <span class="church-branch-mobile-hero__badge-dot"></span>
-      <span><%= churchName %></span>
-    </div>
-    <h1 class="church-branch-mobile-hero__title"><%= heroTitle || 'Welcome home to our community.' %></h1>
-    <p class="church-branch-mobile-hero__lead"><%= welcomeMessage %></p>
-    <% if (typeof branchName !== 'undefined' && branchName) { %>
-    <p class="bb-tenant-branch-label"><%= branchName %></p>
-    <% } %>
-    <div class="church-branch-mobile-hero__cta">
-      <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="/login">Member Login</a>
-      <a class="church-btn church-btn--outline church-btn--block church-btn--mobile-pill" href="/register">Register as a Member</a>
-    </div>
-  </div>
-</section>
-
-<section class="church-service-scroller home-mobile-design" aria-label="Service times">
-  <div class="church-service-scroller__head">
-    <h2>Service Times</h2>
-    <a class="church-service-scroller__link" href="/events">View Calendar</a>
-  </div>
-  <div class="church-service-scroller__track">
-    <% serviceCards.forEach(function (card) { %>
-    <article class="church-service-card <%= card.accent ? 'church-service-card--accent' : '' %>">
-      <div class="church-service-card__label">
-        <span class="material-symbols-outlined" aria-hidden="true"><%= card.icon %></span>
-        <span><%= card.label %></span>
-      </div>
-      <p class="church-service-card__time"><%= card.time %></p>
-      <p class="church-service-card__detail"><%= card.detail %></p>
-    </article>
-    <% }); %>
-  </div>
-</section>
-
-<section class="church-location-card home-mobile-design" aria-label="Location">
-  <div class="church-location-card__map">
-    <img
-      class="church-location-card__map-img"
-      src="/church/images/homepage/mobile-map-kafue.jpg"
-      alt="Map of church location in Kafue, Zambia"
-      width="286"
-      height="512"
-    />
-    <a class="church-location-card__nav" href="/contact" aria-label="Get directions">
-      <span class="material-symbols-outlined" aria-hidden="true">near_me</span>
-    </a>
-  </div>
-  <div class="church-location-card__body">
-    <h3>Join us this Sunday</h3>
-    <p><%= mapAddress %></p>
-    <div class="church-location-card__nearby">
-      <div class="church-location-card__avatars" aria-hidden="true">
-        <span class="church-location-card__avatar church-location-card__avatar--1">JD</span>
-        <span class="church-location-card__avatar church-location-card__avatar--2">MK</span>
-        <span class="church-location-card__avatar church-location-card__avatar--3">+12</span>
-      </div>
-      <span>15 members are nearby</span>
-    </div>
-  </div>
-</section>
-
-<section class="church-home-ministries home-mobile-design" id="ministries-mobile">
-  <h2 class="church-home-section-title">Ministries</h2>
-  <div class="church-bento-grid">
-    <% homeMinistries.forEach(function (m, idx) { %>
-    <a href="/ministries" class="church-bento-tile church-bento-tile--photo-<%= m.photo %> <%= idx === 0 ? 'church-bento-item--wide church-bento-tile--wide' : '' %>">
-      <div class="church-bento-tile__bg"></div>
-      <p class="church-bento-tile__title"><%= m.name %></p>
-    </a>
-    <% }); %>
-  </div>
-</section>
-
-<section class="church-home-events home-mobile-design" id="events-mobile">
-  <h2 class="church-home-section-title">Upcoming Events</h2>
-  <div class="church-home-events__list">
-    <% eventsList.forEach(function (event) { %>
-    <a class="church-event-row" href="/events">
-      <div class="church-event-row__date">
-        <span><%= event._badge.month %></span>
-        <strong><%= event._badge.day %></strong>
-      </div>
-      <div class="church-event-row__body">
-        <h3><%= event.title %></h3>
-        <p>
-          <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
-          <%= event.when %>
-        </p>
-      </div>
-      <span class="material-symbols-outlined church-event-row__chevron" aria-hidden="true">chevron_right</span>
-    </a>
-    <% }); %>
-  </div>
-  <a class="church-home-events__all" href="/events">See All Events</a>
-</section>
-
-<section class="church-home-giving home-mobile-design" id="giving-mobile">
-  <div class="church-home-giving__card">
-    <div class="church-home-giving__icon">
-      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;" aria-hidden="true">volunteer_activism</span>
-    </div>
-    <h2>Support our Mission</h2>
-    <p>Your generosity helps us serve our community and share the gospel across Kafue.</p>
-    <a class="church-btn church-btn--primary church-btn--pill" href="/giving">Give Online</a>
-  </div>
-</section>
-<% } %>
-
-<% if (isPreviewMode) { %>
-<section class="church-hero church-hero--branch church-hero--desktop-layout" id="welcome">
-  <div class="church-hero__inner">
-    <div class="church-hero__copy">
-      <span class="church-eyebrow"><%= heroSubtitle || 'Welcome home' %></span>
-      <h1 class="church-hero__title"><%= heroTitle || churchName %></h1>
-      <p class="church-hero__lead"><%= welcomeMessage %></p>
-    </div>
-    <div class="church-hero__panel" aria-label="Service information">
-      <div class="church-card glass-card">
-        <div class="church-card__icon-wrap">
-          <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+<section class="bb-tenant-home home-desktop-design home-mobile-design" data-tenant-home="1" data-home-layout="responsive">
+  <span class="bb-tenant-home__desktop-marker home-desktop-design" hidden aria-hidden="true"></span>
+  <span class="bb-tenant-home__mobile-marker home-mobile-design" hidden aria-hidden="true"></span>
+  <%# —— Hero —— %>
+  <section class="bb-tenant-hero" id="welcome" aria-label="Welcome">
+    <div class="bb-tenant-hero__inner">
+      <div class="bb-tenant-hero__copy">
+        <span class="bb-tenant-hero__badge"><%= heroEyebrow %></span>
+        <h1 class="bb-tenant-hero__title"><%= heroHeading %></h1>
+        <% if (heroLead) { %>
+        <p class="bb-tenant-hero__lead"><%= heroLead %></p>
+        <% } %>
+        <% if (showBranchDistinct) { %>
+        <p class="bb-tenant-branch-label"><%= branchLabel %></p>
+        <% } %>
+        <% if (!isPreviewMode) { %>
+        <div class="bb-tenant-hero__cta">
+          <a class="church-btn church-btn--primary" href="/register">Register as a Member</a>
+          <a class="church-btn church-btn--outline" href="/events">View Events</a>
+          <a class="church-btn church-btn--ghost bb-tenant-hero__cta-secondary" href="/login">Member Login</a>
+          <a class="church-btn church-btn--ghost bb-tenant-hero__cta-secondary" href="/contact">Plan a Visit</a>
         </div>
-        <h2 class="church-card__title">Service Times</h2>
-        <p class="church-card__body church-card__body--pre"><%= serviceTimes %></p>
+        <% } %>
       </div>
-      <div class="church-card glass-card">
-        <div class="church-card__icon-wrap">
-          <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+      <div class="bb-tenant-hero__visual<%= hasHeroImage ? ' bb-tenant-hero__visual--has-image' : ' bb-tenant-hero__visual--fallback' %>">
+        <% if (hasHeroImage) { %>
+        <img class="bb-tenant-hero__img" src="<%= heroImageUrl %>" alt="" width="960" height="720"/>
+        <% } else { %>
+        <div class="bb-tenant-hero__fallback" aria-hidden="true"></div>
+        <% } %>
+        <% if (serviceInfo) { %>
+        <div class="bb-tenant-hero__service glass-card">
+          <div class="bb-tenant-hero__service-icon" aria-hidden="true">
+            <span class="material-symbols-outlined">schedule</span>
+          </div>
+          <div>
+            <p class="bb-tenant-hero__service-label">Join us this Sunday</p>
+            <p class="bb-tenant-hero__service-time"><%= serviceInfo %></p>
+          </div>
         </div>
-        <h2 class="church-card__title">Location</h2>
-        <p class="church-card__body"><%= locationText || address %></p>
+        <% } %>
       </div>
     </div>
-  </div>
+  </section>
+
+  <%# —— Service / visit quick info —— %>
+  <% if (serviceInfo || visitLocation) { %>
+  <section class="bb-tenant-service" aria-label="Service information">
+    <div class="bb-tenant-section__inner bb-tenant-service__grid">
+      <% if (serviceInfo) { %>
+      <article class="bb-tenant-service__card">
+        <div class="bb-tenant-service__icon" aria-hidden="true"><span class="material-symbols-outlined">schedule</span></div>
+        <div>
+          <h2 class="bb-tenant-service__title">Service Times</h2>
+          <p class="bb-tenant-service__body"><%= serviceInfo %></p>
+        </div>
+      </article>
+      <% } %>
+      <% if (visitLocation) { %>
+      <article class="bb-tenant-service__card">
+        <div class="bb-tenant-service__icon" aria-hidden="true"><span class="material-symbols-outlined">location_on</span></div>
+        <div>
+          <h2 class="bb-tenant-service__title">Location</h2>
+          <p class="bb-tenant-service__body"><%= visitLocation %></p>
+          <% if (!isPreviewMode) { %>
+          <a class="bb-tenant-inline-link" href="/contact">Get directions</a>
+          <% } %>
+        </div>
+      </article>
+      <% } %>
+      <% if (!isPreviewMode) { %>
+      <div class="bb-tenant-service__actions">
+        <a class="bb-tenant-inline-link" href="/events">View Calendar</a>
+      </div>
+      <% } %>
+    </div>
+  </section>
+  <% } %>
+
+  <%# —— Announcements —— %>
+  <section class="bb-tenant-announcements" id="announcements" aria-label="Announcements">
+    <div class="bb-tenant-section__inner">
+      <div class="bb-tenant-section__head">
+        <div>
+          <h2 class="bb-tenant-section__title">Announcements</h2>
+          <p class="bb-tenant-section__subtitle">Updates from <%= churchName %>.</p>
+        </div>
+      </div>
+      <% if (announcements.length === 0) { %>
+      <div class="bb-tenant-empty">
+        <p>There are no public announcements at this time.</p>
+      </div>
+      <% } else { %>
+      <ul class="bb-tenant-announcements__list">
+        <% announcements.forEach(function (a) { %>
+        <li class="bb-tenant-announcement-card">
+          <div class="bb-tenant-announcement-card__meta">
+            <% if (a.priority && a.priority !== 'normal') { %>
+            <span class="bb-tenant-chip bb-tenant-chip--priority"><%= a.priority %></span>
+            <% } %>
+            <% if (a.source === 'hq') { %>
+            <span class="bb-tenant-chip">HQ</span>
+            <% } %>
+            <% if (a.category) { %>
+            <span class="bb-tenant-chip"><%= a.category %></span>
+            <% } %>
+          </div>
+          <h3 class="bb-tenant-announcement-card__title"><%= a.title %></h3>
+          <% if (a.body) { %>
+          <p class="bb-tenant-announcement-card__body"><%= String(a.body).length > 180 ? String(a.body).slice(0, 177) + '…' : a.body %></p>
+          <% } %>
+        </li>
+        <% }); %>
+      </ul>
+      <% } %>
+    </div>
+  </section>
+
+  <%# —— Upcoming events —— %>
+  <section class="bb-tenant-events" id="events" aria-label="Upcoming events">
+    <div class="bb-tenant-section__inner">
+      <div class="bb-tenant-section__head bb-tenant-section__head--center">
+        <h2 class="bb-tenant-section__title">Mark Your Calendar</h2>
+        <p class="bb-tenant-section__subtitle">Join us for these special community gatherings.</p>
+      </div>
+      <% if (!hasRealEvents || events.length === 0) { %>
+      <div class="bb-tenant-empty">
+        <p>No upcoming events have been published yet.</p>
+        <% if (!isPreviewMode) { %>
+        <a class="bb-tenant-inline-link" href="/events">See events page</a>
+        <% } %>
+      </div>
+      <% } else { %>
+      <div class="bb-tenant-events__grid">
+        <% events.slice(0, 3).forEach(function (event) { %>
+        <a class="bb-tenant-event-card" href="/events">
+          <div class="bb-tenant-event-card__date">
+            <span><%= event.month || 'SOON' %></span>
+            <strong><%= event.day || '—' %></strong>
+          </div>
+          <h3 class="bb-tenant-event-card__title"><%= event.title %></h3>
+          <% if (event.description) { %>
+          <p class="bb-tenant-event-card__desc"><%= String(event.description).length > 120 ? String(event.description).slice(0, 117) + '…' : event.description %></p>
+          <% } %>
+          <div class="bb-tenant-event-card__meta">
+            <% if (event.location) { %>
+            <span><span class="material-symbols-outlined" aria-hidden="true">location_on</span> <%= event.location %></span>
+            <% } %>
+            <% if (event.time) { %>
+            <span><%= event.time %></span>
+            <% } else if (event.when) { %>
+            <span><%= event.when %></span>
+            <% } %>
+          </div>
+        </a>
+        <% }); %>
+      </div>
+      <% if (!isPreviewMode) { %>
+      <div class="bb-tenant-section__foot">
+        <a class="bb-tenant-inline-link" href="/events">See All Events <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+      </div>
+      <% } %>
+      <% } %>
+    </div>
+  </section>
+
+  <%# —— Ministries —— %>
+  <section class="bb-tenant-ministries" id="ministries" aria-label="Ministries">
+    <div class="bb-tenant-section__inner">
+      <div class="bb-tenant-section__head">
+        <div>
+          <h2 class="bb-tenant-section__title">Our Ministries</h2>
+          <p class="bb-tenant-section__subtitle">Finding your place in the house of God.</p>
+        </div>
+        <% if (!isPreviewMode) { %>
+        <a class="bb-tenant-inline-link" href="/ministries">See All Ministries <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+        <% } %>
+      </div>
+      <% if (homeMinistriesList.length === 0) { %>
+      <div class="bb-tenant-empty">
+        <p>Ministry information will be available soon.</p>
+      </div>
+      <% } else { %>
+      <div class="bb-tenant-ministries__grid">
+        <% homeMinistriesList.forEach(function (m, idx) { %>
+        <a class="bb-tenant-ministry-card<%= idx === 0 ? ' bb-tenant-ministry-card--featured' : '' %>" href="<%= isPreviewMode ? '#' : '/ministries' %>">
+          <div class="bb-tenant-ministry-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= ministryIcons[idx % ministryIcons.length] %></span>
+          </div>
+          <h3 class="bb-tenant-ministry-card__title"><%= m.name %></h3>
+          <% if (m.description) { %>
+          <p class="bb-tenant-ministry-card__desc"><%= String(m.description).length > 140 ? String(m.description).slice(0, 137) + '…' : m.description %></p>
+          <% } %>
+          <span class="bb-tenant-ministry-card__arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </a>
+        <% }); %>
+      </div>
+      <% } %>
+    </div>
+  </section>
+
+  <%# —— Sermons —— %>
+  <section class="bb-tenant-sermons" id="sermons" aria-label="Sermons and resources">
+    <div class="bb-tenant-section__inner bb-tenant-sermons__inner">
+      <% if (hasRealSermons && homeFeaturedSermon) { %>
+      <div class="bb-tenant-sermons__panel">
+        <div class="bb-tenant-sermons__media" aria-hidden="true">
+          <span class="material-symbols-outlined">play_circle</span>
+        </div>
+        <div class="bb-tenant-sermons__copy">
+          <span class="bb-tenant-sermons__eyebrow">Latest Sermon</span>
+          <h2 class="bb-tenant-sermons__title"><%= homeFeaturedSermon.title %></h2>
+          <% if (homeFeaturedSermon.description) { %>
+          <p class="bb-tenant-sermons__lead"><%= String(homeFeaturedSermon.description).length > 200 ? String(homeFeaturedSermon.description).slice(0, 197) + '…' : homeFeaturedSermon.description %></p>
+          <% } %>
+          <div class="bb-tenant-sermons__speaker">
+            <% if (homeFeaturedSermon.speaker) { %>
+            <p class="bb-tenant-sermons__speaker-name"><%= homeFeaturedSermon.speaker %></p>
+            <% } %>
+            <% if (homeFeaturedSermon.date) { %>
+            <p class="bb-tenant-sermons__speaker-date"><%= homeFeaturedSermon.date %></p>
+            <% } %>
+            <% if (homeFeaturedSermon.category) { %>
+            <p class="bb-tenant-sermons__speaker-date"><%= homeFeaturedSermon.category %></p>
+            <% } %>
+          </div>
+          <% if (!isPreviewMode) { %>
+          <a class="bb-tenant-inline-link bb-tenant-inline-link--on-dark" href="/sermons">Browse Sermon Archive <span class="material-symbols-outlined" aria-hidden="true">library_music</span></a>
+          <% } %>
+        </div>
+      </div>
+      <% } else { %>
+      <div class="bb-tenant-sermons__empty">
+        <span class="bb-tenant-sermons__eyebrow">Sermons &amp; Resources</span>
+        <h2 class="bb-tenant-sermons__title">Messages and study resources</h2>
+        <p class="bb-tenant-sermons__lead">Published sermons and resources from <%= churchName %> will appear here.</p>
+        <% if (!isPreviewMode) { %>
+        <a class="bb-tenant-inline-link bb-tenant-inline-link--on-dark" href="/sermons">Browse Sermons <span class="material-symbols-outlined" aria-hidden="true">library_music</span></a>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+  </section>
+
+  <%# —— Giving —— %>
+  <section class="bb-tenant-giving" id="giving" aria-label="Giving">
+    <div class="bb-tenant-section__inner">
+      <div class="bb-tenant-giving__card">
+        <div class="bb-tenant-giving__copy">
+          <h2 class="bb-tenant-giving__title">Generosity Changes Lives</h2>
+          <p class="bb-tenant-giving__lead"><%= givingIntro %></p>
+          <% if (!isPreviewMode) { %>
+          <div class="bb-tenant-giving__actions">
+            <a class="church-btn church-btn--on-primary" href="/giving">Give Online Now</a>
+            <a class="church-btn church-btn--outline-on-primary" href="/giving">Other Ways to Give</a>
+          </div>
+          <% } %>
+        </div>
+        <div class="bb-tenant-giving__icon" aria-hidden="true">
+          <span class="material-symbols-outlined">volunteer_activism</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%# —— Contact / Visit —— %>
+  <section class="bb-tenant-visit" id="visit" aria-label="Visit us">
+    <div class="bb-tenant-section__inner bb-tenant-visit__grid">
+      <div class="bb-tenant-visit__copy">
+        <h2 class="bb-tenant-section__title">Visit Us</h2>
+        <p class="bb-tenant-section__subtitle">We would love to welcome you. Come as you are.</p>
+        <% if (!hasVisitDetails) { %>
+        <div class="bb-tenant-empty bb-tenant-empty--inline">
+          <p>Contact details will be available soon.</p>
+        </div>
+        <% } else { %>
+        <ul class="bb-tenant-visit__list">
+          <% if (visitLocation) { %>
+          <li>
+            <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+            <div>
+              <p class="bb-tenant-visit__label">Location</p>
+              <p class="bb-tenant-visit__value"><%= visitLocation %></p>
+            </div>
+          </li>
+          <% } %>
+          <% if (visitEmail) { %>
+          <li>
+            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+            <div>
+              <p class="bb-tenant-visit__label">Email Address</p>
+              <p class="bb-tenant-visit__value"><a href="mailto:<%= visitEmail %>"><%= visitEmail %></a></p>
+            </div>
+          </li>
+          <% } %>
+          <% if (visitPhone) { %>
+          <li>
+            <span class="material-symbols-outlined" aria-hidden="true">phone_in_talk</span>
+            <div>
+              <p class="bb-tenant-visit__label">Phone Number</p>
+              <p class="bb-tenant-visit__value"><a href="tel:<%= String(visitPhone).replace(/[^\d+]/g, '') %>"><%= visitPhone %></a></p>
+            </div>
+          </li>
+          <% } %>
+          <% if (serviceInfo) { %>
+          <li>
+            <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+            <div>
+              <p class="bb-tenant-visit__label">Service Times</p>
+              <p class="bb-tenant-visit__value"><%= serviceInfo %></p>
+            </div>
+          </li>
+          <% } %>
+        </ul>
+        <% } %>
+        <% if (!isPreviewMode) { %>
+        <a class="church-btn church-btn--primary" href="/contact">Contact Us</a>
+        <% } %>
+      </div>
+      <div class="bb-tenant-visit__panel">
+        <div class="bb-tenant-visit__panel-body">
+          <span class="material-symbols-outlined" aria-hidden="true">map</span>
+          <p>Find visit details and send a message on our contact page.</p>
+          <% if (!isPreviewMode) { %>
+          <a class="bb-tenant-inline-link" href="/contact">Open contact page <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </section>
 </section>
-<% } else { %>
-<%# Desktop uses SaaS platform layout from 01-public-home-desktop.png %>
-<%- include('./home_apex') %>
-<% } %>

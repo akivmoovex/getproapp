@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=47"/>
+  <link rel="stylesheet" href="/church/church.css?v=49"/>
 </head>
 <%
   var isPreviewMode = typeof isPreview !== 'undefined' && isPreview;
@@ -62,17 +62,9 @@
   <% } %>
 
   <% if (!isVerticalApex) { %>
-  <header class="church-header church-header--branch<%= isBranchHome ? ' church-header--branch-home' : '' %>">
-    <div class="church-header__inner">
-      <a class="church-brand church-brand--branch church-brand--branch-mobile" href="<%= homeHref %>">
-        <span class="church-brand-mark" aria-hidden="true">
-          <span class="material-symbols-outlined">church</span>
-        </span>
-        <span class="church-brand__text"><%= churchName %></span>
-      </a>
-      <div class="church-brand--branch-desktop">
-        <%- include('./brand_lockup', { href: homeHref }) %>
-      </div>
+  <header class="church-header church-header--branch<%= isBranchHome ? ' church-header--branch-home' : '' %>" data-tenant-header="1">
+    <div class="church-header__inner church-header__inner--tenant">
+      <%- include('./tenant_brand_lockup', { href: homeHref, compact: false }) %>
       <nav class="church-nav church-nav--branch" aria-label="Primary">
         <a href="<%= homeHref %>" class="<%= activePage === 'home' ? 'church-nav__active' : '' %>">Home</a>
         <a href="/about" class="<%= activePage === 'about' ? 'church-nav__active' : '' %>">About</a>
@@ -90,7 +82,7 @@
         <% } %>
       </div>
       <% if (!isPreviewMode) { %>
-      <button type="button" class="church-menu-btn" id="church-mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="church-mobile-drawer">
+      <button type="button" class="church-menu-btn church-menu-btn--tenant" id="church-mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="church-mobile-drawer">
         <span class="material-symbols-outlined" aria-hidden="true">menu</span>
       </button>
       <% } %>
@@ -101,8 +93,8 @@
   <% if (!isVerticalApex && !isPreviewMode) { %>
   <div class="church-drawer-overlay" id="church-drawer-overlay" hidden></div>
   <aside class="church-drawer" id="church-mobile-drawer" aria-label="Mobile navigation" aria-hidden="true">
-    <div class="church-drawer__head">
-      <p class="church-drawer__title"><%= churchName %></p>
+    <div class="church-drawer__head church-drawer__head--tenant">
+      <%- include('./tenant_brand_lockup', { href: '/', compact: true, showBranchOnCompact: true }) %>
       <button type="button" class="church-drawer__close" id="church-drawer-close" aria-label="Close menu">
         <span class="material-symbols-outlined" aria-hidden="true">close</span>
       </button>
@@ -120,7 +112,7 @@
     <div class="church-drawer__actions">
       <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="/register">Register as a Member</a>
       <a class="church-btn church-btn--outline church-btn--block church-btn--mobile-pill" href="/login">Member Login</a>
-      <p class="church-footer__powered">BlessBoard<span class="church-footer__powered-sub"><%- include('./powered_by_getpro') %></span></p>
+      <p class="church-footer__powered-line"><%- include('./powered_by_getpro') %></p>
     </div>
   </aside>
   <% } %>

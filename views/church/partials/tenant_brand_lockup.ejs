@@ -1,0 +1,39 @@
+<%
+  var _href = typeof href !== 'undefined' ? href : '/';
+  var _org = (typeof organizationName !== 'undefined' && organizationName) ? String(organizationName).trim() : '';
+  var _branch = (typeof branchName !== 'undefined' && branchName) ? String(branchName).trim() : '';
+  var _church = (typeof churchName !== 'undefined' && churchName) ? String(churchName).trim() : '';
+  var _primary = _org || _church || 'Our Church';
+  var _showBranch = _branch && _branch !== _primary;
+  var _rawLogo = '';
+  if (typeof churchLogoUrl !== 'undefined' && churchLogoUrl) _rawLogo = String(churchLogoUrl).trim();
+  else if (typeof logoUrl !== 'undefined' && logoUrl) _rawLogo = String(logoUrl).trim();
+  var _logo = '';
+  if (_rawLogo.indexOf('/') === 0 && _rawLogo.indexOf('//') !== 0) _logo = _rawLogo;
+  else if (/^https:\/\//i.test(_rawLogo)) _logo = _rawLogo;
+  var _parts = _primary.split(/\s+/).filter(Boolean);
+  var _initials = '';
+  if (_parts.length === 1) _initials = _parts[0].slice(0, 2).toUpperCase();
+  else if (_parts.length > 1) _initials = (_parts[0].charAt(0) + _parts[_parts.length - 1].charAt(0)).toUpperCase();
+  var _compact = typeof compact !== 'undefined' && compact;
+  var _showBranchOnCompact = typeof showBranchOnCompact === 'undefined' ? true : !!showBranchOnCompact;
+%>
+<a class="church-brand church-brand--tenant<%= _compact ? ' church-brand--tenant-compact' : '' %>" href="<%= _href %>" data-tenant-brand="1">
+  <% if (_logo) { %>
+  <img class="church-brand__logo" src="<%= _logo %>" alt="<%= _primary %> logo" width="36" height="36"/>
+  <% } else { %>
+  <span class="church-brand-mark church-brand-mark--fallback" aria-hidden="true">
+    <% if (_initials) { %>
+    <span class="church-brand-mark__initials"><%= _initials %></span>
+    <% } else { %>
+    <span class="material-symbols-outlined">church</span>
+    <% } %>
+  </span>
+  <% } %>
+  <span class="church-brand__identity">
+    <span class="church-brand__name"><%= _primary %></span>
+    <% if (_showBranch && (!_compact || _showBranchOnCompact)) { %>
+    <span class="church-brand__branch"><%= _branch %></span>
+    <% } %>
+  </span>
+</a>

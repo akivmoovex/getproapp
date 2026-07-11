@@ -218,6 +218,22 @@ function validateForPublish(content) {
   return { ok: true };
 }
 
+function resolveChurchLogoUrl(org, branch) {
+  const candidates = [
+    org && org.logo_url,
+    org && org.logoUrl,
+    branch && branch.logo_url,
+    branch && branch.logoUrl,
+  ];
+  for (const raw of candidates) {
+    const url = String(raw || "").trim();
+    if (!url) continue;
+    if (url.startsWith("/") && !url.startsWith("//")) return url;
+    if (/^https:\/\//i.test(url)) return url;
+  }
+  return "";
+}
+
 function preparePublicViewModel(org, branch, content, extra = {}) {
   const merged = mergeWithFallbacks(content, org, branch);
   const organizationName = (org && org.name) || "";
@@ -229,6 +245,7 @@ function preparePublicViewModel(org, branch, content, extra = {}) {
     churchName,
     organizationName,
     branchName,
+    churchLogoUrl: resolveChurchLogoUrl(org, branch),
     heroTitle: merged.homepage_hero_title || churchName,
     heroSubtitle: merged.homepage_hero_subtitle || "",
     welcomeMessage: merged.welcome_message,

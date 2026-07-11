@@ -215,8 +215,16 @@ function applyDemoEventFallbacks(locals) {
 function branchPublicLocalsWithoutDb(org, branch, activePage) {
   const merged = buildBranchFallbacks(org, branch);
   const locals = preparePublicViewModel(org, branch, merged, { activePage });
-  if (activePage === "home" || activePage === "events") {
+  locals.publicAnnouncements = [];
+  locals.featuredSermon = null;
+  locals.hasDbSermons = false;
+  locals.heroImageUrl = "";
+  if (activePage === "events") {
     applyDemoEventFallbacks(locals);
+  } else if (activePage === "home") {
+    locals.upcomingEvents = [];
+    locals.hasDbEvents = false;
+    locals.publicMinistries = [];
   }
   return locals;
 }
@@ -277,17 +285,37 @@ async function loadBranchPublicLocals(req, activePage) {
   const merged = published ? mergeWithFallbacks(published, org, branch) : buildBranchFallbacks(org, branch);
 
   const locals = preparePublicViewModel(org, branch, merged, { activePage });
+  locals.publicAnnouncements = locals.publicAnnouncements || [];
+  locals.featuredSermon = null;
+  locals.hasDbSermons = false;
+  locals.heroImageUrl = "";
 
   if (activePage === "home" || activePage === "events") {
     if (activePage === "home") {
-      const [branchAnnouncements, hqBroadcasts] = await Promise.all([
+      const [branchAnnouncements, hqBroadcasts, publicMinistries, publicSermons] = await Promise.all([
         announcementsRepo.listPublicAnnouncementsForBranch(pool, branch.id, { limit: 6 }),
         hqBroadcastsRepo.listVisibleBroadcastsForBranch(pool, org.id, branch.id, {
           audiences: PUBLIC_HQ_AUDIENCES,
           limit: 6,
         }),
+        ministriesRepo.listPublishedMinistriesForBranch(pool, branch.id, {
+          visibility: "public",
+          limit: 4,
+        }),
+        sermonsRepo.listPublicSermonsForBranch(pool, branch.id, { limit: 1 }),
       ]);
       locals.publicAnnouncements = mergeAnnouncementFeed(branchAnnouncements, hqBroadcasts, 3);
+      if (publicMinistries.length > 0) {
+        locals.publicMinistries = publicMinistries;
+      } else if ((locals.ministries || []).length > 0) {
+        locals.publicMinistries = locals.ministries.slice(0, 4);
+      } else {
+        locals.publicMinistries = [];
+      }
+      if (publicSermons.length > 0) {
+        locals.featuredSermon = publicSermons[0];
+        locals.hasDbSermons = true;
+      }
     }
     const publicEvents = await eventsRepo.listPublicEventsForBranch(pool, branch.id, {
       limit: activePage === "events" ? 24 : 6,
@@ -295,19 +323,11 @@ async function loadBranchPublicLocals(req, activePage) {
     if (publicEvents.length > 0) {
       locals.upcomingEvents = publicEvents.map(mapPublicEventCard);
       locals.hasDbEvents = true;
-    } else {
+    } else if (activePage === "events") {
       applyDemoEventFallbacks(locals);
-    }
-    if (activePage === "home") {
-      const publicMinistries = await ministriesRepo.listPublishedMinistriesForBranch(pool, branch.id, {
-        visibility: "public",
-        limit: 3,
-      });
-      if (publicMinistries.length > 0) {
-        locals.publicMinistries = publicMinistries;
-      } else if ((locals.ministries || []).length > 0) {
-        locals.publicMinistries = locals.ministries.slice(0, 3);
-      }
+    } else {
+      locals.upcomingEvents = [];
+      locals.hasDbEvents = false;
     }
   }
 
