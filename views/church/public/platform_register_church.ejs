@@ -1,101 +1,109 @@
 <%- include('../partials/public_shell_start') %>
 
-<section class="bb-platform-form-page home-desktop-design">
-  <div class="bb-platform-form-page__inner">
-    <header class="bb-platform-page__header">
-      <p class="bb-platform-page__eyebrow">BlessBoard</p>
-      <h1 class="bb-platform-page__title">Register Your Church</h1>
-      <p class="bb-platform-page__lead">Request BlessBoard access for your congregation. This form asks for contact only — it does not create a church site or administrator accounts automatically.</p>
-      <p class="bb-platform-page__lead">BlessBoard is currently onboarding selected churches. Plans and available services may vary according to church size, branch structure and setup requirements. Contact the BlessBoard team to discuss access.</p>
-    </header>
-
-    <% if (submitted) { %>
-    <div class="church-alert church-alert--success bb-platform-form-page__alert" role="status">
-      <strong>Thank you — your request was received.</strong>
-      <p>BlessBoard platform administrators will review your details and follow up about onboarding. You can prepare branch names, preferred subdomain, and admin contacts while you wait.</p>
-      <p>Already on BlessBoard? Use <a href="/churches?for=admin">Church Administrator Login</a> to sign in on your church site.</p>
+<section class="bb-apex-register" aria-labelledby="register-page-title">
+  <%# Mobile hero (Stitch: Register Your Church Mobile) %>
+  <div class="bb-apex-register__mobile-hero home-mobile-design">
+    <div class="bb-apex-register__mobile-hero-inner">
+      <p class="bb-apex-eyebrow bb-apex-eyebrow--inverse">Church onboarding</p>
+      <p class="bb-apex-register__mobile-display">Equipping your ministry for digital connection.</p>
+      <p class="bb-apex-register__mobile-lead">Request BlessBoard access for your congregation. This form asks for contact only — it does not create a church site or administrator accounts automatically.</p>
+      <div class="bb-apex-register__mobile-chips" aria-hidden="true">
+        <div class="bb-apex-register__mobile-chip">
+          <span class="material-symbols-outlined">language</span>
+          <span>Public website</span>
+        </div>
+        <div class="bb-apex-register__mobile-chip">
+          <span class="material-symbols-outlined">groups</span>
+          <span>Member portal</span>
+        </div>
+        <div class="bb-apex-register__mobile-chip">
+          <span class="material-symbols-outlined">admin_panel_settings</span>
+          <span>Branch admin</span>
+        </div>
+      </div>
     </div>
-    <% } else { %>
-    <% if (formError) { %>
-    <div class="church-alert church-alert--error bb-platform-form-page__alert" role="alert"><%= formError %></div>
-    <% } %>
+  </div>
 
-    <form class="church-form bb-platform-form" action="<%= registerChurchPath %>" method="post" novalidate>
-      <div class="visually-hidden" aria-hidden="true">
-        <label for="register_company_website">Company website</label>
-        <input id="register_company_website" type="text" name="company_website" tabindex="-1" autocomplete="off"/>
-      </div>
+  <%# Desktop benefits panel (Stitch: Register Your Church Desktop left column) %>
+  <aside class="bb-apex-register__aside home-desktop-design" aria-label="Why register with BlessBoard">
+    <div class="bb-apex-register__aside-inner">
+      <h2 class="bb-apex-register__aside-title">Bring your church online with clarity.</h2>
+      <p class="bb-apex-register__aside-lead">BlessBoard connects public pages, member sign-in, and branch administration on one platform — so leaders spend less time juggling tools.</p>
+      <ul class="bb-apex-register__benefits">
+        <li class="bb-apex-register__benefit">
+          <span class="bb-apex-register__benefit-icon" aria-hidden="true"><span class="material-symbols-outlined">verified</span></span>
+          <div>
+            <h3>Unified ministry tools</h3>
+            <p>Public website, member portal, and branch administration on each branch subdomain.</p>
+          </div>
+        </li>
+        <li class="bb-apex-register__benefit">
+          <span class="bb-apex-register__benefit-icon" aria-hidden="true"><span class="material-symbols-outlined">favorite</span></span>
+          <div>
+            <h3>Practical onboarding</h3>
+            <p>BlessBoard is currently onboarding selected churches with setup support from platform administrators.</p>
+          </div>
+        </li>
+        <li class="bb-apex-register__benefit">
+          <span class="bb-apex-register__benefit-icon" aria-hidden="true"><span class="material-symbols-outlined">account_tree</span></span>
+          <div>
+            <h3>Multi-branch ready</h3>
+            <p>HQ oversight and branch registry when your organization spans multiple locations.</p>
+          </div>
+        </li>
+      </ul>
+      <p class="bb-apex-register__aside-note">Plans and available services may vary according to church size, branch structure, and setup requirements.</p>
+    </div>
+  </aside>
 
-      <div class="church-field">
-        <label class="church-label" for="register_church_name">Church name</label>
-        <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'church_name' ? ' church-input--error' : '' %>" id="register_church_name" name="church_name" type="text" required value="<%= form.church_name || '' %>"/>
-      </div>
+  <%# Shared form panel %>
+  <div class="bb-apex-register__main">
+    <div class="bb-apex-register__main-inner">
+      <header class="bb-apex-register__header">
+        <p class="bb-apex-eyebrow">BlessBoard</p>
+        <h1 class="bb-apex-register__title" id="register-page-title">Register Your Church</h1>
+        <p class="bb-apex-register__lead">Request BlessBoard access for your congregation. This form asks for contact only — it does not create a church site or administrator accounts automatically.</p>
+        <p class="bb-apex-register__lead bb-apex-register__lead--secondary home-desktop-design">BlessBoard is currently onboarding selected churches. Plans and available services may vary according to church size, branch structure and setup requirements. Contact the BlessBoard team to discuss access.</p>
+      </header>
 
-      <div class="church-field">
-        <label class="church-label" for="register_branch_name">Branch name <span class="church-public-meta">(optional)</span></label>
-        <input class="church-input" id="register_branch_name" name="branch_name" type="text" value="<%= form.branch_name || '' %>"/>
-      </div>
-
-      <div class="bb-platform-form__row">
-        <div class="church-field">
-          <label class="church-label" for="register_city">Town or city</label>
-          <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'city' ? ' church-input--error' : '' %>" id="register_city" name="city" type="text" required value="<%= form.city || '' %>"/>
+      <% if (submitted) { %>
+      <div class="bb-apex-register-success church-alert church-alert--success" role="status">
+        <span class="bb-apex-register-success__icon material-symbols-outlined" aria-hidden="true">check_circle</span>
+        <div>
+          <strong>Thank you — your request was received.</strong>
+          <p>BlessBoard platform administrators will review your details and follow up about onboarding. You can prepare branch names, preferred subdomain, and admin contacts while you wait.</p>
+          <p>Already on BlessBoard? Use <a href="/churches?for=admin">Church Administrator Login</a> to sign in on your church site.</p>
         </div>
-        <div class="church-field">
-          <label class="church-label" for="register_country">Country</label>
-          <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'country' ? ' church-input--error' : '' %>" id="register_country" name="country" type="text" required value="<%= form.country || '' %>"/>
-        </div>
       </div>
+      <% } else { %>
+      <% if (formError && !(typeof fieldError !== 'undefined' && fieldError)) { %>
+      <div class="church-alert church-alert--error bb-apex-register__alert" role="alert"><%= formError %></div>
+      <% } %>
 
-      <div class="church-field">
-        <label class="church-label" for="register_contact_name">Contact person name</label>
-        <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'contact_name' ? ' church-input--error' : '' %>" id="register_contact_name" name="contact_name" type="text" required autocomplete="name" value="<%= form.contact_name || '' %>"/>
-      </div>
-
-      <div class="church-field">
-        <label class="church-label" for="register_role">Role in church</label>
-        <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'role_in_church' ? ' church-input--error' : '' %>" id="register_role" name="role_in_church" type="text" required placeholder="Pastor, administrator, elder, etc." value="<%= form.role_in_church || '' %>"/>
-      </div>
-
-      <div class="bb-platform-form__row">
-        <div class="church-field">
-          <label class="church-label" for="register_phone">Phone number</label>
-          <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'phone' ? ' church-input--error' : '' %>" id="register_phone" name="phone" type="tel" required autocomplete="tel" value="<%= form.phone || '' %>"/>
-        </div>
-        <div class="church-field">
-          <label class="church-label" for="register_whatsapp">WhatsApp <span class="church-public-meta">(optional)</span></label>
-          <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'whatsapp' ? ' church-input--error' : '' %>" id="register_whatsapp" name="whatsapp" type="tel" autocomplete="tel" value="<%= form.whatsapp || '' %>"/>
-        </div>
-      </div>
-
-      <div class="church-field">
-        <label class="church-label" for="register_email">Email</label>
-        <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'email' ? ' church-input--error' : '' %>" id="register_email" name="email" type="email" required autocomplete="email" value="<%= form.email || '' %>"/>
-      </div>
-
-      <div class="church-field">
-        <label class="church-label" for="register_branch_count">Number of branches <span class="church-public-meta">(optional)</span></label>
-        <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'branch_count' ? ' church-input--error' : '' %>" id="register_branch_count" name="branch_count" type="number" min="1" max="999" inputmode="numeric" value="<%= form.branch_count || '' %>"/>
-      </div>
-
-      <div class="church-field">
-        <label class="church-label" for="register_message">Short message</label>
-        <textarea class="church-input church-input--textarea<%= typeof fieldError !== 'undefined' && fieldError === 'message' ? ' church-input--error' : '' %>" id="register_message" name="message" rows="4" required placeholder="Tell us about your church and what you hope to use BlessBoard for."><%= form.message || '' %></textarea>
-      </div>
-
-      <div class="church-field church-field--checkbox">
-        <label class="church-checkbox">
-          <input type="checkbox" name="consent_contact" value="on"<%= form.consent_contact ? ' checked' : '' %> required/>
-          <span>I agree that BlessBoard may contact me about this church access request.</span>
-        </label>
-      </div>
-
-      <button class="church-btn church-btn--primary church-btn--pill church-btn--block" type="submit">Submit Request</button>
-    </form>
-
-    <p class="bb-platform-form-page__note">General questions only? Use <a href="/contact">Contact BlessBoard</a>.</p>
-    <% } %>
+      <%- include('../partials/platform_register_church_form', {
+        form: form,
+        fieldError: typeof fieldError !== 'undefined' ? fieldError : null,
+        formError: formError,
+        registerChurchPath: registerChurchPath
+      }) %>
+      <% } %>
+    </div>
   </div>
 </section>
+
+<script>
+(function () {
+  var form = document.querySelector(".bb-apex-register-form");
+  if (!form) return;
+  form.addEventListener("submit", function () {
+    var btn = form.querySelector(".bb-apex-register-submit");
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.setAttribute("aria-busy", "true");
+    btn.classList.add("bb-apex-register-submit--submitting");
+    btn.textContent = "Submitting…";
+  });
+})();
+</script>
 
 <%- include('../partials/public_shell_end') %>

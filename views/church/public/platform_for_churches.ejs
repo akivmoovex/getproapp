@@ -1,86 +1,247 @@
 <%- include('../partials/public_shell_start') %>
 
 <%- include('../partials/platform_info_hero', {
+  heroVariant: 'apex-split',
+  heroEyebrow: 'For Church Leaders',
   heroTitle: 'BlessBoard for your church',
-  heroLead: 'Pastors, administrators, and ministry leaders get one place to publish, communicate, and coordinate — without replacing the relationships that matter.'
+  heroLead: 'Pastors, administrators, and ministry leaders get one place to publish, communicate, and coordinate — without replacing the relationships that matter.',
+  heroImageSrc: '/church/images/homepage/desktop-hero-auditorium.jpg',
+  heroImageAlt: 'Church leaders welcoming their congregation'
 }) %>
 
-<section class="bb-platform-info-section home-desktop-design" aria-labelledby="fc-challenges">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="fc-challenges">Common challenges churches face</h2>
-    <ul>
-      <li>Members cannot find the right church website or branch sign-in page.</li>
-      <li>Event and ministry updates live in scattered chats, documents, and social posts.</li>
-      <li>Administrators repeat the same member and content tasks across disconnected tools.</li>
-      <li>Multi-branch organizations lack a shared view of branch activity and reporting.</li>
-    </ul>
-  </div>
-</section>
+<%# --- Desktop (Stitch: For Churches Desktop) --- %>
+<div class="home-desktop-design">
+  <section class="bb-apex-page-challenges" aria-labelledby="fc-challenges">
+    <div class="bb-apex-page-challenges__inner">
+      <div class="bb-apex-page-band__head bb-apex-page-band__head--center">
+        <h2 class="bb-apex-page-band__title" id="fc-challenges">Common challenges churches face</h2>
+        <p class="bb-apex-page-band__lead">Ministry is about people, but scattered tools and unclear sign-in paths can get in the way of meaningful connection.</p>
+      </div>
+      <div class="bb-apex-page-challenges__grid">
+        <article class="bb-apex-page-challenge-card">
+          <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>
+          <h3>Hard to find the right site</h3>
+          <p>Members cannot find the right church website or branch sign-in page.</p>
+        </article>
+        <article class="bb-apex-page-challenge-card">
+          <span class="material-symbols-outlined" aria-hidden="true">cloud_off</span>
+          <h3>Scattered updates</h3>
+          <p>Event and ministry updates live in scattered chats, documents, and social posts.</p>
+        </article>
+        <article class="bb-apex-page-challenge-card">
+          <span class="material-symbols-outlined" aria-hidden="true">edit_note</span>
+          <h3>Repeated admin work</h3>
+          <p>Administrators repeat the same member and content tasks across disconnected tools.</p>
+        </article>
+        <article class="bb-apex-page-challenge-card">
+          <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
+          <h3>Limited HQ visibility</h3>
+          <p>Multi-branch organizations lack a shared view of branch activity and reporting.</p>
+        </article>
+      </div>
+    </div>
+  </section>
 
-<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="fc-helps">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="fc-helps">How BlessBoard helps</h2>
-    <p>BlessBoard connects what your congregation sees publicly with the member portal and administration tools your team uses behind the scenes. Each branch keeps its own subdomain, while HQ can oversee the wider organization when needed.</p>
-  </div>
-</section>
+  <section class="bb-apex-page-split bb-apex-page-split--alt" aria-labelledby="fc-helps">
+    <div class="bb-apex-page-split__inner">
+      <div class="bb-apex-page-split__media">
+        <img src="/church/images/homepage/apex-feature-engagement.jpg" alt="Church members connecting through BlessBoard" width="640" height="480" />
+      </div>
+      <div class="bb-apex-page-split__copy">
+        <div class="bb-apex-page-split__icon" aria-hidden="true"><span class="material-symbols-outlined">hub</span></div>
+        <h2 class="bb-apex-page-split__title" id="fc-helps">How BlessBoard helps</h2>
+        <p class="bb-apex-page-split__lead">BlessBoard connects what your congregation sees publicly with the member portal and administration tools your team uses behind the scenes. Each branch keeps its own subdomain, while HQ can oversee the wider organization when needed.</p>
+        <ul class="bb-apex-page-checks">
+          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> One branch URL for public pages, member sign-in, and admin access</li>
+          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Shared workflows for content, members, ministries, and requests</li>
+          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> HQ oversight for organizations with multiple branches</li>
+        </ul>
+      </div>
+    </div>
+  </section>
 
-<section class="bb-platform-info-section home-desktop-design" aria-labelledby="fc-receive">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="fc-receive">What a church receives</h2>
-    <ul>
-      <li>A public branch website with pages for about, leadership, ministries, events, sermons, giving information, and contact.</li>
-      <li>Member registration and a signed-in member portal on the same branch site.</li>
-      <li>Branch administration for content, members, ministries, events, and operational workflows.</li>
-      <li>HQ tools when your organization spans multiple branches.</li>
-    </ul>
-    <p>Explore the full capability list on the <a href="/features">Features</a> page, take the <a href="/demo">guided demo tour</a>, or open the <a href="<%= demoChurchUrl %>" rel="noopener noreferrer">demo church site</a>.</p>
-    <% if (typeof demoChurchUrl !== 'undefined' && demoChurchUrl) { %>
-    <p><a class="church-btn church-btn--outline church-btn--pill" href="/demo">See BlessBoard in action</a></p>
-    <% } %>
-  </div>
-</section>
+  <section class="bb-apex-page-band bb-apex-page-band--dark" aria-labelledby="fc-receive">
+    <div class="bb-apex-page-band__inner">
+      <div class="bb-apex-page-band__head bb-apex-page-band__head--center">
+        <h2 class="bb-apex-page-band__title" id="fc-receive">What a church receives</h2>
+        <p class="bb-apex-page-band__lead">Three connected experiences on each branch subdomain — plus HQ tools when your organization spans multiple locations.</p>
+      </div>
+      <div class="bb-apex-page-toolkit">
+        <article class="bb-apex-page-toolkit-card">
+          <span class="material-symbols-outlined" aria-hidden="true">language</span>
+          <h3>Public Branch Website</h3>
+          <p>Pages for about, leadership, ministries, events, sermons, giving information, and contact.</p>
+        </article>
+        <article class="bb-apex-page-toolkit-card">
+          <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+          <h3>Member Portal</h3>
+          <p>Member registration and a signed-in member portal on the same branch site.</p>
+        </article>
+        <article class="bb-apex-page-toolkit-card">
+          <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+          <h3>Branch Administration</h3>
+          <p>Tools for content, members, ministries, events, and operational workflows.</p>
+        </article>
+        <article class="bb-apex-page-toolkit-card">
+          <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
+          <h3>HQ Tools</h3>
+          <p>Headquarters oversight when your organization spans multiple branches.</p>
+        </article>
+      </div>
+      <p class="bb-apex-page-band__footer">
+        Explore the full capability list on the <a href="/features">Features</a> page, take the <a href="/demo">guided demo tour</a>, or open the <a href="<%= demoChurchUrl %>" rel="noopener noreferrer">demo church site</a>.
+      </p>
+    </div>
+  </section>
 
-<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="fc-onboarding">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="fc-onboarding">Typical onboarding steps</h2>
-    <ol>
-      <li>Request access through <a href="<%= registerChurchPath %>">Register Your Church</a>.</li>
-      <li>BlessBoard platform administrators provision your organization, branch subdomain, and starter HQ and branch admin accounts.</li>
-      <li>Your team publishes website content, configures giving information, and enables member registration when ready.</li>
-      <li>Leaders sign in on the branch site to manage members, ministries, and ongoing communication.</li>
-    </ol>
-  </div>
-</section>
+  <section class="bb-apex-page-steps" aria-labelledby="fc-onboarding">
+    <div class="bb-apex-page-steps__inner">
+      <div class="bb-apex-page-band__head bb-apex-page-band__head--center">
+        <h2 class="bb-apex-page-band__title" id="fc-onboarding">Typical onboarding steps</h2>
+        <p class="bb-apex-page-band__lead">BlessBoard is currently onboarding selected churches. Plans and available services may vary according to church size, branch structure, and setup requirements.</p>
+      </div>
+      <ol class="bb-apex-page-steps__list">
+        <li class="bb-apex-page-steps__item">
+          <span class="bb-apex-page-steps__num" aria-hidden="true">1</span>
+          <div>
+            <h3>Request access</h3>
+            <p>Request access through <a href="<%= registerChurchPath %>">Register Your Church</a>.</p>
+          </div>
+        </li>
+        <li class="bb-apex-page-steps__item">
+          <span class="bb-apex-page-steps__num" aria-hidden="true">2</span>
+          <div>
+            <h3>Provision your branch</h3>
+            <p>BlessBoard platform administrators provision your organization, branch subdomain, and starter HQ and branch admin accounts.</p>
+          </div>
+        </li>
+        <li class="bb-apex-page-steps__item">
+          <span class="bb-apex-page-steps__num" aria-hidden="true">3</span>
+          <div>
+            <h3>Publish your site</h3>
+            <p>Your team publishes website content, configures giving information, and enables member registration when ready.</p>
+          </div>
+        </li>
+        <li class="bb-apex-page-steps__item">
+          <span class="bb-apex-page-steps__num" aria-hidden="true">4</span>
+          <div>
+            <h3>Lead from one place</h3>
+            <p>Leaders sign in on the branch site to manage members, ministries, and ongoing communication.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
 
-<section class="bb-platform-info-section home-desktop-design" aria-labelledby="fc-manage">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="fc-manage">What church administrators can manage</h2>
-    <ul>
-      <li>Public website content and published branch pages</li>
-      <li>Member verification, profiles, and registration requests</li>
-      <li>Events, ministries, announcements, sermons, and resources</li>
-      <li>Prayer requests, member requests, and password-reset queues</li>
-      <li>Attendance, duty roster, giving settings, and monthly branch reports</li>
-      <li>Ministry leaders, departments, and leader portal access</li>
-    </ul>
-  </div>
-</section>
+  <section class="bb-apex-page-band" aria-labelledby="fc-manage">
+    <div class="bb-apex-page-band__inner">
+      <div class="bb-apex-page-band__head bb-apex-page-band__head--center">
+        <h2 class="bb-apex-page-band__title" id="fc-manage">What church administrators can manage</h2>
+      </div>
+      <div class="bb-apex-page-icon-grid">
+        <article class="bb-apex-page-icon-card">
+          <span class="material-symbols-outlined" aria-hidden="true">web</span>
+          <h3>Website Content</h3>
+          <p>Public website content and published branch pages.</p>
+        </article>
+        <article class="bb-apex-page-icon-card">
+          <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+          <h3>Members</h3>
+          <p>Member verification, profiles, and registration requests.</p>
+        </article>
+        <article class="bb-apex-page-icon-card">
+          <span class="material-symbols-outlined" aria-hidden="true">event</span>
+          <h3>Ministry Activity</h3>
+          <p>Events, ministries, announcements, sermons, and resources.</p>
+        </article>
+        <article class="bb-apex-page-icon-card">
+          <span class="material-symbols-outlined" aria-hidden="true">inbox</span>
+          <h3>Request Queues</h3>
+          <p>Prayer requests, member requests, and password-reset queues.</p>
+        </article>
+        <article class="bb-apex-page-icon-card">
+          <span class="material-symbols-outlined" aria-hidden="true">summarize</span>
+          <h3>Operations</h3>
+          <p>Attendance, duty roster, giving settings, and monthly branch reports.</p>
+        </article>
+        <article class="bb-apex-page-icon-card">
+          <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
+          <h3>Mobile Access</h3>
+          <p>Responsive public pages and member portal for phones and tablets.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+</div>
 
-<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="fc-mobile">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="fc-mobile">Mobile access for members</h2>
-    <p>Public branch pages and the member portal use responsive layouts, so members can read announcements, browse events, and submit requests from phones and tablets — on the same branch URL they already know.</p>
-  </div>
-</section>
+<%# --- Mobile (Stitch: For Churches Mobile) --- %>
+<div class="home-mobile-design">
+  <section class="bb-apex-page-stack" aria-labelledby="fc-mobile-touchpoints">
+    <div class="bb-apex-page-stack__inner">
+      <h2 class="bb-apex-page-stack__title" id="fc-mobile-touchpoints">Tools for every touchpoint</h2>
+      <p class="bb-apex-page-stack__lead">BlessBoard connects public pages, member sign-in, and branch administration on one branch subdomain.</p>
+      <div class="bb-apex-page-stack-cards">
+        <article class="bb-apex-page-stack-card">
+          <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+          <h3>Member Connection</h3>
+          <p>Registration, announcements, events, ministries, resources, and requests on the branch site.</p>
+        </article>
+        <article class="bb-apex-page-stack-card">
+          <span class="material-symbols-outlined" aria-hidden="true">language</span>
+          <h3>Public Website</h3>
+          <p>About, leadership, ministries, events, sermons, giving information, and contact pages.</p>
+        </article>
+        <article class="bb-apex-page-stack-card">
+          <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+          <h3>Branch Administration</h3>
+          <p>Content, members, ministries, events, and operational workflows for leaders.</p>
+        </article>
+      </div>
+    </div>
+  </section>
 
-<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="fc-onboarding">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="fc-onboarding">Onboarding</h2>
-    <p>BlessBoard is currently onboarding selected churches. Plans and available services may vary according to church size, branch structure and setup requirements. Contact the BlessBoard team to discuss access.</p>
-  </div>
-</section>
+  <section class="bb-apex-page-stack bb-apex-page-stack--alt" aria-labelledby="fc-mobile-manage">
+    <div class="bb-apex-page-stack__inner">
+      <h2 class="bb-apex-page-stack__title" id="fc-mobile-manage">Faithful management</h2>
+      <p class="bb-apex-page-stack__lead">Practical branch tools focused on real church workflows — from member verification to monthly reports.</p>
+      <ul class="bb-apex-page-checks">
+        <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Public website content and published branch pages</li>
+        <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Member verification, events, ministries, and request queues</li>
+        <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Mobile-friendly public pages and member portal on the same branch URL</li>
+      </ul>
+      <p class="bb-apex-page-stack__link-row">
+        <a class="church-btn church-btn--public-primary" href="/features">View all features</a>
+        <% if (typeof demoChurchUrl !== 'undefined' && demoChurchUrl) { %>
+        <a class="church-btn church-btn--public-secondary" href="/demo">See BlessBoard in action</a>
+        <% } %>
+      </p>
+    </div>
+  </section>
+
+  <section class="bb-apex-page-stack" aria-labelledby="fc-mobile-onboarding">
+    <div class="bb-apex-page-stack__inner">
+      <h2 class="bb-apex-page-stack__title" id="fc-mobile-onboarding">Onboarding</h2>
+      <p class="bb-apex-page-stack__lead">BlessBoard is currently onboarding selected churches. Contact the BlessBoard team to discuss access for your congregation and branch structure.</p>
+      <ol class="bb-apex-page-steps__list bb-apex-page-steps__list--compact">
+        <li class="bb-apex-page-steps__item">
+          <span class="bb-apex-page-steps__num" aria-hidden="true">1</span>
+          <div><p>Request access through Register Your Church.</p></div>
+        </li>
+        <li class="bb-apex-page-steps__item">
+          <span class="bb-apex-page-steps__num" aria-hidden="true">2</span>
+          <div><p>Platform administrators provision your organization and branch subdomain.</p></div>
+        </li>
+        <li class="bb-apex-page-steps__item">
+          <span class="bb-apex-page-steps__num" aria-hidden="true">3</span>
+          <div><p>Your team publishes content and enables member registration when ready.</p></div>
+        </li>
+      </ol>
+    </div>
+  </section>
+</div>
 
 <%- include('../partials/platform_info_cta', {
+  ctaVariant: 'apex-band',
   ctaTitle: 'Request BlessBoard for your church',
   ctaLead: 'Tell us about your congregation and branch structure to begin onboarding.',
   primaryHref: registerChurchPath,

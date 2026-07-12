@@ -1,0 +1,254 @@
+<%#
+  Register Your Church inquiry form — preserve field names and server validation.
+  Locals: form, fieldError, registerChurchPath
+%>
+<%
+  var formData = typeof form !== 'undefined' ? form : {};
+  var activeFieldError = typeof fieldError !== 'undefined' ? fieldError : null;
+  function fieldHasError(name) { return activeFieldError === name; }
+%>
+<form class="church-form bb-apex-register-form" action="<%= registerChurchPath %>" method="post" novalidate>
+  <div class="visually-hidden" aria-hidden="true">
+    <label for="register_company_website">Company website</label>
+    <input id="register_company_website" type="text" name="company_website" tabindex="-1" autocomplete="off"/>
+  </div>
+
+  <div class="bb-apex-register-form__section">
+    <div class="bb-apex-register-form__section-head">
+      <span class="material-symbols-outlined" aria-hidden="true">person</span>
+      <h2 class="bb-apex-register-form__section-title">Contact person</h2>
+    </div>
+    <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
+      <div class="church-field">
+        <label class="bb-apex-register-label" for="register_contact_name">Contact person name</label>
+        <input
+          class="bb-apex-register-input<%= fieldHasError('contact_name') ? ' bb-apex-register-input--error' : '' %>"
+          id="register_contact_name"
+          name="contact_name"
+          type="text"
+          required
+          autocomplete="name"
+          value="<%= formData.contact_name || '' %>"
+          <%= fieldHasError('contact_name') ? 'aria-invalid="true"' : '' %>
+        />
+        <% if (fieldHasError('contact_name') && typeof formError !== 'undefined' && formError) { %>
+        <p class="bb-apex-register-field-error" id="register_contact_name_error" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <%= formError %>
+        </p>
+        <% } %>
+      </div>
+      <div class="church-field">
+        <label class="bb-apex-register-label" for="register_email">Email</label>
+        <input
+          class="bb-apex-register-input<%= fieldHasError('email') ? ' bb-apex-register-input--error' : '' %>"
+          id="register_email"
+          name="email"
+          type="email"
+          required
+          autocomplete="email"
+          value="<%= formData.email || '' %>"
+          <%= fieldHasError('email') ? 'aria-invalid="true" aria-describedby="register_email_error"' : '' %>
+        />
+        <% if (fieldHasError('email') && typeof formError !== 'undefined' && formError) { %>
+        <p class="bb-apex-register-field-error" id="register_email_error" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <%= formError %>
+        </p>
+        <% } %>
+      </div>
+    </div>
+    <div class="church-field">
+      <label class="bb-apex-register-label" for="register_role">Role in church</label>
+      <input
+        class="bb-apex-register-input<%= fieldHasError('role_in_church') ? ' bb-apex-register-input--error' : '' %>"
+        id="register_role"
+        name="role_in_church"
+        type="text"
+        required
+        placeholder="Pastor, administrator, elder, etc."
+        value="<%= formData.role_in_church || '' %>"
+        <%= fieldHasError('role_in_church') ? 'aria-invalid="true"' : '' %>
+      />
+      <% if (fieldHasError('role_in_church') && typeof formError !== 'undefined' && formError) { %>
+      <p class="bb-apex-register-field-error" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true">error</span>
+        <%= formError %>
+      </p>
+      <% } %>
+    </div>
+    <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
+      <div class="church-field">
+        <label class="bb-apex-register-label" for="register_phone">Phone number</label>
+        <input
+          class="bb-apex-register-input<%= fieldHasError('phone') ? ' bb-apex-register-input--error' : '' %>"
+          id="register_phone"
+          name="phone"
+          type="tel"
+          required
+          autocomplete="tel"
+          value="<%= formData.phone || '' %>"
+          <%= fieldHasError('phone') ? 'aria-invalid="true"' : '' %>
+        />
+        <% if (fieldHasError('phone') && typeof formError !== 'undefined' && formError) { %>
+        <p class="bb-apex-register-field-error" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <%= formError %>
+        </p>
+        <% } %>
+      </div>
+      <div class="church-field">
+        <label class="bb-apex-register-label" for="register_whatsapp">WhatsApp <span class="bb-apex-register-label__meta">(optional)</span></label>
+        <input
+          class="bb-apex-register-input<%= fieldHasError('whatsapp') ? ' bb-apex-register-input--error' : '' %>"
+          id="register_whatsapp"
+          name="whatsapp"
+          type="tel"
+          autocomplete="tel"
+          value="<%= formData.whatsapp || '' %>"
+          <%= fieldHasError('whatsapp') ? 'aria-invalid="true"' : '' %>
+        />
+        <% if (fieldHasError('whatsapp') && typeof formError !== 'undefined' && formError) { %>
+        <p class="bb-apex-register-field-error" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <%= formError %>
+        </p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="bb-apex-register-form__section">
+    <div class="bb-apex-register-form__section-head">
+      <span class="material-symbols-outlined" aria-hidden="true">church</span>
+      <h2 class="bb-apex-register-form__section-title">Church details</h2>
+    </div>
+    <div class="church-field">
+      <label class="bb-apex-register-label" for="register_church_name">Church name</label>
+      <input
+        class="bb-apex-register-input<%= fieldHasError('church_name') ? ' bb-apex-register-input--error' : '' %>"
+        id="register_church_name"
+        name="church_name"
+        type="text"
+        required
+        value="<%= formData.church_name || '' %>"
+        <%= fieldHasError('church_name') ? 'aria-invalid="true"' : '' %>
+      />
+      <% if (fieldHasError('church_name') && typeof formError !== 'undefined' && formError) { %>
+      <p class="bb-apex-register-field-error" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true">error</span>
+        <%= formError %>
+      </p>
+      <% } %>
+    </div>
+    <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
+      <div class="church-field">
+        <label class="bb-apex-register-label" for="register_branch_name">Branch name <span class="bb-apex-register-label__meta">(optional)</span></label>
+        <input class="bb-apex-register-input" id="register_branch_name" name="branch_name" type="text" value="<%= formData.branch_name || '' %>"/>
+      </div>
+      <div class="church-field">
+        <label class="bb-apex-register-label" for="register_city">Town or city</label>
+        <input
+          class="bb-apex-register-input<%= fieldHasError('city') ? ' bb-apex-register-input--error' : '' %>"
+          id="register_city"
+          name="city"
+          type="text"
+          required
+          value="<%= formData.city || '' %>"
+          <%= fieldHasError('city') ? 'aria-invalid="true"' : '' %>
+        />
+        <% if (fieldHasError('city') && typeof formError !== 'undefined' && formError) { %>
+        <p class="bb-apex-register-field-error" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <%= formError %>
+        </p>
+        <% } %>
+      </div>
+    </div>
+    <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
+      <div class="church-field">
+        <label class="bb-apex-register-label" for="register_country">Country</label>
+        <input
+          class="bb-apex-register-input<%= fieldHasError('country') ? ' bb-apex-register-input--error' : '' %>"
+          id="register_country"
+          name="country"
+          type="text"
+          required
+          value="<%= formData.country || '' %>"
+          <%= fieldHasError('country') ? 'aria-invalid="true"' : '' %>
+        />
+        <% if (fieldHasError('country') && typeof formError !== 'undefined' && formError) { %>
+        <p class="bb-apex-register-field-error" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <%= formError %>
+        </p>
+        <% } %>
+      </div>
+      <div class="church-field">
+        <label class="bb-apex-register-label" for="register_branch_count">Number of branches <span class="bb-apex-register-label__meta">(optional)</span></label>
+        <input
+          class="bb-apex-register-input<%= fieldHasError('branch_count') ? ' bb-apex-register-input--error' : '' %>"
+          id="register_branch_count"
+          name="branch_count"
+          type="number"
+          min="1"
+          max="999"
+          inputmode="numeric"
+          value="<%= formData.branch_count || '' %>"
+          <%= fieldHasError('branch_count') ? 'aria-invalid="true"' : '' %>
+        />
+        <% if (fieldHasError('branch_count') && typeof formError !== 'undefined' && formError) { %>
+        <p class="bb-apex-register-field-error" role="alert">
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <%= formError %>
+        </p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="bb-apex-register-form__section">
+    <div class="bb-apex-register-form__section-head">
+      <span class="material-symbols-outlined" aria-hidden="true">edit_note</span>
+      <h2 class="bb-apex-register-form__section-title">Your request</h2>
+    </div>
+    <div class="church-field">
+      <label class="bb-apex-register-label" for="register_message">Short message</label>
+      <textarea
+        class="bb-apex-register-input bb-apex-register-input--textarea<%= fieldHasError('message') ? ' bb-apex-register-input--error' : '' %>"
+        id="register_message"
+        name="message"
+        rows="4"
+        required
+        placeholder="Tell us about your church and what you hope to use BlessBoard for."
+        <%= fieldHasError('message') ? 'aria-invalid="true"' : '' %>
+      ><%= formData.message || '' %></textarea>
+      <% if (fieldHasError('message') && typeof formError !== 'undefined' && formError) { %>
+      <p class="bb-apex-register-field-error" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true">error</span>
+        <%= formError %>
+      </p>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="bb-apex-register-form__footer">
+    <div class="church-field church-field--checkbox<%= fieldHasError('consent_contact') ? ' bb-apex-register-field--error' : '' %>">
+      <label class="bb-apex-register-checkbox">
+        <input type="checkbox" name="consent_contact" value="on"<%= formData.consent_contact ? ' checked' : '' %> required<%= fieldHasError('consent_contact') ? ' aria-invalid="true"' : '' %>/>
+        <span>I agree that BlessBoard may contact me about this church access request. See our <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.</span>
+      </label>
+      <% if (fieldHasError('consent_contact') && typeof formError !== 'undefined' && formError) { %>
+      <p class="bb-apex-register-field-error" role="alert">
+        <span class="material-symbols-outlined" aria-hidden="true">error</span>
+        <%= formError %>
+      </p>
+      <% } %>
+    </div>
+
+    <div class="bb-apex-register-form__actions">
+      <button class="church-btn church-btn--public-primary bb-apex-register-submit" type="submit">Submit Request</button>
+      <p class="bb-apex-register-form__help">General questions only? <a href="/contact">Contact BlessBoard</a>.</p>
+    </div>
+  </div>
+</form>

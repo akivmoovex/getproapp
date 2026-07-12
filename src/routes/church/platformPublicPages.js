@@ -15,6 +15,9 @@ const {
   BLESSBOARD_PRICING_ONBOARDING_NOTE,
   buildPublicPricingPlans,
   buildPublicPricingComparisonRows,
+  buildPartnerPlan,
+  STAFF_BILLING_NOTE,
+  THIRD_PARTY_COSTS_NOTE,
 } = require("../../church/platformPricingContent");
 const { mergePlatformPublicSeo } = require("../../church/platformPublicSeo");
 
@@ -66,7 +69,10 @@ function registerPlatformPublicPagesRoutes(router) {
           activePage: "pricing",
           pricingOnboardingNote: BLESSBOARD_PRICING_ONBOARDING_NOTE,
           pricingPlans: buildPublicPricingPlans(),
+          partnerPlan: buildPartnerPlan(),
           pricingComparisonRows: buildPublicPricingComparisonRows(),
+          staffBillingNote: STAFF_BILLING_NOTE,
+          thirdPartyCostsNote: THIRD_PARTY_COSTS_NOTE,
         },
         req
       )

@@ -1,0 +1,32 @@
+<%#
+  Single pricing tier card.
+  Locals: plan
+%>
+<article class="bb-apex-pricing-card<%= plan.featured ? ' bb-apex-pricing-card--featured' : '' %>">
+  <% if (plan.badge) { %>
+  <p class="bb-apex-pricing-card__badge"><%= plan.badge %></p>
+  <% } %>
+  <div class="bb-apex-pricing-card__head">
+    <% if (plan.eyebrow) { %>
+    <p class="bb-apex-pricing-card__eyebrow"><%= plan.eyebrow %></p>
+    <% } %>
+    <h2 class="bb-apex-pricing-card__name"><%= plan.label %></h2>
+    <p class="bb-apex-pricing-card__price">
+      <span class="bb-apex-pricing-card__price-amount"><%= plan.priceAmount %></span>
+      <span class="bb-apex-pricing-card__price-suffix"><%= plan.priceSuffix %></span>
+    </p>
+    <p class="bb-apex-pricing-card__desc"><%= plan.description %></p>
+  </div>
+  <ul class="bb-apex-pricing-card__features">
+    <% plan.features.forEach(function (feature) { %>
+    <li>
+      <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+      <span><%= feature %></span>
+    </li>
+    <% }); %>
+  </ul>
+  <a
+    class="church-btn church-btn--pill bb-apex-pricing-card__cta<%= plan.ctaVariant === 'primary' ? ' church-btn--primary' : ' bb-apex-pricing-card__cta--outline' %>"
+    href="<%= plan.ctaHref %>"
+  ><%= plan.ctaLabel %></a>
+</article>

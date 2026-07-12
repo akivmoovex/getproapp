@@ -95,7 +95,7 @@ test("apex desktop nav renders on main platform pages", async () => {
     const res = await request(app).get(routePath);
     assert.equal(res.status, 200, `${routePath} should render`);
     assert.match(extractDesktopNav(res.text), /Solutions/, `${routePath} should include Solutions`);
-    assert.match(res.text, /church\.css\?v=65/);
+    assert.match(res.text, /church\.css\?v=71/);
   }
 });
 

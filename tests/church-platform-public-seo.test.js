@@ -22,7 +22,7 @@ const PROHIBITED_CLAIMS_RE =
 const MARKETING_PAGES = [
   { path: "/", key: "home", h1: "One digital home for your church" },
   { path: "/features", key: "features", h1: "Everything your church needs" },
-  { path: "/pricing", key: "pricing", h1: "Plans for every stage" },
+  { path: "/pricing", key: "pricing", h1: "Simple plans for every stage" },
   { path: "/for-churches", key: "for-churches", h1: "BlessBoard for your church" },
   { path: "/multi-branch", key: "multi-branch", h1: "One platform for every branch" },
   { path: "/churches", key: "churches", h1: "Find Your Church" },
@@ -110,7 +110,7 @@ test("apex marketing pages include unique SEO metadata", async () => {
   for (const page of MARKETING_PAGES) {
     const res = await request(app).get(page.path);
     assert.equal(res.status, 200, `${page.path} should render`);
-    assert.match(res.text, /church\.css\?v=64/, `${page.path} should load public CSS v64`);
+    assert.match(res.text, /church\.css\?v=71/, `${page.path} should load public CSS v71`);
 
     const config = PLATFORM_PUBLIC_SEO[page.key];
     assert.match(res.text, new RegExp(`<link rel="canonical" href="${config.path === "/" ? "https://blessboard.com/" : `https://blessboard.com${config.path}`}"`), `${page.path} canonical`);
@@ -124,7 +124,11 @@ test("apex marketing pages include unique SEO metadata", async () => {
     seenDescriptions.add(descMatch[1]);
 
     assert.equal(countMatches(res.text, /<h1\b/gi), 1, `${page.path} should have one H1`);
-    assert.match(res.text, new RegExp(page.h1), `${page.path} should include expected H1`);
+    if (page.key === "home") {
+      assert.match(res.text, /One digital home for[\s\S]{0,48}?your church/i, `${page.path} should include expected H1`);
+    } else {
+      assert.match(res.text, new RegExp(page.h1), `${page.path} should include expected H1`);
+    }
     assert.doesNotMatch(res.text, PROHIBITED_CLAIMS_RE, `${page.path} must not include prohibited claims`);
   }
 });

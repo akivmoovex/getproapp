@@ -1,7 +1,39 @@
 <%#
   Bottom CTA band for platform marketing pages.
-  Locals: ctaTitle, ctaLead (optional), primaryHref, primaryLabel, secondaryHref, secondaryLabel
+  Locals: ctaTitle, ctaLead (optional), primaryHref, primaryLabel, secondaryHref, secondaryLabel,
+          ctaVariant (optional: apex-band)
 %>
+<%
+  var variant = typeof ctaVariant !== 'undefined' ? ctaVariant : '';
+%>
+<% if (variant === 'apex-band') { %>
+<section class="bb-apex-cta home-desktop-design">
+  <div class="bb-apex-cta__decor" aria-hidden="true"></div>
+  <div class="bb-apex-cta__inner">
+    <h2 class="bb-apex-cta__title"><%= ctaTitle %></h2>
+    <% if (typeof ctaLead !== 'undefined' && ctaLead) { %>
+    <p class="bb-apex-cta__lead"><%= ctaLead %></p>
+    <% } %>
+    <div class="bb-apex-cta__actions">
+      <a class="church-btn church-btn--public-primary bb-apex-cta__btn-primary" href="<%= primaryHref %>"><%= primaryLabel %></a>
+      <a class="church-btn church-btn--public-secondary bb-apex-cta__btn-secondary" href="<%= secondaryHref %>"><%= secondaryLabel %></a>
+    </div>
+  </div>
+</section>
+<section class="bb-apex-cta bb-apex-cta--mobile home-mobile-design">
+  <div class="bb-apex-cta__decor" aria-hidden="true"></div>
+  <div class="bb-apex-cta__inner">
+    <h2 class="bb-apex-cta__title"><%= ctaTitle %></h2>
+    <% if (typeof ctaLead !== 'undefined' && ctaLead) { %>
+    <p class="bb-apex-cta__lead"><%= ctaLead %></p>
+    <% } %>
+    <div class="bb-apex-cta__actions">
+      <a class="church-btn church-btn--public-primary bb-apex-cta__btn-primary" href="<%= primaryHref %>"><%= primaryLabel %></a>
+      <a class="church-btn church-btn--public-secondary bb-apex-cta__btn-secondary" href="<%= secondaryHref %>"><%= secondaryLabel %></a>
+    </div>
+  </div>
+</section>
+<% } else { %>
 <section class="bb-platform-info-cta home-desktop-design">
   <div class="bb-platform-info-cta__inner">
     <h2 class="bb-platform-info-cta__title"><%= ctaTitle %></h2>
@@ -14,3 +46,4 @@
     </div>
   </div>
 </section>
+<% } %>

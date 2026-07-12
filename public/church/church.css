@@ -14676,7 +14676,11 @@ a.church-branch-bento-stat:hover {
   }
 }
 
-/* --- Apex marketing shell + homepage (Stitch v65) --- */
+/* --- Apex marketing shell + homepage (Stitch v67) --- */
+
+html:has(> body.church-body--apex) {
+  overflow-x: hidden;
+}
 
 .church-body--apex {
   --bb-apex-primary: #6c5ce7;
@@ -14698,6 +14702,7 @@ a.church-branch-bento-stat:hover {
   font-family: "Hanken Grotesk", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color: var(--bb-apex-text);
   background: var(--bb-apex-surface);
+  overflow-x: hidden;
 }
 
 .church-body--apex .church-violet,
@@ -14719,7 +14724,7 @@ a.church-branch-bento-stat:hover {
 }
 
 .church-body--apex .brand-name {
-  font-size: 1.125rem;
+  font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -14730,7 +14735,7 @@ a.church-branch-bento-stat:hover {
 }
 
 .church-body--apex .church-brand {
-  max-width: min(220px, 42vw);
+  max-width: min(240px, 42vw);
   gap: 10px;
 }
 
@@ -14802,7 +14807,12 @@ a.church-branch-bento-stat:hover {
 .church-body--apex .church-nav-dropdown__item:hover,
 .church-body--apex .church-nav-dropdown__item:focus-visible {
   background: color-mix(in srgb, var(--bb-apex-primary) 8%, transparent);
-  outline: none;
+}
+
+.church-body--apex .church-nav-dropdown__trigger:focus-visible,
+.church-body--apex .church-nav-dropdown__item:focus-visible {
+  outline: 2px solid var(--bb-apex-primary);
+  outline-offset: 2px;
 }
 
 .church-body--apex .church-nav-dropdown__icon {
@@ -14928,6 +14938,7 @@ a.church-branch-bento-stat:hover {
 .church-body--apex .bb-apex-hero {
   background: var(--bb-apex-surface);
   padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop);
+  overflow: hidden;
 }
 
 .church-body--apex .bb-apex-hero__inner {
@@ -15396,7 +15407,7 @@ a.church-branch-bento-stat:hover {
   }
 
   .church-body--apex .brand-name {
-    font-size: 1rem;
+    font-size: 1.25rem;
   }
 
   .church-body--apex .brand-powered {
@@ -15600,11 +15611,1852 @@ a.church-branch-bento-stat:hover {
   }
 }
 
+/* —— Apex internal marketing pages (Features, For Churches) —— */
+.church-body--apex .bb-apex-page-hero {
+  padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop);
+  background: var(--bb-apex-surface);
+}
+
+.church-body--apex .bb-apex-page-hero__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+}
+
+.church-body--apex .bb-apex-page-hero--center {
+  text-align: center;
+}
+
+.church-body--apex .bb-apex-page-hero--center .bb-apex-page-hero__title {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 18ch;
+}
+
+.church-body--apex .bb-apex-page-hero--center .bb-apex-page-hero__lead {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+}
+
+.church-body--apex .bb-apex-page-hero__title {
+  margin: 0 0 24px;
+  font-size: 3.5rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-page-hero__title--display {
+  margin: 0 0 24px;
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+.church-body--apex .bb-apex-page-hero__inner--split {
+  display: grid;
+  gap: 48px;
+  align-items: center;
+}
+
+.church-body--apex .bb-apex-page-hero__frame {
+  border-radius: var(--bb-apex-radius);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 60%, transparent);
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-page-hero__img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.church-body--apex .bb-apex-page-split,
+.church-body--apex .bb-apex-page-band,
+.church-body--apex .bb-apex-page-challenges,
+.church-body--apex .bb-apex-page-steps,
+.church-body--apex .bb-apex-page-stack {
+  padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop);
+}
+
+.church-body--apex .bb-apex-page-split {
+  background: #fff;
+}
+
+.church-body--apex .bb-apex-page-split--alt {
+  background: var(--bb-apex-surface-dim);
+}
+
+.church-body--apex .bb-apex-page-split__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+  display: grid;
+  gap: 48px;
+  align-items: center;
+}
+
+.church-body--apex .bb-apex-page-split--reverse .bb-apex-page-split__media {
+  order: 2;
+}
+
+.church-body--apex .bb-apex-page-split__media img {
+  display: block;
+  width: 100%;
+  border-radius: var(--bb-apex-radius);
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-page-split__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, transparent);
+  color: var(--bb-apex-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.church-body--apex .bb-apex-page-split__title,
+.church-body--apex .bb-apex-page-band__title,
+.church-body--apex .bb-apex-page-stack__title {
+  margin: 0 0 16px;
+  font-size: 2.5rem;
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-page-split__lead,
+.church-body--apex .bb-apex-page-band__lead,
+.church-body--apex .bb-apex-page-stack__lead {
+  margin: 0 0 24px;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-page-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.church-body--apex .bb-apex-page-checks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-page-checks .material-symbols-outlined {
+  color: var(--bb-apex-primary);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-page-icon-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.church-body--apex .bb-apex-page-icon-grid--compact {
+  margin-top: 8px;
+}
+
+.church-body--apex .bb-apex-page-icon-card {
+  padding: 24px;
+  border-radius: var(--bb-apex-radius);
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 50%, transparent);
+  background: #fff;
+  box-shadow: var(--bb-apex-shadow-sm);
+}
+
+.church-body--apex .bb-apex-page-icon-card .material-symbols-outlined {
+  color: var(--bb-apex-primary);
+  font-size: 1.75rem;
+  margin-bottom: 12px;
+}
+
+.church-body--apex .bb-apex-page-icon-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-page-icon-card p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-page-band {
+  background: var(--bb-apex-surface-dim);
+}
+
+.church-body--apex .bb-apex-page-band--dark {
+  background: var(--bb-apex-text);
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.church-body--apex .bb-apex-page-band__inner,
+.church-body--apex .bb-apex-page-challenges__inner,
+.church-body--apex .bb-apex-page-steps__inner,
+.church-body--apex .bb-apex-page-stack__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+}
+
+.church-body--apex .bb-apex-page-band__head--center {
+  text-align: center;
+  max-width: 42rem;
+  margin: 0 auto 48px;
+}
+
+.church-body--apex .bb-apex-page-band--dark .bb-apex-page-band__title,
+.church-body--apex .bb-apex-page-band--dark .bb-apex-page-band__lead {
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-page-band--dark .bb-apex-page-band__lead {
+  opacity: 0.88;
+}
+
+.church-body--apex .bb-apex-eyebrow--inverse {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-page-band--dark .bb-apex-page-icon-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+.church-body--apex .bb-apex-page-band--dark .bb-apex-page-icon-card h3 {
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-page-band--dark .bb-apex-page-icon-card p {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.church-body--apex .bb-apex-page-band--dark .bb-apex-page-icon-card .material-symbols-outlined {
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-page-band__footer {
+  margin: 40px 0 0;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.church-body--apex .bb-apex-page-band__footer a {
+  color: #fff;
+  font-weight: 600;
+}
+
+.church-body--apex .bb-apex-page-challenges {
+  background: var(--bb-apex-surface-dim);
+}
+
+.church-body--apex .bb-apex-page-challenges__grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.church-body--apex .bb-apex-page-challenge-card {
+  padding: 32px 24px;
+  border-radius: var(--bb-apex-radius);
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 50%, transparent);
+  box-shadow: var(--bb-apex-shadow-sm);
+}
+
+.church-body--apex .bb-apex-page-challenge-card .material-symbols-outlined {
+  color: var(--bb-apex-primary);
+  font-size: 2rem;
+  margin-bottom: 16px;
+}
+
+.church-body--apex .bb-apex-page-challenge-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.church-body--apex .bb-apex-page-challenge-card p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-page-toolkit {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.church-body--apex .bb-apex-page-toolkit-card {
+  padding: 28px 24px;
+  border-radius: var(--bb-apex-radius);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.church-body--apex .bb-apex-page-toolkit-card .material-symbols-outlined {
+  color: #fff;
+  font-size: 2rem;
+  margin-bottom: 16px;
+}
+
+.church-body--apex .bb-apex-page-toolkit-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-page-toolkit-card p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.church-body--apex .bb-apex-page-steps {
+  background: #fff;
+}
+
+.church-body--apex .bb-apex-page-steps__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 24px;
+}
+
+.church-body--apex .bb-apex-page-steps__item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.church-body--apex .bb-apex-page-steps__num {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #e4dfff;
+  color: var(--bb-apex-primary);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-page-steps__item h3 {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.church-body--apex .bb-apex-page-steps__item p {
+  margin: 0;
+  color: var(--bb-apex-text-secondary);
+  line-height: 1.6;
+}
+
+.church-body--apex .bb-apex-page-stack {
+  background: #fff;
+}
+
+.church-body--apex .bb-apex-page-stack--alt {
+  background: var(--bb-apex-surface-dim);
+}
+
+.church-body--apex .bb-apex-page-stack__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, transparent);
+  color: var(--bb-apex-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.church-body--apex .bb-apex-page-stack-cards {
+  display: grid;
+  gap: 16px;
+}
+
+.church-body--apex .bb-apex-page-stack-card {
+  padding: 20px;
+  border-radius: var(--bb-apex-radius);
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 50%, transparent);
+  background: #fff;
+}
+
+.church-body--apex .bb-apex-page-stack-card .material-symbols-outlined {
+  color: var(--bb-apex-primary);
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+
+.church-body--apex .bb-apex-page-stack-card h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.church-body--apex .bb-apex-page-stack-card p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-page-stack__link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.church-body--apex .bb-apex-page-note {
+  max-width: var(--church-max-width);
+  margin: 0 auto calc(var(--bb-apex-section-pad-desktop) * 0.5);
+  padding: 0 var(--church-margin-mobile);
+  text-align: center;
+  font-size: 0.9375rem;
+}
+
+.church-body--apex .bb-apex-page-note a {
+  color: var(--bb-apex-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.church-body--apex .bb-apex-page-note a:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 900px) {
+  .church-body--apex .bb-apex-page-hero__inner--split {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .church-body--apex .bb-apex-page-split__inner {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .church-body--apex .bb-apex-page-icon-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .church-body--apex .bb-apex-page-steps__list:not(.bb-apex-page-steps__list--compact) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 32px;
+  }
+
+  .church-body--apex .bb-apex-page-steps__list:not(.bb-apex-page-steps__list--compact) .bb-apex-page-steps__item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 899px) {
+  .church-body--apex .bb-apex-page-hero--mobile {
+    padding: var(--bb-apex-section-pad-mobile) var(--church-margin-mobile);
+    text-align: center;
+  }
+
+  .church-body--apex .bb-apex-page-hero--mobile .bb-apex-page-hero__title,
+  .church-body--apex .bb-apex-page-hero--mobile .bb-apex-page-hero__title--display {
+    font-size: 2.25rem;
+    max-width: none;
+  }
+
+  .church-body--apex .bb-apex-page-hero--mobile .bb-apex-page-hero__lead {
+    font-size: 1rem;
+    max-width: 24rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .church-body--apex .bb-apex-page-split__title,
+  .church-body--apex .bb-apex-page-band__title,
+  .church-body--apex .bb-apex-page-stack__title {
+    font-size: 1.75rem;
+  }
+
+  .church-body--apex .bb-apex-page-split,
+  .church-body--apex .bb-apex-page-band,
+  .church-body--apex .bb-apex-page-challenges,
+  .church-body--apex .bb-apex-page-steps,
+  .church-body--apex .bb-apex-page-stack {
+    padding: var(--bb-apex-section-pad-mobile) var(--church-margin-mobile);
+  }
+
+  .church-body--apex .bb-apex-page-challenges__grid,
+  .church-body--apex .bb-apex-page-toolkit,
+  .church-body--apex .bb-apex-page-icon-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .church-body--apex .bb-apex-page-split--reverse .bb-apex-page-split__media {
+    order: 0;
+  }
+}
+
+/* —— Apex Register Your Church (Stitch desktop/mobile) —— */
+.church-body--apex .bb-apex-register {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  background: var(--bb-apex-surface);
+}
+
+.church-body--apex .bb-apex-register__mobile-hero {
+  background: var(--bb-apex-primary);
+  color: #fff;
+  padding: calc(var(--bb-apex-section-pad-mobile) + 16px) var(--church-margin-mobile) 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.church-body--apex .bb-apex-register__mobile-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 24rem;
+}
+
+.church-body--apex .bb-apex-register__mobile-display {
+  margin: 0 0 16px;
+  font-size: 2rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.church-body--apex .bb-apex-register__mobile-lead {
+  margin: 0 0 24px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.church-body--apex .bb-apex-register__mobile-chips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.church-body--apex .bb-apex-register__mobile-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.church-body--apex .bb-apex-register__mobile-chip .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+.church-body--apex .bb-apex-register__aside {
+  display: none;
+  background: var(--bb-apex-surface-dim);
+  padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop);
+  position: relative;
+  overflow: hidden;
+}
+
+.church-body--apex .bb-apex-register__aside-inner {
+  max-width: 28rem;
+  position: relative;
+  z-index: 1;
+}
+
+.church-body--apex .bb-apex-register__aside-title {
+  margin: 0 0 16px;
+  font-size: 2.5rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--bb-apex-primary);
+  letter-spacing: -0.02em;
+}
+
+.church-body--apex .bb-apex-register__aside-lead,
+.church-body--apex .bb-apex-register__aside-note {
+  margin: 0 0 24px;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-register__benefits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 24px;
+}
+
+.church-body--apex .bb-apex-register__benefit {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.church-body--apex .bb-apex-register__benefit-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, transparent);
+  color: var(--bb-apex-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-register__benefit h3 {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.church-body--apex .bb-apex-register__benefit p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-register__main {
+  padding: var(--bb-apex-section-pad-mobile) var(--church-margin-mobile) calc(var(--bb-apex-section-pad-mobile) + 16px);
+  background: #fff;
+}
+
+.church-body--apex .bb-apex-register__main-inner {
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.church-body--apex .bb-apex-register__header {
+  margin-bottom: 32px;
+}
+
+.church-body--apex .bb-apex-register__title {
+  margin: 0 0 16px;
+  font-size: 2rem;
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-register__lead {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-register__lead--secondary {
+  margin-bottom: 0;
+}
+
+.church-body--apex .bb-apex-register__alert {
+  margin-bottom: 24px;
+}
+
+.church-body--apex .bb-apex-register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.church-body--apex .bb-apex-register-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.church-body--apex .bb-apex-register-form__section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--bb-apex-border) 70%, transparent);
+}
+
+.church-body--apex .bb-apex-register-form__section-head .material-symbols-outlined {
+  color: var(--bb-apex-primary);
+}
+
+.church-body--apex .bb-apex-register-form__section-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-register-form__grid {
+  display: grid;
+  gap: 16px;
+}
+
+.church-body--apex .bb-apex-register-form__grid--two {
+  grid-template-columns: 1fr;
+}
+
+.church-body--apex .bb-apex-register-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-register-label__meta {
+  font-weight: 500;
+  color: var(--bb-apex-text-secondary);
+  opacity: 0.85;
+}
+
+.church-body--apex .bb-apex-register-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid var(--bb-apex-border);
+  border-radius: var(--bb-apex-radius-sm);
+  background: var(--bb-apex-surface);
+  font: inherit;
+  font-size: 1rem;
+  color: var(--bb-apex-text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.church-body--apex .bb-apex-register-input::placeholder {
+  color: color-mix(in srgb, var(--bb-apex-text-secondary) 55%, transparent);
+}
+
+.church-body--apex .bb-apex-register-input:focus {
+  outline: none;
+  border-color: var(--bb-apex-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bb-apex-primary) 25%, transparent);
+}
+
+.church-body--apex .bb-apex-register-input--textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.church-body--apex .bb-apex-register-input--error {
+  border-color: var(--bb-apex-error);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--bb-apex-error) 35%, transparent);
+}
+
+.church-body--apex .bb-apex-register-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.church-body--apex .bb-apex-register-field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--bb-apex-error);
+}
+
+.church-body--apex .bb-apex-register-field-error .material-symbols-outlined {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-register-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--bb-apex-text-secondary);
+  cursor: pointer;
+}
+
+.church-body--apex .bb-apex-register-checkbox input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--bb-apex-primary);
+}
+
+.church-body--apex .bb-apex-register-checkbox a {
+  color: var(--bb-apex-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.church-body--apex .bb-apex-register-checkbox a:hover {
+  text-decoration: underline;
+}
+
+.church-body--apex .bb-apex-register-form__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.church-body--apex .bb-apex-register-form__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.church-body--apex .bb-apex-register-submit {
+  width: 100%;
+  min-height: 48px;
+}
+
+.church-body--apex .bb-apex-register-submit--submitting,
+.church-body--apex .bb-apex-register-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.church-body--apex .bb-apex-register-form__help {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--bb-apex-text-secondary);
+  text-align: center;
+}
+
+.church-body--apex .bb-apex-register-form__help a {
+  color: var(--bb-apex-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.church-body--apex .bb-apex-register-success {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 24px;
+  border-radius: var(--bb-apex-radius);
+  border: 1px solid color-mix(in srgb, var(--bb-apex-primary) 25%, transparent);
+  background: color-mix(in srgb, var(--bb-apex-primary) 6%, #fff);
+}
+
+.church-body--apex .bb-apex-register-success__icon {
+  color: var(--bb-apex-primary);
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-register-success p {
+  margin: 8px 0 0;
+  line-height: 1.55;
+}
+
+@media (min-width: 900px) {
+  .church-body--apex .bb-apex-register {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    min-height: calc(100vh - var(--bb-apex-header-height));
+  }
+
+  .church-body--apex .bb-apex-register__aside {
+    display: block;
+  }
+
+  .church-body--apex .bb-apex-register__main {
+    padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop);
+  }
+
+  .church-body--apex .bb-apex-register__title {
+    font-size: 2.5rem;
+  }
+
+  .church-body--apex .bb-apex-register-form__grid--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .church-body--apex .bb-apex-register-form__actions {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .church-body--apex .bb-apex-register-submit {
+    width: auto;
+    min-width: 220px;
+  }
+
+  .church-body--apex .bb-apex-register-form__help {
+    text-align: left;
+  }
+}
+
+@media (max-width: 899px) {
+  .church-body--apex .bb-apex-register__main {
+    margin-top: -24px;
+    border-radius: 24px 24px 0 0;
+    position: relative;
+    z-index: 2;
+    box-shadow: var(--bb-apex-shadow-md);
+  }
+
+  .church-body--apex .bb-apex-register__header .bb-apex-eyebrow,
+  .church-body--apex .bb-apex-register__lead {
+    display: none;
+  }
+
+  .church-body--apex .bb-apex-register__title {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+  }
+}
+
 .church-body--apex #features,
 .church-body--apex #pricing,
 .church-body--apex #about,
 .church-body--apex #welcome,
 .church-body--apex #welcome-mobile {
   scroll-margin-top: var(--bb-apex-header-height);
+}
+
+/* —— Apex Church Directory (Stitch desktop/mobile) —— */
+.church-body--apex .bb-apex-directory {
+  padding: 32px var(--church-margin-mobile) 64px;
+  background: var(--bb-apex-surface);
+  min-height: 60vh;
+  overflow-x: clip;
+}
+
+.church-body--apex .bb-apex-directory__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  min-width: 0;
+}
+
+.church-body--apex .bb-apex-directory__header {
+  margin-bottom: 32px;
+}
+
+.church-body--apex .bb-apex-directory__header--mobile {
+  margin-bottom: 20px;
+}
+
+.church-body--apex .bb-apex-directory__title {
+  margin: 0 0 12px;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-directory__title--mobile {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.church-body--apex .bb-apex-directory__lead {
+  margin: 0;
+  max-width: 42rem;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-directory__lead--mobile {
+  font-size: 1rem;
+  max-width: none;
+}
+
+.church-body--apex .bb-apex-directory__search-card {
+  margin-bottom: 32px;
+  padding: 24px;
+  border-radius: var(--bb-apex-radius);
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 60%, transparent);
+  box-shadow: var(--bb-apex-shadow-md);
+  min-width: 0;
+}
+
+.church-body--apex .bb-apex-directory__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.church-body--apex .bb-apex-directory__search-field {
+  position: relative;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.church-body--apex .bb-apex-directory__search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--bb-apex-text-secondary);
+  pointer-events: none;
+}
+
+.church-body--apex .bb-apex-directory__input {
+  width: 100%;
+  min-width: 0;
+  padding: 16px 16px 16px 48px;
+  border: none;
+  border-radius: var(--bb-apex-radius-sm);
+  background: var(--bb-apex-surface-dim);
+  font: inherit;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-directory__input:focus {
+  outline: 2px solid var(--bb-apex-primary);
+  outline-offset: 2px;
+}
+
+.church-body--apex .bb-apex-directory__submit {
+  width: 100%;
+  justify-content: center;
+}
+
+.church-body--apex .bb-apex-directory__stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  border-radius: var(--bb-apex-radius);
+  background: color-mix(in srgb, var(--bb-apex-primary) 8%, #fff);
+  border: 1px solid color-mix(in srgb, var(--bb-apex-primary) 18%, transparent);
+  min-width: 0;
+}
+
+.church-body--apex .bb-apex-directory__stats-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: var(--bb-apex-primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-directory__stats-copy {
+  min-width: 0;
+}
+
+.church-body--apex .bb-apex-directory__stats-count {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--bb-apex-primary-dark);
+}
+
+.church-body--apex .bb-apex-directory__stats-query {
+  margin: 2px 0 0;
+  font-size: 0.8125rem;
+  color: var(--bb-apex-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.church-body--apex .bb-apex-directory__count {
+  margin: 0 0 24px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-directory__list {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.church-body--apex .bb-apex-directory-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 70%, transparent);
+  border-radius: var(--bb-apex-radius);
+  box-shadow: var(--bb-apex-shadow-md);
+  min-width: 0;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.church-body--apex .bb-apex-directory-card:focus-within {
+  border-color: color-mix(in srgb, var(--bb-apex-primary) 45%, var(--bb-apex-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bb-apex-primary) 12%, transparent), var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-directory-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  min-width: 0;
+}
+
+.church-body--apex .bb-apex-directory-card__logo {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--bb-apex-radius);
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, #fff);
+  color: var(--bb-apex-primary);
+}
+
+.church-body--apex .bb-apex-directory-card__logo .material-symbols-outlined {
+  font-size: 2rem;
+}
+
+.church-body--apex .bb-apex-directory-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bb-apex-primary);
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, #fff);
+  flex-shrink: 0;
+  max-width: 50%;
+  overflow-wrap: anywhere;
+}
+
+.church-body--apex .bb-apex-directory-card__badge--single {
+  color: var(--bb-apex-text-secondary);
+  background: var(--bb-apex-surface-dim);
+}
+
+.church-body--apex .bb-apex-directory-card__name {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.church-body--apex .bb-apex-directory-card__location {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-directory-card__location .material-symbols-outlined {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-directory-card__desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.church-body--apex .bb-apex-directory-card__facts {
+  margin-top: 12px;
+}
+
+.church-body--apex .bb-apex-directory-card__actions {
+  margin-top: auto;
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.church-body--apex .bb-apex-directory-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--bb-apex-border) 50%, transparent);
+  min-width: 0;
+}
+
+.church-body--apex .bb-apex-directory-card__footer-detail {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.church-body--apex .bb-apex-directory-card__footer-label {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-directory-card__footer-value {
+  margin: 2px 0 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--bb-apex-text);
+  overflow-wrap: anywhere;
+}
+
+.church-body--apex .bb-apex-directory-card__cta {
+  width: 100%;
+  justify-content: center;
+  background: var(--bb-apex-surface-dim);
+  color: var(--bb-apex-primary);
+  border: 1px solid var(--bb-apex-primary);
+}
+
+.church-body--apex .bb-apex-directory-card__cta:hover,
+.church-body--apex .bb-apex-directory-card__cta:focus-visible {
+  background: var(--bb-apex-primary);
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-directory-card__actions form {
+  margin: 0;
+  min-width: 0;
+}
+
+.church-body--apex .bb-apex-directory__empty {
+  text-align: center;
+  padding: 48px 16px;
+}
+
+.church-body--apex .bb-apex-directory__empty-icon {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 24px;
+  border-radius: 999px;
+  background: var(--bb-apex-surface-dim);
+  color: var(--bb-apex-text-secondary);
+  display: grid;
+  place-items: center;
+}
+
+.church-body--apex .bb-apex-directory__empty-icon .material-symbols-outlined {
+  font-size: 3rem;
+}
+
+.church-body--apex .bb-apex-directory__empty h2 {
+  margin: 0 0 8px;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-directory__empty p {
+  margin: 0 auto 16px;
+  max-width: 24rem;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-directory__pager {
+  margin-top: 32px;
+}
+
+.church-body--apex .bb-apex-directory__pager-link {
+  color: var(--bb-apex-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.church-body--apex .bb-apex-directory__pager-link:hover {
+  text-decoration: underline;
+}
+
+.church-body--apex .bb-apex-directory__back {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.church-body--apex .bb-apex-directory__back a {
+  color: var(--bb-apex-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.church-body--apex .bb-apex-directory__back a:hover {
+  text-decoration: underline;
+}
+
+.church-body--apex .bb-apex-directory__org {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.church-body--apex .bb-apex-directory__org-meta {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.church-body--apex .bb-apex-directory__org-meta .material-symbols-outlined {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-directory__branch-count {
+  margin-top: 4px;
+}
+
+@media (min-width: 640px) {
+  .church-body--apex .bb-apex-directory__form {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .church-body--apex .bb-apex-directory__submit {
+    width: auto;
+    min-width: 9rem;
+    flex-shrink: 0;
+  }
+}
+
+@media (min-width: 900px) {
+  .church-body--apex .bb-apex-directory {
+    padding: 48px var(--church-margin-desktop) 96px;
+  }
+
+  .church-body--apex .bb-apex-directory__header {
+    text-align: left;
+  }
+
+  .church-body--apex .bb-apex-directory__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
+  }
+
+  .church-body--apex .bb-apex-directory-card:hover {
+    transform: translateY(-4px);
+  }
+}
+
+@media (min-width: 1100px) {
+  .church-body--apex .bb-apex-directory__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 899px) {
+  .church-body--apex .bb-apex-directory-card__facts {
+    display: none;
+  }
+
+  .church-body--apex .bb-apex-directory-card__footer + .bb-apex-directory-card__cta,
+  .church-body--apex .bb-apex-directory-card__footer + form .bb-apex-directory-card__cta {
+    width: auto;
+    align-self: flex-end;
+    min-width: 7.5rem;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .church-body--apex .bb-apex-directory-card__actions:has(.bb-apex-directory-card__footer) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .church-body--apex .bb-apex-directory-card__actions:has(.bb-apex-directory-card__footer) .bb-apex-directory-card__footer {
+    border-top: none;
+    padding-top: 0;
+    flex: 1 1 50%;
+  }
+
+  .church-body--apex .bb-apex-directory-card__actions:has(.bb-apex-directory-card__footer) form {
+    flex: 0 0 auto;
+  }
+}
+
+/* —— Apex Pricing (Stitch desktop/mobile) —— */
+.church-body--apex .bb-apex-pricing__staff-note {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  max-width: 40rem;
+  margin: 0 auto 32px;
+  padding: 0 var(--church-margin-mobile);
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-pricing__staff-note .material-symbols-outlined {
+  color: var(--bb-apex-primary);
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-pricing {
+  padding: 0 var(--church-margin-mobile) var(--bb-apex-section-pad-mobile);
+  overflow-x: clip;
+}
+
+.church-body--apex .bb-apex-pricing__tiers {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 1280px;
+  margin: 0 auto 32px;
+  align-items: stretch;
+}
+
+.church-body--apex .bb-apex-pricing-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px;
+  border-radius: var(--bb-apex-radius);
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 70%, transparent);
+  background: #fff;
+  box-shadow: var(--bb-apex-shadow-md);
+  min-width: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.church-body--apex .bb-apex-pricing-card--featured {
+  border: 2px solid var(--bb-apex-primary);
+  box-shadow: 0 20px 40px rgba(108, 92, 231, 0.12);
+  z-index: 1;
+}
+
+.church-body--apex .bb-apex-pricing-card__badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 4px 16px;
+  border-radius: 999px;
+  background: var(--bb-apex-primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.church-body--apex .bb-apex-pricing-card__eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-pricing-card__name {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-pricing-card__price {
+  margin: 0 0 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.church-body--apex .bb-apex-pricing-card__price-amount {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-pricing-card__price-suffix {
+  font-size: 1rem;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-pricing-card__desc {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-pricing-card__features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  flex: 1 1 auto;
+}
+
+.church-body--apex .bb-apex-pricing-card__features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-pricing-card__features .material-symbols-outlined {
+  color: var(--bb-apex-primary);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-pricing-card__cta {
+  width: 100%;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.church-body--apex .bb-apex-pricing-card__cta--outline {
+  background: transparent;
+  color: var(--bb-apex-primary);
+  border: 2px solid var(--bb-apex-primary);
+}
+
+.church-body--apex .bb-apex-pricing-card__cta--outline:hover,
+.church-body--apex .bb-apex-pricing-card__cta--outline:focus-visible {
+  background: var(--bb-apex-primary);
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-pricing-card--partner {
+  background: var(--bb-apex-text);
+  border-color: transparent;
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-pricing-card--partner .bb-apex-pricing-card__name,
+.church-body--apex .bb-apex-pricing-card--partner .bb-apex-pricing-card__price-amount {
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-pricing-card--partner .bb-apex-pricing-card__desc,
+.church-body--apex .bb-apex-pricing-card--partner .bb-apex-pricing-card__features li,
+.church-body--apex .bb-apex-pricing-card--partner .bb-apex-pricing-card__eyebrow,
+.church-body--apex .bb-apex-pricing-card--partner .bb-apex-pricing-card__price-suffix {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.church-body--apex .bb-apex-pricing-card--partner .bb-apex-pricing-card__features .material-symbols-outlined {
+  color: #e4dfff;
+}
+
+.church-body--apex .bb-apex-pricing-card__cta--inverse {
+  background: #fff;
+  color: var(--bb-apex-text);
+  border: none;
+}
+
+.church-body--apex .bb-apex-pricing-partner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  max-width: 1280px;
+  margin: 0 auto 48px;
+  border-radius: var(--bb-apex-radius);
+  overflow: hidden;
+  background: var(--bb-apex-text);
+  color: #fff;
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-pricing-partner__copy {
+  padding: 40px;
+}
+
+.church-body--apex .bb-apex-pricing-partner__eyebrow {
+  display: inline-block;
+  margin: 0 0 16px;
+  padding: 4px 12px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: var(--bb-apex-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.church-body--apex .bb-apex-pricing-partner__title {
+  margin: 0 0 16px;
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.church-body--apex .bb-apex-pricing-partner__lead {
+  margin: 0 0 24px;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 32rem;
+}
+
+.church-body--apex .bb-apex-pricing-partner__price {
+  margin: 0 0 24px;
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+.church-body--apex .bb-apex-pricing-partner__cta {
+  background: #fff;
+  color: var(--bb-apex-text);
+  border: none;
+}
+
+.church-body--apex .bb-apex-pricing-partner__features {
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.church-body--apex .bb-apex-pricing-partner__features-title {
+  margin: 0 0 24px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #e4dfff;
+}
+
+.church-body--apex .bb-apex-pricing-partner__feature-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.church-body--apex .bb-apex-pricing-partner__feature-grid li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9375rem;
+}
+
+.church-body--apex .bb-apex-pricing-partner__feature-grid .material-symbols-outlined {
+  color: #e4dfff;
+}
+
+.church-body--apex .bb-apex-pricing-compare {
+  padding: var(--bb-apex-section-pad-mobile) var(--church-margin-mobile);
+  background: #fff;
+}
+
+.church-body--apex .bb-apex-pricing-compare__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.church-body--apex .bb-apex-pricing-compare__header {
+  text-align: center;
+  max-width: 40rem;
+  margin: 0 auto 32px;
+}
+
+.church-body--apex .bb-apex-pricing-compare__title {
+  margin: 0 0 8px;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.church-body--apex .bb-apex-pricing-compare__lead {
+  margin: 0;
+  color: var(--bb-apex-text-secondary);
+  line-height: 1.55;
+}
+
+.church-body--apex .bb-apex-pricing-compare__scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 60%, transparent);
+  border-radius: var(--bb-apex-radius);
+}
+
+.church-body--apex .bb-apex-pricing-compare__table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.church-body--apex .bb-apex-pricing-compare__table th,
+.church-body--apex .bb-apex-pricing-compare__table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--bb-apex-border) 50%, transparent);
+  text-align: left;
+  vertical-align: top;
+}
+
+.church-body--apex .bb-apex-pricing-compare__table thead th {
+  background: var(--bb-apex-surface-dim);
+  font-weight: 700;
+}
+
+.church-body--apex .bb-apex-pricing-compare__table tbody th {
+  font-weight: 600;
+  color: var(--bb-apex-text);
+  background: #fff;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.church-body--apex .bb-apex-pricing-compare__yes {
+  color: var(--bb-apex-primary);
+}
+
+.church-body--apex .bb-apex-pricing-compare__no {
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-pricing-atmosphere {
+  padding: 0 var(--church-margin-mobile) var(--bb-apex-section-pad-mobile);
+}
+
+.church-body--apex .bb-apex-pricing-atmosphere__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  min-height: 320px;
+  border-radius: var(--bb-apex-radius);
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--bb-apex-primary) 70%, transparent), transparent),
+    url("/church/images/homepage/desktop-hero-auditorium.jpg") center / cover no-repeat;
+  display: flex;
+  align-items: center;
+  padding: 48px;
+}
+
+.church-body--apex .bb-apex-pricing-atmosphere__copy {
+  max-width: 32rem;
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-pricing-atmosphere__title {
+  margin: 0 0 12px;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.church-body--apex .bb-apex-pricing-atmosphere__lead {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  opacity: 0.92;
+}
+
+.church-body--apex .bb-apex-pricing-notes {
+  padding: var(--bb-apex-section-pad-mobile) var(--church-margin-mobile);
+  background: var(--bb-apex-surface-dim);
+}
+
+.church-body--apex .bb-apex-pricing-notes__inner {
+  max-width: 48rem;
+  margin: 0 auto;
+  text-align: center;
+  color: var(--bb-apex-text-secondary);
+  line-height: 1.6;
+}
+
+.church-body--apex .bb-apex-pricing-notes__title {
+  margin: 0 0 16px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-pricing-notes a {
+  color: var(--bb-apex-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.church-body--apex .bb-apex-pricing-notes a:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 900px) {
+  .church-body--apex .bb-apex-pricing__tiers {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 32px;
+    align-items: stretch;
+  }
+
+  .church-body--apex .bb-apex-pricing-card--featured {
+    transform: scale(1.03);
+  }
+
+  .church-body--apex .bb-apex-pricing-card:hover:not(.bb-apex-pricing-card--partner) {
+    transform: translateY(-4px);
+  }
+
+  .church-body--apex .bb-apex-pricing-card--featured:hover {
+    transform: scale(1.03) translateY(-4px);
+  }
+
+  .church-body--apex .bb-apex-pricing-partner {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .church-body--apex .bb-apex-pricing-partner__features {
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .church-body--apex .bb-apex-pricing-partner__feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 

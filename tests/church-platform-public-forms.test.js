@@ -117,7 +117,7 @@ test("apex GET /contact and register-church render accessible forms", async () =
     assert.equal(res.status, 200, `${routePath} should render`);
     assert.match(res.text, /method="post"/);
     assert.match(res.text, /company_website/);
-    assert.match(res.text, /church\.css\?v=64/);
+    assert.match(res.text, /church\.css\?v=71/);
   }
   const contact = await request(app).get("/contact");
   assert.match(contact.text, /name="full_name"/);
@@ -126,6 +126,109 @@ test("apex GET /contact and register-church render accessible forms", async () =
   const register = await request(app).get(BLESSBOARD_REGISTER_CHURCH_PATH);
   assert.match(register.text, /name="church_name"/);
   assert.match(register.text, /name="consent_contact"/);
+  assert.match(register.text, /bb-apex-register/);
+  assert.match(register.text, /home-mobile-design/);
+  assert.match(register.text, /home-desktop-design/);
+  assert.match(register.text, /bb-apex-register-form/);
+  assert.match(register.text, /for="register_church_name"/);
+  assert.match(register.text, /for="register_email"/);
+});
+
+test("apex POST register-church validation preserves values and shows field errors", async () => {
+  const app = makeApexApp();
+  const res = await request(app)
+    .post(BLESSBOARD_REGISTER_CHURCH_PATH)
+    .type("form")
+    .send({
+      church_name: "Grace Chapel",
+      city: "Lusaka",
+      country: "Zambia",
+      contact_name: "Pastor John",
+      role_in_church: "Senior Pastor",
+      phone: "+260971234567",
+      message: "We would like BlessBoard for our congregation.",
+      email: "not-an-email",
+      consent_contact: "on",
+    });
+  assert.equal(res.status, 400);
+  assert.match(res.text, /valid email/i);
+  assert.match(res.text, /value="Grace Chapel"/);
+  assert.match(res.text, /value="Pastor John"/);
+  assert.match(res.text, /bb-apex-register-input--error/);
+  assert.match(res.text, /bb-apex-register-field-error/);
+});
+
+test("apex POST register-church requires consent checkbox", async () => {
+  const app = makeApexApp();
+  const res = await request(app)
+    .post(BLESSBOARD_REGISTER_CHURCH_PATH)
+    .type("form")
+    .send({ ...validRegister, consent_contact: "" });
+  assert.equal(res.status, 400);
+  assert.match(res.text, /contact you/i);
+  assert.match(res.text, /name="consent_contact"/);
+});
+
+test("apex POST register-church rejects missing required fields", async () => {
+  const app = makeApexApp();
+  const res = await request(app).post(BLESSBOARD_REGISTER_CHURCH_PATH).type("form").send({});
+  assert.equal(res.status, 400);
+  assert.match(res.text, /church name/i);
+  assert.match(res.text, /bb-apex-register-form/);
+});
+
+test("apex POST register-church honeypot returns success redirect without storing inquiry", async () => {
+  const app = makeApexApp();
+  const res = await request(app)
+    .post(BLESSBOARD_REGISTER_CHURCH_PATH)
+    .type("form")
+    .send({ ...validRegister, company_website: "https://bot.example" });
+  assert.equal(res.status, 303);
+  assert.match(res.headers.location, /submitted=1/);
+});
+
+test("apex POST register-church rate limit returns friendly error page", async () => {
+  const prevMax = process.env.GETPRO_PLATFORM_FORM_RATE_MAX;
+  const prevWindow = process.env.GETPRO_PLATFORM_FORM_RATE_WINDOW_MS;
+  process.env.GETPRO_PLATFORM_FORM_RATE_MAX = "1";
+  process.env.GETPRO_PLATFORM_FORM_RATE_WINDOW_MS = "60000";
+
+  const rateLimitPath = require.resolve("../src/middleware/platformPublicFormRateLimit");
+  delete require.cache[rateLimitPath];
+  const formsPath = require.resolve("../src/routes/church/platformPublicForms");
+  delete require.cache[formsPath];
+  const indexPath = require.resolve("../src/routes/church/index");
+  delete require.cache[indexPath];
+  const freshRoutes = require("../src/routes/church");
+
+  const app = express();
+  app.set("view engine", "ejs");
+  app.set("views", path.join(__dirname, "../views"));
+  app.use(express.urlencoded({ extended: true }));
+  app.use((req, res, next) => {
+    req.isChurchHost = true;
+    req.churchContext = { kind: "vertical-apex", host: "blessboard.com", organization: null, branch: null };
+    next();
+  });
+  app.use(freshRoutes());
+
+  try {
+    const first = await request(app).post(BLESSBOARD_REGISTER_CHURCH_PATH).type("form").send(validRegister);
+    assert.ok(first.status === 303 || first.status === 503, "first submit may redirect or fail without PG");
+
+    const second = await request(app).post(BLESSBOARD_REGISTER_CHURCH_PATH).type("form").send(validRegister);
+    assert.equal(second.status, 429);
+    assert.match(second.text, /Too many submissions/i);
+    assert.match(second.text, /bb-apex-register/);
+  } finally {
+    if (prevMax === undefined) delete process.env.GETPRO_PLATFORM_FORM_RATE_MAX;
+    else process.env.GETPRO_PLATFORM_FORM_RATE_MAX = prevMax;
+    if (prevWindow === undefined) delete process.env.GETPRO_PLATFORM_FORM_RATE_WINDOW_MS;
+    else process.env.GETPRO_PLATFORM_FORM_RATE_WINDOW_MS = prevWindow;
+    delete require.cache[rateLimitPath];
+    delete require.cache[formsPath];
+    delete require.cache[indexPath];
+  }
 });
 
 test("apex POST /contact validation preserves values and shows errors", async () => {

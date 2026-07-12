@@ -9,41 +9,64 @@
   : (church.is_single_branch && church.branch_name
     ? 'Visit ' + church.name + ', ' + church.branch_name
     : 'Select branch for ' + church.name); %>
-<article class="bb-finder__card bb-finder__card--org">
-  <div class="bb-finder__card-body">
-    <div class="bb-finder__logo" aria-hidden="true">
+<article class="bb-finder__card bb-finder__card--org bb-apex-directory-card">
+  <div class="bb-apex-directory-card__top">
+    <div class="bb-finder__logo bb-apex-directory-card__logo" aria-hidden="true">
       <span class="material-symbols-outlined" aria-hidden="true">church</span>
     </div>
-    <div class="bb-finder__card-main">
-      <h2 class="bb-finder__name"><%= church.name %></h2>
-      <% if (church.is_single_branch && church.branch_name) { %>
-      <p class="bb-finder__branch-name"><span class="bb-finder__label">Branch:</span> <%= church.branch_name %></p>
-      <% } else if (church.branch_count_label) { %>
-      <p class="bb-finder__branch-name"><%= church.branch_count_label %></p>
-      <% } %>
-      <% if (church.location_line) { %>
-      <p class="bb-finder__meta"><%= church.location_line %></p>
-      <% } %>
-      <% if (church.short_description) { %>
-      <p class="bb-finder__desc"><%= church.short_description %></p>
-      <% } %>
-      <dl class="bb-finder__facts">
-        <% if (church.service_times_label) { %>
-        <dt>Service times</dt>
-        <dd><%= church.service_times_label %></dd>
-        <% } %>
-        <% if (church.registration_label) { %>
-        <dt>Registration</dt>
-        <dd><%= church.registration_label %></dd>
-        <% } %>
-      </dl>
-    </div>
+    <% if (church.is_single_branch) { %>
+    <span class="bb-apex-directory-card__badge bb-apex-directory-card__badge--single">1 branch</span>
+    <% } else if (church.branch_count_label) { %>
+    <span class="bb-apex-directory-card__badge"><%= church.branch_count_label %></span>
+    <% } %>
   </div>
-  <a
-    class="church-btn church-btn--primary church-btn--pill bb-finder__visit"
-    href="<%= visitHref %>"
-    aria-label="<%= visitAria %>"
-  >
-    <%= intent === 'admin' ? 'Continue' : church.visit_label %>
-  </a>
+  <div class="bb-finder__card-main">
+    <h2 class="bb-finder__name bb-apex-directory-card__name"><%= church.name %></h2>
+    <% if (church.is_single_branch && church.branch_name) { %>
+    <p class="bb-finder__branch-name"><span class="bb-finder__label">Branch:</span> <%= church.branch_name %></p>
+    <% } %>
+    <% if (church.location_line) { %>
+    <p class="bb-apex-directory-card__location bb-finder__meta">
+      <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+      <span><%= church.location_line %></span>
+    </p>
+    <% } %>
+    <% if (church.short_description) { %>
+    <p class="bb-finder__desc bb-apex-directory-card__desc"><%= church.short_description %></p>
+    <% } %>
+    <dl class="bb-finder__facts bb-apex-directory-card__facts home-desktop-design">
+      <% if (church.service_times_label) { %>
+      <dt>Service times</dt>
+      <dd><%= church.service_times_label %></dd>
+      <% } %>
+      <% if (church.registration_label) { %>
+      <dt>Registration</dt>
+      <dd><%= church.registration_label %></dd>
+      <% } %>
+    </dl>
+  </div>
+  <div class="bb-apex-directory-card__actions">
+    <% if (church.service_times_label || church.registration_label) { %>
+    <div class="bb-apex-directory-card__footer home-mobile-design">
+      <% if (church.service_times_label) { %>
+      <div class="bb-apex-directory-card__footer-detail">
+        <p class="bb-apex-directory-card__footer-label">Service times</p>
+        <p class="bb-apex-directory-card__footer-value"><%= church.service_times_label %></p>
+      </div>
+      <% } else if (church.registration_label) { %>
+      <div class="bb-apex-directory-card__footer-detail">
+        <p class="bb-apex-directory-card__footer-label">Registration</p>
+        <p class="bb-apex-directory-card__footer-value"><%= church.registration_label %></p>
+      </div>
+      <% } %>
+    </div>
+    <% } %>
+    <a
+      class="bb-apex-directory-card__cta church-btn church-btn--primary church-btn--pill bb-finder__visit"
+      href="<%= visitHref %>"
+      aria-label="<%= visitAria %>"
+    >
+      <%= intent === 'admin' ? 'Continue' : church.visit_label %>
+    </a>
+  </div>
 </article>

@@ -1,13 +1,69 @@
 <%#
   Compact hero for platform marketing pages.
-  Locals: heroTitle, heroLead
+  Locals: heroTitle, heroLead, heroVariant (optional: apex-center | apex-split),
+          heroImageSrc, heroImageAlt, heroEyebrow
 %>
+<%
+  var variant = typeof heroVariant !== 'undefined' ? heroVariant : '';
+  var eyebrow = typeof heroEyebrow !== 'undefined' && heroEyebrow ? heroEyebrow : 'BlessBoard';
+  var imageSrc = typeof heroImageSrc !== 'undefined' ? heroImageSrc : '';
+  var imageAlt = typeof heroImageAlt !== 'undefined' ? heroImageAlt : '';
+%>
+<% if (variant === 'apex-center') { %>
+<section class="bb-apex-page-hero bb-apex-page-hero--center home-desktop-design" aria-labelledby="platform-page-hero-title">
+  <div class="bb-apex-page-hero__inner">
+    <p class="bb-apex-eyebrow"><%= eyebrow %></p>
+    <h1 class="bb-apex-page-hero__title" id="platform-page-hero-title"><%= heroTitle %></h1>
+    <% if (typeof heroLead !== 'undefined' && heroLead) { %>
+    <p class="bb-apex-page-hero__lead"><%= heroLead %></p>
+    <% } %>
+  </div>
+</section>
+<section class="bb-apex-page-hero bb-apex-page-hero--center bb-apex-page-hero--mobile home-mobile-design" aria-labelledby="platform-page-hero-title-mobile">
+  <div class="bb-apex-page-hero__inner">
+    <p class="bb-apex-eyebrow"><%= eyebrow %></p>
+    <p class="bb-apex-page-hero__title bb-apex-page-hero__title--display" id="platform-page-hero-title-mobile"><%= heroTitle %></p>
+    <% if (typeof heroLead !== 'undefined' && heroLead) { %>
+    <p class="bb-apex-page-hero__lead"><%= heroLead %></p>
+    <% } %>
+  </div>
+</section>
+<% } else if (variant === 'apex-split') { %>
+<section class="bb-apex-page-hero bb-apex-page-hero--split home-desktop-design" aria-labelledby="platform-page-hero-title">
+  <div class="bb-apex-page-hero__inner bb-apex-page-hero__inner--split">
+    <div class="bb-apex-page-hero__copy">
+      <p class="bb-apex-eyebrow"><%= eyebrow %></p>
+      <h1 class="bb-apex-page-hero__title" id="platform-page-hero-title"><%= heroTitle %></h1>
+      <% if (typeof heroLead !== 'undefined' && heroLead) { %>
+      <p class="bb-apex-page-hero__lead"><%= heroLead %></p>
+      <% } %>
+    </div>
+    <% if (imageSrc) { %>
+    <div class="bb-apex-page-hero__visual">
+      <div class="bb-apex-page-hero__frame">
+        <img class="bb-apex-page-hero__img" src="<%= imageSrc %>" alt="<%= imageAlt %>" width="640" height="480" />
+      </div>
+    </div>
+    <% } %>
+  </div>
+</section>
+<section class="bb-apex-page-hero bb-apex-page-hero--center bb-apex-page-hero--mobile home-mobile-design" aria-labelledby="platform-page-hero-title-mobile">
+  <div class="bb-apex-page-hero__inner">
+    <p class="bb-apex-eyebrow"><%= eyebrow %></p>
+    <p class="bb-apex-page-hero__title bb-apex-page-hero__title--display" id="platform-page-hero-title-mobile"><%= heroTitle %></p>
+    <% if (typeof heroLead !== 'undefined' && heroLead) { %>
+    <p class="bb-apex-page-hero__lead"><%= heroLead %></p>
+    <% } %>
+  </div>
+</section>
+<% } else { %>
 <section class="bb-platform-info-hero home-desktop-design">
   <div class="bb-platform-info-hero__inner">
-    <p class="bb-platform-page__eyebrow">BlessBoard</p>
+    <p class="bb-platform-page__eyebrow"><%= eyebrow %></p>
     <h1 class="bb-platform-info-hero__title"><%= heroTitle %></h1>
     <% if (typeof heroLead !== 'undefined' && heroLead) { %>
     <p class="bb-platform-info-hero__lead"><%= heroLead %></p>
     <% } %>
   </div>
 </section>
+<% } %>

@@ -1,49 +1,58 @@
 <%- include('../partials/public_shell_start') %>
 
-<section class="bb-finder bb-finder--branches">
-  <div class="bb-finder__inner">
-    <header class="bb-finder__header">
-      <div class="bb-finder__org">
-        <div class="bb-finder__logo bb-finder__logo--lg" aria-hidden="true">
+<section class="bb-apex-directory bb-finder bb-finder--branches" aria-labelledby="branch-directory-title">
+  <div class="bb-apex-directory__inner bb-finder__inner">
+    <header class="bb-apex-directory__header bb-apex-directory__header--org bb-finder__header">
+      <div class="bb-apex-directory__org bb-finder__org">
+        <div class="bb-finder__logo bb-finder__logo--lg bb-apex-directory-card__logo" aria-hidden="true">
           <span class="material-symbols-outlined" aria-hidden="true">church</span>
         </div>
         <div>
           <p class="bb-finder__eyebrow">Select a branch</p>
-          <h1 class="bb-finder__title"><%= church.name %></h1>
+          <h1 class="bb-apex-directory__title bb-finder__title" id="branch-directory-title"><%= church.name %></h1>
           <% var orgLoc = [church.city, church.country].filter(Boolean); %>
           <% if (orgLoc.length) { %>
-          <p class="bb-finder__meta"><%= orgLoc.join(', ') %></p>
+          <p class="bb-apex-directory__org-meta bb-finder__meta">
+            <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+            <%= orgLoc.join(', ') %>
+          </p>
           <% } %>
           <% if (church.active_branch_count > 1) { %>
-          <p class="bb-finder__meta"><%= church.active_branch_count %> active branches</p>
+          <p class="bb-apex-directory__branch-count bb-finder__meta"><%= church.active_branch_count %> active branches</p>
           <% } %>
         </div>
       </div>
     </header>
 
     <% if (branches.length > 4) { %>
-    <form class="bb-finder__form" method="get" action="/churches/<%= encodeURIComponent(church.slug) %>/branches" role="search">
-      <% if (intent === 'admin') { %>
-      <input type="hidden" name="for" value="admin"/>
-      <% } %>
-      <label class="bb-finder__label" for="branch-search-q">Filter branches</label>
-      <div class="bb-finder__row">
-        <input
-          id="branch-search-q"
-          class="bb-finder__input"
-          type="search"
-          name="q"
-          value="<%= branchFilter || '' %>"
-          placeholder="Branch name, town, or slug"
-          maxlength="80"
-        />
-        <button type="submit" class="church-btn church-btn--primary church-btn--pill">Filter</button>
-      </div>
-    </form>
+    <div class="bb-apex-directory__search-card">
+      <form class="bb-apex-directory__form bb-finder__form" method="get" action="/churches/<%= encodeURIComponent(church.slug) %>/branches" role="search">
+        <% if (intent === 'admin') { %>
+        <input type="hidden" name="for" value="admin"/>
+        <% } %>
+        <label class="bb-finder__label visually-hidden" for="branch-search-q">Filter branches</label>
+        <div class="bb-apex-directory__search-field">
+          <span class="material-symbols-outlined bb-apex-directory__search-icon" aria-hidden="true">search</span>
+          <input
+            id="branch-search-q"
+            class="bb-apex-directory__input bb-finder__input"
+            type="search"
+            name="q"
+            value="<%= branchFilter || '' %>"
+            placeholder="Branch name, town, or slug"
+            maxlength="80"
+          />
+        </div>
+        <button type="submit" class="bb-apex-directory__submit church-btn church-btn--primary church-btn--pill">Filter</button>
+      </form>
+    </div>
     <% } %>
 
     <% if (!branches.length) { %>
-    <div class="bb-finder__empty" role="status">
+    <div class="bb-apex-directory__empty bb-finder__empty" role="status">
+      <div class="bb-apex-directory__empty-icon" aria-hidden="true">
+        <span class="material-symbols-outlined">search_off</span>
+      </div>
       <h2>No branches matched your filter</h2>
       <p>Try a different branch name, town, or slug.</p>
       <div class="bb-finder__empty-actions">
@@ -51,7 +60,7 @@
       </div>
     </div>
     <% } else { %>
-    <div class="bb-finder__list" role="list">
+    <div class="bb-apex-directory__list bb-finder__list" role="list">
       <% branches.forEach(function (branch) { %>
       <div role="listitem">
         <%- include('../partials/finder_branch_card', { branch: branch, church: church, intent: intent }) %>
@@ -60,7 +69,7 @@
     </div>
     <% } %>
 
-    <p class="bb-finder__back">
+    <p class="bb-apex-directory__back bb-finder__back">
       <a href="/churches<%= intent === 'admin' ? '?for=admin' : '' %>">Choose another church</a>
     </p>
   </div>

@@ -124,7 +124,7 @@ test("Powered by is gray and GetPro is orange in shared markup and CSS tokens", 
 
   const fs = require("fs");
   const css = fs.readFileSync(path.join(__dirname, "../public/church/church.css"), "utf8");
-  assert.match(css, /--church-getpro-orange:\s*#f59e0b/);
+  assert.match(css, /--church-getpro-orange:\s*#ff9800/);
   assert.match(css, /\.bb-powered-by__label\s*\{[^}]*color:\s*var\(--church-powered-by-gray\)/s);
   assert.match(css, /\.bb-powered-by__getpro\s*\{[^}]*color:\s*var\(--church-getpro-orange\)/s);
 });
@@ -220,12 +220,17 @@ test(
     const hit = await request(app).get(`/churches?q=${encodeURIComponent(org.name)}`);
     assert.equal(hit.status, 200);
     assert.match(hit.text, /Find Your Church/);
+    assert.match(hit.text, /bb-apex-directory/);
+    assert.match(hit.text, /home-desktop-design/);
+    assert.match(hit.text, /home-mobile-design/);
+    assert.match(hit.text, /bb-apex-directory__search-card/);
     assert.match(hit.text, new RegExp(org.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(hit.text, /Visit Church|Select branch/);
 
     const miss = await request(app).get("/churches?q=zzznomatchchurch999");
     assert.equal(miss.status, 200);
     assert.match(miss.text, /No churches matched your search/);
+    assert.match(miss.text, /search_off/);
   }
 );
 
@@ -483,11 +488,20 @@ test(
     assert.match(bySlug.text, /aria-label="Visit Card Church/);
     assert.match(bySlug.text, /bb-finder__visit/);
     assert.match(bySlug.text, /bb-finder__card-main/);
+    assert.match(bySlug.text, /bb-apex-directory-card__logo/);
+    assert.match(bySlug.text, /material-symbols-outlined/);
+    assert.doesNotMatch(bySlug.text, /<img[^>]+bb-apex-directory/);
+    assert.doesNotMatch(bySlug.text, /favorite|star|Featured|NON-DENOMINATIONAL/i);
   }
 );
 
+test("church directory CSS prevents horizontal overflow on mobile", () => {
+  const fs = require("fs");
+  const css = fs.readFileSync(path.join(__dirname, "../public/church/church.css"), "utf8");
+  assert.match(css, /\.church-body--apex \.bb-apex-directory\s*\{[^}]*overflow-x:\s*clip/s);
+});
+
 test(
-  "suspended organizations and inactive branches stay out of directory cards",
   churchPgSkipIfUnconfigured(),
   async (t) => {
     const pool = await requireChurchPgOrSkip(t);

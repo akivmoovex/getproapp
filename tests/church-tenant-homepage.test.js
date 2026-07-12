@@ -135,7 +135,7 @@ test("powered-by GetPro branding colors remain in shared CSS", () => {
 test("apex homepage remains church finder and is not tenant homepage", async () => {
   const res = await request(makeApexApp()).get("/");
   assert.equal(res.status, 200);
-  assert.match(res.text, /bb-saas-hero/);
+  assert.match(res.text, /bb-apex-hero/);
   assert.match(res.text, /Find Your Church/);
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
   assert.doesNotMatch(res.text, /data-tenant-home="1"/);

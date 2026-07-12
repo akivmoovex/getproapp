@@ -1,73 +1,112 @@
 <%- include('../partials/public_shell_start') %>
 
 <%- include('../partials/platform_info_hero', {
-  heroTitle: 'Plans for every stage of your church',
-  heroLead: typeof pricingOnboardingNote !== 'undefined' ? pricingOnboardingNote : 'BlessBoard is currently onboarding selected churches. Contact the BlessBoard team to discuss access and setup.'
+  heroVariant: 'apex-center',
+  heroEyebrow: 'Transparent Pricing',
+  heroTitle: 'Simple plans for every stage of church growth',
+  heroLead: 'Start free, grow across branches, build a professional digital presence, or combine BlessBoard technology with managed services.'
 }) %>
 
-<section class="bb-platform-pricing-plans home-desktop-design" aria-labelledby="pricing-plans-title">
-  <div class="bb-platform-pricing-plans__inner">
-    <div class="bb-platform-pricing-plans__header">
-      <h2 class="bb-platform-section__title" id="pricing-plans-title">Choose the right fit</h2>
-      <p class="bb-platform-section__subtitle">Plans and available services may vary according to church size, branch structure, and setup requirements.</p>
-    </div>
-    <div class="bb-platform-pricing-plans__grid">
-      <% (typeof pricingPlans !== 'undefined' ? pricingPlans : []).forEach(function (plan) { %>
-      <article class="bb-platform-pricing-card<%= plan.featured ? ' bb-platform-pricing-card--featured' : '' %>">
-        <% if (plan.featured) { %>
-        <p class="bb-platform-pricing-card__badge">Most churches start here</p>
-        <% } %>
-        <h3 class="bb-platform-pricing-card__name"><%= plan.label %></h3>
-        <p class="bb-platform-pricing-card__desc"><%= plan.description %></p>
-        <p class="bb-platform-pricing-card__price">
-          <span class="bb-platform-pricing-card__price-label">Pricing</span>
-          <span class="bb-platform-pricing-card__price-value">Contact for access</span>
-        </p>
-        <ul class="bb-platform-pricing-card__limits">
-          <li><span class="material-symbols-outlined" aria-hidden="true">account_tree</span><%= plan.branchesLabel %></li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">groups</span><%= plan.membersLabel %></li>
-        </ul>
-        <ul class="bb-saas-bento__checks bb-platform-pricing-card__features">
-          <% plan.highlights.forEach(function (feature) { %>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><%= feature %></li>
-          <% }); %>
-        </ul>
-        <a
-          class="church-btn church-btn--pill bb-platform-pricing-card__cta<%= plan.featured ? ' church-btn--primary' : ' church-btn--outline' %>"
-          href="/contact"
-        >Discuss this plan</a>
-      </article>
-      <% }); %>
-    </div>
+<p class="bb-apex-pricing__staff-note" role="note">
+  <span class="material-symbols-outlined" aria-hidden="true">info</span>
+  <span><%= typeof staffBillingNote !== 'undefined' ? staffBillingNote : 'Ordinary church-member accounts are not billed as staff or administrator accounts.' %></span>
+</p>
+
+<% var tiers = typeof pricingPlans !== 'undefined' ? pricingPlans : []; %>
+<% var partner = typeof partnerPlan !== 'undefined' ? partnerPlan : null; %>
+<% var compareRows = typeof pricingComparisonRows !== 'undefined' ? pricingComparisonRows : []; %>
+<% var planColumns = partner ? tiers.concat([partner]) : tiers; %>
+
+<section class="bb-apex-pricing" aria-labelledby="pricing-plans-title">
+  <h2 class="visually-hidden" id="pricing-plans-title">BlessBoard pricing plans</h2>
+
+  <div class="bb-apex-pricing__tiers home-desktop-design">
+    <% tiers.forEach(function (plan) { %>
+    <%- include('../partials/platform_pricing_card', { plan: plan }) %>
+    <% }); %>
   </div>
+
+  <div class="bb-apex-pricing__tiers bb-apex-pricing__tiers--mobile home-mobile-design">
+    <% tiers.forEach(function (plan) { %>
+    <%- include('../partials/platform_pricing_card', { plan: plan }) %>
+    <% }); %>
+    <% if (partner) { %>
+    <article class="bb-apex-pricing-card bb-apex-pricing-card--partner">
+      <div class="bb-apex-pricing-card__head">
+        <p class="bb-apex-pricing-card__eyebrow"><%= partner.eyebrow %></p>
+        <h2 class="bb-apex-pricing-card__name"><%= partner.label %></h2>
+        <p class="bb-apex-pricing-card__price">
+          <span class="bb-apex-pricing-card__price-amount"><%= partner.priceDisplay %></span>
+        </p>
+        <p class="bb-apex-pricing-card__desc"><%= partner.description %></p>
+      </div>
+      <ul class="bb-apex-pricing-card__features">
+        <% partner.features.forEach(function (feature) { %>
+        <li>
+          <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+          <span><%= feature %></span>
+        </li>
+        <% }); %>
+      </ul>
+      <a class="church-btn church-btn--pill bb-apex-pricing-card__cta bb-apex-pricing-card__cta--inverse" href="<%= partner.ctaHref %>"><%= partner.ctaLabel %></a>
+    </article>
+    <% } %>
+  </div>
+
+  <% if (partner) { %>
+  <article class="bb-apex-pricing-partner home-desktop-design" aria-labelledby="pricing-partner-title">
+    <div class="bb-apex-pricing-partner__copy">
+      <p class="bb-apex-pricing-partner__eyebrow"><%= partner.eyebrow %></p>
+      <h2 class="bb-apex-pricing-partner__title" id="pricing-partner-title"><%= partner.label %></h2>
+      <p class="bb-apex-pricing-partner__lead"><%= partner.description %></p>
+      <p class="bb-apex-pricing-partner__price"><%= partner.priceDisplay %></p>
+      <a class="church-btn church-btn--pill bb-apex-pricing-partner__cta" href="<%= partner.ctaHref %>"><%= partner.ctaLabel %></a>
+    </div>
+    <div class="bb-apex-pricing-partner__features">
+      <h3 class="bb-apex-pricing-partner__features-title">Included in Partner</h3>
+      <ul class="bb-apex-pricing-partner__feature-grid">
+        <% partner.features.forEach(function (feature) { %>
+        <li>
+          <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+          <span><%= feature %></span>
+        </li>
+        <% }); %>
+      </ul>
+    </div>
+  </article>
+  <% } %>
 </section>
 
-<section class="bb-platform-pricing-compare home-desktop-design" aria-labelledby="pricing-compare-title">
-  <div class="bb-platform-pricing-compare__inner">
-    <h2 class="bb-platform-section__title" id="pricing-compare-title">Compare plans</h2>
-    <p class="bb-platform-section__subtitle">See which capabilities are included at each level.</p>
-    <div class="bb-platform-pricing-compare__scroll">
-      <table class="bb-platform-pricing-compare__table">
+<section class="bb-apex-pricing-compare home-desktop-design" aria-labelledby="pricing-compare-title">
+  <div class="bb-apex-pricing-compare__inner">
+    <header class="bb-apex-pricing-compare__header">
+      <h2 class="bb-apex-pricing-compare__title" id="pricing-compare-title">Compare plans</h2>
+      <p class="bb-apex-pricing-compare__lead">See capacity, reporting, and branding options at each level.</p>
+    </header>
+    <div class="bb-apex-pricing-compare__scroll">
+      <table class="bb-apex-pricing-compare__table">
         <thead>
           <tr>
             <th scope="col">Feature</th>
-            <% (typeof pricingPlans !== 'undefined' ? pricingPlans : []).forEach(function (plan) { %>
+            <% planColumns.forEach(function (plan) { %>
             <th scope="col"><%= plan.label %></th>
             <% }); %>
           </tr>
         </thead>
         <tbody>
-          <% (typeof pricingComparisonRows !== 'undefined' ? pricingComparisonRows : []).forEach(function (row) { %>
+          <% compareRows.forEach(function (row) { %>
           <tr>
             <th scope="row"><%= row.label %></th>
-            <% (typeof pricingPlans !== 'undefined' ? pricingPlans : []).forEach(function (plan) { %>
+            <% planColumns.forEach(function (plan) { %>
             <td>
-              <% if (row.plans[plan.code]) { %>
-              <span class="bb-platform-pricing-compare__yes" aria-label="Included">
+              <% if (row.type === 'text') { %>
+              <%= row.values[plan.code] %>
+              <% } else if (row.values[plan.code]) { %>
+              <span class="bb-apex-pricing-compare__yes" aria-label="Included">
                 <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
               </span>
               <% } else { %>
-              <span class="bb-platform-pricing-compare__no" aria-label="Not included">—</span>
+              <span class="bb-apex-pricing-compare__no" aria-label="Not included">—</span>
               <% } %>
             </td>
             <% }); %>
@@ -79,15 +118,26 @@
   </div>
 </section>
 
-<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="pricing-onboarding">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="pricing-onboarding">Onboarding</h2>
+<section class="bb-apex-pricing-atmosphere home-desktop-design" aria-labelledby="pricing-atmosphere-title">
+  <div class="bb-apex-pricing-atmosphere__inner">
+    <div class="bb-apex-pricing-atmosphere__copy">
+      <h2 class="bb-apex-pricing-atmosphere__title" id="pricing-atmosphere-title">Focus on your mission, let us handle the bits and bytes.</h2>
+      <p class="bb-apex-pricing-atmosphere__lead">Our pricing is designed to scale as your ministry grows, ensuring you only pay for the management resources you actually use.</p>
+    </div>
+  </div>
+</section>
+
+<section class="bb-apex-pricing-notes" aria-labelledby="pricing-onboarding">
+  <div class="bb-apex-pricing-notes__inner">
+    <h2 class="bb-apex-pricing-notes__title" id="pricing-onboarding">Onboarding &amp; third-party costs</h2>
     <p><%= typeof pricingOnboardingNote !== 'undefined' ? pricingOnboardingNote : '' %></p>
+    <p><%= typeof thirdPartyCostsNote !== 'undefined' ? thirdPartyCostsNote : '' %></p>
     <p>Questions about plans or multi-branch setup? Read the <a href="/faq">FAQ</a> or <a href="/contact">contact the BlessBoard team</a>.</p>
   </div>
 </section>
 
 <%- include('../partials/platform_info_cta', {
+  ctaVariant: 'apex-band',
   ctaTitle: 'Ready to discuss BlessBoard for your church?',
   ctaLead: 'Tell us about your congregation and branch structure to begin onboarding.',
   primaryHref: registerChurchPath,
