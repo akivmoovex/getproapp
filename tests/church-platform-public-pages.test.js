@@ -65,7 +65,7 @@ test("apex platform static pages render with shared shell", async () => {
   for (const page of PLATFORM_PAGES) {
     const res = await request(app).get(page.path);
     assert.equal(res.status, 200, `${page.path} should render`);
-    assert.match(res.text, /church\.css\?v=62/, `${page.path} should load public CSS`);
+    assert.match(res.text, /church\.css\?v=63/, `${page.path} should load public CSS`);
     assert.match(res.text, /church-body--apex/, `${page.path} should use apex body`);
     assert.match(res.text, new RegExp(page.title), `${page.path} should include heading`);
     if (page.sections) {
@@ -181,13 +181,16 @@ test("apex header and footer navigation links to dedicated pages", async () => {
   assert.doesNotMatch(res.text, /href="\/#features"/);
 });
 
-test("apex desktop nav includes Multi-Branch link", async () => {
+test("apex desktop nav includes Solutions dropdown with Multi-Branch link", async () => {
   const app = makeApexApp();
   const res = await request(app).get("/");
   const navMatch = res.text.match(/<nav class="church-nav church-nav--apex"[^>]*>([\s\S]*?)<\/nav>/);
   assert.ok(navMatch);
   assert.match(navMatch[1], /href="\/features"[^>]*>Features</);
-  assert.match(navMatch[1], /href="\/multi-branch"[^>]*>Multi-Branch</);
+  assert.match(navMatch[1], /Solutions/);
+  assert.match(navMatch[1], /href="\/multi-branch"/);
+  assert.match(navMatch[1], /href="\/for-churches"/);
+  assert.doesNotMatch(navMatch[1], />Home</);
 });
 
 test("branch /about and /contact remain tenant pages on branch host", async () => {

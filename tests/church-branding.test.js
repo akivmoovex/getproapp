@@ -78,7 +78,7 @@ test("apex homepage promotes Find Your Church, not tenant member login as primar
   const app = makeVerticalApexApp();
   const res = await request(app).get("/");
   assert.match(res.text, /Find Your Church/);
-  assert.match(res.text, /Church Administrator Login/);
+  assert.match(res.text, /Church Admin Login|Church Administrator Login/);
   assert.doesNotMatch(res.text, /Start Free Trial|Get Started Free|View Demo/);
   assert.doesNotMatch(res.text, /https:\/\/demo\.blessboard\.com\/login/);
   assert.doesNotMatch(res.text, /https:\/\/demo\.blessboard\.com\/register/);

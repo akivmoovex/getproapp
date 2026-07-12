@@ -94,5 +94,89 @@
       });
     })();
   </script>
+  <% if (isVerticalApex) { %>
+  <script>
+    (function () {
+      var dropdowns = document.querySelectorAll(".church-body--apex [data-nav-dropdown]");
+      if (!dropdowns.length) return;
+
+      dropdowns.forEach(function (dropdown) {
+        var trigger = dropdown.querySelector(".church-nav-dropdown__trigger");
+        var menu = dropdown.querySelector(".church-nav-dropdown__menu");
+        if (!trigger || !menu) return;
+
+        function menuItems() {
+          return Array.prototype.slice.call(menu.querySelectorAll('[role="menuitem"]'));
+        }
+
+        function openMenu() {
+          dropdown.classList.add("is-open");
+          trigger.setAttribute("aria-expanded", "true");
+          menu.removeAttribute("hidden");
+        }
+
+        function closeMenu() {
+          dropdown.classList.remove("is-open");
+          trigger.setAttribute("aria-expanded", "false");
+          menu.setAttribute("hidden", "");
+        }
+
+        function isOpen() {
+          return dropdown.classList.contains("is-open");
+        }
+
+        trigger.addEventListener("click", function () {
+          if (isOpen()) closeMenu();
+          else openMenu();
+        });
+
+        trigger.addEventListener("keydown", function (e) {
+          if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openMenu();
+            var first = menuItems()[0];
+            if (first) first.focus();
+          }
+          if (e.key === "Escape") {
+            closeMenu();
+          }
+        });
+
+        menu.addEventListener("keydown", function (e) {
+          var items = menuItems();
+          var index = items.indexOf(document.activeElement);
+          if (e.key === "Escape") {
+            e.preventDefault();
+            closeMenu();
+            trigger.focus();
+          }
+          if (e.key === "ArrowDown" && index < items.length - 1) {
+            e.preventDefault();
+            items[index + 1].focus();
+          }
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            if (index <= 0) {
+              closeMenu();
+              trigger.focus();
+            } else {
+              items[index - 1].focus();
+            }
+          }
+        });
+
+        dropdown.addEventListener("focusout", function (e) {
+          var next = e.relatedTarget;
+          if (next && dropdown.contains(next)) return;
+          closeMenu();
+        });
+
+        document.addEventListener("click", function (e) {
+          if (!dropdown.contains(e.target)) closeMenu();
+        });
+      });
+    })();
+  </script>
+  <% } %>
 </body>
 </html>

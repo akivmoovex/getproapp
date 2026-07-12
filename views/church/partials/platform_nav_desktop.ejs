@@ -1,0 +1,37 @@
+<%#
+  BlessBoard apex desktop primary navigation (≥900px).
+  Locals: activePage
+%>
+<%
+  var _active = typeof activePage !== 'undefined' ? activePage : '';
+  var _featuresClass = _active === 'features' ? ' church-nav__active' : '';
+  var _solutionsActive = _active === 'for-churches' || _active === 'multi-branch';
+  var _forChurchesClass = _active === 'for-churches' ? ' church-nav-dropdown__link--active' : '';
+  var _multiBranchClass = _active === 'multi-branch' ? ' church-nav-dropdown__link--active' : '';
+  var _churchesClass = _active === 'churches' ? ' church-nav__active' : '';
+  var _aboutClass = _active === 'about' ? ' church-nav__active' : '';
+%>
+<a href="/features" class="<%= _featuresClass.trim() %>">Features</a>
+<div class="church-nav-dropdown<%= _solutionsActive ? ' church-nav-dropdown--section-active' : '' %>" data-nav-dropdown>
+  <button
+    type="button"
+    class="church-nav-dropdown__trigger<%= _solutionsActive ? ' church-nav__active' : '' %>"
+    aria-expanded="false"
+    aria-haspopup="true"
+    aria-controls="platform-solutions-menu"
+    id="platform-solutions-trigger"
+  >
+    Solutions
+    <span class="material-symbols-outlined church-nav-dropdown__chevron" aria-hidden="true">expand_more</span>
+  </button>
+  <ul class="church-nav-dropdown__menu" id="platform-solutions-menu" role="menu" aria-labelledby="platform-solutions-trigger" hidden>
+    <li role="none">
+      <a role="menuitem" href="/for-churches" class="<%= _forChurchesClass.trim() %>">For Churches</a>
+    </li>
+    <li role="none">
+      <a role="menuitem" href="/multi-branch" class="<%= _multiBranchClass.trim() %>">Multi-Branch Churches</a>
+    </li>
+  </ul>
+</div>
+<a href="/churches" class="<%= _churchesClass.trim() %>">Find a Church</a>
+<a href="/about" class="<%= _aboutClass.trim() %>">About</a>

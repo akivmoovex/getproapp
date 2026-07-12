@@ -109,7 +109,7 @@ test("apex marketing pages include unique SEO metadata", async () => {
   for (const page of MARKETING_PAGES) {
     const res = await request(app).get(page.path);
     assert.equal(res.status, 200, `${page.path} should render`);
-    assert.match(res.text, /church\.css\?v=62/, `${page.path} should load public CSS v62`);
+    assert.match(res.text, /church\.css\?v=63/, `${page.path} should load public CSS v63`);
 
     const config = PLATFORM_PUBLIC_SEO[page.key];
     assert.match(res.text, new RegExp(`<link rel="canonical" href="${config.path === "/" ? "https://blessboard.com/" : `https://blessboard.com${config.path}`}"`), `${page.path} canonical`);

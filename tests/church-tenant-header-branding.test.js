@@ -123,7 +123,7 @@ test("apex header remains BlessBoard-branded with Find Your Church", async () =>
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
   assert.match(res.text, /brand-name/);
   assert.match(res.text, /Find Your Church/);
-  assert.match(res.text, /Church Administrator Login/);
+  assert.match(res.text, /Church Admin Login|Church Administrator Login/);
   assert.doesNotMatch(res.text, /data-tenant-header="1"/);
   assert.doesNotMatch(res.text, /data-tenant-brand="1"/);
 });

@@ -1,0 +1,20 @@
+<%#
+  BlessBoard apex mobile drawer navigation (<900px).
+  Locals: activePage
+%>
+<%
+  var _active = typeof activePage !== 'undefined' ? activePage : '';
+  function _drawerClass(key) {
+    return _active === key ? ' church-drawer__link--active' : '';
+  }
+%>
+<a href="/" class="<%= _drawerClass('home').trim() %>">Home</a>
+<a href="/features" class="<%= _drawerClass('features').trim() %>">Features</a>
+<a href="/for-churches" class="<%= _drawerClass('for-churches').trim() %>">For Churches</a>
+<a href="/multi-branch" class="<%= _drawerClass('multi-branch').trim() %>">Multi-Branch Churches</a>
+<a href="/churches" class="<%= _drawerClass('churches').trim() %>">Find a Church</a>
+<a href="/about" class="<%= _drawerClass('about').trim() %>">About</a>
+<a href="/contact" class="<%= _drawerClass('contact').trim() %>">Contact</a>
+<a href="/demo" class="<%= _drawerClass('demo').trim() %>">Demo</a>
+<a href="/faq" class="<%= _drawerClass('faq').trim() %>">FAQ</a>
+<a href="/churches?for=admin">Church Administrator Login</a>
