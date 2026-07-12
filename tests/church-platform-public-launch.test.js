@@ -65,17 +65,14 @@ test("approved Zambia launch positioning appears on about page", async () => {
   assert.doesNotMatch(res.text, /Zambia-only|only in Zambia|only for Zambia/i);
 });
 
-test("approved onboarding wording appears on register and for-churches pages", async () => {
+test("approved onboarding wording appears on register page", async () => {
   const app = makeApexApp();
   const register = await request(app).get("/register-church");
-  const forChurches = await request(app).get("/for-churches");
-  for (const res of [register, forChurches]) {
-    assert.match(
-      res.text,
-      /BlessBoard is currently onboarding selected churches/i
-    );
-    assert.match(res.text, /Contact the BlessBoard team to discuss access/i);
-  }
+  assert.match(
+    register.text,
+    /BlessBoard is currently onboarding selected churches/i
+  );
+  assert.match(register.text, /Contact the BlessBoard team to discuss access/i);
 });
 
 test("public pages do not claim free plan or Start Free", async () => {

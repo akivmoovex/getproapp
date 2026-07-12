@@ -3,17 +3,22 @@
   var _compact = typeof compact !== 'undefined' && compact;
   var _showIcon = typeof showIcon === 'undefined' ? true : !!showIcon;
   var _asDiv = typeof asDiv !== 'undefined' && asDiv;
+  var _useApexLogo = typeof useApexLogo !== 'undefined' && useApexLogo;
 %>
 <% if (!_asDiv) { %>
 <a class="church-brand<% if (_compact) { %> church-brand--compact<% } %>" href="<%= _href %>">
-  <% if (_showIcon) { %>
+  <% if (_useApexLogo) { %>
+  <img class="church-brand__apex-logo" src="/church/images/brand/blessboard-church-logo.png" alt="BlessBoard, powered by GetPro" width="437" height="148"/>
+  <% } else if (_showIcon) { %>
   <span class="material-symbols-outlined church-brand__icon" aria-hidden="true">church</span>
   <% } %>
 <% } %>
+  <% if (!_useApexLogo) { %>
   <div class="brand-lockup<% if (_compact) { %> brand-lockup--compact<% } %>">
     <div class="brand-name">BlessBoard</div>
     <div class="brand-powered"><%- include('./powered_by_getpro') %></div>
   </div>
+  <% } %>
 <% if (!_asDiv) { %>
 </a>
 <% } %>

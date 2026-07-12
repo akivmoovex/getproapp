@@ -49,7 +49,7 @@ function makeBranchApp() {
 const PLATFORM_PAGES = [
   { path: "/about", title: "About BlessBoard", sections: ["What BlessBoard is", "Why BlessBoard exists", "Who it serves", "How BlessBoard and GetPro are related", "Our approach"], active: "about" },
   { path: "/contact", title: "Contact BlessBoard", active: "contact", hasForm: true },
-  { path: "/for-churches", title: "BlessBoard for your church", active: "for-churches" },
+  { path: "/for-churches", title: "Empowering your congregation with", active: "for-churches" },
   { path: "/multi-branch", title: "One platform for every branch", active: "multi-branch" },
   { path: BLESSBOARD_REGISTER_CHURCH_PATH, title: "Register Your Church", active: "register-church", hasForm: true },
   { path: "/privacy", title: "Privacy Policy", active: "privacy" },
@@ -66,7 +66,7 @@ test("apex platform static pages render with shared shell", async () => {
   for (const page of PLATFORM_PAGES) {
     const res = await request(app).get(page.path);
     assert.equal(res.status, 200, `${page.path} should render`);
-    assert.match(res.text, /church\.css\?v=72/, `${page.path} should load public CSS`);
+    assert.match(res.text, /church\.css\?v=75/, `${page.path} should load public CSS`);
     assert.match(res.text, /church-body--apex/, `${page.path} should use apex body`);
     assert.match(res.text, new RegExp(page.title), `${page.path} should include heading`);
     if (page.sections) {
@@ -140,21 +140,39 @@ test("apex /features Member section is a desktop 2x2 grid and mobile is stacked"
   assert.match(css, /@media \(max-width:\s*899px\)[\s\S]*?\.church-body--apex \.bb-apex-features-member-grid\s*\{[^}]*grid-template-columns:\s*1fr/s);
 });
 
-test("apex /for-churches page renders leader-focused sections", async () => {
+test("apex /for-churches page renders Stitch desktop and mobile sections", async () => {
   const app = makeApexApp();
   const res = await request(app).get("/for-churches");
   assert.equal(res.status, 200);
-  assert.match(res.text, /Common challenges churches face/);
-  assert.match(res.text, /How BlessBoard helps/);
-  assert.match(res.text, /What a church receives/);
-  assert.match(res.text, /Typical onboarding steps/);
-  assert.match(res.text, /What church administrators can manage/);
-  assert.match(res.text, /Request BlessBoard for your church/);
+  assert.match(res.text, /Empowering your congregation with/);
+  assert.match(res.text, /Sacred Clarity/);
+  assert.match(res.text, /The Burden of Fragmentation/);
+  assert.match(res.text, /Disconnected Tools/);
+  assert.match(res.text, /A Unified Ministry Heartbeat/);
+  assert.match(res.text, /Centralized Command/);
+  assert.match(res.text, /The Complete Ministry Toolkit/);
+  assert.match(res.text, /Public Member Site/);
+  assert.match(res.text, /Launching Your New Board/);
+  assert.match(res.text, /Sync Your Records/);
+  assert.match(res.text, /Excellence in Stewardship/);
+  assert.match(res.text, /Attendance Insights/);
+  assert.match(res.text, /Ready to transform your church's/);
+  assert.match(res.text, /digital stewardship/);
+  assert.match(res.text, /Steward your ministry with clarity/);
+  assert.match(res.text, /Tools for every touchpoint/);
+  assert.match(res.text, /Community Connect/);
+  assert.match(res.text, /Real-time Analytics/);
+  assert.match(res.text, /Faithful Management/);
+  assert.match(res.text, /Ready to grow your community/);
   assert.match(res.text, /href="\/features"/);
-  assert.match(res.text, /bb-apex-page-challenges/);
-  assert.match(res.text, /bb-apex-page-toolkit/);
+  assert.match(res.text, /href="\/register-church"/);
+  assert.match(res.text, /bb-apex-for-churches-hero/);
+  assert.match(res.text, /bb-apex-for-churches-challenges/);
+  assert.match(res.text, /bb-apex-for-churches-toolkit/);
+  assert.match(res.text, /bb-apex-for-churches-mobile-bento/);
   assert.match(res.text, /home-desktop-design/);
   assert.match(res.text, /home-mobile-design/);
+  assert.doesNotMatch(res.text, /Pastor Sarah Jenkins|500 churches|Join over 500|End-to-end encryption|industry-leading security/i);
 });
 
 test("apex /multi-branch page renders HQ-focused sections", async () => {

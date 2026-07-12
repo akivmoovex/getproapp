@@ -14721,6 +14721,18 @@ html:has(> body.church-body--apex) {
   padding-left: var(--church-margin-desktop);
   padding-right: var(--church-margin-desktop);
   gap: 24px;
+  white-space: nowrap;
+}
+
+.church-body--apex .church-header--apex .brand-lockup,
+.church-body--apex .church-header--apex .brand-powered,
+.church-body--apex .church-header--apex .bb-powered-by {
+  white-space: nowrap;
+}
+
+.church-body--apex .church-header--apex .church-nav--apex,
+.church-body--apex .church-header--apex .church-header__actions {
+  flex-wrap: nowrap;
 }
 
 .church-body--apex .brand-name {
@@ -14737,6 +14749,14 @@ html:has(> body.church-body--apex) {
 .church-body--apex .church-brand {
   max-width: min(240px, 42vw);
   gap: 10px;
+}
+
+.church-body--apex .church-brand__apex-logo {
+  display: block;
+  width: 180px;
+  height: auto;
+  max-width: none;
+  flex-shrink: 0;
 }
 
 .church-body--apex .church-brand__icon {
@@ -14762,12 +14782,14 @@ html:has(> body.church-body--apex) {
 
 .church-body--apex .church-header__admin-link {
   font-size: 0.875rem;
-  color: var(--bb-apex-text-secondary);
+  color: #6C5CE7;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .church-body--apex .church-header__admin-link:hover,
 .church-body--apex .church-header__admin-link:focus-visible {
-  color: var(--bb-apex-primary);
+  color: #5341cd;
+  background: rgba(108, 92, 231, 0.08);
   outline: 2px solid var(--bb-apex-primary);
   outline-offset: 2px;
 }
@@ -15406,6 +15428,19 @@ html:has(> body.church-body--apex) {
     max-width: calc(100% - 52px);
   }
 
+  .church-body--apex .church-header--apex .church-brand {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .church-body--apex .church-header--apex .church-brand__apex-logo {
+    width: 164px;
+  }
+
+  .church-body--apex .church-header--apex .brand-lockup {
+    flex: 0 1 auto;
+  }
+
   .church-body--apex .brand-name {
     font-size: 1.25rem;
   }
@@ -15418,6 +15453,7 @@ html:has(> body.church-body--apex) {
     width: 44px;
     height: 44px;
     flex-shrink: 0;
+    margin-left: auto;
   }
 
   .church-body--apex .bb-apex-hero--mobile {
@@ -15608,6 +15644,28 @@ html:has(> body.church-body--apex) {
 
   .church-body--apex .church-footer__col--support {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 379px) {
+  .church-body--apex .church-header--apex .church-header__inner {
+    gap: 8px;
+  }
+
+  .church-body--apex .church-header--apex .church-brand {
+    gap: 7px;
+  }
+
+  .church-body--apex .church-header--apex .church-brand__apex-logo {
+    width: 150px;
+  }
+
+  .church-body--apex .church-header--apex .brand-name {
+    font-size: 1.125rem;
+  }
+
+  .church-body--apex .church-header--apex .brand-powered {
+    font-size: 0.59375rem;
   }
 }
 
@@ -16550,6 +16608,673 @@ html:has(> body.church-body--apex) {
 
   .church-body--apex .bb-apex-page-split--reverse .bb-apex-page-split__media {
     order: 0;
+  }
+}
+
+/* —— Apex For Churches (Stitch desktop/mobile) —— */
+.church-body--apex .bb-apex-for-churches-hero {
+  padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop) 32px;
+  background: var(--bb-apex-surface);
+  overflow: hidden;
+}
+
+.church-body--apex .bb-apex-for-churches-hero__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+  display: grid;
+  gap: 48px;
+  align-items: center;
+}
+
+.church-body--apex .bb-apex-for-churches-hero__title {
+  margin: 0 0 24px;
+  font-size: 4rem;
+  line-height: 1.125;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bb-apex-text);
+  max-width: 14ch;
+}
+
+.church-body--apex .bb-apex-for-churches-hero__lead {
+  margin: 0 0 40px;
+  max-width: 32rem;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-for-churches-hero__visual {
+  position: relative;
+}
+
+.church-body--apex .bb-apex-for-churches-hero__frame {
+  position: relative;
+  z-index: 1;
+  border-radius: 40px;
+  overflow: hidden;
+  transform: rotate(3deg);
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-for-churches-hero__frame img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.church-body--apex .bb-apex-for-churches-hero__glow {
+  position: absolute;
+  top: -48px;
+  right: -48px;
+  width: 256px;
+  height: 256px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, transparent);
+  filter: blur(48px);
+  z-index: 0;
+}
+
+.church-body--apex .bb-apex-for-churches-challenges,
+.church-body--apex .bb-apex-for-churches-unified,
+.church-body--apex .bb-apex-for-churches-toolkit,
+.church-body--apex .bb-apex-for-churches-onboarding,
+.church-body--apex .bb-apex-for-churches-stewardship,
+.church-body--apex .bb-apex-for-churches-cta,
+.church-body--apex .bb-apex-for-churches-mobile-bento,
+.church-body--apex .bb-apex-for-churches-mobile-faithful,
+.church-body--apex .bb-apex-for-churches-mobile-cta {
+  padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop);
+}
+
+.church-body--apex .bb-apex-for-churches-challenges {
+  background: var(--bb-apex-surface-dim);
+}
+
+.church-body--apex .bb-apex-for-churches-challenges__inner,
+.church-body--apex .bb-apex-for-churches-unified__inner,
+.church-body--apex .bb-apex-for-churches-toolkit__inner,
+.church-body--apex .bb-apex-for-churches-onboarding__inner,
+.church-body--apex .bb-apex-for-churches-stewardship__inner,
+.church-body--apex .bb-apex-for-churches-cta__inner,
+.church-body--apex .bb-apex-for-churches-mobile-bento__inner,
+.church-body--apex .bb-apex-for-churches-mobile-faithful__inner,
+.church-body--apex .bb-apex-for-churches-mobile-cta__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+}
+
+.church-body--apex .bb-apex-for-churches-challenges__grid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.church-body--apex .bb-apex-for-churches-challenge-card {
+  padding: 32px;
+  border-radius: var(--bb-apex-radius);
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 50%, transparent);
+  box-shadow: var(--bb-apex-shadow-md);
+  text-align: center;
+}
+
+.church-body--apex .bb-apex-for-churches-challenge-card__icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.church-body--apex .bb-apex-for-churches-challenge-card__icon .material-symbols-outlined {
+  font-size: 1.75rem;
+}
+
+.church-body--apex .bb-apex-for-churches-challenge-card__icon--red {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.church-body--apex .bb-apex-for-churches-challenge-card__icon--amber {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.church-body--apex .bb-apex-for-churches-challenge-card__icon--blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.church-body--apex .bb-apex-for-churches-challenge-card h3 {
+  margin: 0 0 12px;
+  font-size: 1.5rem;
+  line-height: 1.33;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-for-churches-challenge-card p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-for-churches-unified {
+  background: #fff;
+}
+
+.church-body--apex .bb-apex-for-churches-unified__inner {
+  display: grid;
+  gap: 64px;
+  align-items: center;
+}
+
+.church-body--apex .bb-apex-for-churches-unified__frame {
+  position: relative;
+  border-radius: var(--bb-apex-radius);
+  overflow: hidden;
+  border: 4px solid #fff;
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-for-churches-unified__frame img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.church-body--apex .bb-apex-for-churches-unified__badge {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--bb-apex-primary) 20%, transparent);
+  box-shadow: var(--bb-apex-shadow-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--bb-apex-primary);
+}
+
+.church-body--apex .bb-apex-for-churches-unified__badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #22c55e;
+}
+
+.church-body--apex .bb-apex-for-churches-feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 24px;
+}
+
+.church-body--apex .bb-apex-for-churches-feature-list li {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.church-body--apex .bb-apex-for-churches-feature-list__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, transparent);
+  color: var(--bb-apex-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-for-churches-feature-list h3 {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-for-churches-feature-list p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-for-churches-toolkit {
+  background: var(--bb-apex-text);
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.church-body--apex .bb-apex-for-churches-toolkit .bb-apex-page-band__title,
+.church-body--apex .bb-apex-for-churches-toolkit .bb-apex-page-band__lead {
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-for-churches-toolkit .bb-apex-page-band__lead {
+  opacity: 0.7;
+}
+
+.church-body--apex .bb-apex-for-churches-toolkit__grid {
+  display: grid;
+  gap: 48px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.church-body--apex .bb-apex-for-churches-toolkit-card--offset {
+  transform: translateY(48px);
+}
+
+.church-body--apex .bb-apex-for-churches-toolkit-card__media {
+  height: 256px;
+  margin-bottom: 24px;
+  border-radius: var(--bb-apex-radius-sm);
+  overflow: hidden;
+}
+
+.church-body--apex .bb-apex-for-churches-toolkit-card__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.church-body--apex .bb-apex-for-churches-toolkit-card h3 {
+  margin: 0 0 12px;
+  font-size: 1.5rem;
+  line-height: 1.33;
+  font-weight: 600;
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-for-churches-toolkit-card p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.church-body--apex .bb-apex-for-churches-onboarding {
+  background: #fff;
+}
+
+.church-body--apex .bb-apex-for-churches-onboarding__panel {
+  position: relative;
+  overflow: hidden;
+  padding: 48px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-for-churches-onboarding__panel > .bb-apex-page-band__title {
+  margin-bottom: 48px;
+  text-align: center;
+}
+
+.church-body--apex .bb-apex-for-churches-onboarding__watermark {
+  position: absolute;
+  top: 48px;
+  right: 48px;
+  font-size: 7.5rem;
+  opacity: 0.05;
+  color: var(--bb-apex-primary);
+}
+
+.church-body--apex .bb-apex-for-churches-onboarding__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 48px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  position: relative;
+  text-align: center;
+}
+
+.church-body--apex .bb-apex-for-churches-onboarding__steps::before {
+  content: "";
+  position: absolute;
+  top: 24px;
+  left: 25%;
+  right: 25%;
+  height: 2px;
+  background: color-mix(in srgb, var(--bb-apex-primary) 20%, transparent);
+}
+
+.church-body--apex .bb-apex-for-churches-onboarding__num {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 24px;
+  border-radius: 999px;
+  background: var(--bb-apex-primary);
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.church-body--apex .bb-apex-for-churches-onboarding__steps h3 {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-for-churches-onboarding__steps p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-for-churches-stewardship {
+  background: var(--bb-apex-surface);
+}
+
+.church-body--apex .bb-apex-for-churches-stewardship__inner {
+  display: grid;
+  gap: 64px;
+  align-items: start;
+}
+
+.church-body--apex .bb-apex-for-churches-stewardship__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--bb-apex-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.church-body--apex .bb-apex-for-churches-stewardship__link:hover {
+  text-decoration: underline;
+}
+
+.church-body--apex .bb-apex-for-churches-stewardship__grid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.church-body--apex .bb-apex-for-churches-cta {
+  background: var(--bb-apex-surface);
+}
+
+.church-body--apex .bb-apex-for-churches-cta__panel {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 64px;
+  text-align: center;
+  border-radius: 48px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-for-churches-cta__title {
+  margin: 0 0 48px;
+  font-size: 4rem;
+  line-height: 1.125;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-for-churches-cta__actions {
+  justify-content: center;
+}
+
+.church-body--apex .bb-apex-for-churches-hero--mobile {
+  padding: var(--bb-apex-section-pad-mobile) var(--church-margin-mobile);
+}
+
+.church-body--apex .bb-apex-for-churches-hero__inner--mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.church-body--apex .bb-apex-for-churches-hero__title--mobile {
+  font-size: 2.5rem;
+  line-height: 1.2;
+  max-width: none;
+}
+
+.church-body--apex .bb-apex-for-churches-hero__frame--mobile {
+  width: 100%;
+  margin-top: 24px;
+  border-radius: var(--bb-apex-radius);
+  transform: none;
+  position: relative;
+}
+
+.church-body--apex .bb-apex-for-churches-hero__gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, color-mix(in srgb, var(--bb-apex-primary) 20%, transparent), transparent);
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento {
+  background: #fff;
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento__stack {
+  display: grid;
+  gap: 24px;
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento-card {
+  padding: 24px;
+  border-radius: var(--bb-apex-radius-sm);
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 50%, transparent);
+  background: #fff;
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento-card__icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, transparent);
+  color: var(--bb-apex-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  line-height: 1.33;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento-card p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento-card--accent {
+  background: var(--bb-apex-primary);
+  border-color: transparent;
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento-card--accent h3,
+.church-body--apex .bb-apex-for-churches-mobile-bento-card--accent p {
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento-card--accent p {
+  opacity: 0.9;
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento-card__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 128px;
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento-card__bars span {
+  flex: 1;
+  height: var(--bar-height, 50%);
+  border-radius: 4px 4px 0 0;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento-card__bars span:nth-child(2) {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-bento-card__bars span:nth-child(3) {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-faithful {
+  background: var(--bb-apex-surface-dim);
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-faithful__inner {
+  display: grid;
+  gap: 32px;
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-faithful__media {
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-faithful__media img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-cta__inner {
+  padding: 32px;
+  border-radius: 24px;
+  background: var(--bb-apex-text);
+  color: #fff;
+  text-align: center;
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-cta__title {
+  margin: 0 0 24px;
+  font-size: 1.75rem;
+  line-height: 1.3;
+  font-weight: 700;
+  color: #fff;
+}
+
+.church-body--apex .bb-apex-for-churches-mobile-cta__link {
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (min-width: 900px) {
+  .church-body--apex .bb-apex-for-churches-hero__inner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .church-body--apex .bb-apex-for-churches-unified__inner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .church-body--apex .bb-apex-for-churches-stewardship__inner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+}
+
+@media (max-width: 1099px) and (min-width: 900px) {
+  .church-body--apex .bb-apex-for-churches-hero__title,
+  .church-body--apex .bb-apex-for-churches-cta__title {
+    font-size: 3rem;
+  }
+
+  .church-body--apex .bb-apex-for-churches-toolkit-card--offset {
+    transform: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .church-body--apex .bb-apex-for-churches-challenges,
+  .church-body--apex .bb-apex-for-churches-unified,
+  .church-body--apex .bb-apex-for-churches-toolkit,
+  .church-body--apex .bb-apex-for-churches-onboarding,
+  .church-body--apex .bb-apex-for-churches-stewardship,
+  .church-body--apex .bb-apex-for-churches-cta,
+  .church-body--apex .bb-apex-for-churches-mobile-bento,
+  .church-body--apex .bb-apex-for-churches-mobile-faithful,
+  .church-body--apex .bb-apex-for-churches-mobile-cta {
+    padding: var(--bb-apex-section-pad-mobile) var(--church-margin-mobile);
+  }
+
+  .church-body--apex .bb-apex-for-churches-challenges__grid,
+  .church-body--apex .bb-apex-for-churches-toolkit__grid,
+  .church-body--apex .bb-apex-for-churches-onboarding__steps,
+  .church-body--apex .bb-apex-for-churches-stewardship__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .church-body--apex .bb-apex-for-churches-toolkit-card--offset {
+    transform: none;
+  }
+
+  .church-body--apex .bb-apex-for-churches-onboarding__steps::before {
+    display: none;
+  }
+
+  .church-body--apex .bb-apex-for-churches-onboarding__panel {
+    padding: 32px 24px;
+  }
+
+  .church-body--apex .bb-apex-for-churches-cta__panel {
+    padding: 40px 24px;
+    border-radius: 24px;
+  }
+
+  .church-body--apex .bb-apex-for-churches-cta__title {
+    font-size: 2rem;
   }
 }
 

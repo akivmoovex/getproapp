@@ -1,5 +1,6 @@
 "use strict";
 
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const test = require("node:test");
@@ -82,6 +83,8 @@ test("apex desktop nav uses simplified structure with Solutions dropdown", async
 
   assert.match(res.text, /class="church-header__admin-link"[^>]*href="\/churches\?for=admin"[^>]*>Church Admin Login</);
   assert.match(res.text, /class="church-btn church-btn--primary[^"]*"[^>]*href="\/register-church"[^>]*>Register Your Church</);
+  assert.match(res.text, /class="church-brand__apex-logo"[^>]*src="\/church\/images\/brand\/blessboard-church-logo\.png"/);
+  assert.match(res.text, /alt="BlessBoard, powered by GetPro"/);
   assert.match(res.text, /bb-powered-by__getpro/);
   assert.match(res.text, /Powered by/);
   assert.match(res.text, /home-desktop-design/);
@@ -95,7 +98,7 @@ test("apex desktop nav renders on main platform pages", async () => {
     const res = await request(app).get(routePath);
     assert.equal(res.status, 200, `${routePath} should render`);
     assert.match(extractDesktopNav(res.text), /Solutions/, `${routePath} should include Solutions`);
-    assert.match(res.text, /church\.css\?v=72/);
+    assert.match(res.text, /church\.css\?v=75/);
   }
 });
 
@@ -120,6 +123,54 @@ test("apex mobile drawer includes full public links including Contact", async ()
   assert.match(drawer, /href="\/churches\?for=admin"/);
 });
 
+test("apex header lockup and actions preserve responsive hierarchy", async () => {
+  const app = makeApexApp();
+  const res = await request(app).get("/");
+  const css = fs.readFileSync(path.join(__dirname, "../public/church/church.css"), "utf8");
+  const poweredBy = fs.readFileSync(
+    path.join(__dirname, "../views/church/partials/powered_by_getpro.ejs"),
+    "utf8"
+  );
+  const logoPath = path.join(__dirname, "../public/church/images/brand/blessboard-church-logo.png");
+  const faviconPath = path.join(__dirname, "../public/church/images/brand/blessboard-favicon-32.png");
+  const appleTouchPath = path.join(__dirname, "../public/church/images/brand/blessboard-apple-touch-icon.png");
+
+  assert.match(poweredBy, /bb-powered-by__label">Powered by<\/span>\s+<span class="bb-powered-by__getpro">GetPro/);
+  assert.doesNotMatch(poweredBy, /<br\b/);
+  assert.ok(fs.existsSync(logoPath), "approved apex logo asset should exist");
+  assert.ok(fs.existsSync(faviconPath), "derived small favicon asset should exist");
+  assert.ok(fs.existsSync(appleTouchPath), "derived apple-touch icon should exist");
+  assert.match(res.text, /rel="icon" href="\/church\/images\/brand\/blessboard-favicon-32\.png" type="image\/png" sizes="32x32"/);
+  assert.match(res.text, /rel="shortcut icon" href="\/church\/images\/brand\/blessboard-favicon-32\.png" type="image\/png"/);
+  assert.match(res.text, /rel="apple-touch-icon" href="\/church\/images\/brand\/blessboard-apple-touch-icon\.png" sizes="180x180"/);
+  assert.match(
+    css,
+    /\.church-body--apex \.church-header--apex \.brand-lockup,[\s\S]*?\.church-body--apex \.church-header--apex \.bb-powered-by\s*\{[^}]*white-space:\s*nowrap/s
+  );
+  assert.match(
+    css,
+    /\.church-body--apex \.church-brand__apex-logo\s*\{[^}]*width:\s*180px[\s\S]*?height:\s*auto/s
+  );
+  assert.match(
+    css,
+    /\.church-body--apex \.church-header__admin-link\s*\{[^}]*color:\s*#6C5CE7/s
+  );
+  assert.match(
+    css,
+    /\.church-body--apex \.church-header__admin-link:hover,[\s\S]*?\.church-body--apex \.church-header__admin-link:focus-visible\s*\{[^}]*background:\s*rgba\(108,\s*92,\s*231,\s*0\.08\)[^}]*outline:\s*2px solid/s
+  );
+  assert.match(
+    css,
+    /\.church-body--apex \.church-header--apex \.church-nav--apex,[\s\S]*?\.church-body--apex \.church-header--apex \.church-header__actions\s*\{[^}]*flex-wrap:\s*nowrap/s
+  );
+  assert.match(css, /--church-getpro-orange:\s*#ff9800/i);
+  assert.match(res.text, /class="church-header__admin-link"[^>]*>Church Admin Login</);
+  assert.match(
+    res.text,
+    /class="church-btn church-btn--primary church-btn--pill church-header__cta"[^>]*>Register Your Church</
+  );
+});
+
 test("apex Solutions dropdown includes keyboard support script", async () => {
   const app = makeApexApp();
   const res = await request(app).get("/features");
@@ -138,5 +189,7 @@ test("tenant branch header is unchanged", async () => {
   assert.doesNotMatch(res.text, /church-nav--apex/);
   assert.doesNotMatch(res.text, /platform-solutions-menu/);
   assert.doesNotMatch(res.text, /Church Admin Login/);
+  assert.doesNotMatch(res.text, /blessboard-church-logo\.png/);
+  assert.doesNotMatch(res.text, /blessboard-favicon-32\.png/);
   assert.match(res.text, /Member Login/);
 });

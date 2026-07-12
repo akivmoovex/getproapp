@@ -23,7 +23,7 @@ const MARKETING_PAGES = [
   { path: "/", key: "home", h1: "One digital home for your church" },
   { path: "/features", key: "features", h1: "Built for the Modern Ministry" },
   { path: "/pricing", key: "pricing", h1: "Simple plans for every stage" },
-  { path: "/for-churches", key: "for-churches", h1: "BlessBoard for your church" },
+  { path: "/for-churches", key: "for-churches", h1: "Empowering your congregation with" },
   { path: "/multi-branch", key: "multi-branch", h1: "One platform for every branch" },
   { path: "/churches", key: "churches", h1: "Find Your Church" },
   { path: "/about", key: "about", h1: "About BlessBoard" },
@@ -110,7 +110,7 @@ test("apex marketing pages include unique SEO metadata", async () => {
   for (const page of MARKETING_PAGES) {
     const res = await request(app).get(page.path);
     assert.equal(res.status, 200, `${page.path} should render`);
-    assert.match(res.text, /church\.css\?v=72/, `${page.path} should load public CSS v72`);
+    assert.match(res.text, /church\.css\?v=75/, `${page.path} should load public CSS v75`);
 
     const config = PLATFORM_PUBLIC_SEO[page.key];
     assert.match(res.text, new RegExp(`<link rel="canonical" href="${config.path === "/" ? "https://blessboard.com/" : `https://blessboard.com${config.path}`}"`), `${page.path} canonical`);

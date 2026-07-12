@@ -2,8 +2,14 @@
   BlessBoard apex marketing SEO head tags.
   Locals: seoTitle, seoDescription, canonicalUrl, ogUrl, ogImage, ogType, robotsMeta, noindex, structuredDataJsonLd
 %>
+<% if (typeof isVerticalApex !== 'undefined' && isVerticalApex) { %>
+<link rel="icon" href="/church/images/brand/blessboard-favicon-32.png" type="image/png" sizes="32x32"/>
+<link rel="shortcut icon" href="/church/images/brand/blessboard-favicon-32.png" type="image/png"/>
+<link rel="apple-touch-icon" href="/church/images/brand/blessboard-apple-touch-icon.png" sizes="180x180"/>
+<% } else { %>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
 <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml"/>
+<% } %>
 <title><%= typeof seoTitle !== 'undefined' && seoTitle ? seoTitle : pageTitle + ' | BlessBoard' %></title>
 <meta name="description" content="<%= typeof seoDescription !== 'undefined' && seoDescription ? seoDescription : (typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : welcomeMessage) %>"/>
 <% if (typeof canonicalUrl !== 'undefined' && canonicalUrl) { %>
