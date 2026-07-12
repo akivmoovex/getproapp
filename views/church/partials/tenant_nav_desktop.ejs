@@ -1,0 +1,47 @@
+<%#
+  Tenant branch desktop primary navigation (≥900px).
+  Locals: activePage, homeHref
+%>
+<%
+  var _active = typeof activePage !== 'undefined' ? activePage : '';
+  var _homeHref = typeof homeHref !== 'undefined' ? homeHref : '/';
+  var _homeClass = _active === 'home' ? ' church-nav__active' : '';
+  var _aboutClass = _active === 'about' ? ' church-nav__active' : '';
+  var _contactClass = _active === 'contact' ? ' church-nav__active' : '';
+  var _explorePages = ['leadership', 'ministries', 'events', 'sermons', 'giving'];
+  var _exploreActive = _explorePages.indexOf(_active) >= 0;
+  var _leadershipClass = _active === 'leadership' ? ' church-nav-dropdown__link--active' : '';
+  var _ministriesClass = _active === 'ministries' ? ' church-nav-dropdown__link--active' : '';
+  var _eventsClass = _active === 'events' ? ' church-nav-dropdown__link--active' : '';
+  var _sermonsClass = _active === 'sermons' ? ' church-nav-dropdown__link--active' : '';
+%>
+<a href="<%= _homeHref %>" class="<%= _homeClass.trim() %>">Home</a>
+<a href="/about" class="<%= _aboutClass.trim() %>">About</a>
+<div class="church-nav-dropdown<%= _exploreActive ? ' church-nav-dropdown--section-active' : '' %>" data-nav-dropdown>
+  <button
+    type="button"
+    class="church-nav-dropdown__trigger<%= _exploreActive ? ' church-nav__active' : '' %>"
+    aria-expanded="false"
+    aria-haspopup="true"
+    aria-controls="tenant-explore-menu"
+    id="tenant-explore-trigger"
+  >
+    Explore
+    <span class="material-symbols-outlined church-nav-dropdown__chevron" aria-hidden="true">expand_more</span>
+  </button>
+  <ul class="church-nav-dropdown__menu" id="tenant-explore-menu" role="menu" aria-labelledby="tenant-explore-trigger" hidden>
+    <li role="none">
+      <a role="menuitem" href="/leadership" class="<%= _leadershipClass.trim() %>">Leadership</a>
+    </li>
+    <li role="none">
+      <a role="menuitem" href="/ministries" class="<%= _ministriesClass.trim() %>">Ministries</a>
+    </li>
+    <li role="none">
+      <a role="menuitem" href="/events" class="<%= _eventsClass.trim() %>">Events</a>
+    </li>
+    <li role="none">
+      <a role="menuitem" href="/sermons" class="<%= _sermonsClass.trim() %>">Sermons &amp; Resources</a>
+    </li>
+  </ul>
+</div>
+<a href="/contact" class="<%= _contactClass.trim() %>">Contact</a>

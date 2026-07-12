@@ -28,7 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <% } %>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=75"/>
+  <link rel="stylesheet" href="/church/church.css?v=76"/>
 </head>
 <%
   var isBranchHome = !isVerticalApex && activePage === 'home' && !isPreviewMode;
@@ -80,14 +80,7 @@
     <div class="church-header__inner church-header__inner--tenant">
       <%- include('./tenant_brand_lockup', { href: homeHref, compact: false }) %>
       <nav class="church-nav church-nav--branch" aria-label="Primary">
-        <a href="<%= homeHref %>" class="<%= activePage === 'home' ? 'church-nav__active' : '' %>">Home</a>
-        <a href="/about" class="<%= activePage === 'about' ? 'church-nav__active' : '' %>">About</a>
-        <a href="/leadership" class="<%= activePage === 'leadership' ? 'church-nav__active' : '' %>">Leadership</a>
-        <a href="/ministries" class="<%= activePage === 'ministries' ? 'church-nav__active' : '' %>">Ministries</a>
-        <a href="/events" class="<%= activePage === 'events' ? 'church-nav__active' : '' %>">Events</a>
-        <a href="/sermons" class="<%= activePage === 'sermons' ? 'church-nav__active' : '' %>">Sermons</a>
-        <a href="/contact" class="<%= activePage === 'contact' ? 'church-nav__active' : '' %>">Contact</a>
-        <a href="/giving" class="<%= activePage === 'giving' ? 'church-nav__active' : '' %>">Giving</a>
+        <%- include('./tenant_nav_desktop', { activePage: activePage, homeHref: homeHref }) %>
       </nav>
       <div class="church-header__actions">
         <% if (!isPreviewMode) { %>

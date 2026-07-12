@@ -43,9 +43,9 @@
   <header class="church-leadership-page__hero church-leadership-intro">
     <div class="church-public-container">
       <span class="church-public-eyebrow church-leadership-page__eyebrow">Leadership</span>
-      <h1 class="church-public-page-title church-leadership-page__title">Meet Our Church Leadership</h1>
+      <h1 class="church-public-page-title church-leadership-page__title">Our Leadership</h1>
       <p class="church-public-body church-leadership-page__lead">
-        Dedicated servants committed to shepherd, teach, and empower our congregation at <%= churchName %>.
+        At <%= churchName %>, we are led by a dedicated team committed to serving our community with compassion, wisdom, and faith. Meet the hearts behind our mission.
       </p>
     </div>
   </header>
@@ -113,8 +113,11 @@
     <% if (hasElders) { %>
     <section class="church-leadership-page__elders" aria-labelledby="leadership-elders-heading">
       <div class="church-leadership-page__section-head">
-        <span class="church-leadership-page__rule" aria-hidden="true"></span>
-        <h2 id="leadership-elders-heading" class="church-public-section-title">Church Elders</h2>
+        <div class="church-leadership-page__section-title-group">
+          <span class="church-leadership-page__rule" aria-hidden="true"></span>
+          <h2 id="leadership-elders-heading" class="church-public-section-title">Our Elders</h2>
+        </div>
+        <p class="church-leadership-page__section-note">Wisdom and Governance</p>
       </div>
       <div class="church-leadership-page__elders-grid">
         <% elderList.forEach(function (elder) { %>

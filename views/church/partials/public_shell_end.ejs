@@ -106,10 +106,9 @@
       });
     })();
   </script>
-  <% if (isVerticalApex) { %>
   <script>
     (function () {
-      var dropdowns = document.querySelectorAll(".church-body--apex [data-nav-dropdown]");
+      var dropdowns = document.querySelectorAll("[data-nav-dropdown]");
       if (!dropdowns.length) return;
 
       dropdowns.forEach(function (dropdown) {
@@ -189,6 +188,5 @@
       });
     })();
   </script>
-  <% } %>
 </body>
 </html>

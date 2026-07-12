@@ -101,20 +101,22 @@ test("5-8 page roots and hero structures render", async () => {
   assert.match(about.text, /church-about-page/);
   assert.match(about.text, /data-about-page="1"/);
   assert.match(about.text, /church-about-page__hero/);
-  assert.match(about.text, /About Us/);
+  assert.match(about.text, /OUR JOURNEY/);
+  assert.match(about.text, /Rooted in Grace/);
+  assert.match(about.text, /Growing in Community/);
+  assert.match(about.text, /The Church Story|Our Story/);
 
   const leadership = await request(makeTenantApp()).get("/leadership");
   assert.match(leadership.text, /church-leadership-page/);
   assert.match(leadership.text, /data-leadership-page="1"/);
   assert.match(leadership.text, /church-leadership-page__hero/);
-  assert.match(leadership.text, /Meet Our Church Leadership/);
+  assert.match(leadership.text, /Our Leadership/);
 });
 
 test("9-10 real About content renders; fake history/stats absent", async () => {
   const app = makeTenantApp();
   const res = await request(app).get("/about");
-  assert.match(res.text, /Our Story|About Downtown Branch|Christ-centered community/);
-  assert.doesNotMatch(res.text, /Rooted in Grace|Growing in Community/);
+  assert.match(res.text, /Our Story|The Church Story|About Downtown Branch|Christ-centered community/);
   assert.doesNotMatch(res.text, /1984|1988|1,200\+|5k\+|Watch Our Story|Download Annual Report/);
   assert.doesNotMatch(res.text, /Service Culture|Excellence in Worship|Structured Compassion<\/h1>/);
   assert.doesNotMatch(res.text, /To make disciples of Jesus Christ who love God, love people/);
@@ -197,13 +199,12 @@ test("21 unsupported actions absent on About and Leadership", async () => {
 
 test("22-24 active nav, Member Login, Register remain", async () => {
   const about = await request(makeTenantApp()).get("/about");
-  assert.match(about.text, /church-nav__active[^>]*>About<|>About<\/a>/);
-  assert.match(about.text, /href="\/about"[^>]*church-nav__active|church-nav__active"[^>]*>About/);
+  assert.match(about.text, /href="\/about"[^>]*church-nav__active/);
   assert.match(about.text, /Member Login/);
   assert.match(about.text, /Register as a Member/);
 
   const leadership = await request(makeTenantApp()).get("/leadership");
-  assert.match(leadership.text, /href="\/leadership"[^>]*church-nav__active|church-nav__active"[^>]*>Leadership/);
+  assert.match(leadership.text, /church-nav-dropdown__trigger[^>]*church-nav__active|church-nav-dropdown__link--active"[^>]*>Leadership/);
   assert.match(leadership.text, /Member Login/);
   assert.match(leadership.text, /Register as a Member/);
 });

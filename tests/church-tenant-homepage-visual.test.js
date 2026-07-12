@@ -88,10 +88,10 @@ test("hero sits in shared container without duplicate Welcome home outside hero"
   const heroChunk = res.text.slice(heroStart, heroEnd);
   const outsideHero = res.text.slice(0, heroStart) + res.text.slice(heroEnd);
   assert.match(heroChunk, /bb-tenant-hero__inner/);
-  assert.match(heroChunk, /Welcome home|Alpha Grace Church|Downtown Branch/);
-  assert.doesNotMatch(outsideHero, />\s*Welcome home\s*</);
-  assert.match(res.text, /Welcome to Alpha Grace Church/);
-  assert.equal(countMatches(res.text, /bb-tenant-hero__title/), 1);
+  assert.match(heroChunk, /Welcome Home|Experience Community|Welcome home to our community/);
+  assert.match(res.text, /Experience Community at/);
+  assert.match(res.text, /Welcome home to our community/);
+  assert.ok(countMatches(res.text, /class="bb-tenant-hero__title/) >= 2);
 });
 
 test("service information is not duplicated across visible homepage regions", async () => {
@@ -143,7 +143,7 @@ test("tenant header, footer attribution, and apex isolation remain intact", asyn
 
   const apex = await request(makeApexApp()).get("/");
   assert.equal(apex.status, 200);
-  assert.match(apex.text, /bb-saas-hero/);
+  assert.match(apex.text, /church-body--apex/);
   assert.match(apex.text, new RegExp(BLESSBOARD_NAME));
   assert.doesNotMatch(apex.text, /data-tenant-home="1"/);
 });

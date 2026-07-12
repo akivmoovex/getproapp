@@ -1,0 +1,339 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Kafue Baptist Church - Main Branch | Powered by BlessBoard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#4029ba",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#787586",
+                        "on-tertiary-fixed": "#191c1d",
+                        "inverse-primary": "#c6bfff",
+                        "tertiary": "#57595b",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#dae1e3",
+                        "on-secondary-fixed-variant": "#41484a",
+                        "surface-container": "#e4f0f4",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "surface-variant": "#d9e4e9",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#f1fbff",
+                        "tertiary-fixed": "#e1e3e4",
+                        "on-tertiary-container": "#f7f8f9",
+                        "tertiary-container": "#707273",
+                        "on-secondary-fixed": "#161d1f",
+                        "secondary": "#586062",
+                        "secondary-fixed-dim": "#c1c8ca",
+                        "primary-container": "#6c5ce7",
+                        "outline-variant": "#c8c4d7",
+                        "on-surface-variant": "#474554",
+                        "primary-fixed-dim": "#c6bfff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#dfeaef",
+                        "on-error-container": "#93000a",
+                        "on-background": "#131d21",
+                        "primary": "#5341cd",
+                        "secondary-fixed": "#dde4e6",
+                        "on-primary-container": "#faf6ff",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "surface-dim": "#d1dce0",
+                        "on-secondary-container": "#5d6466",
+                        "surface-container-low": "#eaf5fa",
+                        "on-surface": "#131d21",
+                        "inverse-on-surface": "#e7f3f7",
+                        "surface": "#f1fbff",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#d9e4e9",
+                        "inverse-surface": "#283236",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#e4dfff",
+                        "background": "#f1fbff",
+                        "surface-tint": "#5847d2",
+                        "on-primary-fixed": "#160066",
+                        "brand-orange": "#FF9800"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "4px",
+                        "lg": "8px",
+                        "xl": "12px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "sm": "8px",
+                        "base": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "label-md": ["11px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-lg": ["12px", { "lineHeight": "16px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1fbff;
+        }
+        .hero-mesh {
+            background: radial-gradient(circle at 70% 30%, rgba(108, 92, 231, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 10% 80%, rgba(83, 65, 205, 0.05) 0%, transparent 40%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-inverse-surface border-b border-outline-variant dark:border-outline fixed top-0 w-full z-50 transition-all duration-300" id="top-nav">
+<div class="flex justify-between items-center px-margin-desktop w-full max-w-7xl mx-auto h-16">
+<!-- Brand / Church Identity -->
+<div class="flex items-center gap-sm">
+<img alt="BlessBoard Logo" class="h-10 w-auto rounded-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYnDY4Keeh22ORyYmrFKppYuzQEXRIj84gNVltZP4-ZFxbKIUAR8kEyj1IGaCLFA_9yQG-pBg98x9JQJcsYC7mum6ctSzPw_FKar2IQwF6ZEQHOTde6wTT2p_On6ujFQY2BrOZw94KSMf4IhYtzpklCDFOh-mPztrq3GD57Y-RYDmMidOEJwhYvZjDanuX5bBHOM1jcYaVPz0Ls316lZOz6vZyrK43PULakNQ_ytaERW6zREU-0dOnHA">
+<div class="flex flex-col leading-tight">
+<span class="font-bold text-on-surface text-title-md">Kafue Baptist Church</span>
+<span class="text-secondary text-label-md">Main Branch</span>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="hidden md:flex items-center gap-xl">
+<a class="text-secondary hover:text-primary transition-colors font-label-lg text-label-lg px-2 py-1 rounded" href="#features">Features</a>
+<a class="text-secondary hover:text-primary transition-colors font-label-lg text-label-lg px-2 py-1 rounded" href="#">Ministries</a>
+<a class="text-secondary hover:text-primary transition-colors font-label-lg text-label-lg px-2 py-1 rounded" href="#">Contact</a>
+</nav>
+<!-- Header Actions -->
+<div class="flex items-center gap-sm">
+<button class="text-primary font-label-lg text-label-lg hover:bg-surface-container-low px-md py-sm rounded transition-all">Member Login</button>
+<button class="bg-primary text-on-primary font-label-lg text-label-lg px-lg py-sm rounded-lg shadow-sm hover:bg-primary-container transition-all">Register</button>
+</div>
+</div>
+</header>
+<main class="pt-16">
+<!-- Hero Section -->
+<section class="relative overflow-hidden hero-mesh min-h-[80vh] flex items-center">
+<div class="max-w-7xl mx-auto px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-xl items-center py-xl">
+<div class="z-10 order-2 lg:order-1">
+<span class="inline-block px-md py-xs bg-primary-fixed text-on-primary-fixed-variant rounded-full font-label-lg text-label-lg mb-md">Welcome Home</span>
+<h1 class="font-display-lg text-display-lg text-on-surface mb-lg leading-tight">
+                        Experience Community at <span class="text-primary">Kafue Baptist Church</span>
+</h1>
+<p class="font-body-lg text-body-lg text-secondary mb-xl max-w-xl">
+                        Join us as we grow together in faith and serve our community in the Main Branch. We are a family of believers dedicated to structured compassion.
+                    </p>
+<div class="flex flex-wrap gap-md">
+<button class="bg-primary text-on-primary px-lg py-md rounded-lg font-title-md text-title-md flex items-center justify-center gap-xs hover:shadow-lg transition-all active:scale-95">
+                            Plan a Visit
+                            <span class="material-symbols-outlined text-[20px]">event</span>
+</button>
+<button class="border border-outline-variant text-primary px-lg py-md rounded-lg font-title-md text-title-md hover:bg-surface-container-low transition-all">
+                            View Events
+                        </button>
+<button class="text-secondary font-title-md text-title-md px-lg py-md hover:text-primary transition-all flex items-center gap-xs">
+                            Member Login <span class="material-symbols-outlined text-[18px]">login</span>
+</button>
+</div>
+</div>
+<div class="relative order-1 lg:order-2">
+<div class="absolute -top-12 -right-12 w-64 h-64 bg-primary-fixed-dim opacity-20 blur-3xl rounded-full"></div>
+<div class="relative rounded-xl overflow-hidden shadow-2xl border border-outline-variant/30">
+<img alt="Church Congregation" class="w-full aspect-[4/3] object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVZMd4Mm4JNr2YlZHzd96fayppN1QCJuaWhrlPUsQgFmrdjO-t8_f25jPNR183kmo-LlNKJQbnvjq4yzAJhIaUoilA5h3iIY5jlNYA-nbeDy29aS5vo2hCQxSqBswKSPFoK1zTbdfX42ByFNdji1S5v3CRmiGTSlTz7Xl-2Z65qbqCmQsaZKS6TzKEQZ6Kqr2I35P1-K6Mu15vVGmstMY4Oo8W6MmalEb4NcukO-3jWWDrkX7DzSfo6w">
+<!-- Floating Glass Card -->
+<div class="absolute bottom-6 left-6 right-6 glass-card p-md rounded-xl flex items-center gap-md">
+<div class="bg-primary-container p-sm rounded-lg">
+<span class="material-symbols-outlined text-on-primary-container">calendar_today</span>
+</div>
+<div>
+<p class="text-label-md font-label-md text-secondary">Next Service</p>
+<p class="text-title-md font-title-md text-on-surface">Sunday Worship • 9:00 AM</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Overview -->
+<section class="py-xl bg-surface-container-lowest" id="features">
+<div class="max-w-7xl mx-auto px-margin-desktop">
+<div class="text-center mb-xl">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-md">Our Ministry Resources</h2>
+<p class="text-body-lg font-body-lg text-secondary max-w-2xl mx-auto">
+                        Tools and platforms designed to keep our congregation connected and growing.
+                    </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+<!-- Feature 1 -->
+<div class="md:col-span-8 bg-surface border border-outline-variant p-xl rounded-xl hover:shadow-lg transition-all group">
+<div class="flex flex-col md:flex-row gap-xl">
+<div class="flex-1">
+<div class="w-12 h-12 bg-primary-container text-on-primary-container rounded-lg flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">group</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-md">Member Portal</h3>
+<p class="text-body-md font-body-md text-secondary mb-lg">
+                                    Access your giving history, join small groups, and update your family information in one secure location.
+                                </p>
+<ul class="space-y-sm">
+<li class="flex items-center gap-sm text-label-lg font-label-lg text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-sm">check_circle</span> Personal Profiles
+                                    </li>
+<li class="flex items-center gap-sm text-label-lg font-label-lg text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-sm">check_circle</span> Group Communication
+                                    </li>
+</ul>
+</div>
+<div class="flex-1 bg-surface-container-low rounded-lg p-md overflow-hidden min-h-[200px]">
+<img alt="Member Directory" class="w-full rounded-lg shadow-sm border border-outline-variant/20 transform group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJq-1GyT87XjRHdI5S4hld-RMwtTE0sg8EABhCu8zu2-Bb3VNOSOWa6TMrDcnVwLdsqirW7PGt-s82Q6lziMu2mNAL10RUgfQb7z8PIlzXmtPvsanxzR8uJEN9cFEdRmNxeBL5Q-8HyEOT0i7ORnFAG5Xh0XQKMn3fAIHZxb4RJff8E2ef8k5UQdg-cTtfFKbMBU3xgLW64GCkWGSvH4gqgTOBnFlUOmx0_9hGiRlo3ObsKHgxNhNltg">
+</div>
+</div>
+</div>
+<!-- Feature 2 -->
+<div class="md:col-span-4 bg-surface border border-outline-variant p-xl rounded-xl hover:shadow-lg transition-all">
+<div class="w-12 h-12 bg-secondary-container text-on-secondary-container rounded-lg flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined">event_available</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-md">Event Sign-ups</h3>
+<p class="text-body-md font-body-md text-secondary">
+                            Easily register for upcoming conferences, youth retreats, and community outreach programs.
+                        </p>
+</div>
+<!-- Feature 3 -->
+<div class="md:col-span-4 bg-surface border border-outline-variant p-xl rounded-xl hover:shadow-lg transition-all">
+<div class="w-12 h-12 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-lg flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined">favorite</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-md">Care &amp; Support</h3>
+<p class="text-body-md font-body-md text-secondary">
+                            Request prayer or practical help from our dedicated care team through the member portal.
+                        </p>
+</div>
+<!-- Feature 4 -->
+<div class="md:col-span-8 bg-surface border border-outline-variant p-xl rounded-xl hover:shadow-lg transition-all group">
+<div class="flex flex-col md:flex-row gap-xl items-center">
+<div class="flex-1 order-2 md:order-1">
+<div class="bg-surface-variant rounded-lg p-md overflow-hidden">
+<img alt="Volunteer Coordination" class="w-full rounded-lg transform group-hover:-translate-y-2 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9EPpt4aYb-wMDliGCj7bwCpX0zqE9pa031d18QPtPvXeB3JxNLudlYBLmuMGbxQwdEGTG7l2JzW9giB-9iriCut0ipl9fk7jtbCUD46nTGNhcbVnfsTf6Ll4-KiGOY2f27GieZmJfYiNg9ISjjgNzmwU4JoGX9pkVMvHgdqZgUnHpHFWJpHJwE7PhIaoXGnil23i8aeocBQoY1Ik7IqpvJqrAVnyvPOSTjTArwgN5cNTuk-Bp-Ra2UA">
+</div>
+</div>
+<div class="flex-1 order-1 md:order-2">
+<div class="w-12 h-12 bg-primary-container text-on-primary-container rounded-lg flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-md">Serve with Us</h3>
+<p class="text-body-md font-body-md text-secondary mb-lg">
+                                    Discover opportunities to use your gifts and volunteer in various ministries across the Main Branch.
+                                </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-xl bg-inverse-surface text-on-primary-container overflow-hidden relative">
+<div class="absolute top-0 right-0 w-96 h-96 bg-primary opacity-10 blur-[100px] rounded-full -mr-48 -mt-48"></div>
+<div class="max-w-7xl mx-auto px-margin-desktop relative z-10">
+<div class="bg-surface-container-highest/10 backdrop-blur-md border border-white/10 rounded-xl p-xl md:p-[64px] text-center">
+<h2 class="font-headline-lg text-headline-lg text-primary-fixed-dim mb-md">New to Kafue Baptist Church?</h2>
+<p class="font-body-lg text-body-lg text-secondary-fixed-dim mb-xl max-w-2xl mx-auto">
+                        We'd love to meet you. Join us this Sunday and experience a welcoming community of believers.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-md justify-center">
+<button class="bg-primary-fixed text-on-primary-fixed font-title-md text-title-md px-xl py-md rounded-lg hover:bg-primary-container hover:text-on-primary-container transition-all">
+                            Plan Your Visit
+                        </button>
+<button class="border border-outline text-primary-fixed-dim font-title-md text-title-md px-xl py-md rounded-lg hover:bg-white/10 transition-all">
+                            Contact Us
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant">
+<div class="w-full py-xl px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-lg max-w-7xl mx-auto">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-sm">
+<img alt="BlessBoard Logo" class="h-10 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYnDY4Keeh22ORyYmrFKppYuzQEXRIj84gNVltZP4-ZFxbKIUAR8kEyj1IGaCLFA_9yQG-pBg98x9JQJcsYC7mum6ctSzPw_FKar2IQwF6ZEQHOTde6wTT2p_On6ujFQY2BrOZw94KSMf4IhYtzpklCDFOh-mPztrq3GD57Y-RYDmMidOEJwhYvZjDanuX5bBHOM1jcYaVPz0Ls316lZOz6vZyrK43PULakNQ_ytaERW6zREU-0dOnHA">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface text-body-lg">Kafue Baptist Church - Main Branch</span>
+<p class="text-label-md">
+<span class="text-secondary">Powered by</span>
+<span class="text-brand-orange font-bold">GetPro</span>
+</p>
+</div>
+</div>
+<p class="text-secondary font-body-md text-body-md mt-sm">© 2024 Kafue Baptist Church. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-xl">
+<a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all" href="#">Privacy Policy</a>
+<a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all" href="#">Terms of Service</a>
+<a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all" href="#">Support</a>
+<a class="text-secondary-fixed-variant font-body-md text-body-md hover:text-primary underline transition-all" href="#">Resources</a>
+</div>
+</div>
+</footer>
+<script>
+        // Simple scroll effect for navbar
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('top-nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('shadow-md', 'bg-white/95', 'backdrop-blur-md');
+                nav.classList.remove('bg-surface');
+            } else {
+                nav.classList.remove('shadow-md', 'bg-white/95', 'backdrop-blur-md');
+                nav.classList.add('bg-surface');
+            }
+        });
+
+        // Hover animation for icons
+        document.querySelectorAll('.material-symbols-outlined').forEach(icon => {
+            icon.addEventListener('mouseenter', () => {
+                icon.style.fontVariationSettings = "'FILL' 1";
+            });
+            icon.addEventListener('mouseleave', () => {
+                if(!icon.closest('.bg-primary-container')) {
+                    icon.style.fontVariationSettings = "'FILL' 0";
+                }
+            });
+        });
+    </script>
+</body></html>

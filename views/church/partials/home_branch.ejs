@@ -3,6 +3,16 @@
   var orgLabel = (typeof organizationName !== 'undefined' && organizationName) ? organizationName : churchName;
   var branchLabel = (typeof branchName !== 'undefined' && branchName) ? branchName : '';
   var showBranchDistinct = branchLabel && orgLabel && String(branchLabel) !== String(orgLabel);
+  var autoHeroTitle = orgLabel ? ('Welcome to ' + orgLabel) : ('Welcome to ' + churchName);
+  var hasPublishedHeroTitle = !!(typeof heroTitle !== 'undefined' && heroTitle && String(heroTitle).trim() && String(heroTitle).trim() !== autoHeroTitle);
+  var autoWelcomeFallback = 'Welcome to ' + churchName + '. We are glad you are here and would love to connect with you.';
+  var hasPublishedWelcome = !!(typeof welcomeMessage !== 'undefined' && welcomeMessage && String(welcomeMessage).trim() && String(welcomeMessage).trim() !== autoWelcomeFallback);
+  var stitchDesktopLead = showBranchDistinct
+    ? ('Join us as we grow together in faith and serve our community in the ' + branchLabel + '. We are a family of believers dedicated to structured compassion.')
+    : 'Join us as we grow together in faith and serve our community. We are a family of believers dedicated to structured compassion.';
+  var stitchMobileLead = 'Experience grace, find community, and grow in faith with us.';
+  var heroLeadDesktop = hasPublishedWelcome ? String(welcomeMessage).trim() : stitchDesktopLead;
+  var heroLeadMobile = hasPublishedWelcome ? String(welcomeMessage).trim() : stitchMobileLead;
   var heroHeading = heroTitle || (orgLabel ? ('Welcome to ' + orgLabel) : churchName);
   var heroLead = welcomeMessage || '';
   var heroEyebrow = heroSubtitle || (showBranchDistinct ? branchLabel : (orgLabel || 'Welcome'));
@@ -37,23 +47,31 @@
   <section class="bb-tenant-hero" id="welcome" aria-label="Welcome">
     <div class="bb-tenant-hero__inner">
       <div class="bb-tenant-hero__copy">
-        <span class="bb-tenant-hero__badge"><%= heroEyebrow %></span>
+        <span class="bb-tenant-hero__badge bb-tenant-hero__badge--desktop">Welcome Home</span>
+        <span class="bb-tenant-hero__badge bb-tenant-hero__badge--mobile"><%= orgLabel || churchName %></span>
+        <% if (hasPublishedHeroTitle) { %>
         <h1 class="bb-tenant-hero__title"><%= heroHeading %></h1>
-        <% if (heroLead) { %>
-        <p class="bb-tenant-hero__lead"><%= heroLead %></p>
+        <% } else { %>
+        <h1 class="bb-tenant-hero__title bb-tenant-hero__title--desktop">Experience Community at <span class="bb-tenant-hero__title-accent"><%= orgLabel || churchName %></span></h1>
+        <h1 class="bb-tenant-hero__title bb-tenant-hero__title--mobile">Welcome home to our community.</h1>
         <% } %>
+        <p class="bb-tenant-hero__lead bb-tenant-hero__lead--desktop"><%= heroLeadDesktop %></p>
+        <p class="bb-tenant-hero__lead bb-tenant-hero__lead--mobile"><%= heroLeadMobile %></p>
         <% if (!isPreviewMode) { %>
-        <div class="bb-tenant-hero__cta">
-          <a class="church-btn church-btn--public-primary bb-tenant-hero__cta-primary" href="/events">
-            <span class="bb-tenant-hero__cta-label bb-tenant-hero__cta-label--desktop">Join a Service</span>
-            <span class="bb-tenant-hero__cta-label bb-tenant-hero__cta-label--mobile">Join Our Next Service</span>
-            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        <div class="bb-tenant-hero__cta bb-tenant-hero__cta--desktop">
+          <a class="church-btn church-btn--public-primary" href="/contact">
+            Plan a Visit
+            <span class="material-symbols-outlined" aria-hidden="true">event</span>
           </a>
-          <a class="church-btn church-btn--public-secondary bb-tenant-hero__cta-giving" href="/giving">
-            <span class="material-symbols-outlined" aria-hidden="true">favorite</span>
-            Giving
+          <a class="church-btn church-btn--public-secondary" href="/events">View Events</a>
+          <a class="church-btn church-btn--ghost bb-tenant-hero__cta-login" href="/login">
+            Member Login
+            <span class="material-symbols-outlined" aria-hidden="true">login</span>
           </a>
-          <a class="church-btn church-btn--public-secondary bb-tenant-hero__cta-ministries" href="/ministries">Explore Ministries</a>
+        </div>
+        <div class="bb-tenant-hero__cta bb-tenant-hero__cta--mobile">
+          <a class="church-btn church-btn--public-primary church-btn--block" href="/register">Register as Member</a>
+          <a class="church-btn church-btn--public-secondary church-btn--block" href="/contact">Plan a Visit</a>
         </div>
         <% } %>
       </div>
@@ -377,4 +395,17 @@
       </div>
     </div>
   </section>
+
+  <% if (!isPreviewMode) { %>
+  <section class="bb-tenant-newcomer home-desktop-design" aria-labelledby="tenant-newcomer-heading">
+    <div class="bb-tenant-section__inner bb-tenant-newcomer__inner">
+      <h2 id="tenant-newcomer-heading" class="bb-tenant-newcomer__title">New to <%= orgLabel || churchName %>?</h2>
+      <p class="bb-tenant-newcomer__lead">We'd love to meet you. Join us this Sunday and experience a welcoming community of believers.</p>
+      <div class="bb-tenant-newcomer__actions">
+        <a class="church-btn church-btn--public-primary" href="/contact">Plan Your Visit</a>
+        <a class="church-btn church-btn--public-secondary" href="/contact">Contact Us</a>
+      </div>
+    </div>
+  </section>
+  <% } %>
 </section>

@@ -5399,10 +5399,12 @@ a.church-branch-stat-card--link:hover {
 .church-nav--branch {
   flex-wrap: nowrap;
   white-space: nowrap;
+  gap: 20px;
 }
 
-.church-nav--branch a {
-  font-size: 0.8125rem;
+.church-nav--branch a,
+.church-nav--branch .church-nav-dropdown__trigger {
+  font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--church-muted);
@@ -5411,9 +5413,43 @@ a.church-branch-stat-card--link:hover {
 }
 
 .church-nav--branch a.church-nav__active,
-.church-nav--branch a:hover {
+.church-nav--branch a:hover,
+.church-nav--branch .church-nav-dropdown__trigger.church-nav__active,
+.church-nav--branch .church-nav-dropdown__trigger:hover {
   color: var(--church-primary);
   border-bottom-color: var(--church-primary);
+}
+
+.church-nav--branch .church-nav-dropdown__trigger {
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: inherit;
+}
+
+.church-nav--branch .church-nav-dropdown__menu a {
+  font-size: 0.875rem;
+  border-bottom: none;
+  padding: 10px 16px;
+}
+
+.church-nav--branch .church-nav-dropdown__menu a.church-nav-dropdown__link--active {
+  color: var(--church-primary);
+  font-weight: 600;
+}
+
+@media (min-width: 900px) and (max-width: 1100px) {
+  .church-body--branch .church-nav--branch {
+    gap: 14px;
+  }
+
+  .church-nav--branch a,
+  .church-nav--branch .church-nav-dropdown__trigger {
+    font-size: 0.875rem;
+  }
 }
 
 .church-header--branch .church-header__actions .church-btn--ghost {
@@ -5499,7 +5535,7 @@ a.church-branch-stat-card--link:hover {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    gap: 18px;
+    gap: 20px;
   }
 
   .church-body--branch .church-header__actions {
@@ -5766,6 +5802,10 @@ a.church-branch-stat-card--link:hover {
 .church-about-page__title {
   color: var(--church-primary);
   max-width: 20ch;
+}
+
+.church-about-page__title-accent {
+  color: var(--church-navy);
 }
 
 .church-about-page__lead {
@@ -6063,8 +6103,27 @@ a.church-branch-stat-card--link:hover {
 .church-leadership-page__section-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--church-space-md);
   margin-bottom: var(--church-space-lg);
+  flex-wrap: wrap;
+}
+
+.church-leadership-page__section-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--church-space-md);
+}
+
+.church-leadership-page__section-title-group .church-public-section-title {
+  margin: 0;
+}
+
+.church-leadership-page__section-note {
+  margin: 0;
+  color: var(--church-muted);
+  font-size: 0.9375rem;
+  font-weight: 500;
 }
 
 .church-leadership-page__rule {
@@ -13319,6 +13378,79 @@ a.church-branch-bento-stat:hover {
   line-height: 1.6;
 }
 
+.bb-tenant-hero__title-accent {
+  color: var(--church-primary);
+}
+
+.bb-tenant-hero__cta-login {
+  border: none;
+  background: transparent;
+}
+
+.bb-tenant-newcomer {
+  padding: 48px 0 64px;
+  background: var(--church-navy, #283236);
+  color: #fff;
+}
+
+.bb-tenant-newcomer__inner {
+  text-align: center;
+}
+
+.bb-tenant-newcomer__title {
+  margin: 0 0 12px;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  color: #e4dfff;
+}
+
+.bb-tenant-newcomer__lead {
+  margin: 0 auto 24px;
+  max-width: 40rem;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.6;
+}
+
+.bb-tenant-newcomer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+@media (min-width: 900px) {
+  .bb-tenant-hero__badge--mobile,
+  .bb-tenant-hero__title--mobile,
+  .bb-tenant-hero__lead--mobile,
+  .bb-tenant-hero__cta--mobile {
+    display: none !important;
+  }
+
+  .bb-tenant-hero__cta--desktop {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 899px) {
+  .bb-tenant-hero__badge--desktop,
+  .bb-tenant-hero__title--desktop,
+  .bb-tenant-hero__lead--desktop,
+  .bb-tenant-hero__cta--desktop {
+    display: none !important;
+  }
+
+  .bb-tenant-hero__cta--mobile {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .bb-tenant-newcomer.home-desktop-design {
+    display: none !important;
+  }
+}
+
 .bb-tenant-hero__cta {
   display: flex;
   flex-wrap: wrap;
@@ -13896,11 +14028,6 @@ a.church-branch-bento-stat:hover {
 }
 
 @media (min-width: 900px) {
-  .bb-tenant-hero__cta-label--desktop { display: inline; }
-  .bb-tenant-hero__cta-label--mobile { display: none; }
-  .bb-tenant-hero__cta .bb-tenant-hero__cta-ministries { display: none; }
-  .bb-tenant-hero__cta .bb-tenant-hero__cta-giving { display: inline-flex; }
-
   .bb-tenant-community {
     display: none;
   }
@@ -13926,18 +14053,6 @@ a.church-branch-bento-stat:hover {
 }
 
 @media (max-width: 899px) {
-  .bb-tenant-hero__cta-label--desktop { display: none; }
-  .bb-tenant-hero__cta-label--mobile { display: inline; }
-  .bb-tenant-hero__cta .bb-tenant-hero__cta-giving { display: none; }
-  .bb-tenant-hero__cta .bb-tenant-hero__cta-ministries { display: inline-flex; }
-  .bb-tenant-hero__cta {
-    flex-direction: column;
-  }
-  .bb-tenant-hero__cta .church-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
   .bb-tenant-community { order: 3; }
   .bb-tenant-ministries { order: 4; }
   .bb-tenant-member { order: 5; }

@@ -5,8 +5,12 @@
   var visionBody = String(visionText || '').trim();
   var findAddress = String(address || locationText || '').trim();
   var welcomeLead = String(typeof welcomeMessage !== 'undefined' ? welcomeMessage : '').trim();
-  var pageHeading = String(aboutTitle || '').trim() || ('About ' + churchName);
-  var heroLead = welcomeLead || ('Discover ' + churchName + (branchName && branchName !== churchName ? (' · ' + branchName) : '') + '.');
+  var autoAboutTitle = 'About ' + churchName;
+  var hasCustomAboutTitle = !!(aboutTitle && String(aboutTitle).trim() && String(aboutTitle).trim() !== autoAboutTitle);
+  var pageHeading = String(aboutTitle || '').trim() || 'Rooted in Grace, Growing in Community';
+  var stitchAboutLead = churchName + ' is more than just a building; we are a family dedicated to sharing the transformative power of the Gospel.';
+  var autoAboutWelcome = 'Welcome to ' + churchName + '. We are glad you are here and would love to connect with you.';
+  var heroLead = (welcomeLead && welcomeLead !== autoAboutWelcome) ? welcomeLead : stitchAboutLead;
   var valueRows = [];
   if (valuesText) {
     String(valuesText).split('\n').map(function (line) { return line.trim(); }).filter(Boolean).forEach(function (line) {
@@ -28,8 +32,12 @@
   <header class="church-about-page__hero church-about-desktop-hero church-about-mobile-hero">
     <div class="church-public-container church-about-page__hero-inner">
       <div class="church-about-page__hero-copy">
-        <span class="church-public-eyebrow church-about-page__eyebrow">About Us</span>
+        <span class="church-public-eyebrow church-about-page__eyebrow">OUR JOURNEY</span>
+        <% if (hasCustomAboutTitle) { %>
         <h1 class="church-public-page-title church-about-page__title"><%= pageHeading %></h1>
+        <% } else { %>
+        <h1 class="church-public-page-title church-about-page__title">Rooted in Grace, <span class="church-about-page__title-accent">Growing in Community</span></h1>
+        <% } %>
         <p class="church-public-body church-about-page__lead"><%= heroLead %></p>
         <div class="church-about-page__hero-actions">
           <a class="church-btn church-btn--public-primary" href="/contact">
@@ -71,7 +79,7 @@
         <div class="church-about-page__story-panel church-about-page__story-panel--accent"></div>
       </div>
       <div class="church-about-page__story-copy">
-        <h2 id="about-story-heading" class="church-public-section-title">Our Story</h2>
+        <h2 id="about-story-heading" class="church-public-section-title">The Church Story</h2>
         <p class="church-public-body"><%= storyBody %></p>
       </div>
     </div>

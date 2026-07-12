@@ -1,0 +1,50 @@
+{
+  "projectId": "17124191473876947591",
+  "targetTenant": "https://demo.blessboard.com",
+  "canonicalScreens": [
+    {
+      "title": "01-public-home-desktop",
+      "screenId": "7cb68d969f1e4b718e5870a0dd60523e",
+      "deviceType": "DESKTOP",
+      "dimensions": "2560x4390",
+      "notes": "Chosen over ff5da3e58 and f5b04bfbdd8b452f912cf45aa1d66992 duplicates; tenant hero copy (Welcome Home / Experience Community). Hub sections retain church-flow parity for data-driven regions."
+    },
+    {
+      "title": "01-public-home-mobile",
+      "screenId": "221636e594a1490d92ef27189748b172",
+      "deviceType": "MOBILE",
+      "dimensions": "1560x6136",
+      "notes": "Chosen over a3ec4058 and a52e64c6 duplicates; matches mobile hero and section stack."
+    },
+    {
+      "title": "02-public-about-desktop",
+      "screenId": "4537dc7257cb47a39fa0af4ee1c1c316",
+      "deviceType": "DESKTOP",
+      "dimensions": "2560x6006"
+    },
+    {
+      "title": "02-public-about-mobile",
+      "screenId": "338e5c78ba2148669d1a20e626a43969",
+      "deviceType": "MOBILE",
+      "dimensions": "780x4640"
+    },
+    {
+      "title": "03-public-leadership-desktop",
+      "screenId": "a779e04c4e28497ba4d5fb1e5fd8a5fe",
+      "deviceType": "DESKTOP",
+      "dimensions": "2560x3550"
+    },
+    {
+      "title": "03-public-leadership-mobile",
+      "screenId": "9342690a6b8644039395a0fb801d8be6",
+      "deviceType": "MOBILE",
+      "dimensions": "780x3148"
+    }
+  ],
+  "excludedDuplicates": [
+    "01-public-home-desktop (ff5da3e58cff4525a6ed972dcfc6f1d8)",
+    "01-public-home-desktop (f5b04bfbdd8b452f912cf45aa1d66992)",
+    "01-public-home-mobile (a3ec4058c4024e35a18e471960d748e8)",
+    "01-public-home-mobile (a52e64c6e9b743c8857cf7ab5cd907f6)"
+  ]
+}

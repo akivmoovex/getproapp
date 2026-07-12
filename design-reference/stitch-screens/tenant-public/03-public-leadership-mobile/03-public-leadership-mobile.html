@@ -1,0 +1,318 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-pill {
+            transition: all 0.2s ease-in-out;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error": "#ffffff",
+                      "on-tertiary-container": "#f7f8f9",
+                      "error-container": "#ffdad6",
+                      "on-secondary": "#ffffff",
+                      "tertiary-container": "#707273",
+                      "primary-fixed": "#e4dfff",
+                      "on-primary": "#ffffff",
+                      "primary-fixed-dim": "#c6bfff",
+                      "on-surface-variant": "#474554",
+                      "surface-container-low": "#eaf5fa",
+                      "on-secondary-fixed-variant": "#41484a",
+                      "on-background": "#131d21",
+                      "surface": "#f1fbff",
+                      "background": "#f1fbff",
+                      "on-surface": "#131d21",
+                      "surface-tint": "#5847d2",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container": "#e4f0f4",
+                      "on-primary-container": "#faf6ff",
+                      "secondary": "#586062",
+                      "surface-variant": "#d9e4e9",
+                      "inverse-on-surface": "#e7f3f7",
+                      "secondary-container": "#dae1e3",
+                      "primary": "#5341cd",
+                      "on-primary-fixed": "#160066",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed-variant": "#4029ba",
+                      "on-secondary-container": "#5d6466",
+                      "surface-bright": "#f1fbff",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed": "#191c1d",
+                      "primary-container": "#6c5ce7",
+                      "on-secondary-fixed": "#161d1f",
+                      "surface-container-highest": "#d9e4e9",
+                      "on-tertiary-fixed-variant": "#454748",
+                      "inverse-primary": "#c6bfff",
+                      "tertiary-fixed-dim": "#c5c7c8",
+                      "secondary-fixed-dim": "#c1c8ca",
+                      "outline": "#787586",
+                      "outline-variant": "#c8c4d7",
+                      "on-tertiary": "#ffffff",
+                      "tertiary-fixed": "#e1e3e4",
+                      "tertiary": "#57595b",
+                      "secondary-fixed": "#dde4e6",
+                      "surface-dim": "#d1dce0",
+                      "surface-container-high": "#dfeaef",
+                      "inverse-surface": "#283236"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "lg": "24px",
+                      "xl": "32px",
+                      "xs": "4px",
+                      "sm": "8px",
+                      "base": "8px",
+                      "md": "16px",
+                      "gutter": "24px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "32px"
+              },
+              "fontFamily": {
+                      "title-lg": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "title-md": ["Inter"],
+                      "label-lg": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "label-md": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "body-md": ["Inter"]
+              },
+              "fontSize": {
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "label-md": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen flex flex-col">
+<!-- Top Navigation Anchor -->
+<nav class="bg-surface border-b border-outline-variant fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16">
+<div class="flex items-center gap-sm"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7BjgyPRMQj90Ke_rhAxyAeo9QALUbBBcMCgpub4tY1t0XzoqK0Ywnr_1YIc3SvOTtD6J8BWgJSN4vufk04qWxP2VCGAKkV3epRBDJzhdH-QwNpFmPT3XX14SDfdLI29Y2Luv-mH-NIMvO6Gb5zL0Rvfcws58Z7FTFL5oiSFwDOrr5Cb9vpUcOHXCua3X8Au89UeYT0WH3-0YLTJ9MDpKTpIgtkUPYBLmqIzIfm-h8v8NtoebkZAlLaw" alt="BlessBoard Logo" class="h-8 w-auto"></div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/20">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+</button>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 mt-16 pb-24 overflow-y-auto">
+<!-- Header Section -->
+<header class="px-margin-mobile pt-xl pb-lg">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background mb-xs">Our Leadership</h1>
+<p class="text-on-surface-variant font-body-md">Guided by faith, serving with love. Meet the heart of Kafue Baptist Church.</p>
+</header>
+<!-- Senior Pastor Featured Card -->
+<section class="px-margin-mobile mb-xl">
+<div class="relative bg-primary-container rounded-xl overflow-hidden shadow-md">
+<div class="aspect-[4/5] w-full relative">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a senior pastor with a warm, welcoming expression, standing in front of a modern church pulpit. The lighting is soft and golden, highlighting a background of subtle wooden textures and the signature Kafue Baptist purple color palette. The image exudes a sense of structured compassion and reliable leadership." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBo0shTg3iTfzGxUKU0hjtNLUQrhzo56so-LV87pwPjO5uJRr1VeF4GOqgpfphLNAmNOmLcxd0BxmSjt9gqLXypMCnKkYUEiMobUv_2ZzOJopXCfiLpNQQ9IFB9nx80ew1ZbhCc7BegxvKpWDj8JYqWRN69wDUmU4txRyGrg6XpmqZ-j64S6NeBcyWFJUK5iyd_bUoS6BAfunE26H0drkaAES8n2-0AUQew2i_Tx6CymOLCzhBNRvrF_g">
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-lg w-full">
+<span class="inline-block bg-primary text-on-primary font-label-lg px-md py-xs rounded-full mb-sm">Senior Pastor</span>
+<h2 class="text-white font-headline-md text-headline-md">Rev. David Mumba</h2>
+<div class="flex gap-md mt-md">
+<a class="flex-1 bg-white text-primary flex items-center justify-center gap-sm py-md rounded-lg font-title-md active:scale-95 transition-transform" href="tel:+26012345678">
+<span class="material-symbols-outlined text-title-md">call</span> Call
+                            </a>
+<a class="flex-1 bg-primary text-white border border-white/20 flex items-center justify-center gap-sm py-md rounded-lg font-title-md active:scale-95 transition-transform" href="mailto:david.m@kafuebaptist.org">
+<span class="material-symbols-outlined text-title-md">mail</span> Email
+                            </a>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Leadership List Section -->
+<section class="px-margin-mobile space-y-lg">
+<h3 class="font-title-lg text-title-lg text-on-surface-variant flex items-center gap-sm">
+<span class="material-symbols-outlined">diversity_3</span> Ministry Leaders
+            </h3>
+<!-- Leader Row 1 -->
+<div class="flex gap-md bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm active:bg-surface-container-low transition-colors">
+<div class="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A smiling female youth leader in a modern, brightly lit office environment. She is wearing a smart-casual outfit that reflects the church's violet and gray brand colors. The photography is clean, high-key, and professional, conveying approachable expertise." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-EbaSwYIMhxvxOHXAQFH46ogQwNmA5mm1HOFfzZ-YeiH2gVXeH7aszFA_R2iTPUj6NsHHiFiSxGVMf-RDppgB6aaVm_ibHZJSLLVtG5qv27bZi4EbZl2pKOFm4xHOkSfuWqFsXiQajkqcik8hTKb1gZ3u41MMLZVZAmUl8RI1C_naAN7WngWPaEZuIAHf7E3QXRBGansrTewvJ6QX6FErqjy9OJk_oL3r1CuSkWfBJ_vf3sfr-qBNqg">
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">Sarah Chilufya</h4>
+<p class="font-label-lg text-primary">Youth &amp; Outreach Director</p>
+</div>
+<button class="text-secondary hover:text-primary p-xs rounded-full">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="flex gap-sm mt-sm">
+<button class="bg-secondary-container text-on-secondary-container px-md py-xs rounded-full font-label-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">chat</span> Message
+                        </button>
+<button class="bg-surface-variant text-on-surface-variant px-md py-xs rounded-full font-label-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">calendar_month</span> Office Hours
+                        </button>
+</div>
+</div>
+</div>
+<!-- Leader Row 2 -->
+<div class="flex gap-md bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm active:bg-surface-container-low transition-colors">
+<div class="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A middle-aged man with a kind face, acting as the Worship Director, holding a modern guitar in a recording studio or church hall. The setting uses soft ambient lighting with hints of purple and deep charcoal, matching the church's brand identity of structured compassion." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsm6wXlmEAzR6RUOQO1i5Jao25vc7zXzUUUkP52E_vIs-i_HZJf8ZdrfLaB5DuAwxuQY1ibyXFzDfbJ6jBOrRV9dS6NAKFRlYGEVH6bgULbGnQcsl4VCkQs5i6gdu0-AsTletEmM1mBOb2y708DBK-FFtei9qgpwvfD5Llce6xMcdQ-ucyTygwlb68Z8Cj3N9lrepzYTEPNzJyeVF80PNR9YyEYe9DxZwUhUJGF6pb7i8lK8xRr7oYEw">
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">Mark Banda</h4>
+<p class="font-label-lg text-primary">Worship &amp; Media Lead</p>
+</div>
+<button class="text-secondary hover:text-primary p-xs rounded-full">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="flex gap-sm mt-sm">
+<button class="bg-secondary-container text-on-secondary-container px-md py-xs rounded-full font-label-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">chat</span> Message
+                        </button>
+<button class="bg-surface-variant text-on-surface-variant px-md py-xs rounded-full font-label-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">headphones</span> Playlists
+                        </button>
+</div>
+</div>
+</div>
+<!-- Leader Row 3 -->
+<div class="flex gap-md bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm active:bg-surface-container-low transition-colors">
+<div class="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="An elderly woman with a gentle and wise expression, representing the Children's Ministry Leader. She is in a bright, colorful classroom decorated with subtle church motifs. The image is warm and high-resolution, maintaining the professional corporate yet approachable church aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA50Y2RlfoItTJJTvKRmkN7_7QS1dOMWAKDHSuWGBcclrISshZ2LQ39WUBiQ_V92Wl32W10uVwM9DqQmz_FNakeGyUEp0QH1gdEhbPDWK9O2vZ5l2ap_Aj3aZ_l3qyRfqSPye7wJmSAwmPCHrgZFSMdSZ2S4812onnGglrkJwcyPXvZr6sw5B8qjEYupIliVtYhK_9PxtdjJevb4PAqFI5yoAK7v3VQcrYRQrX-xpSXfJfn-y9IDQzWIw">
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">Elizabeth Phiri</h4>
+<p class="font-label-lg text-primary">Children's Ministry</p>
+</div>
+<button class="text-secondary hover:text-primary p-xs rounded-full">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<div class="flex gap-sm mt-sm">
+<button class="bg-secondary-container text-on-secondary-container px-md py-xs rounded-full font-label-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">chat</span> Message
+                        </button>
+<button class="bg-surface-variant text-on-surface-variant px-md py-xs rounded-full font-label-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">info</span> Curriculum
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Administrative Section (Bento Grid Style) -->
+<section class="px-margin-mobile mt-xl mb-xl">
+<h3 class="font-title-lg text-title-lg text-on-surface-variant mb-lg">Administration</h3>
+<div class="grid grid-cols-2 gap-md">
+<div class="bg-surface-container-high p-lg rounded-xl flex flex-col justify-between h-40">
+<span class="material-symbols-outlined text-primary text-headline-md">account_balance</span>
+<div>
+<h4 class="font-title-md text-on-surface">Finance Office</h4>
+<p class="font-label-md text-secondary">Treasury &amp; Giving</p>
+</div>
+</div>
+<div class="bg-inverse-surface p-lg rounded-xl flex flex-col justify-between h-40">
+<span class="material-symbols-outlined text-primary-fixed-dim text-headline-md">description</span>
+<div>
+<h4 class="font-title-md text-surface-container-lowest">Secretariat</h4>
+<p class="font-label-md text-secondary-fixed-dim">Bookings &amp; Comms</p>
+</div>
+</div>
+</div>
+</section>
+<footer class="px-margin-mobile py-lg border-t border-outline-variant mt-xl text-center"><p class="text-on-surface-variant font-label-md">Powered by BlessBoard</p></footer></main>
+<!-- Bottom Navigation Shell -->
+<nav class="fixed bottom-0 w-full bg-surface-container-lowest border-t border-outline-variant md:hidden h-20 px-sm flex items-center justify-around z-50">
+<button class="flex flex-col items-center gap-xs text-secondary active-nav-pill px-md py-xs rounded-full">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md">Home</span>
+</button>
+<button class="flex flex-col items-center gap-xs text-primary active-nav-pill bg-primary-container/20 px-md py-xs rounded-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-md">Leaders</span>
+</button>
+<button class="flex flex-col items-center gap-xs text-secondary active-nav-pill px-md py-xs rounded-full">
+<span class="material-symbols-outlined">church</span>
+<span class="font-label-md">Ministries</span>
+</button>
+<button class="flex flex-col items-center gap-xs text-secondary active-nav-pill px-md py-xs rounded-full">
+<span class="material-symbols-outlined">volunteer_activism</span>
+<span class="font-label-md">Giving</span>
+</button>
+</nav>
+<!-- Floating Action Button for focused context -->
+<div class="fixed bottom-24 right-margin-mobile z-40">
+<button class="bg-primary-container text-on-primary-container w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-headline-md">add_comment</span>
+</button>
+</div>
+<script>
+        // Simple micro-interaction for active nav states
+        const navButtons = document.querySelectorAll('nav.bottom-0 button');
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                navButtons.forEach(b => {
+                    b.classList.remove('bg-primary-container/20', 'text-primary');
+                    b.classList.add('text-secondary');
+                    const icon = b.querySelector('.material-symbols-outlined');
+                    if (icon) icon.style.fontVariationSettings = "'FILL' 0";
+                });
+                btn.classList.add('bg-primary-container/20', 'text-primary');
+                btn.classList.remove('text-secondary');
+                const activeIcon = btn.querySelector('.material-symbols-outlined');
+                if (activeIcon) activeIcon.style.fontVariationSettings = "'FILL' 1";
+            });
+        });
+
+        // Pull to refresh feel (visual only)
+        let touchstartY = 0;
+        document.addEventListener('touchstart', e => touchstartY = e.touches[0].screenY);
+        document.addEventListener('touchend', e => {
+            const touchendY = e.changedTouches[0].screenY;
+            if (touchendY > touchstartY + 100 && window.scrollY === 0) {
+                console.log('Reload simulation');
+            }
+        });
+    </script>
+
+
+</body></html>
