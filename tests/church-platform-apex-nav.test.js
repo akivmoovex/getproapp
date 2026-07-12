@@ -68,8 +68,10 @@ test("apex desktop nav uses simplified structure with Solutions dropdown", async
   assert.match(nav, /church-nav-dropdown/);
   assert.match(nav, /id="platform-solutions-trigger"[^>]*>[\s\S]*Solutions/);
   assert.match(nav, /expand_more/);
-  assert.match(nav, /role="menuitem"[^>]*href="\/for-churches"[^>]*>For Churches</);
-  assert.match(nav, /role="menuitem"[^>]*href="\/multi-branch"[^>]*>Multi-Branch Churches</);
+  assert.match(nav, /role="menuitem"[^>]*href="\/for-churches"/);
+  assert.match(nav, /church-nav-dropdown__label">For Churches</);
+  assert.match(nav, /role="menuitem"[^>]*href="\/multi-branch"/);
+  assert.match(nav, /church-nav-dropdown__label">Multi-Branch Churches</);
   assert.match(nav, /href="\/churches"[^>]*>Find a Church</);
   assert.match(nav, /href="\/about"[^>]*>About</);
 
@@ -80,7 +82,11 @@ test("apex desktop nav uses simplified structure with Solutions dropdown", async
 
   assert.match(res.text, /class="church-header__admin-link"[^>]*href="\/churches\?for=admin"[^>]*>Church Admin Login</);
   assert.match(res.text, /class="church-btn church-btn--primary[^"]*"[^>]*href="\/register-church"[^>]*>Register Your Church</);
-  assert.match(res.text, /class="church-brand"[^>]*href="\/"/);
+  assert.match(res.text, /bb-powered-by__getpro/);
+  assert.match(res.text, /Powered by/);
+  assert.match(res.text, /home-desktop-design/);
+  assert.match(res.text, /home-mobile-design/);
+  assert.match(res.text, /bb-apex-hero/);
 });
 
 test("apex desktop nav renders on main platform pages", async () => {
@@ -89,7 +95,7 @@ test("apex desktop nav renders on main platform pages", async () => {
     const res = await request(app).get(routePath);
     assert.equal(res.status, 200, `${routePath} should render`);
     assert.match(extractDesktopNav(res.text), /Solutions/, `${routePath} should include Solutions`);
-    assert.match(res.text, /church\.css\?v=64/);
+    assert.match(res.text, /church\.css\?v=65/);
   }
 });
 

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BlessBoard | One digital home for your church</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-tertiary-fixed": "#251a00",
+                    "tertiary-fixed": "#ffdf98",
+                    "tertiary-container": "#8f6d00",
+                    "surface-tint": "#5847d2",
+                    "outline": "#787586",
+                    "surface-container-highest": "#d9e4e9",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed": "#160066",
+                    "on-tertiary-fixed-variant": "#5a4300",
+                    "tertiary-fixed-dim": "#f1c03b",
+                    "on-error-container": "#93000a",
+                    "on-background": "#131d21",
+                    "surface-variant": "#d9e4e9",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "inverse-on-surface": "#e7f3f7",
+                    "on-surface-variant": "#474554",
+                    "surface-bright": "#f1fbff",
+                    "outline-variant": "#c8c4d7",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-container": "#5d6466",
+                    "inverse-surface": "#283236",
+                    "surface-container": "#e4f0f4",
+                    "surface-container-high": "#dfeaef",
+                    "surface-container-low": "#eaf5fa",
+                    "on-surface": "#131d21",
+                    "secondary-fixed": "#dde4e6",
+                    "primary": "#5341cd",
+                    "on-error": "#ffffff",
+                    "secondary": "#586062",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "inverse-primary": "#c6bfff",
+                    "surface": "#f1fbff",
+                    "tertiary": "#715500",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "secondary-container": "#dae1e3",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary-fixed": "#161d1f",
+                    "error": "#ba1a1a",
+                    "on-primary-container": "#faf6ff",
+                    "background": "#f1fbff",
+                    "on-tertiary-container": "#fff7ec",
+                    "surface-dim": "#d1dce0",
+                    "primary-fixed": "#e4dfff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "16px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-padding-mobile": "64px",
+                    "stack-md": "16px",
+                    "stack-sm": "8px",
+                    "gutter": "32px",
+                    "container-max": "1280px",
+                    "section-padding-desktop": "120px",
+                    "stack-lg": "32px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "label-md": ["Hanken Grotesk"],
+                    "body-lg": ["Inter"],
+                    "headline-sm": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-xl": ["Hanken Grotesk"],
+                    "display-lg-mobile": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "26px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-lg": ["20px", {"lineHeight": "30px", "fontWeight": "400"}],
+                    "headline-sm": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["64px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display-lg-mobile": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.01em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .blessboard-shadow {
+            box-shadow: 0 10px 30px rgba(108, 92, 231, 0.08);
+        }
+        .blessboard-shadow-hover:hover {
+            box-shadow: 0 20px 40px rgba(108, 92, 231, 0.12);
+        }
+        .glass-nav {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md overflow-x-hidden">
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 w-full z-50 glass-nav bg-surface/80 dark:bg-surface-dim/80 shadow-[0_10px_30px_rgba(108,92,231,0.08)]">
+<div class="max-w-container-max mx-auto px-gutter py-4 flex justify-between items-center">
+<div class="flex items-center gap-8">
+<a class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed-dim" href="#">BlessBoard</a>
+<div class="hidden md:flex items-center gap-6">
+<a class="font-label-md text-label-md text-primary dark:text-primary-fixed-dim border-b-2 border-primary pb-1" href="#">Features</a>
+<a class="font-label-md text-label-md text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors" href="#">Solutions</a>
+<a class="font-label-md text-label-md text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors" href="#">Find a Church</a>
+<a class="font-label-md text-label-md text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors" href="#">About</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<a class="hidden md:block font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Church Admin Login</a>
+<button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-lg font-label-md text-label-md scale-95 active:scale-90 transition-transform hover:opacity-90">
+                    Register Your Church
+                </button>
+</div>
+</div>
+</nav>
+<main class="pt-24">
+<!-- Hero Section -->
+<section class="relative px-gutter py-section-padding-mobile md:py-section-padding-desktop overflow-hidden bg-[#F9F8F6]">
+<div class="max-w-container-max mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
+<div class="space-y-stack-lg">
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface leading-tight">
+                        One digital home for <span class="text-primary">your church</span>
+</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+                        Everything you need to grow your congregation, engage your members, and manage your ministry in one simple, powerful platform.
+                    </p>
+<div class="flex flex-wrap gap-4 pt-4">
+<button class="bg-primary text-on-primary px-8 py-4 rounded-lg font-label-md text-label-md blessboard-shadow hover:bg-primary/90 transition-all scale-100 active:scale-95">
+                            Register Your Church
+                        </button>
+<button class="border-2 border-primary text-primary px-8 py-4 rounded-lg font-label-md text-label-md hover:bg-primary/5 transition-all scale-100 active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">play_circle</span>
+                            Watch the Demo
+                        </button>
+</div>
+</div>
+<div class="relative">
+<div class="rounded-xl overflow-hidden blessboard-shadow transform md:rotate-2 hover:rotate-0 transition-transform duration-700">
+<img class="w-full h-full object-cover aspect-[4/3]" data-alt="A warm, high-quality photograph showing a diverse, multi-generational church community gathering in a modern, naturally lit sanctuary. People are smiling and engaging in conversation, creating a sense of deep belonging and connection. The lighting is soft and golden, matching the ivory and violet color palette of the brand, evoking a professional yet human-centric and spiritual atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_lG1MBe--b5q7ejjFSRCA3d_vu6e5udLYrQuqjbqEGZvWdNl4wTEtx634jHZTbF_PJ3-B82cbIl1HV_AQVbuBQ55CmlXFLQp84qEE-IL-XkNfi10BwKRkqFuRIF93HsVOBwKDVJ5YAeJXtfZW77FMWBrT_8dDlAmPM-Zp_cbIQx91jcqtE83NbfbaEE89zsVrwyl5TBaob9i-XUE81u_c5wfh617hLhYJ-br1DZY_z9Ykj-PqvdiJEw"/>
+</div>
+<!-- Abstract Decor -->
+<div class="absolute -bottom-6 -left-6 w-32 h-32 bg-primary/10 rounded-full blur-3xl -z-10"></div>
+<div class="absolute -top-10 -right-10 w-48 h-48 bg-tertiary-fixed/30 rounded-full blur-3xl -z-10"></div>
+</div>
+</div>
+</section>
+<!-- Audience Pathways Section -->
+<section class="px-gutter py-section-padding-mobile md:py-section-padding-desktop bg-surface">
+<div class="max-w-container-max mx-auto text-center mb-16">
+<h2 class="font-headline-xl text-headline-xl text-on-surface mb-4">Designed for every member of your community</h2>
+<div class="w-20 h-1.5 bg-primary mx-auto rounded-full"></div>
+</div>
+<div class="max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-stack-lg">
+<!-- Visitor Card -->
+<div class="group relative bg-surface-container-lowest p-8 rounded-xl blessboard-shadow blessboard-shadow-hover border border-outline-variant/30 transition-all cursor-pointer">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">person_add</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">For Visitors</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Find your place and stay connected.</p>
+</div>
+<!-- Member Card -->
+<div class="group relative bg-surface-container-lowest p-8 rounded-xl blessboard-shadow blessboard-shadow-hover border border-outline-variant/30 transition-all cursor-pointer">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">favorite</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">For Members</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Deepen your faith and fellowship.</p>
+</div>
+<!-- Leader Card -->
+<div class="group relative bg-surface-container-lowest p-8 rounded-xl blessboard-shadow blessboard-shadow-hover border border-outline-variant/30 transition-all cursor-pointer">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">auto_fix_high</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">For Leaders</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Empower your ministry with the right tools.</p>
+</div>
+<!-- Multi-Branch Card -->
+<div class="group relative bg-surface-container-lowest p-8 rounded-xl blessboard-shadow blessboard-shadow-hover border border-outline-variant/30 transition-all cursor-pointer">
+<div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">account_tree</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">For Multi-Branch</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Unity and oversight for growing organizations.</p>
+</div>
+</div>
+</section>
+<!-- Core Features Section -->
+<section class="px-gutter py-section-padding-mobile md:py-section-padding-desktop bg-[#F9F8F6]">
+<div class="max-w-container-max mx-auto">
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
+<div class="max-w-2xl">
+<p class="text-primary font-label-md text-label-md tracking-wider uppercase mb-2">Platform Capabilities</p>
+<h2 class="font-headline-xl text-headline-xl text-on-surface">Powerful tools built for modern ministry</h2>
+</div>
+<a class="text-primary font-label-md text-label-md flex items-center gap-2 hover:gap-4 transition-all" href="#">
+                        View all features <span class="material-symbols-outlined">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Feature 1: Bento Style -->
+<div class="bg-white rounded-xl overflow-hidden blessboard-shadow flex flex-col md:flex-row">
+<div class="md:w-1/2 h-64 md:h-auto">
+<img class="w-full h-full object-cover" data-alt="A clean and minimal mockup of a church website interface being viewed on a sleek laptop. The website features high-quality photography of a church community and a modern navigation menu. The lighting is bright and airy, reflecting a sophisticated software-as-a-service aesthetic that emphasizes data-driven clarity and stewardship." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOUbA7OZZ7VvPeCgGHi8m_lBl_SE4ZjnYdRBDYc7GFydMKMN8Ig1CAA4RSdpx-_nB0fvy2B5mgHx25ma3W3UI030YeGiwIRJp7wm2IAS0ALjKoQsarQzxLCosM-bjnQCOGm6gTHKbcUUl4KBN_WwGf-VICfHZuw4ed74W9v-nDMIDPDVgBE80IiL7oyRnunqygpvYBdVuaFyGu8mhEF8ssEG_fYmvpB_rbDBRMatyhVeZIwxifkgBnvQ"/>
+</div>
+<div class="md:w-1/2 p-8 flex flex-col justify-center">
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-4">Public Church Website</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">A beautiful, data-driven home for your online presence.</p>
+</div>
+</div>
+<!-- Feature 2 -->
+<div class="bg-white rounded-xl overflow-hidden blessboard-shadow flex flex-col md:flex-row">
+<div class="md:w-1/2 h-64 md:h-auto md:order-last">
+<img class="w-full h-full object-cover" data-alt="Close up of a mobile app interface showing community interaction features like prayer request lists, giving buttons, and event RSVP cards. The UI is clean, with soft violet accents and ivory backgrounds. The focus is on tactile warmth and ease of use for members to engage with their church community daily." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUoRCW_spsSd7nc-j7RiCka4IXN2hMCWNagLwv5MsBRN2qa-znwRgUZpJIOMcivuDRBQDCoIGa-20HUcI4rdGSz3EodIYgQuI7oTcHYAJl7QGRJJHMZ6FwY_EE3gKU1VFJMwzTPRf36ES_Y_P1XCDEZo2DKImrcPtR4IVCepCJS5gfuIizx8vOUpfb573felILxzQQBI0mjEzuZkNdgIh_Dj3r7Dx1qJy0E-Wilkb-MK88I2-IEETcEg"/>
+</div>
+<div class="md:w-1/2 p-8 flex flex-col justify-center">
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-4">Member Engagement</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Tools for prayer requests, giving, and community growth.</p>
+</div>
+</div>
+<!-- Feature 3 -->
+<div class="bg-white rounded-xl overflow-hidden blessboard-shadow flex flex-col md:flex-row">
+<div class="md:w-1/2 h-64 md:h-auto">
+<img class="w-full h-full object-cover" data-alt="A professional dashboard view showing church administrative analytics including attendance charts, financial reports, and volunteer management tables. The design is clean, using soft grays and primary violet colors to make data analysis feel approachable and clear for ministry leaders. High-end SaaS interface aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbEh__WnfXdytyOhmaI2yhyhbvRDZDczA8xx1I1c9EgXgERCO8o6ZJOwchAjOGezC7qF3Nf0MSDskxm9EmYlGteoa1eEGy2EKVmaz3mVQ3xLpeGSQw6Iqzb2YGKNrMN7kDzc0ds60G0VpuM3w7Vz0MWVd8uNueQ3xm6TpfB7p30DH0YCNBaAxZgKoEV4giGGkK_u7YIQA6t2hgMGu2Wnc6eTnRYNPF8Ly0FPKbaIqC80U8SHIVVHksOw"/>
+</div>
+<div class="md:w-1/2 p-8 flex flex-col justify-center">
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-4">Church Administration</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Streamlined attendance, reporting, and management.</p>
+</div>
+</div>
+<!-- Feature 4 -->
+<div class="bg-white rounded-xl overflow-hidden blessboard-shadow flex flex-col md:flex-row">
+<div class="md:w-1/2 h-64 md:h-auto md:order-last">
+<img class="w-full h-full object-cover" data-alt="A birds-eye view visualization of a multi-branch organization, showing various campus locations on a stylized map with consolidated data overlays. The visual emphasizes unity and oversight through clean digital graphics and sophisticated tonal layering of soft blues and violets on a light surface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCD95qZFYUIyGf9gG03M8in_otdlXAHn_i2LlrNAxo7Ydiw3r1HNoljAzdbBoaXI5mazJYbcoMjSvbCdmMoKnSORr8etAPg1QxQOLBOgfAQMuG3AqxwjPoHT4R4hhwV88TSyh_AIMsgbMbJ3HUb3FjmV7QIQVgJ2_uXzfqe1mR4WUgq4U98FMjUwot9MrgUWZv8AshrQeGkOyyzlcnTWTA5alVrejYR6cQF8zY7rr1855fnZRK4Xje0Rg"/>
+</div>
+<div class="md:w-1/2 p-8 flex flex-col justify-center">
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-4">Multi-Branch Management</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Consolidated analytics for complex organizations.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="px-gutter py-section-padding-mobile md:py-section-padding-desktop bg-primary text-on-primary overflow-hidden relative">
+<div class="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-48 -mt-48"></div>
+<div class="max-w-container-max mx-auto text-center relative z-10">
+<h2 class="font-display-lg-mobile md:font-headline-xl text-display-lg-mobile md:text-headline-xl mb-6">Ready to empower your ministry?</h2>
+<p class="font-body-lg text-body-lg mb-10 opacity-90 max-w-2xl mx-auto">
+                    Join hundreds of churches who are already using BlessBoard to simplify their administration and deepen their community connection.
+                </p>
+<div class="flex flex-wrap justify-center gap-4">
+<button class="bg-white text-primary px-10 py-4 rounded-lg font-label-md text-label-md shadow-lg hover:scale-105 transition-transform active:scale-95">
+                        Register Your Church Now
+                    </button>
+<button class="border border-white/40 bg-white/10 backdrop-blur-sm px-10 py-4 rounded-lg font-label-md text-label-md hover:bg-white/20 transition-all active:scale-95">
+                        Schedule a Demo
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-section-padding-desktop px-gutter bg-inverse-surface dark:bg-surface-container-lowest border-t border-outline-variant/30">
+<div class="max-w-container-max mx-auto grid grid-cols-2 md:grid-cols-4 gap-stack-lg">
+<div class="col-span-2 md:col-span-1">
+<a class="font-headline-lg text-headline-lg font-bold text-on-tertiary dark:text-primary mb-6 block" href="#">BlessBoard</a>
+<p class="text-surface-variant/80 font-body-md text-body-md max-w-xs mb-6">
+                    Building the digital foundation for the global church community.
+                </p>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-tertiary dark:text-on-surface mb-6 uppercase tracking-wider">Product</h4>
+<ul class="space-y-4">
+<li><a class="font-label-md text-label-md text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">Features</a></li>
+<li><a class="font-label-md text-label-md text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">Pricing</a></li>
+<li><a class="font-label-md text-label-md text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">For Churches</a></li>
+<li><a class="font-label-md text-label-md text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">FAQ</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-tertiary dark:text-on-surface mb-6 uppercase tracking-wider">Company</h4>
+<ul class="space-y-4">
+<li><a class="font-label-md text-label-md text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">About</a></li>
+<li><a class="font-label-md text-label-md text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">Contact</a></li>
+<li><a class="font-label-md text-label-md text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">Privacy</a></li>
+<li><a class="font-label-md text-label-md text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">Terms</a></li>
+</ul>
+</div>
+<div class="col-span-2 md:col-span-1">
+<h4 class="font-label-md text-label-md text-on-tertiary dark:text-on-surface mb-6 uppercase tracking-wider">Stay Updated</h4>
+<div class="flex gap-2">
+<input class="bg-white/5 border border-outline/30 rounded-lg px-4 py-2 text-on-tertiary focus:ring-2 focus:ring-primary w-full outline-none" placeholder="Email address" type="email"/>
+<button class="bg-primary p-2 rounded-lg text-white hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+<div class="mt-8 flex gap-4 text-surface-variant/80">
+<a class="hover:text-white transition-colors" href="#"><span class="material-symbols-outlined">public</span></a>
+<a class="hover:text-white transition-colors" href="#"><span class="material-symbols-outlined">group</span></a>
+</div>
+</div>
+</div>
+<div class="max-w-container-max mx-auto mt-16 pt-8 border-t border-outline-variant/10 text-center text-surface-variant/60 font-label-md text-label-md">
+            © 2024 BlessBoard. Powered by GetPro.
+        </div>
+</footer>
+<script>
+        // Simple scroll micro-interaction for Navbar
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('py-2');
+                nav.classList.remove('py-4');
+            } else {
+                nav.classList.add('py-4');
+                nav.classList.remove('py-2');
+            }
+        });
+
+        // Hover effect for feature cards
+        const cards = document.querySelectorAll('.blessboard-shadow-hover');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body></html>

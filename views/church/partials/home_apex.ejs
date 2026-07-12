@@ -1,4 +1,4 @@
-<%# BlessBoard apex platform homepage %>
+<%# BlessBoard apex platform homepage — Stitch desktop + mobile trees v65 %>
 <%
   var isApex = typeof isVerticalApex !== 'undefined' && isVerticalApex;
   var remembered = typeof rememberedChurch !== 'undefined' ? rememberedChurch : null;
@@ -6,206 +6,349 @@
   var demoUrl = typeof demoChurchUrl !== 'undefined' ? demoChurchUrl : '';
 %>
 <% if (isApex) { %>
-<section class="bb-saas-hero home-desktop-design bb-apex-hero" id="welcome">
-  <div class="bb-saas-hero__inner">
-    <div class="bb-saas-hero__copy">
-      <span class="bb-saas-pill">BlessBoard</span>
-      <h1 class="bb-saas-hero__title">One digital home for your church</h1>
-      <p class="bb-saas-hero__lead">
-        BlessBoard helps churches manage their public website, members, ministries, events, resources and branch administration from one connected platform.
-      </p>
+
+<%# --- Desktop homepage (Stitch: One digital home for your church Desktop) --- %>
+<div class="home-desktop-design">
+  <section class="bb-apex-hero" id="welcome">
+    <div class="bb-apex-hero__inner">
+      <div class="bb-apex-hero__copy">
+        <h1 class="bb-apex-hero__title">One digital home for <span class="bb-apex-hero__accent">your church</span></h1>
+        <p class="bb-apex-hero__lead">Everything you need to grow your congregation, engage your members, and manage your ministry in one simple, powerful platform.</p>
+
+        <% if (remembered) { %>
+        <div class="bb-remembered" data-remembered-church="1">
+          <p class="bb-remembered__label">Continue to your church</p>
+          <p class="bb-remembered__church"><%= remembered.churchName %></p>
+          <p class="bb-remembered__branch"><%= remembered.branchName %></p>
+          <div class="bb-apex-hero__cta">
+            <a class="church-btn church-btn--primary church-btn--public-primary" href="<%= remembered.continueUrl %>">
+              Continue
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+            <a class="church-btn church-btn--public-secondary" href="/churches">Choose another church</a>
+          </div>
+          <form method="post" action="/churches/preference/clear" class="bb-remembered__clear">
+            <button type="submit" class="bb-remembered__clear-btn">Forget this church</button>
+          </form>
+        </div>
+        <% } else { %>
+        <div class="bb-apex-hero__cta">
+          <a class="church-btn church-btn--primary church-btn--public-primary" href="<%= registerHref %>">Register Your Church</a>
+          <a class="church-btn church-btn--public-secondary" href="/demo">
+            <span class="material-symbols-outlined" aria-hidden="true">play_circle</span>
+            Watch the Demo
+          </a>
+        </div>
+        <p class="bb-apex-hero__admin-link">
+          <a href="/churches?for=admin">Church Administrator Login</a>
+        </p>
+        <% } %>
+      </div>
+      <div class="bb-apex-hero__visual">
+        <div class="bb-apex-hero__decor bb-apex-hero__decor--one" aria-hidden="true"></div>
+        <div class="bb-apex-hero__decor bb-apex-hero__decor--two" aria-hidden="true"></div>
+        <div class="bb-apex-hero__frame">
+          <img
+            class="bb-apex-hero__img"
+            src="/church/images/homepage/desktop-hero-auditorium.jpg"
+            alt="Welcoming church congregation during a modern service"
+            width="800"
+            height="600"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bb-apex-pathways" id="audiences" aria-labelledby="audiences-title">
+    <div class="bb-apex-pathways__inner">
+      <div class="bb-apex-section-head bb-apex-section-head--center">
+        <h2 class="bb-apex-section-head__title" id="audiences-title">Designed for every member of your community</h2>
+        <span class="bb-apex-section-head__rule" aria-hidden="true"></span>
+      </div>
+      <div class="bb-apex-pathways__grid">
+        <article class="bb-apex-pathways__card">
+          <div class="bb-apex-pathways__icon" aria-hidden="true"><span class="material-symbols-outlined">person_add</span></div>
+          <h3>For Visitors</h3>
+          <p>Find your place and stay connected.</p>
+          <a class="bb-apex-pathways__link" href="/churches">Find a Church</a>
+        </article>
+        <article class="bb-apex-pathways__card">
+          <div class="bb-apex-pathways__icon" aria-hidden="true"><span class="material-symbols-outlined">favorite</span></div>
+          <h3>For Members</h3>
+          <p>Deepen your faith and fellowship.</p>
+          <a class="bb-apex-pathways__link" href="/churches">Find Your Church</a>
+        </article>
+        <article class="bb-apex-pathways__card">
+          <div class="bb-apex-pathways__icon" aria-hidden="true"><span class="material-symbols-outlined">auto_fix_high</span></div>
+          <h3>For Leaders</h3>
+          <p>Empower your ministry with the right tools.</p>
+          <a class="bb-apex-pathways__link" href="/churches?for=admin">Church Administrator Login</a>
+        </article>
+        <article class="bb-apex-pathways__card">
+          <div class="bb-apex-pathways__icon" aria-hidden="true"><span class="material-symbols-outlined">account_tree</span></div>
+          <h3>For Multi-Branch</h3>
+          <p>Unity and oversight for growing organizations.</p>
+          <a class="bb-apex-pathways__link" href="/multi-branch">Multi-Branch Churches</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="bb-apex-features" id="features" aria-labelledby="features-title">
+    <div class="bb-apex-features__inner">
+      <div class="bb-apex-features__header">
+        <div>
+          <p class="bb-apex-eyebrow">Platform Capabilities</p>
+          <h2 class="bb-apex-section-head__title" id="features-title">Powerful tools built for modern ministry</h2>
+        </div>
+        <a class="bb-apex-features__all" href="/features">
+          View all features
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </a>
+      </div>
+      <div class="bb-apex-features__grid">
+        <article class="bb-apex-feature-card">
+          <div class="bb-apex-feature-card__media">
+            <img src="/church/images/homepage/apex-feature-website.jpg" alt="Public church website interface on a laptop" width="640" height="480" />
+          </div>
+          <div class="bb-apex-feature-card__copy">
+            <h3>Public Church Website</h3>
+            <p>A beautiful, data-driven home for your online presence.</p>
+          </div>
+        </article>
+        <article class="bb-apex-feature-card bb-apex-feature-card--reverse">
+          <div class="bb-apex-feature-card__media">
+            <img src="/church/images/homepage/apex-feature-engagement.jpg" alt="Member engagement tools on a mobile phone" width="640" height="480" />
+          </div>
+          <div class="bb-apex-feature-card__copy">
+            <h3>Member Engagement</h3>
+            <p>Tools for prayer requests, giving, and community growth.</p>
+          </div>
+        </article>
+        <article class="bb-apex-feature-card">
+          <div class="bb-apex-feature-card__media">
+            <img src="/church/images/homepage/apex-feature-admin.jpg" alt="Church administration dashboard with analytics" width="640" height="480" />
+          </div>
+          <div class="bb-apex-feature-card__copy">
+            <h3>Church Administration</h3>
+            <p>Streamlined attendance, reporting, and management.</p>
+          </div>
+        </article>
+        <article class="bb-apex-feature-card bb-apex-feature-card--reverse">
+          <div class="bb-apex-feature-card__media">
+            <img src="/church/images/homepage/apex-feature-multibranch.jpg" alt="Multi-branch organization map and analytics" width="640" height="480" />
+          </div>
+          <div class="bb-apex-feature-card__copy">
+            <h3>Multi-Branch Management</h3>
+            <p>Consolidated analytics for complex organizations.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="bb-apex-steps" id="how-it-works" aria-labelledby="how-title">
+    <div class="bb-apex-steps__inner">
+      <h2 class="bb-apex-section-head__title" id="how-title">How it works</h2>
+      <ol class="bb-apex-steps__list">
+        <li class="bb-apex-steps__item">
+          <span class="bb-apex-steps__num" aria-hidden="true">1</span>
+          <div>
+            <h3>Find or register your church</h3>
+            <p>Search the directory for an active congregation, or request BlessBoard access for a new church.</p>
+          </div>
+        </li>
+        <li class="bb-apex-steps__item">
+          <span class="bb-apex-steps__num" aria-hidden="true">2</span>
+          <div>
+            <h3>Set up your church information and member access</h3>
+            <p>Publish website content, configure giving information, and enable member registration on your branch site.</p>
+          </div>
+        </li>
+        <li class="bb-apex-steps__item">
+          <span class="bb-apex-steps__num" aria-hidden="true">3</span>
+          <div>
+            <h3>Publish, communicate, and manage church activities</h3>
+            <p>Share announcements and events, support ministries, and manage branch operations from connected admin tools.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <% if (demoUrl) { %>
+  <section class="bb-apex-demo" id="demo" aria-labelledby="demo-title">
+    <div class="bb-apex-demo__inner">
+      <h2 class="bb-apex-section-head__title" id="demo-title">See BlessBoard in action</h2>
+      <p class="bb-apex-demo__lead">Explore a sample church public website with fictional content — no sign-in required.</p>
+      <div class="bb-apex-hero__cta">
+        <a class="church-btn church-btn--primary church-btn--public-primary" href="/demo">Guided demo tour</a>
+        <a class="church-btn church-btn--public-secondary" href="<%= demoUrl %>" rel="noopener noreferrer">Open demo church site</a>
+      </div>
+    </div>
+  </section>
+  <% } %>
+
+  <section class="bb-apex-cta" id="get-started">
+    <div class="bb-apex-cta__inner">
+      <div class="bb-apex-cta__decor" aria-hidden="true"></div>
+      <h2 class="bb-apex-cta__title">Ready to empower your ministry?</h2>
+      <p class="bb-apex-cta__lead">Request BlessBoard for your congregation or find your church to connect with members and leaders.</p>
+      <div class="bb-apex-cta__actions">
+        <a class="church-btn church-btn--public-primary bb-apex-cta__btn-primary" href="<%= registerHref %>">Register Your Church Now</a>
+        <a class="church-btn church-btn--public-secondary bb-apex-cta__btn-secondary" href="/contact">Schedule a Demo</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<%# --- Mobile homepage (Stitch: One digital home for your church Mobile) --- %>
+<div class="home-mobile-design">
+  <section class="bb-apex-hero bb-apex-hero--mobile" id="welcome-mobile">
+    <div class="bb-apex-hero__inner bb-apex-hero__inner--mobile">
+      <span class="bb-apex-pill">BlessBoard</span>
+      <h1 class="bb-apex-hero__title bb-apex-hero__title--mobile">One digital home for <span class="bb-apex-hero__accent">your church</span></h1>
+      <p class="bb-apex-hero__lead bb-apex-hero__lead--mobile">BlessBoard helps churches manage their public website, members, ministries, events, resources and branch administration from one connected platform.</p>
 
       <% if (remembered) { %>
       <div class="bb-remembered" data-remembered-church="1">
         <p class="bb-remembered__label">Continue to your church</p>
         <p class="bb-remembered__church"><%= remembered.churchName %></p>
         <p class="bb-remembered__branch"><%= remembered.branchName %></p>
-        <div class="bb-saas-hero__cta">
-          <a class="church-btn church-btn--primary church-btn--lg bb-saas-btn--pill" href="<%= remembered.continueUrl %>">
-            Continue
-            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-          </a>
-          <a class="church-btn church-btn--outline church-btn--lg bb-saas-btn--pill" href="/churches">Choose another church</a>
+        <div class="bb-apex-hero__cta bb-apex-hero__cta--stack">
+          <a class="church-btn church-btn--primary church-btn--public-primary church-btn--block" href="<%= remembered.continueUrl %>">Continue</a>
+          <a class="church-btn church-btn--public-secondary church-btn--block" href="/churches">Choose another church</a>
         </div>
         <form method="post" action="/churches/preference/clear" class="bb-remembered__clear">
           <button type="submit" class="bb-remembered__clear-btn">Forget this church</button>
         </form>
       </div>
       <% } else { %>
-      <div class="bb-saas-hero__cta">
-        <a class="church-btn church-btn--primary church-btn--lg bb-saas-btn--pill" href="<%= registerHref %>">
-          Register Your Church
-          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-        </a>
-        <a class="church-btn church-btn--outline church-btn--lg bb-saas-btn--pill" href="/churches">Find Your Church</a>
+      <div class="bb-apex-hero__cta bb-apex-hero__cta--stack">
+        <a class="church-btn church-btn--primary church-btn--public-primary church-btn--block" href="<%= registerHref %>">Register Your Church</a>
+        <a class="church-btn church-btn--public-secondary church-btn--block" href="/churches">Find Your Church</a>
       </div>
-      <p class="bb-saas-hero__admin-link">
+      <p class="bb-apex-hero__admin-link">
         <a href="/churches?for=admin">Church Administrator Login</a>
+        <% if (demoUrl) { %>
+        · <a href="/demo">Watch the Demo</a>
+        <% } %>
       </p>
       <% } %>
-    </div>
-    <div class="bb-saas-hero__visual">
-      <div class="bb-saas-hero__glow" aria-hidden="true"></div>
-      <div class="bb-saas-hero__frame">
-        <img
-          class="bb-saas-hero__img"
-          src="/church/images/homepage/desktop-hero-auditorium.jpg"
-          alt="Welcoming church congregation during a modern service"
-          width="800"
-          height="600"
-        />
+
+      <div class="bb-apex-hero__visual bb-apex-hero__visual--mobile">
+        <div class="bb-apex-hero__decor bb-apex-hero__decor--mobile" aria-hidden="true"></div>
+        <div class="bb-apex-hero__frame">
+          <img
+            class="bb-apex-hero__img"
+            src="/church/images/homepage/apex-hero-mobile.jpg"
+            alt="BlessBoard church management interface on a mobile phone"
+            width="780"
+            height="585"
+          />
+        </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="bb-platform-pathways home-desktop-design" id="audiences" aria-labelledby="audiences-title">
-  <div class="bb-platform-pathways__inner">
-    <h2 class="bb-platform-section__title" id="audiences-title">Built for every part of your church</h2>
-    <p class="bb-platform-section__subtitle">Choose the path that matches your role.</p>
-    <div class="bb-platform-pathways__grid">
-      <article class="bb-platform-pathways__card">
-        <div class="bb-saas-bento__icon bb-saas-bento__icon--primary" aria-hidden="true">
-          <span class="material-symbols-outlined">travel_explore</span>
-        </div>
-        <h3>Visitors</h3>
-        <p>Discover an active church and open its public branch website.</p>
-        <a class="bb-platform-pathways__link" href="/churches">Find a Church</a>
-      </article>
-      <article class="bb-platform-pathways__card">
-        <div class="bb-saas-bento__icon bb-saas-bento__icon--secondary" aria-hidden="true">
-          <span class="material-symbols-outlined">groups</span>
-        </div>
-        <h3>Church Members</h3>
-        <p>Sign in on your church site for announcements, events, and member resources.</p>
-        <a class="bb-platform-pathways__link" href="/churches">Find Your Church</a>
-      </article>
-      <article class="bb-platform-pathways__card">
-        <div class="bb-saas-bento__icon bb-saas-bento__icon--tertiary" aria-hidden="true">
-          <span class="material-symbols-outlined">admin_panel_settings</span>
-        </div>
-        <h3>Church Leaders</h3>
-        <p>Manage website content, members, ministries, and branch operations.</p>
-        <a class="bb-platform-pathways__link" href="/churches?for=admin">Church Administrator Login</a>
-      </article>
-      <article class="bb-platform-pathways__card">
-        <div class="bb-saas-bento__icon bb-saas-bento__icon--primary" aria-hidden="true">
-          <span class="material-symbols-outlined">account_tree</span>
-        </div>
-        <h3>Multi-Branch Churches</h3>
-        <p>Coordinate branches with HQ dashboards, reports, and organization-wide tools.</p>
-        <a class="bb-platform-pathways__link" href="/multi-branch">Multi-Branch Churches</a>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="bb-saas-features bb-platform-features home-desktop-design" id="features" aria-labelledby="features-title">
-  <div class="bb-saas-features__inner">
-    <div class="bb-saas-features__header">
-      <h2 class="bb-saas-features__title" id="features-title">Core platform features</h2>
-      <p class="bb-saas-features__subtitle">
-        BlessBoard connects public presence, member engagement, branch administration, and multi-branch oversight.
-        <a href="/features">See full feature list</a>.
-      </p>
-    </div>
-    <div class="bb-platform-features__grid">
-      <article class="bb-saas-bento__card bb-platform-features__group">
-        <h3>Public Church Website</h3>
-        <ul class="bb-saas-bento__checks">
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Branch homepage and public pages</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> About, leadership, ministries, events, and sermons</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Giving information and contact submissions</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Website editor with publish workflow</li>
-        </ul>
-      </article>
-      <article class="bb-saas-bento__card bb-platform-features__group">
-        <h3>Member Engagement</h3>
-        <ul class="bb-saas-bento__checks">
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Member registration and login</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Announcements and event listings</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Ministries, prayer requests, and member resources</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Member profile and account management</li>
-        </ul>
-      </article>
-      <article class="bb-saas-bento__card bb-platform-features__group">
-        <h3>Church Administration</h3>
-        <ul class="bb-saas-bento__checks">
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Member verification and branch admin tools</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Events, ministries, attendance, and duty roster</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Announcements, sermons, and resources</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Monthly branch reports and giving settings</li>
-        </ul>
-      </article>
-      <article class="bb-saas-bento__card bb-platform-features__group">
-        <h3>Multi-Branch Management</h3>
-        <ul class="bb-saas-bento__checks">
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Organization with multiple branch subdomains</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> HQ branch registry and report review</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> HQ broadcasts and consolidated analytics on supported plans</li>
-          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> BlessBoard directory to find the right branch</li>
-        </ul>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="bb-platform-steps home-desktop-design" id="how-it-works" aria-labelledby="how-title">
-  <div class="bb-platform-steps__inner">
-    <h2 class="bb-platform-section__title" id="how-title">How it works</h2>
-    <ol class="bb-platform-steps__list">
-      <li class="bb-platform-steps__item">
-        <span class="bb-platform-steps__num" aria-hidden="true">1</span>
-        <div>
-          <h3>Find or register your church</h3>
-          <p>Search the directory for an active congregation, or request BlessBoard access for a new church.</p>
-        </div>
-      </li>
-      <li class="bb-platform-steps__item">
-        <span class="bb-platform-steps__num" aria-hidden="true">2</span>
-        <div>
-          <h3>Set up your church information and member access</h3>
-          <p>Publish website content, configure giving information, and enable member registration on your branch site.</p>
-        </div>
-      </li>
-      <li class="bb-platform-steps__item">
-        <span class="bb-platform-steps__num" aria-hidden="true">3</span>
-        <div>
-          <h3>Publish, communicate, and manage church activities</h3>
-          <p>Share announcements and events, support ministries, and manage branch operations from connected admin tools.</p>
-        </div>
-      </li>
-    </ol>
-  </div>
-</section>
-
-<% if (demoUrl) { %>
-<section class="bb-platform-demo home-desktop-design" id="demo" aria-labelledby="demo-title">
-  <div class="bb-platform-demo__inner">
-    <div class="bb-platform-demo__copy">
-      <h2 class="bb-platform-section__title" id="demo-title">See BlessBoard in action</h2>
-      <p class="bb-platform-section__subtitle">Explore a sample church public website with fictional content — no sign-in required.</p>
-      <div class="bb-platform-page__actions">
-        <a class="church-btn church-btn--primary church-btn--pill" href="/demo">Guided demo tour</a>
-        <a class="church-btn church-btn--outline church-btn--pill" href="<%= demoUrl %>" rel="noopener noreferrer">Open demo church site</a>
+  <section class="bb-apex-pathways bb-apex-pathways--mobile" id="audiences-mobile" aria-labelledby="audiences-mobile-title">
+    <div class="bb-apex-pathways__inner">
+      <h2 class="bb-apex-section-head__title bb-apex-section-head__title--mobile" id="audiences-mobile-title">Built for every part of <span class="bb-apex-hero__accent">your church</span></h2>
+      <div class="bb-apex-pathways__stack">
+        <article class="bb-apex-pathways__card bb-apex-pathways__card--mobile">
+          <span class="material-symbols-outlined bb-apex-pathways__icon-lg" aria-hidden="true">person_add</span>
+          <h3>Visitors</h3>
+          <p>Discover an active church and open its public branch website.</p>
+          <a class="bb-apex-pathways__link" href="/churches">Find a Church <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+        </article>
+        <article class="bb-apex-pathways__card bb-apex-pathways__card--mobile">
+          <span class="material-symbols-outlined bb-apex-pathways__icon-lg" aria-hidden="true">groups</span>
+          <h3>Church Members</h3>
+          <p>Sign in on your church site for announcements, events, and member resources.</p>
+          <a class="bb-apex-pathways__link" href="/churches">Find Your Church <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+        </article>
+        <article class="bb-apex-pathways__card bb-apex-pathways__card--mobile">
+          <span class="material-symbols-outlined bb-apex-pathways__icon-lg" aria-hidden="true">admin_panel_settings</span>
+          <h3>Church Leaders</h3>
+          <p>Manage website content, members, ministries, and branch operations.</p>
+          <a class="bb-apex-pathways__link" href="/churches?for=admin">Church Administrator Login <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+        </article>
+        <article class="bb-apex-pathways__card bb-apex-pathways__card--mobile">
+          <span class="material-symbols-outlined bb-apex-pathways__icon-lg" aria-hidden="true">account_tree</span>
+          <h3>Multi-Branch Churches</h3>
+          <p>Coordinate branches with HQ dashboards, reports, and organization-wide tools.</p>
+          <a class="bb-apex-pathways__link" href="/multi-branch">Multi-Branch Churches <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+        </article>
       </div>
     </div>
-  </div>
-</section>
-<% } %>
+  </section>
 
-<section class="bb-saas-cta home-desktop-design" id="get-started">
-  <div class="bb-saas-cta__inner">
-    <div class="bb-saas-cta__card">
-      <h2>Bring your church community together online</h2>
-      <p>Request BlessBoard for your congregation or find your church to connect with members and leaders.</p>
-      <div class="bb-saas-cta__actions">
-        <a class="church-btn church-btn--lg bb-saas-btn--pill bb-saas-btn--cta-primary" href="<%= registerHref %>">Register Your Church</a>
-        <a class="church-btn church-btn--lg bb-saas-btn--pill bb-saas-btn--cta-outline" href="/contact">Contact BlessBoard</a>
+  <section class="bb-apex-features bb-apex-features--mobile" id="features-mobile" aria-labelledby="features-mobile-title">
+    <div class="bb-apex-features__inner">
+      <div class="bb-apex-section-head bb-apex-section-head--center">
+        <h2 class="bb-apex-section-head__title bb-apex-section-head__title--mobile" id="features-mobile-title">Core platform features</h2>
+        <p class="bb-apex-features__mobile-lead">BlessBoard connects public presence, member engagement, branch administration, and multi-branch oversight.</p>
+      </div>
+      <div class="bb-apex-features__compact">
+        <article class="bb-apex-feature-row">
+          <div class="bb-apex-feature-row__icon" aria-hidden="true"><span class="material-symbols-outlined">language</span></div>
+          <div>
+            <h3>Public Church Website</h3>
+            <p>Branch homepage, public pages, giving information, and website editor.</p>
+          </div>
+        </article>
+        <article class="bb-apex-feature-row">
+          <div class="bb-apex-feature-row__icon" aria-hidden="true"><span class="material-symbols-outlined">forum</span></div>
+          <div>
+            <h3>Member Engagement</h3>
+            <p>Announcements, events, ministries, prayer requests, and member resources.</p>
+          </div>
+        </article>
+        <article class="bb-apex-feature-row">
+          <div class="bb-apex-feature-row__icon" aria-hidden="true"><span class="material-symbols-outlined">dashboard</span></div>
+          <div>
+            <h3>Church Administration</h3>
+            <p>Member verification, attendance, duty roster, and monthly branch reports.</p>
+          </div>
+        </article>
+        <article class="bb-apex-feature-row">
+          <div class="bb-apex-feature-row__icon" aria-hidden="true"><span class="material-symbols-outlined">analytics</span></div>
+          <div>
+            <h3>Multi-Branch Management</h3>
+            <p>HQ branch registry, report review, broadcasts, and consolidated analytics.</p>
+          </div>
+        </article>
+      </div>
+      <p class="bb-apex-features__mobile-more"><a href="/features">See full feature list</a></p>
+    </div>
+  </section>
+
+  <% if (demoUrl) { %>
+  <section class="bb-apex-demo bb-apex-demo--mobile" id="demo-mobile" aria-labelledby="demo-mobile-title">
+    <div class="bb-apex-demo__inner">
+      <h2 class="bb-apex-section-head__title" id="demo-mobile-title">See BlessBoard in action</h2>
+      <p class="bb-apex-demo__lead">Explore a sample church public website with fictional content.</p>
+      <div class="bb-apex-hero__cta bb-apex-hero__cta--stack">
+        <a class="church-btn church-btn--primary church-btn--public-primary church-btn--block" href="/demo">Guided demo tour</a>
+        <a class="church-btn church-btn--public-secondary church-btn--block" href="<%= demoUrl %>" rel="noopener noreferrer">Open demo church site</a>
       </div>
     </div>
-  </div>
-</section>
+  </section>
+  <% } %>
+
+  <section class="bb-apex-cta bb-apex-cta--mobile" id="get-started-mobile">
+    <div class="bb-apex-cta__inner">
+      <h2 class="bb-apex-cta__title">Bring your church community together online</h2>
+      <p class="bb-apex-cta__lead">Request BlessBoard for your congregation or find your church to connect with members and leaders.</p>
+      <div class="bb-apex-hero__cta bb-apex-hero__cta--stack">
+        <a class="church-btn bb-apex-cta__btn-primary church-btn--block" href="<%= registerHref %>">Register Your Church</a>
+        <a class="church-btn bb-apex-cta__btn-secondary church-btn--block" href="/contact">Contact BlessBoard</a>
+      </div>
+    </div>
+  </section>
+</div>
+
 <% } else { %>
 <%# Tenant desktop fallback — keep relative member actions on the branch host %>
 <section class="bb-saas-hero home-desktop-design" id="welcome-desktop">

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BlessBoard | Empowering Your Ministry</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Hanken+Grotesk:wght@600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed-dim": "#c6bfff",
+                    "on-tertiary-fixed": "#251a00",
+                    "tertiary-fixed": "#ffdf98",
+                    "tertiary-container": "#8f6d00",
+                    "surface-tint": "#5847d2",
+                    "outline": "#787586",
+                    "surface-container-highest": "#d9e4e9",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed": "#160066",
+                    "on-tertiary-fixed-variant": "#5a4300",
+                    "tertiary-fixed-dim": "#f1c03b",
+                    "on-error-container": "#93000a",
+                    "on-background": "#131d21",
+                    "surface-variant": "#d9e4e9",
+                    "on-primary-fixed-variant": "#4029ba",
+                    "inverse-on-surface": "#e7f3f7",
+                    "on-surface-variant": "#474554",
+                    "surface-bright": "#f1fbff",
+                    "outline-variant": "#c8c4d7",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-container": "#5d6466",
+                    "inverse-surface": "#283236",
+                    "surface-container": "#e4f0f4",
+                    "surface-container-high": "#dfeaef",
+                    "surface-container-low": "#eaf5fa",
+                    "on-surface": "#131d21",
+                    "secondary-fixed": "#dde4e6",
+                    "primary": "#5341cd",
+                    "on-error": "#ffffff",
+                    "secondary": "#586062",
+                    "on-secondary-fixed-variant": "#41484a",
+                    "inverse-primary": "#c6bfff",
+                    "surface": "#f1fbff",
+                    "tertiary": "#715500",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "secondary-fixed-dim": "#c1c8ca",
+                    "secondary-container": "#dae1e3",
+                    "primary-container": "#6c5ce7",
+                    "on-secondary-fixed": "#161d1f",
+                    "error": "#ba1a1a",
+                    "on-primary-container": "#faf6ff",
+                    "background": "#f1fbff",
+                    "on-tertiary-container": "#fff7ec",
+                    "surface-dim": "#d1dce0",
+                    "primary-fixed": "#e4dfff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-padding-mobile": "64px",
+                    "stack-md": "16px",
+                    "stack-sm": "8px",
+                    "gutter": "32px",
+                    "container-max": "1280px",
+                    "section-padding-desktop": "120px",
+                    "stack-lg": "32px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "label-md": ["Hanken Grotesk"],
+                    "body-lg": ["Inter"],
+                    "headline-sm": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-xl": ["Hanken Grotesk"],
+                    "display-lg-mobile": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "26px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-lg": ["20px", {"lineHeight": "30px", "fontWeight": "400"}],
+                    "headline-sm": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["64px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display-lg-mobile": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.01em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bless-shadow {
+            box-shadow: 0 10px 30px rgba(108, 92, 231, 0.08);
+        }
+        .ivory-bg {
+            background-color: #F9F8F6;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F9F8F6;
+            color: #131d21;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased overflow-x-hidden">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 dark:bg-surface-dim/80 shadow-[0_10px_30px_rgba(108,92,231,0.08)]">
+<div class="max-w-container-max mx-auto px-6 py-4 flex justify-between items-center">
+<div class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed-dim">
+                BlessBoard
+            </div>
+<!-- Mobile Hamburger -->
+<button class="p-2 text-primary focus:outline-none transition-transform active:scale-90" id="mobile-menu-btn">
+<span class="material-symbols-outlined text-3xl">menu</span>
+</button>
+</div>
+<!-- Mobile Menu Overlay -->
+<div class="hidden fixed inset-0 h-screen bg-surface dark:bg-surface-dim z-[60] p-6 flex flex-col" id="mobile-menu">
+<div class="flex justify-between items-center mb-12">
+<div class="font-headline-lg text-headline-lg font-bold text-primary">BlessBoard</div>
+<button class="p-2 text-on-surface" id="close-menu-btn">
+<span class="material-symbols-outlined text-3xl">close</span>
+</button>
+</div>
+<nav class="flex flex-col gap-6">
+<a class="font-headline-sm text-headline-sm text-on-surface hover:text-primary" href="#">Features</a>
+<a class="font-headline-sm text-headline-sm text-on-surface hover:text-primary" href="#">Solutions</a>
+<a class="font-headline-sm text-headline-sm text-on-surface hover:text-primary" href="#">Find a Church</a>
+<a class="font-headline-sm text-headline-sm text-on-surface hover:text-primary" href="#">About</a>
+</nav>
+<div class="mt-auto flex flex-col gap-4">
+<button class="w-full py-4 rounded-xl border-2 border-primary text-primary font-label-md text-label-md">Church Admin Login</button>
+<button class="w-full py-4 rounded-xl bg-primary text-on-primary font-label-md text-label-md shadow-lg">Register Your Church</button>
+</div>
+</div>
+</header>
+<main class="pt-20">
+<!-- Hero Section -->
+<section class="px-6 py-section-padding-mobile flex flex-col items-center text-center">
+<div class="inline-block px-4 py-1.5 bg-primary-fixed text-primary rounded-full font-label-md text-label-md mb-6">
+                Technology for Ministry
+            </div>
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-on-surface mb-6 tracking-tight">
+                Empower Your <span class="text-primary">Community</span> with Grace.
+            </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-sm mb-10">
+                Modern tools designed for the unique heart of the church. Stewardship, connection, and clarity in one board.
+            </p>
+<div class="flex flex-col w-full gap-4">
+<button class="w-full py-4 bg-primary text-on-primary rounded-lg font-label-md text-label-md shadow-md active:scale-95 transition-transform">Get Started Free</button>
+<button class="w-full py-4 border border-outline-variant text-secondary font-label-md text-label-md rounded-lg active:scale-95 transition-transform">View Demo</button>
+</div>
+<!-- Hero Image Wrapper -->
+<div class="mt-16 w-full relative">
+<div class="absolute inset-0 bg-primary/5 rounded-3xl -rotate-2 -z-10"></div>
+<div class="relative bg-white rounded-3xl overflow-hidden bless-shadow border border-outline-variant/30">
+<img class="w-full aspect-[4/3] object-cover" data-alt="A clean, high-fidelity mobile application interface showing a church management dashboard. The UI features soft purple accents, rounded containers, and elegant typography on a warm ivory background. A diverse group of church members is depicted in a small, stylized illustration at the top, emphasizing community and digital organization." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7JtlcSOGWLcfJALFlBtDflRh2WtYWtkOHE7hVdrWyihQlK12IyX8dzzX1QssWuqktLu1DfTErqV5lH9qtn1sOMmNyar0G65XesK6Nt1gJWxKspR0TK-GhzLqoCM9snYZ0U58abrxu90f2ZW-eXgaCxdK-d_VGnON4FYH5XwtwZILC6SMUWrVC4ScImzlPb_Cki2Feb-j_02ueIji-t2aEXWJN2U1c8DEwfI8cGih-uCASi-I_7NyQtw"/>
+</div>
+</div>
+</section>
+<!-- Audience Pathways (2x2 Grid on Mobile) -->
+<section class="px-6 py-section-padding-mobile ivory-bg">
+<h2 class="font-headline-lg text-headline-lg text-center mb-10">Tailored for Every <span class="text-primary">Role</span></h2>
+<div class="grid grid-cols-1 gap-6">
+<div class="bg-white p-8 rounded-xl bless-shadow border border-outline-variant/20 relative overflow-hidden group">
+<div class="flex flex-col h-full">
+<span class="material-symbols-outlined text-primary text-4xl mb-4">church</span>
+<h3 class="font-headline-sm text-headline-sm mb-2">Church Leaders</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Manage congregations with digital-first stewardship tools.</p>
+<a class="mt-auto text-primary font-label-md text-label-md flex items-center gap-1" href="#">Learn more <span class="material-symbols-outlined text-sm">arrow_forward</span></a>
+</div>
+</div>
+<div class="bg-white p-8 rounded-xl bless-shadow border border-outline-variant/20 relative overflow-hidden group">
+<div class="flex flex-col h-full">
+<span class="material-symbols-outlined text-primary text-4xl mb-4">groups</span>
+<h3 class="font-headline-sm text-headline-sm mb-2">Small Groups</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Facilitate deep connection and coordination effortlessly.</p>
+<a class="mt-auto text-primary font-label-md text-label-md flex items-center gap-1" href="#">Learn more <span class="material-symbols-outlined text-sm">arrow_forward</span></a>
+</div>
+</div>
+<div class="bg-white p-8 rounded-xl bless-shadow border border-outline-variant/20 relative overflow-hidden group">
+<div class="flex flex-col h-full">
+<span class="material-symbols-outlined text-primary text-4xl mb-4">volunteer_activism</span>
+<h3 class="font-headline-sm text-headline-sm mb-2">Volunteers</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Streamline scheduling and service tracking roles.</p>
+<a class="mt-auto text-primary font-label-md text-label-md flex items-center gap-1" href="#">Learn more <span class="material-symbols-outlined text-sm">arrow_forward</span></a>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Compact Cards -->
+<section class="px-6 py-section-padding-mobile bg-white">
+<div class="text-center mb-12">
+<h2 class="font-headline-lg text-headline-lg mb-4">Powerful Features</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Everything you need to nurture your flock.</p>
+</div>
+<div class="space-y-4">
+<div class="flex gap-4 p-4 rounded-xl border border-outline-variant/30 hover:border-primary/40 transition-colors">
+<div class="w-12 h-12 bg-primary-fixed flex items-center justify-center rounded-lg shrink-0">
+<span class="material-symbols-outlined text-primary">calendar_month</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Event Coordination</h4>
+<p class="text-sm text-on-surface-variant">Unified calendars for all ministry activities.</p>
+</div>
+</div>
+<div class="flex gap-4 p-4 rounded-xl border border-outline-variant/30 hover:border-primary/40 transition-colors">
+<div class="w-12 h-12 bg-primary-fixed flex items-center justify-center rounded-lg shrink-0">
+<span class="material-symbols-outlined text-primary">payments</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Smart Tithing</h4>
+<p class="text-sm text-on-surface-variant">Secure, transparent digital giving solutions.</p>
+</div>
+</div>
+<div class="flex gap-4 p-4 rounded-xl border border-outline-variant/30 hover:border-primary/40 transition-colors">
+<div class="w-12 h-12 bg-primary-fixed flex items-center justify-center rounded-lg shrink-0">
+<span class="material-symbols-outlined text-primary">forum</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Community Messaging</h4>
+<p class="text-sm text-on-surface-variant">Private, safe channels for prayer and support.</p>
+</div>
+</div>
+<div class="flex gap-4 p-4 rounded-xl border border-outline-variant/30 hover:border-primary/40 transition-colors">
+<div class="w-12 h-12 bg-primary-fixed flex items-center justify-center rounded-lg shrink-0">
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Insight Dashboards</h4>
+<p class="text-sm text-on-surface-variant">Data-driven growth and engagement metrics.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="px-6 py-section-padding-mobile bg-primary text-on-primary text-center">
+<h2 class="font-headline-xl text-headline-xl mb-6">Ready to transform your ministry?</h2>
+<p class="font-body-md text-body-md text-primary-fixed-dim mb-10">Join over 500 churches already using BlessBoard to simplify their administration.</p>
+<button class="w-full py-4 bg-on-primary text-primary rounded-lg font-label-md text-label-md shadow-xl">Get Started Now</button>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-inverse-surface dark:bg-surface-container-lowest w-full py-section-padding-mobile px-6">
+<div class="max-w-container-max mx-auto flex flex-col gap-12">
+<div>
+<div class="font-headline-lg text-headline-lg font-bold text-on-tertiary dark:text-primary mb-4">BlessBoard</div>
+<p class="text-surface-variant/80 font-body-md text-body-md">Empowering ministries through purposeful technology and community-centered design.</p>
+</div>
+<div class="grid grid-cols-2 gap-stack-lg">
+<div class="flex flex-col gap-4">
+<h5 class="text-on-tertiary font-bold">Platform</h5>
+<a class="text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">Features</a>
+<a class="text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">Pricing</a>
+<a class="text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">For Churches</a>
+<a class="text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">FAQ</a>
+</div>
+<div class="flex flex-col gap-4">
+<h5 class="text-on-tertiary font-bold">Company</h5>
+<a class="text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">About</a>
+<a class="text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">Contact</a>
+<a class="text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">Privacy</a>
+<a class="text-surface-variant/80 hover:text-on-tertiary transition-colors" href="#">Terms</a>
+</div>
+</div>
+<div class="pt-12 border-t border-outline-variant/30 text-surface-variant/60 text-sm">
+                © 2024 BlessBoard. Powered by GetPro.
+            </div>
+</div>
+</footer>
+<script>
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const closeBtn = document.getElementById('close-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+
+        menuBtn.addEventListener('click', () => {
+            menu.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+
+        closeBtn.addEventListener('click', () => {
+            menu.classList.add('hidden');
+            document.body.style.overflow = '';
+        });
+
+        // Add smooth scrolling to links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Simple scroll reveal for cards
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-4');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.bless-shadow').forEach(card => {
+            card.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-4');
+            observer.observe(card);
+        });
+    </script>
+</body></html>

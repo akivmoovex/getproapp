@@ -22,9 +22,13 @@
   <% } %>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <% if (isApexMarketing) { %>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <% } else { %>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <% } %>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=64"/>
+  <link rel="stylesheet" href="/church/church.css?v=65"/>
 </head>
 <%
   var isBranchHome = !isVerticalApex && activePage === 'home' && !isPreviewMode;
@@ -54,7 +58,7 @@
   <div class="church-drawer-overlay" id="church-drawer-overlay" hidden></div>
   <aside class="church-drawer church-drawer--apex" id="church-mobile-drawer" aria-label="Mobile navigation" aria-hidden="true">
     <div class="church-drawer__head">
-      <p class="church-drawer__title">BlessBoard</p>
+      <%- include('./brand_lockup', { href: '/', compact: true }) %>
       <button type="button" class="church-drawer__close" id="church-drawer-close" aria-label="Close menu">
         <span class="material-symbols-outlined" aria-hidden="true">close</span>
       </button>

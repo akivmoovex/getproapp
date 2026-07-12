@@ -26,12 +26,24 @@
     Solutions
     <span class="material-symbols-outlined church-nav-dropdown__chevron" aria-hidden="true">expand_more</span>
   </button>
-  <ul class="church-nav-dropdown__menu" id="platform-solutions-menu" role="menu" aria-labelledby="platform-solutions-trigger" hidden>
+  <ul class="church-nav-dropdown__menu church-nav-dropdown__menu--rich" id="platform-solutions-menu" role="menu" aria-labelledby="platform-solutions-trigger" hidden>
     <li role="none">
-      <a role="menuitem" href="/for-churches" class="<%= _forChurchesClass.trim() %>">For Churches</a>
+      <a role="menuitem" href="/for-churches" class="church-nav-dropdown__item<%= _forChurchesClass %>">
+        <span class="church-nav-dropdown__icon" aria-hidden="true"><span class="material-symbols-outlined">church</span></span>
+        <span class="church-nav-dropdown__copy">
+          <span class="church-nav-dropdown__label">For Churches</span>
+          <span class="church-nav-dropdown__desc">Public website, members, and branch administration</span>
+        </span>
+      </a>
     </li>
     <li role="none">
-      <a role="menuitem" href="/multi-branch" class="<%= _multiBranchClass.trim() %>">Multi-Branch Churches</a>
+      <a role="menuitem" href="/multi-branch" class="church-nav-dropdown__item<%= _multiBranchClass %>">
+        <span class="church-nav-dropdown__icon" aria-hidden="true"><span class="material-symbols-outlined">account_tree</span></span>
+        <span class="church-nav-dropdown__copy">
+          <span class="church-nav-dropdown__label">Multi-Branch Churches</span>
+          <span class="church-nav-dropdown__desc">HQ oversight, reports, and organization tools</span>
+        </span>
+      </a>
     </li>
   </ul>
 </div>

@@ -29,7 +29,7 @@
   --church-text: #131d21;
   --church-outline: #c8c4d7;
   --church-border: #e2e8f0;
-  --church-getpro-orange: #f59e0b;
+  --church-getpro-orange: #ff9800;
   --church-powered-by-gray: #6b7280;
   --church-radius: 8px;
   --church-radius-md: 8px;
@@ -5469,23 +5469,6 @@ a.church-branch-stat-card--link:hover {
   .church-branch-mobile-hero.home-mobile-design {
     display: flex !important;
   }
-
-  .church-body--apex .home-desktop-design {
-    display: block !important;
-  }
-
-  .church-body--apex .bb-saas-hero,
-  .church-body--apex .bb-saas-features,
-  .church-body--apex .bb-saas-cta,
-  .church-body--apex .bb-platform-pathways,
-  .church-body--apex .bb-platform-steps,
-  .church-body--apex .bb-platform-demo,
-  .church-body--apex .bb-platform-page,
-  .church-body--apex .bb-platform-info-hero,
-  .church-body--apex .bb-platform-info-section,
-  .church-body--apex .bb-platform-info-cta {
-    display: block !important;
-  }
 }
 
 /* Public dual-layout + header: min-width 900px = desktop (see --church-public-bp). */
@@ -5737,7 +5720,7 @@ a.church-branch-stat-card--link:hover {
 .church-body--apex #features,
 .church-body--apex #pricing,
 .church-body--apex #about {
-  scroll-margin-top: 72px;
+  scroll-margin-top: 80px;
 }
 
 /* Events: only two Stitch rows on mobile home */
@@ -14691,5 +14674,937 @@ a.church-branch-bento-stat:hover {
     width: 100%;
     justify-content: center;
   }
+}
+
+/* --- Apex marketing shell + homepage (Stitch v65) --- */
+
+.church-body--apex {
+  --bb-apex-primary: #6c5ce7;
+  --bb-apex-primary-dark: #5341cd;
+  --bb-apex-orange: #ff9800;
+  --bb-apex-surface: #fbf9f6;
+  --bb-apex-surface-dim: #f2f0ed;
+  --bb-apex-text: #1a1c1e;
+  --bb-apex-text-secondary: #44474e;
+  --bb-apex-border: #d1dce0;
+  --bb-apex-error: #b3261e;
+  --bb-apex-radius: 16px;
+  --bb-apex-radius-sm: 8px;
+  --bb-apex-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --bb-apex-shadow-md: 0 10px 30px rgba(108, 92, 231, 0.08);
+  --bb-apex-header-height: 80px;
+  --bb-apex-section-pad-desktop: 120px;
+  --bb-apex-section-pad-mobile: 64px;
+  font-family: "Hanken Grotesk", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--bb-apex-text);
+  background: var(--bb-apex-surface);
+}
+
+.church-body--apex .church-violet,
+.church-body--apex .church-brand {
+  color: var(--bb-apex-primary);
+}
+
+.church-body--apex .church-header--apex {
+  background: rgba(251, 249, 246, 0.92);
+  border-bottom-color: var(--bb-apex-border);
+  backdrop-filter: blur(10px);
+}
+
+.church-body--apex .church-header--apex .church-header__inner {
+  height: var(--bb-apex-header-height);
+  padding-left: var(--church-margin-desktop);
+  padding-right: var(--church-margin-desktop);
+  gap: 24px;
+}
+
+.church-body--apex .brand-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.church-body--apex .brand-powered {
+  font-size: 0.6875rem;
+  line-height: 1.25;
+}
+
+.church-body--apex .church-brand {
+  max-width: min(220px, 42vw);
+  gap: 10px;
+}
+
+.church-body--apex .church-brand__icon {
+  color: var(--bb-apex-primary);
+  font-size: 1.5rem;
+}
+
+.church-body--apex .church-nav--apex > a,
+.church-body--apex .church-nav--apex .church-nav-dropdown__trigger {
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .church-nav--apex a.church-nav__active,
+.church-body--apex .church-nav--apex a:hover,
+.church-body--apex .church-nav--apex .church-nav-dropdown__trigger.church-nav__active,
+.church-body--apex .church-nav--apex .church-nav-dropdown__trigger:hover {
+  color: var(--bb-apex-primary);
+}
+
+.church-body--apex .church-header__admin-link {
+  font-size: 0.875rem;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .church-header__admin-link:hover,
+.church-body--apex .church-header__admin-link:focus-visible {
+  color: var(--bb-apex-primary);
+  outline: 2px solid var(--bb-apex-primary);
+  outline-offset: 2px;
+}
+
+.church-body--apex .church-header--apex .church-btn--primary {
+  min-height: 48px;
+  padding: 12px 24px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: var(--bb-apex-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.church-body--apex .church-header--apex .church-btn--primary:hover {
+  background: color-mix(in srgb, var(--bb-apex-primary) 90%, #000 10%);
+}
+
+.church-body--apex .church-nav-dropdown__menu--rich {
+  min-width: 300px;
+  max-width: 340px;
+  padding: 8px;
+  border-radius: var(--bb-apex-radius-sm);
+  border-color: var(--bb-apex-border);
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .church-nav-dropdown__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--bb-apex-radius-sm);
+  text-decoration: none;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .church-nav-dropdown__item:hover,
+.church-body--apex .church-nav-dropdown__item:focus-visible {
+  background: color-mix(in srgb, var(--bb-apex-primary) 8%, transparent);
+  outline: none;
+}
+
+.church-body--apex .church-nav-dropdown__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, transparent);
+  color: var(--bb-apex-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.church-body--apex .church-nav-dropdown__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.church-body--apex .church-nav-dropdown__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .church-nav-dropdown__desc {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .church-nav-dropdown__item.church-nav-dropdown__link--active .church-nav-dropdown__label {
+  color: var(--bb-apex-primary);
+}
+
+.church-body--apex .church-drawer--apex {
+  width: min(360px, 100%);
+  background: var(--bb-apex-surface);
+  padding: 24px 16px;
+}
+
+.church-body--apex .church-drawer__head .church-brand {
+  max-width: calc(100% - 52px);
+}
+
+.church-body--apex .church-drawer__nav a {
+  width: 100%;
+  min-height: 48px;
+  padding: 14px 16px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  border-radius: var(--bb-apex-radius-sm);
+}
+
+.church-body--apex .church-drawer__actions .church-btn {
+  min-height: 48px;
+  border-radius: var(--bb-apex-radius);
+}
+
+.church-body--apex main .church-btn--public-primary {
+  min-height: 48px;
+  padding: 12px 32px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: var(--bb-apex-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.church-body--apex main .church-btn--public-primary:hover {
+  background: color-mix(in srgb, var(--bb-apex-primary) 90%, #000 10%);
+}
+
+.church-body--apex main .church-btn--public-secondary {
+  min-height: 48px;
+  padding: 12px 32px;
+  border-radius: var(--bb-apex-radius-sm);
+  border: 2px solid var(--bb-apex-primary);
+  color: var(--bb-apex-primary);
+  background: transparent;
+  font-weight: 600;
+}
+
+.church-body--apex main .church-btn--public-secondary:hover {
+  background: color-mix(in srgb, var(--bb-apex-primary) 5%, transparent);
+}
+
+.church-body--apex .bb-apex-eyebrow,
+.church-body--apex .bb-apex-pill {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: #e4dfff;
+  color: var(--bb-apex-primary-dark);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.church-body--apex .bb-apex-section-head__title {
+  margin: 0;
+  font-size: 2.5rem;
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-section-head--center {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.church-body--apex .bb-apex-section-head__rule {
+  display: block;
+  width: 80px;
+  height: 6px;
+  margin: 16px auto 0;
+  border-radius: 999px;
+  background: var(--bb-apex-primary);
+}
+
+.church-body--apex .bb-apex-hero {
+  background: var(--bb-apex-surface);
+  padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop);
+}
+
+.church-body--apex .bb-apex-hero__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+  display: grid;
+  gap: 48px;
+  align-items: center;
+}
+
+.church-body--apex .bb-apex-hero__title {
+  margin: 0 0 24px;
+  font-size: 4rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bb-apex-text);
+  max-width: 14ch;
+}
+
+.church-body--apex .bb-apex-hero__accent {
+  color: var(--bb-apex-primary);
+}
+
+.church-body--apex .bb-apex-hero__lead {
+  margin: 0 0 32px;
+  max-width: 36rem;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.church-body--apex .bb-apex-hero__admin-link {
+  margin: 16px 0 0;
+  font-size: 0.875rem;
+}
+
+.church-body--apex .bb-apex-hero__admin-link a {
+  color: var(--bb-apex-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.church-body--apex .bb-apex-hero__admin-link a:hover {
+  text-decoration: underline;
+}
+
+.church-body--apex .bb-apex-hero__visual {
+  position: relative;
+}
+
+.church-body--apex .bb-apex-hero__frame {
+  position: relative;
+  border-radius: var(--bb-apex-radius);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 60%, transparent);
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-hero__img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.church-body--apex .bb-apex-hero__decor {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(48px);
+  z-index: 0;
+}
+
+.church-body--apex .bb-apex-hero__decor--one {
+  width: 128px;
+  height: 128px;
+  left: -24px;
+  bottom: -24px;
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, transparent);
+}
+
+.church-body--apex .bb-apex-hero__decor--two {
+  width: 192px;
+  height: 192px;
+  right: -40px;
+  top: -40px;
+  background: color-mix(in srgb, #ffdf98 30%, transparent);
+}
+
+.church-body--apex .bb-apex-pathways {
+  padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop);
+  background: #fff;
+}
+
+.church-body--apex .bb-apex-pathways__inner,
+.church-body--apex .bb-apex-features__inner,
+.church-body--apex .bb-apex-steps__inner,
+.church-body--apex .bb-apex-demo__inner,
+.church-body--apex .bb-apex-cta__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+}
+
+.church-body--apex .bb-apex-pathways__grid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.church-body--apex .bb-apex-pathways__card {
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 50%, transparent);
+  border-radius: var(--bb-apex-radius);
+  box-shadow: var(--bb-apex-shadow-sm);
+  padding: 32px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.church-body--apex .bb-apex-pathways__card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-pathways__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, transparent);
+  color: var(--bb-apex-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.church-body--apex .bb-apex-pathways__card h3 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.church-body--apex .bb-apex-pathways__card p {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-pathways__link {
+  color: var(--bb-apex-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.church-body--apex .bb-apex-pathways__link:hover {
+  text-decoration: underline;
+}
+
+.church-body--apex .bb-apex-features {
+  padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop);
+  background: var(--bb-apex-surface);
+}
+
+.church-body--apex .bb-apex-features__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 32px;
+  margin-bottom: 64px;
+}
+
+.church-body--apex .bb-apex-eyebrow {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.church-body--apex .bb-apex-features__all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--bb-apex-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.church-body--apex .bb-apex-features__all:hover {
+  gap: 16px;
+}
+
+.church-body--apex .bb-apex-features__grid {
+  display: grid;
+  gap: 32px;
+}
+
+.church-body--apex .bb-apex-feature-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #fff;
+  border-radius: var(--bb-apex-radius);
+  overflow: hidden;
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-feature-card--reverse .bb-apex-feature-card__media {
+  order: 2;
+}
+
+.church-body--apex .bb-apex-feature-card__media {
+  min-height: 256px;
+}
+
+.church-body--apex .bb-apex-feature-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.church-body--apex .bb-apex-feature-card__copy {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.church-body--apex .bb-apex-feature-card__copy h3 {
+  margin: 0 0 16px;
+  font-size: 2rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.church-body--apex .bb-apex-feature-card__copy p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-steps {
+  padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop);
+  background: #fff;
+}
+
+.church-body--apex .bb-apex-steps__list {
+  list-style: none;
+  margin: 32px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 24px;
+}
+
+.church-body--apex .bb-apex-steps__item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.church-body--apex .bb-apex-steps__num {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #e4dfff;
+  color: var(--bb-apex-primary);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-steps__item h3 {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.church-body--apex .bb-apex-steps__item p {
+  margin: 0;
+  color: var(--bb-apex-text-secondary);
+  line-height: 1.6;
+}
+
+.church-body--apex .bb-apex-demo {
+  padding: 64px var(--church-margin-desktop);
+  background: var(--bb-apex-surface-dim);
+  text-align: center;
+}
+
+.church-body--apex .bb-apex-demo__lead {
+  margin: 12px auto 24px;
+  max-width: 40rem;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-demo .bb-apex-hero__cta {
+  justify-content: center;
+}
+
+.church-body--apex .bb-apex-cta {
+  position: relative;
+  overflow: hidden;
+  padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop);
+  background: var(--bb-apex-primary);
+  color: #fff;
+  text-align: center;
+}
+
+.church-body--apex .bb-apex-cta__decor {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 384px;
+  height: 384px;
+  margin-right: -192px;
+  margin-top: -192px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  filter: blur(48px);
+}
+
+.church-body--apex .bb-apex-cta__inner {
+  position: relative;
+  z-index: 1;
+}
+
+.church-body--apex .bb-apex-cta__title {
+  margin: 0 0 24px;
+  font-size: 2.5rem;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.church-body--apex .bb-apex-cta__lead {
+  margin: 0 auto 40px;
+  max-width: 40rem;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.church-body--apex .bb-apex-cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+}
+
+.church-body--apex .bb-apex-cta__btn-primary {
+  background: #fff !important;
+  color: var(--bb-apex-primary) !important;
+  border-color: transparent !important;
+}
+
+.church-body--apex .bb-apex-cta__btn-secondary {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.church-body--apex .church-footer--apex {
+  background: var(--bb-apex-text);
+  color: rgba(255, 255, 255, 0.78);
+  border-top: none;
+}
+
+.church-body--apex .church-footer__inner--apex {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+  padding: var(--bb-apex-section-pad-desktop) var(--church-margin-desktop) 32px;
+}
+
+.church-body--apex .church-footer__grid {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+  gap: 48px;
+}
+
+.church-body--apex .church-footer__brand-row {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.church-body--apex .church-footer__tagline {
+  margin: 0 0 16px;
+  max-width: 18rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.church-body--apex .church-footer__col-title {
+  margin: 0 0 24px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.church-body--apex .church-footer__col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.church-body--apex .church-footer__col a {
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.church-body--apex .church-footer__col a:hover,
+.church-body--apex .church-footer__col a:focus-visible {
+  color: #fff;
+  outline: none;
+}
+
+.church-body--apex .church-footer__legal {
+  margin: 48px 0 0;
+  padding-top: 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: center;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.church-body--apex .church-footer__powered-line .bb-powered-by__getpro,
+.church-body--apex .church-footer__legal .bb-powered-by__getpro {
+  color: var(--bb-apex-orange);
+}
+
+@media (min-width: 900px) {
+  .church-body--apex .bb-apex-hero__inner {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .church-body--apex .church-menu-btn {
+    display: none !important;
+  }
+}
+
+@media (max-width: 899px) {
+  .church-body--apex .church-header--apex .church-header__inner {
+    height: 64px;
+    padding-left: var(--church-margin-mobile);
+    padding-right: var(--church-margin-mobile);
+    gap: 12px;
+  }
+
+  .church-body--apex .church-brand {
+    max-width: calc(100% - 52px);
+  }
+
+  .church-body--apex .brand-name {
+    font-size: 1rem;
+  }
+
+  .church-body--apex .brand-powered {
+    font-size: 0.625rem;
+  }
+
+  .church-body--apex .church-menu-btn {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
+
+  .church-body--apex .bb-apex-hero--mobile {
+    padding: var(--bb-apex-section-pad-mobile) var(--church-margin-mobile) 32px;
+    text-align: center;
+  }
+
+  .church-body--apex .bb-apex-hero__inner--mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .church-body--apex .bb-apex-hero__title--mobile {
+    max-width: none;
+    font-size: 2.5rem;
+    line-height: 1.2;
+    margin-bottom: 24px;
+  }
+
+  .church-body--apex .bb-apex-hero__lead--mobile {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 40px;
+    max-width: 24rem;
+  }
+
+  .church-body--apex .bb-apex-hero__cta--stack {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .church-body--apex .bb-apex-hero__visual--mobile {
+    width: 100%;
+    margin-top: 64px;
+  }
+
+  .church-body--apex .bb-apex-hero__decor--mobile {
+    inset: 0;
+    background: color-mix(in srgb, var(--bb-apex-primary) 5%, transparent);
+    transform: rotate(-2deg);
+    border-radius: 24px;
+  }
+
+  .church-body--apex .bb-apex-pathways--mobile,
+  .church-body--apex .bb-apex-features--mobile,
+  .church-body--apex .bb-apex-demo--mobile {
+    padding: var(--bb-apex-section-pad-mobile) var(--church-margin-mobile);
+  }
+
+  .church-body--apex .bb-apex-pathways--mobile {
+    background: var(--bb-apex-surface);
+  }
+
+  .church-body--apex .bb-apex-section-head__title--mobile {
+    font-size: 2rem;
+    line-height: 1.3;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .church-body--apex .bb-apex-pathways__stack {
+    display: grid;
+    gap: 24px;
+  }
+
+  .church-body--apex .bb-apex-pathways__card--mobile {
+    padding: 32px;
+    text-align: left;
+  }
+
+  .church-body--apex .bb-apex-pathways__icon-lg {
+    font-size: 2.25rem;
+    color: var(--bb-apex-primary);
+    margin-bottom: 16px;
+  }
+
+  .church-body--apex .bb-apex-pathways__card--mobile h3 {
+    margin: 0 0 8px;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .church-body--apex .bb-apex-pathways__card--mobile p {
+    margin: 0 0 24px;
+    color: var(--bb-apex-text-secondary);
+    line-height: 1.6;
+  }
+
+  .church-body--apex .bb-apex-pathways__card--mobile .bb-apex-pathways__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .church-body--apex .bb-apex-features--mobile {
+    background: #fff;
+  }
+
+  .church-body--apex .bb-apex-features__mobile-lead {
+    margin: 0 auto 32px;
+    max-width: 24rem;
+    color: var(--bb-apex-text-secondary);
+    line-height: 1.6;
+  }
+
+  .church-body--apex .bb-apex-features__compact {
+    display: grid;
+    gap: 16px;
+  }
+
+  .church-body--apex .bb-apex-feature-row {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--bb-apex-border) 50%, transparent);
+    border-radius: var(--bb-apex-radius);
+  }
+
+  .church-body--apex .bb-apex-feature-row__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--bb-apex-radius-sm);
+    background: #e4dfff;
+    color: var(--bb-apex-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .church-body--apex .bb-apex-feature-row h3 {
+    margin: 0 0 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .church-body--apex .bb-apex-feature-row p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--bb-apex-text-secondary);
+  }
+
+  .church-body--apex .bb-apex-features__mobile-more {
+    margin: 24px 0 0;
+    text-align: center;
+  }
+
+  .church-body--apex .bb-apex-features__mobile-more a {
+    color: var(--bb-apex-primary);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .church-body--apex .bb-apex-cta--mobile {
+    padding: var(--bb-apex-section-pad-mobile) var(--church-margin-mobile);
+    text-align: center;
+  }
+
+  .church-body--apex .bb-apex-cta--mobile .bb-apex-cta__title {
+    font-size: 2rem;
+  }
+
+  .church-body--apex .bb-apex-cta--mobile .bb-apex-cta__lead {
+    font-size: 1rem;
+    margin-bottom: 32px;
+  }
+
+  .church-body--apex .church-footer__inner--apex {
+    padding: var(--bb-apex-section-pad-mobile) var(--church-margin-mobile) 24px;
+  }
+
+  .church-body--apex .church-footer__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .church-body--apex .church-footer__brand-block {
+    grid-column: 1 / -1;
+  }
+
+  .church-body--apex .church-footer__col--support {
+    grid-column: 1 / -1;
+  }
+}
+
+.church-body--apex #features,
+.church-body--apex #pricing,
+.church-body--apex #about,
+.church-body--apex #welcome,
+.church-body--apex #welcome-mobile {
+  scroll-margin-top: var(--bb-apex-header-height);
 }
 
