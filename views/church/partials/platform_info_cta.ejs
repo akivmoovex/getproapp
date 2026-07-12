@@ -1,0 +1,16 @@
+<%#
+  Bottom CTA band for platform marketing pages.
+  Locals: ctaTitle, ctaLead (optional), primaryHref, primaryLabel, secondaryHref, secondaryLabel
+%>
+<section class="bb-platform-info-cta home-desktop-design">
+  <div class="bb-platform-info-cta__inner">
+    <h2 class="bb-platform-info-cta__title"><%= ctaTitle %></h2>
+    <% if (typeof ctaLead !== 'undefined' && ctaLead) { %>
+    <p class="bb-platform-info-cta__lead"><%= ctaLead %></p>
+    <% } %>
+    <div class="bb-platform-page__actions">
+      <a class="church-btn church-btn--primary church-btn--pill" href="<%= primaryHref %>"><%= primaryLabel %></a>
+      <a class="church-btn church-btn--outline church-btn--pill" href="<%= secondaryHref %>"><%= secondaryLabel %></a>
+    </div>
+  </div>
+</section>

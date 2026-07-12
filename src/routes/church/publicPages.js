@@ -23,7 +23,15 @@ const {
   BLESSBOARD_TAGLINE,
   BLESSBOARD_PUBLIC_URL,
 } = require("../../church/branding");
+const {
+  BLESSBOARD_DEMO_PUBLIC_URL,
+  BLESSBOARD_REGISTER_CHURCH_PATH,
+} = require("../../church/platformPublicContent");
+const { mergePlatformPublicSeo } = require("../../church/platformPublicSeo");
+const { mergeChurchTenantPublicSeo } = require("../../church/churchTenantPublicSeo");
 const { resolveRememberedChurch } = require("./publicChurchDirectory");
+const { apexPageLocals } = require("./platformPublicPages");
+const { contactPageLocals } = require("./platformPublicForms");
 
 function formatPublicEventWhen(ev) {
   const date = ev.event_date instanceof Date ? ev.event_date : new Date(ev.event_date);
@@ -159,8 +167,12 @@ function branchPublicLocalsWithoutDb(org, branch, activePage) {
   return locals;
 }
 
-function buildVerticalApexLocals(extra = {}) {
-  return {
+function finalizeBranchPublicLocals(locals, req) {
+  return mergeChurchTenantPublicSeo(locals, req);
+}
+
+function buildVerticalApexLocals(extra = {}, req = null) {
+  const locals = {
     pageTitle: BLESSBOARD_NAME,
     churchName: BLESSBOARD_NAME,
     metaDescription: BLESSBOARD_TAGLINE,
@@ -177,8 +189,11 @@ function buildVerticalApexLocals(extra = {}) {
     footerMessage: "© BlessBoard. Powered by GetPro.",
     blessboardPublicUrl: BLESSBOARD_PUBLIC_URL,
     rememberedChurch: null,
+    demoChurchUrl: BLESSBOARD_DEMO_PUBLIC_URL,
+    registerChurchPath: BLESSBOARD_REGISTER_CHURCH_PATH,
     ...extra,
   };
+  return mergePlatformPublicSeo(locals, req);
 }
 
 async function loadBranchPublicLocals(req, activePage) {
@@ -202,7 +217,7 @@ async function loadBranchPublicLocals(req, activePage) {
         { audience: "public", churchName: locals.churchName }
       );
     }
-    return locals;
+    return finalizeBranchPublicLocals(locals, req);
   }
 
   let published = null;
@@ -223,7 +238,7 @@ async function loadBranchPublicLocals(req, activePage) {
         { audience: "public", churchName: locals.churchName }
       );
     }
-    return locals;
+    return finalizeBranchPublicLocals(locals, req);
   }
 
   const merged = published ? mergeWithFallbacks(published, org, branch) : buildBranchFallbacks(org, branch);
@@ -305,7 +320,7 @@ async function loadBranchPublicLocals(req, activePage) {
     );
   }
 
-  return locals;
+  return finalizeBranchPublicLocals(locals, req);
 }
 
 function registerPublicPagesRoutes(router) {
@@ -315,7 +330,7 @@ function registerPublicPagesRoutes(router) {
       if (ctx.kind === "vertical-apex") {
         const pool = getPgPool();
         const rememberedChurch = await resolveRememberedChurch(req, res, pool);
-        return res.render("church/public/home", buildVerticalApexLocals({ rememberedChurch }));
+        return res.render("church/public/home", buildVerticalApexLocals({ rememberedChurch }, req));
       }
       if (ctx.kind !== "branch" || !ctx.branch || !ctx.organization) {
         if (ctx.kind === "branch") {
@@ -335,7 +350,16 @@ function registerPublicPagesRoutes(router) {
     try {
       const ctx = req.churchContext;
       if (ctx.kind === "vertical-apex") {
-        return res.redirect("/");
+        return res.render(
+          "church/public/platform_about",
+          apexPageLocals(
+            {
+              pageTitle: "About BlessBoard",
+              activePage: "about",
+            },
+            req
+          )
+        );
       }
       if (ctx.kind !== "branch" || !ctx.branch) {
         return res.status(404).type("text").send("Not found.");
@@ -410,7 +434,10 @@ function registerPublicPagesRoutes(router) {
     try {
       const ctx = req.churchContext;
       if (ctx.kind === "vertical-apex") {
-        return res.redirect("/");
+        return res.render(
+          "church/public/platform_contact",
+          contactPageLocals(req)
+        );
       }
       if (ctx.kind !== "branch" || !ctx.branch) {
         return res.status(404).type("text").send("Not found.");
@@ -429,7 +456,7 @@ function registerPublicPagesRoutes(router) {
     try {
       const ctx = req.churchContext;
       if (ctx.kind === "vertical-apex") {
-        return res.redirect("/");
+        return next("router");
       }
       if (ctx.kind !== "branch" || !ctx.branch || !ctx.organization) {
         return res.status(404).type("text").send("Not found.");

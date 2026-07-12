@@ -307,7 +307,7 @@ test("34-35 Home/About/Leadership/Ministries/Events/Sermons and apex remain unch
   const apex = await request(makeApexApp()).get("/");
   assert.equal(apex.status, 200);
   assert.match(apex.text, new RegExp(BLESSBOARD_NAME));
-  assert.match(apex.text, /Find Your Church|Find and connect with your church/);
+  assert.match(apex.text, /Find Your Church|One digital home for your church/);
 });
 
 test("36-37 no duplicate IDs and CSS selectors for page roots", async () => {

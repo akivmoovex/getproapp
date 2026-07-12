@@ -3708,16 +3708,20 @@ a.church-branch-stat-card--link:hover {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  gap: var(--church-space-xl);
+  gap: 14px;
+  max-width: min(52vw, 640px);
+  justify-content: center;
+  flex-wrap: nowrap;
 }
 
 .church-nav--apex a {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--church-muted);
   padding: 4px 0;
   border-bottom: 2px solid transparent;
+  white-space: nowrap;
 }
 
 .church-nav--apex a.church-nav__active,
@@ -4197,6 +4201,484 @@ a.church-branch-stat-card--link:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.bb-saas-hero__admin-link {
+  margin: var(--church-space-md) 0 0;
+  font-size: 0.875rem;
+}
+
+.bb-saas-hero__admin-link a {
+  color: var(--church-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bb-saas-hero__admin-link a:hover {
+  text-decoration: underline;
+}
+
+.bb-platform-section__title {
+  margin: 0 0 var(--church-space-sm);
+  font-size: var(--church-public-section-title-size);
+  font-weight: 700;
+  color: var(--church-text);
+  line-height: 1.25;
+}
+
+.bb-platform-section__subtitle {
+  margin: 0 0 var(--church-space-lg);
+  color: var(--church-muted);
+  font-size: 1rem;
+  line-height: 1.55;
+  max-width: 42rem;
+}
+
+.bb-platform-pathways {
+  padding: var(--church-space-xl) var(--church-margin-mobile);
+}
+
+.bb-platform-pathways__inner,
+.bb-platform-steps__inner,
+.bb-platform-demo__inner,
+.bb-platform-page__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+}
+
+.bb-platform-pathways__grid {
+  display: grid;
+  gap: var(--church-space-md);
+  grid-template-columns: 1fr;
+}
+
+.bb-platform-pathways__card {
+  background: var(--church-public-card-bg);
+  border: var(--church-public-card-border);
+  border-radius: var(--church-public-card-radius);
+  box-shadow: var(--church-public-card-shadow);
+  padding: var(--church-public-card-padding);
+}
+
+.bb-platform-pathways__card h3 {
+  margin: var(--church-space-sm) 0 var(--church-space-xs);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--church-text);
+}
+
+.bb-platform-pathways__card p {
+  margin: 0 0 var(--church-space-md);
+  color: var(--church-muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.bb-platform-pathways__link {
+  color: var(--church-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.bb-platform-pathways__link:hover {
+  text-decoration: underline;
+}
+
+.bb-platform-features__grid {
+  display: grid;
+  gap: var(--church-space-md);
+  grid-template-columns: 1fr;
+}
+
+.bb-platform-features__group h3 {
+  margin: 0 0 var(--church-space-md);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.bb-platform-steps {
+  padding: var(--church-space-xl) var(--church-margin-mobile);
+  background: var(--church-surface-card);
+}
+
+.bb-platform-steps__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--church-space-lg);
+}
+
+.bb-platform-steps__item {
+  display: flex;
+  gap: var(--church-space-md);
+  align-items: flex-start;
+}
+
+.bb-platform-steps__num {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--church-primary-fixed);
+  color: var(--church-primary);
+  font-weight: 700;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bb-platform-steps__item h3 {
+  margin: 0 0 var(--church-space-xs);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--church-text);
+}
+
+.bb-platform-steps__item p {
+  margin: 0;
+  color: var(--church-muted);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.bb-platform-demo {
+  padding: var(--church-space-xl) var(--church-margin-mobile);
+}
+
+.bb-platform-demo__inner {
+  background: var(--church-surface-container-low);
+  border: var(--church-public-card-border);
+  border-radius: var(--church-public-card-radius);
+  padding: var(--church-space-xl);
+}
+
+.bb-platform-page {
+  padding: var(--church-space-xl) var(--church-margin-mobile) calc(var(--church-space-xl) * 2);
+}
+
+.bb-platform-page__eyebrow {
+  margin: 0 0 var(--church-space-sm);
+  font-size: var(--church-public-eyebrow-size);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--church-primary);
+}
+
+.bb-platform-page__title {
+  margin: 0 0 var(--church-space-md);
+  font-size: var(--church-public-page-title-size);
+  font-weight: 700;
+  color: var(--church-text);
+  line-height: 1.2;
+}
+
+.bb-platform-page__lead {
+  margin: 0;
+  color: var(--church-muted);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  max-width: 42rem;
+}
+
+.bb-platform-page__header {
+  margin-bottom: var(--church-space-xl);
+}
+
+.church-public-prose h2 {
+  margin: var(--church-space-xl) 0 var(--church-space-sm);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--church-text);
+}
+
+.church-public-prose p,
+.church-public-prose li {
+  color: var(--church-muted);
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.church-public-prose ul,
+.church-public-prose ol {
+  padding-left: 1.25rem;
+  margin: 0 0 var(--church-space-md);
+}
+
+.church-public-prose a {
+  color: var(--church-primary);
+  font-weight: 600;
+}
+
+.bb-platform-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--church-space-sm);
+  margin-top: var(--church-space-lg);
+}
+
+.bb-platform-page__note {
+  margin-top: var(--church-space-md);
+  font-size: 0.875rem;
+  color: var(--church-muted);
+}
+
+.bb-platform-form-page {
+  padding: var(--church-space-xl) var(--church-margin-mobile) calc(var(--church-space-xl) * 2);
+}
+
+.bb-platform-form-page__inner {
+  max-width: 36rem;
+  margin: 0 auto;
+}
+
+.bb-platform-form-page__alert {
+  margin-bottom: var(--church-space-lg);
+}
+
+.bb-platform-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--church-space-md);
+}
+
+.bb-platform-form__row {
+  display: grid;
+  gap: var(--church-space-md);
+}
+
+@media (min-width: 640px) {
+  .bb-platform-form__row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.bb-platform-form-page__note {
+  margin-top: var(--church-space-lg);
+  font-size: 0.875rem;
+  color: var(--church-muted);
+}
+
+.church-field--checkbox {
+  margin-top: var(--church-space-xs);
+}
+
+.church-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--church-text);
+  cursor: pointer;
+}
+
+.church-checkbox input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.church-input--error {
+  border-color: var(--church-error, #c0392b);
+}
+
+.bb-platform-demo-page__next {
+  margin-top: var(--church-space-xl);
+  padding-top: var(--church-space-lg);
+  border-top: 1px solid rgba(200, 196, 215, 0.35);
+}
+
+.bb-platform-demo-explore {
+  margin-top: var(--church-space-lg);
+}
+
+.bb-platform-demo-explore__list {
+  list-style: none;
+  margin: var(--church-space-md) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.bb-platform-demo-explore__item {
+  min-width: 0;
+}
+
+.bb-platform-demo-explore__link {
+  display: block;
+  padding: 16px 18px;
+  border: 1px solid var(--church-outline);
+  border-radius: var(--church-radius-lg);
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bb-platform-demo-explore__link:hover,
+.bb-platform-demo-explore__link:focus-visible {
+  border-color: color-mix(in srgb, var(--church-primary) 45%, var(--church-outline));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--church-primary) 12%, transparent);
+  outline: none;
+}
+
+.bb-platform-demo-explore__label {
+  display: block;
+  font-weight: 600;
+  color: var(--church-navy);
+  margin-bottom: 4px;
+}
+
+.bb-platform-demo-explore__desc {
+  display: block;
+  font-size: 0.92rem;
+  color: var(--church-muted);
+  line-height: 1.45;
+}
+
+.bb-platform-demo-explore__note {
+  margin: var(--church-space-md) 0 0;
+  font-size: 0.875rem;
+  color: var(--church-muted);
+}
+
+.bb-platform-faq__list {
+  display: grid;
+  gap: 10px;
+  margin-top: var(--church-space-lg);
+}
+
+.bb-platform-faq__item {
+  border: 1px solid var(--church-outline);
+  border-radius: var(--church-radius-lg);
+  background: #fff;
+  overflow: hidden;
+}
+
+.bb-platform-faq__question {
+  padding: 16px 18px;
+  font-weight: 600;
+  color: var(--church-navy);
+  cursor: pointer;
+  list-style: none;
+}
+
+.bb-platform-faq__question::-webkit-details-marker {
+  display: none;
+}
+
+.bb-platform-faq__question::after {
+  content: "+";
+  float: right;
+  font-weight: 700;
+  color: var(--church-primary);
+}
+
+.bb-platform-faq__item[open] .bb-platform-faq__question::after {
+  content: "−";
+}
+
+.bb-platform-faq__question:focus-visible {
+  outline: 2px solid var(--church-primary);
+  outline-offset: -2px;
+}
+
+.bb-platform-faq__answer {
+  padding: 0 18px 16px;
+  color: var(--church-text);
+  line-height: 1.55;
+}
+
+.bb-platform-faq__answer p {
+  margin: 0 0 0.75rem;
+}
+
+.bb-platform-info-hero {
+  padding: calc(var(--church-space-xl) * 1.25) var(--church-margin-mobile) var(--church-space-xl);
+  background: linear-gradient(180deg, var(--church-surface) 0%, var(--church-surface-card) 100%);
+  border-bottom: 1px solid rgba(200, 196, 215, 0.35);
+}
+
+.bb-platform-info-hero__inner,
+.bb-platform-info-section__inner,
+.bb-platform-info-cta__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+}
+
+.bb-platform-info-hero__title {
+  margin: 0 0 var(--church-space-md);
+  font-size: var(--church-public-page-title-size);
+  font-weight: 700;
+  color: var(--church-text);
+  line-height: 1.2;
+  max-width: 20ch;
+}
+
+.bb-platform-info-hero__lead {
+  margin: 0;
+  max-width: 42rem;
+  color: var(--church-muted);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+.bb-platform-info-section {
+  padding: var(--church-space-xl) var(--church-margin-mobile);
+}
+
+.bb-platform-info-section--alt {
+  background: var(--church-surface-card);
+}
+
+.bb-platform-info-section__card {
+  max-width: 48rem;
+}
+
+.bb-platform-info-section__card h2 {
+  margin: var(--church-space-md) 0 var(--church-space-sm);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--church-text);
+}
+
+.bb-platform-info-section__card p {
+  margin: 0 0 var(--church-space-md);
+  color: var(--church-muted);
+  line-height: 1.55;
+}
+
+.bb-platform-info-cta {
+  padding: var(--church-space-xl) var(--church-margin-mobile) calc(var(--church-space-xl) * 2);
+  background: var(--church-surface-container-low);
+  border-top: 1px solid rgba(200, 196, 215, 0.35);
+}
+
+.bb-platform-info-cta__title {
+  margin: 0 0 var(--church-space-sm);
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--church-text);
+}
+
+.bb-platform-info-cta__lead {
+  margin: 0 0 var(--church-space-lg);
+  color: var(--church-muted);
+  max-width: 36rem;
+  line-height: 1.55;
+}
+
+.bb-saas-features__subtitle a {
+  color: var(--church-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bb-saas-features__subtitle a:hover {
+  text-decoration: underline;
+}
+
 .church-footer--apex {
   background: #fff;
   color: var(--church-muted);
@@ -4352,6 +4834,25 @@ a.church-branch-stat-card--link:hover {
 
   .bb-saas-cta__card {
     padding: 64px;
+  }
+
+  .bb-platform-pathways,
+  .bb-platform-steps,
+  .bb-platform-demo,
+  .bb-platform-page,
+  .bb-platform-info-hero,
+  .bb-platform-info-section,
+  .bb-platform-info-cta {
+    padding-left: var(--church-margin-desktop);
+    padding-right: var(--church-margin-desktop);
+  }
+
+  .bb-platform-pathways__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .bb-platform-features__grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .church-footer__inner--apex {
@@ -4591,7 +5092,14 @@ a.church-branch-stat-card--link:hover {
 
   .church-body--apex .bb-saas-hero,
   .church-body--apex .bb-saas-features,
-  .church-body--apex .bb-saas-cta {
+  .church-body--apex .bb-saas-cta,
+  .church-body--apex .bb-platform-pathways,
+  .church-body--apex .bb-platform-steps,
+  .church-body--apex .bb-platform-demo,
+  .church-body--apex .bb-platform-page,
+  .church-body--apex .bb-platform-info-hero,
+  .church-body--apex .bb-platform-info-section,
+  .church-body--apex .bb-platform-info-cta {
     display: block !important;
   }
 }
@@ -11883,7 +12391,7 @@ a.church-branch-bento-stat:hover {
 }
 
 .bb-finder__inner {
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
 }
 
@@ -11945,19 +12453,30 @@ a.church-branch-bento-stat:hover {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 12px;
+  gap: 14px;
+}
+
+.bb-finder__list > [role="listitem"] {
+  min-width: 0;
 }
 
 .bb-finder__card {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 18px;
+  padding: 18px;
   background: #fff;
   border: 1px solid var(--church-outline);
   border-radius: var(--church-radius-lg);
+  min-width: 0;
+}
+
+.bb-finder__card--org:focus-within,
+.bb-finder__card--branch:focus-within {
+  border-color: color-mix(in srgb, var(--church-primary) 45%, var(--church-outline));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--church-primary) 12%, transparent);
 }
 
 .bb-finder__card-body {
@@ -11965,7 +12484,28 @@ a.church-branch-bento-stat:hover {
   gap: 14px;
   align-items: flex-start;
   min-width: 0;
-  flex: 1 1 220px;
+  flex: 1 1 240px;
+}
+
+.bb-finder__card-main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.bb-finder__logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--church-violet) 14%, #fff);
+  color: var(--church-primary);
+  flex-shrink: 0;
+}
+
+.bb-finder__logo--lg {
+  width: 56px;
+  height: 56px;
 }
 
 .bb-finder__mark {
@@ -11989,6 +12529,71 @@ a.church-branch-bento-stat:hover {
   margin: 0 0 4px;
   font-size: 1.1rem;
   color: var(--church-navy);
+  overflow-wrap: anywhere;
+}
+
+.bb-finder__org-name {
+  margin: 0 0 2px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--church-primary);
+}
+
+.bb-finder__branch-name {
+  margin: 0 0 6px;
+  font-size: 0.92rem;
+  color: var(--church-text);
+  overflow-wrap: anywhere;
+}
+
+.bb-finder__branch-name .bb-finder__label {
+  color: var(--church-muted);
+  font-weight: 600;
+}
+
+.bb-finder__desc {
+  margin: 8px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--church-text);
+  overflow-wrap: anywhere;
+}
+
+.bb-finder__facts {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.bb-finder__facts dt {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--church-muted);
+}
+
+.bb-finder__facts dd {
+  margin: 2px 0 0;
+  font-size: 0.92rem;
+  color: var(--church-text);
+  overflow-wrap: anywhere;
+}
+
+.bb-finder__visit {
+  align-self: center;
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 560px) {
+  .bb-finder__visit {
+    width: auto;
+    min-width: 10.5rem;
+  }
 }
 
 .bb-finder__services {

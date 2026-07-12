@@ -9,7 +9,7 @@
         <% if (intent === 'admin') { %>
           Search for your church, then continue to the branch administrator login on your church site.
         <% } else { %>
-          Search by church name, branch, town, or slug. We only show active churches that are available online.
+          Search by church name, branch name, town, or slug. We only show active churches that are available online.
         <% } %>
       </p>
     </header>
@@ -41,47 +41,37 @@
     </div>
     <% } else if (noResults) { %>
     <div class="bb-finder__empty" role="status">
-      <h2>We could not find that church.</h2>
+      <h2>No churches matched your search</h2>
+      <p>Try a different spelling or search by town, branch name, or church slug.</p>
       <ul class="bb-finder__hints">
-        <li>Check spelling</li>
-        <li>Search by town</li>
-        <li>Try the church or branch slug if you know it</li>
+        <li>Church name</li>
+        <li>Branch name</li>
+        <li>Town or city</li>
+        <li>Church or branch slug</li>
       </ul>
-      <p>Need help? <a href="/">Return home</a> or ask your church administrator.</p>
-      <a class="church-btn church-btn--outline church-btn--pill" href="/churches<%= intent === 'admin' ? '?for=admin' : '' %>">Clear search</a>
+      <div class="bb-finder__empty-actions">
+        <a class="church-btn church-btn--outline church-btn--pill" href="/churches<%= intent === 'admin' ? '?for=admin' : '' %>">Clear search</a>
+        <a class="church-btn church-btn--ghost church-btn--pill" href="/">Return home</a>
+      </div>
     </div>
     <% } else if (typeof emptyDirectory !== 'undefined' && emptyDirectory) { %>
     <div class="bb-finder__empty" role="status">
-      <h2>No churches are available online yet</h2>
-      <p>Check back soon, or ask your church administrator whether your congregation is on BlessBoard.</p>
+      <h2>No churches are published yet</h2>
+      <p>When congregations go live on BlessBoard, they will appear here. Ask your church administrator whether your congregation is on the platform.</p>
+      <div class="bb-finder__empty-actions">
+        <a class="church-btn church-btn--primary church-btn--pill" href="/register-church">Register Your Church</a>
+        <a class="church-btn church-btn--outline church-btn--pill" href="/contact">Contact BlessBoard</a>
+      </div>
     </div>
     <% } else if (churches.length) { %>
     <p class="bb-finder__count"><%= total %> church<%= total === 1 ? '' : 'es' %> found</p>
-    <ul class="bb-finder__list">
+    <div class="bb-finder__list" role="list">
       <% churches.forEach(function (church) { %>
-      <li class="bb-finder__card">
-        <div class="bb-finder__card-body">
-          <div class="bb-finder__mark" aria-hidden="true">
-            <span class="material-symbols-outlined">church</span>
-          </div>
-          <div>
-            <h2 class="bb-finder__name"><%= church.name %></h2>
-            <p class="bb-finder__meta">
-              <% var locParts = [church.city, church.country].filter(Boolean); %>
-              <% if (locParts.length) { %><%= locParts.join(', ') %> · <% } %>
-              <%= church.active_branch_count %> active branch<%= church.active_branch_count === 1 ? '' : 'es' %>
-            </p>
-          </div>
-        </div>
-        <a
-          class="church-btn church-btn--primary church-btn--pill"
-          href="/churches/<%= encodeURIComponent(church.slug) %><%= intent === 'admin' ? '?for=admin' : '' %>"
-        >
-          <%= intent === 'admin' ? 'Continue' : 'Select' %>
-        </a>
-      </li>
+      <div role="listitem">
+        <%- include('../partials/finder_org_card', { church: church, intent: intent }) %>
+      </div>
       <% }); %>
-    </ul>
+    </div>
     <% if (prevUrl || nextUrl) { %>
     <nav class="bb-finder__pager" aria-label="Search results pages">
       <% if (prevUrl) { %><a href="<%= prevUrl %>">Previous</a><% } %>

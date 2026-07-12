@@ -113,7 +113,7 @@ test("shared card tokens and empty-state class exist", () => {
 
 test("public CSS cache version is consistent", () => {
   const shell = fs.readFileSync(PUBLIC_SHELL, "utf8");
-  assert.match(shell, /church\.css\?v=56/);
+  assert.match(shell, /church\.css\?v=62/);
 });
 
 test("About, Leadership, Events, Sermons, Giving, Contact still render", async () => {
@@ -121,7 +121,7 @@ test("About, Leadership, Events, Sermons, Giving, Contact still render", async (
   for (const route of ["/about", "/leadership", "/events", "/sermons", "/giving", "/contact"]) {
     const res = await request(app).get(route);
     assert.equal(res.status, 200, `${route} should render`);
-    assert.match(res.text, /church\.css\?v=56/);
+    assert.match(res.text, /church\.css\?v=62/);
     assert.match(res.text, /data-tenant-header="1"/);
   }
 });
@@ -151,7 +151,7 @@ test("Home remains unchanged in structure", async () => {
   assert.match(res.text, /data-tenant-home="1"/);
   assert.match(res.text, /bb-tenant-home/);
   assert.match(res.text, /bb-tenant-hero/);
-  assert.match(res.text, /church\.css\?v=56/);
+  assert.match(res.text, /church\.css\?v=62/);
 });
 
 test("Ministries remains unchanged in structure", async () => {
@@ -175,13 +175,13 @@ test("Apex finder remains unchanged", async () => {
   assert.equal(res.status, 200);
   assert.match(res.text, /church-body--apex/);
   assert.match(res.text, new RegExp(BLESSBOARD_NAME));
-  assert.match(res.text, /Find and connect with your church|Find Your Church/);
+  assert.match(res.text, /One digital home for your church|Find Your Church/);
 });
 
 test("Authenticated portal CSS remains unaffected", () => {
   const memberShell = fs.readFileSync(MEMBER_SHELL, "utf8");
   assert.match(memberShell, /church\.css\?v=\d+/);
-  assert.doesNotMatch(memberShell, /church\.css\?v=56/);
+  assert.doesNotMatch(memberShell, /church\.css\?v=62/);
   const css = fs.readFileSync(CSS_PATH, "utf8");
   assert.match(css, /\.church-body--member-portal/);
   assert.match(css, /Authenticated portals keep their own 767\/768 rules/);

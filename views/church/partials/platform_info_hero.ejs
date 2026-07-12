@@ -1,0 +1,13 @@
+<%#
+  Compact hero for platform marketing pages.
+  Locals: heroTitle, heroLead
+%>
+<section class="bb-platform-info-hero home-desktop-design">
+  <div class="bb-platform-info-hero__inner">
+    <p class="bb-platform-page__eyebrow">BlessBoard</p>
+    <h1 class="bb-platform-info-hero__title"><%= heroTitle %></h1>
+    <% if (typeof heroLead !== 'undefined' && heroLead) { %>
+    <p class="bb-platform-info-hero__lead"><%= heroLead %></p>
+    <% } %>
+  </div>
+</section>

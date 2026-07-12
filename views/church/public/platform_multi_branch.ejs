@@ -1,0 +1,67 @@
+<%- include('../partials/public_shell_start') %>
+
+<%- include('../partials/platform_info_hero', {
+  heroTitle: 'One platform for every branch',
+  heroLead: 'Denominations, headquarters teams, and multi-site churches use BlessBoard to stay aligned while each branch runs its own public site and local administration.'
+}) %>
+
+<section class="bb-platform-info-section home-desktop-design" aria-labelledby="mb-shared">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="mb-shared">Shared platform with separate branch operations</h2>
+    <p>Each branch receives its own subdomain and admin team. Members and visitors always land on the correct branch context — while HQ retains organization-level visibility.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="mb-hq">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="mb-hq">HQ oversight</h2>
+    <p>HQ administrators can review monthly branch reports, monitor branch registry details, and — on supported plans — send organization-wide broadcasts and view consolidated analytics from the HQ dashboard.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section home-desktop-design" aria-labelledby="mb-branch">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="mb-branch">Branch-level administration</h2>
+    <p>Branch admins manage local members, publish website content, run events and ministries, and handle day-to-day requests without waiting on HQ for every update.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="mb-identity">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="mb-identity">Consistent public identity</h2>
+    <p>Every branch shares the BlessBoard platform experience and Powered by GetPro infrastructure, while displaying the church name, branding, and branch context that members expect.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section home-desktop-design" aria-labelledby="mb-local">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="mb-local">Separate local content</h2>
+    <p>Service times, events, ministries, sermons, leadership listings, and contact details are managed per branch. What one location publishes does not overwrite another branch’s public site.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="mb-roles">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="mb-roles">Role-based access</h2>
+    <p>HQ admins, branch admins, ministry leaders, and members each sign in through the appropriate portal on their branch host — with access scoped to their role and congregation.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section home-desktop-design" aria-labelledby="mb-directory">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="mb-directory">Help people find the right branch</h2>
+    <p>The BlessBoard directory lets members search by church name, branch, or town, then open the correct branch homepage or administrator login — especially when one organization serves many locations.</p>
+    <p><a href="/features">See all platform features</a> or <a href="/for-churches">learn how churches get started</a>.</p>
+  </div>
+</section>
+
+<%- include('../partials/platform_info_cta', {
+  ctaTitle: 'Talk to us about multi-branch setup',
+  ctaLead: 'Share your organization structure and we will help plan branch subdomains and admin access.',
+  primaryHref: '/contact',
+  primaryLabel: 'Contact BlessBoard',
+  secondaryHref: registerChurchPath,
+  secondaryLabel: 'Register Your Church'
+}) %>
+
+<%- include('../partials/public_shell_end') %>

@@ -4,7 +4,7 @@
     var isBranchHome = !isVerticalApex && activePage === 'home' && !isPreviewMode;
   %>
   <% if (isVerticalApex) { %>
-  <footer class="church-footer church-footer--apex" id="about">
+  <footer class="church-footer church-footer--apex">
     <div class="church-footer__inner church-footer__inner--apex">
       <div class="church-footer__brand-block">
         <div class="church-footer__brand-row">
@@ -13,12 +13,20 @@
         </div>
         <p class="church-footer__copy">© <%= new Date().getFullYear() %> BlessBoard. <%- include('./powered_by_getpro') %>. All rights reserved.</p>
       </div>
-      <div class="church-footer__links">
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms of Service</a>
-        <a href="#">Support</a>
-        <a href="#">Documentation</a>
-      </div>
+      <nav class="church-footer__links" aria-label="Footer">
+        <a href="/features">Features</a>
+        <a href="/for-churches">For Churches</a>
+        <a href="/multi-branch">Multi-Branch</a>
+        <a href="/churches">Find a Church</a>
+        <a href="/about">About</a>
+        <a href="/demo">Demo</a>
+        <a href="/faq">FAQ</a>
+        <a href="/contact">Contact</a>
+        <a href="/support">Support</a>
+        <a href="/security">Security</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </nav>
     </div>
   </footer>
   <% } %>

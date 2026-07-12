@@ -3,16 +3,30 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <%
+    var isPreviewMode = typeof isPreview !== 'undefined' && isPreview;
+    var isApexMarketing = typeof isVerticalApex !== 'undefined' && isVerticalApex;
+  %>
+  <% if (isApexMarketing) { %>
+  <%- include('./platform_public_seo') %>
+  <% } else if (typeof canonicalUrl !== 'undefined' && canonicalUrl) { %>
+  <%- include('./platform_public_seo') %>
+  <% } else { %>
   <title><%= pageTitle %> | BlessBoard</title>
   <meta name="description" content="<%= typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : welcomeMessage %>"/>
+  <% if (isPreviewMode || (typeof noindex !== 'undefined' && noindex)) { %>
+  <meta name="robots" content="noindex, nofollow"/>
+  <% } else { %>
+  <meta name="robots" content="index, follow"/>
+  <% } %>
+  <% } %>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/church/church.css?v=56"/>
+  <link rel="stylesheet" href="/church/church.css?v=62"/>
 </head>
 <%
-  var isPreviewMode = typeof isPreview !== 'undefined' && isPreview;
   var isBranchHome = !isVerticalApex && activePage === 'home' && !isPreviewMode;
   var homeHref = isPreviewMode ? '/branch/website-preview' : '/';
 %>
@@ -26,13 +40,11 @@
     <div class="church-header__inner">
       <%- include('./brand_lockup', { href: '/' }) %>
       <nav class="church-nav church-nav--apex" aria-label="Primary">
-        <a href="/churches" class="<%= typeof activePage !== 'undefined' && activePage === 'churches' ? 'church-nav__active' : '' %>">Find Church</a>
-        <a href="/#features">Features</a>
-        <a href="/#about">About</a>
+        <%- include('./platform_nav_links') %>
       </nav>
       <div class="church-header__actions">
         <a class="church-btn church-btn--ghost" href="/churches?for=admin">Church Administrator Login</a>
-        <a class="church-btn church-btn--primary church-btn--pill" href="/churches">Find Your Church</a>
+        <a class="church-btn church-btn--primary church-btn--pill" href="<%= typeof registerChurchPath !== 'undefined' ? registerChurchPath : '/register-church' %>">Register Your Church</a>
       </div>
       <button type="button" class="church-menu-btn" id="church-mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="church-mobile-drawer">
         <span class="material-symbols-outlined" aria-hidden="true">menu</span>
@@ -48,13 +60,13 @@
       </button>
     </div>
     <nav class="church-drawer__nav">
-      <a href="/churches">Find Your Church</a>
-      <a href="/#features">Features</a>
-      <a href="/#about">About</a>
+      <%- include('./platform_nav_links', { compactNav: true }) %>
+      <a href="/multi-branch">Multi-Branch Churches</a>
       <a href="/churches?for=admin">Church Administrator Login</a>
     </nav>
     <div class="church-drawer__actions">
-      <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="/churches">Find Your Church</a>
+      <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="<%= typeof registerChurchPath !== 'undefined' ? registerChurchPath : '/register-church' %>">Register Your Church</a>
+      <a class="church-btn church-btn--outline church-btn--block church-btn--mobile-pill" href="/churches">Find a Church</a>
       <a class="church-btn church-btn--outline church-btn--block church-btn--mobile-pill" href="/churches?for=admin">Church Administrator Login</a>
       <p class="church-footer__powered">BlessBoard<span class="church-footer__powered-sub"><%- include('./powered_by_getpro') %></span></p>
     </div>

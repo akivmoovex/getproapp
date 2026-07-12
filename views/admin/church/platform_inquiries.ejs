@@ -1,0 +1,88 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Platform inquiries', activeNav: activeNav || 'church_platform_inquiries', pageTitle: 'Platform inquiries' }) %>
+
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Platform Inquiries</h1>
+            <p class="admin-dashboard__subtitle muted">Contact messages and church access requests from blessboard.com</p>
+          </div>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: '/admin/dashboard', label: 'Dashboard' }) %>
+          </div>
+        </header>
+
+        <section class="admin-dashboard__grid card card--mb-xl" style="padding:1.25rem;">
+          <div class="admin-stat admin-stat--pending-highlight">
+            <p class="admin-stat__label">New</p>
+            <p class="admin-stat__value"><%= typeof newCount !== 'undefined' ? newCount : 0 %></p>
+          </div>
+          <div class="admin-stat">
+            <p class="admin-stat__label">Listed</p>
+            <p class="admin-stat__value"><%= items.length %></p>
+          </div>
+        </section>
+
+        <form method="get" action="/admin/church/platform-inquiries" class="card card--mb-xl admin-filter-form" style="padding:1rem;">
+          <div class="input-field">
+            <label class="input-field__label" for="inquiry_type">Type</label>
+            <select class="input-field__input" id="inquiry_type" name="inquiry_type">
+              <option value="all"<%= filters.inquiry_type === 'all' ? ' selected' : '' %>>All types</option>
+              <% inquiryTypes.forEach(function (t) { %>
+              <option value="<%= t %>"<%= filters.inquiry_type === t ? ' selected' : '' %>><%= inquiryTypeLabel(t) %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="status">Status</label>
+            <select class="input-field__input" id="status" name="status">
+              <option value="all"<%= filters.status === 'all' ? ' selected' : '' %>>All statuses</option>
+              <% inquiryStatuses.forEach(function (s) { %>
+              <option value="<%= s %>"<%= filters.status === s ? ' selected' : '' %>><%= inquiryStatusLabel(s) %></option>
+              <% }); %>
+            </select>
+          </div>
+          <button type="submit" class="btn btn--primary">Filter</button>
+        </form>
+
+        <% if (items.length === 0) { %>
+        <section class="card" style="padding:1.25rem;">
+          <p class="muted" style="margin:0;">No inquiries match these filters.</p>
+        </section>
+        <% } else { %>
+        <section class="card card--mb-xl" style="padding:0;overflow:hidden;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Contact</th>
+                <th>Summary</th>
+                <th>Status</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% items.forEach(function (row) { %>
+              <tr>
+                <td><a href="/admin/church/platform-inquiries/<%= row.id %>"><%= row.id %></a></td>
+                <td><%= inquiryTypeLabel(row.inquiry_type) %></td>
+                <td>
+                  <%= row.full_name %><br/>
+                  <span class="muted"><%= row.email || '—' %></span>
+                </td>
+                <td>
+                  <% if (row.inquiry_type === 'register_church') { %>
+                    <%= row.church_name || '—' %><% if (row.city) { %>, <%= row.city %><% } %>
+                  <% } else { %>
+                    <%= row.subject || '—' %>
+                  <% } %>
+                </td>
+                <td><%= inquiryStatusLabel(row.status) %></td>
+                <td><%= formatDateTime(row.created_at) %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </section>
+        <% } %>
+
+<%- include('../../partials/platform_admin_shell_end') %>

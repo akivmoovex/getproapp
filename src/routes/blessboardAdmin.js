@@ -18,6 +18,10 @@ const {
   getResetRequestTypeLabel,
   getResetRequestTypeClass,
 } = require("../church/resetRequestFormatting");
+const {
+  inquiryStatusLabel,
+  inquiryTypeLabel,
+} = require("../church/platformInquiryValidation");
 const { requireBlessBoardApexHost } = require("../church/requireBlessBoardApexHost");
 const {
   rewriteBlessBoardAdminPathToInternal,
@@ -34,6 +38,8 @@ const registerAdminChurchHqAdminPasswordResetRoutes = require("./admin/adminChur
 const registerAdminChurchResetRequestsInboxRoutes = require("./admin/adminChurchResetRequestsInbox");
 const registerAdminChurchMemberPasswordResetRequestRoutes = require("./admin/adminChurchMemberPasswordResetRequests");
 const registerAdminChurchMinistryLeaderSupportRoutes = require("./admin/adminChurchMinistryLeaderSupport");
+const registerAdminChurchPlatformInquiriesRoutes = require("./admin/adminChurchPlatformInquiries");
+const platformInquiriesRepo = require("../db/pg/church/platformInquiriesRepo");
 
 function blessboardAdminPathRewrite(req, res, next) {
   // Legacy /admin/church/organizations/... → canonical /admin/churches/...
@@ -154,6 +160,9 @@ module.exports = function blessboardAdminRoutes() {
       res.locals.getResetRequestStatusClass = getResetRequestStatusClass;
       res.locals.getResetRequestTypeLabel = getResetRequestTypeLabel;
       res.locals.getResetRequestTypeClass = getResetRequestTypeClass;
+      res.locals.platformInquiryNewCount = await platformInquiriesRepo.countNewPlatformInquiries(pool);
+      res.locals.inquiryStatusLabel = inquiryStatusLabel;
+      res.locals.inquiryTypeLabel = inquiryTypeLabel;
       return next();
     } catch (e) {
       return next(e);
@@ -168,6 +177,7 @@ module.exports = function blessboardAdminRoutes() {
   registerAdminChurchResetRequestsInboxRoutes(router);
   registerAdminChurchMemberPasswordResetRequestRoutes(router);
   registerAdminChurchMinistryLeaderSupportRoutes(router);
+  registerAdminChurchPlatformInquiriesRoutes(router);
 
   return router;
 };

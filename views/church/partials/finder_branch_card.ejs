@@ -1,0 +1,42 @@
+<%#
+  Branch directory card.
+  Locals: branch, church, intent ('admin' | 'member')
+%>
+<% var visitAria = intent === 'admin'
+  ? 'Continue to administrator login for ' + church.name + ', ' + branch.name
+  : 'Visit ' + church.name + ', ' + branch.name; %>
+<article class="bb-finder__card bb-finder__card--branch">
+  <div class="bb-finder__card-body">
+    <div class="bb-finder__logo" aria-hidden="true">
+      <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+    </div>
+    <div class="bb-finder__card-main">
+      <p class="bb-finder__org-name"><%= church.name %></p>
+      <h2 class="bb-finder__name"><%= branch.name %></h2>
+      <% if (branch.location_line) { %>
+      <p class="bb-finder__meta"><%= branch.location_line %></p>
+      <% } %>
+      <% if (branch.short_description) { %>
+      <p class="bb-finder__desc"><%= branch.short_description %></p>
+      <% } %>
+      <dl class="bb-finder__facts">
+        <% if (branch.service_times_label) { %>
+        <dt>Service times</dt>
+        <dd><%= branch.service_times_label %></dd>
+        <% } %>
+        <% if (branch.registration_label) { %>
+        <dt>Registration</dt>
+        <dd><%= branch.registration_label %></dd>
+        <% } %>
+      </dl>
+    </div>
+  </div>
+  <form method="post" action="/churches/<%= encodeURIComponent(church.slug) %>/branches/<%= encodeURIComponent(branch.slug) %>/open">
+    <% if (intent === 'admin') { %>
+    <input type="hidden" name="for" value="admin"/>
+    <% } %>
+    <button type="submit" class="church-btn church-btn--primary church-btn--pill bb-finder__visit" aria-label="<%= visitAria %>">
+      <%= intent === 'admin' ? 'Continue to Admin Login' : branch.visit_label %>
+    </button>
+  </form>
+</article>

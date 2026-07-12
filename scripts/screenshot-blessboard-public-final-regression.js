@@ -150,7 +150,7 @@ async function auditPage(page, routeName, width) {
   if (metrics.dupIds.length) issues.push(`duplicate ids: ${metrics.dupIds.join(",")}`);
   if (metrics.emptyLinks) issues.push(`empty links=${metrics.emptyLinks}`);
   if (metrics.unsafeHrefs) issues.push(`unsafe hrefs=${metrics.unsafeHrefs}`);
-  if (!/church\.css\?v=56/.test(metrics.cssHref)) issues.push(`css cache ${metrics.cssHref}`);
+  if (!/church\.css\?v=58/.test(metrics.cssHref)) issues.push(`css cache ${metrics.cssHref}`);
 
   if (width < 900) {
     const btn = page.locator("#church-mobile-menu-btn");

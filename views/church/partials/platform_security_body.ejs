@@ -1,0 +1,42 @@
+<p>This page summarizes security-related controls implemented in BlessBoard based on the current product design. It describes how access is structured for administrators and church users.</p>
+
+<h2>Separate church workspaces</h2>
+<p>Each church branch on BlessBoard is served on its own site context (typically a dedicated hostname). Public pages, member portals, and branch administration for one congregation are scoped to that church’s organization and branch records in the platform database.</p>
+
+<h2>Role-based access</h2>
+<p>BlessBoard separates common roles so people see tools appropriate to their responsibility:</p>
+<ul>
+  <li><strong>Members</strong> — member portal on their church site after sign-in.</li>
+  <li><strong>Ministry leaders</strong> — leader tools for assigned ministries on their church site.</li>
+  <li><strong>Branch administrators</strong> — branch-level administration on their church site.</li>
+  <li><strong>HQ administrators</strong> — multi-branch headquarters tools where enabled for an organization.</li>
+  <li><strong>BlessBoard platform administrators</strong> — super-administrative provisioning and support on blessboard.com (<code>/admin</code>), separate from church tenant sign-in.</li>
+</ul>
+<p>Cross-church access is rejected by server-side checks tied to organization and branch context.</p>
+
+<h2>Password protection</h2>
+<p>User passwords are stored using one-way password hashing (bcrypt) rather than plain text. Password reset flows use request queues reviewed by the appropriate administrators (branch, headquarters, or platform level depending on account type).</p>
+
+<h2>Session handling</h2>
+<p>Authenticated areas use a server-side session stored in the platform PostgreSQL database. Session cookies are marked <code>httpOnly</code>, use <code>SameSite=Lax</code>, and use the secure flag in production environments. Sessions are configured with a limited lifetime (currently eight hours of inactivity-based expiry in application settings).</p>
+
+<h2>Sign-in protections</h2>
+<ul>
+  <li>Repeated failed church sign-in attempts can temporarily lock an identifier after several consecutive failures.</li>
+  <li>Password reset request submission is rate limited.</li>
+  <li>BlessBoard platform administrator login and public platform contact forms have additional rate limiting.</li>
+  <li>Authenticated church portal and platform administrator forms that change data use CSRF tokens tied to the active session.</li>
+</ul>
+
+<h2>Public forms on blessboard.com</h2>
+<p>Contact and church registration forms on blessboard.com are unauthenticated. They use server-side validation, honeypot fields, and rate limiting rather than session CSRF tokens.</p>
+
+<h2>Operational logging</h2>
+<p>Sign-in attempts and many administrative actions generate audit records to support troubleshooting and administrator review. Support staff identifiers may be masked in security views.</p>
+
+<h2>What this page does not cover</h2>
+<p>BlessBoard does not publish infrastructure certifications, backup schedules, data residency commitments, or breach notification procedures on this page. Those depend on deployment and organizational agreements outside this public summary.</p>
+<p>If you believe you found a security issue affecting BlessBoard, use the <a href="/contact">Contact BlessBoard</a> form and describe the concern. Do not include passwords or unrelated personal data in your message.</p>
+
+<h2>Related pages</h2>
+<p><a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a> · <a href="/support">Support</a></p>

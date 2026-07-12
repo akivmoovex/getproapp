@@ -1,0 +1,92 @@
+<%- include('../partials/public_shell_start') %>
+
+<%- include('../partials/platform_info_hero', {
+  heroTitle: 'BlessBoard for your church',
+  heroLead: 'Pastors, administrators, and ministry leaders get one place to publish, communicate, and coordinate — without replacing the relationships that matter.'
+}) %>
+
+<section class="bb-platform-info-section home-desktop-design" aria-labelledby="fc-challenges">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="fc-challenges">Common challenges churches face</h2>
+    <ul>
+      <li>Members cannot find the right church website or branch sign-in page.</li>
+      <li>Event and ministry updates live in scattered chats, documents, and social posts.</li>
+      <li>Administrators repeat the same member and content tasks across disconnected tools.</li>
+      <li>Multi-branch organizations lack a shared view of branch activity and reporting.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="fc-helps">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="fc-helps">How BlessBoard helps</h2>
+    <p>BlessBoard connects what your congregation sees publicly with the member portal and administration tools your team uses behind the scenes. Each branch keeps its own subdomain, while HQ can oversee the wider organization when needed.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section home-desktop-design" aria-labelledby="fc-receive">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="fc-receive">What a church receives</h2>
+    <ul>
+      <li>A public branch website with pages for about, leadership, ministries, events, sermons, giving information, and contact.</li>
+      <li>Member registration and a signed-in member portal on the same branch site.</li>
+      <li>Branch administration for content, members, ministries, events, and operational workflows.</li>
+      <li>HQ tools when your organization spans multiple branches.</li>
+    </ul>
+    <p>Explore the full capability list on the <a href="/features">Features</a> page, take the <a href="/demo">guided demo tour</a>, or open the <a href="<%= demoChurchUrl %>" rel="noopener noreferrer">demo church site</a>.</p>
+    <% if (typeof demoChurchUrl !== 'undefined' && demoChurchUrl) { %>
+    <p><a class="church-btn church-btn--outline church-btn--pill" href="/demo">See BlessBoard in action</a></p>
+    <% } %>
+  </div>
+</section>
+
+<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="fc-onboarding">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="fc-onboarding">Typical onboarding steps</h2>
+    <ol>
+      <li>Request access through <a href="<%= registerChurchPath %>">Register Your Church</a>.</li>
+      <li>BlessBoard platform administrators provision your organization, branch subdomain, and starter HQ and branch admin accounts.</li>
+      <li>Your team publishes website content, configures giving information, and enables member registration when ready.</li>
+      <li>Leaders sign in on the branch site to manage members, ministries, and ongoing communication.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="bb-platform-info-section home-desktop-design" aria-labelledby="fc-manage">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="fc-manage">What church administrators can manage</h2>
+    <ul>
+      <li>Public website content and published branch pages</li>
+      <li>Member verification, profiles, and registration requests</li>
+      <li>Events, ministries, announcements, sermons, and resources</li>
+      <li>Prayer requests, member requests, and password-reset queues</li>
+      <li>Attendance, duty roster, giving settings, and monthly branch reports</li>
+      <li>Ministry leaders, departments, and leader portal access</li>
+    </ul>
+  </div>
+</section>
+
+<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="fc-mobile">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="fc-mobile">Mobile access for members</h2>
+    <p>Public branch pages and the member portal use responsive layouts, so members can read announcements, browse events, and submit requests from phones and tablets — on the same branch URL they already know.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="fc-onboarding">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="fc-onboarding">Onboarding</h2>
+    <p>BlessBoard is currently onboarding selected churches. Plans and available services may vary according to church size, branch structure and setup requirements. Contact the BlessBoard team to discuss access.</p>
+  </div>
+</section>
+
+<%- include('../partials/platform_info_cta', {
+  ctaTitle: 'Request BlessBoard for your church',
+  ctaLead: 'Tell us about your congregation and branch structure to begin onboarding.',
+  primaryHref: registerChurchPath,
+  primaryLabel: 'Register Your Church',
+  secondaryHref: '/contact',
+  secondaryLabel: 'Contact BlessBoard'
+}) %>
+
+<%- include('../partials/public_shell_end') %>

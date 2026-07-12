@@ -8,6 +8,7 @@ const {
   BLESSBOARD_TAGLINE,
   BLESSBOARD_PUBLIC_URL,
 } = require("../../church/branding");
+const { mergePlatformPublicSeo } = require("../../church/platformPublicSeo");
 const {
   isSafeSlug,
   normalizeSlug,
@@ -37,8 +38,8 @@ function destinationPathForIntent(intent) {
   return intent === "admin" ? "/branch/login" : "/";
 }
 
-function apexShellLocals(extra = {}) {
-  return {
+function apexShellLocals(extra = {}, req = null) {
+  const locals = {
     pageTitle: extra.pageTitle || "Find Your Church",
     churchName: BLESSBOARD_NAME,
     metaDescription: extra.metaDescription || BLESSBOARD_TAGLINE,
@@ -48,6 +49,11 @@ function apexShellLocals(extra = {}) {
     blessboardPublicUrl: BLESSBOARD_PUBLIC_URL,
     ...extra,
   };
+  return mergePlatformPublicSeo(locals, req);
+}
+
+function apexUnavailableLocals(extra = {}, req = null) {
+  return apexShellLocals({ noindex: true, activePage: "churches", ...extra }, req);
 }
 
 function buildSearchQuery(filters, page) {
@@ -128,27 +134,33 @@ function registerPublicChurchDirectoryRoutes(router) {
       }
 
       const filters = { q: results.q, intent };
+      const shouldNoindexListing = searched || results.page > 1 || intent === "admin";
       return res.render(
         "church/public/churches",
-        apexShellLocals({
-          pageTitle: intent === "admin" ? "Find Your Church — Administrator" : "Find Your Church",
-          activePage: "churches",
-          intent,
-          searchQuery: results.q,
-          searched,
-          churches: results.items,
-          total: results.total,
-          page: results.page,
-          totalPages: results.totalPages,
-          prevUrl: results.page > 1 ? `/churches${buildSearchQuery(filters, results.page - 1)}` : null,
-          nextUrl:
-            results.totalPages > 0 && results.page < results.totalPages
-              ? `/churches${buildSearchQuery(filters, results.page + 1)}`
-              : null,
-          dbUnavailable,
-          noResults: !dbUnavailable && searched && results.total === 0,
-          emptyDirectory: !dbUnavailable && !searched && results.total === 0,
-        })
+        apexShellLocals(
+          {
+            pageTitle: intent === "admin" ? "Find Your Church — Administrator" : "Find Your Church",
+            activePage: "churches",
+            canonicalPath: "/churches",
+            noindex: shouldNoindexListing,
+            intent,
+            searchQuery: results.q,
+            searched,
+            churches: results.items,
+            total: results.total,
+            page: results.page,
+            totalPages: results.totalPages,
+            prevUrl: results.page > 1 ? `/churches${buildSearchQuery(filters, results.page - 1)}` : null,
+            nextUrl:
+              results.totalPages > 0 && results.page < results.totalPages
+                ? `/churches${buildSearchQuery(filters, results.page + 1)}`
+                : null,
+            dbUnavailable,
+            noResults: !dbUnavailable && searched && results.total === 0,
+            emptyDirectory: !dbUnavailable && !searched && results.total === 0,
+          },
+          req
+        )
       );
     } catch (e) {
       return next(e);
@@ -161,7 +173,7 @@ function registerPublicChurchDirectoryRoutes(router) {
       if (!churchSlug || !isSafeSlug(churchSlug)) {
         return res.status(404).render(
           "church/public/church_unavailable",
-          apexShellLocals({
+          apexUnavailableLocals({
             pageTitle: "Church not found",
             message: "We could not find that church.",
             activePage: "churches",
@@ -174,7 +186,7 @@ function registerPublicChurchDirectoryRoutes(router) {
       if (!pool) {
         return res.status(503).render(
           "church/public/church_unavailable",
-          apexShellLocals({
+          apexUnavailableLocals({
             pageTitle: "Temporarily unavailable",
             message: "Church directory is temporarily unavailable. Please try again shortly.",
             activePage: "churches",
@@ -186,7 +198,7 @@ function registerPublicChurchDirectoryRoutes(router) {
       if (!org) {
         return res.status(404).render(
           "church/public/church_unavailable",
-          apexShellLocals({
+          apexUnavailableLocals({
             pageTitle: "Church not found",
             message: "We could not find that church.",
             activePage: "churches",
@@ -194,11 +206,13 @@ function registerPublicChurchDirectoryRoutes(router) {
         );
       }
 
-      const branches = await directoryRepo.listActivePublicBranchesForOrganization(pool, org.id);
+      const branches = await directoryRepo.listActivePublicBranchesForOrganization(pool, org.id, {
+        organizationName: org.name,
+      });
       if (branches.length === 0) {
         return res.status(404).render(
           "church/public/church_unavailable",
-          apexShellLocals({
+          apexUnavailableLocals({
             pageTitle: org.name,
             church: org,
             message: "This church does not currently have an active branch available online.",
@@ -219,7 +233,7 @@ function registerPublicChurchDirectoryRoutes(router) {
         if (!dest) {
           return res.status(404).render(
             "church/public/church_unavailable",
-            apexShellLocals({
+            apexUnavailableLocals({
               pageTitle: "Church not found",
               message: "We could not find that church.",
               activePage: "churches",
@@ -242,7 +256,7 @@ function registerPublicChurchDirectoryRoutes(router) {
       if (!churchSlug || !isSafeSlug(churchSlug)) {
         return res.status(404).render(
           "church/public/church_unavailable",
-          apexShellLocals({
+          apexUnavailableLocals({
             pageTitle: "Church not found",
             message: "We could not find that church.",
             activePage: "churches",
@@ -256,7 +270,7 @@ function registerPublicChurchDirectoryRoutes(router) {
       if (!pool) {
         return res.status(503).render(
           "church/public/church_unavailable",
-          apexShellLocals({
+          apexUnavailableLocals({
             pageTitle: "Temporarily unavailable",
             message: "Church directory is temporarily unavailable. Please try again shortly.",
             activePage: "churches",
@@ -268,7 +282,7 @@ function registerPublicChurchDirectoryRoutes(router) {
       if (!org) {
         return res.status(404).render(
           "church/public/church_unavailable",
-          apexShellLocals({
+          apexUnavailableLocals({
             pageTitle: "Church not found",
             message: "We could not find that church.",
             activePage: "churches",
@@ -278,12 +292,13 @@ function registerPublicChurchDirectoryRoutes(router) {
 
       const branches = await directoryRepo.listActivePublicBranchesForOrganization(pool, org.id, {
         q: branchFilter,
+        organizationName: org.name,
       });
 
       if (!branchFilter && branches.length === 0) {
         return res.status(404).render(
           "church/public/church_unavailable",
-          apexShellLocals({
+          apexUnavailableLocals({
             pageTitle: org.name,
             church: org,
             message: "This church does not currently have an active branch available online.",
@@ -308,6 +323,8 @@ function registerPublicChurchDirectoryRoutes(router) {
         apexShellLocals({
           pageTitle: `Select a branch — ${org.name}`,
           activePage: "churches",
+          canonicalPath: "/churches",
+          noindex: true,
           intent,
           church: org,
           branches,
@@ -335,7 +352,7 @@ function registerPublicChurchDirectoryRoutes(router) {
       if (!pool) {
         return res.status(503).render(
           "church/public/church_unavailable",
-          apexShellLocals({
+          apexUnavailableLocals({
             pageTitle: "Temporarily unavailable",
             message: "Church directory is temporarily unavailable. Please try again shortly.",
             activePage: "churches",
@@ -352,7 +369,7 @@ function registerPublicChurchDirectoryRoutes(router) {
         clearChurchSelectionPreference(res, req);
         return res.status(404).render(
           "church/public/church_unavailable",
-          apexShellLocals({
+          apexUnavailableLocals({
             pageTitle: "Branch not available",
             message: "This church does not currently have an active branch available online.",
             activePage: "churches",

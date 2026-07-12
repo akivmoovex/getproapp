@@ -1,0 +1,75 @@
+<%- include('../partials/public_shell_start') %>
+
+<%- include('../partials/platform_info_hero', {
+  heroTitle: 'About BlessBoard',
+  heroLead: 'BlessBoard is a digital church platform that helps congregations publish online, stay in touch with members, and manage branch administration from one connected system.'
+}) %>
+
+<section class="bb-platform-info-section home-desktop-design" aria-labelledby="about-what">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="about-what">What BlessBoard is</h2>
+    <p>BlessBoard is a church engagement and member platform for branches, members, and ministry teams. Each church branch can have a public website, a member portal, and administration tools on its own subdomain — for example, <code>yourchurch.blessboard.com</code>.</p>
+    <p>Verified platform capabilities include public pages (home, about, leadership, ministries, events, sermons, giving information, and contact), member registration and login, branch administration, and HQ tools for multi-branch organizations. See the <a href="/features">Features</a> page for a full list.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="about-why">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="about-why">Why BlessBoard exists</h2>
+    <p>Church information, member communication, and administration are often scattered across paper records, messaging apps, and separate tools. Members struggle to find the right website or sign-in page. Leaders repeat the same updates in multiple places.</p>
+    <p>BlessBoard brings public-facing church information, member engagement, and branch administration into one platform — so congregations can communicate more clearly and administrators can work from a single place.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section home-desktop-design" aria-labelledby="about-who">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="about-who">Who it serves</h2>
+    <p>BlessBoard is being developed and introduced with churches in Zambia, with a platform designed to support church communities across multiple locations and countries.</p>
+    <ul>
+      <li><strong>Individual churches</strong> — a public branch website, member registration, and tools for day-to-day ministry operations.</li>
+      <li><strong>Church members</strong> — announcements, events, ministries, resources, and requests through a signed-in member portal on their church site.</li>
+      <li><strong>Church branches</strong> — local administrators who publish content, verify members, and manage branch activities.</li>
+      <li><strong>Headquarters and denominations</strong> — organizations with multiple branches that need shared oversight, report review, and coordination across locations. Learn more on the <a href="/multi-branch">Multi-Branch</a> page.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="about-onboarding">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="about-onboarding">Onboarding churches</h2>
+    <p>BlessBoard is currently onboarding selected churches. Plans and available services may vary according to church size, branch structure and setup requirements. Contact the BlessBoard team to discuss access.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section home-desktop-design" aria-labelledby="about-getpro">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="about-getpro">How BlessBoard and GetPro are related</h2>
+    <p>BlessBoard is developed and supported using GetPro technology. Public BlessBoard pages display <strong>Powered by GetPro</strong> attribution, consistent with the broader GetPro product family.</p>
+    <p>BlessBoard (<code>blessboard.com</code> and church subdomains) runs alongside the GetPro platform at <code>getproapp.org</code>. The same codebase serves both products; hostname determines which experience is shown.</p>
+    <p>BlessBoard platform provisioning and support are handled through BlessBoard platform administrators at <code>blessboard.com</code>. Individual churches manage their own congregation content and member access on their branch sites.</p>
+  </div>
+</section>
+
+<section class="bb-platform-info-section home-desktop-design" aria-labelledby="about-approach">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="about-approach">Our approach</h2>
+    <ul>
+      <li><strong>Mobile-friendly access</strong> — public branch pages and the member portal use responsive layouts for phones and tablets.</li>
+      <li><strong>Simple church administration</strong> — branch tools focus on practical tasks: members, content, events, ministries, and requests.</li>
+      <li><strong>Branch-level organization</strong> — each location keeps its own subdomain, content, and admin team.</li>
+      <li><strong>Gradual adoption</strong> — churches can publish website content, enable member registration, and expand use of portal and admin features over time.</li>
+      <li><strong>Practical tools</strong> — features reflect real church workflows documented in the platform, not a generic office suite.</li>
+    </ul>
+  </div>
+</section>
+
+<%- include('../partials/platform_info_cta', {
+  ctaTitle: 'Talk with us about BlessBoard',
+  ctaLead: 'Request access for your church or ask a question about the platform.',
+  primaryHref: '/contact',
+  primaryLabel: 'Contact BlessBoard',
+  secondaryHref: registerChurchPath,
+  secondaryLabel: 'Register Your Church'
+}) %>
+
+<%- include('../partials/public_shell_end') %>

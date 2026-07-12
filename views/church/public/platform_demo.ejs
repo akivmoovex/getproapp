@@ -1,0 +1,41 @@
+<%- include('../partials/public_shell_start') %>
+
+<section class="bb-platform-page bb-platform-demo-page home-desktop-design">
+  <div class="bb-platform-page__inner">
+    <header class="bb-platform-page__header">
+      <p class="bb-platform-page__eyebrow">BlessBoard</p>
+      <h1 class="bb-platform-page__title">See BlessBoard in action</h1>
+      <p class="bb-platform-page__lead">Explore a sample church public website with fictional content. No sign-in is required for the pages below.</p>
+      <% if (demoChurchUrl) { %>
+      <div class="bb-platform-page__actions">
+        <a class="church-btn church-btn--primary church-btn--pill" href="<%= demoChurchUrl %>" rel="noopener noreferrer">Open demo church homepage</a>
+        <a class="church-btn church-btn--outline church-btn--pill" href="/faq">Read FAQ</a>
+      </div>
+      <% } %>
+    </header>
+
+    <% if (demoChurchUrl && demoExploreLinks && demoExploreLinks.length) { %>
+    <%- include('../partials/platform_demo_explore', {
+      demoExploreLinks: demoExploreLinks,
+      demoExploreTitle: 'Public pages you can browse',
+      demoExploreLead: 'Each link opens a published page on the BlessBoard Demo Church site.',
+      demoExploreHeadingId: 'demo-guided-explore'
+    }) %>
+    <% } else { %>
+    <div class="bb-platform-page__body church-public-prose">
+      <p>The public demo church is not available in this environment. You can still review <a href="/features">Features</a>, read the <a href="/faq">FAQ</a>, or <a href="/contact">contact BlessBoard</a>.</p>
+    </div>
+    <% } %>
+
+    <div class="bb-platform-demo-page__next church-public-prose">
+      <h2>Ready to go further?</h2>
+      <ul>
+        <li>Request BlessBoard for your congregation through <a href="<%= registerChurchPath %>">Register Your Church</a>.</li>
+        <li>Find an active congregation at <a href="/churches">Find a Church</a>.</li>
+        <li>Learn how churches get started on the <a href="/for-churches">For Churches</a> page.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/public_shell_end') %>

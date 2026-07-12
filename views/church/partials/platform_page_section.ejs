@@ -1,0 +1,18 @@
+<%#
+  Platform prose page wrapper.
+  Locals: pageHeading, pageLead (optional), bodyPartial path string
+%>
+<section class="bb-platform-page home-desktop-design">
+  <div class="bb-platform-page__inner">
+    <header class="bb-platform-page__header">
+      <p class="bb-platform-page__eyebrow">BlessBoard</p>
+      <h1 class="bb-platform-page__title"><%= pageHeading %></h1>
+      <% if (typeof pageLead !== 'undefined' && pageLead) { %>
+      <p class="bb-platform-page__lead"><%= pageLead %></p>
+      <% } %>
+    </header>
+    <div class="bb-platform-page__body church-public-prose">
+      <%- include(bodyPartial) %>
+    </div>
+  </div>
+</section>

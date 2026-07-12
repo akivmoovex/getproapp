@@ -1,0 +1,37 @@
+<%#
+  BlessBoard apex marketing SEO head tags.
+  Locals: seoTitle, seoDescription, canonicalUrl, ogUrl, ogImage, ogType, robotsMeta, noindex, structuredDataJsonLd
+%>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml"/>
+<title><%= typeof seoTitle !== 'undefined' && seoTitle ? seoTitle : pageTitle + ' | BlessBoard' %></title>
+<meta name="description" content="<%= typeof seoDescription !== 'undefined' && seoDescription ? seoDescription : (typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : welcomeMessage) %>"/>
+<% if (typeof canonicalUrl !== 'undefined' && canonicalUrl) { %>
+<link rel="canonical" href="<%= canonicalUrl %>"/>
+<% } %>
+<% if (typeof noindex !== 'undefined' && noindex) { %>
+<meta name="robots" content="noindex, nofollow"/>
+<% } else if (typeof robotsMeta !== 'undefined' && robotsMeta) { %>
+<meta name="robots" content="<%= robotsMeta %>"/>
+<% } %>
+<meta property="og:type" content="<%= typeof ogType !== 'undefined' && ogType ? ogType : 'website' %>"/>
+<meta property="og:site_name" content="BlessBoard"/>
+<meta property="og:title" content="<%= typeof seoTitle !== 'undefined' && seoTitle ? seoTitle : pageTitle + ' | BlessBoard' %>"/>
+<meta property="og:description" content="<%= typeof seoDescription !== 'undefined' && seoDescription ? seoDescription : (typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : welcomeMessage) %>"/>
+<% if (typeof ogUrl !== 'undefined' && ogUrl) { %>
+<meta property="og:url" content="<%= ogUrl %>"/>
+<% } %>
+<% if (typeof ogImage !== 'undefined' && ogImage) { %>
+<meta property="og:image" content="<%= ogImage %>"/>
+<% } %>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="<%= typeof seoTitle !== 'undefined' && seoTitle ? seoTitle : pageTitle + ' | BlessBoard' %>"/>
+<meta name="twitter:description" content="<%= typeof seoDescription !== 'undefined' && seoDescription ? seoDescription : (typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : welcomeMessage) %>"/>
+<% if (typeof ogImage !== 'undefined' && ogImage) { %>
+<meta name="twitter:image" content="<%= ogImage %>"/>
+<% } %>
+<% if (typeof structuredDataJsonLd !== 'undefined' && structuredDataJsonLd && structuredDataJsonLd.length) { %>
+  <% structuredDataJsonLd.forEach(function (graph) { %>
+<script type="application/ld+json"><%- JSON.stringify(graph) %></script>
+  <% }); %>
+<% } %>

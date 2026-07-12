@@ -1,0 +1,61 @@
+<%- include('../partials/public_shell_start') %>
+
+<section class="bb-platform-form-page home-desktop-design">
+  <div class="bb-platform-form-page__inner">
+    <header class="bb-platform-page__header">
+      <p class="bb-platform-page__eyebrow">BlessBoard</p>
+      <h1 class="bb-platform-page__title">Contact BlessBoard</h1>
+      <p class="bb-platform-page__lead">Send a general question about BlessBoard. This form does not create a church site or administrator account.</p>
+      <p class="bb-platform-page__lead">BlessBoard is currently onboarding selected churches. Contact the BlessBoard team to discuss access and setup for your congregation.</p>
+    </header>
+
+    <% if (submitted) { %>
+    <div class="church-alert church-alert--success bb-platform-form-page__alert" role="status">
+      <strong>Thank you — your message was received.</strong>
+      <p>Our team will review your inquiry. If you are requesting church access, you can also complete the <a href="<%= registerChurchPath %>">Register Your Church</a> form with branch details.</p>
+    </div>
+    <% } else { %>
+    <% if (formError) { %>
+    <div class="church-alert church-alert--error bb-platform-form-page__alert" role="alert"><%= formError %></div>
+    <% } %>
+
+    <form class="church-form bb-platform-form" action="/contact" method="post" novalidate>
+      <div class="visually-hidden" aria-hidden="true">
+        <label for="contact_company_website">Company website</label>
+        <input id="contact_company_website" type="text" name="company_website" tabindex="-1" autocomplete="off"/>
+      </div>
+
+      <div class="church-field">
+        <label class="church-label" for="contact_full_name">Name</label>
+        <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'full_name' ? ' church-input--error' : '' %>" id="contact_full_name" name="full_name" type="text" required autocomplete="name" value="<%= form.full_name || '' %>"/>
+      </div>
+
+      <div class="church-field">
+        <label class="church-label" for="contact_email">Email</label>
+        <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'email' ? ' church-input--error' : '' %>" id="contact_email" name="email" type="email" required autocomplete="email" value="<%= form.email || '' %>"/>
+      </div>
+
+      <div class="church-field">
+        <label class="church-label" for="contact_phone">Phone <span class="church-public-meta">(optional)</span></label>
+        <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'phone' ? ' church-input--error' : '' %>" id="contact_phone" name="phone" type="tel" autocomplete="tel" value="<%= form.phone || '' %>"/>
+      </div>
+
+      <div class="church-field">
+        <label class="church-label" for="contact_subject">Subject</label>
+        <input class="church-input<%= typeof fieldError !== 'undefined' && fieldError === 'subject' ? ' church-input--error' : '' %>" id="contact_subject" name="subject" type="text" required value="<%= form.subject || '' %>"/>
+      </div>
+
+      <div class="church-field">
+        <label class="church-label" for="contact_message">Message</label>
+        <textarea class="church-input church-input--textarea<%= typeof fieldError !== 'undefined' && fieldError === 'message' ? ' church-input--error' : '' %>" id="contact_message" name="message" rows="5" required><%= form.message || '' %></textarea>
+      </div>
+
+      <button class="church-btn church-btn--primary church-btn--pill church-btn--block" type="submit">Send Message</button>
+    </form>
+
+    <p class="bb-platform-form-page__note">Need to request BlessBoard for a congregation? Use <a href="<%= registerChurchPath %>">Register Your Church</a>.</p>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/public_shell_end') %>

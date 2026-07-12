@@ -82,8 +82,8 @@ async function insertOrg(pool, { name, slug, status = "active", city = null, cou
 async function insertBranch(pool, orgId, fields) {
   const r = await pool.query(
     `INSERT INTO public.church_branches
-       (organization_id, name, slug, host_slug, status, city, country, location_text, service_times, member_registration_enabled)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)
+       (organization_id, name, slug, host_slug, status, city, country, location_text, service_times, welcome_message, member_registration_enabled)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      RETURNING id, organization_id, name, slug, host_slug, status, city, country, location_text, service_times`,
     [
       orgId,
@@ -95,6 +95,8 @@ async function insertBranch(pool, orgId, fields) {
       fields.country || null,
       fields.location_text || null,
       fields.service_times || null,
+      fields.welcome_message || null,
+      fields.member_registration_enabled !== undefined ? fields.member_registration_enabled : true,
     ]
   );
   return r.rows[0];
@@ -219,11 +221,11 @@ test(
     assert.equal(hit.status, 200);
     assert.match(hit.text, /Find Your Church/);
     assert.match(hit.text, new RegExp(org.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-    assert.match(hit.text, /Select/);
+    assert.match(hit.text, /Visit Church|Select branch/);
 
     const miss = await request(app).get("/churches?q=zzznomatchchurch999");
     assert.equal(miss.status, 200);
-    assert.match(miss.text, /We could not find that church/);
+    assert.match(miss.text, /No churches matched your search/);
   }
 );
 
@@ -290,8 +292,9 @@ test(
     assert.match(branchesPage.text, new RegExp(multi.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(branchesPage.text, new RegExp(b1.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(branchesPage.text, new RegExp(b2.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-    assert.match(branchesPage.text, /Open Branch Homepage/);
+    assert.match(branchesPage.text, /Visit Church/);
     assert.match(branchesPage.text, /Sunday 09:00/);
+    assert.match(branchesPage.text, /bb-finder__org-name/);
     assert.doesNotMatch(branchesPage.text, /Inactive Branch/);
   }
 );
@@ -441,3 +444,75 @@ test("desktop and mobile apex layouts both expose Find Your Church", async () =>
   assert.match(res.text, /Find Your Church/);
   assert.match(res.text, /church-drawer--apex/);
 });
+
+test(
+  "directory cards show optional fields, graceful fallbacks, and search by slug",
+  churchPgSkipIfUnconfigured(),
+  async (t) => {
+    const pool = await requireChurchPgOrSkip(t);
+    if (!pool) return;
+    await ensureCanonicalTenantsForTests(pool);
+    await ensureChurchSchema(pool);
+
+    const suffix = makeSuffix("cards");
+    const org = await insertOrg(pool, {
+      name: `Card Church ${suffix}`,
+      slug: `card-church-${suffix}`,
+      status: "active",
+      city: "Livingstone",
+      country: "Zambia",
+    });
+    await insertBranch(pool, org.id, {
+      name: `Card Branch ${suffix}`,
+      slug: `card-br-${suffix}`,
+      host_slug: `card-br-${suffix}`,
+      status: "active",
+      city: "Livingstone",
+      welcome_message: "A friendly church community in Livingstone.",
+      service_times: null,
+      location_text: "Mosi-oa-Tunya Road",
+    });
+
+    const app = makeApexApp();
+    const bySlug = await request(app).get(`/churches?q=${encodeURIComponent(org.slug)}`);
+    assert.equal(bySlug.status, 200);
+    assert.match(bySlug.text, new RegExp(org.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(bySlug.text, /Branch:/);
+    assert.match(bySlug.text, /Service times not published/);
+    assert.match(bySlug.text, /Visit Church/);
+    assert.match(bySlug.text, /aria-label="Visit Card Church/);
+    assert.match(bySlug.text, /bb-finder__visit/);
+    assert.match(bySlug.text, /bb-finder__card-main/);
+  }
+);
+
+test(
+  "suspended organizations and inactive branches stay out of directory cards",
+  churchPgSkipIfUnconfigured(),
+  async (t) => {
+    const pool = await requireChurchPgOrSkip(t);
+    if (!pool) return;
+    await ensureCanonicalTenantsForTests(pool);
+    await ensureChurchSchema(pool);
+
+    const suffix = makeSuffix("hidden");
+    const hidden = await insertOrg(pool, {
+      name: `Hidden Church ${suffix}`,
+      slug: `hidden-${suffix}`,
+      status: "suspended",
+      city: "Kabwe",
+    });
+    await insertBranch(pool, hidden.id, {
+      name: `Hidden Branch ${suffix}`,
+      slug: `hidden-br-${suffix}`,
+      host_slug: `hidden-br-${suffix}`,
+      status: "active",
+    });
+
+    const app = makeApexApp();
+    const res = await request(app).get(`/churches?q=${encodeURIComponent(hidden.slug)}`);
+    assert.equal(res.status, 200);
+    assert.match(res.text, /No churches matched your search/);
+    assert.doesNotMatch(res.text, new RegExp(hidden.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+);

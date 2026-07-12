@@ -260,6 +260,8 @@ app.use((req, res, next) => {
 
 // GetPro Church vertical hosts (*.church.{BASE} and church.{BASE}) — before company-subdomain classification.
 app.use(createAttachChurchContext());
+const { blessboardCanonicalRedirect } = require("./src/church/blessboardCanonicalRedirect");
+app.use(blessboardCanonicalRedirect);
 
 // Subdomain is a platform tenant (reserved region slugs + rows in `tenants`) vs a company marketing subdomain
 app.use(async (req, res, next) => {

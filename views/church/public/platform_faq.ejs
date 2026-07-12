@@ -1,0 +1,33 @@
+<%- include('../partials/public_shell_start') %>
+
+<section class="bb-platform-page bb-platform-faq home-desktop-design">
+  <div class="bb-platform-page__inner">
+    <header class="bb-platform-page__header">
+      <p class="bb-platform-page__eyebrow">BlessBoard</p>
+      <h1 class="bb-platform-page__title">Frequently Asked Questions</h1>
+      <p class="bb-platform-page__lead">Answers about BlessBoard for visitors, members, and church leaders. For platform onboarding or plan questions, <a href="/contact">contact BlessBoard</a>.</p>
+    </header>
+
+    <div class="bb-platform-faq__list">
+      <% faqItems.forEach(function (item, index) { %>
+      <details class="bb-platform-faq__item" id="faq-<%= item.id %>">
+        <summary class="bb-platform-faq__question"><%= item.question %></summary>
+        <div class="bb-platform-faq__answer">
+          <p><%= item.answer %></p>
+          <% if (item.id === 'request-access') { %>
+          <p><a href="<%= registerChurchPath %>">Register Your Church</a> · <a href="/contact">Contact BlessBoard</a></p>
+          <% } else if (item.id === 'login-help') { %>
+          <p><a href="/churches">Find a Church</a> · <a href="/support">Support</a></p>
+          <% } else if (item.id === 'pricing' || item.id === 'custom-domain') { %>
+          <p><a href="/contact">Contact BlessBoard</a></p>
+          <% } %>
+        </div>
+      </details>
+      <% }); %>
+    </div>
+
+    <p class="bb-platform-page__note">Still have questions? See <a href="/support">Support</a>, explore the <a href="/demo">guided demo</a>, or <a href="/contact">send a message</a>.</p>
+  </div>
+</section>
+
+<%- include('../partials/public_shell_end') %>

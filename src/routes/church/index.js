@@ -8,6 +8,9 @@ const registerMemberPortalRoutes = require("./memberPortal");
 const registerLeaderPortalRoutes = require("./leaderPortal");
 const registerPublicPagesRoutes = require("./publicPages");
 const registerPublicChurchDirectoryRoutes = require("./publicChurchDirectory");
+const registerPlatformPublicPagesRoutes = require("./platformPublicPages");
+const registerPlatformPublicFormRoutes = require("./platformPublicForms");
+const { registerPlatformPublicSeoRoutes } = require("../../church/platformPublicSeo");
 const { churchOperationalAccessGate } = require("../../church/churchStatusAccess");
 
 function requireChurchHost(req, res, next) {
@@ -23,7 +26,10 @@ module.exports = function churchRoutes() {
   router.use(requireChurchHost);
   router.use(churchOperationalAccessGate);
 
+  registerPlatformPublicFormRoutes(router);
+  registerPlatformPublicSeoRoutes(router);
   registerPublicPagesRoutes(router);
+  registerPlatformPublicPagesRoutes(router);
   registerPublicChurchDirectoryRoutes(router);
   registerChurchAuthRoutes(router);
   registerMemberPortalRoutes(router);
