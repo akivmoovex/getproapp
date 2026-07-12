@@ -113,7 +113,7 @@ test("shared card tokens and empty-state class exist", () => {
 
 test("public CSS cache version is consistent", () => {
   const shell = fs.readFileSync(PUBLIC_SHELL, "utf8");
-  assert.match(shell, /church\.css\?v=63/);
+  assert.match(shell, /church\.css\?v=64/);
 });
 
 test("About, Leadership, Events, Sermons, Giving, Contact still render", async () => {
@@ -121,7 +121,7 @@ test("About, Leadership, Events, Sermons, Giving, Contact still render", async (
   for (const route of ["/about", "/leadership", "/events", "/sermons", "/giving", "/contact"]) {
     const res = await request(app).get(route);
     assert.equal(res.status, 200, `${route} should render`);
-    assert.match(res.text, /church\.css\?v=63/);
+    assert.match(res.text, /church\.css\?v=64/);
     assert.match(res.text, /data-tenant-header="1"/);
   }
 });
@@ -151,7 +151,7 @@ test("Home remains unchanged in structure", async () => {
   assert.match(res.text, /data-tenant-home="1"/);
   assert.match(res.text, /bb-tenant-home/);
   assert.match(res.text, /bb-tenant-hero/);
-  assert.match(res.text, /church\.css\?v=63/);
+  assert.match(res.text, /church\.css\?v=64/);
 });
 
 test("Ministries remains unchanged in structure", async () => {
@@ -181,7 +181,7 @@ test("Apex finder remains unchanged", async () => {
 test("Authenticated portal CSS remains unaffected", () => {
   const memberShell = fs.readFileSync(MEMBER_SHELL, "utf8");
   assert.match(memberShell, /church\.css\?v=\d+/);
-  assert.doesNotMatch(memberShell, /church\.css\?v=63/);
+  assert.doesNotMatch(memberShell, /church\.css\?v=64/);
   const css = fs.readFileSync(CSS_PATH, "utf8");
   assert.match(css, /\.church-body--member-portal/);
   assert.match(css, /Authenticated portals keep their own 767\/768 rules/);

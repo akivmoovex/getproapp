@@ -5,6 +5,7 @@
 <%
   var _active = typeof activePage !== 'undefined' ? activePage : '';
   var _featuresClass = _active === 'features' ? ' church-nav__active' : '';
+  var _pricingClass = _active === 'pricing' ? ' church-nav__active' : '';
   var _solutionsActive = _active === 'for-churches' || _active === 'multi-branch';
   var _forChurchesClass = _active === 'for-churches' ? ' church-nav-dropdown__link--active' : '';
   var _multiBranchClass = _active === 'multi-branch' ? ' church-nav-dropdown__link--active' : '';
@@ -12,6 +13,7 @@
   var _aboutClass = _active === 'about' ? ' church-nav__active' : '';
 %>
 <a href="/features" class="<%= _featuresClass.trim() %>">Features</a>
+<a href="/pricing" class="<%= _pricingClass.trim() %>">Pricing</a>
 <div class="church-nav-dropdown<%= _solutionsActive ? ' church-nav-dropdown--section-active' : '' %>" data-nav-dropdown>
   <button
     type="button"

@@ -1,0 +1,38 @@
+---
+description: BlessBoard Stitch design implementation rules (apex marketing only)
+alwaysApply: true
+---
+
+# BlessBoard Stitch — marketing implementation
+
+Applies to **blessboard.com apex marketing** only. Never change tenant church or authenticated screens unless explicitly requested.
+
+## Source of truth
+
+- Treat approved Stitch screens as the visual source of truth.
+- Use the **Stitch MCP server** when available to inspect screens (do not paste API keys into this repo).
+- See `docs/blessboard-stitch-asset-map.md` and `docs/blessboard-stitch-screen-inventory.md`.
+- Match layout, spacing, typography, colors, radii, borders, and responsive behavior closely.
+- Implement **desktop and mobile** from their respective Stitch references — do not infer mobile from desktop alone.
+
+## Architecture (preserve)
+
+- Keep Node.js, Express, EJS, and `public/church/church.css`.
+- Reuse `public_shell_start` / `public_shell_end` and shared partials.
+- Do **not** replace working EJS with standalone HTML apps.
+- Do **not** add React, Tailwind, or another UI framework.
+- Scope marketing CSS to apex/platform selectors (e.g. `.church-body--apex`, `.bb-platform-*`) — away from tenant and auth shells.
+- Do **not** change business logic, routes, forms, DB queries, or auth for visual parity alone.
+- Preserve SEO metadata, accessibility, and server-side validation.
+
+## Sacred Modernity system
+
+- Font: **Hanken Grotesk** (load if not already in shell).
+- Primary: **BlessBoard Violet `#6C5CE7`**; warm neutral surfaces per Stitch.
+- Logo lockup must show **Powered by GetPro** on desktop and mobile; **GetPro** in orange (`powered_by_getpro` partial).
+
+## Verification
+
+- After visual work, compare in Cursor Browser against Stitch.
+- Report differences that cannot safely be matched.
+- Bump `church.css?v=` on public shell when marketing CSS changes.

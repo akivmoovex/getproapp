@@ -11,6 +11,11 @@ const {
   buildDemoExploreLinks,
 } = require("../../church/platformPublicContent");
 const { PLATFORM_FAQ_ITEMS } = require("../../church/platformFaqContent");
+const {
+  BLESSBOARD_PRICING_ONBOARDING_NOTE,
+  buildPublicPricingPlans,
+  buildPublicPricingComparisonRows,
+} = require("../../church/platformPricingContent");
 const { mergePlatformPublicSeo } = require("../../church/platformPublicSeo");
 
 function requireVerticalApex(req, res, next) {
@@ -46,6 +51,22 @@ function registerPlatformPublicPagesRoutes(router) {
         {
           pageTitle: "Features",
           activePage: "features",
+        },
+        req
+      )
+    );
+  });
+
+  router.get("/pricing", requireVerticalApex, (req, res) => {
+    return res.render(
+      "church/public/platform_pricing",
+      apexPageLocals(
+        {
+          pageTitle: "Pricing",
+          activePage: "pricing",
+          pricingOnboardingNote: BLESSBOARD_PRICING_ONBOARDING_NOTE,
+          pricingPlans: buildPublicPricingPlans(),
+          pricingComparisonRows: buildPublicPricingComparisonRows(),
         },
         req
       )

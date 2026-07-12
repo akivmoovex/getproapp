@@ -29,6 +29,15 @@ const PLATFORM_PUBLIC_SEO = {
     priority: "0.9",
     breadcrumbLabel: "Features",
   },
+  pricing: {
+    path: "/pricing",
+    pageTitle: "Pricing",
+    metaDescription:
+      "BlessBoard pricing and plans for churches — Starter, Standard, and Pro tiers with contact-led onboarding for congregations of every size.",
+    changefreq: "monthly",
+    priority: "0.85",
+    breadcrumbLabel: "Pricing",
+  },
   "for-churches": {
     path: "/for-churches",
     pageTitle: "For Churches",
@@ -142,6 +151,7 @@ const PLATFORM_PUBLIC_SEO = {
 const SITEMAP_PAGE_KEYS = [
   "home",
   "features",
+  "pricing",
   "for-churches",
   "multi-branch",
   "churches",

@@ -1,0 +1,99 @@
+<%- include('../partials/public_shell_start') %>
+
+<%- include('../partials/platform_info_hero', {
+  heroTitle: 'Plans for every stage of your church',
+  heroLead: typeof pricingOnboardingNote !== 'undefined' ? pricingOnboardingNote : 'BlessBoard is currently onboarding selected churches. Contact the BlessBoard team to discuss access and setup.'
+}) %>
+
+<section class="bb-platform-pricing-plans home-desktop-design" aria-labelledby="pricing-plans-title">
+  <div class="bb-platform-pricing-plans__inner">
+    <div class="bb-platform-pricing-plans__header">
+      <h2 class="bb-platform-section__title" id="pricing-plans-title">Choose the right fit</h2>
+      <p class="bb-platform-section__subtitle">Plans and available services may vary according to church size, branch structure, and setup requirements.</p>
+    </div>
+    <div class="bb-platform-pricing-plans__grid">
+      <% (typeof pricingPlans !== 'undefined' ? pricingPlans : []).forEach(function (plan) { %>
+      <article class="bb-platform-pricing-card<%= plan.featured ? ' bb-platform-pricing-card--featured' : '' %>">
+        <% if (plan.featured) { %>
+        <p class="bb-platform-pricing-card__badge">Most churches start here</p>
+        <% } %>
+        <h3 class="bb-platform-pricing-card__name"><%= plan.label %></h3>
+        <p class="bb-platform-pricing-card__desc"><%= plan.description %></p>
+        <p class="bb-platform-pricing-card__price">
+          <span class="bb-platform-pricing-card__price-label">Pricing</span>
+          <span class="bb-platform-pricing-card__price-value">Contact for access</span>
+        </p>
+        <ul class="bb-platform-pricing-card__limits">
+          <li><span class="material-symbols-outlined" aria-hidden="true">account_tree</span><%= plan.branchesLabel %></li>
+          <li><span class="material-symbols-outlined" aria-hidden="true">groups</span><%= plan.membersLabel %></li>
+        </ul>
+        <ul class="bb-saas-bento__checks bb-platform-pricing-card__features">
+          <% plan.highlights.forEach(function (feature) { %>
+          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><%= feature %></li>
+          <% }); %>
+        </ul>
+        <a
+          class="church-btn church-btn--pill bb-platform-pricing-card__cta<%= plan.featured ? ' church-btn--primary' : ' church-btn--outline' %>"
+          href="/contact"
+        >Discuss this plan</a>
+      </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<section class="bb-platform-pricing-compare home-desktop-design" aria-labelledby="pricing-compare-title">
+  <div class="bb-platform-pricing-compare__inner">
+    <h2 class="bb-platform-section__title" id="pricing-compare-title">Compare plans</h2>
+    <p class="bb-platform-section__subtitle">See which capabilities are included at each level.</p>
+    <div class="bb-platform-pricing-compare__scroll">
+      <table class="bb-platform-pricing-compare__table">
+        <thead>
+          <tr>
+            <th scope="col">Feature</th>
+            <% (typeof pricingPlans !== 'undefined' ? pricingPlans : []).forEach(function (plan) { %>
+            <th scope="col"><%= plan.label %></th>
+            <% }); %>
+          </tr>
+        </thead>
+        <tbody>
+          <% (typeof pricingComparisonRows !== 'undefined' ? pricingComparisonRows : []).forEach(function (row) { %>
+          <tr>
+            <th scope="row"><%= row.label %></th>
+            <% (typeof pricingPlans !== 'undefined' ? pricingPlans : []).forEach(function (plan) { %>
+            <td>
+              <% if (row.plans[plan.code]) { %>
+              <span class="bb-platform-pricing-compare__yes" aria-label="Included">
+                <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+              </span>
+              <% } else { %>
+              <span class="bb-platform-pricing-compare__no" aria-label="Not included">—</span>
+              <% } %>
+            </td>
+            <% }); %>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="pricing-onboarding">
+  <div class="bb-platform-info-section__inner church-public-prose">
+    <h2 id="pricing-onboarding">Onboarding</h2>
+    <p><%= typeof pricingOnboardingNote !== 'undefined' ? pricingOnboardingNote : '' %></p>
+    <p>Questions about plans or multi-branch setup? Read the <a href="/faq">FAQ</a> or <a href="/contact">contact the BlessBoard team</a>.</p>
+  </div>
+</section>
+
+<%- include('../partials/platform_info_cta', {
+  ctaTitle: 'Ready to discuss BlessBoard for your church?',
+  ctaLead: 'Tell us about your congregation and branch structure to begin onboarding.',
+  primaryHref: registerChurchPath,
+  primaryLabel: 'Register Your Church',
+  secondaryHref: '/contact',
+  secondaryLabel: 'Contact BlessBoard'
+}) %>
+
+<%- include('../partials/public_shell_end') %>

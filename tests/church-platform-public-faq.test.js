@@ -140,6 +140,6 @@ test("FAQ and demo pages use mobile-friendly layout classes", async () => {
     const res = await request(app).get(routePath);
     assert.match(res.text, /home-desktop-design/);
     assert.match(res.text, /bb-platform-page/);
-    assert.match(res.text, /church\.css\?v=63/);
+    assert.match(res.text, /church\.css\?v=64/);
   }
 });

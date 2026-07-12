@@ -64,6 +64,7 @@ test("apex desktop nav uses simplified structure with Solutions dropdown", async
   assert.ok(nav, "desktop nav should render");
 
   assert.match(nav, /href="\/features"[^>]*>Features</);
+  assert.match(nav, /href="\/pricing"[^>]*>Pricing</);
   assert.match(nav, /church-nav-dropdown/);
   assert.match(nav, /id="platform-solutions-trigger"[^>]*>[\s\S]*Solutions/);
   assert.match(nav, /expand_more/);
@@ -88,7 +89,7 @@ test("apex desktop nav renders on main platform pages", async () => {
     const res = await request(app).get(routePath);
     assert.equal(res.status, 200, `${routePath} should render`);
     assert.match(extractDesktopNav(res.text), /Solutions/, `${routePath} should include Solutions`);
-    assert.match(res.text, /church\.css\?v=63/);
+    assert.match(res.text, /church\.css\?v=64/);
   }
 });
 
@@ -99,6 +100,7 @@ test("apex mobile drawer includes full public links including Contact", async ()
   for (const href of [
     'href="/"',
     'href="/features"',
+    'href="/pricing"',
     'href="/for-churches"',
     'href="/multi-branch"',
     'href="/churches"',

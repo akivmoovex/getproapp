@@ -4821,6 +4821,238 @@ a.church-branch-stat-card--link:hover {
   line-height: 1.55;
 }
 
+/* —— Apex pricing page (Stitch BlessBoard Pricing desktop/mobile) —— */
+.church-body--apex .bb-platform-pricing-plans {
+  padding: var(--church-space-xl) var(--church-margin-mobile) calc(var(--church-space-xl) * 1.25);
+}
+
+.church-body--apex .bb-platform-pricing-plans__inner,
+.church-body--apex .bb-platform-pricing-compare__inner {
+  max-width: var(--church-max-width);
+  margin: 0 auto;
+}
+
+.church-body--apex .bb-platform-pricing-plans__header {
+  text-align: center;
+  max-width: 40rem;
+  margin: 0 auto var(--church-space-xl);
+}
+
+.church-body--apex .bb-platform-pricing-plans__grid {
+  display: grid;
+  gap: var(--church-space-lg);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.church-body--apex .bb-platform-pricing-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--church-space-md);
+  padding: calc(var(--church-space-lg) + 4px);
+  border-radius: 1rem;
+  border: 1px solid rgba(200, 196, 215, 0.45);
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(19, 29, 33, 0.05);
+  min-height: 100%;
+}
+
+.church-body--apex .bb-platform-pricing-card--featured {
+  border-color: var(--church-primary);
+  box-shadow: 0 12px 32px rgba(108, 92, 231, 0.14);
+  position: relative;
+}
+
+.church-body--apex .bb-platform-pricing-card__badge {
+  margin: 0;
+  align-self: flex-start;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  background: rgba(108, 92, 231, 0.12);
+  color: var(--church-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.church-body--apex .bb-platform-pricing-card__name {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--church-text);
+  line-height: 1.2;
+}
+
+.church-body--apex .bb-platform-pricing-card__desc {
+  margin: 0;
+  color: var(--church-muted);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  min-height: 3.1em;
+}
+
+.church-body--apex .bb-platform-pricing-card__price {
+  margin: 0;
+  padding: var(--church-space-md) 0;
+  border-top: 1px solid rgba(200, 196, 215, 0.35);
+  border-bottom: 1px solid rgba(200, 196, 215, 0.35);
+}
+
+.church-body--apex .bb-platform-pricing-card__price-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--church-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.church-body--apex .bb-platform-pricing-card__price-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--church-text);
+  line-height: 1.2;
+}
+
+.church-body--apex .bb-platform-pricing-card__limits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--church-space-sm);
+}
+
+.church-body--apex .bb-platform-pricing-card__limits li {
+  display: flex;
+  align-items: center;
+  gap: var(--church-space-sm);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--church-on-surface-variant);
+}
+
+.church-body--apex .bb-platform-pricing-card__limits .material-symbols-outlined {
+  color: var(--church-primary);
+  font-size: 1.125rem;
+}
+
+.church-body--apex .bb-platform-pricing-card__features {
+  flex: 1;
+  margin-top: 0;
+}
+
+.church-body--apex .bb-platform-pricing-card__features li {
+  font-size: 0.8125rem;
+}
+
+.church-body--apex .bb-platform-pricing-card__cta {
+  margin-top: auto;
+  width: 100%;
+  justify-content: center;
+}
+
+.church-body--apex .bb-platform-pricing-compare {
+  padding: 0 var(--church-margin-mobile) calc(var(--church-space-xl) * 1.5);
+}
+
+.church-body--apex .bb-platform-pricing-compare__scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(200, 196, 215, 0.45);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(19, 29, 33, 0.04);
+}
+
+.church-body--apex .bb-platform-pricing-compare__table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+.church-body--apex .bb-platform-pricing-compare__table th,
+.church-body--apex .bb-platform-pricing-compare__table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgba(200, 196, 215, 0.35);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.church-body--apex .bb-platform-pricing-compare__table thead th {
+  background: var(--church-surface-container-low);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--church-text);
+}
+
+.church-body--apex .bb-platform-pricing-compare__table tbody th {
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--church-on-surface-variant);
+  background: #fff;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  box-shadow: 1px 0 0 rgba(200, 196, 215, 0.35);
+}
+
+.church-body--apex .bb-platform-pricing-compare__table tbody tr:last-child th,
+.church-body--apex .bb-platform-pricing-compare__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.church-body--apex .bb-platform-pricing-compare__yes {
+  display: inline-flex;
+  color: var(--church-primary);
+}
+
+.church-body--apex .bb-platform-pricing-compare__yes .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+.church-body--apex .bb-platform-pricing-compare__no {
+  color: var(--church-muted);
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .church-body--apex .bb-platform-pricing-plans__grid {
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+  }
+
+  .church-body--apex .bb-platform-pricing-plans__grid .bb-platform-pricing-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    max-width: 28rem;
+    justify-self: center;
+    width: 100%;
+  }
+}
+
+@media (min-width: 1100px) {
+  .church-body--apex .bb-platform-pricing-plans__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .church-body--apex .bb-platform-pricing-plans__grid .bb-platform-pricing-card:last-child:nth-child(odd) {
+    grid-column: auto;
+    max-width: none;
+    justify-self: stretch;
+  }
+
+  .church-body--apex .bb-platform-pricing-card--featured {
+    transform: translateY(-6px);
+  }
+
+  .church-body--apex .bb-platform-pricing-card__desc {
+    min-height: 4.65em;
+  }
+}
+
 .bb-saas-features__subtitle a {
   color: var(--church-primary);
   font-weight: 600;

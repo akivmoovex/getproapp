@@ -58,6 +58,7 @@ const PLATFORM_PAGES = [
   { path: "/support", title: "Support", active: "support" },
   { path: "/faq", title: "Frequently Asked Questions", active: "faq" },
   { path: "/demo", title: "See BlessBoard in action", active: "demo" },
+  { path: "/pricing", title: "Plans for every stage of your church", active: "pricing" },
 ];
 
 test("apex platform static pages render with shared shell", async () => {
@@ -65,7 +66,7 @@ test("apex platform static pages render with shared shell", async () => {
   for (const page of PLATFORM_PAGES) {
     const res = await request(app).get(page.path);
     assert.equal(res.status, 200, `${page.path} should render`);
-    assert.match(res.text, /church\.css\?v=63/, `${page.path} should load public CSS`);
+    assert.match(res.text, /church\.css\?v=64/, `${page.path} should load public CSS`);
     assert.match(res.text, /church-body--apex/, `${page.path} should use apex body`);
     assert.match(res.text, new RegExp(page.title), `${page.path} should include heading`);
     if (page.sections) {
@@ -112,7 +113,6 @@ test("apex /features page renders dedicated capability sections", async () => {
   assert.match(res.text, /Contact BlessBoard/);
   assert.match(res.text, /href="\/register-church"/);
   assert.match(res.text, /href="\/contact"/);
-  assert.doesNotMatch(res.text, /pricing/i);
 });
 
 test("apex /for-churches page renders leader-focused sections", async () => {
@@ -154,8 +154,8 @@ test("apex homepage includes platform marketing sections and links to dedicated 
   assert.match(res.text, /href="\/features"/);
   assert.match(res.text, /href="\/multi-branch"/);
   assert.match(res.text, /href="\/for-churches"/);
+  assert.match(res.text, /href="\/pricing"/);
   assert.match(res.text, /Bring your church community together online/);
-  assert.doesNotMatch(res.text, /pricing/i);
 });
 
 test("apex header and footer navigation links to dedicated pages", async () => {
@@ -163,6 +163,7 @@ test("apex header and footer navigation links to dedicated pages", async () => {
   const res = await request(app).get("/");
   for (const href of [
     'href="/features"',
+    'href="/pricing"',
     'href="/for-churches"',
     'href="/multi-branch"',
     'href="/churches"',
@@ -211,6 +212,7 @@ test("branch host does not expose apex-only platform routes", async () => {
   const app = makeBranchApp();
   for (const routePath of [
     "/features",
+    "/pricing",
     "/for-churches",
     "/multi-branch",
     "/privacy",
