@@ -66,7 +66,7 @@ test("apex platform static pages render with shared shell", async () => {
   for (const page of PLATFORM_PAGES) {
     const res = await request(app).get(page.path);
     assert.equal(res.status, 200, `${page.path} should render`);
-    assert.match(res.text, /church\.css\?v=71/, `${page.path} should load public CSS`);
+    assert.match(res.text, /church\.css\?v=72/, `${page.path} should load public CSS`);
     assert.match(res.text, /church-body--apex/, `${page.path} should use apex body`);
     assert.match(res.text, new RegExp(page.title), `${page.path} should include heading`);
     if (page.sections) {
@@ -104,19 +104,40 @@ test("apex /features page renders dedicated capability sections", async () => {
   const app = makeApexApp();
   const res = await request(app).get("/features");
   assert.equal(res.status, 200);
-  assert.match(res.text, /Everything your church needs in one connected platform/);
-  assert.match(res.text, /Public Church Website/);
-  assert.match(res.text, /Member Portal/);
-  assert.match(res.text, /Branch Administration/);
-  assert.match(res.text, /Headquarters and Multi-Branch Management/);
-  assert.match(res.text, /Register Your Church/);
-  assert.match(res.text, /Contact BlessBoard/);
+  assert.match(res.text, /Built for the Modern Ministry/);
+  assert.match(res.text, /Website &amp; Public Presence/);
+  assert.match(res.text, /Member Engagement &amp; Giving/);
+  assert.match(res.text, /Secure Giving[\s\S]*Member Portals[\s\S]*Group Management[\s\S]*Event Signups/);
+  assert.match(res.text, /Operational Excellence/);
+  assert.match(res.text, /Sunday Attendance/);
+  assert.match(res.text, /Total Giving/);
+  assert.match(res.text, /New Visitors/);
+  assert.match(res.text, /Illustrative example/);
+  assert.match(res.text, /Enterprise Scaling/);
+  assert.match(res.text, /Multi-Branch Support/);
+  assert.match(res.text, /HQ Oversight/);
+  assert.match(res.text, /Get Started Today/);
+  assert.match(res.text, /Schedule a Demo/);
   assert.match(res.text, /href="\/register-church"/);
-  assert.match(res.text, /href="\/contact"/);
+  assert.match(res.text, /href="\/demo"/);
   assert.match(res.text, /bb-apex-page-hero/);
   assert.match(res.text, /bb-apex-page-split/);
+  assert.match(res.text, /bb-apex-features-member-grid/);
+  assert.match(res.text, /bb-apex-features-report-card/);
   assert.match(res.text, /home-desktop-design/);
   assert.match(res.text, /home-mobile-design/);
+  assert.doesNotMatch(res.text, /thousands of churches|2,500 churches|500\+ churches|bank-grade encryption|GDPR compliance|single sign-on|low transaction fees/i);
+});
+
+test("apex /features Member section is a desktop 2x2 grid and mobile is stacked", async () => {
+  const app = makeApexApp();
+  const res = await request(app).get("/features");
+  assert.equal((res.text.match(/bb-apex-features-member-card/g) || []).length, 4);
+
+  const fs = require("fs");
+  const css = fs.readFileSync(path.join(__dirname, "../public/church/church.css"), "utf8");
+  assert.match(css, /\.church-body--apex \.bb-apex-features-member-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)[^}]*grid-template-rows:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/s);
+  assert.match(css, /@media \(max-width:\s*899px\)[\s\S]*?\.church-body--apex \.bb-apex-features-member-grid\s*\{[^}]*grid-template-columns:\s*1fr/s);
 });
 
 test("apex /for-churches page renders leader-focused sections", async () => {

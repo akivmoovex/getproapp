@@ -97,7 +97,7 @@ test("apex /pricing renders Stitch pricing layout with registration/contact CTAs
   const app = makeApexApp();
   const res = await request(app).get("/pricing");
   assert.equal(res.status, 200);
-  assert.match(res.text, /church\.css\?v=71/);
+  assert.match(res.text, /church\.css\?v=72/);
   assert.match(res.text, /church-body--apex/);
   assert.match(res.text, /Simple plans for every stage of church growth/);
   assert.match(res.text, /bb-apex-pricing/);

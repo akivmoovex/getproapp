@@ -16062,6 +16062,397 @@ html:has(> body.church-body--apex) {
   text-decoration: underline;
 }
 
+.church-body--apex .bb-apex-features-section {
+  overflow-x: clip;
+}
+
+.church-body--apex .bb-apex-page-split__icon--tertiary {
+  background: color-mix(in srgb, #715500 10%, transparent);
+  color: #715500;
+}
+
+.church-body--apex .bb-apex-page-split__icon--secondary {
+  background: color-mix(in srgb, var(--bb-apex-orange) 10%, transparent);
+  color: var(--bb-apex-orange);
+}
+
+.church-body--apex .bb-apex-features-visual {
+  position: relative;
+  min-width: 0;
+}
+
+.church-body--apex .bb-apex-features-visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 38% 62% 58% 42% / 46% 38% 62% 54%;
+  background: color-mix(in srgb, var(--bb-apex-primary) 10%, transparent);
+  transform: rotate(-6deg) scale(1.08);
+}
+
+.church-body--apex .bb-apex-features-visual--giving::before {
+  background: color-mix(in srgb, #715500 10%, transparent);
+  transform: rotate(6deg) scale(1.08);
+}
+
+.church-body--apex .bb-apex-features-visual img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: calc(var(--bb-apex-radius) + 8px);
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-features-mini-card {
+  position: absolute;
+  right: -32px;
+  bottom: -32px;
+  z-index: 2;
+  max-width: 18rem;
+  padding: 24px;
+  border-radius: var(--bb-apex-radius);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--bb-apex-shadow-md);
+}
+
+.church-body--apex .bb-apex-features-mini-card__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-features-mini-card__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bb-apex-primary) 14%, transparent);
+  color: var(--bb-apex-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.church-body--apex .bb-apex-features-mini-card p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-features-checks strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.875rem;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-features-checks small {
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-features-member-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.church-body--apex .bb-apex-features-member-card {
+  min-height: 174px;
+  padding: 24px;
+  border-radius: var(--bb-apex-radius);
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 50%, transparent);
+  background: #fff;
+  box-shadow: var(--bb-apex-shadow-md);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.church-body--apex .bb-apex-features-member-card .material-symbols-outlined {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--bb-apex-primary);
+  font-size: 1.5rem;
+}
+
+.church-body--apex .bb-apex-features-member-card h3 {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-features-member-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-features-report-card {
+  position: relative;
+  padding: 32px;
+  border-radius: calc(var(--bb-apex-radius) + 8px);
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--bb-apex-border) 55%, transparent);
+  box-shadow: var(--bb-apex-shadow-md);
+  min-width: 0;
+}
+
+.church-body--apex .bb-apex-features-report-card::before {
+  content: "";
+  position: absolute;
+  inset: -16px;
+  z-index: -1;
+  border: 2px dashed color-mix(in srgb, var(--bb-apex-border) 70%, transparent);
+  border-radius: calc(var(--bb-apex-radius) + 20px);
+}
+
+.church-body--apex .bb-apex-features-sample-label {
+  margin: 0 0 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-features-report-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--bb-apex-border) 45%, transparent);
+}
+
+.church-body--apex .bb-apex-features-report-card__head h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-features-report-card__head span {
+  color: var(--bb-apex-primary);
+  font-size: 1.125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.church-body--apex .bb-apex-features-bars,
+.church-body--apex .bb-apex-features-mobile-bars {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  height: 192px;
+  padding: 24px 16px 0;
+}
+
+.church-body--apex .bb-apex-features-bars span,
+.church-body--apex .bb-apex-features-mobile-bars span {
+  display: block;
+  flex: 1 1 0;
+  height: var(--bar-height);
+  min-height: 24px;
+  border-radius: 8px 8px 0 0;
+  background: var(--bb-apex-primary);
+}
+
+.church-body--apex .bb-apex-features-bars span:nth-child(1),
+.church-body--apex .bb-apex-features-mobile-bars span:nth-child(1) {
+  opacity: 0.2;
+}
+
+.church-body--apex .bb-apex-features-bars span:nth-child(2),
+.church-body--apex .bb-apex-features-mobile-bars span:nth-child(2) {
+  opacity: 0.32;
+}
+
+.church-body--apex .bb-apex-features-bars span:nth-child(3),
+.church-body--apex .bb-apex-features-mobile-bars span:nth-child(3) {
+  opacity: 0.48;
+}
+
+.church-body--apex .bb-apex-features-bars span:nth-child(4),
+.church-body--apex .bb-apex-features-mobile-bars span:nth-child(4) {
+  opacity: 0.68;
+}
+
+.church-body--apex .bb-apex-features-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.church-body--apex .bb-apex-features-metrics div {
+  padding: 16px;
+  border-radius: var(--bb-apex-radius-sm);
+  background: var(--bb-apex-surface-dim);
+}
+
+.church-body--apex .bb-apex-features-metrics span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-features-metrics strong {
+  display: block;
+  font-size: 1.25rem;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-features-operation-list {
+  display: grid;
+  gap: 24px;
+}
+
+.church-body--apex .bb-apex-features-operation-list article {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.church-body--apex .bb-apex-features-operation-list > article > .material-symbols-outlined {
+  color: var(--bb-apex-primary);
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.church-body--apex .bb-apex-features-operation-list h3 {
+  margin: 0 0 4px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-features-operation-list p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-features-enterprise-grid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+.church-body--apex .bb-apex-features-mobile-label {
+  margin: 0 0 8px;
+  color: var(--bb-apex-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.church-body--apex .bb-apex-features-mobile-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.church-body--apex .bb-apex-features-mobile-list li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-features-domain {
+  display: block;
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: var(--bb-apex-radius-sm);
+  border: 1px dashed var(--bb-apex-border);
+  background: var(--bb-apex-surface-dim);
+  color: var(--bb-apex-primary);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.church-body--apex .bb-apex-features-mobile-feature {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.church-body--apex .bb-apex-features-mobile-feature > .material-symbols-outlined {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #e4dfff;
+  color: var(--bb-apex-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.25rem;
+}
+
+.church-body--apex .bb-apex-features-mobile-feature h3 {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--bb-apex-text);
+}
+
+.church-body--apex .bb-apex-features-mobile-feature p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--bb-apex-text-secondary);
+}
+
+.church-body--apex .bb-apex-features-mobile-bento {
+  display: grid;
+  gap: 16px;
+}
+
+.church-body--apex .bb-apex-features-mobile-bento__large {
+  padding: 24px;
+}
+
+.church-body--apex .bb-apex-features-mobile-bento__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.church-body--apex .bb-apex-features-mobile-bars {
+  height: 128px;
+  margin-top: 20px;
+  padding: 16px 12px 0;
+  border-radius: var(--bb-apex-radius-sm);
+  background: var(--bb-apex-surface-dim);
+}
+
 @media (min-width: 900px) {
   .church-body--apex .bb-apex-page-hero__inner--split {
     grid-template-columns: 1fr 1fr;
@@ -16073,6 +16464,11 @@ html:has(> body.church-body--apex) {
 
   .church-body--apex .bb-apex-page-icon-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .church-body--apex .bb-apex-features-member-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
   }
 
   .church-body--apex .bb-apex-page-steps__list:not(.bb-apex-page-steps__list--compact) {
@@ -16122,6 +16518,33 @@ html:has(> body.church-body--apex) {
   .church-body--apex .bb-apex-page-challenges__grid,
   .church-body--apex .bb-apex-page-toolkit,
   .church-body--apex .bb-apex-page-icon-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .church-body--apex .bb-apex-features-member-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+  }
+
+  .church-body--apex .bb-apex-features-mini-card {
+    display: none;
+  }
+
+  .church-body--apex .bb-apex-features-report-card {
+    padding: 24px;
+  }
+
+  .church-body--apex .bb-apex-features-report-card::before {
+    display: none;
+  }
+
+  .church-body--apex .bb-apex-features-bars {
+    height: 156px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .church-body--apex .bb-apex-features-metrics {
     grid-template-columns: 1fr;
   }
 

@@ -117,7 +117,7 @@ test("apex GET /contact and register-church render accessible forms", async () =
     assert.equal(res.status, 200, `${routePath} should render`);
     assert.match(res.text, /method="post"/);
     assert.match(res.text, /company_website/);
-    assert.match(res.text, /church\.css\?v=71/);
+    assert.match(res.text, /church\.css\?v=72/);
   }
   const contact = await request(app).get("/contact");
   assert.match(contact.text, /name="full_name"/);
