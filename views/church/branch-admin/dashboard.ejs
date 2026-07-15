@@ -25,7 +25,9 @@
         <a class="church-btn church-btn--primary church-show-desktop-only" href="/branch/member-verification">Review queue</a>
       </header>
       <%- include('../partials/plan_limit_warnings', { planContext: typeof planContext !== 'undefined' ? planContext : null }) %>
-      <% if (typeof planContext !== 'undefined' && planContext && planContext.planCode === 'free') { %>
+      <% if (typeof planContext !== 'undefined' && planContext && planContext.seatUsage) { %>
+      <p class="church-branch-panel__hint">Organization members: <%= planContext.seatUsage.membersDisplay %> active (verified). Pending visitors are not counted.</p>
+      <% } else if (typeof planContext !== 'undefined' && planContext && planContext.planCode === 'free') { %>
       <p class="church-branch-panel__hint">Organization members: <%= planContext.membersDisplay %> verified (free plan limit applies org-wide).</p>
       <% } %>
       <% if (notice) { %>

@@ -107,6 +107,58 @@ async function createLeaderForBranch(pool, fields) {
   const email = normalizeEmail(fields.email);
   const phone = String(fields.phone || "").trim().slice(0, 64);
   const phoneNorm = normalizePhone(fields.phone);
+  const status = fields.status || "active";
+
+  if (status === "active") {
+    const seatQuota = require("../../../services/church/churchSeatQuotaService");
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {
+        organizationId: fields.organization_id,
+        branchId: fields.branch_id,
+        actorType: "branch_admin",
+        actorId: fields.created_by_admin_id || null,
+        roleLabel: "ministry_leader",
+      });
+      const r = await client.query(
+        `INSERT INTO public.church_ministry_leaders (
+           organization_id, branch_id, ministry_id, department_id, member_id,
+           full_name, email, phone, phone_normalized, password_hash,
+           role, status, notes, created_by_admin_id, updated_by_admin_id
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $14)
+         RETURNING id`,
+        [
+          fields.organization_id,
+          fields.branch_id,
+          fields.ministry_id || null,
+          fields.department_id || null,
+          fields.member_id || null,
+          String(fields.full_name || "").trim().slice(0, 200),
+          email,
+          phone || null,
+          phoneNorm || null,
+          fields.password_hash,
+          fields.role || "ministry_leader",
+          status,
+          fields.notes || null,
+          fields.created_by_admin_id || null,
+        ]
+      );
+      await client.query("COMMIT");
+      return findLeaderByIdForBranch(pool, r.rows[0].id, fields.branch_id);
+    } catch (err) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
   const r = await pool.query(
     `INSERT INTO public.church_ministry_leaders (
        organization_id, branch_id, ministry_id, department_id, member_id,
@@ -126,7 +178,7 @@ async function createLeaderForBranch(pool, fields) {
       phoneNorm || null,
       fields.password_hash,
       fields.role || "ministry_leader",
-      fields.status || "active",
+      status,
       fields.notes || null,
       fields.created_by_admin_id || null,
     ]
@@ -205,6 +257,67 @@ async function updateLeaderForBranch(pool, leaderId, branchId, update) {
   const email = normalizeEmail(update.email);
   const phone = String(update.phone || "").trim().slice(0, 64);
   const phoneNorm = normalizePhone(update.phone);
+  const nextStatus = update.status || "active";
+
+  const existing = await findLeaderByIdForBranch(pool, leaderId, branchId);
+  if (!existing) return null;
+
+  if (nextStatus === "active" && existing.status !== "active") {
+    const seatQuota = require("../../../services/church/churchSeatQuotaService");
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {
+        organizationId: existing.organization_id,
+        branchId,
+        excludeMinistryLeaderId: existing.id,
+        actorType: "branch_admin",
+        actorId: update.updated_by_admin_id || null,
+        roleLabel: "ministry_leader",
+      });
+      const r = await client.query(
+        `UPDATE public.church_ministry_leaders
+         SET full_name = $1,
+             email = $2,
+             phone = $3,
+             phone_normalized = $4,
+             ministry_id = $5,
+             role = $6,
+             status = $7,
+             notes = $8,
+             updated_by_admin_id = $9,
+             updated_at = now()
+         WHERE id = $10 AND branch_id = $11
+         RETURNING id`,
+        [
+          update.full_name,
+          email,
+          phone || null,
+          phoneNorm || null,
+          update.ministry_id,
+          update.role || "ministry_leader",
+          nextStatus,
+          update.notes || null,
+          update.updated_by_admin_id || null,
+          leaderId,
+          branchId,
+        ]
+      );
+      await client.query("COMMIT");
+      if (!r.rows[0]) return null;
+      return findLeaderByIdForBranch(pool, leaderId, branchId);
+    } catch (err) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
   const r = await pool.query(
     `UPDATE public.church_ministry_leaders
      SET full_name = $1,
@@ -226,7 +339,7 @@ async function updateLeaderForBranch(pool, leaderId, branchId, update) {
       phoneNorm || null,
       update.ministry_id,
       update.role || "ministry_leader",
-      update.status || "active",
+      nextStatus,
       update.notes || null,
       update.updated_by_admin_id || null,
       leaderId,
@@ -245,17 +358,46 @@ async function updateLeaderForBranch(pool, leaderId, branchId, update) {
  * @returns {Promise<object | null>}
  */
 async function activateLeaderForBranch(pool, leaderId, branchId, adminId) {
-  const r = await pool.query(
-    `UPDATE public.church_ministry_leaders
-     SET status = 'active',
-         updated_by_admin_id = $1,
-         updated_at = now()
-     WHERE id = $2 AND branch_id = $3
-     RETURNING id`,
-    [adminId, leaderId, branchId]
-  );
-  if (!r.rows[0]) return null;
-  return findLeaderByIdForBranch(pool, leaderId, branchId);
+  const existing = await findLeaderByIdForBranch(pool, leaderId, branchId);
+  if (!existing) return null;
+  if (existing.status === "active") {
+    return existing;
+  }
+
+  const seatQuota = require("../../../services/church/churchSeatQuotaService");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {
+      organizationId: existing.organization_id,
+      branchId,
+      excludeMinistryLeaderId: existing.id,
+      actorType: "branch_admin",
+      actorId: adminId,
+      roleLabel: "ministry_leader",
+    });
+    const r = await client.query(
+      `UPDATE public.church_ministry_leaders
+       SET status = 'active',
+           updated_by_admin_id = $1,
+           updated_at = now()
+       WHERE id = $2 AND branch_id = $3 AND status <> 'active'
+       RETURNING id`,
+      [adminId, leaderId, branchId]
+    );
+    await client.query("COMMIT");
+    if (!r.rows[0]) return null;
+    return findLeaderByIdForBranch(pool, leaderId, branchId);
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 /**

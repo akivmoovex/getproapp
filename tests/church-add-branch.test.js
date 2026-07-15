@@ -173,14 +173,32 @@ test(
     assert.match(formPage.text, /Add branch/);
 
     const secondHostAttempt = `lusaka${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 30);
-    const blocked = await agent
+    const draftCreate = await agent
       .post(`/admin/church/organizations/${org.id}/branches`)
       .type("form")
       .send(branchBody(secondHostAttempt, `lusaka${suffix}`, "temppass123"));
-    assert.equal(blocked.status, 400);
-    assert.match(blocked.text, /Free plan allows only 1 branch/i);
+    // Foundation/free: second branch row is allowed as non-active (draft), not rejected at create time.
+    assert.ok([302, 400].includes(draftCreate.status));
+    if (draftCreate.status === 302) {
+      const draftId = Number(draftCreate.headers.location.match(/branches\/(\d+)/)[1]);
+      const draftBranch = await branchesRepo.findBranchByIdForPlatform(pool, draftId);
+      assert.ok(draftBranch);
+      assert.notEqual(draftBranch.status, "active");
+      const activateAttempt = await agent
+        .post(`/admin/church/branches/${draftId}/reactivate`)
+        .type("form")
+        .send({ status_reason: "try activate" });
+      assert.equal(activateAttempt.status, 400);
+      assert.match(activateAttempt.text, /Foundation includes one active branch|address|schedule|administrator/i);
+      // Remove draft so the later Growth/standard create can reuse a clean host slug path.
+      await pool.query(`DELETE FROM public.church_branch_admins WHERE branch_id = $1`, [draftId]);
+      await pool.query(`DELETE FROM public.church_audit_logs WHERE branch_id = $1`, [draftId]);
+      await pool.query(`DELETE FROM public.church_branches WHERE id = $1`, [draftId]);
+    } else {
+      assert.match(draftCreate.text, /1 branch|Foundation includes one active branch/i);
+    }
 
-    await pool.query(`UPDATE public.church_organizations SET plan_code = 'standard' WHERE id = $1`, [org.id]);
+    await pool.query(`UPDATE public.church_organizations SET plan_code = 'growth' WHERE id = $1`, [org.id]);
 
     const secondHost = `lusaka${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 30);
     const adminKey = `ba${suffix}`.replace(/[^a-z0-9]/g, "").slice(0, 24);

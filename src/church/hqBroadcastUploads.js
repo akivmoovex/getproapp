@@ -12,6 +12,8 @@ const {
   createAnnouncementAttachment,
   countAttachmentsForAnnouncement,
 } = require("../db/pg/church/broadcastAttachmentsRepo");
+const organizationUsageRepo = require("../db/pg/church/organizationUsageRepo");
+const churchPackageUsageService = require("../services/church/churchPackageUsageService");
 
 const UPLOAD_ROOT = path.join(__dirname, "..", "..", "data", "uploads", "church", "broadcasts");
 const ANNOUNCEMENT_UPLOAD_ROOT = path.join(__dirname, "..", "..", "data", "uploads", "church", "announcements");
@@ -109,6 +111,21 @@ async function saveBroadcastAttachments(pool, { organizationId, broadcastId, adm
       skipped += 1;
       continue;
     }
+    try {
+      await churchPackageUsageService.assertCanConsumeStorage(pool, {
+        organizationId,
+        additionalBytes: size,
+        actorType: "hq_admin",
+        actorId: adminId,
+      });
+    } catch (err) {
+      if (err && err.code === "PACKAGE_STORAGE_LIMIT") {
+        error = err.message;
+        skipped += 1;
+        break;
+      }
+      throw err;
+    }
     const original = safeOriginalName(file.originalname);
     const ext = path.extname(original).toLowerCase() || Object.keys(EXT_MIME).find((e) => EXT_MIME[e] === mime) || "";
     const storedName = `${Date.now()}_${crypto.randomBytes(6).toString("hex")}${ext}`;
@@ -124,6 +141,7 @@ async function saveBroadcastAttachments(pool, { organizationId, broadcastId, adm
       file_size: size,
       created_by_hq_admin_id: adminId,
     });
+    await organizationUsageRepo.adjustStorageBytesUsed(pool, organizationId, size);
     saved += 1;
   }
 
@@ -184,6 +202,21 @@ async function saveAnnouncementAttachments(pool, { organizationId, branchId, ann
       skipped += 1;
       continue;
     }
+    try {
+      await churchPackageUsageService.assertCanConsumeStorage(pool, {
+        organizationId,
+        additionalBytes: size,
+        actorType: "branch_admin",
+        actorId: adminId,
+      });
+    } catch (err) {
+      if (err && err.code === "PACKAGE_STORAGE_LIMIT") {
+        error = err.message;
+        skipped += 1;
+        break;
+      }
+      throw err;
+    }
     const original = safeOriginalName(file.originalname);
     const ext = path.extname(original).toLowerCase() || Object.keys(EXT_MIME).find((e) => EXT_MIME[e] === mime) || "";
     const storedName = `${Date.now()}_${crypto.randomBytes(6).toString("hex")}${ext}`;
@@ -200,6 +233,7 @@ async function saveAnnouncementAttachments(pool, { organizationId, branchId, ann
       file_size: size,
       created_by_admin_id: adminId,
     });
+    await organizationUsageRepo.adjustStorageBytesUsed(pool, organizationId, size);
     created.push(row);
     saved += 1;
   }

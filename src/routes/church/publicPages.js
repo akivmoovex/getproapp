@@ -28,7 +28,12 @@ const {
   BLESSBOARD_REGISTER_CHURCH_PATH,
 } = require("../../church/platformPublicContent");
 const { mergePlatformPublicSeo } = require("../../church/platformPublicSeo");
-const { mergeChurchTenantPublicSeo } = require("../../church/churchTenantPublicSeo");
+const { mergeChurchTenantPublicSeo, TENANT_PUBLIC_PATHS } = require("../../church/churchTenantPublicSeo");
+const { buildCanonicalPublicPath } = require("../../services/church/branchPathRoutingService");
+const {
+  createAttachChurchPublicBranchPath,
+  requirePublicBranchPath,
+} = require("../../church/attachChurchPublicBranchPath");
 const { resolveRememberedChurch } = require("./publicChurchDirectory");
 const { apexPageLocals } = require("./platformPublicPages");
 const { contactPageLocals } = require("./platformPublicForms");
@@ -150,6 +155,10 @@ function sermonResourceCards(featured) {
   return cards;
 }
 
+function contentBranchFromCtx(ctx) {
+  return (ctx && (ctx.publicBranch || ctx.branch)) || null;
+}
+
 function branchPublicLocalsWithoutDb(org, branch, activePage) {
   const merged = buildBranchFallbacks(org, branch);
   const locals = preparePublicViewModel(org, branch, merged, { activePage });
@@ -168,6 +177,18 @@ function branchPublicLocalsWithoutDb(org, branch, activePage) {
 }
 
 function finalizeBranchPublicLocals(locals, req) {
+  const ctx = req && req.churchContext;
+  const hostBranch = (ctx && (ctx.hostBranch || ctx.branch)) || null;
+  const contentBranch = (ctx && (ctx.publicBranch || ctx.branch)) || null;
+  const pathPrefix = (ctx && ctx.branchPathPrefix) || "";
+  const pageKey = typeof locals.activePage === "string" ? locals.activePage : "home";
+  const canonicalPath =
+    hostBranch && contentBranch
+      ? buildCanonicalPublicPath({ hostBranch, contentBranch, pageKey })
+      : TENANT_PUBLIC_PATHS[pageKey] || "/";
+  locals.publicPathPrefix = pathPrefix;
+  locals.homeHref = pathPrefix || "/";
+  locals.canonicalPath = canonicalPath;
   return mergeChurchTenantPublicSeo(locals, req);
 }
 
@@ -199,8 +220,9 @@ function buildVerticalApexLocals(extra = {}, req = null) {
 async function loadBranchPublicLocals(req, activePage) {
   const ctx = req.churchContext;
   const org = ctx.organization;
-  const branch = ctx.branch;
+  const branch = ctx.publicBranch || ctx.branch;
   const pool = getPgPool();
+  const pathPrefix = ctx.branchPathPrefix || "";
 
   if (!pool) {
     const locals = branchPublicLocalsWithoutDb(org, branch, activePage);
@@ -481,10 +503,11 @@ function registerPublicPagesRoutes(router) {
       }
       await contactSubmissionsRepo.createContactSubmissionForBranch(pool, {
         organization_id: ctx.organization.id,
-        branch_id: ctx.branch.id,
+        branch_id: contentBranchFromCtx(ctx).id,
         ...validation.data,
       });
-      return res.redirect(303, "/contact?submitted=1");
+      const prefix = (ctx.branchPathPrefix || "");
+      return res.redirect(303, `${prefix}/contact?submitted=1`);
     } catch (e) {
       return next(e);
     }
@@ -517,10 +540,11 @@ function registerPublicPagesRoutes(router) {
       }
       const locals = await loadBranchPublicLocals(req, "sermons");
       const pool = getPgPool();
+      const contentBranch = contentBranchFromCtx(ctx);
       let published = [];
-      if (pool) {
+      if (pool && contentBranch) {
         try {
-          published = await sermonsRepo.listPublicSermonsForBranch(pool, ctx.branch.id, { limit: 24 });
+          published = await sermonsRepo.listPublicSermonsForBranch(pool, contentBranch.id, { limit: 24 });
         } catch {
           published = [];
         }
@@ -535,6 +559,86 @@ function registerPublicPagesRoutes(router) {
       return next(e);
     }
   });
+
+  const pathPages = [
+    ["", "home", "church/public/home"],
+    ["/about", "about", "church/public/about"],
+    ["/leadership", "leadership", "church/public/leadership"],
+    ["/ministries", "ministries", "church/public/ministries"],
+    ["/giving", "giving", "church/public/giving"],
+    ["/contact", "contact", "church/public/contact"],
+    ["/events", "events", "church/public/events"],
+    ["/sermons", "sermons", "church/public/sermons"],
+  ];
+
+  for (const [suffix, pageKey, view] of pathPages) {
+    router.get(`/branches/:branchSlug${suffix}`, requirePublicBranchPath, async (req, res, next) => {
+      try {
+        const locals = await loadBranchPublicLocals(req, pageKey);
+        if (pageKey === "contact") {
+          locals.contactSubmitted = String(req.query.submitted || "") === "1";
+          locals.contactError = null;
+          locals.contactForm = {};
+        }
+        if (pageKey === "sermons") {
+          const pool = getPgPool();
+          const contentBranch = contentBranchFromCtx(req.churchContext);
+          let published = [];
+          if (pool && contentBranch) {
+            try {
+              published = await sermonsRepo.listPublicSermonsForBranch(pool, contentBranch.id, {
+                limit: 24,
+              });
+            } catch {
+              published = [];
+            }
+          }
+          const samples = published.length > 0 ? published.map(enrichSermonMedia) : [];
+          locals.sermonSamples = samples;
+          locals.hasDbSermons = published.length > 0;
+          locals.sermonDemoMedia = null;
+          locals.sermonResourceCards = sermonResourceCards(samples[0] || null);
+        }
+        return res.render(view, locals);
+      } catch (e) {
+        return next(e);
+      }
+    });
+  }
+
+  router.post("/branches/:branchSlug/contact", requirePublicBranchPath, async (req, res, next) => {
+    try {
+      const ctx = req.churchContext;
+      const validation = validatePublicContactBody(req.body);
+      const locals = await loadBranchPublicLocals(req, "contact");
+      locals.contactSubmitted = false;
+      locals.contactForm = {
+        full_name: String(req.body?.full_name || req.body?.contact_name || ""),
+        email: String(req.body?.email || req.body?.contact_email || ""),
+        phone: String(req.body?.phone || req.body?.contact_phone || ""),
+        message: String(req.body?.message || req.body?.contact_message || ""),
+      };
+      if (!validation.ok) {
+        locals.contactError = validation.error;
+        return res.status(400).render("church/public/contact", locals);
+      }
+      const pool = getPgPool();
+      if (!pool) {
+        locals.contactError =
+          "We could not send your message right now. Please call or email the church directly.";
+        return res.status(503).render("church/public/contact", locals);
+      }
+      await contactSubmissionsRepo.createContactSubmissionForBranch(pool, {
+        organization_id: ctx.organization.id,
+        branch_id: contentBranchFromCtx(ctx).id,
+        ...validation.data,
+      });
+      return res.redirect(303, `${ctx.branchPathPrefix}/contact?submitted=1`);
+    } catch (e) {
+      return next(e);
+    }
+  });
 }
 
 module.exports = registerPublicPagesRoutes;
+module.exports.createAttachChurchPublicBranchPath = createAttachChurchPublicBranchPath;

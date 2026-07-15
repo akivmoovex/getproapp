@@ -254,11 +254,21 @@ function registerHqAdminRoutes(router) {
         return res.redirect("/hq/login");
       }
       const account = buildHqAdminAccountView(row, org.name);
+      let packageUsage = null;
+      try {
+        const churchPackageUsageService = require("../../services/church/churchPackageUsageService");
+        packageUsage = await churchPackageUsageService.getOrganisationUsageSnapshot(pool, org.id, {
+          reconcileStorage: false,
+        });
+      } catch {
+        packageUsage = null;
+      }
       return res.render(
         "church/hq/account",
         hqAdminLocals(req, {
           account,
           hqAdminRoleLabel,
+          packageUsage,
           error: null,
           notice: noticeMessage(flashFromQuery(req, ACCOUNT_NOTICES)),
         })
@@ -573,6 +583,8 @@ function registerHqAdminRoutes(router) {
 
   registerHqAdminBranchesRoutes(router);
   registerHqAdminBroadcastsRoutes(router);
+  const registerPackageFeatureGateRoutes = require("./packageFeatureGates");
+  registerPackageFeatureGateRoutes(router, "hq");
   registerHqAdminAnalyticsRoutes(router);
   registerHqAdminAuditRoutes(router);
 }

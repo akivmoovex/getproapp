@@ -231,6 +231,14 @@ async function createBranchAdminForPlatform(pool, branchId, fields, platformAdmi
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const seatQuota = require("../../../services/church/churchSeatQuotaService");
+    await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {
+      organizationId: branchRow.organization_id,
+      branchId,
+      actorType: "platform_admin",
+      actorId: platformAdminId,
+      roleLabel: "branch_admin",
+    });
     const admin = await createBranchAdmin(client, {
       organization_id: branchRow.organization_id,
       branch_id: branchId,
@@ -390,6 +398,18 @@ async function setBranchAdminStatusForPlatform(pool, adminId, branchId, newStatu
     if (existing.status === newStatus) {
       await client.query("COMMIT");
       return existing;
+    }
+
+    if (newStatus === "active") {
+      const seatQuota = require("../../../services/church/churchSeatQuotaService");
+      await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {
+        organizationId: existing.organization_id,
+        branchId,
+        excludeBranchAdminId: existing.id,
+        actorType: "platform_admin",
+        actorId: platformAdminId,
+        roleLabel: "branch_admin",
+      });
     }
 
     const reason =

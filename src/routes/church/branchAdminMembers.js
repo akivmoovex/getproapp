@@ -37,6 +37,12 @@ const {
   noticeMessage,
   recordBranchAudit,
 } = require("./branchAdminShared");
+const branchesRepo = require("../../db/pg/church/branchesRepo");
+const {
+  transferMemberToBranch,
+  listMemberBranchHistory,
+} = require("../../services/church/memberBranchTransferService");
+const { organisationAllowsBranchPaths } = require("../../services/church/branchPathRoutingService");
 
 async function recordMemberAudit(pool, req, action, memberId, metadata) {
   await recordBranchAudit(pool, req, {
@@ -134,7 +140,19 @@ async function loadMemberProfileSummary(pool, memberId, branchId, adminRole) {
 
 async function renderMemberProfile(pool, req, member, extra = {}) {
   const adminRole = req.churchBranchAdmin.role || "branch_admin";
-  const summary = await loadMemberProfileSummary(pool, member.id, req.churchContext.branch.id, adminRole);
+  const org = req.churchContext.organization;
+  const branch = req.churchContext.branch;
+  const summary = await loadMemberProfileSummary(pool, member.id, branch.id, adminRole);
+  const allowsTransfer = organisationAllowsBranchPaths(org);
+  let transferTargets = [];
+  let transferHistory = [];
+  if (allowsTransfer) {
+    const allBranches = await branchesRepo.listBranchesForOrganization(pool, org.id);
+    transferTargets = allBranches.filter(
+      (b) => b.status === "active" && Number(b.id) !== Number(branch.id)
+    );
+    transferHistory = await listMemberBranchHistory(pool, member.id);
+  }
   return branchAdminLocals(req, {
     member,
     summary,
@@ -146,6 +164,9 @@ async function renderMemberProfile(pool, req, member, extra = {}) {
     dutyStatusLabel,
     error: null,
     notice: noticeMessage(flashFromQuery(req, MEMBER_NOTICES)),
+    allowsTransfer,
+    transferTargets,
+    transferHistory,
     ...extra,
   });
 }
@@ -349,6 +370,8 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
         }
         const updated = await membersRepo.updateMemberStatusForBranch(pool, memberId, branch.id, "verified", {
           reviewComment: comment || undefined,
+          actorType: "branch_admin",
+          actorId: adminId,
         });
         if (!updated) return res.status(404).type("text").send("Member not found.");
         auditAction = "member_verified_by_admin";
@@ -406,6 +429,23 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
       }
       return res.redirect(303, `/branch/member-verification?notice=${redirectNotice}`);
     } catch (e) {
+      if (e && e.code === "FOUNDATION_MEMBER_LIMIT") {
+        try {
+          const branch = req.churchContext.branch;
+          const memberId = Number(req.params.memberId);
+          const pool = getPgPool();
+          const member = await membersRepo.findMemberByIdForBranch(pool, memberId, branch.id);
+          return res.status(400).render(
+            "church/branch-admin/member_profile",
+            await renderMemberProfile(pool, req, member || { id: memberId, status: "pending" }, {
+              error: e.message,
+              notice: null,
+            })
+          );
+        } catch {
+          return res.status(400).type("text").send(e.message);
+        }
+      }
       return next(e);
     }
   }
@@ -454,6 +494,23 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
         });
         return res.redirect(303, `/branch/members/${memberId}?notice=verified`);
       } catch (e) {
+        if (e && e.code === "FOUNDATION_MEMBER_LIMIT") {
+          try {
+            const memberId = Number(req.params.memberId);
+            const branch = req.churchContext.branch;
+            const pool = getPgPool();
+            const member = await membersRepo.findMemberByIdForBranch(pool, memberId, branch.id);
+            return res.status(400).render(
+              "church/branch-admin/member_profile",
+              await renderMemberProfile(pool, req, member, {
+                error: e.message,
+                notice: null,
+              })
+            );
+          } catch {
+            return res.status(400).type("text").send(e.message);
+          }
+        }
         return next(e);
       }
     }
@@ -528,6 +585,23 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
         });
         return res.redirect(303, `/branch/members/${memberId}?notice=reactivated`);
       } catch (e) {
+        if (e && e.code === "FOUNDATION_MEMBER_LIMIT") {
+          try {
+            const memberId = Number(req.params.memberId);
+            const branch = req.churchContext.branch;
+            const pool = getPgPool();
+            const member = await membersRepo.findMemberByIdForBranch(pool, memberId, branch.id);
+            return res.status(400).render(
+              "church/branch-admin/member_profile",
+              await renderMemberProfile(pool, req, member, {
+                error: e.message,
+                notice: null,
+              })
+            );
+          } catch {
+            return res.status(400).type("text").send(e.message);
+          }
+        }
         return next(e);
       }
     }
@@ -569,6 +643,49 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
         });
 
         return res.redirect(303, `/branch/members/${memberId}?notice=admin_note_added`);
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.post(
+    "/branch/members/:memberId/transfer",
+    requireChurchBranchHost,
+    requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        const memberId = Number(req.params.memberId);
+        const branch = req.churchContext.branch;
+        const org = req.churchContext.organization;
+        const pool = getPgPool();
+        const member = await membersRepo.findMemberByIdForBranch(pool, memberId, branch.id);
+        if (!member) return res.status(404).type("text").send("Member not found.");
+
+        const toBranchId = Number(req.body && req.body.to_branch_id);
+        try {
+          await transferMemberToBranch(pool, {
+            memberId,
+            fromBranchId: branch.id,
+            toBranchId,
+            organizationId: org.id,
+            organization: org,
+            actorType: "branch_admin",
+            actorId: req.churchBranchAdmin.admin_id,
+            reason: req.body && req.body.transfer_reason,
+          });
+        } catch (err) {
+          return res.status(400).render(
+            "church/branch-admin/member_profile",
+            await renderMemberProfile(pool, req, member, {
+              error: err.message || "Transfer failed.",
+              notice: null,
+            })
+          );
+        }
+
+        return res.redirect(303, `/branch/members?notice=transferred`);
       } catch (e) {
         return next(e);
       }

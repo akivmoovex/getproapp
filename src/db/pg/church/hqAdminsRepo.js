@@ -224,6 +224,13 @@ async function createHqAdminForPlatform(pool, organizationId, fields, platformAd
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const seatQuota = require("../../../services/church/churchSeatQuotaService");
+    await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {
+      organizationId,
+      actorType: "platform_admin",
+      actorId: platformAdminId,
+      roleLabel: "hq_admin",
+    });
     const admin = await createHqAdmin(client, {
       organization_id: organizationId,
       full_name: fields.full_name,
@@ -380,6 +387,17 @@ async function setHqAdminStatusForPlatform(pool, adminId, organizationId, newSta
     if (existing.status === newStatus) {
       await client.query("COMMIT");
       return existing;
+    }
+
+    if (newStatus === "active") {
+      const seatQuota = require("../../../services/church/churchSeatQuotaService");
+      await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {
+        organizationId,
+        excludeHqAdminId: existing.id,
+        actorType: "platform_admin",
+        actorId: platformAdminId,
+        roleLabel: "hq_admin",
+      });
     }
 
     if (newStatus === "inactive" && existing.status === "active") {

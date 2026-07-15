@@ -12,6 +12,7 @@ const registerPlatformPublicPagesRoutes = require("./platformPublicPages");
 const registerPlatformPublicFormRoutes = require("./platformPublicForms");
 const { registerPlatformPublicSeoRoutes } = require("../../church/platformPublicSeo");
 const { churchOperationalAccessGate } = require("../../church/churchStatusAccess");
+const { createAttachChurchPublicBranchPath } = require("../../church/attachChurchPublicBranchPath");
 
 function requireChurchHost(req, res, next) {
   if (!req.isChurchHost || !req.churchContext) {
@@ -25,6 +26,7 @@ module.exports = function churchRoutes() {
 
   router.use(requireChurchHost);
   router.use(churchOperationalAccessGate);
+  router.use(createAttachChurchPublicBranchPath());
 
   registerPlatformPublicFormRoutes(router);
   registerPlatformPublicSeoRoutes(router);

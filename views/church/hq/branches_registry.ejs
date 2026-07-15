@@ -4,6 +4,19 @@
           <h1 class="church-branch-topbar__title">Branch registry</h1>
           <p class="church-branch-topbar__subtitle">Organization branches for <%= organizationName %> · <%= periodMonth %></p>
         </div>
+        <% if (typeof pathRoutingEnabled !== 'undefined' && pathRoutingEnabled && (hqBranchSwitcher || []).length > 1) { %>
+        <form class="church-form church-form--inline" method="get" action="/hq/branches/switch-preview" aria-label="Branch public site switcher">
+          <div class="church-field">
+            <label class="church-label" for="preview_branch_id">View public site</label>
+            <select class="church-input" id="preview_branch_id" name="branch_id" required>
+              <% hqBranchSwitcher.forEach(function (b) { %>
+              <option value="<%= b.id %>"><%= b.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <button class="church-btn church-btn--outline" type="submit">Open</button>
+        </form>
+        <% } %>
       </header>
       <form class="church-form church-form--inline" method="get" action="/hq/branches">
         <div class="church-field church-field--grow">
@@ -58,8 +71,19 @@
                 <td><%= reportStatusLabel(b.currentMonthReportStatus === 'missing' ? 'draft' : b.currentMonthReportStatus) %><% if (b.currentMonthReportStatus === 'missing') { %> (missing)<% } %></td>
                 <td><%= b.lastAttendanceAverage != null ? b.lastAttendanceAverage : '—' %></td>
                 <td><%= givingStatusLabel(b.givingSummaryStatus) %></td>
-                <td><% var branchChip = b.status === 'active' ? 'verified' : (b.status === 'archived' ? 'rejected' : 'pending'); %><span class="church-status-chip church-status-chip--<%= branchChip %>"><%= b.status %></span></td>
-                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/hq/branches/<%= b.id %>?period_month=<%= periodMonth %>">View performance</a></td>
+                <td>
+                  <% var branchChip = b.status === 'active' ? 'verified' : (b.status === 'archived' ? 'rejected' : 'pending'); %>
+                  <span class="church-status-chip church-status-chip--<%= branchChip %>"><%= b.status %></span>
+                  <% if (b.lifecycle && b.lifecycle.label) { %>
+                  <br/><span class="muted"><%= b.lifecycle.label %></span>
+                  <% } %>
+                </td>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/branches/<%= b.id %>?period_month=<%= periodMonth %>">View performance</a>
+                  <% if (typeof buildPublicBranchUrl === 'function' && typeof hostBranch !== 'undefined' && hostBranch) { %>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="<%= buildPublicBranchUrl(b) %>" target="_blank" rel="noopener">Public site</a>
+                  <% } %>
+                </td>
               </tr>
               <% }); %>
             </tbody>

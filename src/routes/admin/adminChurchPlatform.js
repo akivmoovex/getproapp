@@ -26,6 +26,9 @@ const {
 const { buildProvisionWelcomePack } = require("../../services/church/provisionWelcomeService");
 const { validatePlanUpdateBody } = require("../../church/churchPlanValidation");
 const { PLAN_CODES: CHURCH_PLAN_CODES, getPlanDisplay } = require("../../church/churchPlans");
+const { getOrganisationPackageDiagnostic } = require("../../services/church/churchEntitlementService");
+const { resolveBranchLifecycle } = require("../../church/branchLifecycle");
+const { resolvePackageFromPlanCode } = require("../../church/blessBoardPackageCatalogue");
 const {
   validateSuspendBody,
   validateArchiveBody,
@@ -396,7 +399,10 @@ async function renderOrganizationDetail(req, res, extra) {
   }
   return res.status(extra && extra.statusCode ? extra.statusCode : 200).render("admin/church/organization_detail", {
     organization: detail.organization,
-    branches: detail.branches,
+    branches: (detail.branches || []).map((b) => ({
+      ...b,
+      lifecycle: resolveBranchLifecycle(b),
+    })),
     hqAdmins: detail.hqAdmins,
     primaryHqAdmin,
     activeHqAdminCount,
@@ -490,11 +496,18 @@ async function renderBranchDetail(req, res, extra) {
   const planSummary = await platformProvisioningRepo.getOrganizationPlanSummary(pool, detail.branch.organization_id);
   const branchReturnTo = `/admin/church/branches/${branchId}`;
   const notesPanel = await supportNotesPanelData(pool, "branch", branchId, branchReturnTo);
+  const lifecycle = resolveBranchLifecycle(detail.branch);
+  const packageResolved = resolvePackageFromPlanCode(
+    (planSummary && planSummary.planCode) || detail.branch.organization_plan_code
+  );
   return res.status(extra && extra.statusCode ? extra.statusCode : 200).render("admin/church/branch_detail", {
     branch: detail.branch,
     branchAdmin: detail.branchAdmin,
     usage: detail.usage,
     planSummary,
+    branchLifecycle: lifecycle,
+    packageCode: packageResolved.packageCode,
+    requiresBillingAck: packageResolved.packageCode === "growth",
     branchHostSlug: detail.branchHostSlug,
     activeAdminCount: detail.activeAdminCount,
     formatDate,
@@ -1338,6 +1351,9 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         if (err.code === "INVALID_STATUS") {
           return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: err.message });
         }
+        if (err.code === "FOUNDATION_MEMBER_LIMIT") {
+          return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: err.message });
+        }
         throw err;
       }
 
@@ -1379,6 +1395,9 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
           return res.redirect(`/admin/church/members/${memberId}?notice=already_verified`);
         }
         if (err.code === "INVALID_STATUS") {
+          return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: err.message });
+        }
+        if (err.code === "FOUNDATION_MEMBER_LIMIT") {
           return renderMemberSupportDetail(req, res, { statusCode: 400, statusActionError: err.message });
         }
         throw err;
@@ -1654,10 +1673,13 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
       if (!planSummary) {
         return res.status(404).type("text").send("Organization not found.");
       }
+      const packageDiagnostic = await getOrganisationPackageDiagnostic(pool, organizationId);
       const saved = String(req.query.saved || "") === "1";
       res.render("admin/church/organization_plan", {
         planSummary,
+        packageDiagnostic,
         planCodes: CHURCH_PLAN_CODES,
+        getPlanDisplay,
         formatDate,
         saved,
         error: null,
@@ -1686,9 +1708,12 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         return res.status(404).type("text").send("Organization not found.");
       }
       if (!validation.ok) {
+        const packageDiagnostic = await getOrganisationPackageDiagnostic(pool, organizationId);
         return res.status(400).render("admin/church/organization_plan", {
           planSummary,
+          packageDiagnostic,
           planCodes: CHURCH_PLAN_CODES,
+          getPlanDisplay,
           formatDate,
           saved: false,
           error: validation.error,
@@ -1797,6 +1822,14 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
           statusCode: 400,
           mode: "create",
           error: "An admin with this email already exists.",
+          form: hqCreateFormFromBody(req.body),
+        });
+      }
+      if (err && err.code === "FOUNDATION_ADMIN_LIMIT") {
+        return renderHqAdminForm(req, res, {
+          statusCode: 400,
+          mode: "create",
+          error: err.message,
           form: hqCreateFormFromBody(req.body),
         });
       }
@@ -1916,6 +1949,9 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         });
         return res.redirect(`${organizationHqAdminDetailPath(req, organizationId, adminId)}?notice=activated`);
       } catch (err) {
+        if (err && err.code === "FOUNDATION_ADMIN_LIMIT") {
+          return res.status(400).type("text").send(err.message);
+        }
         next(err);
       }
     }
@@ -2346,6 +2382,14 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
           form: createFormFromBody(req.body),
         });
       }
+      if (err && err.code === "FOUNDATION_ADMIN_LIMIT") {
+        return renderBranchAdminForm(req, res, {
+          statusCode: 400,
+          mode: "create",
+          error: err.message,
+          form: createFormFromBody(req.body),
+        });
+      }
       return next(err);
     }
   });
@@ -2451,6 +2495,9 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
       });
       return res.redirect(`/admin/church/branches/${branchId}/admins/${adminId}?notice=activated`);
     } catch (err) {
+      if (err && err.code === "FOUNDATION_ADMIN_LIMIT") {
+        return res.status(400).type("text").send(err.message);
+      }
       next(err);
     }
   });
@@ -2584,10 +2631,27 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
       if (!transition.ok) {
         return renderBranchDetail(req, res, { statusCode: 400, statusError: transition.error });
       }
-      await platformProvisioningRepo.reactivateBranch(pool, branchId, {
-        reason: validation.reason,
-        platformAdminId: platformAdminId(req),
-      });
+      const billingAcknowledged =
+        String(req.body.billing_acknowledged || "") === "1" ||
+        String(req.body.billing_acknowledged || "").toLowerCase() === "on" ||
+        String(req.body.billing_acknowledged || "").toLowerCase() === "true";
+      try {
+        await platformProvisioningRepo.reactivateBranch(pool, branchId, {
+          reason: validation.reason,
+          platformAdminId: platformAdminId(req),
+          billingAcknowledged,
+        });
+      } catch (err) {
+        if (
+          err &&
+          (err.code === "FOUNDATION_ACTIVE_BRANCH_LIMIT" ||
+            err.code === "ACTIVATION_REQUIREMENTS" ||
+            err.code === "ARCHIVED")
+        ) {
+          return renderBranchDetail(req, res, { statusCode: 400, statusError: err.message });
+        }
+        throw err;
+      }
       return res.redirect(`/admin/church/branches/${branchId}?notice=reactivated`);
     } catch (err) {
       next(err);

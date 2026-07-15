@@ -5,3 +5,10 @@
   </div>
   <% }); %>
 <% } %>
+<% if (typeof planContext !== 'undefined' && planContext && planContext.seatUsage) { %>
+  <p class="church-branch-panel__hint" style="margin-top:0.5rem;">
+    Package seats (<%= planContext.seatUsage.packageLabel %>):
+    members <%= planContext.seatUsage.membersDisplay %>;
+    administrators/leadership <%= planContext.seatUsage.adminsDisplay %>.
+  </p>
+<% } %>

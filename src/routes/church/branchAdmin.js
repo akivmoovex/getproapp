@@ -294,11 +294,22 @@ function registerBranchAdminRoutes(router) {
         return res.redirect("/branch/login");
       }
       const account = buildBranchAdminAccountView(row, branch.name);
+      let packageUsage = null;
+      try {
+        const churchPackageUsageService = require("../../services/church/churchPackageUsageService");
+        const org = req.churchContext.organization;
+        packageUsage = await churchPackageUsageService.getOrganisationUsageSnapshot(pool, org.id, {
+          reconcileStorage: false,
+        });
+      } catch {
+        packageUsage = null;
+      }
       return res.render(
         "church/branch-admin/account",
         branchAdminLocals(req, {
           account,
           branchAdminRoleLabel,
+          packageUsage,
           error: null,
           notice: noticeMessage(flashFromQuery(req, ACCOUNT_NOTICES)),
         })
@@ -509,6 +520,10 @@ function registerBranchAdminRoutes(router) {
       return next(e);
     }
   });
+
+  const registerPackageFeatureGateRoutes = require("./packageFeatureGates");
+  // Specific package feature paths before parameterized /branch/attendance/:recordId etc.
+  registerPackageFeatureGateRoutes(router, "branch");
 
   registerBranchAdminAttendanceRoutes(router);
   registerBranchAdminGivingRoutes(router);

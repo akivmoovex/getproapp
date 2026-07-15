@@ -56,6 +56,10 @@ async function ensureChurchSchema(pool) {
     "092_church_broadcast_delivery_analytics.sql",
     "093_church_ministry_join_leader_recommendation.sql",
     "094_church_platform_inquiries.sql",
+    "095_church_branch_lifecycle.sql",
+    "096_church_member_branch_history.sql",
+    "097_church_package_usage.sql",
+    "098_church_growth_billing.sql",
   ]) {
     const sql = fs.readFileSync(path.join(base, file), "utf8");
     await pool.query(sql);

@@ -98,7 +98,70 @@ async function loadPlanContextForOrganization(pool, organizationId) {
   const org = await organizationsRepo.findOrganizationById(pool, organizationId);
   if (!org) return null;
   const usage = await getOrganizationUsageSummary(pool, organizationId);
-  return planContextForOrganization(org, usage);
+  const ctx = planContextForOrganization(org, usage);
+  try {
+    const seatQuota = require("./churchSeatQuotaService");
+    const seatUsage = await seatQuota.getOrganisationSeatUsage(pool, organizationId);
+    if (seatUsage) {
+      ctx.seatUsage = seatUsage;
+      ctx.membersDisplay = seatUsage.membersDisplay;
+      ctx.adminsDisplay = seatUsage.adminsDisplay;
+      if (seatUsage.memberAtLimit) {
+        ctx.warnings = (ctx.warnings || []).concat([
+          {
+            level: "limit",
+            code: "package_member_limit",
+            message: seatQuota.FOUNDATION_MEMBER_LIMIT_ERROR,
+          },
+        ]);
+      }
+      if (seatUsage.adminAtLimit) {
+        ctx.warnings = (ctx.warnings || []).concat([
+          {
+            level: "limit",
+            code: "package_admin_limit",
+            message: seatQuota.FOUNDATION_ADMIN_LIMIT_ERROR,
+          },
+        ]);
+      }
+    }
+  } catch {
+    /* seat usage is optional for dashboard render */
+  }
+  try {
+    const churchPackageUsageService = require("./churchPackageUsageService");
+    // Cached counters only — do not reconcile storage on every dashboard hit.
+    const packageUsage = await churchPackageUsageService.getOrganisationUsageSnapshot(
+      pool,
+      organizationId,
+      { reconcileStorage: false }
+    );
+    if (packageUsage) {
+      ctx.packageUsage = packageUsage;
+      ctx.storageDisplay = packageUsage.meters.storage.display;
+      for (const w of packageUsage.warnings || []) {
+        ctx.warnings = (ctx.warnings || []).concat([
+          {
+            level: "warn",
+            code: `package_usage_${w.key}`,
+            message: w.message,
+          },
+        ]);
+      }
+      for (const b of packageUsage.blocked || []) {
+        ctx.warnings = (ctx.warnings || []).concat([
+          {
+            level: "limit",
+            code: `package_blocked_${b.key}`,
+            message: b.message,
+          },
+        ]);
+      }
+    }
+  } catch {
+    /* package usage optional */
+  }
+  return ctx;
 }
 
 module.exports = {

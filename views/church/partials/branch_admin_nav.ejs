@@ -29,6 +29,14 @@
   <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
   <span>Attendance</span>
 </a>
+<% if (typeof packageFeatureNav !== 'undefined' && packageFeatureNav && packageFeatureNav.length) { %>
+  <% packageFeatureNav.forEach(function (item) { %>
+<a href="<%= item.path %>" class="<%= navClass(item.navKey) %>">
+  <span class="material-symbols-outlined" aria-hidden="true"><%= item.state === 'upgrade' ? 'lock_open' : 'verified' %></span>
+  <span><%= item.label %></span><% if (item.state === 'upgrade') { %> <span class="church-plan-lock">Upgrade</span><% } %>
+</a>
+  <% }); %>
+<% } %>
 <a href="/branch/reports" class="<%= navClass('reports') %>">
   <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
   <span>Reports</span>

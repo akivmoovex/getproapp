@@ -25,8 +25,13 @@
         <a href="/hq/dashboard" class="<%= hqNavClass('dashboard') %>"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span><span>Dashboard</span></a>
         <a href="/hq/account" class="<%= hqNavClass('account') %>"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span>Account</span></a>
         <a href="/hq/branches" class="<%= hqNavClass('branches') %>"><span class="material-symbols-outlined" aria-hidden="true">account_tree</span><span>Branch registry</span></a>
-        <a href="/hq/broadcasts" class="<%= hqNavClass('broadcasts') %>"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><span>Broadcasts</span><% if (typeof planContext !== 'undefined' && planContext && !planContext.hqBroadcastsEnabled) { %> <span class="church-plan-lock">Premium</span><% } %></a>
+        <a href="/hq/broadcasts" class="<%= hqNavClass('broadcasts') %>"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><span>Broadcasts</span></a>
         <a href="/hq/reports" class="<%= hqNavClass('reports') %>"><span class="material-symbols-outlined" aria-hidden="true">description</span><span>Review Reports</span></a>
+        <% if (typeof packageFeatureNav !== 'undefined' && packageFeatureNav && packageFeatureNav.length) { %>
+          <% packageFeatureNav.forEach(function (item) { %>
+        <a href="<%= item.path %>" class="<%= hqNavClass(item.navKey) %>"><span class="material-symbols-outlined" aria-hidden="true"><%= item.state === 'upgrade' ? 'lock_open' : 'verified' %></span><span><%= item.label %></span><% if (item.state === 'upgrade') { %> <span class="church-plan-lock">Upgrade</span><% } %></a>
+          <% }); %>
+        <% } %>
         <a href="/hq/analytics" class="<%= hqNavClass('analytics') %>"><span class="material-symbols-outlined" aria-hidden="true">analytics</span><span>Analytics</span><% if (typeof planContext !== 'undefined' && planContext && !planContext.consolidatedAnalyticsEnabled) { %> <span class="church-plan-lock">Premium</span><% } %></a>
         <a href="/hq/audit" class="<%= hqNavClass('audit') %>"><span class="material-symbols-outlined" aria-hidden="true">policy</span><span>Audit Trail</span></a>
       </nav>

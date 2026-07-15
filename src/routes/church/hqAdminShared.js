@@ -3,14 +3,35 @@
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
 const { getHqStatusBanner } = require("../../church/churchStatusAccess");
 const { churchSessionCsrfLocals } = require("../../church/churchSessionCsrf");
+const { resolvePackageFromPlanCode } = require("../../church/blessBoardPackageCatalogue");
+const { listNavFeatureGates } = require("../../church/blessBoardPackageFeatures");
+
+function packageFeatureLocalsFromOrg(org, portal) {
+  const resolved = resolvePackageFromPlanCode(org && org.plan_code);
+  const plan = {
+    packageCode: resolved.packageCode,
+    packageLabel: resolved.packageDefinition.label,
+    entitlements: resolved.packageDefinition.entitlements,
+    storedPlanCode: org && org.plan_code != null ? String(org.plan_code) : null,
+  };
+  return {
+    packagePlan: plan,
+    packageFeatureNav: listNavFeatureGates(plan, portal),
+  };
+}
 
 function inferHqActiveNav(req) {
   const p = String((req && req.path) || "");
+  if (p.startsWith("/hq/scheduled-broadcasts")) return "broadcasts-scheduled";
   if (p.startsWith("/hq/broadcasts")) return "broadcasts";
   if (p.startsWith("/hq/audit")) return "audit";
   if (p.startsWith("/hq/branches")) return "branches";
+  if (p.startsWith("/hq/cross-branch-reports")) return "reports-cross-branch";
+  if (p.startsWith("/hq/custom-report-builder")) return "reports-builder";
   if (p.startsWith("/hq/reports")) return "reports";
   if (p.startsWith("/hq/analytics")) return "analytics";
+  if (p.startsWith("/hq/integrations")) return "integrations";
+  if (p.startsWith("/hq/network")) return "network";
   if (p.startsWith("/hq/account")) return "account";
   if (p.startsWith("/hq/dashboard") || p === "/hq" || p === "/hq/") return "dashboard";
   return "";
@@ -33,6 +54,7 @@ function hqAdminLocals(req, extra) {
     statusBanner: getHqStatusBanner(req.churchContext),
     activeNav: extraObj.activeNav != null ? extraObj.activeNav : inferHqActiveNav(req),
     ...csrf,
+    ...packageFeatureLocalsFromOrg(org, "hq"),
     ...extraObj,
   };
 }

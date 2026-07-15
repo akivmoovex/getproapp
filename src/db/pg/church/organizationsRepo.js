@@ -2,6 +2,7 @@
 
 const auditLogsRepo = require("./auditLogsRepo");
 const { normalizePlanCode } = require("../../../church/churchPlans");
+const { resolvePackageFromPlanCode } = require("../../../church/blessBoardPackageCatalogue");
 const { normalizeSlug } = require("../../../church/platformProvisioningValidation");
 
 /**
@@ -154,6 +155,8 @@ async function updateOrganizationPlan(pool, organizationId, fields, platformAdmi
         previous_plan: existing.plan_code || "free",
         new_plan: updated.plan_code,
         plan_status: updated.plan_status,
+        previous_package: resolvePackageFromPlanCode(existing.plan_code).packageCode,
+        new_package: resolvePackageFromPlanCode(updated.plan_code).packageCode,
       },
     });
     await client.query("COMMIT");

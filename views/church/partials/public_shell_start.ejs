@@ -32,7 +32,13 @@
 </head>
 <%
   var isBranchHome = !isVerticalApex && activePage === 'home' && !isPreviewMode;
-  var homeHref = isPreviewMode ? '/branch/website-preview' : '/';
+  var _pathPrefix = typeof publicPathPrefix === 'string' ? publicPathPrefix : '';
+  var homeHref = isPreviewMode ? '/branch/website-preview' : (_pathPrefix || '/');
+  function tenantHref(path) {
+    if (!_pathPrefix) return path;
+    if (path === '/') return _pathPrefix || '/';
+    return _pathPrefix + path;
+  }
 %>
 <body class="church-body<%= isVerticalApex ? ' church-body--apex' : ' church-body--branch' %><%= isBranchHome ? ' church-body--branch-home' : '' %>">
   <% if (isPreviewMode) { %>
@@ -80,7 +86,7 @@
     <div class="church-header__inner church-header__inner--tenant">
       <%- include('./tenant_brand_lockup', { href: homeHref, compact: false }) %>
       <nav class="church-nav church-nav--branch" aria-label="Primary">
-        <%- include('./tenant_nav_desktop', { activePage: activePage, homeHref: homeHref }) %>
+        <%- include('./tenant_nav_desktop', { activePage: activePage, homeHref: homeHref, publicPathPrefix: _pathPrefix }) %>
       </nav>
       <div class="church-header__actions">
         <% if (!isPreviewMode) { %>
@@ -101,20 +107,20 @@
   <div class="church-drawer-overlay" id="church-drawer-overlay" hidden></div>
   <aside class="church-drawer" id="church-mobile-drawer" aria-label="Mobile navigation" aria-hidden="true">
     <div class="church-drawer__head church-drawer__head--tenant">
-      <%- include('./tenant_brand_lockup', { href: '/', compact: true, showBranchOnCompact: true }) %>
+      <%- include('./tenant_brand_lockup', { href: homeHref, compact: true, showBranchOnCompact: true }) %>
       <button type="button" class="church-drawer__close" id="church-drawer-close" aria-label="Close menu">
         <span class="material-symbols-outlined" aria-hidden="true">close</span>
       </button>
     </div>
     <nav class="church-drawer__nav">
-      <a href="/" class="<%= activePage === 'home' ? 'church-drawer__link--active' : '' %>">Home</a>
-      <a href="/about" class="<%= activePage === 'about' ? 'church-drawer__link--active' : '' %>">About</a>
-      <a href="/leadership" class="<%= activePage === 'leadership' ? 'church-drawer__link--active' : '' %>">Leadership</a>
-      <a href="/ministries" class="<%= activePage === 'ministries' ? 'church-drawer__link--active' : '' %>">Ministries</a>
-      <a href="/events" class="<%= activePage === 'events' ? 'church-drawer__link--active' : '' %>">Events</a>
-      <a href="/sermons" class="<%= activePage === 'sermons' ? 'church-drawer__link--active' : '' %>">Sermons &amp; Resources</a>
-      <a href="/giving" class="<%= activePage === 'giving' ? 'church-drawer__link--active' : '' %>">Giving</a>
-      <a href="/contact" class="<%= activePage === 'contact' ? 'church-drawer__link--active' : '' %>">Contact</a>
+      <a href="<%= tenantHref('/') %>" class="<%= activePage === 'home' ? 'church-drawer__link--active' : '' %>">Home</a>
+      <a href="<%= tenantHref('/about') %>" class="<%= activePage === 'about' ? 'church-drawer__link--active' : '' %>">About</a>
+      <a href="<%= tenantHref('/leadership') %>" class="<%= activePage === 'leadership' ? 'church-drawer__link--active' : '' %>">Leadership</a>
+      <a href="<%= tenantHref('/ministries') %>" class="<%= activePage === 'ministries' ? 'church-drawer__link--active' : '' %>">Ministries</a>
+      <a href="<%= tenantHref('/events') %>" class="<%= activePage === 'events' ? 'church-drawer__link--active' : '' %>">Events</a>
+      <a href="<%= tenantHref('/sermons') %>" class="<%= activePage === 'sermons' ? 'church-drawer__link--active' : '' %>">Sermons &amp; Resources</a>
+      <a href="<%= tenantHref('/giving') %>" class="<%= activePage === 'giving' ? 'church-drawer__link--active' : '' %>">Giving</a>
+      <a href="<%= tenantHref('/contact') %>" class="<%= activePage === 'contact' ? 'church-drawer__link--active' : '' %>">Contact</a>
     </nav>
     <div class="church-drawer__actions">
       <a class="church-btn church-btn--primary church-btn--block church-btn--mobile-pill" href="/register">Register as a Member</a>

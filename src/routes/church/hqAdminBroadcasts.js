@@ -5,6 +5,7 @@ const multer = require("multer");
 const { getPgPool } = require("../../db/pg");
 const hqBroadcastsRepo = require("../../db/pg/church/hqBroadcastsRepo");
 const broadcastAttachmentsRepo = require("../../db/pg/church/broadcastAttachmentsRepo");
+const organizationUsageRepo = require("../../db/pg/church/organizationUsageRepo");
 const branchesRepo = require("../../db/pg/church/branchesRepo");
 const { requireChurchHqAdminSession } = require("../../church/hqAuth");
 const { requireChurchBranchHost } = require("./auth");
@@ -30,6 +31,10 @@ const {
 } = require("../../church/hqBroadcastUploads");
 const { hqAdminLocals, flashFromQuery, BROADCAST_NOTICES, noticeMessage, recordHqAudit } = require("./hqAdminShared");
 const churchPlanService = require("../../services/church/churchPlanService");
+const {
+  assertScheduledBroadcastAllowed,
+  PACKAGE_FEATURE_DENIED,
+} = require("../../services/church/churchPackageFeatureGateService");
 const { loadBroadcastDeliveryAnalytics } = require("../../church/broadcastDeliveryAnalytics");
 const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 
@@ -327,6 +332,26 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
           );
         }
 
+        try {
+          await assertScheduledBroadcastAllowed(req, validation.data.publish_at);
+        } catch (gateErr) {
+          if (gateErr && gateErr.code === PACKAGE_FEATURE_DENIED) {
+            return res.status(403).render(
+              "church/hq/broadcast_form",
+              renderFormLocals(req, {
+                form: validation.form,
+                branches,
+                attachments: [],
+                error: gateErr.message,
+                isEdit: false,
+                broadcastId: null,
+                broadcastStatus: "draft",
+              })
+            );
+          }
+          throw gateErr;
+        }
+
         const created = await hqBroadcastsRepo.createBroadcastForOrganization(pool, org.id, {
           ...validation.data,
           status: "draft",
@@ -596,6 +621,26 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
           );
         }
 
+        try {
+          await assertScheduledBroadcastAllowed(req, validation.data.publish_at);
+        } catch (gateErr) {
+          if (gateErr && gateErr.code === PACKAGE_FEATURE_DENIED) {
+            return res.status(403).render(
+              "church/hq/broadcast_form",
+              renderFormLocals(req, {
+                form: validation.form,
+                branches,
+                attachments: existingAttachments,
+                error: gateErr.message,
+                isEdit: true,
+                broadcastId,
+                broadcastStatus: existing.status,
+              })
+            );
+          }
+          throw gateErr;
+        }
+
         const existingTargets = await hqBroadcastsRepo.listBroadcastTargets(pool, broadcastId, org.id);
         const expanding =
           existing.status === "published" &&
@@ -722,7 +767,12 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
           return res.status(404).type("text").send("Attachment not found.");
         }
         const deleted = await broadcastAttachmentsRepo.deleteBroadcastAttachment(pool, attachmentId, org.id);
-        if (deleted) unlinkStoredFilename(deleted.stored_filename);
+        if (deleted) {
+          unlinkStoredFilename(deleted.stored_filename);
+          if (deleted.file_size) {
+            await organizationUsageRepo.adjustStorageBytesUsed(pool, org.id, -Number(deleted.file_size));
+          }
+        }
         await recordHqAudit(pool, req, {
           action: "hq_broadcast_attachment_deleted",
           entityType: "hq_broadcast_attachment",
@@ -791,6 +841,14 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
           if (data.publish_at) data.publish_at = new Date(data.publish_at);
           if (data.expires_at) data.expires_at = new Date(data.expires_at);
           if (data.featured_until) data.featured_until = new Date(data.featured_until);
+          try {
+            await assertScheduledBroadcastAllowed(req, data.publish_at);
+          } catch (gateErr) {
+            if (gateErr && gateErr.code === PACKAGE_FEATURE_DENIED) {
+              return res.status(403).type("text").send(gateErr.message);
+            }
+            throw gateErr;
+          }
           await hqBroadcastsRepo.updateBroadcastForOrganization(pool, broadcastId, org.id, {
             ...data,
             updated_by_hq_admin_id: pending.updated_by_hq_admin_id || adminId,
@@ -809,6 +867,15 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
             },
           });
           return res.redirect(303, `/hq/broadcasts/${broadcastId}?notice=broadcast_updated`);
+        }
+
+        try {
+          await assertScheduledBroadcastAllowed(req, existing.publish_at);
+        } catch (gateErr) {
+          if (gateErr && gateErr.code === PACKAGE_FEATURE_DENIED) {
+            return res.status(403).type("text").send(gateErr.message);
+          }
+          throw gateErr;
         }
 
         const published = await hqBroadcastsRepo.publishBroadcastForOrganization(pool, broadcastId, org.id, {

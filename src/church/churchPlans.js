@@ -1,6 +1,9 @@
 "use strict";
 
-const PLAN_CODES = ["free", "standard", "pro"];
+/** Legacy plan codes (behaviour unchanged). Package codes foundation/growth are assignable aliases. */
+const PLAN_CODES = ["free", "standard", "pro", "foundation", "growth"];
+
+const LEGACY_PLAN_CODES = ["free", "standard", "pro"];
 
 const UNLIMITED = 99999;
 
@@ -97,11 +100,26 @@ function normalizePlanCode(planCode) {
   const code = String(planCode || "free")
     .trim()
     .toLowerCase();
-  return CHURCH_PLANS[code] ? code : "free";
+  if (CHURCH_PLANS[code]) return code;
+  // Stored package codes remain stored; legacy helpers below alias behaviour without changing enforcement yet.
+  if (code === "foundation" || code === "growth") return code;
+  return "free";
 }
 
+/**
+ * Legacy plan config used by existing limit/feature helpers.
+ * foundation → free behaviour; growth → standard behaviour (no enforcement change in Phase 1).
+ */
 function getChurchPlan(planCode) {
-  return CHURCH_PLANS[normalizePlanCode(planCode)];
+  const code = normalizePlanCode(planCode);
+  if (CHURCH_PLANS[code]) return CHURCH_PLANS[code];
+  if (code === "foundation") {
+    return { ...CHURCH_PLANS.free, code: "foundation", label: "Foundation" };
+  }
+  if (code === "growth") {
+    return { ...CHURCH_PLANS.standard, code: "growth", label: "Growth" };
+  }
+  return CHURCH_PLANS.free;
 }
 
 function getPlanLimit(planCode, key) {
@@ -216,6 +234,7 @@ function getPlanUsageSummary(pool, organizationId) {
 
 module.exports = {
   PLAN_CODES,
+  LEGACY_PLAN_CODES,
   UNLIMITED,
   CHURCH_PLANS,
   FEATURE_LABELS,

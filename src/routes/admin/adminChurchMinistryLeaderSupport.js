@@ -208,6 +208,9 @@ function registerLeaderSupportActionRoutes(router, pathPrefix) {
       const notice = result.alreadyActive ? "already_active" : "activated";
       return res.redirect(leaderDetailRedirect(ctx.leaderId, notice));
     } catch (e) {
+      if (e && e.code === "FOUNDATION_ADMIN_LIMIT") {
+        return renderMinistryLeaderSupportDetail(req, res, { statusCode: 400, statusActionError: e.message });
+      }
       return next(e);
     }
   });

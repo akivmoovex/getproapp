@@ -247,7 +247,12 @@
                       <td><code><%= churchPublicHost(bHost) %></code></td>
                       <td><%= [b.city, b.country].filter(Boolean).join(', ') || '—' %></td>
                       <td><%= b.branch_admin_name || '—' %></td>
-                      <td><%- include('../../partials/admin/church_status_badge', { status: b.status }) %></td>
+                      <td>
+                        <%- include('../../partials/admin/church_status_badge', { status: b.status }) %>
+                        <% if (b.lifecycle && b.lifecycle.label) { %>
+                          <div class="muted" style="font-size:0.85em;"><%= b.lifecycle.label %></div>
+                        <% } %>
+                      </td>
                       <td>
                         <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/branches/' + b.id, label: 'View' }) %>
                         <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/branches/' + b.id + '/edit', label: 'Edit' }) %>

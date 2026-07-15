@@ -137,6 +137,11 @@
             <a href="/branch/member-verification">Verification</a>
             <a href="/branch/ministries">Ministries</a>
             <a href="/branch/reports">Reports</a>
+            <% if (typeof packageFeatureNav !== 'undefined' && packageFeatureNav && packageFeatureNav.length) { %>
+              <% packageFeatureNav.forEach(function (item) { %>
+            <a href="<%= item.path %>"><%= item.label %><% if (item.state === 'upgrade') { %> (Upgrade)<% } %></a>
+              <% }); %>
+            <% } %>
             <a href="/branch/website-editor">Website Editor</a>
             <a href="/branch/announcements">Announcements</a>
             <a href="/branch/requests">Requests</a>

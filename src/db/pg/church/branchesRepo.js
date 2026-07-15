@@ -84,6 +84,30 @@ async function countBranchesForOrganization(pool, organizationId) {
 }
 
 /**
+ * Count operationally active branches (status = 'active') for package enforcement.
+ * @param {import("pg").Pool | import("pg").PoolClient} db
+ * @param {number} organizationId
+ * @param {{ excludeBranchId?: number | null }} [opts]
+ */
+async function countActiveBranchesForOrganization(db, organizationId, opts = {}) {
+  const excludeId = opts.excludeBranchId != null ? Number(opts.excludeBranchId) : null;
+  if (Number.isFinite(excludeId) && excludeId > 0) {
+    const r = await db.query(
+      `SELECT COUNT(*)::int AS c FROM public.church_branches
+       WHERE organization_id = $1 AND status = 'active' AND id <> $2`,
+      [organizationId, excludeId]
+    );
+    return r.rows[0]?.c ?? 0;
+  }
+  const r = await db.query(
+    `SELECT COUNT(*)::int AS c FROM public.church_branches
+     WHERE organization_id = $1 AND status = 'active'`,
+    [organizationId]
+  );
+  return r.rows[0]?.c ?? 0;
+}
+
+/**
  * @param {import("pg").Pool} pool
  * @param {number} organizationId
  * @returns {Promise<object[]>}
@@ -134,15 +158,24 @@ async function createBranch(pool, fields) {
     .trim();
   const name = String(fields.name || "").trim();
   const status = fields.status != null ? String(fields.status) : "active";
+  const lifecyclePhase =
+    fields.lifecycle_phase != null
+      ? String(fields.lifecycle_phase)
+      : status === "active"
+        ? "active"
+        : status === "archived"
+          ? "archived"
+          : "draft";
+  const billingReady = fields.billing_ready === true;
   const welcomeMessage = fields.welcome_message != null ? String(fields.welcome_message) : "";
   const serviceTimes = fields.service_times != null ? String(fields.service_times) : "";
   const locationText = fields.location_text != null ? String(fields.location_text) : "";
   const r = await pool.query(
     `INSERT INTO public.church_branches
-       (organization_id, slug, host_slug, name, status, city, country,
+       (organization_id, slug, host_slug, name, status, lifecycle_phase, billing_ready, city, country,
         pastor_name, contact_phone, contact_email,
         welcome_message, service_times, location_text, member_registration_enabled)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
      RETURNING *`,
     [
       fields.organization_id,
@@ -150,6 +183,8 @@ async function createBranch(pool, fields) {
       hostSlug,
       name,
       status,
+      lifecyclePhase,
+      billingReady,
       fields.city ?? null,
       fields.country ?? null,
       fields.pastor_name ?? null,
@@ -168,11 +203,22 @@ async function createBranch(pool, fields) {
  * @param {import("pg").Pool | import("pg").PoolClient} db
  * @param {number} branchId
  * @param {string} newStatus
- * @param {{ reason?: string | null, platformAdminId?: number | null, previousStatus?: string, organizationId?: number }} opts
+ * @param {{
+ *   reason?: string | null,
+ *   platformAdminId?: number | null,
+ *   previousStatus?: string,
+ *   organizationId?: number,
+ *   lifecyclePhase?: string | null,
+ *   billingReady?: boolean | null,
+ *   auditAction?: string | null,
+ *   auditMetadataExtra?: object,
+ * }} opts
  */
 async function updateBranchStatus(db, branchId, newStatus, opts = {}) {
   const id = Number(branchId);
-  const client = "connect" in db ? await db.connect() : null;
+  // Pool has connect(); PoolClient has release() — never nest BEGIN on an outer client.
+  const shouldAcquire = typeof db.connect === "function" && typeof db.release !== "function";
+  const client = shouldAcquire ? await db.connect() : null;
   const runner = client || db;
   try {
     if (client) await client.query("BEGIN");
@@ -190,6 +236,30 @@ async function updateBranchStatus(db, branchId, newStatus, opts = {}) {
     const sets = ["status = $2", "updated_at = now()"];
     const params = [id, newStatus];
     let idx = 3;
+
+    if (opts.lifecyclePhase != null) {
+      sets.push(`lifecycle_phase = $${idx++}`);
+      params.push(String(opts.lifecyclePhase));
+    } else if (newStatus === "active") {
+      sets.push(`lifecycle_phase = $${idx++}`);
+      params.push("active");
+    } else if (newStatus === "archived") {
+      sets.push(`lifecycle_phase = $${idx++}`);
+      params.push(row.lifecycle_phase === "closed" ? "closed" : "archived");
+    } else if (newStatus === "suspended") {
+      sets.push(`lifecycle_phase = $${idx++}`);
+      params.push(
+        row.lifecycle_phase === "draft" || row.lifecycle_phase === "ready"
+          ? row.lifecycle_phase
+          : "temporarily_inactive"
+      );
+    }
+
+    if (opts.billingReady === true) {
+      sets.push("billing_ready = true");
+    } else if (opts.billingReady === false) {
+      sets.push("billing_ready = false");
+    }
 
     if (newStatus === "suspended") {
       sets.push("suspended_at = now()");
@@ -223,7 +293,10 @@ async function updateBranchStatus(db, branchId, newStatus, opts = {}) {
     );
     const updated = r.rows[0];
 
-    const auditAction = STATUS_AUDIT_ACTIONS[newStatus];
+    const auditAction =
+      opts.auditAction ||
+      STATUS_AUDIT_ACTIONS[newStatus] ||
+      (newStatus === "active" ? "platform_church_branch_activated" : null);
     if (auditAction) {
       await auditLogsRepo.insertAuditLog(runner, {
         organization_id: organizationId,
@@ -240,6 +313,9 @@ async function updateBranchStatus(db, branchId, newStatus, opts = {}) {
           reason: reason || null,
           organization_id: organizationId,
           branch_id: id,
+          lifecycle_phase: updated.lifecycle_phase || null,
+          billing_ready: updated.billing_ready === true,
+          ...(opts.auditMetadataExtra || {}),
         },
       });
     }
@@ -255,11 +331,22 @@ async function updateBranchStatus(db, branchId, newStatus, opts = {}) {
 }
 
 async function suspendBranch(pool, branchId, { reason, platformAdminId }) {
-  return updateBranchStatus(pool, branchId, "suspended", { reason, platformAdminId });
+  return updateBranchStatus(pool, branchId, "suspended", {
+    reason,
+    platformAdminId,
+    lifecyclePhase: "temporarily_inactive",
+    auditAction: "platform_church_branch_deactivated",
+  });
 }
 
 async function reactivateBranch(pool, branchId, { reason, platformAdminId }) {
-  return updateBranchStatus(pool, branchId, "active", { reason, platformAdminId });
+  // Prefer branchActivationPolicyService.activateBranch from call sites (enforces package limits).
+  return updateBranchStatus(pool, branchId, "active", {
+    reason,
+    platformAdminId,
+    lifecyclePhase: "active",
+    auditAction: "platform_church_branch_activated",
+  });
 }
 
 async function archiveBranch(pool, branchId, { reason, platformAdminId }) {
@@ -508,6 +595,7 @@ module.exports = {
   findBranchBySlug,
   findBranchByHostSlug,
   countBranchesForOrganization,
+  countActiveBranchesForOrganization,
   listBranchesForOrganization,
   isBranchHostSlugAvailable,
   createBranch,

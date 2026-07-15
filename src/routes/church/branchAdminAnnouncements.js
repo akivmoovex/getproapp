@@ -5,6 +5,7 @@ const fs = require("fs");
 const { getPgPool } = require("../../db/pg");
 const announcementsRepo = require("../../db/pg/church/announcementsRepo");
 const broadcastAttachmentsRepo = require("../../db/pg/church/broadcastAttachmentsRepo");
+const organizationUsageRepo = require("../../db/pg/church/organizationUsageRepo");
 const feedItemReadsRepo = require("../../db/pg/church/feedItemReadsRepo");
 const { requireChurchBranchAdminSession } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
@@ -632,6 +633,16 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
         );
         if (deleted && deleted.stored_filename) {
           unlinkAnnouncementStoredFilename(deleted.stored_filename);
+        }
+        if (deleted && deleted.file_size) {
+          const organizationId = deleted.organization_id || (req.churchContext.organization && req.churchContext.organization.id);
+          if (organizationId) {
+            await organizationUsageRepo.adjustStorageBytesUsed(
+              pool,
+              organizationId,
+              -Number(deleted.file_size)
+            );
+          }
         }
 
         await recordBranchAudit(pool, req, {

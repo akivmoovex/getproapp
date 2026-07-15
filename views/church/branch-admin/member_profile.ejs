@@ -32,6 +32,36 @@
           <% } %>
         </div>
       </section>
+      <% if (typeof allowsTransfer !== 'undefined' && allowsTransfer && (transferTargets || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Transfer to another campus</h2>
+        <p class="church-branch-panel__hint">Moves this member to another Growth campus. Attendance and history stay with the member record.</p>
+        <form class="church-form" method="post" action="/branch/members/<%= member.id %>/transfer">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-field">
+            <label class="church-label" for="to_branch_id">Target campus</label>
+            <select class="church-input" id="to_branch_id" name="to_branch_id" required>
+              <% transferTargets.forEach(function (b) { %>
+              <option value="<%= b.id %>"><%= b.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="transfer_reason">Reason (optional)</label>
+            <input class="church-input" id="transfer_reason" name="transfer_reason" type="text" maxlength="500"/>
+          </div>
+          <button class="church-btn church-btn--outline" type="submit">Transfer member</button>
+        </form>
+        <% if ((transferHistory || []).length) { %>
+        <h3 class="church-branch-panel__title" style="margin-top:1rem;">Transfer history</h3>
+        <ul class="church-branch-list">
+          <% transferHistory.forEach(function (h) { %>
+          <li><%= new Date(h.transferred_at).toLocaleString('en-GB') %>: <%= h.from_branch_name %> → <%= h.to_branch_name %></li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <% } %>
       <% if (member.status === 'pending') { %>
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Verification review</h2>

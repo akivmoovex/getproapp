@@ -11,6 +11,13 @@ const {
   formatBranchLocation,
 } = require("../../church/hqBranchRegistryValidation");
 const { hqAdminLocals } = require("./hqAdminShared");
+const { resolveBranchLifecycle } = require("../../church/branchLifecycle");
+const {
+  organisationAllowsBranchPaths,
+  buildPublicBranchAbsoluteUrl,
+  branchPathSlug,
+} = require("../../services/church/branchPathRoutingService");
+const branchesRepo = require("../../db/pg/church/branchesRepo");
 
 function formatMoney(amount) {
   const n = Number(amount || 0);
@@ -29,6 +36,29 @@ function givingStatusLabel(status) {
 }
 
 module.exports = function registerHqAdminBranchesRoutes(router) {
+  router.get("/hq/branches/switch-preview", requireChurchBranchHost, requireChurchHqAdminSession, async (req, res, next) => {
+    try {
+      const org = req.churchContext.organization;
+      const hostBranch = req.churchContext.hostBranch || req.churchContext.branch;
+      const branchId = Number(req.query.branch_id);
+      if (!Number.isFinite(branchId) || branchId <= 0) {
+        return res.redirect(303, "/hq/branches");
+      }
+      const pool = getPgPool();
+      const target = await hqBranchesRepo.findBranchByIdForOrganization(pool, branchId, org.id);
+      if (!target) {
+        return res.status(404).type("text").send("Branch not found.");
+      }
+      const url = buildPublicBranchAbsoluteUrl(hostBranch, target, "home");
+      if (!url) {
+        return res.redirect(303, "/hq/branches");
+      }
+      return res.redirect(303, url);
+    } catch (e) {
+      return next(e);
+    }
+  });
+
   router.get("/hq/branches", requireChurchBranchHost, requireChurchHqAdminSession, async (req, res, next) => {
     try {
       const org = req.churchContext.organization;
@@ -43,10 +73,19 @@ module.exports = function registerHqAdminBranchesRoutes(router) {
         filter: statusFilter,
         q,
       });
+      const branchesWithLifecycle = (branches || []).map((b) => ({
+        ...b,
+        lifecycle: resolveBranchLifecycle(b),
+      }));
+      const hostBranch = req.churchContext.hostBranch || req.churchContext.branch;
+      const pathRouting = organisationAllowsBranchPaths(org);
+      const siblingBranches = pathRouting
+        ? await branchesRepo.listBranchesForOrganization(pool, org.id)
+        : [];
       return res.render(
         "church/hq/branches_registry",
         hqAdminLocals(req, {
-          branches,
+          branches: branchesWithLifecycle,
           statusFilter,
           registryFilters: REGISTRY_FILTERS,
           searchQuery: q,
@@ -54,6 +93,13 @@ module.exports = function registerHqAdminBranchesRoutes(router) {
           reportStatusLabel,
           givingStatusLabel,
           formatBranchLocation,
+          hostBranch,
+          pathRoutingEnabled: pathRouting,
+          hqBranchSwitcher: siblingBranches.filter((b) => b.status === "active"),
+          buildPublicBranchUrl(target) {
+            return buildPublicBranchAbsoluteUrl(hostBranch, target, "home") || "#";
+          },
+          branchPathSlug,
         })
       );
     } catch (e) {

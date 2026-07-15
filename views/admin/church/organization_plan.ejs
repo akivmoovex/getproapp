@@ -26,6 +26,31 @@
           </dl>
         </section>
 
+        <% if (typeof packageDiagnostic !== 'undefined' && packageDiagnostic) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Package entitlement diagnostic</h2>
+          <p class="muted" style="margin-top:0;">Read-only resolution from the BlessBoard package catalogue plus usage meters.</p>
+          <dl class="admin-dl">
+            <dt>Organisation</dt>
+            <dd><%= packageDiagnostic.organization.name %> (id <%= packageDiagnostic.organization.id %>, <%= packageDiagnostic.organization.slug %>)</dd>
+            <dt>Current package</dt>
+            <dd><strong><%= packageDiagnostic.currentPackage.label %></strong> (<%= packageDiagnostic.currentPackage.code %>)</dd>
+            <dt>Stored plan_code</dt>
+            <dd><%= packageDiagnostic.storedPlanCode == null || packageDiagnostic.storedPlanCode === '' ? '—' : packageDiagnostic.storedPlanCode %></dd>
+            <dt>Entitlement source</dt>
+            <dd><%= packageDiagnostic.entitlementSource %></dd>
+            <dt>Fallback status</dt>
+            <dd>
+              <% if (packageDiagnostic.fallback.used) { %>
+                Used — <%= packageDiagnostic.fallback.reason || 'Defaulted to Foundation.' %>
+              <% } else { %>
+                Not used
+              <% } %>
+            </dd>
+          </dl>
+        </section>
+        <% } %>
+
         <section class="card card--mb-xl" style="padding:1.25rem;">
           <h2 class="section-title section-title--flush">Usage summary</h2>
           <div class="admin-dashboard__grid">
@@ -46,6 +71,32 @@
             </ul>
           <% } %>
         </section>
+
+        <% if (typeof packageDiagnostic !== 'undefined' && packageDiagnostic && packageDiagnostic.usage) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Package usage diagnostic</h2>
+          <p class="muted" style="margin-top:0;">
+            Tenant-scoped meters for <%= packageDiagnostic.usage.packageLabel %>
+            · month <code><%= String(packageDiagnostic.usage.usageMonth).slice(0, 7) %></code>
+            (<%= packageDiagnostic.usage.timezone || 'UTC' %>).
+            No invoice totals.
+          </p>
+          <dl class="admin-dl">
+            <dt>Active branches</dt><dd><%= packageDiagnostic.usage.meters.branches.display %></dd>
+            <dt>Active members</dt><dd><%= packageDiagnostic.usage.meters.members.display %></dd>
+            <dt>Administrators / leadership</dt><dd><%= packageDiagnostic.usage.meters.admins.display %></dd>
+            <dt>Storage</dt><dd><%= packageDiagnostic.usage.meters.storage.display %></dd>
+            <dt>External emails (month)</dt><dd><%= packageDiagnostic.usage.meters.externalEmails.display %></dd>
+            <dt>Scheduled reports (month)</dt><dd><%= packageDiagnostic.usage.meters.scheduledReports.display %></dd>
+            <dt>Warning state</dt>
+            <dd><%= (packageDiagnostic.usage.warnings || []).length ? (packageDiagnostic.usage.warnings.map(function (w) { return w.message; }).join('; ')) : 'None' %></dd>
+            <dt>Blocked state</dt>
+            <dd><%= (packageDiagnostic.usage.blocked || []).length ? (packageDiagnostic.usage.blocked.map(function (b) { return b.message; }).join('; ')) : 'None' %></dd>
+            <dt>Available upgrade</dt>
+            <dd><%= packageDiagnostic.usage.availableUpgrade ? (packageDiagnostic.usage.availableUpgrade.packageLabel + ' — ' + packageDiagnostic.usage.availableUpgrade.reason) : '—' %></dd>
+          </dl>
+        </section>
+        <% } %>
 
         <section class="card card--mb-xl" style="padding:1.25rem;">
           <h2 class="section-title section-title--flush">Features</h2>
@@ -80,7 +131,7 @@
               <label class="input-field__label" for="plan_code">Plan</label>
               <select id="plan_code" class="input-field__control" name="plan_code">
                 <% planCodes.forEach(function (code) { %>
-                  <option value="<%= code %>" <%= form.plan_code === code ? 'selected' : '' %>><%= code %></option>
+                  <option value="<%= code %>" <%= form.plan_code === code ? 'selected' : '' %>><%= (typeof getPlanDisplay === 'function' ? getPlanDisplay(code).label : code) %> (<%= code %>)</option>
                 <% }); %>
               </select>
             </div>

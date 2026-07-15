@@ -498,6 +498,16 @@ async function reactivateMemberForPlatform(pool, memberId, reason, platformAdmin
       throw Object.assign(new Error("Only suspended members can be reactivated."), { code: "INVALID_STATUS" });
     }
 
+    const seatQuota = require("../../../services/church/churchSeatQuotaService");
+    await seatQuota.assertCanActivateMemberLocked(client, {
+      organizationId: existing.organization_id,
+      branchId: existing.branch_id,
+      memberId: existing.id,
+      currentStatus: existing.status,
+      actorType: "platform_admin",
+      actorId: platformAdminId,
+    });
+
     const r = await client.query(
       `UPDATE public.church_members
        SET status = 'verified',
@@ -557,6 +567,16 @@ async function verifyMemberForPlatform(pool, memberId, reason, platformAdminId) 
     if (!["pending", "rejected", "suspended"].includes(existing.status)) {
       throw Object.assign(new Error("Member cannot be verified from current status."), { code: "INVALID_STATUS" });
     }
+
+    const seatQuota = require("../../../services/church/churchSeatQuotaService");
+    await seatQuota.assertCanActivateMemberLocked(client, {
+      organizationId: existing.organization_id,
+      branchId: existing.branch_id,
+      memberId: existing.id,
+      currentStatus: existing.status,
+      actorType: "platform_admin",
+      actorId: platformAdminId,
+    });
 
     const r = await client.query(
       `UPDATE public.church_members

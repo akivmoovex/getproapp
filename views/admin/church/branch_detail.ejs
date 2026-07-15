@@ -39,6 +39,13 @@
           <dl class="admin-dl">
             <dt>Status</dt>
             <dd><%- include('../../partials/admin/church_status_badge', { status: branch.status }) %></dd>
+            <% if (typeof branchLifecycle !== 'undefined' && branchLifecycle) { %>
+              <dt>Lifecycle</dt>
+              <dd><%= branchLifecycle.label %> <span class="muted">(<%= branchLifecycle.phase %>)</span></dd>
+            <% } %>
+            <% if (branch.billing_ready) { %>
+              <dt>Billing ready</dt><dd>Yes (placeholder for future billing)</dd>
+            <% } %>
             <% if (branch.status_reason) { %>
               <dt>Status reason</dt><dd><%= branch.status_reason %></dd>
             <% } %>
@@ -64,6 +71,13 @@
             <form class="admin-status-actions__form" method="post" action="/admin/church/branches/<%= branch.id %>/reactivate">
               <%- include('partials/csrf_field') %>
               <h3>Reactivate branch</h3>
+              <p class="muted">Requires branch identity, address, service schedule, and an assigned branch administrator. Foundation allows only one active branch.</p>
+              <% if (typeof requiresBillingAck !== 'undefined' && requiresBillingAck) { %>
+              <label class="input-field__label" style="display:flex;gap:0.5rem;align-items:flex-start;">
+                <input type="checkbox" name="billing_acknowledged" value="1" required />
+                <span>Confirm this active branch is ready for future Growth billing (no charge collected here).</span>
+              </label>
+              <% } %>
               <label class="input-field__label" for="branch_reactivate_reason">Note (optional)</label>
               <textarea id="branch_reactivate_reason" name="status_reason" maxlength="2000" placeholder="Optional note for audit trail"></textarea>
               <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Reactivate branch' }) %>

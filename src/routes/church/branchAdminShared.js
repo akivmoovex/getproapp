@@ -2,6 +2,22 @@
 
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
 const { churchSessionCsrfLocals } = require("../../church/churchSessionCsrf");
+const { resolvePackageFromPlanCode } = require("../../church/blessBoardPackageCatalogue");
+const { listNavFeatureGates } = require("../../church/blessBoardPackageFeatures");
+
+function packageFeatureLocalsFromOrg(org, portal) {
+  const resolved = resolvePackageFromPlanCode(org && org.plan_code);
+  const plan = {
+    packageCode: resolved.packageCode,
+    packageLabel: resolved.packageDefinition.label,
+    entitlements: resolved.packageDefinition.entitlements,
+    storedPlanCode: org && org.plan_code != null ? String(org.plan_code) : null,
+  };
+  return {
+    packagePlan: plan,
+    packageFeatureNav: listNavFeatureGates(plan, portal),
+  };
+}
 
 function resolveBranchAdminNavActive(req) {
   const p = String((req && req.path) || "");
@@ -20,12 +36,20 @@ function resolveBranchAdminNavActive(req) {
   if (p.startsWith("/branch/contact-submissions")) return "contact";
   if (p.startsWith("/branch/sermons")) return "sermons";
   if (p.startsWith("/branch/resources")) return "resources";
+  if (p.startsWith("/branch/attendance-offline")) return "attendance-offline";
+  if (p.startsWith("/branch/attendance-rules")) return "attendance-rules";
   if (p.startsWith("/branch/attendance")) return "attendance";
   if (p.startsWith("/branch/giving-summary")) return "giving-summary";
   if (p.startsWith("/branch/giving-settings")) return "giving-settings";
   if (p.startsWith("/branch/ministries")) return "ministries";
   if (p.startsWith("/branch/departments")) return "departments";
   if (p.startsWith("/branch/duty-roster")) return "duty";
+  if (p.startsWith("/branch/volunteer-scheduling")) return "volunteer-scheduling";
+  if (p.startsWith("/branch/appointments")) return "appointments";
+  if (p.startsWith("/branch/event-logistics")) return "event-logistics";
+  if (p.startsWith("/branch/scheduled-reports")) return "reports-scheduled";
+  if (p.startsWith("/branch/domains/custom") || p.startsWith("/branch/domains-custom")) return "domains-custom";
+  if (p.startsWith("/branch/email/hosted") || p.startsWith("/branch/email-hosted")) return "email-hosted";
   if (p.startsWith("/branch/ministry-activity")) return "ministry-activity";
   if (p.startsWith("/branch/ministry-attendance")) return "ministry-attendance";
   if (p.startsWith("/branch/leaders")) return "leaders";
@@ -34,7 +58,6 @@ function resolveBranchAdminNavActive(req) {
   if (p.startsWith("/branch/activity")) return "activity";
   return "";
 }
-
 function branchAdminShellTitle(navActive) {
   const titles = {
     dashboard: "Branch Dashboard",
@@ -56,6 +79,14 @@ function branchAdminShellTitle(navActive) {
     ministries: "Ministries",
     departments: "Departments",
     duty: "Duty Roster",
+    "volunteer-scheduling": "Volunteer scheduling",
+    appointments: "Appointments",
+    "attendance-offline": "Offline attendance",
+    "attendance-rules": "Attendance rules",
+    "event-logistics": "Event logistics",
+    "reports-scheduled": "Scheduled reports",
+    "domains-custom": "Custom domain",
+    "email-hosted": "Hosted email",
     "ministry-activity": "Ministry Activity",
     "ministry-attendance": "Ministry Attendance",
     leaders: "Leaders",
@@ -89,6 +120,7 @@ function branchAdminLocals(req, extra) {
     adminName,
     adminAvatarUrl: "/church/images/branch-admin/avatar-pastor-stitch.jpg",
     ...csrf,
+    ...packageFeatureLocalsFromOrg(org, "branch"),
     ...(extra || {}),
   };
 }
@@ -109,6 +141,7 @@ const MEMBER_NOTICES = new Set([
   "reactivated",
   "profile_updated",
   "admin_note_added",
+  "transferred",
 ]);
 const ATTENDANCE_NOTICES = new Set(["created", "submitted", "status_updated"]);
 const GIVING_NOTICES = new Set(["giving_saved", "giving_submitted"]);
@@ -184,6 +217,7 @@ function noticeMessage(code) {
     reactivated: "Member reactivated successfully.",
     profile_updated: "Member profile updated.",
     admin_note_added: "Admin note added.",
+    transferred: "Member transferred to another campus. History preserved.",
     created: "Attendance record saved.",
     submitted: "Attendance record submitted successfully.",
     status_updated: "Attendance status updated.",

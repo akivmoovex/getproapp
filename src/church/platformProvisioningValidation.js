@@ -24,10 +24,18 @@ const BRANCH_HOST_RESERVED_SLUGS = new Set([
   ...RESERVED_SLUGS,
   "hq",
   "branch",
+  "branches",
   "member",
   "login",
   "register",
   "assets",
+  "about",
+  "events",
+  "sermons",
+  "ministries",
+  "leadership",
+  "giving",
+  "contact",
 ]);
 
 const ORGANIZATION_RESERVED_SLUGS = new Set([
@@ -45,7 +53,7 @@ const ORGANIZATION_RESERVED_SLUGS = new Set([
   "assets",
 ]);
 
-const PLAN_CODES = ["free", "standard", "pro"];
+const PLAN_CODES = ["free", "standard", "pro", "foundation", "growth"];
 
 function normalizeSlug(value) {
   return String(value || "")

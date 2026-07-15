@@ -29,6 +29,16 @@
           <div><dt>Last password change</dt><dd><% if (account.password_changed_at) { %><%= new Date(account.password_changed_at).toLocaleString('en-GB') %><% } else { %>Not recorded<% } %></dd></div>
         </dl>
       </section>
+      <section class="church-branch-panel" id="package">
+        <h2 class="church-branch-panel__title">Package</h2>
+        <% if (typeof packagePlan !== 'undefined' && packagePlan) { %>
+        <p class="church-branch-panel__hint">Current package: <strong><%= packagePlan.packageLabel %></strong>.</p>
+        <p class="church-branch-panel__hint">Upgrade opportunities appear in navigation for features that are not included. Network-only tools stay hidden until available.</p>
+        <% } else { %>
+        <p class="church-branch-panel__hint">Package information is unavailable for this organisation.</p>
+        <% } %>
+      </section>
+      <%- include('../partials/package_usage_summary') %>
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Change password</h2>
         <p class="church-branch-panel__hint">Your current session stays active after a successful change. Use your new password the next time you sign in.</p>

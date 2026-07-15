@@ -136,7 +136,7 @@ async function deleteBroadcastAttachment(pool, attachmentId, organizationId) {
   const r = await pool.query(
     `DELETE FROM public.church_hq_broadcast_attachments
      WHERE id = $1 AND organization_id = $2
-     RETURNING id, stored_filename`,
+     RETURNING id, stored_filename, file_size, original_filename`,
     [attachmentId, organizationId]
   );
   return r.rows[0] ?? null;
@@ -146,7 +146,7 @@ async function deleteAnnouncementAttachment(pool, attachmentId, branchId) {
   const r = await pool.query(
     `DELETE FROM public.church_announcement_attachments
      WHERE id = $1 AND branch_id = $2
-     RETURNING id, stored_filename`,
+     RETURNING id, stored_filename, file_size, original_filename, organization_id`,
     [attachmentId, branchId]
   );
   return r.rows[0] ?? null;

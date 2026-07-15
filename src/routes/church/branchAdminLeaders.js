@@ -209,6 +209,25 @@ module.exports = function registerBranchAdminLeadersRoutes(router) {
 
       return res.redirect(303, `/branch/leaders/${created.id}?notice=leader_created`);
     } catch (e) {
+      if (e && e.code === "FOUNDATION_ADMIN_LIMIT") {
+        try {
+          const pool = getPgPool();
+          const branch = req.churchContext.branch;
+          const ministries = await ministriesRepo.listMinistriesForBranch(pool, branch.id);
+          return res.status(400).render(
+            "church/branch-admin/leader_form",
+            renderLocals(req, {
+              form: req.body || {},
+              ministries,
+              error: e.message,
+              isEdit: false,
+              leaderId: null,
+            })
+          );
+        } catch {
+          return res.status(400).type("text").send(e.message);
+        }
+      }
       return next(e);
     }
   });
@@ -361,6 +380,25 @@ module.exports = function registerBranchAdminLeadersRoutes(router) {
 
         return res.redirect(303, `/branch/leaders/${leaderId}?notice=leader_updated`);
       } catch (e) {
+        if (e && e.code === "FOUNDATION_ADMIN_LIMIT") {
+          try {
+            const pool = getPgPool();
+            const branch = req.churchContext.branch;
+            const ministries = await ministriesRepo.listMinistriesForBranch(pool, branch.id);
+            return res.status(400).render(
+              "church/branch-admin/leader_form",
+              renderLocals(req, {
+                form: req.body || {},
+                ministries,
+                error: e.message,
+                isEdit: true,
+                leaderId: Number(req.params.leaderId),
+              })
+            );
+          } catch {
+            /* fall through */
+          }
+        }
         return next(e);
       }
     }
@@ -399,6 +437,9 @@ module.exports = function registerBranchAdminLeadersRoutes(router) {
         });
         return res.redirect(303, `/branch/leaders/${leaderId}?notice=leader_activated`);
       } catch (e) {
+        if (e && e.code === "FOUNDATION_ADMIN_LIMIT") {
+          return res.status(400).type("text").send(e.message);
+        }
         return next(e);
       }
     }

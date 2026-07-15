@@ -10,6 +10,13 @@ const churchPlanService = require("../../../services/church/churchPlanService");
 const { buildUsageWarnings, normalizePlanCode, getPlanLimit, formatLimitValue, canCreateAdditionalBranch } = require("../../../church/churchPlans");
 const { normalizeSlug } = require("../../../church/platformProvisioningValidation");
 const { onboardNewBranchContent } = require("../../../services/church/branchOnboardingService");
+const {
+  resolveCreateBranchLifecycle,
+  activateBranch,
+  FOUNDATION_SECOND_ACTIVE_ERROR,
+} = require("../../../services/church/branchActivationPolicyService");
+const { resolvePackageFromPlanCode } = require("../../../church/blessBoardPackageCatalogue");
+const seatQuota = require("../../../services/church/churchSeatQuotaService");
 
 async function checkOrganizationSlugAvailable(pool, slug, client) {
   const db = client || pool;
@@ -297,19 +304,25 @@ async function createChurchBranch(client, fields) {
   const slug = String(fields.slug || hostSlug)
     .toLowerCase()
     .trim();
+  const status = fields.status || "active";
+  const lifecyclePhase =
+    fields.lifecycle_phase ||
+    (status === "active" ? "active" : status === "archived" ? "archived" : "draft");
   const r = await client.query(
     `INSERT INTO public.church_branches (
-       organization_id, slug, host_slug, name, status, city, country,
+       organization_id, slug, host_slug, name, status, lifecycle_phase, billing_ready, city, country,
        pastor_name, contact_phone, contact_email, welcome_message, service_times, location_text,
        member_registration_enabled
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
      RETURNING *`,
     [
       fields.organization_id,
       slug,
       hostSlug,
       fields.name,
-      fields.status || "active",
+      status,
+      lifecyclePhase,
+      fields.billing_ready === true,
       fields.city,
       fields.country,
       fields.pastor_name,
@@ -381,6 +394,12 @@ async function provisionChurchOrganization(pool, payload, platformAdminId) {
       contact_email: payload.branch.contact_email,
     });
 
+    await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {
+      organizationId: organization.id,
+      actorType: "platform_admin",
+      actorId: platformAdminId || null,
+      reason: "initial_hq_admin",
+    });
     const hqPasswordHash = await bcrypt.hash(payload.hqAdmin.temporary_password, 12);
     const hqAdmin = await createInitialHqAdmin(client, {
       organization_id: organization.id,
@@ -388,6 +407,12 @@ async function provisionChurchOrganization(pool, payload, platformAdminId) {
       password_hash: hqPasswordHash,
     });
 
+    await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {
+      organizationId: organization.id,
+      actorType: "platform_admin",
+      actorId: platformAdminId || null,
+      reason: "initial_branch_admin",
+    });
     const branchPasswordHash = await bcrypt.hash(payload.branchAdmin.temporary_password, 12);
     const branchAdmin = await createInitialBranchAdmin(client, {
       organization_id: organization.id,
@@ -516,6 +541,10 @@ async function createInitialBranchAdmin(client, fields) {
 }
 
 function branchLimitError(planCode, check) {
+  const pkg = resolvePackageFromPlanCode(planCode);
+  if (pkg.packageCode === "foundation") {
+    return FOUNDATION_SECOND_ACTIVE_ERROR;
+  }
   if (planCode === "free") {
     return "Free plan allows only 1 branch. Change the organization plan before adding another branch.";
   }
@@ -523,6 +552,14 @@ function branchLimitError(planCode, check) {
 }
 
 async function assertOrganizationCanAddBranch(pool, organization) {
+  // Foundation/Growth: additional branch *rows* are allowed (non-active / fair use).
+  // Active-branch caps are enforced at activation time via branchActivationPolicyService.
+  const pkg = resolvePackageFromPlanCode(organization.plan_code);
+  if (pkg.packageCode === "foundation" || pkg.packageCode === "growth") {
+    const count = await branchesRepo.countBranchesForOrganization(pool, organization.id);
+    return { count, planCode: normalizePlanCode(organization.plan_code), packageCode: pkg.packageCode };
+  }
+
   const count = await branchesRepo.countBranchesForOrganization(pool, organization.id);
   const planCode = normalizePlanCode(organization.plan_code);
   const check = canCreateAdditionalBranch(planCode, count);
@@ -550,12 +587,25 @@ async function createBranchForOrganization(pool, organizationId, payload, platfo
       throw Object.assign(new Error("Branch host slug is already in use."), { code: "DUPLICATE_HOST_SLUG" });
     }
 
+    const lifecycle = await resolveCreateBranchLifecycle(client, organization, {
+      preferActive: payload.branch && payload.branch.status !== "suspended",
+    });
+
     const branch = await createChurchBranch(client, {
       organization_id: organization.id,
       ...payload.branch,
       host_slug: hostSlug,
+      status: lifecycle.status,
+      lifecycle_phase: lifecycle.lifecycle_phase,
+      billing_ready: false,
     });
 
+    await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {
+      organizationId: organization.id,
+      actorType: "platform_admin",
+      actorId: platformAdminId || null,
+      reason: "create_branch_initial_admin",
+    });
     const branchPasswordHash = await bcrypt.hash(payload.branchAdmin.temporary_password, 12);
     const branchAdmin = await createInitialBranchAdminForBranch(client, {
       organization_id: organization.id,
@@ -573,7 +623,15 @@ async function createBranchForOrganization(pool, organizationId, payload, platfo
       entity_type: "church_branch",
       entity_id: branch.id,
       target_label: branch.name,
-      metadata_json: { slug: branch.slug, host_slug: hostSlug },
+      metadata_json: {
+        slug: branch.slug,
+        host_slug: hostSlug,
+        status: branch.status,
+        lifecycle_phase: lifecycle.lifecycle_phase,
+        package_code: lifecycle.packageCode,
+        created_as_active: lifecycle.createdAsActive,
+        defer_reason: lifecycle.deferReason || null,
+      },
     });
     await recordPlatformAudit(client, {
       organization_id: organization.id,
@@ -590,7 +648,7 @@ async function createBranchForOrganization(pool, organizationId, payload, platfo
     const onboarding = payload.onboarding || { publishWebsite: true, memberRegistrationEnabled: true };
     try {
       await onboardNewBranchContent(client, organization, branch, {
-        publishWebsite: onboarding.publishWebsite !== false,
+        publishWebsite: onboarding.publishWebsite !== false && lifecycle.createdAsActive,
         includeDraftStarters: true,
       });
     } catch (onboardingErr) {
@@ -599,7 +657,13 @@ async function createBranchForOrganization(pool, organizationId, payload, platfo
     }
 
     await client.query("COMMIT");
-    return { organization, branch, branchAdmin };
+    return {
+      organization,
+      branch,
+      branchAdmin,
+      createdAsActive: lifecycle.createdAsActive,
+      deferReason: lifecycle.deferReason || null,
+    };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -661,7 +725,12 @@ async function suspendBranch(pool, branchId, payload) {
 }
 
 async function reactivateBranch(pool, branchId, payload) {
-  return branchesRepo.reactivateBranch(pool, branchId, payload);
+  const result = await activateBranch(pool, branchId, {
+    reason: payload && payload.reason,
+    platformAdminId: payload && payload.platformAdminId,
+    billingAcknowledged: payload && payload.billingAcknowledged === true,
+  });
+  return result.branch;
 }
 
 async function archiveBranch(pool, branchId, payload) {

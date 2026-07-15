@@ -273,6 +273,57 @@ async function countMembersByStatusForBranch(pool, branchId) {
 async function updateMemberStatusForBranch(pool, memberId, branchId, status, opts) {
   const reviewComment =
     opts && opts.reviewComment != null ? String(opts.reviewComment).trim().slice(0, 2000) : null;
+  const nextStatus = String(status || "");
+
+  if (nextStatus === "verified") {
+    const seatQuota = require("../../../services/church/churchSeatQuotaService");
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const existing = await client.query(
+        `SELECT m.*, b.organization_id
+         FROM public.church_members m
+         INNER JOIN public.church_branches b ON b.id = m.branch_id
+         WHERE m.id = $1 AND m.branch_id = $2
+         LIMIT 1`,
+        [memberId, branchId]
+      );
+      const row = existing.rows[0];
+      if (!row) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+      await seatQuota.assertCanActivateMemberLocked(client, {
+        organizationId: row.organization_id,
+        branchId,
+        memberId,
+        currentStatus: row.status,
+        actorType: (opts && opts.actorType) || "branch_admin",
+        actorId: (opts && opts.actorId) || null,
+      });
+      const r = await client.query(
+        `UPDATE public.church_members
+         SET status = 'verified',
+             review_comment = CASE WHEN $3::text IS NOT NULL THEN $3 ELSE review_comment END,
+             updated_at = now()
+         WHERE id = $1 AND branch_id = $2
+         RETURNING *`,
+        [memberId, branchId, reviewComment]
+      );
+      await client.query("COMMIT");
+      return r.rows[0] ?? null;
+    } catch (err) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
   const r = await pool.query(
     `UPDATE public.church_members
      SET status = $1,
@@ -382,19 +433,59 @@ async function updateMemberProfileForBranchAdmin(pool, memberId, branchId, field
  * @returns {Promise<object | null>}
  */
 async function verifyMemberForBranch(pool, memberId, branchId, adminId) {
-  const r = await pool.query(
-    `UPDATE public.church_members
-     SET status = 'verified',
-         reactivated_at = CASE WHEN status = 'suspended' THEN now() ELSE reactivated_at END,
-         reactivated_by_admin_id = CASE WHEN status = 'suspended' THEN $1 ELSE reactivated_by_admin_id END,
-         updated_at = now()
-     WHERE id = $2
-       AND branch_id = $3
-       AND status IN ('pending', 'rejected', 'suspended')
-     RETURNING *`,
-    [adminId, memberId, branchId]
-  );
-  return r.rows[0] ?? null;
+  const seatQuota = require("../../../services/church/churchSeatQuotaService");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const existing = await client.query(
+      `SELECT m.*, b.organization_id
+       FROM public.church_members m
+       INNER JOIN public.church_branches b ON b.id = m.branch_id
+       WHERE m.id = $1 AND m.branch_id = $2
+       LIMIT 1`,
+      [memberId, branchId]
+    );
+    const row = existing.rows[0];
+    if (!row) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    if (!["pending", "rejected", "suspended"].includes(row.status)) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    await seatQuota.assertCanActivateMemberLocked(client, {
+      organizationId: row.organization_id,
+      branchId,
+      memberId,
+      currentStatus: row.status,
+      actorType: "branch_admin",
+      actorId: adminId,
+    });
+    const r = await client.query(
+      `UPDATE public.church_members
+       SET status = 'verified',
+           reactivated_at = CASE WHEN status = 'suspended' THEN now() ELSE reactivated_at END,
+           reactivated_by_admin_id = CASE WHEN status = 'suspended' THEN $1 ELSE reactivated_by_admin_id END,
+           updated_at = now()
+       WHERE id = $2
+         AND branch_id = $3
+         AND status IN ('pending', 'rejected', 'suspended')
+       RETURNING *`,
+      [adminId, memberId, branchId]
+    );
+    await client.query("COMMIT");
+    return r.rows[0] ?? null;
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 /**
@@ -431,19 +522,55 @@ async function suspendMemberForBranch(pool, memberId, branchId, adminId, reason)
  * @returns {Promise<object | null>}
  */
 async function reactivateMemberForBranch(pool, memberId, branchId, adminId) {
-  const r = await pool.query(
-    `UPDATE public.church_members
-     SET status = 'verified',
-         reactivated_at = now(),
-         reactivated_by_admin_id = $1,
-         updated_at = now()
-     WHERE id = $2
-       AND branch_id = $3
-       AND status = 'suspended'
-     RETURNING *`,
-    [adminId, memberId, branchId]
-  );
-  return r.rows[0] ?? null;
+  const seatQuota = require("../../../services/church/churchSeatQuotaService");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const existing = await client.query(
+      `SELECT m.*, b.organization_id
+       FROM public.church_members m
+       INNER JOIN public.church_branches b ON b.id = m.branch_id
+       WHERE m.id = $1 AND m.branch_id = $2
+       LIMIT 1`,
+      [memberId, branchId]
+    );
+    const row = existing.rows[0];
+    if (!row || row.status !== "suspended") {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    await seatQuota.assertCanActivateMemberLocked(client, {
+      organizationId: row.organization_id,
+      branchId,
+      memberId,
+      currentStatus: row.status,
+      actorType: "branch_admin",
+      actorId: adminId,
+    });
+    const r = await client.query(
+      `UPDATE public.church_members
+       SET status = 'verified',
+           reactivated_at = now(),
+           reactivated_by_admin_id = $1,
+           updated_at = now()
+       WHERE id = $2
+         AND branch_id = $3
+         AND status = 'suspended'
+       RETURNING *`,
+      [adminId, memberId, branchId]
+    );
+    await client.query("COMMIT");
+    return r.rows[0] ?? null;
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 /**

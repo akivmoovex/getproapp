@@ -401,6 +401,16 @@ async function activateMinistryLeaderForPlatform(pool, leaderId, reason, platfor
       return { ...existing, alreadyActive: true };
     }
 
+    const seatQuota = require("../../../services/church/churchSeatQuotaService");
+    await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {
+      organizationId: existing.organization_id,
+      branchId: existing.branch_id,
+      excludeMinistryLeaderId: existing.id,
+      actorType: "platform_admin",
+      actorId: platformAdminId,
+      roleLabel: "ministry_leader",
+    });
+
     await client.query(
       `UPDATE public.church_ministry_leaders
        SET status = 'active',
