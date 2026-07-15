@@ -54,6 +54,8 @@ Confirm in Hostinger **Environment variables**:
 - `NODE_ENV=production`
 - `BASE_DOMAIN=getproapp.org`
 - `CHURCH_HOST_DOMAIN=blessboard.com` (optional; default is blessboard.com)
+- `BLESSBOARD_APEX_DOMAINS=blessboard.com,www.blessboard.com,blessboard.org,www.blessboard.org` (optional; defaults include these)
+- `BLESSBOARD_APEX_DOMAINS=blessboard.com,www.blessboard.com,blessboard.org,www.blessboard.org` (optional; defaults include these)
 
 ### Post-deploy super admin diagnostics
 
@@ -135,7 +137,8 @@ You do **not** need getproapp.org to carry BlessBoard admin code for provisionin
 | `DATABASE_URL` or `GETPRO_DATABASE_URL` | **Yes** | PostgreSQL connection (app exits without it) |
 | `SESSION_SECRET` | **Yes** | Express session signing |
 | `BASE_DOMAIN` | Recommended | Platform host (e.g. `getproapp.org`) |
-| `CHURCH_HOST_DOMAIN` | Optional | Default `blessboard.com` |
+| `CHURCH_HOST_DOMAIN` | Optional | Canonical BlessBoard domain; default `blessboard.com` |
+| `BLESSBOARD_APEX_DOMAINS` | Optional | Comma-separated apex aliases (includes `.org` by default) |
 | `GETPRO_PG_POOL_MAX` | Recommended | Default **5** (lower than before to reduce Supabase connection pressure) |
 | `GETPRO_PG_CONNECT_TIMEOUT_MS` | Optional | Default 10000 — increase to 15000 if Supabase is slow |
 | `GETPRO_PG_IDLE_MS` | Optional | Default 30000 |

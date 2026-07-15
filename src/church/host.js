@@ -1,6 +1,11 @@
 "use strict";
 
 const { resolveHostname } = require("../platform/host");
+const {
+  getBlessBoardCanonicalDomain,
+  isBlessBoardApexDomain,
+  normalizeHost: normalizeApexHost,
+} = require("./blessBoardApexDomains");
 
 /** Vertical subdomain label — reserved; never a company marketing subdomain. */
 const CHURCH_VERTICAL_LABEL = "church";
@@ -13,10 +18,7 @@ const DEFAULT_CHURCH_HOST_DOMAIN = "blessboard.com";
  * @param {string} host
  */
 function normalizeHost(host) {
-  return String(host || "")
-    .toLowerCase()
-    .trim()
-    .split(":")[0];
+  return normalizeApexHost(host);
 }
 
 /**
@@ -28,29 +30,28 @@ function normalizeHostFromRequest(req) {
 }
 
 function getChurchHostDomain() {
-  return String(process.env.CHURCH_HOST_DOMAIN || DEFAULT_CHURCH_HOST_DOMAIN)
-    .toLowerCase()
-    .trim();
+  return getBlessBoardCanonicalDomain();
 }
 
 /**
- * True for blessboard.com, www.blessboard.com, and any *.blessboard.com host.
+ * True for BlessBoard apex aliases (.com / .org / www) and any *.{canonical} tenant host.
+ * Does not treat arbitrary *.blessboard.org labels as product hosts.
  * @param {string} host
  */
 function isBlessBoardHost(host) {
   const cleanHost = normalizeHost(host);
+  if (!cleanHost) return false;
+  if (isBlessBoardApexDomain(cleanHost)) return true;
+
   const churchDomain = getChurchHostDomain();
-  if (!cleanHost || !churchDomain) return false;
-  return (
-    cleanHost === churchDomain ||
-    cleanHost === `www.${churchDomain}` ||
-    cleanHost.endsWith(`.${churchDomain}`)
-  );
+  if (!churchDomain) return false;
+  return cleanHost.endsWith(`.${churchDomain}`);
 }
 
 /**
  * Extract the church branch slug from a BlessBoard host.
  * Returns null for apex/www hosts or invalid multi-label subdomains.
+ * Only resolves tenants under the canonical domain (e.g. *.blessboard.com).
  * @param {string} host
  * @returns {string | null}
  */
@@ -58,7 +59,7 @@ function getBlessBoardChurchSlug(host) {
   const cleanHost = normalizeHost(host);
   const churchDomain = getChurchHostDomain();
   if (!cleanHost || !churchDomain) return null;
-  if (cleanHost === churchDomain || cleanHost === `www.${churchDomain}`) return null;
+  if (isBlessBoardApexDomain(cleanHost)) return null;
   if (!cleanHost.endsWith(`.${churchDomain}`)) return null;
 
   const prefix = cleanHost.slice(0, cleanHost.length - churchDomain.length - 1);
@@ -119,7 +120,7 @@ function parseChurchHostFromParts(host, baseDomain) {
 }
 
 /**
- * Parse dedicated BlessBoard host domain (blessboard.com and *.blessboard.com).
+ * Parse dedicated BlessBoard host domain (apex aliases + *.blessboard.com tenants).
  * @param {string} host
  * @returns {{ kind: 'vertical-apex', host: string } | { kind: 'branch', orgSlug: string | null, hostSlug: string | null, host: string } | null}
  */
@@ -127,11 +128,11 @@ function parseChurchHostFromDedicatedDomain(host) {
   const h = normalizeHost(host);
   if (!isBlessBoardHost(h)) return null;
 
-  const churchDomain = getChurchHostDomain();
-  if (h === churchDomain || h === `www.${churchDomain}`) {
+  if (isBlessBoardApexDomain(h)) {
     return { kind: "vertical-apex", host: h };
   }
 
+  const churchDomain = getChurchHostDomain();
   if (h.endsWith(`.${churchDomain}`)) {
     const slug = getBlessBoardChurchSlug(h);
     return { kind: "branch", orgSlug: slug, hostSlug: slug, host: h };

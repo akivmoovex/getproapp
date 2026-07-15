@@ -33,6 +33,23 @@ test("redirects www.blessboard.com to apex with path and query", async () => {
   }
 });
 
+test("redirects blessboard.org to canonical blessboard.com with path and query", async () => {
+  const prev = process.env.BLESSBOARD_CANONICAL_REDIRECT;
+  process.env.BLESSBOARD_CANONICAL_REDIRECT = "1";
+  try {
+    const app = makeRedirectApp();
+    const res = await request(app)
+      .get("/pricing?ref=test")
+      .set("Host", "blessboard.org")
+      .set("X-Forwarded-Proto", "https");
+    assert.equal(res.status, 301);
+    assert.equal(res.headers.location, "https://blessboard.com/pricing?ref=test");
+  } finally {
+    if (prev === undefined) delete process.env.BLESSBOARD_CANONICAL_REDIRECT;
+    else process.env.BLESSBOARD_CANONICAL_REDIRECT = prev;
+  }
+});
+
 test("redirects HTTP to HTTPS on blessboard.com hosts", async () => {
   const prev = process.env.BLESSBOARD_CANONICAL_REDIRECT;
   process.env.BLESSBOARD_CANONICAL_REDIRECT = "1";

@@ -54,10 +54,13 @@ function makeChurchApp(churchContext) {
   return app;
 }
 
-test("isBlessBoardHost: apex, www, and church subdomains", () => {
+test("isBlessBoardHost: apex, www, .org aliases, and church subdomains", () => {
   assert.equal(isBlessBoardHost("blessboard.com"), true);
   assert.equal(isBlessBoardHost("www.blessboard.com"), true);
+  assert.equal(isBlessBoardHost("blessboard.org"), true);
+  assert.equal(isBlessBoardHost("www.blessboard.org"), true);
   assert.equal(isBlessBoardHost("demo.blessboard.com"), true);
+  assert.equal(isBlessBoardHost("demo.blessboard.org"), false);
   assert.equal(isBlessBoardHost("getproapp.org"), false);
 });
 

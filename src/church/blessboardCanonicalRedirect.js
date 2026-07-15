@@ -1,6 +1,10 @@
 "use strict";
 
-const { isBlessBoardHost, getChurchHostDomain, normalizeHostFromRequest } = require("./host");
+const { isBlessBoardHost, normalizeHostFromRequest } = require("./host");
+const {
+  getBlessBoardCanonicalDomain,
+  isBlessBoardApexDomain,
+} = require("./blessBoardApexDomains");
 
 function requestScheme(req) {
   const forwarded = req.headers["x-forwarded-proto"];
@@ -16,8 +20,9 @@ function shouldForceHttps(req, host) {
 
 /**
  * Permanent redirects for BlessBoard product hosts:
- * - www.blessboard.com → blessboard.com (apex only)
- * - http → https (all blessboard.com hosts, including tenant subdomains)
+ * - Non-canonical apex aliases (www.blessboard.com, blessboard.org, www.blessboard.org)
+ *   → https://blessboard.com (canonical) with path and query preserved
+ * - http → https (all BlessBoard hosts, including tenant subdomains)
  *
  * Preserves path and query via req.originalUrl.
  * Skip when BLESSBOARD_CANONICAL_REDIRECT=0 (local dev/tests).
@@ -32,16 +37,16 @@ function blessboardCanonicalRedirect(req, res, next) {
     return next();
   }
 
-  const apexDomain = getChurchHostDomain();
+  const canonicalDomain = getBlessBoardCanonicalDomain();
   const scheme = requestScheme(req);
-  const needsWwwStrip = host === `www.${apexDomain}`;
+  const needsCanonicalHost = isBlessBoardApexDomain(host) && host !== canonicalDomain;
   const needsHttps = shouldForceHttps(req, host) && scheme !== "https";
 
-  if (!needsWwwStrip && !needsHttps) {
+  if (!needsCanonicalHost && !needsHttps) {
     return next();
   }
 
-  const targetHost = needsWwwStrip ? apexDomain : host;
+  const targetHost = needsCanonicalHost ? canonicalDomain : host;
   const targetUrl = `https://${targetHost}${req.originalUrl || "/"}`;
   return res.redirect(301, targetUrl);
 }

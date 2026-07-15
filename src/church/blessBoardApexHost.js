@@ -1,16 +1,15 @@
 "use strict";
 
-const { normalizeHostFromRequest, getChurchHostDomain } = require("./host");
+const { normalizeHostFromRequest } = require("./host");
+const { isBlessBoardApexDomain } = require("./blessBoardApexDomains");
 const { BLESSBOARD_PUBLIC_URL } = require("./branding");
 
 /**
- * True for blessboard.com and www.blessboard.com (platform admin + landing apex).
+ * True for configured BlessBoard apex hosts (blessboard.com / www / .org aliases).
  * @param {import("express").Request} req
  */
 function isBlessBoardApexHost(req) {
-  const host = normalizeHostFromRequest(req);
-  const domain = getChurchHostDomain();
-  return host === domain || host === `www.${domain}`;
+  return isBlessBoardApexDomain(normalizeHostFromRequest(req));
 }
 
 /**

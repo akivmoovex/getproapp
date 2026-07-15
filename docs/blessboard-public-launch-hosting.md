@@ -4,15 +4,22 @@
 
 **Canonical platform domain:** `https://blessboard.com` (non-www apex)
 
+**Also accepted as BlessBoard apex aliases** (same product routes; redirected to `.com` by default):
+
+- `blessboard.org`
+- `www.blessboard.org`
+
+Configure via `BLESSBOARD_APEX_DOMAINS` (defaults include the four apex hosts above). Tenant church subdomains remain under `*.blessboard.com` only — `www` and `.org` are never treated as tenants.
+
 ---
 
 ## What the application handles
 
-When `BLESSBOARD_CANONICAL_REDIRECT` is not `0`, the Node app issues **301** redirects for BlessBoard product hosts (`blessboard.com` and `*.blessboard.com`):
+When `BLESSBOARD_CANONICAL_REDIRECT` is not `0`, the Node app issues **301** redirects for BlessBoard product hosts (`blessboard.com`, apex aliases, and `*.blessboard.com`):
 
 | Condition | Redirect |
 |-----------|----------|
-| Host is `www.blessboard.com` | `https://blessboard.com` + same path and query |
+| Host is a non-canonical apex (`www.blessboard.com`, `blessboard.org`, `www.blessboard.org`) | `https://blessboard.com` + same path and query |
 | Request is HTTP (non-localhost) | `https://` + same host + path and query |
 
 Local development (`localhost`, `127.0.0.1`) is not forced to HTTPS unless you set `PUBLIC_SCHEME=https`.
@@ -30,6 +37,7 @@ Even with application redirects, configure the edge layer for performance, HSTS,
 
 - `blessboard.com`
 - `www.blessboard.com` (redirect target should be apex)
+- `blessboard.org` / `www.blessboard.org` (alias apex — must hit the same Node app as BlessBoard)
 - `*.blessboard.com` (tenant church subdomains)
 
 ### 2. Recommended nginx (or equivalent) rules
@@ -65,7 +73,17 @@ Apply only when all tenant subdomains serve valid HTTPS.
 
 ### 4. Do not redirect tenant hosts to apex
 
-`demo.blessboard.com` must remain on its subdomain. Only `www.blessboard.com` strips the `www` label.
+`demo.blessboard.com` must remain on its subdomain. Only non-canonical **apex** aliases (`www.blessboard.com`, `blessboard.org`, `www.blessboard.org`) redirect to `blessboard.com`.
+
+### 5. Hostinger: attach `blessboard.org` to the BlessBoard Node app
+
+If `blessboard.org` shows the GetPro / Pro-online directory instead of BlessBoard, the domain is almost certainly mapped to the wrong Node.js application (or an outdated deploy). Confirm in hPanel:
+
+1. `blessboard.org` and `www.blessboard.org` are on the **same** Node.js app / document root as `blessboard.com` (or deploy this codebase to whichever app currently receives `.org` traffic).
+2. DNS A/CNAME for apex + www no longer point at an old Proline / unrelated site.
+3. SSL covers `blessboard.org` and `www.blessboard.org`.
+4. No Hostinger redirect rule sends `.org` to Proline or getproapp.org marketing.
+5. After env changes (`BLESSBOARD_APEX_DOMAINS`, etc.), restart the Node.js application.
 
 ---
 
