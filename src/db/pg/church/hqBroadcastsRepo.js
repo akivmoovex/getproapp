@@ -28,7 +28,7 @@ const FEED_ORDER = `
 
 function visibleBroadcastWhere(alias = "b") {
   return `
-    ${alias}.status = 'published'
+    ${alias}.status IN ('published', 'partially_failed')
     AND (${alias}.publish_at IS NULL OR ${alias}.publish_at <= now())
     AND (${alias}.expires_at IS NULL OR ${alias}.expires_at > now())
   `;
@@ -58,7 +58,17 @@ function mapBroadcastForFeed(row) {
 }
 
 const LIST_PRIORITIES = ["normal", "important", "urgent", "emergency"];
-const LIST_AUDIENCES = ["public", "members", "branch_admins", "leaders", "all_logged_in"];
+const LIST_AUDIENCES = [
+  "public",
+  "members",
+  "branch_admins",
+  "leaders",
+  "all_logged_in",
+  "ministry",
+  "department",
+  "event",
+  "selected_recipients",
+];
 const LIST_TARGET_SCOPES = ["all_branches", "selected_branches"];
 
 function parseDateOnly(value) {
@@ -226,20 +236,87 @@ async function setBroadcastTargets(pool, broadcastId, organizationId, branchIds)
   return validIds;
 }
 
+async function setAudienceTargets(pool, broadcastId, organizationId, fields) {
+  const audience = String(fields.audience || "");
+  if (audience === "ministry") {
+    await pool.query(
+      `DELETE FROM public.church_hq_broadcast_ministry_targets WHERE broadcast_id = $1 AND organization_id = $2`,
+      [broadcastId, organizationId]
+    );
+    for (const ministryId of fields.ministry_ids || []) {
+      await pool.query(
+        `INSERT INTO public.church_hq_broadcast_ministry_targets (organization_id, broadcast_id, ministry_id)
+         SELECT $1, $2, m.id FROM public.church_ministries m
+         WHERE m.id = $3 AND m.organization_id = $1
+         ON CONFLICT DO NOTHING`,
+        [organizationId, broadcastId, ministryId]
+      );
+    }
+  }
+  if (audience === "department") {
+    await pool.query(
+      `DELETE FROM public.church_hq_broadcast_department_targets WHERE broadcast_id = $1 AND organization_id = $2`,
+      [broadcastId, organizationId]
+    );
+    for (const departmentId of fields.department_ids || []) {
+      await pool.query(
+        `INSERT INTO public.church_hq_broadcast_department_targets (organization_id, broadcast_id, department_id)
+         SELECT $1, $2, d.id FROM public.church_departments d
+         WHERE d.id = $3 AND d.organization_id = $1
+         ON CONFLICT DO NOTHING`,
+        [organizationId, broadcastId, departmentId]
+      );
+    }
+  }
+  if (audience === "event") {
+    await pool.query(
+      `DELETE FROM public.church_hq_broadcast_event_targets WHERE broadcast_id = $1 AND organization_id = $2`,
+      [broadcastId, organizationId]
+    );
+    for (const eventId of fields.event_ids || []) {
+      await pool.query(
+        `INSERT INTO public.church_hq_broadcast_event_targets (organization_id, broadcast_id, event_id)
+         SELECT $1, $2, e.id FROM public.church_events e
+         WHERE e.id = $3 AND e.organization_id = $1
+         ON CONFLICT DO NOTHING`,
+        [organizationId, broadcastId, eventId]
+      );
+    }
+  }
+  if (audience === "selected_recipients") {
+    await pool.query(
+      `DELETE FROM public.church_hq_broadcast_selected_recipients WHERE broadcast_id = $1 AND organization_id = $2`,
+      [broadcastId, organizationId]
+    );
+    for (const rec of fields.selected_recipients || []) {
+      await pool.query(
+        `INSERT INTO public.church_hq_broadcast_selected_recipients (
+           organization_id, broadcast_id, recipient_type, recipient_id
+         ) VALUES ($1,$2,$3,$4)
+         ON CONFLICT DO NOTHING`,
+        [organizationId, broadcastId, rec.recipient_type, rec.recipient_id]
+      );
+    }
+  }
+}
+
 async function createBroadcastForOrganization(pool, organizationId, fields) {
+  const channels = Array.isArray(fields.delivery_channels)
+    ? fields.delivery_channels
+    : ["in_app"];
   const r = await pool.query(
     `INSERT INTO public.church_hq_broadcasts (
        organization_id, title, body, category, audience, target_scope,
        priority, is_pinned, is_featured, featured_until,
        action_url, action_label,
-       status, publish_at, expires_at,
+       status, publish_at, expires_at, delivery_channels,
        created_by_hq_admin_id, updated_by_hq_admin_id
      ) VALUES (
        $1, $2, $3, $4, $5, $6,
        $7, $8, $9, $10,
        $11, $12,
-       $13, $14, $15,
-       $16, $16
+       $13, $14, $15, $16::jsonb,
+       $17, $17
      )
      RETURNING id`,
     [
@@ -258,6 +335,7 @@ async function createBroadcastForOrganization(pool, organizationId, fields) {
       fields.status || "draft",
       fields.publish_at || null,
       fields.expires_at || null,
+      JSON.stringify(channels),
       fields.created_by_hq_admin_id || null,
     ]
   );
@@ -265,10 +343,12 @@ async function createBroadcastForOrganization(pool, organizationId, fields) {
   if (fields.target_scope === "selected_branches" && fields.branch_ids && fields.branch_ids.length > 0) {
     await setBroadcastTargets(pool, broadcastId, organizationId, fields.branch_ids);
   }
+  await setAudienceTargets(pool, broadcastId, organizationId, fields);
   return findBroadcastByIdForOrganization(pool, broadcastId, organizationId);
 }
 
 async function updateBroadcastForOrganization(pool, broadcastId, organizationId, update) {
+  const channels = Array.isArray(update.delivery_channels) ? update.delivery_channels : null;
   const r = await pool.query(
     `UPDATE public.church_hq_broadcasts
      SET title = $1,
@@ -284,9 +364,11 @@ async function updateBroadcastForOrganization(pool, broadcastId, organizationId,
          action_label = $11,
          publish_at = $12,
          expires_at = $13,
-         updated_by_hq_admin_id = $14,
+         delivery_channels = COALESCE($14::jsonb, delivery_channels),
+         updated_by_hq_admin_id = $15,
          updated_at = now()
-     WHERE id = $15 AND organization_id = $16 AND status IN ('draft', 'published')
+     WHERE id = $16 AND organization_id = $17
+       AND status IN ('draft', 'preview', 'audience_estimate', 'approval', 'published', 'partially_failed')
      RETURNING id`,
     [
       update.title,
@@ -302,6 +384,7 @@ async function updateBroadcastForOrganization(pool, broadcastId, organizationId,
       update.action_label || null,
       update.publish_at || null,
       update.expires_at || null,
+      channels ? JSON.stringify(channels) : null,
       update.updated_by_hq_admin_id || null,
       broadcastId,
       organizationId,
@@ -318,21 +401,26 @@ async function updateBroadcastForOrganization(pool, broadcastId, organizationId,
   } else if (update.branch_ids) {
     await setBroadcastTargets(pool, broadcastId, organizationId, update.branch_ids);
   }
+  await setAudienceTargets(pool, broadcastId, organizationId, update);
 
   return findBroadcastByIdForOrganization(pool, broadcastId, organizationId);
 }
 
 async function publishBroadcastForOrganization(pool, broadcastId, organizationId, update) {
   const publishAt = update.publish_at || new Date();
+  const status = update.status || "published";
   const r = await pool.query(
     `UPDATE public.church_hq_broadcasts
-     SET status = 'published',
+     SET status = $5,
          publish_at = $1,
+         approved_at = COALESCE(approved_at, now()),
+         approved_by_hq_admin_id = COALESCE(approved_by_hq_admin_id, $2),
          updated_by_hq_admin_id = $2,
          updated_at = now()
-     WHERE id = $3 AND organization_id = $4 AND status IN ('draft', 'published')
+     WHERE id = $3 AND organization_id = $4
+       AND status IN ('draft', 'preview', 'audience_estimate', 'approval', 'published', 'scheduled')
      RETURNING id`,
-    [publishAt, update.updated_by_hq_admin_id || null, broadcastId, organizationId]
+    [publishAt, update.updated_by_hq_admin_id || null, broadcastId, organizationId, status]
   );
   if (!r.rows[0]) return null;
   return findBroadcastByIdForOrganization(pool, broadcastId, organizationId);
@@ -344,7 +432,8 @@ async function archiveBroadcastForOrganization(pool, broadcastId, organizationId
      SET status = 'archived',
          updated_by_hq_admin_id = $1,
          updated_at = now()
-     WHERE id = $2 AND organization_id = $3 AND status IN ('draft', 'published')
+     WHERE id = $2 AND organization_id = $3
+       AND status IN ('draft', 'preview', 'audience_estimate', 'approval', 'published', 'partially_failed', 'failed', 'cancelled')
      RETURNING id`,
     [adminId, broadcastId, organizationId]
   );
@@ -360,7 +449,19 @@ async function countBroadcastsByStatusForOrganization(pool, organizationId) {
      GROUP BY status`,
     [organizationId]
   );
-  const out = { draft: 0, published: 0, archived: 0 };
+  const out = {
+    draft: 0,
+    preview: 0,
+    audience_estimate: 0,
+    approval: 0,
+    scheduled: 0,
+    processing: 0,
+    published: 0,
+    partially_failed: 0,
+    failed: 0,
+    cancelled: 0,
+    archived: 0,
+  };
   for (const row of r.rows) {
     if (Object.prototype.hasOwnProperty.call(out, row.status)) {
       out[row.status] = row.count;
@@ -522,6 +623,77 @@ async function estimateBroadcastAudience(pool, organizationId, broadcast, opts =
     };
   }
 
+  if (audience === "ministry") {
+    const r = await pool.query(
+      `SELECT COUNT(DISTINCT mm.member_id)::int AS count
+       FROM public.church_hq_broadcast_ministry_targets t
+       INNER JOIN public.church_member_ministries mm
+         ON mm.ministry_id = t.ministry_id AND mm.organization_id = t.organization_id
+       INNER JOIN public.church_members m ON m.id = mm.member_id
+       WHERE t.broadcast_id = $1 AND t.organization_id = $2
+         AND mm.status = 'active' AND m.status = 'verified'`,
+      [broadcast.id, organizationId]
+    );
+    return {
+      branch_count: branchCount,
+      estimated_recipients: r.rows[0] ? r.rows[0].count : 0,
+      recipient_label: "active ministry members",
+      is_estimate: true,
+    };
+  }
+
+  if (audience === "department") {
+    // Group (department): verified members on the department's campus.
+    const r = await pool.query(
+      `SELECT COUNT(DISTINCT m.id)::int AS count
+       FROM public.church_hq_broadcast_department_targets t
+       INNER JOIN public.church_departments d ON d.id = t.department_id AND d.organization_id = t.organization_id
+       INNER JOIN public.church_members m ON m.branch_id = d.branch_id AND m.organization_id = t.organization_id
+       WHERE t.broadcast_id = $1 AND t.organization_id = $2
+         AND m.status = 'verified'`,
+      [broadcast.id, organizationId]
+    );
+    return {
+      branch_count: branchCount,
+      estimated_recipients: r.rows[0] ? r.rows[0].count : 0,
+      recipient_label: "verified members (group campus)",
+      is_estimate: true,
+    };
+  }
+
+  if (audience === "event") {
+    const r = await pool.query(
+      `SELECT COUNT(DISTINCT m.id)::int AS count
+       FROM public.church_hq_broadcast_event_targets t
+       INNER JOIN public.church_events e ON e.id = t.event_id AND e.organization_id = t.organization_id
+       INNER JOIN public.church_members m ON m.branch_id = e.branch_id AND m.organization_id = t.organization_id
+       WHERE t.broadcast_id = $1 AND t.organization_id = $2
+         AND m.status = 'verified'`,
+      [broadcast.id, organizationId]
+    );
+    return {
+      branch_count: branchCount,
+      estimated_recipients: r.rows[0] ? r.rows[0].count : 0,
+      recipient_label: "verified members (event campus)",
+      is_estimate: true,
+    };
+  }
+
+  if (audience === "selected_recipients") {
+    const r = await pool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM public.church_hq_broadcast_selected_recipients
+       WHERE broadcast_id = $1 AND organization_id = $2`,
+      [broadcast.id, organizationId]
+    );
+    return {
+      branch_count: branchCount,
+      estimated_recipients: r.rows[0] ? r.rows[0].count : 0,
+      recipient_label: "selected recipients",
+      is_estimate: true,
+    };
+  }
+
   // members + all_logged_in → distinct verified members in scope
   if (!branchIds.length) {
     return {
@@ -638,6 +810,7 @@ module.exports = {
   publishBroadcastForOrganization,
   archiveBroadcastForOrganization,
   setBroadcastTargets,
+  setAudienceTargets,
   listBroadcastTargets,
   listVisibleBroadcastsForBranch,
   findVisibleBroadcastForBranch,
@@ -646,4 +819,5 @@ module.exports = {
   estimateBroadcastAudience,
   resolveBroadcastTargetBranchIds,
   estimateBroadcastAudienceByBranch,
+  visibleBroadcastWhere,
 };

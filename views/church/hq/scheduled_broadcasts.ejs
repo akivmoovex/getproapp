@@ -1,0 +1,46 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-hq-page-header">
+        <div>
+          <h1 class="church-hq-page-header__title">Scheduled broadcasts</h1>
+          <p class="church-hq-page-header__subtitle">Growth workflow: draft → preview → estimate → approval → scheduled delivery</p>
+        </div>
+        <a class="church-btn church-btn--primary" href="/hq/broadcasts/new">New broadcast</a>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Scheduled &amp; in progress</h2>
+        <% if (!(broadcasts || []).length) { %>
+        <p class="church-branch-empty">No scheduled broadcasts. Create a broadcast with a future publish time, then confirm publish.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Audience</th>
+                <th>Publish at</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% broadcasts.forEach(function (b) { %>
+              <tr>
+                <td class="church-hq-wrap"><%= b.title %></td>
+                <td><%= broadcastStatusLabel(b.status) %></td>
+                <td><%= broadcastAudienceLabel(b.audience) %></td>
+                <td><%= b.publish_at ? new Date(b.publish_at).toISOString() : '—' %></td>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/scheduled-broadcasts/<%= b.id %>">View</a>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/broadcasts/<%= b.id %>">Broadcast</a>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/hq_shell_end') %>

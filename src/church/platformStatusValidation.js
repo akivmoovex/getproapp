@@ -1,6 +1,9 @@
 "use strict";
 
-const ORG_BRANCH_STATUSES = ["active", "suspended", "archived"];
+/** Branch + legacy shared filter list. Organisation may also be `dormant` (Foundation inactivity). */
+const BRANCH_STATUSES = ["active", "suspended", "archived"];
+const ORG_STATUSES = ["active", "suspended", "archived", "dormant"];
+const ORG_BRANCH_STATUSES = BRANCH_STATUSES;
 const REASON_MIN_LENGTH = 3;
 const REASON_MAX_LENGTH = 2000;
 
@@ -58,8 +61,22 @@ function validateAdminActivateBody(body) {
 
 function assertCanSuspendOrganization(org) {
   if (!org) return { ok: false, error: "Organization not found." };
+  if (org.status === "dormant") {
+    return {
+      ok: false,
+      error: "Dormant organisations must be reactivated from dormancy before suspension. Suspension and dormancy are distinct.",
+    };
+  }
   if (org.status !== "active") {
     return { ok: false, error: "Only active organizations can be suspended." };
+  }
+  return { ok: true };
+}
+
+function assertCanReactivateFromDormancy(org) {
+  if (!org) return { ok: false, error: "Organization not found." };
+  if (org.status !== "dormant") {
+    return { ok: false, error: "Only dormant organisations can be reactivated from dormancy." };
   }
   return { ok: true };
 }
@@ -133,16 +150,23 @@ function parseOrganizationStatusFilter(raw) {
     .trim()
     .toLowerCase();
   if (s === "all" || !s) return "all";
-  if (ORG_BRANCH_STATUSES.includes(s)) return s;
+  if (ORG_STATUSES.includes(s)) return s;
   return "all";
 }
 
 function parseBranchStatusFilter(raw) {
-  return parseOrganizationStatusFilter(raw);
+  const s = String(raw || "all")
+    .trim()
+    .toLowerCase();
+  if (s === "all" || !s) return "all";
+  if (BRANCH_STATUSES.includes(s)) return s;
+  return "all";
 }
 
 module.exports = {
   ORG_BRANCH_STATUSES,
+  ORG_STATUSES,
+  BRANCH_STATUSES,
   REASON_MIN_LENGTH,
   REASON_MAX_LENGTH,
   normalizeStatusReason,
@@ -154,6 +178,7 @@ module.exports = {
   assertCanSuspendOrganization,
   assertCanArchiveOrganization,
   assertCanReactivateOrganization,
+  assertCanReactivateFromDormancy,
   assertCanSuspendBranch,
   assertCanArchiveBranch,
   assertCanReactivateBranch,

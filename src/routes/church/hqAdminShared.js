@@ -73,7 +73,7 @@ const HQ_NOTICES = new Set([
   "broadcast_published",
   "broadcast_archived",
 ]);
-const ACCOUNT_NOTICES = new Set(["password_changed"]);
+const ACCOUNT_NOTICES = new Set(["password_changed", "reactivated_from_dormancy"]);
 
 function noticeMessage(code) {
   const map = {
@@ -84,6 +84,8 @@ function noticeMessage(code) {
     broadcast_published: "Broadcast published successfully.",
     broadcast_archived: "Broadcast archived.",
     password_changed: "Password updated. Use your new password next time you log in.",
+    reactivated_from_dormancy:
+      "Organisation reactivated from dormancy. The public site remains unpublished until you republish it. Member access is restored.",
   };
   return map[code] || null;
 }

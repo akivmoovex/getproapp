@@ -24,10 +24,12 @@ const {
   countPrivilegedAccountsForOrganization,
 } = require("./churchSeatQuotaService");
 
-const STORAGE_QUOTA_ERROR =
-  "Storage limit reached for your package. Delete unused files or upgrade to Growth.";
-const EXTERNAL_EMAIL_QUOTA_ERROR =
-  "Monthly external email limit reached for your package. Wait for next month or upgrade.";
+const { formatHardLimitFailureMessage } = require("../../church/blessBoardQuotaWarnings");
+
+const STORAGE_QUOTA_ERROR = formatHardLimitFailureMessage("storage", { packageLabel: "Foundation" });
+const EXTERNAL_EMAIL_QUOTA_ERROR = formatHardLimitFailureMessage("externalEmails", {
+  packageLabel: "Foundation",
+});
 const SCHEDULED_REPORT_QUOTA_ERROR =
   "Monthly scheduled report limit reached for your package.";
 
@@ -85,6 +87,116 @@ function formatLimitDisplay(used, limit, opts = {}) {
     return `${formatBytes(used)} / ${formatBytes(limit)}`;
   }
   return `${used} / ${limit}`;
+}
+
+/**
+ * Human-readable package ceiling rows for the admin package & usage panel.
+ * Derived only from central getNumericLimit — not for EJS-side math.
+ * @param {object} plan - getOrganisationPlan result
+ * @param {number} activeBranchCount
+ */
+function buildPackageLimitRows(plan, activeBranchCount) {
+  const branchLimit = getNumericLimit(plan, "branches.max_active");
+  const memberLimit = getNumericLimit(plan, "members.max_active");
+  const adminLimit = getNumericLimit(plan, "admins.max");
+  const storageLimit = getNumericLimit(plan, "storage.bytes", { activeBranchCount });
+  const emailLimit = getNumericLimit(plan, "external_emails.monthly", { activeBranchCount });
+  const reportLimit = getNumericLimit(plan, "reports.scheduled_monthly");
+
+  function countCeiling(limit, { fairUse, unlimited }) {
+    if (limit === FAIR_USE) return fairUse;
+    if (limit == null) return unlimited;
+    if (typeof limit === "number") return String(limit);
+    return "—";
+  }
+
+  return [
+    {
+      key: "branches",
+      label: "Active branches",
+      value: countCeiling(branchLimit, {
+        fairUse: "Fair use (unlimited)",
+        unlimited: "Counted (unlimited)",
+      }),
+    },
+    {
+      key: "members",
+      label: "Active members",
+      value: countCeiling(memberLimit, {
+        fairUse: "Unlimited (fair use)",
+        unlimited: "Unlimited",
+      }),
+    },
+    {
+      key: "admins",
+      label: "Administrators / leadership",
+      value: countCeiling(adminLimit, {
+        fairUse: "Unlimited (fair use)",
+        unlimited: "Unlimited",
+      }),
+    },
+    {
+      key: "storage",
+      label: "Storage",
+      value: typeof storageLimit === "number" ? formatBytes(storageLimit) : "—",
+    },
+    {
+      key: "externalEmails",
+      label: "External emails / month",
+      value: typeof emailLimit === "number" ? String(emailLimit) : "—",
+    },
+    {
+      key: "scheduledReports",
+      label: "Scheduled reports / month",
+      value:
+        reportLimit === 0
+          ? "Not included"
+          : typeof reportLimit === "number"
+            ? String(reportLimit)
+            : "—",
+    },
+  ];
+}
+
+/**
+ * Billing readiness safe for branch/HQ admins (no invoices, amounts, or dunning internals).
+ * @param {import("pg").Pool | import("pg").PoolClient} db
+ * @param {number} organizationId
+ */
+async function loadAdminSafeBillingReadiness(db, organizationId) {
+  try {
+    const r = await db.query(
+      `SELECT billing_cadence, billing_currency, billing_payment_status, billing_collection_state,
+              billing_payment_provider_enabled
+       FROM public.church_organizations WHERE id = $1 LIMIT 1`,
+      [organizationId]
+    );
+    const row = r.rows[0];
+    if (!row) return null;
+
+    const cadence = String(row.billing_cadence || "monthly").toLowerCase();
+    const collectionState = String(row.billing_collection_state || "ok").toLowerCase();
+    const paymentStatus = String(row.billing_payment_status || "not_applicable").toLowerCase();
+    const providerEnabled = row.billing_payment_provider_enabled === true;
+
+    let summary = "Billing readiness: metering is available. Payment collection is not enabled yet.";
+    if (providerEnabled) {
+      summary = "Billing readiness: a payment provider is enabled for this organisation.";
+    } else if (paymentStatus === "awaiting_provider" || paymentStatus === "pending") {
+      summary = "Billing readiness: awaiting payment provider setup. No card details are stored here.";
+    }
+
+    return {
+      cadence,
+      currency: String(row.billing_currency || "USD").toUpperCase(),
+      paymentStatus,
+      collectionState,
+      paymentProviderEnabled: providerEnabled,
+      summary,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function quotaToMeter(quota, displayOpts = {}) {
@@ -201,24 +313,29 @@ async function getOrganisationUsageSnapshot(db, organizationId, opts = {}) {
     meters.scheduledReports.display = "Not included (0 / month)";
   }
 
-  const warnings = [];
-  const blocked = [];
-  for (const meter of Object.values(meters)) {
-    if (meter.state === "unavailable") continue;
-    if (meter.state === "blocked" && typeof meter.limit === "number") {
-      blocked.push({
-        key: meter.key,
-        message: `${meter.key} at ${meter.display}`,
-        warningBand: meter.warningBand,
-      });
-    } else if (meter.state === "warning" && typeof meter.limit === "number") {
-      warnings.push({
-        key: meter.key,
-        message: `${meter.key} at ${meter.warningBand || 80}% (${meter.display})`,
-        warningBand: meter.warningBand,
-      });
-    }
-  }
+  const {
+    buildQuotaWarningsFromMeters,
+  } = require("../../church/blessBoardQuotaWarnings");
+  const quotaWarnings = buildQuotaWarningsFromMeters(meters, {
+    packageCode: plan.packageCode,
+    packageLabel: plan.packageLabel,
+  });
+
+  // Legacy shape kept for older callers; prefer quotaWarnings for UI.
+  const warnings = quotaWarnings
+    .filter((w) => w.band < 100)
+    .map((w) => ({
+      key: w.key,
+      message: [w.message, w.guidance].filter(Boolean).join(" "),
+      warningBand: w.band,
+    }));
+  const blocked = quotaWarnings
+    .filter((w) => w.band >= 100)
+    .map((w) => ({
+      key: w.key,
+      message: [w.message, w.existingDataNote, w.guidance].filter(Boolean).join(" "),
+      warningBand: w.band,
+    }));
 
   const availableUpgrade =
     plan.packageCode === "foundation"
@@ -233,13 +350,31 @@ async function getOrganisationUsageSnapshot(db, organizationId, opts = {}) {
         }
       : null;
 
+  const billingReadiness = await loadAdminSafeBillingReadiness(db, orgId);
+
+  let trialStatus = null;
+  try {
+    const churchGrowthTrialService = require("./churchGrowthTrialService");
+    trialStatus = await churchGrowthTrialService.getOrganisationTrialStatus(db, orgId, {
+      at: opts.at,
+    });
+  } catch {
+    trialStatus = null;
+  }
+
   return {
     organizationId: orgId,
     timezone,
     usageMonth,
     packageCode: plan.packageCode,
     packageLabel: plan.packageLabel,
-    planStatus: plan.planStatus,
+    planStatus: plan.planStatus || "active",
+    storedPlanCode: plan.storedPlanCode,
+    entitlementSource: plan.entitlementSource,
+    usedFallback: Boolean(plan.usedFallback),
+    fallbackReason: plan.fallbackReason || null,
+    trial: plan.trial || null,
+    trialStatus,
     activeBranches,
     activeMembers,
     privilegedAccounts: privileged.total,
@@ -248,9 +383,12 @@ async function getOrganisationUsageSnapshot(db, organizationId, opts = {}) {
     externalEmailsThisMonth: monthRow.external_emails_count || 0,
     scheduledReportsThisMonth: monthRow.scheduled_reports_count || 0,
     meters,
+    quotaWarnings,
     warnings,
     blocked,
     availableUpgrade,
+    packageLimitRows: buildPackageLimitRows(plan, activeBranches),
+    billingReadiness,
     limits: {
       branches: meters.branches.limit,
       members: meters.members.limit,
@@ -260,6 +398,21 @@ async function getOrganisationUsageSnapshot(db, organizationId, opts = {}) {
       scheduledReportsMonthly: meters.scheduledReports.limit,
     },
   };
+}
+
+/**
+ * Account-page loader: never throws; returns null when usage cannot be shown.
+ * @param {import("pg").Pool | import("pg").PoolClient} db
+ * @param {number} organizationId
+ * @param {{ reconcileStorage?: boolean, at?: Date }} [opts]
+ */
+async function loadPackageUsageForAccountPage(db, organizationId, opts = {}) {
+  try {
+    // Prefer exported binding so tests (and future wrappers) can intercept failures.
+    return await module.exports.getOrganisationUsageSnapshot(db, organizationId, opts);
+  } catch {
+    return null;
+  }
 }
 
 async function recordQuotaBlock(db, entry) {
@@ -308,6 +461,12 @@ async function assertCanConsumeStorage(db, opts) {
   );
   const used = Number(org.rows[0]?.storage_bytes_used) || 0;
   if (used + additionalBytes > limit) {
+    const message = formatHardLimitFailureMessage("storage", {
+      packageLabel: plan.packageLabel,
+      used,
+      limit,
+      display: `${formatBytes(used)} / ${formatBytes(limit)}`,
+    });
     await recordQuotaBlock(db, {
       organizationId,
       actorType: opts.actorType,
@@ -317,10 +476,10 @@ async function assertCanConsumeStorage(db, opts) {
       quotaKey: "storage.bytes",
       used,
       limit,
-      message: STORAGE_QUOTA_ERROR,
+      message,
       metadata: { additional_bytes: additionalBytes },
     });
-    throw Object.assign(new Error(STORAGE_QUOTA_ERROR), {
+    throw Object.assign(new Error(message), {
       code: "PACKAGE_STORAGE_LIMIT",
       packageCode: plan.packageCode,
       used,
@@ -392,6 +551,11 @@ async function recordExternalEmailSend(db, opts) {
   const used = current.external_emails_count || 0;
 
   if (typeof limit === "number" && used + count > limit) {
+    const message = formatHardLimitFailureMessage("externalEmails", {
+      packageLabel: plan.packageLabel,
+      used,
+      limit,
+    });
     await recordQuotaBlock(db, {
       organizationId,
       actorType: opts.actorType,
@@ -401,10 +565,10 @@ async function recordExternalEmailSend(db, opts) {
       quotaKey: "external_emails.monthly",
       used,
       limit,
-      message: EXTERNAL_EMAIL_QUOTA_ERROR,
+      message,
       metadata: { category, count },
     });
-    throw Object.assign(new Error(EXTERNAL_EMAIL_QUOTA_ERROR), {
+    throw Object.assign(new Error(message), {
       code: "PACKAGE_EXTERNAL_EMAIL_LIMIT",
       packageCode: plan.packageCode,
       used,
@@ -503,7 +667,10 @@ module.exports = {
   getWarningThresholds,
   isExemptEmailCategory,
   formatBytes,
+  buildPackageLimitRows,
+  loadAdminSafeBillingReadiness,
   getOrganisationUsageSnapshot,
+  loadPackageUsageForAccountPage,
   assertCanConsumeStorage,
   recordExternalEmailSend,
   assertCanCreateScheduledReport,

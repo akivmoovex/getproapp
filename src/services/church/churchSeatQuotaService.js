@@ -24,12 +24,15 @@ const organizationsRepo = require("../../db/pg/church/organizationsRepo");
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
 const { FAIR_USE } = require("../../church/blessBoardPackageCatalogue");
 const { getNumericLimit, getOrganisationPlan } = require("./churchEntitlementService");
+const { formatHardLimitFailureMessage } = require("../../church/blessBoardQuotaWarnings");
 
-const FOUNDATION_MEMBER_LIMIT_ERROR =
-  "Foundation includes 250 active members. Archive or suspend an existing member, or upgrade to Growth.";
+const FOUNDATION_MEMBER_LIMIT_ERROR = formatHardLimitFailureMessage("members", {
+  packageLabel: "Foundation",
+});
 
-const FOUNDATION_ADMIN_LIMIT_ERROR =
-  "Foundation includes 10 administrator/leadership accounts. Deactivate an existing privileged account or upgrade to Growth.";
+const FOUNDATION_ADMIN_LIMIT_ERROR = formatHardLimitFailureMessage("admins", {
+  packageLabel: "Foundation",
+});
 
 const COUNTED_PRIVILEGED_ROLES = [
   "church_hq_admins (status=active)",
@@ -194,6 +197,11 @@ async function assertCanActivateMemberLocked(client, opts) {
   }
 
   if (typeof limit === "number" && used >= limit) {
+    const message = formatHardLimitFailureMessage("members", {
+      packageLabel: plan.packageLabel,
+      used,
+      limit,
+    });
     await recordQuotaBlock(client, {
       organizationId,
       branchId: opts.branchId,
@@ -206,9 +214,9 @@ async function assertCanActivateMemberLocked(client, opts) {
       quotaKey: "members.max_active",
       used,
       limit,
-      message: FOUNDATION_MEMBER_LIMIT_ERROR,
+      message,
     });
-    throw Object.assign(new Error(FOUNDATION_MEMBER_LIMIT_ERROR), {
+    throw Object.assign(new Error(message), {
       code: "FOUNDATION_MEMBER_LIMIT",
       packageCode: plan.packageCode,
       used,
@@ -265,6 +273,11 @@ async function assertCanAssignPrivilegedRoleLocked(client, opts) {
   }
 
   if (typeof limit === "number" && used >= limit) {
+    const message = formatHardLimitFailureMessage("admins", {
+      packageLabel: plan.packageLabel,
+      used,
+      limit,
+    });
     await recordQuotaBlock(client, {
       organizationId,
       branchId: opts.branchId,
@@ -277,10 +290,10 @@ async function assertCanAssignPrivilegedRoleLocked(client, opts) {
       quotaKey: "admins.max",
       used,
       limit,
-      message: FOUNDATION_ADMIN_LIMIT_ERROR,
+      message,
       metadata: { role: opts.roleLabel || null, breakdown: privileged },
     });
-    throw Object.assign(new Error(FOUNDATION_ADMIN_LIMIT_ERROR), {
+    throw Object.assign(new Error(message), {
       code: "FOUNDATION_ADMIN_LIMIT",
       packageCode: plan.packageCode,
       used,

@@ -1,0 +1,91 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <% var batch = diagnostic.batch; var impact = diagnostic.impact; var rows = diagnostic.rows || []; %>
+      <header class="church-branch-page-hero">
+        <div>
+          <h1 class="church-branch-page-hero__title">Import preview</h1>
+          <p class="church-branch-page-hero__subtitle">Batch <%= batch.batch_key %> · <%= batch.original_filename || 'CSV' %></p>
+        </div>
+        <a class="church-btn church-btn--outline" href="/branch/members/import">All imports</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Package impact preview</h2>
+        <dl class="church-branch-dl">
+          <div><dt>Package</dt><dd><%= impact.packageLabel || impact.packageCode %></dd></div>
+          <div><dt>Current active members</dt><dd><%= impact.currentActiveMembers %><% if (impact.memberLimit != null && impact.memberLimit !== 'fair_use') { %> / <%= impact.memberLimit %><% } %></dd></div>
+          <div><dt>Proposed active members (verified)</dt><dd><%= impact.proposedActiveMembers %></dd></div>
+          <div><dt>Would exceed limit by</dt><dd><%= impact.wouldExceedBy || 0 %></dd></div>
+          <div><dt>Visitors that may still be imported</dt><dd><%= impact.visitorsThatMayStillBeImported %></dd></div>
+          <div><dt>Need archive or Growth upgrade</dt><dd><%= impact.recordsRequiringArchiveOrGrowthUpgrade %></dd></div>
+          <div><dt>Administrator accounts (current)</dt><dd><%= impact.administratorImpact.adminsDisplay %></dd></div>
+          <div><dt>CSV administrator flags</dt><dd><%= impact.administratorImpact.csvAdministratorFlags %> (not created by import)</dd></div>
+        </dl>
+        <p class="church-branch-panel__hint"><%= impact.administratorImpact.note %></p>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Conflict review</h2>
+        <p class="church-branch-panel__hint">Existing matches are skipped by default. Import never merges people. Download a formula-safe error file if needed.</p>
+        <p><a class="church-btn church-btn--outline church-btn--sm" href="/branch/members/import/<%= batch.id %>/errors.csv">Download error / conflict CSV</a></p>
+
+        <% if (batch.status === 'previewed') { %>
+        <form class="church-form" method="post" action="/branch/members/import/<%= batch.id %>/decisions">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-branch-table-wrap">
+            <table class="church-branch-table">
+              <thead>
+                <tr>
+                  <th>Row</th><th>Name</th><th>Identity</th><th>Type</th><th>Disposition</th><th>Match</th><th>Decision</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% rows.forEach(function (r) { %>
+                <tr>
+                  <td><%= r.row_number %></td>
+                  <td><%= r.full_name || '—' %></td>
+                  <td><%= r.email_masked %> · <%= r.phone_masked %></td>
+                  <td><%= r.proposed_status === 'verified' ? 'member' : 'visitor' %><% if (r.admin_flag) { %> · admin flag<% } %></td>
+                  <td>
+                    <%= r.disposition %>
+                    <% if (r.field_errors && r.field_errors.length) { %>
+                    <div class="muted"><%= r.field_errors.join(', ') %></div>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (r.match_member_id) { %>
+                    #<%= r.match_member_id %> (<%= r.match_status %>)
+                    <% if (r.match_reasons && r.match_reasons.length) { %> · <%= r.match_reasons.join('/') %><% } %>
+                    <% } else { %>—<% } %>
+                  </td>
+                  <td>
+                    <% if (r.disposition === 'ready' || r.disposition === 'over_limit') { %>
+                    <select class="church-input" name="decision_<%= r.id %>">
+                      <option value="import" <%= r.review_decision === 'import' ? 'selected' : '' %>>Import</option>
+                      <option value="skip" <%= r.review_decision === 'skip' ? 'selected' : '' %>>Skip</option>
+                    </select>
+                    <% } else { %>
+                    Skip
+                    <input type="hidden" name="decision_<%= r.id %>" value="skip"/>
+                    <% } %>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <div class="church-form-actions" style="margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <button class="church-btn church-btn--outline" type="submit">Save decisions</button>
+          </div>
+        </form>
+        <form class="church-form" method="post" action="/branch/members/import/<%= batch.id %>/commit" style="margin-top:1rem;">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--primary" type="submit">Commit import</button>
+        </form>
+        <% } else { %>
+        <p class="church-branch-panel__hint">This batch is <strong><%= batch.status %></strong>.</p>
+        <a class="church-btn church-btn--primary" href="/branch/members/import/<%= batch.id %>/summary">View summary</a>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

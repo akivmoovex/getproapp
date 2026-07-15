@@ -37,6 +37,7 @@ const {
 } = require("../../services/church/churchPackageFeatureGateService");
 const { loadBroadcastDeliveryAnalytics } = require("../../church/broadcastDeliveryAnalytics");
 const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
+const scheduledBroadcastService = require("../../services/church/scheduledBroadcastService");
 
 const broadcastUpload = multer({
   storage: multer.memoryStorage(),
@@ -57,7 +58,10 @@ function withBroadcastUpload(req, res, next) {
   });
 }
 
-function formFromBroadcast(item, targets) {
+function formFromBroadcast(item, targets, audienceExtras) {
+  const channels = Array.isArray(item && item.delivery_channels)
+    ? item.delivery_channels
+    : ["in_app"];
   if (!item) {
     return {
       title: "",
@@ -66,6 +70,11 @@ function formFromBroadcast(item, targets) {
       audience: "members",
       target_scope: "all_branches",
       branch_ids: [],
+      ministry_ids: [],
+      department_ids: [],
+      event_ids: [],
+      selected_recipients: [],
+      delivery_channels: ["in_app"],
       priority: "normal",
       is_pinned: false,
       is_featured: false,
@@ -83,6 +92,11 @@ function formFromBroadcast(item, targets) {
     audience: item.audience || "members",
     target_scope: item.target_scope || "all_branches",
     branch_ids: (targets || []).map((t) => t.branch_id),
+    ministry_ids: (audienceExtras && audienceExtras.ministry_ids) || [],
+    department_ids: (audienceExtras && audienceExtras.department_ids) || [],
+    event_ids: (audienceExtras && audienceExtras.event_ids) || [],
+    selected_recipients: (audienceExtras && audienceExtras.selected_recipients) || [],
+    delivery_channels: channels,
     priority: item.priority || "normal",
     is_pinned: Boolean(item.is_pinned),
     is_featured: Boolean(item.is_featured),
@@ -91,6 +105,37 @@ function formFromBroadcast(item, targets) {
     action_label: item.action_label || "",
     publish_at: formatDateTimeLocal(item.publish_at),
     expires_at: formatDateTimeLocal(item.expires_at),
+  };
+}
+
+async function loadAudienceExtras(pool, broadcastId, organizationId) {
+  const [m, d, e, s] = await Promise.all([
+    pool.query(
+      `SELECT ministry_id AS id FROM public.church_hq_broadcast_ministry_targets
+       WHERE broadcast_id = $1 AND organization_id = $2`,
+      [broadcastId, organizationId]
+    ),
+    pool.query(
+      `SELECT department_id AS id FROM public.church_hq_broadcast_department_targets
+       WHERE broadcast_id = $1 AND organization_id = $2`,
+      [broadcastId, organizationId]
+    ),
+    pool.query(
+      `SELECT event_id AS id FROM public.church_hq_broadcast_event_targets
+       WHERE broadcast_id = $1 AND organization_id = $2`,
+      [broadcastId, organizationId]
+    ),
+    pool.query(
+      `SELECT recipient_type, recipient_id FROM public.church_hq_broadcast_selected_recipients
+       WHERE broadcast_id = $1 AND organization_id = $2`,
+      [broadcastId, organizationId]
+    ),
+  ]);
+  return {
+    ministry_ids: m.rows.map((r) => r.id),
+    department_ids: d.rows.map((r) => r.id),
+    event_ids: e.rows.map((r) => r.id),
+    selected_recipients: s.rows,
   };
 }
 
@@ -122,6 +167,34 @@ async function validateBranchSelection(pool, orgId, data) {
 
 async function loadOrgBranches(pool, orgId) {
   return branchesRepo.listBranchesForOrganization(pool, orgId);
+}
+
+async function loadAudienceOptions(pool, orgId) {
+  const [ministries, departments, events] = await Promise.all([
+    pool.query(
+      `SELECT id, name, branch_id FROM public.church_ministries
+       WHERE organization_id = $1 AND status = 'published'
+       ORDER BY name ASC LIMIT 200`,
+      [orgId]
+    ),
+    pool.query(
+      `SELECT id, name, branch_id FROM public.church_departments
+       WHERE organization_id = $1 AND status = 'active'
+       ORDER BY name ASC LIMIT 200`,
+      [orgId]
+    ),
+    pool.query(
+      `SELECT id, title, branch_id FROM public.church_events
+       WHERE organization_id = $1 AND status = 'published'
+       ORDER BY event_date DESC NULLS LAST, id DESC LIMIT 200`,
+      [orgId]
+    ),
+  ]);
+  return {
+    ministries: ministries.rows,
+    departments: departments.rows,
+    events: events.rows,
+  };
 }
 
 function parseBroadcastListFilters(query) {
@@ -267,11 +340,13 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
       const org = req.churchContext.organization;
       const pool = getPgPool();
       const branches = await loadOrgBranches(pool, org.id);
+      const audienceOptions = await loadAudienceOptions(pool, org.id);
       return res.render(
         "church/hq/broadcast_form",
         renderFormLocals(req, {
           form: formFromBroadcast(null),
           branches,
+          ...audienceOptions,
           attachments: [],
           error: null,
           isEdit: false,
@@ -300,6 +375,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
         const pool = getPgPool();
         const adminId = req.churchHqAdmin.hq_admin_id;
         const branches = await loadOrgBranches(pool, org.id);
+        const audienceOptions = await loadAudienceOptions(pool, org.id);
 
         if (!validation.ok) {
           return res.status(400).render(
@@ -307,6 +383,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
             renderFormLocals(req, {
               form: validation.form,
               branches,
+              ...audienceOptions,
               attachments: [],
               error: validation.error,
               isEdit: false,
@@ -323,6 +400,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
             renderFormLocals(req, {
               form: validation.form,
               branches,
+              ...audienceOptions,
               attachments: [],
               error: branchCheck.error,
               isEdit: false,
@@ -341,6 +419,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
               renderFormLocals(req, {
                 form: validation.form,
                 branches,
+                ...audienceOptions,
                 attachments: [],
                 error: gateErr.message,
                 isEdit: false,
@@ -408,7 +487,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
         if (!item) {
           return res.status(404).type("text").send("Broadcast not found.");
         }
-        if (item.status === "archived") {
+        if (item.status === "archived" || item.status === "cancelled") {
           return res.redirect(303, `/hq/broadcasts/${broadcastId}`);
         }
         const expandMode = String(req.query.mode || "").trim() === "expand";
@@ -418,10 +497,11 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
           Number(req.session.hqBroadcastPendingExpansion.broadcastId) === broadcastId
             ? req.session.hqBroadcastPendingExpansion
             : null;
-        if (item.status === "published" && !(expandMode && pending)) {
+        const lockedStatuses = ["published", "partially_failed", "failed", "scheduled", "processing"];
+        if (lockedStatuses.includes(item.status) && !(expandMode && pending)) {
           return res.redirect(303, `/hq/broadcasts/${broadcastId}`);
         }
-        if (item.status === "published" && !pending) {
+        if (lockedStatuses.includes(item.status) && !pending) {
           return res.redirect(303, `/hq/broadcasts/${broadcastId}`);
         }
 
@@ -538,11 +618,14 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
         const targets = await hqBroadcastsRepo.listBroadcastTargets(pool, broadcastId, org.id);
         const attachments = await broadcastAttachmentsRepo.listAttachmentsForBroadcast(pool, broadcastId, org.id);
         const branches = await loadOrgBranches(pool, org.id);
+        const audienceOptions = await loadAudienceOptions(pool, org.id);
+        const audienceExtras = await loadAudienceExtras(pool, broadcastId, org.id);
         return res.render(
           "church/hq/broadcast_form",
           renderFormLocals(req, {
-            form: formFromBroadcast(item, targets),
+            form: formFromBroadcast(item, targets, audienceExtras),
             branches,
+            ...audienceOptions,
             attachments,
             error: null,
             isEdit: true,
@@ -575,6 +658,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
         const pool = getPgPool();
         const adminId = req.churchHqAdmin.hq_admin_id;
         const branches = await loadOrgBranches(pool, org.id);
+        const audienceOptions = await loadAudienceOptions(pool, org.id);
 
         const existing = await hqBroadcastsRepo.findBroadcastByIdForOrganization(pool, broadcastId, org.id);
         if (!existing) {
@@ -596,6 +680,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
             renderFormLocals(req, {
               form: validation.form,
               branches,
+              ...audienceOptions,
               attachments: existingAttachments,
               error: validation.error,
               isEdit: true,
@@ -612,6 +697,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
             renderFormLocals(req, {
               form: validation.form,
               branches,
+              ...audienceOptions,
               attachments: existingAttachments,
               error: branchCheck.error,
               isEdit: true,
@@ -630,6 +716,7 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
               renderFormLocals(req, {
                 form: validation.form,
                 branches,
+                ...audienceOptions,
                 attachments: existingAttachments,
                 error: gateErr.message,
                 isEdit: true,
@@ -878,40 +965,42 @@ module.exports = function registerHqAdminBroadcastsRoutes(router) {
           throw gateErr;
         }
 
-        const published = await hqBroadcastsRepo.publishBroadcastForOrganization(pool, broadcastId, org.id, {
-          publish_at: existing.publish_at || new Date(),
-          updated_by_hq_admin_id: adminId,
-        });
-        if (!published) {
-          const targets = await hqBroadcastsRepo.listBroadcastTargets(pool, broadcastId, org.id);
-          const attachments = await broadcastAttachmentsRepo.listAttachmentsForBroadcast(pool, broadcastId, org.id);
-          const audienceEstimate = await hqBroadcastsRepo.estimateBroadcastAudience(pool, org.id, existing);
-          const publishToken = issuePublishToken(req, broadcastId);
-          return res.status(400).render(
-            "church/hq/broadcast_confirm_publish",
-            renderFormLocals(req, {
-              broadcast: existing,
-              targets,
-              attachments,
-              audienceEstimate,
-              publishToken,
-              error: "Broadcast could not be published.",
-            })
-          );
+        // Workflow: Draft → (preview/estimate) → Approval confirm → Scheduled or Published.
+        // Growth future publish_at becomes scheduled (+ email channel); Foundation remains immediate in-app.
+        let approved;
+        try {
+          await scheduledBroadcastService.submitForApproval(pool, broadcastId, org.id).catch(() => null);
+          approved = await scheduledBroadcastService.approveBroadcast(pool, {
+            broadcastId,
+            organizationId: org.id,
+            hqAdminId: adminId,
+            at: new Date(),
+          });
+        } catch (approveErr) {
+          if (approveErr && approveErr.code === "FOUNDATION_SCHEDULE_FORBIDDEN") {
+            return res.status(403).type("text").send(approveErr.message);
+          }
+          throw approveErr;
         }
 
         await recordHqAudit(pool, req, {
-          action: "hq_broadcast_published",
+          action:
+            approved.outcome === "scheduled" ? "hq_broadcast_scheduled" : "hq_broadcast_published",
           entityType: "hq_broadcast",
           entityId: broadcastId,
           metadata: {
-            title: published.title,
-            audience: published.audience,
-            target_scope: published.target_scope,
-            status: "published",
+            title: existing.title,
+            audience: existing.audience,
+            target_scope: existing.target_scope,
+            status: approved.outcome,
+            delivered: approved.delivered,
+            failed: approved.failed,
           },
         });
 
+        if (approved.outcome === "scheduled") {
+          return res.redirect(303, `/hq/scheduled-broadcasts/${broadcastId}?notice=broadcast_scheduled`);
+        }
         return res.redirect(303, `/hq/broadcasts/${broadcastId}?notice=broadcast_published`);
       } catch (e) {
         return next(e);

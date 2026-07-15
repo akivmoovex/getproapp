@@ -90,26 +90,6 @@ function registerFeatureRoute(router, feature) {
       try {
         // Mutations never succeed without entitlement; middleware already 403s when locked.
         if (req.packageFeatureUi && req.packageFeatureUi.state === "available") {
-          if (feature.id === "reports_scheduled") {
-            const churchPackageUsageService = require("../../services/church/churchPackageUsageService");
-            const org = req.churchContext.organization;
-            try {
-              await churchPackageUsageService.assertCanCreateScheduledReport(getPgPool(), {
-                organizationId: org.id,
-                actorType: feature.portal === "hq" ? "hq_admin" : "branch_admin",
-                actorId:
-                  (req.churchHqAdmin && req.churchHqAdmin.hq_admin_id) ||
-                  (req.churchBranchAdmin && req.churchBranchAdmin.admin_id) ||
-                  null,
-                consume: false,
-              });
-            } catch (quotaErr) {
-              if (quotaErr && quotaErr.code === "PACKAGE_SCHEDULED_REPORT_LIMIT") {
-                return res.status(403).type("text").send(quotaErr.message);
-              }
-              throw quotaErr;
-            }
-          }
           return res.status(501).type("text").send(`${req.packageFeatureUi.feature.name} action is not enabled yet.`);
         }
         return res.status(403).type("text").send("Package feature denied.");
@@ -123,9 +103,17 @@ function registerFeatureRoute(router, feature) {
   );
 }
 
+/** Features with a real workflow registered elsewhere (not stub GET/POST 501). */
+const FEATURES_WITH_REAL_ROUTES = new Set([
+  "reports_scheduled",
+  "broadcasts_scheduled",
+  "reports_cross_branch",
+]);
+
 module.exports = function registerPackageFeatureGateRoutes(router, portal) {
   for (const feature of PACKAGE_FEATURES) {
     if (portal && feature.portal !== portal) continue;
+    if (FEATURES_WITH_REAL_ROUTES.has(feature.id)) continue;
     registerFeatureRoute(router, feature);
   }
 };

@@ -254,21 +254,20 @@ function registerHqAdminRoutes(router) {
         return res.redirect("/hq/login");
       }
       const account = buildHqAdminAccountView(row, org.name);
-      let packageUsage = null;
-      try {
-        const churchPackageUsageService = require("../../services/church/churchPackageUsageService");
-        packageUsage = await churchPackageUsageService.getOrganisationUsageSnapshot(pool, org.id, {
-          reconcileStorage: false,
-        });
-      } catch {
-        packageUsage = null;
-      }
+      const churchPackageUsageService = require("../../services/church/churchPackageUsageService");
+      const packageUsage = await churchPackageUsageService.loadPackageUsageForAccountPage(pool, org.id, {
+        reconcileStorage: false,
+      });
+      const churchDormancyService = require("../../services/church/churchDormancyService");
+      const dormancyDiagnostic = await churchDormancyService.getOrganisationDormancyDiagnostic(pool, org.id);
       return res.render(
         "church/hq/account",
         hqAdminLocals(req, {
           account,
           hqAdminRoleLabel,
           packageUsage,
+          dormancyDiagnostic,
+          organizationStatus: org.status,
           error: null,
           notice: noticeMessage(flashFromQuery(req, ACCOUNT_NOTICES)),
         })
@@ -299,6 +298,38 @@ function registerHqAdminRoutes(router) {
       }
     }
   });
+
+  router.post(
+    "/hq/account/reactivate-from-dormancy",
+    requireChurchHqAdminSession,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        const org = req.churchContext.organization;
+        const pool = getPgPool();
+        if (!org || String(org.status) !== "dormant") {
+          return res.redirect(303, "/hq/account");
+        }
+        const churchDormancyService = require("../../services/church/churchDormancyService");
+        await churchDormancyService.reactivateFromDormancy(pool, {
+          organizationId: org.id,
+          actorType: "hq_admin",
+          actorId: req.churchHqAdmin.hq_admin_id,
+          reason: String((req.body && req.body.status_reason) || "").trim() || "Reactivated by HQ admin.",
+        });
+        if (req.churchContext.organization) {
+          req.churchContext.organization.status = "active";
+        }
+        delete req._churchOperationalStatus;
+        return res.redirect(303, "/hq/account?notice=reactivated_from_dormancy");
+      } catch (err) {
+        if (err && (err.code === "INVALID_STATUS" || err.code === "NOT_FOUND")) {
+          return res.redirect(303, "/hq/account");
+        }
+        return next(err);
+      }
+    }
+  );
 
   router.post("/hq/account/change-password", requireChurchHqAdminSession, requireChurchSessionCsrf, async (req, res, next) => {
     try {
@@ -585,6 +616,10 @@ function registerHqAdminRoutes(router) {
   registerHqAdminBroadcastsRoutes(router);
   const registerPackageFeatureGateRoutes = require("./packageFeatureGates");
   registerPackageFeatureGateRoutes(router, "hq");
+  const registerHqAdminScheduledBroadcastsRoutes = require("./hqAdminScheduledBroadcasts");
+  registerHqAdminScheduledBroadcastsRoutes(router);
+  const registerHqAdminCrossBranchReportsRoutes = require("./hqAdminCrossBranchReports");
+  registerHqAdminCrossBranchReportsRoutes(router);
   registerHqAdminAnalyticsRoutes(router);
   registerHqAdminAuditRoutes(router);
 }

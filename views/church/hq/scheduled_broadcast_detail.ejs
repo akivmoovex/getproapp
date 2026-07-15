@@ -1,0 +1,95 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-hq-page-header">
+        <div>
+          <a class="church-branch-back" href="/hq/scheduled-broadcasts">&larr; Scheduled broadcasts</a>
+          <h1 class="church-hq-page-header__title church-hq-wrap"><%= broadcast.title %></h1>
+          <p class="church-hq-page-header__subtitle"><%= broadcastStatusLabel(broadcast.status) %></p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Preview</h2>
+        <p class="church-hq-wrap"><strong><%= broadcast.title %></strong></p>
+        <div class="church-hq-wrap" style="white-space:pre-wrap;"><%= broadcast.body %></div>
+        <dl class="church-branch-dl church-hq-meta-dl">
+          <div><dt>Audience</dt><dd><%= broadcastAudienceLabel(broadcast.audience) %></dd></div>
+          <div><dt>Target</dt><dd><%= targetScopeLabel(broadcast.target_scope) %></dd></div>
+          <div><dt>Publish at</dt><dd><%= broadcast.publish_at ? new Date(broadcast.publish_at).toISOString() : '—' %></dd></div>
+          <div><dt>Channels</dt><dd><%= Array.isArray(broadcast.delivery_channels) ? broadcast.delivery_channels.join(', ') : 'in_app' %></dd></div>
+          <% if (broadcast.audience_estimate_json) { %>
+          <div><dt>Estimated audience</dt><dd><%= broadcast.audience_estimate_json.estimated_recipients %> <%= broadcast.audience_estimate_json.recipient_label %></dd></div>
+          <% } %>
+          <% if (broadcast.approved_at) { %>
+          <div><dt>Approved</dt><dd><%= new Date(broadcast.approved_at).toISOString() %></dd></div>
+          <% } %>
+        </dl>
+        <div class="church-branch-actions">
+          <% if (broadcast.status === 'draft') { %>
+          <form method="post" action="/hq/scheduled-broadcasts/<%= broadcast.id %>/preview">
+            <%- include('../partials/csrf_field') %>
+            <button class="church-btn church-btn--primary" type="submit">Move to preview</button>
+          </form>
+          <% } %>
+          <% if (broadcast.status === 'preview' || broadcast.status === 'draft') { %>
+          <form method="post" action="/hq/scheduled-broadcasts/<%= broadcast.id %>/estimate">
+            <%- include('../partials/csrf_field') %>
+            <button class="church-btn church-btn--primary" type="submit">Audience estimate</button>
+          </form>
+          <% } %>
+          <% if (broadcast.status === 'audience_estimate' || broadcast.status === 'preview') { %>
+          <form method="post" action="/hq/scheduled-broadcasts/<%= broadcast.id %>/submit-approval">
+            <%- include('../partials/csrf_field') %>
+            <button class="church-btn church-btn--primary" type="submit">Submit for approval</button>
+          </form>
+          <% } %>
+          <% if (broadcast.status === 'approval') { %>
+          <a class="church-btn church-btn--primary" href="/hq/broadcasts/<%= broadcast.id %>/confirm-publish">Confirm publish</a>
+          <% } %>
+          <% if (broadcast.status === 'scheduled' || broadcast.status === 'approval' || broadcast.status === 'preview' || broadcast.status === 'audience_estimate') { %>
+          <form method="post" action="/hq/scheduled-broadcasts/<%= broadcast.id %>/cancel">
+            <%- include('../partials/csrf_field') %>
+            <button class="church-btn church-btn--ghost" type="submit">Cancel</button>
+          </form>
+          <% } %>
+          <% if (broadcast.status === 'partially_failed' || broadcast.status === 'failed') { %>
+          <form method="post" action="/hq/scheduled-broadcasts/<%= broadcast.id %>/retry">
+            <%- include('../partials/csrf_field') %>
+            <button class="church-btn church-btn--primary" type="submit">Retry failed deliveries</button>
+          </form>
+          <% } %>
+        </div>
+      </section>
+
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Delivery results</h2>
+        <% if (!(deliveries || []).length) { %>
+        <p class="church-branch-empty">No deliveries recorded yet.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Channel</th>
+                <th>Recipient</th>
+                <th>Status</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% deliveries.forEach(function (d) { %>
+              <tr>
+                <td><%= d.channel %></td>
+                <td><%= d.recipient_type %> #<%= d.recipient_id %></td>
+                <td><%= d.status %></td>
+                <td class="church-hq-wrap"><%= d.recipient_email || '—' %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/hq_shell_end') %>

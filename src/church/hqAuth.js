@@ -2,7 +2,7 @@
 
 const { hashMemberPassword, verifyMemberPassword } = require("./memberAuth");
 const {
-  isOperationalStatus,
+  isAdminAccessibleOrgStatus,
   resolveOperationalTenantStatus,
   clearAllChurchPortalSessions,
   renderChurchUnavailable,
@@ -63,8 +63,12 @@ async function requireChurchHqAdminSession(req, res, next) {
   }
 
   // Prefer request-local status from the operational gate (already refreshed for authed sessions).
+  // Dormant orgs remain admin-accessible (reactivation / recovery); suspended are not.
   const status = await resolveOperationalTenantStatus(req);
-  if (!status.orgActive || Number(status.organization && status.organization.id) !== Number(admin.organization_id)) {
+  if (
+    !status.orgAdminAccessible ||
+    Number(status.organization && status.organization.id) !== Number(admin.organization_id)
+  ) {
     clearAllChurchPortalSessions(req);
     return renderChurchUnavailable(req, res);
   }
@@ -77,7 +81,11 @@ async function requireChurchHqAdminSession(req, res, next) {
       clearChurchHqAdminSession(req);
       return res.redirect("/hq/login");
     }
-    if (!isOperationalStatus((req.churchContext.organization && req.churchContext.organization.status) || "")) {
+    const orgStatus =
+      (status.organization && status.organization.status) ||
+      (req.churchContext.organization && req.churchContext.organization.status) ||
+      "";
+    if (!isAdminAccessibleOrgStatus(orgStatus)) {
       clearAllChurchPortalSessions(req);
       return renderChurchUnavailable(req, res);
     }
@@ -87,6 +95,7 @@ async function requireChurchHqAdminSession(req, res, next) {
       full_name: row.full_name || row.display_name || "HQ Admin",
       role: row.role || "hq_admin",
       status: row.status,
+      can_view_finance: Boolean(row.can_view_finance),
     };
     return next();
   } catch (err) {

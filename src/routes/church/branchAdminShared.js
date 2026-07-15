@@ -142,6 +142,10 @@ const MEMBER_NOTICES = new Set([
   "profile_updated",
   "admin_note_added",
   "transferred",
+  "import_decisions_saved",
+  "import_committed",
+  "import_already_committed",
+  "import_reversed",
 ]);
 const ATTENDANCE_NOTICES = new Set(["created", "submitted", "status_updated"]);
 const GIVING_NOTICES = new Set(["giving_saved", "giving_submitted"]);
@@ -202,6 +206,13 @@ const MINISTRY_JOIN_NOTICES = new Set([
   "join_request_rejected",
   "join_request_more_info",
 ]);
+const SCHEDULED_REPORT_NOTICES = new Set([
+  "schedule_created",
+  "schedule_enabled",
+  "schedule_paused",
+  "schedule_cancelled",
+  "run_retried",
+]);
 const ACCOUNT_NOTICES = new Set(["password_changed"]);
 const PASSWORD_RESET_NOTICES = new Set(["reset_reviewed", "reset_completed", "reset_rejected"]);
 const LEADER_PASSWORD_RESET_NOTICES = PASSWORD_RESET_NOTICES;
@@ -218,6 +229,11 @@ function noticeMessage(code) {
     profile_updated: "Member profile updated.",
     admin_note_added: "Admin note added.",
     transferred: "Member transferred to another campus. History preserved.",
+    import_decisions_saved: "Import review decisions saved.",
+    import_committed: "Member import committed. Review the summary for outcomes.",
+    import_already_committed: "This import batch was already committed (idempotent).",
+    import_reversed:
+      "Import batch reversed. People created by this batch were suspended — not deleted.",
     created: "Attendance record saved.",
     submitted: "Attendance record submitted successfully.",
     status_updated: "Attendance status updated.",
@@ -225,6 +241,11 @@ function noticeMessage(code) {
     giving_submitted: "Giving summary submitted.",
     report_draft_saved: "Monthly report draft saved.",
     report_submitted: "Monthly report submitted to HQ.",
+    schedule_created: "Scheduled report saved.",
+    schedule_enabled: "Scheduled report enabled.",
+    schedule_paused: "Scheduled report paused.",
+    schedule_cancelled: "Scheduled report cancelled.",
+    run_retried: "Failed scheduled report run queued for retry.",
     request_in_review: "Request marked in review.",
     request_approved: "Request approved.",
     request_rejected: "Request rejected.",
@@ -304,6 +325,7 @@ module.exports = {
   ATTENDANCE_NOTICES,
   GIVING_NOTICES,
   REPORT_NOTICES,
+  SCHEDULED_REPORT_NOTICES,
   REQUEST_NOTICES,
   PRAYER_ADMIN_NOTICES,
   ANNOUNCEMENT_NOTICES,

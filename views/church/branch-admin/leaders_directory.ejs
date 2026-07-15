@@ -7,6 +7,11 @@
         <a class="church-btn church-btn--primary" href="/branch/leaders/new">Add leader</a>
       </header>
       <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <%- include('../partials/quota_warnings', {
+        quotaWarnings: (typeof planContext !== 'undefined' && planContext && planContext.quotaWarnings)
+          ? planContext.quotaWarnings.filter(function (w) { return w.meterKey === 'admins'; })
+          : []
+      }) %>
       <div class="church-branch-filter-tabs">
         <% leaderFilters.forEach(function (f) { %>
         <a class="church-branch-filter-tab <%= statusFilter === f ? 'church-branch-filter-tab--active' : '' %>" href="/branch/leaders<%= f === 'all' ? '' : '?status=' + f %>"><%= f === 'all' ? 'All' : leaderStatusLabel(f) %></a>

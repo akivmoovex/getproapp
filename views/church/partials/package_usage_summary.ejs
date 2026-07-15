@@ -1,13 +1,45 @@
-<% if (typeof packageUsage !== 'undefined' && packageUsage) { %>
-<section class="church-branch-panel" id="package-usage">
-  <h2 class="church-branch-panel__title">Package usage</h2>
+<section class="church-branch-panel" id="package">
+  <h2 class="church-branch-panel__title">Package &amp; usage</h2>
+  <% if (typeof packageUsage === 'undefined' || !packageUsage) { %>
+  <p class="church-branch-panel__hint" role="status">
+    Package and usage details are temporarily unavailable. Try again shortly.
+  </p>
+  <% } else { %>
   <p class="church-branch-panel__hint">
     Current package: <strong><%= packageUsage.packageLabel %></strong>
+    · Status: <strong><%= packageUsage.planStatus || 'active' %></strong>
     <% if (packageUsage.usageMonth) { %>
       · Metering month <code><%= String(packageUsage.usageMonth).slice(0, 7) %></code>
       (<%= packageUsage.timezone || 'UTC' %>)
     <% } %>
   </p>
+  <% if (packageUsage.trialStatus && packageUsage.trialStatus.status === 'active' && packageUsage.trialStatus.trial) { %>
+  <div class="church-alert church-alert--info" role="status" data-trial-status="active">
+    <strong>Growth trial active</strong>
+    <span> Started <%= String(packageUsage.trialStatus.trial.startsAt).slice(0, 10) %>.
+      Ends <%= String(packageUsage.trialStatus.trial.endsAt).slice(0, 10) %>.
+      Not a paid subscription — expires automatically.</span>
+  </div>
+  <% } else if (packageUsage.trialStatus && packageUsage.trialStatus.status === 'expired_retaining_config' && packageUsage.trialStatus.trial) { %>
+  <div class="church-alert church-alert--info" role="status" data-trial-status="expired_retaining_config">
+    <strong>Growth trial ended</strong>
+    <span> Package restored to <%= packageUsage.trialStatus.trial.previousPackageCode || 'previous package' %>.
+      Growth-only configuration is retained until <%= String(packageUsage.trialStatus.trial.configRetainUntil || '').slice(0, 10) %>.
+      Growth actions are unavailable. Security, account access, and exports remain available.</span>
+  </div>
+  <% } else if (packageUsage.trialStatus && packageUsage.trialStatus.status === 'expired') { %>
+  <div class="church-alert church-alert--info" role="status" data-trial-status="expired">
+    <strong>Growth trial ended</strong>
+    <span> Previous package restored. Growth-only actions are unavailable. Data remains.</span>
+  </div>
+  <% } %>
+  <% if (packageUsage.usedFallback) { %>
+  <p class="church-branch-panel__hint" role="status">
+    Package resolved to Foundation as a safe default<%= packageUsage.fallbackReason ? ': ' + packageUsage.fallbackReason : '.' %>
+  </p>
+  <% } %>
+
+  <h3 class="church-branch-panel__subtitle">Current usage</h3>
   <dl class="church-branch-dl">
     <div><dt>Active branches</dt><dd><%= packageUsage.meters.branches.display %></dd></div>
     <div><dt>Active members</dt><dd><%= packageUsage.meters.members.display %></dd></div>
@@ -16,30 +48,36 @@
     <div><dt>External emails this month</dt><dd><%= packageUsage.meters.externalEmails.display %></dd></div>
     <div><dt>Scheduled reports this month</dt><dd><%= packageUsage.meters.scheduledReports.display %></dd></div>
   </dl>
-  <% if ((packageUsage.warnings || []).length) { %>
-  <div class="church-alert church-alert--info" role="status">
-    Usage warning: approaching a package limit.
-    <% packageUsage.warnings.forEach(function (w) { %>
-      <br/><%= w.message %>
+
+  <% if (packageUsage.packageLimitRows && packageUsage.packageLimitRows.length) { %>
+  <h3 class="church-branch-panel__subtitle">Package limits</h3>
+  <dl class="church-branch-dl">
+    <% packageUsage.packageLimitRows.forEach(function (row) { %>
+    <div><dt><%= row.label %></dt><dd><%= row.value %></dd></div>
     <% }); %>
-  </div>
+  </dl>
   <% } %>
-  <% if ((packageUsage.blocked || []).length) { %>
-  <div class="church-alert church-alert--warning" role="alert">
-    A hard package limit is blocking new usage for at least one meter.
-    <% packageUsage.blocked.forEach(function (b) { %>
-      <br/><%= b.message %>
-    <% }); %>
-  </div>
-  <% } %>
+
+  <%- include('./quota_warnings', { quotaWarnings: packageUsage.quotaWarnings || [] }) %>
+
   <% if (packageUsage.availableUpgrade) { %>
   <p class="church-branch-panel__hint">
     Available upgrade: <strong><%= packageUsage.availableUpgrade.packageLabel %></strong>
     — <%= packageUsage.availableUpgrade.reason %>
   </p>
   <% } %>
+
+  <% if (packageUsage.billingReadiness) { %>
+  <h3 class="church-branch-panel__subtitle">Billing readiness</h3>
+  <dl class="church-branch-dl">
+    <div><dt>Billing cadence</dt><dd><%= packageUsage.billingReadiness.cadence %></dd></div>
+    <div><dt>Collection state</dt><dd><%= packageUsage.billingReadiness.collectionState %></dd></div>
+  </dl>
+  <p class="church-branch-panel__hint"><%= packageUsage.billingReadiness.summary %></p>
+  <% } %>
+
   <p class="church-branch-panel__hint">
     Security notifications, password recovery, safeguarding, account export, billing access, and offboarding are not blocked by email quotas.
   </p>
+  <% } %>
 </section>
-<% } %>

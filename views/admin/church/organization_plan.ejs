@@ -1,137 +1,99 @@
 <%- include('../../partials/platform_admin_shell_start', { navTitle: 'Organization plan', activeNav: activeNav || 'church_platform_orgs', pageTitle: 'Organization plan' }) %>
 <header class="admin-dashboard__header">
           <div>
-            <h1 class="admin-dashboard__title"><%= planSummary.organization.name %> — Plan</h1>
-            <p class="admin-dashboard__subtitle muted">Manage church organization plan metadata (no billing).</p>
+            <h1 class="admin-dashboard__title"><%= planSummary.organization.name %> — Package</h1>
+            <p class="admin-dashboard__subtitle muted">Assign Foundation or Growth (platform admin only). No self-service payment.</p>
           </div>
           <div class="admin-toolbar">
             <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + planSummary.organization.id, label: 'Organization detail' }) %>
           </div>
         </header>
 
-        <% if (saved) { %>
-          <div class="flash flash--info" role="status">Plan updated successfully.</div>
+        <% if (saved && typeof trialGranted !== 'undefined' && trialGranted) { %>
+          <div class="flash flash--info" role="status">30-day Growth trial granted. Expiry is automatic — not a paid conversion.</div>
+        <% } else if (saved) { %>
+          <div class="flash flash--info" role="status">Package assignment saved. History and audit updated.</div>
         <% } %>
         <% if (error) { %>
           <div class="flash" role="alert"><%= error %></div>
         <% } %>
 
         <section class="card card--mb-xl" style="padding:1.25rem;">
-          <h2 class="section-title section-title--flush">Current plan</h2>
+          <h2 class="section-title section-title--flush">Current package</h2>
           <dl class="admin-dl">
-            <dt>Plan</dt><dd><strong><%= planSummary.planDisplay.label %></strong> (<%= planSummary.planCode %>)</dd>
-            <dt>Status</dt><dd><%= planSummary.planStatus %></dd>
-            <dt>Started</dt><dd><%= planSummary.planStartedAt ? formatDate(planSummary.planStartedAt) : '—' %></dd>
-            <dt>Notes</dt><dd><%= planSummary.planNotes || '—' %></dd>
-          </dl>
-        </section>
-
-        <% if (typeof packageDiagnostic !== 'undefined' && packageDiagnostic) { %>
-        <section class="card card--mb-xl" style="padding:1.25rem;">
-          <h2 class="section-title section-title--flush">Package entitlement diagnostic</h2>
-          <p class="muted" style="margin-top:0;">Read-only resolution from the BlessBoard package catalogue plus usage meters.</p>
-          <dl class="admin-dl">
-            <dt>Organisation</dt>
-            <dd><%= packageDiagnostic.organization.name %> (id <%= packageDiagnostic.organization.id %>, <%= packageDiagnostic.organization.slug %>)</dd>
-            <dt>Current package</dt>
+            <% if (typeof packageDiagnostic !== 'undefined' && packageDiagnostic) { %>
+            <dt>Package</dt>
             <dd><strong><%= packageDiagnostic.currentPackage.label %></strong> (<%= packageDiagnostic.currentPackage.code %>)</dd>
             <dt>Stored plan_code</dt>
             <dd><%= packageDiagnostic.storedPlanCode == null || packageDiagnostic.storedPlanCode === '' ? '—' : packageDiagnostic.storedPlanCode %></dd>
-            <dt>Entitlement source</dt>
-            <dd><%= packageDiagnostic.entitlementSource %></dd>
-            <dt>Fallback status</dt>
-            <dd>
-              <% if (packageDiagnostic.fallback.used) { %>
-                Used — <%= packageDiagnostic.fallback.reason || 'Defaulted to Foundation.' %>
-              <% } else { %>
-                Not used
-              <% } %>
-            </dd>
+            <dt>Plan status</dt><dd><%= packageDiagnostic.planStatus || planSummary.planStatus %></dd>
+            <dt>Entitlement source</dt><dd><%= packageDiagnostic.entitlementSource %></dd>
+            <% } else { %>
+            <dt>Plan</dt><dd><strong><%= planSummary.planDisplay.label %></strong> (<%= planSummary.planCode %>)</dd>
+            <dt>Status</dt><dd><%= planSummary.planStatus %></dd>
+            <% } %>
+            <dt>Started</dt><dd><%= planSummary.planStartedAt ? formatDate(planSummary.planStartedAt) : '—' %></dd>
+            <dt>Notes</dt><dd><%= planSummary.planNotes || '—' %></dd>
           </dl>
-        </section>
-        <% } %>
-
-        <section class="card card--mb-xl" style="padding:1.25rem;">
-          <h2 class="section-title section-title--flush">Usage summary</h2>
-          <div class="admin-dashboard__grid">
-            <div class="admin-stat">
-              <p class="admin-stat__label">Branches</p>
-              <p class="admin-stat__value"><%= planSummary.branchesDisplay %></p>
-            </div>
-            <div class="admin-stat">
-              <p class="admin-stat__label">Verified members</p>
-              <p class="admin-stat__value"><%= planSummary.membersDisplay %></p>
-            </div>
-          </div>
-          <% if ((planSummary.warnings || []).length > 0) { %>
-            <ul style="margin-top:1rem;">
-              <% planSummary.warnings.forEach(function (w) { %>
-                <li class="<%= w.level === 'limit' ? 'flash' : 'muted' %>"><%= w.message %></li>
-              <% }); %>
-            </ul>
+          <% if (typeof trialStatus !== 'undefined' && trialStatus && trialStatus.hasTrial && trialStatus.trial) { %>
+          <h3 class="section-title" style="margin-top:1rem;">Growth trial</h3>
+          <dl class="admin-dl">
+            <dt>Status</dt><dd><%= trialStatus.status %></dd>
+            <dt>Start</dt><dd><%= trialStatus.trial.startsAt ? formatDate(trialStatus.trial.startsAt) : '—' %></dd>
+            <dt>End</dt><dd><%= trialStatus.trial.endsAt ? formatDate(trialStatus.trial.endsAt) : '—' %></dd>
+            <dt>Granted by</dt><dd><%= trialStatus.trial.grantedByPlatformAdminId || '—' %></dd>
+            <dt>Reason</dt><dd><%= trialStatus.trial.reason || '—' %></dd>
+            <dt>Previous package</dt><dd><%= trialStatus.trial.previousPackageCode || '—' %></dd>
+            <% if (trialStatus.trial.configRetainUntil) { %>
+            <dt>Config retain until</dt><dd><%= formatDate(trialStatus.trial.configRetainUntil) %></dd>
+            <% } %>
+          </dl>
           <% } %>
         </section>
 
+        <% if (typeof trialStatus === 'undefined' || !trialStatus || trialStatus.canGrant) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Grant 30-day Growth trial</h2>
+          <p class="muted" style="margin-top:0;">One Growth trial per organisation by default. Does not integrate payment and does not convert to paid Growth on expiry.</p>
+          <form method="post" action="/admin/church/organizations/<%= planSummary.organization.id %>/trial" class="admin-form-grid">
+            <%- include('partials/csrf_field') %>
+            <div class="input-field" style="grid-column:1/-1;">
+              <label class="input-field__label" for="trial_reason">Reason</label>
+              <textarea id="trial_reason" class="input-field__control" name="reason" rows="3" required maxlength="2000"><%= (typeof trialForm !== 'undefined' && trialForm && trialForm.reason) ? trialForm.reason : '' %></textarea>
+            </div>
+            <div class="admin-toolbar" style="grid-column:1/-1;">
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Grant Growth trial' }) %>
+            </div>
+          </form>
+        </section>
+        <% } %>
+
         <% if (typeof packageDiagnostic !== 'undefined' && packageDiagnostic && packageDiagnostic.usage) { %>
         <section class="card card--mb-xl" style="padding:1.25rem;">
-          <h2 class="section-title section-title--flush">Package usage diagnostic</h2>
-          <p class="muted" style="margin-top:0;">
-            Tenant-scoped meters for <%= packageDiagnostic.usage.packageLabel %>
-            · month <code><%= String(packageDiagnostic.usage.usageMonth).slice(0, 7) %></code>
-            (<%= packageDiagnostic.usage.timezone || 'UTC' %>).
-            No invoice totals.
-          </p>
+          <h2 class="section-title section-title--flush">Usage snapshot</h2>
           <dl class="admin-dl">
             <dt>Active branches</dt><dd><%= packageDiagnostic.usage.meters.branches.display %></dd>
             <dt>Active members</dt><dd><%= packageDiagnostic.usage.meters.members.display %></dd>
             <dt>Administrators / leadership</dt><dd><%= packageDiagnostic.usage.meters.admins.display %></dd>
-            <dt>Storage</dt><dd><%= packageDiagnostic.usage.meters.storage.display %></dd>
-            <dt>External emails (month)</dt><dd><%= packageDiagnostic.usage.meters.externalEmails.display %></dd>
-            <dt>Scheduled reports (month)</dt><dd><%= packageDiagnostic.usage.meters.scheduledReports.display %></dd>
-            <dt>Warning state</dt>
-            <dd><%= (packageDiagnostic.usage.warnings || []).length ? (packageDiagnostic.usage.warnings.map(function (w) { return w.message; }).join('; ')) : 'None' %></dd>
-            <dt>Blocked state</dt>
-            <dd><%= (packageDiagnostic.usage.blocked || []).length ? (packageDiagnostic.usage.blocked.map(function (b) { return b.message; }).join('; ')) : 'None' %></dd>
-            <dt>Available upgrade</dt>
-            <dd><%= packageDiagnostic.usage.availableUpgrade ? (packageDiagnostic.usage.availableUpgrade.packageLabel + ' — ' + packageDiagnostic.usage.availableUpgrade.reason) : '—' %></dd>
           </dl>
         </section>
         <% } %>
 
         <section class="card card--mb-xl" style="padding:1.25rem;">
-          <h2 class="section-title section-title--flush">Features</h2>
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>Feature</th><th>Status</th></tr></thead>
-              <tbody>
-                <% planSummary.featureRows.forEach(function (row) { %>
-                  <tr>
-                    <td><%= row.label %></td>
-                    <td>
-                      <% if (row.locked) { %>
-                        <span class="muted">Locked</span>
-                      <% } else if (row.enabled) { %>
-                        Enabled
-                      <% } else { %>
-                        Disabled
-                      <% } %>
-                    </td>
-                  </tr>
-                <% }); %>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="card card--mb-xl" style="padding:1.25rem;">
-          <h2 class="section-title section-title--flush">Change plan</h2>
+          <h2 class="section-title section-title--flush">Assign package</h2>
+          <p class="muted" style="margin-top:0;">
+            Acting as <strong><%= (typeof actingAdmin !== 'undefined' && actingAdmin && actingAdmin.displayName) ? actingAdmin.displayName : 'Platform admin' %></strong>
+            <% if (typeof actingAdmin !== 'undefined' && actingAdmin && actingAdmin.id) { %>(id <%= actingAdmin.id %>)<% } %>.
+            Preview consequences before confirmation. Network cannot be activated here.
+          </p>
           <form method="post" action="/admin/church/organizations/<%= planSummary.organization.id %>/plan" class="admin-form-grid">
             <%- include('partials/csrf_field') %>
+            <input type="hidden" name="assignment_action" value="preview"/>
             <div class="input-field">
-              <label class="input-field__label" for="plan_code">Plan</label>
-              <select id="plan_code" class="input-field__control" name="plan_code">
-                <% planCodes.forEach(function (code) { %>
-                  <option value="<%= code %>" <%= form.plan_code === code ? 'selected' : '' %>><%= (typeof getPlanDisplay === 'function' ? getPlanDisplay(code).label : code) %> (<%= code %>)</option>
+              <label class="input-field__label" for="package_code">Package</label>
+              <select id="package_code" class="input-field__control" name="package_code" required>
+                <% (packageCodes || ['foundation', 'growth']).forEach(function (code) { %>
+                  <option value="<%= code %>" <%= form.package_code === code ? 'selected' : '' %>><%= code === 'foundation' ? 'Foundation' : (code === 'growth' ? 'Growth' : code) %></option>
                 <% }); %>
               </select>
             </div>
@@ -142,13 +104,105 @@
                 <option value="inactive" <%= form.plan_status === 'inactive' ? 'selected' : '' %>>inactive</option>
               </select>
             </div>
+            <div class="input-field">
+              <label class="input-field__label" for="effective_at">Effective date</label>
+              <input id="effective_at" class="input-field__control" name="effective_at" type="datetime-local" value="<%= form.effective_at || '' %>" required/>
+            </div>
             <div class="input-field" style="grid-column:1/-1;">
-              <label class="input-field__label" for="plan_notes">Plan notes</label>
-              <textarea id="plan_notes" class="input-field__control" name="plan_notes" rows="3"><%= form.plan_notes || '' %></textarea>
+              <label class="input-field__label" for="reason">Reason</label>
+              <textarea id="reason" class="input-field__control" name="reason" rows="3" required maxlength="2000"><%= form.reason || '' %></textarea>
             </div>
             <div class="admin-toolbar" style="grid-column:1/-1;">
-              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save plan' }) %>
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Preview assignment' }) %>
             </div>
           </form>
         </section>
+
+        <% if (typeof assignmentPreview !== 'undefined' && assignmentPreview) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;" id="package-assignment-preview">
+          <h2 class="section-title section-title--flush">Assignment preview</h2>
+          <dl class="admin-dl">
+            <% if (assignmentPreview.currentPackage) { %>
+            <dt>From</dt><dd><%= assignmentPreview.currentPackage.label %> (<%= assignmentPreview.currentPackage.code %>)</dd>
+            <% } %>
+            <dt>To</dt><dd><strong><%= assignmentPreview.targetPackage.label %></strong> (<%= assignmentPreview.targetPackage.code %>)</dd>
+            <dt>Direction</dt><dd><%= assignmentPreview.direction %></dd>
+            <dt>Effective</dt><dd><%= assignmentPreview.effectiveAt ? formatDate(assignmentPreview.effectiveAt) : '—' %></dd>
+            <dt>Reason</dt><dd><%= assignmentPreview.reason %></dd>
+          </dl>
+          <% if ((assignmentPreview.consequences || []).length) { %>
+          <h3 class="section-title" style="margin-top:1rem;">Consequences</h3>
+          <ul>
+            <% assignmentPreview.consequences.forEach(function (c) { %>
+              <li><%= c %></li>
+            <% }); %>
+          </ul>
+          <% } %>
+          <% if (assignmentPreview.direction === 'upgrade' && (assignmentPreview.inactiveBranchesEligibleForActivation || []).length) { %>
+          <h3 class="section-title" style="margin-top:1rem;">Inactive branches that may be activated</h3>
+          <ul>
+            <% assignmentPreview.inactiveBranchesEligibleForActivation.forEach(function (b) { %>
+              <li><%= b.name %> (<%= b.slug || b.id %>) — <%= b.status %><%= b.lifecycle_phase ? ' / ' + b.lifecycle_phase : '' %></li>
+            <% }); %>
+          </ul>
+          <% } %>
+          <% if (assignmentPreview.downgrade && !(assignmentPreview.downgrade.allowed) && (assignmentPreview.downgrade.incompatibilities || []).length) { %>
+          <div class="flash" role="alert" style="margin-top:1rem;">
+            Downgrade blocked. Resolve these items before confirming. No data will be deleted.
+            <ul style="margin-top:0.5rem;">
+              <% assignmentPreview.downgrade.incompatibilities.forEach(function (item) { %>
+                <li><%= item.message %></li>
+              <% }); %>
+            </ul>
+          </div>
+          <% } %>
+          <% if (assignmentPreview.canConfirm) { %>
+          <form method="post" action="/admin/church/organizations/<%= planSummary.organization.id %>/plan" class="admin-form-grid" style="margin-top:1rem;">
+            <%- include('partials/csrf_field') %>
+            <input type="hidden" name="assignment_action" value="confirm"/>
+            <input type="hidden" name="package_code" value="<%= assignmentPreview.targetPackage.code %>"/>
+            <input type="hidden" name="plan_status" value="<%= assignmentPreview.planStatus || 'active' %>"/>
+            <input type="hidden" name="reason" value="<%= assignmentPreview.reason %>"/>
+            <input type="hidden" name="effective_at_iso" value="<%= assignmentPreview.effectiveAt %>"/>
+            <input type="hidden" name="effective_at" value="<%= (assignmentPreview.effectiveAt || '').slice(0, 16) %>"/>
+            <input type="hidden" name="confirm_token" value="<%= assignmentPreview.confirmToken %>"/>
+            <div class="admin-toolbar" style="grid-column:1/-1;">
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Confirm package assignment' }) %>
+            </div>
+          </form>
+          <% } else if (assignmentPreview.direction === 'noop') { %>
+          <p class="muted">Already on this package — confirmation is not available.</p>
+          <% } %>
+        </section>
+        <% } %>
+
+        <% if (typeof packageHistory !== 'undefined' && packageHistory && packageHistory.length) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Package history</h2>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Effective</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Admin</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% packageHistory.forEach(function (row) { %>
+                <tr>
+                  <td><%= row.effective_at ? formatDate(row.effective_at) : '—' %></td>
+                  <td><%= row.previous_package_code || row.previous_plan_code || '—' %></td>
+                  <td><%= row.new_package_code || row.new_plan_code %></td>
+                  <td><%= row.changed_by_platform_admin_id || '—' %></td>
+                  <td><%= row.change_reason || '—' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <% } %>
 <%- include('../../partials/platform_admin_shell_end') %>

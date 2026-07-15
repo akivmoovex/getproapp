@@ -1,0 +1,103 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-page-hero">
+        <div>
+          <h1 class="church-branch-page-hero__title church-show-mobile-only">Scheduled report</h1>
+          <p class="church-branch-page-hero__subtitle">
+            <%= reportDef ? reportDef.label : schedule.report_type %> · <%= schedule.status %>
+          </p>
+        </div>
+        <a class="church-btn church-btn--ghost" href="/branch/scheduled-reports">Back to schedules</a>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Schedule</h2>
+        <dl class="church-branch-dl church-branch-dl--inline">
+          <div><dt>Format</dt><dd><%= String(schedule.export_format || '').toUpperCase() %></dd></div>
+          <div><dt>Frequency</dt><dd><%= schedule.frequency %></dd></div>
+          <div><dt>Timezone</dt><dd><%= schedule.timezone %></dd></div>
+          <div><dt>Local time</dt><dd><%= schedule.delivery_time_local %></dd></div>
+          <div><dt>Next run</dt><dd><%= schedule.next_run_at ? new Date(schedule.next_run_at).toISOString() : '—' %></dd></div>
+          <div><dt>Last run</dt><dd><%= schedule.last_run_at ? new Date(schedule.last_run_at).toISOString() : '—' %></dd></div>
+        </dl>
+        <% if (schedule.status === 'enabled') { %>
+        <form method="post" action="/branch/scheduled-reports/<%= schedule.id %>/status" class="church-inline-form">
+          <%- include('../partials/csrf_field') %>
+          <input type="hidden" name="status" value="paused">
+          <button type="submit" class="church-btn church-btn--ghost">Pause</button>
+        </form>
+        <% } else if (schedule.status === 'paused') { %>
+        <form method="post" action="/branch/scheduled-reports/<%= schedule.id %>/status" class="church-inline-form">
+          <%- include('../partials/csrf_field') %>
+          <input type="hidden" name="status" value="enabled">
+          <button type="submit" class="church-btn church-btn--primary">Enable</button>
+        </form>
+        <% } %>
+        <% if (schedule.status !== 'cancelled') { %>
+        <form method="post" action="/branch/scheduled-reports/<%= schedule.id %>/status" class="church-inline-form">
+          <%- include('../partials/csrf_field') %>
+          <input type="hidden" name="status" value="cancelled">
+          <button type="submit" class="church-btn church-btn--ghost">Cancel schedule</button>
+        </form>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Recipients</h2>
+        <% if (!(recipients || []).length) { %>
+        <p class="church-branch-empty">No recipients.</p>
+        <% } else { %>
+        <ul class="church-list">
+          <% recipients.forEach(function (r) { %>
+          <li><%= r.recipient_type %> #<%= r.recipient_id %></li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Delivery audit</h2>
+        <% if (!(runs || []).length) { %>
+        <p class="church-branch-empty">No runs yet.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Scheduled for</th>
+                <th>Status</th>
+                <th>Attempts</th>
+                <th>Deliveries</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% runs.forEach(function (run) { %>
+              <tr>
+                <td><%= new Date(run.scheduled_for).toISOString() %></td>
+                <td><%= run.status %></td>
+                <td><%= run.attempt_count %></td>
+                <td>
+                  <% (run.deliveries || []).forEach(function (d) { %>
+                  <div><%= d.recipient_type %> #<%= d.recipient_id %>: <%= d.status %><%= d.recipient_email ? ' → ' + d.recipient_email : '' %></div>
+                  <% }); %>
+                  <% if (!(run.deliveries || []).length) { %>—<% } %>
+                </td>
+                <td>
+                  <% if (run.status === 'failed') { %>
+                  <form method="post" action="/branch/scheduled-reports/runs/<%= run.id %>/retry">
+                    <%- include('../partials/csrf_field') %>
+                    <button type="submit" class="church-btn church-btn--primary church-btn--sm">Retry</button>
+                  </form>
+                  <% } %>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

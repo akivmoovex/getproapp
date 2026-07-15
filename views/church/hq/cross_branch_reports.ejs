@@ -1,0 +1,160 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-hq-page-header">
+        <div>
+          <h1 class="church-hq-page-header__title">Cross-branch comparison</h1>
+          <p class="church-hq-page-header__subtitle">Growth KPIs by campus — documented definitions, set-based aggregates</p>
+        </div>
+        <div class="church-branch-actions">
+          <a class="church-btn church-btn--ghost" href="/hq/cross-branch-reports?<%= new URLSearchParams(Object.assign({}, filters, { view: 'table', date_from: filters.dateFrom, date_to: filters.dateTo, branch_id: filters.branchId || '', service: filters.serviceType || '', ministry_id: filters.ministryId || '', department_id: filters.departmentId || '' })).toString() %>">Table view</a>
+          <a class="church-btn church-btn--ghost" href="/hq/cross-branch-reports?<%= new URLSearchParams(Object.assign({}, { date_from: filters.dateFrom, date_to: filters.dateTo, branch_id: filters.branchId || '', service: filters.serviceType || '', ministry_id: filters.ministryId || '', department_id: filters.departmentId || '', view: 'chart' })).toString() %>">Chart view</a>
+        </div>
+      </header>
+
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Filters</h2>
+        <form method="get" action="/hq/cross-branch-reports" class="church-form">
+          <input type="hidden" name="view" value="<%= viewMode %>"/>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="date_from">From</label>
+              <input class="church-input" type="date" id="date_from" name="date_from" value="<%= filters.dateFrom %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="date_to">To</label>
+              <input class="church-input" type="date" id="date_to" name="date_to" value="<%= filters.dateTo %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="branch_id">Branch</label>
+              <select class="church-input" id="branch_id" name="branch_id">
+                <option value="">All active branches</option>
+                <% (branches || []).forEach(function (b) { %>
+                <option value="<%= b.id %>" <%= Number(filters.branchId) === Number(b.id) ? 'selected' : '' %>><%= b.name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="service">Service type</label>
+              <input class="church-input" type="text" id="service" name="service" value="<%= filters.serviceType || '' %>" placeholder="e.g. Sunday service"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="ministry_id">Ministry</label>
+              <select class="church-input" id="ministry_id" name="ministry_id">
+                <option value="">Any</option>
+                <% (ministries || []).forEach(function (m) { %>
+                <option value="<%= m.id %>" <%= Number(filters.ministryId) === Number(m.id) ? 'selected' : '' %>><%= m.name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="department_id">Group (department)</label>
+              <select class="church-input" id="department_id" name="department_id">
+                <option value="">Any</option>
+                <% (departments || []).forEach(function (d) { %>
+                <option value="<%= d.id %>" <%= Number(filters.departmentId) === Number(d.id) ? 'selected' : '' %>><%= d.name %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Apply filters</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Organisation totals</h2>
+        <dl class="church-branch-dl church-hq-meta-dl">
+          <div><dt>Campuses</dt><dd><%= comparison.totals.branch_count %></dd></div>
+          <div><dt>Active members</dt><dd><%= comparison.totals.active_members %></dd></div>
+          <div><dt>Monthly attendance</dt><dd><%= comparison.totals.monthly_attendance %></dd></div>
+          <div><dt>Visitors</dt><dd><%= comparison.totals.visitors %></dd></div>
+          <div><dt>Event registrations (proxy)</dt><dd><%= comparison.totals.event_registrations %></dd></div>
+          <div><dt>Event attendance (proxy)</dt><dd><%= comparison.totals.event_attendance %></dd></div>
+          <div><dt>Open pastoral follow-ups</dt><dd><%= comparison.totals.open_pastoral_follow_ups %></dd></div>
+          <div><dt>Overdue pastoral cases</dt><dd><%= comparison.totals.overdue_pastoral_cases %></dd></div>
+          <% if (canViewFinance) { %>
+          <div><dt>Giving totals</dt><dd><%= formatMoney(comparison.totals.giving_total) %></dd></div>
+          <% } else { %>
+          <div><dt>Giving totals</dt><dd class="church-muted">Requires finance permission</dd></div>
+          <% } %>
+        </dl>
+      </section>
+
+      <% if (viewMode === 'chart') { %>
+      <section class="church-branch-panel church-hq-panel" data-cross-branch-chart>
+        <h2 class="church-branch-panel__title">Comparison chart</h2>
+        <p class="church-branch-panel__hint">Simple bar comparison (active members). Use table view for full KPI grid.</p>
+        <div class="church-hq-bar-chart" role="img" aria-label="Active members by branch">
+          <% var maxM = Math.max.apply(null, comparison.chart.active_members.concat([1])); %>
+          <% comparison.rows.forEach(function (row, idx) { %>
+          <div class="church-hq-bar-chart__row">
+            <span class="church-hq-bar-chart__label church-hq-wrap"><%= row.branch_name %></span>
+            <div class="church-hq-bar-chart__track">
+              <div class="church-hq-bar-chart__bar" style="width:<%= Math.round((row.active_members / maxM) * 100) %>%"></div>
+            </div>
+            <span class="church-hq-bar-chart__value"><%= row.active_members %></span>
+          </div>
+          <% }); %>
+          <% if (!(comparison.rows || []).length) { %>
+          <p class="church-branch-empty">No branches in range.</p>
+          <% } %>
+        </div>
+      </section>
+      <% } %>
+
+      <section class="church-branch-panel church-hq-panel" data-cross-branch-table>
+        <h2 class="church-branch-panel__title">Comparison table</h2>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Active members</th>
+                <th>Attendance</th>
+                <th>Visitors</th>
+                <th>Event regs</th>
+                <th>Event att.</th>
+                <th>Open follow-ups</th>
+                <th>Overdue</th>
+                <% if (canViewFinance) { %><th>Giving</th><% } %>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!(comparison.rows || []).length) { %>
+              <tr><td colspan="10">No branch data for these filters.</td></tr>
+              <% } %>
+              <% (comparison.rows || []).forEach(function (row) { %>
+              <tr>
+                <td class="church-hq-wrap"><%= row.branch_name %></td>
+                <td><%= row.active_members %></td>
+                <td><%= row.monthly_attendance %></td>
+                <td><%= row.visitors %></td>
+                <td><%= row.event_registrations %></td>
+                <td><%= row.event_attendance %></td>
+                <td><%= row.open_pastoral_follow_ups %></td>
+                <td><%= row.overdue_pastoral_cases %></td>
+                <% if (canViewFinance) { %><td><%= formatMoney(row.giving_total) %></td><% } %>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/cross-branch-reports/branches/<%= row.branch_id %>?date_from=<%= filters.dateFrom %>&date_to=<%= filters.dateTo %>">Drill down</a>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">KPI definitions</h2>
+        <ul class="church-list">
+          <% Object.keys(comparison.kpiDefinitions).forEach(function (key) { %>
+          <% var kpi = comparison.kpiDefinitions[key]; %>
+          <li><strong><%= kpi.label %></strong> — <%= kpi.definition %></li>
+          <% }); %>
+        </ul>
+      </section>
+      <style>
+        .church-hq-bar-chart__row { display: grid; grid-template-columns: 8rem 1fr 3rem; gap: .5rem; align-items: center; margin: .35rem 0; }
+        .church-hq-bar-chart__track { background: rgba(0,0,0,.06); border-radius: 4px; height: .65rem; overflow: hidden; }
+        .church-hq-bar-chart__bar { background: #2f6fed; height: 100%; border-radius: 4px; min-width: 2px; }
+      </style>
+<%- include('../partials/hq_shell_end') %>

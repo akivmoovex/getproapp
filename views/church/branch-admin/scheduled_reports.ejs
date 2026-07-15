@@ -1,0 +1,140 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-page-hero">
+        <div>
+          <h1 class="church-branch-page-hero__title church-show-mobile-only">Scheduled reports</h1>
+          <p class="church-branch-page-hero__subtitle">Automate delivery of existing branch reports (Growth)</p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--danger" role="alert"><%= error %></div>
+      <% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Your schedules</h2>
+        <% if (!(schedules || []).length) { %>
+        <p class="church-branch-empty">No scheduled reports yet.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Report</th>
+                <th>Format</th>
+                <th>Frequency</th>
+                <th>Next run</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% schedules.forEach(function (s) { %>
+              <tr>
+                <td><%= s.report_type %></td>
+                <td><%= String(s.export_format || '').toUpperCase() %></td>
+                <td>
+                  <%= s.frequency %>
+                  <span class="church-muted"><%= s.delivery_time_local %> <%= s.timezone %></span>
+                </td>
+                <td><%= s.next_run_at ? new Date(s.next_run_at).toISOString() : '—' %></td>
+                <td><span class="church-status-chip"><%= s.status %></span></td>
+                <td>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/scheduled-reports/<%= s.id %>">View</a>
+                  <% if (s.status === 'enabled') { %>
+                  <form class="church-inline-form" method="post" action="/branch/scheduled-reports/<%= s.id %>/status">
+                    <%- include('../partials/csrf_field') %>
+                    <input type="hidden" name="status" value="paused">
+                    <button type="submit" class="church-btn church-btn--ghost church-btn--sm">Pause</button>
+                  </form>
+                  <% } else if (s.status === 'paused') { %>
+                  <form class="church-inline-form" method="post" action="/branch/scheduled-reports/<%= s.id %>/status">
+                    <%- include('../partials/csrf_field') %>
+                    <input type="hidden" name="status" value="enabled">
+                    <button type="submit" class="church-btn church-btn--ghost church-btn--sm">Enable</button>
+                  </form>
+                  <% } %>
+                  <% if (s.status !== 'cancelled') { %>
+                  <form class="church-inline-form" method="post" action="/branch/scheduled-reports/<%= s.id %>/status">
+                    <%- include('../partials/csrf_field') %>
+                    <input type="hidden" name="status" value="cancelled">
+                    <button type="submit" class="church-btn church-btn--ghost church-btn--sm">Cancel</button>
+                  </form>
+                  <% } %>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Create schedule</h2>
+        <p class="church-branch-panel__hint">Select an existing supported report. Maximum 20 scheduled runs per month.</p>
+        <form method="post" action="/branch/scheduled-reports" class="church-form">
+          <%- include('../partials/csrf_field') %>
+          <label class="church-field">
+            <span class="church-field__label">Report</span>
+            <select name="report_type" required>
+              <% (supportedReports || []).forEach(function (r) { %>
+              <option value="<%= r.id %>" <%= form.report_type === r.id ? 'selected' : '' %>><%= r.label %></option>
+              <% }); %>
+            </select>
+          </label>
+          <label class="church-field">
+            <span class="church-field__label">Period filter (YYYY-MM, optional)</span>
+            <input type="text" name="period_month" value="<%= form.period_month || '' %>" placeholder="e.g. 2026-06" pattern="\d{4}-\d{2}">
+          </label>
+          <label class="church-field">
+            <span class="church-field__label">Export format</span>
+            <select name="export_format" required>
+              <option value="csv" <%= form.export_format === 'csv' ? 'selected' : '' %>>CSV</option>
+              <option value="pdf" <%= form.export_format === 'pdf' ? 'selected' : '' %>>PDF</option>
+            </select>
+          </label>
+          <label class="church-field">
+            <span class="church-field__label">Frequency</span>
+            <select name="frequency" required>
+              <% frequencies.forEach(function (f) { %>
+              <option value="<%= f %>" <%= form.frequency === f ? 'selected' : '' %>><%= f %></option>
+              <% }); %>
+            </select>
+          </label>
+          <label class="church-field">
+            <span class="church-field__label">Day of week (weekly: 0=Sun … 6=Sat)</span>
+            <input type="number" name="day_of_week" min="0" max="6" value="<%= form.day_of_week %>">
+          </label>
+          <label class="church-field">
+            <span class="church-field__label">Day of month (monthly: 1–28)</span>
+            <input type="number" name="day_of_month" min="1" max="28" value="<%= form.day_of_month %>">
+          </label>
+          <label class="church-field">
+            <span class="church-field__label">Timezone (IANA)</span>
+            <input type="text" name="timezone" value="<%= form.timezone %>" required>
+          </label>
+          <label class="church-field">
+            <span class="church-field__label">Delivery time (local)</span>
+            <input type="time" name="delivery_time_local" value="<%= form.delivery_time_local %>" required>
+          </label>
+          <fieldset class="church-field">
+            <legend class="church-field__label">Recipients (authorised users)</legend>
+            <% (eligible.branchAdmins || []).forEach(function (a) { %>
+            <label class="church-check">
+              <input type="checkbox" name="recipient" value="branch_admin:<%= a.id %>">
+              Branch admin — <%= a.full_name %> (<%= a.email %>)
+            </label>
+            <% }); %>
+            <% (eligible.hqAdmins || []).forEach(function (a) { %>
+            <label class="church-check">
+              <input type="checkbox" name="recipient" value="hq_admin:<%= a.id %>">
+              HQ admin — <%= a.full_name %> (<%= a.email %>)
+            </label>
+            <% }); %>
+          </fieldset>
+          <button type="submit" class="church-btn church-btn--primary">Save schedule</button>
+        </form>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

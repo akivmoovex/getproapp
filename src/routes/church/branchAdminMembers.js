@@ -182,6 +182,10 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
       const members = q
         ? await membersRepo.searchMembersForBranch(pool, branch.id, q, { status: statusFilter })
         : await membersRepo.listMembersForBranch(pool, branch.id, { status: statusFilter });
+      const planContext = await churchPlanService.loadPlanContextForOrganization(
+        pool,
+        req.churchContext.organization.id
+      );
       return res.render(
         "church/branch-admin/members_directory",
         branchAdminLocals(req, {
@@ -190,6 +194,7 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
           memberFilters: MEMBER_STATUS_FILTERS,
           memberStatusLabel,
           searchQuery: q,
+          planContext,
           notice: noticeMessage(flashFromQuery(req, MEMBER_NOTICES)),
         })
       );

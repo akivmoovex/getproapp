@@ -72,6 +72,50 @@
               <% }); %>
             </div>
           </div>
+          <div class="church-field church-field--full" id="ministry-targets-panel">
+            <label class="church-label">Ministries</label>
+            <div class="church-hq-branch-checklist">
+              <% (ministries || []).forEach(function (m) { %>
+              <label class="church-checkbox-row">
+                <input type="checkbox" name="ministry_ids" value="<%= m.id %>" <%= (form.ministry_ids || []).some(function (id) { return Number(id) === Number(m.id); }) ? 'checked' : '' %>/>
+                <span class="church-hq-wrap"><%= m.name %></span>
+              </label>
+              <% }); %>
+            </div>
+          </div>
+          <div class="church-field church-field--full" id="department-targets-panel">
+            <label class="church-label">Groups (departments)</label>
+            <div class="church-hq-branch-checklist">
+              <% (departments || []).forEach(function (d) { %>
+              <label class="church-checkbox-row">
+                <input type="checkbox" name="department_ids" value="<%= d.id %>" <%= (form.department_ids || []).some(function (id) { return Number(id) === Number(d.id); }) ? 'checked' : '' %>/>
+                <span class="church-hq-wrap"><%= d.name %></span>
+              </label>
+              <% }); %>
+            </div>
+          </div>
+          <div class="church-field church-field--full" id="event-targets-panel">
+            <label class="church-label">Events</label>
+            <div class="church-hq-branch-checklist">
+              <% (events || []).forEach(function (ev) { %>
+              <label class="church-checkbox-row">
+                <input type="checkbox" name="event_ids" value="<%= ev.id %>" <%= (form.event_ids || []).some(function (id) { return Number(id) === Number(ev.id); }) ? 'checked' : '' %>/>
+                <span class="church-hq-wrap"><%= ev.title %></span>
+              </label>
+              <% }); %>
+            </div>
+          </div>
+          <div class="church-field church-field--full" id="selected-recipients-panel">
+            <label class="church-label">Selected recipients (type:id)</label>
+            <p class="church-branch-panel__hint">Example: member:12 — one per line or comma-separated. Growth schedules may also include email (no confidential title in subject).</p>
+            <textarea class="church-input church-input--textarea" name="selected_recipients" rows="3"><%= Array.isArray(form.selected_recipients) ? form.selected_recipients.map(function (r) { return r.recipient_type + ':' + r.recipient_id; }).join('\n') : (form.selected_recipients || '') %></textarea>
+          </div>
+          <div class="church-field">
+            <label class="church-checkbox-row">
+              <input type="checkbox" name="delivery_channels" value="email" <%= (form.delivery_channels || []).indexOf('email') >= 0 ? 'checked' : '' %>/>
+              <span>Also record email delivery (Growth; in-app always included)</span>
+            </label>
+          </div>
         </section>
 
         <section class="church-branch-panel church-hq-panel" data-hq-broadcast-section="schedule">

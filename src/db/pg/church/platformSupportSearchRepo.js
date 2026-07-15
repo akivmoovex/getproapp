@@ -2,7 +2,7 @@
 
 const { normalizePhone } = require("./membersRepo");
 
-const ORG_BRANCH_STATUSES = new Set(["active", "suspended", "archived"]);
+const ORG_BRANCH_STATUSES = new Set(["active", "suspended", "archived", "dormant"]);
 const ADMIN_STATUSES = new Set(["active", "inactive"]);
 const MEMBER_STATUSES = new Set(["pending", "verified", "rejected", "suspended"]);
 

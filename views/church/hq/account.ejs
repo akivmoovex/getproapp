@@ -29,16 +29,24 @@
           <div><dt>Last password change</dt><dd><% if (account.password_changed_at) { %><%= new Date(account.password_changed_at).toLocaleString('en-GB') %><% } else { %>Not recorded<% } %></dd></div>
         </dl>
       </section>
-      <section class="church-branch-panel" id="package">
-        <h2 class="church-branch-panel__title">Package</h2>
-        <% if (typeof packagePlan !== 'undefined' && packagePlan) { %>
-        <p class="church-branch-panel__hint">Current package: <strong><%= packagePlan.packageLabel %></strong>.</p>
-        <p class="church-branch-panel__hint">Upgrade opportunities appear in navigation for features that are not included. Network-only tools stay hidden until available.</p>
-        <% } else { %>
-        <p class="church-branch-panel__hint">Package information is unavailable for this organisation.</p>
-        <% } %>
-      </section>
       <%- include('../partials/package_usage_summary') %>
+      <% if (typeof organizationStatus !== 'undefined' && organizationStatus === 'dormant') { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Organisation dormancy</h2>
+        <p class="church-branch-panel__hint">This organisation is dormant after Foundation inactivity. Member access is paused and the public site is unpublished. Your HQ data is preserved. Production deletion is not enabled.</p>
+        <% if (typeof dormancyDiagnostic !== 'undefined' && dormancyDiagnostic && dormancyDiagnostic.dataPreserveUntil) { %>
+        <p class="church-branch-panel__hint">Data preserve until: <%= new Date(dormancyDiagnostic.dataPreserveUntil).toLocaleString('en-GB') %></p>
+        <% } %>
+        <form class="church-form" method="post" action="/hq/account/reactivate-from-dormancy">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="status_reason">Note (optional)</label>
+            <textarea class="church-input" id="status_reason" name="status_reason" maxlength="2000" rows="2" placeholder="Optional note for audit trail"></textarea>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Reactivate organisation</button>
+        </form>
+      </section>
+      <% } %>
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Change password</h2>
         <p class="church-branch-panel__hint">Your current session stays active after a successful change. Use your new password the next time you sign in.</p>

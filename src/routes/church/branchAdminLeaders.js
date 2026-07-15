@@ -22,6 +22,7 @@ const {
   noticeMessage,
   recordBranchAudit,
 } = require("./branchAdminShared");
+const churchPlanService = require("../../services/church/churchPlanService");
 
 const LEADER_FILTERS = ["all", "active", "inactive"];
 
@@ -96,12 +97,17 @@ module.exports = function registerBranchAdminLeadersRoutes(router) {
       const leaders = await ministryLeadersRepo.listLeadersForBranch(pool, branch.id, {
         status: statusFilter,
       });
+      const planContext = await churchPlanService.loadPlanContextForOrganization(
+        pool,
+        req.churchContext.organization.id
+      );
       return res.render(
         "church/branch-admin/leaders_directory",
         renderLocals(req, {
           leaders,
           statusFilter,
           leaderFilters: LEADER_FILTERS,
+          planContext,
           notice: noticeMessage(flashFromQuery(req, LEADER_NOTICES)),
         })
       );

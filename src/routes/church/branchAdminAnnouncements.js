@@ -33,6 +33,8 @@ const {
   noticeMessage,
   recordBranchAudit,
 } = require("./branchAdminShared");
+const churchPlanService = require("../../services/church/churchPlanService");
+const { filterQuotaWarnings } = require("../../church/blessBoardQuotaWarnings");
 const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
 
 const ANNOUNCEMENT_FILTERS = ["all", "draft", "published", "archived"];
@@ -176,6 +178,16 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
           page,
           limit: 20,
         });
+        const planContext = await churchPlanService.loadPlanContextForOrganization(
+          pool,
+          req.churchContext.organization.id
+        );
+        if (planContext && Array.isArray(planContext.quotaWarnings)) {
+          planContext.quotaWarnings = filterQuotaWarnings(planContext.quotaWarnings, [
+            "storage",
+            "externalEmails",
+          ]);
+        }
         return res.render(
           "church/branch-admin/announcements_management",
           renderFormLocals(req, {
@@ -187,6 +199,7 @@ module.exports = function registerBranchAdminAnnouncementsRoutes(router) {
             totalCount: listed.total,
             buildListQuery,
             announcementFilters: ANNOUNCEMENT_FILTERS,
+            planContext,
             notice: noticeMessage(flashFromQuery(req, ANNOUNCEMENT_NOTICES)),
           })
         );

@@ -1,0 +1,97 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-hq-page-header">
+        <div>
+          <a class="church-branch-back" href="/hq/cross-branch-reports?date_from=<%= drill.filters.dateFrom %>&date_to=<%= drill.filters.dateTo %>">&larr; Cross-branch comparison</a>
+          <h1 class="church-hq-page-header__title church-hq-wrap"><%= drill.branch.name %></h1>
+          <p class="church-hq-page-header__subtitle">Drill-down · <%= drill.branch.status %> · <%= drill.filters.dateFrom %> → <%= drill.filters.dateTo %></p>
+        </div>
+      </header>
+
+      <% if (drill.summary) { %>
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Branch totals (same KPIs as comparison table)</h2>
+        <dl class="church-branch-dl church-hq-meta-dl">
+          <div><dt>Active members</dt><dd><%= drill.summary.active_members %></dd></div>
+          <div><dt>Attendance</dt><dd><%= drill.summary.monthly_attendance %></dd></div>
+          <div><dt>Visitors</dt><dd><%= drill.summary.visitors %></dd></div>
+          <div><dt>Open follow-ups</dt><dd><%= drill.summary.open_pastoral_follow_ups %></dd></div>
+          <div><dt>Overdue</dt><dd><%= drill.summary.overdue_pastoral_cases %></dd></div>
+          <% if (drill.canViewFinance) { %>
+          <div><dt>Giving</dt><dd><%= formatMoney(drill.summary.giving_total) %></dd></div>
+          <% } %>
+        </dl>
+        <p class="church-branch-panel__hint">
+          Reconciliation: attendance <%= drill.reconciliation.attendance_matches ? 'matches' : 'mismatch' %>
+          (table <%= drill.reconciliation.table_monthly_attendance %> vs records <%= drill.reconciliation.drilldown_attendance_sum %>);
+          visitors <%= drill.reconciliation.visitors_matches ? 'matches' : 'mismatch' %>.
+        </p>
+      </section>
+      <% } %>
+
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Attendance records</h2>
+        <% if (!(drill.attendanceRecords || []).length) { %>
+        <p class="church-branch-empty">No submitted attendance in range.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Date</th><th>Service</th><th>Headcount</th><th>Visitors</th><th>Status</th></tr></thead>
+            <tbody>
+              <% drill.attendanceRecords.forEach(function (r) { %>
+              <tr>
+                <td><%= r.service_date %></td>
+                <td><%= r.attendance_type || '—' %></td>
+                <td><%= r.headcount %></td>
+                <td><%= r.first_time_visitors_count %></td>
+                <td><%= r.status %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Pastoral follow-ups</h2>
+        <p class="church-branch-panel__hint">Labels only — no prayer request bodies.</p>
+        <% if (!(drill.pastoralItems || []).length) { %>
+        <p class="church-branch-empty">No open pastoral items.</p>
+        <% } else { %>
+        <ul class="church-list">
+          <% drill.pastoralItems.forEach(function (p) { %>
+          <li><%= p.kind %>: <%= p.label %> (<%= p.status %>)</li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+
+      <% if (drill.canViewFinance) { %>
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Giving summaries</h2>
+        <% if (!(drill.givingSummaries || []).length) { %>
+        <p class="church-branch-empty">No giving rows in range.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Period</th><th>Status</th><th>Total</th></tr></thead>
+            <tbody>
+              <% drill.givingSummaries.forEach(function (g) { %>
+              <tr>
+                <td><%= g.period_year %>-<%= String(g.period_month).padStart(2,'0') %></td>
+                <td><%= g.status %></td>
+                <td><%= formatMoney(g.grand_total) %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+      <% } else { %>
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Giving</h2>
+        <p class="church-muted">Giving detail requires finance permission.</p>
+      </section>
+      <% } %>
+<%- include('../partials/hq_shell_end') %>

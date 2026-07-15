@@ -37,12 +37,13 @@ async function listPriceHistory(db, packageCode = GROWTH_PACKAGE_CODE) {
 }
 
 async function insertPackageHistory(db, entry) {
+  const effectiveAt = entry.effective_at ? new Date(entry.effective_at) : null;
   const r = await db.query(
     `INSERT INTO public.church_organization_package_history (
        organization_id, previous_plan_code, new_plan_code,
        previous_package_code, new_package_code,
-       changed_by_platform_admin_id, change_reason
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+       changed_by_platform_admin_id, change_reason, effective_at
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7, COALESCE($8::timestamptz, now()))
      RETURNING *`,
     [
       entry.organization_id,
@@ -52,9 +53,23 @@ async function insertPackageHistory(db, entry) {
       entry.new_package_code,
       entry.changed_by_platform_admin_id || null,
       entry.change_reason || null,
+      effectiveAt && !Number.isNaN(effectiveAt.getTime()) ? effectiveAt.toISOString() : null,
     ]
   );
   return r.rows[0];
+}
+
+async function listPackageHistoryForOrganization(db, organizationId, opts = {}) {
+  const limit = Math.min(Math.max(Number(opts.limit) || 20, 1), 100);
+  const r = await db.query(
+    `SELECT *
+     FROM public.church_organization_package_history
+     WHERE organization_id = $1
+     ORDER BY effective_at DESC, id DESC
+     LIMIT $2`,
+    [organizationId, limit]
+  );
+  return r.rows;
 }
 
 async function ensureBillingPeriod(db, organizationId, cadence, periodStart, periodEnd) {
@@ -226,6 +241,7 @@ module.exports = {
   getCurrentPrice,
   listPriceHistory,
   insertPackageHistory,
+  listPackageHistoryForOrganization,
   ensureBillingPeriod,
   findInvoiceByIdempotencyKey,
   insertDraftInvoice,

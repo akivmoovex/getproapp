@@ -51,6 +51,10 @@ const ACTION_GROUP_SQL = {
 
 const ACTION_LABELS = {
   member_verified_by_admin: "Member verified",
+  member_import_previewed: "Member import previewed",
+  member_import_committed: "Member import committed",
+  member_imported: "Member imported",
+  member_import_reversed: "Member import reversed",
   member_suspended: "Member suspended",
   member_reactivated: "Member reactivated",
   member_profile_updated_by_admin: "Member profile updated by admin",
@@ -147,6 +151,10 @@ const ACTION_LABELS = {
   platform_church_organization_suspended: "Organization suspended",
   platform_church_organization_reactivated: "Organization reactivated",
   platform_church_organization_archived: "Organization archived",
+  organization_inactivity_first_warning: "Inactivity first warning",
+  organization_inactivity_final_warning: "Inactivity final warning",
+  organization_marked_dormant: "Organization marked dormant",
+  organization_reactivated_from_dormancy: "Organization reactivated from dormancy",
   platform_church_organization_slug_changed: "Organization slug changed",
   platform_church_plan_updated: "Organization plan updated",
   platform_church_branch_created: "Branch created",

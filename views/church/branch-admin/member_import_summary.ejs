@@ -1,0 +1,61 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <% var batch = diagnostic.batch; var impact = diagnostic.impact; var rows = diagnostic.rows || []; %>
+      <header class="church-branch-page-hero">
+        <div>
+          <h1 class="church-branch-page-hero__title">Import summary</h1>
+          <p class="church-branch-page-hero__subtitle">Batch <%= batch.batch_key %> · status <%= batch.status %></p>
+        </div>
+        <a class="church-btn church-btn--outline" href="/branch/members">Members</a>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Results</h2>
+        <dl class="church-branch-dl">
+          <div><dt>Rows</dt><dd><%= batch.row_count %></dd></div>
+          <div><dt>Commit summary</dt><dd><pre style="white-space:pre-wrap;margin:0;"><%= JSON.stringify((batch.summary_json && batch.summary_json.commit) || {}, null, 2) %></pre></dd></div>
+          <div><dt>Current active members (org)</dt><dd><%= impact.currentActiveMembers %></dd></div>
+          <div><dt>Admin accounts</dt><dd><%= impact.administratorImpact.adminsDisplay %></dd></div>
+        </dl>
+        <p class="church-branch-panel__hint">Imported people are batch-traceable. Reversal suspends them — it does not permanently delete records.</p>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Row outcomes</h2>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Row</th><th>Name</th><th>Disposition</th><th>Outcome</th><th>Member id</th></tr></thead>
+            <tbody>
+              <% rows.forEach(function (r) { %>
+              <tr>
+                <td><%= r.row_number %></td>
+                <td><%= r.full_name || '—' %></td>
+                <td><%= r.disposition %></td>
+                <td><%= r.commit_outcome || '—' %></td>
+                <td>
+                  <% if (r.committed_member_id) { %>
+                  <a href="/branch/members/<%= r.committed_member_id %>"><%= r.committed_member_id %></a>
+                  <% } else { %>—<% } %>
+                </td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <% if (batch.status === 'committed') { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Reverse import</h2>
+        <p class="church-branch-panel__hint">Suspends people created by this batch. Does not delete duplicates or other records.</p>
+        <form class="church-form" method="post" action="/branch/members/import/<%= batch.id %>/reverse">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="reason">Reason (optional)</label>
+            <textarea class="church-input" id="reason" name="reason" rows="2" maxlength="2000"></textarea>
+          </div>
+          <button class="church-btn church-btn--outline" type="submit">Reverse batch</button>
+        </form>
+      </section>
+      <% } %>
+<%- include('../partials/branch_admin_shell_end') %>

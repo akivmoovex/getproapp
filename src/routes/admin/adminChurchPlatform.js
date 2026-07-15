@@ -24,9 +24,11 @@ const {
   churchOrganizationEditFormFromRecords,
 } = require("../../church/platformProvisioningValidation");
 const { buildProvisionWelcomePack } = require("../../services/church/provisionWelcomeService");
-const { validatePlanUpdateBody } = require("../../church/churchPlanValidation");
 const { PLAN_CODES: CHURCH_PLAN_CODES, getPlanDisplay } = require("../../church/churchPlans");
 const { getOrganisationPackageDiagnostic } = require("../../services/church/churchEntitlementService");
+const churchPackageAssignmentService = require("../../services/church/churchPackageAssignmentService");
+const churchGrowthTrialService = require("../../services/church/churchGrowthTrialService");
+const churchBillingRepo = require("../../db/pg/church/churchBillingRepo");
 const { resolveBranchLifecycle } = require("../../church/branchLifecycle");
 const { resolvePackageFromPlanCode } = require("../../church/blessBoardPackageCatalogue");
 const {
@@ -38,14 +40,17 @@ const {
   assertCanSuspendOrganization,
   assertCanArchiveOrganization,
   assertCanReactivateOrganization,
+  assertCanReactivateFromDormancy,
   assertCanSuspendBranch,
   assertCanArchiveBranch,
   assertCanReactivateBranch,
   parseOrganizationStatusFilter,
   parseBranchStatusFilter,
   ORG_BRANCH_STATUSES,
+  ORG_STATUSES,
 } = require("../../church/platformStatusValidation");
 const { statusBadgeClass, statusLabel } = require("../../church/churchStatusAccess");
+const churchDormancyService = require("../../services/church/churchDormancyService");
 const {
   BRANCH_ADMIN_ROLES,
   createFormFromBody,
@@ -163,6 +168,8 @@ function organizationStatusNotice(req) {
   const map = {
     suspended: "Organization suspended successfully.",
     reactivated: "Organization reactivated successfully.",
+    reactivated_from_dormancy:
+      "Organization reactivated from dormancy. Public site remains unpublished until republished. Member access is restored.",
     archived: "Organization archived successfully.",
     updated: "Organization updated successfully.",
     hq_admin_created: "HQ admin created.",
@@ -371,6 +378,7 @@ async function renderOrganizationDetail(req, res, extra) {
     recentBroadcasts,
     pendingResetRequests,
     notesPanel,
+    dormancyDiagnostic,
   ] = await Promise.all([
     platformProvisioningRepo.getOrganizationPlanSummary(pool, organizationId),
     organizationsRepo.getOrganizationUsageCounts(pool, organizationId),
@@ -380,6 +388,7 @@ async function renderOrganizationDetail(req, res, extra) {
     hqBroadcastsRepo.listRecentBroadcastSummariesForOrganization(pool, organizationId, { limit: 5 }),
     organizationsRepo.countSubmittedResetRequestsForOrganization(pool, organizationId),
     supportNotesPanelData(pool, "organization", organizationId, organizationAdminDetailPath(req, organizationId)),
+    churchDormancyService.getOrganisationDormancyDiagnostic(pool, organizationId),
   ]);
   const activeHqAdminCount = adminCounts.active_hq_admin_count;
   const primaryHqAdmin =
@@ -423,10 +432,12 @@ async function renderOrganizationDetail(req, res, extra) {
     supportNoteNotice: supportNoteNotice(req) || (extra && extra.supportNoteNotice) || null,
     supportNoteError: supportNoteError(req, extra),
     ...notesPanel,
+    dormancyDiagnostic,
     statusBadgeClass,
     statusLabel,
     actionLabel,
     orgBranchStatuses: ORG_BRANCH_STATUSES,
+    orgStatuses: ORG_STATUSES,
     hqAdminsBasePath: organizationHqAdminsPath(req, organizationId),
     hqAdminNewPath: `${organizationHqAdminsPath(req, organizationId)}/new`,
     organizationDetailPath: organizationAdminDetailPath(req, organizationId),
@@ -1422,7 +1433,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         organizations,
         q,
         statusFilter,
-        orgBranchStatuses: ORG_BRANCH_STATUSES,
+        orgBranchStatuses: ORG_STATUSES,
         formatDate,
         getPlanDisplay,
         statusBadgeClass,
@@ -1639,6 +1650,40 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
     }
   });
 
+  router.post(
+    "/church/organizations/:organizationId/reactivate-from-dormancy",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const organizationId = Number(req.params.organizationId);
+        if (!Number.isFinite(organizationId) || organizationId <= 0) {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        const pool = getPgPool();
+        const org = await platformProvisioningRepo.findChurchOrganizationById(pool, organizationId);
+        if (!org) {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        const validation = validateReactivateBody(req.body);
+        const transition = assertCanReactivateFromDormancy(org);
+        if (!transition.ok) {
+          return renderOrganizationDetail(req, res, { statusCode: 400, statusError: transition.error });
+        }
+        await churchDormancyService.reactivateFromDormancy(pool, {
+          organizationId,
+          actorType: "platform_admin",
+          actorId: platformAdminId(req),
+          reason: validation.reason,
+        });
+        return res.redirect(
+          `${organizationAdminDetailPath(req, organizationId)}?notice=reactivated_from_dormancy`
+        );
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
   router.post("/church/organizations/:organizationId/archive", requireSuperAdmin, async (req, res, next) => {
     try {
       const organizationId = Number(req.params.organizationId);
@@ -1674,24 +1719,119 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         return res.status(404).type("text").send("Organization not found.");
       }
       const packageDiagnostic = await getOrganisationPackageDiagnostic(pool, organizationId);
+      const packageHistory = await churchBillingRepo.listPackageHistoryForOrganization(pool, organizationId, {
+        limit: 25,
+      });
+      const trialStatus = await churchGrowthTrialService.getOrganisationTrialStatus(pool, organizationId);
       const saved = String(req.query.saved || "") === "1";
+      const trialGranted = String(req.query.trial || "") === "1";
+      const currentPackage = resolvePackageFromPlanCode(planSummary.organization.plan_code);
+      const adminUser = req.session.adminUser || {};
       res.render("admin/church/organization_plan", {
         planSummary,
         packageDiagnostic,
-        planCodes: CHURCH_PLAN_CODES,
+        packageHistory,
+        trialStatus,
+        packageCodes: churchPackageAssignmentService.ASSIGNABLE_PACKAGE_CODES,
         getPlanDisplay,
         formatDate,
-        saved,
+        saved: saved || trialGranted,
+        trialGranted,
         error: null,
+        assignmentPreview: null,
         form: {
-          plan_code: planSummary.planCode,
+          package_code: currentPackage.packageCode,
           plan_status: planSummary.planStatus,
-          plan_notes: planSummary.planNotes || "",
+          reason: "",
+          effective_at: new Date().toISOString().slice(0, 16),
+        },
+        trialForm: { reason: "" },
+        actingAdmin: {
+          id: adminUser.id || null,
+          username: adminUser.username || "",
+          displayName: adminUser.displayName || adminUser.username || "Platform admin",
         },
         activeNav: "church_platform_orgs",
       });
     } catch (err) {
       next(err);
+    }
+  });
+
+  async function renderPackageAssignmentPage(req, res, organizationId, opts = {}) {
+    const pool = getPgPool();
+    const planSummary = await platformProvisioningRepo.getOrganizationPlanSummary(pool, organizationId);
+    if (!planSummary) {
+      return res.status(404).type("text").send("Organization not found.");
+    }
+    const packageDiagnostic = await getOrganisationPackageDiagnostic(pool, organizationId);
+    const packageHistory = await churchBillingRepo.listPackageHistoryForOrganization(pool, organizationId, {
+      limit: 25,
+    });
+    const trialStatus = await churchGrowthTrialService.getOrganisationTrialStatus(pool, organizationId);
+    const adminUser = req.session.adminUser || {};
+    return res.status(opts.status || 200).render("admin/church/organization_plan", {
+      planSummary,
+      packageDiagnostic,
+      packageHistory,
+      trialStatus,
+      packageCodes: churchPackageAssignmentService.ASSIGNABLE_PACKAGE_CODES,
+      getPlanDisplay,
+      formatDate,
+      saved: false,
+      trialGranted: false,
+      error: opts.error || null,
+      assignmentPreview: opts.assignmentPreview || null,
+      form: opts.form || {
+        package_code: resolvePackageFromPlanCode(planSummary.organization.plan_code).packageCode,
+        plan_status: planSummary.planStatus,
+        reason: "",
+        effective_at: new Date().toISOString().slice(0, 16),
+      },
+      trialForm: opts.trialForm || { reason: "" },
+      actingAdmin: {
+        id: adminUser.id || null,
+        username: adminUser.username || "",
+        displayName: adminUser.displayName || adminUser.username || "Platform admin",
+      },
+      activeNav: "church_platform_orgs",
+    });
+  }
+
+  router.post("/church/organizations/:organizationId/trial", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const organizationId = Number(req.params.organizationId);
+      if (!Number.isFinite(organizationId) || organizationId <= 0) {
+        return res.status(404).type("text").send("Organization not found.");
+      }
+      const pool = getPgPool();
+      const platformAdminId =
+        req.session.adminUser && req.session.adminUser.id ? req.session.adminUser.id : null;
+      const reason = String(req.body.reason || "").trim();
+      try {
+        await churchGrowthTrialService.grantGrowthTrial(pool, organizationId, {
+          reason,
+          grantedByPlatformAdminId: platformAdminId,
+        });
+        return res.redirect(`/admin/church/organizations/${organizationId}/plan?trial=1`);
+      } catch (err) {
+        if (
+          err &&
+          (err.code === "DUPLICATE_TRIAL" ||
+            err.code === "REASON_REQUIRED" ||
+            err.code === "ALREADY_GROWTH" ||
+            err.code === "NOT_FOUND")
+        ) {
+          return renderPackageAssignmentPage(req, res, organizationId, {
+            status: 400,
+            error: err.message,
+            trialForm: { reason },
+          });
+        }
+        throw err;
+      }
+    } catch (err) {
+      return next(err);
     }
   });
 
@@ -1701,33 +1841,118 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
       if (!Number.isFinite(organizationId) || organizationId <= 0) {
         return res.status(404).type("text").send("Organization not found.");
       }
-      const validation = validatePlanUpdateBody(req.body);
+      const action = String(req.body.assignment_action || "preview")
+        .trim()
+        .toLowerCase();
       const pool = getPgPool();
-      const planSummary = await platformProvisioningRepo.getOrganizationPlanSummary(pool, organizationId);
-      if (!planSummary) {
-        return res.status(404).type("text").send("Organization not found.");
+      const platformAdminId =
+        req.session.adminUser && req.session.adminUser.id ? req.session.adminUser.id : null;
+
+      const form = {
+        package_code: String(req.body.package_code || req.body.plan_code || "foundation")
+          .trim()
+          .toLowerCase(),
+        plan_status: String(req.body.plan_status || "active")
+          .trim()
+          .toLowerCase(),
+        reason: String(req.body.reason || req.body.plan_notes || "").trim(),
+        effective_at: String(req.body.effective_at || "").trim(),
+      };
+
+      if (action === "confirm") {
+        const used = (req.session.churchPackageAssignUsedTokens =
+          req.session.churchPackageAssignUsedTokens || []);
+        try {
+          await churchPackageAssignmentService.confirmPackageAssignment(
+            pool,
+            organizationId,
+            {
+              package_code: form.package_code,
+              reason: form.reason,
+              effective_at: req.body.effective_at_iso || form.effective_at,
+              plan_status: form.plan_status,
+              confirm_token: String(req.body.confirm_token || ""),
+              generate_invoice: String(req.body.generate_invoice || "") === "1",
+              used_tokens: used,
+            },
+            platformAdminId
+          );
+          delete req.session.churchPackageAssignPreview;
+          return res.redirect(`/admin/church/organizations/${organizationId}/plan?saved=1`);
+        } catch (err) {
+          if (err && err.code === "DOWNGRADE_BLOCKED") {
+            return renderPackageAssignmentPage(req, res, organizationId, {
+              status: 400,
+              error: err.message,
+              assignmentPreview: {
+                canConfirm: false,
+                direction: "downgrade",
+                downgrade: { allowed: false, incompatibilities: err.incompatibilities || [] },
+                consequences: ["Final downgrade is blocked until incompatibilities are resolved."],
+                targetPackage: { code: form.package_code, label: form.package_code },
+                currentPackage: null,
+                reason: form.reason,
+                effectiveAt: form.effective_at,
+              },
+              form,
+            });
+          }
+          if (
+            err &&
+            (err.code === "DUPLICATE_SUBMISSION" ||
+              err.code === "INVALID_TOKEN" ||
+              err.code === "TOKEN_EXPIRED" ||
+              err.code === "TOKEN_MISMATCH" ||
+              err.code === "CROSS_TENANT_TOKEN" ||
+              err.code === "ALREADY_ASSIGNED" ||
+              err.code === "REASON_REQUIRED" ||
+              err.code === "INVALID_PACKAGE" ||
+              err.code === "INVALID_EFFECTIVE_AT")
+          ) {
+            return renderPackageAssignmentPage(req, res, organizationId, {
+              status: 400,
+              error: err.message,
+              form,
+            });
+          }
+          throw err;
+        }
       }
-      if (!validation.ok) {
-        const packageDiagnostic = await getOrganisationPackageDiagnostic(pool, organizationId);
-        return res.status(400).render("admin/church/organization_plan", {
-          planSummary,
-          packageDiagnostic,
-          planCodes: CHURCH_PLAN_CODES,
-          getPlanDisplay,
-          formatDate,
-          saved: false,
-          error: validation.error,
-          form: {
-            plan_code: String(req.body.plan_code || planSummary.planCode),
-            plan_status: String(req.body.plan_status || planSummary.planStatus),
-            plan_notes: String(req.body.plan_notes || ""),
-          },
-          activeNav: "church_platform_orgs",
+
+      // Default / explicit preview
+      try {
+        const preview = await churchPackageAssignmentService.previewPackageAssignment(pool, organizationId, {
+          package_code: form.package_code,
+          reason: form.reason,
+          effective_at: form.effective_at,
+          plan_status: form.plan_status,
         });
+        req.session.churchPackageAssignPreview = {
+          organizationId,
+          confirmToken: preview.confirmToken,
+          packageCode: preview.targetPackage.code,
+        };
+        form.effective_at = preview.effectiveAt.slice(0, 16);
+        return renderPackageAssignmentPage(req, res, organizationId, {
+          assignmentPreview: preview,
+          form,
+        });
+      } catch (err) {
+        if (
+          err &&
+          (err.code === "REASON_REQUIRED" ||
+            err.code === "INVALID_PACKAGE" ||
+            err.code === "INVALID_EFFECTIVE_AT" ||
+            err.code === "NOT_FOUND")
+        ) {
+          return renderPackageAssignmentPage(req, res, organizationId, {
+            status: 400,
+            error: err.message,
+            form,
+          });
+        }
+        throw err;
       }
-      const platformAdminId = req.session.adminUser && req.session.adminUser.id ? req.session.adminUser.id : null;
-      await platformProvisioningRepo.updateOrganizationPlan(pool, organizationId, validation.data, platformAdminId);
-      return res.redirect(`/admin/church/organizations/${organizationId}/plan?saved=1`);
     } catch (err) {
       return next(err);
     }

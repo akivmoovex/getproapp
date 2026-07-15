@@ -83,7 +83,11 @@
         <% var usage = typeof usageCounts !== 'undefined' && usageCounts ? usageCounts : {}; %>
         <% var admins = typeof adminCounts !== 'undefined' && adminCounts ? adminCounts : {}; %>
         <% var resets = typeof pendingResetRequests !== 'undefined' && pendingResetRequests ? pendingResetRequests : {}; %>
-        <% var _suspendHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? ('/admin/churches/' + organization.id + '/suspend') : ('/admin/church/organizations/' + organization.id + '/suspend'); %>
+        <% var _orgBase = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? ('/admin/churches/' + organization.id) : ('/admin/church/organizations/' + organization.id); %>
+        <% var _suspendHref = _orgBase + '/suspend'; %>
+        <% var _reactivateFromDormancyAction = _orgBase + '/reactivate-from-dormancy'; %>
+        <% var _reactivateAction = _orgBase + '/reactivate'; %>
+        <% var _archiveAction = _orgBase + '/archive'; %>
         <section class="card card--mb-xl" style="padding:1.25rem;">
           <h2 class="section-title section-title--flush">Overview</h2>
           <dl class="admin-dl">
@@ -114,6 +118,12 @@
             <% if (organization.suspended_at) { %>
               <dt>Suspended at</dt><dd><%= formatDate(organization.suspended_at) %></dd>
             <% } %>
+            <% if (organization.dormant_at) { %>
+              <dt>Dormant at</dt><dd><%= formatDate(organization.dormant_at) %></dd>
+            <% } %>
+            <% if (organization.dormancy_data_preserve_until) { %>
+              <dt>Data preserve until</dt><dd><%= formatDate(organization.dormancy_data_preserve_until) %></dd>
+            <% } %>
             <% if (organization.archived_at) { %>
               <dt>Archived at</dt><dd><%= formatDate(organization.archived_at) %></dd>
             <% } %>
@@ -126,15 +136,25 @@
               <%- include('../../partials/components/button', { variant: 'default', href: _suspendHref, label: 'Suspend organization…' }) %>
             </div>
             <% } %>
+            <% if (organization.status === 'dormant') { %>
+            <form class="admin-status-actions__form" method="post" action="<%= _reactivateFromDormancyAction %>">
+              <%- include('partials/csrf_field') %>
+              <h3>Reactivate from dormancy</h3>
+              <p class="muted">Restores active status. Public site stays unpublished until manually republished. Suspension and dormancy are distinct — use this action, not suspend reactivation.</p>
+              <label class="input-field__label" for="org_dormancy_reactivate_reason">Note (optional)</label>
+              <textarea id="org_dormancy_reactivate_reason" name="status_reason" maxlength="2000" placeholder="Optional note for audit trail"></textarea>
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Reactivate from dormancy' }) %>
+            </form>
+            <% } %>
             <% if (organization.status === 'suspended') { %>
-            <form class="admin-status-actions__form" method="post" action="/admin/church/organizations/<%= organization.id %>/reactivate">
+            <form class="admin-status-actions__form" method="post" action="<%= _reactivateAction %>">
               <%- include('partials/csrf_field') %>
               <h3>Reactivate organization</h3>
               <label class="input-field__label" for="org_reactivate_reason">Note (optional)</label>
               <textarea id="org_reactivate_reason" name="status_reason" maxlength="2000" placeholder="Optional note for audit trail"></textarea>
               <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Reactivate organization' }) %>
             </form>
-            <form class="admin-status-actions__form" method="post" action="/admin/church/organizations/<%= organization.id %>/archive">
+            <form class="admin-status-actions__form" method="post" action="<%= _archiveAction %>">
               <%- include('partials/csrf_field') %>
               <h3>Archive organization</h3>
               <p class="muted">Organization must be suspended before archiving. Access remains blocked.</p>
@@ -148,6 +168,45 @@
             <% } %>
           </div>
         </section>
+
+        <% if (typeof dormancyDiagnostic !== 'undefined' && dormancyDiagnostic) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Foundation inactivity / dormancy</h2>
+          <p class="muted">Diagnostics only. Growth organisations are excluded. Production deletion is not enabled.</p>
+          <dl class="admin-dl">
+            <dt>Package context</dt>
+            <dd>
+              <%= (dormancyDiagnostic.package && dormancyDiagnostic.package.packageCode) || '—' %>
+              <% if (dormancyDiagnostic.package && dormancyDiagnostic.package.isGrowth) { %>
+                · Growth excluded (<%= dormancyDiagnostic.package.reason %>)
+              <% } %>
+            </dd>
+            <dt>Activity certain</dt>
+            <dd><%= dormancyDiagnostic.activity && dormancyDiagnostic.activity.certain ? 'Yes' : 'No' %><% if (dormancyDiagnostic.activity && dormancyDiagnostic.activity.reason) { %> (<%= dormancyDiagnostic.activity.reason %>)<% } %></dd>
+            <dt>Last genuine activity</dt>
+            <dd>
+              <% if (dormancyDiagnostic.activity && dormancyDiagnostic.activity.lastActivityAt) { %>
+                <%= formatDate(dormancyDiagnostic.activity.lastActivityAt) %>
+                <% if (dormancyDiagnostic.activity.primarySource) { %> · <%= dormancyDiagnostic.activity.primarySource %><% } %>
+              <% } else { %>—<% } %>
+            </dd>
+            <dt>Months inactive</dt>
+            <dd><%= dormancyDiagnostic.classification && dormancyDiagnostic.classification.certain ? Number(dormancyDiagnostic.classification.monthsInactive).toFixed(2) : '—' %></dd>
+            <dt>Data preserve until</dt>
+            <dd><%= dormancyDiagnostic.dataPreserveUntil ? formatDate(dormancyDiagnostic.dataPreserveUntil) : '—' %></dd>
+            <dt>Production deletion</dt>
+            <dd>Disabled</dd>
+          </dl>
+          <% if (dormancyDiagnostic.warnings && dormancyDiagnostic.warnings.length) { %>
+          <h3 class="section-title" style="margin-top:1rem;">Warning / job history</h3>
+          <ul class="muted" style="margin:0;padding-left:1.25rem;">
+            <% dormancyDiagnostic.warnings.forEach(function (w) { %>
+              <li><%= w.warning_stage %> · <%= w.status %> · <%= formatDate(w.processed_at || w.created_at) %><% if (w.message) { %> — <%= w.message %><% } %></li>
+            <% }) %>
+          </ul>
+          <% } %>
+        </section>
+        <% } %>
 
         <% if (typeof planSummary !== 'undefined' && planSummary) { %>
         <section class="card card--mb-xl" style="padding:1.25rem;">

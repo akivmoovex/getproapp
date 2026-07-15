@@ -21,17 +21,91 @@ const {
  * Load organisation package resolution (scoped strictly by organization id).
  * @param {import("pg").Pool} pool
  * @param {number} organizationId
+ * @param {{ at?: Date }} [opts] - optional clock for trial window evaluation (tests / jobs)
  * @returns {Promise<object | null>} null if organisation does not exist
  */
-async function getOrganisationPlan(pool, organizationId) {
+async function getOrganisationPlan(pool, organizationId, opts = {}) {
   const id = Number(organizationId);
   if (!Number.isFinite(id) || id <= 0) return null;
 
   const organization = await organizationsRepo.findOrganizationById(pool, id);
   if (!organization) return null;
 
+  const at =
+    opts.at instanceof Date && !Number.isNaN(opts.at.getTime()) ? opts.at : new Date();
+
   // Isolation: never accept a caller-supplied plan_code — only the row for this id.
-  const resolved = resolvePackageFromPlanCode(organization.plan_code);
+  let resolved = resolvePackageFromPlanCode(organization.plan_code);
+  let trial = null;
+  let entitlementSource = resolved.entitlementSource;
+
+  try {
+    const churchGrowthTrialService = require("./churchGrowthTrialService");
+    const activeTrial = await churchGrowthTrialService.findActiveGrowthTrial(pool, id, { at });
+    if (activeTrial) {
+      const growth = resolvePackageFromPlanCode("growth");
+      resolved = growth;
+      entitlementSource = "growth_trial";
+      trial = {
+        id: activeTrial.id,
+        status: "active",
+        startsAt: new Date(activeTrial.starts_at).toISOString(),
+        endsAt: new Date(activeTrial.ends_at).toISOString(),
+        reason: activeTrial.grant_reason,
+        grantedByPlatformAdminId: activeTrial.granted_by_platform_admin_id,
+        previousPackageCode: activeTrial.previous_package_code,
+        isTrial: true,
+      };
+    } else {
+      // F1: Trial ended but expiry job may not have restored plan_code yet.
+      // Do not treat stale plan_code=growth from an overdue trial as paid Growth.
+      const trialRecord = await churchGrowthTrialService.findGrowthTrialRecord(pool, id);
+      const storedPlan = String(organization.plan_code || "")
+        .trim()
+        .toLowerCase();
+      if (
+        trialRecord &&
+        trialRecord.status === "active" &&
+        storedPlan === "growth" &&
+        new Date(trialRecord.ends_at).getTime() <= at.getTime()
+      ) {
+        const previousCode =
+          trialRecord.previous_package_code || trialRecord.previous_plan_code || DEFAULT_PACKAGE_CODE;
+        resolved = resolvePackageFromPlanCode(previousCode);
+        entitlementSource = "growth_trial_ended";
+        trial = {
+          id: trialRecord.id,
+          status: "ended_pending_restore",
+          startsAt: new Date(trialRecord.starts_at).toISOString(),
+          endsAt: new Date(trialRecord.ends_at).toISOString(),
+          reason: trialRecord.grant_reason,
+          grantedByPlatformAdminId: trialRecord.granted_by_platform_admin_id,
+          previousPackageCode: trialRecord.previous_package_code,
+          isTrial: false,
+        };
+      } else {
+        const trialStatus = await churchGrowthTrialService.getOrganisationTrialStatus(pool, id, {
+          at,
+        });
+        if (trialStatus && trialStatus.hasTrial) {
+          trial = {
+            id: trialStatus.trial && trialStatus.trial.id,
+            status: trialStatus.status,
+            startsAt: trialStatus.trial && trialStatus.trial.startsAt,
+            endsAt: trialStatus.trial && trialStatus.trial.endsAt,
+            reason: trialStatus.trial && trialStatus.trial.reason,
+            grantedByPlatformAdminId: trialStatus.trial && trialStatus.trial.grantedByPlatformAdminId,
+            previousPackageCode: trialStatus.trial && trialStatus.trial.previousPackageCode,
+            configRetainUntil: trialStatus.trial && trialStatus.trial.configRetainUntil,
+            configRetained: trialStatus.configRetained,
+            isTrial: trialStatus.status === "active",
+          };
+        }
+      }
+    }
+  } catch {
+    /* trials optional if migration not applied yet */
+  }
 
   return {
     organizationId: organization.id,
@@ -46,9 +120,10 @@ async function getOrganisationPlan(pool, organizationId) {
     packageCode: resolved.packageCode,
     packageLabel: resolved.packageDefinition.label,
     entitlements: resolved.packageDefinition.entitlements,
-    entitlementSource: resolved.entitlementSource,
+    entitlementSource,
     usedFallback: resolved.usedFallback,
     fallbackReason: resolved.fallbackReason,
+    trial,
   };
 }
 
@@ -314,58 +389,12 @@ async function getOrganisationPackageDiagnostic(pool, organizationId) {
 }
 
 /**
- * Assign package via existing church_organizations.plan_code + audit log.
- * Does not enforce quotas.
- *
- * @param {import("pg").Pool} pool
- * @param {number} organizationId
- * @param {{ package_code: string, plan_status?: string, plan_notes?: string | null }} fields
- * @param {number | null} platformAdminId
+ * Assign package via preview+confirm workflow (Foundation / Growth only).
+ * Prefer churchPackageAssignmentService.previewPackageAssignment / confirmPackageAssignment from routes.
  */
-const ASSIGNABLE_PLAN_CODES = new Set(["foundation", "growth", "free", "standard", "pro"]);
-
 async function assignOrganisationPackage(pool, organizationId, fields, platformAdminId) {
-  const packageCode = String(fields.package_code || "")
-    .trim()
-    .toLowerCase();
-  if (!ASSIGNABLE_PLAN_CODES.has(packageCode)) {
-    const err = new Error(`Invalid package code: ${packageCode || "(empty)"}`);
-    err.code = "INVALID_PACKAGE";
-    throw err;
-  }
-
-  const before = await getOrganisationPlan(pool, organizationId);
-  const updated = await organizationsRepo.updateOrganizationPlan(
-    pool,
-    organizationId,
-    {
-      plan_code: packageCode,
-      plan_status: fields.plan_status,
-      plan_notes: fields.plan_notes,
-    },
-    platformAdminId
-  );
-
-  try {
-    const churchBillingRepo = require("../../db/pg/church/churchBillingRepo");
-    const after = resolvePackageFromPlanCode(packageCode);
-    await churchBillingRepo.insertPackageHistory(pool, {
-      organization_id: organizationId,
-      previous_plan_code: before ? before.storedPlanCode : null,
-      new_plan_code: packageCode,
-      previous_package_code: before ? before.packageCode : null,
-      new_package_code: after.packageCode,
-      changed_by_platform_admin_id: platformAdminId || null,
-      change_reason: fields.change_reason || fields.plan_notes || null,
-    });
-  } catch {
-    /* package history is additive */
-  }
-
-  return {
-    organization: updated,
-    package: await getOrganisationPlan(pool, organizationId),
-  };
+  const assignment = require("./churchPackageAssignmentService");
+  return assignment.assignOrganisationPackage(pool, organizationId, fields, platformAdminId);
 }
 
 module.exports = {

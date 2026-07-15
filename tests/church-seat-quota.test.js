@@ -92,8 +92,10 @@ test("documented privileged roles match repository tables", () => {
     "church_branch_admins (status=active)",
     "church_ministry_leaders (status=active)",
   ]);
-  assert.match(FOUNDATION_MEMBER_LIMIT_ERROR, /250 active members/);
-  assert.match(FOUNDATION_ADMIN_LIMIT_ERROR, /10 administrator/);
+  assert.match(FOUNDATION_MEMBER_LIMIT_ERROR, /restricted/i);
+  assert.match(FOUNDATION_MEMBER_LIMIT_ERROR, /Active members/i);
+  assert.match(FOUNDATION_ADMIN_LIMIT_ERROR, /restricted/i);
+  assert.match(FOUNDATION_ADMIN_LIMIT_ERROR, /Administrator/i);
 });
 
 test(

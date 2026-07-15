@@ -9,6 +9,7 @@
       <% if (notice) { %>
       <div class="church-alert church-alert--success" role="status"><%= notice %></div>
       <% } %>
+      <%- include('../partials/quota_warnings') %>
       <form class="church-form church-form--inline" method="get" action="/branch/announcements">
         <% if (statusFilter && statusFilter !== 'all') { %>
         <input type="hidden" name="status" value="<%= statusFilter %>"/>

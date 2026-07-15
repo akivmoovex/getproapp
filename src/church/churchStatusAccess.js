@@ -1,10 +1,19 @@
 "use strict";
 
-const { ORG_BRANCH_STATUSES } = require("./platformStatusValidation");
+const { ORG_BRANCH_STATUSES, ORG_STATUSES } = require("./platformStatusValidation");
 const { normalizeHostFromRequest } = require("./host");
 
 function isOperationalStatus(status) {
   return status === "active";
+}
+
+/** Admins may sign in and recover accounts while Foundation-dormant (not suspended). */
+function isAdminAccessibleOrgStatus(status) {
+  return status === "active" || status === "dormant";
+}
+
+function isDormantStatus(status) {
+  return status === "dormant";
 }
 
 /**
@@ -15,6 +24,9 @@ function getChurchAccessBlock(churchContext) {
   const org = churchContext.organization;
   const branch = churchContext.branch;
   if (!org || !branch) return { code: "not_found" };
+  if (isDormantStatus(org.status)) {
+    return { code: "organization_dormant", status: org.status };
+  }
   if (!isOperationalStatus(org.status)) {
     return { code: "organization", status: org.status };
   }
@@ -24,14 +36,6 @@ function getChurchAccessBlock(churchContext) {
   return null;
 }
 
-/**
- * Request-local operational status derived from churchContext (already DB-loaded by attachChurchContext).
- * Optionally refreshes organization/branch from PostgreSQL once per request when a pool is available
- * and `forceRefresh` is set — used by authenticated role middleware that must not trust session status.
- *
- * @param {import("express").Request} req
- * @param {{ forceRefresh?: boolean }} [opts]
- */
 async function resolveOperationalTenantStatus(req, opts = {}) {
   if (req._churchOperationalStatus && !opts.forceRefresh) {
     return req._churchOperationalStatus;
@@ -70,19 +74,19 @@ async function resolveOperationalTenantStatus(req, opts = {}) {
     }
   }
 
+  const orgStatus = organization && organization.status;
   const result = {
     organization,
     branch,
-    orgActive: isOperationalStatus(organization && organization.status),
+    orgActive: isOperationalStatus(orgStatus),
+    orgDormant: isDormantStatus(orgStatus),
+    orgAdminAccessible: isAdminAccessibleOrgStatus(orgStatus),
     branchActive: isOperationalStatus(branch && branch.status),
   };
   req._churchOperationalStatus = result;
   return result;
 }
 
-/**
- * @param {{ kind?: string, organization?: { status?: string, name?: string } | null, branch?: { status?: string, name?: string } | null } | null} churchContext
- */
 function getHqStatusBanner(churchContext) {
   if (!churchContext || churchContext.kind !== "branch") return null;
   const org = churchContext.organization;
@@ -90,7 +94,13 @@ function getHqStatusBanner(churchContext) {
   if (!org || !branch) return null;
 
   const banners = [];
-  if (!isOperationalStatus(org.status)) {
+  if (isDormantStatus(org.status)) {
+    banners.push({
+      level: "warning",
+      message:
+        "This organisation is dormant due to Foundation inactivity. The public site is unpublished. HQ and branch administrators may sign in to reactivate. Member access is paused. Data is preserved; deletion is not enabled.",
+    });
+  } else if (!isOperationalStatus(org.status)) {
     banners.push({
       level: org.status === "archived" ? "danger" : "warning",
       message:
@@ -124,6 +134,15 @@ function clearAllChurchPortalSessions(req) {
   }
 }
 
+function clearMemberAndLeaderSessions(req) {
+  try {
+    require("./memberAuth").clearChurchMemberSession(req);
+    require("./leaderAuth").clearChurchLeaderSession(req);
+  } catch {
+    /* optional */
+  }
+}
+
 /** @deprecated use clearAllChurchPortalSessions */
 function clearOperationalSessions(req) {
   clearAllChurchPortalSessions(req);
@@ -153,6 +172,10 @@ function isHqPath(path) {
   return String(path || "").startsWith("/hq");
 }
 
+function isBranchAdminPath(path) {
+  return String(path || "").startsWith("/branch");
+}
+
 function isPlatformAdminPath(path) {
   return String(path || "").startsWith("/admin");
 }
@@ -172,6 +195,23 @@ function isHqPublicAuthPath(path) {
   return p === "/hq/login" || p.startsWith("/hq/forgot-password");
 }
 
+function isBranchPublicAuthPath(path) {
+  const p = String(path || "");
+  return p === "/branch/login" || p.startsWith("/branch/forgot-password");
+}
+
+function isAccountRecoveryPath(path) {
+  const p = String(path || "");
+  return (
+    isHqPublicAuthPath(p) ||
+    isBranchPublicAuthPath(p) ||
+    p === "/forgot-password" ||
+    p.startsWith("/forgot-password") ||
+    p === "/reset-password" ||
+    p.startsWith("/reset-password")
+  );
+}
+
 function hasAnyChurchPortalSession(req) {
   try {
     if (require("./memberAuth").getChurchMemberSession(req)) return true;
@@ -184,21 +224,30 @@ function hasAnyChurchPortalSession(req) {
   return false;
 }
 
+function hasAdminPortalSession(req) {
+  try {
+    if (require("./branchAdminAuth").getChurchBranchAdminSession(req)) return true;
+    if (require("./hqAuth").getChurchHqAdminSession(req)) return true;
+  } catch {
+    /* optional */
+  }
+  return false;
+}
+
 /**
  * Blocks public and authenticated church portal access when org/branch is not active.
- * HQ authenticated routes are blocked when the organization is inactive.
- * HQ remains allowed when only the selected branch is inactive (org still active).
- * Logout and HQ public auth paths remain reachable.
+ * Foundation dormant: public/member blocked; HQ/branch admin + recovery remain available.
  */
 function churchOperationalAccessGate(req, res, next) {
   if (!req.isChurchHost || !req.churchContext) return next();
   if (req.churchContext.kind === "vertical-apex") return next();
   if (isPlatformAdminPath(req.path)) return next();
   if (isChurchLogoutPath(req.path)) return next();
-  if (isHqPublicAuthPath(req.path)) return next();
+  if (isAccountRecoveryPath(req.path)) return next();
 
   const authed = hasAnyChurchPortalSession(req);
   const hqPortal = isHqPath(req.path);
+  const branchAdminPortal = isBranchAdminPath(req.path);
 
   return resolveOperationalTenantStatus(req, { forceRefresh: authed })
     .then((status) => {
@@ -207,12 +256,20 @@ function churchOperationalAccessGate(req, res, next) {
         return renderChurchNotFound(req, res);
       }
 
+      // Dormancy ≠ suspension: admins may sign in / recover / reactivate.
+      if (status.orgDormant) {
+        clearMemberAndLeaderSessions(req);
+        if (hqPortal || branchAdminPortal) {
+          return next();
+        }
+        return renderChurchUnavailable(req, res);
+      }
+
       if (!status.orgActive) {
         clearAllChurchPortalSessions(req);
         return renderChurchUnavailable(req, res);
       }
 
-      // Inactive branch: block public + branch-scoped portals; HQ portal stays allowed.
       if (!status.branchActive && !hqPortal) {
         clearAllChurchPortalSessions(req);
         return renderChurchUnavailable(req, res);
@@ -227,6 +284,7 @@ function statusBadgeClass(status) {
   const map = {
     active: "success",
     suspended: "warning",
+    dormant: "warning",
     archived: "muted",
   };
   return map[status] || "default";
@@ -239,18 +297,25 @@ function statusLabel(status) {
 
 module.exports = {
   ORG_BRANCH_STATUSES,
+  ORG_STATUSES,
   isOperationalStatus,
+  isAdminAccessibleOrgStatus,
+  isDormantStatus,
   getChurchAccessBlock,
   getHqStatusBanner,
   resolveOperationalTenantStatus,
   clearOperationalSessions,
   clearAllChurchPortalSessions,
+  clearMemberAndLeaderSessions,
   hasAnyChurchPortalSession,
+  hasAdminPortalSession,
   renderChurchUnavailable,
   renderChurchNotFound,
   churchOperationalAccessGate,
   isChurchLogoutPath,
   isHqPublicAuthPath,
+  isBranchPublicAuthPath,
+  isAccountRecoveryPath,
   statusBadgeClass,
   statusLabel,
 };

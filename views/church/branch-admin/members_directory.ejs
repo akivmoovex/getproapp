@@ -4,9 +4,17 @@
           <h1 class="church-branch-page-hero__title church-show-mobile-only">Members</h1>
           <p class="church-branch-page-hero__subtitle">Directory for <%= churchName %></p>
         </div>
-        <a class="church-btn church-btn--outline" href="/branch/member-verification">Verification queue</a>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <a class="church-btn church-btn--outline" href="/branch/members/import">Import CSV</a>
+          <a class="church-btn church-btn--outline" href="/branch/member-verification">Verification queue</a>
+        </div>
       </header>
       <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <%- include('../partials/quota_warnings', {
+        quotaWarnings: (typeof planContext !== 'undefined' && planContext && planContext.quotaWarnings)
+          ? planContext.quotaWarnings.filter(function (w) { return w.meterKey === 'members'; })
+          : []
+      }) %>
       <form class="church-form church-form--inline" method="get" action="/branch/members">
         <div class="church-field church-field--grow">
           <label class="church-label" for="q">Search</label>

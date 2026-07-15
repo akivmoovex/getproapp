@@ -151,9 +151,26 @@ async function publishWebsiteContentForBranch(pool, branchId, adminId) {
   return r.rows[0] ?? null;
 }
 
+/**
+ * Soft-unpublish public site (draft). Does not delete content.
+ * Used by Foundation dormancy — not treated as genuine church activity.
+ */
+async function unpublishWebsiteContentForBranch(pool, branchId) {
+  const r = await pool.query(
+    `UPDATE public.church_branch_website_content
+     SET status = 'draft',
+         updated_at = now()
+     WHERE branch_id = $1 AND status = 'published'
+     RETURNING ${SELECT_COLUMNS}`,
+    [branchId]
+  );
+  return r.rows[0] ?? null;
+}
+
 module.exports = {
   getWebsiteContentForBranch,
   getPublishedWebsiteContentForBranch,
   upsertWebsiteDraftForBranch,
   publishWebsiteContentForBranch,
+  unpublishWebsiteContentForBranch,
 };

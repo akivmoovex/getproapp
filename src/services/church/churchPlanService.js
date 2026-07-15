@@ -139,21 +139,15 @@ async function loadPlanContextForOrganization(pool, organizationId) {
     if (packageUsage) {
       ctx.packageUsage = packageUsage;
       ctx.storageDisplay = packageUsage.meters.storage.display;
-      for (const w of packageUsage.warnings || []) {
+      ctx.quotaWarnings = packageUsage.quotaWarnings || [];
+      // Keep compact warning list for older plan_limit_warnings consumers.
+      for (const w of packageUsage.quotaWarnings || []) {
         ctx.warnings = (ctx.warnings || []).concat([
           {
-            level: "warn",
-            code: `package_usage_${w.key}`,
-            message: w.message,
-          },
-        ]);
-      }
-      for (const b of packageUsage.blocked || []) {
-        ctx.warnings = (ctx.warnings || []).concat([
-          {
-            level: "limit",
-            code: `package_blocked_${b.key}`,
-            message: b.message,
+            level: w.band >= 100 ? "limit" : w.band >= 90 ? "warning" : "warn",
+            code: `package_quota_${w.meterKey}_${w.band}`,
+            message: [w.message, w.existingDataNote, w.guidance].filter(Boolean).join(" "),
+            quotaWarning: w,
           },
         ]);
       }
