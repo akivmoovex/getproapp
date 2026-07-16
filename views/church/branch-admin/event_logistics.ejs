@@ -1,0 +1,33 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Event logistics</h1>
+          <p class="church-branch-topbar__subtitle">Reusable forms, advanced registration, and follow-up</p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success"><%= notice %></div><% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Reusable registration forms</h2>
+        <form class="church-form" method="post" action="/branch/event-logistics/forms">
+          <%- include('../partials/csrf_field') %>
+          <input class="church-input" name="title" placeholder="Form title" required/>
+          <textarea class="church-input" name="consent_text" rows="2" placeholder="Consent text"></textarea>
+          <button class="church-btn church-btn--primary" type="submit">Create form</button>
+        </form>
+        <ul class="church-list">
+          <% (forms || []).forEach(function (f) { %>
+          <li><a href="/branch/event-logistics/forms/<%= f.id %>"><%= f.title %></a></li>
+          <% }) %>
+        </ul>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Published events</h2>
+        <ul class="church-list">
+          <% (events || []).forEach(function (e) { %>
+          <li><a href="/branch/events/<%= e.id %>"><%= e.title %></a> · <%= new Date(e.event_date).toLocaleDateString('en-GB') %></li>
+          <% }) %>
+        </ul>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

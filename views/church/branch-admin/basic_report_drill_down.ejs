@@ -1,0 +1,46 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-page-hero">
+        <div>
+          <a class="church-branch-back" href="/branch/reports/basic?<%= filterQueryString(drillDown.filters) %>">&larr; Back to basic reports</a>
+          <h1 class="church-branch-page-hero__title"><%= drillDown.definition.label %></h1>
+          <p class="church-branch-page-hero__subtitle"><%= drillDown.definition.definition %></p>
+        </div>
+      </header>
+
+      <section class="church-branch-panel">
+        <dl class="church-branch-dl church-branch-dl--inline">
+          <div><dt>Report total</dt><dd><strong><%= typeof reportKpiValue === 'number' && drillDown.kpiId === 'giving_totals' ? formatMoney(reportKpiValue) : reportKpiValue %></strong></dd></div>
+          <div><dt>Rows shown</dt><dd><%= drillDown.rows.length %> of <%= drillDown.totalCount %></dd></div>
+          <div><dt>Date range</dt><dd><%= drillDown.filters.dateFrom %> — <%= drillDown.filters.dateTo %></dd></div>
+        </dl>
+        <% if (drillDown.truncated) { %>
+        <div class="church-alert church-alert--warning" role="alert">
+          Showing first <%= drillDown.exportMaxRows %> rows. Narrow filters or use export within the row limit.
+        </div>
+        <% } %>
+        <% if (drillDown.rows.length === 0) { %>
+        <p class="church-branch-empty">No underlying records for this metric.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <% Object.keys(drillDown.rows[0]).forEach(function (col) { %>
+                <th scope="col"><%= col.replace(/_/g, ' ') %></th>
+                <% }); %>
+              </tr>
+            </thead>
+            <tbody>
+              <% drillDown.rows.forEach(function (row) { %>
+              <tr>
+                <% Object.keys(drillDown.rows[0]).forEach(function (col) { %>
+                <td><%= row[col] == null ? '' : row[col] %></td>
+                <% }); %>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

@@ -36,6 +36,7 @@ module.exports = function churchRoutes() {
   registerPublicChurchDirectoryRoutes(router);
   registerChurchAuthRoutes(router);
   registerMemberPortalRoutes(router);
+  require("./memberAppointmentsSurveys")(router);
   registerLeaderPortalRoutes(router);
   registerBranchAdminRoutes(router);
   registerHqAdminRoutes(router);

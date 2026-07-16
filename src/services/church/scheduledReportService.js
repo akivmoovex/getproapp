@@ -32,6 +32,31 @@ function sha256(text) {
   return crypto.createHash("sha256").update(String(text || ""), "utf8").digest("hex");
 }
 
+async function actorHasFinancePermission(pool, actorType, actorId, organizationId, branchId) {
+  if (!actorId) return false;
+  if (actorType === "hq_admin") {
+    const admin = await hqAdminsRepo.findHqAdminById(pool, actorId);
+    return Boolean(
+      admin &&
+        Number(admin.organization_id) === Number(organizationId) &&
+        admin.status === "active" &&
+        admin.can_view_finance
+    );
+  }
+  const admin = await branchAdminsRepo.findBranchAdminById(pool, actorId);
+  return Boolean(
+    admin &&
+      Number(admin.organization_id) === Number(organizationId) &&
+      Number(admin.branch_id) === Number(branchId) &&
+      admin.status === "active" &&
+      admin.can_view_finance
+  );
+}
+
+async function recipientHasFinancePermission(pool, recipientType, recipientId, organizationId, branchId) {
+  return actorHasFinancePermission(pool, recipientType, recipientId, organizationId, branchId);
+}
+
 async function assertCanScheduleReports(pool, organizationId) {
   const plan = await getOrganisationPlan(pool, organizationId);
   if (!plan) {
@@ -212,6 +237,20 @@ async function createSchedule(pool, input) {
     const err = new Error("This report cannot be scheduled.");
     err.code = "UNAUTHORISED_REPORT";
     throw err;
+  }
+  if (reportDef.requiresFinance) {
+    const canFinance = await actorHasFinancePermission(
+      pool,
+      input.actorType || "branch_admin",
+      input.actorId,
+      input.organizationId,
+      input.branchId
+    );
+    if (!canFinance) {
+      const err = new Error("Scheduling giving reports requires finance permission.");
+      err.code = "FINANCE_FORBIDDEN";
+      throw err;
+    }
   }
   if (input.actorType === "branch_admin" && input.actorId) {
     const creator = await resolveAuthorisedRecipient(pool, {
@@ -404,6 +443,19 @@ async function executeScheduleRun(pool, schedule, opts = {}) {
     return { outcome: "skipped_unauthorised_report", jobKey };
   }
 
+  if (reportDef.requiresFinance) {
+    const canFinance = await actorHasFinancePermission(
+      pool,
+      schedule.created_by_actor_type || "branch_admin",
+      schedule.created_by_actor_id,
+      schedule.organization_id,
+      schedule.branch_id
+    );
+    if (!canFinance) {
+      return { outcome: "skipped_finance_permission", jobKey };
+    }
+  }
+
   // Claim the run first (unique job_key) so retries never double-deliver or double-bill quota.
   let run;
   try {
@@ -501,6 +553,40 @@ async function executeScheduleRun(pool, schedule, opts = {}) {
           /* ignore */
         }
         continue;
+      }
+
+      if (reportDef.requiresFinance) {
+        const financeOk = await recipientHasFinancePermission(
+          pool,
+          authorised.recipient_type,
+          authorised.recipient_id,
+          schedule.organization_id,
+          schedule.branch_id
+        );
+        if (!financeOk) {
+          try {
+            await pool.query(
+              `INSERT INTO public.church_scheduled_report_deliveries (
+                 run_id, organization_id, recipient_type, recipient_id, recipient_email,
+                 status, idempotency_key, error_message
+               ) VALUES ($1,$2,$3,$4,$5,'skipped_unauthorised',$6,$7)
+               ON CONFLICT (idempotency_key) DO NOTHING`,
+              [
+                run.id,
+                schedule.organization_id,
+                authorised.recipient_type,
+                authorised.recipient_id,
+                authorised.email,
+                idempotencyKey,
+                "Recipient lacks finance permission for giving reports.",
+              ]
+            );
+            skipped += 1;
+          } catch {
+            /* ignore */
+          }
+          continue;
+        }
       }
 
       try {

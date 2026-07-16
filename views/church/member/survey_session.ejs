@@ -1,0 +1,39 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header church-member-header--page">
+        <div>
+          <a href="/member/surveys">&larr; Surveys</a>
+          <h1 class="church-member-header__title"><%= session.survey_title %></h1>
+          <p class="church-member-header__subtitle"><%= session.status === 'submitted' ? 'Submitted' : 'In progress — save and resume anytime' %></p>
+        </div>
+      </header>
+      <section class="church-member-panel">
+        <% if (session.status === 'in_progress') { %>
+          <% (questions || []).forEach(function (q) { %>
+          <form class="church-form" method="post" action="/member/surveys/sessions/<%= session.id %>/answer" style="margin-bottom:1rem;">
+            <%- include('../partials/csrf_field') %>
+            <input type="hidden" name="question_id" value="<%= q.id %>"/>
+            <label class="church-label"><%= q.prompt %></label>
+            <% if (q.question_type === 'yes_no') { %>
+            <select class="church-input" name="answer_text" required>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+            <% } else if (q.question_type === 'single_choice') { %>
+            <select class="church-input" name="answer_text" required>
+              <% (q.options_json || []).forEach(function (opt) { %><option value="<%= opt %>"><%= opt %></option><% }) %>
+            </select>
+            <% } else { %>
+            <input class="church-input" name="answer_text" <%= q.is_required ? 'required' : '' %>/>
+            <% } %>
+            <button class="church-btn church-btn--outline" type="submit">Save answer</button>
+          </form>
+          <% }) %>
+          <form class="church-form" method="post" action="/member/surveys/sessions/<%= session.id %>/submit">
+            <%- include('../partials/csrf_field') %>
+            <button class="church-btn church-btn--primary" type="submit">Submit survey</button>
+          </form>
+        <% } else { %>
+          <p>Thank you. Your responses have been submitted.</p>
+        <% } %>
+      </section>
+<%- include('../partials/member_shell_end') %>

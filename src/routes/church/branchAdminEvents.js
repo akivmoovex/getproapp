@@ -169,6 +169,19 @@ module.exports = function registerBranchAdminEventsRoutes(router) {
         if (!item) {
           return res.status(404).type("text").send("Event not found.");
         }
+        const { getOrganisationPlan } = require("../../services/church/churchEntitlementService");
+        const growthAdvancedEventsService = require("../../services/church/growthAdvancedEventsService");
+        const plan = await getOrganisationPlan(pool, req.churchContext.organization.id);
+        const ops = await growthAdvancedEventsService.loadEventOps(
+          pool,
+          {
+            organization_id: req.churchContext.organization.id,
+            branch_id: req.churchContext.branch.id,
+            admin_id: req.churchBranchAdmin.admin_id,
+          },
+          plan,
+          eventId
+        );
         return res.render(
           "church/branch-admin/event_detail",
           renderFormLocals(req, {
@@ -176,6 +189,12 @@ module.exports = function registerBranchAdminEventsRoutes(router) {
             formatEventTimeRange,
             notice: noticeMessage(flashFromQuery(req, EVENT_NOTICES)),
             error: null,
+            registrations: ops.registrations,
+            checkIns: ops.checkIns,
+            volunteerNeeds: ops.volunteerNeeds,
+            followUps: ops.followUps,
+            forms: ops.forms,
+            growthAdvanced: ops.growth,
           })
         );
       } catch (e) {
@@ -373,6 +392,146 @@ module.exports = function registerBranchAdminEventsRoutes(router) {
         });
 
         return res.redirect(303, `/branch/events?notice=event_cancelled`);
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.post(
+    "/branch/events/:eventId/registration-settings",
+    requireChurchBranchHost,
+    requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        const eventId = Number(req.params.eventId);
+        const {
+          validateFoundationEventSettings,
+          validateGrowthEventSettings,
+        } = require("../../church/growthAdvancedEventsValidation");
+        const growthAdvancedEventsService = require("../../services/church/growthAdvancedEventsService");
+        const { getOrganisationPlan } = require("../../services/church/churchEntitlementService");
+        const pool = getPgPool();
+        const plan = await getOrganisationPlan(pool, req.churchContext.organization.id);
+        const ctx = {
+          organization_id: req.churchContext.organization.id,
+          branch_id: req.churchContext.branch.id,
+          admin_id: req.churchBranchAdmin.admin_id,
+        };
+        if (growthAdvancedEventsService.isGrowth(plan)) {
+          const validated = validateGrowthEventSettings(req.body);
+          if (!validated.ok) return res.status(400).type("text").send(validated.error);
+          await growthAdvancedEventsService.configureGrowthEvent(
+            pool,
+            ctx,
+            plan,
+            eventId,
+            validated.data
+          );
+        } else {
+          const validated = validateFoundationEventSettings(req.body);
+          if (!validated.ok) return res.status(400).type("text").send(validated.error);
+          await growthAdvancedEventsService.enableFoundationRegistration(
+            pool,
+            ctx,
+            eventId,
+            validated.data
+          );
+        }
+        return res.redirect(303, `/branch/events/${eventId}?notice=event_updated`);
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.post(
+    "/branch/events/:eventId/registrations",
+    requireChurchBranchHost,
+    requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        const eventId = Number(req.params.eventId);
+        const growthAdvancedEventsService = require("../../services/church/growthAdvancedEventsService");
+        const { validateRegistrationBody } = require("../../church/growthAdvancedEventsValidation");
+        const { getOrganisationPlan } = require("../../services/church/churchEntitlementService");
+        const pool = getPgPool();
+        const plan = await getOrganisationPlan(pool, req.churchContext.organization.id);
+        const validated = validateRegistrationBody(req.body);
+        const memberId = Number(req.body && req.body.member_id);
+        await growthAdvancedEventsService.registerForEvent(
+          pool,
+          {
+            organization_id: req.churchContext.organization.id,
+            branch_id: req.churchContext.branch.id,
+            admin_id: req.churchBranchAdmin.admin_id,
+            member_id: Number.isFinite(memberId) && memberId > 0 ? memberId : null,
+          },
+          plan,
+          eventId,
+          validated.data
+        );
+        return res.redirect(303, `/branch/events/${eventId}?notice=event_updated`);
+      } catch (e) {
+        if (e.code === "FULL" || e.code === "DUPLICATE" || e.code === "WINDOW_CLOSED") {
+          return res.status(409).type("text").send(e.message);
+        }
+        return next(e);
+      }
+    }
+  );
+
+  router.post(
+    "/branch/events/:eventId/registrations/:registrationId/check-in",
+    requireChurchBranchHost,
+    requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        const growthAdvancedEventsService = require("../../services/church/growthAdvancedEventsService");
+        await growthAdvancedEventsService.checkInRegistration(
+          getPgPool(),
+          {
+            organization_id: req.churchContext.organization.id,
+            branch_id: req.churchContext.branch.id,
+            admin_id: req.churchBranchAdmin.admin_id,
+          },
+          Number(req.params.eventId),
+          Number(req.params.registrationId)
+        );
+        return res.redirect(303, `/branch/events/${req.params.eventId}?notice=event_updated`);
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.post(
+    "/branch/events/:eventId/registrations/:registrationId/cancel",
+    requireChurchBranchHost,
+    requireChurchBranchAdminSession,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        const growthAdvancedEventsService = require("../../services/church/growthAdvancedEventsService");
+        const { getOrganisationPlan } = require("../../services/church/churchEntitlementService");
+        const pool = getPgPool();
+        const plan = await getOrganisationPlan(pool, req.churchContext.organization.id);
+        await growthAdvancedEventsService.cancelRegistration(
+          pool,
+          {
+            organization_id: req.churchContext.organization.id,
+            branch_id: req.churchContext.branch.id,
+            admin_id: req.churchBranchAdmin.admin_id,
+          },
+          plan,
+          Number(req.params.registrationId),
+          String((req.body && req.body.cancellation_reason) || ""),
+          "admin"
+        );
+        return res.redirect(303, `/branch/events/${req.params.eventId}?notice=event_updated`);
       } catch (e) {
         return next(e);
       }

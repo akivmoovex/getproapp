@@ -75,7 +75,7 @@ async function createOrUpdateDraftReportForBranchPeriod(pool, fields) {
        $10, $11, $12, $13, $14,
        $15, $16, $17, $18, $19,
        $20, $21, $22,
-       $23::jsonb, $24::jsonb
+       $23, $24::jsonb, $25::jsonb
      )
      ON CONFLICT (branch_id, period_year, period_month)
      DO UPDATE SET
@@ -326,21 +326,33 @@ async function findReportByIdForOrganization(pool, reportId, organizationId) {
  * @param {number} reportId
  * @param {number} organizationId
  * @param {string} comment
+ * @param {number | null} [hqAdminId]
  * @returns {Promise<object | null>}
  */
-async function approveReportForOrganization(pool, reportId, organizationId, comment) {
+async function approveReportForOrganization(pool, reportId, organizationId, comment, hqAdminId = null) {
   const r = await pool.query(
     `UPDATE public.church_monthly_reports
      SET status = 'approved',
          hq_review_comment = $1,
          reviewed_at = now(),
+         locked_at = now(),
+         locked_by_hq_admin_id = $4,
          updated_at = now()
      WHERE id = $2 AND organization_id = $3 AND status = 'submitted'
      RETURNING *`,
-    [comment || "", reportId, organizationId]
+    [comment || "", reportId, organizationId, hqAdminId || null]
   );
   if (!r.rows[0]) return null;
   return findReportByIdForOrganization(pool, reportId, organizationId);
+}
+
+/**
+ * True when an approved monthly report is locked against branch edits.
+ */
+function isMonthlyReportLocked(report) {
+  if (!report) return false;
+  if (report.locked_at) return true;
+  return report.status === "approved";
 }
 
 /**
@@ -402,4 +414,5 @@ module.exports = {
   requestChangesForOrganization,
   countReportsByStatusForOrganization,
   formatReportPeriod,
+  isMonthlyReportLocked,
 };

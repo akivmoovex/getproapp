@@ -52,7 +52,7 @@ async function calculateOrganisationActivity(pool, organizationId) {
       });
     }
 
-    // Attendance activity (record created/updated — genuine church ops)
+    // Attendance activity (records + Foundation check-ins — genuine church ops)
     const attendance = await pool.query(
       `SELECT GREATEST(MAX(created_at), MAX(updated_at), MAX(service_date::timestamptz)) AS last_at
        FROM public.church_attendance_records
@@ -61,6 +61,17 @@ async function calculateOrganisationActivity(pool, organizationId) {
     );
     if (attendance.rows[0] && attendance.rows[0].last_at) {
       sources.push({ key: "attendance", at: new Date(attendance.rows[0].last_at) });
+    }
+    const checkIns = await pool
+      .query(
+        `SELECT GREATEST(MAX(checked_in_at), MAX(created_at), MAX(updated_at)) AS last_at
+         FROM public.church_attendance_check_ins
+         WHERE organization_id = $1 AND status = 'active'`,
+        [orgId]
+      )
+      .catch(() => ({ rows: [{ last_at: null }] }));
+    if (checkIns.rows[0] && checkIns.rows[0].last_at) {
+      sources.push({ key: "attendance_check_in", at: new Date(checkIns.rows[0].last_at) });
     }
 
     // Events

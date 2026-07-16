@@ -89,6 +89,7 @@ async function cleanupPilotOrganization(pool, organizationId) {
   const tables = [
     "church_pilot_feature_flag_audit",
     "church_pilot_feature_flag_tenant_overrides",
+    "church_notification_test_deliveries",
     "church_scheduled_report_deliveries",
     "church_scheduled_report_runs",
     "church_scheduled_report_recipients",
@@ -96,6 +97,50 @@ async function cleanupPilotOrganization(pool, organizationId) {
     "church_hq_broadcast_deliveries",
     "church_hq_broadcast_targets",
     "church_hq_broadcasts",
+    "church_survey_answers",
+    "church_survey_response_sessions",
+    "church_survey_questions",
+    "church_surveys",
+    "church_appointment_confidential_notes",
+    "church_appointment_reminders",
+    "church_appointments",
+    "church_appointment_leave",
+    "church_appointment_availability",
+    "church_appointment_settings",
+    "church_volunteer_assignments",
+    "church_volunteer_shifts",
+    "church_volunteer_availability",
+    "church_volunteer_member_skills",
+    "church_volunteer_role_skills",
+    "church_volunteer_skills",
+    "church_volunteer_roles",
+    "church_group_attendance",
+    "church_group_notes",
+    "church_group_meetings",
+    "church_group_join_requests",
+    "church_group_memberships",
+    "church_group_leaders",
+    "church_groups",
+    "church_event_registration_answers",
+    "church_event_registration_form_questions",
+    "church_event_registration_forms",
+    "church_event_visitor_follow_ups",
+    "church_event_volunteers",
+    "church_event_registrations",
+    "church_pastoral_automation_work_items",
+    "church_pastoral_automation_runs",
+    "church_pastoral_automation_settings",
+    "church_pastoral_case_attachments",
+    "church_pastoral_case_notes",
+    "church_pastoral_cases",
+    "church_safeguarding_incidents",
+    "church_attendance_offline_queue",
+    "church_attendance_check_ins",
+    "church_attendance_service_sessions",
+    "church_member_attendance_qr_tokens",
+    "church_attendance_cross_branch_authorizations",
+    "church_member_attendance_exemptions",
+    "church_attendance_branch_rules",
     "church_member_branch_history",
     "church_member_import_rows",
     "church_member_import_batches",
@@ -103,16 +148,17 @@ async function cleanupPilotOrganization(pool, organizationId) {
     "church_prayer_requests",
     "church_events",
     "church_monthly_reports",
+    "church_organization_inactivity_warnings",
     "church_audit_logs",
     "church_ministry_leaders",
     "church_branch_admins",
     "church_hq_admins",
     "church_members",
+    "church_branch_website_content",
     "church_branches",
-    "church_growth_trials",
     "church_organization_package_trial_reminders",
     "church_organization_package_trials",
-    "church_package_history",
+    "church_organization_package_history",
     "church_billing_invoices",
     "church_billing_branch_snapshots",
     "church_giving_summaries",
@@ -398,6 +444,52 @@ async function postWithCsrf(agent, getPath, postPath, body) {
     });
 }
 
+/** Service-layer actor context shared by Growth feature helpers. */
+function serviceActorCtx(org, branch, admin, extras = {}) {
+  return {
+    organization_id: org.id,
+    branch_id: branch.id,
+    platform_tenant_id: org.platform_tenant_id,
+    admin_id: admin.id,
+    can_access_pastoral: admin.can_access_pastoral === true,
+    can_supervise_pastoral: admin.can_supervise_pastoral === true,
+    can_view_finance: admin.can_view_finance === true,
+    ...extras,
+  };
+}
+
+async function setBranchAdminFlags(pool, adminId, flags = {}) {
+  const sets = [];
+  const vals = [adminId];
+  let i = 2;
+  if (flags.can_access_pastoral != null) {
+    sets.push(`can_access_pastoral = $${i++}`);
+    vals.push(Boolean(flags.can_access_pastoral));
+  }
+  if (flags.can_supervise_pastoral != null) {
+    sets.push(`can_supervise_pastoral = $${i++}`);
+    vals.push(Boolean(flags.can_supervise_pastoral));
+  }
+  if (flags.can_view_finance != null) {
+    sets.push(`can_view_finance = $${i++}`);
+    vals.push(Boolean(flags.can_view_finance));
+  }
+  if (!sets.length) return;
+  await pool.query(
+    `UPDATE public.church_branch_admins SET ${sets.join(", ")} WHERE id = $1`,
+    vals
+  );
+}
+
+async function setHqAdminFlags(pool, adminId, flags = {}) {
+  if (flags.can_view_finance != null) {
+    await pool.query(`UPDATE public.church_hq_admins SET can_view_finance = $2 WHERE id = $1`, [
+      adminId,
+      Boolean(flags.can_view_finance),
+    ]);
+  }
+}
+
 module.exports = {
   CSRF_FIELD,
   DEFAULT_PASSWORD,
@@ -416,4 +508,7 @@ module.exports = {
   loginHqAdmin,
   loginMember,
   postWithCsrf,
+  serviceActorCtx,
+  setBranchAdminFlags,
+  setHqAdminFlags,
 };

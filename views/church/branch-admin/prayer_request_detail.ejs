@@ -17,11 +17,23 @@
         <dl class="church-branch-dl">
           <div><dt>Status</dt><dd><%= prayerStatusLabel(prayerItem.status) %></dd></div>
           <div><dt>Submitted</dt><dd><%= new Date(prayerItem.created_at).toLocaleString('en-GB') %></dd></div>
+          <% if (prayerItem.acknowledged_at) { %>
+          <div><dt>Acknowledged</dt><dd><%= new Date(prayerItem.acknowledged_at).toLocaleString('en-GB') %></dd></div>
+          <% } %>
+          <% if (prayerItem.assigned_admin_name) { %>
+          <div><dt>Assigned to</dt><dd><%= prayerItem.assigned_admin_name %></dd></div>
+          <% } %>
+          <% if (prayerItem.due_date) { %>
+          <div><dt>Due date</dt><dd><%= prayerItem.due_date %></dd></div>
+          <% } %>
+          <% if (prayerItem.next_action) { %>
+          <div><dt>Next action</dt><dd><%= prayerItem.next_action %></dd></div>
+          <% } %>
           <div><dt>Member</dt><dd><%= showMemberIdentity ? prayerItem.member_name : 'Anonymous' %></dd></div>
         </dl>
         <div class="church-branch-review-note">
           <strong>Details</strong>
-          <p><%= prayerItem.details || 'No additional details provided.' %></p>
+          <p><%= showDetails ? (prayerItem.details || 'No additional details provided.') : prayerItem.details_display %></p>
         </div>
         <% if (prayerItem.admin_comment) { %>
         <div class="church-branch-review-note church-branch-review-note--hq">
@@ -29,14 +41,63 @@
           <p><%= prayerItem.admin_comment %></p>
         </div>
         <% } %>
+        <% if (prayerItem.closure_outcome) { %>
+        <div class="church-branch-review-note">
+          <strong>Closure outcome</strong>
+          <p><%= prayerItem.closure_outcome %></p>
+        </div>
+        <% } %>
       </section>
+
+      <% if ((attachments || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Attachments</h2>
+        <ul class="church-member-list">
+          <% attachments.forEach(function (a) { %>
+          <li><a href="/branch/prayer-requests/<%= prayerItem.id %>/attachments/<%= a.id %>/download"><%= a.original_filename %></a></li>
+          <% }); %>
+        </ul>
+      </section>
+      <% } %>
+
       <% if (prayerItem.status !== 'closed') { %>
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Actions</h2>
         <div class="church-hq-review-actions">
           <% if (prayerItem.status === 'submitted') { %>
+          <form class="church-form" method="post" action="/branch/prayer-requests/<%= prayerItem.id %>/acknowledge">
+            <%- include('../partials/csrf_field') %>
+            <button class="church-btn church-btn--outline" type="submit">Acknowledge</button>
+          </form>
+          <% } %>
+          <form class="church-form" method="post" action="/branch/prayer-requests/<%= prayerItem.id %>/assign">
+            <%- include('../partials/csrf_field') %>
+            <div class="church-field">
+              <label class="church-label" for="assigned_admin_id">Assign to</label>
+              <select class="church-input" id="assigned_admin_id" name="assigned_admin_id" required>
+                <option value="" disabled selected>Select pastoral admin</option>
+                <% (pastoralAdmins || []).forEach(function (a) { %>
+                <option value="<%= a.id %>"><%= a.full_name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <button class="church-btn church-btn--outline" type="submit">Assign</button>
+          </form>
+          <form class="church-form" method="post" action="/branch/prayer-requests/<%= prayerItem.id %>/follow-up">
+            <%- include('../partials/csrf_field') %>
+            <div class="church-field">
+              <label class="church-label" for="due_date">Due date</label>
+              <input class="church-input" id="due_date" name="due_date" type="date"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="next_action">Next action</label>
+              <input class="church-input" id="next_action" name="next_action" type="text" required/>
+            </div>
+            <button class="church-btn church-btn--outline" type="submit">Record follow-up</button>
+          </form>
+          <% if (prayerItem.status === 'submitted' || prayerItem.status === 'acknowledged') { %>
           <form class="church-form" method="post" action="/branch/prayer-requests/<%= prayerItem.id %>/mark-reviewed">
-        <%- include('../partials/csrf_field') %>
+            <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
               <label class="church-label" for="review_comment">Comment (optional)</label>
               <textarea class="church-input church-input--textarea" id="review_comment" name="admin_comment" rows="2"></textarea>
@@ -45,13 +106,26 @@
           </form>
           <% } %>
           <form class="church-form" method="post" action="/branch/prayer-requests/<%= prayerItem.id %>/close">
-        <%- include('../partials/csrf_field') %>
+            <%- include('../partials/csrf_field') %>
             <div class="church-field church-field--full">
-              <label class="church-label" for="close_comment">Close note (optional)</label>
-              <textarea class="church-input church-input--textarea" id="close_comment" name="admin_comment" rows="2"></textarea>
+              <label class="church-label" for="closure_outcome">Closure outcome</label>
+              <input class="church-input" id="closure_outcome" name="closure_outcome" type="text" required/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="closure_reason">Closure reason (optional)</label>
+              <textarea class="church-input church-input--textarea" id="closure_reason" name="closure_reason" rows="2"></textarea>
             </div>
             <button class="church-btn church-btn--outline" type="submit">Close</button>
           </form>
+          <form class="church-form" method="post" action="/branch/prayer-requests/<%= prayerItem.id %>/attachments" enctype="multipart/form-data">
+            <%- include('../partials/csrf_field') %>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="attachment">Restricted attachment</label>
+              <input class="church-input" id="attachment" name="attachment" type="file" required/>
+            </div>
+            <button class="church-btn church-btn--ghost" type="submit">Upload attachment</button>
+          </form>
+          <p><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/pastoral-cases?member_id=<%= prayerItem.member_id %>&prayer_request_id=<%= prayerItem.id %>">Open pastoral case</a></p>
         </div>
       </section>
       <% } %>

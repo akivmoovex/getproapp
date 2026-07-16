@@ -53,6 +53,11 @@ function validateProfileBody(body) {
     ministry_interest: normalizeMinistryInterest(body.ministry_interest),
     emergency_contact_name: String(body.emergency_contact_name || "").trim(),
     emergency_contact_phone: String(body.emergency_contact_phone || "").trim(),
+    communication_consent:
+      body.communication_consent === true ||
+      body.communication_consent === "1" ||
+      body.communication_consent === "on" ||
+      body.communication_consent === "true",
   };
 
   if (!form.full_name || form.full_name.length < 2) {
@@ -131,6 +136,9 @@ function requestStatusLabel(status) {
 function prayerStatusLabel(status) {
   const map = {
     submitted: "Submitted",
+    acknowledged: "Acknowledged",
+    assigned: "Assigned",
+    in_follow_up: "In follow-up",
     reviewed: "Reviewed",
     closed: "Closed",
   };

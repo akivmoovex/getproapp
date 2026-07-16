@@ -22,14 +22,18 @@ const {
 } = require("./branchAdminShared");
 const { validateChangePasswordBody } = require("../../church/branchAdminAccountValidation");
 const registerBranchAdminAttendanceRoutes = require("./branchAdminAttendance");
+const registerBranchAdminAttendanceCheckInRoutes = require("./branchAdminAttendanceCheckIn");
 const registerBranchAdminGivingRoutes = require("./branchAdminGiving");
 const registerBranchAdminReportsRoutes = require("./branchAdminReports");
+const registerBranchAdminBasicReportsRoutes = require("./branchAdminBasicReports");
 const registerBranchAdminScheduledReportsRoutes = require("./branchAdminScheduledReports");
 const registerBranchAdminMemberRequestsRoutes = require("./branchAdminMemberRequests");
 const registerBranchAdminPasswordResetRequestsRoutes = require("./branchAdminPasswordResetRequests");
 const registerBranchAdminLeaderPasswordResetRequestsRoutes = require("./branchAdminLeaderPasswordResetRequests");
 const registerBranchAdminResetRequestsInboxRoutes = require("./branchAdminResetRequestsInbox");
 const registerBranchAdminPrayerRequestsRoutes = require("./branchAdminPrayerRequests");
+const registerBranchAdminPastoralCasesRoutes = require("./branchAdminPastoralCases");
+const registerBranchAdminSafeguardingRoutes = require("./branchAdminSafeguarding");
 const registerBranchAdminAnnouncementsRoutes = require("./branchAdminAnnouncements");
 const registerBranchAdminEventsRoutes = require("./branchAdminEvents");
 const registerBranchAdminWebsiteEditorRoutes = require("./branchAdminWebsiteEditor");
@@ -518,11 +522,28 @@ function registerBranchAdminRoutes(router) {
   });
 
   const registerPackageFeatureGateRoutes = require("./packageFeatureGates");
+  const registerBranchAdminGrowthAttendanceRoutes = require("./branchAdminGrowthAttendance");
+  registerBranchAdminGrowthAttendanceRoutes(router);
+  const registerBranchAdminPastoralAutomationRoutes = require("./branchAdminPastoralAutomation");
+  registerBranchAdminPastoralAutomationRoutes(router);
+  const registerBranchAdminAppointmentsRoutes = require("./branchAdminAppointments");
+  registerBranchAdminAppointmentsRoutes(router);
+  const registerBranchAdminSurveysRoutes = require("./branchAdminSurveys");
+  registerBranchAdminSurveysRoutes(router);
+  const registerBranchAdminGroupsRoutes = require("./branchAdminGroups");
+  registerBranchAdminGroupsRoutes(router);
+  const registerBranchAdminDiscipleshipRoutes = require("./branchAdminDiscipleship");
+  registerBranchAdminDiscipleshipRoutes(router);
+  const registerBranchAdminVolunteerSchedulingRoutes = require("./branchAdminVolunteerScheduling");
+  registerBranchAdminVolunteerSchedulingRoutes(router);
+  const registerBranchAdminEventLogisticsRoutes = require("./branchAdminEventLogistics");
+  registerBranchAdminEventLogisticsRoutes(router);
   // Specific package feature paths before parameterized /branch/attendance/:recordId etc.
   registerPackageFeatureGateRoutes(router, "branch");
   // Growth scheduled reports (real workflow; skipped from stub gates).
   registerBranchAdminScheduledReportsRoutes(router);
 
+  registerBranchAdminAttendanceCheckInRoutes(router);
   registerBranchAdminAttendanceRoutes(router);
   registerBranchAdminGivingRoutes(router);
   registerBranchAdminGivingSettingsRoutes(router);
@@ -536,12 +557,15 @@ function registerBranchAdminRoutes(router) {
   require("./branchAdminMemberImport")(router);
   registerBranchAdminMembersRoutes(router);
   registerBranchAdminAuditRoutes(router);
+  registerBranchAdminBasicReportsRoutes(router);
   registerBranchAdminReportsRoutes(router);
   registerBranchAdminMemberRequestsRoutes(router);
   registerBranchAdminPasswordResetRequestsRoutes(router);
   registerBranchAdminLeaderPasswordResetRequestsRoutes(router);
   registerBranchAdminResetRequestsInboxRoutes(router);
   registerBranchAdminPrayerRequestsRoutes(router);
+  registerBranchAdminPastoralCasesRoutes(router);
+  registerBranchAdminSafeguardingRoutes(router);
   registerBranchAdminAnnouncementsRoutes(router);
   registerBranchAdminEventsRoutes(router);
   registerBranchAdminWebsiteEditorRoutes(router);

@@ -24,7 +24,10 @@ function makeSuffix(prefix) {
 test("cross-branch KPI definitions document required metrics", () => {
   assert.ok(CROSS_BRANCH_KPI_DEFINITIONS.active_members);
   assert.ok(CROSS_BRANCH_KPI_DEFINITIONS.giving_totals.requires_finance_permission);
-  assert.match(CROSS_BRANCH_KPI_DEFINITIONS.event_registrations.definition, /proxy/i);
+  assert.ok(CROSS_BRANCH_KPI_DEFINITIONS.event_registrations);
+  assert.ok(CROSS_BRANCH_KPI_DEFINITIONS.pastoral_workload);
+  assert.ok(CROSS_BRANCH_KPI_DEFINITIONS.survey_completions);
+  assert.match(CROSS_BRANCH_KPI_DEFINITIONS.event_registrations.definition, /church_event_registrations/i);
 });
 
 test(
@@ -162,11 +165,26 @@ test(
       [orgG.id, branchMain.id]
     );
 
-    await pool.query(
+    const eventIns = await pool.query(
       `INSERT INTO public.church_events (
-         organization_id, branch_id, title, description, event_date, event_time, location_text, status
-       ) VALUES ($1, $2, 'Youth Night', '', '2026-07-05', '18:00', 'Hall', 'published')`,
+         organization_id, branch_id, title, description, event_date, start_time, location_text, status
+       ) VALUES ($1, $2, 'Youth Night', '', '2026-07-05', '18:00', 'Hall', 'published')
+       RETURNING id`,
       [orgG.id, branchMain.id]
+    );
+    const eventId = eventIns.rows[0].id;
+    const regIns = await pool.query(
+      `INSERT INTO public.church_event_registrations (
+         organization_id, branch_id, event_id, member_id, status, party_size
+       ) VALUES ($1, $2, $3, $4, 'registered', 1)
+       RETURNING id`,
+      [orgG.id, branchMain.id, eventId, member.id]
+    );
+    await pool.query(
+      `INSERT INTO public.church_event_check_ins (
+         organization_id, branch_id, event_id, registration_id, member_id, method
+       ) VALUES ($1, $2, $3, $4, $5, 'registration')`,
+      [orgG.id, branchMain.id, eventId, regIns.rows[0].id, member.id]
     );
 
     await pool.query(
@@ -236,8 +254,12 @@ test(
     assert.equal(mainRow.monthly_attendance, 40 + 10 + 5 + 42 + 8 + 6);
     assert.equal(mainRow.visitors, 5);
     assert.equal(mainRow.event_registrations, 1);
-    assert.equal(mainRow.event_attendance, 40 + 10 + 5); // 2026-07-05 only
+    assert.equal(mainRow.event_attendance, 1);
     assert.equal(mainRow.giving_total, 1250);
+    assert.ok(mainRow.giving_by_fund);
+    assert.equal(mainRow.giving_by_fund.tithes_total, 1000);
+    assert.ok(withFin.rankings && withFin.rankings.monthly_attendance);
+    assert.equal(withFin.rankings.monthly_attendance[0].branch_id, branchMain.id);
     assert.equal(zeroRow.active_members, 0);
     assert.equal(zeroRow.monthly_attendance, 0);
 

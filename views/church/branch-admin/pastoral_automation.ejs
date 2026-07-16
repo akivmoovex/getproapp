@@ -1,0 +1,100 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Pastoral automation</h1>
+          <p class="church-branch-topbar__subtitle">Missed-service recommendations, SLAs, and workload · <%= churchName %></p>
+        </div>
+        <a class="church-btn church-btn--outline" href="/branch/pastoral-cases">Pastoral cases</a>
+      </header>
+      <% if (notice) { %><div class="church-branch-panel church-branch-panel--notice" role="status"><%= notice %></div><% } %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Automation settings</h2>
+        <form class="church-form" method="post" action="/branch/pastoral-automation/settings">
+          <%- include('../partials/csrf_field') %>
+          <label class="church-checkbox">
+            <input type="checkbox" name="enabled" value="1" <%= settingsForm.enabled ? 'checked' : '' %>/>
+            Enable missed-service automation
+          </label>
+          <div class="church-field">
+            <label class="church-label" for="missed_service_threshold_weeks">Missed-service threshold (weeks)</label>
+            <input class="church-input" id="missed_service_threshold_weeks" name="missed_service_threshold_weeks" type="number" min="1" max="52" value="<%= settingsForm.missed_service_threshold_weeks != null ? settingsForm.missed_service_threshold_weeks : '' %>"/>
+          </div>
+          <div class="church-form church-form--inline">
+            <div class="church-field">
+              <label class="church-label" for="first_response_target_hours">First-response target (hours)</label>
+              <input class="church-input" id="first_response_target_hours" name="first_response_target_hours" type="number" min="1" value="<%= settingsForm.first_response_target_hours || 48 %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="follow_up_target_days">Follow-up target (days)</label>
+              <input class="church-input" id="follow_up_target_days" name="follow_up_target_days" type="number" min="1" value="<%= settingsForm.follow_up_target_days || 7 %>"/>
+            </div>
+          </div>
+          <label class="church-checkbox">
+            <input type="checkbox" name="auto_create_cases" value="1" <%= settingsForm.auto_create_cases !== false ? 'checked' : '' %>/>
+            Auto-create pastoral cases from recommendations (human accountability retained)
+          </label>
+          <button class="church-btn church-btn--primary" type="submit">Save settings</button>
+        </form>
+        <form class="church-form" method="post" action="/branch/pastoral-automation/run-scan" style="margin-top:1rem;">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--outline" type="submit">Run missed-service scan now</button>
+        </form>
+      </section>
+      <% if ((workItems || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Pending recommendations</h2>
+        <ul class="church-member-list">
+          <% workItems.filter(function (w) { return w.status === 'pending'; }).forEach(function (w) { %>
+          <li class="church-member-list__item">
+            <strong><%= w.member_name %></strong> · <%= w.risk_level %>
+            <p><%= w.recommendation_summary %></p>
+            <form class="church-form church-form--inline" method="post" action="/branch/pastoral-automation/work-items/<%= w.id %>/accept">
+              <%- include('../partials/csrf_field') %>
+              <button class="church-btn church-btn--primary church-btn--sm" type="submit">Accept</button>
+            </form>
+            <form class="church-form church-form--inline" method="post" action="/branch/pastoral-automation/work-items/<%= w.id %>/dismiss">
+              <%- include('../partials/csrf_field') %>
+              <button class="church-btn church-btn--ghost church-btn--sm" type="submit">Dismiss</button>
+            </form>
+          </li>
+          <% }); %>
+        </ul>
+      </section>
+      <% } %>
+      <% if ((overdueCases || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Overdue cases</h2>
+        <ul class="church-member-list">
+          <% overdueCases.forEach(function (c) { %>
+          <li class="church-member-list__item"><a href="/branch/pastoral-cases/<%= c.id %>"><%= c.member_name %></a> · <%= c.status %></li>
+          <% }); %>
+        </ul>
+      </section>
+      <% } %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Workload by assignee</h2>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Admin</th><th>Open</th><th>Escalated</th><th>Overdue first response</th></tr></thead>
+            <tbody>
+              <% (workload || []).forEach(function (row) { %>
+              <tr><td><%= row.full_name %></td><td><%= row.open_cases %></td><td><%= row.escalated_cases %></td><td><%= row.overdue_first_response %></td></tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Branch comparison</h2>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Branch</th><th>Open cases</th><th>Pending items</th><th>Overdue</th></tr></thead>
+            <tbody>
+              <% (branchComparison || []).forEach(function (row) { %>
+              <tr><td><%= row.branch_name %></td><td><%= row.open_cases %></td><td><%= row.pending_work_items %></td><td><%= row.overdue_first_response %></td></tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

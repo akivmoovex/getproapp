@@ -68,7 +68,7 @@ function formFromMember(member) {
   };
 }
 
-async function loadMemberProfileSummary(pool, memberId, branchId, adminRole) {
+async function loadMemberProfileSummary(pool, memberId, branchId, admin) {
   const [
     activeMinistries,
     joinRequests,
@@ -105,9 +105,10 @@ async function loadMemberProfileSummary(pool, memberId, branchId, adminRole) {
   const prayerItems = prayerRequests.slice(0, 5).map((row) => {
     const mapped = prayerRequestsRepo.mapPrayerRow(
       { ...row, member_name: row.member_id ? "Member" : "Anonymous" },
-      adminRole
+      { admin }
     );
-    const showDetails = showPrayerDetails(row, adminRole);
+    const showDetails = showPrayerDetails(row, admin);
+    const canViewQueue = Boolean(admin && admin.can_access_pastoral);
     return {
       id: row.id,
       prayer_topic: row.prayer_topic,
@@ -116,13 +117,15 @@ async function loadMemberProfileSummary(pool, memberId, branchId, adminRole) {
       privacy_level: row.privacy_level,
       privacy_label: privacyLevelLabel(row.privacy_level),
       created_at: row.created_at,
-      details_preview:
-        row.privacy_level === "anonymous_summary"
+      details_preview: !canViewQueue
+        ? "Prayer details require pastoral access."
+        : row.privacy_level === "anonymous_summary"
           ? "Anonymous summary — details withheld on member profile."
           : showDetails
             ? row.details
             : "Details available in prayer request queue.",
-      identity_masked: row.privacy_level === "anonymous_summary",
+      identity_masked: row.privacy_level === "anonymous_summary" || !canViewQueue,
+      can_view_in_queue: canViewQueue,
     };
   });
 
@@ -139,10 +142,10 @@ async function loadMemberProfileSummary(pool, memberId, branchId, adminRole) {
 }
 
 async function renderMemberProfile(pool, req, member, extra = {}) {
-  const adminRole = req.churchBranchAdmin.role || "branch_admin";
+  const admin = req.churchBranchAdmin;
   const org = req.churchContext.organization;
   const branch = req.churchContext.branch;
-  const summary = await loadMemberProfileSummary(pool, member.id, branch.id, adminRole);
+  const summary = await loadMemberProfileSummary(pool, member.id, branch.id, admin);
   const allowsTransfer = organisationAllowsBranchPaths(org);
   let transferTargets = [];
   let transferHistory = [];

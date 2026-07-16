@@ -9,6 +9,42 @@
         <% var perfChip = b.status === 'active' ? 'verified' : (b.status === 'archived' ? 'rejected' : 'pending'); %>
         <span class="church-status-chip church-status-chip--<%= perfChip %>"><%= b.status %></span>
       </header>
+      <% if (typeof notice !== 'undefined' && notice) { %>
+      <div class="church-branch-panel church-branch-panel--notice" role="status"><%= notice %></div>
+      <% } %>
+      <% if (typeof activateError !== 'undefined' && activateError) { %>
+      <div class="church-branch-panel church-branch-panel--error" role="alert"><%= activateError %></div>
+      <% } %>
+      <% if (typeof canActivate !== 'undefined' && canActivate || typeof canDeactivate !== 'undefined' && canDeactivate) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Branch lifecycle</h2>
+        <% if (lifecycle && lifecycle.label) { %>
+        <p class="muted">Lifecycle: <%= lifecycle.label %></p>
+        <% } %>
+        <% if (canActivate) { %>
+        <form class="church-form" method="post" action="/hq/branches/<%= b.id %>/activate">
+          <%- include('../partials/csrf_field') %>
+          <% if (typeof packageCode !== 'undefined' && packageCode === 'growth') { %>
+          <label class="church-checkbox">
+            <input type="checkbox" name="billing_acknowledged" value="1"/>
+            Confirm future billing readiness for this active branch (Growth).
+          </label>
+          <% } %>
+          <button class="church-btn church-btn--primary" type="submit">Activate branch</button>
+        </form>
+        <% } %>
+        <% if (canDeactivate) { %>
+        <form class="church-form" method="post" action="/hq/branches/<%= b.id %>/deactivate" style="margin-top:1rem;">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-field">
+            <label class="church-label" for="deactivate_reason">Reason (optional)</label>
+            <input class="church-input" id="deactivate_reason" name="reason" type="text"/>
+          </div>
+          <button class="church-btn church-btn--outline" type="submit">Deactivate branch</button>
+        </form>
+        <% } %>
+      </section>
+      <% } %>
       <form class="church-form church-form--inline" method="get" action="/hq/branches/<%= b.id %>">
         <div class="church-field">
           <label class="church-label" for="period_month">Period</label>
@@ -19,7 +55,7 @@
       <section class="church-branch-panel">
         <dl class="church-branch-dl">
           <div><dt>Contact</dt><dd><%= p.contact.name || '—' %><% if (p.contact.phone) { %> · <%= p.contact.phone %><% } %><% if (p.contact.email) { %> · <%= p.contact.email %><% } %></dd></div>
-          <div><dt>Public site</dt><dd><a href="/">View public website</a></dd></div>
+          <div><dt>Public site</dt><dd><% if (typeof publicBranchUrl !== 'undefined' && publicBranchUrl) { %><a href="<%= publicBranchUrl %>" target="_blank" rel="noopener"><%= publicBranchUrl %></a><% } else { %><a href="/">View public website</a><% } %></dd></div>
         </dl>
       </section>
       <% if ((p.attentionItems || []).length > 0) { %>

@@ -9,6 +9,30 @@
       <% if (notice) { %>
       <div class="church-alert church-alert--success" role="status"><%= notice %></div>
       <% } %>
+
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Quiet-hour policy</h2>
+        <p class="church-branch-panel__hint">When enabled, scheduled email broadcasts due during quiet hours are deferred until the window ends (organisation timezone: <%= (quietHours && quietHours.timezone) || 'UTC' %>).</p>
+        <form method="post" action="/hq/scheduled-broadcasts/quiet-hours" class="church-form">
+          <%- include('../partials/csrf_field') %>
+          <label class="church-label">
+            <input type="checkbox" name="quiet_hours_enabled" value="1" <%= quietHours && quietHours.quiet_hours_enabled ? 'checked' : '' %>/>
+            Enable quiet hours
+          </label>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="quiet_hours_start">Start</label>
+              <input class="church-input" type="time" id="quiet_hours_start" name="quiet_hours_start" value="<%= (quietHours && quietHours.quiet_hours_start) || '21:00' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="quiet_hours_end">End</label>
+              <input class="church-input" type="time" id="quiet_hours_end" name="quiet_hours_end" value="<%= (quietHours && quietHours.quiet_hours_end) || '07:00' %>"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Save quiet hours</button>
+        </form>
+      </section>
+
       <section class="church-branch-panel church-hq-panel">
         <h2 class="church-branch-panel__title">Scheduled &amp; in progress</h2>
         <% if (!(broadcasts || []).length) { %>

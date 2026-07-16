@@ -525,7 +525,8 @@ function registerHqAdminRoutes(router) {
         pool,
         reportId,
         org.id,
-        commentCheck.comment
+        commentCheck.comment,
+        req.churchHqAdmin.hq_admin_id
       );
       if (!approved) {
         return res.status(400).type("text").send("Report could not be approved.");
@@ -613,6 +614,8 @@ function registerHqAdminRoutes(router) {
   });
 
   registerHqAdminBranchesRoutes(router);
+  const registerHqAdminMembersRoutes = require("./hqAdminMembers");
+  registerHqAdminMembersRoutes(router);
   registerHqAdminBroadcastsRoutes(router);
   const registerPackageFeatureGateRoutes = require("./packageFeatureGates");
   registerPackageFeatureGateRoutes(router, "hq");

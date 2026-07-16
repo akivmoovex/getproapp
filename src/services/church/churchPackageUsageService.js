@@ -41,6 +41,8 @@ const EXEMPT_EMAIL_CATEGORIES = new Set([
   "account_export",
   "billing_access",
   "offboarding",
+  "growth_trial_lifecycle",
+  "foundation_dormancy_lifecycle",
 ]);
 
 const DEFAULT_WARNING_THRESHOLDS = Object.freeze([0.8, 0.9, 1.0]);

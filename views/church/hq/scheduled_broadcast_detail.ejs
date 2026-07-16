@@ -60,6 +60,12 @@
             <button class="church-btn church-btn--primary" type="submit">Retry failed deliveries</button>
           </form>
           <% } %>
+          <% if (broadcast.status !== 'cancelled' && broadcast.status !== 'processing') { %>
+          <form method="post" action="/hq/scheduled-broadcasts/<%= broadcast.id %>/test-delivery">
+            <%- include('../partials/csrf_field') %>
+            <button class="church-btn church-btn--ghost" type="submit">Record test delivery to me</button>
+          </form>
+          <% } %>
         </div>
       </section>
 

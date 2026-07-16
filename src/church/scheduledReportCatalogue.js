@@ -31,6 +31,7 @@ const SUPPORTED_SCHEDULED_REPORTS = Object.freeze({
     description: "Giving totals recorded for a period.",
     portals: ["branch"],
     requiredPermission: "branch_reports_read",
+    requiresFinance: true,
   },
 });
 

@@ -2,6 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const bcrypt = require("bcryptjs");
 
 const {
   computeReminderDueDates,
@@ -25,6 +26,8 @@ const { ensureChurchSchema } = require("../src/db/pg/ensureChurchSchema");
 const { ensureCanonicalTenantsForTests } = require("./helpers/pgTestSeed");
 const { TENANT_ZM } = require("../src/tenants/tenantIds");
 const organizationsRepo = require("../src/db/pg/church/organizationsRepo");
+const branchesRepo = require("../src/db/pg/church/branchesRepo");
+const hqAdminsRepo = require("../src/db/pg/church/hqAdminsRepo");
 
 function makeSuffix(prefix) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -55,6 +58,7 @@ test(
     await ensureCanonicalTenantsForTests(pool);
     await ensureChurchSchema(pool);
     const suffix = makeSuffix("gtrial");
+    const adminHash = await bcrypt.hash("trialadmin123456", 12);
 
     const orgA = await organizationsRepo.createOrganization(pool, {
       platform_tenant_id: TENANT_ZM,
@@ -79,6 +83,23 @@ test(
       { plan_code: "foundation", plan_status: "active", plan_notes: null },
       null
     );
+
+    const branchA = await branchesRepo.createBranch(pool, {
+      organization_id: orgA.id,
+      name: `Main ${suffix}`,
+      slug: `main_${suffix}`.slice(0, 40),
+      status: "active",
+      lifecycle_phase: "active",
+    });
+    await hqAdminsRepo.createHqAdmin(pool, {
+      organization_id: orgA.id,
+      full_name: "Trial HQ Admin",
+      email: `trial_hq_${suffix}@example.com`,
+      phone: `0955${String(Date.now()).slice(-6)}`,
+      password_hash: adminHash,
+      role: "hq_admin",
+      status: "active",
+    });
 
     const startsAt = new Date("2026-07-01T00:00:00.000Z");
     const granted = await grantGrowthTrial(pool, orgA.id, {
@@ -117,15 +138,45 @@ test(
       [7, 3, 1]
     );
 
+    // Seed Growth job that must be paused (not deleted) on expiry
+    await pool.query(
+      `INSERT INTO public.church_scheduled_reports (
+         organization_id, branch_id, report_type, export_format, frequency, timezone,
+         delivery_time_local, status, created_by_actor_type, created_by_actor_id, next_run_at
+       ) VALUES ($1, $2, 'branch_attendance_summary', 'csv', 'daily', 'UTC', '09:00', 'enabled',
+                 'hq_admin', NULL, now() + interval '1 day')`,
+      [orgA.id, branchA.id]
+    );
+
     // Reminder at 7 days before end
     const endsAt = new Date(granted.trial.ends_at);
     const day7 = addDays(endsAt, -7);
     const rem1 = await processTrialReminders(pool, { at: day7 });
     assert.ok(rem1.processed.some((p) => p.outcome === "sent" && p.daysBeforeExpiry === 7));
+    const remSent = rem1.processed.find(
+      (p) => p.outcome === "sent" && p.organizationId === orgA.id && p.daysBeforeExpiry === 7
+    );
+    assert.ok(remSent);
+    assert.ok(remSent.delivered >= 1);
     const rem1Again = await processTrialReminders(pool, { at: day7 });
     assert.ok(
       rem1Again.processed.every((p) => p.outcome === "already_processed") || rem1Again.count === 0
     );
+
+    const reminderAudit = await pool.query(
+      `SELECT metadata_json FROM public.church_audit_logs
+       WHERE organization_id = $1 AND action = 'platform_growth_trial_reminder'
+       ORDER BY id DESC LIMIT 1`,
+      [orgA.id]
+    );
+    assert.ok(Number(reminderAudit.rows[0].metadata_json.recorded_deliveries) >= 1);
+
+    const reminderDeliveries = await pool.query(
+      `SELECT COUNT(*)::int AS c FROM public.church_notification_test_deliveries
+       WHERE organization_id = $1 AND template_key = 'growth_trial_reminder'`,
+      [orgA.id]
+    );
+    assert.ok(reminderDeliveries.rows[0].c >= 1);
 
     // Org B untouched
     const statusB = await getOrganisationTrialStatus(pool, orgB.id, { at: day7 });
@@ -139,10 +190,10 @@ test(
     const afterEnd = addDays(endsAt, 1);
     const exp1 = await processTrialExpiries(pool, { at: afterEnd });
     assert.ok(exp1.processed.some((p) => p.outcome === "expired" && p.organizationId === orgA.id));
-    assert.equal(
-      exp1.processed.find((p) => p.organizationId === orgA.id).restoredPackageCode,
-      "foundation"
-    );
+    const expiredRow = exp1.processed.find((p) => p.organizationId === orgA.id);
+    assert.equal(expiredRow.restoredPackageCode, "foundation");
+    assert.ok(expiredRow.pausedJobs);
+    assert.ok(expiredRow.pausedJobs.paused_scheduled_reports >= 1);
 
     const exp2 = await processTrialExpiries(pool, { at: afterEnd });
     assert.ok(
@@ -153,6 +204,14 @@ test(
     const planRestored = await getOrganisationPlan(pool, orgA.id);
     assert.equal(planRestored.packageCode, "foundation");
     assert.equal(await findActiveGrowthTrial(pool, orgA.id, { at: afterEnd }), null);
+
+    // Growth config retained (paused, not deleted)
+    const retained = await pool.query(
+      `SELECT status FROM public.church_scheduled_reports WHERE organization_id = $1`,
+      [orgA.id]
+    );
+    assert.equal(retained.rows.length, 1);
+    assert.equal(retained.rows[0].status, "paused");
 
     const afterExpiryStatus = await getOrganisationTrialStatus(pool, orgA.id, { at: afterEnd });
     assert.equal(afterExpiryStatus.status, "expired_retaining_config");
@@ -184,9 +243,13 @@ test(
     assert.ok(actions.includes("platform_growth_trial_config_retention_ended"));
 
     // Cleanup
+    await pool.query(`DELETE FROM public.church_notification_test_deliveries WHERE organization_id = ANY($1::int[])`, [
+      [orgA.id, orgB.id],
+    ]);
     await pool.query(`DELETE FROM public.church_audit_logs WHERE organization_id = ANY($1::int[])`, [
       [orgA.id, orgB.id],
     ]);
+    await pool.query(`DELETE FROM public.church_scheduled_reports WHERE organization_id = $1`, [orgA.id]);
     await pool.query(
       `DELETE FROM public.church_organization_package_trial_reminders WHERE organization_id = ANY($1::int[])`,
       [[orgA.id, orgB.id]]
@@ -199,6 +262,8 @@ test(
       `DELETE FROM public.church_organization_package_history WHERE organization_id = ANY($1::int[])`,
       [[orgA.id, orgB.id]]
     );
+    await pool.query(`DELETE FROM public.church_hq_admins WHERE organization_id = $1`, [orgA.id]);
+    await pool.query(`DELETE FROM public.church_branches WHERE organization_id = $1`, [orgA.id]);
     await pool.query(`DELETE FROM public.church_organizations WHERE id = ANY($1::int[])`, [
       [orgA.id, orgB.id],
     ]);

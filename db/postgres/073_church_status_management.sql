@@ -14,7 +14,7 @@ ALTER TABLE public.church_organizations
 
 ALTER TABLE public.church_organizations
   ADD CONSTRAINT church_organizations_status_check
-  CHECK (status IN ('active', 'suspended', 'archived'));
+  CHECK (status IN ('active', 'suspended', 'archived', 'dormant'));
 
 ALTER TABLE public.church_branches
   DROP CONSTRAINT IF EXISTS church_branches_status_check;

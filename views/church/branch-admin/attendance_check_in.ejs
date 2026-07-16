@@ -1,0 +1,191 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/attendance">&larr; Attendance tracker</a>
+          <h1 class="church-branch-topbar__title">Service check-in</h1>
+          <p class="church-branch-topbar__subtitle">Manual, QR, and visitor check-in for <%= churchName %></p>
+        </div>
+        <a class="church-btn church-btn--outline church-btn--sm" href="/branch/attendance/check-in/report">Check-in report</a>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Open service session</h2>
+        <form class="church-form" method="post" action="/branch/attendance/check-in/sessions/open">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="attendance_type">Attendance type</label>
+              <select class="church-input" id="attendance_type" name="attendance_type" required>
+                <option value="" disabled <%= !form.attendance_type ? 'selected' : '' %>>Select type</option>
+                <% attendanceTypes.forEach(function (t) { %>
+                <option value="<%= t %>" <%= form.attendance_type === t ? 'selected' : '' %>><%= t %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="service_name">Service / meeting name</label>
+              <input class="church-input" id="service_name" name="service_name" type="text" required value="<%= form.service_name || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="session_date">Date</label>
+              <input class="church-input" id="session_date" name="session_date" type="date" required value="<%= form.session_date || '' %>"/>
+            </div>
+          </div>
+          <div class="church-branch-form-actions">
+            <button class="church-btn church-btn--primary" type="submit">Open session</button>
+          </div>
+        </form>
+        <p class="church-branch-hint">Multiple sessions can run on the same day (e.g. first and second service).</p>
+      </section>
+
+      <% if (openSession) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Active session</h2>
+        <dl class="church-branch-dl">
+          <div><dt>Service</dt><dd><%= openSession.service_name %> · <%= openSession.attendance_type %></dd></div>
+          <div><dt>Date</dt><dd><%= openSession.session_date_display %></dd></div>
+          <div><dt>Status</dt><dd><span class="church-status-chip church-status-chip--verified"><%= openSession.status %></span></dd></div>
+          <div><dt>Checked in</dt><dd><%= counts.members %> members · <%= counts.visitors %> visitors</dd></div>
+        </dl>
+        <form class="church-form church-form--inline" method="post" action="/branch/attendance/check-in/sessions/<%= openSession.id %>/close">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--outline" type="submit">Close session</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Check in member (manual)</h2>
+        <form class="church-form" method="post" action="/branch/attendance/check-in/member">
+          <%- include('../partials/csrf_field') %>
+          <input type="hidden" name="session_id" value="<%= openSession.id %>"/>
+          <div class="church-form-grid">
+            <div class="church-field church-field--full">
+              <label class="church-label" for="member_id">Member</label>
+              <select class="church-input" id="member_id" name="member_id" required>
+                <option value="" disabled selected>Select member</option>
+                <% members.forEach(function (m) { %>
+                <option value="<%= m.id %>"><%= m.label %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Check in member</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Scan member QR</h2>
+        <form class="church-form" method="post" action="/branch/attendance/check-in/qr">
+          <%- include('../partials/csrf_field') %>
+          <input type="hidden" name="session_id" value="<%= openSession.id %>"/>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="qr_token">QR token</label>
+            <input class="church-input" id="qr_token" name="qr_token" type="text" required autocomplete="off" placeholder="Scan or paste opaque check-in code"/>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Record QR check-in</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Visitor check-in</h2>
+        <form class="church-form" method="post" action="/branch/attendance/check-in/visitor">
+          <%- include('../partials/csrf_field') %>
+          <input type="hidden" name="session_id" value="<%= openSession.id %>"/>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="visitor_name">Visitor name</label>
+              <input class="church-input" id="visitor_name" name="visitor_name" type="text" required/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="visitor_phone">Phone (optional)</label>
+              <input class="church-input" id="visitor_phone" name="visitor_phone" type="tel"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Check in visitor</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Recent check-ins (usher view)</h2>
+        <% if ((checkIns || []).length === 0) { %>
+        <p class="church-branch-empty">No check-ins yet for this session.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Kind</th>
+                <th>Method</th>
+                <th>Time</th>
+                <% if (canCorrectAttendance) { %><th></th><% } %>
+              </tr>
+            </thead>
+            <tbody>
+              <% checkIns.forEach(function (c) { %>
+              <tr>
+                <td><%= c.display.label %></td>
+                <td><%= c.kind %></td>
+                <td><%= c.method %></td>
+                <td><%= new Date(c.checked_in_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) %></td>
+                <% if (canCorrectAttendance && c.status === 'active') { %>
+                <td>
+                  <form class="church-form church-form--inline" method="post" action="/branch/attendance/check-in/<%= c.id %>/correct">
+                    <%- include('../partials/csrf_field') %>
+                    <input type="hidden" name="replacement_kind" value="void_only"/>
+                    <input type="hidden" name="reason" value="Usher correction"/>
+                    <button class="church-btn church-btn--ghost church-btn--sm" type="submit">Void</button>
+                  </form>
+                </td>
+                <% } else if (canCorrectAttendance) { %>
+                <td></td>
+                <% } %>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+      <% } else { %>
+      <section class="church-branch-panel">
+        <p class="church-branch-empty">No open session. Open a service session above to begin check-in.</p>
+      </section>
+      <% } %>
+
+      <% if ((sessions || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Recent sessions</h2>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Service</th>
+                <th>Status</th>
+                <th>Check-ins</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% sessions.forEach(function (s) { %>
+              <tr>
+                <td><%= s.session_date_display %></td>
+                <td><%= s.service_name %></td>
+                <td><span class="church-status-chip church-status-chip--<%= s.status === 'open' ? 'verified' : 'pending' %>"><%= s.status %></span></td>
+                <td><%= s.active_check_in_count %></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/attendance/check-in?session=<%= s.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <% } %>
+<%- include('../partials/branch_admin_shell_end') %>

@@ -1,0 +1,58 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/appointments">&larr; Appointments</a>
+          <h1 class="church-branch-topbar__title"><%= appointment.purpose || 'Appointment' %></h1>
+          <p class="church-branch-topbar__subtitle"><%= appointment.member_name %> · <%= appointment.minister_name %></p>
+        </div>
+      </header>
+      <section class="church-branch-panel">
+        <dl class="church-branch-dl">
+          <div><dt>Status</dt><dd><%= appointment.status %></dd></div>
+          <div><dt>Starts</dt><dd><%= new Date(appointment.starts_at).toLocaleString('en-GB') %></dd></div>
+          <div><dt>Ends</dt><dd><%= new Date(appointment.ends_at).toLocaleString('en-GB') %></dd></div>
+          <div><dt>Duration</dt><dd><%= appointment.duration_minutes %> min</dd></div>
+          <div><dt>Buffer</dt><dd><%= appointment.buffer_minutes %> min</dd></div>
+          <div><dt>Member note</dt><dd><%= appointment.member_request_note || '—' %></dd></div>
+        </dl>
+        <% if (appointment.status === 'requested') { %>
+        <form class="church-form church-form--inline" method="post" action="/branch/appointments/<%= appointment.id %>/approve">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--primary" type="submit">Approve</button>
+        </form>
+        <% } %>
+        <% if (appointment.status === 'requested' || appointment.status === 'approved') { %>
+        <form class="church-form" method="post" action="/branch/appointments/<%= appointment.id %>/cancel">
+          <%- include('../partials/csrf_field') %>
+          <input class="church-input" name="cancellation_reason" placeholder="Cancellation reason"/>
+          <button class="church-btn church-btn--ghost" type="submit">Cancel</button>
+        </form>
+        <form class="church-form" method="post" action="/branch/appointments/<%= appointment.id %>/reschedule">
+          <%- include('../partials/csrf_field') %>
+          <input type="hidden" name="minister_admin_id" value="<%= appointment.minister_admin_id %>"/>
+          <label class="church-label" for="reschedule_starts">Reschedule to</label>
+          <input class="church-input" id="reschedule_starts" name="starts_at" type="datetime-local" required/>
+          <input class="church-input" name="purpose" value="<%= appointment.purpose || '' %>"/>
+          <button class="church-btn church-btn--outline" type="submit">Reschedule</button>
+        </form>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Confidential counselling notes</h2>
+        <% if (canViewConfidentialNotes) { %>
+        <ul class="church-list">
+          <% (confidentialNotes || []).forEach(function (n) { %>
+          <li><strong><%= n.author_name %></strong>: <%= n.note_body %></li>
+          <% }) %>
+        </ul>
+        <form class="church-form" method="post" action="/branch/appointments/<%= appointment.id %>/confidential-note">
+          <%- include('../partials/csrf_field') %>
+          <textarea class="church-input" name="note_body" rows="3" required></textarea>
+          <button class="church-btn church-btn--outline" type="submit">Add confidential note</button>
+        </form>
+        <% } else { %>
+        <p class="muted">Schedule coordinators can manage this appointment without access to counselling notes. Pastoral access is required.</p>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

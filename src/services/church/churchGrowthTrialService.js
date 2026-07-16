@@ -15,6 +15,8 @@ const {
   DEFAULT_GROWTH_TRIAL_DURATION_DAYS,
 } = require("../../church/blessBoardPackageCatalogue");
 const { PACKAGE_FEATURES } = require("../../church/blessBoardPackageFeatures");
+const notificationTemplateService = require("./notificationTemplateService");
+const churchPackageUsageService = require("./churchPackageUsageService");
 
 const TRIAL_KIND_GROWTH_30 = "growth_30_day";
 const DEFAULT_DURATION_DAYS = DEFAULT_GROWTH_TRIAL_DURATION_DAYS;
@@ -389,6 +391,7 @@ async function grantGrowthTrial(pool, organizationId, fields) {
 
 /**
  * Idempotent reminder processor. Safe if run twice.
+ * Records catalogue-template deliveries to active HQ admins (no SMTP; quota-exempt lifecycle category).
  * @param {import("pg").Pool} pool
  * @param {{ at?: Date, limit?: number }} [opts]
  */
@@ -396,9 +399,10 @@ async function processTrialReminders(pool, opts = {}) {
   const at = parseAt(opts.at);
   const limit = Math.min(Math.max(Number(opts.limit) || 100, 1), 500);
   const due = await pool.query(
-    `SELECT r.*
+    `SELECT r.*, t.ends_at AS trial_ends_at, o.name AS organisation_name
      FROM public.church_organization_package_trial_reminders r
      INNER JOIN public.church_organization_package_trials t ON t.id = r.trial_id
+     INNER JOIN public.church_organizations o ON o.id = r.organization_id
      WHERE r.status = 'pending'
        AND r.due_at <= $1
        AND t.status = 'active'
@@ -422,6 +426,67 @@ async function processTrialReminders(pool, opts = {}) {
       processed.push({ id: row.id, organizationId: row.organization_id, outcome: "already_processed" });
       continue;
     }
+
+    const endsAt = new Date(row.trial_ends_at);
+    const daysRemaining = Number(row.days_before_expiry);
+    const hqAdmins = await pool.query(
+      `SELECT id, full_name, email
+       FROM public.church_hq_admins
+       WHERE organization_id = $1 AND status = 'active' AND email IS NOT NULL AND email <> ''
+       ORDER BY id ASC
+       LIMIT 20`,
+      [row.organization_id]
+    );
+
+    let delivered = 0;
+    for (const admin of hqAdmins.rows) {
+      try {
+        const preview = await notificationTemplateService.previewTemplate(pool, {
+          templateKey: "growth_trial_reminder",
+          organizationId: row.organization_id,
+          variables: {
+            organisation_name: row.organisation_name || "your church",
+            organization_name: row.organisation_name || "your church",
+            admin_name: admin.full_name || "Administrator",
+            trial_ends_on: endsAt.toISOString().slice(0, 10),
+            days_remaining: String(daysRemaining),
+            branch_name: "",
+            support_url: "",
+            login_url: "",
+            member_name: "",
+          },
+          allowMissing: true,
+        });
+        await churchPackageUsageService.recordExternalEmailSend(pool, {
+          organizationId: row.organization_id,
+          category: "growth_trial_lifecycle",
+          count: 1,
+          at,
+          actorType: "system",
+          actorId: null,
+        });
+        await pool.query(
+          `INSERT INTO public.church_notification_test_deliveries (
+             organization_id, template_key, recipient_actor_type, recipient_actor_id, recipient_email,
+             subject_rendered, body_text_rendered, body_html_rendered,
+             requested_by_actor_type, requested_by_actor_id
+           ) VALUES ($1,$2,'hq_admin',$3,$4,$5,$6,$7,'system',NULL)`,
+          [
+            row.organization_id,
+            "growth_trial_reminder",
+            admin.id,
+            String(admin.email).trim().toLowerCase(),
+            preview.subject,
+            preview.bodyText,
+            preview.bodyHtml,
+          ]
+        );
+        delivered += 1;
+      } catch {
+        /* continue other recipients */
+      }
+    }
+
     await auditLogsRepo.insertAuditLog(pool, {
       organization_id: row.organization_id,
       branch_id: null,
@@ -436,6 +501,8 @@ async function processTrialReminders(pool, opts = {}) {
         days_before_expiry: row.days_before_expiry,
         job_key: row.job_key,
         due_at: row.due_at,
+        recorded_deliveries: delivered,
+        recorded_only: true,
       },
     });
     processed.push({
@@ -444,9 +511,54 @@ async function processTrialReminders(pool, opts = {}) {
       daysBeforeExpiry: row.days_before_expiry,
       outcome: "sent",
       jobKey: row.job_key,
+      delivered,
     });
   }
   return { at: at.toISOString(), processed, count: processed.length };
+}
+
+/**
+ * Pause Growth-only schedules so they do not keep running after Foundation restore.
+ * Configuration rows are retained (not deleted) for the 90-day retention window.
+ */
+async function pauseGrowthJobsForOrganisation(db, organizationId, at) {
+  const pausedReports = await db.query(
+    `UPDATE public.church_scheduled_reports
+     SET status = 'paused', next_run_at = NULL, updated_at = now()
+     WHERE organization_id = $1 AND status = 'enabled'
+     RETURNING id`,
+    [organizationId]
+  );
+  const cancelledBroadcasts = await db.query(
+    `UPDATE public.church_hq_broadcasts
+     SET status = 'cancelled', cancelled_at = $2, updated_at = now(),
+         last_error = 'Paused because Growth trial ended or package changed'
+     WHERE organization_id = $1
+       AND status IN ('scheduled', 'preview', 'audience_estimate', 'approval')
+     RETURNING id`,
+    [organizationId, at.toISOString()]
+  );
+  const disabledAutomation = await db.query(
+    `UPDATE public.church_pastoral_automation_settings
+     SET enabled = false, updated_at = now()
+     WHERE organization_id = $1 AND enabled = true
+     RETURNING id`,
+    [organizationId]
+  ).catch(() => ({ rows: [] }));
+  const closedSurveys = await db.query(
+    `UPDATE public.church_surveys
+     SET status = 'closed', updated_at = now()
+     WHERE organization_id = $1 AND status = 'active'
+     RETURNING id`,
+    [organizationId]
+  ).catch(() => ({ rows: [] }));
+
+  return {
+    paused_scheduled_reports: (pausedReports.rows || []).length,
+    cancelled_scheduled_broadcasts: (cancelledBroadcasts.rows || []).length,
+    disabled_pastoral_automation: (disabledAutomation.rows || []).length,
+    closed_surveys: (closedSurveys.rows || []).length,
+  };
 }
 
 /**
@@ -530,6 +642,69 @@ async function processTrialExpiries(pool, opts = {}) {
         [trial.id]
       );
 
+      const pausedJobs = await pauseGrowthJobsForOrganisation(client, trial.organization_id, at);
+
+      // Recorded expiry notice to HQ admins (config retained; jobs paused above).
+      const orgNameRow = await client.query(
+        `SELECT name FROM public.church_organizations WHERE id = $1`,
+        [trial.organization_id]
+      );
+      const orgName = orgNameRow.rows[0]?.name || "your church";
+      const hqAdmins = await client.query(
+        `SELECT id, full_name, email FROM public.church_hq_admins
+         WHERE organization_id = $1 AND status = 'active' AND email IS NOT NULL AND email <> ''
+         LIMIT 20`,
+        [trial.organization_id]
+      );
+      let expiryDeliveries = 0;
+      for (const admin of hqAdmins.rows) {
+        try {
+          const preview = await notificationTemplateService.previewTemplate(client, {
+            templateKey: "growth_trial_expiry",
+            organizationId: trial.organization_id,
+            variables: {
+              organisation_name: orgName,
+              organization_name: orgName,
+              admin_name: admin.full_name || "Administrator",
+              trial_ended_on: at.toISOString().slice(0, 10),
+              previous_package: restoreCode,
+              branch_name: "",
+              support_url: "",
+              login_url: "",
+              member_name: "",
+            },
+            allowMissing: true,
+          });
+          await churchPackageUsageService.recordExternalEmailSend(client, {
+            organizationId: trial.organization_id,
+            category: "growth_trial_lifecycle",
+            count: 1,
+            at,
+            actorType: "system",
+            actorId: null,
+          });
+          await client.query(
+            `INSERT INTO public.church_notification_test_deliveries (
+               organization_id, template_key, recipient_actor_type, recipient_actor_id, recipient_email,
+               subject_rendered, body_text_rendered, body_html_rendered,
+               requested_by_actor_type, requested_by_actor_id
+             ) VALUES ($1,$2,'hq_admin',$3,$4,$5,$6,$7,'system',NULL)`,
+            [
+              trial.organization_id,
+              "growth_trial_expiry",
+              admin.id,
+              String(admin.email).trim().toLowerCase(),
+              preview.subject,
+              preview.bodyText,
+              preview.bodyHtml,
+            ]
+          );
+          expiryDeliveries += 1;
+        } catch {
+          /* continue */
+        }
+      }
+
       await auditLogsRepo.insertAuditLog(client, {
         organization_id: trial.organization_id,
         branch_id: null,
@@ -545,6 +720,9 @@ async function processTrialExpiries(pool, opts = {}) {
           restored_package_code: restoreCode,
           config_retain_until: trial.config_retain_until,
           converted_to_paid: false,
+          paused_jobs: pausedJobs,
+          expiry_recorded_deliveries: expiryDeliveries,
+          recorded_only: true,
         },
       });
 
@@ -555,6 +733,7 @@ async function processTrialExpiries(pool, opts = {}) {
         outcome: "expired",
         jobKey,
         restoredPackageCode: restoreCode,
+        pausedJobs,
       });
     } catch (err) {
       try {
@@ -662,6 +841,7 @@ module.exports = {
   processTrialReminders,
   processTrialExpiries,
   processTrialConfigRetention,
+  pauseGrowthJobsForOrganisation,
   runGrowthTrialJobs,
   computeReminderDueDates,
   addDays,

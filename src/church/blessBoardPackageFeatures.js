@@ -68,6 +68,20 @@ const PACKAGE_FEATURES = [
     mutationMethods: ["POST"],
   },
   {
+    id: "care_automation",
+    entitlementKey: "care.automation",
+    name: "Pastoral-care automation",
+    benefit: "Automated missed-service follow-up, SLAs, escalation, and workload reporting.",
+    portal: "branch",
+    path: "/branch/pastoral-automation",
+    lockedUi: "upgrade",
+    showInNav: true,
+    navLabel: "Pastoral automation",
+    navKey: "pastoral-automation",
+    mutationMethods: ["POST"],
+    requiredEntitlementValue: "advanced",
+  },
+  {
     id: "appointments_calendar",
     entitlementKey: "appointments.calendar",
     name: "Appointment calendar",
@@ -78,6 +92,46 @@ const PACKAGE_FEATURES = [
     showInNav: true,
     navLabel: "Appointments",
     navKey: "appointments",
+    mutationMethods: ["POST"],
+  },
+  {
+    id: "surveys_custom",
+    entitlementKey: "surveys.custom",
+    name: "Custom surveys",
+    benefit: "Recurring surveys, branching questions, consent, and response routing.",
+    portal: "branch",
+    path: "/branch/surveys",
+    lockedUi: "upgrade",
+    showInNav: true,
+    navLabel: "Surveys",
+    navKey: "surveys",
+    mutationMethods: ["POST"],
+    requiredEntitlementValue: "true",
+  },
+  {
+    id: "groups_management",
+    entitlementKey: "groups.management",
+    name: "Growth groups",
+    benefit: "Small groups with leaders, capacity, join requests, meetings, and attendance.",
+    portal: "branch",
+    path: "/branch/groups",
+    lockedUi: "upgrade",
+    showInNav: true,
+    navLabel: "Groups",
+    navKey: "groups",
+    mutationMethods: ["POST"],
+  },
+  {
+    id: "discipleship_pathways",
+    entitlementKey: "discipleship.pathways",
+    name: "Discipleship pathways",
+    benefit: "Stages, milestones, owners, and movement history for members.",
+    portal: "branch",
+    path: "/branch/discipleship",
+    lockedUi: "upgrade",
+    showInNav: true,
+    navLabel: "Discipleship",
+    navKey: "discipleship",
     mutationMethods: ["POST"],
   },
   {
@@ -244,6 +298,15 @@ function requiredPackageForEntitlement(entitlementKey) {
   return { code: "network", label: "Network" };
 }
 
+function entitlementSourceForPlan(plan) {
+  if (!plan) return {};
+  if (plan.entitlements && typeof plan.entitlements === "object") return plan.entitlements;
+  if (plan.packageDefinition && plan.packageDefinition.entitlements) {
+    return plan.packageDefinition.entitlements;
+  }
+  return plan;
+}
+
 /**
  * @param {object | null} plan - getOrganisationPlan result
  * @param {PackageFeatureDefinition | string} featureOrId
@@ -272,18 +335,27 @@ function resolveFeatureUi(plan, featureOrId) {
     "Foundation";
   const required = requiredPackageForEntitlement(feature.entitlementKey);
   const accountPath = feature.portal === "hq" ? "/hq/account#package" : "/branch/account#package";
+  const entitlements = entitlementSourceForPlan(plan);
 
-  if (plan && entitlementsAllow(plan.entitlements || plan, feature.entitlementKey)) {
-    return {
-      state: "available",
-      feature,
-      packageCode,
-      packageLabel,
-      requiredPackageCode: required.code,
-      requiredPackageLabel: required.label,
-      entitlementKey: feature.entitlementKey,
-      accountPath,
-    };
+  if (plan && entitlementsAllow(entitlements, feature.entitlementKey)) {
+    const actualValue = readEntitlementPath(entitlements, feature.entitlementKey);
+    if (
+      feature.requiredEntitlementValue != null &&
+      String(actualValue) !== String(feature.requiredEntitlementValue)
+    ) {
+      /* fall through to upgrade shell */
+    } else {
+      return {
+        state: "available",
+        feature,
+        packageCode,
+        packageLabel,
+        requiredPackageCode: required.code,
+        requiredPackageLabel: required.label,
+        entitlementKey: feature.entitlementKey,
+        accountPath,
+      };
+    }
   }
 
   if (feature.lockedUi === "hidden") {

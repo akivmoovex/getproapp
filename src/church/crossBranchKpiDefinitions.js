@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Documented KPI definitions for the Growth cross-branch comparison dashboard.
+ * Documented KPI definitions for the Growth cross-branch / advanced reporting dashboard.
  * Used by the service and surfaced in the UI — do not invent alternate formulas
  * without updating this module.
  */
@@ -21,6 +21,13 @@ const CROSS_BRANCH_KPI_DEFINITIONS = Object.freeze({
       "Sum of adults_count + youth_count + children_count on submitted attendance records in the date range (optional attendance_type / ministry filters).",
     source: "church_attendance_records",
   },
+  group_attendance: {
+    id: "group_attendance",
+    label: "Group attendance",
+    definition:
+      "Count of church_group_attendance rows with present = true whose meeting starts_at falls in the date range (optional group_id filter).",
+    source: "church_group_attendance ∩ church_group_meetings",
+  },
   visitors: {
     id: "visitors",
     label: "Visitors",
@@ -28,34 +35,69 @@ const CROSS_BRANCH_KPI_DEFINITIONS = Object.freeze({
       "Sum of first_time_visitors_count on submitted attendance records in the date range (same filters as attendance).",
     source: "church_attendance_records.first_time_visitors_count",
   },
+  visitor_retention: {
+    id: "visitor_retention",
+    label: "Visitor follow-ups closed",
+    definition:
+      "Count of church_event_visitor_follow_ups with status = closed whose created_at falls in the date range (event visitor follow-up completions).",
+    source: "church_event_visitor_follow_ups",
+  },
+  absence_follow_ups: {
+    id: "absence_follow_ups",
+    label: "Absence follow-ups",
+    definition:
+      "Count of pastoral automation work items with trigger_type = missed_service and status in (pending, accepted, converted) created in the date range.",
+    source: "church_pastoral_automation_work_items",
+  },
   event_registrations: {
     id: "event_registrations",
-    label: "Event registrations (proxy)",
+    label: "Event registrations",
     definition:
-      "Count of published church_events in the date range per branch. Registration RSVP tables are not yet available; this is the documented proxy.",
-    source: "church_events",
+      "Count of church_event_registrations (excluding cancelled) for published events whose event_date is in the date range.",
+    source: "church_event_registrations ∩ church_events",
   },
   event_attendance: {
     id: "event_attendance",
-    label: "Event attendance (proxy)",
+    label: "Event check-ins",
     definition:
-      "Sum of headcount on attendance records whose service_date matches a published event date for the same branch in range.",
-    source: "church_attendance_records ∩ church_events.event_date",
+      "Count of church_event_check_ins for published events whose event_date is in the date range.",
+    source: "church_event_check_ins ∩ church_events",
   },
   open_pastoral_follow_ups: {
     id: "open_pastoral_follow_ups",
-    label: "Open pastoral follow-ups (proxy)",
+    label: "Open pastoral follow-ups",
     definition:
-      "Ministry activity notes with review_status = follow_up_requested plus open member requests (submitted / in_review / more_info_needed).",
-    source: "church_ministry_activity_notes + church_member_requests",
+      "Open church_pastoral_cases (status in open, in_follow_up, paused, pending_supervisor_ack, escalated) plus ministry activity notes with review_status = follow_up_requested.",
+    source: "church_pastoral_cases + church_ministry_activity_notes",
+  },
+  pastoral_workload: {
+    id: "pastoral_workload",
+    label: "Pastoral workload",
+    definition:
+      "Count of open church_pastoral_cases (non-closed) assigned to a branch admin (assigned_admin_id IS NOT NULL).",
+    source: "church_pastoral_cases",
   },
   overdue_pastoral_cases: {
     id: "overdue_pastoral_cases",
-    label: "Overdue pastoral cases (proxy)",
+    label: "Overdue pastoral cases",
     definition:
-      "Open pastoral follow-ups whose updated_at (notes) or created_at (requests) is older than 7 days.",
-    source: "same as open_pastoral_follow_ups with age > 7 days",
+      "Open pastoral cases whose due_date is before today, or (when due_date is null) whose updated_at is older than 7 days.",
+    source: "church_pastoral_cases",
     overdue_days: 7,
+  },
+  survey_completions: {
+    id: "survey_completions",
+    label: "Survey completions",
+    definition:
+      "Count of church_survey_response_sessions with status = submitted and submitted_at in the date range.",
+    source: "church_survey_response_sessions",
+  },
+  survey_completion_rate: {
+    id: "survey_completion_rate",
+    label: "Survey completion rate (%)",
+    definition:
+      "100 * submitted sessions in range / (submitted + in_progress sessions with created_at in range). Zero when denominator is 0.",
+    source: "church_survey_response_sessions",
   },
   giving_totals: {
     id: "giving_totals",
@@ -66,6 +108,17 @@ const CROSS_BRANCH_KPI_DEFINITIONS = Object.freeze({
     requires_finance_permission: true,
   },
 });
+
+/** KPI keys used for branch ranking (desc). */
+const CROSS_BRANCH_RANKING_KPI_ORDER = Object.freeze([
+  "monthly_attendance",
+  "active_members",
+  "visitors",
+  "event_registrations",
+  "event_attendance",
+  "group_attendance",
+  "giving_totals",
+]);
 
 /** Within-tenant analytics: exclude inactive + obvious sample/demo campus hosts. */
 const DEMO_TEST_BRANCH_EXCLUSION_SQL = `
@@ -80,5 +133,6 @@ const DEMO_TEST_BRANCH_EXCLUSION_SQL = `
 
 module.exports = {
   CROSS_BRANCH_KPI_DEFINITIONS,
+  CROSS_BRANCH_RANKING_KPI_ORDER,
   DEMO_TEST_BRANCH_EXCLUSION_SQL,
 };

@@ -34,6 +34,8 @@ const memberMinistriesRepo = require("../../db/pg/church/memberMinistriesRepo");
 const ministryJoinRequestsRepo = require("../../db/pg/church/ministryJoinRequestsRepo");
 const dutyRosterRepo = require("../../db/pg/church/dutyRosterRepo");
 const { prepareGivingDisplay } = require("../../services/church/givingSettingsService");
+const foundationAttendanceCheckInService = require("../../services/church/foundationAttendanceCheckInService");
+const { getOrganisationPlan, hasEntitlement } = require("../../services/church/churchEntitlementService");
 const {
   matchMinistriesByInterest,
   visibilityLabel,
@@ -65,6 +67,7 @@ const {
   validateMemberRequestBody,
   validatePrayerRequestBody,
   requestStatusLabel,
+  prayerStatusLabel,
 } = require("../../church/memberPortalValidation");
 const {
   joinRequestStatusLabel,
@@ -406,15 +409,29 @@ function registerMemberPortalRoutes(router) {
   router.get("/member/profile", requireVerifiedMemberSession, ensureMemberAccountActive, async (req, res, next) => {
     try {
       const pool = getPgPool();
+      const branch = req.churchContext.branch;
+      const org = req.churchContext.organization;
       const profile = await membersRepo.findMemberByIdForBranch(
         pool,
         req.churchMember.member_id,
-        req.churchContext.branch.id
+        branch.id
       );
+      let attendanceQr = null;
+      const plan = await getOrganisationPlan(pool, org.id);
+      if (hasEntitlement(plan, "attendance.qr")) {
+        const issued = await foundationAttendanceCheckInService.ensureMemberQrToken(pool, {
+          organization_id: org.id,
+          branch_id: branch.id,
+          admin_id: null,
+          can_correct_attendance: false,
+        }, req.churchMember.member_id);
+        attendanceQr = { token: issued.token };
+      }
       return res.render(
         "church/member/profile",
         memberPortalLocals(req, {
           profile,
+          attendanceQr,
           error: null,
           ageGroupOptions: AGE_GROUP_OPTIONS,
           ministryInterestOptions: MINISTRY_INTEREST_OPTIONS,
@@ -1061,28 +1078,48 @@ function registerMemberPortalRoutes(router) {
     }
   });
 
-  router.get("/member/prayer-request", requireVerifiedMemberSession, ensureMemberAccountActive, (req, res) => {
-    return res.render(
-      "church/member/prayer_request",
-      memberPortalLocals(req, {
-        error: null,
-        form: {},
-        privacyLevels: PRAYER_PRIVACY_LEVELS,
-        urgencyLevels: PRAYER_URGENCY_LEVELS,
-        notice: flashFromQuery(req),
-      })
-    );
+  router.get("/member/prayer-request", requireVerifiedMemberSession, ensureMemberAccountActive, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const prayerRequests = await prayerRequestsRepo.listPrayerRequestsForMember(
+        pool,
+        req.churchMember.member_id,
+        req.churchContext.branch.id
+      );
+      return res.render(
+        "church/member/prayer_request",
+        memberPortalLocals(req, {
+          error: null,
+          form: {},
+          prayerRequests,
+          prayerStatusLabel,
+          privacyLevels: PRAYER_PRIVACY_LEVELS,
+          urgencyLevels: PRAYER_URGENCY_LEVELS,
+          notice: flashFromQuery(req),
+        })
+      );
+    } catch (e) {
+      return next(e);
+    }
   });
 
   router.post("/member/prayer-request", requireVerifiedMemberSession, ensureMemberAccountActive, requireChurchSessionCsrf, async (req, res, next) => {
     try {
       const validation = validatePrayerRequestBody(req.body || {});
       if (!validation.ok) {
+        const pool = getPgPool();
+        const prayerRequests = await prayerRequestsRepo.listPrayerRequestsForMember(
+          pool,
+          req.churchMember.member_id,
+          req.churchContext.branch.id
+        );
         return res.status(400).render(
           "church/member/prayer_request",
           memberPortalLocals(req, {
             error: validation.error,
             form: validation.form,
+            prayerRequests,
+            prayerStatusLabel,
             privacyLevels: PRAYER_PRIVACY_LEVELS,
             urgencyLevels: PRAYER_URGENCY_LEVELS,
             notice: null,

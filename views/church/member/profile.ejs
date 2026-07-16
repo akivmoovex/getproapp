@@ -56,6 +56,13 @@
           <p><%= profile.address_area || '—' %></p>
           <img class="church-member-profile-map" src="/church/images/member/profile-map-kafue.jpg" alt="Area map" width="640" height="320"/>
         </article>
+        <% if (typeof attendanceQr !== 'undefined' && attendanceQr && attendanceQr.token) { %>
+        <article class="church-member-panel church-member-panel--glass">
+          <h2 class="church-member-panel__title">Service check-in QR</h2>
+          <p class="church-member-empty">Show this code at the usher desk. It does not contain your member ID.</p>
+          <p class="church-member-kv"><strong>Code</strong> <code><%= attendanceQr.token %></code></p>
+        </article>
+        <% } %>
       </div>
 
       <section class="church-member-panel" id="profile-form">
@@ -105,6 +112,13 @@
             <div class="church-field">
               <label class="church-label" for="emergency_contact_phone">Emergency contact phone</label>
               <input class="church-input" id="emergency_contact_phone" name="emergency_contact_phone" type="tel" value="<%= profile.emergency_contact_phone || '' %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label">
+                <input type="checkbox" name="communication_consent" value="1" <%= profile.communication_consent !== false ? 'checked' : '' %>/>
+                Allow church email communications (you can opt out anytime)
+              </label>
+              <p class="church-branch-panel__hint">In-app announcements may still appear. Opting out skips external email broadcasts.</p>
             </div>
           </div>
           <button class="church-btn church-btn--primary" type="submit">Save profile</button>

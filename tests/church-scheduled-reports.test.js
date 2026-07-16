@@ -127,6 +127,10 @@ test(
       role: "branch_admin",
       status: "active",
     });
+    await pool.query(
+      `UPDATE public.church_branch_admins SET can_view_finance = true WHERE id = $1`,
+      [adminG.id]
+    );
     const recipientG2 = await branchAdminsRepo.createBranchAdmin(pool, {
       organization_id: orgGrowth.id,
       branch_id: branchG.id,

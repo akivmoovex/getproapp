@@ -30,6 +30,9 @@ function resolveBranchAdminNavActive(req) {
     return "reset";
   }
   if (p.startsWith("/branch/prayer-requests")) return "prayer";
+  if (p.startsWith("/branch/pastoral-automation")) return "pastoral-automation";
+  if (p.startsWith("/branch/pastoral-cases")) return "pastoral-cases";
+  if (p.startsWith("/branch/safeguarding")) return "safeguarding";
   if (p.startsWith("/branch/announcements")) return "announcements";
   if (p.startsWith("/branch/events")) return "events";
   if (p.startsWith("/branch/website-editor") || p.startsWith("/branch/site")) return "website";
@@ -45,7 +48,10 @@ function resolveBranchAdminNavActive(req) {
   if (p.startsWith("/branch/departments")) return "departments";
   if (p.startsWith("/branch/duty-roster")) return "duty";
   if (p.startsWith("/branch/volunteer-scheduling")) return "volunteer-scheduling";
+  if (p.startsWith("/branch/groups")) return "groups";
+  if (p.startsWith("/branch/discipleship")) return "discipleship";
   if (p.startsWith("/branch/appointments")) return "appointments";
+  if (p.startsWith("/branch/surveys")) return "surveys";
   if (p.startsWith("/branch/event-logistics")) return "event-logistics";
   if (p.startsWith("/branch/scheduled-reports")) return "reports-scheduled";
   if (p.startsWith("/branch/domains/custom") || p.startsWith("/branch/domains-custom")) return "domains-custom";
@@ -67,6 +73,9 @@ function branchAdminShellTitle(navActive) {
     requests: "Requests",
     reset: "Reset Inbox",
     prayer: "Prayer Requests",
+    "pastoral-cases": "Pastoral Cases",
+    "pastoral-automation": "Pastoral automation",
+    safeguarding: "Safeguarding",
     announcements: "Announcements",
     events: "Events Management",
     website: "Website Editor",
@@ -80,7 +89,10 @@ function branchAdminShellTitle(navActive) {
     departments: "Departments",
     duty: "Duty Roster",
     "volunteer-scheduling": "Volunteer scheduling",
+    groups: "Groups",
+    discipleship: "Discipleship",
     appointments: "Appointments",
+    surveys: "Surveys",
     "attendance-offline": "Offline attendance",
     "attendance-rules": "Attendance rules",
     "event-logistics": "Event logistics",
@@ -153,7 +165,16 @@ const MEMBER_NOTICES = new Set([
   "import_already_committed",
   "import_reversed",
 ]);
-const ATTENDANCE_NOTICES = new Set(["created", "submitted", "status_updated"]);
+const ATTENDANCE_NOTICES = new Set([
+  "created",
+  "submitted",
+  "status_updated",
+  "session_opened",
+  "session_closed",
+  "check_in_recorded",
+  "visitor_checked_in",
+  "check_in_corrected",
+]);
 const GIVING_NOTICES = new Set(["giving_saved", "giving_submitted"]);
 const REPORT_NOTICES = new Set(["report_draft_saved", "report_submitted"]);
 const REQUEST_NOTICES = new Set([
@@ -163,7 +184,16 @@ const REQUEST_NOTICES = new Set([
   "request_more_info",
   "request_completed",
 ]);
-const PRAYER_ADMIN_NOTICES = new Set(["prayer_reviewed", "prayer_closed"]);
+const PRAYER_ADMIN_NOTICES = new Set([
+  "prayer_reviewed",
+  "prayer_closed",
+  "prayer_acknowledged",
+  "prayer_assigned",
+  "prayer_follow_up",
+  "attachment_uploaded",
+]);
+const PASTORAL_NOTICES = new Set(["case_opened", "case_follow_up", "case_closed"]);
+const SAFEGUARDING_NOTICES = new Set(["incident_opened"]);
 const ANNOUNCEMENT_NOTICES = new Set([
   "announcement_created",
   "announcement_updated",
@@ -243,6 +273,11 @@ function noticeMessage(code) {
     created: "Attendance record saved.",
     submitted: "Attendance record submitted successfully.",
     status_updated: "Attendance status updated.",
+    session_opened: "Service session opened for check-in.",
+    session_closed: "Service session closed.",
+    check_in_recorded: "Check-in recorded.",
+    visitor_checked_in: "Visitor checked in.",
+    check_in_corrected: "Check-in corrected and audit logged.",
     giving_saved: "Giving summary saved.",
     giving_submitted: "Giving summary submitted.",
     report_draft_saved: "Monthly report draft saved.",
@@ -259,6 +294,14 @@ function noticeMessage(code) {
     request_completed: "Request marked completed.",
     prayer_reviewed: "Prayer request marked reviewed.",
     prayer_closed: "Prayer request closed.",
+    prayer_acknowledged: "Prayer request acknowledged.",
+    prayer_assigned: "Prayer request assigned.",
+    prayer_follow_up: "Prayer follow-up recorded.",
+    attachment_uploaded: "Attachment uploaded.",
+    case_opened: "Pastoral case opened.",
+    case_follow_up: "Pastoral follow-up recorded.",
+    case_closed: "Pastoral case closed.",
+    incident_opened: "Safeguarding incident recorded.",
     announcement_created: "Announcement saved as draft.",
     announcement_updated: "Announcement updated.",
     announcement_published: "Announcement published.",
@@ -334,6 +377,8 @@ module.exports = {
   SCHEDULED_REPORT_NOTICES,
   REQUEST_NOTICES,
   PRAYER_ADMIN_NOTICES,
+  PASTORAL_NOTICES,
+  SAFEGUARDING_NOTICES,
   ANNOUNCEMENT_NOTICES,
   EVENT_NOTICES,
   WEBSITE_NOTICES,

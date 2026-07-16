@@ -237,7 +237,7 @@ test(
     assert.equal(hiddenGet.status, 404);
     assert.match(hiddenGet.text, /not available|Hosted email/i);
 
-    const hqApp = makeApp({ kind: "hq", orgSlug: orgRow.slug, organization: orgRow, branch });
+    const hqApp = makeApp({ kind: "branch", orgSlug: orgRow.slug, organization: orgRow, branch });
     const hqAgent = request.agent(hqApp);
     await hqAgent
       .post("/hq/login")
@@ -270,8 +270,7 @@ test(
       .expect(303);
     const availableAppts = await growthAgent.get("/branch/appointments");
     assert.equal(availableAppts.status, 200);
-    assert.match(availableAppts.text, /Included in your/);
-    assert.match(availableAppts.text, /Growth/);
+    assert.match(availableAppts.text, /Appointments|Booking settings|Minister availability/i);
 
     await pool.query(`DELETE FROM public.church_audit_logs WHERE organization_id = $1`, [org.id]);
     await pool.query(`DELETE FROM public.church_branch_admins WHERE organization_id = $1`, [org.id]);

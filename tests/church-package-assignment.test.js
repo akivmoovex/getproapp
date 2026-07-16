@@ -330,6 +330,25 @@ test(
       [org.id]
     );
 
+    // Active Growth jobs block downgrade (scheduled reports)
+    await pool.query(
+      `INSERT INTO public.church_scheduled_reports (
+         organization_id, branch_id, report_type, export_format, frequency, timezone,
+         delivery_time_local, status, created_by_actor_type, created_by_actor_id, next_run_at
+       ) VALUES ($1, $2, 'branch_attendance_summary', 'csv', 'daily', 'UTC', '09:00', 'enabled',
+                 'branch_admin', NULL, now() + interval '1 day')`,
+      [org.id, main.id]
+    );
+    downgradeCheck = await evaluateFoundationDowngradeEligibility(pool, org.id);
+    assert.equal(downgradeCheck.allowed, false);
+    assert.ok(downgradeCheck.incompatibilities.some((i) => i.code === "growth_scheduled_reports"));
+
+    await pool.query(
+      `UPDATE public.church_scheduled_reports SET status = 'paused', next_run_at = NULL
+       WHERE organization_id = $1 AND status = 'enabled'`,
+      [org.id]
+    );
+
     // Valid Growth → Foundation
     const downPreview = await previewPackageAssignment(pool, org.id, {
       package_code: "foundation",
@@ -355,6 +374,14 @@ test(
     const plan = await getOrganisationPlan(pool, org.id);
     assert.equal(plan.packageCode, "foundation");
 
+    // Growth configuration is retained (not deleted) after compatible downgrade
+    const retainedReports = await pool.query(
+      `SELECT id, status FROM public.church_scheduled_reports WHERE organization_id = $1`,
+      [org.id]
+    );
+    assert.ok(retainedReports.rows.length >= 1);
+    assert.equal(retainedReports.rows[0].status, "paused");
+
     // HTTP: unauthorised tenant manager
     const app = express();
     app.set("view engine", "ejs");
@@ -373,7 +400,7 @@ test(
       res.locals.asset = (k) => `/${String(k || "").replace(/^\//, "")}`;
       next();
     });
-    app.use("/admin", adminRoutes({ db }));
+    app.use("/admin", adminRoutes({ db, mountChurchPlatform: true }));
 
     const tmAgent = request.agent(app);
     await tmAgent
@@ -406,6 +433,7 @@ test(
       `DELETE FROM public.church_organization_package_history WHERE organization_id = ANY($1::int[])`,
       [[org.id, orgOther.id]]
     );
+    await pool.query(`DELETE FROM public.church_scheduled_reports WHERE organization_id = $1`, [org.id]);
     await pool.query(`DELETE FROM public.church_members WHERE organization_id = $1`, [org.id]);
     await pool.query(`DELETE FROM public.church_hq_admins WHERE organization_id = $1`, [org.id]);
     await pool.query(`DELETE FROM public.church_branches WHERE organization_id = ANY($1::int[])`, [

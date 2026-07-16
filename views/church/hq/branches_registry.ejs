@@ -4,8 +4,16 @@
           <h1 class="church-branch-topbar__title">Branch registry</h1>
           <p class="church-branch-topbar__subtitle">Organization branches for <%= organizationName %> · <%= periodMonth %></p>
         </div>
-        <% if (typeof pathRoutingEnabled !== 'undefined' && pathRoutingEnabled && (hqBranchSwitcher || []).length > 1) { %>
-        <form class="church-form church-form--inline" method="get" action="/hq/branches/switch-preview" aria-label="Branch public site switcher">
+        <div class="church-branch-topbar__actions">
+          <% if (typeof canAddBranch !== 'undefined' && canAddBranch) { %>
+          <a class="church-btn church-btn--primary" href="/hq/branches/new">Add branch</a>
+          <% } %>
+          <% if (typeof pathRoutingEnabled !== 'undefined' && pathRoutingEnabled) { %>
+          <a class="church-btn church-btn--outline" href="/hq/members">Member lookup</a>
+          <a class="church-btn church-btn--outline" href="/hq/cross-branch-reports">Compare branches</a>
+          <% } %>
+          <% if (typeof pathRoutingEnabled !== 'undefined' && pathRoutingEnabled && (hqBranchSwitcher || []).length > 1) { %>
+          <form class="church-form church-form--inline" method="get" action="/hq/branches/switch-preview" aria-label="Branch public site switcher">
           <div class="church-field">
             <label class="church-label" for="preview_branch_id">View public site</label>
             <select class="church-input" id="preview_branch_id" name="branch_id" required>
@@ -16,8 +24,12 @@
           </div>
           <button class="church-btn church-btn--outline" type="submit">Open</button>
         </form>
-        <% } %>
+          <% } %>
+        </div>
       </header>
+      <% if (typeof notice !== 'undefined' && notice) { %>
+      <div class="church-branch-panel church-branch-panel--notice" role="status"><%= notice %></div>
+      <% } %>
       <form class="church-form church-form--inline" method="get" action="/hq/branches">
         <div class="church-field church-field--grow">
           <label class="church-label" for="q">Search</label>

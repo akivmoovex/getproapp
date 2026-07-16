@@ -177,6 +177,11 @@ test(
     });
     assert.equal(prayer.status, 303);
 
+    const prayerPage = await agent.get("/member/prayer-request");
+    assert.equal(prayerPage.status, 200);
+    assert.match(prayerPage.text, /Healing/);
+    assert.match(prayerPage.text, /Submitted/);
+
     const reqCreate = await agent.post("/member/requests").type("form").send({
       request_type: "Baptism",
       subject: "Baptism request",

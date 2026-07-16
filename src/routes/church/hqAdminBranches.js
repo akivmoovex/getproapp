@@ -10,7 +10,7 @@ const {
   parsePeriodMonth,
   formatBranchLocation,
 } = require("../../church/hqBranchRegistryValidation");
-const { hqAdminLocals } = require("./hqAdminShared");
+const { hqAdminLocals, flashFromQuery, recordHqAudit, BRANCH_NOTICES, branchNoticeMessage } = require("./hqAdminShared");
 const { resolveBranchLifecycle } = require("../../church/branchLifecycle");
 const {
   organisationAllowsBranchPaths,
@@ -18,6 +18,19 @@ const {
   branchPathSlug,
 } = require("../../services/church/branchPathRoutingService");
 const branchesRepo = require("../../db/pg/church/branchesRepo");
+const { requireChurchSessionCsrf } = require("../../church/churchSessionCsrf");
+const { resolvePackageFromPlanCode } = require("../../church/blessBoardPackageCatalogue");
+const {
+  validateHqCreateBranchBody,
+  validateHqActivateBranchBody,
+  validateHqDeactivateBranchBody,
+  hqCreateBranchFormFromBody,
+} = require("../../church/hqGrowthBranchValidation");
+const {
+  createBranchByHq,
+  activateBranchByHq,
+  deactivateBranchByHq,
+} = require("../../services/church/growthMultiBranchService");
 
 function formatMoney(amount) {
   const n = Number(amount || 0);
@@ -95,11 +108,13 @@ module.exports = function registerHqAdminBranchesRoutes(router) {
           formatBranchLocation,
           hostBranch,
           pathRoutingEnabled: pathRouting,
+          canAddBranch: true,
           hqBranchSwitcher: siblingBranches.filter((b) => b.status === "active"),
           buildPublicBranchUrl(target) {
             return buildPublicBranchAbsoluteUrl(hostBranch, target, "home") || "#";
           },
           branchPathSlug,
+          notice: branchNoticeMessage(flashFromQuery(req, BRANCH_NOTICES)),
         })
       );
     } catch (e) {
@@ -129,6 +144,15 @@ module.exports = function registerHqAdminBranchesRoutes(router) {
         if (!performance) {
           return res.status(404).type("text").send("Branch not found.");
         }
+        const hostBranch = req.churchContext.hostBranch || req.churchContext.branch;
+        const pathRouting = organisationAllowsBranchPaths(org);
+        const resolved = resolvePackageFromPlanCode(org.plan_code);
+        const activeCount = await branchesRepo.countActiveBranchesForOrganization(pool, org.id);
+        const lifecycle = resolveBranchLifecycle(performance.branch);
+        const publicUrl = pathRouting
+          ? buildPublicBranchAbsoluteUrl(hostBranch, performance.branch, "home")
+          : null;
+        const pageError = String((req.query && req.query.error) || "").trim().slice(0, 500) || null;
         return res.render(
           "church/hq/branch_performance",
           hqAdminLocals(req, {
@@ -137,6 +161,15 @@ module.exports = function registerHqAdminBranchesRoutes(router) {
             reportStatusLabel,
             givingStatusLabel,
             formatMoney,
+            lifecycle,
+            packageCode: resolved.packageCode,
+            pathRoutingEnabled: pathRouting,
+            publicBranchUrl: publicUrl,
+            canActivate: performance.branch.status !== "active" && performance.branch.status !== "archived",
+            canDeactivate:
+              performance.branch.status === "active" && activeCount > 1,
+            notice: branchNoticeMessage(flashFromQuery(req, BRANCH_NOTICES)),
+            activateError: pageError,
           })
         );
       } catch (e) {
@@ -163,6 +196,156 @@ module.exports = function registerHqAdminBranchesRoutes(router) {
         }
         const period = parsePeriodMonth(req.query.period_month);
         return res.redirect(303, `/hq/branches/${branchId}?period_month=${period.label}#reports-summary`);
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.get("/hq/branches/new", requireChurchBranchHost, requireChurchHqAdminSession, async (req, res, next) => {
+    try {
+      const org = req.churchContext.organization;
+      const resolved = resolvePackageFromPlanCode(org.plan_code);
+      return res.render(
+        "church/hq/branch_new",
+        hqAdminLocals(req, {
+          form: hqCreateBranchFormFromBody({}),
+          error: null,
+          packageCode: resolved.packageCode,
+          pathRoutingEnabled: organisationAllowsBranchPaths(org),
+        })
+      );
+    } catch (e) {
+      return next(e);
+    }
+  });
+
+  router.post(
+    "/hq/branches",
+    requireChurchBranchHost,
+    requireChurchHqAdminSession,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        const org = req.churchContext.organization;
+        const admin = req.churchHqAdmin;
+        const pool = getPgPool();
+        const validated = validateHqCreateBranchBody(req.body, org);
+        if (!validated.ok) {
+          const resolved = resolvePackageFromPlanCode(org.plan_code);
+          return res.status(400).render(
+            "church/hq/branch_new",
+            hqAdminLocals(req, {
+              form: validated.form,
+              error: validated.error,
+              packageCode: resolved.packageCode,
+              pathRoutingEnabled: organisationAllowsBranchPaths(org),
+            })
+          );
+        }
+
+        try {
+          const result = await createBranchByHq(pool, org.id, admin.hq_admin_id, validated.data);
+          const notice = result.createdAsActive ? "branch_created_active" : "branch_created_draft";
+          return res.redirect(303, `/hq/branches/${result.branch.id}?notice=${notice}`);
+        } catch (err) {
+          const resolved = resolvePackageFromPlanCode(org.plan_code);
+          return res.status(400).render(
+            "church/hq/branch_new",
+            hqAdminLocals(req, {
+              form: validated.form,
+              error: err.message || "Could not create branch.",
+              packageCode: resolved.packageCode,
+              pathRoutingEnabled: organisationAllowsBranchPaths(org),
+            })
+          );
+        }
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.post(
+    "/hq/branches/:branchId/activate",
+    requireChurchBranchHost,
+    requireChurchHqAdminSession,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        const branchId = Number(req.params.branchId);
+        const org = req.churchContext.organization;
+        const admin = req.churchHqAdmin;
+        const pool = getPgPool();
+        const body = validateHqActivateBranchBody(req.body);
+
+        try {
+          await activateBranchByHq(pool, branchId, org.id, admin.hq_admin_id, body);
+        } catch (err) {
+          const period = parsePeriodMonth(req.body && req.body.period_month);
+          const performance = await hqBranchesRepo.getBranchPerformanceSummary(
+            pool,
+            org.id,
+            branchId,
+            period
+          );
+          if (!performance) return res.status(404).type("text").send("Branch not found.");
+          const hostBranch = req.churchContext.hostBranch || req.churchContext.branch;
+          const pathRouting = organisationAllowsBranchPaths(org);
+          const resolved = resolvePackageFromPlanCode(org.plan_code);
+          const activeCount = await branchesRepo.countActiveBranchesForOrganization(pool, org.id);
+          return res.status(400).render(
+            "church/hq/branch_performance",
+            hqAdminLocals(req, {
+              performance,
+              periodMonth: period.label,
+              reportStatusLabel,
+              givingStatusLabel,
+              formatMoney,
+              lifecycle: resolveBranchLifecycle(performance.branch),
+              packageCode: resolved.packageCode,
+              pathRoutingEnabled: pathRouting,
+              publicBranchUrl: pathRouting
+                ? buildPublicBranchAbsoluteUrl(hostBranch, performance.branch, "home")
+                : null,
+              canActivate: performance.branch.status !== "active" && performance.branch.status !== "archived",
+              canDeactivate: performance.branch.status === "active" && activeCount > 1,
+              activateError: err.message || "Activation failed.",
+              notice: null,
+            })
+          );
+        }
+
+        return res.redirect(303, `/hq/branches/${branchId}?notice=branch_activated`);
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
+
+  router.post(
+    "/hq/branches/:branchId/deactivate",
+    requireChurchBranchHost,
+    requireChurchHqAdminSession,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        const branchId = Number(req.params.branchId);
+        const org = req.churchContext.organization;
+        const admin = req.churchHqAdmin;
+        const pool = getPgPool();
+        const body = validateHqDeactivateBranchBody(req.body);
+
+        try {
+          await deactivateBranchByHq(pool, branchId, org.id, admin.hq_admin_id, body);
+        } catch (err) {
+          return res.redirect(
+            303,
+            `/hq/branches/${branchId}?error=${encodeURIComponent(err.message || "Deactivation failed.")}`
+          );
+        }
+
+        return res.redirect(303, `/hq/branches?notice=branch_deactivated`);
       } catch (e) {
         return next(e);
       }

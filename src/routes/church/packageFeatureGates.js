@@ -114,6 +114,15 @@ const FEATURES_WITH_REAL_ROUTES = new Set([
   "reports_scheduled",
   "broadcasts_scheduled",
   "reports_cross_branch",
+  "attendance_offline",
+  "attendance_custom_rules",
+  "care_automation",
+  "appointments_calendar",
+  "surveys_custom",
+  "groups_management",
+  "discipleship_pathways",
+  "volunteers_scheduling",
+  "events_advanced_logistics",
 ]);
 
 module.exports = function registerPackageFeatureGateRoutes(router, portal) {

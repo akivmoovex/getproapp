@@ -1,5 +1,7 @@
 "use strict";
 
+const { mapPrayerRowForAdmin } = require("../../../church/foundationPastoralAccess");
+
 /**
  * @param {import("pg").Pool} pool
  * @param {object} fields
@@ -45,15 +47,25 @@ async function listPrayerRequestsForMember(pool, memberId, branchId) {
 const BRANCH_PRAYER_SELECT = `
   SELECT p.*,
          m.full_name AS member_name,
-         m.email AS member_email
+         m.email AS member_email,
+         aa.full_name AS assigned_admin_name,
+         ab.full_name AS acknowledged_by_name
   FROM public.church_prayer_requests p
   INNER JOIN public.church_members m ON m.id = p.member_id
+  LEFT JOIN public.church_branch_admins aa ON aa.id = p.assigned_admin_id
+  LEFT JOIN public.church_branch_admins ab ON ab.id = p.acknowledged_by_admin_id
 `;
 
-function mapPrayerRow(row, adminRole) {
+function mapPrayerRow(row, opts = {}) {
   if (!row) return row;
+  if (opts.pastoralAccess) {
+    return mapPrayerRowForAdmin(row, { can_access_pastoral: true });
+  }
+  if (opts.admin) {
+    return mapPrayerRowForAdmin(row, opts.admin);
+  }
   const { showPrayerMemberIdentity } = require("../../../church/requestProcessingValidation");
-  const showIdentity = showPrayerMemberIdentity(row, adminRole);
+  const showIdentity = showPrayerMemberIdentity(row, opts.adminRole);
   return {
     ...row,
     member_display_name: showIdentity ? row.member_name : "Anonymous",
@@ -64,7 +76,7 @@ function mapPrayerRow(row, adminRole) {
 /**
  * @param {import("pg").Pool} pool
  * @param {number} branchId
- * @param {{ adminRole?: string }} opts
+ * @param {{ admin?: object, pastoralAccess?: boolean }} opts
  * @returns {Promise<object[]>}
  */
 async function listPrayerRequestsForBranch(pool, branchId, opts = {}) {
@@ -74,14 +86,14 @@ async function listPrayerRequestsForBranch(pool, branchId, opts = {}) {
      ORDER BY p.created_at DESC`,
     [branchId]
   );
-  return r.rows.map((row) => mapPrayerRow(row, opts.adminRole));
+  return r.rows.map((row) => mapPrayerRow(row, opts));
 }
 
 /**
  * @param {import("pg").Pool} pool
  * @param {number} prayerRequestId
  * @param {number} branchId
- * @param {{ adminRole?: string }} opts
+ * @param {{ admin?: object, pastoralAccess?: boolean, adminRole?: string }} opts
  * @returns {Promise<object | null>}
  */
 async function findPrayerRequestByIdForBranch(pool, prayerRequestId, branchId, opts = {}) {
@@ -91,7 +103,7 @@ async function findPrayerRequestByIdForBranch(pool, prayerRequestId, branchId, o
      LIMIT 1`,
     [prayerRequestId, branchId]
   );
-  return mapPrayerRow(r.rows[0] ?? null, opts.adminRole);
+  return mapPrayerRow(r.rows[0] ?? null, opts);
 }
 
 /**
@@ -101,27 +113,32 @@ async function findPrayerRequestByIdForBranch(pool, prayerRequestId, branchId, o
  * @param {object} update
  * @returns {Promise<object | null>}
  */
-async function updatePrayerRequestStatusForBranch(pool, prayerRequestId, branchId, update) {
-  const params = [update.status];
-  const sets = ["status = $1", "updated_at = now()"];
-  let idx = 2;
+async function updatePrayerRequestForBranch(pool, prayerRequestId, branchId, update) {
+  const sets = ["updated_at = now()"];
+  const params = [];
+  let idx = 1;
 
-  if (update.admin_comment !== undefined) {
-    sets.push(`admin_comment = $${idx}`);
-    params.push(update.admin_comment);
-    idx += 1;
+  const fields = [
+    ["status", "status"],
+    ["admin_comment", "admin_comment"],
+    ["reviewed_by_admin_id", "reviewed_by_admin_id"],
+    ["assigned_admin_id", "assigned_admin_id"],
+    ["acknowledged_by_admin_id", "acknowledged_by_admin_id"],
+    ["due_date", "due_date"],
+    ["next_action", "next_action"],
+    ["closure_outcome", "closure_outcome"],
+    ["closure_reason", "closure_reason"],
+  ];
+  for (const [key, col] of fields) {
+    if (update[key] !== undefined) {
+      sets.push(`${col} = $${idx}${col === "due_date" ? "::date" : ""}`);
+      params.push(update[key]);
+      idx += 1;
+    }
   }
-  if (update.reviewed_by_admin_id !== undefined) {
-    sets.push(`reviewed_by_admin_id = $${idx}`);
-    params.push(update.reviewed_by_admin_id);
-    idx += 1;
-  }
-  if (update.set_reviewed_at) {
-    sets.push("reviewed_at = now()");
-  }
-  if (update.set_closed_at) {
-    sets.push("closed_at = now()");
-  }
+  if (update.set_reviewed_at) sets.push("reviewed_at = now()");
+  if (update.set_acknowledged_at) sets.push("acknowledged_at = now()");
+  if (update.set_closed_at) sets.push("closed_at = now()");
 
   params.push(prayerRequestId);
   const idParam = idx;
@@ -145,8 +162,21 @@ async function updatePrayerRequestStatusForBranch(pool, prayerRequestId, branchI
   );
   if (!r.rows[0]) return null;
   return findPrayerRequestByIdForBranch(pool, prayerRequestId, branchId, {
+    pastoralAccess: true,
+    admin: update.admin,
     adminRole: update.admin_role,
   });
+}
+
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} prayerRequestId
+ * @param {number} branchId
+ * @param {object} update
+ * @returns {Promise<object | null>}
+ */
+async function updatePrayerRequestStatusForBranch(pool, prayerRequestId, branchId, update) {
+  return updatePrayerRequestForBranch(pool, prayerRequestId, branchId, update);
 }
 
 /**
@@ -162,7 +192,14 @@ async function countPrayerRequestsByStatusForBranch(pool, branchId) {
      GROUP BY status`,
     [branchId]
   );
-  const out = { submitted: 0, reviewed: 0, closed: 0 };
+  const out = {
+    submitted: 0,
+    acknowledged: 0,
+    assigned: 0,
+    in_follow_up: 0,
+    reviewed: 0,
+    closed: 0,
+  };
   for (const row of r.rows) {
     if (Object.prototype.hasOwnProperty.call(out, row.status)) {
       out[row.status] = row.count;
@@ -176,6 +213,7 @@ module.exports = {
   listPrayerRequestsForMember,
   listPrayerRequestsForBranch,
   findPrayerRequestByIdForBranch,
+  updatePrayerRequestForBranch,
   updatePrayerRequestStatusForBranch,
   countPrayerRequestsByStatusForBranch,
   mapPrayerRow,

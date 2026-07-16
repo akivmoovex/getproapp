@@ -194,9 +194,13 @@ test(
       title: "Confidential pastor review notes",
       body: "Do not put this in email subjects.",
       category: "Leadership",
-      audience: "branch_admins",
+      audience: "selected_recipients",
       target_scope: "selected_branches",
       branch_ids: [branchG.id],
+      selected_recipients: [
+        { recipient_type: "branch_admin", recipient_id: baG.id },
+        { recipient_type: "branch_admin", recipient_id: baG2.id },
+      ],
       delivery_channels: ["in_app", "email"],
       status: "draft",
       publish_at: future,
@@ -518,5 +522,87 @@ test(
     );
     // in-app still delivered
     assert.ok(quotaDel.some((d) => d.channel === "in_app" && d.status === "delivered"));
+
+    // --- Quiet hours deferral ---
+    await pool.query(`UPDATE public.church_organizations SET timezone = 'UTC' WHERE id = $1`, [
+      orgG.id,
+    ]);
+    await scheduledBroadcastService.saveQuietHoursPolicy(pool, orgG.id, hqG.id, {
+      quiet_hours_enabled: "1",
+      quiet_hours_start: "22:00",
+      quiet_hours_end: "06:00",
+    });
+    const quietB = await hqBroadcastsRepo.createBroadcastForOrganization(pool, orgG.id, {
+      title: "Quiet hours bcast",
+      body: "Later",
+      category: "General",
+      audience: "selected_recipients",
+      selected_recipients: [{ recipient_type: "member", recipient_id: memberYes.id }],
+      delivery_channels: ["in_app", "email"],
+      status: "draft",
+      publish_at: new Date("2026-12-01T23:00:00.000Z"),
+      created_by_hq_admin_id: hqG.id,
+    });
+    await scheduledBroadcastService.approveBroadcast(pool, {
+      broadcastId: quietB.id,
+      organizationId: orgG.id,
+      hqAdminId: hqG.id,
+      at: new Date("2026-12-01T12:00:00.000Z"),
+      forceSchedule: true,
+    });
+    const quietDue = await scheduledBroadcastService.processDueScheduledBroadcasts(pool, {
+      at: new Date("2026-12-01T23:05:00.000Z"),
+    });
+    const quietHit = quietDue.processed.find((p) => p.broadcastId === quietB.id);
+    assert.ok(quietHit);
+    assert.equal(quietHit.outcome, "deferred_quiet_hours");
+    assert.ok(quietHit.resumeAt);
+
+    // Outside quiet hours → delivers
+    const afterQuiet = await scheduledBroadcastService.processDueScheduledBroadcasts(pool, {
+      at: new Date(quietHit.resumeAt),
+    });
+    const afterHit = afterQuiet.processed.find((p) => p.broadcastId === quietB.id);
+    assert.ok(afterHit);
+    assert.ok(["published", "partially_failed"].includes(afterHit.outcome));
+
+    // --- Test delivery ---
+    const testDraft = await hqBroadcastsRepo.createBroadcastForOrganization(pool, orgG.id, {
+      title: "Confidential salary discussion",
+      body: "Secret body",
+      category: "Leadership",
+      audience: "branch_admins",
+      target_scope: "all_branches",
+      delivery_channels: ["in_app", "email"],
+      status: "draft",
+      created_by_hq_admin_id: hqG.id,
+    });
+    const testSend = await scheduledBroadcastService.testBroadcastDelivery(pool, {
+      broadcastId: testDraft.id,
+      organizationId: orgG.id,
+      hqAdminId: hqG.id,
+    });
+    assert.ok(testSend.delivery.id);
+    assert.match(testSend.subject, /Leadership update/);
+    assert.doesNotMatch(testSend.subject, /salary|Confidential/i);
+
+    // Opt-out via profile update
+    await membersRepo.updateMemberProfileForMember(pool, memberYes.id, branchG.id, {
+      full_name: "Member Yes",
+      email: `my_${suffix}@example.com`,
+      phone: "0977222010",
+      gender: "female",
+      age_group: "Adult (36-60)",
+      address_area: "Lusaka",
+      ministry_interest: "choir",
+      emergency_contact_name: "",
+      emergency_contact_phone: "",
+      communication_consent: false,
+    });
+    const opted = await pool.query(
+      `SELECT communication_consent FROM public.church_members WHERE id = $1`,
+      [memberYes.id]
+    );
+    assert.equal(opted.rows[0].communication_consent, false);
   }
 );

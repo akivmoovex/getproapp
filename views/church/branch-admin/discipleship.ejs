@@ -1,0 +1,67 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Discipleship</h1>
+          <p class="church-branch-topbar__subtitle">Stages, milestones, owners, and movement history</p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success"><%= notice %></div><% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Stages</h2>
+        <form class="church-form" method="post" action="/branch/discipleship/stages">
+          <%- include('../partials/csrf_field') %>
+          <input class="church-input" name="name" placeholder="Stage name" required/>
+          <input class="church-input" name="sort_order" type="number" value="0"/>
+          <button class="church-btn church-btn--primary" type="submit">Add stage</button>
+        </form>
+        <ul class="church-list">
+          <% (stages || []).forEach(function (s) { %>
+          <li><%= s.sort_order %>. <%= s.name %></li>
+          <% }) %>
+        </ul>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Milestones</h2>
+        <form class="church-form" method="post" action="/branch/discipleship/milestones">
+          <%- include('../partials/csrf_field') %>
+          <select class="church-input" name="stage_id" required>
+            <% (stages || []).forEach(function (s) { %><option value="<%= s.id %>"><%= s.name %></option><% }) %>
+          </select>
+          <input class="church-input" name="name" placeholder="Milestone" required/>
+          <button class="church-btn church-btn--outline" type="submit">Add milestone</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Move member</h2>
+        <form class="church-form" method="post" action="/branch/discipleship/move">
+          <%- include('../partials/csrf_field') %>
+          <select class="church-input" name="member_id" required>
+            <% (members || []).forEach(function (m) { %><option value="<%= m.id %>"><%= m.full_name %></option><% }) %>
+          </select>
+          <select class="church-input" name="stage_id" required>
+            <% (stages || []).forEach(function (s) { %><option value="<%= s.id %>"><%= s.name %></option><% }) %>
+          </select>
+          <select class="church-input" name="owner_admin_id">
+            <option value="">Owner (optional)</option>
+            <% (admins || []).forEach(function (a) { %><option value="<%= a.id %>"><%= a.full_name %></option><% }) %>
+          </select>
+          <input class="church-input" name="movement_reason" placeholder="Movement reason"/>
+          <button class="church-btn church-btn--primary" type="submit">Record movement</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Active pathways</h2>
+        <ul class="church-list">
+          <% (pathways || []).forEach(function (p) { %>
+          <li>
+            <a href="/branch/discipleship/members/<%= p.member_id %>"><%= p.member_name %></a>
+            · <%= p.stage_name %><% if (p.owner_name) { %> · owner <%= p.owner_name %><% } %>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

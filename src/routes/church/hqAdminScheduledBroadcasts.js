@@ -28,6 +28,8 @@ const SCHEDULED_BROADCAST_NOTICES = new Set([
   "moved_preview",
   "estimate_ready",
   "submitted_approval",
+  "quiet_hours_saved",
+  "test_delivery_recorded",
 ]);
 
 function scheduledNotice(code) {
@@ -38,6 +40,8 @@ function scheduledNotice(code) {
     moved_preview: "Broadcast moved to preview.",
     estimate_ready: "Audience estimate ready.",
     submitted_approval: "Broadcast submitted for approval.",
+    quiet_hours_saved: "Quiet-hour policy saved.",
+    test_delivery_recorded: "Test delivery recorded to your email (quota applied).",
   };
   return map[code] || noticeMessage(code);
 }
@@ -55,9 +59,10 @@ module.exports = function registerHqAdminScheduledBroadcastsRoutes(router) {
         }
         const org = req.churchContext.organization;
         const pool = getPgPool();
-        const [broadcasts, featureLocals] = await Promise.all([
+        const [broadcasts, featureLocals, quietHours] = await Promise.all([
           scheduledBroadcastService.listScheduledBroadcasts(pool, org.id),
           attachPackageFeatureLocals(req, "hq"),
+          scheduledBroadcastService.getQuietHoursPolicy(pool, org.id),
         ]);
         const noticeCode = flashFromQuery(req, SCHEDULED_BROADCAST_NOTICES);
         return res.render(
@@ -66,6 +71,7 @@ module.exports = function registerHqAdminScheduledBroadcastsRoutes(router) {
             pageTitle: "Scheduled broadcasts",
             activeNav: "broadcasts-scheduled",
             broadcasts,
+            quietHours,
             broadcastStatusLabel,
             broadcastAudienceLabel,
             targetScopeLabel,
@@ -275,6 +281,70 @@ module.exports = function registerHqAdminScheduledBroadcastsRoutes(router) {
       } catch (err) {
         if (err && (err.code === "INVALID_STATUS" || err.code === "NOT_FOUND")) {
           return res.status(400).type("text").send(err.message);
+        }
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    "/hq/scheduled-broadcasts/quiet-hours",
+    requireChurchBranchHost,
+    requireChurchHqAdminSession,
+    featureGuard,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        if (!req.packageFeatureUi || req.packageFeatureUi.state !== "available") {
+          return res.status(403).type("text").send("Scheduled broadcasts require Growth.");
+        }
+        await scheduledBroadcastService.saveQuietHoursPolicy(
+          getPgPool(),
+          req.churchContext.organization.id,
+          req.churchHqAdmin.hq_admin_id,
+          req.body || {}
+        );
+        return res.redirect(303, "/hq/scheduled-broadcasts?notice=quiet_hours_saved");
+      } catch (err) {
+        if (err && (err.code === "VALIDATION" || err.code === "FOUNDATION_SCHEDULE_FORBIDDEN")) {
+          return res.status(err.code === "VALIDATION" ? 400 : 403).type("text").send(err.message);
+        }
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    "/hq/scheduled-broadcasts/:broadcastId/test-delivery",
+    requireChurchBranchHost,
+    requireChurchHqAdminSession,
+    featureGuard,
+    requireChurchSessionCsrf,
+    async (req, res, next) => {
+      try {
+        if (!req.packageFeatureUi || req.packageFeatureUi.state !== "available") {
+          return res.status(403).type("text").send("Scheduled broadcasts require Growth.");
+        }
+        await scheduledBroadcastService.testBroadcastDelivery(getPgPool(), {
+          broadcastId: Number(req.params.broadcastId),
+          organizationId: req.churchContext.organization.id,
+          hqAdminId: req.churchHqAdmin.hq_admin_id,
+        });
+        return res.redirect(
+          303,
+          `/hq/scheduled-broadcasts/${req.params.broadcastId}?notice=test_delivery_recorded`
+        );
+      } catch (err) {
+        if (
+          err &&
+          ["NOT_FOUND", "FORBIDDEN", "CONSENT_REQUIRED", "PACKAGE_EXTERNAL_EMAIL_LIMIT", "FOUNDATION_SCHEDULE_FORBIDDEN"].includes(
+            err.code
+          )
+        ) {
+          return res
+            .status(err.code === "PACKAGE_EXTERNAL_EMAIL_LIMIT" || err.code === "FOUNDATION_SCHEDULE_FORBIDDEN" ? 409 : 400)
+            .type("text")
+            .send(err.message);
         }
         return next(err);
       }

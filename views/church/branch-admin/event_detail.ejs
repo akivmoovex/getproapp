@@ -21,10 +21,105 @@
           <div><dt>Location</dt><dd><%= eventItem.location || '—' %></dd></div>
           <div><dt>Ministry / department</dt><dd><%= eventItem.ministry_or_department || '—' %></dd></div>
           <div><dt>Visibility</dt><dd><%= visibilityLabel(eventItem.visibility) %></dd></div>
+          <div><dt>Capacity</dt><dd><%= eventItem.capacity || '—' %></dd></div>
+          <div><dt>Registration</dt><dd><%= eventItem.registration_enabled ? 'Enabled' : 'Off' %></dd></div>
+          <div><dt>Check-in</dt><dd><%= eventItem.check_in_enabled ? 'Enabled' : 'Off' %></dd></div>
           <div><dt>Created by</dt><dd><%= eventItem.created_by_admin_name || '—' %></dd></div>
-          <div><dt>Last updated</dt><dd><%= new Date(eventItem.updated_at).toLocaleString('en-GB') %></dd></div>
         </dl>
       </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Registration &amp; check-in settings</h2>
+        <form class="church-form" method="post" action="/branch/events/<%= eventItem.id %>/registration-settings">
+          <%- include('../partials/csrf_field') %>
+          <label><input type="checkbox" name="registration_enabled" value="1" <%= eventItem.registration_enabled ? 'checked' : '' %>/> Enable registration</label>
+          <label><input type="checkbox" name="check_in_enabled" value="1" <%= eventItem.check_in_enabled ? 'checked' : '' %>/> Enable check-in</label>
+          <input class="church-input" name="capacity" type="number" min="1" placeholder="Capacity" value="<%= eventItem.capacity || '' %>"/>
+          <% if (typeof growthAdvanced !== 'undefined' && growthAdvanced) { %>
+          <label><input type="checkbox" name="requires_approval" value="1" <%= eventItem.requires_approval ? 'checked' : '' %>/> Require approval</label>
+          <label><input type="checkbox" name="allow_companions" value="1" <%= eventItem.allow_companions ? 'checked' : '' %>/> Allow family/companions</label>
+          <input class="church-input" name="max_companions" type="number" min="0" max="20" value="<%= eventItem.max_companions || 0 %>" placeholder="Max companions"/>
+          <input class="church-input" name="registration_opens_at" type="datetime-local"/>
+          <input class="church-input" name="registration_closes_at" type="datetime-local"/>
+          <select class="church-input" name="registration_form_id">
+            <option value="">No custom form</option>
+            <% (forms || []).forEach(function (f) { %>
+            <option value="<%= f.id %>" <%= eventItem.registration_form_id == f.id ? 'selected' : '' %>><%= f.title %></option>
+            <% }) %>
+          </select>
+          <label><input type="checkbox" name="feedback_enabled" value="1" <%= eventItem.feedback_enabled ? 'checked' : '' %>/> Post-event feedback</label>
+          <% } %>
+          <button class="church-btn church-btn--primary" type="submit">Save settings</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Registrations</h2>
+        <ul class="church-list">
+          <% (registrations || []).forEach(function (r) { %>
+          <li>
+            <%= r.member_name || r.visitor_name %> · <%= r.status %> · party <%= r.party_size %>
+            <% if ((r.status === 'registered' || r.status === 'approved' || r.status === 'pending') && eventItem.check_in_enabled) { %>
+            <form class="church-form church-form--inline" method="post" action="/branch/events/<%= eventItem.id %>/registrations/<%= r.id %>/check-in">
+              <%- include('../partials/csrf_field') %>
+              <button class="church-btn church-btn--ghost" type="submit">Check in</button>
+            </form>
+            <% } %>
+            <% if (r.status !== 'cancelled' && r.status !== 'no_show') { %>
+            <form class="church-form church-form--inline" method="post" action="/branch/events/<%= eventItem.id %>/registrations/<%= r.id %>/cancel">
+              <%- include('../partials/csrf_field') %>
+              <button class="church-btn church-btn--ghost" type="submit">Cancel</button>
+            </form>
+            <% } %>
+            <% if (typeof growthAdvanced !== 'undefined' && growthAdvanced && (r.status === 'pending' || r.status === 'waitlisted')) { %>
+            <form class="church-form church-form--inline" method="post" action="/branch/event-logistics/registrations/<%= r.id %>/approve">
+              <%- include('../partials/csrf_field') %>
+              <button class="church-btn church-btn--outline" type="submit">Approve</button>
+            </form>
+            <% } %>
+            <% if (typeof growthAdvanced !== 'undefined' && growthAdvanced && (r.status === 'registered' || r.status === 'approved' || r.status === 'pending')) { %>
+            <form class="church-form church-form--inline" method="post" action="/branch/event-logistics/registrations/<%= r.id %>/no-show">
+              <%- include('../partials/csrf_field') %>
+              <button class="church-btn church-btn--ghost" type="submit">No-show</button>
+            </form>
+            <% } %>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+
+      <% if (typeof growthAdvanced !== 'undefined' && growthAdvanced) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Volunteer coordination</h2>
+        <ul class="church-list">
+          <% (volunteerNeeds || []).forEach(function (v) { %>
+          <li><%= v.role_name %> · <%= v.slots_needed %> slots · <%= v.status %><% if (v.assigned_member_name) { %> · <%= v.assigned_member_name %><% } %></li>
+          <% }) %>
+        </ul>
+        <form class="church-form" method="post" action="/branch/event-logistics/events/<%= eventItem.id %>/volunteer-needs">
+          <%- include('../partials/csrf_field') %>
+          <input class="church-input" name="role_name" placeholder="Role" required/>
+          <input class="church-input" name="slots_needed" type="number" min="1" value="1"/>
+          <button class="church-btn church-btn--outline" type="submit">Add need</button>
+        </form>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Visitor follow-up</h2>
+        <ul class="church-list">
+          <% (followUps || []).forEach(function (f) { %>
+          <li><%= f.visitor_name || f.visitor_email %> · <%= f.status %></li>
+          <% }) %>
+        </ul>
+        <form class="church-form" method="post" action="/branch/event-logistics/events/<%= eventItem.id %>/visitor-follow-up">
+          <%- include('../partials/csrf_field') %>
+          <input class="church-input" name="visitor_name" placeholder="Visitor name" required/>
+          <input class="church-input" name="visitor_email" placeholder="Email"/>
+          <input class="church-input" name="notes" placeholder="Notes"/>
+          <button class="church-btn church-btn--outline" type="submit">Create follow-up</button>
+        </form>
+      </section>
+      <% } %>
+
       <% if (eventItem.status !== 'cancelled') { %>
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Actions</h2>
@@ -32,12 +127,12 @@
           <a class="church-btn church-btn--outline" href="/branch/events/<%= eventItem.id %>/edit">Edit</a>
           <% if (eventItem.status !== 'published') { %>
           <form method="post" action="/branch/events/<%= eventItem.id %>/publish">
-        <%- include('../partials/csrf_field') %>
+            <%- include('../partials/csrf_field') %>
             <button class="church-btn church-btn--primary" type="submit">Publish</button>
           </form>
           <% } %>
           <form method="post" action="/branch/events/<%= eventItem.id %>/cancel">
-        <%- include('../partials/csrf_field') %>
+            <%- include('../partials/csrf_field') %>
             <button class="church-btn church-btn--outline" type="submit">Cancel event</button>
           </form>
         </div>

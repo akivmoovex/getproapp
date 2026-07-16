@@ -54,6 +54,71 @@ async function findMemberById(pool, memberId) {
  * @param {number} branchId
  * @returns {Promise<object | null>}
  */
+/**
+ * @param {import("pg").Pool} pool
+ * @param {number} memberId
+ * @param {number} organizationId
+ * @returns {Promise<object | null>}
+ */
+async function findMemberByIdForOrganization(pool, memberId, organizationId) {
+  const id = Number(memberId);
+  const orgId = Number(organizationId);
+  if (!Number.isFinite(id) || id <= 0 || !Number.isFinite(orgId) || orgId <= 0) return null;
+  const r = await pool.query(
+    `SELECT m.*,
+            b.name AS branch_name,
+            b.slug AS branch_slug,
+            b.status AS branch_status
+     FROM public.church_members m
+     INNER JOIN public.church_branches b ON b.id = m.branch_id
+     WHERE m.id = $1 AND m.organization_id = $2
+     LIMIT 1`,
+    [id, orgId]
+  );
+  return r.rows[0] ?? null;
+}
+
+/**
+ * Cross-branch member search for authorised HQ admins (Growth).
+ * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ * @param {string} query
+ * @param {{ status?: string, limit?: number }} [opts]
+ * @returns {Promise<object[]>}
+ */
+async function searchMembersForOrganization(pool, organizationId, query, opts = {}) {
+  const orgId = Number(organizationId);
+  const q = String(query || "").trim();
+  if (!Number.isFinite(orgId) || orgId <= 0 || !q) return [];
+
+  const status = String(opts.status || "").trim();
+  const limit = Math.min(Math.max(Number(opts.limit) || 100, 1), 200);
+  const params = [orgId, `%${q.toLowerCase()}%`, `%${normalizePhone(q)}%`];
+  let where = `WHERE m.organization_id = $1
+     AND (
+       lower(m.full_name) LIKE $2
+       OR lower(trim(m.email)) LIKE $2
+       OR m.phone_normalized LIKE $3
+       OR m.phone ILIKE $2
+     )`;
+  if (status && status !== "all") {
+    params.push(status);
+    where += ` AND m.status = $${params.length}`;
+  }
+
+  const r = await pool.query(
+    `SELECT m.id, m.full_name, m.email, m.phone, m.status, m.branch_id, m.created_at,
+            b.name AS branch_name, b.slug AS branch_slug
+     FROM public.church_members m
+     INNER JOIN public.church_branches b ON b.id = m.branch_id
+     ${where}
+     ORDER BY m.full_name ASC
+     LIMIT ${limit}`,
+    params
+  );
+  return r.rows;
+}
+
 async function findMemberByIdForBranch(pool, memberId, branchId) {
   const r = await pool.query(
     `SELECT * FROM public.church_members WHERE id = $1 AND branch_id = $2 LIMIT 1`,
@@ -361,8 +426,13 @@ async function updateMemberProfileForMember(pool, memberId, branchId, fields) {
          ministry_interest = $8,
          emergency_contact_name = $9,
          emergency_contact_phone = $10,
+         communication_consent = $11,
+         communication_consent_updated_at = CASE
+           WHEN communication_consent IS DISTINCT FROM $11 THEN now()
+           ELSE communication_consent_updated_at
+         END,
          updated_at = now()
-     WHERE id = $11 AND branch_id = $12 AND status = 'verified'
+     WHERE id = $12 AND branch_id = $13 AND status = 'verified'
      RETURNING *`,
     [
       String(fields.full_name || "").trim().slice(0, 200),
@@ -375,6 +445,7 @@ async function updateMemberProfileForMember(pool, memberId, branchId, fields) {
       String(fields.ministry_interest || "").trim().slice(0, 500),
       String(fields.emergency_contact_name || "").trim().slice(0, 200),
       String(fields.emergency_contact_phone || "").trim().slice(0, 64),
+      fields.communication_consent !== false,
       memberId,
       branchId,
     ]
@@ -688,7 +759,9 @@ module.exports = {
   normalizePhone,
   findMemberByEmailOrPhoneForBranch,
   findMemberById,
+  findMemberByIdForOrganization,
   findMemberByIdForBranch,
+  searchMembersForOrganization,
   findActiveRegistrationConflictForBranch,
   findProfileConflictForBranch,
   createPendingMember,

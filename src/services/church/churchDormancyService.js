@@ -10,6 +10,8 @@ const organizationsRepo = require("../../db/pg/church/organizationsRepo");
 const websiteContentRepo = require("../../db/pg/church/websiteContentRepo");
 const branchesRepo = require("../../db/pg/church/branchesRepo");
 const { resolvePackageFromPlanCode } = require("../../church/blessBoardPackageCatalogue");
+const notificationTemplateService = require("./notificationTemplateService");
+const churchPackageUsageService = require("./churchPackageUsageService");
 const {
   calculateOrganisationActivity,
   classifyInactivity,
@@ -25,13 +27,102 @@ function addDays(date, days) {
   return d;
 }
 
+function addAverageMonths(date, months) {
+  const d = new Date(date.getTime());
+  d.setUTCDate(d.getUTCDate() + Math.round(Number(months) * 30.436875));
+  return d;
+}
+
+/**
+ * Recorded (not SMTP) dormancy notices to HQ admins. Failures never block state transitions.
+ */
+async function deliverInactivityNotices(pool, opts) {
+  const {
+    organizationId,
+    warningStage,
+    basedOnActivityAt,
+    at = new Date(),
+    organisationName = null,
+  } = opts;
+  const orgName =
+    organisationName ||
+    (
+      await pool.query(`SELECT name FROM public.church_organizations WHERE id = $1`, [organizationId])
+    ).rows[0]?.name ||
+    "your church";
+  const activityDeadline = addAverageMonths(basedOnActivityAt, DORMANT_MONTHS)
+    .toISOString()
+    .slice(0, 10);
+  const stageLabel =
+    warningStage === "final"
+      ? "final warning"
+      : warningStage === "dormant"
+        ? "dormancy notice"
+        : "first warning";
+
+  const hqAdmins = await pool.query(
+    `SELECT id, full_name, email
+     FROM public.church_hq_admins
+     WHERE organization_id = $1 AND status = 'active' AND email IS NOT NULL AND email <> ''
+     ORDER BY id ASC
+     LIMIT 20`,
+    [organizationId]
+  );
+
+  let delivered = 0;
+  for (const admin of hqAdmins.rows) {
+    try {
+      const preview = await notificationTemplateService.previewTemplate(pool, {
+        templateKey: "foundation_dormancy_warning",
+        organizationId,
+        variables: {
+          organisation_name: orgName,
+          organization_name: orgName,
+          admin_name: admin.full_name || "Administrator",
+          warning_stage: stageLabel,
+          activity_deadline: activityDeadline,
+          branch_name: "",
+          support_url: "",
+          login_url: "",
+          member_name: "",
+        },
+        allowMissing: true,
+      });
+      await churchPackageUsageService.recordExternalEmailSend(pool, {
+        organizationId,
+        category: "foundation_dormancy_lifecycle",
+        count: 1,
+        at,
+        actorType: "system",
+        actorId: null,
+      });
+      await pool.query(
+        `INSERT INTO public.church_notification_test_deliveries (
+           organization_id, template_key, recipient_actor_type, recipient_actor_id, recipient_email,
+           subject_rendered, body_text_rendered, body_html_rendered,
+           requested_by_actor_type, requested_by_actor_id
+         ) VALUES ($1,$2,'hq_admin',$3,$4,$5,$6,$7,'system',NULL)`,
+        [
+          organizationId,
+          "foundation_dormancy_warning",
+          admin.id,
+          String(admin.email).trim().toLowerCase(),
+          preview.subject,
+          preview.bodyText,
+          preview.bodyHtml,
+        ]
+      );
+      delivered += 1;
+    } catch {
+      /* continue other recipients */
+    }
+  }
+  return delivered;
+}
+
 async function isGrowthOrganisation(pool, organizationId, at = new Date()) {
   const org = await organizationsRepo.findOrganizationById(pool, organizationId);
   if (!org) return { isGrowth: false, reason: "not_found" };
-  const resolved = resolvePackageFromPlanCode(org.plan_code);
-  if (resolved.packageCode === "growth") {
-    return { isGrowth: true, reason: "growth_package", packageCode: "growth" };
-  }
   try {
     const churchGrowthTrialService = require("./churchGrowthTrialService");
     const trial = await churchGrowthTrialService.findActiveGrowthTrial(pool, organizationId, { at });
@@ -40,6 +131,10 @@ async function isGrowthOrganisation(pool, organizationId, at = new Date()) {
     }
   } catch {
     /* trial service optional mid-migrate */
+  }
+  const resolved = resolvePackageFromPlanCode(org.plan_code);
+  if (resolved.packageCode === "growth") {
+    return { isGrowth: true, reason: "growth_package", packageCode: "growth" };
   }
   return { isGrowth: false, reason: "foundation", packageCode: "foundation" };
 }
@@ -82,6 +177,12 @@ async function recordInactivityWarning(pool, opts) {
     if (!inserted.rows[0]) {
       return { outcome: "duplicate_job", jobKey };
     }
+    const recordedDeliveries = await deliverInactivityNotices(pool, {
+      organizationId,
+      warningStage,
+      basedOnActivityAt,
+      at,
+    });
     await auditLogsRepo.insertAuditLog(pool, {
       organization_id: organizationId,
       branch_id: null,
@@ -98,9 +199,16 @@ async function recordInactivityWarning(pool, opts) {
         warning_stage: warningStage,
         based_on_activity_at: basedIso,
         job_key: jobKey,
+        recorded_deliveries: recordedDeliveries,
+        recorded_only: true,
       },
     });
-    return { outcome: "recorded", jobKey, warning: inserted.rows[0] };
+    return {
+      outcome: "recorded",
+      jobKey,
+      warning: inserted.rows[0],
+      recordedDeliveries,
+    };
   } catch (err) {
     if (err && err.code === "23505") {
       return { outcome: "duplicate_job", jobKey };
@@ -201,6 +309,13 @@ async function markOrganisationDormant(pool, opts) {
   }
 
   const site = await unpublishOrganisationPublicSites(pool, organizationId);
+  const recordedDeliveries = await deliverInactivityNotices(pool, {
+    organizationId,
+    warningStage: "dormant",
+    basedOnActivityAt: activity.lastActivityAt,
+    at,
+    organisationName: claim.rows[0].name,
+  });
 
   await auditLogsRepo.insertAuditLog(pool, {
     organization_id: organizationId,
@@ -221,6 +336,8 @@ async function markOrganisationDormant(pool, opts) {
       data_preserve_until: claim.rows[0].dormancy_data_preserve_until,
       public_sites_unpublished: site.unpublished,
       production_deletion: false,
+      recorded_deliveries: recordedDeliveries,
+      recorded_only: true,
     },
   });
 
@@ -230,6 +347,7 @@ async function markOrganisationDormant(pool, opts) {
     organization: claim.rows[0],
     site,
     dataPreserveUntil: claim.rows[0].dormancy_data_preserve_until,
+    recordedDeliveries,
   };
 }
 
@@ -335,6 +453,12 @@ async function processFoundationInactivityJobs(pool, opts = {}) {
 
   const processed = [];
   for (const org of candidates.rows) {
+    const growth = await isGrowthOrganisation(pool, org.id, at);
+    if (growth.isGrowth) {
+      processed.push({ organizationId: org.id, outcome: "skipped_growth", reason: growth.reason });
+      continue;
+    }
+
     try {
       const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
       await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
@@ -348,11 +472,6 @@ async function processFoundationInactivityJobs(pool, opts = {}) {
         outcome: "skipped_pilot_flag",
         error: err && err.message,
       });
-      continue;
-    }
-    const growth = await isGrowthOrganisation(pool, org.id, at);
-    if (growth.isGrowth) {
-      processed.push({ organizationId: org.id, outcome: "skipped_growth", reason: growth.reason });
       continue;
     }
 
@@ -489,6 +608,7 @@ module.exports = {
   processFoundationInactivityJobs,
   getOrganisationDormancyDiagnostic,
   unpublishOrganisationPublicSites,
+  deliverInactivityNotices,
   warningJobKey,
   dormantJobKey,
   FIRST_WARNING_MONTHS,

@@ -82,6 +82,11 @@ async function requireChurchBranchAdminSession(req, res, next) {
       full_name: row.full_name || row.display_name || "Branch Admin",
       role: row.role || "branch_admin",
       status: row.status,
+      can_view_finance: Boolean(row.can_view_finance),
+      can_export_reports: row.can_export_reports !== false,
+      can_correct_attendance: Boolean(row.can_correct_attendance),
+      can_access_pastoral: Boolean(row.can_access_pastoral),
+      can_access_safeguarding: Boolean(row.can_access_safeguarding),
     };
     return next();
   } catch (err) {

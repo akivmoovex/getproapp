@@ -25,6 +25,7 @@ function inferHqActiveNav(req) {
   if (p.startsWith("/hq/scheduled-broadcasts")) return "broadcasts-scheduled";
   if (p.startsWith("/hq/broadcasts")) return "broadcasts";
   if (p.startsWith("/hq/audit")) return "audit";
+  if (p.startsWith("/hq/members")) return "members";
   if (p.startsWith("/hq/branches")) return "branches";
   if (p.startsWith("/hq/cross-branch-reports")) return "reports-cross-branch";
   if (p.startsWith("/hq/custom-report-builder")) return "reports-builder";
@@ -81,6 +82,12 @@ const HQ_NOTICES = new Set([
   "broadcast_published",
   "broadcast_archived",
 ]);
+const BRANCH_NOTICES = new Set([
+  "branch_created_active",
+  "branch_created_draft",
+  "branch_activated",
+  "branch_deactivated",
+]);
 const ACCOUNT_NOTICES = new Set(["password_changed", "reactivated_from_dormancy"]);
 
 function noticeMessage(code) {
@@ -94,6 +101,17 @@ function noticeMessage(code) {
     password_changed: "Password updated. Use your new password next time you log in.",
     reactivated_from_dormancy:
       "Organisation reactivated from dormancy. The public site remains unpublished until you republish it. Member access is restored.",
+  };
+  return map[code] || null;
+}
+
+function branchNoticeMessage(code) {
+  const map = {
+    branch_created_active: "Branch created and activated.",
+    branch_created_draft:
+      "Branch created as draft. Complete setup and activate when ready (Foundation allows one active branch).",
+    branch_activated: "Branch activated successfully.",
+    branch_deactivated: "Branch deactivated. Historical data remains available to HQ.",
   };
   return map[code] || null;
 }
@@ -117,8 +135,10 @@ module.exports = {
   hqAdminLocals,
   flashFromQuery,
   HQ_NOTICES,
+  BRANCH_NOTICES,
   ACCOUNT_NOTICES,
   noticeMessage,
+  branchNoticeMessage,
   recordHqAudit,
   BROADCAST_NOTICES: HQ_NOTICES,
 };

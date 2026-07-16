@@ -10,6 +10,27 @@
       <div class="church-alert church-alert--error" role="alert"><%= error %></div>
       <% } %>
       <section class="church-member-panel church-member-panel--glass">
+        <h2 class="church-member-panel__title">Your prayer requests</h2>
+        <% if ((prayerRequests || []).length === 0) { %>
+        <div class="church-empty-state church-empty-state--compact">
+          <span class="material-symbols-outlined church-empty-state__icon" aria-hidden="true">volunteer_activism</span>
+          <p class="church-empty-state__body">You have not submitted any prayer requests yet.</p>
+        </div>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% prayerRequests.forEach(function (item) { %>
+          <li class="church-member-list__item">
+            <strong><%= item.prayer_topic %></strong>
+            <span class="church-status-chip church-status-chip--<%= item.status === 'closed' ? 'verified' : 'pending' %>"><%= prayerStatusLabel(item.status) %></span>
+            <span class="church-member-list__meta"><%= new Date(item.created_at).toLocaleDateString('en-GB') %><% if (item.urgency && item.urgency !== 'normal') { %> · <%= item.urgency %><% } %><% if (item.acknowledged_at) { %> · Acknowledged<% } %></span>
+            <% if (item.details) { %><p><%= item.details %></p><% } %>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <section class="church-member-panel church-member-panel--glass">
+        <h2 class="church-member-panel__title">Submit a new request</h2>
         <form class="church-form" method="post" action="/member/prayer-request">
           <%- include('../partials/csrf_field') %>
           <div class="church-form-grid">

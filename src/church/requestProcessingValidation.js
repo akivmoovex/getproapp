@@ -10,7 +10,10 @@ const REQUEST_STATUS_TRANSITIONS = {
 };
 
 const PRAYER_STATUS_TRANSITIONS = {
-  submitted: ["reviewed", "closed"],
+  submitted: ["acknowledged", "assigned", "in_follow_up", "reviewed", "closed"],
+  acknowledged: ["assigned", "in_follow_up", "reviewed", "closed"],
+  assigned: ["in_follow_up", "reviewed", "closed"],
+  in_follow_up: ["assigned", "closed", "reviewed"],
   reviewed: ["closed"],
   closed: [],
 };
@@ -38,6 +41,9 @@ function memberRequestStatusLabel(status) {
 function prayerRequestStatusLabel(status) {
   const map = {
     submitted: "Submitted",
+    acknowledged: "Acknowledged",
+    assigned: "Assigned",
+    in_follow_up: "In follow-up",
     reviewed: "Reviewed",
     closed: "Closed",
   };
@@ -63,18 +69,12 @@ function canTransitionPrayer(fromStatus, toStatus) {
   return allowed.includes(toStatus);
 }
 
-/**
- * Mask member identity for anonymous_summary for all branch admins in MVP.
- */
-function showPrayerMemberIdentity(row, adminRole) {
-  if (!row) return false;
-  if (row.privacy_level === "anonymous_summary") return false;
-  return true;
+function showPrayerMemberIdentity(row, adminOrRole) {
+  return require("./foundationPastoralAccess").showPrayerMemberIdentity(row, adminOrRole);
 }
 
-function showPrayerDetails(row, adminRole) {
-  if (!row) return false;
-  return true;
+function showPrayerDetails(row, adminOrRole) {
+  return require("./foundationPastoralAccess").showPrayerDetails(row, adminOrRole);
 }
 
 function resolveMemberRequestAction(action) {

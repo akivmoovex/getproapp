@@ -48,6 +48,10 @@ function makeApp(ctx, isChurchHost = true) {
 
 async function cleanup(pool, branchIds, orgIds) {
   for (const branchId of branchIds) {
+    await pool.query(`DELETE FROM public.church_pastoral_attachments WHERE branch_id = $1`, [branchId]);
+    await pool.query(`DELETE FROM public.church_pastoral_case_follow_ups WHERE branch_id = $1`, [branchId]);
+    await pool.query(`DELETE FROM public.church_pastoral_cases WHERE branch_id = $1`, [branchId]);
+    await pool.query(`DELETE FROM public.church_safeguarding_incidents WHERE branch_id = $1`, [branchId]);
     await pool.query(`DELETE FROM public.church_audit_logs WHERE branch_id = $1`, [branchId]);
     await pool.query(`DELETE FROM public.church_prayer_requests WHERE branch_id = $1`, [branchId]);
     await pool.query(`DELETE FROM public.church_member_requests WHERE branch_id = $1`, [branchId]);
@@ -116,6 +120,10 @@ test(
       password_hash: passwordHash,
       role: "branch_admin",
     });
+    await pool.query(
+      `UPDATE public.church_branch_admins SET can_access_pastoral = true WHERE branch_id = $1`,
+      [branchA.id]
+    );
     const memberA = await membersRepo.createPendingMember(pool, {
       organization_id: orgA.id,
       branch_id: branchA.id,
@@ -309,13 +317,13 @@ test(
     const closePrayer = await adminAgent
       .post(`/branch/prayer-requests/${anonymousPrayer.id}/close`)
       .type("form")
-      .send({});
+      .send({ closure_outcome: "Prayed and closed" });
     assert.equal(closePrayer.status, 303);
     const closedPrayer = await prayerRequestsRepo.findPrayerRequestByIdForBranch(
       pool,
       anonymousPrayer.id,
       branchA.id,
-      { adminRole: "branch_admin" }
+      { pastoralAccess: true }
     );
     assert.equal(closedPrayer.status, "closed");
 

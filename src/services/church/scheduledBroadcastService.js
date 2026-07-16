@@ -8,11 +8,18 @@
 
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
 const hqBroadcastsRepo = require("../../db/pg/church/hqBroadcastsRepo");
+const hqAdminsRepo = require("../../db/pg/church/hqAdminsRepo");
 const organizationsRepo = require("../../db/pg/church/organizationsRepo");
+const communicationPoliciesRepo = require("../../db/pg/church/communicationPoliciesRepo");
 const {
   safeBroadcastEmailSubject,
   broadcastStatusLabel,
 } = require("../../church/hqBroadcastValidation");
+const {
+  isInQuietHours,
+  nextQuietHoursEnd,
+  validateQuietHoursPolicyBody,
+} = require("../../church/broadcastQuietHours");
 const { hasEntitlement, getOrganisationPlan } = require("./churchEntitlementService");
 const churchPackageUsageService = require("./churchPackageUsageService");
 
@@ -86,9 +93,15 @@ async function resolveAudienceRecipients(pool, organizationId, broadcast) {
        WHERE broadcast_id = $1 AND organization_id = $2`,
       [broadcast.id, organizationId]
     );
+    // Keep listed recipients even if currently unauthorised — send path revalidates and records skips.
     for (const row of rows.rows) {
-      const resolved = await resolveOneRecipient(pool, organizationId, row.recipient_type, row.recipient_id);
-      if (resolved) recipients.push(resolved);
+      recipients.push({
+        recipient_type: row.recipient_type,
+        recipient_id: Number(row.recipient_id),
+        email: null,
+        consent: true,
+        branch_id: null,
+      });
     }
     return dedupeRecipients(recipients);
   }
@@ -857,7 +870,7 @@ async function processDueScheduledBroadcasts(pool, opts = {}) {
   const at = opts.at instanceof Date ? opts.at : new Date();
   const limit = Math.min(Math.max(Number(opts.limit) || 25, 1), 100);
   const due = await pool.query(
-    `SELECT id, organization_id FROM public.church_hq_broadcasts
+    `SELECT id, organization_id, delivery_channels FROM public.church_hq_broadcasts
      WHERE status = 'scheduled'
        AND publish_at IS NOT NULL
        AND publish_at <= $1
@@ -883,6 +896,34 @@ async function processDueScheduledBroadcasts(pool, opts = {}) {
       });
       continue;
     }
+
+    const channels = parseChannels(row);
+    if (channels.includes("email")) {
+      const policy = await communicationPoliciesRepo.getCommunicationPolicy(
+        pool,
+        row.organization_id
+      );
+      if (policy && isInQuietHours(at, policy, policy.timezone)) {
+        const resumeAt = nextQuietHoursEnd(at, policy, policy.timezone);
+        if (resumeAt && resumeAt.getTime() > at.getTime()) {
+          await pool.query(
+            `UPDATE public.church_hq_broadcasts
+             SET publish_at = $2, updated_at = now(),
+                 last_error = 'Deferred for quiet hours'
+             WHERE id = $1 AND organization_id = $3 AND status = 'scheduled'`,
+            [row.id, resumeAt.toISOString(), row.organization_id]
+          );
+          processed.push({
+            broadcastId: row.id,
+            organizationId: row.organization_id,
+            outcome: "deferred_quiet_hours",
+            resumeAt: resumeAt.toISOString(),
+          });
+          continue;
+        }
+      }
+    }
+
     const result = await processBroadcastDelivery(pool, row.id, row.organization_id, { at });
     processed.push({
       broadcastId: row.id,
@@ -935,6 +976,119 @@ async function listDeliveries(pool, broadcastId, organizationId, opts = {}) {
   };
 }
 
+/**
+ * Recorded test delivery to the requesting HQ admin (quota metered; no SMTP).
+ */
+async function testBroadcastDelivery(pool, opts) {
+  const {
+    broadcastId,
+    organizationId,
+    hqAdminId,
+    at = new Date(),
+  } = opts;
+  await assertCanScheduleExternalBroadcast(pool, organizationId);
+
+  const broadcast = await hqBroadcastsRepo.findBroadcastByIdForOrganization(
+    pool,
+    broadcastId,
+    organizationId
+  );
+  if (!broadcast) {
+    const err = new Error("Broadcast not found.");
+    err.code = "NOT_FOUND";
+    throw err;
+  }
+
+  const admin = await hqAdminsRepo.findHqAdminById(pool, hqAdminId);
+  if (
+    !admin ||
+    Number(admin.organization_id) !== Number(organizationId) ||
+    admin.status !== "active" ||
+    !admin.email
+  ) {
+    const err = new Error("Test delivery is only allowed to an active HQ admin with an email.");
+    err.code = "FORBIDDEN";
+    throw err;
+  }
+  if (admin.communication_consent === false) {
+    const err = new Error("Your communication consent is off; enable consent to receive a test delivery.");
+    err.code = "CONSENT_REQUIRED";
+    throw err;
+  }
+
+  const org = await organizationsRepo.findOrganizationById(pool, organizationId);
+  const subject = safeBroadcastEmailSubject(org && org.name, broadcast.category);
+
+  await churchPackageUsageService.recordExternalEmailSend(pool, {
+    organizationId,
+    category: "hq_broadcast_test",
+    count: 1,
+    at,
+    actorType: "hq_admin",
+    actorId: hqAdminId,
+  });
+
+  const delivery = await communicationPoliciesRepo.insertBroadcastTestDelivery(pool, {
+    organization_id: organizationId,
+    broadcast_id: broadcastId,
+    recipient_hq_admin_id: hqAdminId,
+    recipient_email: String(admin.email).trim().toLowerCase(),
+    subject_rendered: subject,
+    channels_json: ["email"],
+    requested_by_hq_admin_id: hqAdminId,
+  });
+
+  await auditLogsRepo.insertAuditLog(pool, {
+    organization_id: organizationId,
+    branch_id: null,
+    actor_type: "hq_admin",
+    actor_id: hqAdminId,
+    action: "hq_broadcast_test_sent",
+    entity_type: "hq_broadcast",
+    entity_id: broadcastId,
+    target_label: broadcast.title,
+    metadata_json: {
+      test_delivery_id: delivery.id,
+      email_subject: subject,
+      recorded_only: true,
+    },
+  });
+
+  return { delivery, subject, recordedOnly: true };
+}
+
+async function getQuietHoursPolicy(pool, organizationId) {
+  return communicationPoliciesRepo.getCommunicationPolicy(pool, organizationId);
+}
+
+async function saveQuietHoursPolicy(pool, organizationId, hqAdminId, body) {
+  await assertCanScheduleExternalBroadcast(pool, organizationId);
+  const validation = validateQuietHoursPolicyBody(body);
+  if (!validation.ok) {
+    const err = new Error(validation.error);
+    err.code = "VALIDATION";
+    throw err;
+  }
+  const saved = await communicationPoliciesRepo.upsertCommunicationPolicy(
+    pool,
+    organizationId,
+    validation.data,
+    hqAdminId
+  );
+  await auditLogsRepo.insertAuditLog(pool, {
+    organization_id: organizationId,
+    branch_id: null,
+    actor_type: "hq_admin",
+    actor_id: hqAdminId,
+    action: "hq_communication_quiet_hours_updated",
+    entity_type: "organization_communication_policy",
+    entity_id: organizationId,
+    target_label: "quiet_hours",
+    metadata_json: validation.data,
+  });
+  return saved;
+}
+
 module.exports = {
   WORKFLOW_STATUSES,
   jobKeyForBroadcast,
@@ -950,6 +1104,9 @@ module.exports = {
   processDueScheduledBroadcasts,
   listScheduledBroadcasts,
   listDeliveries,
+  testBroadcastDelivery,
+  getQuietHoursPolicy,
+  saveQuietHoursPolicy,
   safeBroadcastEmailSubject,
   broadcastStatusLabel,
   parseChannels,

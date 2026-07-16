@@ -37,12 +37,14 @@ const FOUNDATION_ADMIN_ACCOUNTS = 10;
 const FOUNDATION_STORAGE_BYTES = 2 * BYTES_PER_GIB;
 const FOUNDATION_EXTERNAL_EMAILS_MONTHLY = 500;
 const FOUNDATION_SCHEDULED_REPORTS_MONTHLY = 0;
+const FOUNDATION_REPORT_EXPORT_MAX_ROWS = 500;
 
 const GROWTH_STORAGE_BYTES_BASE = 10 * BYTES_PER_GIB;
 const GROWTH_STORAGE_BYTES_PER_ACTIVE_BRANCH = 2 * BYTES_PER_GIB;
 const GROWTH_EXTERNAL_EMAILS_MONTHLY_BASE = 5000;
 const GROWTH_EXTERNAL_EMAILS_MONTHLY_PER_ACTIVE_BRANCH = 1000;
 const GROWTH_SCHEDULED_REPORTS_MONTHLY = 20;
+const GROWTH_REPORT_EXPORT_MAX_ROWS = 5000;
 
 /** Default Growth trial length (days). Not a paid conversion. */
 const DEFAULT_GROWTH_TRIAL_DURATION_DAYS = 30;
@@ -77,10 +79,14 @@ const BLESSBOARD_PACKAGES = {
       care: { automation: "basic" },
       surveys: { custom: "limited" },
       appointments: { calendar: false },
+      groups: { management: false },
+      discipleship: { pathways: false },
       volunteers: { scheduling: false },
       events: { advanced_logistics: false },
       broadcasts: { scheduled: false },
       reports: {
+        basic: true,
+        export_max_rows: FOUNDATION_REPORT_EXPORT_MAX_ROWS,
         scheduled: false,
         scheduled_monthly: FOUNDATION_SCHEDULED_REPORTS_MONTHLY,
         cross_branch: false,
@@ -113,10 +119,14 @@ const BLESSBOARD_PACKAGES = {
       care: { automation: "advanced" },
       surveys: { custom: true },
       appointments: { calendar: true },
+      groups: { management: true },
+      discipleship: { pathways: true },
       volunteers: { scheduling: true },
       events: { advanced_logistics: true },
       broadcasts: { scheduled: true },
       reports: {
+        basic: true,
+        export_max_rows: GROWTH_REPORT_EXPORT_MAX_ROWS,
         scheduled: true,
         scheduled_monthly: GROWTH_SCHEDULED_REPORTS_MONTHLY,
         cross_branch: true,
@@ -266,11 +276,13 @@ module.exports = {
   FOUNDATION_STORAGE_BYTES,
   FOUNDATION_EXTERNAL_EMAILS_MONTHLY,
   FOUNDATION_SCHEDULED_REPORTS_MONTHLY,
+  FOUNDATION_REPORT_EXPORT_MAX_ROWS,
   GROWTH_STORAGE_BYTES_BASE,
   GROWTH_STORAGE_BYTES_PER_ACTIVE_BRANCH,
   GROWTH_EXTERNAL_EMAILS_MONTHLY_BASE,
   GROWTH_EXTERNAL_EMAILS_MONTHLY_PER_ACTIVE_BRANCH,
   GROWTH_SCHEDULED_REPORTS_MONTHLY,
+  GROWTH_REPORT_EXPORT_MAX_ROWS,
   DEFAULT_GROWTH_TRIAL_DURATION_DAYS,
   LEGACY_PLAN_TO_PACKAGE,
   BLESSBOARD_PACKAGES,

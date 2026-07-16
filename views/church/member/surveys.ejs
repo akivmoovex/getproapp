@@ -1,0 +1,25 @@
+<%- include('../partials/member_shell_start') %>
+      <header class="church-member-header church-member-header--page">
+        <div>
+          <h1 class="church-member-header__title">Surveys</h1>
+          <p class="church-member-header__subtitle">Active surveys for your campus</p>
+        </div>
+      </header>
+      <section class="church-member-panel">
+        <ul class="church-list">
+          <% (surveys || []).forEach(function (s) { %>
+          <li>
+            <strong><%= s.title %></strong>
+            <form class="church-form" method="post" action="/member/surveys/<%= s.id %>/start">
+              <%- include('../partials/csrf_field') %>
+              <% if (s.consent_text) { %>
+              <p><%= s.consent_text %></p>
+              <label><input type="checkbox" name="consent_accepted" value="1" required/> I agree</label>
+              <% } %>
+              <button class="church-btn church-btn--primary" type="submit">Start / resume</button>
+            </form>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+<%- include('../partials/member_shell_end') %>

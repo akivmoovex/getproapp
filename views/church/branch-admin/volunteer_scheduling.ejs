@@ -1,0 +1,63 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Volunteer scheduling</h1>
+          <p class="church-branch-topbar__subtitle">Roles, skills, eligibility, shifts, and assignments</p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error"><%= error %></div><% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Roles & skills</h2>
+        <form class="church-form church-form--inline" method="post" action="/branch/volunteer-scheduling/roles">
+          <%- include('../partials/csrf_field') %>
+          <input class="church-input" name="name" placeholder="Role name" required/>
+          <button class="church-btn church-btn--outline" type="submit">Add role</button>
+        </form>
+        <form class="church-form church-form--inline" method="post" action="/branch/volunteer-scheduling/skills">
+          <%- include('../partials/csrf_field') %>
+          <input class="church-input" name="name" placeholder="Skill name" required/>
+          <button class="church-btn church-btn--outline" type="submit">Add skill</button>
+        </form>
+        <form class="church-form" method="post" action="/branch/volunteer-scheduling/role-skills">
+          <%- include('../partials/csrf_field') %>
+          <select class="church-input" name="role_id"><% (roles || []).forEach(function (r) { %><option value="<%= r.id %>"><%= r.name %></option><% }) %></select>
+          <select class="church-input" name="skill_id"><% (skills || []).forEach(function (s) { %><option value="<%= s.id %>"><%= s.name %></option><% }) %></select>
+          <button class="church-btn church-btn--ghost" type="submit">Require skill for role</button>
+        </form>
+        <form class="church-form" method="post" action="/branch/volunteer-scheduling/member-skills">
+          <%- include('../partials/csrf_field') %>
+          <select class="church-input" name="member_id"><% (members || []).forEach(function (m) { %><option value="<%= m.id %>"><%= m.full_name %></option><% }) %></select>
+          <select class="church-input" name="skill_id"><% (skills || []).forEach(function (s) { %><option value="<%= s.id %>"><%= s.name %></option><% }) %></select>
+          <button class="church-btn church-btn--ghost" type="submit">Add member skill</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Create shift</h2>
+        <form class="church-form" method="post" action="/branch/volunteer-scheduling/shifts">
+          <%- include('../partials/csrf_field') %>
+          <select class="church-input" name="role_id" required>
+            <% (roles || []).forEach(function (r) { %><option value="<%= r.id %>"><%= r.name %></option><% }) %>
+          </select>
+          <input class="church-input" name="title" placeholder="Shift title"/>
+          <input class="church-input" name="starts_at" type="datetime-local" required/>
+          <input class="church-input" name="ends_at" type="datetime-local" required/>
+          <button class="church-btn church-btn--primary" type="submit">Create shift</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Shifts</h2>
+        <ul class="church-list">
+          <% (shifts || []).forEach(function (s) { %>
+          <li>
+            <a href="/branch/volunteer-scheduling/shifts/<%= s.id %>"><%= s.title || s.role_name %></a>
+            · <%= new Date(s.starts_at).toLocaleString('en-GB') %>
+            · <%= s.assigned_count || 0 %>/<%= s.slots %>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

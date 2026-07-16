@@ -122,34 +122,20 @@ async function evaluateFoundationDowngradeEligibility(db, organizationId) {
   const adminLimit = getNumericLimit(plan, "admins.max");
   const branchLimit = getNumericLimit(plan, "branches.max_active");
 
-  const [activeBranches, members, privileged, inactiveBranches, scheduledBroadcasts, orgRow] =
-    await Promise.all([
-      branchesRepo.countActiveBranchesForOrganization(db, organizationId),
-      countActiveMembersForOrganization(db, organizationId),
-      countPrivilegedAccountsForOrganization(db, organizationId),
-      db.query(
-        `SELECT id, name, slug, status, lifecycle_phase
-         FROM public.church_branches
-         WHERE organization_id = $1 AND status IS DISTINCT FROM 'active'
-         ORDER BY name ASC
-         LIMIT 50`,
-        [organizationId]
-      ),
-      db.query(
-        `SELECT COUNT(*)::int AS c
-         FROM public.church_hq_broadcasts
-         WHERE organization_id = $1
-           AND publish_at IS NOT NULL
-           AND publish_at > now() + interval '2 minutes'
-           AND status IN ('draft', 'published')`,
-        [organizationId]
-      ).catch(() => ({ rows: [{ c: 0 }] })),
-      db.query(
-        `SELECT billing_payment_provider_enabled
-         FROM public.church_organizations WHERE id = $1`,
-        [organizationId]
-      ),
-    ]);
+  const [activeBranches, members, privileged, inactiveBranches, growthJobs] = await Promise.all([
+    branchesRepo.countActiveBranchesForOrganization(db, organizationId),
+    countActiveMembersForOrganization(db, organizationId),
+    countPrivilegedAccountsForOrganization(db, organizationId),
+    db.query(
+      `SELECT id, name, slug, status, lifecycle_phase
+       FROM public.church_branches
+       WHERE organization_id = $1 AND status IS DISTINCT FROM 'active'
+       ORDER BY name ASC
+       LIMIT 50`,
+      [organizationId]
+    ),
+    collectIncompatibleGrowthJobs(db, organizationId),
+  ]);
 
   const incompatibilities = [];
 
@@ -180,9 +166,7 @@ async function evaluateFoundationDowngradeEligibility(db, organizationId) {
     });
   }
 
-  // No paid add-on catalogue yet; block only if a payment-provider-backed open add-on marker appears later.
-  // Presently: never invent add-ons. Provider enabled alone is not an add-on.
-  void orgRow;
+  // No paid add-on catalogue yet — never invent add-ons.
   const paidAddOns = [];
   if (paidAddOns.length) {
     incompatibilities.push({
@@ -193,14 +177,8 @@ async function evaluateFoundationDowngradeEligibility(db, organizationId) {
     });
   }
 
-  const scheduledCount = scheduledBroadcasts.rows[0]?.c || 0;
-  if (scheduledCount > 0) {
-    incompatibilities.push({
-      code: "growth_scheduled_broadcasts",
-      message: `${scheduledCount} future-scheduled HQ broadcast(s) require Growth. Clear or publish them immediately before downgrade.`,
-      used: scheduledCount,
-      limit: 0,
-    });
+  for (const job of growthJobs) {
+    incompatibilities.push(job);
   }
 
   return {
@@ -211,6 +189,7 @@ async function evaluateFoundationDowngradeEligibility(db, organizationId) {
       activeMembers: members,
       privilegedAccounts: privileged.total,
       privilegedBreakdown: privileged,
+      growthJobs,
     },
     inactiveBranches: inactiveBranches.rows || [],
     limits: {
@@ -219,6 +198,117 @@ async function evaluateFoundationDowngradeEligibility(db, organizationId) {
       admins: adminLimit,
     },
   };
+}
+
+/**
+ * Identify active Growth-only jobs/features that block Foundation downgrade.
+ * Does not delete data — callers must pause/cancel these first.
+ * @param {import("pg").Pool | import("pg").PoolClient} db
+ * @param {number} organizationId
+ * @returns {Promise<Array<{code:string,message:string,used:number,limit:number}>>}
+ */
+async function collectIncompatibleGrowthJobs(db, organizationId) {
+  const jobs = [];
+
+  const scheduledBroadcasts = await db
+    .query(
+      `SELECT COUNT(*)::int AS c
+       FROM public.church_hq_broadcasts
+       WHERE organization_id = $1
+         AND (
+           status = 'scheduled'
+           OR (
+             publish_at IS NOT NULL
+             AND publish_at > now() + interval '2 minutes'
+             AND status IN ('draft', 'preview', 'audience_estimate', 'approval', 'scheduled', 'processing')
+           )
+         )`,
+      [organizationId]
+    )
+    .catch(() => ({ rows: [{ c: 0 }] }));
+  const broadcastCount = Number(scheduledBroadcasts.rows[0]?.c) || 0;
+  if (broadcastCount > 0) {
+    jobs.push({
+      code: "growth_scheduled_broadcasts",
+      message: `${broadcastCount} scheduled or future HQ broadcast(s) require Growth. Cancel or publish them before downgrade.`,
+      used: broadcastCount,
+      limit: 0,
+    });
+  }
+
+  const scheduledReports = await db
+    .query(
+      `SELECT COUNT(*)::int AS c
+       FROM public.church_scheduled_reports
+       WHERE organization_id = $1 AND status = 'enabled'`,
+      [organizationId]
+    )
+    .catch(() => ({ rows: [{ c: 0 }] }));
+  const reportCount = Number(scheduledReports.rows[0]?.c) || 0;
+  if (reportCount > 0) {
+    jobs.push({
+      code: "growth_scheduled_reports",
+      message: `${reportCount} enabled scheduled report(s) require Growth. Pause or cancel them before downgrade.`,
+      used: reportCount,
+      limit: 0,
+    });
+  }
+
+  const pastoralAutomation = await db
+    .query(
+      `SELECT COUNT(*)::int AS c
+       FROM public.church_pastoral_automation_settings
+       WHERE organization_id = $1 AND enabled = true`,
+      [organizationId]
+    )
+    .catch(() => ({ rows: [{ c: 0 }] }));
+  const automationCount = Number(pastoralAutomation.rows[0]?.c) || 0;
+  if (automationCount > 0) {
+    jobs.push({
+      code: "growth_pastoral_automation",
+      message: `${automationCount} branch pastoral automation setting(s) are enabled. Disable them before downgrade.`,
+      used: automationCount,
+      limit: 0,
+    });
+  }
+
+  const pendingAutomationWork = await db
+    .query(
+      `SELECT COUNT(*)::int AS c
+       FROM public.church_pastoral_automation_work_items
+       WHERE organization_id = $1 AND status IN ('pending', 'accepted')`,
+      [organizationId]
+    )
+    .catch(() => ({ rows: [{ c: 0 }] }));
+  const workCount = Number(pendingAutomationWork.rows[0]?.c) || 0;
+  if (workCount > 0) {
+    jobs.push({
+      code: "growth_automation_work_items",
+      message: `${workCount} open pastoral automation work item(s) require Growth. Resolve or dismiss them before downgrade.`,
+      used: workCount,
+      limit: 0,
+    });
+  }
+
+  const activeSurveys = await db
+    .query(
+      `SELECT COUNT(*)::int AS c
+       FROM public.church_surveys
+       WHERE organization_id = $1 AND status = 'active'`,
+      [organizationId]
+    )
+    .catch(() => ({ rows: [{ c: 0 }] }));
+  const surveyCount = Number(activeSurveys.rows[0]?.c) || 0;
+  if (surveyCount > 0) {
+    jobs.push({
+      code: "growth_active_surveys",
+      message: `${surveyCount} active survey(s) require Growth. Close them before downgrade.`,
+      used: surveyCount,
+      limit: 0,
+    });
+  }
+
+  return jobs;
 }
 
 /**
@@ -291,6 +381,9 @@ async function previewPackageAssignment(db, organizationId, fields) {
   } else if (direction === "downgrade") {
     consequences.push("Foundation entitlements and hard limits will apply after confirmation.");
     consequences.push("No package-specific configuration or church data will be deleted.");
+    consequences.push(
+      "Growth-only scheduled jobs (reports, broadcasts, automation, surveys) must be cleared before confirmation."
+    );
     if (downgrade && !downgrade.allowed) {
       consequences.push("Final downgrade is blocked until incompatibilities are resolved.");
     }
@@ -515,6 +608,7 @@ module.exports = {
   confirmPackageAssignment,
   assignOrganisationPackage,
   evaluateFoundationDowngradeEligibility,
+  collectIncompatibleGrowthJobs,
   signAssignmentPreview,
   verifyAssignmentPreviewToken,
   validateAssignablePackageCode,

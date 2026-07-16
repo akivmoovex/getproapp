@@ -46,11 +46,20 @@
               </select>
             </div>
             <div class="church-field">
-              <label class="church-label" for="department_id">Group (department)</label>
+              <label class="church-label" for="department_id">Department</label>
               <select class="church-input" id="department_id" name="department_id">
                 <option value="">Any</option>
                 <% (departments || []).forEach(function (d) { %>
                 <option value="<%= d.id %>" <%= Number(filters.departmentId) === Number(d.id) ? 'selected' : '' %>><%= d.name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="group_id">Group</label>
+              <select class="church-input" id="group_id" name="group_id">
+                <option value="">Any</option>
+                <% (groups || []).forEach(function (g) { %>
+                <option value="<%= g.id %>" <%= Number(filters.groupId) === Number(g.id) ? 'selected' : '' %>><%= g.name %></option>
                 <% }); %>
               </select>
             </div>
@@ -65,17 +74,67 @@
           <div><dt>Campuses</dt><dd><%= comparison.totals.branch_count %></dd></div>
           <div><dt>Active members</dt><dd><%= comparison.totals.active_members %></dd></div>
           <div><dt>Monthly attendance</dt><dd><%= comparison.totals.monthly_attendance %></dd></div>
+          <div><dt>Group attendance</dt><dd><%= comparison.totals.group_attendance %></dd></div>
           <div><dt>Visitors</dt><dd><%= comparison.totals.visitors %></dd></div>
-          <div><dt>Event registrations (proxy)</dt><dd><%= comparison.totals.event_registrations %></dd></div>
-          <div><dt>Event attendance (proxy)</dt><dd><%= comparison.totals.event_attendance %></dd></div>
+          <div><dt>Visitor follow-ups closed</dt><dd><%= comparison.totals.visitor_retention %></dd></div>
+          <div><dt>Absence follow-ups</dt><dd><%= comparison.totals.absence_follow_ups %></dd></div>
+          <div><dt>Event registrations</dt><dd><%= comparison.totals.event_registrations %></dd></div>
+          <div><dt>Event check-ins</dt><dd><%= comparison.totals.event_attendance %></dd></div>
           <div><dt>Open pastoral follow-ups</dt><dd><%= comparison.totals.open_pastoral_follow_ups %></dd></div>
+          <div><dt>Pastoral workload</dt><dd><%= comparison.totals.pastoral_workload %></dd></div>
           <div><dt>Overdue pastoral cases</dt><dd><%= comparison.totals.overdue_pastoral_cases %></dd></div>
+          <div><dt>Survey completions</dt><dd><%= comparison.totals.survey_completions %></dd></div>
           <% if (canViewFinance) { %>
           <div><dt>Giving totals</dt><dd><%= formatMoney(comparison.totals.giving_total) %></dd></div>
           <% } else { %>
           <div><dt>Giving totals</dt><dd class="church-muted">Requires finance permission</dd></div>
           <% } %>
         </dl>
+      </section>
+
+      <% if (comparison.rankings && comparison.rankings.monthly_attendance) { %>
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Branch ranking (attendance)</h2>
+        <ol class="church-list">
+          <% comparison.rankings.monthly_attendance.slice(0, 10).forEach(function (item) { %>
+          <li><strong>#<%= item.rank %></strong> <%= item.branch_name %> — <%= item.value %></li>
+          <% }); %>
+        </ol>
+      </section>
+      <% } %>
+
+      <section class="church-branch-panel church-hq-panel">
+        <h2 class="church-branch-panel__title">Saved filters</h2>
+        <% if (notice === 'filter_saved') { %><p class="church-flash church-flash--success">Filter saved.</p><% } %>
+        <% if (notice === 'filter_deleted') { %><p class="church-flash church-flash--success">Filter deleted.</p><% } %>
+        <form method="post" action="/hq/cross-branch-reports/saved-filters" class="church-form">
+          <%- include('../partials/csrf_field') %>
+          <input type="hidden" name="date_from" value="<%= filters.dateFrom %>"/>
+          <input type="hidden" name="date_to" value="<%= filters.dateTo %>"/>
+          <input type="hidden" name="branch_id" value="<%= filters.branchId || '' %>"/>
+          <input type="hidden" name="service" value="<%= filters.serviceType || '' %>"/>
+          <input type="hidden" name="ministry_id" value="<%= filters.ministryId || '' %>"/>
+          <input type="hidden" name="department_id" value="<%= filters.departmentId || '' %>"/>
+          <input type="hidden" name="group_id" value="<%= filters.groupId || '' %>"/>
+          <div class="church-field">
+            <label class="church-label" for="filter_name">Name current filters</label>
+            <input class="church-input" type="text" id="filter_name" name="name" maxlength="120" required placeholder="e.g. Q2 Sunday comparison"/>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Save filter</button>
+        </form>
+        <% if ((savedFilters || []).length) { %>
+        <ul class="church-list">
+          <% savedFilters.forEach(function (sf) { %>
+          <li>
+            <a href="/hq/cross-branch-reports?saved_filter_id=<%= sf.id %>"><%= sf.name %></a>
+            <form method="post" action="/hq/cross-branch-reports/saved-filters/<%= sf.id %>/delete" style="display:inline;">
+              <%- include('../partials/csrf_field') %>
+              <button class="church-btn church-btn--ghost church-btn--sm" type="submit">Delete</button>
+            </form>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
       </section>
 
       <% if (viewMode === 'chart') { %>
@@ -126,29 +185,33 @@
                 <th scope="col">Branch</th>
                 <th scope="col">Active members</th>
                 <th scope="col">Attendance</th>
+                <th scope="col">Group att.</th>
                 <th scope="col">Visitors</th>
                 <th scope="col">Event regs</th>
-                <th scope="col">Event att.</th>
-                <th scope="col">Open follow-ups</th>
+                <th scope="col">Event check-ins</th>
+                <th scope="col">Workload</th>
                 <th scope="col">Overdue</th>
+                <th scope="col">Surveys</th>
                 <% if (canViewFinance) { %><th scope="col">Giving</th><% } %>
                 <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
               <% if (!(comparison.rows || []).length) { %>
-              <tr><td colspan="10">No branch data for these filters.</td></tr>
+              <tr><td colspan="12">No branch data for these filters.</td></tr>
               <% } %>
               <% (comparison.rows || []).forEach(function (row) { %>
               <tr>
                 <td class="church-hq-wrap"><%= row.branch_name %></td>
                 <td><%= row.active_members %></td>
                 <td><%= row.monthly_attendance %></td>
+                <td><%= row.group_attendance %></td>
                 <td><%= row.visitors %></td>
                 <td><%= row.event_registrations %></td>
                 <td><%= row.event_attendance %></td>
-                <td><%= row.open_pastoral_follow_ups %></td>
+                <td><%= row.pastoral_workload %></td>
                 <td><%= row.overdue_pastoral_cases %></td>
+                <td><%= row.survey_completions %></td>
                 <% if (canViewFinance) { %><td><%= formatMoney(row.giving_total) %></td><% } %>
                 <td>
                   <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/cross-branch-reports/branches/<%= row.branch_id %>?date_from=<%= filters.dateFrom %>&date_to=<%= filters.dateTo %>" aria-label="Drill down into <%= row.branch_name %>">Drill down</a>

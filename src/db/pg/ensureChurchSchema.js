@@ -67,6 +67,16 @@ const CHURCH_SCHEMA_MIGRATION_FILES = Object.freeze([
   "108_church_backup_verification.sql",
   "109_church_release_register.sql",
   "110_church_pilot_feature_flags.sql",
+  "111_church_branch_admin_report_permissions.sql",
+  "112_church_foundation_attendance_check_ins.sql",
+  "113_church_foundation_pastoral_care.sql",
+  "114_church_growth_advanced_attendance.sql",
+  "115_church_growth_pastoral_automation.sql",
+  "116_church_growth_appointments_surveys.sql",
+  "117_church_growth_groups_discipleship_volunteers.sql",
+  "118_church_growth_advanced_events.sql",
+  "119_church_growth_advanced_reporting.sql",
+  "120_church_growth_communication_controls.sql",
 ]);
 
 /**
