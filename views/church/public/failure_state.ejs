@@ -18,7 +18,7 @@
 <body class="church-body church-body--unavailable">
   <header class="church-header church-header--auth">
     <div class="church-header__inner">
-      <%- include('../partials/brand_lockup', { href: 'https://blessboard.com' }) %>
+      <%- include('../partials/brand_lockup', { href: typeof blessboardPublicUrl !== 'undefined' && blessboardPublicUrl ? blessboardPublicUrl : 'https://blessboard.com' }) %>
     </div>
   </header>
   <main class="church-unavailable">

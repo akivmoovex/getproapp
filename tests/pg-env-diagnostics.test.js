@@ -27,6 +27,8 @@ test("summarizeDatabaseUrlEnv: neither set", () => {
   withEnv(
     {
       NODE_ENV: "development",
+      DEPLOYMENT_ENV: undefined,
+      BLESSBOARD_CANONICAL_DOMAIN: undefined,
       DATABASE_URL: undefined,
       GETPRO_DATABASE_URL: undefined,
       GETPRO_TEST_DB: undefined,
@@ -37,6 +39,7 @@ test("summarizeDatabaseUrlEnv: neither set", () => {
         hasDatabaseUrl: false,
         hasGetproDatabaseUrl: false,
         effectiveSource: "(none)",
+        getproFallbackDisabled: false,
       });
     }
   );
@@ -64,6 +67,8 @@ test("summarizeDatabaseUrlEnv: only GETPRO_DATABASE_URL", () => {
   withEnv(
     {
       NODE_ENV: "development",
+      DEPLOYMENT_ENV: "production",
+      BLESSBOARD_CANONICAL_DOMAIN: "blessboard.com",
       DATABASE_URL: undefined,
       GETPRO_TEST_DB: undefined,
       TEST_DATABASE_URL: undefined,
@@ -74,6 +79,7 @@ test("summarizeDatabaseUrlEnv: only GETPRO_DATABASE_URL", () => {
       assert.equal(s.hasDatabaseUrl, false);
       assert.equal(s.hasGetproDatabaseUrl, true);
       assert.equal(s.effectiveSource, "GETPRO_DATABASE_URL");
+      assert.equal(s.getproFallbackDisabled, false);
     }
   );
 });
@@ -82,6 +88,8 @@ test("getDatabaseUrl: prefers DATABASE_URL over GETPRO_DATABASE_URL", () => {
   withEnv(
     {
       NODE_ENV: "development",
+      DEPLOYMENT_ENV: undefined,
+      BLESSBOARD_CANONICAL_DOMAIN: undefined,
       GETPRO_TEST_DB: undefined,
       TEST_DATABASE_URL: undefined,
       DATABASE_URL: "postgres://a/a",
@@ -97,6 +105,8 @@ test("getDatabaseUrl: falls back to GETPRO_DATABASE_URL", () => {
   withEnv(
     {
       NODE_ENV: "development",
+      DEPLOYMENT_ENV: "production",
+      BLESSBOARD_CANONICAL_DOMAIN: "blessboard.com",
       DATABASE_URL: undefined,
       GETPRO_TEST_DB: undefined,
       TEST_DATABASE_URL: undefined,

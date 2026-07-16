@@ -20,9 +20,12 @@ function shouldForceHttps(req, host) {
 
 /**
  * Permanent redirects for BlessBoard product hosts:
- * - Non-canonical apex aliases (www.blessboard.com, blessboard.org, www.blessboard.org)
- *   → https://blessboard.com (canonical) with path and query preserved
+ * - Non-canonical apex aliases (e.g. www.{canonical}, and V4 .org → .com when configured)
+ *   → https://{canonical} with path and query preserved
  * - http → https (all BlessBoard hosts, including tenant subdomains)
+ *
+ * When BLESSBOARD_CANONICAL_DOMAIN=blessboard.org, blessboard.org is not redirected
+ * to blessboard.com; www.blessboard.org redirects only to blessboard.org.
  *
  * Preserves path and query via req.originalUrl.
  * Skip when BLESSBOARD_CANONICAL_REDIRECT=0 (local dev/tests).

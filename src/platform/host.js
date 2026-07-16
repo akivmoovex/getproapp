@@ -1,7 +1,7 @@
 const {
-  getBlessBoardCanonicalDomain,
+  getChurchHostDomain,
   isBlessBoardApexDomain,
-} = require("../church/blessBoardApexDomains");
+} = require("../church/blessBoardEnv");
 
 function sanitizeSubdomain(input) {
   if (!input) return null;
@@ -28,7 +28,7 @@ function resolveHostname(req) {
 }
 
 function getBlessBoardHostDomain() {
-  return getBlessBoardCanonicalDomain();
+  return getChurchHostDomain();
 }
 
 /** BlessBoard product hosts must never participate in GetPro BASE_DOMAIN subdomain routing. */

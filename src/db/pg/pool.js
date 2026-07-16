@@ -16,6 +16,7 @@ const os = require("os");
  */
 
 const { Pool } = require("pg");
+const { isBlessBoardOrgTestingDeployment } = require("../../church/blessBoardEnv");
 
 let pool = null;
 let startupLogged = false;
@@ -37,6 +38,7 @@ function isGetproTestDbIntent() {
 /**
  * Single source for the Postgres connection string (never log the return value).
  * With test intent (NODE_ENV=test or GETPRO_TEST_DB=1): TEST_DATABASE_URL only (empty if unset — PG tests skip).
+ * BlessBoard.org V5 testing (DEPLOYMENT_ENV=testing + canonical blessboard.org): DATABASE_URL only.
  * Otherwise: DATABASE_URL, then GETPRO_DATABASE_URL.
  * @returns {string}
  */
@@ -46,6 +48,8 @@ function getDatabaseUrl() {
     return "";
   }
   if (envStringIsSet(process.env.DATABASE_URL)) return String(process.env.DATABASE_URL).trim();
+  // V5 BlessBoard.org testing must never silently attach to GETPRO / production DB via fallback.
+  if (isBlessBoardOrgTestingDeployment()) return "";
   if (envStringIsSet(process.env.GETPRO_DATABASE_URL)) return String(process.env.GETPRO_DATABASE_URL).trim();
   return "";
 }
@@ -56,7 +60,7 @@ function connectionStringFromEnv() {
 
 /**
  * Safe booleans for diagnostics — never log connection string values.
- * @returns {{ hasDatabaseUrl: boolean, hasGetproDatabaseUrl: boolean, effectiveSource: string }}
+ * @returns {{ hasDatabaseUrl: boolean, hasGetproDatabaseUrl: boolean, effectiveSource: string, getproFallbackDisabled: boolean }}
  */
 function summarizeDatabaseUrlEnv() {
   if (isGetproTestDbIntent()) {
@@ -65,16 +69,21 @@ function summarizeDatabaseUrlEnv() {
       hasDatabaseUrl: false,
       hasGetproDatabaseUrl: false,
       effectiveSource: hasTestDatabaseUrl ? "TEST_DATABASE_URL" : "(none)",
+      getproFallbackDisabled: false,
     };
   }
   const hasDatabaseUrl = envStringIsSet(process.env.DATABASE_URL);
   const hasGetproDatabaseUrl = envStringIsSet(process.env.GETPRO_DATABASE_URL);
-  const effectiveSource = hasDatabaseUrl
-    ? "DATABASE_URL"
-    : hasGetproDatabaseUrl
-      ? "GETPRO_DATABASE_URL"
-      : "(none)";
-  return { hasDatabaseUrl, hasGetproDatabaseUrl, effectiveSource };
+  const orgTesting = isBlessBoardOrgTestingDeployment();
+  let effectiveSource = "(none)";
+  if (hasDatabaseUrl) effectiveSource = "DATABASE_URL";
+  else if (!orgTesting && hasGetproDatabaseUrl) effectiveSource = "GETPRO_DATABASE_URL";
+  return {
+    hasDatabaseUrl,
+    hasGetproDatabaseUrl,
+    effectiveSource,
+    getproFallbackDisabled: orgTesting,
+  };
 }
 
 /** Which env var supplies the URL (DATABASE_URL wins when both are set). Never log the value. */
@@ -89,6 +98,28 @@ function parsePgHost(connectionString) {
   } catch {
     return "";
   }
+}
+
+/**
+ * Redacted host fingerprint for logs (never password, user, path, or full URI).
+ * Example: "ab***.supabase.co"
+ * @param {string} connectionString
+ * @returns {string}
+ */
+function redactDatabaseHostFingerprint(connectionString) {
+  if (!connectionString || !String(connectionString).trim()) return "(none)";
+  const host = parsePgHost(connectionString);
+  if (!host) return "(unparseable)";
+  const labels = host.split(".").filter(Boolean);
+  if (labels.length === 0) return "(unparseable)";
+  if (labels.length === 1) {
+    const h = labels[0];
+    return h.length <= 3 ? "***" : `${h.slice(0, 2)}***`;
+  }
+  const first = labels[0];
+  const rest = labels.slice(1).join(".");
+  const redactedFirst = first.length <= 2 ? "**" : `${first.slice(0, 2)}***`;
+  return `${redactedFirst}.${rest}`;
 }
 
 function isSupabaseHost(host) {
@@ -373,4 +404,6 @@ module.exports = {
   getStartupProcessSnapshot,
   getPoolRuntimeConfig,
   isGetproTestDbIntent,
+  envStringIsSet,
+  redactDatabaseHostFingerprint,
 };

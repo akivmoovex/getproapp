@@ -1,11 +1,10 @@
 "use strict";
 
 const { normalizeHostFromRequest } = require("./host");
-const { isBlessBoardApexDomain } = require("./blessBoardApexDomains");
-const { BLESSBOARD_PUBLIC_URL } = require("./branding");
+const { isBlessBoardApexDomain, getBlessBoardAdminUrl } = require("./blessBoardEnv");
 
 /**
- * True for configured BlessBoard apex hosts (blessboard.com / www / .org aliases).
+ * True for configured BlessBoard apex hosts (canonical + configured aliases).
  * @param {import("express").Request} req
  */
 function isBlessBoardApexHost(req) {
@@ -13,7 +12,7 @@ function isBlessBoardApexHost(req) {
 }
 
 /**
- * True for *.blessboard.com branch hosts (demo, kafuebaptist, etc.) — not apex/www.
+ * True for *.{canonical} branch hosts (demo, kafuebaptist, etc.) — not apex/www.
  * @param {import("express").Request} req
  */
 function isBlessBoardBranchHost(req) {
@@ -22,7 +21,7 @@ function isBlessBoardBranchHost(req) {
 }
 
 function blessBoardAdminBaseUrl() {
-  return String(process.env.BLESSBOARD_ADMIN_URL || BLESSBOARD_PUBLIC_URL).replace(/\/$/, "");
+  return getBlessBoardAdminUrl();
 }
 
 function blessBoardAdminUrl(path) {

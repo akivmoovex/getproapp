@@ -4,8 +4,10 @@ const { churchPublicUrl } = require("./platformProvisioningValidation");
 
 /** Public demo tenant — seeded idempotently; safe to link without credentials. */
 const BLESSBOARD_DEMO_HOST_SLUG = "demo";
-const BLESSBOARD_DEMO_PUBLIC_URL = churchPublicUrl(BLESSBOARD_DEMO_HOST_SLUG, "/");
 
+function getBlessBoardDemoPublicUrl() {
+  return churchPublicUrl(BLESSBOARD_DEMO_HOST_SLUG, "/");
+}
 /** Public pages visitors may explore on the demo church site (no sign-in). */
 const BLESSBOARD_DEMO_PUBLIC_PAGES = [
   {
@@ -60,7 +62,10 @@ const BLESSBOARD_ONBOARDING_POSITIONING =
 
 module.exports = {
   BLESSBOARD_DEMO_HOST_SLUG,
-  BLESSBOARD_DEMO_PUBLIC_URL,
+  get BLESSBOARD_DEMO_PUBLIC_URL() {
+    return getBlessBoardDemoPublicUrl();
+  },
+  getBlessBoardDemoPublicUrl,
   BLESSBOARD_DEMO_PUBLIC_PAGES,
   buildDemoExploreLinks,
   BLESSBOARD_REGISTER_CHURCH_PATH,

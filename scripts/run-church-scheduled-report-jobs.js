@@ -18,6 +18,10 @@ const { ensureChurchSchema } = require("../src/db/pg/ensureChurchSchema");
 const { processDueScheduledReports } = require("../src/services/church/scheduledReportService");
 
 async function main() {
+  const { shouldRunBlessBoardScheduledJob } = require("../src/startup/blessBoardJobsGate");
+  if (!shouldRunBlessBoardScheduledJob("scheduled-report-jobs")) {
+    return;
+  }
   if (!isPgConfigured()) {
     console.error("PostgreSQL is not configured.");
     process.exitCode = 1;

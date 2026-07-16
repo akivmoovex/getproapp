@@ -2,13 +2,11 @@
 
 const {
   BLESSBOARD_NAME,
-  BLESSBOARD_PUBLIC_URL,
+  getBlessBoardPublicUrl,
   blessboardDocumentTitle,
   blessboardDefaultOgImageUrl,
 } = require("./branding");
 const { BLESSBOARD_REGISTER_CHURCH_PATH } = require("./platformPublicContent");
-
-const BLESSBOARD_OG_IMAGE_URL = blessboardDefaultOgImageUrl();
 
 /** @type {Record<string, { path: string, pageTitle: string, metaDescription: string, changefreq?: string, priority?: string, breadcrumbLabel?: string }>} */
 const PLATFORM_PUBLIC_SEO = {
@@ -180,7 +178,7 @@ function escapeXml(s) {
  * @param {string} [pathname]
  */
 function blessboardApexCanonicalUrl(pathname = "/") {
-  const base = BLESSBOARD_PUBLIC_URL.replace(/\/$/, "");
+  const base = getBlessBoardPublicUrl().replace(/\/$/, "");
   const path = String(pathname || "/");
   if (path === "/") return `${base}/`;
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
@@ -223,7 +221,7 @@ function buildOrganizationJsonLd(origin) {
     "@type": "Organization",
     name: BLESSBOARD_NAME,
     url: origin,
-    logo: BLESSBOARD_OG_IMAGE_URL,
+    logo: blessboardDefaultOgImageUrl(),
   };
 }
 
@@ -315,7 +313,7 @@ function mergePlatformPublicSeo(locals, _req = null) {
     seoDescription: metaDescription,
     canonicalUrl,
     ogUrl: canonicalUrl,
-    ogImage: BLESSBOARD_OG_IMAGE_URL,
+    ogImage: blessboardDefaultOgImageUrl(),
     ogType: "website",
     robotsMeta: locals.noindex ? undefined : "index, follow",
     noindex: Boolean(locals.noindex),
@@ -382,7 +380,9 @@ function registerPlatformPublicSeoRoutes(router) {
 }
 
 module.exports = {
-  BLESSBOARD_OG_IMAGE_URL,
+  get BLESSBOARD_OG_IMAGE_URL() {
+    return blessboardDefaultOgImageUrl();
+  },
   PLATFORM_PUBLIC_SEO,
   SITEMAP_PAGE_KEYS,
   escapeXml,

@@ -3,10 +3,10 @@
 const {
   BLESSBOARD_NAME,
   BLESSBOARD_TAGLINE,
-  BLESSBOARD_PUBLIC_URL,
+  getBlessBoardPublicUrl,
 } = require("../../church/branding");
 const {
-  BLESSBOARD_DEMO_PUBLIC_URL,
+  getBlessBoardDemoPublicUrl,
   BLESSBOARD_REGISTER_CHURCH_PATH,
   buildDemoExploreLinks,
 } = require("../../church/platformPublicContent");
@@ -37,8 +37,8 @@ function apexPageLocals(extra = {}, req = null) {
     isVerticalApex: true,
     activePage: extra.activePage || "home",
     welcomeMessage: extra.welcomeMessage || BLESSBOARD_TAGLINE,
-    blessboardPublicUrl: BLESSBOARD_PUBLIC_URL,
-    demoChurchUrl: BLESSBOARD_DEMO_PUBLIC_URL,
+    blessboardPublicUrl: getBlessBoardPublicUrl(),
+    demoChurchUrl: getBlessBoardDemoPublicUrl(),
     registerChurchPath: BLESSBOARD_REGISTER_CHURCH_PATH,
     demoExploreLinks: buildDemoExploreLinks(),
     ...extra,

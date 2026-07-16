@@ -23,6 +23,7 @@ const {
   churchOrganizationEditFormFromBody,
   churchOrganizationEditFormFromRecords,
 } = require("../../church/platformProvisioningValidation");
+const { getBlessBoardCanonicalDomain } = require("../../church/blessBoardEnv");
 const { buildProvisionWelcomePack } = require("../../services/church/provisionWelcomeService");
 const { PLAN_CODES: CHURCH_PLAN_CODES, getPlanDisplay } = require("../../church/churchPlans");
 const { getOrganisationPackageDiagnostic } = require("../../services/church/churchEntitlementService");
@@ -3644,7 +3645,7 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
           id: "super_admin",
           scope: "Platform",
           description: "BlessBoard platform super administrator (code-defined)",
-          access: "Platform Admin Console on blessboard.com",
+          access: `Platform Admin Console on ${getBlessBoardCanonicalDomain()}`,
           active_count: "—",
         },
       ];

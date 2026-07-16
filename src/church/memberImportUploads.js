@@ -3,13 +3,17 @@
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const { getChurchUploadRoot } = require("./blessBoardEnv");
 
-const UPLOAD_ROOT = path.join(__dirname, "..", "..", "data", "uploads", "church", "member-imports");
+function getMemberImportUploadRoot() {
+  return path.join(getChurchUploadRoot(), "member-imports");
+}
+
 const MAX_BYTES = 2 * 1024 * 1024;
 const MAX_ROWS = 2000;
 
 function ensureUploadRoot() {
-  fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
+  fs.mkdirSync(getMemberImportUploadRoot(), { recursive: true });
 }
 
 function safeOriginalName(name) {
@@ -25,8 +29,8 @@ function safeOriginalName(name) {
 function absolutePathUnderRoot(storedRelpath) {
   const rel = String(storedRelpath || "").replace(/^[/\\]+/, "");
   if (!rel || rel.includes("..")) return null;
-  const abs = path.resolve(UPLOAD_ROOT, rel);
-  const root = path.resolve(UPLOAD_ROOT);
+  const root = path.resolve(getMemberImportUploadRoot());
+  const abs = path.resolve(root, rel);
   if (abs !== root && !abs.startsWith(root + path.sep)) return null;
   return abs;
 }
@@ -73,7 +77,9 @@ function persistImportCsv({ organizationId, branchId, batchKey, originalFilename
 }
 
 module.exports = {
-  UPLOAD_ROOT,
+  get UPLOAD_ROOT() {
+    return getMemberImportUploadRoot();
+  },
   MAX_BYTES,
   MAX_ROWS,
   ensureUploadRoot,

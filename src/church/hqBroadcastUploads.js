@@ -14,10 +14,15 @@ const {
 } = require("../db/pg/church/broadcastAttachmentsRepo");
 const organizationUsageRepo = require("../db/pg/church/organizationUsageRepo");
 const churchPackageUsageService = require("../services/church/churchPackageUsageService");
+const { getChurchUploadRoot } = require("./blessBoardEnv");
 
-const UPLOAD_ROOT = path.join(__dirname, "..", "..", "data", "uploads", "church", "broadcasts");
-const ANNOUNCEMENT_UPLOAD_ROOT = path.join(__dirname, "..", "..", "data", "uploads", "church", "announcements");
+function getBroadcastUploadRoot() {
+  return path.join(getChurchUploadRoot(), "broadcasts");
+}
 
+function getAnnouncementUploadRoot() {
+  return path.join(getChurchUploadRoot(), "announcements");
+}
 const EXT_MIME = {
   ".pdf": "application/pdf",
   ".png": "image/png",
@@ -28,11 +33,11 @@ const EXT_MIME = {
 };
 
 function ensureUploadRoot() {
-  fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
+  fs.mkdirSync(getBroadcastUploadRoot(), { recursive: true });
 }
 
 function ensureAnnouncementUploadRoot() {
-  fs.mkdirSync(ANNOUNCEMENT_UPLOAD_ROOT, { recursive: true });
+  fs.mkdirSync(getAnnouncementUploadRoot(), { recursive: true });
 }
 
 function safeOriginalName(name) {
@@ -62,14 +67,14 @@ function resolveMime(file) {
  * @returns {string | null}
  */
 function absolutePathForStoredFilename(storedFilename) {
-  return absolutePathUnderRoot(UPLOAD_ROOT, storedFilename);
+  return absolutePathUnderRoot(getBroadcastUploadRoot(), storedFilename);
 }
 
 /**
  * @returns {string | null}
  */
 function absolutePathForAnnouncementStoredFilename(storedFilename) {
-  return absolutePathUnderRoot(ANNOUNCEMENT_UPLOAD_ROOT, storedFilename);
+  return absolutePathUnderRoot(getAnnouncementUploadRoot(), storedFilename);
 }
 
 function absolutePathUnderRoot(rootDir, storedFilename) {
@@ -97,7 +102,7 @@ async function saveBroadcastAttachments(pool, { organizationId, broadcastId, adm
 
   ensureUploadRoot();
   const dirRel = `${organizationId}/${broadcastId}`;
-  const dirAbs = path.join(UPLOAD_ROOT, String(organizationId), String(broadcastId));
+  const dirAbs = path.join(getBroadcastUploadRoot(), String(organizationId), String(broadcastId));
   fs.mkdirSync(dirAbs, { recursive: true });
 
   let saved = 0;
@@ -187,7 +192,7 @@ async function saveAnnouncementAttachments(pool, { organizationId, branchId, ann
 
   ensureAnnouncementUploadRoot();
   const dirRel = `${branchId}/${announcementId}`;
-  const dirAbs = path.join(ANNOUNCEMENT_UPLOAD_ROOT, String(branchId), String(announcementId));
+  const dirAbs = path.join(getAnnouncementUploadRoot(), String(branchId), String(announcementId));
   fs.mkdirSync(dirAbs, { recursive: true });
 
   let saved = 0;
@@ -261,8 +266,12 @@ function unlinkAnnouncementStoredFilename(storedFilename) {
 }
 
 module.exports = {
-  UPLOAD_ROOT,
-  ANNOUNCEMENT_UPLOAD_ROOT,
+  get UPLOAD_ROOT() {
+    return getBroadcastUploadRoot();
+  },
+  get ANNOUNCEMENT_UPLOAD_ROOT() {
+    return getAnnouncementUploadRoot();
+  },
   MAX_ATTACHMENT_BYTES,
   MAX_ATTACHMENTS_PER_ITEM,
   ALLOWED_MIME_TYPES,

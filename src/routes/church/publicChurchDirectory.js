@@ -6,7 +6,7 @@ const { churchPublicUrl } = require("../../church/platformProvisioningValidation
 const {
   BLESSBOARD_NAME,
   BLESSBOARD_TAGLINE,
-  BLESSBOARD_PUBLIC_URL,
+  getBlessBoardPublicUrl,
 } = require("../../church/branding");
 const { mergePlatformPublicSeo } = require("../../church/platformPublicSeo");
 const {
@@ -46,7 +46,7 @@ function apexShellLocals(extra = {}, req = null) {
     isVerticalApex: true,
     activePage: extra.activePage || "churches",
     welcomeMessage: extra.welcomeMessage || BLESSBOARD_TAGLINE,
-    blessboardPublicUrl: BLESSBOARD_PUBLIC_URL,
+    blessboardPublicUrl: getBlessBoardPublicUrl(),
     ...extra,
   };
   return mergePlatformPublicSeo(locals, req);

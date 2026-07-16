@@ -6,6 +6,7 @@
  */
 
 const { normalizeHostFromRequest } = require("./host");
+const { getBlessBoardPublicUrl } = require("./blessBoardEnv");
 const { getCorrelationId } = require("../middleware/requestCorrelationId");
 
 const PACKAGE_FEATURE_DENIED = "PACKAGE_FEATURE_DENIED";
@@ -150,6 +151,7 @@ function resolveShell(req, explicit) {
 
 function defaultActions(kind, shell) {
   const actions = [];
+  const homeUrl = getBlessBoardPublicUrl();
   if (kind === "unauthenticated") {
     if (shell === "hq") actions.push({ href: "/hq/login", label: "Sign in to HQ", primary: true });
     else if (shell === "branch") actions.push({ href: "/branch/login", label: "Sign in", primary: true });
@@ -163,13 +165,13 @@ function defaultActions(kind, shell) {
     actions.push({ href: "/hq/login", label: "HQ sign in", primary: true });
     actions.push({ href: "/branch/login", label: "Branch admin sign in", primary: false });
   } else if (kind === "not_found") {
-    actions.push({ href: "https://blessboard.com", label: "Go to BlessBoard home", primary: true });
+    actions.push({ href: homeUrl, label: "Go to BlessBoard home", primary: true });
   } else if (kind === "rate_limited" || kind === "internal_error" || kind === "service_unavailable") {
     actions.push({ href: "/", label: "Try again from home", primary: true });
   } else if (kind === "forbidden" || kind === "validation") {
     actions.push({ href: "/", label: "Back to home", primary: true });
   } else {
-    actions.push({ href: "https://blessboard.com", label: "Go to BlessBoard home", primary: true });
+    actions.push({ href: homeUrl, label: "Go to BlessBoard home", primary: true });
   }
   return actions;
 }
@@ -213,6 +215,7 @@ function buildFailureLocals(req, kindKey, opts = {}) {
     shell,
     noindex: true,
     metaDescription: lead,
+    blessboardPublicUrl: getBlessBoardPublicUrl(),
   };
 }
 

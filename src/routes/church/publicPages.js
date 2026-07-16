@@ -21,10 +21,10 @@ const { validatePublicContactBody } = require("../../church/contactSubmissionVal
 const {
   BLESSBOARD_NAME,
   BLESSBOARD_TAGLINE,
-  BLESSBOARD_PUBLIC_URL,
+  getBlessBoardPublicUrl,
 } = require("../../church/branding");
 const {
-  BLESSBOARD_DEMO_PUBLIC_URL,
+  getBlessBoardDemoPublicUrl,
   BLESSBOARD_REGISTER_CHURCH_PATH,
 } = require("../../church/platformPublicContent");
 const { mergePlatformPublicSeo } = require("../../church/platformPublicSeo");
@@ -208,9 +208,9 @@ function buildVerticalApexLocals(extra = {}, req = null) {
     upcomingEvents: [],
     givingTeaser: "",
     footerMessage: "© BlessBoard. Powered by GetPro.",
-    blessboardPublicUrl: BLESSBOARD_PUBLIC_URL,
+    blessboardPublicUrl: getBlessBoardPublicUrl(),
     rememberedChurch: null,
-    demoChurchUrl: BLESSBOARD_DEMO_PUBLIC_URL,
+    demoChurchUrl: getBlessBoardDemoPublicUrl(),
     registerChurchPath: BLESSBOARD_REGISTER_CHURCH_PATH,
     ...extra,
   };

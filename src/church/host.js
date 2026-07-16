@@ -2,16 +2,17 @@
 
 const { resolveHostname } = require("../platform/host");
 const {
-  getBlessBoardCanonicalDomain,
+  DEFAULT_CANONICAL_DOMAIN,
+  getChurchHostDomain: getChurchHostDomainFromEnv,
   isBlessBoardApexDomain,
   normalizeHost: normalizeApexHost,
-} = require("./blessBoardApexDomains");
+} = require("./blessBoardEnv");
 
 /** Vertical subdomain label — reserved; never a company marketing subdomain. */
 const CHURCH_VERTICAL_LABEL = "church";
 
 /** Dedicated church marketing / branch host domain (e.g. blessboard.com). Override via CHURCH_HOST_DOMAIN. */
-const DEFAULT_CHURCH_HOST_DOMAIN = "blessboard.com";
+const DEFAULT_CHURCH_HOST_DOMAIN = DEFAULT_CANONICAL_DOMAIN;
 
 /**
  * Normalize a hostname string (strip port, lowercase).
@@ -30,7 +31,7 @@ function normalizeHostFromRequest(req) {
 }
 
 function getChurchHostDomain() {
-  return getBlessBoardCanonicalDomain();
+  return getChurchHostDomainFromEnv();
 }
 
 /**

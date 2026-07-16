@@ -10,8 +10,7 @@ const BLESSBOARD_TAGLINE =
 /** Provider attribution shown under the BlessBoard lockup. */
 const BLESSBOARD_POWERED_BY = "Powered by GetPro";
 
-/** Public marketing site for the church vertical (canonical apex, non-www). */
-const BLESSBOARD_PUBLIC_URL = "https://blessboard.com";
+const { getBlessBoardPublicUrl } = require("./blessBoardEnv");
 
 /**
  * Temporary default Open Graph image until brand asset is added.
@@ -24,7 +23,7 @@ const BLESSBOARD_SOCIAL_PREVIEW_TARGET_PATH =
   "/images/brand/blessboard-social-preview-1200x630.jpg";
 
 function blessboardDefaultOgImageUrl() {
-  return `${BLESSBOARD_PUBLIC_URL.replace(/\/$/, "")}${BLESSBOARD_SOCIAL_PREVIEW_IMAGE_PATH}`;
+  return `${getBlessBoardPublicUrl()}${BLESSBOARD_SOCIAL_PREVIEW_IMAGE_PATH}`;
 }
 
 /**
@@ -40,7 +39,10 @@ module.exports = {
   BLESSBOARD_NAME,
   BLESSBOARD_TAGLINE,
   BLESSBOARD_POWERED_BY,
-  BLESSBOARD_PUBLIC_URL,
+  get BLESSBOARD_PUBLIC_URL() {
+    return getBlessBoardPublicUrl();
+  },
+  getBlessBoardPublicUrl,
   BLESSBOARD_SOCIAL_PREVIEW_IMAGE_PATH,
   BLESSBOARD_SOCIAL_PREVIEW_TARGET_PATH,
   blessboardDocumentTitle,

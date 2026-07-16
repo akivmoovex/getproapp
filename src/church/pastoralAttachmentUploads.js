@@ -3,8 +3,12 @@
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const { getChurchUploadRoot } = require("./blessBoardEnv");
 
-const UPLOAD_ROOT = path.join(__dirname, "..", "..", "data", "uploads", "church", "pastoral");
+function getPastoralUploadRoot() {
+  return path.join(getChurchUploadRoot(), "pastoral");
+}
+
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = new Set([
   "application/pdf",
@@ -14,7 +18,7 @@ const ALLOWED_MIME = new Set([
 ]);
 
 function ensureUploadRoot() {
-  fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
+  fs.mkdirSync(getPastoralUploadRoot(), { recursive: true });
 }
 
 function safeOriginalName(name) {
@@ -31,7 +35,7 @@ function storedFilenameForUpload(originalName) {
 function absolutePathForStoredFilename(storedFilename) {
   const base = path.basename(String(storedFilename || ""));
   if (!base || base !== storedFilename) return null;
-  return path.join(UPLOAD_ROOT, base);
+  return path.join(getPastoralUploadRoot(), base);
 }
 
 /**
@@ -53,7 +57,9 @@ async function parsePastoralUpload(req) {
 }
 
 module.exports = {
-  UPLOAD_ROOT,
+  get UPLOAD_ROOT() {
+    return getPastoralUploadRoot();
+  },
   MAX_ATTACHMENT_BYTES,
   ALLOWED_MIME,
   ensureUploadRoot,

@@ -5,6 +5,8 @@
  * Defaults are the platform catalogue; org overrides live in DB.
  */
 
+const { getBlessBoardPublicUrl, getChurchHostDomain } = require("./blessBoardEnv");
+
 const MERGE_FIELD_PATTERN = /\{\{\s*([a-z0-9_]+)\s*\}\}/gi;
 
 const COMMON_FIELDS = Object.freeze([
@@ -199,8 +201,8 @@ function sampleVariablesForTemplate(templateKey) {
     branch_name: "Main Campus",
     admin_name: "Jordan Admin",
     member_name: "Alex Member",
-    support_url: "https://blessboard.com/contact",
-    login_url: "https://example.blessboard.com/login",
+    support_url: `${getBlessBoardPublicUrl()}/contact`,
+    login_url: `https://example.${getChurchHostDomain()}/login`,
     temporary_access_hint: "Use the credentials shared during provisioning.",
     decision_note: "Please contact your local administrators for more information.",
     trial_ends_on: "2026-08-01",

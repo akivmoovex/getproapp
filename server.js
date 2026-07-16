@@ -15,6 +15,13 @@ const {
   logDatabaseEnvMissingDiagnostics,
   getDatabaseUrlEnvName,
 } = require("./src/db/pg");
+
+const { assertBlessBoardOrgDbIsolationOrExit } = require("./src/startup/blessBoardOrgDbGate");
+assertBlessBoardOrgDbIsolationOrExit(boot);
+
+const { logBlessBoardRuntimeIsolationDiagnostics } = require("./src/startup/blessBoardRuntimeDiagnostics");
+logBlessBoardRuntimeIsolationDiagnostics();
+
 if (!isPgConfigured()) {
   // Inconsistent env across restarts (missing vars on some boots) is usually a deployment/supervisor issue:
   // wrong cwd, forked workers without panel env, or .env not loaded because the process was started outside the app root.
@@ -239,9 +246,10 @@ const sessionStore = new PgSession({
 // eslint-disable-next-line no-console
 console.log("[getpro] Session store: PostgreSQL (public.session via connect-pg-simple)");
 
+const { getSessionCookieName } = require("./src/church/blessBoardEnv");
 app.use(
   session({
-    name: "getpro_sid",
+    name: getSessionCookieName(),
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,

@@ -1,6 +1,10 @@
 "use strict";
 
 const { getChurchHostDomain, parseChurchHostFromDedicatedDomain } = require("../../church/host");
+const {
+  getBlessBoardCanonicalDomain,
+  getDeploymentEnv,
+} = require("../../church/blessBoardEnv");
 const { getPgPool, isPgConfigured, getPoolRuntimeConfig } = require("../../db/pg/pool");
 const branchesRepo = require("../../db/pg/church/branchesRepo");
 const { classifyPgError } = require("../../church/churchDbResilience");
@@ -9,19 +13,24 @@ const { latestChurchSchemaMigration } = require("../../db/pg/ensureChurchSchema"
 
 const LATEST_CHURCH_MIGRATION = latestChurchSchemaMigration();
 
-const HOST_RESOLUTION_SAMPLES = [
-  { host: "blessboard.com", label: "BlessBoard apex" },
-  { host: "demo.blessboard.com", label: "Demo branch" },
-  { host: "kafuebaptist.blessboard.com", label: "Pilot branch (if provisioned)" },
-  { host: "unknown.blessboard.com", label: "Unknown slug" },
-];
+function hostResolutionSamples() {
+  const church = getChurchHostDomain();
+  const apex = getBlessBoardCanonicalDomain();
+  return [
+    { host: apex, label: "BlessBoard apex" },
+    { host: `demo.${church}`, label: "Demo branch" },
+    { host: `kafuebaptist.${church}`, label: "Pilot branch (if provisioned)" },
+    { host: `unknown.${church}`, label: "Unknown slug" },
+  ];
+}
 
 function deploymentLabel() {
   return (
     String(process.env.GETPRO_DEPLOY_LABEL || "").trim() ||
+    String(process.env.DEPLOYMENT_ENV || "").trim() ||
     String(process.env.GETPRO_GIT_SHA || "").trim().slice(0, 12) ||
     String(process.env.GETPRO_STYLES_V || "").trim() ||
-    "(not set — set GETPRO_DEPLOY_LABEL or GETPRO_GIT_SHA in Hostinger env)"
+    `(not set — set GETPRO_DEPLOY_LABEL, DEPLOYMENT_ENV, or GETPRO_GIT_SHA; current getDeploymentEnv=${getDeploymentEnv()})`
   );
 }
 
@@ -55,22 +64,23 @@ async function checkChurchBranchesTable(pool) {
 }
 
 async function checkDemoBranchLookup(pool) {
+  const demoHost = `demo.${getChurchHostDomain()}`;
   if (!pool) {
-    return { ok: false, host: "demo.blessboard.com", slug: "demo", message: "Database not configured." };
+    return { ok: false, host: demoHost, slug: "demo", message: "Database not configured." };
   }
   try {
     const branch = await branchesRepo.findBranchByHostSlug(pool, "demo");
     if (!branch) {
       return {
         ok: false,
-        host: "demo.blessboard.com",
+        host: demoHost,
         slug: "demo",
         message: "No branch with host_slug=demo.",
       };
     }
     return {
       ok: true,
-      host: "demo.blessboard.com",
+      host: demoHost,
       slug: "demo",
       message: `Resolved branch id=${branch.id}, status=${branch.status}.`,
       branchId: branch.id,
@@ -79,7 +89,7 @@ async function checkDemoBranchLookup(pool) {
     const classified = classifyPgError(err);
     return {
       ok: false,
-      host: "demo.blessboard.com",
+      host: demoHost,
       slug: "demo",
       message: classified.message,
       errorKind: classified.kind,
@@ -173,7 +183,7 @@ async function checkPilotBranch(pool, slug = "kafuebaptist") {
 }
 
 function resolveHostSamples() {
-  return HOST_RESOLUTION_SAMPLES.map((sample) => {
+  return hostResolutionSamples().map((sample) => {
     const parsed = parseChurchHostFromDedicatedDomain(sample.host);
     const kind = parsed ? parsed.kind : "unrecognized";
     const slug =
@@ -249,7 +259,7 @@ async function gatherChurchProductionDiagnostics() {
     warnings.push(`church_branches table: ${churchBranchesTable.message}`);
   }
   if (!demoBranchLookup.ok) {
-    warnings.push(`Demo branch lookup (demo.blessboard.com): ${demoBranchLookup.message}`);
+    warnings.push(`Demo branch lookup (demo.${churchDomain}): ${demoBranchLookup.message}`);
   }
   if (!schema.memberRegistrationColumn.ok) warnings.push(schema.memberRegistrationColumn.message);
   if (!schema.contactSubmissionsTable.ok) warnings.push(schema.contactSubmissionsTable.message);
@@ -262,8 +272,10 @@ async function gatherChurchProductionDiagnostics() {
   }
 
   return {
+    deploymentEnv: getDeploymentEnv(),
     deploymentLabel: deploymentLabel(),
     nodeEnv: process.env.NODE_ENV || "(unset)",
+    churchCanonicalDomain: getBlessBoardCanonicalDomain(),
     databaseConfigured: isPgConfigured(),
     databaseReachable: dbCheck.ok,
     databaseError: dbCheck.ok ? null : dbCheck.error,
