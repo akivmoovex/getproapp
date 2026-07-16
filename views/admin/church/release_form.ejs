@@ -1,0 +1,77 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: mode === 'edit' ? 'Edit release' : 'Record release', activeNav: activeNav || 'church_platform_releases', pageTitle: mode === 'edit' ? 'Edit release' : 'Record release' }) %>
+<% var _listHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/releases' : '/admin/church/releases'; %>
+<% var _action = mode === 'edit' ? (_listHref + '/' + record.id) : _listHref; %>
+<header class="church-platform-page-hero">
+  <div>
+    <a class="church-branch-back" href="<%= _listHref %>">&larr; Release register</a>
+    <h1 class="church-platform-page-hero__title"><%= mode === 'edit' ? 'Edit release' : 'Record release' %></h1>
+    <p class="church-platform-page-hero__subtitle">
+      Do not enter secrets, passwords, tokens, or connection strings. Migration ids must match <code>db/postgres</code> files.
+    </p>
+  </div>
+</header>
+
+<% if (error) { %>
+<div class="flash flash--error" role="alert"><%= error %></div>
+<% } %>
+
+<section class="card card--mb-xl" style="padding:1.25rem;">
+  <form method="post" action="<%= _action %>" class="church-form">
+    <%- include('./partials/csrf_field') %>
+    <label class="church-field">
+      <span class="church-field__label">Application version</span>
+      <input class="church-input" type="text" name="application_version" required maxlength="64" value="<%= form.application_version || '' %>" placeholder="e.g. 1.4.0"/>
+    </label>
+    <label class="church-field">
+      <span class="church-field__label">Release date</span>
+      <input class="church-input" type="date" name="release_date" required value="<%= form.release_date || '' %>"/>
+    </label>
+    <label class="church-field">
+      <span class="church-field__label">Release summary</span>
+      <textarea class="church-input" name="release_summary" rows="4" required maxlength="4000"><%= form.release_summary || '' %></textarea>
+    </label>
+    <label class="church-field">
+      <span class="church-field__label">Migrations included</span>
+      <textarea class="church-input" name="migrations_text" rows="5" placeholder="One filename per line, e.g. 109_church_release_register.sql"><%= form.migrations_text || '' %></textarea>
+      <span class="muted">Must match known migration filenames.</span>
+    </label>
+    <label class="church-field">
+      <span class="church-field__label">Rollback notes</span>
+      <textarea class="church-input" name="rollback_notes" rows="3" maxlength="4000"><%= form.rollback_notes || '' %></textarea>
+    </label>
+    <label class="church-field">
+      <span class="church-field__label">Known limitations</span>
+      <textarea class="church-input" name="known_limitations" rows="3" maxlength="4000"><%= form.known_limitations || '' %></textarea>
+    </label>
+    <label class="church-field">
+      <span class="church-field__label">Package features affected</span>
+      <textarea class="church-input" name="package_features_text" rows="3" placeholder="Feature ids, one per line"><%= form.package_features_text || '' %></textarea>
+      <span class="muted">Known ids: <%= (featureChoices || []).map(function (f) { return f.id; }).slice(0, 12).join(', ') %><%= (featureChoices || []).length > 12 ? '…' : '' %></span>
+    </label>
+    <label class="church-field">
+      <span class="church-field__label">Required environment variables</span>
+      <textarea class="church-input" name="required_env_vars_text" rows="3" placeholder="NAMES only, e.g. BLESSBOARD_BACKUP_STALE_DAYS"><%= form.required_env_vars_text || '' %></textarea>
+    </label>
+    <label class="church-field">
+      <span class="church-field__label">Test status</span>
+      <select class="church-input" name="test_status" required>
+        <% (testStatuses || []).forEach(function (s) { %>
+        <option value="<%= s %>" <%= form.test_status === s ? 'selected' : '' %>><%= s %></option>
+        <% }); %>
+      </select>
+    </label>
+    <label class="church-field">
+      <span class="church-field__label">Test evidence</span>
+      <textarea class="church-input" name="test_evidence" rows="2" maxlength="2000" placeholder="Required when status is passed — CI run id, checklist path, or ticket reference"><%= form.test_evidence || '' %></textarea>
+    </label>
+    <label class="church-field">
+      <span class="church-field__label">Deployed by</span>
+      <input class="church-input" type="text" name="deployed_by" required maxlength="200" value="<%= form.deployed_by || '' %>"/>
+    </label>
+    <div class="church-branch-actions" style="margin-top:1rem;">
+      <button class="church-btn church-btn--primary" type="submit"><%= mode === 'edit' ? 'Save changes' : 'Create release record' %></button>
+      <a class="church-btn church-btn--ghost" href="<%= _listHref %>">Cancel</a>
+    </div>
+  </form>
+</section>
+<%- include('../../partials/platform_admin_shell_end') %>

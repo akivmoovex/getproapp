@@ -5,7 +5,9 @@ const { getPgPool, isPgConfigured, getPoolRuntimeConfig } = require("../../db/pg
 const branchesRepo = require("../../db/pg/church/branchesRepo");
 const { classifyPgError } = require("../../church/churchDbResilience");
 
-const LATEST_CHURCH_MIGRATION = "090_church_operational_readiness.sql";
+const { latestChurchSchemaMigration } = require("../../db/pg/ensureChurchSchema");
+
+const LATEST_CHURCH_MIGRATION = latestChurchSchemaMigration();
 
 const HOST_RESOLUTION_SAMPLES = [
   { host: "blessboard.com", label: "BlessBoard apex" },
@@ -199,6 +201,40 @@ async function gatherChurchProductionDiagnostics() {
   const pilotBranch = await checkPilotBranch(pool, "kafuebaptist");
   const poolConfig = getPoolRuntimeConfig();
 
+  let backupVerification = null;
+  if (pool && dbCheck.ok) {
+    try {
+      const churchBackupVerificationService = require("./churchBackupVerificationService");
+      backupVerification = await churchBackupVerificationService.getBackupVerificationStatus(pool);
+    } catch {
+      backupVerification = {
+        available: false,
+        status: "unavailable",
+        statusLabel: "Unavailable",
+        health: "warning",
+        warnings: ["Backup verification status could not be loaded."],
+        lastSuccessfulBackupAt: null,
+        lastRestorationTestAt: null,
+        lastRestorationTestOutcome: null,
+        staleDays: 7,
+        recentEvents: [],
+      };
+    }
+  } else {
+    backupVerification = {
+      available: false,
+      status: "unavailable",
+      statusLabel: "Unavailable",
+      health: "warning",
+      warnings: [],
+      lastSuccessfulBackupAt: null,
+      lastRestorationTestAt: null,
+      lastRestorationTestOutcome: null,
+      staleDays: 7,
+      recentEvents: [],
+    };
+  }
+
   const warnings = [];
   const sessionWarn = sessionSecretWarning();
   if (sessionWarn) warnings.push(sessionWarn);
@@ -221,6 +257,9 @@ async function gatherChurchProductionDiagnostics() {
   if (process.env.NODE_ENV !== "production") {
     warnings.push("NODE_ENV is not production (expected on local dev).");
   }
+  if (backupVerification && Array.isArray(backupVerification.warnings)) {
+    for (const w of backupVerification.warnings) warnings.push(w);
+  }
 
   return {
     deploymentLabel: deploymentLabel(),
@@ -242,6 +281,7 @@ async function gatherChurchProductionDiagnostics() {
     sessionSecretConfigured: Boolean(String(process.env.SESSION_SECRET || "").trim()),
     sessionSecretLengthOk: !sessionSecretWarning(),
     sessionSecretWarning: sessionWarn,
+    backupVerification,
     warnings,
     checkedAt: new Date().toISOString(),
   };

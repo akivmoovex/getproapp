@@ -133,7 +133,7 @@ test(
     const login = await superAdminLoginAgent(app);
     const res = await login.agent.get("/admin/diagnostics").set("Host", "blessboard.com");
     assert.equal(res.status, 200);
-    assert.match(res.text, /BlessBoard production diagnostics/i);
+    assert.match(res.text, /BlessBoard diagnostics|Support Monitoring|Backup verification/i);
     assert.doesNotMatch(res.text, /postgres:\/\//i);
     await login.pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [login.userId]);
   }

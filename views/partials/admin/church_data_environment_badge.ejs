@@ -1,0 +1,7 @@
+<%#
+  Expects: dataEnvironment (string)
+%>
+<% var _env = typeof dataEnvironment !== 'undefined' && dataEnvironment ? String(dataEnvironment) : 'production'; %>
+<% var _labels = { production: 'Production', pilot: 'Pilot', demo: 'Demo', test: 'Test' }; %>
+<% var _label = _labels[_env] || _env; %>
+<span class="church-platform-chip church-platform-chip--env church-platform-chip--env-<%= _env %>" title="Data environment"><%= _label %></span>

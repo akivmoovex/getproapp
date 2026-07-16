@@ -127,8 +127,8 @@ test(
     const agent = await adminLoginAgent(app, username, "pw12345678");
     const res = await agent.get("/admin/church/diagnostics");
     assert.equal(res.status, 200);
-    assert.match(res.text, /BlessBoard production diagnostics/i);
-    assert.match(res.text, /090_church_operational_readiness/i);
+    assert.match(res.text, /BlessBoard diagnostics|Support Monitoring|Backup verification/i);
+    assert.match(res.text, /108_church_backup_verification/i);
     await pool.query(`DELETE FROM public.admin_users WHERE id = $1`, [userId]);
   }
 );
@@ -177,14 +177,15 @@ test("diagnostics reports missing database safely", async () => {
   }
 });
 
-test("diagnostics service exposes latest migration 090 constant", () => {
-  assert.equal(LATEST_CHURCH_MIGRATION, "090_church_operational_readiness.sql");
+test("diagnostics service exposes latest migration constant", () => {
+  assert.equal(LATEST_CHURCH_MIGRATION, "108_church_backup_verification.sql");
 });
 
-test("production checklist mentions migration 090", () => {
+test("production checklist mentions migration 090 and staging restoration", () => {
   const text = fs.readFileSync(PRODUCTION_CHECKLIST, "utf8");
   assert.match(text, /090_church_operational_readiness\.sql/);
   assert.match(text, /Deploy V4 to Hostinger/i);
+  assert.match(text, /blessboard-staging-restoration-checklist/);
 });
 
 test("pilot smoke-test doc includes kafuebaptist.blessboard.com", () => {

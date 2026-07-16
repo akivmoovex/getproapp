@@ -109,6 +109,12 @@ function branchAdminLocals(req, extra) {
   const csrf = req.churchBranchAdmin
     ? churchSessionCsrfLocals(req)
     : { churchCsrfToken: "", churchCsrfField: "_csrf" };
+  const packageLocals = req.churchPackagePlan
+    ? {
+        packagePlan: req.churchPackagePlan,
+        packageFeatureNav: listNavFeatureGates(req.churchPackagePlan, "branch"),
+      }
+    : packageFeatureLocalsFromOrg(org, "branch");
   return {
     churchName: branch.name || org.name,
     pageTitle: branch.name || org.name,
@@ -120,7 +126,7 @@ function branchAdminLocals(req, extra) {
     adminName,
     adminAvatarUrl: "/church/images/branch-admin/avatar-pastor-stitch.jpg",
     ...csrf,
-    ...packageFeatureLocalsFromOrg(org, "branch"),
+    ...packageLocals,
     ...(extra || {}),
   };
 }

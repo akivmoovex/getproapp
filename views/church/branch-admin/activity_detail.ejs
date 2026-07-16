@@ -15,9 +15,12 @@
           <div><dt>Actor type</dt><dd><%= actorTypeLabel(log.actor_type) %></dd></div>
           <div><dt>Actor ID</dt><dd><%= log.actor_id != null ? log.actor_id : '—' %></dd></div>
           <div><dt>Actor label</dt><dd><%= actorDisplayFromRow(log) %></dd></div>
-          <div><dt>Target type</dt><dd><%= targetTypeLabel(log.entity_type) %></dd></div>
-          <div><dt>Target ID</dt><dd><%= log.entity_id != null ? log.entity_id : '—' %></dd></div>
-          <div><dt>Target label</dt><dd><%= targetLabelFromRow(log) %></dd></div>
+          <div><dt>Entity type</dt><dd><%= targetTypeLabel(log.entity_type) %></dd></div>
+          <div><dt>Entity ID</dt><dd><%= entityIdentifierFromRow(log) %></dd></div>
+          <div><dt>Entity label</dt><dd><%= targetLabelFromRow(log) %></dd></div>
+          <div><dt>Package / entitlement</dt><dd><%= packageChangeFromRow(log) %></dd></div>
+          <div><dt>Reason</dt><dd><%= reasonFromRow(log) %></dd></div>
+          <div><dt>Result</dt><dd><%= resultFromRow(log) %></dd></div>
           <div><dt>Timestamp</dt><dd><%= new Date(log.created_at).toLocaleString('en-GB') %></dd></div>
           <% if (log.ip_address) { %><div><dt>IP address</dt><dd><%= log.ip_address %></dd></div><% } %>
           <% if (log.user_agent) { %><div><dt>User agent</dt><dd><%= log.user_agent %></dd></div><% } %>

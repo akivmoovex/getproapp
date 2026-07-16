@@ -245,30 +245,42 @@ async function getProvisioningSummary(pool) {
     `SELECT
        COUNT(*)::int AS total_organizations,
        COUNT(*) FILTER (WHERE status = 'active')::int AS active_organizations,
-       COUNT(*) FILTER (WHERE plan_code = 'free')::int AS free_plan_count,
-       COUNT(*) FILTER (WHERE plan_code = 'standard')::int AS standard_plan_count,
-       COUNT(*) FILTER (WHERE plan_code = 'pro')::int AS pro_plan_count
+       COUNT(*) FILTER (WHERE data_environment = 'production')::int AS production_organizations,
+       COUNT(*) FILTER (WHERE data_environment = 'pilot')::int AS pilot_organizations,
+       COUNT(*) FILTER (WHERE data_environment = 'demo')::int AS demo_organizations,
+       COUNT(*) FILTER (WHERE data_environment = 'test')::int AS test_organizations,
+       COUNT(*) FILTER (WHERE plan_code = 'free' AND data_environment IN ('production', 'pilot'))::int AS free_plan_count,
+       COUNT(*) FILTER (WHERE plan_code = 'standard' AND data_environment IN ('production', 'pilot'))::int AS standard_plan_count,
+       COUNT(*) FILTER (WHERE plan_code = 'pro' AND data_environment IN ('production', 'pilot'))::int AS pro_plan_count
      FROM public.church_organizations`
   );
   const branches = await pool.query(
     `SELECT
        COUNT(*)::int AS total_branches,
-       COUNT(*) FILTER (WHERE status = 'active')::int AS active_branches
+       COUNT(*) FILTER (WHERE status = 'active')::int AS active_branches,
+       COUNT(*) FILTER (
+         WHERE status = 'active'
+           AND organization_id IN (
+             SELECT id FROM public.church_organizations
+             WHERE data_environment IN ('production', 'pilot')
+           )
+       )::int AS production_active_branches
      FROM public.church_branches`
   );
   const recent = await pool.query(
-    `SELECT id, name, slug, country, plan_code, status, created_at
+    `SELECT id, name, slug, country, plan_code, status, data_environment, created_at
      FROM public.church_organizations
      ORDER BY created_at DESC, id DESC
      LIMIT 8`
   );
   const usageRows = await pool.query(
-    `SELECT o.id, o.name, o.slug, o.plan_code,
+    `SELECT o.id, o.name, o.slug, o.plan_code, o.data_environment,
             COUNT(DISTINCT b.id)::int AS branch_count,
             COUNT(m.id) FILTER (WHERE m.status = 'verified')::int AS verified_member_count
      FROM public.church_organizations o
      LEFT JOIN public.church_branches b ON b.organization_id = o.id
      LEFT JOIN public.church_members m ON m.organization_id = o.id
+     WHERE o.data_environment IN ('production', 'pilot')
      GROUP BY o.id
      ORDER BY o.name ASC`
   );

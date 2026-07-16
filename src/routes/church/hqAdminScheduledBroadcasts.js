@@ -101,9 +101,13 @@ module.exports = function registerHqAdminScheduledBroadcastsRoutes(router) {
         if (!broadcast) {
           return res.status(404).type("text").send("Broadcast not found.");
         }
-        const [targets, deliveries] = await Promise.all([
+        const deliveryPage = Math.max(Number(req.query.page) || 1, 1);
+        const [targets, deliveryPageResult] = await Promise.all([
           hqBroadcastsRepo.listBroadcastTargets(pool, broadcastId, org.id),
-          scheduledBroadcastService.listDeliveries(pool, broadcastId, org.id),
+          scheduledBroadcastService.listDeliveries(pool, broadcastId, org.id, {
+            page: deliveryPage,
+            limit: 50,
+          }),
         ]);
         const noticeCode = flashFromQuery(req, SCHEDULED_BROADCAST_NOTICES);
         return res.render(
@@ -113,7 +117,20 @@ module.exports = function registerHqAdminScheduledBroadcastsRoutes(router) {
             activeNav: "broadcasts-scheduled",
             broadcast,
             targets,
-            deliveries,
+            deliveries: deliveryPageResult.rows,
+            deliveryPagination: {
+              page: deliveryPageResult.page,
+              total: deliveryPageResult.total,
+              totalPages: deliveryPageResult.totalPages,
+              prevUrl:
+                deliveryPageResult.page > 1
+                  ? `/hq/scheduled-broadcasts/${broadcastId}?page=${deliveryPageResult.page - 1}`
+                  : null,
+              nextUrl:
+                deliveryPageResult.page < deliveryPageResult.totalPages
+                  ? `/hq/scheduled-broadcasts/${broadcastId}?page=${deliveryPageResult.page + 1}`
+                  : null,
+            },
             broadcastStatusLabel,
             broadcastAudienceLabel,
             targetScopeLabel,

@@ -1,0 +1,58 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Notifications', activeNav: activeNav || 'church_platform_notification_templates', pageTitle: template.label }) %>
+        <header class="admin-dashboard__header">
+          <div>
+            <p class="muted"><a href="/admin/church/notification-templates">&larr; Back to templates</a></p>
+            <h1 class="admin-dashboard__title"><%= template.label %></h1>
+            <p class="admin-dashboard__subtitle muted"><%= template.description %></p>
+          </div>
+        </header>
+
+        <% if (typeof notice !== 'undefined' && notice) { %>
+          <div class="flash flash--info" role="status"><%= notice %></div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <p class="muted">Allowed merge fields: <%= (template.mergeFields || []).map(function (f) { return '{{' + f + '}}'; }).join(', ') %>. Passwords and tokens are never allowed.</p>
+          <p class="muted">Source: <%= template.source === 'platform_default' ? 'Platform default' : 'Catalogue default' %></p>
+          <form method="post" action="/admin/church/notification-templates/<%= encodeURIComponent(template.key) %>" class="admin-form">
+            <div class="input-field">
+              <label class="input-field__label" for="subject_template">Subject</label>
+              <input id="subject_template" class="input-field__control" name="subject_template" type="text" maxlength="200" required value="<%= form.subject_template || '' %>"/>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="body_text_template">Plain-text body</label>
+              <textarea id="body_text_template" class="input-field__control" name="body_text_template" rows="10" required><%= form.body_text_template || '' %></textarea>
+            </div>
+            <div class="input-field">
+              <label class="input-field__label" for="body_html_template">Safe HTML body (optional)</label>
+              <textarea id="body_html_template" class="input-field__control" name="body_html_template" rows="10" placeholder="Optional: p, br, strong, em, a[https] only"><%= form.body_html_template || '' %></textarea>
+            </div>
+            <div class="admin-form__actions" style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Save platform default' }) %>
+              <button class="btn" type="submit" formaction="/admin/church/notification-templates/<%= encodeURIComponent(template.key) %>/preview">Preview</button>
+            </div>
+          </form>
+          <form method="post" action="/admin/church/notification-templates/<%= encodeURIComponent(template.key) %>/test-send" style="margin-top:0.75rem;">
+            <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Record test delivery to my admin email' }) %>
+          </form>
+          <% if (template.source === 'platform_default') { %>
+          <form method="post" action="/admin/church/notification-templates/<%= encodeURIComponent(template.key) %>/restore" style="margin-top:0.5rem;">
+            <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Restore catalogue default' }) %>
+          </form>
+          <% } %>
+        </section>
+
+        <% if (preview) { %>
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <h2 class="admin-dashboard__title" style="font-size:1.1rem;">Preview</h2>
+          <p><strong>Subject:</strong> <%= preview.subject %></p>
+          <p><strong>Plain text</strong></p>
+          <pre style="white-space:pre-wrap;"><%= preview.bodyText %></pre>
+          <p><strong>Safe HTML</strong></p>
+          <div class="card" style="padding:0.75rem;"><%- preview.bodyHtml || '—' %></div>
+        </section>
+        <% } %>
+<%- include('../../partials/platform_admin_shell_end') %>

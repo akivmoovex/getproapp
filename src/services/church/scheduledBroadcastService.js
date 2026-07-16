@@ -62,6 +62,12 @@ async function assertCanScheduleExternalBroadcast(pool, organizationId) {
     err.code = "FOUNDATION_SCHEDULE_FORBIDDEN";
     throw err;
   }
+  const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+  await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
+    organizationId,
+    flagKey: "broadcasts_scheduled",
+    plan,
+  });
   return plan;
 }
 
@@ -861,6 +867,22 @@ async function processDueScheduledBroadcasts(pool, opts = {}) {
   );
   const processed = [];
   for (const row of due.rows) {
+    try {
+      const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+      await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
+        organizationId: row.organization_id,
+        flagKey: "broadcasts_scheduled",
+        at,
+      });
+    } catch (err) {
+      processed.push({
+        broadcastId: row.id,
+        organizationId: row.organization_id,
+        outcome: "skipped_pilot_flag",
+        error: err && err.message,
+      });
+      continue;
+    }
     const result = await processBroadcastDelivery(pool, row.id, row.organization_id, { at });
     processed.push({
       broadcastId: row.id,
@@ -883,14 +905,34 @@ async function listScheduledBroadcasts(pool, organizationId) {
   return r.rows;
 }
 
-async function listDeliveries(pool, broadcastId, organizationId) {
-  const r = await pool.query(
-    `SELECT * FROM public.church_hq_broadcast_deliveries
-     WHERE broadcast_id = $1 AND organization_id = $2
-     ORDER BY id ASC`,
-    [broadcastId, organizationId]
-  );
-  return r.rows;
+async function listDeliveries(pool, broadcastId, organizationId, opts = {}) {
+  const page = Math.max(Number(opts.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
+  const offset = (page - 1) * limit;
+  const [rows, countR] = await Promise.all([
+    pool.query(
+      `SELECT * FROM public.church_hq_broadcast_deliveries
+       WHERE broadcast_id = $1 AND organization_id = $2
+       ORDER BY id ASC
+       LIMIT $3 OFFSET $4`,
+      [broadcastId, organizationId, limit, offset]
+    ),
+    pool.query(
+      `SELECT COUNT(*)::int AS n FROM public.church_hq_broadcast_deliveries
+       WHERE broadcast_id = $1 AND organization_id = $2`,
+      [broadcastId, organizationId]
+    ),
+  ]);
+  const total = Number(countR.rows[0] && countR.rows[0].n) || 0;
+  const totalPages = Math.max(Math.ceil(total / limit), 1);
+  return {
+    rows: rows.rows,
+    page,
+    limit,
+    total,
+    totalPages,
+    hasMore: page < totalPages,
+  };
 }
 
 module.exports = {

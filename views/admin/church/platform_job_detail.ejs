@@ -1,0 +1,49 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Job detail', activeNav: activeNav || 'church_platform_jobs', pageTitle: 'Job detail' }) %>
+        <header class="admin-dashboard__header">
+          <div>
+            <a class="muted" href="/admin/church/jobs">&larr; Back to background jobs</a>
+            <h1 class="admin-dashboard__title"><%= job.jobTypeLabel %></h1>
+            <p class="admin-dashboard__subtitle muted"><%= job.ref %></p>
+          </div>
+        </header>
+
+        <% if (typeof notice !== 'undefined' && notice) { %>
+          <div class="flash flash--info" role="status"><%= notice %></div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1rem;">
+          <dl class="admin-dl">
+            <div><dt>Job type</dt><dd><%= job.jobTypeLabel %></dd></div>
+            <div><dt>Tenant</dt><dd><%= job.organizationName %> (<%= job.organizationId || '—' %>)</dd></div>
+            <div><dt>Branch</dt><dd><%= job.branchName || '—' %></dd></div>
+            <div><dt>Scheduled time</dt><dd><%= job.scheduledAt ? new Date(job.scheduledAt).toLocaleString('en-GB') : '—' %></dd></div>
+            <div><dt>Start time</dt><dd><%= job.startedAt ? new Date(job.startedAt).toLocaleString('en-GB') : '—' %></dd></div>
+            <div><dt>Finish time</dt><dd><%= job.finishedAt ? new Date(job.finishedAt).toLocaleString('en-GB') : '—' %></dd></div>
+            <div><dt>Status</dt><dd><%= job.status %></dd></div>
+            <div><dt>Attempt count</dt><dd><%= job.attemptCount != null ? job.attemptCount : '—' %></dd></div>
+            <div><dt>Error summary</dt><dd style="overflow-wrap:anywhere;"><%= job.errorSummary || '—' %></dd></div>
+            <div><dt>Idempotency key</dt><dd style="overflow-wrap:anywhere;"><%= job.idempotencyKey || '—' %></dd></div>
+            <div><dt>Next retry time</dt><dd><%= job.nextRetryAt ? new Date(job.nextRetryAt).toLocaleString('en-GB') : '—' %></dd></div>
+            <div><dt>Source</dt><dd><%= job.sourceNote || '—' %></dd></div>
+            <div><dt>Safe detail</dt><dd><pre style="white-space:pre-wrap;overflow-wrap:anywhere;margin:0;"><%= JSON.stringify(job.detailSafe || {}, null, 2) %></pre></dd></div>
+          </dl>
+
+          <div class="admin-toolbar" style="margin-top:1rem;">
+            <% if (job.canRetry) { %>
+            <form method="post" action="/admin/church/jobs/<%= encodeURIComponent(job.jobType) %>/<%= encodeURIComponent(String(job.ref).split(':').slice(1).join(':')) %>/retry" style="display:inline;">
+              <%- include('partials/csrf_field') %>
+              <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Retry failed job' }) %>
+            </form>
+            <% } %>
+            <% if (job.canCancel) { %>
+            <form method="post" action="/admin/church/jobs/<%= encodeURIComponent(job.jobType) %>/<%= encodeURIComponent(String(job.ref).split(':').slice(1).join(':')) %>/cancel" style="display:inline;margin-left:0.5rem;">
+              <%- include('partials/csrf_field') %>
+              <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Cancel pending job' }) %>
+            </form>
+            <% } %>
+          </div>
+        </section>
+<%- include('../../partials/platform_admin_shell_end') %>

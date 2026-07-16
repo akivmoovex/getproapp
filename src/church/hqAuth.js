@@ -48,6 +48,13 @@ function clearChurchHqAdminSession(req) {
 async function requireChurchHqAdminSession(req, res, next) {
   const admin = getChurchHqAdminSession(req);
   if (!admin) {
+    const { wantsJson, renderChurchFailureState } = require("./churchFailureStates");
+    if (wantsJson(req)) {
+      return renderChurchFailureState(req, res, "unauthenticated", {
+        shell: "hq",
+        forceJson: true,
+      });
+    }
     return res.redirect("/hq/login");
   }
   const org = req.churchContext && req.churchContext.organization;

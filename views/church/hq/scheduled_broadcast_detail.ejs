@@ -68,14 +68,18 @@
         <% if (!(deliveries || []).length) { %>
         <p class="church-branch-empty">No deliveries recorded yet.</p>
         <% } else { %>
+        <p class="church-branch-panel__hint">
+          Showing page <%= deliveryPagination.page %> of <%= deliveryPagination.totalPages %>
+          (<%= deliveryPagination.total %> total).
+        </p>
         <div class="church-branch-table-wrap">
           <table class="church-branch-table">
             <thead>
               <tr>
-                <th>Channel</th>
-                <th>Recipient</th>
-                <th>Status</th>
-                <th>Email</th>
+                <th scope="col">Channel</th>
+                <th scope="col">Recipient</th>
+                <th scope="col">Status</th>
+                <th scope="col">Email</th>
               </tr>
             </thead>
             <tbody>
@@ -90,6 +94,16 @@
             </tbody>
           </table>
         </div>
+        <% if (deliveryPagination && (deliveryPagination.prevUrl || deliveryPagination.nextUrl)) { %>
+        <nav class="church-branch-actions" aria-label="Delivery results pages" data-delivery-pagination>
+          <% if (deliveryPagination.prevUrl) { %>
+          <a class="church-btn church-btn--ghost church-btn--sm" href="<%= deliveryPagination.prevUrl %>">Previous</a>
+          <% } %>
+          <% if (deliveryPagination.nextUrl) { %>
+          <a class="church-btn church-btn--ghost church-btn--sm" href="<%= deliveryPagination.nextUrl %>">Next</a>
+          <% } %>
+        </nav>
+        <% } %>
         <% } %>
       </section>
 <%- include('../partials/hq_shell_end') %>

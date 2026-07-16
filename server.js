@@ -201,6 +201,9 @@ app.use((req, res, next) => {
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+const { requestCorrelationId } = require("./src/middleware/requestCorrelationId");
+app.use(requestCorrelationId);
+
 const publicDir = path.join(__dirname, "public");
 const viteBuildDir = path.join(publicDir, "build");
 // Split cache: Vite emits content-hashed files under /build/* (safe for immutable + long max-age).

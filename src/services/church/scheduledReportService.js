@@ -44,6 +44,12 @@ async function assertCanScheduleReports(pool, organizationId) {
     err.code = "FOUNDATION_SCHEDULE_FORBIDDEN";
     throw err;
   }
+  const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+  await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
+    organizationId,
+    flagKey: "reports_scheduled",
+    plan,
+  });
   return plan;
 }
 
@@ -154,14 +160,16 @@ function validateScheduleInput(body, opts = {}) {
   };
 }
 
-async function listSchedulesForBranch(db, organizationId, branchId) {
+async function listSchedulesForBranch(db, organizationId, branchId, opts = {}) {
+  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
   const r = await db.query(
     `SELECT s.*,
             (SELECT COUNT(*)::int FROM public.church_scheduled_report_recipients r WHERE r.schedule_id = s.id) AS recipient_count
      FROM public.church_scheduled_reports s
      WHERE s.organization_id = $1 AND s.branch_id = $2 AND s.status <> 'cancelled'
-     ORDER BY s.updated_at DESC, s.id DESC`,
-    [organizationId, branchId]
+     ORDER BY s.updated_at DESC, s.id DESC
+     LIMIT $3`,
+    [organizationId, branchId, limit]
   );
   return r.rows;
 }
@@ -776,6 +784,22 @@ async function processDueScheduledReports(pool, opts = {}) {
 
   const processed = [];
   for (const schedule of due.rows) {
+    try {
+      const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+      await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
+        organizationId: schedule.organization_id,
+        flagKey: "reports_scheduled",
+        at,
+      });
+    } catch (err) {
+      processed.push({
+        scheduleId: schedule.id,
+        organizationId: schedule.organization_id,
+        outcome: "skipped_pilot_flag",
+        error: err && err.message,
+      });
+      continue;
+    }
     const result = await executeScheduleRun(pool, schedule, {
       at,
       scheduledFor: schedule.next_run_at,
@@ -822,6 +846,27 @@ async function listDeliveriesForRun(db, runId, organizationId) {
   return r.rows;
 }
 
+/** Batch-load deliveries for many runs (avoids N+1 on schedule detail). */
+async function listDeliveriesForRuns(db, runIds, organizationId) {
+  const ids = (runIds || [])
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id) && id > 0);
+  const byRun = new Map();
+  if (!ids.length) return byRun;
+  const r = await db.query(
+    `SELECT * FROM public.church_scheduled_report_deliveries
+     WHERE organization_id = $1 AND run_id = ANY($2::bigint[])
+     ORDER BY run_id ASC, id ASC`,
+    [organizationId, ids]
+  );
+  for (const row of r.rows) {
+    const key = Number(row.run_id);
+    if (!byRun.has(key)) byRun.set(key, []);
+    byRun.get(key).push(row);
+  }
+  return byRun;
+}
+
 async function findRunForOrganization(db, runId, organizationId) {
   const r = await db.query(
     `SELECT * FROM public.church_scheduled_report_runs
@@ -847,6 +892,7 @@ module.exports = {
   listEligibleRecipients,
   listRunsForSchedule,
   listDeliveriesForRun,
+  listDeliveriesForRuns,
   findRunForOrganization,
   createSchedule,
   updateScheduleStatus,

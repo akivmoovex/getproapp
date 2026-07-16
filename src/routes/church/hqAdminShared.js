@@ -32,6 +32,7 @@ function inferHqActiveNav(req) {
   if (p.startsWith("/hq/analytics")) return "analytics";
   if (p.startsWith("/hq/integrations")) return "integrations";
   if (p.startsWith("/hq/network")) return "network";
+  if (p.startsWith("/hq/notification-templates")) return "notification-templates";
   if (p.startsWith("/hq/account")) return "account";
   if (p.startsWith("/hq/dashboard") || p === "/hq" || p === "/hq/") return "dashboard";
   return "";
@@ -44,6 +45,13 @@ function hqAdminLocals(req, extra) {
   const csrf = req.churchHqAdmin
     ? churchSessionCsrfLocals(req)
     : { churchCsrfToken: "", churchCsrfField: "_csrf" };
+  // Prefer request-scoped plan (one DB load) over re-deriving from org.plan_code alone.
+  const packageLocals = req.churchPackagePlan
+    ? {
+        packagePlan: req.churchPackagePlan,
+        packageFeatureNav: listNavFeatureGates(req.churchPackagePlan, "hq"),
+      }
+    : packageFeatureLocalsFromOrg(org, "hq");
   return {
     churchName: org.name,
     organizationName: org.name,
@@ -54,7 +62,7 @@ function hqAdminLocals(req, extra) {
     statusBanner: getHqStatusBanner(req.churchContext),
     activeNav: extraObj.activeNav != null ? extraObj.activeNav : inferHqActiveNav(req),
     ...csrf,
-    ...packageFeatureLocalsFromOrg(org, "hq"),
+    ...packageLocals,
     ...extraObj,
   };
 }

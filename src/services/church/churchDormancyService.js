@@ -335,6 +335,21 @@ async function processFoundationInactivityJobs(pool, opts = {}) {
 
   const processed = [];
   for (const org of candidates.rows) {
+    try {
+      const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+      await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
+        organizationId: org.id,
+        flagKey: "dormancy_automation",
+        at,
+      });
+    } catch (err) {
+      processed.push({
+        organizationId: org.id,
+        outcome: "skipped_pilot_flag",
+        error: err && err.message,
+      });
+      continue;
+    }
     const growth = await isGrowthOrganisation(pool, org.id, at);
     if (growth.isGrowth) {
       processed.push({ organizationId: org.id, outcome: "skipped_growth", reason: growth.reason });

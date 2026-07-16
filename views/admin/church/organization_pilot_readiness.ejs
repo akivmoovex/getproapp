@@ -1,0 +1,126 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Pilot readiness', activeNav: activeNav || 'church_platform_orgs', pageTitle: 'Pilot readiness' }) %>
+<% var r = typeof readiness !== 'undefined' && readiness ? readiness : {}; %>
+<% var org = r.organization || {}; %>
+<% var counts = r.counts || {}; %>
+        <header class="admin-dashboard__header">
+          <div>
+            <p class="muted"><a href="<%= orgDetailUrl %>">&larr; Back to organisation</a></p>
+            <h1 class="admin-dashboard__title">Pilot readiness</h1>
+            <p class="admin-dashboard__subtitle muted">
+              Checklist for <%= org.name || 'organisation' %>. This page never publishes or activates anything. Placeholder and demo content cannot alone mark an item Complete.
+            </p>
+          </div>
+        </header>
+
+        <% if (typeof notice !== 'undefined' && notice) { %>
+          <div class="flash flash--info" role="status"><%= notice %></div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash flash--error" role="alert"><%= error %></div>
+        <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Summary</h2>
+          <dl class="admin-dl">
+            <dt>Organisation</dt><dd><%= org.name %> (<code><%= org.slug %></code>)</dd>
+            <dt>Complete</dt><dd><%= counts.complete || 0 %> / <%= counts.total || 0 %></dd>
+            <dt>Incomplete</dt><dd><%= counts.incomplete || 0 %></dd>
+            <dt>Needs Review</dt><dd><%= counts.needs_review || 0 %></dd>
+            <dt>Active branches</dt><dd><%= r.activeBranchCount != null ? r.activeBranchCount : '—' %></dd>
+            <% if (r.demoLike) { %>
+            <dt>Demo / placeholder org</dt><dd>Yes — Complete requires real data or explicit review marks</dd>
+            <% } %>
+            <% if (r.approval) { %>
+            <dt>Pilot approved</dt>
+            <dd>
+              <%= r.approval.approvedAt %>
+              · <%= r.approval.approvedByLabel || 'Platform administrator' %>
+              <% if (r.approval.note) { %><div class="muted"><%= r.approval.note %></div><% } %>
+            </dd>
+            <% } else { %>
+            <dt>Pilot approved</dt><dd>Not yet</dd>
+            <% } %>
+          </dl>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Checklist</h2>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Item</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Responsible</th>
+                  <th scope="col">Detail</th>
+                  <th scope="col">Link</th>
+                  <th scope="col">Notes / review</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (r.items || []).forEach(function (item) { %>
+                <tr>
+                  <td>
+                    <strong id="pilot_item_<%= item.key %>"><%= item.label %></strong>
+                    <div class="muted"><%= item.description %></div>
+                    <% if (item.placeholderDetected) { %><div class="muted">Placeholder/demo signal detected</div><% } %>
+                  </td>
+                  <td>
+                    <% if (item.status === 'complete') { %>
+                      <span class="flash flash--success" style="display:inline-block;padding:0.15rem 0.5rem;">Complete</span>
+                    <% } else if (item.status === 'incomplete') { %>
+                      <span class="flash flash--error" style="display:inline-block;padding:0.15rem 0.5rem;">Incomplete</span>
+                    <% } else { %>
+                      <span class="flash flash--info" style="display:inline-block;padding:0.15rem 0.5rem;">Needs Review</span>
+                    <% } %>
+                    <% if (item.manualStatus && item.manualStatus !== item.autoStatus) { %>
+                      <div class="muted">Auto: <%= item.autoStatus %></div>
+                    <% } %>
+                  </td>
+                  <td><%= item.responsibleRoleLabel %></td>
+                  <td class="muted"><%= item.detail || '—' %></td>
+                  <td>
+                    <% if (item.link) { %>
+                      <a href="<%= item.link %>" aria-label="Open <%= item.label %>"><%= String(item.link).indexOf('http') === 0 ? 'Open' : 'Open screen' %></a>
+                    <% } else { %>—<% } %>
+                  </td>
+                  <td>
+                    <form method="post" action="<%= basePath %>/items/<%= encodeURIComponent(item.key) %>" class="admin-form" aria-labelledby="pilot_item_<%= item.key %>">
+                      <%- include('partials/csrf_field') %>
+                      <label class="input-field__label" for="note_<%= item.key %>">Note for <%= item.label %></label>
+                      <textarea id="note_<%= item.key %>" name="note" rows="2" maxlength="4000" class="input-field__control"><%= item.note || '' %></textarea>
+                      <% if (item.evaluation === 'manual' || item.autoStatus === 'needs_review') { %>
+                      <label class="input-field__label" for="manual_<%= item.key %>">Review mark for <%= item.label %></label>
+                      <select id="manual_<%= item.key %>" name="manual_status" class="input-field__control">
+                        <option value="">Keep auto status</option>
+                        <option value="complete" <%= item.manualStatus === 'complete' ? 'selected' : '' %>>Mark Complete</option>
+                        <option value="needs_review" <%= item.manualStatus === 'needs_review' ? 'selected' : '' %>>Needs Review</option>
+                        <option value="incomplete" <%= item.manualStatus === 'incomplete' ? 'selected' : '' %>>Incomplete</option>
+                      </select>
+                      <% } %>
+                      <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Save', ariaLabel: 'Save notes for ' + item.label }) %>
+                    </form>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Final pilot approval</h2>
+          <p class="muted">Records the approver and timestamp. Does not publish sites, activate branches, or change package entitlements. Requires every item to be Complete.</p>
+          <% if (r.readyForApproval) { %>
+          <form method="post" action="<%= basePath %>/approve" class="admin-form">
+            <div class="input-field">
+              <label class="input-field__label" for="approval_note">Approval note (optional)</label>
+              <textarea id="approval_note" name="note" rows="3" maxlength="4000" class="input-field__control" placeholder="e.g. Reviewed with church lead on site visit"></textarea>
+            </div>
+            <%- include('../../partials/components/button', { variant: 'primary', type: 'submit', label: 'Record pilot approval' }) %>
+          </form>
+          <% } else { %>
+          <p class="muted">Resolve Incomplete and Needs Review items (using review marks where appropriate) before recording approval.</p>
+          <% } %>
+        </section>
+<%- include('../../partials/platform_admin_shell_end') %>

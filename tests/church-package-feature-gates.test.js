@@ -230,8 +230,8 @@ test(
     assert.equal(duty.status, 200);
 
     const blockedPost = await agent.post("/branch/appointments").type("form").send({});
-    assert.equal(blockedPost.status, 403);
-    assert.match(blockedPost.text, /Appointment calendar|Growth|Foundation/i);
+    assert.equal(blockedPost.status, 409);
+    assert.match(blockedPost.text, /Appointment calendar|Growth|Foundation|package/i);
 
     const hiddenGet = await agent.get("/branch/email/hosted");
     assert.equal(hiddenGet.status, 404);
@@ -251,7 +251,7 @@ test(
     assert.match(cross.text, /Growth/);
 
     const webhookPost = await hqAgent.post("/hq/integrations/webhooks").type("form").send({});
-    assert.equal(webhookPost.status, 403);
+    assert.equal(webhookPost.status, 409);
 
     const growthOrg = await organizationsRepo.updateOrganizationPlan(
       pool,

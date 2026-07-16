@@ -3,16 +3,47 @@
 const websiteContentRepo = require("../../db/pg/church/websiteContentRepo");
 const eventsRepo = require("../../db/pg/church/eventsRepo");
 const sermonsRepo = require("../../db/pg/church/sermonsRepo");
+const { allowsFabricatedPublicContent, getDataEnvironment } = require("../../church/orgDataEnvironment");
 
 /**
- * Seed published (or draft) website content for a newly provisioned branch.
- * @param {import("pg").Pool | import("pg").PoolClient} db
- * @param {object} org
- * @param {object} branch
- * @param {{ publish?: boolean }} opts
+ * Minimal shell content for production/pilot — no fabricated mission, vision, or demo copy.
  */
-async function seedInitialWebsiteContentForBranch(db, org, branch, opts = {}) {
-  const publish = opts.publish !== false;
+function buildMinimalWebsiteShell(org, branch) {
+  const churchName = branch.name || org.name || "Our Church";
+  const address = branch.location_text || branch.city || org.city || "";
+  return {
+    organization_id: org.id,
+    homepage_hero_title: churchName,
+    homepage_hero_subtitle: "",
+    welcome_message: branch.welcome_message || "",
+    service_times: branch.service_times || "",
+    location_text: branch.location_text || address,
+    about_title: `About ${churchName}`,
+    about_body: "",
+    mission_text: "",
+    vision_text: "",
+    values_text: "",
+    leadership_json: { pastor: { name: branch.pastor_name || "", title: "Senior Pastor", bio: "" }, elders: [] },
+    ministries_json: [],
+    contact_phone: branch.contact_phone || org.primary_contact_phone || null,
+    contact_email: branch.contact_email || org.primary_contact_email || null,
+    office_hours: "",
+    address: address || null,
+    map_embed_placeholder: "",
+    giving_bank_details: "",
+    giving_mobile_money: "",
+    giving_categories: "",
+    giving_instructions: "",
+    giving_qr_placeholder: "",
+    footer_message: "",
+    updated_by_admin_id: null,
+  };
+}
+
+/**
+ * Starter template used only for demo/test environments (never production/pilot).
+ */
+function buildFabricatedStarterContent(org, branch) {
   const churchName = branch.name || org.name || "Our Church";
   const pastorName = branch.pastor_name || "Pastor";
   const address = branch.location_text || branch.city || org.city || "";
@@ -25,7 +56,7 @@ async function seedInitialWebsiteContentForBranch(db, org, branch, opts = {}) {
     elders: [],
   };
 
-  const content = {
+  return {
     organization_id: org.id,
     homepage_hero_title: churchName,
     homepage_hero_subtitle: "Welcome home",
@@ -56,6 +87,23 @@ async function seedInitialWebsiteContentForBranch(db, org, branch, opts = {}) {
     footer_message: "Member registration and login are available on your branch church site.",
     updated_by_admin_id: null,
   };
+}
+
+/**
+ * Seed website content for a newly provisioned branch.
+ * Production/pilot get an empty shell only — no fabricated public content.
+ * Demo/test may receive starter templates.
+ *
+ * @param {import("pg").Pool | import("pg").PoolClient} db
+ * @param {object} org
+ * @param {object} branch
+ * @param {{ publish?: boolean }} opts
+ */
+async function seedInitialWebsiteContentForBranch(db, org, branch, opts = {}) {
+  const publish = opts.publish !== false;
+  const content = allowsFabricatedPublicContent(org)
+    ? buildFabricatedStarterContent(org, branch)
+    : buildMinimalWebsiteShell(org, branch);
 
   await websiteContentRepo.upsertWebsiteDraftForBranch(db, branch.id, content);
   if (publish) {
@@ -65,12 +113,13 @@ async function seedInitialWebsiteContentForBranch(db, org, branch, opts = {}) {
 }
 
 /**
- * Optional draft starter rows for branch admins to publish later. Failures are swallowed.
- * @param {import("pg").Pool | import("pg").PoolClient} db
- * @param {object} org
- * @param {object} branch
+ * Optional draft starter rows — only for demo/test environments.
+ * Never fabricates public content for production or pilot churches.
  */
 async function seedOptionalDraftStarterContent(db, org, branch) {
+  if (!allowsFabricatedPublicContent(org)) {
+    return { skipped: true, reason: "fabricated_content_not_allowed", dataEnvironment: getDataEnvironment(org) };
+  }
   try {
     await eventsRepo.createEventForBranch(db, {
       organization_id: org.id,
@@ -105,6 +154,7 @@ async function seedOptionalDraftStarterContent(db, org, branch) {
   } catch {
     /* optional starter content */
   }
+  return { skipped: false };
 }
 
 /**
@@ -127,4 +177,6 @@ module.exports = {
   seedInitialWebsiteContentForBranch,
   seedOptionalDraftStarterContent,
   onboardNewBranchContent,
+  buildMinimalWebsiteShell,
+  buildFabricatedStarterContent,
 };

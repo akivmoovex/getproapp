@@ -148,23 +148,32 @@ function clearOperationalSessions(req) {
   clearAllChurchPortalSessions(req);
 }
 
-function renderChurchUnavailable(req, res) {
+function renderChurchUnavailable(req, res, opts = {}) {
+  const { unavailableKindFromStatus, renderChurchFailureState } = require("./churchFailureStates");
   const branch = req.churchContext && req.churchContext.branch;
   const org = req.churchContext && req.churchContext.organization;
-  const churchName = (branch && branch.name) || (org && org.name) || "Church";
-  return res.status(503).render("church/public/unavailable", {
-    churchName,
-    pageTitle: churchName,
+  const orgStatus = opts.orgStatus || (org && org.status) || null;
+  const branchStatus = opts.branchStatus || (branch && branch.status) || null;
+  const kind = opts.kind || unavailableKindFromStatus(orgStatus, branchStatus);
+
+  return renderChurchFailureState(req, res, kind, {
+    churchName: (branch && branch.name) || (org && org.name) || "Church",
+    shell: "public",
   });
 }
 
 function renderChurchNotFound(req, res) {
+  const { renderChurchFailureState } = require("./churchFailureStates");
   const ctx = req.churchContext || {};
   const requestedSlug = ctx.hostSlug || ctx.orgSlug || null;
-  return res.status(404).render("church/public/not_found", {
-    pageTitle: "Church not found",
+  return renderChurchFailureState(req, res, "not_found", {
+    title: "Church not found",
+    lead: requestedSlug
+      ? `We could not find a BlessBoard church site for ${requestedSlug}. Check the spelling of the church subdomain or visit the BlessBoard home page.`
+      : "We could not find a BlessBoard church site at this address. Check the spelling of the church subdomain or visit the BlessBoard home page.",
     requestedSlug,
     requestedHost: ctx.host || normalizeHostFromRequest(req),
+    shell: "public",
   });
 }
 
@@ -262,17 +271,20 @@ function churchOperationalAccessGate(req, res, next) {
         if (hqPortal || branchAdminPortal) {
           return next();
         }
-        return renderChurchUnavailable(req, res);
+        return renderChurchUnavailable(req, res, { kind: "organization_dormant" });
       }
 
       if (!status.orgActive) {
         clearAllChurchPortalSessions(req);
-        return renderChurchUnavailable(req, res);
+        return renderChurchUnavailable(req, res, { kind: "organization_suspended" });
       }
 
       if (!status.branchActive && !hqPortal) {
         clearAllChurchPortalSessions(req);
-        return renderChurchUnavailable(req, res);
+        const branchStatus = status.branch && status.branch.status;
+        return renderChurchUnavailable(req, res, {
+          kind: branchStatus === "suspended" ? "branch_suspended" : "branch_inactive",
+        });
       }
 
       return next();

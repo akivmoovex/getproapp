@@ -1,5 +1,6 @@
 <%- include('../partials/branch_admin_shell_start') %>
-      <% var batch = diagnostic.batch; var impact = diagnostic.impact; var rows = diagnostic.rows || []; %>
+      <% var batch = diagnostic.batch; var impact = diagnostic.impact; var rows = diagnostic.rows || []; var pagination = diagnostic.pagination; %>
+      <% var commit = (batch.summary_json && batch.summary_json.commit) || {}; %>
       <header class="church-branch-page-hero">
         <div>
           <h1 class="church-branch-page-hero__title">Import summary</h1>
@@ -13,7 +14,11 @@
         <h2 class="church-branch-panel__title">Results</h2>
         <dl class="church-branch-dl">
           <div><dt>Rows</dt><dd><%= batch.row_count %></dd></div>
-          <div><dt>Commit summary</dt><dd><pre style="white-space:pre-wrap;margin:0;"><%= JSON.stringify((batch.summary_json && batch.summary_json.commit) || {}, null, 2) %></pre></dd></div>
+          <div><dt>Created</dt><dd><%= commit.created != null ? commit.created : '—' %></dd></div>
+          <div><dt>Verified</dt><dd><%= commit.verified != null ? commit.verified : '—' %></dd></div>
+          <div><dt>As visitor / pending</dt><dd><%= commit.as_visitor_or_pending != null ? commit.as_visitor_or_pending : '—' %></dd></div>
+          <div><dt>Skipped</dt><dd><%= commit.skipped != null ? commit.skipped : '—' %></dd></div>
+          <div><dt>Failed</dt><dd><%= commit.failed != null ? commit.failed : '—' %></dd></div>
           <div><dt>Current active members (org)</dt><dd><%= impact.currentActiveMembers %></dd></div>
           <div><dt>Admin accounts</dt><dd><%= impact.administratorImpact.adminsDisplay %></dd></div>
         </dl>
@@ -22,6 +27,12 @@
 
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Row outcomes</h2>
+        <% if (pagination && pagination.totalPages > 1) { %>
+        <p class="church-branch-panel__hint">
+          Rows <%= ((pagination.page - 1) * pagination.limit) + 1 %>–<%= Math.min(pagination.page * pagination.limit, pagination.total) %>
+          of <%= pagination.total %>.
+        </p>
+        <% } %>
         <div class="church-branch-table-wrap">
           <table class="church-branch-table">
             <thead><tr><th>Row</th><th>Name</th><th>Disposition</th><th>Outcome</th><th>Member id</th></tr></thead>
@@ -42,19 +53,25 @@
             </tbody>
           </table>
         </div>
+        <% if (pagination && pagination.totalPages > 1) { %>
+        <nav class="church-branch-actions" aria-label="Import summary pages" data-import-pagination>
+          <% if (pagination.page > 1) { %>
+          <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/members/import/<%= batch.id %>/summary?page=<%= pagination.page - 1 %>">Previous</a>
+          <% } %>
+          <% if (pagination.page < pagination.totalPages) { %>
+          <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/members/import/<%= batch.id %>/summary?page=<%= pagination.page + 1 %>">Next</a>
+          <% } %>
+        </nav>
+        <% } %>
       </section>
 
       <% if (batch.status === 'committed') { %>
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Reverse import</h2>
         <p class="church-branch-panel__hint">Suspends people created by this batch. Does not delete duplicates or other records.</p>
-        <form class="church-form" method="post" action="/branch/members/import/<%= batch.id %>/reverse">
+        <form method="post" action="/branch/members/import/<%= batch.id %>/reverse" class="church-form">
           <%- include('../partials/csrf_field') %>
-          <div class="church-field church-field--full">
-            <label class="church-label" for="reason">Reason (optional)</label>
-            <textarea class="church-input" id="reason" name="reason" rows="2" maxlength="2000"></textarea>
-          </div>
-          <button class="church-btn church-btn--outline" type="submit">Reverse batch</button>
+          <button class="church-btn church-btn--ghost" type="submit">Reverse this import</button>
         </form>
       </section>
       <% } %>

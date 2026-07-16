@@ -5,6 +5,11 @@
             <h1 class="admin-dashboard__title">Platform audit log</h1>
             <p class="admin-dashboard__subtitle muted">In-app church activity across organizations. Passwords, tokens, and secrets are not stored in these events.</p>
           </div>
+          <% if (typeof canExport !== 'undefined' && canExport && exportUrl) { %>
+          <div class="admin-toolbar">
+            <%- include('../../partials/components/button', { variant: 'default', href: exportUrl, label: 'Export CSV' }) %>
+          </div>
+          <% } %>
         </header>
 
         <form method="get" action="/admin/church/audit" class="admin-filter-form card card--mb-xl" style="padding:1rem;">
@@ -30,6 +35,10 @@
             </select>
           </div>
           <div class="input-field">
+            <label class="input-field__label" for="action">Action type</label>
+            <input id="action" class="input-field__control" name="action" type="text" value="<%= f.action || '' %>" placeholder="Exact action"/>
+          </div>
+          <div class="input-field">
             <label class="input-field__label" for="actor_type">Actor type</label>
             <select id="actor_type" class="input-field__control" name="actor_type">
               <option value="">All</option>
@@ -37,6 +46,10 @@
               <option value="<%= t %>" <%= f.actorType === t ? 'selected' : '' %>><%= actorTypeLabel(t) %></option>
               <% }); %>
             </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="actor_id">User (actor ID)</label>
+            <input id="actor_id" class="input-field__control" name="actor_id" type="number" min="1" value="<%= f.actorId || '' %>"/>
           </div>
           <div class="input-field">
             <label class="input-field__label" for="date_from">From</label>
@@ -59,12 +72,16 @@
             <table class="table">
               <thead>
                 <tr>
-                  <th>When</th>
+                  <th>Timestamp</th>
                   <th>Organization</th>
-                  <th>Actor</th>
+                  <th>Branch</th>
+                  <th>Acting user</th>
                   <th>Action</th>
-                  <th>Entity</th>
-                  <th>Summary</th>
+                  <th>Entity type</th>
+                  <th>Entity ID</th>
+                  <th>Package</th>
+                  <th>Reason</th>
+                  <th>Result</th>
                   <th></th>
                 </tr>
               </thead>
@@ -73,10 +90,14 @@
                 <tr>
                   <td><%= new Date(log.created_at).toLocaleString('en-GB') %></td>
                   <td style="overflow-wrap:anywhere;"><%= log.organization_name || '—' %></td>
+                  <td style="overflow-wrap:anywhere;"><%= log.branch_name || '—' %></td>
                   <td><%= actorTypeLabel(log.actor_type) %><br/><span class="muted"><%= actorDisplayFromRow(log) %></span></td>
                   <td><%= actionLabel(log.action) %></td>
-                  <td><%= targetTypeLabel(log.entity_type) %><br/><span class="muted"><%= targetLabelFromRow(log) %></span></td>
-                  <td style="overflow-wrap:anywhere;"><%= auditSummary(log) %></td>
+                  <td><%= targetTypeLabel(log.entity_type) %></td>
+                  <td><span class="muted"><%= entityIdentifierFromRow(log) %></span></td>
+                  <td style="overflow-wrap:anywhere;"><%= packageChangeFromRow(log) %></td>
+                  <td style="overflow-wrap:anywhere;"><%= reasonFromRow(log) %></td>
+                  <td style="overflow-wrap:anywhere;"><%= resultFromRow(log) %></td>
                   <td><%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/audit/' + log.id, label: 'View' }) %></td>
                 </tr>
                 <% }); %>

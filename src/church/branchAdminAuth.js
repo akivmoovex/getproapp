@@ -46,6 +46,13 @@ function clearChurchBranchAdminSession(req) {
 async function requireChurchBranchAdminSession(req, res, next) {
   const admin = getChurchBranchAdminSession(req);
   if (!admin) {
+    const { wantsJson, renderChurchFailureState } = require("./churchFailureStates");
+    if (wantsJson(req)) {
+      return renderChurchFailureState(req, res, "unauthenticated", {
+        shell: "branch",
+        forceJson: true,
+      });
+    }
     return res.redirect("/branch/login");
   }
   const branch = req.churchContext && req.churchContext.branch;

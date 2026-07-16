@@ -10,6 +10,8 @@ const branchesRepo = require("../../db/pg/church/branchesRepo");
 const branchAdminsRepo = require("../../db/pg/church/branchAdminsRepo");
 const {
   resolvePackageFromPlanCode,
+  getPackageDefinition,
+  readEntitlementPath,
 } = require("../../church/blessBoardPackageCatalogue");
 const {
   resolveBranchLifecycle,
@@ -18,8 +20,19 @@ const {
 } = require("../../church/branchLifecycle");
 const { getNumericLimit } = require("./churchEntitlementService");
 
-const FOUNDATION_SECOND_ACTIVE_ERROR =
-  "Foundation includes one active branch. Deactivate the existing branch or upgrade to Growth.";
+function foundationSecondActiveBranchError(limit) {
+  // Preserve exact Foundation (1) wording used by activation UX and tests.
+  if (limit === 1) {
+    return "Foundation includes one active branch. Deactivate the existing branch or upgrade to Growth.";
+  }
+  const n = Number(limit);
+  const noun = n === 1 ? "branch" : "branches";
+  return `Foundation includes ${n} active ${noun}. Deactivate the existing ${noun} or upgrade to Growth.`;
+}
+
+const FOUNDATION_SECOND_ACTIVE_ERROR = foundationSecondActiveBranchError(
+  readEntitlementPath(getPackageDefinition("foundation").entitlements, "branches.max_active")
+);
 
 /**
  * @param {import("pg").Pool | import("pg").PoolClient} db
@@ -271,20 +284,23 @@ async function activateBranch(db, branchId, opts = {}) {
       },
     });
 
-    // Growth: establish billing start date (idempotent if already set).
+    // Growth: establish billing start date (idempotent if already set). Demo/test/pilot never become billable.
     if (quota.packageCode === "growth") {
-      const churchBillingRepo = require("../../db/pg/church/churchBillingRepo");
-      const { resolveBranchBillingDates } = require("./churchBillingInvoiceService");
-      const dates = resolveBranchBillingDates(updated, organization, "activate", {
-        at: opts.at instanceof Date ? opts.at : new Date(),
-      });
-      if (dates.apply) {
-        await churchBillingRepo.setBranchBillingWindow(client, id, {
-          billing_started_at: dates.billing_started_at,
-          billing_ends_at: null,
+      const { isBillableEnvironment } = require("../../church/orgDataEnvironment");
+      if (isBillableEnvironment(organization)) {
+        const churchBillingRepo = require("../../db/pg/church/churchBillingRepo");
+        const { resolveBranchBillingDates } = require("./churchBillingInvoiceService");
+        const dates = resolveBranchBillingDates(updated, organization, "activate", {
+          at: opts.at instanceof Date ? opts.at : new Date(),
         });
-        updated.billing_started_at = dates.billing_started_at;
-        updated.billing_ends_at = null;
+        if (dates.apply) {
+          await churchBillingRepo.setBranchBillingWindow(client, id, {
+            billing_started_at: dates.billing_started_at,
+            billing_ends_at: null,
+          });
+          updated.billing_started_at = dates.billing_started_at;
+          updated.billing_ends_at = null;
+        }
       }
     }
 

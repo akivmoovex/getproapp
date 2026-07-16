@@ -1,0 +1,64 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Releases', activeNav: activeNav || 'church_platform_releases', pageTitle: 'Release register' }) %>
+<% var _listHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/releases' : '/admin/church/releases'; %>
+<% var _newHref = _listHref + '/new'; %>
+<header class="church-platform-page-hero">
+  <div>
+    <h1 class="church-platform-page-hero__title">Release register</h1>
+    <p class="church-platform-page-hero__subtitle">
+      Application versions, migrations, and operator notes. Platform admin only — not public.
+    </p>
+  </div>
+  <div class="church-platform-page-hero__actions">
+    <% if (canEditReleases) { %>
+    <a class="church-btn church-btn--primary" href="<%= _newHref %>">Record release</a>
+    <% } %>
+    <a class="church-btn church-btn--outline" href="/admin/diagnostics">Diagnostics</a>
+  </div>
+</header>
+
+<% if (typeof notice === 'string' && notice) { %>
+<div class="flash flash--success" role="status"><%= notice %></div>
+<% } %>
+<% if (typeof error === 'string' && error) { %>
+<div class="flash flash--error" role="alert"><%= error %></div>
+<% } %>
+
+<section class="card card--mb-xl" style="padding:1.25rem;">
+  <p class="muted" style="margin-top:0;">
+    Test status <strong>passed</strong> is only shown when evidence was stored with the record.
+    Environment variable names are listed without values. Secrets must never be entered here.
+  </p>
+  <% if (!(releases || []).length) { %>
+  <p class="muted">No release records yet.</p>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Version</th>
+          <th scope="col">Release date</th>
+          <th scope="col">Migrations</th>
+          <th scope="col">Tests</th>
+          <th scope="col">Deployed by</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% releases.forEach(function (r) { %>
+        <tr>
+          <td><code><%= r.applicationVersion %></code></td>
+          <td><%= r.releaseDate || '—' %></td>
+          <td><%= (r.migrations || []).length %></td>
+          <td><%= testStatusLabel(r.testStatus) %></td>
+          <td><%= r.deployedByLabel || '—' %></td>
+          <td>
+            <a class="church-btn church-btn--ghost church-btn--sm" href="<%= _listHref %>/<%= r.id %>">View</a>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+<%- include('../../partials/platform_admin_shell_end') %>

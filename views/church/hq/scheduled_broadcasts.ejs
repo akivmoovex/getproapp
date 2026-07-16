@@ -18,11 +18,11 @@
           <table class="church-branch-table">
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Audience</th>
-                <th>Publish at</th>
-                <th></th>
+                <th scope="col">Title</th>
+                <th scope="col">Status</th>
+                <th scope="col">Audience</th>
+                <th scope="col">Publish at</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -33,8 +33,8 @@
                 <td><%= broadcastAudienceLabel(b.audience) %></td>
                 <td><%= b.publish_at ? new Date(b.publish_at).toISOString() : '—' %></td>
                 <td>
-                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/scheduled-broadcasts/<%= b.id %>">View</a>
-                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/broadcasts/<%= b.id %>">Broadcast</a>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/scheduled-broadcasts/<%= b.id %>" aria-label="View scheduled broadcast <%= b.title %>">View</a>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/broadcasts/<%= b.id %>" aria-label="Open broadcast editor for <%= b.title %>">Broadcast</a>
                 </td>
               </tr>
               <% }); %>

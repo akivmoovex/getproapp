@@ -32,6 +32,10 @@ function makeSuffix(prefix) {
 
 test("trial reminder dates are 7, 3 and 1 day before expiry", () => {
   assert.deepEqual([...REMINDER_DAYS_BEFORE], [7, 3, 1]);
+  const {
+    DEFAULT_GROWTH_TRIAL_DURATION_DAYS,
+  } = require("../src/church/blessBoardPackageCatalogue");
+  assert.equal(DEFAULT_DURATION_DAYS, DEFAULT_GROWTH_TRIAL_DURATION_DAYS);
   assert.equal(DEFAULT_DURATION_DAYS, 30);
   assert.equal(CONFIG_RETENTION_DAYS, 90);
   const ends = new Date("2026-08-15T12:00:00.000Z");

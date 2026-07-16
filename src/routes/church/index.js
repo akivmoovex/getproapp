@@ -13,6 +13,7 @@ const registerPlatformPublicFormRoutes = require("./platformPublicForms");
 const { registerPlatformPublicSeoRoutes } = require("../../church/platformPublicSeo");
 const { churchOperationalAccessGate } = require("../../church/churchStatusAccess");
 const { createAttachChurchPublicBranchPath } = require("../../church/attachChurchPublicBranchPath");
+const { churchFailureErrorHandler, renderChurchFailureState } = require("../../church/churchFailureStates");
 
 function requireChurchHost(req, res, next) {
   if (!req.isChurchHost || !req.churchContext) {
@@ -38,6 +39,15 @@ module.exports = function churchRoutes() {
   registerLeaderPortalRoutes(router);
   registerBranchAdminRoutes(router);
   registerHqAdminRoutes(router);
+
+  router.use((req, res, next) => {
+    if (!req.isChurchHost) return next();
+    return renderChurchFailureState(req, res, "not_found", {
+      lead: "We could not find that page on this church site.",
+    });
+  });
+
+  router.use(churchFailureErrorHandler);
 
   return router;
 };

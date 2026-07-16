@@ -180,11 +180,13 @@ async function createOrganization(pool, fields) {
     .trim();
   const name = String(fields.name || "").trim();
   const status = fields.status != null ? String(fields.status) : "active";
+  const { normalizeDataEnvironment } = require("../../../church/orgDataEnvironment");
+  const dataEnvironment = normalizeDataEnvironment(fields.data_environment || fields.dataEnvironment);
   const r = await pool.query(
-    `INSERT INTO public.church_organizations (platform_tenant_id, slug, name, status)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO public.church_organizations (platform_tenant_id, slug, name, status, data_environment)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [fields.platform_tenant_id, slug, name, status]
+    [fields.platform_tenant_id, slug, name, status, dataEnvironment]
   );
   return r.rows[0];
 }

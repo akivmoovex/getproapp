@@ -2,12 +2,12 @@
 
 const { getPgPool } = require("../../db/pg");
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
-const branchesRepo = require("../../db/pg/church/branchesRepo");
 const { requireChurchHqAdminSession } = require("../../church/hqAuth");
 const { requireChurchBranchHost } = require("./auth");
 const {
   AUDIT_ACTOR_TYPES,
   AUDIT_ACTION_GROUPS,
+  AUDIT_EXPORT_MAX_ROWS,
   parseAuditFilters,
   actionLabel,
   actorTypeLabel,
@@ -15,8 +15,16 @@ const {
   actorDisplayFromRow,
   targetLabelFromRow,
   auditSummary,
+  entityIdentifierFromRow,
+  entityDisplayFromRow,
+  packageChangeFromRow,
+  reasonFromRow,
+  resultFromRow,
   formatMetadataForDisplay,
+  buildAuditExportCsv,
 } = require("../../church/auditLogFormatting");
+const branchesRepo = require("../../db/pg/church/branchesRepo");
+const { organisationAllowsAuditExport } = require("../../services/church/auditLogViewerService");
 const { hqAdminLocals } = require("./hqAdminShared");
 
 function auditLocals(req, extra) {
@@ -27,6 +35,11 @@ function auditLocals(req, extra) {
     actorDisplayFromRow,
     targetLabelFromRow,
     auditSummary,
+    entityIdentifierFromRow,
+    entityDisplayFromRow,
+    packageChangeFromRow,
+    reasonFromRow,
+    resultFromRow,
     formatMetadataForDisplay,
     auditActorTypes: AUDIT_ACTOR_TYPES,
     auditActionGroups: AUDIT_ACTION_GROUPS,
@@ -41,6 +54,7 @@ function buildFilterQuery(filters, page) {
   if (filters.action) params.set("action", filters.action);
   if (filters.actionGroup && filters.actionGroup !== "all") params.set("action_group", filters.actionGroup);
   if (filters.actorType) params.set("actor_type", filters.actorType);
+  if (filters.actorId) params.set("actor_id", String(filters.actorId));
   if (filters.targetType) params.set("target_type", filters.targetType);
   if (filters.dateFrom) params.set("date_from", filters.dateFrom);
   if (filters.dateTo) params.set("date_to", filters.dateTo);
@@ -60,6 +74,39 @@ async function validateBranchFilter(pool, organizationId, branchId) {
 }
 
 module.exports = function registerHqAdminAuditRoutes(router) {
+  router.get("/hq/audit/export.csv", requireChurchBranchHost, requireChurchHqAdminSession, async (req, res, next) => {
+    try {
+      const parsed = parseAuditFilters(req.query);
+      if (!parsed.ok) {
+        return res.status(400).type("text").send(parsed.error);
+      }
+      const org = req.churchContext.organization;
+      const pool = getPgPool();
+      const allowed = await organisationAllowsAuditExport(pool, org.id);
+      if (!allowed) {
+        return res.status(403).type("text").send("Audit export requires a Growth reports entitlement.");
+      }
+      const branchCheck = await validateBranchFilter(pool, org.id, parsed.filters.branchId);
+      if (!branchCheck.ok) {
+        return res.status(400).type("text").send(branchCheck.error);
+      }
+      const filters = {
+        ...parsed.filters,
+        branchId: branchCheck.branchId,
+        limit: AUDIT_EXPORT_MAX_ROWS,
+        offset: 0,
+        page: 1,
+      };
+      const logs = await auditLogsRepo.listAuditLogsForOrganization(pool, org.id, filters);
+      const csv = buildAuditExportCsv(logs);
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", 'attachment; filename="audit-export.csv"');
+      return res.status(200).send(csv);
+    } catch (e) {
+      return next(e);
+    }
+  });
+
   router.get("/hq/audit", requireChurchBranchHost, requireChurchHqAdminSession, async (req, res, next) => {
     try {
       const parsed = parseAuditFilters(req.query);
@@ -74,9 +121,10 @@ module.exports = function registerHqAdminAuditRoutes(router) {
       }
       const filters = { ...parsed.filters, branchId: branchCheck.branchId };
       const branches = await branchesRepo.listBranchesForOrganization(pool, org.id);
-      const [logs, total] = await Promise.all([
+      const [logs, total, canExport] = await Promise.all([
         auditLogsRepo.listAuditLogsForOrganization(pool, org.id, filters),
         auditLogsRepo.countAuditLogsForOrganization(pool, org.id, filters),
+        organisationAllowsAuditExport(pool, org.id),
       ]);
       const totalPages = Math.max(Math.ceil(total / filters.limit), 1);
       return res.render(
@@ -87,6 +135,8 @@ module.exports = function registerHqAdminAuditRoutes(router) {
           branches,
           total,
           totalPages,
+          canExport,
+          exportUrl: canExport ? `/hq/audit/export.csv${buildFilterQuery(filters, 1)}` : null,
           prevUrl: filters.page > 1 ? `/hq/audit${buildFilterQuery(filters, filters.page - 1)}` : null,
           nextUrl:
             filters.page < totalPages ? `/hq/audit${buildFilterQuery(filters, filters.page + 1)}` : null,

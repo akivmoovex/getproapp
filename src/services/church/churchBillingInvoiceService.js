@@ -32,6 +32,23 @@ async function captureBillableBranchSnapshot(db, organizationId, opts = {}) {
     throw err;
   }
 
+  const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+  await churchPilotFeatureFlagService.assertPilotFeatureAvailable(db, {
+    organizationId,
+    flagKey: "billing_snapshot",
+    at: opts.at instanceof Date ? opts.at : new Date(),
+  });
+
+  const { isBillableEnvironment, getDataEnvironment } = require("../../church/orgDataEnvironment");
+  if (!isBillableEnvironment(org)) {
+    const err = new Error(
+      `Billing snapshots are not available for ${getDataEnvironment(org)} organisations.`
+    );
+    err.code = "NOT_BILLABLE_ENVIRONMENT";
+    err.dataEnvironment = getDataEnvironment(org);
+    throw err;
+  }
+
   const cadence = opts.cadence || org.billing_cadence || "monthly";
   const period =
     opts.periodStart && opts.periodEnd
@@ -125,6 +142,34 @@ async function generateGrowthDraftInvoice(db, organizationId, opts = {}) {
     const err = new Error("Organisation not found");
     err.code = "ORG_NOT_FOUND";
     throw err;
+  }
+
+  try {
+    const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+    await churchPilotFeatureFlagService.assertPilotFeatureAvailable(db, {
+      organizationId,
+      flagKey: "billing_snapshot",
+      at: opts.at instanceof Date ? opts.at : new Date(),
+    });
+  } catch (err) {
+    if (err && (err.code === "PILOT_FEATURE_DENIED" || err.code === "PACKAGE_FEATURE_DENIED")) {
+      return {
+        skipped: true,
+        reason: err.message || "Billing snapshot pilot flag is disabled.",
+        packageCode: resolvePackageFromPlanCode(org.plan_code).packageCode,
+      };
+    }
+    throw err;
+  }
+
+  const { isBillableEnvironment, getDataEnvironment } = require("../../church/orgDataEnvironment");
+  if (!isBillableEnvironment(org)) {
+    return {
+      skipped: true,
+      reason: `Draft invoices are not generated for ${getDataEnvironment(org)} organisations.`,
+      packageCode: resolvePackageFromPlanCode(org.plan_code).packageCode,
+      dataEnvironment: getDataEnvironment(org),
+    };
   }
 
   const resolved = resolvePackageFromPlanCode(org.plan_code);

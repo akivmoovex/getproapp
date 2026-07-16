@@ -49,6 +49,13 @@ function clearChurchMemberSession(req) {
 function requireChurchMemberSession(req, res, next) {
   const member = getChurchMemberSession(req);
   if (!member) {
+    const { wantsJson, renderChurchFailureState } = require("./churchFailureStates");
+    if (wantsJson(req)) {
+      return renderChurchFailureState(req, res, "unauthenticated", {
+        shell: "member",
+        forceJson: true,
+      });
+    }
     return res.redirect("/login");
   }
   const branch = req.churchContext && req.churchContext.branch;

@@ -13,6 +13,9 @@ const {
 } = require("./packageFeatureGates");
 const scheduledReportService = require("../../services/church/scheduledReportService");
 const {
+  GROWTH_SCHEDULED_REPORTS_MONTHLY,
+} = require("../../church/blessBoardPackageCatalogue");
+const {
   branchAdminLocals,
   flashFromQuery,
   SCHEDULED_REPORT_NOTICES,
@@ -58,22 +61,18 @@ module.exports = function registerBranchAdminScheduledReportsRoutes(router) {
           scheduledReportService.listEligibleRecipients(pool, org.id, branch.id),
           attachPackageFeatureLocals(req, "branch"),
         ]);
-        const schedulesWithMeta = [];
-        for (const s of schedules) {
-          const runs = await scheduledReportService.listRunsForSchedule(pool, s.id, org.id, 5);
-          schedulesWithMeta.push({ ...s, recentRuns: runs });
-        }
         return res.render(
           "church/branch-admin/scheduled_reports",
           branchAdminLocals(req, {
             pageTitle: "Scheduled reports",
             navActive: "reports-scheduled",
             shellTitle: "Scheduled reports",
-            schedules: schedulesWithMeta,
+            schedules,
             supportedReports: scheduledReportService.listSupportedScheduledReports("branch"),
             eligible,
             frequencies: scheduledReportService.FREQUENCIES,
             formats: scheduledReportService.FORMATS,
+            scheduledReportsMonthlyLimit: GROWTH_SCHEDULED_REPORTS_MONTHLY,
             notice: noticeMessage(flashFromQuery(req, SCHEDULED_REPORT_NOTICES)),
             error: null,
             form: {
@@ -150,6 +149,7 @@ module.exports = function registerBranchAdminScheduledReportsRoutes(router) {
                 eligible,
                 frequencies: scheduledReportService.FREQUENCIES,
                 formats: scheduledReportService.FORMATS,
+                scheduledReportsMonthlyLimit: GROWTH_SCHEDULED_REPORTS_MONTHLY,
                 notice: null,
                 error: err.message,
                 form: {
@@ -243,17 +243,17 @@ module.exports = function registerBranchAdminScheduledReportsRoutes(router) {
         }
         const [recipients, runs] = await Promise.all([
           scheduledReportService.listRecipientsForSchedule(pool, schedule.id, org.id),
-          scheduledReportService.listRunsForSchedule(pool, schedule.id, org.id, 40),
+          scheduledReportService.listRunsForSchedule(pool, schedule.id, org.id, 20),
         ]);
-        const runsWithDeliveries = [];
-        for (const run of runs) {
-          const deliveries = await scheduledReportService.listDeliveriesForRun(
-            pool,
-            run.id,
-            org.id
-          );
-          runsWithDeliveries.push({ ...run, deliveries });
-        }
+        const deliveriesByRunId = await scheduledReportService.listDeliveriesForRuns(
+          pool,
+          runs.map((r) => r.id),
+          org.id
+        );
+        const runsWithDeliveries = runs.map((run) => ({
+          ...run,
+          deliveries: deliveriesByRunId.get(Number(run.id)) || [],
+        }));
         return res.render(
           "church/branch-admin/scheduled_report_detail",
           branchAdminLocals(req, {

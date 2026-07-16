@@ -1,0 +1,98 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Release', activeNav: activeNav || 'church_platform_releases', pageTitle: 'Release ' + record.applicationVersion }) %>
+<% var _listHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/releases' : '/admin/church/releases'; %>
+<header class="church-platform-page-hero">
+  <div>
+    <a class="church-branch-back" href="<%= _listHref %>">&larr; Release register</a>
+    <h1 class="church-platform-page-hero__title">Release <%= record.applicationVersion %></h1>
+    <p class="church-platform-page-hero__subtitle">Released <%= record.releaseDate || '—' %></p>
+  </div>
+  <div class="church-platform-page-hero__actions">
+    <% if (canEditReleases) { %>
+    <a class="church-btn church-btn--primary" href="<%= _listHref %>/<%= record.id %>/edit">Edit</a>
+    <% } %>
+  </div>
+</header>
+
+<% if (typeof notice === 'string' && notice) { %>
+<div class="flash flash--success" role="status"><%= notice %></div>
+<% } %>
+
+<section class="card card--mb-xl" style="padding:1.25rem;" data-release-detail>
+  <h2 class="section-title section-title--flush">Summary</h2>
+  <dl class="admin-dl">
+    <dt>Application version</dt><dd><code><%= record.applicationVersion %></code></dd>
+    <dt>Release date</dt><dd><%= record.releaseDate || '—' %></dd>
+    <dt>Release summary</dt><dd style="white-space:pre-wrap;"><%= record.releaseSummary %></dd>
+    <dt>Deployed by</dt><dd><%= record.deployedByLabel || '—' %></dd>
+    <dt>Test status</dt>
+    <dd>
+      <%= testStatusLabel(record.testStatus) %>
+      <% if (record.testStatus === 'passed' && record.testEvidence) { %>
+      <div class="muted" style="margin-top:0.35rem;">Evidence: <%= record.testEvidence %></div>
+      <% } else if (record.testStatus === 'passed') { %>
+      <div class="muted" style="margin-top:0.35rem;">Evidence missing — treat as unverified.</div>
+      <% } else if (record.testEvidence) { %>
+      <div class="muted" style="margin-top:0.35rem;">Notes: <%= record.testEvidence %></div>
+      <% } %>
+    </dd>
+  </dl>
+</section>
+
+<section class="card card--mb-xl" style="padding:1.25rem;">
+  <h2 class="section-title section-title--flush">Migrations included</h2>
+  <% if (!(record.migrations || []).length) { %>
+  <p class="muted">None listed.</p>
+  <% } else { %>
+  <ul>
+    <% record.migrations.forEach(function (m) { %>
+    <li><code><%= m %></code></li>
+    <% }); %>
+  </ul>
+  <% } %>
+</section>
+
+<section class="card card--mb-xl" style="padding:1.25rem;" data-rollback-notes>
+  <h2 class="section-title section-title--flush">Rollback notes</h2>
+  <% if (record.rollbackNotes) { %>
+  <p style="white-space:pre-wrap;"><%= record.rollbackNotes %></p>
+  <% } else { %>
+  <p class="muted">No rollback notes recorded.</p>
+  <% } %>
+</section>
+
+<section class="card card--mb-xl" style="padding:1.25rem;">
+  <h2 class="section-title section-title--flush">Known limitations</h2>
+  <% if (record.knownLimitations) { %>
+  <p style="white-space:pre-wrap;"><%= record.knownLimitations %></p>
+  <% } else { %>
+  <p class="muted">None recorded.</p>
+  <% } %>
+</section>
+
+<section class="card card--mb-xl" style="padding:1.25rem;">
+  <h2 class="section-title section-title--flush">Package features affected</h2>
+  <% if (!(record.packageFeaturesAffected || []).length) { %>
+  <p class="muted">None listed.</p>
+  <% } else { %>
+  <ul>
+    <% record.packageFeaturesAffected.forEach(function (f) { %>
+    <li><code><%= f %></code></li>
+    <% }); %>
+  </ul>
+  <% } %>
+</section>
+
+<section class="card card--mb-xl" style="padding:1.25rem;">
+  <h2 class="section-title section-title--flush">Required environment variables</h2>
+  <p class="muted">Names only — values are never stored or displayed.</p>
+  <% if (!(record.requiredEnvVars || []).length) { %>
+  <p class="muted">None listed.</p>
+  <% } else { %>
+  <ul>
+    <% record.requiredEnvVars.forEach(function (v) { %>
+    <li><code><%= v %></code></li>
+    <% }); %>
+  </ul>
+  <% } %>
+</section>
+<%- include('../../partials/platform_admin_shell_end') %>

@@ -8,6 +8,8 @@
  *   - members.max_active → verified church_members
  *   - admins.max → active church_hq_admins + church_branch_admins + church_ministry_leaders
  *
+ * Growth price-per-branch lives in blessBoardBillingCatalogue.js (price book).
+ *
  * Does not enforce limits itself; does not replace legacy free/standard/pro helpers in churchPlans.js.
  *
  * Safe fallback: missing / unknown organization plan_code → foundation
@@ -21,6 +23,29 @@ const UNLIMITED = Number.POSITIVE_INFINITY;
 
 /** Sentinel string for fair-use numeric limits (not a hard cap in Phase 1). */
 const FAIR_USE = "fair_use";
+
+/** 1 GiB in bytes — used only to express storage commercial units. */
+const BYTES_PER_GIB = 1024 * 1024 * 1024;
+
+/**
+ * Named commercial capacity (keep in sync with BLESSBOARD_PACKAGES below —
+ * packages are built from these; do not restate the numbers elsewhere).
+ */
+const FOUNDATION_ACTIVE_BRANCHES = 1;
+const FOUNDATION_ACTIVE_MEMBERS = 250;
+const FOUNDATION_ADMIN_ACCOUNTS = 10;
+const FOUNDATION_STORAGE_BYTES = 2 * BYTES_PER_GIB;
+const FOUNDATION_EXTERNAL_EMAILS_MONTHLY = 500;
+const FOUNDATION_SCHEDULED_REPORTS_MONTHLY = 0;
+
+const GROWTH_STORAGE_BYTES_BASE = 10 * BYTES_PER_GIB;
+const GROWTH_STORAGE_BYTES_PER_ACTIVE_BRANCH = 2 * BYTES_PER_GIB;
+const GROWTH_EXTERNAL_EMAILS_MONTHLY_BASE = 5000;
+const GROWTH_EXTERNAL_EMAILS_MONTHLY_PER_ACTIVE_BRANCH = 1000;
+const GROWTH_SCHEDULED_REPORTS_MONTHLY = 20;
+
+/** Default Growth trial length (days). Not a paid conversion. */
+const DEFAULT_GROWTH_TRIAL_DURATION_DAYS = 30;
 
 const LEGACY_PLAN_TO_PACKAGE = {
   free: "foundation",
@@ -43,11 +68,11 @@ const BLESSBOARD_PACKAGES = {
     code: "foundation",
     label: "Foundation",
     entitlements: {
-      branches: { max_active: 1 },
-      members: { max_active: 250 },
-      admins: { max: 10 },
-      storage: { bytes: 2147483648 },
-      external_emails: { monthly: 500 },
+      branches: { max_active: FOUNDATION_ACTIVE_BRANCHES },
+      members: { max_active: FOUNDATION_ACTIVE_MEMBERS },
+      admins: { max: FOUNDATION_ADMIN_ACCOUNTS },
+      storage: { bytes: FOUNDATION_STORAGE_BYTES },
+      external_emails: { monthly: FOUNDATION_EXTERNAL_EMAILS_MONTHLY },
       attendance: { qr: true, offline: false, custom_rules: false },
       care: { automation: "basic" },
       surveys: { custom: "limited" },
@@ -57,7 +82,7 @@ const BLESSBOARD_PACKAGES = {
       broadcasts: { scheduled: false },
       reports: {
         scheduled: false,
-        scheduled_monthly: 0,
+        scheduled_monthly: FOUNDATION_SCHEDULED_REPORTS_MONTHLY,
         cross_branch: false,
         custom_builder: false,
         api: false,
@@ -77,12 +102,12 @@ const BLESSBOARD_PACKAGES = {
       members: { max_active: FAIR_USE },
       admins: { max: FAIR_USE },
       storage: {
-        bytes_base: 10737418240,
-        bytes_per_active_branch: 2147483648,
+        bytes_base: GROWTH_STORAGE_BYTES_BASE,
+        bytes_per_active_branch: GROWTH_STORAGE_BYTES_PER_ACTIVE_BRANCH,
       },
       external_emails: {
-        monthly_base: 5000,
-        monthly_per_active_branch: 1000,
+        monthly_base: GROWTH_EXTERNAL_EMAILS_MONTHLY_BASE,
+        monthly_per_active_branch: GROWTH_EXTERNAL_EMAILS_MONTHLY_PER_ACTIVE_BRANCH,
       },
       attendance: { qr: true, offline: true, custom_rules: true },
       care: { automation: "advanced" },
@@ -93,7 +118,7 @@ const BLESSBOARD_PACKAGES = {
       broadcasts: { scheduled: true },
       reports: {
         scheduled: true,
-        scheduled_monthly: 20,
+        scheduled_monthly: GROWTH_SCHEDULED_REPORTS_MONTHLY,
         cross_branch: true,
         custom_builder: false,
         api: false,
@@ -108,6 +133,31 @@ const BLESSBOARD_PACKAGES = {
 };
 
 const DEFAULT_PACKAGE_CODE = "foundation";
+
+/**
+ * Snapshot of commercial numbers for display/docs/tests (not alternate limits).
+ * Price-per-branch is in blessBoardBillingCatalogue.
+ */
+function getCommercialCapacitySnapshot() {
+  return {
+    foundation: {
+      activeBranches: FOUNDATION_ACTIVE_BRANCHES,
+      activeMembers: FOUNDATION_ACTIVE_MEMBERS,
+      adminAccounts: FOUNDATION_ADMIN_ACCOUNTS,
+      storageBytes: FOUNDATION_STORAGE_BYTES,
+      externalEmailsMonthly: FOUNDATION_EXTERNAL_EMAILS_MONTHLY,
+      scheduledReportsMonthly: FOUNDATION_SCHEDULED_REPORTS_MONTHLY,
+    },
+    growth: {
+      storageBytesBase: GROWTH_STORAGE_BYTES_BASE,
+      storageBytesPerActiveBranch: GROWTH_STORAGE_BYTES_PER_ACTIVE_BRANCH,
+      externalEmailsMonthlyBase: GROWTH_EXTERNAL_EMAILS_MONTHLY_BASE,
+      externalEmailsMonthlyPerActiveBranch: GROWTH_EXTERNAL_EMAILS_MONTHLY_PER_ACTIVE_BRANCH,
+      scheduledReportsMonthly: GROWTH_SCHEDULED_REPORTS_MONTHLY,
+      defaultTrialDurationDays: DEFAULT_GROWTH_TRIAL_DURATION_DAYS,
+    },
+  };
+}
 
 /**
  * @param {string | null | undefined} planCode - Raw church_organizations.plan_code
@@ -209,9 +259,23 @@ module.exports = {
   PACKAGE_CODES,
   UNLIMITED,
   FAIR_USE,
+  BYTES_PER_GIB,
+  FOUNDATION_ACTIVE_BRANCHES,
+  FOUNDATION_ACTIVE_MEMBERS,
+  FOUNDATION_ADMIN_ACCOUNTS,
+  FOUNDATION_STORAGE_BYTES,
+  FOUNDATION_EXTERNAL_EMAILS_MONTHLY,
+  FOUNDATION_SCHEDULED_REPORTS_MONTHLY,
+  GROWTH_STORAGE_BYTES_BASE,
+  GROWTH_STORAGE_BYTES_PER_ACTIVE_BRANCH,
+  GROWTH_EXTERNAL_EMAILS_MONTHLY_BASE,
+  GROWTH_EXTERNAL_EMAILS_MONTHLY_PER_ACTIVE_BRANCH,
+  GROWTH_SCHEDULED_REPORTS_MONTHLY,
+  DEFAULT_GROWTH_TRIAL_DURATION_DAYS,
   LEGACY_PLAN_TO_PACKAGE,
   BLESSBOARD_PACKAGES,
   DEFAULT_PACKAGE_CODE,
+  getCommercialCapacitySnapshot,
   resolvePackageFromPlanCode,
   getPackageDefinition,
   readEntitlementPath,

@@ -35,7 +35,7 @@
         <% } else { %>
         <div class="church-branch-table-wrap">
           <table class="church-branch-table">
-            <thead><tr><th>Date</th><th>Service</th><th>Headcount</th><th>Visitors</th><th>Status</th></tr></thead>
+            <thead><tr><th scope="col">Date</th><th scope="col">Service</th><th scope="col">Headcount</th><th scope="col">Visitors</th><th scope="col">Status</th></tr></thead>
             <tbody>
               <% drill.attendanceRecords.forEach(function (r) { %>
               <tr>
@@ -74,7 +74,7 @@
         <% } else { %>
         <div class="church-branch-table-wrap">
           <table class="church-branch-table">
-            <thead><tr><th>Period</th><th>Status</th><th>Total</th></tr></thead>
+            <thead><tr><th scope="col">Period</th><th scope="col">Status</th><th scope="col">Total</th></tr></thead>
             <tbody>
               <% drill.givingSummaries.forEach(function (g) { %>
               <tr>

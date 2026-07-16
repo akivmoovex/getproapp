@@ -9,7 +9,7 @@
       <div class="church-alert church-alert--success" role="status"><%= notice %></div>
       <% } %>
       <% if (error) { %>
-      <div class="church-alert church-alert--danger" role="alert"><%= error %></div>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
       <% } %>
 
       <section class="church-branch-panel">
@@ -21,12 +21,12 @@
           <table class="church-branch-table">
             <thead>
               <tr>
-                <th>Report</th>
-                <th>Format</th>
-                <th>Frequency</th>
-                <th>Next run</th>
-                <th>Status</th>
-                <th></th>
+                <th scope="col">Report</th>
+                <th scope="col">Format</th>
+                <th scope="col">Frequency</th>
+                <th scope="col">Next run</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -41,25 +41,25 @@
                 <td><%= s.next_run_at ? new Date(s.next_run_at).toISOString() : '—' %></td>
                 <td><span class="church-status-chip"><%= s.status %></span></td>
                 <td>
-                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/scheduled-reports/<%= s.id %>">View</a>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/scheduled-reports/<%= s.id %>" aria-label="View schedule for <%= s.report_type %>">View</a>
                   <% if (s.status === 'enabled') { %>
                   <form class="church-inline-form" method="post" action="/branch/scheduled-reports/<%= s.id %>/status">
                     <%- include('../partials/csrf_field') %>
                     <input type="hidden" name="status" value="paused">
-                    <button type="submit" class="church-btn church-btn--ghost church-btn--sm">Pause</button>
+                    <button type="submit" class="church-btn church-btn--ghost church-btn--sm" aria-label="Pause schedule for <%= s.report_type %>">Pause</button>
                   </form>
                   <% } else if (s.status === 'paused') { %>
                   <form class="church-inline-form" method="post" action="/branch/scheduled-reports/<%= s.id %>/status">
                     <%- include('../partials/csrf_field') %>
                     <input type="hidden" name="status" value="enabled">
-                    <button type="submit" class="church-btn church-btn--ghost church-btn--sm">Enable</button>
+                    <button type="submit" class="church-btn church-btn--ghost church-btn--sm" aria-label="Enable schedule for <%= s.report_type %>">Enable</button>
                   </form>
                   <% } %>
                   <% if (s.status !== 'cancelled') { %>
                   <form class="church-inline-form" method="post" action="/branch/scheduled-reports/<%= s.id %>/status">
                     <%- include('../partials/csrf_field') %>
                     <input type="hidden" name="status" value="cancelled">
-                    <button type="submit" class="church-btn church-btn--ghost church-btn--sm">Cancel</button>
+                    <button type="submit" class="church-btn church-btn--ghost church-btn--sm" aria-label="Cancel schedule for <%= s.report_type %>">Cancel</button>
                   </form>
                   <% } %>
                 </td>
@@ -73,7 +73,7 @@
 
       <section class="church-branch-panel">
         <h2 class="church-branch-panel__title">Create schedule</h2>
-        <p class="church-branch-panel__hint">Select an existing supported report. Maximum 20 scheduled runs per month.</p>
+        <p class="church-branch-panel__hint">Select an existing supported report. Maximum <%= scheduledReportsMonthlyLimit %> scheduled runs per month.</p>
         <form method="post" action="/branch/scheduled-reports" class="church-form">
           <%- include('../partials/csrf_field') %>
           <label class="church-field">

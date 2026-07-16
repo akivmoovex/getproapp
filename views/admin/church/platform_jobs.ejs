@@ -1,0 +1,86 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'Background jobs', activeNav: activeNav || 'church_platform_jobs', pageTitle: 'Background jobs' }) %>
+<% var f = typeof filters !== 'undefined' && filters ? filters : {}; %>
+        <header class="admin-dashboard__header">
+          <div>
+            <h1 class="admin-dashboard__title">Background jobs</h1>
+            <p class="admin-dashboard__subtitle muted">Read-only status across existing BlessBoard workers. Retries and cancellations only where the current job system already supports them safely.</p>
+          </div>
+        </header>
+
+        <% if (typeof notice !== 'undefined' && notice) { %>
+          <div class="flash flash--info" role="status"><%= notice %></div>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="flash" role="alert"><%= error %></div>
+        <% } %>
+
+        <form method="get" action="/admin/church/jobs" class="admin-filter-form card card--mb-xl" style="padding:1rem;">
+          <div class="input-field">
+            <label class="input-field__label" for="job_type">Job type</label>
+            <select id="job_type" class="input-field__control" name="job_type">
+              <option value="">All types</option>
+              <% (jobTypeDefs || []).forEach(function (t) { %>
+              <option value="<%= t.id %>" <%= f.jobType === t.id ? 'selected' : '' %>><%= t.label %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="status">Status</label>
+            <input id="status" class="input-field__control" name="status" type="text" value="<%= f.status || '' %>" placeholder="e.g. failed, pending"/>
+          </div>
+          <div class="input-field">
+            <label class="input-field__label" for="organization_id">Organization ID</label>
+            <input id="organization_id" class="input-field__control" name="organization_id" type="number" min="1" value="<%= f.organizationId || '' %>"/>
+          </div>
+          <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Apply' }) %>
+          <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/jobs', label: 'Clear' }) %>
+        </form>
+
+        <section class="card card--mb-xl">
+          <p class="muted" style="padding:0.75rem 1rem;"><%= total %> job(s) · page <%= f.page || 1 %> of <%= totalPages %></p>
+          <% if (!(jobs || []).length) { %>
+          <p class="muted" style="padding:1rem;">No jobs match these filters.</p>
+          <% } else { %>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Job type</th>
+                  <th>Tenant</th>
+                  <th>Scheduled</th>
+                  <th>Started</th>
+                  <th>Finished</th>
+                  <th>Status</th>
+                  <th>Attempts</th>
+                  <th>Error</th>
+                  <th>Idempotency</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% jobs.forEach(function (job) { %>
+                <tr>
+                  <td><%= job.jobTypeLabel %></td>
+                  <td style="overflow-wrap:anywhere;"><%= job.organizationName %><% if (job.branchName) { %><br/><span class="muted"><%= job.branchName %></span><% } %></td>
+                  <td><%= job.scheduledAt ? new Date(job.scheduledAt).toLocaleString('en-GB') : '—' %></td>
+                  <td><%= job.startedAt ? new Date(job.startedAt).toLocaleString('en-GB') : '—' %></td>
+                  <td><%= job.finishedAt ? new Date(job.finishedAt).toLocaleString('en-GB') : '—' %></td>
+                  <td><%= job.status %></td>
+                  <td><%= job.attemptCount != null ? job.attemptCount : '—' %></td>
+                  <td style="overflow-wrap:anywhere;"><%= job.errorSummary || '—' %></td>
+                  <td style="overflow-wrap:anywhere;font-size:0.85em;"><%= job.idempotencyKey || '—' %></td>
+                  <td><%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/jobs/' + encodeURIComponent(job.jobType) + '/' + encodeURIComponent(String(job.ref).split(':').slice(1).join(':')), label: 'View' }) %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <% if (totalPages > 1) { %>
+          <div class="admin-toolbar" style="padding:1rem;">
+            <% if (prevUrl) { %><%- include('../../partials/components/button', { variant: 'default', href: prevUrl, label: 'Previous' }) %><% } %>
+            <% if (nextUrl) { %><%- include('../../partials/components/button', { variant: 'default', href: nextUrl, label: 'Next' }) %><% } %>
+          </div>
+          <% } %>
+          <% } %>
+        </section>
+<%- include('../../partials/platform_admin_shell_end') %>

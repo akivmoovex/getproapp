@@ -2,7 +2,10 @@
 <header class="admin-dashboard__header">
           <div>
             <h1 class="admin-dashboard__title"><%= organization.name %></h1>
-            <p class="admin-dashboard__subtitle muted">Organization provisioning summary</p>
+            <p class="admin-dashboard__subtitle muted">
+              Organization provisioning summary
+              · <%- include('../../partials/admin/church_data_environment_badge', { dataEnvironment: organization.data_environment || 'production' }) %>
+            </p>
           </div>
           <div class="admin-toolbar">
             <% var _detailHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/churches/' + organization.id : '/admin/church/organizations/' + organization.id; %>
@@ -14,6 +17,8 @@
               <span class="muted">Branch limit reached — <a href="/admin/church/organizations/<%= organization.id %>/plan">change plan</a> to add more.</span>
             <% } %>
             <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/plan', label: 'Change plan' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: _detailHref + '/support-diagnostic', label: 'Support diagnostic' }) %>
+            <%- include('../../partials/components/button', { variant: 'default', href: _detailHref + '/pilot-readiness', label: 'Pilot readiness' }) %>
             <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations', label: 'All organizations' }) %>
           </div>
         </header>
@@ -93,6 +98,8 @@
           <dl class="admin-dl">
             <dt>Status</dt>
             <dd><%- include('../../partials/admin/church_status_badge', { status: organization.status }) %></dd>
+            <dt>Data environment</dt>
+            <dd><%- include('../../partials/admin/church_data_environment_badge', { dataEnvironment: organization.data_environment || 'production' }) %></dd>
             <dt>Branches</dt><dd><%= usage.branches_count || 0 %></dd>
             <dt>Members (verified / total)</dt><dd><%= usage.active_members_count || 0 %> / <%= usage.total_members_count || 0 %></dd>
             <dt>Active HQ administrators</dt><dd><%= admins.active_hq_admin_count || 0 %></dd>
@@ -105,6 +112,22 @@
               <% } %>
             </dd>
           </dl>
+          <form method="post" action="<%= _orgBase %>/data-environment" class="admin-form" style="margin-top:1rem;">
+            <label class="input-field__label" for="data_environment">Change data environment</label>
+            <select id="data_environment" name="data_environment" class="input-field__control" style="max-width:16rem;">
+              <% ['production','pilot','demo','test'].forEach(function (env) { %>
+              <option value="<%= env %>" <%= (organization.data_environment || 'production') === env ? 'selected' : '' %>><%= env.charAt(0).toUpperCase() + env.slice(1) %></option>
+              <% }); %>
+            </select>
+            <p class="muted" style="margin:0.35rem 0;">Demo and test are never billable and are excluded from the public church directory. Only production generates Growth draft invoices.</p>
+            <%- include('../../partials/components/button', { variant: 'default', type: 'submit', label: 'Save environment' }) %>
+          </form>
+          <% if ((organization.data_environment || 'production') === 'demo') { %>
+          <form method="post" action="<%= _orgBase %>/demo-reset" class="admin-form" style="margin-top:0.75rem;" onsubmit="return confirm('Reset demo content for this organisation? Identity and admins are preserved.');">
+            <p class="muted">Resets demo public content and re-seeds fabricated demo pages. Never runs on production.</p>
+            <%- include('../../partials/components/button', { variant: 'danger-outline', type: 'submit', label: 'Reset demo content' }) %>
+          </form>
+          <% } %>
         </section>
 
         <section class="card card--mb-xl" style="padding:1.25rem;">

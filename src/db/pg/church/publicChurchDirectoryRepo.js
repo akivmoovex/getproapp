@@ -97,6 +97,8 @@ async function searchPublicOrganizations(pool, opts = {}) {
 
   const params = [];
   const clauses = [`o.status = 'active'`];
+  const { sqlPublicDirectoryEnvironmentFilter } = require("../../../church/orgDataEnvironment");
+  clauses.push(sqlPublicDirectoryEnvironmentFilter("o"));
 
   clauses.push(`EXISTS (
     SELECT 1 FROM public.church_branches b_active
@@ -195,6 +197,7 @@ async function findActivePublicOrganizationBySlug(pool, orgSlug) {
             ) AS active_branch_count
      FROM public.church_organizations o
      WHERE o.slug = $1 AND o.status = 'active'
+       AND o.data_environment IN ('production', 'pilot')
      LIMIT 1`,
     [slug]
   );
@@ -280,6 +283,7 @@ async function findActivePublicBranchForOrganization(pool, orgSlug, branchSlug) 
        ON wc.branch_id = b.id AND wc.status = 'published'
      WHERE o.slug = $1
        AND o.status = 'active'
+       AND o.data_environment IN ('production', 'pilot')
        AND b.status = 'active'
        AND (b.slug = $2 OR lower(trim(COALESCE(b.host_slug, ''))) = $2)
      LIMIT 1`,

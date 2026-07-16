@@ -72,6 +72,12 @@ async function assertCrossBranchAccess(pool, organizationId) {
     err.code = "FOUNDATION_CROSS_BRANCH_FORBIDDEN";
     throw err;
   }
+  const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+  await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
+    organizationId,
+    flagKey: "reports_cross_branch",
+    plan,
+  });
   return plan;
 }
 

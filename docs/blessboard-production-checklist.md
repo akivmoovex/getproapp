@@ -62,9 +62,10 @@ Confirm in Hostinger **Environment variables**:
 Open `https://blessboard.com/admin/diagnostics` (super admin only). Confirm:
 
 - Database reachable: **Yes**
-- Latest migration label: **090_church_operational_readiness.sql**
+- Latest migration label: **108_church_backup_verification.sql** (or newer)
 - Demo branch: **Yes**
 - No SESSION_SECRET length warning
+- Backup verification: review status / health warnings (operator-attested only — see [blessboard-staging-restoration-checklist.md](./blessboard-staging-restoration-checklist.md))
 
 ---
 

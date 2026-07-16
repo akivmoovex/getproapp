@@ -5,6 +5,11 @@
           <h1 class="church-hq-page-header__title">Global audit trail</h1>
           <p class="church-hq-page-header__subtitle">Organization-wide activity log</p>
         </div>
+        <% if (typeof canExport !== 'undefined' && canExport && exportUrl) { %>
+        <div>
+          <a class="church-btn church-btn--ghost" href="<%= exportUrl %>">Export CSV</a>
+        </div>
+        <% } %>
       </header>
 
       <form class="church-form church-hq-filter-panel" method="get" action="/hq/audit" data-hq-audit-filters>
@@ -31,6 +36,10 @@
             </select>
           </div>
           <div class="church-field">
+            <label class="church-label" for="action">Action type</label>
+            <input class="church-input" id="action" name="action" type="text" value="<%= filters.action || '' %>" placeholder="e.g. member_verified_by_admin"/>
+          </div>
+          <div class="church-field">
             <label class="church-label" for="actor_type">Actor type</label>
             <select class="church-input" id="actor_type" name="actor_type">
               <option value="">All</option>
@@ -38,6 +47,10 @@
               <option value="<%= t %>" <%= filters.actorType === t ? 'selected' : '' %>><%= actorTypeLabel(t) %></option>
               <% }); %>
             </select>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="actor_id">User (actor ID)</label>
+            <input class="church-input" id="actor_id" name="actor_id" type="number" min="1" value="<%= filters.actorId || '' %>" placeholder="Actor ID"/>
           </div>
           <div class="church-field">
             <label class="church-label" for="target_type">Target type</label>
@@ -69,13 +82,16 @@
             <table class="church-branch-table church-audit-table">
               <thead>
                 <tr>
-                  <th>Date/time</th>
-                  <th>Branch</th>
-                  <th>Actor</th>
-                  <th>Action</th>
-                  <th>Target</th>
-                  <th>Summary</th>
-                  <th></th>
+                  <th scope="col">Timestamp</th>
+                  <th scope="col">Branch</th>
+                  <th scope="col">Acting user</th>
+                  <th scope="col">Action</th>
+                  <th scope="col">Entity type</th>
+                  <th scope="col">Entity ID</th>
+                  <th scope="col">Package</th>
+                  <th scope="col">Reason</th>
+                  <th scope="col">Result</th>
+                  <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -88,12 +104,12 @@
                     <span class="church-hq-wrap church-hq-muted"><%= actorDisplayFromRow(log) %></span>
                   </td>
                   <td><span class="church-hq-action-badge"><%= actionLabel(log.action) %></span></td>
-                  <td>
-                    <span class="church-hq-wrap"><%= targetTypeLabel(log.entity_type) %></span>
-                    <span class="church-hq-wrap church-hq-muted"><%= targetLabelFromRow(log) %></span>
-                  </td>
-                  <td class="church-hq-wrap"><%= auditSummary(log) %></td>
-                  <td><a class="church-btn church-btn--ghost church-btn--sm" href="/hq/audit/<%= log.id %>">View</a></td>
+                  <td class="church-hq-wrap"><%= targetTypeLabel(log.entity_type) %></td>
+                  <td class="church-hq-wrap church-hq-muted"><%= entityIdentifierFromRow(log) %></td>
+                  <td class="church-hq-wrap"><%= packageChangeFromRow(log) %></td>
+                  <td class="church-hq-wrap"><%= reasonFromRow(log) %></td>
+                  <td class="church-hq-wrap"><%= resultFromRow(log) %></td>
+                  <td><a class="church-btn church-btn--ghost church-btn--sm" href="/hq/audit/<%= log.id %>" aria-label="View audit event <%= actionLabel(log.action) %> at <%= new Date(log.created_at).toLocaleString('en-GB') %>">View</a></td>
                 </tr>
                 <% }); %>
               </tbody>
@@ -112,7 +128,7 @@
                 <span class="church-hq-muted"><%= actorTypeLabel(log.actor_type) %><% if (log.branch_name) { %> · <%= log.branch_name %><% } %></span>
               </p>
               <p class="church-hq-audit-card__target church-hq-wrap">
-                <%= targetTypeLabel(log.entity_type) %>: <%= targetLabelFromRow(log) %>
+                Entity type: <%= targetTypeLabel(log.entity_type) %> · Entity ID: <%= entityIdentifierFromRow(log) %>
               </p>
               <p class="church-hq-audit-card__summary church-hq-wrap"><%= auditSummary(log) %></p>
               <a class="church-member-link" href="/hq/audit/<%= log.id %>">View detail</a>

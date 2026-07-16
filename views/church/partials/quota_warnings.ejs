@@ -13,6 +13,7 @@
   <div class="church-alert <%= w.alertClass || (w.band >= 90 ? 'church-alert--warning' : 'church-alert--info') %>" role="<%= w.role || (w.band >= 100 ? 'alert' : 'status') %>" data-quota-band="<%= w.band %>" data-quota-meter="<%= w.meterKey %>">
     <strong><%= w.title %></strong>
     <span> <%= w.message %></span>
+    <% if (w.band != null) { %><span class="visually-hidden"> Usage band <%= w.band %> percent.</span><% } %>
     <% if (w.existingDataNote) { %><span> <%= w.existingDataNote %></span><% } %>
     <% if (w.guidance) { %><span> <%= w.guidance %></span><% } %>
   </div>

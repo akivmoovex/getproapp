@@ -150,9 +150,12 @@ module.exports = function registerBranchAdminMemberImportRoutes(router) {
         const pool = getPgPool();
         const org = req.churchContext.organization;
         const branch = req.churchContext.branch;
+        const page = Math.max(Number(req.query.page) || 1, 1);
         const diagnostic = await churchMemberImportService.getImportBatchDetail(pool, batchId, {
           organizationId: org.id,
           branchId: branch.id,
+          page,
+          limit: 75,
         });
         if (!diagnostic) {
           return res.status(404).type("text").send("Import batch not found.");
@@ -196,7 +199,9 @@ module.exports = function registerBranchAdminMemberImportRoutes(router) {
           branchId: branch.id,
           decisions,
         });
-        return res.redirect(303, `/branch/members/import/${batchId}?notice=import_decisions_saved`);
+        const page = Math.max(Number(req.body && req.body.page) || 1, 1);
+        const qs = page > 1 ? `?page=${page}&notice=import_decisions_saved` : "?notice=import_decisions_saved";
+        return res.redirect(303, `/branch/members/import/${batchId}${qs}`);
       } catch (err) {
         if (err && (err.code === "NOT_FOUND" || err.code === "INVALID_STATUS")) {
           return res.status(400).type("text").send(err.message);
@@ -249,9 +254,12 @@ module.exports = function registerBranchAdminMemberImportRoutes(router) {
         const pool = getPgPool();
         const org = req.churchContext.organization;
         const branch = req.churchContext.branch;
+        const page = Math.max(Number(req.query.page) || 1, 1);
         const diagnostic = await churchMemberImportService.getImportBatchDetail(pool, batchId, {
           organizationId: org.id,
           branchId: branch.id,
+          page,
+          limit: 75,
         });
         if (!diagnostic) {
           return res.status(404).type("text").send("Import batch not found.");

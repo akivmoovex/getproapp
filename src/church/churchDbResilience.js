@@ -44,10 +44,10 @@ function logChurchDbResolutionFailure(req, parsed, hostSlug, err) {
 }
 
 function renderChurchServiceUnavailable(req, res) {
-  const host = normalizeHostFromRequest(req);
-  return res.status(503).render("church/public/service_unavailable", {
-    pageTitle: "BlessBoard temporarily unavailable",
-    requestedHost: host,
+  const { renderChurchFailureState } = require("./churchFailureStates");
+  return renderChurchFailureState(req, res, "service_unavailable", {
+    requestedHost: normalizeHostFromRequest(req),
+    shell: "public",
   });
 }
 

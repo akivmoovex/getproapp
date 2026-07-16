@@ -335,7 +335,16 @@ async function seedChurchDemoOrganizationIfMissing(pool) {
       slug: DEMO_ORG_SLUG,
       name: "BlessBoard Demo Church",
       status: "active",
+      data_environment: "demo",
     });
+  } else if (String(org.data_environment || "") !== "demo") {
+    await pool.query(
+      `UPDATE public.church_organizations
+       SET data_environment = 'demo', updated_at = now()
+       WHERE id = $1`,
+      [org.id]
+    );
+    org = await organizationsRepo.findOrganizationById(pool, org.id);
   }
 
   let branch = await branchesRepo.findBranchByHostSlug(pool, DEMO_HOST_SLUG);

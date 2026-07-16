@@ -92,10 +92,16 @@ function registerFeatureRoute(router, feature) {
         if (req.packageFeatureUi && req.packageFeatureUi.state === "available") {
           return res.status(501).type("text").send(`${req.packageFeatureUi.feature.name} action is not enabled yet.`);
         }
-        return res.status(403).type("text").send("Package feature denied.");
+        const { renderChurchFailureState } = require("../../church/churchFailureStates");
+        return renderChurchFailureState(req, res, "package_restricted", {
+          message: "This feature is not included in your package.",
+        });
       } catch (err) {
         if (err && err.code === PACKAGE_FEATURE_DENIED) {
-          return res.status(403).type("text").send(err.message);
+          const { renderChurchFailureState } = require("../../church/churchFailureStates");
+          return renderChurchFailureState(req, res, "package_restricted", {
+            message: err.message,
+          });
         }
         return next(err);
       }

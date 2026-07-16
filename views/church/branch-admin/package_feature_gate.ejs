@@ -1,6 +1,8 @@
 <%- include('../partials/branch_admin_shell_start') %>
       <section class="church-branch-panel church-branch-panel--glass">
-        <% if (packageFeatureUi.state === 'upgrade') { %>
+        <% if (packageFeatureUi.pilotBlocked) { %>
+          <%- include('../partials/package_feature_pilot_locked', { packageFeatureUi: packageFeatureUi }) %>
+        <% } else if (packageFeatureUi.state === 'upgrade') { %>
           <%- include('../partials/package_feature_upgrade', { packageFeatureUi: packageFeatureUi }) %>
         <% } else if (packageFeatureUi.state === 'available') { %>
           <%- include('../partials/package_feature_available', { packageFeatureUi: packageFeatureUi }) %>

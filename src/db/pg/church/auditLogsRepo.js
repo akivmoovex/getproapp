@@ -1,6 +1,11 @@
 "use strict";
 
-const { actionPatternsForGroup } = require("../../../church/auditLogFormatting");
+const {
+  actionPatternsForGroup,
+  BRANCH_RESTRICTED_ACTOR_TYPES,
+  BRANCH_RESTRICTED_ACTION_LIKE,
+  isBranchRestrictedAuditRow,
+} = require("../../../church/auditLogFormatting");
 
 const AUDIT_SELECT = `
   SELECT a.*,
@@ -56,6 +61,20 @@ function buildFilterClause(opts, params, { organizationId, branchId }) {
   if (opts.branchId != null) {
     params.push(opts.branchId);
     clauses.push(`a.branch_id = $${params.length}`);
+  }
+  if (opts.excludeBranchRestricted) {
+    for (const actorType of BRANCH_RESTRICTED_ACTOR_TYPES) {
+      params.push(actorType);
+      clauses.push(`a.actor_type IS DISTINCT FROM $${params.length}`);
+    }
+    for (const pattern of BRANCH_RESTRICTED_ACTION_LIKE) {
+      params.push(pattern);
+      clauses.push(`a.action NOT LIKE $${params.length}`);
+    }
+  }
+  if (opts.actorId != null) {
+    params.push(opts.actorId);
+    clauses.push(`a.actor_id = $${params.length}`);
   }
   if (opts.action) {
     params.push(opts.action);
@@ -129,7 +148,7 @@ async function queryAuditLogs(pool, opts, scope) {
 }
 
 async function listAuditLogsForBranch(pool, branchId, opts = {}) {
-  return queryAuditLogs(pool, opts, { branchId });
+  return queryAuditLogs(pool, { ...opts, excludeBranchRestricted: true }, { branchId });
 }
 
 async function listAuditLogsForOrganization(pool, organizationId, opts = {}) {
@@ -162,7 +181,7 @@ async function findAuditLogByIdForPlatform(pool, auditId) {
 }
 
 async function countAuditLogsForBranch(pool, branchId, opts = {}) {
-  return countAuditLogs(pool, opts, { branchId });
+  return countAuditLogs(pool, { ...opts, excludeBranchRestricted: true }, { branchId });
 }
 
 async function countAuditLogsForOrganization(pool, organizationId, opts = {}) {
@@ -186,7 +205,9 @@ async function findAuditLogByIdForBranch(pool, auditId, branchId) {
      LIMIT 1`,
     [auditId, branchId]
   );
-  return mapAuditRow(r.rows[0] ?? null);
+  const row = mapAuditRow(r.rows[0] ?? null);
+  if (!row || isBranchRestrictedAuditRow(row)) return null;
+  return row;
 }
 
 async function findAuditLogByIdForOrganization(pool, auditId, organizationId) {

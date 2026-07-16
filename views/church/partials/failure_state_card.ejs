@@ -1,0 +1,28 @@
+<%
+  var _icon = typeof failureIcon !== 'undefined' && failureIcon ? failureIcon : 'info';
+  var _title = typeof failureTitle !== 'undefined' && failureTitle ? failureTitle : 'Something went wrong';
+  var _lead = typeof failureLead !== 'undefined' && failureLead ? failureLead : '';
+  var _actions = typeof failureActions !== 'undefined' && failureActions && failureActions.length ? failureActions : [];
+  var _corr = typeof correlationId !== 'undefined' && correlationId ? correlationId : null;
+  var _kind = typeof failureKind !== 'undefined' ? failureKind : '';
+  var _code = typeof failureCode !== 'undefined' ? failureCode : '';
+%>
+<div class="church-unavailable__card" data-failure-kind="<%= _kind %>" data-failure-code="<%= _code %>">
+  <span class="material-symbols-outlined church-unavailable__icon" aria-hidden="true"><%= _icon %></span>
+  <h1 class="church-unavailable__title"><%= _title %></h1>
+  <% if (_lead) { %>
+  <p class="church-unavailable__lead"><%= _lead %></p>
+  <% } %>
+  <% if (_actions.length) { %>
+  <nav class="church-unavailable__actions" aria-label="Next steps">
+    <% _actions.forEach(function (a, i) { %>
+      <a class="church-btn <%= a.primary !== false && i === 0 ? 'church-btn--primary' : 'church-btn--outline' %>" href="<%= a.href %>"><%= a.label %></a>
+    <% }); %>
+  </nav>
+  <% } %>
+  <% if (_corr) { %>
+  <p class="muted church-unavailable__ref" style="margin-top:1rem;font-size:0.85rem;">
+    Reference: <code><%= _corr %></code>
+  </p>
+  <% } %>
+</div>

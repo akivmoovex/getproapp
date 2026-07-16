@@ -9,13 +9,15 @@
           </div>
         </header>
 
-        <% if (saved && typeof trialGranted !== 'undefined' && trialGranted) { %>
-          <div class="flash flash--info" role="status">30-day Growth trial granted. Expiry is automatic — not a paid conversion.</div>
+        <% if (saved && typeof pilotSaved !== 'undefined' && pilotSaved) { %>
+          <div class="flash flash--info" role="status">Tenant pilot flag saved. Audit updated.</div>
+        <% } else if (saved && typeof trialGranted !== 'undefined' && trialGranted) { %>
+          <div class="flash flash--info" role="status"><%= growthTrialDurationDays %>-day Growth trial granted. Expiry is automatic — not a paid conversion.</div>
         <% } else if (saved) { %>
           <div class="flash flash--info" role="status">Package assignment saved. History and audit updated.</div>
         <% } %>
         <% if (error) { %>
-          <div class="flash" role="alert"><%= error %></div>
+          <div class="flash flash--error" role="alert"><%= error %></div>
         <% } %>
 
         <section class="card card--mb-xl" style="padding:1.25rem;">
@@ -53,7 +55,7 @@
 
         <% if (typeof trialStatus === 'undefined' || !trialStatus || trialStatus.canGrant) { %>
         <section class="card card--mb-xl" style="padding:1.25rem;">
-          <h2 class="section-title section-title--flush">Grant 30-day Growth trial</h2>
+          <h2 class="section-title section-title--flush">Grant <%= growthTrialDurationDays %>-day Growth trial</h2>
           <p class="muted" style="margin-top:0;">One Growth trial per organisation by default. Does not integrate payment and does not convert to paid Growth on expiry.</p>
           <form method="post" action="/admin/church/organizations/<%= planSummary.organization.id %>/trial" class="admin-form-grid">
             <%- include('partials/csrf_field') %>
@@ -67,6 +69,74 @@
           </form>
         </section>
         <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;" id="pilot-flags">
+          <h2 class="section-title section-title--flush">Pilot feature flags (tenant override)</h2>
+          <p class="muted" style="margin-top:0;">
+            Overrides platform defaults for this organisation only. Package entitlement must still allow the feature.
+            <a href="/admin/church/pilot-flags">Manage platform defaults</a>.
+          </p>
+          <% if (typeof pilotFlags !== 'undefined' && pilotFlags && pilotFlags.length) { %>
+          <% pilotFlags.forEach(function (f) { %>
+          <div style="border-top:1px solid #eee;padding:1rem 0;" data-tenant-pilot-flag="<%= f.flagKey %>">
+            <h3 style="margin:0 0 0.35rem;"><%= f.definition.label %> <code><%= f.flagKey %></code></h3>
+            <p class="muted" style="margin:0 0 0.75rem;">
+              Available now: <strong><%= f.available ? 'yes' : 'no' %></strong>
+              · entitlement <%= f.entitlementAllows ? 'yes' : 'no' %>
+              · flag <%= f.flagAllows ? 'yes' : 'no' %>
+              · source <code><%= f.source %></code>
+            </p>
+            <form method="post" action="/admin/church/organizations/<%= planSummary.organization.id %>/pilot-flags/<%= f.flagKey %>" class="admin-form-grid">
+              <%- include('partials/csrf_field') %>
+              <label class="input-field">
+                <span class="input-field__label">Enabled</span>
+                <select class="input-field__control" name="enabled">
+                  <option value="true" <%= f.flag && f.flag.tenant && f.flag.tenant.enabled ? 'selected' : '' %>>true</option>
+                  <option value="false" <%= !(f.flag && f.flag.tenant && f.flag.tenant.enabled) ? 'selected' : '' %>>false</option>
+                </select>
+              </label>
+              <label class="input-field">
+                <span class="input-field__label">Starts at</span>
+                <input class="input-field__control" type="datetime-local" name="starts_at" value="<%= f.flag && f.flag.tenant && f.flag.tenant.startsAt ? String(f.flag.tenant.startsAt).slice(0,16) : '' %>"/>
+              </label>
+              <label class="input-field">
+                <span class="input-field__label">Ends at</span>
+                <input class="input-field__control" type="datetime-local" name="ends_at" value="<%= f.flag && f.flag.tenant && f.flag.tenant.endsAt ? String(f.flag.tenant.endsAt).slice(0,16) : '' %>"/>
+              </label>
+              <label class="input-field" style="grid-column:1/-1;">
+                <span class="input-field__label">Reason</span>
+                <input class="input-field__control" type="text" name="reason" maxlength="2000" value="<%= f.flag && f.flag.tenant && f.flag.tenant.reason ? f.flag.tenant.reason : '' %>"/>
+              </label>
+              <label class="input-field" style="grid-column:1/-1;">
+                <span class="input-field__label">Approver</span>
+                <input class="input-field__control" type="text" name="approver_label" required maxlength="200" value="<%= actingAdmin && actingAdmin.displayName ? actingAdmin.displayName : '' %>"/>
+              </label>
+              <div class="admin-toolbar" style="grid-column:1/-1;">
+                <button class="church-btn church-btn--primary" type="submit">Save tenant override</button>
+              </div>
+            </form>
+          </div>
+          <% }); %>
+          <% } %>
+          <% if (typeof pilotAudit !== 'undefined' && pilotAudit && pilotAudit.length) { %>
+          <h3 class="section-title" style="margin-top:1.25rem;">Flag audit (this org)</h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>When</th><th>Flag</th><th>Change</th><th>Approver</th></tr></thead>
+              <tbody>
+                <% pilotAudit.forEach(function (a) { %>
+                <tr>
+                  <td><%= a.created_at %></td>
+                  <td><code><%= a.flag_key %></code></td>
+                  <td><%= a.previous_enabled %> → <%= a.new_enabled %></td>
+                  <td><%= a.approver_label || '—' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <% } %>
+        </section>
 
         <% if (typeof packageDiagnostic !== 'undefined' && packageDiagnostic && packageDiagnostic.usage) { %>
         <section class="card card--mb-xl" style="padding:1.25rem;">

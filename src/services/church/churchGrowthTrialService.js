@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * BlessBoard 30-day Growth trial entitlements.
+ * BlessBoard Growth trial entitlements (default duration from package catalogue).
  * No payment collection. No Network features. No silent conversion to paid Growth.
  */
 
@@ -12,11 +12,12 @@ const {
   resolvePackageFromPlanCode,
   getPackageDefinition,
   readEntitlementPath,
+  DEFAULT_GROWTH_TRIAL_DURATION_DAYS,
 } = require("../../church/blessBoardPackageCatalogue");
 const { PACKAGE_FEATURES } = require("../../church/blessBoardPackageFeatures");
 
 const TRIAL_KIND_GROWTH_30 = "growth_30_day";
-const DEFAULT_DURATION_DAYS = 30;
+const DEFAULT_DURATION_DAYS = DEFAULT_GROWTH_TRIAL_DURATION_DAYS;
 const CONFIG_RETENTION_DAYS = 90;
 const REMINDER_DAYS_BEFORE = Object.freeze([7, 3, 1]);
 
@@ -215,6 +216,12 @@ async function getOrganisationTrialStatus(db, organizationId, opts = {}) {
  */
 async function grantGrowthTrial(pool, organizationId, fields) {
   const orgId = Number(organizationId);
+  const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+  await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
+    organizationId: orgId,
+    flagKey: "growth_trial",
+    at: fields && fields.at ? new Date(fields.at) : new Date(),
+  });
   const reason = String(fields.reason || "")
     .trim()
     .slice(0, 2000);
@@ -228,6 +235,16 @@ async function grantGrowthTrial(pool, organizationId, fields) {
   if (!org) {
     const err = new Error("Organization not found.");
     err.code = "NOT_FOUND";
+    throw err;
+  }
+
+  const { isBillableEnvironment, getDataEnvironment } = require("../../church/orgDataEnvironment");
+  if (!isBillableEnvironment(org)) {
+    const err = new Error(
+      `Growth trials are not available for ${getDataEnvironment(org)} organisations.`
+    );
+    err.code = "NOT_BILLABLE_ENVIRONMENT";
+    err.dataEnvironment = getDataEnvironment(org);
     throw err;
   }
 

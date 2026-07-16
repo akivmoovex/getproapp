@@ -66,11 +66,11 @@
           <table class="church-branch-table">
             <thead>
               <tr>
-                <th>Scheduled for</th>
-                <th>Status</th>
-                <th>Attempts</th>
-                <th>Deliveries</th>
-                <th></th>
+                <th scope="col">Scheduled for</th>
+                <th scope="col">Status</th>
+                <th scope="col">Attempts</th>
+                <th scope="col">Deliveries</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -89,7 +89,7 @@
                   <% if (run.status === 'failed') { %>
                   <form method="post" action="/branch/scheduled-reports/runs/<%= run.id %>/retry">
                     <%- include('../partials/csrf_field') %>
-                    <button type="submit" class="church-btn church-btn--primary church-btn--sm">Retry</button>
+                    <button type="submit" class="church-btn church-btn--primary church-btn--sm" aria-label="Retry failed run scheduled for <%= new Date(run.scheduled_for).toISOString() %>">Retry</button>
                   </form>
                   <% } %>
                 </td>

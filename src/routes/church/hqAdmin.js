@@ -622,6 +622,8 @@ function registerHqAdminRoutes(router) {
   registerHqAdminCrossBranchReportsRoutes(router);
   registerHqAdminAnalyticsRoutes(router);
   registerHqAdminAuditRoutes(router);
+  const registerHqAdminNotificationTemplatesRoutes = require("./hqAdminNotificationTemplates");
+  registerHqAdminNotificationTemplatesRoutes(router);
 }
 
 registerHqAdminRoutes.requireChurchBranchHost = requireChurchBranchHost;

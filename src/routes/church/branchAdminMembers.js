@@ -440,7 +440,7 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
           const memberId = Number(req.params.memberId);
           const pool = getPgPool();
           const member = await membersRepo.findMemberByIdForBranch(pool, memberId, branch.id);
-          return res.status(400).render(
+          return res.status(409).render(
             "church/branch-admin/member_profile",
             await renderMemberProfile(pool, req, member || { id: memberId, status: "pending" }, {
               error: e.message,
@@ -448,7 +448,8 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
             })
           );
         } catch {
-          return res.status(400).type("text").send(e.message);
+          const { renderChurchFailureState } = require("../../church/churchFailureStates");
+          return renderChurchFailureState(req, res, "quota_conflict", { message: e.message });
         }
       }
       return next(e);
@@ -505,7 +506,7 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
             const branch = req.churchContext.branch;
             const pool = getPgPool();
             const member = await membersRepo.findMemberByIdForBranch(pool, memberId, branch.id);
-            return res.status(400).render(
+            return res.status(409).render(
               "church/branch-admin/member_profile",
               await renderMemberProfile(pool, req, member, {
                 error: e.message,
@@ -513,7 +514,8 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
               })
             );
           } catch {
-            return res.status(400).type("text").send(e.message);
+            const { renderChurchFailureState } = require("../../church/churchFailureStates");
+            return renderChurchFailureState(req, res, "quota_conflict", { message: e.message });
           }
         }
         return next(e);
@@ -596,7 +598,7 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
             const branch = req.churchContext.branch;
             const pool = getPgPool();
             const member = await membersRepo.findMemberByIdForBranch(pool, memberId, branch.id);
-            return res.status(400).render(
+            return res.status(409).render(
               "church/branch-admin/member_profile",
               await renderMemberProfile(pool, req, member, {
                 error: e.message,
@@ -604,7 +606,8 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
               })
             );
           } catch {
-            return res.status(400).type("text").send(e.message);
+            const { renderChurchFailureState } = require("../../church/churchFailureStates");
+            return renderChurchFailureState(req, res, "quota_conflict", { message: e.message });
           }
         }
         return next(e);

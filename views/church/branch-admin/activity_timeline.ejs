@@ -4,6 +4,11 @@
           <h1 class="church-branch-topbar__title">Activity timeline</h1>
           <p class="church-branch-topbar__subtitle">Audit trail for <%= churchName %></p>
         </div>
+        <% if (typeof canExport !== 'undefined' && canExport && exportUrl) { %>
+        <div>
+          <a class="church-btn church-btn--ghost" href="<%= exportUrl %>">Export CSV</a>
+        </div>
+        <% } %>
       </header>
       <form class="church-form church-form--inline" method="get" action="/branch/activity">
         <div class="church-field church-field--grow">
@@ -19,6 +24,10 @@
           </select>
         </div>
         <div class="church-field">
+          <label class="church-label" for="action">Action type</label>
+          <input class="church-input" id="action" name="action" type="text" value="<%= filters.action || '' %>" placeholder="Exact action"/>
+        </div>
+        <div class="church-field">
           <label class="church-label" for="actor_type">Actor type</label>
           <select class="church-input" id="actor_type" name="actor_type">
             <option value="">All</option>
@@ -26,6 +35,10 @@
             <option value="<%= t %>" <%= filters.actorType === t ? 'selected' : '' %>><%= actorTypeLabel(t) %></option>
             <% }); %>
           </select>
+        </div>
+        <div class="church-field">
+          <label class="church-label" for="actor_id">User (actor ID)</label>
+          <input class="church-input" id="actor_id" name="actor_id" type="number" min="1" value="<%= filters.actorId || '' %>"/>
         </div>
         <div class="church-field">
           <label class="church-label" for="target_type">Target type</label>
@@ -50,11 +63,14 @@
           <table class="church-branch-table church-audit-table">
             <thead>
               <tr>
-                <th>Date/time</th>
-                <th>Actor</th>
+                <th>Timestamp</th>
+                <th>Acting user</th>
                 <th>Action</th>
-                <th>Target</th>
-                <th>Summary</th>
+                <th>Entity type</th>
+                <th>Entity ID</th>
+                <th>Package</th>
+                <th>Reason</th>
+                <th>Result</th>
                 <th></th>
               </tr>
             </thead>
@@ -64,8 +80,11 @@
                 <td><%= new Date(log.created_at).toLocaleString('en-GB') %></td>
                 <td><%= actorTypeLabel(log.actor_type) %><br/><%= actorDisplayFromRow(log) %></td>
                 <td><%= actionLabel(log.action) %></td>
-                <td><%= targetTypeLabel(log.entity_type) %><br/><%= targetLabelFromRow(log) %></td>
-                <td><%= auditSummary(log) %></td>
+                <td><%= targetTypeLabel(log.entity_type) %></td>
+                <td><%= entityIdentifierFromRow(log) %></td>
+                <td><%= packageChangeFromRow(log) %></td>
+                <td><%= reasonFromRow(log) %></td>
+                <td><%= resultFromRow(log) %></td>
                 <td><a class="church-btn church-btn--ghost church-btn--sm" href="/branch/activity/<%= log.id %>">View</a></td>
               </tr>
               <% }); %>

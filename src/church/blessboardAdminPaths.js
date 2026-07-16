@@ -11,6 +11,7 @@ const BLESSBOARD_ADMIN = {
   churchDetail: (id) => `/admin/churches/${id}`,
   churchEdit: (id) => `/admin/churches/${id}/edit`,
   diagnostics: "/admin/diagnostics",
+  releases: "/admin/releases",
 };
 
 /** Legacy GetPro-mounted church admin paths (redirect away from getproapp.org). */
@@ -26,6 +27,13 @@ function rewriteBlessBoardAdminPathToInternal(method, path) {
   const p = String(path || "");
   if (p === "/dashboard" || p === "/dashboard/") return "/church";
   if (p === "/diagnostics" || p === "/diagnostics/") return "/church/diagnostics";
+  if (p === "/releases" || p === "/releases/") return "/church/releases";
+  const releaseNew = p.match(/^\/releases\/new\/?$/);
+  if (releaseNew) return "/church/releases/new";
+  const releaseEdit = p.match(/^\/releases\/(\d+)\/edit\/?$/);
+  if (releaseEdit) return `/church/releases/${releaseEdit[1]}/edit`;
+  const releaseDetail = p.match(/^\/releases\/(\d+)\/?$/);
+  if (releaseDetail) return `/church/releases/${releaseDetail[1]}`;
   if (p === "/churches" || p === "/churches/") return "/church/organizations";
   if (p === "/churches/new" || p === "/churches/new/") return "/church/organizations/new";
   const detail = p.match(/^\/churches\/(\d+)\/?$/);
@@ -52,6 +60,9 @@ function mapLegacyGetProChurchAdminPathToBlessBoard(adminPath) {
   if (p === "/admin/church" || p === "/admin/church/") return BLESSBOARD_ADMIN.dashboard;
   if (p === "/admin/church/diagnostics" || p === "/admin/church/diagnostics/") {
     return BLESSBOARD_ADMIN.diagnostics;
+  }
+  if (p === "/admin/church/releases" || p.startsWith("/admin/church/releases/")) {
+    return p.replace("/admin/church/releases", BLESSBOARD_ADMIN.releases);
   }
   if (p === "/admin/church/organizations" || p === "/admin/church/organizations/") {
     return BLESSBOARD_ADMIN.churches;
@@ -84,6 +95,8 @@ function isBlessBoardPlatformAdminPath(path) {
     p.startsWith("/dashboard/") ||
     p === "/diagnostics" ||
     p.startsWith("/diagnostics/") ||
+    p === "/releases" ||
+    p.startsWith("/releases/") ||
     p.startsWith("/churches") ||
     p.startsWith("/church")
   );

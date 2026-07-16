@@ -81,22 +81,39 @@
       <% if (viewMode === 'chart') { %>
       <section class="church-branch-panel church-hq-panel" data-cross-branch-chart>
         <h2 class="church-branch-panel__title">Comparison chart</h2>
-        <p class="church-branch-panel__hint">Simple bar comparison (active members). Use table view for full KPI grid.</p>
-        <div class="church-hq-bar-chart" role="img" aria-label="Active members by branch">
+        <p class="church-branch-panel__hint">Simple bar comparison (active members). Table view remains available without JavaScript.</p>
+        <%
+          var _chartSummaryParts = [];
+          (comparison.rows || []).forEach(function (row) {
+            _chartSummaryParts.push(row.branch_name + ': ' + row.active_members);
+          });
+          var _chartSummary = _chartSummaryParts.length
+            ? ('Active members by branch. ' + _chartSummaryParts.join('. ') + '.')
+            : 'Active members by branch. No branches in range.';
+        %>
+        <figure class="church-hq-bar-chart">
+          <figcaption class="visually-hidden"><%= _chartSummary %></figcaption>
           <% var maxM = Math.max.apply(null, comparison.chart.active_members.concat([1])); %>
+          <ul class="church-hq-bar-chart__list" style="list-style:none;margin:0;padding:0;">
           <% comparison.rows.forEach(function (row, idx) { %>
-          <div class="church-hq-bar-chart__row">
+          <li class="church-hq-bar-chart__row">
             <span class="church-hq-bar-chart__label church-hq-wrap"><%= row.branch_name %></span>
-            <div class="church-hq-bar-chart__track">
+            <div class="church-hq-bar-chart__track" aria-hidden="true">
               <div class="church-hq-bar-chart__bar" style="width:<%= Math.round((row.active_members / maxM) * 100) %>%"></div>
             </div>
-            <span class="church-hq-bar-chart__value"><%= row.active_members %></span>
-          </div>
+            <span class="church-hq-bar-chart__value"><%= row.active_members %> <span class="visually-hidden">active members</span></span>
+          </li>
           <% }); %>
+          </ul>
           <% if (!(comparison.rows || []).length) { %>
           <p class="church-branch-empty">No branches in range.</p>
           <% } %>
-        </div>
+        </figure>
+        <style>
+          .church-hq-bar-chart__row { display: grid; grid-template-columns: 8rem 1fr 3rem; gap: .5rem; align-items: center; margin: .35rem 0; }
+          .church-hq-bar-chart__track { background: rgba(0,0,0,.06); border-radius: 4px; height: .65rem; overflow: hidden; }
+          .church-hq-bar-chart__bar { background: #2f6fed; height: 100%; border-radius: 4px; min-width: 2px; }
+        </style>
       </section>
       <% } %>
 
@@ -106,16 +123,16 @@
           <table class="church-branch-table">
             <thead>
               <tr>
-                <th>Branch</th>
-                <th>Active members</th>
-                <th>Attendance</th>
-                <th>Visitors</th>
-                <th>Event regs</th>
-                <th>Event att.</th>
-                <th>Open follow-ups</th>
-                <th>Overdue</th>
-                <% if (canViewFinance) { %><th>Giving</th><% } %>
-                <th></th>
+                <th scope="col">Branch</th>
+                <th scope="col">Active members</th>
+                <th scope="col">Attendance</th>
+                <th scope="col">Visitors</th>
+                <th scope="col">Event regs</th>
+                <th scope="col">Event att.</th>
+                <th scope="col">Open follow-ups</th>
+                <th scope="col">Overdue</th>
+                <% if (canViewFinance) { %><th scope="col">Giving</th><% } %>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -134,7 +151,7 @@
                 <td><%= row.overdue_pastoral_cases %></td>
                 <% if (canViewFinance) { %><td><%= formatMoney(row.giving_total) %></td><% } %>
                 <td>
-                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/cross-branch-reports/branches/<%= row.branch_id %>?date_from=<%= filters.dateFrom %>&date_to=<%= filters.dateTo %>">Drill down</a>
+                  <a class="church-btn church-btn--ghost church-btn--sm" href="/hq/cross-branch-reports/branches/<%= row.branch_id %>?date_from=<%= filters.dateFrom %>&date_to=<%= filters.dateTo %>" aria-label="Drill down into <%= row.branch_name %>">Drill down</a>
                 </td>
               </tr>
               <% }); %>
@@ -152,9 +169,4 @@
           <% }); %>
         </ul>
       </section>
-      <style>
-        .church-hq-bar-chart__row { display: grid; grid-template-columns: 8rem 1fr 3rem; gap: .5rem; align-items: center; margin: .35rem 0; }
-        .church-hq-bar-chart__track { background: rgba(0,0,0,.06); border-radius: 4px; height: .65rem; overflow: hidden; }
-        .church-hq-bar-chart__bar { background: #2f6fed; height: 100%; border-radius: 4px; min-width: 2px; }
-      </style>
 <%- include('../partials/hq_shell_end') %>

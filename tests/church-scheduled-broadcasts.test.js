@@ -250,7 +250,7 @@ test(
     assert.ok(hit.skipped >= 1); // inactive admin skipped
     assert.ok(hit.delivered >= 1);
 
-    const deliveries = await scheduledBroadcastService.listDeliveries(pool, scheduledB.id, orgG.id);
+    const deliveries = (await scheduledBroadcastService.listDeliveries(pool, scheduledB.id, orgG.id)).rows;
     assert.ok(deliveries.some((d) => d.status === "skipped_unauthorised"));
     assert.ok(deliveries.some((d) => d.channel === "email" && d.status === "delivered"));
     // Subject must not include confidential title
@@ -269,7 +269,7 @@ test(
       at: new Date("2026-08-01T10:02:00.000Z"),
     });
     assert.equal(dup.outcome, "duplicate_job");
-    const delAfterDup = await scheduledBroadcastService.listDeliveries(pool, scheduledB.id, orgG.id);
+    const delAfterDup = (await scheduledBroadcastService.listDeliveries(pool, scheduledB.id, orgG.id)).rows;
     assert.equal(delAfterDup.length, deliveries.length);
 
     // --- Foundation restriction ---
@@ -351,7 +351,7 @@ test(
       forceSchedule: false,
     });
     assert.ok(consentRun.skipped >= 1);
-    const consentDel = await scheduledBroadcastService.listDeliveries(pool, consentB.id, orgG.id);
+    const consentDel = (await scheduledBroadcastService.listDeliveries(pool, consentB.id, orgG.id)).rows;
     assert.ok(
       consentDel.some(
         (d) =>
@@ -385,7 +385,7 @@ test(
       forceSchedule: false,
     });
     // Recipient resolves empty → published with zero deliveries or skipped
-    const crossDel = await scheduledBroadcastService.listDeliveries(pool, cross.id, orgG.id);
+    const crossDel = (await scheduledBroadcastService.listDeliveries(pool, cross.id, orgG.id)).rows;
     assert.ok(
       crossDel.length === 0 ||
         crossDel.every((d) => d.status === "skipped_unauthorised") ||
@@ -454,7 +454,7 @@ test(
       at: new Date("2026-07-16T13:00:00.000Z"),
       forceSchedule: false,
     });
-    const beforeFail = await scheduledBroadcastService.listDeliveries(pool, partial.id, orgG.id);
+    const beforeFail = (await scheduledBroadcastService.listDeliveries(pool, partial.id, orgG.id)).rows;
     const emailDel = beforeFail.find((d) => d.channel === "email" && d.status === "delivered");
     assert.ok(emailDel);
     await pool.query(
@@ -470,7 +470,7 @@ test(
     const deliveredCountBefore = beforeFail.filter((d) => d.status === "delivered").length;
     const retry = await scheduledBroadcastService.retryFailedDeliveries(pool, partial.id, orgG.id);
     assert.ok(["published", "partially_failed"].includes(retry.outcome));
-    const afterRetry = await scheduledBroadcastService.listDeliveries(pool, partial.id, orgG.id);
+    const afterRetry = (await scheduledBroadcastService.listDeliveries(pool, partial.id, orgG.id)).rows;
     // Successful in_app rows unchanged; failed email recovered without duplicating rows
     assert.equal(afterRetry.length, beforeFail.length);
     assert.ok(afterRetry.find((d) => d.id === emailDel.id && d.status === "delivered"));
@@ -511,7 +511,7 @@ test(
       at: quotaAt,
       forceSchedule: false,
     });
-    const quotaDel = await scheduledBroadcastService.listDeliveries(pool, quotaB.id, orgG.id);
+    const quotaDel = (await scheduledBroadcastService.listDeliveries(pool, quotaB.id, orgG.id)).rows;
     assert.ok(
       quotaDel.some((d) => d.channel === "email" && d.status === "skipped_quota") ||
         quotaRun.skipped >= 1

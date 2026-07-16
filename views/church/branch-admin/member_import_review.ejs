@@ -1,5 +1,5 @@
 <%- include('../partials/branch_admin_shell_start') %>
-      <% var batch = diagnostic.batch; var impact = diagnostic.impact; var rows = diagnostic.rows || []; %>
+      <% var batch = diagnostic.batch; var impact = diagnostic.impact; var rows = diagnostic.rows || []; var pagination = diagnostic.pagination; %>
       <header class="church-branch-page-hero">
         <div>
           <h1 class="church-branch-page-hero__title">Import preview</h1>
@@ -29,10 +29,17 @@
         <h2 class="church-branch-panel__title">Conflict review</h2>
         <p class="church-branch-panel__hint">Existing matches are skipped by default. Import never merges people. Download a formula-safe error file if needed.</p>
         <p><a class="church-btn church-btn--outline church-btn--sm" href="/branch/members/import/<%= batch.id %>/errors.csv">Download error / conflict CSV</a></p>
+        <% if (pagination && pagination.totalPages > 1) { %>
+        <p class="church-branch-panel__hint">
+          Rows <%= ((pagination.page - 1) * pagination.limit) + 1 %>–<%= Math.min(pagination.page * pagination.limit, pagination.total) %>
+          of <%= pagination.total %>. Save decisions on this page before changing pages.
+        </p>
+        <% } %>
 
         <% if (batch.status === 'previewed') { %>
         <form class="church-form" method="post" action="/branch/members/import/<%= batch.id %>/decisions">
           <%- include('../partials/csrf_field') %>
+          <input type="hidden" name="page" value="<%= pagination && pagination.page ? pagination.page : 1 %>"/>
           <div class="church-branch-table-wrap">
             <table class="church-branch-table">
               <thead>
@@ -79,6 +86,16 @@
             <button class="church-btn church-btn--outline" type="submit">Save decisions</button>
           </div>
         </form>
+        <% if (pagination && pagination.totalPages > 1) { %>
+        <nav class="church-branch-actions" aria-label="Import row pages" data-import-pagination>
+          <% if (pagination.page > 1) { %>
+          <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/members/import/<%= batch.id %>?page=<%= pagination.page - 1 %>">Previous</a>
+          <% } %>
+          <% if (pagination.page < pagination.totalPages) { %>
+          <a class="church-btn church-btn--ghost church-btn--sm" href="/branch/members/import/<%= batch.id %>?page=<%= pagination.page + 1 %>">Next</a>
+          <% } %>
+        </nav>
+        <% } %>
         <form class="church-form" method="post" action="/branch/members/import/<%= batch.id %>/commit" style="margin-top:1rem;">
           <%- include('../partials/csrf_field') %>
           <button class="church-btn church-btn--primary" type="submit">Commit import</button>

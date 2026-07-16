@@ -1,5 +1,6 @@
 <%- include('../../partials/platform_admin_shell_start', { navTitle: 'Support Monitoring', activeNav: activeNav || 'church_platform_diagnostics', pageTitle: 'BlessBoard diagnostics' }) %>
 <% var _dashHref = (typeof blessboardAdminMode !== 'undefined' && blessboardAdminMode) ? '/admin/dashboard' : '/admin/church'; %>
+<% var _bv = diagnostics.backupVerification || {}; %>
 <header class="church-platform-page-hero">
   <div>
     <h1 class="church-platform-page-hero__title">Support Monitoring</h1>
@@ -13,6 +14,13 @@
   </div>
 </header>
 
+        <% if (typeof notice === 'string' && notice) { %>
+        <div class="flash flash--success" role="status"><%= notice %></div>
+        <% } %>
+        <% if (typeof error === 'string' && error) { %>
+        <div class="flash flash--error" role="alert"><%= error %></div>
+        <% } %>
+
         <% if (diagnostics.warnings && diagnostics.warnings.length) { %>
         <section class="card card--mb-xl" style="padding:1rem;border-left:4px solid #c0392b;">
           <h2 class="section-title section-title--flush">Warnings</h2>
@@ -25,6 +33,129 @@
         <% } else { %>
         <div class="flash flash--success" role="status">No blocking warnings detected.</div>
         <% } %>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Backup verification</h2>
+          <p class="muted">
+            Operator-attested status only. The application does not create provider backups or invent success records.
+            Follow <code>docs/blessboard-staging-restoration-checklist.md</code> before recording a restoration test.
+          </p>
+          <dl class="admin-dl" style="margin-top:0.75rem;">
+            <dt>Status</dt>
+            <dd><strong><%= _bv.statusLabel || 'Unavailable' %></strong>
+              <% if (_bv.status) { %> (<code><%= _bv.status %></code>)<% } %>
+            </dd>
+            <dt>Health</dt><dd><code><%= _bv.health || '—' %></code></dd>
+            <dt>Last successful backup verification</dt>
+            <dd><%= _bv.lastSuccessfulBackupAt || '—' %></dd>
+            <dt>Last restoration test</dt>
+            <dd>
+              <%= _bv.lastRestorationTestAt || '—' %>
+              <% if (_bv.lastRestorationTestOutcome) { %>
+                — <code><%= _bv.lastRestorationTestOutcome %></code>
+                <% if (_bv.lastRestorationTestEnvironment) { %>
+                  (<%= _bv.lastRestorationTestEnvironment %>)
+                <% } %>
+              <% } %>
+            </dd>
+            <dt>Stale after</dt><dd><%= _bv.staleDays || 7 %> day(s)</dd>
+            <% if (_bv.lastSuccessfulBackupEvidence) { %>
+            <dt>Evidence reference</dt><dd><%= _bv.lastSuccessfulBackupEvidence %></dd>
+            <% } %>
+          </dl>
+
+          <% if (_bv.recentEvents && _bv.recentEvents.length) { %>
+          <h3 class="section-title" style="margin-top:1.25rem;font-size:1rem;">Recent verification events</h3>
+          <table class="admin-table" style="width:100%;margin-top:0.5rem;">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Outcome</th>
+                <th>Verified at</th>
+                <th>Environment</th>
+                <th>Recorded by</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% _bv.recentEvents.forEach(function (ev) { %>
+              <tr>
+                <td><code><%= ev.eventType %></code></td>
+                <td><code><%= ev.outcome %></code></td>
+                <td><%= ev.verifiedAt || '—' %></td>
+                <td><%= ev.environmentLabel || '—' %></td>
+                <td><%= ev.recordedByLabel || '—' %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+          <% } %>
+
+          <div style="display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:1.5rem;">
+            <form method="post" action="/admin/church/diagnostics/backup-verification" class="admin-filter-form">
+              <%- include('./partials/csrf_field') %>
+              <h3 class="section-title" style="font-size:1rem;">Record backup verification</h3>
+              <p class="muted" style="font-size:0.9rem;">Use only after checking the provider console. Success requires an evidence reference (snapshot id — no secrets).</p>
+              <div class="input-field">
+                <label class="input-field__label" for="bv_outcome">Outcome</label>
+                <select id="bv_outcome" class="input-field__control" name="outcome" required>
+                  <option value="">Select…</option>
+                  <option value="success">success</option>
+                  <option value="failed">failed</option>
+                  <option value="partial">partial</option>
+                </select>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="bv_verified_at">Verified at (optional ISO)</label>
+                <input id="bv_verified_at" class="input-field__control" name="verified_at" type="text" placeholder="Leave blank for now"/>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="bv_evidence">Evidence reference</label>
+                <input id="bv_evidence" class="input-field__control" name="evidence_reference" type="text" maxlength="500" placeholder="e.g. supabase-snapshot-abc123"/>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="bv_env">Environment label</label>
+                <input id="bv_env" class="input-field__control" name="environment_label" type="text" maxlength="120" value="production-provider-check"/>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="bv_notes">Notes</label>
+                <textarea id="bv_notes" class="input-field__control" name="notes" rows="3" maxlength="4000"></textarea>
+              </div>
+              <button class="btn btn--primary" type="submit">Record backup verification</button>
+            </form>
+
+            <form method="post" action="/admin/church/diagnostics/restoration-test" class="admin-filter-form">
+              <%- include('./partials/csrf_field') %>
+              <h3 class="section-title" style="font-size:1rem;">Record restoration test</h3>
+              <p class="muted" style="font-size:0.9rem;">Record after completing the staging checklist. Prefer staging — do not restore over production.</p>
+              <div class="input-field">
+                <label class="input-field__label" for="rt_outcome">Outcome</label>
+                <select id="rt_outcome" class="input-field__control" name="outcome" required>
+                  <option value="">Select…</option>
+                  <option value="success">success</option>
+                  <option value="failed">failed</option>
+                  <option value="partial">partial</option>
+                </select>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="rt_verified_at">Tested at (optional ISO)</label>
+                <input id="rt_verified_at" class="input-field__control" name="verified_at" type="text" placeholder="Leave blank for now"/>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="rt_env">Environment label</label>
+                <input id="rt_env" class="input-field__control" name="environment_label" type="text" maxlength="120" value="staging" required/>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="rt_evidence">Evidence reference</label>
+                <input id="rt_evidence" class="input-field__control" name="evidence_reference" type="text" maxlength="500" placeholder="ticket / run id"/>
+              </div>
+              <div class="input-field">
+                <label class="input-field__label" for="rt_notes">Notes</label>
+                <textarea id="rt_notes" class="input-field__control" name="notes" rows="3" maxlength="4000" placeholder="What was restored and verified"></textarea>
+              </div>
+              <button class="btn btn--primary" type="submit">Record restoration test</button>
+            </form>
+          </div>
+        </section>
 
         <section class="card card--mb-xl" style="padding:1.25rem;">
           <h2 class="section-title section-title--flush">Deployment</h2>
@@ -110,11 +241,36 @@
         </section>
 
         <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Tenant support diagnostic</h2>
+          <p class="muted">Open a redacted organisation summary (package, quotas, failed jobs, storage). No secrets or personal records.</p>
+          <form method="get" action="/admin/church/organizations/0/support-diagnostic" id="tenant-support-diagnostic-form" class="admin-filter-form" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+            <div class="input-field">
+              <label class="input-field__label" for="support_org_id">Organisation ID</label>
+              <input id="support_org_id" class="input-field__control" name="organization_id" type="number" min="1" required placeholder="e.g. 12"/>
+            </div>
+            <button class="btn btn--primary" type="submit">Open diagnostic</button>
+          </form>
+          <script>
+            (function () {
+              var form = document.getElementById('tenant-support-diagnostic-form');
+              if (!form) return;
+              form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var id = document.getElementById('support_org_id').value;
+                if (!id) return;
+                window.location.href = '/admin/church/organizations/' + encodeURIComponent(id) + '/support-diagnostic';
+              });
+            })();
+          </script>
+        </section>
+
+        <section class="card card--mb-xl" style="padding:1.25rem;">
           <h2 class="section-title section-title--flush">Pilot launch docs</h2>
           <ul>
             <li><a href="/admin/churches/new">Provision Kafue Baptist</a> (manual — do not hard-code in seed)</li>
             <li>Smoke test checklist: <code>docs/blessboard-pilot-smoke-test.md</code></li>
             <li>Branch admin training: <code>docs/blessboard-branch-admin-training.md</code></li>
+            <li>Staging restoration checklist: <code>docs/blessboard-staging-restoration-checklist.md</code></li>
           </ul>
         </section>
 <%- include('../../partials/platform_admin_shell_end') %>

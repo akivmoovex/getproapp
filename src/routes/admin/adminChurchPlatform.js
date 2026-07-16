@@ -1,7 +1,7 @@
 "use strict";
 
 const bcrypt = require("bcryptjs");
-const { requireSuperAdmin } = require("../../auth");
+const { requireSuperAdmin, requireAdmin } = require("../../auth");
 const { getPgPool } = require("../../db/pg");
 const { TENANT_ZM } = require("../../tenants/tenantIds");
 const platformProvisioningRepo = require("../../db/pg/church/platformProvisioningRepo");
@@ -95,8 +95,14 @@ const {
 const { memberStatusLabel } = require("../../church/memberDirectoryValidation");
 const { memberRequestStatusLabel } = require("../../church/requestProcessingValidation");
 const { joinRequestStatusLabel } = require("../../church/ministryJoinRequestValidation");
-const { actionLabel, actorTypeLabel, targetTypeLabel, actorDisplayFromRow, targetLabelFromRow, auditSummary, formatMetadataForDisplay, parseAuditFilters, AUDIT_ACTOR_TYPES, AUDIT_ACTION_GROUPS } = require("../../church/auditLogFormatting");
+const { actionLabel, actorTypeLabel, targetTypeLabel, actorDisplayFromRow, targetLabelFromRow, auditSummary, entityIdentifierFromRow, entityDisplayFromRow, packageChangeFromRow, reasonFromRow, resultFromRow, formatMetadataForDisplay, parseAuditFilters, buildAuditExportCsv, AUDIT_ACTOR_TYPES, AUDIT_ACTION_GROUPS, AUDIT_EXPORT_MAX_ROWS } = require("../../church/auditLogFormatting");
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
+const churchBackgroundJobStatusService = require("../../services/church/churchBackgroundJobStatusService");
+const notificationTemplateService = require("../../services/church/notificationTemplateService");
+const { TEMPLATE_KEYS } = require("../../church/notificationTemplateCatalogue");
+const churchSupportDiagnosticService = require("../../services/church/churchSupportDiagnosticService");
+const pilotReadinessService = require("../../services/church/pilotReadinessService");
+const churchDemoDataService = require("../../services/church/churchDemoDataService");
 const hqBroadcastsRepo = require("../../db/pg/church/hqBroadcastsRepo");
 const organizationsRepo = require("../../db/pg/church/organizationsRepo");
 const platformUsersRepo = require("../../db/pg/church/platformUsersRepo");
@@ -113,6 +119,9 @@ const {
   FAILURE_REASONS,
 } = require("../../church/platformSecurityValidation");
 const { gatherChurchProductionDiagnostics } = require("../../services/church/churchProductionDiagnostics");
+const churchBackupVerificationService = require("../../services/church/churchBackupVerificationService");
+const churchReleaseRegisterService = require("../../services/church/churchReleaseRegisterService");
+const churchPilotFeatureFlagService = require("../../services/church/churchPilotFeatureFlagService");
 const { organizationAdminDetailPath, organizationAdminEditPath, organizationHqAdminsPath, organizationHqAdminDetailPath } = require("../../church/blessboardAdminPaths");
 const { hashHqAdminPassword } = require("../../church/hqAuth");
 const { classifyPgError } = require("../../church/churchDbResilience");
@@ -177,6 +186,8 @@ function organizationStatusNotice(req) {
       "Organization updated. Organization slug changed — internal identity and display links are updated. Branch public URLs use branch host slugs and are unchanged.",
     host_slug_changed:
       "Church updated. Branch host slug changed — the public URL is now on the new subdomain. Configure DNS/SSL for the new host before sharing links.",
+    data_environment_updated: "Data environment updated.",
+    demo_reset: "Demo content reset and re-seeded.",
   };
   return map[notice] || null;
 }
@@ -978,12 +989,281 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
   router.get("/church/diagnostics", requireSuperAdmin, async (req, res, next) => {
     try {
       const diagnostics = await gatherChurchProductionDiagnostics();
+      const notice = String(req.query.notice || "").trim() || null;
+      const error = String(req.query.error || "").trim() || null;
       res.render("admin/church/diagnostics", {
         diagnostics,
+        notice,
+        error,
         activeNav: "church_platform_diagnostics",
       });
     } catch (err) {
       next(err);
+    }
+  });
+
+  router.post("/church/diagnostics/backup-verification", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const admin = req.session.adminUser || {};
+      await churchBackupVerificationService.recordBackupVerification(pool, {
+        outcome: req.body.outcome,
+        verifiedAt: req.body.verified_at,
+        evidenceReference: req.body.evidence_reference,
+        environmentLabel: req.body.environment_label,
+        notes: req.body.notes,
+        actorType: "platform_admin",
+        actorId: platformAdminId(req),
+        actorLabel: admin.display_name || admin.username || admin.email || "platform_admin",
+      });
+      return res.redirect(
+        `/admin/church/diagnostics?notice=${encodeURIComponent("Backup verification recorded.")}`
+      );
+    } catch (err) {
+      if (err && err.code === "VALIDATION") {
+        return res.redirect(
+          `/admin/church/diagnostics?error=${encodeURIComponent(err.message)}`
+        );
+      }
+      return next(err);
+    }
+  });
+
+  router.post("/church/diagnostics/restoration-test", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const admin = req.session.adminUser || {};
+      await churchBackupVerificationService.recordRestorationTest(pool, {
+        outcome: req.body.outcome,
+        verifiedAt: req.body.verified_at,
+        evidenceReference: req.body.evidence_reference,
+        environmentLabel: req.body.environment_label || "staging",
+        notes: req.body.notes,
+        actorType: "platform_admin",
+        actorId: platformAdminId(req),
+        actorLabel: admin.display_name || admin.username || admin.email || "platform_admin",
+      });
+      return res.redirect(
+        `/admin/church/diagnostics?notice=${encodeURIComponent("Restoration test recorded.")}`
+      );
+    } catch (err) {
+      if (err && err.code === "VALIDATION") {
+        return res.redirect(
+          `/admin/church/diagnostics?error=${encodeURIComponent(err.message)}`
+        );
+      }
+      return next(err);
+    }
+  });
+
+  function releaseRegisterActor(req) {
+    const admin = req.session.adminUser || {};
+    return {
+      id: platformAdminId(req),
+      role: admin.role || null,
+      username: admin.username || admin.email || null,
+      label: admin.display_name || admin.username || admin.email || "platform_admin",
+    };
+  }
+
+  function requireReleaseRegisterEditor(req, res, next) {
+    const role = req.session && req.session.adminUser && req.session.adminUser.role;
+    if (!churchReleaseRegisterService.canEditReleaseRegister(role)) {
+      return res.status(403).type("text").send("Only authorised platform administrators can edit the release register.");
+    }
+    return next();
+  }
+
+  router.get("/church/releases", requireAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const actor = releaseRegisterActor(req);
+      if (!churchReleaseRegisterService.canViewReleaseRegister(actor.role)) {
+        return res.status(403).type("text").send("Release register is not available for this account.");
+      }
+      const releases = await churchReleaseRegisterService.listReleaseRecords(pool, { limit: 50 });
+      const notice = String(req.query.notice || "").trim() || null;
+      const error = String(req.query.error || "").trim() || null;
+      return res.render("admin/church/releases", {
+        releases,
+        notice,
+        error,
+        canEditReleases: churchReleaseRegisterService.canEditReleaseRegister(actor.role),
+        testStatusLabel: churchReleaseRegisterService.testStatusLabel,
+        activeNav: "church_platform_releases",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.get("/church/releases/new", requireAdmin, requireReleaseRegisterEditor, async (req, res, next) => {
+    try {
+      return res.render("admin/church/release_form", {
+        mode: "create",
+        record: null,
+        form: {
+          application_version: "",
+          release_date: new Date().toISOString().slice(0, 10),
+          release_summary: "",
+          migrations_text: "",
+          rollback_notes: "",
+          known_limitations: "",
+          package_features_text: "",
+          required_env_vars_text: "",
+          test_status: "not_run",
+          test_evidence: "",
+          deployed_by: releaseRegisterActor(req).label || "",
+        },
+        error: null,
+        migrationChoices: churchReleaseRegisterService.knownMigrationChoices(),
+        featureChoices: churchReleaseRegisterService.knownPackageFeatureChoices(),
+        testStatuses: churchReleaseRegisterService.TEST_STATUSES,
+        activeNav: "church_platform_releases",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.post("/church/releases", requireAdmin, requireReleaseRegisterEditor, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const record = await churchReleaseRegisterService.createReleaseRecord(pool, req.body || {}, releaseRegisterActor(req));
+      return res.redirect(
+        `/admin/church/releases/${record.id}?notice=${encodeURIComponent("Release record created.")}`
+      );
+    } catch (err) {
+      if (err && (err.code === "VALIDATION" || err.code === "DUPLICATE_VERSION" || err.code === "FORBIDDEN")) {
+        return res.status(err.code === "FORBIDDEN" ? 403 : 400).render("admin/church/release_form", {
+          mode: "create",
+          record: null,
+          form: {
+            application_version: String((req.body && req.body.application_version) || ""),
+            release_date: String((req.body && req.body.release_date) || ""),
+            release_summary: String((req.body && req.body.release_summary) || ""),
+            migrations_text: String((req.body && req.body.migrations_text) || ""),
+            rollback_notes: String((req.body && req.body.rollback_notes) || ""),
+            known_limitations: String((req.body && req.body.known_limitations) || ""),
+            package_features_text: String((req.body && req.body.package_features_text) || ""),
+            required_env_vars_text: String((req.body && req.body.required_env_vars_text) || ""),
+            test_status: String((req.body && req.body.test_status) || "not_run"),
+            test_evidence: String((req.body && req.body.test_evidence) || ""),
+            deployed_by: String((req.body && req.body.deployed_by) || ""),
+          },
+          error: err.message,
+          migrationChoices: churchReleaseRegisterService.knownMigrationChoices(),
+          featureChoices: churchReleaseRegisterService.knownPackageFeatureChoices(),
+          testStatuses: churchReleaseRegisterService.TEST_STATUSES,
+          activeNav: "church_platform_releases",
+        });
+      }
+      return next(err);
+    }
+  });
+
+  router.get("/church/releases/:releaseId", requireAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const actor = releaseRegisterActor(req);
+      if (!churchReleaseRegisterService.canViewReleaseRegister(actor.role)) {
+        return res.status(403).type("text").send("Release register is not available for this account.");
+      }
+      const releaseId = Number(req.params.releaseId);
+      const record = await churchReleaseRegisterService.findReleaseRecordById(pool, releaseId);
+      if (!record) {
+        return res.status(404).type("text").send("Release record not found.");
+      }
+      const notice = String(req.query.notice || "").trim() || null;
+      return res.render("admin/church/release_detail", {
+        record,
+        notice,
+        canEditReleases: churchReleaseRegisterService.canEditReleaseRegister(actor.role),
+        testStatusLabel: churchReleaseRegisterService.testStatusLabel,
+        activeNav: "church_platform_releases",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.get("/church/releases/:releaseId/edit", requireAdmin, requireReleaseRegisterEditor, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const releaseId = Number(req.params.releaseId);
+      const record = await churchReleaseRegisterService.findReleaseRecordById(pool, releaseId);
+      if (!record) {
+        return res.status(404).type("text").send("Release record not found.");
+      }
+      return res.render("admin/church/release_form", {
+        mode: "edit",
+        record,
+        form: {
+          application_version: record.applicationVersion,
+          release_date: record.releaseDate,
+          release_summary: record.releaseSummary,
+          migrations_text: (record.migrations || []).join("\n"),
+          rollback_notes: record.rollbackNotes || "",
+          known_limitations: record.knownLimitations || "",
+          package_features_text: (record.packageFeaturesAffected || []).join("\n"),
+          required_env_vars_text: (record.requiredEnvVars || []).join("\n"),
+          test_status: record.testStatus,
+          test_evidence: record.testEvidence || "",
+          deployed_by: record.deployedByLabel || "",
+        },
+        error: null,
+        migrationChoices: churchReleaseRegisterService.knownMigrationChoices(),
+        featureChoices: churchReleaseRegisterService.knownPackageFeatureChoices(),
+        testStatuses: churchReleaseRegisterService.TEST_STATUSES,
+        activeNav: "church_platform_releases",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.post("/church/releases/:releaseId", requireAdmin, requireReleaseRegisterEditor, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const releaseId = Number(req.params.releaseId);
+      const record = await churchReleaseRegisterService.updateReleaseRecord(
+        pool,
+        releaseId,
+        req.body || {},
+        releaseRegisterActor(req)
+      );
+      return res.redirect(
+        `/admin/church/releases/${record.id}?notice=${encodeURIComponent("Release record updated.")}`
+      );
+    } catch (err) {
+      if (err && err.code === "NOT_FOUND") {
+        return res.status(404).type("text").send(err.message);
+      }
+      if (err && (err.code === "VALIDATION" || err.code === "DUPLICATE_VERSION" || err.code === "FORBIDDEN")) {
+        return res.status(err.code === "FORBIDDEN" ? 403 : 400).render("admin/church/release_form", {
+          mode: "edit",
+          record: { id: Number(req.params.releaseId) },
+          form: {
+            application_version: String((req.body && req.body.application_version) || ""),
+            release_date: String((req.body && req.body.release_date) || ""),
+            release_summary: String((req.body && req.body.release_summary) || ""),
+            migrations_text: String((req.body && req.body.migrations_text) || ""),
+            rollback_notes: String((req.body && req.body.rollback_notes) || ""),
+            known_limitations: String((req.body && req.body.known_limitations) || ""),
+            package_features_text: String((req.body && req.body.package_features_text) || ""),
+            required_env_vars_text: String((req.body && req.body.required_env_vars_text) || ""),
+            test_status: String((req.body && req.body.test_status) || "not_run"),
+            test_evidence: String((req.body && req.body.test_evidence) || ""),
+            deployed_by: String((req.body && req.body.deployed_by) || ""),
+          },
+          error: err.message,
+          migrationChoices: churchReleaseRegisterService.knownMigrationChoices(),
+          featureChoices: churchReleaseRegisterService.knownPackageFeatureChoices(),
+          testStatuses: churchReleaseRegisterService.TEST_STATUSES,
+          activeNav: "church_platform_releases",
+        });
+      }
+      return next(err);
     }
   });
 
@@ -1684,6 +1964,62 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
     }
   );
 
+  router.post(
+    "/church/organizations/:organizationId/data-environment",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const organizationId = Number(req.params.organizationId);
+        if (!Number.isFinite(organizationId) || organizationId <= 0) {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        const pool = getPgPool();
+        const adminUser = req.session.adminUser || {};
+        await churchDemoDataService.updateOrganisationDataEnvironment(
+          pool,
+          organizationId,
+          req.body.data_environment,
+          { platformAdminId: adminUser.id || null }
+        );
+        return res.redirect(
+          `${organizationAdminDetailPath(req, organizationId)}?notice=data_environment_updated`
+        );
+      } catch (err) {
+        if (err && (err.code === "VALIDATION" || err.code === "NOT_FOUND")) {
+          return renderOrganizationDetail(req, res, { statusCode: 400, statusError: err.message });
+        }
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    "/church/organizations/:organizationId/demo-reset",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const organizationId = Number(req.params.organizationId);
+        if (!Number.isFinite(organizationId) || organizationId <= 0) {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        const pool = getPgPool();
+        const adminUser = req.session.adminUser || {};
+        await churchDemoDataService.resetDemoOrganisationContent(pool, organizationId, {
+          platformAdminId: adminUser.id || null,
+          actorLabel: adminUser.display_name || adminUser.username || null,
+        });
+        return res.redirect(
+          `${organizationAdminDetailPath(req, organizationId)}?notice=demo_reset`
+        );
+      } catch (err) {
+        if (err && (err.code === "RESET_FORBIDDEN" || err.code === "NOT_FOUND")) {
+          return renderOrganizationDetail(req, res, { statusCode: 400, statusError: err.message });
+        }
+        return next(err);
+      }
+    }
+  );
+
   router.post("/church/organizations/:organizationId/archive", requireSuperAdmin, async (req, res, next) => {
     try {
       const organizationId = Number(req.params.organizationId);
@@ -1707,6 +2043,204 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
     }
   });
 
+  router.get(
+    "/church/organizations/:organizationId/support-diagnostic",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const organizationId = Number(req.params.organizationId);
+        if (!Number.isFinite(organizationId) || organizationId <= 0) {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        const pool = getPgPool();
+        const adminUser = req.session.adminUser || {};
+        const diagnostic = await churchSupportDiagnosticService.buildOrganisationSupportDiagnostic(
+          pool,
+          organizationId,
+          { platformAdminId: adminUser.id || null, auditAccess: true }
+        );
+        return res.render("admin/church/organization_support_diagnostic", {
+          organization: diagnostic.organisation,
+          diagnostic,
+          notice: String(req.query.notice || "").trim() || null,
+          error: String(req.query.error || "").trim() || null,
+          activeNav: "church_platform_orgs",
+          exportJsonUrl: `/admin/church/organizations/${organizationId}/support-diagnostic/export.json`,
+          exportTxtUrl: `/admin/church/organizations/${organizationId}/support-diagnostic/export.txt`,
+          orgDetailUrl: organizationAdminDetailPath(req, organizationId),
+        });
+      } catch (err) {
+        if (err && err.code === "NOT_FOUND") {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        return next(err);
+      }
+    }
+  );
+
+  router.get(
+    "/church/organizations/:organizationId/support-diagnostic/export.json",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const organizationId = Number(req.params.organizationId);
+        if (!Number.isFinite(organizationId) || organizationId <= 0) {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        const pool = getPgPool();
+        const adminUser = req.session.adminUser || {};
+        const exported = await churchSupportDiagnosticService.exportOrganisationSupportDiagnostic(
+          pool,
+          organizationId,
+          { format: "json", platformAdminId: adminUser.id || null }
+        );
+        res.setHeader("Content-Type", exported.contentType);
+        res.setHeader("Content-Disposition", `attachment; filename="${exported.filename}"`);
+        return res.status(200).send(exported.body);
+      } catch (err) {
+        if (err && err.code === "NOT_FOUND") {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        return next(err);
+      }
+    }
+  );
+
+  router.get(
+    "/church/organizations/:organizationId/support-diagnostic/export.txt",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const organizationId = Number(req.params.organizationId);
+        if (!Number.isFinite(organizationId) || organizationId <= 0) {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        const pool = getPgPool();
+        const adminUser = req.session.adminUser || {};
+        const exported = await churchSupportDiagnosticService.exportOrganisationSupportDiagnostic(
+          pool,
+          organizationId,
+          { format: "txt", platformAdminId: adminUser.id || null }
+        );
+        res.setHeader("Content-Type", exported.contentType);
+        res.setHeader("Content-Disposition", `attachment; filename="${exported.filename}"`);
+        return res.status(200).send(exported.body);
+      } catch (err) {
+        if (err && err.code === "NOT_FOUND") {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        return next(err);
+      }
+    }
+  );
+
+  router.get(
+    "/church/organizations/:organizationId/pilot-readiness",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const organizationId = Number(req.params.organizationId);
+        if (!Number.isFinite(organizationId) || organizationId <= 0) {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        const pool = getPgPool();
+        const readiness = await pilotReadinessService.getOrganisationPilotReadiness(pool, organizationId, {
+          blessboardAdminMode: Boolean(req.blessboardAdminMode),
+        });
+        return res.render("admin/church/organization_pilot_readiness", {
+          readiness,
+          notice: String(req.query.notice || "").trim() || null,
+          error: String(req.query.error || "").trim() || null,
+          activeNav: "church_platform_orgs",
+          orgDetailUrl: organizationAdminDetailPath(req, organizationId),
+          basePath: `/admin/church/organizations/${organizationId}/pilot-readiness`,
+        });
+      } catch (err) {
+        if (err && err.code === "NOT_FOUND") {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    "/church/organizations/:organizationId/pilot-readiness/items/:itemKey",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const organizationId = Number(req.params.organizationId);
+        const itemKey = String(req.params.itemKey || "").trim();
+        if (!Number.isFinite(organizationId) || organizationId <= 0) {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        const pool = getPgPool();
+        const adminUser = req.session.adminUser || {};
+        await pilotReadinessService.upsertItemNote(pool, {
+          organizationId,
+          itemKey,
+          note: req.body.note,
+          manualStatus: req.body.manual_status,
+          actorType: "platform_admin",
+          actorId: adminUser.id || null,
+        });
+        return res.redirect(
+          `/admin/church/organizations/${organizationId}/pilot-readiness?notice=${encodeURIComponent("Checklist note saved.")}`
+        );
+      } catch (err) {
+        if (err && err.code === "VALIDATION") {
+          return res.redirect(
+            `/admin/church/organizations/${req.params.organizationId}/pilot-readiness?error=${encodeURIComponent(err.message)}`
+          );
+        }
+        if (err && err.code === "NOT_FOUND") {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    "/church/organizations/:organizationId/pilot-readiness/approve",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const organizationId = Number(req.params.organizationId);
+        if (!Number.isFinite(organizationId) || organizationId <= 0) {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        const pool = getPgPool();
+        const adminUser = req.session.adminUser || {};
+        await pilotReadinessService.recordPilotApproval(pool, {
+          organizationId,
+          note: req.body.note,
+          actorType: "platform_admin",
+          actorId: adminUser.id || null,
+          actorLabel:
+            adminUser.display_name ||
+            adminUser.username ||
+            adminUser.email ||
+            "Platform administrator",
+          blessboardAdminMode: Boolean(req.blessboardAdminMode),
+        });
+        return res.redirect(
+          `/admin/church/organizations/${organizationId}/pilot-readiness?notice=${encodeURIComponent("Pilot approval recorded.")}`
+        );
+      } catch (err) {
+        if (err && err.code === "NOT_READY") {
+          return res.redirect(
+            `/admin/church/organizations/${req.params.organizationId}/pilot-readiness?error=${encodeURIComponent(err.message)}`
+          );
+        }
+        if (err && err.code === "NOT_FOUND") {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        return next(err);
+      }
+    }
+  );
+
   router.get("/church/organizations/:organizationId/plan", requireSuperAdmin, async (req, res, next) => {
     try {
       const organizationId = Number(req.params.organizationId);
@@ -1723,8 +2257,17 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         limit: 25,
       });
       const trialStatus = await churchGrowthTrialService.getOrganisationTrialStatus(pool, organizationId);
+      const pilotFlags = await churchPilotFeatureFlagService.listEffectiveFlagsForOrganisation(
+        pool,
+        organizationId
+      );
+      const pilotAudit = await churchPilotFeatureFlagService.listPilotFlagAudit(pool, {
+        organizationId,
+        limit: 20,
+      });
       const saved = String(req.query.saved || "") === "1";
       const trialGranted = String(req.query.trial || "") === "1";
+      const pilotSaved = String(req.query.pilot || "") === "1";
       const currentPackage = resolvePackageFromPlanCode(planSummary.organization.plan_code);
       const adminUser = req.session.adminUser || {};
       res.render("admin/church/organization_plan", {
@@ -1732,11 +2275,16 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         packageDiagnostic,
         packageHistory,
         trialStatus,
+        pilotFlags,
+        pilotAudit,
+        pilotFlagDefinitions: churchPilotFeatureFlagService.listPilotFlagDefinitions(),
         packageCodes: churchPackageAssignmentService.ASSIGNABLE_PACKAGE_CODES,
+        growthTrialDurationDays: churchGrowthTrialService.DEFAULT_DURATION_DAYS,
         getPlanDisplay,
         formatDate,
-        saved: saved || trialGranted,
+        saved: saved || trialGranted || pilotSaved,
         trialGranted,
+        pilotSaved,
         error: null,
         assignmentPreview: null,
         form: {
@@ -1769,17 +2317,30 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
       limit: 25,
     });
     const trialStatus = await churchGrowthTrialService.getOrganisationTrialStatus(pool, organizationId);
+    const pilotFlags = await churchPilotFeatureFlagService.listEffectiveFlagsForOrganisation(
+      pool,
+      organizationId
+    );
+    const pilotAudit = await churchPilotFeatureFlagService.listPilotFlagAudit(pool, {
+      organizationId,
+      limit: 20,
+    });
     const adminUser = req.session.adminUser || {};
     return res.status(opts.status || 200).render("admin/church/organization_plan", {
       planSummary,
       packageDiagnostic,
       packageHistory,
       trialStatus,
+      pilotFlags,
+      pilotAudit,
+      pilotFlagDefinitions: churchPilotFeatureFlagService.listPilotFlagDefinitions(),
       packageCodes: churchPackageAssignmentService.ASSIGNABLE_PACKAGE_CODES,
+      growthTrialDurationDays: churchGrowthTrialService.DEFAULT_DURATION_DAYS,
       getPlanDisplay,
       formatDate,
       saved: false,
       trialGranted: false,
+      pilotSaved: false,
       error: opts.error || null,
       assignmentPreview: opts.assignmentPreview || null,
       form: opts.form || {
@@ -1820,7 +2381,10 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
           (err.code === "DUPLICATE_TRIAL" ||
             err.code === "REASON_REQUIRED" ||
             err.code === "ALREADY_GROWTH" ||
-            err.code === "NOT_FOUND")
+            err.code === "NOT_FOUND" ||
+            err.code === "PILOT_FEATURE_DENIED" ||
+            err.code === "PACKAGE_FEATURE_DENIED" ||
+            err.code === "NOT_BILLABLE_ENVIRONMENT")
         ) {
           return renderPackageAssignmentPage(req, res, organizationId, {
             status: 400,
@@ -1831,6 +2395,85 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         throw err;
       }
     } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.post(
+    "/church/organizations/:organizationId/pilot-flags/:flagKey",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const organizationId = Number(req.params.organizationId);
+        const flagKey = String(req.params.flagKey || "").trim();
+        if (!Number.isFinite(organizationId) || organizationId <= 0) {
+          return res.status(404).type("text").send("Organization not found.");
+        }
+        const pool = getPgPool();
+        const admin = req.session.adminUser || {};
+        await churchPilotFeatureFlagService.setTenantPilotFlag(pool, organizationId, flagKey, req.body || {}, {
+          id: platformAdminId(req),
+          label: admin.display_name || admin.username || admin.email || "Platform admin",
+        });
+        return res.redirect(
+          `/admin/church/organizations/${organizationId}/plan?pilot=1#pilot-flags`
+        );
+      } catch (err) {
+        if (err && (err.code === "VALIDATION" || err.code === "NOT_FOUND")) {
+          return renderPackageAssignmentPage(req, res, Number(req.params.organizationId), {
+            status: 400,
+            error: err.message,
+          });
+        }
+        return next(err);
+      }
+    }
+  );
+
+  router.get("/church/pilot-flags", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const definitions = churchPilotFeatureFlagService.listPilotFlagDefinitions();
+      const rows = [];
+      for (const def of definitions) {
+        const resolved = await churchPilotFeatureFlagService.resolvePilotFlag(pool, {
+          flagKey: def.key,
+        });
+        rows.push({ definition: def, resolved });
+      }
+      const audit = await churchPilotFeatureFlagService.listPilotFlagAudit(pool, {
+        limit: 40,
+      });
+      return res.render("admin/church/pilot_feature_flags", {
+        rows,
+        audit,
+        notice: String(req.query.notice || "").trim() || null,
+        error: String(req.query.error || "").trim() || null,
+        activeNav: "church_platform_pilot_flags",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.post("/church/pilot-flags/:flagKey", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const flagKey = String(req.params.flagKey || "").trim();
+      const pool = getPgPool();
+      const admin = req.session.adminUser || {};
+      await churchPilotFeatureFlagService.setPlatformPilotFlag(pool, flagKey, req.body || {}, {
+        id: platformAdminId(req),
+        label: admin.display_name || admin.username || admin.email || "Platform admin",
+      });
+      return res.redirect(
+        `/admin/church/pilot-flags?notice=${encodeURIComponent("Platform pilot flag saved.")}`
+      );
+    } catch (err) {
+      if (err && err.code === "VALIDATION") {
+        return res.redirect(
+          `/admin/church/pilot-flags?error=${encodeURIComponent(err.message)}`
+        );
+      }
       return next(err);
     }
   });
@@ -2927,8 +3570,10 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
     const params = new URLSearchParams();
     if (f.organizationId) params.set("organization_id", String(f.organizationId));
     if (f.q) params.set("q", f.q);
+    if (f.action) params.set("action", f.action);
     if (f.actionGroup && f.actionGroup !== "all") params.set("action_group", f.actionGroup);
     if (f.actorType) params.set("actor_type", f.actorType);
+    if (f.actorId) params.set("actor_id", String(f.actorId));
     if (f.targetType) params.set("target_type", f.targetType);
     if (f.dateFrom) params.set("date_from", f.dateFrom);
     if (f.dateTo) params.set("date_to", f.dateTo);
@@ -3012,6 +3657,336 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
     }
   });
 
+  function buildPlatformJobsQuery(filters, page) {
+    const f = filters || {};
+    const pageNum = page != null ? Number(page) || 1 : Number(f.page) || 1;
+    const params = new URLSearchParams();
+    if (f.jobType) params.set("job_type", f.jobType);
+    if (f.status) params.set("status", f.status);
+    if (f.organizationId) params.set("organization_id", String(f.organizationId));
+    if (pageNum > 1) params.set("page", String(pageNum));
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  }
+
+  router.get("/church/jobs", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const listed = await churchBackgroundJobStatusService.listBackgroundJobs(pool, req.query);
+      const page = Math.min(listed.filters.page, listed.totalPages);
+      return res.render("admin/church/platform_jobs", {
+        jobs: listed.jobs,
+        filters: { ...listed.filters, page },
+        total: listed.total,
+        totalPages: listed.totalPages,
+        jobTypeDefs: churchBackgroundJobStatusService.JOB_TYPE_DEFS,
+        notice: String(req.query.notice || "").trim() || null,
+        error: String(req.query.error || "").trim() || null,
+        prevUrl:
+          page > 1 ? `/admin/church/jobs${buildPlatformJobsQuery(listed.filters, page - 1)}` : null,
+        nextUrl:
+          page < listed.totalPages
+            ? `/admin/church/jobs${buildPlatformJobsQuery(listed.filters, page + 1)}`
+            : null,
+        activeNav: "church_platform_jobs",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.get("/church/jobs/:jobType/:jobId", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const jobType = decodeURIComponent(String(req.params.jobType || ""));
+      const jobId = decodeURIComponent(String(req.params.jobId || ""));
+      const job = await churchBackgroundJobStatusService.getBackgroundJobByParts(pool, jobType, jobId);
+      return res.render("admin/church/platform_job_detail", {
+        job,
+        notice: String(req.query.notice || "").trim() || null,
+        error: String(req.query.error || "").trim() || null,
+        activeNav: "church_platform_jobs",
+      });
+    } catch (err) {
+      if (err && err.code === "NOT_FOUND") {
+        return res.status(404).type("text").send("Job not found.");
+      }
+      return next(err);
+    }
+  });
+
+  router.post("/church/jobs/:jobType/:jobId/retry", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const jobType = decodeURIComponent(String(req.params.jobType || ""));
+      const jobId = decodeURIComponent(String(req.params.jobId || ""));
+      const ref = `${jobType}:${jobId}`;
+      const adminUser = req.session.adminUser || {};
+      await churchBackgroundJobStatusService.retryBackgroundJob(pool, ref, {
+        platformAdminId: adminUser.id || null,
+      });
+      return res.redirect(
+        `/admin/church/jobs/${encodeURIComponent(jobType)}/${encodeURIComponent(jobId)}?notice=${encodeURIComponent("Retry submitted. Idempotency keys are preserved.")}`
+      );
+    } catch (err) {
+      if (err && (err.code === "NOT_FOUND" || err.code === "RETRY_UNSUPPORTED" || err.code === "INVALID_STATUS")) {
+        const jobType = decodeURIComponent(String(req.params.jobType || ""));
+        const jobId = decodeURIComponent(String(req.params.jobId || ""));
+        return res.redirect(
+          `/admin/church/jobs/${encodeURIComponent(jobType)}/${encodeURIComponent(jobId)}?error=${encodeURIComponent(err.message || "Retry failed.")}`
+        );
+      }
+      return next(err);
+    }
+  });
+
+  router.post("/church/jobs/:jobType/:jobId/cancel", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const jobType = decodeURIComponent(String(req.params.jobType || ""));
+      const jobId = decodeURIComponent(String(req.params.jobId || ""));
+      const ref = `${jobType}:${jobId}`;
+      const adminUser = req.session.adminUser || {};
+      await churchBackgroundJobStatusService.cancelBackgroundJob(pool, ref, {
+        platformAdminId: adminUser.id || null,
+      });
+      return res.redirect(
+        `/admin/church/jobs/${encodeURIComponent(jobType)}/${encodeURIComponent(jobId)}?notice=${encodeURIComponent("Pending job cancelled.")}`
+      );
+    } catch (err) {
+      if (err && (err.code === "NOT_FOUND" || err.code === "CANCEL_UNSUPPORTED" || err.code === "INVALID_STATUS")) {
+        const jobType = decodeURIComponent(String(req.params.jobType || ""));
+        const jobId = decodeURIComponent(String(req.params.jobId || ""));
+        return res.redirect(
+          `/admin/church/jobs/${encodeURIComponent(jobType)}/${encodeURIComponent(jobId)}?error=${encodeURIComponent(err.message || "Cancel failed.")}`
+        );
+      }
+      return next(err);
+    }
+  });
+
+  function isKnownNotificationTemplateKey(key) {
+    return TEMPLATE_KEYS.includes(String(key || "").trim());
+  }
+
+  router.get("/church/notification-templates", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const pool = getPgPool();
+      const templates = await notificationTemplateService.listEffectiveTemplates(pool, null);
+      return res.render("admin/church/notification_templates", {
+        templates,
+        notice: String(req.query.notice || "").trim() || null,
+        error: String(req.query.error || "").trim() || null,
+        activeNav: "church_platform_notification_templates",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.get("/church/notification-templates/:templateKey", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const key = String(req.params.templateKey || "").trim();
+      if (!isKnownNotificationTemplateKey(key)) {
+        return res.status(404).type("text").send("Template not found.");
+      }
+      const pool = getPgPool();
+      const template = await notificationTemplateService.getEffectiveTemplate(pool, key, null);
+      return res.render("admin/church/notification_template_detail", {
+        template,
+        preview: null,
+        form: {
+          subject_template: template.subjectTemplate,
+          body_text_template: template.bodyTextTemplate,
+          body_html_template: template.bodyHtmlTemplate || "",
+        },
+        notice: String(req.query.notice || "").trim() || null,
+        error: String(req.query.error || "").trim() || null,
+        activeNav: "church_platform_notification_templates",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.post("/church/notification-templates/:templateKey", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const key = String(req.params.templateKey || "").trim();
+      if (!isKnownNotificationTemplateKey(key)) {
+        return res.status(404).type("text").send("Template not found.");
+      }
+      const pool = getPgPool();
+      const adminUser = req.session.adminUser || {};
+      await notificationTemplateService.upsertTemplate(pool, {
+        templateKey: key,
+        organizationId: null,
+        subject_template: req.body.subject_template,
+        body_text_template: req.body.body_text_template,
+        body_html_template: req.body.body_html_template,
+        actorType: "platform_admin",
+        actorId: adminUser.id || null,
+      });
+      return res.redirect(
+        `/admin/church/notification-templates/${encodeURIComponent(key)}?notice=${encodeURIComponent("Platform default saved.")}`
+      );
+    } catch (err) {
+      if (err && err.code === "VALIDATION") {
+        return res.redirect(
+          `/admin/church/notification-templates/${encodeURIComponent(req.params.templateKey)}?error=${encodeURIComponent(err.message)}`
+        );
+      }
+      return next(err);
+    }
+  });
+
+  router.post(
+    "/church/notification-templates/:templateKey/preview",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const key = String(req.params.templateKey || "").trim();
+        if (!isKnownNotificationTemplateKey(key)) {
+          return res.status(404).type("text").send("Template not found.");
+        }
+        const pool = getPgPool();
+        const validated = notificationTemplateService.validateAndSanitizeInput(key, req.body || {});
+        if (!validated.ok) {
+          return res.redirect(
+            `/admin/church/notification-templates/${encodeURIComponent(key)}?error=${encodeURIComponent(validated.error)}`
+          );
+        }
+        const effective = await notificationTemplateService.getEffectiveTemplate(pool, key, null);
+        const preview = notificationTemplateService.renderTemplateContent(
+          {
+            ...effective,
+            subjectTemplate: validated.subject_template,
+            bodyTextTemplate: validated.body_text_template,
+            bodyHtmlTemplate: validated.body_html_template,
+          },
+          notificationTemplateService.sampleVariablesForTemplate(key)
+        );
+        return res.render("admin/church/notification_template_detail", {
+          template: effective,
+          preview,
+          form: {
+            subject_template: validated.subject_template,
+            body_text_template: validated.body_text_template,
+            body_html_template: validated.body_html_template || "",
+          },
+          notice: "Preview generated (not saved).",
+          error: null,
+          activeNav: "church_platform_notification_templates",
+        });
+      } catch (err) {
+        if (err && err.code === "MISSING_VARIABLES") {
+          return res.redirect(
+            `/admin/church/notification-templates/${encodeURIComponent(req.params.templateKey)}?error=${encodeURIComponent(err.message)}`
+          );
+        }
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    "/church/notification-templates/:templateKey/restore",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const key = String(req.params.templateKey || "").trim();
+        if (!isKnownNotificationTemplateKey(key)) {
+          return res.status(404).type("text").send("Template not found.");
+        }
+        const pool = getPgPool();
+        const adminUser = req.session.adminUser || {};
+        await notificationTemplateService.restoreDefaultTemplate(pool, {
+          templateKey: key,
+          organizationId: null,
+          actorType: "platform_admin",
+          actorId: adminUser.id || null,
+        });
+        return res.redirect(
+          `/admin/church/notification-templates/${encodeURIComponent(key)}?notice=${encodeURIComponent("Catalogue default restored.")}`
+        );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    "/church/notification-templates/:templateKey/test-send",
+    requireSuperAdmin,
+    async (req, res, next) => {
+      try {
+        const key = String(req.params.templateKey || "").trim();
+        if (!isKnownNotificationTemplateKey(key)) {
+          return res.status(404).type("text").send("Template not found.");
+        }
+        const pool = getPgPool();
+        const adminUser = req.session.adminUser || {};
+        const email = String(adminUser.email || adminUser.username || "")
+          .trim()
+          .toLowerCase();
+        if (!email || !email.includes("@")) {
+          return res.redirect(
+            `/admin/church/notification-templates/${encodeURIComponent(key)}?error=${encodeURIComponent("Your platform admin account needs an email for test delivery.")}`
+          );
+        }
+        await notificationTemplateService.testSendTemplate(pool, {
+          templateKey: key,
+          organizationId: null,
+          recipientEmail: email,
+          authorisedRecipient: true,
+          recipientActorType: "platform_admin",
+          recipientActorId: adminUser.id || null,
+          actorType: "platform_admin",
+          actorId: adminUser.id || null,
+        });
+        return res.redirect(
+          `/admin/church/notification-templates/${encodeURIComponent(key)}?notice=${encodeURIComponent("Test delivery recorded for your administrator email (no external provider).")}`
+        );
+      } catch (err) {
+        if (err && (err.code === "VALIDATION" || err.code === "FORBIDDEN" || err.code === "MISSING_VARIABLES")) {
+          return res.redirect(
+            `/admin/church/notification-templates/${encodeURIComponent(req.params.templateKey)}?error=${encodeURIComponent(err.message)}`
+          );
+        }
+        return next(err);
+      }
+    }
+  );
+
+  router.get("/church/audit/export.csv", requireSuperAdmin, async (req, res, next) => {
+    try {
+      const parsed = parseAuditFilters(req.query);
+      if (!parsed.ok) {
+        return res.status(400).type("text").send(parsed.error);
+      }
+      const pool = getPgPool();
+      const filters = {
+        ...parsed.filters,
+        limit: AUDIT_EXPORT_MAX_ROWS,
+        offset: 0,
+        page: 1,
+      };
+      if (filters.organizationId) {
+        const orgs = await platformProvisioningRepo.listChurchOrganizations(pool, {});
+        const ok = orgs.some((o) => Number(o.id) === Number(filters.organizationId));
+        if (!ok) {
+          return res.status(400).type("text").send("Invalid organization filter.");
+        }
+      }
+      const logs = await auditLogsRepo.listAuditLogsForPlatform(pool, filters);
+      const csv = buildAuditExportCsv(logs);
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", 'attachment; filename="platform-audit-export.csv"');
+      return res.status(200).send(csv);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
   router.get("/church/audit", requireSuperAdmin, async (req, res, next) => {
     try {
       const parsed = parseAuditFilters(req.query);
@@ -3048,6 +4023,13 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         actorDisplayFromRow,
         targetLabelFromRow,
         auditSummary,
+        entityIdentifierFromRow,
+        entityDisplayFromRow,
+        packageChangeFromRow,
+        reasonFromRow,
+        resultFromRow,
+        canExport: true,
+        exportUrl: `/admin/church/audit/export.csv${buildPlatformAuditQuery(filters, 1)}`,
         prevUrl: page > 1 ? `/admin/church/audit${buildPlatformAuditQuery(filters, page - 1)}` : null,
         nextUrl: page < totalPages ? `/admin/church/audit${buildPlatformAuditQuery(filters, page + 1)}` : null,
         activeNav: "church_platform_audit",
@@ -3076,6 +4058,11 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
         actorDisplayFromRow,
         targetLabelFromRow,
         auditSummary,
+        entityIdentifierFromRow,
+        entityDisplayFromRow,
+        packageChangeFromRow,
+        reasonFromRow,
+        resultFromRow,
         formatMetadataForDisplay,
         activeNav: "church_platform_audit",
       });

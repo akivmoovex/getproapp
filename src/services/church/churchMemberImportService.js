@@ -178,6 +178,12 @@ async function previewMemberImport(pool, opts) {
     actorType = "branch_admin",
   } = opts;
 
+  const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+  await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
+    organizationId,
+    flagKey: "member_import_advanced",
+  });
+
   const batchKey = makeBatchKey(providedKey);
 
   const existing = await pool.query(
@@ -513,19 +519,50 @@ async function getImportBatchDetail(pool, batchId, opts = {}) {
   }
   if (!batch) return null;
 
-  const rows = await pool.query(
-    `SELECT id, row_number, disposition, proposed_status, review_decision,
-            full_name, email_normalized, phone_normalized, phone_display, member_type_raw,
-            admin_flag, ignored_tenant_columns, field_errors, match_member_id, match_status,
-            match_reasons, payload_json, commit_outcome, committed_member_id
-     FROM public.church_member_import_rows
-     WHERE batch_id = $1
-     ORDER BY row_number ASC`,
-    [batchId]
-  );
+  const includePayload = opts.includePayload === true;
+  const paginate = opts.page != null || opts.limit != null;
+  const page = Math.max(Number(opts.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(opts.limit) || 100, 1), 200);
+  const offset = (page - 1) * limit;
 
-  const seatUsage = await getOrganisationSeatUsage(pool, batch.organization_id);
-  const impact = buildImpactPreview(seatUsage, rows.rows);
+  const [impactRows, seatUsage] = await Promise.all([
+    pool.query(
+      `SELECT disposition, proposed_status, admin_flag, review_decision
+       FROM public.church_member_import_rows
+       WHERE batch_id = $1`,
+      [batchId]
+    ),
+    getOrganisationSeatUsage(pool, batch.organization_id),
+  ]);
+  const impact = buildImpactPreview(seatUsage, impactRows.rows);
+
+  const payloadSelect = includePayload ? ", payload_json" : "";
+  let rowsSql = `
+    SELECT id, row_number, disposition, proposed_status, review_decision,
+           full_name, email_normalized, phone_normalized, phone_display, member_type_raw,
+           admin_flag, ignored_tenant_columns, field_errors, match_member_id, match_status,
+           match_reasons${payloadSelect}, commit_outcome, committed_member_id
+    FROM public.church_member_import_rows
+    WHERE batch_id = $1
+    ORDER BY row_number ASC`;
+  const rowParams = [batchId];
+  if (paginate) {
+    rowsSql += ` LIMIT $2 OFFSET $3`;
+    rowParams.push(limit, offset);
+  }
+
+  const [rows, countR] = await Promise.all([
+    pool.query(rowsSql, rowParams),
+    paginate
+      ? pool.query(
+          `SELECT COUNT(*)::int AS n FROM public.church_member_import_rows WHERE batch_id = $1`,
+          [batchId]
+        )
+      : Promise.resolve(null),
+  ]);
+
+  const total = countR ? Number(countR.rows[0] && countR.rows[0].n) || 0 : rows.rows.length;
+  const totalPages = paginate ? Math.max(Math.ceil(total / limit), 1) : 1;
 
   return {
     batch,
@@ -536,6 +573,15 @@ async function getImportBatchDetail(pool, batchId, opts = {}) {
     })),
     impact,
     summary: batch.summary_json || {},
+    pagination: paginate
+      ? {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasMore: page < totalPages,
+        }
+      : null,
   };
 }
 
@@ -619,6 +665,11 @@ async function createMemberFromImportRow(pool, batch, row, passwordHash) {
  */
 async function commitMemberImport(pool, opts) {
   const { batchId, organizationId, branchId, adminId, actorType = "branch_admin" } = opts;
+  const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+  await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
+    organizationId,
+    flagKey: "member_import_advanced",
+  });
   const batch = await assertBatchOwned(pool, batchId, organizationId, branchId);
   if (!batch) {
     const err = new Error("Import batch not found.");
@@ -642,7 +693,11 @@ async function commitMemberImport(pool, opts) {
     throw err;
   }
 
-  const detail = await getImportBatchDetail(pool, batchId, { organizationId, branchId });
+  const detail = await getImportBatchDetail(pool, batchId, {
+    organizationId,
+    branchId,
+    includePayload: true,
+  });
   const passwordHash = await bcrypt.hash(crypto.randomBytes(24).toString("hex"), 12);
 
   let created = 0;

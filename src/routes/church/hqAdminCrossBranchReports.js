@@ -71,7 +71,7 @@ module.exports = function registerHqAdminCrossBranchReportsRoutes(router) {
             ministries: ministries.rows,
             departments: departments.rows,
             formatMoney,
-            viewMode: String(req.query.view || "chart") === "table" ? "table" : "chart",
+            viewMode: String(req.query.view || "table") === "chart" ? "chart" : "table",
             ...featureLocals,
           })
         );

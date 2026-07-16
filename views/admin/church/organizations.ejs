@@ -57,6 +57,7 @@
                 <div>
                   <strong><%= org.name %></strong>
                   <span class="church-platform-meta">ID: <%= org.slug %></span>
+                  <div style="margin-top:0.25rem;"><%- include('../../partials/admin/church_data_environment_badge', { dataEnvironment: org.data_environment || 'production' }) %></div>
                 </div>
               </div>
             </td>

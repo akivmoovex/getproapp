@@ -12,8 +12,15 @@
             <div><dt>Branch</dt><dd><%= log.branch_name || '—' %></dd></div>
             <div><dt>Actor</dt><dd><%= actorTypeLabel(log.actor_type) %> — <%= actorDisplayFromRow(log) %></dd></div>
             <div><dt>Action</dt><dd><%= actionLabel(log.action) %></dd></div>
-            <div><dt>Entity</dt><dd><%= targetTypeLabel(log.entity_type) %> — <%= targetLabelFromRow(log) %></dd></div>
+            <div><dt>Entity type</dt><dd><%= targetTypeLabel(log.entity_type) %></dd></div>
+            <div><dt>Entity ID</dt><dd><%= entityIdentifierFromRow(log) %></dd></div>
+            <div><dt>Entity label</dt><dd><%= targetLabelFromRow(log) %></dd></div>
+            <div><dt>Package / entitlement</dt><dd><%= packageChangeFromRow(log) %></dd></div>
+            <div><dt>Reason</dt><dd><%= reasonFromRow(log) %></dd></div>
+            <div><dt>Result</dt><dd><%= resultFromRow(log) %></dd></div>
             <div><dt>Summary</dt><dd style="overflow-wrap:anywhere;"><%= auditSummary(log) %></dd></div>
+            <% if (log.ip_address) { %><div><dt>IP address</dt><dd><%= log.ip_address %></dd></div><% } %>
+            <% if (log.user_agent) { %><div><dt>User agent</dt><dd style="overflow-wrap:anywhere;"><%= log.user_agent %></dd></div><% } %>
             <div><dt>Safe metadata</dt><dd><pre style="white-space:pre-wrap;overflow-wrap:anywhere;margin:0;"><%= formatMetadataForDisplay(log.metadata_json) %></pre></dd></div>
           </dl>
         </section>

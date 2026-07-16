@@ -16,11 +16,13 @@ const AUDIT_ACTION_GROUPS = [
   { id: "requests", label: "Requests" },
   { id: "hq_review", label: "HQ Review" },
   { id: "broadcasts", label: "Broadcasts" },
+  { id: "package", label: "Package events" },
+  { id: "security", label: "Security events" },
 ];
 
 const ACTION_GROUP_SQL = {
   members: ["member_%", "platform_member_%"],
-  reports: ["monthly_report_%", "hq_report_%"],
+  reports: ["monthly_report_%", "hq_report_%", "scheduled_report_%"],
   attendance: ["attendance_%", "leader_attendance_%"],
   giving: ["giving_%"],
   website: ["website_%"],
@@ -46,8 +48,43 @@ const ACTION_GROUP_SQL = {
     "password_reset_request_rate_limited",
   ],
   hq_review: ["hq_report_%", "ministry_activity_%", "ministry_activity_follow_up_%"],
-  broadcasts: ["hq_broadcast_%"],
+  broadcasts: ["hq_broadcast_%", "scheduled_broadcast_%"],
+  package: [
+    "platform_package_%",
+    "platform_church_plan_%",
+    "platform_growth_trial_%",
+    "package_%",
+  ],
+  security: [
+    "%login_locked",
+    "%password_reset%",
+    "password_reset_request_rate_limited",
+    "platform_login_%",
+    "platform_member_password_%",
+    "platform_support_diagnostic_%",
+    "platform_pilot_readiness_%",
+    "platform_demo_organisation_%",
+    "platform_organization_data_environment_%",
+    "platform_backup_%",
+    "member_password_changed_self_service",
+    "branch_admin_password_changed_self_service",
+    "hq_admin_password_changed_self_service",
+  ],
 };
+
+/** Branch admins must not see these even when branch_id is set. */
+const BRANCH_RESTRICTED_ACTION_LIKE = Object.freeze([
+  "platform_%",
+  "package_%",
+  "organization_inactivity_%",
+  "organization_marked_dormant",
+  "organization_reactivated_from_dormancy",
+]);
+
+const BRANCH_RESTRICTED_ACTOR_TYPES = Object.freeze(["platform_admin"]);
+
+/** Safe export page size cap (no full-table dump). */
+const AUDIT_EXPORT_MAX_ROWS = 500;
 
 const ACTION_LABELS = {
   member_verified_by_admin: "Member verified",
@@ -157,6 +194,32 @@ const ACTION_LABELS = {
   organization_reactivated_from_dormancy: "Organization reactivated from dormancy",
   platform_church_organization_slug_changed: "Organization slug changed",
   platform_church_plan_updated: "Organization plan updated",
+  platform_package_assigned: "Package assigned",
+  platform_background_job_retry: "Background job retried",
+  platform_background_job_cancelled: "Background job cancelled",
+  platform_notification_template_updated: "Notification template updated",
+  notification_template_override_saved: "Notification template override saved",
+  notification_template_override_restored: "Notification template default restored",
+  notification_template_test_sent: "Notification template test delivery recorded",
+  platform_support_diagnostic_viewed: "Support diagnostic viewed",
+  platform_support_diagnostic_exported: "Support diagnostic exported",
+  platform_pilot_readiness_note_updated: "Pilot readiness note updated",
+  platform_pilot_readiness_approved: "Pilot readiness approved",
+  platform_demo_organisation_reset: "Demo organisation content reset",
+  platform_organization_data_environment_updated: "Organisation data environment updated",
+  platform_backup_verification_recorded: "Backup verification recorded",
+  platform_backup_restoration_test_recorded: "Backup restoration test recorded",
+  platform_package_assignment_previewed: "Package assignment previewed",
+  platform_growth_trial_granted: "Growth trial granted",
+  platform_growth_trial_reminder: "Growth trial reminder",
+  platform_growth_trial_expired: "Growth trial expired",
+  platform_growth_trial_config_retention_ended: "Growth trial config retention ended",
+  package_feature_denied: "Package feature denied",
+  package_quota_member_blocked: "Member seat quota blocked",
+  package_quota_admin_blocked: "Admin seat quota blocked",
+  package_quota_storage_blocked: "Storage quota blocked",
+  package_quota_external_email_blocked: "External email quota blocked",
+  package_quota_scheduled_report_blocked: "Scheduled report quota blocked",
   platform_church_branch_created: "Branch created",
   platform_church_branch_updated: "Branch updated",
   platform_church_branch_suspended: "Branch suspended",
@@ -239,10 +302,13 @@ function parseAuditFilters(query) {
   const page = Math.max(Number(query && query.page) || 1, 1);
   const limit = Math.min(Math.max(Number(query && query.limit) || 50, 1), 100);
   const q = String((query && query.q) || "").trim();
-  const action = String((query && query.action) || "").trim();
+  const action = String((query && query.action) || "").trim().slice(0, 128);
   const actionGroup = String((query && query.action_group) || "all").trim();
   const actorType = String((query && query.actor_type) || "").trim();
   const targetType = String((query && query.target_type) || "").trim();
+  const actorIdRaw = query && (query.actor_id != null ? query.actor_id : query.user);
+  const actorId =
+    actorIdRaw != null && String(actorIdRaw).trim() !== "" ? Number(actorIdRaw) : null;
   const branchIdRaw = query && query.branch_id;
   const branchId =
     branchIdRaw != null && String(branchIdRaw).trim() !== ""
@@ -269,6 +335,7 @@ function parseAuditFilters(query) {
       action,
       actionGroup: AUDIT_ACTION_GROUPS.some((g) => g.id === actionGroup) ? actionGroup : "all",
       actorType: actorType && AUDIT_ACTOR_TYPES.includes(actorType) ? actorType : "",
+      actorId: Number.isFinite(actorId) && actorId > 0 ? actorId : null,
       targetType: targetType || "",
       branchId: Number.isFinite(branchId) && branchId > 0 ? branchId : null,
       organizationId: Number.isFinite(organizationId) && organizationId > 0 ? organizationId : null,
@@ -315,6 +382,53 @@ function auditSummary(row) {
   return parts.join(" ");
 }
 
+function entityIdentifierFromRow(row) {
+  if (row == null || row.entity_id == null || row.entity_id === "") return "—";
+  return String(row.entity_id);
+}
+
+/**
+ * Compact label for tables: "member 42" or entity type alone when no id.
+ */
+function entityDisplayFromRow(row) {
+  const type = targetTypeLabel(row && row.entity_type);
+  const id = entityIdentifierFromRow(row);
+  if (id === "—") return type === "—" ? "—" : type;
+  return `${type} ${id}`;
+}
+
+function packageChangeFromRow(row) {
+  const meta = parseMetadata(row && row.metadata_json);
+  const previous =
+    meta.previous_package ||
+    meta.previous_package_code ||
+    meta.previous_plan ||
+    null;
+  const next = meta.new_package || meta.new_package_code || meta.new_plan || null;
+  if (previous && next) return `${previous} → ${next}`;
+  if (next) return String(next);
+  if (meta.package_code) return String(meta.package_code);
+  if (meta.feature_id) return String(meta.feature_id);
+  return "—";
+}
+
+function reasonFromRow(row) {
+  const meta = parseMetadata(row && row.metadata_json);
+  if (meta.reason != null && String(meta.reason).trim()) return String(meta.reason).slice(0, 500);
+  if (meta.defer_reason != null && String(meta.defer_reason).trim()) {
+    return String(meta.defer_reason).slice(0, 500);
+  }
+  return "—";
+}
+
+function resultFromRow(row) {
+  const meta = parseMetadata(row && row.metadata_json);
+  if (meta.result != null && String(meta.result).trim()) return String(meta.result).slice(0, 200);
+  if (meta.status != null && String(meta.status).trim()) return String(meta.status).slice(0, 200);
+  if (meta.outcome != null && String(meta.outcome).trim()) return String(meta.outcome).slice(0, 200);
+  return "—";
+}
+
 const SENSITIVE_METADATA_KEYS = new Set([
   "password",
   "password_hash",
@@ -340,7 +454,59 @@ const SENSITIVE_METADATA_KEYS = new Set([
   "databaseUrl",
   "env",
   "environment",
+  "note",
+  "notes",
+  "body",
+  "content",
+  "admin_note",
+  "pastoral_note",
+  "pastoral_content",
+  "care_note",
+  "care_notes",
+  "support_note",
+  "support_note_body",
+  "prayer_text",
+  "prayer_content",
+  "prayer_request_text",
+  "prayer_details",
+  "note_body",
+  "notes_confidential",
+  "confidential_note",
+  "raw_csv",
+  "csv_content",
+  "row_payload",
 ]);
+
+/** Commercial / operational keys that must remain visible despite "_note" suffixes. */
+const SENSITIVE_METADATA_ALLOWLIST = new Set([
+  "plan_notes",
+  "quota_key",
+  "feature_id",
+  "entitlement_key",
+  "history_id",
+  "trial_id",
+]);
+
+function isSensitiveMetadataKey(key) {
+  const normalized = String(key).toLowerCase().replace(/[\s-]+/g, "_");
+  if (SENSITIVE_METADATA_ALLOWLIST.has(normalized)) return false;
+  if (SENSITIVE_METADATA_KEYS.has(normalized)) return true;
+  if (normalized.includes("password")) return true;
+  if (normalized.includes("token")) return true;
+  if (normalized.includes("csrf")) return true;
+  if (normalized.includes("cookie")) return true;
+  if (normalized.includes("secret")) return true;
+  if (normalized.includes("session_id")) return true;
+  if (normalized.includes("database_url")) return true;
+  if (normalized.includes("pastoral")) return true;
+  if (normalized.includes("prayer")) return true;
+  if (normalized.includes("confiden")) return true;
+  if (normalized.includes("care_note") || normalized.includes("care_notes")) return true;
+  if (normalized.endsWith("_note") || normalized.endsWith("_notes") || normalized.includes("_note_")) {
+    return true;
+  }
+  return false;
+}
 
 function sanitizeMetadataForDisplay(value, depth) {
   if (depth > 6) return "[omitted]";
@@ -351,19 +517,7 @@ function sanitizeMetadataForDisplay(value, depth) {
   if (typeof value !== "object") return value;
   const out = {};
   for (const [key, nested] of Object.entries(value)) {
-    const normalized = String(key).toLowerCase().replace(/[\s-]+/g, "_");
-    if (
-      SENSITIVE_METADATA_KEYS.has(normalized) ||
-      normalized.includes("password") ||
-      normalized.includes("token") ||
-      normalized.includes("csrf") ||
-      normalized.includes("cookie") ||
-      normalized.includes("secret") ||
-      normalized.includes("session_id") ||
-      normalized.includes("database_url")
-    ) {
-      continue;
-    }
+    if (isSensitiveMetadataKey(key)) continue;
     out[key] = sanitizeMetadataForDisplay(nested, depth + 1);
   }
   return out;
@@ -384,10 +538,77 @@ function actionPatternsForGroup(groupId) {
   return ACTION_GROUP_SQL[groupId] || null;
 }
 
+function likePatternToRegExp(pattern) {
+  const escaped = String(pattern).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*");
+  return new RegExp(`^${escaped}$`, "i");
+}
+
+function isBranchRestrictedAuditRow(row) {
+  if (!row) return true;
+  const actorType = String(row.actor_type || "");
+  if (BRANCH_RESTRICTED_ACTOR_TYPES.includes(actorType)) return true;
+  const action = String(row.action || "");
+  return BRANCH_RESTRICTED_ACTION_LIKE.some((pattern) => likePatternToRegExp(pattern).test(action));
+}
+
+function csvEscape(value) {
+  const s = value == null ? "" : String(value);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function auditRowToSafeExportObject(row) {
+  const meta = sanitizeMetadataForDisplay(parseMetadata(row.metadata_json), 0);
+  return {
+    timestamp: row.created_at ? new Date(row.created_at).toISOString() : "",
+    organization: row.organization_name || "",
+    branch: row.branch_name || "",
+    acting_user: actorDisplayFromRow(row),
+    actor_type: row.actor_type || "",
+    action: row.action || "",
+    action_label: actionLabel(row.action),
+    entity_type: row.entity_type || "",
+    entity_id: row.entity_id != null ? String(row.entity_id) : "",
+    package_change: packageChangeFromRow(row) === "—" ? "" : packageChangeFromRow(row),
+    reason: reasonFromRow(row) === "—" ? "" : reasonFromRow(row),
+    result: resultFromRow(row) === "—" ? "" : resultFromRow(row),
+    ip_address: row.ip_address || "",
+    // Deliberately omit user_agent and sanitized metadata dump from CSV for minimal surface.
+    metadata_safe: Object.keys(meta || {}).length ? JSON.stringify(meta) : "",
+  };
+}
+
+function buildAuditExportCsv(rows) {
+  const headers = [
+    "timestamp",
+    "organization",
+    "branch",
+    "acting_user",
+    "actor_type",
+    "action",
+    "action_label",
+    "entity_type",
+    "entity_id",
+    "package_change",
+    "reason",
+    "result",
+    "ip_address",
+  ];
+  const lines = [headers.join(",")];
+  for (const row of rows || []) {
+    const obj = auditRowToSafeExportObject(row);
+    lines.push(headers.map((h) => csvEscape(obj[h])).join(","));
+  }
+  return `${lines.join("\n")}\n`;
+}
+
 module.exports = {
   AUDIT_ACTOR_TYPES,
   AUDIT_ACTION_GROUPS,
   ACTION_GROUP_SQL,
+  BRANCH_RESTRICTED_ACTION_LIKE,
+  BRANCH_RESTRICTED_ACTOR_TYPES,
+  AUDIT_EXPORT_MAX_ROWS,
   actionLabel,
   actorTypeLabel,
   targetTypeLabel,
@@ -396,6 +617,15 @@ module.exports = {
   targetLabelFromRow,
   actorDisplayFromRow,
   auditSummary,
+  entityIdentifierFromRow,
+  entityDisplayFromRow,
+  packageChangeFromRow,
+  reasonFromRow,
+  resultFromRow,
   formatMetadataForDisplay,
+  sanitizeMetadataForDisplay,
   actionPatternsForGroup,
+  isBranchRestrictedAuditRow,
+  auditRowToSafeExportObject,
+  buildAuditExportCsv,
 };

@@ -89,7 +89,9 @@ async function recordFeatureDeniedAudit(req, ui, detail) {
  * Attach packageFeatureNav (+ packagePlan) for authorised portal locals builders.
  */
 async function attachPackageFeatureLocals(req, portal) {
-  const plan = await loadPlanForReq(req);
+  // Reuse plan already loaded by requirePackageFeature / loadChurchPackagePlan.
+  const plan = req.churchPackagePlan || (await loadPlanForReq(req));
+  req.churchPackagePlan = plan;
   return {
     packagePlan: plan,
     packageFeatureNav: listNavFeatureGates(plan, portal),
@@ -127,6 +129,45 @@ function requirePackageFeature(featureId, opts = {}) {
       req.packageFeatureUi = ui;
 
       if (ui.state === "available") {
+        const orgId = organisationIdFromReq(req);
+        const pilotKey =
+          require("../../church/blessBoardPilotFeatureFlags").PACKAGE_FEATURE_TO_PILOT_FLAG[
+            featureId
+          ];
+        if (pilotKey && orgId) {
+          const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+          const pilot = await churchPilotFeatureFlagService.isPilotFeatureAvailable(getPgPool(), {
+            organizationId: orgId,
+            flagKey: pilotKey,
+            plan,
+          });
+          if (!pilot.available) {
+            const blockedUi = {
+              ...ui,
+              state: "upgrade",
+              pilotBlocked: true,
+              pilotReason: pilot.reason,
+              pilotSource: pilot.source,
+            };
+            req.packageFeatureUi = blockedUi;
+            const method = String(req.method || "GET").toUpperCase();
+            if (method !== "GET" && method !== "HEAD") {
+              await recordFeatureDeniedAudit(req, blockedUi, {
+                reason: "pilot_flag_blocked",
+                pilot_source: pilot.source,
+              });
+              if (opts.onDenied) return opts.onDenied(req, res, blockedUi);
+              const { renderChurchFailureState } = require("../../church/churchFailureStates");
+              return renderChurchFailureState(req, res, "package_restricted", {
+                message:
+                  pilot.reason ||
+                  `${ui.feature.name} is not enabled for this organisation (pilot flag).`,
+              });
+            }
+            req.packageFeatureGate = blockedUi;
+            return next();
+          }
+        }
         return next();
       }
 
@@ -134,9 +175,10 @@ function requirePackageFeature(featureId, opts = {}) {
       if (method !== "GET" && method !== "HEAD") {
         await recordFeatureDeniedAudit(req, ui, { reason: "mutation_blocked" });
         if (opts.onDenied) return opts.onDenied(req, res, ui);
-        return res.status(403).type("text").send(
-          `${ui.feature.name} requires ${ui.requiredPackageLabel}. Current package: ${ui.packageLabel}.`
-        );
+        const { renderChurchFailureState } = require("../../church/churchFailureStates");
+        return renderChurchFailureState(req, res, "package_restricted", {
+          message: `${ui.feature.name} requires ${ui.requiredPackageLabel}. Current package: ${ui.packageLabel}.`,
+        });
       }
 
       if (ui.state === "hidden" && !allowGetUpgradeShell) {
@@ -167,16 +209,26 @@ async function assertScheduledBroadcastAllowed(req, publishAt) {
 
   const plan = req.churchPackagePlan || (await loadPlanForReq(req));
   req.churchPackagePlan = plan;
-  if (hasEntitlement(plan, "broadcasts.scheduled")) return;
+  if (!hasEntitlement(plan, "broadcasts.scheduled")) {
+    const ui = resolveFeatureUi(plan, "broadcasts_scheduled");
+    await recordFeatureDeniedAudit(req, ui, { reason: "scheduled_broadcast", publish_at: when.toISOString() });
+    throw Object.assign(
+      new Error(
+        `Scheduled broadcasts require ${ui.requiredPackageLabel}. Current package: ${ui.packageLabel}. Publish immediately, or upgrade.`
+      ),
+      { code: PACKAGE_FEATURE_DENIED, featureId: "broadcasts_scheduled", ui }
+    );
+  }
 
-  const ui = resolveFeatureUi(plan, "broadcasts_scheduled");
-  await recordFeatureDeniedAudit(req, ui, { reason: "scheduled_broadcast", publish_at: when.toISOString() });
-  throw Object.assign(
-    new Error(
-      `Scheduled broadcasts require ${ui.requiredPackageLabel}. Current package: ${ui.packageLabel}. Publish immediately, or upgrade.`
-    ),
-    { code: PACKAGE_FEATURE_DENIED, featureId: "broadcasts_scheduled", ui }
-  );
+  const orgId = organisationIdFromReq(req);
+  if (orgId) {
+    const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+    await churchPilotFeatureFlagService.assertPilotFeatureAvailable(getPgPool(), {
+      organizationId: orgId,
+      flagKey: "broadcasts_scheduled",
+      plan,
+    });
+  }
 }
 
 module.exports = {

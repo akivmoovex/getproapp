@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title><%= pageTitle || churchName %> | BlessBoard</title>
   <meta name="robots" content="noindex, nofollow"/>
+  <% if (typeof correlationId !== 'undefined' && correlationId) { %>
+  <meta name="x-request-id" content="<%= correlationId %>"/>
+  <% } %>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -12,14 +15,26 @@
   <link rel="stylesheet" href="/church/church.css?v=47"/>
 </head>
 <body class="church-body church-body--unavailable">
-  <main class="church-unavailable">
-    <div class="church-unavailable__card">
-      <span class="material-symbols-outlined church-unavailable__icon" aria-hidden="true">info</span>
-      <h1 class="church-unavailable__title">This church site is temporarily unavailable.</h1>
-      <p class="church-unavailable__lead">
-        <%= churchName %> is not accessible right now. Please check back later or contact the church office if you need assistance.
-      </p>
+  <header class="church-header church-header--auth">
+    <div class="church-header__inner">
+      <%- include('../partials/brand_lockup', { href: 'https://blessboard.com' }) %>
     </div>
+  </header>
+  <main class="church-unavailable">
+    <%
+      var _reason = typeof unavailableReason !== 'undefined' ? unavailableReason : 'service_unavailable';
+      var _title = typeof failureTitle !== 'undefined' && failureTitle ? failureTitle : 'This church site is temporarily unavailable.';
+      var _lead = typeof failureLead !== 'undefined' && failureLead ? failureLead : ((typeof churchName !== 'undefined' && churchName ? churchName : 'This church') + ' is not accessible right now. Please check back later or contact the church office if you need assistance.');
+      var _icon = typeof failureIcon !== 'undefined' && failureIcon ? failureIcon : 'info';
+      var _actions = typeof failureActions !== 'undefined' && failureActions ? failureActions : [];
+      var failureKind = _reason;
+      var failureCode = _reason;
+      var failureTitle = _title;
+      var failureLead = _lead;
+      var failureIcon = _icon;
+      var failureActions = _actions;
+    %>
+    <%- include('../partials/failure_state_card') %>
   </main>
 </body>
 </html>
