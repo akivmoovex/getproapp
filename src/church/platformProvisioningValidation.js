@@ -14,6 +14,7 @@ const RESERVED_SLUGS = new Set([
   "church",
   "global",
   "demo",
+  "demo2",
   "zm",
   "blessboard",
   "getpro",

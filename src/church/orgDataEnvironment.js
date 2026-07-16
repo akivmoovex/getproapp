@@ -14,8 +14,14 @@ const DATA_ENVIRONMENT_LABELS = Object.freeze({
   test: "Test",
 });
 
-/** Environments that may appear in public directory / production-facing listings. */
+/** Environments that may appear in public directory on production deployments. */
 const PUBLIC_DIRECTORY_ENVIRONMENTS = Object.freeze(["production", "pilot"]);
+
+/**
+ * Environments that may appear in public directory on testing deployments.
+ * Includes catalogue demo tenants (data_environment=demo); automated `test` stays hidden.
+ */
+const PUBLIC_DIRECTORY_ENVIRONMENTS_TESTING = Object.freeze(["production", "pilot", "demo"]);
 
 /** Environments included in production analytics / cross-tenant report aggregates. */
 const REPORT_AGGREGATE_ENVIRONMENTS = Object.freeze(["production", "pilot"]);
@@ -56,8 +62,25 @@ function isReportAggregateEnvironment(orgOrEnv) {
   return REPORT_AGGREGATE_ENVIRONMENTS.includes(getDataEnvironment(orgOrEnv));
 }
 
+/**
+ * Whether an org may appear in the public church directory / selector.
+ * Depends on DEPLOYMENT_ENV (via isTestingDeployment) — not NODE_ENV alone.
+ */
 function isPublicDirectoryEnvironment(orgOrEnv) {
-  return PUBLIC_DIRECTORY_ENVIRONMENTS.includes(getDataEnvironment(orgOrEnv));
+  const env = getDataEnvironment(orgOrEnv);
+  const { isTestingDeployment } = require("./blessBoardEnv");
+  if (isTestingDeployment()) {
+    return PUBLIC_DIRECTORY_ENVIRONMENTS_TESTING.includes(env);
+  }
+  return PUBLIC_DIRECTORY_ENVIRONMENTS.includes(env);
+}
+
+/** Environments allowed in the public directory for the current deployment mode. */
+function publicDirectoryEnvironmentsForDeployment() {
+  const { isTestingDeployment } = require("./blessBoardEnv");
+  return isTestingDeployment()
+    ? PUBLIC_DIRECTORY_ENVIRONMENTS_TESTING
+    : PUBLIC_DIRECTORY_ENVIRONMENTS;
 }
 
 function allowsFabricatedPublicContent(orgOrEnv) {
@@ -78,10 +101,14 @@ function isNonProductionEnvironment(orgOrEnv) {
 
 /**
  * SQL fragment: organisation alias must be `o` (or pass alias).
- * Excludes demo/test from public directory.
+ * Production deployments: production + pilot only.
+ * Testing deployments: also include data_environment=demo (catalogue demos).
  */
 function sqlPublicDirectoryEnvironmentFilter(alias = "o") {
-  return `${alias}.data_environment IN ('production', 'pilot')`;
+  const list = publicDirectoryEnvironmentsForDeployment()
+    .map((e) => `'${e}'`)
+    .join(", ");
+  return `${alias}.data_environment IN (${list})`;
 }
 
 /**
@@ -98,7 +125,7 @@ function sqlExcludeDemoTestFromReports(orgAlias = "o", branchAlias = "b") {
   return `
   AND ${sqlReportAggregateEnvironmentFilter(orgAlias)}
   AND ${branchAlias}.status = 'active'
-  AND lower(${branchAlias}.host_slug) <> 'demo'
+  AND lower(${branchAlias}.host_slug) NOT IN ('demo', 'demo2')
   AND lower(${branchAlias}.host_slug) NOT LIKE 'demo-%'
   AND lower(${branchAlias}.host_slug) NOT LIKE '%-demo'
   AND lower(${branchAlias}.slug) NOT LIKE 'sample%'
@@ -111,6 +138,7 @@ module.exports = {
   DATA_ENVIRONMENTS,
   DATA_ENVIRONMENT_LABELS,
   PUBLIC_DIRECTORY_ENVIRONMENTS,
+  PUBLIC_DIRECTORY_ENVIRONMENTS_TESTING,
   REPORT_AGGREGATE_ENVIRONMENTS,
   BILLABLE_ENVIRONMENTS,
   FABRICATED_CONTENT_ENVIRONMENTS,
@@ -120,6 +148,7 @@ module.exports = {
   isBillableEnvironment,
   isReportAggregateEnvironment,
   isPublicDirectoryEnvironment,
+  publicDirectoryEnvironmentsForDeployment,
   allowsFabricatedPublicContent,
   isDemoEnvironment,
   isTestEnvironment,

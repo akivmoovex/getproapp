@@ -154,8 +154,9 @@ async function seedChurchSampleBranchAdminIfMissing(pool, org, branch) {
 }
 
 /**
- * Idempotent dev/sample seed for Phase 1+ church homepage and branch admin testing.
- * @param {import("pg").Pool} pool
+ * Dev/sample seed for kafuebaptist — NOT auto-run on server boot.
+ * Prefer BlessBoard catalogue demos (demo / demo2) via seedChurchDemoOrganization.
+ * Kept for explicit local/test use only; never treat as a real tenant seed.
  */
 async function seedChurchSampleOrganizationIfMissing(pool) {
   let org = await organizationsRepo.findOrganizationBySlug(pool, SAMPLE_ORG_SLUG);
@@ -169,6 +170,7 @@ async function seedChurchSampleOrganizationIfMissing(pool) {
       slug: SAMPLE_ORG_SLUG,
       name: "Kafue Baptist Church",
       status: "active",
+      data_environment: "test",
     });
 
     await branchesRepo.createBranch(pool, {

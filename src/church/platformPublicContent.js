@@ -1,12 +1,13 @@
 "use strict";
 
 const { churchPublicUrl } = require("./platformProvisioningValidation");
+const { demoTenantPublicUrl } = require("./demoTenantCatalogue");
 
 /** Public demo tenant — seeded idempotently; safe to link without credentials. */
 const BLESSBOARD_DEMO_HOST_SLUG = "demo";
 
 function getBlessBoardDemoPublicUrl() {
-  return churchPublicUrl(BLESSBOARD_DEMO_HOST_SLUG, "/");
+  return demoTenantPublicUrl(BLESSBOARD_DEMO_HOST_SLUG, "/") || churchPublicUrl(BLESSBOARD_DEMO_HOST_SLUG, "/");
 }
 /** Public pages visitors may explore on the demo church site (no sign-in). */
 const BLESSBOARD_DEMO_PUBLIC_PAGES = [

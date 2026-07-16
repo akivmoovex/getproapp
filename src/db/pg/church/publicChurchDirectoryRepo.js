@@ -189,6 +189,7 @@ async function findActivePublicOrganizationBySlug(pool, orgSlug) {
     .toLowerCase()
     .trim();
   if (!slug) return null;
+  const { sqlPublicDirectoryEnvironmentFilter } = require("../../../church/orgDataEnvironment");
   const r = await pool.query(
     `SELECT o.slug, o.name, o.city, o.country, o.id,
             (
@@ -197,7 +198,7 @@ async function findActivePublicOrganizationBySlug(pool, orgSlug) {
             ) AS active_branch_count
      FROM public.church_organizations o
      WHERE o.slug = $1 AND o.status = 'active'
-       AND o.data_environment IN ('production', 'pilot')
+       AND ${sqlPublicDirectoryEnvironmentFilter("o")}
      LIMIT 1`,
     [slug]
   );
@@ -268,6 +269,7 @@ async function findActivePublicBranchForOrganization(pool, orgSlug, branchSlug) 
     .trim();
   if (!oSlug || !bSlug) return null;
 
+  const { sqlPublicDirectoryEnvironmentFilter } = require("../../../church/orgDataEnvironment");
   const r = await pool.query(
     `SELECT o.slug AS organization_slug, o.name AS organization_name,
             b.slug AS branch_slug, b.host_slug, b.name AS branch_name,
@@ -283,7 +285,7 @@ async function findActivePublicBranchForOrganization(pool, orgSlug, branchSlug) 
        ON wc.branch_id = b.id AND wc.status = 'published'
      WHERE o.slug = $1
        AND o.status = 'active'
-       AND o.data_environment IN ('production', 'pilot')
+       AND ${sqlPublicDirectoryEnvironmentFilter("o")}
        AND b.status = 'active'
        AND (b.slug = $2 OR lower(trim(COALESCE(b.host_slug, ''))) = $2)
      LIMIT 1`,

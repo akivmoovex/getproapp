@@ -279,8 +279,16 @@ function areBlessBoardJobsEnabled() {
   return !isEnvFlagDisabled("BLESSBOARD_JOBS_ENABLED");
 }
 
+/** Accepted DEPLOYMENT_ENV modes for demo visibility / seed gates (not NODE_ENV). */
+const DEPLOYMENT_ENV_TESTING = "testing";
+const DEPLOYMENT_ENV_PRODUCTION = "production";
+
+let deploymentEnvFallbackWarned = false;
+
 /**
- * Deployment label for diagnostics (e.g. production, staging, testing, v5-org).
+ * Raw deployment label for diagnostics (e.g. production, staging, testing, v5-org).
+ * Prefer {@link getDeploymentEnvMode} / {@link isTestingDeployment} for policy gates.
+ * Does not invent a production/testing mode from NODE_ENV alone for those gates.
  */
 function getDeploymentEnv() {
   const fromEnv = envTrim("DEPLOYMENT_ENV");
@@ -290,13 +298,48 @@ function getDeploymentEnv() {
 }
 
 /**
+ * Authoritative deployment mode for demo visibility and seed safety.
+ * Reads DEPLOYMENT_ENV only (case-insensitive, trimmed). Does not use NODE_ENV.
+ * Accepted: "testing" | "production". Missing or unknown → "production" (safe: hide demos).
+ * @returns {"testing"|"production"}
+ */
+function getDeploymentEnvMode() {
+  const raw = envTrim("DEPLOYMENT_ENV").toLowerCase();
+  if (raw === DEPLOYMENT_ENV_TESTING) return DEPLOYMENT_ENV_TESTING;
+  if (raw === DEPLOYMENT_ENV_PRODUCTION) return DEPLOYMENT_ENV_PRODUCTION;
+  if (!deploymentEnvFallbackWarned) {
+    deploymentEnvFallbackWarned = true;
+    const reason = raw
+      ? `unrecognised DEPLOYMENT_ENV value (expected testing|production)`
+      : "DEPLOYMENT_ENV unset";
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[blessboard] ${reason}; using safe fallback mode=production (demo tenants hidden from directory/selector). NODE_ENV is not used for this gate.`
+    );
+  }
+  return DEPLOYMENT_ENV_PRODUCTION;
+}
+
+/** True when DEPLOYMENT_ENV is testing (demo tenants may appear in directory/selector). */
+function isTestingDeployment() {
+  return getDeploymentEnvMode() === DEPLOYMENT_ENV_TESTING;
+}
+
+/**
+ * True when DEPLOYMENT_ENV is production, or when missing/invalid (safe fallback).
+ * Demo tenants stay hidden from public directory/selector.
+ */
+function isProductionDeployment() {
+  return getDeploymentEnvMode() === DEPLOYMENT_ENV_PRODUCTION;
+}
+
+/**
  * True for BlessBoard.org V5 testing deployments that must use an explicit DATABASE_URL
  * (no silent GETPRO_DATABASE_URL fallback).
  * Trigger: DEPLOYMENT_ENV=testing AND effective canonical blessboard.org
  */
 function isBlessBoardOrgTestingDeployment() {
-  const deployment = getDeploymentEnv().toLowerCase();
-  if (deployment !== "testing") return false;
+  if (!isTestingDeployment()) return false;
   return getBlessBoardCanonicalDomain() === "blessboard.org";
 }
 
@@ -358,6 +401,11 @@ module.exports = {
   getUploadRootLogLabel,
   areBlessBoardJobsEnabled,
   getDeploymentEnv,
+  getDeploymentEnvMode,
+  isTestingDeployment,
+  isProductionDeployment,
+  DEPLOYMENT_ENV_TESTING,
+  DEPLOYMENT_ENV_PRODUCTION,
   isBlessBoardOrgTestingDeployment,
   validateExpectedDatabaseEnv,
   getBlessBoardDomainDiagnostics,

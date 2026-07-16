@@ -131,8 +131,6 @@ const {
 const { renderBlessBoardAdminHostNotFound } = require("./src/church/requireBlessBoardApexHost");
 const { createAttachChurchContext } = require("./src/church/attachChurchContext");
 const { ensureChurchSchema } = require("./src/db/pg/ensureChurchSchema");
-const { seedChurchSampleOrganizationIfMissing } = require("./src/seeds/seedChurchSampleOrganization");
-const { seedChurchDemoOrganizationIfMissing } = require("./src/seeds/seedChurchDemoOrganization");
 const { runBootstrapWithAdvisoryLock } = require("./src/startup/runBootstrapWithAdvisoryLock");
 const apiRoutes = require("./src/routes/api");
 const { runProductionStartupChecks } = require("./src/startup/productionStartupChecks");
@@ -568,13 +566,14 @@ async function bootstrapAfterListen(pool) {
     await ensureTenantDirectoryOptionLists(pool);
     await ensureChurchSchema(pool);
     try {
-      await seedChurchSampleOrganizationIfMissing(pool);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("[getpro] Church sample seed warning:", err.message);
-    }
-    try {
-      await seedChurchDemoOrganizationIfMissing(pool);
+      // Kafue Baptist sample seed is no longer auto-run (demo/test fixture only via explicit scripts).
+      // Catalogue demos (demo + demo2) auto-seed only when DEPLOYMENT_ENV=testing.
+      const demoSeed = require("./src/seeds/seedChurchDemoOrganization");
+      const demoResult = await demoSeed.seedChurchDemoOrganizationsForDeploymentIfAllowed(pool);
+      if (demoResult.skipped) {
+        // eslint-disable-next-line no-console
+        console.log(`[getpro] BlessBoard demo seed skipped (${demoResult.reason}).`);
+      }
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("[getpro] BlessBoard demo seed warning:", err.message);

@@ -19,8 +19,8 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_church_organizations_data_environment
   ON public.church_organizations (data_environment);
 
--- Classify the canonical BlessBoard demo organisation.
+-- Classify the canonical BlessBoard demo organisations.
 UPDATE public.church_organizations
 SET data_environment = 'demo'
-WHERE lower(trim(slug)) = 'demo'
+WHERE lower(trim(slug)) IN ('demo', 'demo2')
   AND data_environment = 'production';

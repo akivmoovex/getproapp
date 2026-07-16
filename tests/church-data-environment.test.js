@@ -92,11 +92,20 @@ test("data environment catalogue and helpers", () => {
   assert.equal(isBillableEnvironment("pilot"), false);
   assert.equal(isBillableEnvironment("demo"), false);
   assert.equal(isBillableEnvironment("test"), false);
-  assert.equal(isPublicDirectoryEnvironment("production"), true);
-  assert.equal(isPublicDirectoryEnvironment("demo"), false);
+  const prevDep = process.env.DEPLOYMENT_ENV;
+  try {
+    process.env.DEPLOYMENT_ENV = "production";
+    assert.equal(isPublicDirectoryEnvironment("production"), true);
+    assert.equal(isPublicDirectoryEnvironment("demo"), false);
+    process.env.DEPLOYMENT_ENV = "testing";
+    assert.equal(isPublicDirectoryEnvironment("demo"), true);
+  } finally {
+    if (prevDep === undefined) delete process.env.DEPLOYMENT_ENV;
+    else process.env.DEPLOYMENT_ENV = prevDep;
+  }
   assert.equal(allowsFabricatedPublicContent("demo"), true);
   assert.equal(allowsFabricatedPublicContent("production"), false);
-  assert.match(DEMO_TEST_BRANCH_EXCLUSION_SQL, /host_slug\) <> 'demo'|host_slug.*demo/);
+  assert.match(DEMO_TEST_BRANCH_EXCLUSION_SQL, /host_slug.*demo/);
 });
 
 test("production/pilot website shell has no fabricated mission copy", () => {
@@ -189,18 +198,25 @@ test(
       assert.equal(invoiceSkip.skipped, true);
       assert.match(invoiceSkip.reason, /demo/i);
 
-      // Public directory exclusion
-      const listed = await publicChurchDirectoryRepo.searchPublicOrganizations(pool, { q: suffix, limit: 50 });
-      const slugs = listed.items.map((i) => i.slug);
-      assert.ok(slugs.includes(production.slug));
-      assert.ok(!slugs.includes(demo.slug));
-      assert.ok(!slugs.includes(testOrg.slug));
+      // Public directory exclusion (production deployment hides demo/test)
+      const prevDep = process.env.DEPLOYMENT_ENV;
+      process.env.DEPLOYMENT_ENV = "production";
+      try {
+        const listed = await publicChurchDirectoryRepo.searchPublicOrganizations(pool, { q: suffix, limit: 50 });
+        const slugs = listed.items.map((i) => i.slug);
+        assert.ok(slugs.includes(production.slug));
+        assert.ok(!slugs.includes(demo.slug));
+        assert.ok(!slugs.includes(testOrg.slug));
 
-      const demoPublic = await publicChurchDirectoryRepo.findActivePublicOrganizationBySlug(
-        pool,
-        demo.slug
-      );
-      assert.equal(demoPublic, null);
+        const demoPublic = await publicChurchDirectoryRepo.findActivePublicOrganizationBySlug(
+          pool,
+          demo.slug
+        );
+        assert.equal(demoPublic, null);
+      } finally {
+        if (prevDep === undefined) delete process.env.DEPLOYMENT_ENV;
+        else process.env.DEPLOYMENT_ENV = prevDep;
+      }
 
       // Public content separation: production gets empty shell; demo may fabricate
       const prodBranch = (await branchesRepo.listBranchesForOrganization(pool, production.id))[0];

@@ -34,7 +34,7 @@ const PLACEHOLDER_CONTENT_MARKERS = Object.freeze([
   "member registration and login are available on your branch church site",
 ]);
 
-const RESERVED_DEMO_HOST_SLUGS = Object.freeze(["demo"]);
+const RESERVED_DEMO_HOST_SLUGS = Object.freeze(["demo", "demo2"]);
 
 /**
  * @typedef {{

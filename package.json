@@ -37,6 +37,8 @@
     "church:attachments:audit": "node scripts/check-church-attachment-orphans.js",
     "church:demo-admin": "node scripts/create-demo-church-admin.js",
     "church:demo-reset": "node scripts/reset-church-demo-data.js",
+    "church:seed-demos": "node scripts/seed-blessboard-demo-tenants.js",
+    "church:cleanup-kafue-sample": "node scripts/cleanup-kafue-sample-seed.js",
     "church:backup-verify-record": "node scripts/record-church-backup-verification.js",
     "check:ejs-partials": "node scripts/check-ejs-partials.js",
     "test": "NODE_ENV=test node --test tests",

@@ -11,19 +11,36 @@ const sermonsRepo = require("../db/pg/church/sermonsRepo");
 const resourcesRepo = require("../db/pg/church/resourcesRepo");
 const tenantsRepo = require("../db/pg/tenantsRepo");
 const { hashBranchAdminPassword } = require("../church/branchAdminAuth");
+const { getChurchHostDomain, isTestingDeployment } = require("../church/blessBoardEnv");
+const {
+  DEMO_TENANT_CATALOGUE,
+  findDemoTenantBySlug,
+} = require("../church/demoTenantCatalogue");
 
 const DEMO_ORG_SLUG = "demo";
 const DEMO_HOST_SLUG = "demo";
-const DEMO_BRANCH_ADMIN_EMAIL = "admin@demo.blessboard.com";
+
+function demoContactEmail(hostSlug) {
+  const domain = getChurchHostDomain() || "blessboard.com";
+  return `hello@${hostSlug}.${domain}`;
+}
+
+function demoBranchAdminEmail(hostSlug) {
+  const domain = getChurchHostDomain() || "blessboard.com";
+  return `admin@${hostSlug}.${domain}`;
+}
+
+const DEMO_BRANCH_ADMIN_EMAIL = demoBranchAdminEmail(DEMO_HOST_SLUG);
 const DEMO_BRANCH_ADMIN_NAME = "Demo Church Admin";
 /** Temporary demo password — prefer `npm run church:demo-admin` to reset/update. */
 const DEMO_BRANCH_ADMIN_PASSWORD = process.env.DEMO_CHURCH_ADMIN_PASSWORD || "DemoAdmin@2026!";
 
-async function seedDemoBranchAdminIfMissing(pool, org, branch) {
-  const existing = await branchAdminsRepo.findBranchAdminByEmailForBranch(pool, branch.id, DEMO_BRANCH_ADMIN_EMAIL);
+async function seedDemoBranchAdminIfMissing(pool, org, branch, hostSlug = DEMO_HOST_SLUG) {
+  const adminEmail = demoBranchAdminEmail(hostSlug);
+  const existing = await branchAdminsRepo.findBranchAdminByEmailForBranch(pool, branch.id, adminEmail);
   if (existing) return existing;
 
-  const username = DEMO_BRANCH_ADMIN_EMAIL.toLowerCase();
+  const username = adminEmail.toLowerCase();
   const byUsername = await pool.query(
     `SELECT * FROM public.church_branch_admins
      WHERE branch_id = $1 AND lower(trim(username)) = $2
@@ -38,7 +55,7 @@ async function seedDemoBranchAdminIfMissing(pool, org, branch) {
       organization_id: org.id,
       branch_id: branch.id,
       full_name: DEMO_BRANCH_ADMIN_NAME,
-      email: DEMO_BRANCH_ADMIN_EMAIL,
+      email: adminEmail,
       phone: "0977111222",
       password_hash: passwordHash,
       role: "branch_admin",
@@ -46,7 +63,7 @@ async function seedDemoBranchAdminIfMissing(pool, org, branch) {
     });
   } catch (err) {
     if (/church_branch_admins_branch_username_unique|duplicate key value/i.test(String(err.message))) {
-      const retry = await branchAdminsRepo.findBranchAdminByEmailForBranch(pool, branch.id, DEMO_BRANCH_ADMIN_EMAIL);
+      const retry = await branchAdminsRepo.findBranchAdminByEmailForBranch(pool, branch.id, adminEmail);
       if (retry) return retry;
       const retryUsername = await pool.query(
         `SELECT * FROM public.church_branch_admins
@@ -94,10 +111,10 @@ async function seedDemoWebsiteContentIfMissing(pool, org, branch) {
     leadership_json: leadership,
     ministries_json: [],
     contact_phone: branch.contact_phone || "+260 97 000 0000",
-    contact_email: branch.contact_email || "hello@demo.blessboard.com",
+    contact_email: branch.contact_email || demoContactEmail(branch.host_slug || DEMO_HOST_SLUG),
     office_hours: "Mon–Fri · 08:00 – 17:00\nSaturday · 09:00 – 13:00\nSunday · Service times",
     address: branch.location_text || "123 BlessBoard Avenue, Demo City",
-    map_embed_placeholder: "Map preview for BlessBoard Demo Church.",
+    map_embed_placeholder: `Map preview for ${branch.name || "BlessBoard Demo Church"}.`,
     giving_bank_details: "",
     giving_mobile_money: "",
     giving_categories: "Tithes, Offerings, Missions",
@@ -318,11 +335,17 @@ async function seedDemoPublicContentIfMissing(pool, org, branch) {
 }
 
 /**
- * Idempotent production-safe seed for demo.blessboard.com (BlessBoard demo church).
+ * Idempotent seed for one catalogue demo tenant (demo or demo2).
  * @param {import("pg").Pool} pool
+ * @param {string} [slug] catalogue slug (default: demo)
  */
-async function seedChurchDemoOrganizationIfMissing(pool) {
-  let org = await organizationsRepo.findOrganizationBySlug(pool, DEMO_ORG_SLUG);
+async function seedChurchDemoOrganizationIfMissing(pool, slug = DEMO_ORG_SLUG) {
+  const entry = findDemoTenantBySlug(slug) || findDemoTenantBySlug(DEMO_ORG_SLUG);
+  if (!entry) {
+    throw new Error(`Unknown demo tenant slug: ${slug}`);
+  }
+
+  let org = await organizationsRepo.findOrganizationBySlug(pool, entry.slug);
 
   if (!org) {
     const demoTenant = await tenantsRepo.getBySlug(pool, "demo");
@@ -332,36 +355,35 @@ async function seedChurchDemoOrganizationIfMissing(pool) {
 
     org = await organizationsRepo.createOrganization(pool, {
       platform_tenant_id: platformTenantId,
-      slug: DEMO_ORG_SLUG,
-      name: "BlessBoard Demo Church",
+      slug: entry.slug,
+      name: entry.name,
       status: "active",
-      data_environment: "demo",
+      data_environment: entry.dataEnvironment,
     });
-  } else if (String(org.data_environment || "") !== "demo") {
+  } else if (String(org.data_environment || "") !== entry.dataEnvironment) {
     await pool.query(
       `UPDATE public.church_organizations
-       SET data_environment = 'demo', updated_at = now()
+       SET data_environment = $2, updated_at = now()
        WHERE id = $1`,
-      [org.id]
+      [org.id, entry.dataEnvironment]
     );
     org = await organizationsRepo.findOrganizationById(pool, org.id);
   }
 
-  let branch = await branchesRepo.findBranchByHostSlug(pool, DEMO_HOST_SLUG);
+  let branch = await branchesRepo.findBranchByHostSlug(pool, entry.hostSlug);
   if (!branch) {
     branch = await branchesRepo.createBranch(pool, {
       organization_id: org.id,
-      slug: "main",
-      host_slug: DEMO_HOST_SLUG,
-      name: "BlessBoard Demo Church",
+      slug: entry.branchSlug,
+      host_slug: entry.hostSlug,
+      name: entry.branchName,
       status: "active",
       city: "Lusaka",
       country: "Zambia",
       pastor_name: "Rev. Demo Pastor",
-      contact_email: "hello@demo.blessboard.com",
+      contact_email: demoContactEmail(entry.hostSlug),
       contact_phone: "+260 97 000 0000",
-      welcome_message:
-        "Welcome to BlessBoard Demo Church — a sample church site powered by BlessBoard. Explore our public pages and register as a member to try the portal.",
+      welcome_message: `Welcome to ${entry.name} — a sample church site powered by BlessBoard. Explore our public pages and register as a member to try the portal.`,
       service_times: "Sunday Worship · 10:00 AM\nMidweek Prayer · Wednesday 6:30 PM",
       location_text: "123 BlessBoard Avenue, Demo City",
     });
@@ -371,13 +393,41 @@ async function seedChurchDemoOrganizationIfMissing(pool) {
   await seedDemoWebsiteContentIfMissing(pool, org, branch);
   await seedDemoSermonsIfMissing(pool, org, branch);
   await seedDemoResourcesIfMissing(pool, org, branch);
-  await seedDemoBranchAdminIfMissing(pool, org, branch);
+  await seedDemoBranchAdminIfMissing(pool, org, branch, entry.hostSlug);
 
   return { organization: org, branch };
 }
 
+/**
+ * Idempotent seed of every catalogue demo tenant (demo + demo2).
+ * Intended for explicit CLI / testing deployments — not production auto-boot.
+ * @param {import("pg").Pool} pool
+ */
+async function seedAllCatalogueDemoOrganizationsIfMissing(pool) {
+  const results = [];
+  for (const entry of DEMO_TENANT_CATALOGUE) {
+    results.push(await seedChurchDemoOrganizationIfMissing(pool, entry.slug));
+  }
+  return results;
+}
+
+/**
+ * Boot-time demo seed: only when DEPLOYMENT_ENV=testing.
+ * Production never auto-seeds demo tenants.
+ * @param {import("pg").Pool} pool
+ */
+async function seedChurchDemoOrganizationsForDeploymentIfAllowed(pool) {
+  if (!isTestingDeployment()) {
+    return { skipped: true, reason: "DEPLOYMENT_ENV is not testing" };
+  }
+  const results = await seedAllCatalogueDemoOrganizationsIfMissing(pool);
+  return { skipped: false, results };
+}
+
 module.exports = {
   seedChurchDemoOrganizationIfMissing,
+  seedAllCatalogueDemoOrganizationsIfMissing,
+  seedChurchDemoOrganizationsForDeploymentIfAllowed,
   DEMO_ORG_SLUG,
   DEMO_HOST_SLUG,
   DEMO_BRANCH_ADMIN_EMAIL,

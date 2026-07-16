@@ -123,7 +123,7 @@ const CROSS_BRANCH_RANKING_KPI_ORDER = Object.freeze([
 /** Within-tenant analytics: exclude inactive + obvious sample/demo campus hosts. */
 const DEMO_TEST_BRANCH_EXCLUSION_SQL = `
   AND b.status = 'active'
-  AND lower(b.host_slug) <> 'demo'
+  AND lower(b.host_slug) NOT IN ('demo', 'demo2')
   AND lower(b.host_slug) NOT LIKE 'demo-%'
   AND lower(b.host_slug) NOT LIKE '%-demo'
   AND lower(b.slug) NOT LIKE 'sample%'
