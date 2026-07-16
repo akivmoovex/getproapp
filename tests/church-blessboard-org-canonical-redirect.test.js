@@ -14,12 +14,14 @@ const { blessboardCanonicalRedirect } = require("../src/church/blessboardCanonic
 const {
   getBlessBoardCanonicalDomain,
   getBlessBoardApexDomainSet,
+  getChurchHostDomain,
 } = require("../src/church/blessBoardEnv");
 
 const ENV_KEYS = [
   "BLESSBOARD_CANONICAL_DOMAIN",
   "BLESSBOARD_APEX_DOMAINS",
   "CHURCH_HOST_DOMAIN",
+  "BLESSBOARD_PUBLIC_URL",
   "BLESSBOARD_CANONICAL_REDIRECT",
   "BLESSBOARD_FORCE_HTTPS",
 ];
@@ -151,6 +153,103 @@ test("V5: leftover CHURCH_HOST_DOMAIN=.com does not force .org → .com when ape
       assert.equal(res.headers.location, undefined);
     }
   );
+});
+
+test("V5: leftover CANONICAL_DOMAIN=.com ignored when apex list is org-only", async () => {
+  await withEnv(
+    {
+      BLESSBOARD_CANONICAL_DOMAIN: "blessboard.com",
+      BLESSBOARD_APEX_DOMAINS: "blessboard.org,www.blessboard.org",
+      CHURCH_HOST_DOMAIN: "blessboard.com",
+      BLESSBOARD_PUBLIC_URL: "https://blessboard.org",
+      BLESSBOARD_CANONICAL_REDIRECT: "1",
+    },
+    async () => {
+      assert.equal(getBlessBoardCanonicalDomain(), "blessboard.org");
+      const apex = getBlessBoardApexDomainSet();
+      assert.equal(apex.has("blessboard.com"), false);
+      assert.equal(apex.has("blessboard.org"), true);
+
+      const res = await request(makeRedirectApp())
+        .get("/?fresh=1")
+        .set("Host", "blessboard.org")
+        .set("X-Forwarded-Proto", "https");
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.location, undefined);
+    }
+  );
+});
+
+test("V5: quoted env values resolve to blessboard.org", async () => {
+  await withEnv(
+    {
+      BLESSBOARD_CANONICAL_DOMAIN: '"blessboard.org"',
+      BLESSBOARD_APEX_DOMAINS: '"blessboard.org","www.blessboard.org"',
+      CHURCH_HOST_DOMAIN: "'blessboard.org'",
+      BLESSBOARD_PUBLIC_URL: '"https://blessboard.org"',
+      BLESSBOARD_CANONICAL_REDIRECT: "1",
+    },
+    async () => {
+      assert.equal(getBlessBoardCanonicalDomain(), "blessboard.org");
+      assert.equal(getBlessBoardApexDomainSet().has("www.blessboard.org"), true);
+      const res = await request(makeRedirectApp())
+        .get("/")
+        .set("Host", "blessboard.org")
+        .set("X-Forwarded-Proto", "https");
+      assert.equal(res.status, 200);
+    }
+  );
+});
+
+test("V5: BLESSBOARD_CANONICAL_REDIRECT=false disables host remap but keeps HTTPS", async () => {
+  await withEnv(
+    {
+      ...V5_ORG,
+      BLESSBOARD_CANONICAL_REDIRECT: "false",
+    },
+    async () => {
+      const wwwHttps = await request(makeRedirectApp())
+        .get("/keep-www")
+        .set("Host", "www.blessboard.org")
+        .set("X-Forwarded-Proto", "https");
+      assert.equal(wwwHttps.status, 200);
+
+      const httpApex = await request(makeRedirectApp()).get("/secure-me").set("Host", "blessboard.org");
+      assert.equal(httpApex.status, 301);
+      assert.equal(httpApex.headers.location, "https://blessboard.org/secure-me");
+    }
+  );
+});
+
+test("domain getters read live process.env after module load (no require-time capture)", async () => {
+  await withEnv(
+    {
+      BLESSBOARD_CANONICAL_DOMAIN: undefined,
+      BLESSBOARD_APEX_DOMAINS: undefined,
+      CHURCH_HOST_DOMAIN: undefined,
+      BLESSBOARD_PUBLIC_URL: undefined,
+    },
+    async () => {
+      assert.equal(getBlessBoardCanonicalDomain(), "blessboard.com");
+      process.env.BLESSBOARD_CANONICAL_DOMAIN = "blessboard.org";
+      process.env.BLESSBOARD_APEX_DOMAINS = "blessboard.org,www.blessboard.org";
+      process.env.CHURCH_HOST_DOMAIN = "blessboard.org";
+      process.env.BLESSBOARD_PUBLIC_URL = "https://blessboard.org";
+      assert.equal(getBlessBoardCanonicalDomain(), "blessboard.org");
+      assert.equal(getChurchHostDomain(), "blessboard.org");
+      assert.equal(getBlessBoardApexDomainSet().has("blessboard.com"), false);
+    }
+  );
+});
+
+test("server.js loads bootstrap before church canonical redirect", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const src = fs.readFileSync(path.join(__dirname, "../server.js"), "utf8");
+  const bootIdx = src.indexOf("runBootstrap");
+  const redirectIdx = src.indexOf("blessboardCanonicalRedirect");
+  assert.ok(bootIdx >= 0 && redirectIdx >= 0);
+  assert.ok(bootIdx < redirectIdx, "bootstrap must run before canonical redirect middleware is required");
 });
 
 test("V5: BLESSBOARD_CANONICAL_REDIRECT=0 disables host remap but keeps HTTPS", async () => {

@@ -30,6 +30,8 @@ const ENV_KEYS = [
   "BLESSBOARD_JOBS_ENABLED",
   "DEPLOYMENT_ENV",
   "BLESSBOARD_CANONICAL_DOMAIN",
+  "BLESSBOARD_APEX_DOMAINS",
+  "BLESSBOARD_PUBLIC_URL",
   "CHURCH_HOST_DOMAIN",
   "BLESSBOARD_CANONICAL_REDIRECT",
 ];
@@ -175,6 +177,10 @@ test("runtime diagnostics log safe fields without secrets", () => {
       {
         DEPLOYMENT_ENV: "testing",
         BLESSBOARD_CANONICAL_DOMAIN: "blessboard.org",
+        BLESSBOARD_APEX_DOMAINS: "blessboard.org,www.blessboard.org",
+        CHURCH_HOST_DOMAIN: "blessboard.org",
+        BLESSBOARD_PUBLIC_URL: "https://blessboard.org",
+        BLESSBOARD_CANONICAL_REDIRECT: "1",
         SESSION_COOKIE_NAME: "blessboard_org_sid",
         UPLOAD_ROOT: "/home/secretuser/v5-uploads",
         BLESSBOARD_JOBS_ENABLED: "0",
@@ -189,6 +195,10 @@ test("runtime diagnostics log safe fields without secrets", () => {
   const text = logs.join("\n");
   assert.match(text, /deployment environment: testing/);
   assert.match(text, /canonical domain: blessboard\.org/);
+  assert.match(text, /apex domains:.*blessboard\.org/);
+  assert.match(text, /church host domain: blessboard\.org/);
+  assert.match(text, /public URL: https:\/\/blessboard\.org/);
+  assert.match(text, /canonical redirect enabled: yes/);
   assert.match(text, /session cookie name: blessboard_org_sid/);
   assert.match(text, /scheduled jobs enabled: no/);
   assert.match(text, /upload root:/);

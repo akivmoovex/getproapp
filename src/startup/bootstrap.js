@@ -40,6 +40,13 @@ function buildProductionFallbackCandidates(appRoot, cwd, startupEntry) {
   const explicit = String(process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK || "").trim();
   const hay = `${String(appRoot)}\n${String(cwd)}\n${String(startupEntry)}`.toLowerCase();
   const deterministic = [];
+  // BlessBoard.org / V5 must prefer its own production file before any shared getpro/.env.production
+  // that still carries blessboard.com canonical defaults.
+  if (hay.includes("blessboard.org") || hay.includes("blessboard-org") || hay.includes("/blessboardorg/")) {
+    deterministic.push(`${PRODUCTION_FALLBACK_HOME}/domains/blessboard.org/.env.production`);
+    deterministic.push(`${PRODUCTION_FALLBACK_HOME}/blessboard.org/.env.production`);
+    deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.blessboard.org`);
+  }
   if (hay.includes("pronline")) {
     deterministic.push(`${PRODUCTION_FALLBACK_HOME}/pronline/.env.production`);
     deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.pronline`);

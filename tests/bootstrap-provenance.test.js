@@ -106,6 +106,25 @@ test("buildProductionFallbackCandidates: getproapp hint prefers folder .env.prod
   }
 });
 
+test("buildProductionFallbackCandidates: blessboard.org hint prefers org production file before shared", () => {
+  const prev = process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK;
+  delete process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK;
+  try {
+    const c = buildProductionFallbackCandidates(
+      "/home/u549637099/domains/blessboard.org/nodejs",
+      "/tmp",
+      "/x"
+    );
+    assert.equal(c[0], "/home/u549637099/domains/blessboard.org/.env.production");
+    assert.ok(c.includes("/home/u549637099/blessboard.org/.env.production"));
+    assert.ok(c.includes("/home/u549637099/.env.production.blessboard.org"));
+    assert.equal(c[c.length - 1], "/home/u549637099/.env.production");
+    assert.ok(!c.some((p) => p.includes("/getpro/")));
+  } finally {
+    if (prev !== undefined) process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK = prev;
+  }
+});
+
 test("buildProductionFallbackCandidates: explicit env is first when set", () => {
   const prev = process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK;
   process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK = "/custom/first.env";

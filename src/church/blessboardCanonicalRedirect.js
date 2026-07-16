@@ -4,7 +4,9 @@ const { isBlessBoardHost, normalizeHostFromRequest } = require("./host");
 const {
   getBlessBoardCanonicalDomain,
   isBlessBoardApexDomain,
-} = require("./blessBoardApexDomains");
+  isCanonicalHostRedirectEnabled,
+  isBlessBoardForceHttpsEnabled,
+} = require("./blessBoardEnv");
 
 function requestScheme(req) {
   const forwarded = req.headers["x-forwarded-proto"];
@@ -14,28 +16,20 @@ function requestScheme(req) {
 
 function shouldForceHttps(req, host) {
   if (!host || host === "localhost" || host === "127.0.0.1") return false;
-  if (process.env.BLESSBOARD_FORCE_HTTPS === "0") return false;
+  if (!isBlessBoardForceHttpsEnabled()) return false;
   return true;
 }
 
 /**
- * Whether apex-host canonicalisation (www / alias → BLESSBOARD_CANONICAL_DOMAIN) is enabled.
- * BLESSBOARD_CANONICAL_REDIRECT=0 disables host remapping only — HTTPS enforcement continues.
- */
-function isCanonicalHostRedirectEnabled() {
-  return process.env.BLESSBOARD_CANONICAL_REDIRECT !== "0";
-}
-
-/**
  * Permanent redirects for BlessBoard product hosts:
- * - Non-canonical apex aliases → https://{BLESSBOARD_CANONICAL_DOMAIN} (path + query preserved)
+ * - Non-canonical apex aliases → https://{canonical} (path + query preserved)
  * - http → https (all BlessBoard hosts, including tenant subdomains)
  *
  * V4 default (unset env): blessboard.org is an apex alias of blessboard.com.
  * V5 (BLESSBOARD_CANONICAL_DOMAIN=blessboard.org and/or BLESSBOARD_APEX_DOMAINS listing
  * only .org hosts): blessboard.org stays on blessboard.org; www → blessboard.org.
  *
- * BLESSBOARD_CANONICAL_REDIRECT=0 disables host remapping only (not HTTPS).
+ * BLESSBOARD_CANONICAL_REDIRECT=0|false disables host remapping only (not HTTPS).
  */
 function blessboardCanonicalRedirect(req, res, next) {
   const host = normalizeHostFromRequest(req);
