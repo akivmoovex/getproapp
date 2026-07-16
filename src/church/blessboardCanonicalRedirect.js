@@ -19,22 +19,25 @@ function shouldForceHttps(req, host) {
 }
 
 /**
+ * Whether apex-host canonicalisation (www / alias → BLESSBOARD_CANONICAL_DOMAIN) is enabled.
+ * BLESSBOARD_CANONICAL_REDIRECT=0 disables host remapping only — HTTPS enforcement continues.
+ */
+function isCanonicalHostRedirectEnabled() {
+  return process.env.BLESSBOARD_CANONICAL_REDIRECT !== "0";
+}
+
+/**
  * Permanent redirects for BlessBoard product hosts:
- * - Non-canonical apex aliases (e.g. www.{canonical}, and V4 .org → .com when configured)
- *   → https://{canonical} with path and query preserved
+ * - Non-canonical apex aliases → https://{BLESSBOARD_CANONICAL_DOMAIN} (path + query preserved)
  * - http → https (all BlessBoard hosts, including tenant subdomains)
  *
- * When BLESSBOARD_CANONICAL_DOMAIN=blessboard.org, blessboard.org is not redirected
- * to blessboard.com; www.blessboard.org redirects only to blessboard.org.
+ * V4 default (unset env): blessboard.org is an apex alias of blessboard.com.
+ * V5 (BLESSBOARD_CANONICAL_DOMAIN=blessboard.org and/or BLESSBOARD_APEX_DOMAINS listing
+ * only .org hosts): blessboard.org stays on blessboard.org; www → blessboard.org.
  *
- * Preserves path and query via req.originalUrl.
- * Skip when BLESSBOARD_CANONICAL_REDIRECT=0 (local dev/tests).
+ * BLESSBOARD_CANONICAL_REDIRECT=0 disables host remapping only (not HTTPS).
  */
 function blessboardCanonicalRedirect(req, res, next) {
-  if (process.env.BLESSBOARD_CANONICAL_REDIRECT === "0") {
-    return next();
-  }
-
   const host = normalizeHostFromRequest(req);
   if (!isBlessBoardHost(host)) {
     return next();
@@ -42,7 +45,8 @@ function blessboardCanonicalRedirect(req, res, next) {
 
   const canonicalDomain = getBlessBoardCanonicalDomain();
   const scheme = requestScheme(req);
-  const needsCanonicalHost = isBlessBoardApexDomain(host) && host !== canonicalDomain;
+  const needsCanonicalHost =
+    isCanonicalHostRedirectEnabled() && isBlessBoardApexDomain(host) && host !== canonicalDomain;
   const needsHttps = shouldForceHttps(req, host) && scheme !== "https";
 
   if (!needsCanonicalHost && !needsHttps) {
@@ -58,4 +62,5 @@ module.exports = {
   blessboardCanonicalRedirect,
   shouldForceHttps,
   requestScheme,
+  isCanonicalHostRedirectEnabled,
 };

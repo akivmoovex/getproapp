@@ -81,15 +81,34 @@ test("does not redirect tenant hosts to blessboard.com apex", async () => {
   }
 });
 
-test("skips redirects when BLESSBOARD_CANONICAL_REDIRECT=0", async () => {
+test("skips host remapping when BLESSBOARD_CANONICAL_REDIRECT=0 but still forces HTTPS", async () => {
   const prev = process.env.BLESSBOARD_CANONICAL_REDIRECT;
+  const prevCanon = process.env.BLESSBOARD_CANONICAL_DOMAIN;
+  const prevApex = process.env.BLESSBOARD_APEX_DOMAINS;
+  const prevChurch = process.env.CHURCH_HOST_DOMAIN;
   process.env.BLESSBOARD_CANONICAL_REDIRECT = "0";
+  delete process.env.BLESSBOARD_CANONICAL_DOMAIN;
+  delete process.env.BLESSBOARD_APEX_DOMAINS;
+  delete process.env.CHURCH_HOST_DOMAIN;
   try {
     const app = makeRedirectApp();
-    const res = await request(app).get("/").set("Host", "www.blessboard.com");
-    assert.equal(res.status, 200);
+    const wwwHttps = await request(app)
+      .get("/")
+      .set("Host", "www.blessboard.com")
+      .set("X-Forwarded-Proto", "https");
+    assert.equal(wwwHttps.status, 200);
+
+    const httpApex = await request(app).get("/x").set("Host", "blessboard.com");
+    assert.equal(httpApex.status, 301);
+    assert.equal(httpApex.headers.location, "https://blessboard.com/x");
   } finally {
     if (prev === undefined) delete process.env.BLESSBOARD_CANONICAL_REDIRECT;
     else process.env.BLESSBOARD_CANONICAL_REDIRECT = prev;
+    if (prevCanon === undefined) delete process.env.BLESSBOARD_CANONICAL_DOMAIN;
+    else process.env.BLESSBOARD_CANONICAL_DOMAIN = prevCanon;
+    if (prevApex === undefined) delete process.env.BLESSBOARD_APEX_DOMAINS;
+    else process.env.BLESSBOARD_APEX_DOMAINS = prevApex;
+    if (prevChurch === undefined) delete process.env.CHURCH_HOST_DOMAIN;
+    else process.env.CHURCH_HOST_DOMAIN = prevChurch;
   }
 });

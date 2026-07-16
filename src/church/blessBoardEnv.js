@@ -37,13 +37,30 @@ function envTrim(name) {
 
 /**
  * Canonical BlessBoard public domain (no www).
- * BLESSBOARD_CANONICAL_DOMAIN wins; else CHURCH_HOST_DOMAIN; else blessboard.com.
+ * Priority:
+ * 1. BLESSBOARD_CANONICAL_DOMAIN
+ * 2. First non-www host from BLESSBOARD_APEX_DOMAINS (when explicitly set)
+ * 3. CHURCH_HOST_DOMAIN
+ * 4. blessboard.com
+ *
+ * (2) prevents V5 Hostinger configs that list only .org apex hosts while leaving
+ * CHURCH_HOST_DOMAIN=blessboard.com from silently redirecting .org → .com.
  */
 function getBlessBoardCanonicalDomain() {
-  const fromEnv = normalizeHost(
-    envTrim("BLESSBOARD_CANONICAL_DOMAIN") || envTrim("CHURCH_HOST_DOMAIN")
-  );
-  return fromEnv || DEFAULT_CANONICAL_DOMAIN;
+  const explicit = normalizeHost(envTrim("BLESSBOARD_CANONICAL_DOMAIN"));
+  if (explicit) return explicit;
+
+  const apexFromEnv = parseApexDomainsFromEnv();
+  if (apexFromEnv && apexFromEnv.length) {
+    const nonWww = apexFromEnv.find((h) => h && !h.startsWith("www."));
+    if (nonWww) return nonWww;
+    const first = apexFromEnv[0];
+    if (first.startsWith("www.") && first.length > 4) return first.slice(4);
+    return first;
+  }
+
+  const church = normalizeHost(envTrim("CHURCH_HOST_DOMAIN"));
+  return church || DEFAULT_CANONICAL_DOMAIN;
 }
 
 /**

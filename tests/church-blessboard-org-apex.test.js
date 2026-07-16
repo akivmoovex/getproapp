@@ -205,7 +205,10 @@ test("blessboard.com serves BlessBoard apex homepage", async () => {
   process.env.BLESSBOARD_CANONICAL_REDIRECT = "0";
   try {
     const app = makeApexChurchApp();
-    const res = await request(app).get("/").set("Host", "blessboard.com");
+    const res = await request(app)
+      .get("/")
+      .set("Host", "blessboard.com")
+      .set("X-Forwarded-Proto", "https");
     assert.equal(res.status, 200);
     assert.match(res.text, new RegExp(BLESSBOARD_NAME));
     assert.doesNotMatch(res.text, /platform fallback/);
@@ -221,7 +224,10 @@ test("blessboard.org serves BlessBoard apex when redirects disabled", async () =
   process.env.BLESSBOARD_CANONICAL_REDIRECT = "0";
   try {
     const app = makeApexChurchApp();
-    const res = await request(app).get("/").set("Host", "blessboard.org");
+    const res = await request(app)
+      .get("/")
+      .set("Host", "blessboard.org")
+      .set("X-Forwarded-Proto", "https");
     assert.equal(res.status, 200);
     assert.match(res.text, new RegExp(BLESSBOARD_NAME));
     assert.doesNotMatch(res.text, /platform fallback/);
@@ -236,7 +242,10 @@ test("www.blessboard.com is not resolved as a church tenant by attachChurchConte
   process.env.BLESSBOARD_CANONICAL_REDIRECT = "0";
   try {
     const app = makeApexChurchApp();
-    const res = await request(app).get("/").set("Host", "www.blessboard.com");
+    const res = await request(app)
+      .get("/")
+      .set("Host", "www.blessboard.com")
+      .set("X-Forwarded-Proto", "https");
     assert.equal(res.status, 200);
     assert.match(res.text, new RegExp(BLESSBOARD_NAME));
     assert.doesNotMatch(res.text, /Church not found/i);
