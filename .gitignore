@@ -22,3 +22,6 @@ test-results/
 playwright-report/
 playwright/.cache/
 tmp/
+
+# Runtime church announcement uploads (not fixtures)
+data/uploads/church/announcements/

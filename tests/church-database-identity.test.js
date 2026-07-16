@@ -318,7 +318,7 @@ test("latestChurchSchemaMigration equals the highest-numbered migration on disk"
   const latest = latestChurchSchemaMigration();
   assert.equal(parseInt(latest.slice(0, 3), 10), maxNum);
   assert.equal(latest, CHURCH_SCHEMA_MIGRATION_FILES[CHURCH_SCHEMA_MIGRATION_FILES.length - 1]);
-  assert.equal(latest, "123_church_account_security_version.sql");
+  assert.equal(latest, "124_church_growth_scheduled_job_safety.sql");
 });
 
 test("diagnostics no longer reference the stale migration 090", () => {
@@ -401,7 +401,7 @@ test("PG: database identity insert, read, refuse overwrite, verify", async (t) =
   const identity = await churchProductionDiagnostics.gatherDeploymentIdentity(pool);
   assert.equal(identity.databaseEnvironmentCode, "testing");
   assert.equal(identity.databaseInstanceId, instanceId);
-  assert.equal(identity.latestExpectedMigration, "123_church_account_security_version.sql");
+  assert.equal(identity.latestExpectedMigration, "124_church_growth_scheduled_job_safety.sql");
   assert.ok(identity.currentDatabase && identity.currentDatabase !== "(unavailable)");
 
   await pool.query("DELETE FROM public.church_database_identity");

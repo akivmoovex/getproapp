@@ -23,6 +23,11 @@ const {
 } = require("../../church/scheduledReportTiming");
 const { hasEntitlement, getOrganisationPlan } = require("./churchEntitlementService");
 const churchPackageUsageService = require("./churchPackageUsageService");
+const organizationsRepo = require("../../db/pg/church/organizationsRepo");
+const {
+  isOrganizationStatusEligibleForGrowthJobs,
+  sanitizeJobPauseReason,
+} = require("../../church/growthScheduledJobGate");
 
 const FREQUENCIES = Object.freeze(["daily", "weekly", "monthly"]);
 const FORMATS = Object.freeze(["csv", "pdf"]);
@@ -417,17 +422,84 @@ async function executeScheduleRun(pool, schedule, opts = {}) {
       : at;
   const jobKey = jobKeyForScheduleRun(schedule.id, scheduledFor);
 
+  if (schedule.status && schedule.status !== "enabled") {
+    return { outcome: "skipped_not_enabled", jobKey };
+  }
+
+  // Check organization status first (before entitlement).
+  const org = await organizationsRepo.findOrganizationById(pool, schedule.organization_id);
+  if (!org || !isOrganizationStatusEligibleForGrowthJobs(org.status)) {
+    const pauseReason = sanitizeJobPauseReason(
+      org
+        ? `Organization status is ${org.status}; scheduled reports require active status.`
+        : "Organization not found."
+    );
+    const pausedOrg = await pool.query(
+      `UPDATE public.church_scheduled_reports
+       SET status = 'paused', next_run_at = NULL, pause_reason = $2, paused_at = $3, updated_at = now()
+       WHERE id = $1 AND status = 'enabled'
+       RETURNING id`,
+      [schedule.id, pauseReason, at.toISOString()]
+    );
+    if (pausedOrg.rows[0]) {
+      await auditLogsRepo.insertAuditLog(pool, {
+        organization_id: schedule.organization_id,
+        branch_id: schedule.branch_id,
+        actor_type: "system",
+        actor_id: null,
+        action: "scheduled_report_paused_organization_inactive",
+        entity_type: "church_scheduled_report",
+        entity_id: schedule.id,
+        target_label: schedule.report_type,
+        metadata_json: {
+          schedule_id: schedule.id,
+          previous_status: "enabled",
+          new_status: "paused",
+          organization_status: org ? org.status : null,
+          reason: pauseReason,
+          package_code: null,
+        },
+      });
+    }
+    return { outcome: "skipped_organization_inactive", jobKey };
+  }
+
   // Re-validate package entitlement at run time.
   try {
     await assertCanScheduleReports(pool, schedule.organization_id);
   } catch (err) {
     if (err && err.code === "FOUNDATION_SCHEDULE_FORBIDDEN") {
-      await pool.query(
-        `UPDATE public.church_scheduled_reports
-         SET status = 'paused', next_run_at = NULL, updated_at = now()
-         WHERE id = $1`,
-        [schedule.id]
+      const pauseReason = sanitizeJobPauseReason(
+        "Scheduled reports require Growth. Organization does not have reports.scheduled entitlement."
       );
+      const plan = await getOrganisationPlan(pool, schedule.organization_id).catch(() => null);
+      const pausedEnt = await pool.query(
+        `UPDATE public.church_scheduled_reports
+         SET status = 'paused', next_run_at = NULL, pause_reason = $2, paused_at = $3, updated_at = now()
+         WHERE id = $1 AND status = 'enabled'
+         RETURNING id`,
+        [schedule.id, pauseReason, at.toISOString()]
+      );
+      if (pausedEnt.rows[0]) {
+        await auditLogsRepo.insertAuditLog(pool, {
+          organization_id: schedule.organization_id,
+          branch_id: schedule.branch_id,
+          actor_type: "system",
+          actor_id: null,
+          action: "scheduled_report_paused_no_entitlement",
+          entity_type: "church_scheduled_report",
+          entity_id: schedule.id,
+          target_label: schedule.report_type,
+          metadata_json: {
+            schedule_id: schedule.id,
+            previous_status: "enabled",
+            new_status: "paused",
+            reason: pauseReason,
+            package_code: plan ? plan.packageCode : null,
+            organization_status: org.status,
+          },
+        });
+      }
       return { outcome: "skipped_no_entitlement", jobKey };
     }
     throw err;
@@ -740,6 +812,20 @@ async function retryFailedRun(pool, runId, organizationId) {
     throw err;
   }
 
+  // Gate check: org must be active
+  const org = await organizationsRepo.findOrganizationById(pool, organizationId);
+  if (!org || !isOrganizationStatusEligibleForGrowthJobs(org.status)) {
+    const err = new Error(
+      org
+        ? `Organization status is ${org.status}. Retry requires active organization.`
+        : "Organization not found."
+    );
+    err.code = "ORG_INACTIVE";
+    err.organizationStatus = org ? org.status : null;
+    throw err;
+  }
+
+  // Gate check: must have entitlement
   await assertCanScheduleReports(pool, organizationId);
 
   await pool.query(

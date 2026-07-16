@@ -80,6 +80,7 @@ const CHURCH_SCHEMA_MIGRATION_FILES = Object.freeze([
   "121_church_database_identity.sql",
   "122_church_members_organization_status_index.sql",
   "123_church_account_security_version.sql",
+  "124_church_growth_scheduled_job_safety.sql",
 ]);
 
 /**

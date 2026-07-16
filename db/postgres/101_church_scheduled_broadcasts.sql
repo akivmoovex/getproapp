@@ -19,7 +19,10 @@ ALTER TABLE public.church_hq_broadcasts
     'partially_failed',
     'failed',
     'cancelled',
-    'archived'
+    'archived',
+    -- Growth job-safety pause states (also enforced/extended by 124_*)
+    'paused_no_entitlement',
+    'paused_organization_inactive'
   ));
 
 ALTER TABLE public.church_hq_broadcasts

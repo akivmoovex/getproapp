@@ -41,6 +41,8 @@ const BROADCAST_STATUSES = [
   "failed",
   "cancelled",
   "archived",
+  "paused_no_entitlement",
+  "paused_organization_inactive",
 ];
 
 const BROADCAST_FILTERS = [
@@ -56,6 +58,8 @@ const BROADCAST_FILTERS = [
   "failed",
   "cancelled",
   "archived",
+  "paused_no_entitlement",
+  "paused_organization_inactive",
 ];
 
 const BROADCAST_DELIVERY_CHANNELS = ["in_app", "email"];
@@ -80,6 +84,8 @@ function broadcastStatusLabel(status) {
     failed: "Failed",
     cancelled: "Cancelled",
     archived: "Archived",
+    paused_no_entitlement: "Paused (no entitlement)",
+    paused_organization_inactive: "Paused (org inactive)",
   };
   return map[status] || status;
 }

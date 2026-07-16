@@ -333,6 +333,82 @@ function resolveHostSamples() {
 }
 
 /**
+ * Gather Growth scheduled-job paused counts (no PII).
+ * @param {import("pg").Pool} pool
+ * @returns {Promise<object>}
+ */
+async function gatherGrowthJobPausedCounts(pool) {
+  if (!pool) {
+    return {
+      scheduledBroadcastsPausedNoEntitlement: null,
+      scheduledBroadcastsPausedOrgInactive: null,
+      scheduledReportsPausedNoEntitlement: null,
+      scheduledReportsPausedOrgInactive: null,
+      organizationsBlockedFromFoundationDowngrade: null,
+      available: false,
+    };
+  }
+  try {
+    const {
+      GROWTH_BROADCAST_STATUSES_BLOCKING_FOUNDATION_DOWNGRADE,
+      GROWTH_REPORT_STATUSES_BLOCKING_FOUNDATION_DOWNGRADE,
+    } = require("../../church/growthScheduledJobGate");
+    const broadcastCounts = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE status = 'paused_no_entitlement')::int AS no_entitlement,
+         COUNT(*) FILTER (WHERE status = 'paused_organization_inactive')::int AS org_inactive
+       FROM public.church_hq_broadcasts`
+    );
+    const reportCounts = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE status = 'paused' AND pause_reason ILIKE '%entitlement%')::int AS no_entitlement,
+         COUNT(*) FILTER (WHERE status = 'paused' AND (pause_reason ILIKE '%inactive%' OR pause_reason ILIKE '%suspend%' OR pause_reason ILIKE '%archived%' OR pause_reason ILIKE '%dormant%'))::int AS org_inactive
+       FROM public.church_scheduled_reports`
+    );
+    const blockedOrgs = await pool.query(
+      `SELECT COUNT(*)::int AS c
+       FROM public.church_organizations o
+       WHERE LOWER(COALESCE(o.plan_code, '')) = 'growth'
+         AND (
+           EXISTS (
+             SELECT 1 FROM public.church_hq_broadcasts b
+             WHERE b.organization_id = o.id
+               AND b.status = ANY($1::text[])
+           )
+           OR EXISTS (
+             SELECT 1 FROM public.church_scheduled_reports r
+             WHERE r.organization_id = o.id
+               AND r.status = ANY($2::text[])
+           )
+         )`,
+      [
+        GROWTH_BROADCAST_STATUSES_BLOCKING_FOUNDATION_DOWNGRADE,
+        GROWTH_REPORT_STATUSES_BLOCKING_FOUNDATION_DOWNGRADE,
+      ]
+    );
+    const b = broadcastCounts.rows[0] || {};
+    const r = reportCounts.rows[0] || {};
+    return {
+      scheduledBroadcastsPausedNoEntitlement: Number(b.no_entitlement) || 0,
+      scheduledBroadcastsPausedOrgInactive: Number(b.org_inactive) || 0,
+      scheduledReportsPausedNoEntitlement: Number(r.no_entitlement) || 0,
+      scheduledReportsPausedOrgInactive: Number(r.org_inactive) || 0,
+      organizationsBlockedFromFoundationDowngrade: Number(blockedOrgs.rows[0]?.c) || 0,
+      available: true,
+    };
+  } catch {
+    return {
+      scheduledBroadcastsPausedNoEntitlement: null,
+      scheduledBroadcastsPausedOrgInactive: null,
+      scheduledReportsPausedNoEntitlement: null,
+      scheduledReportsPausedOrgInactive: null,
+      organizationsBlockedFromFoundationDowngrade: null,
+      available: false,
+    };
+  }
+}
+
+/**
  * Safe production diagnostics for super admins (no secrets).
  * @returns {Promise<object>}
  */
@@ -409,6 +485,8 @@ async function gatherChurchProductionDiagnostics(opts = {}) {
     for (const w of backupVerification.warnings) warnings.push(w);
   }
 
+  const growthJobPausedCounts = await gatherGrowthJobPausedCounts(pool && dbCheck.ok ? pool : null);
+
   let legacyPlanAudit = {
     totalOrganizations: 0,
     foundationCount: 0,
@@ -473,6 +551,7 @@ async function gatherChurchProductionDiagnostics(opts = {}) {
     sessionSecretLengthOk: !sessionSecretWarning(),
     sessionSecretWarning: sessionWarn,
     backupVerification,
+    growthJobPausedCounts,
     warnings,
     checkedAt: new Date().toISOString(),
   };
@@ -481,6 +560,7 @@ async function gatherChurchProductionDiagnostics(opts = {}) {
 module.exports = {
   gatherChurchProductionDiagnostics,
   gatherDeploymentIdentity,
+  gatherGrowthJobPausedCounts,
   uploadRootFingerprint,
   getGitInfo,
   LATEST_CHURCH_MIGRATION,

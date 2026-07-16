@@ -224,6 +224,21 @@
           <% } %>
         </section>
 
+        <% var _gjp = diagnostics.growthJobPausedCounts || {}; %>
+        <% if (_gjp.available) { %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Growth scheduled-job safety (paused counts)</h2>
+          <p class="muted">Broadcasts and reports paused by entitlement-transition or organization-inactive checks. Read-only counts — no PII.</p>
+          <dl class="admin-dl">
+            <dt>Broadcasts paused (no entitlement)</dt><dd><code><%= _gjp.scheduledBroadcastsPausedNoEntitlement != null ? _gjp.scheduledBroadcastsPausedNoEntitlement : '—' %></code></dd>
+            <dt>Broadcasts paused (org inactive)</dt><dd><code><%= _gjp.scheduledBroadcastsPausedOrgInactive != null ? _gjp.scheduledBroadcastsPausedOrgInactive : '—' %></code></dd>
+            <dt>Reports paused (no entitlement)</dt><dd><code><%= _gjp.scheduledReportsPausedNoEntitlement != null ? _gjp.scheduledReportsPausedNoEntitlement : '—' %></code></dd>
+            <dt>Reports paused (org inactive)</dt><dd><code><%= _gjp.scheduledReportsPausedOrgInactive != null ? _gjp.scheduledReportsPausedOrgInactive : '—' %></code></dd>
+            <dt>Orgs blocked from Foundation downgrade (open Growth work)</dt><dd><code><%= _gjp.organizationsBlockedFromFoundationDowngrade != null ? _gjp.organizationsBlockedFromFoundationDowngrade : '—' %></code></dd>
+          </dl>
+        </section>
+        <% } %>
+
         <section class="card card--mb-xl" style="padding:1.25rem;">
           <h2 class="section-title section-title--flush">Database</h2>
           <dl class="admin-dl">

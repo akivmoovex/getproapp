@@ -23,6 +23,11 @@ const {
   countActiveMembersForOrganization,
   countPrivilegedAccountsForOrganization,
 } = require("./churchSeatQuotaService");
+const {
+  GROWTH_BROADCAST_STATUSES_BLOCKING_FOUNDATION_DOWNGRADE,
+  GROWTH_REPORT_STATUSES_BLOCKING_FOUNDATION_DOWNGRADE,
+} = require("../../church/growthScheduledJobGate");
+const { findActiveGrowthTrial } = require("./churchGrowthTrialService");
 
 const ASSIGNABLE_PACKAGE_CODES = Object.freeze(["foundation", "growth"]);
 
@@ -122,20 +127,22 @@ async function evaluateFoundationDowngradeEligibility(db, organizationId) {
   const adminLimit = getNumericLimit(plan, "admins.max");
   const branchLimit = getNumericLimit(plan, "branches.max_active");
 
-  const [activeBranches, members, privileged, inactiveBranches, growthJobs] = await Promise.all([
-    branchesRepo.countActiveBranchesForOrganization(db, organizationId),
-    countActiveMembersForOrganization(db, organizationId),
-    countPrivilegedAccountsForOrganization(db, organizationId),
-    db.query(
-      `SELECT id, name, slug, status, lifecycle_phase
-       FROM public.church_branches
-       WHERE organization_id = $1 AND status IS DISTINCT FROM 'active'
-       ORDER BY name ASC
-       LIMIT 50`,
-      [organizationId]
-    ),
-    collectIncompatibleGrowthJobs(db, organizationId),
-  ]);
+  // Sequential queries so this works on a PoolClient held under FOR UPDATE (confirm path).
+  const activeBranches = await branchesRepo.countActiveBranchesForOrganization(db, organizationId);
+  const members = await countActiveMembersForOrganization(db, organizationId);
+  const privileged = await countPrivilegedAccountsForOrganization(db, organizationId);
+  const inactiveBranches = await db.query(
+    `SELECT id, name, slug, status, lifecycle_phase
+     FROM public.church_branches
+     WHERE organization_id = $1 AND status IS DISTINCT FROM 'active'
+     ORDER BY name ASC
+     LIMIT 50`,
+    [organizationId]
+  );
+  const growthJobsResult = await collectIncompatibleGrowthJobs(db, organizationId);
+
+  const growthJobs = growthJobsResult.jobs;
+  const blockerCounts = growthJobsResult.counts;
 
   const incompatibilities = [];
 
@@ -184,6 +191,7 @@ async function evaluateFoundationDowngradeEligibility(db, organizationId) {
   return {
     allowed: incompatibilities.length === 0,
     incompatibilities,
+    blockerCounts,
     usage: {
       activeBranches,
       activeMembers: members,
@@ -205,51 +213,85 @@ async function evaluateFoundationDowngradeEligibility(db, organizationId) {
  * Does not delete data — callers must pause/cancel these first.
  * @param {import("pg").Pool | import("pg").PoolClient} db
  * @param {number} organizationId
- * @returns {Promise<Array<{code:string,message:string,used:number,limit:number}>>}
+ * @returns {Promise<{jobs: Array<{code:string,message:string,used:number,limit:number}>, counts: object}>}
  */
 async function collectIncompatibleGrowthJobs(db, organizationId) {
   const jobs = [];
+  const counts = {
+    scheduled_broadcasts: 0,
+    processing_broadcasts: 0,
+    retryable_broadcasts: 0,
+    enabled_reports: 0,
+    pastoral_automation: 0,
+    automation_work_items: 0,
+    active_surveys: 0,
+  };
 
-  const scheduledBroadcasts = await db
+  // Query broadcasts with blocking statuses
+  const blockingBroadcastStatuses = GROWTH_BROADCAST_STATUSES_BLOCKING_FOUNDATION_DOWNGRADE;
+  const broadcastStats = await db
     .query(
-      `SELECT COUNT(*)::int AS c
+      `SELECT
+         COUNT(*) FILTER (WHERE status = 'scheduled')::int AS scheduled,
+         COUNT(*) FILTER (WHERE status = 'processing')::int AS processing,
+         COUNT(*) FILTER (WHERE status IN ('approval', 'audience_estimate', 'preview'))::int AS pending,
+         COUNT(*) FILTER (WHERE status IN ('partially_failed', 'failed'))::int AS retryable
        FROM public.church_hq_broadcasts
        WHERE organization_id = $1
-         AND (
-           status = 'scheduled'
-           OR (
-             publish_at IS NOT NULL
-             AND publish_at > now() + interval '2 minutes'
-             AND status IN ('draft', 'preview', 'audience_estimate', 'approval', 'scheduled', 'processing')
-           )
-         )`,
-      [organizationId]
+         AND status = ANY($2::text[])`,
+      [organizationId, blockingBroadcastStatuses]
     )
-    .catch(() => ({ rows: [{ c: 0 }] }));
-  const broadcastCount = Number(scheduledBroadcasts.rows[0]?.c) || 0;
-  if (broadcastCount > 0) {
+    .catch(() => ({ rows: [{ scheduled: 0, processing: 0, pending: 0, retryable: 0 }] }));
+
+  const bStats = broadcastStats.rows[0] || {};
+  counts.scheduled_broadcasts = Number(bStats.scheduled) || 0;
+  counts.processing_broadcasts = (Number(bStats.processing) || 0) + (Number(bStats.pending) || 0);
+  counts.retryable_broadcasts = Number(bStats.retryable) || 0;
+
+  const totalBlockingBroadcasts =
+    counts.scheduled_broadcasts + counts.processing_broadcasts + counts.retryable_broadcasts;
+
+  if (counts.scheduled_broadcasts > 0) {
     jobs.push({
       code: "growth_scheduled_broadcasts",
-      message: `${broadcastCount} scheduled or future HQ broadcast(s) require Growth. Cancel or publish them before downgrade.`,
-      used: broadcastCount,
+      message: `${counts.scheduled_broadcasts} scheduled HQ broadcast(s) require Growth. Cancel or wait for them to publish.`,
+      used: counts.scheduled_broadcasts,
+      limit: 0,
+    });
+  }
+  if (counts.processing_broadcasts > 0) {
+    jobs.push({
+      code: "growth_processing_broadcasts",
+      message: `${counts.processing_broadcasts} in-progress HQ broadcast(s) require Growth (processing/approval/preview). Wait for completion or cancel.`,
+      used: counts.processing_broadcasts,
+      limit: 0,
+    });
+  }
+  if (counts.retryable_broadcasts > 0) {
+    jobs.push({
+      code: "growth_retryable_broadcasts",
+      message: `${counts.retryable_broadcasts} failed/partially-failed HQ broadcast(s) can be retried. Retry or cancel before downgrade.`,
+      used: counts.retryable_broadcasts,
       limit: 0,
     });
   }
 
+  // Reports: only 'enabled' status blocks
+  const blockingReportStatuses = GROWTH_REPORT_STATUSES_BLOCKING_FOUNDATION_DOWNGRADE;
   const scheduledReports = await db
     .query(
       `SELECT COUNT(*)::int AS c
        FROM public.church_scheduled_reports
-       WHERE organization_id = $1 AND status = 'enabled'`,
-      [organizationId]
+       WHERE organization_id = $1 AND status = ANY($2::text[])`,
+      [organizationId, blockingReportStatuses]
     )
     .catch(() => ({ rows: [{ c: 0 }] }));
-  const reportCount = Number(scheduledReports.rows[0]?.c) || 0;
-  if (reportCount > 0) {
+  counts.enabled_reports = Number(scheduledReports.rows[0]?.c) || 0;
+  if (counts.enabled_reports > 0) {
     jobs.push({
       code: "growth_scheduled_reports",
-      message: `${reportCount} enabled scheduled report(s) require Growth. Pause or cancel them before downgrade.`,
-      used: reportCount,
+      message: `${counts.enabled_reports} enabled scheduled report(s) require Growth. Pause or cancel them before downgrade.`,
+      used: counts.enabled_reports,
       limit: 0,
     });
   }
@@ -262,12 +304,12 @@ async function collectIncompatibleGrowthJobs(db, organizationId) {
       [organizationId]
     )
     .catch(() => ({ rows: [{ c: 0 }] }));
-  const automationCount = Number(pastoralAutomation.rows[0]?.c) || 0;
-  if (automationCount > 0) {
+  counts.pastoral_automation = Number(pastoralAutomation.rows[0]?.c) || 0;
+  if (counts.pastoral_automation > 0) {
     jobs.push({
       code: "growth_pastoral_automation",
-      message: `${automationCount} branch pastoral automation setting(s) are enabled. Disable them before downgrade.`,
-      used: automationCount,
+      message: `${counts.pastoral_automation} branch pastoral automation setting(s) are enabled. Disable them before downgrade.`,
+      used: counts.pastoral_automation,
       limit: 0,
     });
   }
@@ -280,12 +322,12 @@ async function collectIncompatibleGrowthJobs(db, organizationId) {
       [organizationId]
     )
     .catch(() => ({ rows: [{ c: 0 }] }));
-  const workCount = Number(pendingAutomationWork.rows[0]?.c) || 0;
-  if (workCount > 0) {
+  counts.automation_work_items = Number(pendingAutomationWork.rows[0]?.c) || 0;
+  if (counts.automation_work_items > 0) {
     jobs.push({
       code: "growth_automation_work_items",
-      message: `${workCount} open pastoral automation work item(s) require Growth. Resolve or dismiss them before downgrade.`,
-      used: workCount,
+      message: `${counts.automation_work_items} open pastoral automation work item(s) require Growth. Resolve or dismiss them before downgrade.`,
+      used: counts.automation_work_items,
       limit: 0,
     });
   }
@@ -298,17 +340,17 @@ async function collectIncompatibleGrowthJobs(db, organizationId) {
       [organizationId]
     )
     .catch(() => ({ rows: [{ c: 0 }] }));
-  const surveyCount = Number(activeSurveys.rows[0]?.c) || 0;
-  if (surveyCount > 0) {
+  counts.active_surveys = Number(activeSurveys.rows[0]?.c) || 0;
+  if (counts.active_surveys > 0) {
     jobs.push({
       code: "growth_active_surveys",
-      message: `${surveyCount} active survey(s) require Growth. Close them before downgrade.`,
-      used: surveyCount,
+      message: `${counts.active_surveys} active survey(s) require Growth. Close them before downgrade.`,
+      used: counts.active_surveys,
       limit: 0,
     });
   }
 
-  return jobs;
+  return { jobs, counts };
 }
 
 /**
@@ -346,6 +388,21 @@ async function previewPackageAssignment(db, organizationId, fields) {
         : fromCode === "growth" && targetCode === "foundation"
           ? "downgrade"
           : "reassign";
+
+  // Check for active Growth trial when targeting foundation.
+  // Cannot assign Foundation while Growth trial is active.
+  let activeTrial = null;
+  if (targetCode === "foundation") {
+    activeTrial = await findActiveGrowthTrial(db, orgId, { at: effectiveAt });
+    if (activeTrial) {
+      const err = new Error(
+        "Cannot assign Foundation while a Growth trial is active. The trial must expire or be cancelled first."
+      );
+      err.code = "ACTIVE_GROWTH_TRIAL";
+      err.trialEndsAt = activeTrial.ends_at ? new Date(activeTrial.ends_at).toISOString() : null;
+      throw err;
+    }
+  }
 
   let downgrade = null;
   if (direction === "downgrade") {
@@ -480,71 +537,150 @@ async function confirmPackageAssignment(pool, organizationId, fields, platformAd
     }
   }
 
-  const preview = await previewPackageAssignment(pool, orgId, {
-    package_code: targetCode,
-    reason,
-    effective_at: effectiveAt,
-    plan_status: fields.plan_status || verified.payload.planStatus,
-  });
+  // Use a single client transaction with FOR UPDATE to prevent race conditions.
+  // Between preview and confirm, someone could insert a scheduled broadcast — we must re-check.
+  const client = await pool.connect();
+  let updated;
+  let history;
+  let before;
+  let finalPreview;
 
-  if (preview.direction === "noop") {
-    const err = new Error("Organisation is already on this package.");
-    err.code = "ALREADY_ASSIGNED";
-    throw err;
-  }
+  try {
+    await client.query("BEGIN");
 
-  if (preview.direction === "downgrade" && preview.downgrade && !preview.downgrade.allowed) {
-    const err = new Error("Downgrade blocked by Foundation compatibility checks.");
-    err.code = "DOWNGRADE_BLOCKED";
-    err.incompatibilities = preview.downgrade.incompatibilities;
-    throw err;
-  }
+    // Lock the organization row to prevent concurrent modifications.
+    const lockResult = await client.query(
+      `SELECT * FROM public.church_organizations WHERE id = $1 FOR UPDATE`,
+      [orgId]
+    );
+    if (!lockResult.rows[0]) {
+      await client.query("ROLLBACK");
+      const err = new Error("Organization not found.");
+      err.code = "NOT_FOUND";
+      throw err;
+    }
+    const orgRow = lockResult.rows[0];
 
-  const before = await getOrganisationPlan(pool, orgId);
-  const updated = await organizationsRepo.updateOrganizationPlan(
-    pool,
-    orgId,
-    {
-      plan_code: targetCode,
-      plan_status: preview.planStatus || "active",
-      plan_notes: reason,
-    },
-    platformAdminId
-  );
+    // Re-check active trial conflict if targeting foundation.
+    if (targetCode === "foundation") {
+      const activeTrial = await findActiveGrowthTrial(client, orgId, { at: effectiveAt });
+      if (activeTrial) {
+        await client.query("ROLLBACK");
+        const err = new Error(
+          "Cannot assign Foundation while a Growth trial is active. The trial must expire or be cancelled first."
+        );
+        err.code = "ACTIVE_GROWTH_TRIAL";
+        err.trialEndsAt = activeTrial.ends_at ? new Date(activeTrial.ends_at).toISOString() : null;
+        throw err;
+      }
+    }
 
-  const history = await churchBillingRepo.insertPackageHistory(pool, {
-    organization_id: orgId,
-    previous_plan_code: before ? before.storedPlanCode : null,
-    new_plan_code: targetCode,
-    previous_package_code: before ? before.packageCode : null,
-    new_package_code: targetCode,
-    changed_by_platform_admin_id: platformAdminId || null,
-    change_reason: reason,
-    effective_at: effectiveAt,
-  });
+    // Re-validate preview (using the client within the same transaction).
+    before = await getOrganisationPlan(client, orgId);
+    const fromCode = before ? before.packageCode : "foundation";
+    const direction =
+      fromCode === targetCode
+        ? "noop"
+        : fromCode === "foundation" && targetCode === "growth"
+          ? "upgrade"
+          : fromCode === "growth" && targetCode === "foundation"
+            ? "downgrade"
+            : "reassign";
 
-  await auditLogsRepo.insertAuditLog(pool, {
-    organization_id: orgId,
-    branch_id: null,
-    actor_type: "platform_admin",
-    actor_id: platformAdminId || null,
-    action: "platform_package_assigned",
-    entity_type: "church_organization",
-    entity_id: orgId,
-    target_label: updated.name,
-    metadata_json: {
-      previous_package: before ? before.packageCode : null,
-      new_package: targetCode,
+    if (direction === "noop") {
+      await client.query("ROLLBACK");
+      const err = new Error("Organisation is already on this package.");
+      err.code = "ALREADY_ASSIGNED";
+      throw err;
+    }
+
+    // Re-run downgrade eligibility within the transaction (with the lock held).
+    if (direction === "downgrade") {
+      const downgradeCheck = await evaluateFoundationDowngradeEligibility(client, orgId);
+      if (!downgradeCheck.allowed) {
+        await client.query("ROLLBACK");
+        const err = new Error("Downgrade blocked by Foundation compatibility checks.");
+        err.code = "DOWNGRADE_BLOCKED";
+        err.incompatibilities = downgradeCheck.incompatibilities;
+        throw err;
+      }
+      finalPreview = {
+        direction,
+        downgrade: downgradeCheck,
+        planStatus: fields.plan_status || verified.payload.planStatus || "active",
+      };
+    } else {
+      finalPreview = {
+        direction,
+        planStatus: fields.plan_status || verified.payload.planStatus || "active",
+      };
+    }
+
+    // Update plan_code inline (avoiding updateOrganizationPlan which starts its own txn).
+    const planStatus = finalPreview.planStatus || "active";
+    const updateResult = await client.query(
+      `UPDATE public.church_organizations
+       SET plan_code = $2,
+           plan_status = $3,
+           plan_notes = $4,
+           plan_started_at = CASE
+             WHEN plan_code IS DISTINCT FROM $2 AND $2 IS NOT NULL THEN COALESCE(plan_started_at, now())
+             ELSE plan_started_at
+           END,
+           updated_at = now()
+       WHERE id = $1
+       RETURNING *`,
+      [orgId, targetCode, planStatus, reason]
+    );
+    updated = updateResult.rows[0];
+
+    // Insert package history.
+    history = await churchBillingRepo.insertPackageHistory(client, {
+      organization_id: orgId,
       previous_plan_code: before ? before.storedPlanCode : null,
       new_plan_code: targetCode,
-      reason,
-      effective_at: effectiveAt.toISOString(),
-      direction: preview.direction,
-      history_id: history && history.id ? history.id : null,
-      generate_invoice: false,
-      platform_admin_id: platformAdminId || null,
-    },
-  });
+      previous_package_code: before ? before.packageCode : null,
+      new_package_code: targetCode,
+      changed_by_platform_admin_id: platformAdminId || null,
+      change_reason: reason,
+      effective_at: effectiveAt,
+    });
+
+    // Audit log.
+    await auditLogsRepo.insertAuditLog(client, {
+      organization_id: orgId,
+      branch_id: null,
+      actor_type: "platform_admin",
+      actor_id: platformAdminId || null,
+      action: "platform_package_assigned",
+      entity_type: "church_organization",
+      entity_id: orgId,
+      target_label: updated.name,
+      metadata_json: {
+        previous_package: before ? before.packageCode : null,
+        new_package: targetCode,
+        previous_plan_code: before ? before.storedPlanCode : null,
+        new_plan_code: targetCode,
+        reason,
+        effective_at: effectiveAt.toISOString(),
+        direction: finalPreview.direction,
+        history_id: history && history.id ? history.id : null,
+        generate_invoice: false,
+        platform_admin_id: platformAdminId || null,
+      },
+    });
+
+    await client.query("COMMIT");
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
 
   if (fields.generate_invoice === true) {
     // Explicit opt-in only — never default.
@@ -567,7 +703,7 @@ async function confirmPackageAssignment(pool, organizationId, fields, platformAd
     organization: updated,
     package: await getOrganisationPlan(pool, orgId),
     history,
-    preview,
+    preview: finalPreview,
   };
 }
 

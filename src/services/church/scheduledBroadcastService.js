@@ -22,6 +22,10 @@ const {
 } = require("../../church/broadcastQuietHours");
 const { hasEntitlement, getOrganisationPlan } = require("./churchEntitlementService");
 const churchPackageUsageService = require("./churchPackageUsageService");
+const {
+  isOrganizationStatusEligibleForGrowthJobs,
+  sanitizeJobPauseReason,
+} = require("../../church/growthScheduledJobGate");
 
 const WORKFLOW_STATUSES = Object.freeze([
   "draft",
@@ -34,6 +38,8 @@ const WORKFLOW_STATUSES = Object.freeze([
   "partially_failed",
   "failed",
   "cancelled",
+  "paused_no_entitlement",
+  "paused_organization_inactive",
 ]);
 
 function jobKeyForBroadcast(broadcastId, publishAt) {
@@ -345,6 +351,92 @@ async function setWorkflowStatus(pool, broadcastId, organizationId, status, extr
   return r.rows[0] || null;
 }
 
+/**
+ * Pause a scheduled broadcast due to entitlement or org status gate.
+ * Idempotent: if already paused with the same status, no-op (no duplicate audit).
+ *
+ * @param {import("pg").Pool} pool
+ * @param {object} broadcast - Broadcast row
+ * @param {object} opts
+ * @param {string} opts.status - Target pause status: 'paused_no_entitlement' | 'paused_organization_inactive'
+ * @param {string} opts.reason - Human-readable reason (will be sanitized)
+ * @param {string|null} [opts.packageCode] - Current package code
+ * @param {string|null} [opts.organizationStatus] - Current org status
+ */
+async function pauseScheduledBroadcastForGate(pool, broadcast, opts) {
+  const { status, reason, packageCode, organizationStatus } = opts;
+  const previousStatus = broadcast.status;
+
+  // Only pause if currently in a runnable state
+  if (!["scheduled", "approval", "processing", "partially_failed", "failed"].includes(previousStatus)) {
+    return { paused: false, reason: "not_in_runnable_state", previousStatus };
+  }
+
+  // If already paused with same status, skip (idempotent)
+  if (previousStatus === status) {
+    return { paused: false, reason: "already_paused", previousStatus };
+  }
+
+  const sanitizedReason = sanitizeJobPauseReason(reason);
+  const now = new Date();
+
+  const updated = await pool.query(
+    `UPDATE public.church_hq_broadcasts
+     SET status = $3,
+         pause_reason = $4,
+         paused_at = $5,
+         last_error = $6,
+         updated_at = now()
+     WHERE id = $1 AND organization_id = $2
+       AND status IN ('scheduled', 'approval', 'processing', 'partially_failed', 'failed')
+     RETURNING *`,
+    [
+      broadcast.id,
+      broadcast.organization_id,
+      status,
+      sanitizedReason,
+      now.toISOString(),
+      sanitizedReason,
+    ]
+  );
+
+  if (!updated.rows[0]) {
+    return { paused: false, reason: "concurrent_update", previousStatus };
+  }
+
+  const auditAction =
+    status === "paused_no_entitlement"
+      ? "hq_broadcast_paused_no_entitlement"
+      : "hq_broadcast_paused_organization_inactive";
+
+  await auditLogsRepo.insertAuditLog(pool, {
+    organization_id: broadcast.organization_id,
+    branch_id: null,
+    actor_type: "system",
+    actor_id: null,
+    action: auditAction,
+    entity_type: "hq_broadcast",
+    entity_id: broadcast.id,
+    target_label: broadcast.title,
+    metadata_json: {
+      organization_id: broadcast.organization_id,
+      broadcast_id: broadcast.id,
+      previous_status: previousStatus,
+      new_status: status,
+      reason: sanitizedReason,
+      package_code: packageCode || null,
+      organization_status: organizationStatus || null,
+    },
+  });
+
+  return {
+    paused: true,
+    broadcast: updated.rows[0],
+    previousStatus,
+    newStatus: status,
+  };
+}
+
 async function moveToPreview(pool, broadcastId, organizationId) {
   const broadcast = await hqBroadcastsRepo.findBroadcastByIdForOrganization(pool, broadcastId, organizationId);
   if (!broadcast || !["draft", "preview"].includes(broadcast.status)) {
@@ -539,6 +631,53 @@ async function processBroadcastDelivery(pool, broadcastId, organizationId, opts 
     return { outcome: "not_found" };
   }
 
+  const runnableStatuses = ["scheduled", "approval", "processing", "partially_failed", "failed"];
+  if (!runnableStatuses.includes(broadcast.status)) {
+    if (
+      broadcast.status === "paused_no_entitlement" ||
+      broadcast.status === "paused_organization_inactive"
+    ) {
+      return { outcome: broadcast.status, broadcast };
+    }
+    if (broadcast.status === "published" || broadcast.status === "cancelled") {
+      return { outcome: "duplicate_job", broadcast };
+    }
+    return { outcome: "invalid_status", broadcast };
+  }
+
+  // Gate check BEFORE claiming processing: org must be active and have entitlement.
+  // If gate fails, pause without creating deliveries.
+  const org = await organizationsRepo.findOrganizationById(pool, organizationId);
+  if (!org || !isOrganizationStatusEligibleForGrowthJobs(org.status)) {
+    const pauseResult = await pauseScheduledBroadcastForGate(pool, broadcast, {
+      status: "paused_organization_inactive",
+      reason: org
+        ? `Organization status is ${org.status}; scheduled broadcasts require active status.`
+        : "Organization not found.",
+      organizationStatus: org ? org.status : null,
+    });
+    return {
+      outcome: "paused_organization_inactive",
+      broadcast: pauseResult.broadcast || broadcast,
+      paused: pauseResult.paused,
+    };
+  }
+
+  const plan = await getOrganisationPlan(pool, organizationId);
+  if (!plan || !hasEntitlement(plan, "broadcasts.scheduled")) {
+    const pauseResult = await pauseScheduledBroadcastForGate(pool, broadcast, {
+      status: "paused_no_entitlement",
+      reason: "Scheduled broadcasts require Growth. Organization does not have broadcasts.scheduled entitlement.",
+      packageCode: plan ? plan.packageCode : null,
+      organizationStatus: org.status,
+    });
+    return {
+      outcome: "paused_no_entitlement",
+      broadcast: pauseResult.broadcast || broadcast,
+      paused: pauseResult.paused,
+    };
+  }
+
   // Claim processing (prevent duplicate concurrent jobs).
   if (broadcast.status === "scheduled" || broadcast.status === "approval" || broadcast.status === "partially_failed" || broadcast.status === "failed") {
     const claim = await pool.query(
@@ -558,27 +697,10 @@ async function processBroadcastDelivery(pool, broadcastId, organizationId, opts 
     return { outcome: "duplicate_job", broadcast };
   }
 
-  // Re-check schedule entitlement if email channel present.
+  // Parse channels (entitlement already verified above, no downgrade to in_app).
   const channels = parseChannels(broadcast);
-  if (channels.includes("email")) {
-    try {
-      await assertCanScheduleExternalBroadcast(pool, organizationId);
-    } catch (err) {
-      if (err && err.code === "FOUNDATION_SCHEDULE_FORBIDDEN") {
-        // Downgrade to in-app only
-        channels.splice(0, channels.length, "in_app");
-        await pool.query(
-          `UPDATE public.church_hq_broadcasts SET delivery_channels = $2::jsonb WHERE id = $1`,
-          [broadcastId, JSON.stringify(channels)]
-        );
-      } else {
-        throw err;
-      }
-    }
-  }
 
   const recipients = await resolveAudienceRecipients(pool, organizationId, broadcast);
-  const org = await organizationsRepo.findOrganizationById(pool, organizationId);
   const emailSubject = safeBroadcastEmailSubject(org && org.name, broadcast.category);
 
   let delivered = 0;
@@ -787,6 +909,30 @@ async function retryFailedDeliveries(pool, broadcastId, organizationId) {
     throw err;
   }
 
+  // Gate check: org must be active
+  const org = await organizationsRepo.findOrganizationById(pool, organizationId);
+  if (!org || !isOrganizationStatusEligibleForGrowthJobs(org.status)) {
+    const err = new Error(
+      org
+        ? `Organization status is ${org.status}. Retry requires active organization.`
+        : "Organization not found."
+    );
+    err.code = "ORG_INACTIVE";
+    err.organizationStatus = org ? org.status : null;
+    throw err;
+  }
+
+  // Gate check: must have entitlement
+  const plan = await getOrganisationPlan(pool, organizationId);
+  if (!plan || !hasEntitlement(plan, "broadcasts.scheduled")) {
+    const err = new Error(
+      "Scheduled broadcasts require Growth. Organization does not have broadcasts.scheduled entitlement."
+    );
+    err.code = "ENTITLEMENT_REQUIRED";
+    err.packageCode = plan ? plan.packageCode : null;
+    throw err;
+  }
+
   const failed = await pool.query(
     `SELECT * FROM public.church_hq_broadcast_deliveries
      WHERE broadcast_id = $1 AND organization_id = $2 AND status = 'failed'`,
@@ -870,16 +1016,54 @@ async function processDueScheduledBroadcasts(pool, opts = {}) {
   const at = opts.at instanceof Date ? opts.at : new Date();
   const limit = Math.min(Math.max(Number(opts.limit) || 25, 1), 100);
   const due = await pool.query(
-    `SELECT id, organization_id, delivery_channels FROM public.church_hq_broadcasts
-     WHERE status = 'scheduled'
-       AND publish_at IS NOT NULL
-       AND publish_at <= $1
-     ORDER BY publish_at ASC, id ASC
+    `SELECT b.id, b.organization_id, b.delivery_channels, b.title, b.status
+     FROM public.church_hq_broadcasts b
+     WHERE b.status = 'scheduled'
+       AND b.publish_at IS NOT NULL
+       AND b.publish_at <= $1
+     ORDER BY b.publish_at ASC, b.id ASC
      LIMIT $2`,
     [at.toISOString(), limit]
   );
   const processed = [];
   for (const row of due.rows) {
+    // Check organization status first
+    const org = await organizationsRepo.findOrganizationById(pool, row.organization_id);
+    if (!org || !isOrganizationStatusEligibleForGrowthJobs(org.status)) {
+      const pauseResult = await pauseScheduledBroadcastForGate(pool, row, {
+        status: "paused_organization_inactive",
+        reason: org
+          ? `Organization status is ${org.status}; scheduled broadcasts require active status.`
+          : "Organization not found.",
+        organizationStatus: org ? org.status : null,
+      });
+      processed.push({
+        broadcastId: row.id,
+        organizationId: row.organization_id,
+        outcome: "paused_organization_inactive",
+        paused: pauseResult.paused,
+      });
+      continue;
+    }
+
+    // Check entitlement
+    const plan = await getOrganisationPlan(pool, row.organization_id);
+    if (!plan || !hasEntitlement(plan, "broadcasts.scheduled")) {
+      const pauseResult = await pauseScheduledBroadcastForGate(pool, row, {
+        status: "paused_no_entitlement",
+        reason: "Scheduled broadcasts require Growth. Organization does not have broadcasts.scheduled entitlement.",
+        packageCode: plan ? plan.packageCode : null,
+        organizationStatus: org.status,
+      });
+      processed.push({
+        broadcastId: row.id,
+        organizationId: row.organization_id,
+        outcome: "paused_no_entitlement",
+        paused: pauseResult.paused,
+      });
+      continue;
+    }
+
     try {
       const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
       await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
@@ -938,7 +1122,7 @@ async function listScheduledBroadcasts(pool, organizationId) {
   const r = await pool.query(
     `SELECT * FROM public.church_hq_broadcasts
      WHERE organization_id = $1
-       AND status IN ('scheduled', 'processing', 'approval', 'audience_estimate', 'preview', 'partially_failed', 'failed', 'cancelled')
+       AND status IN ('scheduled', 'processing', 'approval', 'audience_estimate', 'preview', 'partially_failed', 'failed', 'cancelled', 'paused_no_entitlement', 'paused_organization_inactive')
      ORDER BY COALESCE(publish_at, updated_at) DESC, id DESC
      LIMIT 100`,
     [organizationId]
@@ -1099,6 +1283,7 @@ module.exports = {
   submitForApproval,
   approveBroadcast,
   cancelScheduledBroadcast,
+  pauseScheduledBroadcastForGate,
   processBroadcastDelivery,
   retryFailedDeliveries,
   processDueScheduledBroadcasts,
