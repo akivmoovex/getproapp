@@ -97,17 +97,22 @@ test("canonical PLAN_CODES are foundation and growth only", () => {
   assert.equal(assertCanonicalProvisioningPlanCode("free").ok, false);
   assert.equal(assertCanonicalProvisioningPlanCode("standard").ok, false);
   assert.equal(assertCanonicalProvisioningPlanCode("pro").ok, false);
+  assert.equal(assertCanonicalProvisioningPlanCode("network").ok, false);
+  assert.equal(assertCanonicalProvisioningPlanCode("enterprise").ok, false);
+  assert.equal(assertCanonicalProvisioningPlanCode("").ok, true);
+  assert.equal(assertCanonicalProvisioningPlanCode("").value, "foundation");
+  assert.equal(assertCanonicalProvisioningPlanCode(null).value, "foundation");
 });
 
-test("validateProvisioningBody rejects free, standard, and pro", () => {
-  for (const code of ["free", "standard", "pro"]) {
+test("validateProvisioningBody rejects free, standard, pro, and network", () => {
+  for (const code of ["free", "standard", "pro", "network", "unknown-pkg"]) {
     const result = validateProvisioningBody({
       organization_name: "Reject Legacy",
-      organization_slug: `rej-${code}`,
+      organization_slug: `rej-${code}`.slice(0, 40),
       country: "Zambia",
       plan_code: code,
       branch_name: "Main",
-      branch_host_slug: `rej-${code}`,
+      branch_host_slug: `rej-${String(code).replace(/[^a-z0-9-]/gi, "").slice(0, 20) || "x"}`,
       hq_full_name: "HQ Admin",
       hq_email: "hq@example.com",
       hq_temporary_password: "temppass123",
@@ -116,7 +121,7 @@ test("validateProvisioningBody rejects free, standard, and pro", () => {
       branch_admin_temporary_password: "temppass456",
     });
     assert.equal(result.ok, false, `expected reject for ${code}`);
-    assert.match(result.error, /legacy|foundation or growth/i);
+    assert.match(result.error, /legacy|foundation or growth|invalid package/i);
   }
 });
 
@@ -165,13 +170,13 @@ test("PG: Growth provisioning succeeds", async (t) => {
   }
 });
 
-test("PG: free / standard / pro provisioning rejected at service layer", async (t) => {
+test("PG: free / standard / pro / network / unknown provisioning rejected at service layer", async (t) => {
   const pool = await requireChurchPgOrSkip(t);
   if (!pool) return;
   await ensureChurchSchema(pool);
   await ensureCanonicalTenantsForTests(pool);
 
-  for (const code of ["free", "standard", "pro"]) {
+  for (const code of ["free", "standard", "pro", "network", "enterprise"]) {
     const payload = baseProvisionPayload(`leg-${code}`, code);
     await assert.rejects(
       () => platformProvisioningRepo.provisionChurchOrganization(pool, payload, null),
@@ -182,6 +187,103 @@ test("PG: free / standard / pro provisioning rejected at service layer", async (
       [payload.organization.slug]
     );
     assert.equal(leftover.rowCount, 0, `no partial org for ${code}`);
+  }
+});
+
+test("PG: missing plan_code defaults to Foundation (documented)", async (t) => {
+  const pool = await requireChurchPgOrSkip(t);
+  if (!pool) return;
+  await ensureChurchSchema(pool);
+  await ensureCanonicalTenantsForTests(pool);
+
+  const payload = baseProvisionPayload("def-found", "");
+  delete payload.organization.plan_code;
+  let orgId = null;
+  try {
+    const result = await platformProvisioningRepo.provisionChurchOrganization(pool, payload, null);
+    orgId = result.organization.id;
+    assert.equal(result.organization.plan_code, "foundation");
+  } finally {
+    await cleanupOrg(pool, orgId);
+  }
+});
+
+test("PG: HQ admin creation failure rolls back organization and branch", async (t) => {
+  const pool = await requireChurchPgOrSkip(t);
+  if (!pool) return;
+  await ensureChurchSchema(pool);
+  await ensureCanonicalTenantsForTests(pool);
+
+  const payload = baseProvisionPayload("hqfail", "foundation");
+  const bcrypt = require("bcryptjs");
+  const realHash = bcrypt.hash.bind(bcrypt);
+  let hashCalls = 0;
+  bcrypt.hash = async (...args) => {
+    hashCalls += 1;
+    // Fail on the first hash (HQ admin password) after org+branch exist.
+    if (hashCalls === 1) {
+      throw Object.assign(new Error("forced HQ password hash failure"), { code: "FORCED_HQ_FAIL" });
+    }
+    return realHash(...args);
+  };
+
+  try {
+    await assert.rejects(() =>
+      platformProvisioningRepo.provisionChurchOrganization(pool, payload, null)
+    );
+
+    const org = await pool.query(`SELECT id FROM public.church_organizations WHERE slug = $1`, [
+      payload.organization.slug,
+    ]);
+    assert.equal(org.rowCount, 0, "organization rolled back after HQ failure");
+    const branches = await pool.query(
+      `SELECT id FROM public.church_branches WHERE host_slug = $1`,
+      [payload.branch.host_slug]
+    );
+    assert.equal(branches.rowCount, 0, "branch rolled back after HQ failure");
+  } finally {
+    bcrypt.hash = realHash;
+  }
+});
+
+test("PG: branch-admin creation failure rolls back organization, branch, and HQ", async (t) => {
+  const pool = await requireChurchPgOrSkip(t);
+  if (!pool) return;
+  await ensureChurchSchema(pool);
+  await ensureCanonicalTenantsForTests(pool);
+
+  const payload = baseProvisionPayload("bafail", "foundation");
+  const bcrypt = require("bcryptjs");
+  const realHash = bcrypt.hash.bind(bcrypt);
+  let hashCalls = 0;
+  bcrypt.hash = async (...args) => {
+    hashCalls += 1;
+    // First hash = HQ (ok); second = branch admin (fail) — role/account assignment step.
+    if (hashCalls === 2) {
+      throw Object.assign(new Error("forced branch-admin hash failure"), { code: "FORCED_BA_FAIL" });
+    }
+    return realHash(...args);
+  };
+
+  try {
+    await assert.rejects(() =>
+      platformProvisioningRepo.provisionChurchOrganization(pool, payload, null)
+    );
+
+    const org = await pool.query(`SELECT id FROM public.church_organizations WHERE slug = $1`, [
+      payload.organization.slug,
+    ]);
+    assert.equal(org.rowCount, 0);
+    const hq = await pool.query(`SELECT id FROM public.church_hq_admins WHERE email = $1`, [
+      payload.hqAdmin.email,
+    ]);
+    assert.equal(hq.rowCount, 0, "HQ admin rolled back with org");
+    const ba = await pool.query(`SELECT id FROM public.church_branch_admins WHERE email = $1`, [
+      payload.branchAdmin.email,
+    ]);
+    assert.equal(ba.rowCount, 0);
+  } finally {
+    bcrypt.hash = realHash;
   }
 });
 
@@ -385,6 +487,9 @@ test("PG: legacy package rows are reported but not rewritten", async (t) => {
     assert.ok(audit.freeCount >= 1);
     assert.ok(audit.standardCount >= 1);
     assert.ok(audit.proCount >= 1);
+    assert.ok(Array.isArray(audit.legacyByCode));
+    assert.ok(audit.legacyByCode.some((r) => r.plan_code === "free" && r.organization_count >= 1));
+    assert.ok(audit.legacyByCode.every((r) => r.plan_code && typeof r.organization_count === "number"));
     assert.match(audit.note, /not auto-rewritten/i);
 
     const after = await pool.query(

@@ -56,8 +56,10 @@ const ORGANIZATION_RESERVED_SLUGS = new Set([
 
 /** Canonical packages accepted for new church provisioning (Foundation / Growth only). */
 const PLAN_CODES = Object.freeze(["foundation", "growth"]);
+/** Explicit default when plan_code is missing/empty — Foundation only (documented). */
 const DEFAULT_PROVISIONING_PLAN_CODE = "foundation";
-const LEGACY_PLAN_CODES = Object.freeze(["free", "standard", "pro"]);
+/** Known legacy / retired codes rejected for new provisioning (never silently remapped). */
+const LEGACY_PLAN_CODES = Object.freeze(["free", "standard", "pro", "network"]);
 
 function normalizeSlug(value) {
   return String(value || "")
@@ -532,7 +534,8 @@ function validateAddBranchBody(body, organization) {
 
 /**
  * Service-layer guard for new provisioning plan codes.
- * Does not silently map legacy codes (e.g. pro → growth).
+ * Empty/missing → Foundation (DEFAULT_PROVISIONING_PLAN_CODE). Documented intentional default.
+ * Does not silently map legacy codes (e.g. pro → growth, network → growth).
  * @param {string} planCode
  * @returns {{ ok: true, value: string } | { ok: false, error: string }}
  */

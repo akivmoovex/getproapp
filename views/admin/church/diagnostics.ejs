@@ -197,17 +197,31 @@
         <% var _lpa = diagnostics.legacyPlanAudit || {}; %>
         <section class="card card--mb-xl" style="padding:1.25rem;">
           <h2 class="section-title section-title--flush">Package code audit (read-only)</h2>
-          <p class="muted">New provisioning accepts Foundation and Growth only. Existing free / standard / pro rows are preserved and never auto-rewritten.</p>
+          <p class="muted">New provisioning accepts Foundation and Growth only. Existing free / standard / pro / network rows are preserved and never auto-rewritten.</p>
           <dl class="admin-dl">
             <dt>Foundation</dt><dd><code><%= _lpa.foundationCount != null ? _lpa.foundationCount : 0 %></code></dd>
             <dt>Growth</dt><dd><code><%= _lpa.growthCount != null ? _lpa.growthCount : 0 %></code></dd>
-            <dt>Legacy total (incompatible for new provision)</dt><dd><code><%= _lpa.legacyTotal != null ? _lpa.legacyTotal : 0 %></code></dd>
+            <dt>Legacy total (outside Foundation/Growth)</dt><dd><code><%= _lpa.legacyTotal != null ? _lpa.legacyTotal : 0 %></code></dd>
             <dt>Legacy free</dt><dd><code><%= _lpa.freeCount != null ? _lpa.freeCount : 0 %></code></dd>
             <dt>Legacy standard</dt><dd><code><%= _lpa.standardCount != null ? _lpa.standardCount : 0 %></code></dd>
             <dt>Legacy pro</dt><dd><code><%= _lpa.proCount != null ? _lpa.proCount : 0 %></code></dd>
+            <dt>Legacy network</dt><dd><code><%= _lpa.networkCount != null ? _lpa.networkCount : 0 %></code></dd>
             <dt>Other / unknown</dt><dd><code><%= _lpa.otherCount != null ? _lpa.otherCount : 0 %></code></dd>
             <dt>Note</dt><dd><%= _lpa.note || '—' %></dd>
           </dl>
+          <% if (_lpa.legacyByCode && _lpa.legacyByCode.length) { %>
+          <table class="admin-table" style="margin-top:1rem;">
+            <thead><tr><th>Legacy package code</th><th>Organizations</th></tr></thead>
+            <tbody>
+              <% _lpa.legacyByCode.forEach(function (row) { %>
+              <tr>
+                <td><code><%= row.plan_code %></code></td>
+                <td><%= row.organization_count %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+          <% } %>
         </section>
 
         <section class="card card--mb-xl" style="padding:1.25rem;">

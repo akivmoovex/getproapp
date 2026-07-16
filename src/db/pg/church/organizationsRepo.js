@@ -78,7 +78,8 @@ async function getOrganizationUsageCounts(pool, organizationId) {
 
 /**
  * Read-only audit of stored plan_code values.
- * Does not rewrite legacy free/standard/pro rows.
+ * Does not rewrite legacy free/standard/pro/network rows.
+ * Exposes per-code counts for non-canonical packages without tenant PII.
  * @param {import("pg").Pool} pool
  */
 async function getLegacyPlanCodeAudit(pool) {
@@ -90,12 +91,24 @@ async function getLegacyPlanCodeAudit(pool) {
        COUNT(*) FILTER (WHERE plan_code = 'free')::int AS free_count,
        COUNT(*) FILTER (WHERE plan_code = 'standard')::int AS standard_count,
        COUNT(*) FILTER (WHERE plan_code = 'pro')::int AS pro_count,
-       COUNT(*) FILTER (WHERE plan_code IN ('free', 'standard', 'pro'))::int AS legacy_total,
+       COUNT(*) FILTER (WHERE plan_code = 'network')::int AS network_count,
        COUNT(*) FILTER (
          WHERE plan_code IS NOT NULL
-           AND plan_code NOT IN ('foundation', 'growth', 'free', 'standard', 'pro')
+           AND plan_code NOT IN ('foundation', 'growth')
+       )::int AS legacy_total,
+       COUNT(*) FILTER (
+         WHERE plan_code IS NOT NULL
+           AND plan_code NOT IN ('foundation', 'growth', 'free', 'standard', 'pro', 'network')
        )::int AS other_count
      FROM public.church_organizations`
+  );
+  const byCodeRes = await pool.query(
+    `SELECT plan_code, COUNT(*)::int AS organization_count
+     FROM public.church_organizations
+     WHERE plan_code IS NOT NULL
+       AND plan_code NOT IN ('foundation', 'growth')
+     GROUP BY plan_code
+     ORDER BY organization_count DESC, plan_code ASC`
   );
   const row = r.rows[0] || {};
   return {
@@ -105,13 +118,22 @@ async function getLegacyPlanCodeAudit(pool) {
     freeCount: row.free_count || 0,
     standardCount: row.standard_count || 0,
     proCount: row.pro_count || 0,
+    networkCount: row.network_count || 0,
     legacyTotal: row.legacy_total || 0,
     otherCount: row.other_count || 0,
+    /**
+     * Non-canonical package codes with organization counts only (no tenant names/slugs).
+     * @type {Array<{ plan_code: string, organization_count: number }>}
+     */
+    legacyByCode: byCodeRes.rows.map((x) => ({
+      plan_code: String(x.plan_code),
+      organization_count: Number(x.organization_count) || 0,
+    })),
     legacyIncompatible: (row.legacy_total || 0) > 0,
     note:
       (row.legacy_total || 0) > 0
-        ? "Legacy free/standard/pro rows are preserved and reported only — not auto-rewritten."
-        : "No legacy free/standard/pro plan_code rows found.",
+        ? "Legacy package rows outside Foundation/Growth are preserved and reported only — not auto-rewritten."
+        : "No legacy plan_code rows found outside Foundation/Growth.",
   };
 }
 

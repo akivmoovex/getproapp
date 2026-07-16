@@ -1790,6 +1790,15 @@ module.exports = function registerAdminChurchPlatformRoutes(router) {
           activeNav: "church_platform_orgs",
         });
       }
+      if (err && err.code === "INVALID_PLAN_CODE") {
+        return res.status(400).render("admin/church/organization_form", {
+          form: formFromBody(req.body),
+          error: err.message || "Invalid package. New churches must use foundation or growth.",
+          planCodes: PLAN_CODES,
+          churchPublicHost,
+          activeNav: "church_platform_orgs",
+        });
+      }
       if (err && err.code === "23505") {
         return res.status(400).render("admin/church/organization_form", {
           form: formFromBody(req.body),

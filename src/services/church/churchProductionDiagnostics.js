@@ -416,8 +416,10 @@ async function gatherChurchProductionDiagnostics(opts = {}) {
     freeCount: 0,
     standardCount: 0,
     proCount: 0,
+    networkCount: 0,
     legacyTotal: 0,
     otherCount: 0,
+    legacyByCode: [],
     legacyIncompatible: false,
     note: "Unavailable.",
   };
@@ -425,8 +427,14 @@ async function gatherChurchProductionDiagnostics(opts = {}) {
     try {
       legacyPlanAudit = await organizationsRepo.getLegacyPlanCodeAudit(pool);
       if (legacyPlanAudit.legacyIncompatible) {
+        const byCode =
+          Array.isArray(legacyPlanAudit.legacyByCode) && legacyPlanAudit.legacyByCode.length
+            ? legacyPlanAudit.legacyByCode
+                .map((r) => `${r.plan_code}=${r.organization_count}`)
+                .join(", ")
+            : `free=${legacyPlanAudit.freeCount}, standard=${legacyPlanAudit.standardCount}, pro=${legacyPlanAudit.proCount}, network=${legacyPlanAudit.networkCount || 0}`;
         warnings.push(
-          `Legacy package codes on ${legacyPlanAudit.legacyTotal} organisation(s) (free=${legacyPlanAudit.freeCount}, standard=${legacyPlanAudit.standardCount}, pro=${legacyPlanAudit.proCount}). Preserved — not auto-rewritten.`
+          `Legacy package codes on ${legacyPlanAudit.legacyTotal} organisation(s) (${byCode}). Preserved — not auto-rewritten.`
         );
       }
     } catch {

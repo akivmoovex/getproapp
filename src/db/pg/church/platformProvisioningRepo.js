@@ -367,6 +367,8 @@ async function recordPlatformAudit(client, entry) {
 }
 
 async function provisionChurchOrganization(pool, payload, platformAdminId) {
+  // Canonical packages only. Missing/empty plan_code → Foundation (explicit documented default).
+  // Legacy free/standard/pro/network and unknown codes are rejected — never remapped.
   const planCheck = assertCanonicalProvisioningPlanCode(
     payload && payload.organization && payload.organization.plan_code
   );
