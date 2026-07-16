@@ -169,6 +169,47 @@
           </dl>
         </section>
 
+        <% var _di = diagnostics.deploymentIdentity || {}; %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Deployment identity</h2>
+          <p class="muted">Proves which PostgreSQL environment this app is connected to. Sanitized — no URLs, credentials, addresses or full paths.</p>
+          <dl class="admin-dl">
+            <dt>DEPLOYMENT_ENV</dt><dd><code><%= diagnostics.deploymentEnv %></code></dd>
+            <dt>Database environment code</dt><dd><code><%= _di.databaseEnvironmentCode %></code></dd>
+            <dt>Deployment name</dt><dd><code><%= _di.deploymentName %></code></dd>
+            <dt>Database instance id</dt><dd><code><%= _di.databaseInstanceId %></code></dd>
+            <dt>current_database()</dt><dd><code><%= _di.currentDatabase %></code></dd>
+            <dt>PostgreSQL server identity</dt><dd><code><%= _di.postgresServerIdentity %></code></dd>
+            <dt>PostgreSQL server version</dt><dd><code><%= _di.postgresServerVersion %></code></dd>
+            <dt>Database host fingerprint</dt><dd><code><%= _di.databaseHostFingerprint %></code></dd>
+            <dt>Current schema migration</dt><dd><code><%= _di.schemaMigrationCurrent %></code></dd>
+            <dt>Latest expected migration</dt><dd><code><%= _di.latestExpectedMigration %></code></dd>
+            <dt>Git commit</dt><dd><code><%= diagnostics.gitCommitSha %></code></dd>
+            <dt>Git branch</dt><dd><code><%= diagnostics.gitBranch %></code></dd>
+            <dt>Canonical domain</dt><dd><code><%= diagnostics.canonicalDomain %></code></dd>
+            <dt>Church host domain</dt><dd><code><%= diagnostics.churchHostDomain %></code></dd>
+            <dt>Session cookie name</dt><dd><code><%= diagnostics.sessionCookieName %></code></dd>
+            <dt>Background jobs</dt><dd><%= diagnostics.backgroundJobsEnabled ? 'Enabled' : 'Disabled' %></dd>
+            <dt>Upload-root fingerprint</dt><dd><code><%= diagnostics.uploadRootFingerprint %></code></dd>
+          </dl>
+        </section>
+
+        <% var _lpa = diagnostics.legacyPlanAudit || {}; %>
+        <section class="card card--mb-xl" style="padding:1.25rem;">
+          <h2 class="section-title section-title--flush">Package code audit (read-only)</h2>
+          <p class="muted">New provisioning accepts Foundation and Growth only. Existing free / standard / pro rows are preserved and never auto-rewritten.</p>
+          <dl class="admin-dl">
+            <dt>Foundation</dt><dd><code><%= _lpa.foundationCount != null ? _lpa.foundationCount : 0 %></code></dd>
+            <dt>Growth</dt><dd><code><%= _lpa.growthCount != null ? _lpa.growthCount : 0 %></code></dd>
+            <dt>Legacy total (incompatible for new provision)</dt><dd><code><%= _lpa.legacyTotal != null ? _lpa.legacyTotal : 0 %></code></dd>
+            <dt>Legacy free</dt><dd><code><%= _lpa.freeCount != null ? _lpa.freeCount : 0 %></code></dd>
+            <dt>Legacy standard</dt><dd><code><%= _lpa.standardCount != null ? _lpa.standardCount : 0 %></code></dd>
+            <dt>Legacy pro</dt><dd><code><%= _lpa.proCount != null ? _lpa.proCount : 0 %></code></dd>
+            <dt>Other / unknown</dt><dd><code><%= _lpa.otherCount != null ? _lpa.otherCount : 0 %></code></dd>
+            <dt>Note</dt><dd><%= _lpa.note || '—' %></dd>
+          </dl>
+        </section>
+
         <section class="card card--mb-xl" style="padding:1.25rem;">
           <h2 class="section-title section-title--flush">Database</h2>
           <dl class="admin-dl">

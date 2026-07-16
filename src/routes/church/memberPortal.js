@@ -533,6 +533,14 @@ function registerMemberPortalRoutes(router) {
             memberId,
           });
           await client.query("COMMIT");
+          setChurchMemberSession(req, {
+            member_id: updated.id,
+            organization_id: updated.organization_id,
+            branch_id: updated.branch_id,
+            status: updated.status,
+            full_name: updated.full_name,
+            security_version: updated.security_version,
+          });
         } catch (err) {
           await client.query("ROLLBACK");
           throw err;

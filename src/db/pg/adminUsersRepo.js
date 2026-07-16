@@ -126,39 +126,62 @@ async function insertUser(pool, p) {
 
 /**
  * Tenant /users edit: username, role, enabled (0|1), optional password.
+ * Bumps security_version on password, role, or disable changes.
  * @param {import("pg").Pool} pool
  */
 async function updateTenantScopedUser(pool, id, { username, role, enabledNum, passwordHash }) {
   if (passwordHash) {
     const r = await pool.query(
-      `UPDATE public.admin_users SET username = $1, role = $2, enabled = $3, password_hash = $4 WHERE id = $5`,
+      `UPDATE public.admin_users
+       SET username = $1, role = $2, enabled = $3, password_hash = $4,
+           security_version = security_version + 1
+       WHERE id = $5`,
       [username, role, enabledNum === 1, passwordHash, id]
     );
     return r.rowCount > 0;
   }
-  const r = await pool.query(`UPDATE public.admin_users SET username = $1, role = $2, enabled = $3 WHERE id = $4`, [
-    username,
-    role,
-    enabledNum === 1,
-    id,
-  ]);
+  const r = await pool.query(
+    `UPDATE public.admin_users
+     SET username = $1, role = $2, enabled = $3,
+         security_version = CASE
+           WHEN role IS DISTINCT FROM $2
+             OR (enabled = true AND $3 = false)
+           THEN security_version + 1
+           ELSE security_version
+         END
+     WHERE id = $4`,
+    [username, role, enabledNum === 1, id]
+  );
   return r.rowCount > 0;
 }
 
 /**
  * Super-console user edit.
+ * Bumps security_version on password, role, tenant, or disable changes.
  * @param {import("pg").Pool} pool
  */
 async function updateSuperConsoleUser(pool, id, { username, role, tenantId, enabledNum, passwordHash }) {
   if (passwordHash) {
     const r = await pool.query(
-      `UPDATE public.admin_users SET username = $1, role = $2, tenant_id = $3, enabled = $4, password_hash = $5 WHERE id = $6`,
+      `UPDATE public.admin_users
+       SET username = $1, role = $2, tenant_id = $3, enabled = $4, password_hash = $5,
+           security_version = security_version + 1
+       WHERE id = $6`,
       [username, role, tenantId, enabledNum === 1, passwordHash, id]
     );
     return r.rowCount > 0;
   }
   const r = await pool.query(
-    `UPDATE public.admin_users SET username = $1, role = $2, tenant_id = $3, enabled = $4 WHERE id = $5`,
+    `UPDATE public.admin_users
+     SET username = $1, role = $2, tenant_id = $3, enabled = $4,
+         security_version = CASE
+           WHEN role IS DISTINCT FROM $2
+             OR tenant_id IS DISTINCT FROM $3
+             OR (enabled = true AND $4 = false)
+           THEN security_version + 1
+           ELSE security_version
+         END
+     WHERE id = $5`,
     [username, role, tenantId, enabledNum === 1, id]
   );
   return r.rowCount > 0;
@@ -236,21 +259,29 @@ async function listForSuperConsole(pool, filterKey) {
 }
 
 /**
+ * Bumps security_version when password changes.
  * @param {import("pg").Pool} pool
  */
 async function updateDisplayNameAndPasswordHash(pool, id, displayName, passwordHash) {
-  await pool.query(`UPDATE public.admin_users SET display_name = $1, password_hash = $2 WHERE id = $3`, [
-    displayName,
-    passwordHash,
-    id,
-  ]);
+  await pool.query(
+    `UPDATE public.admin_users
+     SET display_name = $1, password_hash = $2, security_version = security_version + 1
+     WHERE id = $3`,
+    [displayName, passwordHash, id]
+  );
 }
 
 /**
+ * Bumps security_version on role/tenant changes.
  * @param {import("pg").Pool} pool
  */
 async function updateRoleTenantHome(pool, id, role, tenantId) {
-  await pool.query(`UPDATE public.admin_users SET role = $1, tenant_id = $2 WHERE id = $3`, [role, tenantId, id]);
+  await pool.query(
+    `UPDATE public.admin_users
+     SET role = $1, tenant_id = $2, security_version = security_version + 1
+     WHERE id = $3`,
+    [role, tenantId, id]
+  );
 }
 
 /**

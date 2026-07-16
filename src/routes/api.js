@@ -4,7 +4,7 @@ const { israelComingSoonEnabled } = require("../tenants/israelComingSoon");
 const { TENANT_IL } = require("../tenants/tenantIds");
 const phoneRulesService = require("../phone/phoneRulesService");
 const { createCrmTaskFromEvent } = require("../crm/crmAutoTasks");
-const { getPgPool, isPgConfigured } = require("../db/pg");
+const { getPgPool } = require("../db/pg");
 const callbacksRepo = require("../db/pg/callbacksRepo");
 const companiesRepo = require("../db/pg/companiesRepo");
 const leadsRepo = require("../db/pg/leadsRepo");
@@ -136,26 +136,9 @@ module.exports = function apiRoutes() {
     });
   }
 
-  /** Opt-in PostgreSQL connectivity check (Supabase). Off by default. */
-  if (process.env.GETPRO_PG_HEALTH_ROUTE === "1") {
-    router.get("/debug/pg-ping", async (req, res) => {
-      if (!isPgConfigured()) {
-        return res.status(503).json({
-          ok: false,
-          error: "PostgreSQL not configured (set DATABASE_URL or GETPRO_DATABASE_URL).",
-        });
-      }
-      try {
-        const pool = getPgPool();
-        const r = await pool.query(
-          "SELECT current_database() AS database, current_schema() AS schema, 1 AS ok"
-        );
-        return res.json({ ok: true, ...r.rows[0] });
-      } catch (err) {
-        return res.status(503).json({ ok: false, error: err.message });
-      }
-    });
-  }
+  // NOTE: The former unauthenticated GET /api/debug/pg-ping database probe has been removed.
+  // Database identity + current_database() are now available only on the authenticated,
+  // super-admin-gated Platform Diagnostics page (/admin/church/diagnostics).
 
   router.post("/callback-interest", async (req, res) => {
     const body = req.body || {};

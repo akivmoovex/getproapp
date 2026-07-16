@@ -52,12 +52,13 @@
               <input id="primary_contact_email" class="input-field__control" name="primary_contact_email" type="email" value="<%= f.primary_contact_email || '' %>" />
             </div>
             <div class="input-field">
-              <label class="input-field__label" for="plan_code">Plan</label>
-              <select id="plan_code" class="input-field__control" name="plan_code">
-                <% (planCodes || ['free']).forEach(function (code) { %>
-                  <option value="<%= code %>" <%= (f.plan_code || 'free') === code ? 'selected' : '' %>><%= code %></option>
+              <label class="input-field__label" for="plan_code">Package</label>
+              <select id="plan_code" class="input-field__control" name="plan_code" required>
+                <% (planCodes || ['foundation', 'growth']).forEach(function (code) { %>
+                  <option value="<%= code %>" <%= (f.plan_code || 'foundation') === code ? 'selected' : '' %>><%= code === 'foundation' ? 'Foundation' : (code === 'growth' ? 'Growth' : code) %></option>
                 <% }); %>
               </select>
+              <p class="muted" style="font-size:0.85rem;margin-top:0.25rem;">Foundation or Growth only. Legacy free / standard / pro are not accepted for new churches.</p>
             </div>
           </div>
 

@@ -268,7 +268,7 @@ test(
       assert.ok(diagnostic.usageAndQuota);
       assert.equal(diagnostic.customDomain.status, "not_implemented");
       assert.equal(diagnostic.storageHealth.kind, "attachment_quota");
-      assert.match(String(diagnostic.application.latestChurchMigration), /105_church_notification/);
+      assert.equal(String(diagnostic.application.latestChurchMigration), latestChurchSchemaMigration());
       assert.ok(diagnostic.redacted);
       assert.doesNotMatch(JSON.stringify(diagnostic), /0977000111|hq_.*@example\.com|password_hash|SESSION_SECRET/i);
       assert.ok(elapsed < 5000, `large-tenant-style diagnostic should stay under 5s (was ${elapsed}ms)`);

@@ -98,6 +98,7 @@ function registerBlessBoardAdminAuthRoutes(router) {
       username: user.username,
       role: user.role || ROLES.SUPER_ADMIN,
       tenantId: user.tenant_id,
+      security_version: user.security_version,
     };
 
     return res.redirect(BLESSBOARD_ADMIN.dashboard);

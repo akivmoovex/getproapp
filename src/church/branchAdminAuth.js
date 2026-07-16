@@ -1,14 +1,17 @@
 "use strict";
 
+const { hashMemberPassword, verifyMemberPassword } = require("./memberAuth");
 const {
-  hashMemberPassword,
-  verifyMemberPassword,
-} = require("./memberAuth");
+  normalizeSecurityVersion,
+  stampSecurityVersion,
+  sessionMatchesSecurityVersion,
+  rejectStaleSecuritySession,
+} = require("./accountSecurityVersion");
 
 const SESSION_KEY = "churchBranchAdmin";
 
 /**
- * @returns {{ admin_id: number, organization_id: number, branch_id: number, full_name: string, role: string, status: string } | null}
+ * @returns {{ admin_id: number, organization_id: number, branch_id: number, full_name: string, role: string, status: string, security_version: number } | null}
  */
 function getChurchBranchAdminSession(req) {
   const s = req.session && req.session[SESSION_KEY];
@@ -22,19 +25,25 @@ function getChurchBranchAdminSession(req) {
     full_name: String(s.full_name || ""),
     role: String(s.role || ""),
     status: String(s.status || ""),
+    security_version: normalizeSecurityVersion(s.security_version),
   };
 }
 
 function setChurchBranchAdminSession(req, payload) {
   if (!req.session) return;
-  req.session[SESSION_KEY] = {
-    admin_id: payload.admin_id,
-    organization_id: payload.organization_id,
-    branch_id: payload.branch_id,
-    full_name: payload.full_name,
-    role: payload.role,
-    status: payload.status,
-  };
+  const prev = req.session[SESSION_KEY];
+  req.session[SESSION_KEY] = stampSecurityVersion(
+    {
+      admin_id: payload.admin_id,
+      organization_id: payload.organization_id,
+      branch_id: payload.branch_id,
+      full_name: payload.full_name,
+      role: payload.role,
+      status: payload.status,
+    },
+    payload,
+    prev && prev.security_version
+  );
 }
 
 function clearChurchBranchAdminSession(req) {
@@ -70,24 +79,35 @@ async function requireChurchBranchAdminSession(req, res, next) {
   try {
     const { getPgPool } = require("../db/pg");
     const branchAdminsRepo = require("../db/pg/church/branchAdminsRepo");
+    const { wantsJson } = require("./churchFailureStates");
     const row = await branchAdminsRepo.findBranchAdminById(getPgPool(), admin.admin_id);
     if (!row || row.status !== "active" || Number(row.branch_id) !== Number(admin.branch_id)) {
       clearChurchBranchAdminSession(req);
       return res.redirect("/branch/login");
     }
-    req.churchBranchAdmin = {
-      admin_id: row.id,
-      organization_id: row.organization_id,
-      branch_id: row.branch_id,
-      full_name: row.full_name || row.display_name || "Branch Admin",
-      role: row.role || "branch_admin",
-      status: row.status,
-      can_view_finance: Boolean(row.can_view_finance),
-      can_export_reports: row.can_export_reports !== false,
-      can_correct_attendance: Boolean(row.can_correct_attendance),
-      can_access_pastoral: Boolean(row.can_access_pastoral),
-      can_access_safeguarding: Boolean(row.can_access_safeguarding),
-    };
+    if (!sessionMatchesSecurityVersion(admin, row)) {
+      return rejectStaleSecuritySession(req, res, {
+        loginPath: "/branch/login",
+        clearFn: clearChurchBranchAdminSession,
+        wantsJson,
+      });
+    }
+    req.churchBranchAdmin = stampSecurityVersion(
+      {
+        admin_id: row.id,
+        organization_id: row.organization_id,
+        branch_id: row.branch_id,
+        full_name: row.full_name || row.display_name || "Branch Admin",
+        role: row.role || "branch_admin",
+        status: row.status,
+        can_view_finance: Boolean(row.can_view_finance),
+        can_export_reports: row.can_export_reports !== false,
+        can_correct_attendance: Boolean(row.can_correct_attendance),
+        can_access_pastoral: Boolean(row.can_access_pastoral),
+        can_access_safeguarding: Boolean(row.can_access_safeguarding),
+      },
+      row
+    );
     return next();
   } catch (err) {
     return next(err);

@@ -117,7 +117,8 @@ test(
     });
     const branch = await branchesRepo.createBranch(pool, {
       organization_id: org.id,
-      slug: "main",
+      slug: `main_${suffix}`,
+      host_slug: `baacct-main-${suffix}`,
       name: `BA Account Branch ${suffix}`,
     });
     const oldPassword = "oldpass123456";

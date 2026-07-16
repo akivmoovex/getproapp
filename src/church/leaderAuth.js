@@ -1,14 +1,17 @@
 "use strict";
 
+const { hashMemberPassword, verifyMemberPassword } = require("./memberAuth");
 const {
-  hashMemberPassword,
-  verifyMemberPassword,
-} = require("./memberAuth");
+  normalizeSecurityVersion,
+  stampSecurityVersion,
+  sessionMatchesSecurityVersion,
+  rejectStaleSecuritySession,
+} = require("./accountSecurityVersion");
 
 const SESSION_KEY = "churchLeader";
 
 /**
- * @returns {{ leader_id: number, organization_id: number, branch_id: number, ministry_id: number | null, full_name: string, role: string, status: string } | null}
+ * @returns {{ leader_id: number, organization_id: number, branch_id: number, ministry_id: number | null, full_name: string, role: string, status: string, security_version: number } | null}
  */
 function getChurchLeaderSession(req) {
   const s = req.session && req.session[SESSION_KEY];
@@ -23,20 +26,26 @@ function getChurchLeaderSession(req) {
     full_name: String(s.full_name || ""),
     role: String(s.role || ""),
     status: String(s.status || ""),
+    security_version: normalizeSecurityVersion(s.security_version),
   };
 }
 
 function setChurchLeaderSession(req, payload) {
   if (!req.session) return;
-  req.session[SESSION_KEY] = {
-    leader_id: payload.leader_id,
-    organization_id: payload.organization_id,
-    branch_id: payload.branch_id,
-    ministry_id: payload.ministry_id ?? null,
-    full_name: payload.full_name,
-    role: payload.role,
-    status: payload.status,
-  };
+  const prev = req.session[SESSION_KEY];
+  req.session[SESSION_KEY] = stampSecurityVersion(
+    {
+      leader_id: payload.leader_id,
+      organization_id: payload.organization_id,
+      branch_id: payload.branch_id,
+      ministry_id: payload.ministry_id ?? null,
+      full_name: payload.full_name,
+      role: payload.role,
+      status: payload.status,
+    },
+    payload,
+    prev && prev.security_version
+  );
 }
 
 function clearChurchLeaderSession(req) {
@@ -45,7 +54,7 @@ function clearChurchLeaderSession(req) {
   }
 }
 
-function requireChurchLeaderSession(req, res, next) {
+async function requireChurchLeaderSession(req, res, next) {
   const leader = getChurchLeaderSession(req);
   if (!leader) {
     return res.redirect("/leader/login");
@@ -59,8 +68,44 @@ function requireChurchLeaderSession(req, res, next) {
     clearChurchLeaderSession(req);
     return res.redirect("/leader/login");
   }
-  req.churchLeader = leader;
-  return next();
+
+  try {
+    const { getPgPool } = require("../db/pg");
+    const ministryLeadersRepo = require("../db/pg/church/ministryLeadersRepo");
+    const { wantsJson } = require("./churchFailureStates");
+    const pool = getPgPool();
+    if (!pool) {
+      req.churchLeader = leader;
+      return next();
+    }
+    const row = await ministryLeadersRepo.findLeaderById(pool, leader.leader_id);
+    if (!row || row.status !== "active" || Number(row.branch_id) !== Number(leader.branch_id)) {
+      clearChurchLeaderSession(req);
+      return res.redirect("/leader/login");
+    }
+    if (!sessionMatchesSecurityVersion(leader, row)) {
+      return rejectStaleSecuritySession(req, res, {
+        loginPath: "/leader/login",
+        clearFn: clearChurchLeaderSession,
+        wantsJson,
+      });
+    }
+    req.churchLeader = stampSecurityVersion(
+      {
+        leader_id: row.id,
+        organization_id: row.organization_id,
+        branch_id: row.branch_id,
+        ministry_id: row.ministry_id || null,
+        full_name: row.full_name,
+        role: row.role || "ministry_leader",
+        status: row.status,
+      },
+      row
+    );
+    return next();
+  } catch (err) {
+    return next(err);
+  }
 }
 
 module.exports = {

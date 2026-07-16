@@ -1,6 +1,12 @@
 "use strict";
 
 const bcrypt = require("bcryptjs");
+const {
+  normalizeSecurityVersion,
+  stampSecurityVersion,
+  sessionMatchesSecurityVersion,
+  rejectStaleSecuritySession,
+} = require("./accountSecurityVersion");
 
 const SESSION_KEY = "churchMember";
 
@@ -13,7 +19,7 @@ function getPgPoolSafe() {
 }
 
 /**
- * @returns {{ member_id: number, organization_id: number, branch_id: number, status: string, full_name: string } | null}
+ * @returns {{ member_id: number, organization_id: number, branch_id: number, status: string, full_name: string, security_version: number } | null}
  */
 function getChurchMemberSession(req) {
   const s = req.session && req.session[SESSION_KEY];
@@ -26,18 +32,24 @@ function getChurchMemberSession(req) {
     branch_id: s.branch_id,
     status: String(s.status || ""),
     full_name: String(s.full_name || ""),
+    security_version: normalizeSecurityVersion(s.security_version),
   };
 }
 
 function setChurchMemberSession(req, payload) {
   if (!req.session) return;
-  req.session[SESSION_KEY] = {
-    member_id: payload.member_id,
-    organization_id: payload.organization_id,
-    branch_id: payload.branch_id,
-    status: payload.status,
-    full_name: payload.full_name,
-  };
+  const prev = req.session[SESSION_KEY];
+  req.session[SESSION_KEY] = stampSecurityVersion(
+    {
+      member_id: payload.member_id,
+      organization_id: payload.organization_id,
+      branch_id: payload.branch_id,
+      status: payload.status,
+      full_name: payload.full_name,
+    },
+    payload,
+    prev && prev.security_version
+  );
 }
 
 function clearChurchMemberSession(req) {
@@ -93,6 +105,7 @@ async function ensureMemberAccountActive(req, res, next) {
     const pool = getPgPoolSafe();
     if (!pool) return next();
     const membersRepo = require("../db/pg/church/membersRepo");
+    const { wantsJson } = require("./churchFailureStates");
     const row = await membersRepo.findMemberByIdForBranch(
       pool,
       req.churchMember.member_id,
@@ -102,6 +115,13 @@ async function ensureMemberAccountActive(req, res, next) {
       clearChurchMemberSession(req);
       return res.redirect("/login");
     }
+    if (!sessionMatchesSecurityVersion(req.churchMember, row)) {
+      return rejectStaleSecuritySession(req, res, {
+        loginPath: "/login",
+        clearFn: clearChurchMemberSession,
+        wantsJson,
+      });
+    }
     if (row.status === "pending") {
       return res.redirect("/waiting-verification");
     }
@@ -109,13 +129,16 @@ async function ensureMemberAccountActive(req, res, next) {
       clearChurchMemberSession(req);
       return res.redirect("/login");
     }
-    req.churchMember = {
-      member_id: row.id,
-      organization_id: row.organization_id,
-      branch_id: row.branch_id,
-      status: row.status,
-      full_name: row.full_name,
-    };
+    req.churchMember = stampSecurityVersion(
+      {
+        member_id: row.id,
+        organization_id: row.organization_id,
+        branch_id: row.branch_id,
+        status: row.status,
+        full_name: row.full_name,
+      },
+      row
+    );
     return next();
   } catch (e) {
     return next(e);

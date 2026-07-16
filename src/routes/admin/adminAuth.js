@@ -67,6 +67,7 @@ module.exports = function registerAdminAuthRoutes(router) {
         username: user.username,
         role: user.role || ROLES.TENANT_EDITOR,
         tenantId: user.tenant_id,
+        security_version: user.security_version,
       };
     } else {
       const resolved = await resolveSessionAfterLoginAsync(pool, user);
@@ -75,6 +76,7 @@ module.exports = function registerAdminAuthRoutes(router) {
         username: user.username,
         role: resolved.role,
         tenantId: resolved.tenantId,
+        security_version: user.security_version,
       };
       req.session.adminTenantMemberships = resolved.memberships;
     }

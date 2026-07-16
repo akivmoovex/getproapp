@@ -117,7 +117,8 @@ test(
     });
     const branch = await branchesRepo.createBranch(pool, {
       organization_id: org.id,
-      slug: "main",
+      slug: `main_${suffix}`,
+      host_slug: `hqacct-main-${suffix}`,
       name: `HQ Account Branch ${suffix}`,
     });
     const oldPassword = "oldpass123456";
@@ -129,6 +130,16 @@ test(
       full_name: "Active HQ Admin",
       email: `hqacct_${suffix}@example.com`,
       phone: "0977333001",
+      password_hash: passwordHash,
+      role: "hq_admin",
+      status: "active",
+    });
+    // Keep a second active HQ so platform deactivation of `admin` is allowed.
+    await hqAdminsRepo.createHqAdmin(pool, {
+      organization_id: org.id,
+      full_name: "Spare HQ Admin",
+      email: `hqacct_spare_${suffix}@example.com`,
+      phone: "0977333002",
       password_hash: passwordHash,
       role: "hq_admin",
       status: "active",

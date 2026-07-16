@@ -8,9 +8,11 @@ const givingSummariesRepo = require("../../db/pg/church/givingSummariesRepo");
 const monthlyReportsRepo = require("../../db/pg/church/monthlyReportsRepo");
 const {
   getChurchBranchAdminSession,
+  setChurchBranchAdminSession,
   clearChurchBranchAdminSession,
   requireChurchBranchAdminSession,
   hashBranchAdminPassword,
+  verifyBranchAdminPassword,
 } = require("../../church/branchAdminAuth");
 const { requireChurchBranchHost } = require("./auth");
 const {
@@ -389,6 +391,15 @@ function registerBranchAdminRoutes(router) {
           branchAdminId: adminId,
         });
         await client.query("COMMIT");
+        setChurchBranchAdminSession(req, {
+          admin_id: updated.id,
+          organization_id: updated.organization_id,
+          branch_id: updated.branch_id,
+          full_name: updated.full_name || updated.display_name || "Branch Admin",
+          role: updated.role || "branch_admin",
+          status: updated.status,
+          security_version: updated.security_version,
+        });
       } catch (err) {
         await client.query("ROLLBACK");
         throw err;

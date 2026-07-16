@@ -575,6 +575,7 @@ async function suspendMemberForBranch(pool, memberId, branchId, adminId, reason)
          suspended_at = now(),
          suspended_by_admin_id = $1,
          review_comment = CASE WHEN $4::text IS NOT NULL THEN $4 ELSE review_comment END,
+         security_version = security_version + 1,
          updated_at = now()
      WHERE id = $2
        AND branch_id = $3
@@ -700,9 +701,10 @@ async function updateMemberPasswordSelfService(client, memberId, branchId, passw
      SET password_hash = $3,
          password_changed_at = now(),
          password_changed_by = 'member',
+         security_version = security_version + 1,
          updated_at = now()
      WHERE id = $1 AND branch_id = $2 AND status = 'verified'
-     RETURNING id, organization_id, branch_id, full_name, email, phone, status, password_changed_at`,
+     RETURNING id, organization_id, branch_id, full_name, email, phone, status, password_changed_at, security_version`,
     [memberId, branchId, passwordHash]
   );
   return r.rows[0] ?? null;
@@ -723,9 +725,10 @@ async function resetMemberPasswordByBranchAdmin(client, memberId, branchId, pass
          password_changed_by = 'branch_admin_password_reset',
          failed_login_attempts = 0,
          login_locked_until = NULL,
+         security_version = security_version + 1,
          updated_at = now()
      WHERE id = $1 AND branch_id = $2 AND status = 'verified'
-     RETURNING id, organization_id, branch_id, full_name, email, phone, status, password_changed_at`,
+     RETURNING id, organization_id, branch_id, full_name, email, phone, status, password_changed_at, security_version`,
     [memberId, branchId, passwordHash]
   );
   return r.rows[0] ?? null;

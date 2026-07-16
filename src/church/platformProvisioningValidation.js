@@ -54,7 +54,10 @@ const ORGANIZATION_RESERVED_SLUGS = new Set([
   "assets",
 ]);
 
-const PLAN_CODES = ["free", "standard", "pro", "foundation", "growth"];
+/** Canonical packages accepted for new church provisioning (Foundation / Growth only). */
+const PLAN_CODES = Object.freeze(["foundation", "growth"]);
+const DEFAULT_PROVISIONING_PLAN_CODE = "foundation";
+const LEGACY_PLAN_CODES = Object.freeze(["free", "standard", "pro"]);
 
 function normalizeSlug(value) {
   return String(value || "")
@@ -169,7 +172,9 @@ function formFromBody(body) {
     primary_contact_name: String(b.primary_contact_name || "").trim(),
     primary_contact_phone: String(b.primary_contact_phone || "").trim(),
     primary_contact_email: String(b.primary_contact_email || "").trim(),
-    plan_code: String(b.plan_code || "free").trim(),
+    plan_code: String(b.plan_code || DEFAULT_PROVISIONING_PLAN_CODE)
+      .trim()
+      .toLowerCase(),
     branch_name: String(b.branch_name || "").trim(),
     branch_host_slug: normalizeSlug(b.branch_host_slug),
     branch_city: String(b.branch_city || "").trim(),
@@ -215,9 +220,21 @@ function validateProvisioningBody(body) {
     return { ok: false, error: "Branch name is required.", form };
   }
 
-  const planCode = form.plan_code || "free";
+  const planCode = form.plan_code || DEFAULT_PROVISIONING_PLAN_CODE;
+  if (LEGACY_PLAN_CODES.includes(planCode)) {
+    return {
+      ok: false,
+      error:
+        `Legacy package "${planCode}" is not accepted for new provisioning. Choose foundation or growth.`,
+      form,
+    };
+  }
   if (!PLAN_CODES.includes(planCode)) {
-    return { ok: false, error: "Invalid plan code.", form };
+    return {
+      ok: false,
+      error: "Invalid package. New churches must use foundation or growth.",
+      form,
+    };
   }
 
   const hq = validateAdminAccount(form, "hq");
@@ -513,6 +530,34 @@ function validateAddBranchBody(body, organization) {
   };
 }
 
+/**
+ * Service-layer guard for new provisioning plan codes.
+ * Does not silently map legacy codes (e.g. pro → growth).
+ * @param {string} planCode
+ * @returns {{ ok: true, value: string } | { ok: false, error: string }}
+ */
+function assertCanonicalProvisioningPlanCode(planCode) {
+  const code = String(planCode || "")
+    .trim()
+    .toLowerCase();
+  if (!code) {
+    return { ok: true, value: DEFAULT_PROVISIONING_PLAN_CODE };
+  }
+  if (LEGACY_PLAN_CODES.includes(code)) {
+    return {
+      ok: false,
+      error: `Legacy package "${code}" is not accepted for new provisioning. Choose foundation or growth.`,
+    };
+  }
+  if (!PLAN_CODES.includes(code)) {
+    return {
+      ok: false,
+      error: "Invalid package. New churches must use foundation or growth.",
+    };
+  }
+  return { ok: true, value: code };
+}
+
 module.exports = {
   SLUG_PATTERN,
   ADMIN_USERNAME_PATTERN,
@@ -520,6 +565,9 @@ module.exports = {
   BRANCH_HOST_RESERVED_SLUGS,
   ORGANIZATION_RESERVED_SLUGS,
   PLAN_CODES,
+  DEFAULT_PROVISIONING_PLAN_CODE,
+  LEGACY_PLAN_CODES,
+  assertCanonicalProvisioningPlanCode,
   normalizeSlug,
   churchPublicHost,
   churchPublicUrl,

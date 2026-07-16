@@ -8,7 +8,7 @@ const branchAdminsRepo = require("./branchAdminsRepo");
 const hqAdminsRepo = require("./hqAdminsRepo");
 const churchPlanService = require("../../../services/church/churchPlanService");
 const { buildUsageWarnings, normalizePlanCode, getPlanLimit, formatLimitValue, canCreateAdditionalBranch } = require("../../../church/churchPlans");
-const { normalizeSlug } = require("../../../church/platformProvisioningValidation");
+const { normalizeSlug, assertCanonicalProvisioningPlanCode } = require("../../../church/platformProvisioningValidation");
 const { onboardNewBranchContent } = require("../../../services/church/branchOnboardingService");
 const {
   resolveCreateBranchLifecycle,
@@ -249,9 +249,15 @@ async function getProvisioningSummary(pool) {
        COUNT(*) FILTER (WHERE data_environment = 'pilot')::int AS pilot_organizations,
        COUNT(*) FILTER (WHERE data_environment = 'demo')::int AS demo_organizations,
        COUNT(*) FILTER (WHERE data_environment = 'test')::int AS test_organizations,
+       COUNT(*) FILTER (WHERE plan_code = 'foundation' AND data_environment IN ('production', 'pilot'))::int AS foundation_plan_count,
+       COUNT(*) FILTER (WHERE plan_code = 'growth' AND data_environment IN ('production', 'pilot'))::int AS growth_plan_count,
        COUNT(*) FILTER (WHERE plan_code = 'free' AND data_environment IN ('production', 'pilot'))::int AS free_plan_count,
        COUNT(*) FILTER (WHERE plan_code = 'standard' AND data_environment IN ('production', 'pilot'))::int AS standard_plan_count,
-       COUNT(*) FILTER (WHERE plan_code = 'pro' AND data_environment IN ('production', 'pilot'))::int AS pro_plan_count
+       COUNT(*) FILTER (WHERE plan_code = 'pro' AND data_environment IN ('production', 'pilot'))::int AS pro_plan_count,
+       COUNT(*) FILTER (
+         WHERE plan_code IN ('free', 'standard', 'pro')
+           AND data_environment IN ('production', 'pilot')
+       )::int AS legacy_plan_count
      FROM public.church_organizations`
   );
   const branches = await pool.query(
@@ -275,13 +281,20 @@ async function getProvisioningSummary(pool) {
   );
   const usageRows = await pool.query(
     `SELECT o.id, o.name, o.slug, o.plan_code, o.data_environment,
-            COUNT(DISTINCT b.id)::int AS branch_count,
-            COUNT(m.id) FILTER (WHERE m.status = 'verified')::int AS verified_member_count
+            COALESCE(bc.branch_count, 0)::int AS branch_count,
+            COALESCE(mc.verified_member_count, 0)::int AS verified_member_count
      FROM public.church_organizations o
-     LEFT JOIN public.church_branches b ON b.organization_id = o.id
-     LEFT JOIN public.church_members m ON m.organization_id = o.id
+     LEFT JOIN LATERAL (
+       SELECT COUNT(*)::int AS branch_count
+       FROM public.church_branches b
+       WHERE b.organization_id = o.id
+     ) bc ON true
+     LEFT JOIN LATERAL (
+       SELECT COUNT(*)::int AS verified_member_count
+       FROM public.church_members m
+       WHERE m.organization_id = o.id AND m.status = 'verified'
+     ) mc ON true
      WHERE o.data_environment IN ('production', 'pilot')
-     GROUP BY o.id
      ORDER BY o.name ASC`
   );
   const nearMemberLimit = [];
@@ -340,9 +353,9 @@ async function createChurchBranch(client, fields) {
       fields.pastor_name,
       fields.contact_phone,
       fields.contact_email,
-      fields.welcome_message || null,
-      fields.service_times || null,
-      fields.location_text || null,
+      fields.welcome_message || (fields.name ? `Welcome to ${fields.name}` : ""),
+      fields.service_times || "",
+      fields.location_text || "",
       fields.member_registration_enabled !== false,
     ]
   );
@@ -354,6 +367,14 @@ async function recordPlatformAudit(client, entry) {
 }
 
 async function provisionChurchOrganization(pool, payload, platformAdminId) {
+  const planCheck = assertCanonicalProvisioningPlanCode(
+    payload && payload.organization && payload.organization.plan_code
+  );
+  if (!planCheck.ok) {
+    throw Object.assign(new Error(planCheck.error), { code: "INVALID_PLAN_CODE" });
+  }
+  const planCode = planCheck.value;
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -387,7 +408,7 @@ async function provisionChurchOrganization(pool, payload, platformAdminId) {
         payload.organization.primary_contact_name,
         payload.organization.primary_contact_phone,
         payload.organization.primary_contact_email,
-        payload.organization.plan_code || "free",
+        planCode,
         platformAdminId || null,
       ]
     );
@@ -404,6 +425,10 @@ async function provisionChurchOrganization(pool, payload, platformAdminId) {
       pastor_name: payload.branch.pastor_name,
       contact_phone: payload.branch.contact_phone,
       contact_email: payload.branch.contact_email,
+      welcome_message: payload.branch.welcome_message || `Welcome to ${payload.branch.name}`,
+      service_times: payload.branch.service_times || null,
+      location_text: payload.branch.location_text || null,
+      member_registration_enabled: payload.branch.member_registration_enabled,
     });
 
     await seatQuota.assertCanAssignPrivilegedRoleLocked(client, {

@@ -43,14 +43,14 @@
   </a>
   <article class="church-platform-bento-stat">
     <span class="church-platform-bento-stat__icon"><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span></span>
-    <span class="church-platform-bento-stat__label">Free plan</span>
-    <strong class="church-platform-bento-stat__value"><%= s.free_plan_count != null ? s.free_plan_count : 0 %></strong>
+    <span class="church-platform-bento-stat__label">Foundation</span>
+    <strong class="church-platform-bento-stat__value"><%= s.foundation_plan_count != null ? s.foundation_plan_count : 0 %></strong>
   </article>
   <article class="church-platform-bento-stat">
     <span class="church-platform-bento-stat__icon"><span class="material-symbols-outlined" aria-hidden="true">diamond</span></span>
-    <span class="church-platform-bento-stat__label">Standard / Pro</span>
-    <strong class="church-platform-bento-stat__value"><%= (s.standard_plan_count || 0) + (s.pro_plan_count || 0) %></strong>
-    <span class="church-platform-bento-stat__hint">Std <%= s.standard_plan_count || 0 %> · Pro <%= s.pro_plan_count || 0 %></span>
+    <span class="church-platform-bento-stat__label">Growth</span>
+    <strong class="church-platform-bento-stat__value"><%= s.growth_plan_count != null ? s.growth_plan_count : 0 %></strong>
+    <span class="church-platform-bento-stat__hint">Legacy free/std/pro: <%= s.legacy_plan_count != null ? s.legacy_plan_count : ((s.free_plan_count || 0) + (s.standard_plan_count || 0) + (s.pro_plan_count || 0)) %></span>
   </article>
 </section>
 

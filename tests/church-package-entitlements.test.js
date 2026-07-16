@@ -161,10 +161,13 @@ test("legacy churchPlans behaviour for free/standard remains unchanged", () => {
   assert.equal(isFeatureEnabled("growth", "hq_broadcasts"), true);
 });
 
-test("validatePlanUpdateBody accepts foundation and growth", () => {
+test("validatePlanUpdateBody accepts foundation and growth only", () => {
   assert.equal(validatePlanUpdateBody({ plan_code: "foundation" }).ok, true);
   assert.equal(validatePlanUpdateBody({ plan_code: "growth" }).ok, true);
   assert.equal(validatePlanUpdateBody({ plan_code: "enterprise" }).ok, false);
+  assert.equal(validatePlanUpdateBody({ plan_code: "free" }).ok, false);
+  assert.equal(validatePlanUpdateBody({ plan_code: "standard" }).ok, false);
+  assert.equal(validatePlanUpdateBody({ plan_code: "pro" }).ok, false);
 });
 
 test(
@@ -254,14 +257,19 @@ test(
       slug: `pkg_free_${suffix}`,
       name: `Pkg Free ${suffix}`,
     });
-    // Default create typically leaves plan_code free
+    // createOrganization now defaults to foundation (canonical); legacy free still resolves as Foundation.
     const plan = await getOrganisationPlan(pool, org.id);
     assert.ok(plan);
     assert.equal(plan.packageCode, "foundation");
-    assert.ok(plan.entitlementSource === "legacy_alias" || plan.entitlementSource === "direct" || plan.entitlementSource === "fallback_default");
+    assert.ok(
+      plan.entitlementSource === "legacy_alias" ||
+        plan.entitlementSource === "direct" ||
+        plan.entitlementSource === "fallback_default"
+    );
     if (plan.storedPlanCode === "free" || plan.storedPlanCode == null || plan.storedPlanCode === "") {
       assert.ok(["legacy_alias", "fallback_default"].includes(plan.entitlementSource));
     }
+    assert.equal(plan.storedPlanCode, "foundation");
     assert.equal(getNumericLimit(plan, "members.max_active"), 250);
 
     await pool.query(`DELETE FROM public.church_audit_logs WHERE organization_id = $1`, [org.id]);

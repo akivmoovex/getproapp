@@ -275,6 +275,7 @@ async function updateLeaderForBranch(pool, leaderId, branchId, update) {
         actorId: update.updated_by_admin_id || null,
         roleLabel: "ministry_leader",
       });
+      const roleChangedInActivation = update.role && update.role !== existing.role;
       const r = await client.query(
         `UPDATE public.church_ministry_leaders
          SET full_name = $1,
@@ -286,6 +287,7 @@ async function updateLeaderForBranch(pool, leaderId, branchId, update) {
              status = $7,
              notes = $8,
              updated_by_admin_id = $9,
+             security_version = security_version + CASE WHEN $12::boolean THEN 1 ELSE 0 END,
              updated_at = now()
          WHERE id = $10 AND branch_id = $11
          RETURNING id`,
@@ -301,6 +303,7 @@ async function updateLeaderForBranch(pool, leaderId, branchId, update) {
           update.updated_by_admin_id || null,
           leaderId,
           branchId,
+          roleChangedInActivation,
         ]
       );
       await client.query("COMMIT");
@@ -318,6 +321,9 @@ async function updateLeaderForBranch(pool, leaderId, branchId, update) {
     }
   }
 
+  const bumpVersion =
+    (nextStatus === "inactive" && existing.status !== "inactive") ||
+    (update.role && update.role !== existing.role);
   const r = await pool.query(
     `UPDATE public.church_ministry_leaders
      SET full_name = $1,
@@ -329,6 +335,7 @@ async function updateLeaderForBranch(pool, leaderId, branchId, update) {
          status = $7,
          notes = $8,
          updated_by_admin_id = $9,
+         security_version = security_version + CASE WHEN $12::boolean THEN 1 ELSE 0 END,
          updated_at = now()
      WHERE id = $10 AND branch_id = $11
      RETURNING id`,
@@ -344,6 +351,7 @@ async function updateLeaderForBranch(pool, leaderId, branchId, update) {
       update.updated_by_admin_id || null,
       leaderId,
       branchId,
+      bumpVersion,
     ]
   );
   if (!r.rows[0]) return null;
@@ -412,6 +420,7 @@ async function deactivateLeaderForBranch(pool, leaderId, branchId, adminId) {
     `UPDATE public.church_ministry_leaders
      SET status = 'inactive',
          updated_by_admin_id = $1,
+         security_version = security_version + 1,
          updated_at = now()
      WHERE id = $2 AND branch_id = $3 AND status = 'active'
      RETURNING id`,
@@ -436,6 +445,7 @@ async function resetLeaderPasswordForBranch(pool, leaderId, branchId, passwordHa
          last_password_reset_at = now(),
          password_reset_by_admin_id = $2,
          updated_by_admin_id = $2,
+         security_version = security_version + 1,
          updated_at = now()
      WHERE id = $3 AND branch_id = $4
      RETURNING id`,
@@ -468,9 +478,10 @@ async function resetMinistryLeaderPasswordByBranchAdminResetRequest(
          updated_by_admin_id = $4,
          login_locked_until = NULL,
          failed_login_attempts = 0,
+         security_version = security_version + 1,
          updated_at = now()
      WHERE id = $1 AND branch_id = $2
-     RETURNING id, organization_id, branch_id, ministry_id, full_name, status`,
+     RETURNING id, organization_id, branch_id, ministry_id, full_name, status, security_version`,
     [leaderId, branchId, passwordHash, branchAdminId]
   );
   return r.rows[0] ?? null;

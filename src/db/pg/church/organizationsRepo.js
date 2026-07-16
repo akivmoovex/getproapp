@@ -4,6 +4,7 @@ const auditLogsRepo = require("./auditLogsRepo");
 const { normalizePlanCode } = require("../../../church/churchPlans");
 const { resolvePackageFromPlanCode } = require("../../../church/blessBoardPackageCatalogue");
 const { normalizeSlug } = require("../../../church/platformProvisioningValidation");
+const { bumpOrganizationAccountSecurityVersions } = require("../../../church/accountSecurityVersion");
 
 /**
  * @param {import("pg").Pool} pool
@@ -32,28 +33,85 @@ async function findOrganizationById(pool, organizationId) {
 }
 
 /**
+ * Organization usage counts for Admin Console.
+ * Uses independent aggregate subqueries so member counts are never multiplied by branch count.
  * @param {import("pg").Pool} pool
  * @param {number} organizationId
- * @returns {Promise<{ branches_count: number, active_members_count: number, total_members_count: number }>}
+ * @returns {Promise<{ branches_count: number, active_branches_count: number, active_members_count: number, total_members_count: number }>}
  */
 async function getOrganizationUsageCounts(pool, organizationId) {
+  const id = Number(organizationId);
+  if (!Number.isFinite(id) || id <= 0) {
+    return {
+      branches_count: 0,
+      active_branches_count: 0,
+      active_members_count: 0,
+      total_members_count: 0,
+    };
+  }
   const r = await pool.query(
     `SELECT
-       COUNT(DISTINCT b.id)::int AS branches_count,
-       COUNT(m.id) FILTER (WHERE m.status = 'verified')::int AS active_members_count,
-       COUNT(m.id)::int AS total_members_count
+       (SELECT COUNT(*)::int
+          FROM public.church_branches b
+         WHERE b.organization_id = o.id) AS branches_count,
+       (SELECT COUNT(*)::int
+          FROM public.church_branches b
+         WHERE b.organization_id = o.id AND b.status = 'active') AS active_branches_count,
+       (SELECT COUNT(*)::int
+          FROM public.church_members m
+         WHERE m.organization_id = o.id AND m.status = 'verified') AS active_members_count,
+       (SELECT COUNT(*)::int
+          FROM public.church_members m
+         WHERE m.organization_id = o.id) AS total_members_count
      FROM public.church_organizations o
-     LEFT JOIN public.church_branches b ON b.organization_id = o.id
-     LEFT JOIN public.church_members m ON m.organization_id = o.id
-     WHERE o.id = $1
-     GROUP BY o.id`,
-    [organizationId]
+     WHERE o.id = $1`,
+    [id]
   );
   const row = r.rows[0];
   return {
     branches_count: row ? row.branches_count : 0,
+    active_branches_count: row ? row.active_branches_count : 0,
     active_members_count: row ? row.active_members_count : 0,
     total_members_count: row ? row.total_members_count : 0,
+  };
+}
+
+/**
+ * Read-only audit of stored plan_code values.
+ * Does not rewrite legacy free/standard/pro rows.
+ * @param {import("pg").Pool} pool
+ */
+async function getLegacyPlanCodeAudit(pool) {
+  const r = await pool.query(
+    `SELECT
+       COUNT(*)::int AS total_organizations,
+       COUNT(*) FILTER (WHERE plan_code = 'foundation')::int AS foundation_count,
+       COUNT(*) FILTER (WHERE plan_code = 'growth')::int AS growth_count,
+       COUNT(*) FILTER (WHERE plan_code = 'free')::int AS free_count,
+       COUNT(*) FILTER (WHERE plan_code = 'standard')::int AS standard_count,
+       COUNT(*) FILTER (WHERE plan_code = 'pro')::int AS pro_count,
+       COUNT(*) FILTER (WHERE plan_code IN ('free', 'standard', 'pro'))::int AS legacy_total,
+       COUNT(*) FILTER (
+         WHERE plan_code IS NOT NULL
+           AND plan_code NOT IN ('foundation', 'growth', 'free', 'standard', 'pro')
+       )::int AS other_count
+     FROM public.church_organizations`
+  );
+  const row = r.rows[0] || {};
+  return {
+    totalOrganizations: row.total_organizations || 0,
+    foundationCount: row.foundation_count || 0,
+    growthCount: row.growth_count || 0,
+    freeCount: row.free_count || 0,
+    standardCount: row.standard_count || 0,
+    proCount: row.pro_count || 0,
+    legacyTotal: row.legacy_total || 0,
+    otherCount: row.other_count || 0,
+    legacyIncompatible: (row.legacy_total || 0) > 0,
+    note:
+      (row.legacy_total || 0) > 0
+        ? "Legacy free/standard/pro rows are preserved and reported only — not auto-rewritten."
+        : "No legacy free/standard/pro plan_code rows found.",
   };
 }
 
@@ -171,7 +229,7 @@ async function updateOrganizationPlan(pool, organizationId, fields, platformAdmi
 
 /**
  * @param {import("pg").Pool} pool
- * @param {{ platform_tenant_id: number, slug: string, name: string, status?: string }} fields
+ * @param {{ platform_tenant_id: number, slug: string, name: string, status?: string, plan_code?: string }} fields
  * @returns {Promise<object>}
  */
 async function createOrganization(pool, fields) {
@@ -182,11 +240,18 @@ async function createOrganization(pool, fields) {
   const status = fields.status != null ? String(fields.status) : "active";
   const { normalizeDataEnvironment } = require("../../../church/orgDataEnvironment");
   const dataEnvironment = normalizeDataEnvironment(fields.data_environment || fields.dataEnvironment);
+  const {
+    assertCanonicalProvisioningPlanCode,
+  } = require("../../../church/platformProvisioningValidation");
+  const planCheck = assertCanonicalProvisioningPlanCode(fields.plan_code);
+  if (!planCheck.ok) {
+    throw Object.assign(new Error(planCheck.error), { code: "INVALID_PLAN_CODE" });
+  }
   const r = await pool.query(
-    `INSERT INTO public.church_organizations (platform_tenant_id, slug, name, status, data_environment)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO public.church_organizations (platform_tenant_id, slug, name, status, data_environment, plan_code)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [fields.platform_tenant_id, slug, name, status, dataEnvironment]
+    [fields.platform_tenant_id, slug, name, status, dataEnvironment, planCheck.value]
   );
   return r.rows[0];
 }
@@ -259,6 +324,11 @@ async function updateOrganizationStatus(db, organizationId, newStatus, opts = {}
       throw Object.assign(new Error("Organization not found."), { code: "NOT_FOUND" });
     }
 
+    let securityBumpCounts = null;
+    if (newStatus === "suspended" || newStatus === "archived") {
+      securityBumpCounts = await bumpOrganizationAccountSecurityVersions(runner, organizationId);
+    }
+
     const auditAction = STATUS_AUDIT_ACTIONS[newStatus];
     if (auditAction) {
       await auditLogsRepo.insertAuditLog(runner, {
@@ -276,6 +346,8 @@ async function updateOrganizationStatus(db, organizationId, newStatus, opts = {}
           reason: reason || null,
           result: "ok",
           organization_id: organizationId,
+          security_version_bumped: securityBumpCounts != null,
+          security_bump_counts: securityBumpCounts,
         },
       });
     }
@@ -460,6 +532,7 @@ module.exports = {
   findOrganizationByIdForPlatform,
   checkOrganizationSlugAvailableForUpdate,
   getOrganizationUsageCounts,
+  getLegacyPlanCodeAudit,
   getOrganizationAdminCounts,
   countSubmittedResetRequestsForOrganization,
   updateOrganizationPlan,

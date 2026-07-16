@@ -5,9 +5,11 @@ const hqAdminsRepo = require("../../db/pg/church/hqAdminsRepo");
 const monthlyReportsRepo = require("../../db/pg/church/monthlyReportsRepo");
 const {
   getChurchHqAdminSession,
+  setChurchHqAdminSession,
   clearChurchHqAdminSession,
   requireChurchHqAdminSession,
   hashHqAdminPassword,
+  verifyHqAdminPassword,
 } = require("../../church/hqAuth");
 const { requireChurchBranchHost } = require("./auth");
 const { reportStatusLabel } = require("../../church/monthlyReportValidation");
@@ -400,6 +402,14 @@ function registerHqAdminRoutes(router) {
           hqAdminId: adminId,
         });
         await client.query("COMMIT");
+        setChurchHqAdminSession(req, {
+          hq_admin_id: updated.id,
+          organization_id: updated.organization_id,
+          full_name: updated.full_name || updated.display_name || "HQ Admin",
+          role: updated.role || "hq_admin",
+          status: updated.status,
+          security_version: updated.security_version,
+        });
       } catch (err) {
         await client.query("ROLLBACK");
         throw err;

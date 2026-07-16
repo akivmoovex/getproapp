@@ -80,7 +80,7 @@ function provisioningBody(slug, suffix) {
     organization_slug: slug,
     country: "Zambia",
     city: "Lusaka",
-    plan_code: "free",
+    plan_code: "foundation",
     branch_name: `Main Branch ${suffix}`,
     branch_host_slug: slug,
     branch_city: "Lusaka",
@@ -251,7 +251,7 @@ test(
             name: "Rollback Org",
             slug: `rollback_${slug}`,
             country: "Zambia",
-            plan_code: "free",
+            plan_code: "foundation",
             status: "active",
           },
           branch: {

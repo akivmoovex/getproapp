@@ -8,11 +8,17 @@ const {
   renderChurchUnavailable,
   isChurchLogoutPath,
 } = require("./churchStatusAccess");
+const {
+  normalizeSecurityVersion,
+  stampSecurityVersion,
+  sessionMatchesSecurityVersion,
+  rejectStaleSecuritySession,
+} = require("./accountSecurityVersion");
 
 const SESSION_KEY = "churchHqAdmin";
 
 /**
- * @returns {{ hq_admin_id: number, organization_id: number, full_name: string, role: string, status: string } | null}
+ * @returns {{ hq_admin_id: number, organization_id: number, full_name: string, role: string, status: string, security_version: number } | null}
  */
 function getChurchHqAdminSession(req) {
   const s = req.session && req.session[SESSION_KEY];
@@ -25,18 +31,24 @@ function getChurchHqAdminSession(req) {
     full_name: String(s.full_name || ""),
     role: String(s.role || ""),
     status: String(s.status || ""),
+    security_version: normalizeSecurityVersion(s.security_version),
   };
 }
 
 function setChurchHqAdminSession(req, payload) {
   if (!req.session) return;
-  req.session[SESSION_KEY] = {
-    hq_admin_id: payload.hq_admin_id,
-    organization_id: payload.organization_id,
-    full_name: payload.full_name,
-    role: payload.role,
-    status: payload.status,
-  };
+  const prev = req.session[SESSION_KEY];
+  req.session[SESSION_KEY] = stampSecurityVersion(
+    {
+      hq_admin_id: payload.hq_admin_id,
+      organization_id: payload.organization_id,
+      full_name: payload.full_name,
+      role: payload.role,
+      status: payload.status,
+    },
+    payload,
+    prev && prev.security_version
+  );
 }
 
 function clearChurchHqAdminSession(req) {
@@ -83,10 +95,18 @@ async function requireChurchHqAdminSession(req, res, next) {
   try {
     const { getPgPool } = require("../db/pg");
     const hqAdminsRepo = require("../db/pg/church/hqAdminsRepo");
+    const { wantsJson } = require("./churchFailureStates");
     const row = await hqAdminsRepo.findHqAdminById(getPgPool(), admin.hq_admin_id);
     if (!row || row.status !== "active" || Number(row.organization_id) !== Number(admin.organization_id)) {
       clearChurchHqAdminSession(req);
       return res.redirect("/hq/login");
+    }
+    if (!sessionMatchesSecurityVersion(admin, row)) {
+      return rejectStaleSecuritySession(req, res, {
+        loginPath: "/hq/login",
+        clearFn: clearChurchHqAdminSession,
+        wantsJson,
+      });
     }
     const orgStatus =
       (status.organization && status.organization.status) ||
@@ -96,14 +116,17 @@ async function requireChurchHqAdminSession(req, res, next) {
       clearAllChurchPortalSessions(req);
       return renderChurchUnavailable(req, res);
     }
-    req.churchHqAdmin = {
-      hq_admin_id: row.id,
-      organization_id: row.organization_id,
-      full_name: row.full_name || row.display_name || "HQ Admin",
-      role: row.role || "hq_admin",
-      status: row.status,
-      can_view_finance: Boolean(row.can_view_finance),
-    };
+    req.churchHqAdmin = stampSecurityVersion(
+      {
+        hq_admin_id: row.id,
+        organization_id: row.organization_id,
+        full_name: row.full_name || row.display_name || "HQ Admin",
+        role: row.role || "hq_admin",
+        status: row.status,
+        can_view_finance: Boolean(row.can_view_finance),
+      },
+      row
+    );
     return next();
   } catch (err) {
     return next(err);

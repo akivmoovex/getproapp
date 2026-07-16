@@ -16,7 +16,10 @@ const {
   getDatabaseUrlEnvName,
 } = require("./src/db/pg");
 
-const { assertBlessBoardOrgDbIsolationOrExit } = require("./src/startup/blessBoardOrgDbGate");
+const {
+  assertBlessBoardOrgDbIsolationOrExit,
+  assertBlessBoardDatabaseIdentityOrExit,
+} = require("./src/startup/blessBoardOrgDbGate");
 assertBlessBoardOrgDbIsolationOrExit(boot);
 
 const { logBlessBoardRuntimeIsolationDiagnostics } = require("./src/startup/blessBoardRuntimeDiagnostics");
@@ -564,7 +567,6 @@ async function bootstrapAfterListen(pool) {
     await ensureFieldAgentPayRunsSchema(pool);
     await ensureCompaniesDirectoryFlagsSchema(pool);
     await ensureTenantDirectoryOptionLists(pool);
-    await ensureChurchSchema(pool);
     try {
       // Kafue Baptist sample seed is no longer auto-run (demo/test fixture only via explicit scripts).
       // Catalogue demos (demo + demo2) auto-seed only when DEPLOYMENT_ENV=testing.
@@ -599,22 +601,32 @@ async function bootstrapAfterListen(pool) {
   });
 }
 
-app.listen(port, host, () => {
-  // eslint-disable-next-line no-console
-  console.log(`GetPro listening on ${host}:${port}`);
-  const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
-  if (base) {
-    const examples = listExplicitRegionalHostExamples(base);
-    // eslint-disable-next-line no-console
-    console.log(
-      `[getpro] Subdomain routing (platform tenants): demo.${base}→tenant demo, zm.${base}→tenant zm, il.${base}→tenant il. Examples: ${examples.join(", ")}. Requires reverse proxy to forward Host / X-Forwarded-Host unchanged.`
-    );
-  }
-});
+async function startServer() {
+  // Every worker applies the idempotent identity migration and verifies the row
+  // before accepting HTTP traffic. This must remain outside the advisory-locked
+  // bootstrap: workers that do not acquire that lock still need to fail closed.
+  await ensureChurchSchema(pgPoolForBoot);
+  await assertBlessBoardDatabaseIdentityOrExit(pgPoolForBoot);
 
-void bootstrapAfterListen(pgPoolForBoot).catch((err) => {
+  app.listen(port, host, () => {
+    // eslint-disable-next-line no-console
+    console.log(`GetPro listening on ${host}:${port}`);
+    const base = (process.env.BASE_DOMAIN || "").trim().toLowerCase();
+    if (base) {
+      const examples = listExplicitRegionalHostExamples(base);
+      // eslint-disable-next-line no-console
+      console.log(
+        `[getpro] Subdomain routing (platform tenants): demo.${base}→tenant demo, zm.${base}→tenant zm, il.${base}→tenant il. Examples: ${examples.join(", ")}. Requires reverse proxy to forward Host / X-Forwarded-Host unchanged.`
+      );
+    }
+  });
+
+  await bootstrapAfterListen(pgPoolForBoot);
+}
+
+void startServer().catch((err) => {
   // eslint-disable-next-line no-console
-  console.error("[getpro] Bootstrap error:", err.message);
+  console.error("[getpro] Startup error:", err.message);
   if (/ADMIN_PASSWORD/i.test(String(err.message))) {
     // eslint-disable-next-line no-console
     console.error(

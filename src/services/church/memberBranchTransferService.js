@@ -127,7 +127,7 @@ async function transferMemberToBranch(pool, opts) {
     const previousStatus = member.status;
     await client.query(
       `UPDATE public.church_members
-       SET branch_id = $1, updated_at = now()
+       SET branch_id = $1, security_version = security_version + 1, updated_at = now()
        WHERE id = $2 AND branch_id = $3`,
       [toBranchId, memberId, fromBranchId]
     );
@@ -169,6 +169,7 @@ async function transferMemberToBranch(pool, opts) {
         previous_status: previousStatus,
         history_id: history.rows[0].id,
         reason: opts.reason || null,
+        security_version_bumped: true,
       },
     });
 

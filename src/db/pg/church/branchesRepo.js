@@ -2,6 +2,7 @@
 
 const auditLogsRepo = require("./auditLogsRepo");
 const { normalizeSlug } = require("../../../church/platformProvisioningValidation");
+const { bumpBranchAccountSecurityVersions } = require("../../../church/accountSecurityVersion");
 
 const STATUS_AUDIT_ACTIONS = {
   suspended: "platform_church_branch_suspended",
@@ -293,6 +294,11 @@ async function updateBranchStatus(db, branchId, newStatus, opts = {}) {
     );
     const updated = r.rows[0];
 
+    let securityBumpCounts = null;
+    if (newStatus === "suspended" || newStatus === "archived") {
+      securityBumpCounts = await bumpBranchAccountSecurityVersions(runner, id);
+    }
+
     const auditAction =
       opts.auditAction ||
       STATUS_AUDIT_ACTIONS[newStatus] ||
@@ -315,6 +321,8 @@ async function updateBranchStatus(db, branchId, newStatus, opts = {}) {
           branch_id: id,
           lifecycle_phase: updated.lifecycle_phase || null,
           billing_ready: updated.billing_ready === true,
+          security_version_bumped: securityBumpCounts != null,
+          security_bump_counts: securityBumpCounts,
           ...(opts.auditMetadataExtra || {}),
         },
       });

@@ -314,6 +314,7 @@ async function updateHqAdminForPlatform(pool, adminId, organizationId, fields, p
     if (metadataFieldChanged(existing, next, "role")) changedFields.push("role");
     if (metadataFieldChanged(existing, next, "notes")) changedFields.push("notes");
 
+    const roleChanged = metadataFieldChanged(existing, next, "role");
     const r = await client.query(
       `UPDATE public.church_hq_admins
        SET full_name = $3,
@@ -325,6 +326,7 @@ async function updateHqAdminForPlatform(pool, adminId, organizationId, fields, p
            role = $8,
            notes = $9,
            updated_by_platform_admin_id = $10,
+           security_version = security_version + CASE WHEN $8 IS DISTINCT FROM $11 THEN 1 ELSE 0 END,
            updated_at = now()
        WHERE id = $1 AND organization_id = $2
        RETURNING *`,
@@ -339,6 +341,7 @@ async function updateHqAdminForPlatform(pool, adminId, organizationId, fields, p
         next.role,
         next.notes,
         platformAdminId || null,
+        existing.role,
       ]
     );
     const updated = r.rows[0];
@@ -361,6 +364,7 @@ async function updateHqAdminForPlatform(pool, adminId, organizationId, fields, p
           previous_role: existing.role,
           new_role: updated.role,
           result: "ok",
+          security_version_bumped: roleChanged,
         },
       });
     }
@@ -416,18 +420,20 @@ async function setHqAdminStatusForPlatform(pool, adminId, organizationId, newSta
             .slice(0, 2000)
         : null;
     const isActive = newStatus === "active";
+    const bumpSecurityVersion = newStatus === "inactive";
     const r = await client.query(
       `UPDATE public.church_hq_admins
        SET status = $3,
            updated_by_platform_admin_id = $4,
            deactivated_at = CASE WHEN $3 = 'inactive' THEN now() ELSE NULL END,
-           deactivated_by_platform_admin_id = CASE WHEN $3 = 'inactive' THEN $4 ELSE NULL END,
+           deactivated_by_platform_admin_id = CASE WHEN $3 = 'inactive' THEN $4::integer ELSE NULL END,
            reactivated_at = CASE WHEN $3 = 'active' THEN now() ELSE reactivated_at END,
-           reactivated_by_platform_admin_id = CASE WHEN $3 = 'active' THEN $4 ELSE reactivated_by_platform_admin_id END,
+           reactivated_by_platform_admin_id = CASE WHEN $3 = 'active' THEN $4::integer ELSE reactivated_by_platform_admin_id END,
+           security_version = security_version + CASE WHEN $5::boolean THEN 1 ELSE 0 END,
            updated_at = now()
        WHERE id = $1 AND organization_id = $2
        RETURNING *`,
-      [adminId, organizationId, newStatus, platformAdminId || null]
+      [adminId, organizationId, newStatus, platformAdminId || null, bumpSecurityVersion]
     );
     const updated = r.rows[0];
 
@@ -448,6 +454,7 @@ async function setHqAdminStatusForPlatform(pool, adminId, organizationId, newSta
         reason: reason || null,
         result: "ok",
         role: updated.role,
+        security_version_bumped: bumpSecurityVersion,
       },
     });
 
@@ -500,9 +507,10 @@ async function updateHqAdminPasswordSelfService(client, adminId, organizationId,
      SET password_hash = $3,
          password_changed_at = now(),
          password_changed_by = 'hq_admin',
+         security_version = security_version + 1,
          updated_at = now()
      WHERE id = $1 AND organization_id = $2 AND status = 'active'
-     RETURNING id, organization_id, full_name, display_name, email, phone, role, status, password_changed_at`,
+     RETURNING id, organization_id, full_name, display_name, email, phone, role, status, password_changed_at, security_version`,
     [adminId, organizationId, passwordHash]
   );
   return r.rows[0] ?? null;
@@ -553,6 +561,7 @@ async function resetHqAdminPasswordForPlatform(pool, adminId, organizationId, pa
            last_password_reset_at = now(),
            password_reset_by_platform_admin_id = $4,
            updated_by_platform_admin_id = $4,
+           security_version = security_version + 1,
            updated_at = now()
        WHERE id = $1 AND organization_id = $2
        RETURNING *`,
@@ -573,6 +582,7 @@ async function resetHqAdminPasswordForPlatform(pool, adminId, organizationId, pa
         organization_id: organizationId,
         hq_admin_id: adminId,
         role: updated.role,
+        security_version_bumped: true,
       },
     });
 
@@ -601,12 +611,76 @@ async function resetHqAdminPasswordByPlatformResetRequest(client, adminId, organ
          password_changed_by = 'platform_hq_admin_reset_request',
          failed_login_attempts = 0,
          login_locked_until = NULL,
+         security_version = security_version + 1,
          updated_at = now()
      WHERE id = $1 AND organization_id = $2 AND status = 'active'
-     RETURNING id, organization_id, full_name, display_name, email, phone, role, status, password_changed_at`,
+     RETURNING id, organization_id, full_name, display_name, email, phone, role, status, password_changed_at, security_version`,
     [adminId, organizationId, passwordHash]
   );
   return r.rows[0] ?? null;
+}
+
+/**
+ * Update finance access permission and bump security_version when access is revoked.
+ * @param {import("pg").Pool} pool
+ * @param {number} adminId
+ * @param {number} organizationId
+ * @param {boolean} canViewFinance
+ * @param {number | null} platformAdminId
+ * @returns {Promise<object>}
+ */
+async function setHqAdminFinanceAccess(pool, adminId, organizationId, canViewFinance, platformAdminId) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const existing = await findHqAdminByIdForPlatform(client, adminId, organizationId);
+    if (!existing) {
+      throw Object.assign(new Error("HQ admin not found."), { code: "NOT_FOUND" });
+    }
+
+    const previousValue = existing.can_view_finance === true;
+    const newValue = canViewFinance === true;
+    const bumpSecurityVersion = previousValue && !newValue;
+
+    const r = await client.query(
+      `UPDATE public.church_hq_admins
+       SET can_view_finance = $3,
+           security_version = security_version + CASE WHEN $4::boolean THEN 1 ELSE 0 END,
+           updated_by_platform_admin_id = $5,
+           updated_at = now()
+       WHERE id = $1 AND organization_id = $2
+       RETURNING *`,
+      [adminId, organizationId, newValue, bumpSecurityVersion, platformAdminId || null]
+    );
+    const updated = r.rows[0];
+
+    await auditLogsRepo.insertAuditLog(client, {
+      organization_id: organizationId,
+      branch_id: null,
+      actor_type: "platform_admin",
+      actor_id: platformAdminId || null,
+      action: newValue ? "platform_church_hq_admin_finance_access_granted" : "platform_church_hq_admin_finance_access_revoked",
+      entity_type: "church_hq_admin",
+      entity_id: adminId,
+      target_label: updated.full_name,
+      metadata_json: {
+        organization_id: organizationId,
+        hq_admin_id: adminId,
+        previous_value: previousValue,
+        new_value: newValue,
+        security_version_bumped: bumpSecurityVersion,
+      },
+    });
+
+    await client.query("COMMIT");
+    return updated;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 module.exports = {
@@ -627,4 +701,5 @@ module.exports = {
   findHqAdminByIdForPasswordChange,
   updateHqAdminPasswordSelfService,
   recordHqAdminPasswordChangeAudit,
+  setHqAdminFinanceAccess,
 };

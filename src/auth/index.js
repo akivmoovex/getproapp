@@ -76,13 +76,95 @@ async function ensureAdminUser({ pool }) {
   console.log(`[getpro] Admin user created: ${username} (${role})`);
 }
 
-function requireAdmin(req, res, next) {
-  if (req.session && req.session.adminUser) return next();
-  res.redirect("/admin/login");
+function clearAdminSession(req) {
+  if (!req.session) return;
+  delete req.session.adminUser;
+  delete req.session.adminTenantScope;
+  delete req.session.adminTenantMemberships;
 }
 
-function requireSuperAdmin(req, res, next) {
-  if (!req.session || !req.session.adminUser) return res.redirect("/admin/login");
+function adminWantsJson(req) {
+  return !!(
+    req.xhr ||
+    (req.headers && String(req.headers.accept || "").includes("application/json")) ||
+    (req.headers && String(req.headers["content-type"] || "").includes("application/json"))
+  );
+}
+
+/**
+ * Compare session security_version to the live admin_users row.
+ * Stale sessions are destroyed and redirected (or 401 for JSON).
+ */
+async function enforceAdminSecurityVersion(req, res) {
+  const sessionUser = req.session && req.session.adminUser;
+  if (!sessionUser) return true;
+  const id = Number(sessionUser.id);
+  // Role-only unit stubs may omit id; skip version compare until a durable account id exists.
+  if (!Number.isFinite(id) || id <= 0) return true;
+  try {
+    const { getPgPool } = require("../db/pg");
+    const pool = getPgPool();
+    if (!pool) return true;
+    const {
+      sessionMatchesSecurityVersion,
+      rejectStaleSecuritySession,
+      normalizeSecurityVersion,
+    } = require("../church/accountSecurityVersion");
+    const row = await adminUsersRepo.getById(pool, id);
+    if (!row || adminRowDisabled(row)) {
+      clearAdminSession(req);
+      if (adminWantsJson(req)) {
+        res.status(401).json({ ok: false, error: "Session expired. Please sign in again." });
+        return false;
+      }
+      res.redirect("/admin/login");
+      return false;
+    }
+    if (!sessionMatchesSecurityVersion(sessionUser, row)) {
+      rejectStaleSecuritySession(req, res, {
+        loginPath: "/admin/login",
+        clearFn: clearAdminSession,
+        wantsJson: adminWantsJson,
+      });
+      return false;
+    }
+    req.session.adminUser = {
+      ...sessionUser,
+      security_version: normalizeSecurityVersion(row.security_version),
+    };
+    return true;
+  } catch (err) {
+    clearAdminSession(req);
+    if (adminWantsJson(req)) {
+      res.status(401).json({ ok: false, error: "Session expired. Please sign in again." });
+      return false;
+    }
+    res.redirect("/admin/login");
+    return false;
+  }
+}
+
+async function requireAdmin(req, res, next) {
+  if (!req.session || !req.session.adminUser) {
+    if (adminWantsJson(req)) {
+      return res.status(401).json({ ok: false, error: "Authentication required." });
+    }
+    return res.redirect("/admin/login");
+  }
+  const ok = await enforceAdminSecurityVersion(req, res);
+  if (!ok) return;
+  return next();
+}
+
+async function requireSuperAdmin(req, res, next) {
+  if (!req.session || !req.session.adminUser) {
+    if (adminWantsJson(req)) {
+      return res.status(401).json({ ok: false, error: "Authentication required." });
+    }
+    return res.redirect("/admin/login");
+  }
+  const ok = await enforceAdminSecurityVersion(req, res);
+  if (!ok) return;
   if (!canAccessSuperConsole(req.session.adminUser.role)) {
     return res.status(403).type("text").send("Super admin access required.");
   }

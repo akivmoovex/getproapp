@@ -1,17 +1,153 @@
 "use strict";
 
+const crypto = require("crypto");
+const path = require("path");
+const { execFileSync } = require("child_process");
+
 const { getChurchHostDomain, parseChurchHostFromDedicatedDomain } = require("../../church/host");
 const {
   getBlessBoardCanonicalDomain,
   getDeploymentEnv,
+  getSessionCookieName,
+  areBlessBoardJobsEnabled,
+  getUploadRoot,
 } = require("../../church/blessBoardEnv");
-const { getPgPool, isPgConfigured, getPoolRuntimeConfig } = require("../../db/pg/pool");
+const {
+  getPgPool,
+  isPgConfigured,
+  getPoolRuntimeConfig,
+  redactDatabaseHostFingerprint,
+  getDatabaseUrl,
+} = require("../../db/pg/pool");
 const branchesRepo = require("../../db/pg/church/branchesRepo");
+const { getDatabaseIdentity } = require("../../db/pg/church/databaseIdentityRepo");
+const organizationsRepo = require("../../db/pg/church/organizationsRepo");
 const { classifyPgError } = require("../../church/churchDbResilience");
 
 const { latestChurchSchemaMigration } = require("../../db/pg/ensureChurchSchema");
 
 const LATEST_CHURCH_MIGRATION = latestChurchSchemaMigration();
+const PROJECT_ROOT = path.join(__dirname, "..", "..", "..");
+
+function shortHash(value) {
+  return crypto.createHash("sha256").update(String(value || "")).digest("hex").slice(0, 12);
+}
+
+/** Git commit SHA + branch, best effort: env first, then `git` (never throws). */
+function getGitInfo() {
+  let sha = String(process.env.GETPRO_GIT_SHA || "").trim();
+  let branch = String(process.env.GETPRO_GIT_BRANCH || "").trim();
+  if (!sha) {
+    try {
+      sha = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: PROJECT_ROOT,
+        timeout: 800,
+        stdio: ["ignore", "pipe", "ignore"],
+      })
+        .toString()
+        .trim();
+    } catch {
+      sha = "";
+    }
+  }
+  if (!branch) {
+    try {
+      branch = execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+        cwd: PROJECT_ROOT,
+        timeout: 800,
+        stdio: ["ignore", "pipe", "ignore"],
+      })
+        .toString()
+        .trim();
+    } catch {
+      branch = "";
+    }
+  }
+  return {
+    commitSha: sha ? sha.slice(0, 12) : "(unavailable)",
+    branch: branch || "(unavailable)",
+  };
+}
+
+/**
+ * Sanitized upload-root fingerprint: a stable hash + the final path segment only.
+ * Never exposes the full filesystem path.
+ */
+function uploadRootFingerprint() {
+  try {
+    const root = getUploadRoot();
+    return `${shortHash(root)} (…/${path.basename(root)})`;
+  } catch {
+    return "(unavailable)";
+  }
+}
+
+/**
+ * Sanitized PostgreSQL server + identity facts (no credentials, addresses, or URLs).
+ * @param {import("pg").Pool|null} pool
+ */
+async function gatherDeploymentIdentity(pool) {
+  const hostFingerprint = redactDatabaseHostFingerprint(getDatabaseUrl());
+  const out = {
+    databaseEnvironmentCode: "(not set)",
+    deploymentName: "(not set)",
+    databaseInstanceId: "(not set)",
+    currentDatabase: "(unavailable)",
+    postgresServerIdentity: "(unavailable)",
+    postgresServerVersion: "(unavailable)",
+    databaseHostFingerprint: hostFingerprint,
+    schemaMigrationCurrent: "(unavailable)",
+    latestExpectedMigration: LATEST_CHURCH_MIGRATION,
+  };
+
+  if (!pool) return out;
+
+  try {
+    const r = await pool.query(
+      `SELECT current_database() AS current_database,
+              current_setting('server_version') AS server_version,
+              host(inet_server_addr()) AS server_addr,
+              inet_server_port() AS server_port`
+    );
+    const row = r.rows[0] || {};
+    out.currentDatabase = row.current_database || "(unavailable)";
+    if (row.server_version) {
+      const major = String(row.server_version).split(".")[0];
+      out.postgresServerVersion = `PostgreSQL ${major}`;
+    }
+    // Hash address:port so the server is identifiable/comparable without leaking its location.
+    const addrPart = row.server_addr ? `${row.server_addr}:${row.server_port || ""}` : hostFingerprint;
+    out.postgresServerIdentity = `sha256:${shortHash(addrPart)}`;
+  } catch {
+    /* leave defaults */
+  }
+
+  try {
+    const identity = await getDatabaseIdentity(pool);
+    if (identity) {
+      out.databaseEnvironmentCode = identity.environmentCode;
+      out.deploymentName = identity.deploymentName || "(none)";
+      out.databaseInstanceId = identity.databaseInstanceId;
+    } else {
+      out.databaseEnvironmentCode = "(not set — run church:db-identity:init)";
+    }
+  } catch {
+    out.databaseEnvironmentCode = "(unavailable)";
+  }
+
+  try {
+    const probe = await pool.query(
+      `SELECT to_regclass('public.church_database_identity') IS NOT NULL AS latest_present`
+    );
+    out.schemaMigrationCurrent = probe.rows[0] && probe.rows[0].latest_present
+      ? LATEST_CHURCH_MIGRATION
+      : `behind (newest migration ${LATEST_CHURCH_MIGRATION} not applied)`;
+  } catch {
+    /* leave default */
+  }
+
+  return out;
+}
 
 function hostResolutionSamples() {
   const church = getChurchHostDomain();
@@ -120,7 +256,7 @@ async function checkSchemaFeatures(pool) {
     out.memberRegistrationColumn =
       col.rows.length > 0
         ? { ok: true, message: "Present." }
-        : { ok: false, message: "Run migration 090 or restart app to apply ensureChurchSchema." };
+        : { ok: false, message: `Restart app to apply ensureChurchSchema (latest: ${LATEST_CHURCH_MIGRATION}).` };
   } catch (err) {
     out.memberRegistrationColumn = { ok: false, message: err.message || "Check failed." };
   }
@@ -135,7 +271,7 @@ async function checkSchemaFeatures(pool) {
     out.contactSubmissionsTable =
       tbl.rows.length > 0
         ? { ok: true, message: "Present." }
-        : { ok: false, message: "Run migration 090 or restart app to apply ensureChurchSchema." };
+        : { ok: false, message: `Restart app to apply ensureChurchSchema (latest: ${LATEST_CHURCH_MIGRATION}).` };
   } catch (err) {
     out.contactSubmissionsTable = { ok: false, message: err.message || "Check failed." };
   }
@@ -200,8 +336,8 @@ function resolveHostSamples() {
  * Safe production diagnostics for super admins (no secrets).
  * @returns {Promise<object>}
  */
-async function gatherChurchProductionDiagnostics() {
-  const pool = getPgPool();
+async function gatherChurchProductionDiagnostics(opts = {}) {
+  const pool = opts.pool !== undefined ? opts.pool : getPgPool();
   const churchDomain = getChurchHostDomain();
   const dbCheck = await checkDatabaseReachable(pool);
   const churchBranchesTable = await checkChurchBranchesTable(pool);
@@ -210,6 +346,8 @@ async function gatherChurchProductionDiagnostics() {
   const demoBranch = await checkDemoBranch(pool);
   const pilotBranch = await checkPilotBranch(pool, "kafuebaptist");
   const poolConfig = getPoolRuntimeConfig();
+  const deploymentIdentity = await gatherDeploymentIdentity(pool);
+  const git = getGitInfo();
 
   let backupVerification = null;
   if (pool && dbCheck.ok) {
@@ -271,11 +409,44 @@ async function gatherChurchProductionDiagnostics() {
     for (const w of backupVerification.warnings) warnings.push(w);
   }
 
+  let legacyPlanAudit = {
+    totalOrganizations: 0,
+    foundationCount: 0,
+    growthCount: 0,
+    freeCount: 0,
+    standardCount: 0,
+    proCount: 0,
+    legacyTotal: 0,
+    otherCount: 0,
+    legacyIncompatible: false,
+    note: "Unavailable.",
+  };
+  if (pool && dbCheck.ok) {
+    try {
+      legacyPlanAudit = await organizationsRepo.getLegacyPlanCodeAudit(pool);
+      if (legacyPlanAudit.legacyIncompatible) {
+        warnings.push(
+          `Legacy package codes on ${legacyPlanAudit.legacyTotal} organisation(s) (free=${legacyPlanAudit.freeCount}, standard=${legacyPlanAudit.standardCount}, pro=${legacyPlanAudit.proCount}). Preserved — not auto-rewritten.`
+        );
+      }
+    } catch {
+      legacyPlanAudit.note = "Legacy plan audit could not be loaded.";
+    }
+  }
+
   return {
     deploymentEnv: getDeploymentEnv(),
     deploymentLabel: deploymentLabel(),
     nodeEnv: process.env.NODE_ENV || "(unset)",
     churchCanonicalDomain: getBlessBoardCanonicalDomain(),
+    canonicalDomain: getBlessBoardCanonicalDomain(),
+    sessionCookieName: getSessionCookieName(),
+    backgroundJobsEnabled: areBlessBoardJobsEnabled(),
+    uploadRootFingerprint: uploadRootFingerprint(),
+    gitCommitSha: git.commitSha,
+    gitBranch: git.branch,
+    deploymentIdentity,
+    legacyPlanAudit,
     databaseConfigured: isPgConfigured(),
     databaseReachable: dbCheck.ok,
     databaseError: dbCheck.ok ? null : dbCheck.error,
@@ -301,6 +472,9 @@ async function gatherChurchProductionDiagnostics() {
 
 module.exports = {
   gatherChurchProductionDiagnostics,
+  gatherDeploymentIdentity,
+  uploadRootFingerprint,
+  getGitInfo,
   LATEST_CHURCH_MIGRATION,
   deploymentLabel,
   sessionSecretWarning,

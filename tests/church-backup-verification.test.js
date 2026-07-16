@@ -10,7 +10,10 @@ const assert = require("node:assert/strict");
 const request = require("supertest");
 
 const { isPgConfigured, getPgPool } = require("../src/db/pg/pool");
-const { ensureChurchSchema, latestChurchSchemaMigration } = require("../src/db/pg/ensureChurchSchema");
+const {
+  ensureChurchSchema,
+  CHURCH_SCHEMA_MIGRATION_FILES,
+} = require("../src/db/pg/ensureChurchSchema");
 const { ensureCanonicalTenantsForTests } = require("./helpers/pgTestSeed");
 const { TENANT_ZM } = require("../src/tenants/tenantIds");
 const blessboardAdminRoutes = require("../src/routes/blessboardAdmin");
@@ -365,6 +368,6 @@ test("staging restoration checklist doc exists with command guidance", () => {
   assert.match(text, /Do not restore over production/i);
 });
 
-test("latest church migration includes backup verification", () => {
-  assert.equal(latestChurchSchemaMigration(), "108_church_backup_verification.sql");
+test("church migration list includes backup verification", () => {
+  assert.ok(CHURCH_SCHEMA_MIGRATION_FILES.includes("108_church_backup_verification.sql"));
 });
