@@ -409,14 +409,23 @@ describe("platform tenant provisioning", () => {
     }
   });
 
-  it("no product-schema or public application tables are created", async () => {
+  it("no public tables; getpro/ngo empty; blessboard catalogue allowed", async () => {
     requireDb();
     const publicTables = await pool.query(
       `SELECT table_name FROM information_schema.tables
         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
     );
     assert.equal(publicTables.rowCount, 0);
-    for (const schema of ["blessboard", "getpro", "ngo"]) {
+    const blessboard = await pool.query(
+      `SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'blessboard' AND table_type = 'BASE TABLE'
+        ORDER BY table_name`
+    );
+    assert.deepEqual(
+      blessboard.rows.map((r) => r.table_name),
+      ["branches", "churches"]
+    );
+    for (const schema of ["getpro", "ngo"]) {
       const tables = await pool.query(
         `SELECT table_name FROM information_schema.tables
           WHERE table_schema = $1 AND table_type = 'BASE TABLE'`,

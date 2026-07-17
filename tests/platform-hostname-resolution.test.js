@@ -361,7 +361,7 @@ describe("platform hostname resolution", () => {
     assert.deepEqual(after.rows[0], before.rows[0]);
   });
 
-  it("no product-schema or public application tables are created", async () => {
+  it("no public application tables; getpro/ngo empty; blessboard catalogue allowed", async () => {
     requireDb();
     const publicTables = await pool.query(
       `SELECT table_name FROM information_schema.tables
@@ -369,7 +369,17 @@ describe("platform hostname resolution", () => {
     );
     assert.equal(publicTables.rowCount, 0);
 
-    for (const schema of ["blessboard", "getpro", "ngo"]) {
+    const blessboard = await pool.query(
+      `SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'blessboard' AND table_type = 'BASE TABLE'
+        ORDER BY table_name`
+    );
+    assert.deepEqual(
+      blessboard.rows.map((r) => r.table_name),
+      ["branches", "churches"]
+    );
+
+    for (const schema of ["getpro", "ngo"]) {
       const tables = await pool.query(
         `SELECT table_name FROM information_schema.tables
           WHERE table_schema = $1 AND table_type = 'BASE TABLE'`,

@@ -23,6 +23,16 @@ const FORBIDDEN_PUBLIC_TABLES = Object.freeze(["tenants", "session"]);
 const PRODUCT_SCHEMAS = Object.freeze(["blessboard", "getpro", "ngo"]);
 
 /**
+ * Approved base tables per product schema.
+ * BlessBoard may contain the catalogue tables from this phase; getpro/ngo must stay empty.
+ */
+const APPROVED_PRODUCT_TABLES = Object.freeze({
+  blessboard: Object.freeze(["branches", "churches"]),
+  getpro: Object.freeze([]),
+  ngo: Object.freeze([]),
+});
+
+/**
  * @param {import('pg').Pool} pool
  * @param {{ identityKey?: string }} [opts]
  */
@@ -35,6 +45,7 @@ async function verifyFoundation(pool, opts = {}) {
     products: [],
     public_forbidden: {},
     product_schema_tables: {},
+    approved_product_tables: APPROVED_PRODUCT_TABLES,
     migration_status: null,
     identity: null,
   };
@@ -137,6 +148,7 @@ async function verifyFoundation(pool, opts = {}) {
   }
 
   for (const schemaName of PRODUCT_SCHEMAS) {
+    const allowed = new Set(APPROVED_PRODUCT_TABLES[schemaName] || []);
     const productTables = await pool.query(
       `SELECT table_name
          FROM information_schema.tables
@@ -144,9 +156,18 @@ async function verifyFoundation(pool, opts = {}) {
         ORDER BY table_name`,
       [schemaName]
     );
-    details.product_schema_tables[schemaName] = productTables.rows.map((r) => r.table_name);
-    if (productTables.rowCount > 0) {
-      failures.push(`product_schema_not_empty:${schemaName}`);
+    const present = productTables.rows.map((r) => r.table_name);
+    details.product_schema_tables[schemaName] = present;
+
+    for (const name of allowed) {
+      if (!present.includes(name)) {
+        failures.push(`missing_approved_product_table:${schemaName}.${name}`);
+      }
+    }
+    for (const name of present) {
+      if (!allowed.has(name)) {
+        failures.push(`unexpected_product_table:${schemaName}.${name}`);
+      }
     }
   }
 
@@ -164,5 +185,6 @@ module.exports = {
   REQUIRED_PRODUCTS,
   FORBIDDEN_PUBLIC_TABLES,
   PRODUCT_SCHEMAS,
+  APPROVED_PRODUCT_TABLES,
   verifyFoundation,
 };

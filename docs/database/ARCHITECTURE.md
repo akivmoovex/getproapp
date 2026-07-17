@@ -6,8 +6,8 @@ Clean multi-schema foundation for a shared PostgreSQL database used initially by
 
 - **V4 (`blessboard.com`)** remains on the **legacy** PostgreSQL database (`public.*`, church schemas, `ensure*Schema`).
 - **V5 (`blessboard.org`)** uses **only the new** platform foundation database (`DATABASE_URL`). Do not reconnect V5 to the legacy database. Do not use `GETPRO_DATABASE_URL` for V5.
-- The new database is a clean multi-schema foundation (platform + empty product schemas). It does **not** receive copies of legacy `public` application tables (`tenants`, `session`, etc.).
-- Implement BlessBoard product tables later under `blessboard` only — not by recreating legacy `public` shapes.
+- The new database is a clean multi-schema foundation (platform + product schemas). It does **not** receive copies of legacy `public` application tables (`tenants`, `session`, etc.).
+- BlessBoard product catalogue tables live under `blessboard` only — not by recreating legacy `public` shapes.
 - Do not modify the old/legacy database as part of this foundation work.
 
 ## V5 foundation startup mode (temporary)
@@ -36,7 +36,7 @@ Foundation mode is **temporary** until auth, sessions, tenant routing, and Bless
 | Schema | Ownership | Status |
 |--------|-----------|--------|
 | `platform` | Shared cross-product registry (migrations, identity, deployments, tenant catalogue) | Foundation + tenant catalogue |
-| `blessboard` | BlessBoard product data | Schema created; product tables deferred |
+| `blessboard` | BlessBoard product data | Catalogue: `churches`, `branches` |
 | `getpro` | GetPro product data | Empty schema reserved |
 | `ngo` | NGO product data | Empty schema reserved |
 | `public` | No new application tables | Must remain free of new app DDL |
@@ -47,9 +47,26 @@ Foundation mode is **temporary** until auth, sessions, tenant routing, and Bless
 1. **Application tables belong only in product or platform schemas.** Never create new application tables in `public`.
 2. **Schema-qualified SQL is mandatory.** All new queries and migrations must use explicit qualifiers (`platform.deployments`, `blessboard.…`). Unqualified names are not allowed for application objects.
 3. **Platform owns cross-cutting registry tables** (`schema_migrations`, `database_identity`, `deployments`, `products`, `organizations`, `organization_products`, `domains`). Product domains do not own these.
-4. **BlessBoard owns BlessBoard product tables** under `blessboard` only (created in later phases).
+4. **BlessBoard owns BlessBoard product tables** under `blessboard` only. Current catalogue: `blessboard.churches`, `blessboard.branches`.
 5. **GetPro and NGO** may only receive empty schema placeholders now. No product tables until those phases begin.
 6. **Supabase-managed schemas** (`auth`, `storage`, `realtime`, `extensions`) must not be altered by application migrations or scripts.
+
+## BlessBoard catalogue (churches and branches)
+
+| Concept | Table | Meaning |
+|---------|-------|---------|
+| **Platform organization** | `platform.organizations` | Shared immutable tenant identity (`organization_key`, environment, status) |
+| **BlessBoard church** | `blessboard.churches` | Product-specific church record; at most one per organization |
+| **BlessBoard branch** | `blessboard.branches` | Campus/site under a church (`hq` or `branch`); not stored on platform |
+
+- **`organization_id`** on `blessboard.churches` is the permanent UUID bridge to `platform.organizations.id` (unique + FK `ON DELETE RESTRICT`).
+- One platform organization may have **at most one** BlessBoard church.
+- Product enrolment remains in `platform.organization_products` (not duplicated on the church row). Database triggers require an **active** BlessBoard enrolment and matching `data_environment`.
+- Branches belong only to a church (`church_id` FK `ON DELETE RESTRICT` — no silent cascade).
+- At most one `branch_type = hq` and at most one `is_primary = true` per church.
+- Provisioning is **explicit and transactional** (`npm run blessboard:church:provision`). No demo church is auto-created at migrate, bootstrap, or app startup.
+- Platform hostname routing remains **diagnostic / non-authoritative**. Sessions and login remain unavailable on V5 foundation mode.
+- Legacy `public.tenants` / `public.session` remain absent. V4 remains on the legacy database unchanged.
 
 ## Separate concepts (do not collapse)
 
@@ -96,11 +113,21 @@ Product-specific organization details (church settings, CRM fields, NGO programm
 - `platform.database_identity` is a **singleton**.
 - **`identity_key`** (env: `DATABASE_IDENTITY_EXPECTED`, e.g. `blessboard-platform-v5`) names the **physical database purpose**. It is **not** `PLATFORM_DEPLOYMENT_CODE`.
 - **`environment_code`** remains one of: `preproduction`, `shared`, `production`, `testing`.
-- Hosted first-run: `npm run db:bootstrap:foundation` (manual only) migrates, seeds, initializes identity if missing, then verifies.
+- Hosted first-run: `npm run db:bootstrap:foundation` (manual only) migrates **all approved modules** (platform + approved BlessBoard catalogue migrations + empty getpro/ngo schemas), seeds, initializes identity if missing, then verifies against an approved-table allowlist.
 - Standalone init: `npm run db:identity:init -- --env <code> --confirm` with `DATABASE_IDENTITY_EXPECTED` set.
 - Host is stored only as a **sanitized fingerprint**, never a password or full URL.
 - Rerun with the same identity is idempotent; a different expected identity fails closed.
 - See `docs/database/HOSTED_SUPABASE_RUNBOOK.md`.
+
+### Foundation verify allowlist
+
+`npm run db:verify:foundation` expects:
+
+- Platform tables as before.
+- `blessboard.churches` and `blessboard.branches` present (approved catalogue).
+- `getpro` and `ngo` base-table empty.
+- No unexpected BlessBoard tables beyond the allowlist.
+- `public.tenants` / `public.session` absent.
 
 ## Deployments, sessions, and jobs
 
@@ -189,6 +216,23 @@ Creates **platform catalogue records only** (organization, organization_products
 - Ownership conflicts never overwritten (`organization_conflict`, `enrolment_conflict`, `hostname_conflict`, …).
 - Does not infer product/deployment/environment from hostname.
 
+### BlessBoard church provisioning (administrative)
+
+Explicit CLI / service operation after a platform tenant exists with active BlessBoard enrolment — **never** at startup or in migrations.
+
+| Piece | Role |
+|-------|------|
+| `src/blessboard/services/provisionBlessBoardChurch.js` | Transactional find-or-create of church + HQ branch |
+| `src/blessboard/repositories/blessBoardCatalogueRepository.js` | Parameterized SQL helpers |
+| `src/blessboard/services/getBlessBoardCatalogueContext.js` | Read-only org → church → HQ/primary branch lookup (not wired to Express yet) |
+| `npm run blessboard:church:provision` | DATABASE_URL-only CLI (requires `DATABASE_IDENTITY_EXPECTED` + identity row) |
+
+- Single transaction; rollback on any failure.
+- Idempotent: identical input → `already_provisioned` (no silent updates).
+- Conflicts: `church_conflict`, `branch_conflict`, `environment_mismatch`, enrolment failures, etc.
+- Does not infer organization or environment from hostname.
+- Does not create demo churches automatically.
+
 ### Domain-type meanings
 
 | `domain_type` | Meaning |
@@ -213,15 +257,17 @@ Means: **the hostname is assigned to a platform deployment that differs from the
 ## Out of scope (current)
 
 - `platform.branches`
-- BlessBoard / GetPro / NGO product tables
+- GetPro / NGO product tables
+- BlessBoard members, ministries, events, public content, portals
 - Compatibility views over legacy `public`
 - Using host context for routing, redirects, auth, sessions, cookies, or jobs
 - Domain redirects (alias → canonical)
 - Application pool cutover for V4 away from legacy `public` schemas
 - V5 authentication, sessions, tenant routing, and portals (beyond foundation mode)
 - Church/tenant data seeds in production migrations
-- Hosted Supabase connection or deploy
+- Hosted Supabase connection or deploy from CI/agents
 - Persistent metric tables or hosted telemetry
-- Automatic demo tenant creation at startup
-- Silent reassignment of hostnames or product enrolments
+- Automatic demo tenant/church creation at startup
+- Silent reassignment of hostnames, product enrolments, or church ownership
 - Making platform hostname resolution authoritative
+- Express wiring for BlessBoard catalogue lookup

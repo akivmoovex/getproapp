@@ -133,7 +133,7 @@ describe("db foundation (empty PostgreSQL)", () => {
          FROM platform.schema_migrations
         ORDER BY module, version`
     );
-    assert.ok(r.rowCount >= 11, `expected migration+seed rows, got ${r.rowCount}`);
+    assert.ok(r.rowCount >= 13, `expected migration+seed rows, got ${r.rowCount}`);
     for (const row of r.rows) {
       assert.ok(row.module);
       assert.ok(row.version);
@@ -516,7 +516,7 @@ describe("db foundation (empty PostgreSQL)", () => {
     );
   });
 
-  it("no branches table and product schemas remain empty", async () => {
+  it("no platform.branches; getpro/ngo empty; blessboard allowlist only", async () => {
     requireDb();
     const branches = await pool.query(
       `SELECT 1
@@ -525,7 +525,18 @@ describe("db foundation (empty PostgreSQL)", () => {
     );
     assert.equal(branches.rowCount, 0);
 
-    for (const schema of ["blessboard", "getpro", "ngo"]) {
+    const blessboard = await pool.query(
+      `SELECT table_name
+         FROM information_schema.tables
+        WHERE table_schema = 'blessboard' AND table_type = 'BASE TABLE'
+        ORDER BY table_name`
+    );
+    assert.deepEqual(
+      blessboard.rows.map((r) => r.table_name),
+      ["branches", "churches"]
+    );
+
+    for (const schema of ["getpro", "ngo"]) {
       const tables = await pool.query(
         `SELECT table_name
            FROM information_schema.tables
@@ -580,7 +591,7 @@ describe("db foundation (empty PostgreSQL)", () => {
     const report = await status({ connectionString: databaseUrl });
     assert.equal(report.pending, 0);
     assert.equal(report.drift, 0);
-    assert.ok(report.applied >= 11);
+    assert.ok(report.applied >= 13);
 
     const noUrl = runCli("db/scripts/migrate.js", [], {
       DATABASE_URL: "",

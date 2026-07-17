@@ -198,7 +198,7 @@ describe("db bootstrap foundation", () => {
     assert.equal(forbidden.rows[0].tenants, null);
     assert.equal(forbidden.rows[0].session, null);
 
-    for (const schema of ["blessboard", "getpro", "ngo"]) {
+    for (const schema of ["getpro", "ngo"]) {
       const t = await pool.query(
         `SELECT COUNT(*)::int AS n FROM information_schema.tables
           WHERE table_schema = $1 AND table_type = 'BASE TABLE'`,
@@ -206,6 +206,16 @@ describe("db bootstrap foundation", () => {
       );
       assert.equal(t.rows[0].n, 0, schema);
     }
+
+    const blessboard = await pool.query(
+      `SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'blessboard' AND table_type = 'BASE TABLE'
+        ORDER BY table_name`
+    );
+    assert.deepEqual(
+      blessboard.rows.map((r) => r.table_name),
+      ["branches", "churches"]
+    );
   });
 
   it("checksum drift is detected by verify", async () => {
