@@ -21,6 +21,7 @@ const ROOT = path.resolve(__dirname, "..");
 
 const EXPECTED_PLATFORM_TABLES = [
   "database_identity",
+  "deployment_sessions",
   "deployments",
   "domains",
   "organization_products",
@@ -133,7 +134,7 @@ describe("db foundation (empty PostgreSQL)", () => {
          FROM platform.schema_migrations
         ORDER BY module, version`
     );
-    assert.ok(r.rowCount >= 13, `expected migration+seed rows, got ${r.rowCount}`);
+    assert.ok(r.rowCount >= 16, `expected migration+seed rows, got ${r.rowCount}`);
     for (const row of r.rows) {
       assert.ok(row.module);
       assert.ok(row.version);
@@ -533,7 +534,7 @@ describe("db foundation (empty PostgreSQL)", () => {
     );
     assert.deepEqual(
       blessboard.rows.map((r) => r.table_name),
-      ["branches", "churches"]
+      ["branches", "churches", "user_roles", "users"]
     );
 
     for (const schema of ["getpro", "ngo"]) {
@@ -591,7 +592,7 @@ describe("db foundation (empty PostgreSQL)", () => {
     const report = await status({ connectionString: databaseUrl });
     assert.equal(report.pending, 0);
     assert.equal(report.drift, 0);
-    assert.ok(report.applied >= 13);
+    assert.ok(report.applied >= 16);
 
     const noUrl = runCli("db/scripts/migrate.js", [], {
       DATABASE_URL: "",

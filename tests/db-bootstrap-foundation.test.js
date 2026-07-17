@@ -214,7 +214,7 @@ describe("db bootstrap foundation", () => {
     );
     assert.deepEqual(
       blessboard.rows.map((r) => r.table_name),
-      ["branches", "churches"]
+      ["branches", "churches", "user_roles", "users"]
     );
   });
 

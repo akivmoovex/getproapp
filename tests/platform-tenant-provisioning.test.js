@@ -423,7 +423,7 @@ describe("platform tenant provisioning", () => {
     );
     assert.deepEqual(
       blessboard.rows.map((r) => r.table_name),
-      ["branches", "churches"]
+      ["branches", "churches", "user_roles", "users"]
     );
     for (const schema of ["getpro", "ngo"]) {
       const tables = await pool.query(

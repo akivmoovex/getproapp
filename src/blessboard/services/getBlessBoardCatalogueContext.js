@@ -14,6 +14,8 @@ const STATUS = Object.freeze({
   CHURCH_INACTIVE: "church_inactive",
   HQ_BRANCH_MISSING: "hq_branch_missing",
   HQ_BRANCH_INACTIVE: "hq_branch_inactive",
+  PRIMARY_BRANCH_MISSING: "primary_branch_missing",
+  PRIMARY_BRANCH_INACTIVE: "primary_branch_inactive",
   LOOKUP_ERROR: "lookup_error",
 });
 
@@ -121,6 +123,24 @@ async function getBlessBoardCatalogueContext(db, organizationId) {
         ok: false,
         status: STATUS.HQ_BRANCH_INACTIVE,
         message: "hq_branch_inactive",
+        context,
+      };
+    }
+
+    if (!context.primaryBranch) {
+      return {
+        ok: false,
+        status: STATUS.PRIMARY_BRANCH_MISSING,
+        message: "primary_branch_missing",
+        context,
+      };
+    }
+
+    if (String(context.primaryBranch.status) !== "active") {
+      return {
+        ok: false,
+        status: STATUS.PRIMARY_BRANCH_INACTIVE,
+        message: "primary_branch_inactive",
         context,
       };
     }

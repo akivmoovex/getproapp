@@ -26,17 +26,18 @@ the HTTP process enters **V5 foundation mode** (`src/platform/config/v5Foundatio
 | `ensure*Schema` / runtime DDL | Skipped | Runs at boot |
 | Legacy seeds / scheduled jobs | Skipped | As before |
 | `/healthz` + apex `/` | 200 (foundation page) | Full product |
-| Login / admin / member / portals | Controlled 503 | Full product |
+| Apex `/login`, `/logout`, `/account` | Available (deployment-scoped sessions) | Full product |
+| Tenant portals / member / HQ / branch | Controlled 503 | Full product |
 | Platform host diagnostics | Optional (`PLATFORM_HOST_CONTEXT_MODE=diagnostic`); non-authoritative | Optional; non-authoritative |
 
-Foundation mode is **temporary** until auth, sessions, tenant routing, and BlessBoard product tables are migrated. Platform hostname resolution remains diagnostic only — not authoritative for routing.
+Foundation mode serves apex auth with deployment-scoped sessions. Platform hostname resolution and BlessBoard catalogue remain diagnostic only — not authoritative for tenant routing.
 
 ## Target schemas
 
 | Schema | Ownership | Status |
 |--------|-----------|--------|
 | `platform` | Shared cross-product registry (migrations, identity, deployments, tenant catalogue) | Foundation + tenant catalogue |
-| `blessboard` | BlessBoard product data | Catalogue: `churches`, `branches` |
+| `blessboard` | BlessBoard product data | Catalogue + V5 users/roles |
 | `getpro` | GetPro product data | Empty schema reserved |
 | `ngo` | NGO product data | Empty schema reserved |
 | `public` | No new application tables | Must remain free of new app DDL |
@@ -47,9 +48,26 @@ Foundation mode is **temporary** until auth, sessions, tenant routing, and Bless
 1. **Application tables belong only in product or platform schemas.** Never create new application tables in `public`.
 2. **Schema-qualified SQL is mandatory.** All new queries and migrations must use explicit qualifiers (`platform.deployments`, `blessboard.…`). Unqualified names are not allowed for application objects.
 3. **Platform owns cross-cutting registry tables** (`schema_migrations`, `database_identity`, `deployments`, `products`, `organizations`, `organization_products`, `domains`). Product domains do not own these.
-4. **BlessBoard owns BlessBoard product tables** under `blessboard` only. Current catalogue: `blessboard.churches`, `blessboard.branches`.
+4. **BlessBoard owns BlessBoard product tables** under `blessboard` only. Current: `churches`, `branches`, `users`, `user_roles`.
 5. **GetPro and NGO** may only receive empty schema placeholders now. No product tables until those phases begin.
 6. **Supabase-managed schemas** (`auth`, `storage`, `realtime`, `extensions`) must not be altered by application migrations or scripts.
+7. **V5 sessions** live in `platform.deployment_sessions` (token hash only, deployment-scoped). Never `public.session` / `connect-pg-simple` on V5.
+
+## V5 apex authentication (deployment-scoped)
+
+| Piece | Role |
+|-------|------|
+| `platform.deployment_sessions` | Session rows keyed by SHA-256 token hash + `deployment_code` |
+| `blessboard.users` | Minimal login identity (bcrypt password hash) |
+| `blessboard.user_roles` | `platform_admin` / `church_hq_admin` / `branch_admin` scopes |
+| Cookie | `SESSION_COOKIE_NAME` (default `blessboard_org_v5_sid`); HttpOnly; Secure in production; SameSite=Lax; 12h |
+| CSRF | Signed double-submit cookie (`v5c1…`) using `SESSION_SECRET` — independent of express-session |
+| Routes | Apex only: `GET/POST /login`, `POST /logout`, `GET /account` |
+
+- Login is **apex-only** (`blessboard.org` / `www.blessboard.org`). Tenant host `/login` stays controlled unavailable.
+- Sessions created for `blessboard-org-v5` do not authenticate on `blessboard-com-v4`.
+- No password reset, email verification, OAuth, MFA, or tenant portal access in this phase.
+- Provision users/roles explicitly via CLI — never at startup.
 
 ## BlessBoard catalogue (churches and branches)
 
@@ -65,7 +83,7 @@ Foundation mode is **temporary** until auth, sessions, tenant routing, and Bless
 - Branches belong only to a church (`church_id` FK `ON DELETE RESTRICT` — no silent cascade).
 - At most one `branch_type = hq` and at most one `is_primary = true` per church.
 - Provisioning is **explicit and transactional** (`npm run blessboard:church:provision`). No demo church is auto-created at migrate, bootstrap, or app startup.
-- Platform hostname routing remains **diagnostic / non-authoritative**. Sessions and login remain unavailable on V5 foundation mode.
+- Platform hostname routing remains **diagnostic / non-authoritative**. Apex auth is available; tenant portals remain unavailable on V5 foundation mode.
 - Legacy `public.tenants` / `public.session` remain absent. V4 remains on the legacy database unchanged.
 
 ## Separate concepts (do not collapse)
@@ -123,10 +141,9 @@ Product-specific organization details (church settings, CRM fields, NGO programm
 
 `npm run db:verify:foundation` expects:
 
-- Platform tables as before.
-- `blessboard.churches` and `blessboard.branches` present (approved catalogue).
+- Platform tables including `deployment_sessions`.
+- BlessBoard: `churches`, `branches`, `users`, `user_roles`.
 - `getpro` and `ngo` base-table empty.
-- No unexpected BlessBoard tables beyond the allowlist.
 - `public.tenants` / `public.session` absent.
 
 ## Deployments, sessions, and jobs
@@ -157,7 +174,8 @@ Application code under `src/platform/` can resolve a hostname against `platform.
 | `src/platform/config/platformHostContextMode.js` | `PLATFORM_HOST_CONTEXT_MODE` (`off` \| `diagnostic`, default `off`) |
 | `src/platform/config/platformDeploymentCode.js` | Explicit `PLATFORM_DEPLOYMENT_CODE` (running deployment identity) |
 | `src/platform/http/loadPlatformHostContext.js` | Opt-in Express diagnostic loader (fail-open; server-side only) |
-| `src/platform/http/compareLegacyHostContext.js` | Observational platform vs legacy comparison (after legacy attach) |
+| `src/blessboard/http/loadBlessBoardCatalogueContext.js` | After platform host context: org → church → HQ/primary (BlessBoard tenants only) |
+| `src/platform/http/compareLegacyHostContext.js` | Observational platform vs legacy comparison (after legacy + catalogue attach) |
 
 ### Database identity vs deployment identity
 
@@ -183,7 +201,7 @@ Rules:
 - **Legacy routing remains authoritative.** Loaders run in parallel and do not change routing, redirects, auth, sessions, cookies, or jobs.
 - **Fail-open:** unexpected DB/lookup failures become middleware `resultType: lookup_error` (not a resolver domain type) and always call `next()`.
 - **Server-side only:** `req.platformHostContext` / `req.platformHostComparison` are not exposed to templates, API JSON, or browsers.
-- **Logging:** routine request diagnostics use `event: platform_host_comparison`; loader logs `platform_host_context` only for `lookup_error`. No persistent metrics/telemetry.
+- **Logging:** routine request diagnostics use `event: platform_host_comparison` (includes catalogue IDs/`comparisonBasis` when present); loaders log `platform_host_context` / `blessboard_catalogue_context` only for lookup errors. No persistent metrics/telemetry.
 - Hosted Supabase is still not connected; the loader uses the app’s existing `getPgPool()`.
 
 ### Platform vs legacy comparison categories
@@ -197,7 +215,20 @@ Rules:
 | `product_mismatch` | Both have product identities, but they differ |
 | `not_comparable` | Apex, lookup_error, inactive/unresolved without safe shared IDs, or missing keys |
 
-Stable legacy keys used today: church `orgSlug` / `organization.slug`; GetPro `tenant.slug`. Shared platform organization UUIDs are not yet present on legacy request context. Slug/key comparison remains **diagnostic and temporary**; the immutable platform organization UUID is the future authoritative shared identity once legacy context carries it.
+### Platform hostname vs BlessBoard catalogue (separate layers)
+
+| Layer | Input | Output on `req` | Queries |
+|-------|-------|-----------------|---------|
+| Platform hostname | Host header | `platformHostContext` | 1 joined domain resolve |
+| BlessBoard catalogue | Platform org UUID (when applicable) | `blessBoardCatalogueContext` | 0 or 1 joined church/branch read |
+
+BlessBoard lookup runs only when platform context is enabled, `resultType=resolved_tenant`, `product.key=blessboard`, and organization UUID is present. Apex, unknown domains, inactive platform results, getpro/ngo, and missing org IDs attach a typed `not_applicable` / `platform_*` result and **perform no catalogue query**.
+
+HQ and primary branches are resolved separately (they may be the same row). Missing/inactive church or branch states are typed (`church_missing`, `hq_branch_missing`, …) — never collapsed to bare `null` without a result type.
+
+Comparison prefers UUIDs when both sides have them (`comparisonBasis`: `organization_uuid` → `church_uuid` → `product_and_key` → `none`). Display names are never compared. Legacy request context often still lacks platform UUIDs, so key fallback remains temporary and diagnostic.
+
+Catalogue context remains **non-authoritative**: no redirects, no tenant content, no session/auth decisions.
 
 ### Platform tenant provisioning (administrative)
 
@@ -258,16 +289,16 @@ Means: **the hostname is assigned to a platform deployment that differs from the
 
 - `platform.branches`
 - GetPro / NGO product tables
-- BlessBoard members, ministries, events, public content, portals
+- BlessBoard members, ministry roles, events, public content, portals
+- Password reset, email verification, OAuth, MFA
 - Compatibility views over legacy `public`
-- Using host context for routing, redirects, auth, sessions, cookies, or jobs
+- Using host context for authoritative routing, redirects, or tenant content
 - Domain redirects (alias → canonical)
 - Application pool cutover for V4 away from legacy `public` schemas
-- V5 authentication, sessions, tenant routing, and portals (beyond foundation mode)
-- Church/tenant data seeds in production migrations
+- Tenant-host login and portal dashboards
 - Hosted Supabase connection or deploy from CI/agents
 - Persistent metric tables or hosted telemetry
-- Automatic demo tenant/church creation at startup
+- Automatic demo tenant/church/admin creation at startup
 - Silent reassignment of hostnames, product enrolments, or church ownership
-- Making platform hostname resolution authoritative
-- Express wiring for BlessBoard catalogue lookup
+- Making platform hostname resolution or BlessBoard catalogue context authoritative
+- `public.session` / `connect-pg-simple` on V5

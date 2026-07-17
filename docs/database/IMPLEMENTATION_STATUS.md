@@ -2,32 +2,27 @@
 
 Last updated: 2026-07-18
 
-## Phase: BlessBoard churches + branches catalogue — complete (code)
+## Phase: V5 deployment-scoped sessions + apex auth — complete (code)
 
 | Item | Status |
 |------|--------|
-| Platform foundation migrations + seeds | Done |
-| SSL-aware foundation admin pool (Supabase-safe) | Done |
-| `npm run db:bootstrap:foundation` (manual) | Done — applies all approved migrations including BlessBoard catalogue |
-| `npm run db:verify:foundation` (read-only allowlist) | Done — `blessboard.churches` / `branches` approved; getpro/ngo empty |
-| `identity_key` / `DATABASE_IDENTITY_EXPECTED` | Done (`platform/009`) |
-| Hosted Supabase runbook | Done |
-| V5 foundation HTTP startup | Done |
-| BlessBoard `churches` + `branches` migrations | Done (`blessboard/002`, `003`) |
-| BlessBoard church provisioning CLI/service | Done |
-| Read-only catalogue lookup (not Express-wired) | Done |
-| Authoritative platform routing | Not started |
-| V5 auth/sessions/portals | Not started |
+| `platform.deployment_sessions` | Done (`platform/010` + `blessboard/006` FKs) |
+| `blessboard.users` / `user_roles` | Done (`004`, `005`) |
+| Apex login / logout / account | Done on V5 foundation server |
+| V5 session cookie (hashed token) | Done — not `connect-pg-simple` / not `public.session` |
+| User + role provisioning CLIs | Done |
+| Authoritative tenant routing | Not started |
+| Tenant portals / member roles | Not started |
+| Password reset / email verification | Not started |
 
 ## Architecture commitments (current)
 
-- **V4** → old/legacy database only.
-- **V5** → new platform database only (`DATABASE_URL`). No `GETPRO_DATABASE_URL`. No `public.tenants` / `public.session`.
-- Migrations **never** run at application startup.
-- Hosted init is **human-run** only (`db:bootstrap:foundation` or `db:migrate`).
-- `db:migrate` / bootstrap apply **all approved** module migrations; foundation verification uses an **approved-table allowlist** (Approach B).
-- Platform hostname routing remains diagnostic / non-authoritative.
-- `platform.organizations` is shared tenant identity; `blessboard.churches.organization_id` is the permanent UUID bridge; branches are product-owned.
+- V5 sessions are **deployment-scoped** (`PLATFORM_DEPLOYMENT_CODE`).
+- Raw session tokens are **never** stored (SHA-256 hash only).
+- V5 does **not** use `connect-pg-simple` or `public.session`.
+- Apex-only auth (`blessboard.org` / `www`); tenant `/login` remains unavailable.
+- Platform hostname + BlessBoard catalogue remain **diagnostic**.
+- V4 remains on `server.legacy.js` unchanged.
 
 ## Hosted operator commands
 
@@ -40,37 +35,23 @@ npm run db:migrate
 npm run db:status
 npm run db:identity:check
 npm run db:verify:foundation
+
+printf '%s' 'TEMP_PASSWORD' | npm run blessboard:user:create -- \
+  --email admin@example.org --display-name 'Administrator' --password-stdin
+
+npm run blessboard:user:role:assign -- \
+  --email admin@example.org \
+  --organization-key example-church \
+  --role church_hq_admin \
+  --church-key example-church
 ```
-
-Then provision a platform tenant, then its BlessBoard church (no auto demo):
-
-```bash
-npm run platform:tenant:provision -- …
-npm run blessboard:church:provision -- …
-```
-
-See `docs/database/HOSTED_SUPABASE_RUNBOOK.md`.
-
-## Verification (2026-07-18, local)
-
-- `npm run test:db:bootstrap-foundation` → **9 pass**
-- `npm run test:db:foundation` → **16 pass**
-- `npm run test:blessboard:catalogue` → **12 pass**
-- `npm run test:blessboard:provisioning` → **12 pass**
-- `npm run test:v5:foundation-startup` → **11 pass**
-- `npm run test:platform:resolution` → **25 pass**
-- `npm run test:platform:provisioning` → **19 pass**
-- `npm run test:platform:diagnostic-integration` → **1 pass**
-- `npm run test:platform:http-context` → **22 pass**
-- `npm run test:platform:host-comparison` → **24 pass**
 
 ## Remaining blockers
 
-1. Operator must run migrate/verify against the real hosted Supabase URL (not done from Cursor).
-2. V5 auth/sessions/tenant portals not migrated.
-3. Platform resolution still non-authoritative.
-4. Catalogue lookup not wired into Express.
+1. Hosted migrate + first admin user still operator-run.
+2. Tenant portals and authoritative routing not started.
+3. Legacy request context usually lacks platform UUIDs.
 
 ## Exact next phase recommendation
 
-After hosted migrate + `db:verify:foundation` and a first real church provision: add deployment-scoped session storage + minimal apex auth on V5 — still without `public.tenants` / `public.session`, and without authoritative hostname cutover.
+After hosted login works on apex: wire authenticated apex navigation only, then plan tenant-host cutover behind an explicit flag — still without `public.session` / `public.tenants`.

@@ -15,6 +15,8 @@ const {
   createFoundationPool,
 } = require("./helpers/foundationDb");
 const { migrate } = require("../db/scripts/lib/migrator");
+const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
+const { provisionBlessBoardChurch } = require("../src/blessboard/services/provisionBlessBoardChurch");
 const {
   isV5FoundationMode,
   V5_FOUNDATION_DEPLOYMENT_CODE,
@@ -24,6 +26,14 @@ const {
   createV5FoundationApp,
   UNAVAILABLE_STATUS,
 } = require("../src/platform/http/v5FoundationServer");
+const { RESULT_TYPES: PLATFORM_RESULT_TYPES } = require("../src/platform/services/resolveHostname");
+const {
+  createLoadPlatformHostContext,
+} = require("../src/platform/http/loadPlatformHostContext");
+const {
+  createLoadBlessBoardCatalogueContext,
+  RESULT_TYPES: CATALOGUE_RESULT_TYPES,
+} = require("../src/blessboard/http/loadBlessBoardCatalogueContext");
 
 const ROOT = path.resolve(__dirname, "..");
 
@@ -136,6 +146,22 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
     await assertNoPublicLegacyTables();
   });
 
+  it("GET /login returns 200 on apex", async () => {
+    requireDb();
+    const loginApp = createV5FoundationApp({
+      getPool: () => pool,
+      enableDiagnosticHostContext: false,
+      env: {
+        NODE_ENV: "test",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-v5",
+        SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
+      },
+    });
+    const res = await request(loginApp).get("/login").set("Host", "blessboard.org");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /Sign in/i);
+  });
+
   it("missing public.session does not crash request path", async () => {
     requireDb();
     const res = await request(app).get("/healthz");
@@ -161,7 +187,6 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
   it("legacy tenant and portal routes return controlled unavailable", async () => {
     requireDb();
     const paths = [
-      "/login",
       "/admin",
       "/admin/login",
       "/member",
@@ -185,9 +210,115 @@ describe("v5 foundation HTTP (ephemeral platform DB)", () => {
   it("does not create public legacy tables after traffic", async () => {
     requireDb();
     await request(app).get("/");
-    await request(app).get("/login");
     await request(app).get("/admin");
     await assertNoPublicLegacyTables();
+  });
+
+  it("tenant hostname diagnostics do not make routing authoritative", async () => {
+    requireDb();
+    await provisionPlatformTenant(pool, {
+      organizationKey: "foundation-tenant",
+      displayName: "Foundation Tenant",
+      legalName: null,
+      dataEnvironment: "testing",
+      productKey: "blessboard",
+      productTenantKey: "foundation-tenant",
+      hostname: "foundation-tenant.blessboard.org",
+      domainType: "canonical",
+      deploymentCode: "blessboard-org-v5",
+      isPrimary: true,
+    });
+    await provisionBlessBoardChurch(pool, {
+      organizationKey: "foundation-tenant",
+      churchKey: "foundation-tenant",
+      displayName: "Foundation Tenant",
+      legalName: null,
+      dataEnvironment: "testing",
+      hqBranchKey: "hq",
+      hqBranchDisplayName: "Headquarters",
+    });
+
+    const diagApp = createV5FoundationApp({
+      getPool: () => pool,
+      enableDiagnosticHostContext: true,
+    });
+
+    const health = await request(diagApp).get("/healthz");
+    assert.equal(health.status, 200);
+
+    const apex = await request(diagApp).get("/").set("Host", "blessboard.org");
+    assert.equal(apex.status, 200);
+    assert.match(apex.text, /foundation mode/i);
+
+    const tenant = await request(diagApp)
+      .get("/")
+      .set("Host", "foundation-tenant.blessboard.org");
+    assert.equal(tenant.status, 200);
+    assert.match(tenant.text, /foundation mode/i);
+    assert.doesNotMatch(tenant.text, /foundation-tenant|Headquarters/i);
+
+    assert.equal(
+      (await request(diagApp).get("/login").set("Host", "foundation-tenant.blessboard.org").set("Accept", "text/plain"))
+        .status,
+      UNAVAILABLE_STATUS
+    );
+
+    const login = await request(diagApp)
+      .get("/member")
+      .set("Host", "foundation-tenant.blessboard.org")
+      .set("Accept", "text/plain");
+    assert.equal(login.status, UNAVAILABLE_STATUS);
+
+    // Catalogue lookup errors must not kill the process or change status.
+    const boomApp = createV5FoundationApp({
+      getPool: () => pool,
+      enableDiagnosticHostContext: true,
+    });
+    // Exercise middleware chain with a throwing catalogue via direct middleware call.
+    const loadPlatform = createLoadPlatformHostContext({
+      getPool: () => pool,
+      getMode: () => "diagnostic",
+      resolveHostname: async () => ({
+        type: PLATFORM_RESULT_TYPES.RESOLVED_TENANT,
+        hostname: "foundation-tenant.blessboard.org",
+        product: { key: "blessboard" },
+        organization: {
+          id: "11111111-1111-4111-8111-111111111111",
+          key: "foundation-tenant",
+          dataEnvironment: "testing",
+        },
+        domain: null,
+        deployment: { code: "blessboard-org-v5" },
+        organizationProduct: null,
+      }),
+    });
+    const loadCatalogue = createLoadBlessBoardCatalogueContext({
+      getPool: () => pool,
+      getCatalogueContext: async () => {
+        throw new Error("forced catalogue failure");
+      },
+    });
+    const req = {
+      path: "/",
+      url: "/",
+      headers: { host: "foundation-tenant.blessboard.org" },
+      get: () => "foundation-tenant.blessboard.org",
+    };
+    const res = { statusCode: 200 };
+    await new Promise((resolve, reject) => {
+      loadPlatform(req, res, (err) => (err ? reject(err) : resolve()));
+    });
+    await new Promise((resolve, reject) => {
+      loadCatalogue(req, res, (err) => (err ? reject(err) : resolve()));
+    });
+    assert.equal(
+      req.blessBoardCatalogueContext.resultType,
+      CATALOGUE_RESULT_TYPES.CATALOGUE_LOOKUP_ERROR
+    );
+    assert.equal(res.statusCode, 200);
+
+    await assertNoPublicLegacyTables();
+    void boomApp;
   });
 });
 
@@ -210,14 +341,15 @@ describe("v5 foundation vs V4 wiring (source)", () => {
     assert.match(legacy, /seedBuiltinUsers/);
   });
 
-  it("V5 foundation server does not register session or ensure*Schema", () => {
+  it("V5 foundation server does not register connect-pg-simple or ensure*Schema", () => {
     const src = fs.readFileSync(
       path.join(ROOT, "src/platform/http/v5FoundationServer.js"),
       "utf8"
     );
-    assert.equal(src.includes("connect-pg-simple"), false);
+    assert.doesNotMatch(src, /require\(["']connect-pg-simple["']\)/);
     assert.equal(src.includes("ensureChurchSchema"), false);
     assert.equal(src.includes("createAttachTenantByHost"), false);
     assert.equal(src.includes("createTableIfMissing"), false);
+    assert.match(src, /deployment_sessions|createV5Session|loadV5Session|authenticateBlessBoardUser/);
   });
 });

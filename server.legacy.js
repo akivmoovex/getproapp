@@ -32,6 +32,9 @@ const { opsHrefMiddleware, marketingApexLoginRedirectTarget } = require("./src/l
 const { getSubdomain, resolveHostname, isBlessBoardProductHost } = require("./src/platform/host");
 const { formatHostTenantDebugLine, listExplicitRegionalHostExamples } = require("./src/platform/tenantHostRouting");
 const { createLoadPlatformHostContext } = require("./src/platform/http/loadPlatformHostContext");
+const {
+  createLoadBlessBoardCatalogueContext,
+} = require("./src/blessboard/http/loadBlessBoardCatalogueContext");
 const { createCompareLegacyHostContext } = require("./src/platform/http/compareLegacyHostContext");
 const { getPlatformHostContextMode } = require("./src/platform/config/platformHostContextMode");
 const {
@@ -262,6 +265,14 @@ app.use((req, res, next) => {
 
 // Tenant + region context before /api and /admin so staff routes can compute tenant-aware links (e.g. Cancel → regional home).
 app.use(createAttachTenantByHost());
+
+// Observational BlessBoard catalogue (org → church → HQ/primary). After platform host context;
+// before comparison so UUID-first matching can use church IDs when available. Never authoritative.
+app.use(
+  createLoadBlessBoardCatalogueContext({
+    getPool: getPgPool,
+  })
+);
 
 // Observational platform vs legacy host comparison (diagnostic only; after legacy context is attached).
 app.use(

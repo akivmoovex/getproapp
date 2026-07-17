@@ -67,7 +67,7 @@ describe("blessboard catalogue schema", () => {
     );
     assert.deepEqual(
       tables.rows.map((r) => r.table_name),
-      ["branches", "churches"]
+      ["branches", "churches", "user_roles", "users"]
     );
   });
 

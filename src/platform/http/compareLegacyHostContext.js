@@ -3,6 +3,12 @@
 /**
  * Read-only observational comparison of platform host context vs legacy routing.
  * Never mutates platform/legacy context, never queries DB, always fail-open.
+ *
+ * Preferred identity order when UUIDs are available on both sides:
+ * 1 organization UUID
+ * 2 BlessBoard church UUID
+ * 3 product + normalized organization key (temporary)
+ * 4 not_comparable
  */
 
 const { shouldSkipDiagnosticLog } = require("./loadPlatformHostContext");
@@ -16,6 +22,16 @@ const COMPARISON_CATEGORIES = Object.freeze({
   PRODUCT_MISMATCH: "product_mismatch",
   NOT_COMPARABLE: "not_comparable",
 });
+
+const COMPARISON_BASIS = Object.freeze({
+  ORGANIZATION_UUID: "organization_uuid",
+  CHURCH_UUID: "church_uuid",
+  PRODUCT_AND_KEY: "product_and_key",
+  NONE: "none",
+});
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const INACTIVE_OR_UNRESOLVED_PLATFORM = new Set([
   "inactive_domain",
@@ -33,17 +49,48 @@ const INACTIVE_OR_UNRESOLVED_PLATFORM = new Set([
 ]);
 
 /**
- * Stable legacy tenant key + product hint from request (no display names).
- * Prefer orgSlug / tenant slug — platform organization UUIDs are not on legacy req yet.
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+function asUuid(value) {
+  if (value == null) return null;
+  const s = String(value).trim();
+  if (!UUID_RE.test(s)) return null;
+  return s.toLowerCase();
+}
+
+/**
+ * Stable legacy tenant identity from request (no display names).
+ * Platform organization / church UUIDs are optional until legacy context carries them.
  *
  * @param {import('express').Request} req
- * @returns {{ kind: string, tenantKey: string | null, productHint: string | null }}
+ * @returns {{
+ *   kind: string,
+ *   tenantKey: string | null,
+ *   productHint: string | null,
+ *   organizationId: string | null,
+ *   churchId: string | null
+ * }}
  */
 function extractLegacyTenantIdentity(req) {
+  const empty = {
+    kind: "none",
+    tenantKey: null,
+    productHint: null,
+    organizationId: null,
+    churchId: null,
+  };
+
   if (req && req.isChurchHost && req.churchContext) {
     const ctx = req.churchContext;
     if (ctx.kind === "vertical-apex") {
-      return { kind: "apex", tenantKey: null, productHint: "blessboard" };
+      return {
+        kind: "apex",
+        tenantKey: null,
+        productHint: "blessboard",
+        organizationId: null,
+        churchId: null,
+      };
     }
     const fromOrg =
       ctx.organization && ctx.organization.slug != null
@@ -52,42 +99,96 @@ function extractLegacyTenantIdentity(req) {
     const fromSlug = ctx.orgSlug != null ? String(ctx.orgSlug).trim().toLowerCase() : "";
     const fromHost = ctx.hostSlug != null ? String(ctx.hostSlug).trim().toLowerCase() : "";
     const tenantKey = fromOrg || fromSlug || fromHost || null;
-    if (tenantKey) {
-      return { kind: "tenant", tenantKey, productHint: "blessboard" };
+
+    const organizationId =
+      asUuid(ctx.platformOrganizationId) ||
+      asUuid(ctx.organization && ctx.organization.platformOrganizationId) ||
+      asUuid(ctx.organization && ctx.organization.platform_organization_id) ||
+      asUuid(ctx.organization && ctx.organization.id) ||
+      null;
+    const churchId =
+      asUuid(ctx.churchId) ||
+      asUuid(ctx.church && ctx.church.id) ||
+      asUuid(ctx.organization && ctx.organization.churchId) ||
+      null;
+
+    if (tenantKey || organizationId || churchId) {
+      return {
+        kind: "tenant",
+        tenantKey,
+        productHint: "blessboard",
+        organizationId,
+        churchId,
+      };
     }
-    return { kind: "church_unresolved", tenantKey: null, productHint: "blessboard" };
+    return {
+      kind: "church_unresolved",
+      tenantKey: null,
+      productHint: "blessboard",
+      organizationId: null,
+      churchId: null,
+    };
   }
 
   if (req && req.tenant && req.tenant.slug) {
     const tenantKey = String(req.tenant.slug).trim().toLowerCase();
     if (tenantKey) {
-      return { kind: "tenant", tenantKey, productHint: "getpro" };
+      return {
+        kind: "tenant",
+        tenantKey,
+        productHint: "getpro",
+        organizationId: asUuid(req.tenant.platformOrganizationId) || asUuid(req.tenant.id),
+        churchId: null,
+      };
     }
   }
   if (req && req.tenantSlug) {
     const tenantKey = String(req.tenantSlug).trim().toLowerCase();
     if (tenantKey) {
-      return { kind: "tenant", tenantKey, productHint: "getpro" };
+      return {
+        kind: "tenant",
+        tenantKey,
+        productHint: "getpro",
+        organizationId: null,
+        churchId: null,
+      };
     }
   }
 
-  return { kind: "none", tenantKey: null, productHint: null };
+  return empty;
 }
 
 /**
  * @param {object | null | undefined} platformHostContext
- * @param {{ kind: string, tenantKey: string | null, productHint: string | null }} legacy
+ * @param {{
+ *   kind: string,
+ *   tenantKey: string | null,
+ *   productHint: string | null,
+ *   organizationId?: string | null,
+ *   churchId?: string | null
+ * }} legacy
+ * @param {object | null | undefined} [blessBoardCatalogueContext]
  */
-function comparePlatformAndLegacy(platformHostContext, legacy) {
+function comparePlatformAndLegacy(platformHostContext, legacy, blessBoardCatalogueContext) {
   const ctx = platformHostContext && typeof platformHostContext === "object" ? platformHostContext : null;
+  const catalogue =
+    blessBoardCatalogueContext && typeof blessBoardCatalogueContext === "object"
+      ? blessBoardCatalogueContext
+      : null;
+
   if (!ctx || !ctx.enabled) {
     return {
       category: COMPARISON_CATEGORIES.NOT_COMPARABLE,
+      comparisonBasis: COMPARISON_BASIS.NONE,
       platformResultType: null,
       platformOrganizationKey: null,
+      platformOrganizationId: null,
+      platformChurchId: null,
       platformProductKey: null,
       legacyTenantKey: legacy.tenantKey,
       legacyProductHint: legacy.productHint,
+      legacyOrganizationId: legacy.organizationId || null,
+      legacyChurchId: legacy.churchId || null,
       expectedDeploymentCode: null,
       resolvedDeploymentCode: null,
     };
@@ -99,6 +200,12 @@ function comparePlatformAndLegacy(platformHostContext, legacy) {
     resolution && resolution.organization && resolution.organization.key
       ? String(resolution.organization.key).trim().toLowerCase()
       : null;
+  const platformOrganizationId =
+    asUuid(resolution && resolution.organization && resolution.organization.id) ||
+    asUuid(catalogue && catalogue.organizationId) ||
+    null;
+  const platformChurchId =
+    asUuid(catalogue && catalogue.church && catalogue.church.id) || null;
   const platformProductKey =
     resolution && resolution.product && resolution.product.key
       ? String(resolution.product.key).trim().toLowerCase()
@@ -108,14 +215,22 @@ function comparePlatformAndLegacy(platformHostContext, legacy) {
       ? resolution.deployment.code
       : null;
 
+  const legacyOrganizationId = asUuid(legacy.organizationId) || null;
+  const legacyChurchId = asUuid(legacy.churchId) || null;
+
   const base = {
     platformResultType: resultType,
     platformOrganizationKey: platformOrgKey,
+    platformOrganizationId,
+    platformChurchId,
     platformProductKey: platformProductKey,
     legacyTenantKey: legacy.tenantKey,
     legacyProductHint: legacy.productHint,
+    legacyOrganizationId,
+    legacyChurchId,
     expectedDeploymentCode: ctx.expectedDeploymentCode || null,
     resolvedDeploymentCode,
+    comparisonBasis: COMPARISON_BASIS.NONE,
   };
 
   if (legacy.kind === "apex" || resultType === "resolved_apex") {
@@ -123,7 +238,6 @@ function comparePlatformAndLegacy(platformHostContext, legacy) {
   }
   if (INACTIVE_OR_UNRESOLVED_PLATFORM.has(String(resultType || ""))) {
     if (legacy.tenantKey && resultType !== "resolved_tenant") {
-      // Platform has no active tenant identity; legacy does.
       if (
         resultType === "unknown_domain" ||
         resultType === "invalid_hostname" ||
@@ -138,20 +252,86 @@ function comparePlatformAndLegacy(platformHostContext, legacy) {
     return { category: COMPARISON_CATEGORIES.NOT_COMPARABLE, ...base };
   }
 
-  if (resultType === "resolved_tenant" && platformOrgKey) {
-    if (legacy.tenantKey) {
+  if (resultType === "resolved_tenant") {
+    const hasLegacyIdentity = Boolean(
+      legacy.tenantKey || legacyOrganizationId || legacyChurchId
+    );
+
+    if (platformOrganizationId && legacyOrganizationId) {
+      if (platformOrganizationId === legacyOrganizationId) {
+        if (legacy.productHint && platformProductKey && legacy.productHint !== platformProductKey) {
+          return {
+            category: COMPARISON_CATEGORIES.PRODUCT_MISMATCH,
+            ...base,
+            comparisonBasis: COMPARISON_BASIS.ORGANIZATION_UUID,
+          };
+        }
+        return {
+          category: COMPARISON_CATEGORIES.MATCH,
+          ...base,
+          comparisonBasis: COMPARISON_BASIS.ORGANIZATION_UUID,
+        };
+      }
+      return {
+        category: COMPARISON_CATEGORIES.IDENTITY_MISMATCH,
+        ...base,
+        comparisonBasis: COMPARISON_BASIS.ORGANIZATION_UUID,
+      };
+    }
+
+    if (platformChurchId && legacyChurchId) {
+      if (platformChurchId === legacyChurchId) {
+        if (legacy.productHint && platformProductKey && legacy.productHint !== platformProductKey) {
+          return {
+            category: COMPARISON_CATEGORIES.PRODUCT_MISMATCH,
+            ...base,
+            comparisonBasis: COMPARISON_BASIS.CHURCH_UUID,
+          };
+        }
+        return {
+          category: COMPARISON_CATEGORIES.MATCH,
+          ...base,
+          comparisonBasis: COMPARISON_BASIS.CHURCH_UUID,
+        };
+      }
+      return {
+        category: COMPARISON_CATEGORIES.IDENTITY_MISMATCH,
+        ...base,
+        comparisonBasis: COMPARISON_BASIS.CHURCH_UUID,
+      };
+    }
+
+    if (platformOrgKey && legacy.tenantKey) {
       if (legacy.productHint && platformProductKey && legacy.productHint !== platformProductKey) {
-        return { category: COMPARISON_CATEGORIES.PRODUCT_MISMATCH, ...base };
+        return {
+          category: COMPARISON_CATEGORIES.PRODUCT_MISMATCH,
+          ...base,
+          comparisonBasis: COMPARISON_BASIS.PRODUCT_AND_KEY,
+        };
       }
       if (legacy.tenantKey === platformOrgKey) {
-        return { category: COMPARISON_CATEGORIES.MATCH, ...base };
+        return {
+          category: COMPARISON_CATEGORIES.MATCH,
+          ...base,
+          comparisonBasis: COMPARISON_BASIS.PRODUCT_AND_KEY,
+        };
       }
-      return { category: COMPARISON_CATEGORIES.IDENTITY_MISMATCH, ...base };
+      return {
+        category: COMPARISON_CATEGORIES.IDENTITY_MISMATCH,
+        ...base,
+        comparisonBasis: COMPARISON_BASIS.PRODUCT_AND_KEY,
+      };
     }
-    return { category: COMPARISON_CATEGORIES.PLATFORM_ONLY, ...base };
+
+    if (hasLegacyIdentity && !platformOrgKey && !platformOrganizationId) {
+      return { category: COMPARISON_CATEGORIES.LEGACY_ONLY, ...base };
+    }
+    if (!hasLegacyIdentity && (platformOrgKey || platformOrganizationId)) {
+      return { category: COMPARISON_CATEGORIES.PLATFORM_ONLY, ...base };
+    }
   }
 
-  if (legacy.tenantKey && !platformOrgKey) {
+  if (legacy.tenantKey && !platformOrgKey && !platformOrganizationId) {
     return { category: COMPARISON_CATEGORIES.LEGACY_ONLY, ...base };
   }
 
@@ -165,22 +345,35 @@ function comparePlatformAndLegacy(platformHostContext, legacy) {
  */
 function logPlatformHostComparison(req, comparison, logFn) {
   if (shouldSkipDiagnosticLog(req)) return;
+  const catalogue = req.blessBoardCatalogueContext || null;
   const line = JSON.stringify({
     event: "platform_host_comparison",
     hostname: (req.platformHostContext && req.platformHostContext.hostname) || null,
     platformResultType: comparison.platformResultType || null,
     comparisonCategory: comparison.category || null,
+    comparisonBasis: comparison.comparisonBasis || COMPARISON_BASIS.NONE,
     expectedDeploymentCode: comparison.expectedDeploymentCode || null,
     resolvedDeploymentCode: comparison.resolvedDeploymentCode || null,
     platformProductKey: comparison.platformProductKey || null,
     platformOrganizationKey: comparison.platformOrganizationKey || null,
+    platformOrganizationId: comparison.platformOrganizationId || null,
+    platformChurchId: comparison.platformChurchId || null,
     legacyTenantKey: comparison.legacyTenantKey || null,
+    blessBoardCatalogueResultType: catalogue && catalogue.resultType ? catalogue.resultType : null,
+    churchId: catalogue && catalogue.church ? catalogue.church.id : null,
+    churchKey: catalogue && catalogue.church ? catalogue.church.churchKey : null,
+    hqBranchId: catalogue && catalogue.hqBranch ? catalogue.hqBranch.id : null,
+    hqBranchKey: catalogue && catalogue.hqBranch ? catalogue.hqBranch.branchKey : null,
+    primaryBranchId: catalogue && catalogue.primaryBranch ? catalogue.primaryBranch.id : null,
+    primaryBranchKey:
+      catalogue && catalogue.primaryBranch ? catalogue.primaryBranch.branchKey : null,
     dataEnvironment:
-      req.platformHostContext &&
+      (catalogue && catalogue.church && catalogue.church.dataEnvironment) ||
+      (req.platformHostContext &&
       req.platformHostContext.resolution &&
       req.platformHostContext.resolution.organization
         ? req.platformHostContext.resolution.organization.dataEnvironment
-        : null,
+        : null),
     path: String((req && (req.path || req.url)) || "").split("?")[0] || null,
   });
   const out = typeof logFn === "function" ? logFn : (msg) => console.log(msg);
@@ -208,7 +401,11 @@ function createCompareLegacyHostContext(deps) {
       }
 
       const legacy = extractLegacyTenantIdentity(req);
-      const comparison = comparePlatformAndLegacy(req.platformHostContext, legacy);
+      const comparison = comparePlatformAndLegacy(
+        req.platformHostContext,
+        legacy,
+        req.blessBoardCatalogueContext
+      );
       req.platformHostComparison = comparison;
       logPlatformHostComparison(req, comparison, logFn);
     } catch {
@@ -216,14 +413,19 @@ function createCompareLegacyHostContext(deps) {
       try {
         req.platformHostComparison = {
           category: COMPARISON_CATEGORIES.NOT_COMPARABLE,
+          comparisonBasis: COMPARISON_BASIS.NONE,
           platformResultType:
             req.platformHostContext && req.platformHostContext.resultType
               ? req.platformHostContext.resultType
               : null,
           platformOrganizationKey: null,
+          platformOrganizationId: null,
+          platformChurchId: null,
           platformProductKey: null,
           legacyTenantKey: null,
           legacyProductHint: null,
+          legacyOrganizationId: null,
+          legacyChurchId: null,
           expectedDeploymentCode: null,
           resolvedDeploymentCode: null,
         };
@@ -237,6 +439,7 @@ function createCompareLegacyHostContext(deps) {
 
 module.exports = {
   COMPARISON_CATEGORIES,
+  COMPARISON_BASIS,
   extractLegacyTenantIdentity,
   comparePlatformAndLegacy,
   createCompareLegacyHostContext,

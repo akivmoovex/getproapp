@@ -22,6 +22,7 @@ const {
   comparePlatformAndLegacy,
   extractLegacyTenantIdentity,
   COMPARISON_CATEGORIES,
+  COMPARISON_BASIS,
 } = require("../src/platform/http/compareLegacyHostContext");
 const { createLoadPlatformHostContext } = require("../src/platform/http/loadPlatformHostContext");
 const { RESULT_TYPES } = require("../src/platform/services/resolveHostname");
@@ -158,6 +159,7 @@ describe("platform vs legacy host comparison", () => {
       legacy
     );
     assert.equal(result.category, COMPARISON_CATEGORIES.MATCH);
+    assert.equal(result.comparisonBasis, COMPARISON_BASIS.PRODUCT_AND_KEY);
   });
 
   it("legacy-only resolution produces legacy_only", () => {

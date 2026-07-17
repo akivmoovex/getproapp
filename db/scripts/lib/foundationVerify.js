@@ -9,13 +9,14 @@ const { checkDatabaseIdentity } = require("./databaseIdentity");
 
 const REQUIRED_SCHEMAS = Object.freeze(["platform", "blessboard", "getpro", "ngo"]);
 const REQUIRED_PLATFORM_TABLES = Object.freeze([
-  "schema_migrations",
   "database_identity",
+  "deployment_sessions",
   "deployments",
-  "products",
-  "organizations",
-  "organization_products",
   "domains",
+  "organization_products",
+  "organizations",
+  "products",
+  "schema_migrations",
 ]);
 const REQUIRED_DEPLOYMENTS = Object.freeze(["blessboard-com-v4", "blessboard-org-v5"]);
 const REQUIRED_PRODUCTS = Object.freeze(["blessboard", "getpro", "ngo"]);
@@ -24,10 +25,10 @@ const PRODUCT_SCHEMAS = Object.freeze(["blessboard", "getpro", "ngo"]);
 
 /**
  * Approved base tables per product schema.
- * BlessBoard may contain the catalogue tables from this phase; getpro/ngo must stay empty.
+ * BlessBoard catalogue + auth tables; getpro/ngo must stay empty.
  */
 const APPROVED_PRODUCT_TABLES = Object.freeze({
-  blessboard: Object.freeze(["branches", "churches"]),
+  blessboard: Object.freeze(["branches", "churches", "user_roles", "users"]),
   getpro: Object.freeze([]),
   ngo: Object.freeze([]),
 });

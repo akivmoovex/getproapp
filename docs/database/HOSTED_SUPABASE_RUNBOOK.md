@@ -10,8 +10,10 @@ Creates:
 | Kind | Objects |
 |------|---------|
 | Schemas | `platform`, `blessboard`, `getpro`, `ngo` |
-| Platform tables | `schema_migrations`, `database_identity`, `deployments`, `products`, `organizations`, `organization_products`, `domains` |
+| Platform tables | `schema_migrations`, `database_identity`, `deployments`, `products`, `organizations`, `organization_products`, `domains`, `deployment_sessions` |
 | BlessBoard catalogue | `blessboard.churches`, `blessboard.branches` |
+| BlessBoard auth | `blessboard.users`, `blessboard.user_roles` |
+| Platform sessions | `platform.deployment_sessions` |
 | Deployment seeds | `blessboard-com-v4`, `blessboard-org-v5` |
 | Product seeds | `blessboard`, `getpro`, `ngo` |
 
@@ -20,7 +22,7 @@ Does **not** create:
 - `public.tenants`, `public.session`, or any legacy `public` application tables
 - GetPro / NGO product application tables
 - BlessBoard members, ministries, events, content, or portal tables
-- Demo organizations or churches (provisioning is explicit and separate)
+- Demo organizations, churches, or admin users (provisioning is explicit and separate)
 - Changes to Supabase-managed schemas (`auth`, `storage`, `realtime`, `extensions`, …)
 
 ## Command boundary (Approach B)
@@ -29,7 +31,7 @@ Does **not** create:
 |---------|---------|
 | `npm run db:migrate` | Applies **all** approved on-disk migrations (`platform` → `blessboard` → `getpro` → `ngo`) + seeds |
 | `npm run db:bootstrap:foundation` | Migrate + identity init (if needed) + `db:verify:foundation` |
-| `npm run db:verify:foundation` | Read-only check using an **approved-table allowlist** (`blessboard.churches`/`branches` allowed; getpro/ngo must stay empty) |
+| `npm run db:verify:foundation` | Read-only check using an **approved-table allowlist** (`blessboard.churches`/`branches`/`users`/`user_roles`, `platform.deployment_sessions`; getpro/ngo empty) |
 
 `db:bootstrap:foundation` is still the hosted first-run helper; it is no longer “platform tables only” once BlessBoard catalogue migrations exist. Prefer `db:migrate` when the database already has identity and you only need new migrations.
 
@@ -112,6 +114,78 @@ npm run blessboard:church:provision -- \
 ```
 
 Exit zero for `provisioned` and `already_provisioned`. Conflicts exit non-zero.
+
+### Create first V5 admin user (after church exists)
+
+```bash
+printf '%s' 'TEMP_PASSWORD' | npm run blessboard:user:create -- \
+  --email admin@example.org \
+  --display-name 'Administrator' \
+  --password-stdin
+
+npm run blessboard:user:role:assign -- \
+  --email admin@example.org \
+  --organization-key example-church \
+  --role church_hq_admin \
+  --church-key example-church
+```
+
+Hostinger extras for apex auth:
+
+```bash
+PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5
+SESSION_SECRET=<long random secret ≥ 32 chars>
+SESSION_COOKIE_NAME=blessboard_org_v5_sid
+```
+
+Then open `https://blessboard.org/login` (apex only). Tenant host `/login` remains unavailable.
+
+### Verify one provisioned church (SQL + curls)
+
+```sql
+select
+  o.organization_key,
+  c.id as church_id,
+  c.church_key,
+  b.id as branch_id,
+  b.branch_key,
+  b.branch_type,
+  b.is_primary
+from platform.organizations o
+join blessboard.churches c
+  on c.organization_id = o.id
+join blessboard.branches b
+  on b.church_id = c.id
+where o.organization_key = 'example-church';
+```
+
+With Hostinger V5 foundation running and `PLATFORM_HOST_CONTEXT_MODE=diagnostic` (routing remains non-authoritative):
+
+```bash
+# Health
+curl -sS -o /dev/null -w '%{http_code}\n' https://blessboard.org/healthz
+# expect 200
+
+# Apex — no church lookup required; foundation homepage
+curl -sS -o /dev/null -w '%{http_code}\n' -H 'Host: blessboard.org' https://blessboard.org/
+# expect 200 foundation HTML (not tenant content)
+
+# Known BlessBoard tenant hostname — diagnostics may load; content still foundation/unavailable
+curl -sS -o /dev/null -w '%{http_code}\n' -H 'Host: example.blessboard.org' https://blessboard.org/
+# expect 200 foundation HTML (not church portal)
+
+curl -sS -o /dev/null -w '%{http_code}\n' -H 'Host: example.blessboard.org' https://blessboard.org/login
+# expect 503 controlled unavailable
+
+# Unknown hostname — still controlled foundation responses
+curl -sS -o /dev/null -w '%{http_code}\n' -H 'Host: unknown.blessboard.org' https://blessboard.org/healthz
+# expect 200
+
+curl -sS -o /dev/null -w '%{http_code}\n' -H 'Host: unknown.blessboard.org' https://blessboard.org/login
+# expect 503
+```
+
+Server logs may show `platform_host_comparison` (and `blessboard_catalogue_context` only on catalogue lookup errors). Never expect redirects or tenant pages from catalogue data in this phase.
 
 ## Safe SQL verification (Supabase SQL editor)
 
