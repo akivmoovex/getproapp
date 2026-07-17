@@ -1,0 +1,39 @@
+{
+  "totals": {
+    "getpro_migration_tables": 183,
+    "runtime_tables": 1,
+    "ngo_tables": 19,
+    "total_objects": 203
+  },
+  "by_target_schema": {
+    "platform": 16,
+    "getpro": 45,
+    "blessboard": 126,
+    "ngo": 16
+  },
+  "by_owning_product": {
+    "platform": 11,
+    "getpro": 45,
+    "blessboard": 128,
+    "ngo": 19
+  },
+  "by_migration_complexity": {
+    "medium": 171,
+    "critical": 6,
+    "high": 23,
+    "low": 3
+  },
+  "files": [
+    "authentication-rbac.md",
+    "current-to-target-map.csv",
+    "database-entry-points.md",
+    "empty-database-readiness.md",
+    "executive-summary.md",
+    "migration-systems.md",
+    "object-inventory.json",
+    "organization-model.md",
+    "phased-separation-plan.md",
+    "risk-register.md",
+    "sessions-jobs-storage.md"
+  ]
+}

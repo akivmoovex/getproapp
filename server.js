@@ -104,6 +104,13 @@ const { tenantHomeHrefFromPrefix } = require("./src/lib/tenantHomeHref");
 const { opsHrefMiddleware, marketingApexLoginRedirectTarget } = require("./src/lib/marketingOperationalUrls");
 const { getSubdomain, resolveHostname, isBlessBoardProductHost } = require("./src/platform/host");
 const { formatHostTenantDebugLine, listExplicitRegionalHostExamples } = require("./src/platform/tenantHostRouting");
+const { createLoadPlatformHostContext } = require("./src/platform/http/loadPlatformHostContext");
+const { createCompareLegacyHostContext } = require("./src/platform/http/compareLegacyHostContext");
+const { getPlatformHostContextMode } = require("./src/platform/config/platformHostContextMode");
+const {
+  getPlatformDeploymentCode,
+  warnOnceIfDiagnosticDeploymentUnavailable,
+} = require("./src/platform/config/platformDeploymentCode");
 
 const {
   createAttachTenantByHost,
@@ -270,6 +277,20 @@ app.use((req, res, next) => {
   next();
 });
 
+// Opt-in platform host-context diagnostics (PLATFORM_HOST_CONTEXT_MODE=diagnostic).
+// Parallel to legacy routing — fail-open; never drives auth/session/cookie/redirect decisions.
+// PLATFORM_DEPLOYMENT_CODE is the explicit running deployment identity (not DB identity / hostname).
+const platformHostContextMode = getPlatformHostContextMode();
+const platformDeploymentIdentity = getPlatformDeploymentCode();
+warnOnceIfDiagnosticDeploymentUnavailable(platformHostContextMode, platformDeploymentIdentity);
+app.use(
+  createLoadPlatformHostContext({
+    getPool: getPgPool,
+    getMode: getPlatformHostContextMode,
+    getDeploymentIdentity: getPlatformDeploymentCode,
+  })
+);
+
 // GetPro Church vertical hosts (*.church.{BASE} and church.{BASE}) — before company-subdomain classification.
 app.use(createAttachChurchContext());
 const { blessboardCanonicalRedirect } = require("./src/church/blessboardCanonicalRedirect");
@@ -314,6 +335,13 @@ app.use((req, res, next) => {
 
 // Tenant + region context before /api and /admin so staff routes can compute tenant-aware links (e.g. Cancel → regional home).
 app.use(createAttachTenantByHost());
+
+// Observational platform vs legacy host comparison (diagnostic only; after legacy context is attached).
+app.use(
+  createCompareLegacyHostContext({
+    getMode: getPlatformHostContextMode,
+  })
+);
 
 if (
   process.env.GETPRO_DEBUG_ROUTING === "1" ||
