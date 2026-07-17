@@ -4,10 +4,32 @@ Clean multi-schema foundation for a shared PostgreSQL database used initially by
 
 ## Physical topology
 
-- One physical PostgreSQL database (new empty Supabase project when hosted).
-- Shared by BlessBoard V4 (`blessboard.com`) and V5 (`blessboard.org`) initially.
-- Implement BlessBoard only in this phase.
-- Do not copy the legacy `public` schema or move legacy tables into the new schemas.
+- **V4 (`blessboard.com`)** remains on the **legacy** PostgreSQL database (`public.*`, church schemas, `ensure*Schema`).
+- **V5 (`blessboard.org`)** uses **only the new** platform foundation database (`DATABASE_URL`). Do not reconnect V5 to the legacy database. Do not use `GETPRO_DATABASE_URL` for V5.
+- The new database is a clean multi-schema foundation (platform + empty product schemas). It does **not** receive copies of legacy `public` application tables (`tenants`, `session`, etc.).
+- Implement BlessBoard product tables later under `blessboard` only — not by recreating legacy `public` shapes.
+- Do not modify the old/legacy database as part of this foundation work.
+
+## V5 foundation startup mode (temporary)
+
+When both are set:
+
+- `PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5`
+- `DEPLOYMENT_ENV=testing`
+
+the HTTP process enters **V5 foundation mode** (`src/platform/config/v5FoundationMode.js` → `src/platform/http/v5FoundationServer.js`):
+
+| Behavior | V5 foundation | V4 / legacy (`server.legacy.js`) |
+|----------|---------------|----------------------------------|
+| Database | `DATABASE_URL` only (new platform DB) | Legacy URL (`DATABASE_URL` or `GETPRO_DATABASE_URL`) |
+| `public.tenants` / `public.session` | Never queried; must not exist | Required |
+| `ensure*Schema` / runtime DDL | Skipped | Runs at boot |
+| Legacy seeds / scheduled jobs | Skipped | As before |
+| `/healthz` + apex `/` | 200 (foundation page) | Full product |
+| Login / admin / member / portals | Controlled 503 | Full product |
+| Platform host diagnostics | Optional (`PLATFORM_HOST_CONTEXT_MODE=diagnostic`); non-authoritative | Optional; non-authoritative |
+
+Foundation mode is **temporary** until auth, sessions, tenant routing, and BlessBoard product tables are migrated. Platform hostname resolution remains diagnostic only — not authoritative for routing.
 
 ## Target schemas
 
@@ -191,9 +213,11 @@ Means: **the hostname is assigned to a platform deployment that differs from the
 - Compatibility views over legacy `public`
 - Using host context for routing, redirects, auth, sessions, cookies, or jobs
 - Domain redirects (alias → canonical)
-- Application pool cutover away from legacy `public` schemas
+- Application pool cutover for V4 away from legacy `public` schemas
+- V5 authentication, sessions, tenant routing, and portals (beyond foundation mode)
 - Church/tenant data seeds in production migrations
 - Hosted Supabase connection or deploy
 - Persistent metric tables or hosted telemetry
 - Automatic demo tenant creation at startup
 - Silent reassignment of hostnames or product enrolments
+- Making platform hostname resolution authoritative

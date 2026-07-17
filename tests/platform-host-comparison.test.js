@@ -395,7 +395,7 @@ describe("platform vs legacy host comparison", () => {
   });
 
   it("comparison middleware is registered after legacy context attachment", () => {
-    const serverSrc = fs.readFileSync(path.join(__dirname, "../server.js"), "utf8");
+    const serverSrc = fs.readFileSync(path.join(__dirname, "../server.legacy.js"), "utf8");
     const tenantUse = serverSrc.indexOf("app.use(createAttachTenantByHost())");
     const compareUse = serverSrc.indexOf("createCompareLegacyHostContext({");
     assert.ok(tenantUse > 0);

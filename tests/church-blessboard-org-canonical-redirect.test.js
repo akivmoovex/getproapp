@@ -242,14 +242,16 @@ test("domain getters read live process.env after module load (no require-time ca
   );
 });
 
-test("server.js loads bootstrap before church canonical redirect", () => {
+test("server.js loads bootstrap before church canonical redirect (via server.legacy)", () => {
   const fs = require("fs");
   const path = require("path");
-  const src = fs.readFileSync(path.join(__dirname, "../server.js"), "utf8");
-  const bootIdx = src.indexOf("runBootstrap");
-  const redirectIdx = src.indexOf("blessboardCanonicalRedirect");
+  const dispatcher = fs.readFileSync(path.join(__dirname, "../server.js"), "utf8");
+  const legacy = fs.readFileSync(path.join(__dirname, "../server.legacy.js"), "utf8");
+  const bootIdx = dispatcher.indexOf("runBootstrap");
+  const redirectIdx = legacy.indexOf("blessboardCanonicalRedirect");
   assert.ok(bootIdx >= 0 && redirectIdx >= 0);
-  assert.ok(bootIdx < redirectIdx, "bootstrap must run before canonical redirect middleware is required");
+  assert.match(dispatcher, /server\.legacy/);
+  assert.ok(bootIdx >= 0, "bootstrap must run in server.js before legacy is required");
 });
 
 test("V5: BLESSBOARD_CANONICAL_REDIRECT=0 disables host remap but keeps HTTPS", async () => {

@@ -17,6 +17,7 @@ const os = require("os");
 
 const { Pool } = require("pg");
 const { isBlessBoardOrgTestingDeployment } = require("../../church/blessBoardEnv");
+const { isV5FoundationMode } = require("../../platform/config/v5FoundationMode");
 
 let pool = null;
 let startupLogged = false;
@@ -39,6 +40,7 @@ function isGetproTestDbIntent() {
  * Single source for the Postgres connection string (never log the return value).
  * With test intent (NODE_ENV=test or GETPRO_TEST_DB=1): TEST_DATABASE_URL only (empty if unset — PG tests skip).
  * BlessBoard.org V5 testing (DEPLOYMENT_ENV=testing + canonical blessboard.org): DATABASE_URL only.
+ * V5 foundation mode (PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5 + DEPLOYMENT_ENV=testing): DATABASE_URL only.
  * Otherwise: DATABASE_URL, then GETPRO_DATABASE_URL.
  * @returns {string}
  */
@@ -48,8 +50,8 @@ function getDatabaseUrl() {
     return "";
   }
   if (envStringIsSet(process.env.DATABASE_URL)) return String(process.env.DATABASE_URL).trim();
-  // V5 BlessBoard.org testing must never silently attach to GETPRO / production DB via fallback.
-  if (isBlessBoardOrgTestingDeployment()) return "";
+  // V5 must never silently attach to GETPRO / production DB via fallback.
+  if (isBlessBoardOrgTestingDeployment() || isV5FoundationMode()) return "";
   if (envStringIsSet(process.env.GETPRO_DATABASE_URL)) return String(process.env.GETPRO_DATABASE_URL).trim();
   return "";
 }
@@ -75,14 +77,16 @@ function summarizeDatabaseUrlEnv() {
   const hasDatabaseUrl = envStringIsSet(process.env.DATABASE_URL);
   const hasGetproDatabaseUrl = envStringIsSet(process.env.GETPRO_DATABASE_URL);
   const orgTesting = isBlessBoardOrgTestingDeployment();
+  const v5Foundation = isV5FoundationMode();
+  const getproFallbackDisabled = orgTesting || v5Foundation;
   let effectiveSource = "(none)";
   if (hasDatabaseUrl) effectiveSource = "DATABASE_URL";
-  else if (!orgTesting && hasGetproDatabaseUrl) effectiveSource = "GETPRO_DATABASE_URL";
+  else if (!getproFallbackDisabled && hasGetproDatabaseUrl) effectiveSource = "GETPRO_DATABASE_URL";
   return {
     hasDatabaseUrl,
     hasGetproDatabaseUrl,
     effectiveSource,
-    getproFallbackDisabled: orgTesting,
+    getproFallbackDisabled,
   };
 }
 

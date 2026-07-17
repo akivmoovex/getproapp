@@ -2,17 +2,27 @@
 
 Last updated: 2026-07-17
 
-## Phase: transactional platform tenant provisioning + diagnostic integration — complete
+## Phase: V5 foundation startup mode — complete
 
 | Item | Status |
 |------|--------|
 | Platform foundation + resolver + host diagnostics | Done |
 | `provisionPlatformTenant` transactional service | Done |
-| `npm run platform:tenant:provision` CLI | Done |
-| Ephemeral provisioning + diagnostic integration tests | Done |
-| Startup / authoritative routing cutover | Not started |
-| BlessBoard product / church tables | Not started |
+| V5 foundation HTTP startup (`PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5` + `DEPLOYMENT_ENV=testing`) | Done |
+| V4 remains on legacy DB / `server.legacy.js` unchanged behavior | Done |
+| Startup / authoritative routing cutover | Not started (diagnostics only) |
+| BlessBoard product / church tables on new DB | Not started |
+| V5 auth, sessions, tenant portals | Not started |
 | Hosted Supabase | Not started (by design) |
+
+## Architecture commitments (current)
+
+- **V4** → old/legacy database only.
+- **V5** → new platform database only (`DATABASE_URL`). No `GETPRO_DATABASE_URL`. No `public.tenants` / `public.session` / legacy app tables.
+- Legacy `public` tables are **intentionally absent** from the new database.
+- V5 foundation mode is **temporary**.
+- Platform hostname routing remains **diagnostic / non-authoritative**.
+- Authentication, tenant routing, sessions, and portals are **not yet migrated** to V5.
 
 ## Commands
 
@@ -29,12 +39,16 @@ DATABASE_URL=postgres://… npm run platform:tenant:provision -- \
   --domain-type canonical \
   --deployment blessboard-org-v5
 
+# V5 Hostinger (foundation): PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5 DEPLOYMENT_ENV=testing
+# BLESSBOARD_JOBS_ENABLED=0 DATABASE_URL=<new platform db>
+
 npm run test:db:foundation
 npm run test:platform:resolution
 npm run test:platform:http-context
 npm run test:platform:host-comparison
 npm run test:platform:provisioning
 npm run test:platform:diagnostic-integration
+npm run test:v5:foundation-startup
 ```
 
 ## Verification (2026-07-17, local)
@@ -45,16 +59,18 @@ npm run test:platform:diagnostic-integration
 - `npm run test:platform:host-comparison` → **24 pass**
 - `npm run test:platform:provisioning` → **19 pass**
 - `npm run test:platform:diagnostic-integration` → **1 pass**
-- Legacy host routing → **22 pass**
+- `npm run test:v5:foundation-startup` → **11 pass**
+- `tests/tenant-host-routing.test.js` → **20 pass**
+- `tests/church-blessboard-org-canonical-redirect.test.js` → **15 pass** (updated for `server.legacy.js`)
 
 ## Remaining blockers
 
 1. Hosted Supabase not connected.
-2. Runtime still on legacy `public` / `ensure*Schema`.
+2. V5 auth/sessions/tenant portals not migrated (foundation 503s).
 3. Platform resolution still non-authoritative.
-4. Legacy request context lacks platform organization UUID (slug/key comparison only).
-5. No BlessBoard product tables / church record bridge yet.
+4. No BlessBoard product tables on the new database yet.
+5. Legacy request context lacks platform organization UUID (slug/key comparison only).
 
 ## Exact next phase recommendation
 
-Add an optional, read-only **legacy→platform key bridge helper** (slug → `platform.organizations.id`) used only by diagnostic comparison — still no routing cutover — then promote comparison from slug/key to UUID when both sides are present.
+Migrate a minimal V5 session + BlessBoard apex auth path onto the new database (deployment-scoped session store under a product/platform schema — **not** `public.session`), still without copying legacy `public.tenants`, and keep platform hostname resolution diagnostic until product tables and org bridge exist.

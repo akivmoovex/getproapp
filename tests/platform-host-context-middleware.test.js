@@ -404,8 +404,8 @@ describe("loadPlatformHostContext middleware", () => {
     assert.equal(res.state.redirected, false);
   });
 
-  it("existing legacy routing remains registered in server.js", () => {
-    const serverSrc = fs.readFileSync(path.join(__dirname, "../server.js"), "utf8");
+  it("existing legacy routing remains registered in server.legacy.js", () => {
+    const serverSrc = fs.readFileSync(path.join(__dirname, "../server.legacy.js"), "utf8");
     assert.match(serverSrc, /createLoadPlatformHostContext/);
     assert.match(serverSrc, /createCompareLegacyHostContext/);
     assert.match(serverSrc, /createAttachChurchContext/);
