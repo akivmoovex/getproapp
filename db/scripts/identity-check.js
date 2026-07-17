@@ -4,13 +4,16 @@
 /**
  * Read and report platform.database_identity without mutating it.
  * Uses DATABASE_URL only. Never prints credentials.
+ * When DATABASE_IDENTITY_EXPECTED is set, verifies identity_key match.
  *
- * Usage: DATABASE_URL=… node db/scripts/identity-check.js
+ * Usage: DATABASE_URL=… DATABASE_IDENTITY_EXPECTED=… npm run db:identity:check
  */
 
 const { Pool } = require("pg");
-const { requireDatabaseUrl, parseDatabaseName } = require("./lib/databaseUrl");
+const { requireDatabaseUrl, parseDatabaseName, envStringIsSet } = require("./lib/databaseUrl");
 const { sanitizeHostFingerprint } = require("./lib/hostFingerprint");
+const { buildFoundationPoolConfig } = require("./lib/foundationPool");
+const { checkDatabaseIdentity, validateIdentityKey } = require("./lib/databaseIdentity");
 
 async function main() {
   let connectionString;
@@ -24,36 +27,63 @@ async function main() {
 
   const expectedDbName = parseDatabaseName(connectionString);
   const liveFingerprint = sanitizeHostFingerprint(connectionString);
-  const pool = new Pool({ connectionString, max: 2 });
+  const expectedKeyRaw = process.env.DATABASE_IDENTITY_EXPECTED;
+  let expectedKey = null;
+  if (envStringIsSet(expectedKeyRaw)) {
+    const keyCheck = validateIdentityKey(expectedKeyRaw);
+    if (!keyCheck.ok) {
+      // eslint-disable-next-line no-console
+      console.error("[db:identity:check] DATABASE_IDENTITY_EXPECTED is invalid.");
+      process.exit(1);
+    }
+    expectedKey = keyCheck.key;
+  }
+
+  const pool = new Pool(buildFoundationPoolConfig(connectionString, { max: 2 }));
 
   try {
-    const tableCheck = await pool.query(
-      `SELECT 1
-         FROM information_schema.tables
-        WHERE table_schema = 'platform' AND table_name = 'database_identity'`
-    );
-    if (tableCheck.rowCount === 0) {
+    const result = await checkDatabaseIdentity(pool, { identityKey: expectedKey || undefined });
+    if (result.code === "identity_table_missing") {
       // eslint-disable-next-line no-console
       console.error(
-        "[db:identity:check] platform.database_identity does not exist. Run npm run db:migrate first."
+        "[db:identity:check] platform.database_identity does not exist. Run npm run db:migrate or db:bootstrap:foundation first."
       );
       process.exit(1);
     }
 
-    const r = await pool.query(
-      `SELECT database_instance_id, environment_code, database_name, host_fingerprint, created_at, updated_at
-         FROM platform.database_identity
-        WHERE id = 1`
-    );
-
-    if (r.rowCount === 0) {
+    if (!result.ok && result.code === "missing") {
       // eslint-disable-next-line no-console
       console.log(
         JSON.stringify(
           {
             ok: false,
             result: "missing",
-            message: "Identity is not initialized. Run npm run db:identity:init -- --env <code> --confirm.",
+            message:
+              "Identity is not initialized. Run npm run db:bootstrap:foundation or db:identity:init.",
+            current_database: expectedDbName || null,
+            live_host_fingerprint: liveFingerprint,
+            expected_identity_key: expectedKey,
+          },
+          null,
+          2
+        )
+      );
+      process.exit(2);
+    }
+
+    if (!result.ok) {
+      // eslint-disable-next-line no-console
+      console.error(`[db:identity:check] ${result.message}`);
+      // eslint-disable-next-line no-console
+      console.log(
+        JSON.stringify(
+          {
+            ok: false,
+            result: result.code,
+            message: result.message,
+            identity_key: result.row && result.row.identity_key,
+            environment_code: result.row && result.row.environment_code,
+            expected_identity_key: expectedKey,
             current_database: expectedDbName || null,
             live_host_fingerprint: liveFingerprint,
           },
@@ -64,7 +94,7 @@ async function main() {
       process.exit(2);
     }
 
-    const row = r.rows[0];
+    const row = result.row;
     // eslint-disable-next-line no-console
     console.log(
       JSON.stringify(
@@ -72,11 +102,13 @@ async function main() {
           ok: true,
           result: "present",
           database_instance_id: row.database_instance_id,
+          identity_key: row.identity_key,
           environment_code: row.environment_code,
           database_name: row.database_name,
           host_fingerprint: row.host_fingerprint,
           current_database: expectedDbName || null,
           live_host_fingerprint: liveFingerprint,
+          expected_identity_key: expectedKey,
           created_at: row.created_at,
           updated_at: row.updated_at,
         },

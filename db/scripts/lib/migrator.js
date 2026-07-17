@@ -11,8 +11,12 @@ const path = require("path");
 const crypto = require("crypto");
 const { Pool } = require("pg");
 const { requireDatabaseUrl } = require("./databaseUrl");
+const { buildFoundationPoolConfig } = require("./foundationPool");
 
 const MODULE_ORDER = ["platform", "blessboard", "getpro", "ngo"];
+
+/** pg_advisory_lock key for foundation migrate concurrency protection */
+const FOUNDATION_MIGRATE_LOCK_KEY = 824510017;
 
 const DB_ROOT = path.resolve(__dirname, "..", "..");
 const MIGRATIONS_ROOT = path.join(DB_ROOT, "migrations");
@@ -153,7 +157,7 @@ async function applyOne(client, file) {
 async function createPool(opts = {}) {
   if (opts.pool) return { pool: opts.pool, owned: false };
   const connectionString = opts.connectionString || requireDatabaseUrl();
-  const pool = new Pool({ connectionString, max: 2 });
+  const pool = new Pool(buildFoundationPoolConfig(connectionString, { max: 2 }));
   return { pool, owned: true };
 }
 
@@ -169,7 +173,11 @@ async function migrate(opts = {}) {
     seedsApplied: [],
     seedsSkipped: [],
   };
+  let locked = false;
   try {
+    await client.query("SELECT pg_advisory_lock($1)", [FOUNDATION_MIGRATE_LOCK_KEY]);
+    locked = true;
+
     await ensureMigrationLedger(pool);
 
     const migrations = discoverMigrations();
@@ -188,18 +196,50 @@ async function migrate(opts = {}) {
 
     return summary;
   } finally {
+    if (locked) {
+      try {
+        await client.query("SELECT pg_advisory_unlock($1)", [FOUNDATION_MIGRATE_LOCK_KEY]);
+      } catch {
+        /* ignore */
+      }
+    }
     client.release();
     if (owned) await pool.end();
   }
 }
 
 /**
+ * Read-only migration status. Does not create the ledger.
  * @param {{ pool?: import('pg').Pool, connectionString?: string }} [opts]
  */
-async function status(opts = {}) {
+async function statusReadOnly(opts = {}) {
   const { pool, owned } = await createPool(opts);
   try {
-    await ensureMigrationLedger(pool);
+    const tableCheck = await pool.query(
+      `SELECT 1
+         FROM information_schema.tables
+        WHERE table_schema = 'platform' AND table_name = 'schema_migrations'`
+    );
+    if (tableCheck.rowCount === 0) {
+      const discovered = [...discoverMigrations(), ...discoverSeeds()];
+      return {
+        total: discovered.length,
+        applied: 0,
+        pending: discovered.length,
+        drift: 0,
+        ledger_missing: true,
+        rows: discovered.map((file) => ({
+          module: file.module,
+          version: file.version,
+          filename: file.filename,
+          state: "pending",
+          checksum: file.checksum,
+          applied_at: null,
+          execution_ms: null,
+        })),
+      };
+    }
+
     const discovered = [...discoverMigrations(), ...discoverSeeds()];
     const r = await pool.query(
       `SELECT module, version, filename, checksum, applied_at, execution_ms
@@ -231,6 +271,7 @@ async function status(opts = {}) {
       applied: rows.filter((x) => x.state === "applied").length,
       pending: rows.filter((x) => x.state === "pending").length,
       drift: rows.filter((x) => x.state === "drift").length,
+      ledger_missing: false,
       rows,
     };
   } finally {
@@ -238,16 +279,26 @@ async function status(opts = {}) {
   }
 }
 
+/**
+ * Migration status report (read-only). Does not create schemas or the ledger.
+ * @param {{ pool?: import('pg').Pool, connectionString?: string }} [opts]
+ */
+async function status(opts = {}) {
+  return statusReadOnly(opts);
+}
+
 module.exports = {
   MODULE_ORDER,
   DB_ROOT,
   MIGRATIONS_ROOT,
   SEEDS_ROOT,
+  FOUNDATION_MIGRATE_LOCK_KEY,
   discoverMigrations,
   discoverSeeds,
   ensureMigrationLedger,
   migrate,
   status,
+  statusReadOnly,
   sha256Hex,
   versionFromFilename,
 };

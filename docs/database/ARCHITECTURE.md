@@ -94,9 +94,13 @@ Product-specific organization details (church settings, CRM fields, NGO programm
 ## Database identity
 
 - `platform.database_identity` is a **singleton**.
-- Initialization requires an explicit CLI with confirmation (`npm run db:identity:init -- --confirm …`).
-- Allowed `environment_code` values: `preproduction`, `shared`, `production`, `testing`.
+- **`identity_key`** (env: `DATABASE_IDENTITY_EXPECTED`, e.g. `blessboard-platform-v5`) names the **physical database purpose**. It is **not** `PLATFORM_DEPLOYMENT_CODE`.
+- **`environment_code`** remains one of: `preproduction`, `shared`, `production`, `testing`.
+- Hosted first-run: `npm run db:bootstrap:foundation` (manual only) migrates, seeds, initializes identity if missing, then verifies.
+- Standalone init: `npm run db:identity:init -- --env <code> --confirm` with `DATABASE_IDENTITY_EXPECTED` set.
 - Host is stored only as a **sanitized fingerprint**, never a password or full URL.
+- Rerun with the same identity is idempotent; a different expected identity fails closed.
+- See `docs/database/HOSTED_SUPABASE_RUNBOOK.md`.
 
 ## Deployments, sessions, and jobs
 
@@ -132,7 +136,7 @@ Application code under `src/platform/` can resolve a hostname against `platform.
 
 | Concept | Source | Meaning |
 |---------|--------|---------|
-| **Database identity** | `platform.database_identity` / `church:db-identity:init` | Which physical DB environment this database is marked as |
+| **Database identity** | `platform.database_identity.identity_key` / `DATABASE_IDENTITY_EXPECTED` | Which physical DB purpose this database is marked as |
 | **Deployment identity** | `PLATFORM_DEPLOYMENT_CODE` | Which application deployment this process is (e.g. `blessboard-com-v4`, `blessboard-org-v5`) |
 
 They are **not interchangeable**. Deployment code is never inferred from hostname, `NODE_ENV`, `BASE_DOMAIN`, database URL, Git branch, cookie name, or database identity markers.

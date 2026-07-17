@@ -180,6 +180,7 @@ describe("db foundation (empty PostgreSQL)", () => {
 
     const refused = runCli("db/scripts/identity-init.js", ["--env", "testing"], {
       DATABASE_URL: databaseUrl,
+      DATABASE_IDENTITY_EXPECTED: "blessboard-platform-v5",
     });
     assert.notEqual(refused.status, 0);
     assert.match(refused.stderr, /--confirm/);
@@ -187,17 +188,25 @@ describe("db foundation (empty PostgreSQL)", () => {
     const ok = runCli(
       "db/scripts/identity-init.js",
       ["--env", "testing", "--confirm"],
-      { DATABASE_URL: databaseUrl }
+      {
+        DATABASE_URL: databaseUrl,
+        DATABASE_IDENTITY_EXPECTED: "blessboard-platform-v5",
+      }
     );
     assert.equal(ok.status, 0, ok.stderr || ok.stdout);
     const payload = JSON.parse(ok.stdout);
     assert.equal(payload.environment_code, "testing");
+    assert.equal(payload.identity_key, "blessboard-platform-v5");
     assert.ok(payload.database_instance_id);
 
-    const check = runCli("db/scripts/identity-check.js", [], { DATABASE_URL: databaseUrl });
+    const check = runCli("db/scripts/identity-check.js", [], {
+      DATABASE_URL: databaseUrl,
+      DATABASE_IDENTITY_EXPECTED: "blessboard-platform-v5",
+    });
     assert.equal(check.status, 0, check.stderr || check.stdout);
     const checkPayload = JSON.parse(check.stdout);
     assert.equal(checkPayload.result, "present");
+    assert.equal(checkPayload.identity_key, "blessboard-platform-v5");
 
     await assert.rejects(
       () =>
@@ -212,10 +221,24 @@ describe("db foundation (empty PostgreSQL)", () => {
     const overwrite = runCli(
       "db/scripts/identity-init.js",
       ["--env", "production", "--confirm"],
-      { DATABASE_URL: databaseUrl }
+      {
+        DATABASE_URL: databaseUrl,
+        DATABASE_IDENTITY_EXPECTED: "blessboard-platform-v5",
+      }
     );
     assert.notEqual(overwrite.status, 0);
-    assert.match(overwrite.stderr, /already exists/);
+    assert.match(overwrite.stderr, /already exists|environment_code|overwrite/i);
+
+    const wrongKey = runCli(
+      "db/scripts/identity-init.js",
+      ["--env", "testing", "--confirm"],
+      {
+        DATABASE_URL: databaseUrl,
+        DATABASE_IDENTITY_EXPECTED: "other-platform-key",
+      }
+    );
+    assert.notEqual(wrongKey.status, 0);
+    assert.match(wrongKey.stderr, /identity_key|does not match|overwrite/i);
   });
 
   it("deployment seed rows: V4/V5 coexistence and job flags", async () => {
