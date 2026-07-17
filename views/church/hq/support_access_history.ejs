@@ -1,0 +1,52 @@
+<%- include('../partials/hq_shell_start') %>
+<header class="church-hq-page-header">
+  <div>
+    <p class="church-hq-page-header__eyebrow"><%= organizationName %></p>
+    <h1 class="church-hq-page-header__title">Support access history</h1>
+    <p class="church-hq-page-header__subtitle">When BlessBoard support accessed your organisation</p>
+  </div>
+</header>
+
+<section class="church-card">
+  <% if (!history || !history.length) { %>
+  <p class="muted">No support access has been recorded for this organisation yet.</p>
+  <% } else { %>
+  <table class="church-table">
+    <thead>
+      <tr>
+        <th>Support staff</th>
+        <th>Purpose</th>
+        <th>Scope</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% history.forEach(function (row) { %>
+      <tr>
+        <td><%= row.support_display_name %></td>
+        <td><%= row.access_purpose %></td>
+        <td><code><%= row.approved_scope %></code></td>
+        <td><%= row.started_at %></td>
+        <td><%= row.ends_at || '—' %></td>
+        <td><%= row.status %></td>
+        <td>
+          <% if (row.high_level_actions && row.high_level_actions.length) { %>
+          <ul class="church-list-plain">
+            <% row.high_level_actions.forEach(function (a) { %>
+            <li><%= a.action_summary %> <span class="muted">(<%= a.created_at %>)</span></li>
+            <% }); %>
+          </ul>
+          <% } else { %>
+          <span class="muted">—</span>
+          <% } %>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% } %>
+</section>
+<%- include('../partials/hq_shell_end') %>

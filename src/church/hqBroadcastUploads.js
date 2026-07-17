@@ -12,7 +12,6 @@ const {
   createAnnouncementAttachment,
   countAttachmentsForAnnouncement,
 } = require("../db/pg/church/broadcastAttachmentsRepo");
-const organizationUsageRepo = require("../db/pg/church/organizationUsageRepo");
 const churchPackageUsageService = require("../services/church/churchPackageUsageService");
 const { getChurchUploadRoot } = require("./blessBoardEnv");
 
@@ -136,18 +135,31 @@ async function saveBroadcastAttachments(pool, { organizationId, broadcastId, adm
     const storedName = `${Date.now()}_${crypto.randomBytes(6).toString("hex")}${ext}`;
     const storedFilename = `${dirRel}/${storedName}`.replace(/\\/g, "/");
     const abs = path.join(dirAbs, storedName);
-    fs.writeFileSync(abs, file.buffer);
-    await createBroadcastAttachment(pool, {
-      organization_id: organizationId,
-      broadcast_id: broadcastId,
-      original_filename: original,
-      stored_filename: storedFilename,
-      mime_type: mime,
-      file_size: size,
-      created_by_hq_admin_id: adminId,
-    });
-    await organizationUsageRepo.adjustStorageBytesUsed(pool, organizationId, size);
-    saved += 1;
+    try {
+      fs.writeFileSync(abs, file.buffer);
+      await createBroadcastAttachment(pool, {
+        organization_id: organizationId,
+        broadcast_id: broadcastId,
+        original_filename: original,
+        stored_filename: storedFilename,
+        mime_type: mime,
+        file_size: size,
+        created_by_hq_admin_id: adminId,
+      });
+      // Meter already reserved atomically in assertCanConsumeStorage.
+      saved += 1;
+    } catch (persistErr) {
+      await churchPackageUsageService.releaseStorageBytes(pool, {
+        organizationId,
+        bytes: size,
+      });
+      try {
+        if (fs.existsSync(abs)) fs.unlinkSync(abs);
+      } catch {
+        /* best-effort */
+      }
+      throw persistErr;
+    }
   }
 
   if (list.length > remaining) {
@@ -227,20 +239,33 @@ async function saveAnnouncementAttachments(pool, { organizationId, branchId, ann
     const storedName = `${Date.now()}_${crypto.randomBytes(6).toString("hex")}${ext}`;
     const storedFilename = `${dirRel}/${storedName}`.replace(/\\/g, "/");
     const abs = path.join(dirAbs, storedName);
-    fs.writeFileSync(abs, file.buffer);
-    const row = await createAnnouncementAttachment(pool, {
-      organization_id: organizationId,
-      branch_id: branchId,
-      announcement_id: announcementId,
-      original_filename: original,
-      stored_filename: storedFilename,
-      mime_type: mime,
-      file_size: size,
-      created_by_admin_id: adminId,
-    });
-    await organizationUsageRepo.adjustStorageBytesUsed(pool, organizationId, size);
-    created.push(row);
-    saved += 1;
+    try {
+      fs.writeFileSync(abs, file.buffer);
+      const row = await createAnnouncementAttachment(pool, {
+        organization_id: organizationId,
+        branch_id: branchId,
+        announcement_id: announcementId,
+        original_filename: original,
+        stored_filename: storedFilename,
+        mime_type: mime,
+        file_size: size,
+        created_by_admin_id: adminId,
+      });
+      // Meter already reserved atomically in assertCanConsumeStorage.
+      created.push(row);
+      saved += 1;
+    } catch (persistErr) {
+      await churchPackageUsageService.releaseStorageBytes(pool, {
+        organizationId,
+        bytes: size,
+      });
+      try {
+        if (fs.existsSync(abs)) fs.unlinkSync(abs);
+      } catch {
+        /* best-effort */
+      }
+      throw persistErr;
+    }
   }
 
   if (list.length > remaining) {

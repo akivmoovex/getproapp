@@ -31,8 +31,8 @@ function makeApp(role) {
   app.use((req, res, next) => {
     req.isBlessBoardApexHost = true;
     if (role) {
+      // Omit durable id so enforceAdminSecurityVersion skips DB lookup (role-gate unit stub).
       req.session.adminUser = {
-        id: 1,
         username: "super",
         display_name: "Super",
         role,

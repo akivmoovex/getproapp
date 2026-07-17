@@ -28,7 +28,9 @@ async function renderBranchFeatureGate(req, res, featureId, statusCode) {
   const packageFeatureUi = req.packageFeatureUi || resolveFeatureUi(plan, featureId);
   const pool = getPgPool();
   const org = req.churchContext.organization;
-  const planContext = await churchPlanService.loadPlanContextForOrganization(pool, org.id);
+  const planContext =
+    req.churchPlanContext ||
+    (await churchPlanService.loadPlanContextForOrganization(pool, org.id, { req, plan }));
   const featureLocals = await attachPackageFeatureLocals(req, "branch");
   const code = statusCode || (packageFeatureUi.state === "hidden" ? 404 : 200);
   return res.status(code).render(
@@ -49,7 +51,9 @@ async function renderHqFeatureGate(req, res, featureId, statusCode) {
   const packageFeatureUi = req.packageFeatureUi || resolveFeatureUi(plan, featureId);
   const pool = getPgPool();
   const org = req.churchContext.organization;
-  const planContext = await churchPlanService.loadPlanContextForOrganization(pool, org.id);
+  const planContext =
+    req.churchPlanContext ||
+    (await churchPlanService.loadPlanContextForOrganization(pool, org.id, { req, plan }));
   const featureLocals = await attachPackageFeatureLocals(req, "hq");
   const code = statusCode || (packageFeatureUi.state === "hidden" ? 404 : 200);
   return res.status(code).render(

@@ -8,27 +8,20 @@
  * Usage:
  *   node scripts/run-church-scheduled-report-jobs.js
  *
- * Requires DATABASE_URL (or GETPRO_DATABASE_URL).
+ * Requires DATABASE_URL (or GETPRO_DATABASE_URL / TEST_DATABASE_URL in test).
  */
 
 require("dotenv").config({ quiet: true });
 
-const { getPgPool, closePgPool, isPgConfigured } = require("../src/db/pg/pool");
-const { ensureChurchSchema } = require("../src/db/pg/ensureChurchSchema");
+const {
+  prepareBlessBoardJobPool,
+  closePgPool,
+} = require("../src/startup/blessBoardJobPreflight");
 const { processDueScheduledReports } = require("../src/services/church/scheduledReportService");
 
 async function main() {
-  const { shouldRunBlessBoardScheduledJob } = require("../src/startup/blessBoardJobsGate");
-  if (!shouldRunBlessBoardScheduledJob("scheduled-report-jobs")) {
-    return;
-  }
-  if (!isPgConfigured()) {
-    console.error("PostgreSQL is not configured.");
-    process.exitCode = 1;
-    return;
-  }
-  const pool = getPgPool();
-  await ensureChurchSchema(pool);
+  const pool = await prepareBlessBoardJobPool("scheduled-report-jobs");
+  if (!pool) return;
   const result = await processDueScheduledReports(pool, { at: new Date(), limit: 50 });
   console.log(
     JSON.stringify(

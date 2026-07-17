@@ -145,17 +145,13 @@ async function findGrowthTrialRecord(db, organizationId) {
 }
 
 /**
- * Public trial status for account / package pages (tenant-scoped).
- * @param {import("pg").Pool | import("pg").PoolClient} db
+ * Derive public trial status from an already-loaded trial row (no SQL).
+ * @param {object|null} trial
  * @param {number} organizationId
- * @param {{ at?: Date }} [opts]
+ * @param {Date} at
  */
-async function getOrganisationTrialStatus(db, organizationId, opts = {}) {
-  const at = parseAt(opts.at);
+function buildOrganisationTrialStatusFromRecord(trial, organizationId, at) {
   const orgId = Number(organizationId);
-  if (!Number.isFinite(orgId) || orgId <= 0) return null;
-
-  const trial = await findGrowthTrialRecord(db, orgId);
   if (!trial) {
     return {
       organizationId: orgId,
@@ -181,12 +177,14 @@ async function getOrganisationTrialStatus(db, organizationId, opts = {}) {
 
   let status = trial.status;
   if (isActive) status = "active";
+  else if (endsAt.getTime() <= at.getTime() && trial.status === "active") status = "ended";
   else if (configRetained) status = "expired_retaining_config";
   else if (trial.status === "expired") status = "expired";
 
   return {
     organizationId: orgId,
     hasTrial: true,
+    isActive,
     status,
     canGrant: false,
     configRetained: Boolean(configRetained),
@@ -206,6 +204,49 @@ async function getOrganisationTrialStatus(db, organizationId, opts = {}) {
       configPurgedAt: trial.config_purged_at ? new Date(trial.config_purged_at).toISOString() : null,
     },
   };
+}
+
+/**
+ * Single trial-row lookup for entitlement + account surfaces.
+ * @param {import("pg").Pool | import("pg").PoolClient} db
+ * @param {number} organizationId
+ * @param {{ at?: Date, trialRecord?: object|null }} [opts]
+ */
+async function resolveGrowthTrialForEntitlement(db, organizationId, opts = {}) {
+  const at = parseAt(opts.at);
+  const orgId = Number(organizationId);
+  const trial =
+    opts.trialRecord !== undefined
+      ? opts.trialRecord
+      : await findGrowthTrialRecord(db, orgId);
+  const trialStatus = buildOrganisationTrialStatusFromRecord(trial, orgId, at);
+  const isActive = Boolean(trialStatus.isActive);
+  const endedPendingRestore =
+    Boolean(trial) &&
+    !isActive &&
+    trial.status === "active" &&
+    new Date(trial.ends_at).getTime() <= at.getTime();
+  return {
+    trialRecord: trial,
+    trialStatus,
+    isActive,
+    endedPendingRestore,
+  };
+}
+
+/**
+ * Public trial status for account / package pages (tenant-scoped).
+ * @param {import("pg").Pool | import("pg").PoolClient} db
+ * @param {number} organizationId
+ * @param {{ at?: Date }} [opts]
+ */
+async function getOrganisationTrialStatus(db, organizationId, opts = {}) {
+  const at = parseAt(opts.at);
+  const orgId = Number(organizationId);
+  if (!Number.isFinite(orgId) || orgId <= 0) return null;
+
+  const { trialRecord } = await resolveGrowthTrialForEntitlement(db, orgId, { at });
+  return buildOrganisationTrialStatusFromRecord(trialRecord, orgId, at);
 }
 
 /**
@@ -836,6 +877,8 @@ module.exports = {
   REMINDER_DAYS_BEFORE,
   findActiveGrowthTrial,
   findGrowthTrialRecord,
+  buildOrganisationTrialStatusFromRecord,
+  resolveGrowthTrialForEntitlement,
   getOrganisationTrialStatus,
   grantGrowthTrial,
   processTrialReminders,

@@ -944,6 +944,7 @@ module.exports = {
   updateOrganizationMetadataForPlatform,
   createBranchForOrganization,
   createInitialBranchAdminForBranch,
+  assertOrganizationCanAddBranch,
   countBranchesForOrganization,
   listBranchesForOrganization,
   getBranchProvisioningSummary,

@@ -122,7 +122,7 @@ test("scheduled reports list route does not N+1 listRunsForSchedule", () => {
   );
   assert.ok(listFn, "expected scheduled-reports list route");
   assert.doesNotMatch(listFn[0], /listRunsForSchedule/);
-  assert.match(src, /listDeliveriesForRuns/);
+  assert.match(src, /listDeliveriesForSchedule/);
 });
 
 test("scheduled report schedules query is limited", () => {
@@ -130,7 +130,8 @@ test("scheduled report schedules query is limited", () => {
     path.join(ROOT, "src/services/church/scheduledReportService.js"),
     "utf8"
   );
-  assert.match(src, /async function listSchedulesForBranch[\s\S]*LIMIT \$3/);
+  assert.match(src, /async function listSchedulesForBranch[\s\S]*LIMIT \$3 OFFSET \$4/);
+  assert.match(src, /async function listDeliveriesForSchedule[\s\S]*COUNT\(\*\)/);
 });
 
 test("broadcast deliveries are paginated (not unbounded)", () => {

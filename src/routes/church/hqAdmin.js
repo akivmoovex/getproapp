@@ -26,6 +26,7 @@ const registerHqAdminBranchesRoutes = require("./hqAdminBranches");
 const registerHqAdminBroadcastsRoutes = require("./hqAdminBroadcasts");
 const registerHqAdminAnalyticsRoutes = require("./hqAdminAnalytics");
 const registerHqAdminAuditRoutes = require("./hqAdminAudit");
+const registerHqAdminSupportAccessRoutes = require("./hqAdminSupportAccess");
 const hqBranchesRepo = require("../../db/pg/church/hqBranchesRepo");
 const hqBroadcastsRepo = require("../../db/pg/church/hqBroadcastsRepo");
 const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
@@ -256,10 +257,9 @@ function registerHqAdminRoutes(router) {
         return res.redirect("/hq/login");
       }
       const account = buildHqAdminAccountView(row, org.name);
-      const churchPackageUsageService = require("../../services/church/churchPackageUsageService");
-      const packageUsage = await churchPackageUsageService.loadPackageUsageForAccountPage(pool, org.id, {
-        reconcileStorage: false,
-      });
+      const { loadPlanContextForReq } = require("../../services/church/churchPackageFeatureGateService");
+      const planContext = await loadPlanContextForReq(req);
+      const packageUsage = planContext ? planContext.packageUsage : null;
       const churchDormancyService = require("../../services/church/churchDormancyService");
       const dormancyDiagnostic = await churchDormancyService.getOrganisationDormancyDiagnostic(pool, org.id);
       return res.render(
@@ -435,7 +435,9 @@ function registerHqAdminRoutes(router) {
       const recentActivity = await auditLogsRepo.listRecentAuditLogsForOrganization(pool, org.id, {
         limit: 5,
       });
-      const planContext = await churchPlanService.loadPlanContextForOrganization(pool, org.id);
+      const planContext = await churchPlanService.loadPlanContextForOrganization(pool, org.id, {
+        req,
+      });
 
       return res.render(
         "church/hq/dashboard",
@@ -635,6 +637,7 @@ function registerHqAdminRoutes(router) {
   registerHqAdminCrossBranchReportsRoutes(router);
   registerHqAdminAnalyticsRoutes(router);
   registerHqAdminAuditRoutes(router);
+  registerHqAdminSupportAccessRoutes(router);
   const registerHqAdminNotificationTemplatesRoutes = require("./hqAdminNotificationTemplates");
   registerHqAdminNotificationTemplatesRoutes(router);
 }

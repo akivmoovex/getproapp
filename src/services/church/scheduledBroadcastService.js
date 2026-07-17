@@ -93,23 +93,7 @@ async function resolveAudienceRecipients(pool, organizationId, broadcast) {
   const recipients = [];
 
   if (audience === "selected_recipients") {
-    const rows = await pool.query(
-      `SELECT recipient_type, recipient_id
-       FROM public.church_hq_broadcast_selected_recipients
-       WHERE broadcast_id = $1 AND organization_id = $2`,
-      [broadcast.id, organizationId]
-    );
-    // Keep listed recipients even if currently unauthorised — send path revalidates and records skips.
-    for (const row of rows.rows) {
-      recipients.push({
-        recipient_type: row.recipient_type,
-        recipient_id: Number(row.recipient_id),
-        email: null,
-        consent: true,
-        branch_id: null,
-      });
-    }
-    return dedupeRecipients(recipients);
+    return resolveSelectedRecipientsBatched(pool, organizationId, broadcast.id);
   }
 
   if (audience === "ministry") {
@@ -242,71 +226,135 @@ async function resolveAudienceRecipients(pool, organizationId, broadcast) {
 }
 
 async function resolveOneRecipient(pool, organizationId, recipientType, recipientId) {
-  if (recipientType === "member") {
+  const map = await batchResolveRecipientsByType(pool, organizationId, {
+    [recipientType]: [Number(recipientId)],
+  });
+  return map.get(`${recipientType}:${Number(recipientId)}`) || null;
+}
+
+/**
+ * Batch-validate recipient IDs by type (IN / ANY). Organization-scoped only.
+ * @returns {Promise<Map<string, object>>} key = `${type}:${id}`
+ */
+async function batchResolveRecipientsByType(pool, organizationId, groups) {
+  const map = new Map();
+  const memberIds = (groups.member || []).map(Number).filter((id) => Number.isFinite(id) && id > 0);
+  const branchAdminIds = (groups.branch_admin || [])
+    .map(Number)
+    .filter((id) => Number.isFinite(id) && id > 0);
+  const hqAdminIds = (groups.hq_admin || []).map(Number).filter((id) => Number.isFinite(id) && id > 0);
+  const leaderIds = (groups.leader || []).map(Number).filter((id) => Number.isFinite(id) && id > 0);
+
+  if (memberIds.length) {
     const r = await pool.query(
-      `SELECT id, email, communication_consent, branch_id, status
-       FROM public.church_members WHERE id = $1 AND organization_id = $2 LIMIT 1`,
-      [recipientId, organizationId]
+      `SELECT id, email, communication_consent, branch_id
+       FROM public.church_members
+       WHERE organization_id = $1 AND id = ANY($2::bigint[]) AND status = 'verified'`,
+      [organizationId, memberIds]
     );
-    const row = r.rows[0];
-    if (!row || row.status !== "verified") return null;
-    return {
-      recipient_type: "member",
-      recipient_id: row.id,
-      email: row.email || null,
-      consent: row.communication_consent !== false,
-      branch_id: row.branch_id,
-    };
+    for (const row of r.rows) {
+      map.set(`member:${row.id}`, {
+        recipient_type: "member",
+        recipient_id: row.id,
+        email: row.email || null,
+        consent: row.communication_consent !== false,
+        branch_id: row.branch_id,
+        authorised: true,
+      });
+    }
   }
-  if (recipientType === "branch_admin") {
+  if (branchAdminIds.length) {
     const r = await pool.query(
-      `SELECT id, email, communication_consent, branch_id, status
-       FROM public.church_branch_admins WHERE id = $1 AND organization_id = $2 LIMIT 1`,
-      [recipientId, organizationId]
+      `SELECT id, email, communication_consent, branch_id
+       FROM public.church_branch_admins
+       WHERE organization_id = $1 AND id = ANY($2::bigint[]) AND status = 'active'`,
+      [organizationId, branchAdminIds]
     );
-    const row = r.rows[0];
-    if (!row || row.status !== "active") return null;
-    return {
-      recipient_type: "branch_admin",
-      recipient_id: row.id,
-      email: row.email || null,
-      consent: row.communication_consent !== false,
-      branch_id: row.branch_id,
-    };
+    for (const row of r.rows) {
+      map.set(`branch_admin:${row.id}`, {
+        recipient_type: "branch_admin",
+        recipient_id: row.id,
+        email: row.email || null,
+        consent: row.communication_consent !== false,
+        branch_id: row.branch_id,
+        authorised: true,
+      });
+    }
   }
-  if (recipientType === "hq_admin") {
+  if (hqAdminIds.length) {
     const r = await pool.query(
-      `SELECT id, email, communication_consent, status
-       FROM public.church_hq_admins WHERE id = $1 AND organization_id = $2 LIMIT 1`,
-      [recipientId, organizationId]
+      `SELECT id, email, communication_consent
+       FROM public.church_hq_admins
+       WHERE organization_id = $1 AND id = ANY($2::bigint[]) AND status = 'active'`,
+      [organizationId, hqAdminIds]
     );
-    const row = r.rows[0];
-    if (!row || row.status !== "active") return null;
-    return {
-      recipient_type: "hq_admin",
-      recipient_id: row.id,
-      email: row.email || null,
-      consent: row.communication_consent !== false,
-      branch_id: null,
-    };
+    for (const row of r.rows) {
+      map.set(`hq_admin:${row.id}`, {
+        recipient_type: "hq_admin",
+        recipient_id: row.id,
+        email: row.email || null,
+        consent: row.communication_consent !== false,
+        branch_id: null,
+        authorised: true,
+      });
+    }
   }
-  if (recipientType === "leader") {
+  if (leaderIds.length) {
     const r = await pool.query(
-      `SELECT id, email, communication_consent, branch_id, status
-       FROM public.church_ministry_leaders WHERE id = $1 AND organization_id = $2 LIMIT 1`,
-      [recipientId, organizationId]
+      `SELECT id, email, communication_consent, branch_id
+       FROM public.church_ministry_leaders
+       WHERE organization_id = $1 AND id = ANY($2::bigint[]) AND status = 'active'`,
+      [organizationId, leaderIds]
     );
-    const row = r.rows[0];
-    if (!row || row.status !== "active") return null;
-    return {
-      recipient_type: "leader",
-      recipient_id: row.id,
-      email: row.email || null,
-      consent: row.communication_consent !== false,
-      branch_id: row.branch_id,
-    };
+    for (const row of r.rows) {
+      map.set(`leader:${row.id}`, {
+        recipient_type: "leader",
+        recipient_id: row.id,
+        email: row.email || null,
+        consent: row.communication_consent !== false,
+        branch_id: row.branch_id,
+        authorised: true,
+      });
+    }
   }
-  return null;
+  return map;
+}
+
+/**
+ * Selected recipients: load listed IDs, then batch-validate with IN joins.
+ * Unauthorised / cross-tenant IDs remain in the list so the send path can record skips.
+ */
+async function resolveSelectedRecipientsBatched(pool, organizationId, broadcastId) {
+  const listed = await pool.query(
+    `SELECT recipient_type, recipient_id
+     FROM public.church_hq_broadcast_selected_recipients
+     WHERE broadcast_id = $1 AND organization_id = $2`,
+    [broadcastId, organizationId]
+  );
+  const groups = { member: [], branch_admin: [], hq_admin: [], leader: [] };
+  for (const row of listed.rows) {
+    const type = String(row.recipient_type || "");
+    if (groups[type]) groups[type].push(Number(row.recipient_id));
+  }
+  const authorised = await batchResolveRecipientsByType(pool, organizationId, groups);
+  const recipients = [];
+  for (const row of listed.rows) {
+    const key = `${row.recipient_type}:${Number(row.recipient_id)}`;
+    const auth = authorised.get(key);
+    if (auth) {
+      recipients.push(auth);
+    } else {
+      recipients.push({
+        recipient_type: row.recipient_type,
+        recipient_id: Number(row.recipient_id),
+        email: null,
+        consent: true,
+        branch_id: null,
+        authorised: false,
+      });
+    }
+  }
+  return dedupeRecipients(recipients);
 }
 
 function dedupeRecipients(list) {
@@ -645,14 +693,23 @@ async function processBroadcastDelivery(pool, broadcastId, organizationId, opts 
     return { outcome: "invalid_status", broadcast };
   }
 
-  // Gate check BEFORE claiming processing: org must be active and have entitlement.
-  // If gate fails, pause without creating deliveries.
+  const channelsEarly = parseChannels(broadcast);
+  // Growth-only scheduled / external paths require broadcasts.scheduled.
+  // Foundation immediate in-app publish (approval→publish, in_app only) must remain allowed.
+  const requiresScheduledEntitlement =
+    broadcast.status === "scheduled" ||
+    broadcast.status === "partially_failed" ||
+    broadcast.status === "failed" ||
+    channelsEarly.includes("email") ||
+    opts.requireScheduledEntitlement === true;
+
+  // Organization must be active for any automated or immediate delivery.
   const org = await organizationsRepo.findOrganizationById(pool, organizationId);
   if (!org || !isOrganizationStatusEligibleForGrowthJobs(org.status)) {
     const pauseResult = await pauseScheduledBroadcastForGate(pool, broadcast, {
       status: "paused_organization_inactive",
       reason: org
-        ? `Organization status is ${org.status}; scheduled broadcasts require active status.`
+        ? `Organization status is ${org.status}; broadcasts require active status.`
         : "Organization not found.",
       organizationStatus: org ? org.status : null,
     });
@@ -663,19 +720,24 @@ async function processBroadcastDelivery(pool, broadcastId, organizationId, opts 
     };
   }
 
-  const plan = await getOrganisationPlan(pool, organizationId);
-  if (!plan || !hasEntitlement(plan, "broadcasts.scheduled")) {
-    const pauseResult = await pauseScheduledBroadcastForGate(pool, broadcast, {
-      status: "paused_no_entitlement",
-      reason: "Scheduled broadcasts require Growth. Organization does not have broadcasts.scheduled entitlement.",
-      packageCode: plan ? plan.packageCode : null,
-      organizationStatus: org.status,
-    });
-    return {
-      outcome: "paused_no_entitlement",
-      broadcast: pauseResult.broadcast || broadcast,
-      paused: pauseResult.paused,
-    };
+  let plan = opts.plan || null;
+  if (requiresScheduledEntitlement) {
+    plan = plan || (await getOrganisationPlan(pool, organizationId, { organization: org }));
+    if (!plan || !hasEntitlement(plan, "broadcasts.scheduled")) {
+      const pauseResult = await pauseScheduledBroadcastForGate(pool, broadcast, {
+        status: "paused_no_entitlement",
+        reason: "Scheduled broadcasts require Growth. Organization does not have broadcasts.scheduled entitlement.",
+        packageCode: plan ? plan.packageCode : null,
+        organizationStatus: org.status,
+      });
+      return {
+        outcome: "paused_no_entitlement",
+        broadcast: pauseResult.broadcast || broadcast,
+        paused: pauseResult.paused,
+      };
+    }
+  } else if (!plan && channelsEarly.includes("email")) {
+    plan = await getOrganisationPlan(pool, organizationId, { organization: org });
   }
 
   // Claim processing (prevent duplicate concurrent jobs).
@@ -697,22 +759,42 @@ async function processBroadcastDelivery(pool, broadcastId, organizationId, opts 
     return { outcome: "duplicate_job", broadcast };
   }
 
-  // Parse channels (entitlement already verified above, no downgrade to in_app).
-  const channels = parseChannels(broadcast);
+  // Parse channels (Growth scheduled path already gated; Foundation in-app continues).
+  const channels = channelsEarly;
 
   const recipients = await resolveAudienceRecipients(pool, organizationId, broadcast);
   const emailSubject = safeBroadcastEmailSubject(org && org.name, broadcast.category);
+  const audience = String(broadcast.audience || "members");
+  // Set-based audience queries already hydrated live rows; selected uses batch IN validation.
+  const needsSendTimeReauth = audience === "selected_recipients";
+
+  let authorisedList = recipients;
+  if (needsSendTimeReauth) {
+    // Already batch-validated in resolveSelectedRecipientsBatched (authorised flag).
+    authorisedList = recipients;
+  } else {
+    // Mark set-based rows as authorised (live JOIN/SELECT already applied status filters).
+    authorisedList = recipients.map((rec) =>
+      rec.recipient_type === "public_branch" || rec.authorised === false
+        ? rec
+        : { ...rec, authorised: rec.authorised !== false }
+    );
+  }
 
   let delivered = 0;
   let failed = 0;
   let skipped = 0;
 
-  for (const rec of recipients) {
-    // Re-evaluate authorisation at send time
+  // Classify recipients once (no per-recipient SQL).
+  const emailEligible = [];
+  for (const rec of authorisedList) {
     const stillAuth =
       rec.recipient_type === "public_branch"
         ? rec
-        : await resolveOneRecipient(pool, organizationId, rec.recipient_type, rec.recipient_id);
+        : rec.authorised === false
+          ? null
+          : rec;
+
     if (!stillAuth) {
       for (const channel of channels) {
         const inserted = await insertDelivery(pool, {
@@ -776,16 +858,72 @@ async function processBroadcastDelivery(pool, broadcastId, organizationId, opts 
         if (inserted) skipped += 1;
         continue;
       }
+      emailEligible.push({ stillAuth, key });
+    }
+  }
 
-      try {
-        await churchPackageUsageService.recordExternalEmailSend(pool, {
-          organizationId,
-          category: "hq_broadcast",
-          count: 1,
-          at,
-          actorType: "system",
-          actorId: null,
+  if (channels.includes("email") && emailEligible.length) {
+    // Skip quota for deliveries already recorded (idempotent retry).
+    const existingKeys = await pool.query(
+      `SELECT idempotency_key, status
+       FROM public.church_hq_broadcast_deliveries
+       WHERE broadcast_id = $1 AND organization_id = $2 AND channel = 'email'
+         AND idempotency_key = ANY($3::text[])`,
+      [broadcastId, organizationId, emailEligible.map((e) => e.key)]
+    );
+    const alreadyDelivered = new Set(
+      existingKeys.rows.filter((r) => r.status === "delivered").map((r) => r.idempotency_key)
+    );
+    const toSend = emailEligible.filter((e) => !alreadyDelivered.has(e.key));
+    for (const e of emailEligible) {
+      if (alreadyDelivered.has(e.key)) {
+        // Prior successful delivery — do not re-charge quota.
+        continue;
+      }
+    }
+
+    let reservation = {
+      reserved: 0,
+      usageMonth: null,
+      exempt: false,
+    };
+    if (toSend.length) {
+      if (!plan) {
+        plan = await getOrganisationPlan(pool, organizationId, { organization: org });
+      }
+      reservation = await churchPackageUsageService.reserveExternalEmailSends(pool, {
+        organizationId,
+        category: "hq_broadcast",
+        count: toSend.length,
+        at,
+        plan,
+        organization: org,
+        actorType: "system",
+        actorId: null,
+      });
+    }
+
+    let slotsLeft = reservation.reserved || 0;
+
+    for (const { stillAuth, key } of toSend) {
+      if (slotsLeft <= 0) {
+        const inserted = await insertDelivery(pool, {
+          organization_id: organizationId,
+          broadcast_id: broadcastId,
+          channel: "email",
+          recipient_type: stillAuth.recipient_type,
+          recipient_id: stillAuth.recipient_id,
+          recipient_email: stillAuth.email,
+          status: "skipped_quota",
+          idempotency_key: key,
+          error_message: "Monthly external email limit reached for this organisation package.",
         });
+        if (inserted) skipped += 1;
+        continue;
+      }
+
+      slotsLeft -= 1;
+      try {
         const inserted = await insertDelivery(pool, {
           organization_id: organizationId,
           broadcast_id: broadcastId,
@@ -798,39 +936,46 @@ async function processBroadcastDelivery(pool, broadcastId, organizationId, opts 
         });
         if (inserted) {
           delivered += 1;
-          // Subject stored only as non-confidential metadata via audit aggregate, not per row
           void emailSubject;
+        } else {
+          // Conflict: another worker already delivered — release this reserved slot.
+          await churchPackageUsageService.releaseExternalEmailSends(pool, {
+            organizationId,
+            usageMonth: reservation.usageMonth,
+            count: 1,
+            exempt: reservation.exempt,
+          });
         }
       } catch (err) {
-        if (err && err.code === "PACKAGE_EXTERNAL_EMAIL_LIMIT") {
-          const inserted = await insertDelivery(pool, {
-            organization_id: organizationId,
-            broadcast_id: broadcastId,
-            channel: "email",
-            recipient_type: stillAuth.recipient_type,
-            recipient_id: stillAuth.recipient_id,
-            recipient_email: stillAuth.email,
-            status: "skipped_quota",
-            idempotency_key: key,
-            error_message: err.message,
-          });
-          if (inserted) skipped += 1;
-        } else {
-          const inserted = await insertDelivery(pool, {
-            organization_id: organizationId,
-            broadcast_id: broadcastId,
-            channel: "email",
-            recipient_type: stillAuth.recipient_type,
-            recipient_id: stillAuth.recipient_id,
-            recipient_email: stillAuth.email,
-            status: "failed",
-            idempotency_key: key,
-            error_message: String(err.message || "email failed").slice(0, 500),
-          });
-          if (inserted) failed += 1;
-          else failed += 1;
-        }
+        await churchPackageUsageService.releaseExternalEmailSends(pool, {
+          organizationId,
+          usageMonth: reservation.usageMonth,
+          count: 1,
+          exempt: reservation.exempt,
+        });
+        const inserted = await insertDelivery(pool, {
+          organization_id: organizationId,
+          broadcast_id: broadcastId,
+          channel: "email",
+          recipient_type: stillAuth.recipient_type,
+          recipient_id: stillAuth.recipient_id,
+          recipient_email: stillAuth.email,
+          status: "failed",
+          idempotency_key: key,
+          error_message: String(err.message || "email failed").slice(0, 500),
+        });
+        failed += 1;
+        void inserted;
       }
+    }
+
+    if (slotsLeft > 0) {
+      await churchPackageUsageService.releaseExternalEmailSends(pool, {
+        organizationId,
+        usageMonth: reservation.usageMonth,
+        count: slotsLeft,
+        exempt: reservation.exempt,
+      });
     }
   }
 
@@ -942,8 +1087,17 @@ async function retryFailedDeliveries(pool, broadcastId, organizationId) {
   let delivered = 0;
   let stillFailed = 0;
   const at = new Date();
+
+  const groups = { member: [], branch_admin: [], hq_admin: [], leader: [] };
   for (const row of failed.rows) {
-    const stillAuth = await resolveOneRecipient(pool, organizationId, row.recipient_type, row.recipient_id);
+    const type = String(row.recipient_type || "");
+    if (groups[type]) groups[type].push(Number(row.recipient_id));
+  }
+  const authMap = await batchResolveRecipientsByType(pool, organizationId, groups);
+
+  const retryable = [];
+  for (const row of failed.rows) {
+    const stillAuth = authMap.get(`${row.recipient_type}:${Number(row.recipient_id)}`);
     if (!stillAuth || !stillAuth.consent || !stillAuth.email) {
       await pool.query(
         `UPDATE public.church_hq_broadcast_deliveries
@@ -955,13 +1109,29 @@ async function retryFailedDeliveries(pool, broadcastId, organizationId) {
       );
       continue;
     }
+    retryable.push({ row, stillAuth });
+  }
+
+  let reservation = { reserved: 0, usageMonth: null, exempt: false };
+  if (retryable.length) {
+    reservation = await churchPackageUsageService.reserveExternalEmailSends(pool, {
+      organizationId,
+      category: "hq_broadcast",
+      count: retryable.length,
+      at,
+      plan,
+      organization: org,
+    });
+  }
+
+  let slotsLeft = reservation.reserved || 0;
+  for (const { row, stillAuth } of retryable) {
+    if (slotsLeft <= 0) {
+      stillFailed += 1;
+      continue;
+    }
+    slotsLeft -= 1;
     try {
-      await churchPackageUsageService.recordExternalEmailSend(pool, {
-        organizationId,
-        category: "hq_broadcast",
-        count: 1,
-        at,
-      });
       await pool.query(
         `UPDATE public.church_hq_broadcast_deliveries
          SET status = 'delivered',
@@ -973,15 +1143,30 @@ async function retryFailedDeliveries(pool, broadcastId, organizationId) {
       );
       delivered += 1;
     } catch (err) {
-      stillFailed += 1;
+      await churchPackageUsageService.releaseExternalEmailSends(pool, {
+        organizationId,
+        usageMonth: reservation.usageMonth,
+        count: 1,
+        exempt: reservation.exempt,
+      });
       await pool.query(
         `UPDATE public.church_hq_broadcast_deliveries
          SET error_message = $2
          WHERE id = $1`,
         [row.id, String(err.message || "retry failed").slice(0, 500)]
       );
+      stillFailed += 1;
     }
   }
+  if (slotsLeft > 0) {
+    await churchPackageUsageService.releaseExternalEmailSends(pool, {
+      organizationId,
+      usageMonth: reservation.usageMonth,
+      count: slotsLeft,
+      exempt: reservation.exempt,
+    });
+  }
+  stillFailed = retryable.length - delivered;
 
   // Remaining failed?
   const rem = await pool.query(
@@ -1131,32 +1316,46 @@ async function listScheduledBroadcasts(pool, organizationId) {
 }
 
 async function listDeliveries(pool, broadcastId, organizationId, opts = {}) {
-  const page = Math.max(Number(opts.page) || 1, 1);
-  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
-  const offset = (page - 1) * limit;
-  const [rows, countR] = await Promise.all([
-    pool.query(
-      `SELECT * FROM public.church_hq_broadcast_deliveries
-       WHERE broadcast_id = $1 AND organization_id = $2
-       ORDER BY id ASC
-       LIMIT $3 OFFSET $4`,
-      [broadcastId, organizationId, limit, offset]
-    ),
-    pool.query(
-      `SELECT COUNT(*)::int AS n FROM public.church_hq_broadcast_deliveries
-       WHERE broadcast_id = $1 AND organization_id = $2`,
-      [broadcastId, organizationId]
-    ),
-  ]);
+  const {
+    parseAdminListPageParams,
+    buildAdminListPageResult,
+  } = require("../../church/adminListPagination");
+  const parsed = parseAdminListPageParams(
+    { page: opts.page, limit: opts.limit },
+    { defaultLimit: 50, maxLimit: 100 }
+  );
+
+  const countR = await pool.query(
+    `SELECT COUNT(*)::int AS n FROM public.church_hq_broadcast_deliveries
+     WHERE broadcast_id = $1 AND organization_id = $2`,
+    [broadcastId, organizationId]
+  );
   const total = Number(countR.rows[0] && countR.rows[0].n) || 0;
-  const totalPages = Math.max(Math.ceil(total / limit), 1);
+  const meta = buildAdminListPageResult({
+    page: parsed.page,
+    limit: parsed.limit,
+    total,
+  });
+
+  const rows = await pool.query(
+    `SELECT * FROM public.church_hq_broadcast_deliveries
+     WHERE broadcast_id = $1 AND organization_id = $2
+     ORDER BY id ASC
+     LIMIT $3 OFFSET $4`,
+    [broadcastId, organizationId, meta.limit, meta.offset]
+  );
+
   return {
     rows: rows.rows,
-    page,
-    limit,
-    total,
-    totalPages,
-    hasMore: page < totalPages,
+    page: meta.page,
+    limit: meta.limit,
+    total: meta.total,
+    totalPages: meta.totalPages,
+    from: meta.from,
+    to: meta.to,
+    hasPrev: meta.hasPrev,
+    hasNext: meta.hasNext,
+    hasMore: meta.hasNext,
   };
 }
 
@@ -1278,6 +1477,8 @@ module.exports = {
   jobKeyForBroadcast,
   assertCanScheduleExternalBroadcast,
   resolveAudienceRecipients,
+  batchResolveRecipientsByType,
+  resolveSelectedRecipientsBatched,
   moveToPreview,
   computeAndStoreAudienceEstimate,
   submitForApproval,

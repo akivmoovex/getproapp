@@ -2,7 +2,9 @@
 
 Deploy and operate BlessBoard (`blessboard.com`, `*.blessboard.com`) alongside GetPro (`getproapp.org`).
 
-**Last updated:** 2026-07-10 (public visual freeze CSS **v36** — pre–Kafue Baptist)
+**Last updated:** 2026-07-17
+
+> **V5 pilot ops:** For Foundation / limited Growth controlled pilots, use **[blessboard-v5-operational-readiness.md](./blessboard-v5-operational-readiness.md)** (deployment, backup/restore, workers, monitoring, onboarding, rollback) and run `npm run church:pilot:readiness` before promote.
 
 ---
 

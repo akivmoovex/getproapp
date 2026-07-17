@@ -127,6 +127,7 @@ function branchAdminLocals(req, extra) {
         packageFeatureNav: listNavFeatureGates(req.churchPackagePlan, "branch"),
       }
     : packageFeatureLocalsFromOrg(org, "branch");
+  const planContext = (extra && extra.planContext) || req.churchPlanContext || null;
   return {
     churchName: branch.name || org.name,
     pageTitle: branch.name || org.name,
@@ -139,6 +140,7 @@ function branchAdminLocals(req, extra) {
     adminAvatarUrl: "/church/images/branch-admin/avatar-pastor-stitch.jpg",
     ...csrf,
     ...packageLocals,
+    ...(planContext ? { planContext } : {}),
     ...(extra || {}),
   };
 }

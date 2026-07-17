@@ -17,6 +17,12 @@
         <% if (!(schedules || []).length) { %>
         <p class="church-branch-empty">No scheduled reports yet.</p>
         <% } else { %>
+        <% if (schedulePagination) { %>
+        <p class="church-branch-panel__hint">
+          Showing <%= schedulePagination.from %>–<%= schedulePagination.to %> of <%= schedulePagination.total %>
+          (page <%= schedulePagination.page %> of <%= schedulePagination.totalPages %>).
+        </p>
+        <% } %>
         <div class="church-branch-table-wrap">
           <table class="church-branch-table">
             <thead>
@@ -68,6 +74,16 @@
             </tbody>
           </table>
         </div>
+        <% if (schedulePagination && (schedulePagination.prevUrl || schedulePagination.nextUrl)) { %>
+        <nav class="church-branch-actions" aria-label="Schedule list pages" data-schedule-pagination>
+          <% if (schedulePagination.prevUrl) { %>
+          <a class="church-btn church-btn--ghost church-btn--sm" href="<%= schedulePagination.prevUrl %>">Previous</a>
+          <% } %>
+          <% if (schedulePagination.nextUrl) { %>
+          <a class="church-btn church-btn--ghost church-btn--sm" href="<%= schedulePagination.nextUrl %>">Next</a>
+          <% } %>
+        </nav>
+        <% } %>
         <% } %>
       </section>
 

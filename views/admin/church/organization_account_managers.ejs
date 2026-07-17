@@ -1,0 +1,63 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'BlessBoard Admin', activeNav: activeNav || 'church_platform_orgs', pageTitle: 'Account managers' }) %>
+<header class="admin-dashboard__header">
+  <div>
+    <h1 class="admin-dashboard__title">Account managers</h1>
+    <p class="admin-dashboard__subtitle muted"><%= organization.name %></p>
+  </div>
+  <div class="admin-toolbar">
+    <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id, label: 'Back to organisation' }) %>
+    <%- include('../../partials/components/button', { variant: 'default', href: '/admin/church/organizations/' + organization.id + '/support-access', label: 'Support access' }) %>
+  </div>
+</header>
+
+<% if (typeof notice !== 'undefined' && notice) { %><div class="flash flash--success" role="status"><%= notice %></div><% } %>
+<% if (typeof error !== 'undefined' && error) { %><div class="flash flash--error" role="alert"><%= error %></div><% } %>
+
+<section class="card card--mb-xl" style="padding:1.25rem;">
+  <h2 class="section-title section-title--flush">Primary and backup</h2>
+  <p class="muted">Country-scoped staff only. Internal notes are not shown to churches.</p>
+  <% if (canAssign) { %>
+  <form method="post" action="/admin/church/organizations/<%= organization.id %>/account-managers" class="admin-form">
+    <%- include('./partials/csrf_field') %>
+    <div class="admin-form__row">
+      <label for="primary_admin_user_id">Primary account manager</label>
+      <select id="primary_admin_user_id" name="primary_admin_user_id">
+        <option value="">— None —</option>
+        <% (eligibleStaff || []).forEach(function (u) { %>
+        <option value="<%= u.id %>" <%= assignment && Number(assignment.primary_admin_user_id) === Number(u.id) ? 'selected' : '' %>><%= u.username %> (<%= u.role %>)</option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="admin-form__row">
+      <label for="backup_admin_user_id">Backup account manager</label>
+      <select id="backup_admin_user_id" name="backup_admin_user_id">
+        <option value="">— None —</option>
+        <% (eligibleStaff || []).forEach(function (u) { %>
+        <option value="<%= u.id %>" <%= assignment && Number(assignment.backup_admin_user_id) === Number(u.id) ? 'selected' : '' %>><%= u.username %> (<%= u.role %>)</option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="admin-form__row">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="active" <%= !assignment || assignment.status === 'active' ? 'selected' : '' %>>Active</option>
+        <option value="inactive" <%= assignment && assignment.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+      </select>
+    </div>
+    <div class="admin-form__row">
+      <label for="internal_note">Internal note (optional)</label>
+      <textarea id="internal_note" name="internal_note" rows="3"><%= assignment && assignment.internal_note ? assignment.internal_note : '' %></textarea>
+    </div>
+    <button type="submit" class="btn btn--primary">Save assignment</button>
+  </form>
+  <% } else { %>
+  <p class="muted">You do not have permission to change account managers.</p>
+  <% } %>
+  <% if (assignment) { %>
+  <dl class="admin-dl" style="margin-top:1rem;">
+    <dt>Assigned at</dt><dd><%= assignment.assigned_at %></dd>
+    <dt>Assigned by</dt><dd><%= assignment.assigned_by_username || '—' %></dd>
+  </dl>
+  <% } %>
+</section>
+<%- include('../../partials/platform_admin_shell_end') %>

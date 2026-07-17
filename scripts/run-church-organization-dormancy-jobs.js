@@ -14,22 +14,15 @@
 
 require("dotenv").config({ quiet: true });
 
-const { getPgPool, closePgPool, isPgConfigured } = require("../src/db/pg/pool");
-const { ensureChurchSchema } = require("../src/db/pg/ensureChurchSchema");
+const {
+  prepareBlessBoardJobPool,
+  closePgPool,
+} = require("../src/startup/blessBoardJobPreflight");
 const { processFoundationInactivityJobs } = require("../src/services/church/churchDormancyService");
 
 async function main() {
-  const { shouldRunBlessBoardScheduledJob } = require("../src/startup/blessBoardJobsGate");
-  if (!shouldRunBlessBoardScheduledJob("organization-dormancy-jobs")) {
-    return;
-  }
-  if (!isPgConfigured()) {
-    console.error("PostgreSQL is not configured.");
-    process.exitCode = 1;
-    return;
-  }
-  const pool = getPgPool();
-  await ensureChurchSchema(pool);
+  const pool = await prepareBlessBoardJobPool("organization-dormancy-jobs");
+  if (!pool) return;
   const result = await processFoundationInactivityJobs(pool, { at: new Date() });
   const summary = {
     ok: true,

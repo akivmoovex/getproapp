@@ -62,8 +62,13 @@ async function recipientHasFinancePermission(pool, recipientType, recipientId, o
   return actorHasFinancePermission(pool, recipientType, recipientId, organizationId, branchId);
 }
 
-async function assertCanScheduleReports(pool, organizationId) {
-  const plan = await getOrganisationPlan(pool, organizationId);
+async function assertCanScheduleReports(pool, organizationId, opts = {}) {
+  const plan =
+    opts.plan ||
+    (await getOrganisationPlan(pool, organizationId, {
+      organization: opts.organization,
+      at: opts.at,
+    }));
   if (!plan) {
     const err = new Error("Organisation not found.");
     err.code = "ORG_NOT_FOUND";
@@ -87,42 +92,70 @@ async function assertCanScheduleReports(pool, organizationId) {
  * Validate recipient remains authorised for this org (and branch when branch_admin).
  */
 async function resolveAuthorisedRecipient(db, opts) {
+  const map = await batchResolveAuthorisedRecipients(db, {
+    organizationId: opts.organizationId,
+    branchId: opts.branchId,
+    recipients: [{ recipient_type: opts.recipient_type, recipient_id: opts.recipient_id }],
+  });
+  return map.get(`${opts.recipient_type}:${Number(opts.recipient_id)}`) || null;
+}
+
+/**
+ * Batch-validate schedule recipients (IN queries). Cross-org / wrong-branch IDs excluded.
+ * @returns {Promise<Map<string, object>>}
+ */
+async function batchResolveAuthorisedRecipients(db, opts) {
   const organizationId = Number(opts.organizationId);
   const branchId = opts.branchId != null ? Number(opts.branchId) : null;
-  const recipientType = String(opts.recipient_type || "");
-  const recipientId = Number(opts.recipient_id);
-
-  if (recipientType === "branch_admin") {
-    const admin = await branchAdminsRepo.findBranchAdminById(db, recipientId);
-    if (
-      !admin ||
-      Number(admin.organization_id) !== organizationId ||
-      admin.status !== "active" ||
-      (branchId && Number(admin.branch_id) !== branchId)
-    ) {
-      return null;
-    }
-    return {
-      recipient_type: "branch_admin",
-      recipient_id: admin.id,
-      email: admin.email,
-      full_name: admin.full_name,
-    };
+  const recipients = Array.isArray(opts.recipients) ? opts.recipients : [];
+  const branchAdminIds = [];
+  const hqAdminIds = [];
+  for (const rec of recipients) {
+    const id = Number(rec.recipient_id);
+    if (!Number.isFinite(id) || id <= 0) continue;
+    if (rec.recipient_type === "branch_admin") branchAdminIds.push(id);
+    else if (rec.recipient_type === "hq_admin") hqAdminIds.push(id);
   }
 
-  if (recipientType === "hq_admin") {
-    const admin = await hqAdminsRepo.findHqAdminById(db, recipientId);
-    if (!admin || Number(admin.organization_id) !== organizationId || admin.status !== "active") {
-      return null;
+  const map = new Map();
+  if (branchAdminIds.length) {
+    const r = await db.query(
+      `SELECT id, email, full_name, branch_id, can_view_finance
+       FROM public.church_branch_admins
+       WHERE organization_id = $1
+         AND id = ANY($2::bigint[])
+         AND status = 'active'
+         AND ($3::bigint IS NULL OR branch_id = $3)`,
+      [organizationId, branchAdminIds, branchId]
+    );
+    for (const admin of r.rows) {
+      map.set(`branch_admin:${admin.id}`, {
+        recipient_type: "branch_admin",
+        recipient_id: admin.id,
+        email: admin.email,
+        full_name: admin.full_name,
+        can_view_finance: Boolean(admin.can_view_finance),
+      });
     }
-    return {
-      recipient_type: "hq_admin",
-      recipient_id: admin.id,
-      email: admin.email,
-      full_name: admin.full_name,
-    };
   }
-  return null;
+  if (hqAdminIds.length) {
+    const r = await db.query(
+      `SELECT id, email, full_name, can_view_finance
+       FROM public.church_hq_admins
+       WHERE organization_id = $1 AND id = ANY($2::bigint[]) AND status = 'active'`,
+      [organizationId, hqAdminIds]
+    );
+    for (const admin of r.rows) {
+      map.set(`hq_admin:${admin.id}`, {
+        recipient_type: "hq_admin",
+        recipient_id: admin.id,
+        email: admin.email,
+        full_name: admin.full_name,
+        can_view_finance: Boolean(admin.can_view_finance),
+      });
+    }
+  }
+  return map;
 }
 
 function validateScheduleInput(body, opts = {}) {
@@ -191,17 +224,49 @@ function validateScheduleInput(body, opts = {}) {
 }
 
 async function listSchedulesForBranch(db, organizationId, branchId, opts = {}) {
-  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
+  const {
+    parseAdminListPageParams,
+    buildAdminListPageResult,
+  } = require("../../church/adminListPagination");
+  const parsed = parseAdminListPageParams(
+    { page: opts.page, limit: opts.limit },
+    { defaultLimit: 50, maxLimit: 100 }
+  );
+
+  const countR = await db.query(
+    `SELECT COUNT(*)::int AS n
+     FROM public.church_scheduled_reports s
+     WHERE s.organization_id = $1 AND s.branch_id = $2 AND s.status <> 'cancelled'`,
+    [organizationId, branchId]
+  );
+  const total = Number(countR.rows[0] && countR.rows[0].n) || 0;
+  const meta = buildAdminListPageResult({
+    page: parsed.page,
+    limit: parsed.limit,
+    total,
+  });
+
   const r = await db.query(
     `SELECT s.*,
             (SELECT COUNT(*)::int FROM public.church_scheduled_report_recipients r WHERE r.schedule_id = s.id) AS recipient_count
      FROM public.church_scheduled_reports s
      WHERE s.organization_id = $1 AND s.branch_id = $2 AND s.status <> 'cancelled'
      ORDER BY s.updated_at DESC, s.id DESC
-     LIMIT $3`,
-    [organizationId, branchId, limit]
+     LIMIT $3 OFFSET $4`,
+    [organizationId, branchId, meta.limit, meta.offset]
   );
-  return r.rows;
+
+  return {
+    rows: r.rows,
+    page: meta.page,
+    limit: meta.limit,
+    total: meta.total,
+    totalPages: meta.totalPages,
+    from: meta.from,
+    to: meta.to,
+    hasPrev: meta.hasPrev,
+    hasNext: meta.hasNext,
+  };
 }
 
 async function findScheduleForBranch(db, scheduleId, organizationId, branchId) {
@@ -464,15 +529,18 @@ async function executeScheduleRun(pool, schedule, opts = {}) {
     return { outcome: "skipped_organization_inactive", jobKey };
   }
 
-  // Re-validate package entitlement at run time.
+  // Re-validate package entitlement at run time (plan resolved once for this run).
+  let plan;
   try {
-    await assertCanScheduleReports(pool, schedule.organization_id);
+    plan = await assertCanScheduleReports(pool, schedule.organization_id, {
+      organization: org,
+      at,
+    });
   } catch (err) {
     if (err && err.code === "FOUNDATION_SCHEDULE_FORBIDDEN") {
       const pauseReason = sanitizeJobPauseReason(
         "Scheduled reports require Growth. Organization does not have reports.scheduled entitlement."
       );
-      const plan = await getOrganisationPlan(pool, schedule.organization_id).catch(() => null);
       const pausedEnt = await pool.query(
         `UPDATE public.church_scheduled_reports
          SET status = 'paused', next_run_at = NULL, pause_reason = $2, paused_at = $3, updated_at = now()
@@ -495,7 +563,7 @@ async function executeScheduleRun(pool, schedule, opts = {}) {
             previous_status: "enabled",
             new_status: "paused",
             reason: pauseReason,
-            package_code: plan ? plan.packageCode : null,
+            package_code: null,
             organization_status: org.status,
           },
         });
@@ -557,9 +625,12 @@ async function executeScheduleRun(pool, schedule, opts = {}) {
       actorId: null,
       consume: true,
       at,
+      plan,
+      organization: org,
     });
   } catch (err) {
     if (err && err.code === "PACKAGE_SCHEDULED_REPORT_LIMIT") {
+      // Claim remains as skipped so the same job_key cannot re-bill; meter was not reserved.
       await pool.query(
         `UPDATE public.church_scheduled_report_runs
          SET status = 'skipped', finished_at = now(), last_error = $2
@@ -567,6 +638,12 @@ async function executeScheduleRun(pool, schedule, opts = {}) {
         [run.id, err.message]
       );
       return { outcome: "skipped_quota", jobKey, runId: run.id, error: err.message };
+    }
+    // Failed before quota reservation: drop the claim so a retry can proceed.
+    try {
+      await pool.query(`DELETE FROM public.church_scheduled_report_runs WHERE id = $1`, [run.id]);
+    } catch {
+      /* best-effort */
     }
     throw err;
   }
@@ -594,14 +671,16 @@ async function executeScheduleRun(pool, schedule, opts = {}) {
     let failed = 0;
     let skipped = 0;
 
+    const authMap = await batchResolveAuthorisedRecipients(pool, {
+      organizationId: schedule.organization_id,
+      branchId: schedule.branch_id,
+      recipients,
+    });
+
+    const deliverable = [];
     for (const rec of recipients) {
       const idempotencyKey = `delivery:${run.id}:${rec.recipient_type}:${rec.recipient_id}`;
-      const authorised = await resolveAuthorisedRecipient(pool, {
-        organizationId: schedule.organization_id,
-        branchId: schedule.branch_id,
-        recipient_type: rec.recipient_type,
-        recipient_id: rec.recipient_id,
-      });
+      const authorised = authMap.get(`${rec.recipient_type}:${Number(rec.recipient_id)}`);
 
       if (!authorised) {
         try {
@@ -627,40 +706,74 @@ async function executeScheduleRun(pool, schedule, opts = {}) {
         continue;
       }
 
-      if (reportDef.requiresFinance) {
-        const financeOk = await recipientHasFinancePermission(
-          pool,
-          authorised.recipient_type,
-          authorised.recipient_id,
-          schedule.organization_id,
-          schedule.branch_id
-        );
-        if (!financeOk) {
-          try {
-            await pool.query(
-              `INSERT INTO public.church_scheduled_report_deliveries (
-                 run_id, organization_id, recipient_type, recipient_id, recipient_email,
-                 status, idempotency_key, error_message
-               ) VALUES ($1,$2,$3,$4,$5,'skipped_unauthorised',$6,$7)
-               ON CONFLICT (idempotency_key) DO NOTHING`,
-              [
-                run.id,
-                schedule.organization_id,
-                authorised.recipient_type,
-                authorised.recipient_id,
-                authorised.email,
-                idempotencyKey,
-                "Recipient lacks finance permission for giving reports.",
-              ]
-            );
-            skipped += 1;
-          } catch {
-            /* ignore */
-          }
-          continue;
+      if (reportDef.requiresFinance && !authorised.can_view_finance) {
+        try {
+          await pool.query(
+            `INSERT INTO public.church_scheduled_report_deliveries (
+               run_id, organization_id, recipient_type, recipient_id, recipient_email,
+               status, idempotency_key, error_message
+             ) VALUES ($1,$2,$3,$4,$5,'skipped_unauthorised',$6,$7)
+             ON CONFLICT (idempotency_key) DO NOTHING`,
+            [
+              run.id,
+              schedule.organization_id,
+              authorised.recipient_type,
+              authorised.recipient_id,
+              authorised.email,
+              idempotencyKey,
+              "Recipient lacks finance permission for giving reports.",
+            ]
+          );
+          skipped += 1;
+        } catch {
+          /* ignore */
         }
+        continue;
       }
 
+      deliverable.push({ authorised, idempotencyKey });
+    }
+
+    let reservation = { reserved: 0, usageMonth: null, exempt: false };
+    if (deliverable.length) {
+      reservation = await churchPackageUsageService.reserveExternalEmailSends(pool, {
+        organizationId: schedule.organization_id,
+        category: "scheduled_report_delivery",
+        count: deliverable.length,
+        at,
+        plan,
+        organization: org,
+      });
+    }
+
+    let slotsLeft = reservation.reserved || 0;
+    for (const { authorised, idempotencyKey } of deliverable) {
+      if (slotsLeft <= 0) {
+        try {
+          await pool.query(
+            `INSERT INTO public.church_scheduled_report_deliveries (
+               run_id, organization_id, recipient_type, recipient_id, recipient_email,
+               status, idempotency_key, error_message
+             ) VALUES ($1,$2,$3,$4,$5,'skipped_quota',$6,$7)
+             ON CONFLICT (idempotency_key) DO NOTHING`,
+            [
+              run.id,
+              schedule.organization_id,
+              authorised.recipient_type,
+              authorised.recipient_id,
+              authorised.email,
+              idempotencyKey,
+              "Monthly external email limit reached for this organisation package.",
+            ]
+          );
+          skipped += 1;
+        } catch {
+          /* ignore */
+        }
+        continue;
+      }
+
+      slotsLeft -= 1;
       try {
         const del = await pool.query(
           `INSERT INTO public.church_scheduled_report_deliveries (
@@ -680,14 +793,21 @@ async function executeScheduleRun(pool, schedule, opts = {}) {
         );
         if (del.rows[0]) {
           delivered += 1;
-          await churchPackageUsageService.recordExternalEmailSend(pool, {
+        } else {
+          await churchPackageUsageService.releaseExternalEmailSends(pool, {
             organizationId: schedule.organization_id,
-            category: "scheduled_report_delivery",
+            usageMonth: reservation.usageMonth,
             count: 1,
-            at,
-          }).catch(() => null);
+            exempt: reservation.exempt,
+          });
         }
       } catch (delErr) {
+        await churchPackageUsageService.releaseExternalEmailSends(pool, {
+          organizationId: schedule.organization_id,
+          usageMonth: reservation.usageMonth,
+          count: 1,
+          exempt: reservation.exempt,
+        });
         failed += 1;
         await pool.query(
           `INSERT INTO public.church_scheduled_report_deliveries (
@@ -706,6 +826,15 @@ async function executeScheduleRun(pool, schedule, opts = {}) {
           ]
         );
       }
+    }
+
+    if (slotsLeft > 0) {
+      await churchPackageUsageService.releaseExternalEmailSends(pool, {
+        organizationId: schedule.organization_id,
+        usageMonth: reservation.usageMonth,
+        count: slotsLeft,
+        exempt: reservation.exempt,
+      });
     }
 
     const finalStatus = failed > 0 && delivered === 0 ? "failed" : "delivered";
@@ -861,20 +990,26 @@ async function retryFailedRun(pool, runId, organizationId) {
     );
   }
 
+  const existing = await pool.query(
+    `SELECT idempotency_key, status FROM public.church_scheduled_report_deliveries
+     WHERE run_id = $1 AND organization_id = $2`,
+    [run.id, organizationId]
+  );
+  const alreadyDelivered = new Set(
+    existing.rows.filter((r) => r.status === "delivered").map((r) => r.idempotency_key)
+  );
+
+  const authMap = await batchResolveAuthorisedRecipients(pool, {
+    organizationId,
+    branchId: schedule.branch_id,
+    recipients,
+  });
+
   for (const rec of recipients) {
     const idempotencyKey = `delivery:${run.id}:${rec.recipient_type}:${rec.recipient_id}`;
-    const existing = await pool.query(
-      `SELECT status FROM public.church_scheduled_report_deliveries WHERE idempotency_key = $1`,
-      [idempotencyKey]
-    );
-    if (existing.rows[0] && existing.rows[0].status === "delivered") continue;
+    if (alreadyDelivered.has(idempotencyKey)) continue;
 
-    const authorised = await resolveAuthorisedRecipient(pool, {
-      organizationId,
-      branchId: schedule.branch_id,
-      recipient_type: rec.recipient_type,
-      recipient_id: rec.recipient_id,
-    });
+    const authorised = authMap.get(`${rec.recipient_type}:${Number(rec.recipient_id)}`);
     if (!authorised) {
       skipped += 1;
       await pool.query(
@@ -994,7 +1129,10 @@ async function listEligibleRecipients(pool, organizationId, branchId) {
   };
 }
 
-async function listRunsForSchedule(db, scheduleId, organizationId, limit = 20) {
+async function listRunsForSchedule(db, scheduleId, organizationId, limitOrOpts = 20) {
+  const opts =
+    limitOrOpts && typeof limitOrOpts === "object" ? limitOrOpts : { limit: limitOrOpts };
+  const limit = Math.min(Math.max(Number(opts.limit) || 20, 1), 100);
   const r = await db.query(
     `SELECT id, schedule_id, organization_id, job_key, scheduled_for, status, attempt_count,
             last_error, export_format, export_sha256, export_byte_length,
@@ -1003,33 +1141,125 @@ async function listRunsForSchedule(db, scheduleId, organizationId, limit = 20) {
      WHERE schedule_id = $1 AND organization_id = $2
      ORDER BY scheduled_for DESC, id DESC
      LIMIT $3`,
-    [scheduleId, organizationId, Math.min(Math.max(Number(limit) || 20, 1), 100)]
+    [scheduleId, organizationId, limit]
   );
   return r.rows;
 }
 
-async function listDeliveriesForRun(db, runId, organizationId) {
+async function listDeliveriesForRun(db, runId, organizationId, opts = {}) {
+  const {
+    parseAdminListPageParams,
+    buildAdminListPageResult,
+  } = require("../../church/adminListPagination");
+  const parsed = parseAdminListPageParams(
+    { page: opts.page, limit: opts.limit },
+    { defaultLimit: 50, maxLimit: 100 }
+  );
+
+  const countR = await db.query(
+    `SELECT COUNT(*)::int AS n FROM public.church_scheduled_report_deliveries
+     WHERE run_id = $1 AND organization_id = $2`,
+    [runId, organizationId]
+  );
+  const total = Number(countR.rows[0] && countR.rows[0].n) || 0;
+  const meta = buildAdminListPageResult({
+    page: parsed.page,
+    limit: parsed.limit,
+    total,
+  });
+
   const r = await db.query(
     `SELECT * FROM public.church_scheduled_report_deliveries
      WHERE run_id = $1 AND organization_id = $2
-     ORDER BY id ASC`,
-    [runId, organizationId]
+     ORDER BY id ASC
+     LIMIT $3 OFFSET $4`,
+    [runId, organizationId, meta.limit, meta.offset]
   );
-  return r.rows;
+
+  return {
+    rows: r.rows,
+    page: meta.page,
+    limit: meta.limit,
+    total: meta.total,
+    totalPages: meta.totalPages,
+    from: meta.from,
+    to: meta.to,
+    hasPrev: meta.hasPrev,
+    hasNext: meta.hasNext,
+  };
 }
 
-/** Batch-load deliveries for many runs (avoids N+1 on schedule detail). */
-async function listDeliveriesForRuns(db, runIds, organizationId) {
+/**
+ * Paginated deliveries for a schedule (via runs), org-scoped.
+ * Never loads all delivery rows to compute the total — uses COUNT(*).
+ */
+async function listDeliveriesForSchedule(db, scheduleId, organizationId, opts = {}) {
+  const {
+    parseAdminListPageParams,
+    buildAdminListPageResult,
+  } = require("../../church/adminListPagination");
+  const parsed = parseAdminListPageParams(
+    { page: opts.page, limit: opts.limit },
+    { defaultLimit: 50, maxLimit: 100 }
+  );
+
+  const countR = await db.query(
+    `SELECT COUNT(*)::int AS n
+     FROM public.church_scheduled_report_deliveries d
+     INNER JOIN public.church_scheduled_report_runs r
+       ON r.id = d.run_id AND r.organization_id = d.organization_id
+     WHERE r.schedule_id = $1 AND d.organization_id = $2`,
+    [scheduleId, organizationId]
+  );
+  const total = Number(countR.rows[0] && countR.rows[0].n) || 0;
+  const meta = buildAdminListPageResult({
+    page: parsed.page,
+    limit: parsed.limit,
+    total,
+  });
+
+  const r = await db.query(
+    `SELECT d.*, r.scheduled_for AS run_scheduled_for, r.status AS run_status
+     FROM public.church_scheduled_report_deliveries d
+     INNER JOIN public.church_scheduled_report_runs r
+       ON r.id = d.run_id AND r.organization_id = d.organization_id
+     WHERE r.schedule_id = $1 AND d.organization_id = $2
+     ORDER BY d.id ASC
+     LIMIT $3 OFFSET $4`,
+    [scheduleId, organizationId, meta.limit, meta.offset]
+  );
+
+  return {
+    rows: r.rows,
+    page: meta.page,
+    limit: meta.limit,
+    total: meta.total,
+    totalPages: meta.totalPages,
+    from: meta.from,
+    to: meta.to,
+    hasPrev: meta.hasPrev,
+    hasNext: meta.hasNext,
+  };
+}
+
+/** Batch-load deliveries for many runs (capped per run). Prefer listDeliveriesForSchedule for UI. */
+async function listDeliveriesForRuns(db, runIds, organizationId, opts = {}) {
   const ids = (runIds || [])
     .map((id) => Number(id))
     .filter((id) => Number.isFinite(id) && id > 0);
   const byRun = new Map();
   if (!ids.length) return byRun;
+  const perRunLimit = Math.min(Math.max(Number(opts.perRunLimit) || 50, 1), 100);
   const r = await db.query(
-    `SELECT * FROM public.church_scheduled_report_deliveries
-     WHERE organization_id = $1 AND run_id = ANY($2::bigint[])
-     ORDER BY run_id ASC, id ASC`,
-    [organizationId, ids]
+    `SELECT * FROM (
+       SELECT d.*,
+              ROW_NUMBER() OVER (PARTITION BY d.run_id ORDER BY d.id ASC) AS rn
+       FROM public.church_scheduled_report_deliveries d
+       WHERE d.organization_id = $1 AND d.run_id = ANY($2::bigint[])
+     ) x
+     WHERE x.rn <= $3
+     ORDER BY x.run_id ASC, x.id ASC`,
+    [organizationId, ids, perRunLimit]
   );
   for (const row of r.rows) {
     const key = Number(row.run_id);
@@ -1058,12 +1288,14 @@ module.exports = {
   assertCanScheduleReports,
   validateScheduleInput,
   resolveAuthorisedRecipient,
+  batchResolveAuthorisedRecipients,
   listSchedulesForBranch,
   findScheduleForBranch,
   listRecipientsForSchedule,
   listEligibleRecipients,
   listRunsForSchedule,
   listDeliveriesForRun,
+  listDeliveriesForSchedule,
   listDeliveriesForRuns,
   findRunForOrganization,
   createSchedule,

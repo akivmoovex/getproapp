@@ -24,6 +24,7 @@ function inferHqActiveNav(req) {
   const p = String((req && req.path) || "");
   if (p.startsWith("/hq/scheduled-broadcasts")) return "broadcasts-scheduled";
   if (p.startsWith("/hq/broadcasts")) return "broadcasts";
+  if (p.startsWith("/hq/support-access")) return "support-access";
   if (p.startsWith("/hq/audit")) return "audit";
   if (p.startsWith("/hq/members")) return "members";
   if (p.startsWith("/hq/branches")) return "branches";
@@ -53,6 +54,7 @@ function hqAdminLocals(req, extra) {
         packageFeatureNav: listNavFeatureGates(req.churchPackagePlan, "hq"),
       }
     : packageFeatureLocalsFromOrg(org, "hq");
+  const planContext = extraObj.planContext || req.churchPlanContext || null;
   return {
     churchName: org.name,
     organizationName: org.name,
@@ -64,6 +66,7 @@ function hqAdminLocals(req, extra) {
     activeNav: extraObj.activeNav != null ? extraObj.activeNav : inferHqActiveNav(req),
     ...csrf,
     ...packageLocals,
+    ...(planContext ? { planContext } : {}),
     ...extraObj,
   };
 }

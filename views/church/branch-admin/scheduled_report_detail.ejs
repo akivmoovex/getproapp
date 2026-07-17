@@ -58,7 +58,7 @@
       </section>
 
       <section class="church-branch-panel">
-        <h2 class="church-branch-panel__title">Delivery audit</h2>
+        <h2 class="church-branch-panel__title">Recent runs</h2>
         <% if (!(runs || []).length) { %>
         <p class="church-branch-empty">No runs yet.</p>
         <% } else { %>
@@ -69,7 +69,6 @@
                 <th scope="col">Scheduled for</th>
                 <th scope="col">Status</th>
                 <th scope="col">Attempts</th>
-                <th scope="col">Deliveries</th>
                 <th scope="col">Actions</th>
               </tr>
             </thead>
@@ -80,24 +79,64 @@
                 <td><%= run.status %></td>
                 <td><%= run.attempt_count %></td>
                 <td>
-                  <% (run.deliveries || []).forEach(function (d) { %>
-                  <div><%= d.recipient_type %> #<%= d.recipient_id %>: <%= d.status %><%= d.recipient_email ? ' → ' + d.recipient_email : '' %></div>
-                  <% }); %>
-                  <% if (!(run.deliveries || []).length) { %>—<% } %>
-                </td>
-                <td>
                   <% if (run.status === 'failed') { %>
                   <form method="post" action="/branch/scheduled-reports/runs/<%= run.id %>/retry">
                     <%- include('../partials/csrf_field') %>
                     <button type="submit" class="church-btn church-btn--primary church-btn--sm" aria-label="Retry failed run scheduled for <%= new Date(run.scheduled_for).toISOString() %>">Retry</button>
                   </form>
-                  <% } %>
+                  <% } else { %>—<% } %>
                 </td>
               </tr>
               <% }); %>
             </tbody>
           </table>
         </div>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Delivery audit</h2>
+        <% if (!(deliveries || []).length) { %>
+        <p class="church-branch-empty">No deliveries recorded yet.</p>
+        <% } else { %>
+        <% if (deliveryPagination) { %>
+        <p class="church-branch-panel__hint">
+          Showing <%= deliveryPagination.from %>–<%= deliveryPagination.to %> of <%= deliveryPagination.total %>
+          (page <%= deliveryPagination.page %> of <%= deliveryPagination.totalPages %>).
+        </p>
+        <% } %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th scope="col">Run</th>
+                <th scope="col">Recipient</th>
+                <th scope="col">Status</th>
+                <th scope="col">Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% deliveries.forEach(function (d) { %>
+              <tr>
+                <td><%= d.run_scheduled_for ? new Date(d.run_scheduled_for).toISOString() : ('#' + d.run_id) %></td>
+                <td><%= d.recipient_type %> #<%= d.recipient_id %></td>
+                <td><%= d.status %></td>
+                <td><%= d.recipient_email || '—' %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% if (deliveryPagination && (deliveryPagination.prevUrl || deliveryPagination.nextUrl)) { %>
+        <nav class="church-branch-actions" aria-label="Delivery audit pages" data-delivery-pagination>
+          <% if (deliveryPagination.prevUrl) { %>
+          <a class="church-btn church-btn--ghost church-btn--sm" href="<%= deliveryPagination.prevUrl %>">Previous</a>
+          <% } %>
+          <% if (deliveryPagination.nextUrl) { %>
+          <a class="church-btn church-btn--ghost church-btn--sm" href="<%= deliveryPagination.nextUrl %>">Next</a>
+          <% } %>
+        </nav>
+        <% } %>
         <% } %>
       </section>
 <%- include('../partials/branch_admin_shell_end') %>

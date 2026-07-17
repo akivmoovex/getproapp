@@ -1,0 +1,18 @@
+<%- include('../../partials/platform_admin_shell_start', { navTitle: 'BlessBoard Admin', activeNav: activeNav || 'church_platform_support_access', pageTitle: 'Support config' }) %>
+<header class="admin-dashboard__header">
+  <div>
+    <h1 class="admin-dashboard__title">Organisation configuration (support)</h1>
+    <p class="admin-dashboard__subtitle muted"><%= organization.name %></p>
+  </div>
+</header>
+<section class="card" style="padding:1.25rem;">
+  <dl class="admin-dl">
+    <dt>Name</dt><dd><%= organization.name %></dd>
+    <dt>Slug</dt><dd><code><%= organization.slug %></code></dd>
+    <dt>Status</dt><dd><%= organization.status %></dd>
+    <dt>Plan</dt><dd><%= organization.plan_code || '—' %></dd>
+    <dt>Access mode</dt><dd><%= supportAccess && supportAccess.mode ? supportAccess.mode : '—' %></dd>
+  </dl>
+  <p class="muted">Read-only configuration view under the <code>configuration</code> support scope. No finance or pastoral data.</p>
+</section>
+<%- include('../../partials/platform_admin_shell_end') %>

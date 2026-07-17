@@ -12,7 +12,12 @@
 const { spawnSync } = require("child_process");
 
 const extra = process.argv.slice(2);
-const args = ["--test", ...(extra.length ? extra : ["tests"])];
+const concurrency = String(process.env.GETPRO_TEST_CONCURRENCY || "").trim();
+const args = [
+  "--test",
+  ...(concurrency ? [`--test-concurrency=${concurrency}`] : []),
+  ...(extra.length ? extra : ["tests"]),
+];
 
 const env = { ...process.env };
 if (!env.GETPRO_TEST_DB) env.GETPRO_TEST_DB = "1";

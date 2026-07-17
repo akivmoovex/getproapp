@@ -64,8 +64,9 @@ function parseFilters(query = {}, at = new Date()) {
   };
 }
 
-async function assertCrossBranchAccess(pool, organizationId) {
-  const plan = await getOrganisationPlan(pool, organizationId);
+async function assertCrossBranchAccess(pool, organizationId, opts = {}) {
+  const plan =
+    opts.plan || (await getOrganisationPlan(pool, organizationId, { at: opts.at }));
   if (!plan) {
     const err = new Error("Organisation not found.");
     err.code = "ORG_NOT_FOUND";
@@ -119,7 +120,7 @@ function buildBranchRankings(rows, canViewFinance) {
  */
 async function loadCrossBranchComparison(pool, opts) {
   const organizationId = Number(opts.organizationId);
-  await assertCrossBranchAccess(pool, organizationId);
+  await assertCrossBranchAccess(pool, organizationId, { plan: opts.plan, at: opts.at });
 
   const filters = opts.filters || parseFilters(opts.query || {}, opts.at);
   const canViewFinance = opts.canViewFinance === true;
@@ -499,7 +500,7 @@ async function loadCrossBranchComparison(pool, opts) {
 async function loadBranchDrillDown(pool, opts) {
   const organizationId = Number(opts.organizationId);
   const branchId = Number(opts.branchId);
-  await assertCrossBranchAccess(pool, organizationId);
+  await assertCrossBranchAccess(pool, organizationId, { plan: opts.plan, at: opts.at });
   const canViewFinance = opts.canViewFinance === true;
   const filters = opts.filters || parseFilters(opts.query || {}, opts.at);
 

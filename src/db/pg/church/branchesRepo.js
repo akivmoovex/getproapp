@@ -343,7 +343,7 @@ async function suspendBranch(pool, branchId, { reason, platformAdminId }) {
     reason,
     platformAdminId,
     lifecyclePhase: "temporarily_inactive",
-    auditAction: "platform_church_branch_deactivated",
+    auditAction: "platform_church_branch_suspended",
   });
 }
 
@@ -353,7 +353,7 @@ async function reactivateBranch(pool, branchId, { reason, platformAdminId }) {
     reason,
     platformAdminId,
     lifecyclePhase: "active",
-    auditAction: "platform_church_branch_activated",
+    auditAction: "platform_church_branch_reactivated",
   });
 }
 

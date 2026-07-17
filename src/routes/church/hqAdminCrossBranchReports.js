@@ -58,6 +58,7 @@ module.exports = function registerHqAdminCrossBranchReportsRoutes(router) {
         const [comparison, branches, featureLocals, savedFilters, groups] = await Promise.all([
           crossBranchComparisonService.loadCrossBranchComparison(pool, {
             organizationId: org.id,
+            plan: req.churchPackagePlan,
             canViewFinance,
             filters,
           }),

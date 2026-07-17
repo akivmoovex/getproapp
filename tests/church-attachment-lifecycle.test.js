@@ -111,6 +111,7 @@ test(
     const branch = await branchesRepo.createBranch(pool, {
       organization_id: org.id,
       slug: "main",
+      host_slug: `life-${suffix}`.replace(/[^a-z0-9-]/g, "").slice(0, 48),
       name: `Lifecycle Branch ${suffix}`,
     });
 

@@ -301,11 +301,9 @@ function registerBranchAdminRoutes(router) {
         return res.redirect("/branch/login");
       }
       const account = buildBranchAdminAccountView(row, branch.name);
-      const churchPackageUsageService = require("../../services/church/churchPackageUsageService");
-      const org = req.churchContext.organization;
-      const packageUsage = await churchPackageUsageService.loadPackageUsageForAccountPage(pool, org.id, {
-        reconcileStorage: false,
-      });
+      const { loadPlanContextForReq } = require("../../services/church/churchPackageFeatureGateService");
+      const planContext = await loadPlanContextForReq(req);
+      const packageUsage = planContext ? planContext.packageUsage : null;
       return res.render(
         "church/branch-admin/account",
         branchAdminLocals(req, {
@@ -493,7 +491,8 @@ function registerBranchAdminRoutes(router) {
       });
       const planContext = await churchPlanService.loadPlanContextForOrganization(
         pool,
-        req.churchContext.organization.id
+        req.churchContext.organization.id,
+        { req }
       );
       return res.render(
         "church/branch-admin/dashboard",

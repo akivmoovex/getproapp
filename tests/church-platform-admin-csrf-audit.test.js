@@ -26,6 +26,7 @@ const adminUsersRepo = require("../src/db/pg/adminUsersRepo");
 const organizationsRepo = require("../src/db/pg/church/organizationsRepo");
 const branchesRepo = require("../src/db/pg/church/branchesRepo");
 const hqAdminsRepo = require("../src/db/pg/church/hqAdminsRepo");
+const branchAdminsRepo = require("../src/db/pg/church/branchAdminsRepo");
 const { hashHqAdminPassword } = require("../src/church/hqAuth");
 
 function makeSuffix(prefix) {
@@ -55,8 +56,8 @@ function makeBlessBoardApp(role) {
   app.use((req, res, next) => {
     req.isBlessBoardApexHost = true;
     if (role) {
+      // Omit durable id so enforceAdminSecurityVersion skips DB lookup (role-gate unit stub).
       req.session.adminUser = {
-        id: 9201,
         username: "super",
         display_name: "Super",
         role,
@@ -177,6 +178,17 @@ test(
         slug: hostSlug,
         host_slug: hostSlug,
         name: `CSRF Branch ${suffix}`,
+        location_text: "Lusaka test campus",
+        service_times: "Sunday 09:00",
+      });
+      const baHash = await bcrypt.hash("BranchPass123!", 12);
+      await branchAdminsRepo.createBranchAdmin(pool, {
+        organization_id: org.id,
+        branch_id: branch.id,
+        full_name: `BA ${suffix}`,
+        email: `ba_${suffix}@example.com`,
+        phone: "0973000003",
+        password_hash: baHash,
       });
       const hqHash = await hashHqAdminPassword("HqPass12345!");
       const hq1 = await hqAdminsRepo.createHqAdmin(pool, {
@@ -278,7 +290,11 @@ test(
       await agent
         .post(`/admin/church/branches/${branch.id}/reactivate`)
         .type("form")
-        .send({ status_reason: "Branch open", _csrf: branchToken2 })
+        .send({
+          status_reason: "Branch open",
+          billing_acknowledged: "1",
+          _csrf: branchToken2,
+        })
         .expect(302);
 
       const hqDeactivatePage = await agent.get(

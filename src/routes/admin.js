@@ -256,6 +256,7 @@ module.exports = function adminRoutes({ db, mountChurchPlatform = process.env.NO
     registerAdminChurchResetRequestsInboxRoutes(router);
     registerAdminChurchMemberPasswordResetRequestRoutes(router);
     registerAdminChurchMinistryLeaderSupportRoutes(router);
+    require("./admin/adminChurchSupportAccess")(router);
   }
 
   return router;

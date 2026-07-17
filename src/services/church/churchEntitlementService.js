@@ -28,7 +28,8 @@ async function getOrganisationPlan(pool, organizationId, opts = {}) {
   const id = Number(organizationId);
   if (!Number.isFinite(id) || id <= 0) return null;
 
-  const organization = await organizationsRepo.findOrganizationById(pool, id);
+  const organization =
+    opts.organization || (await organizationsRepo.findOrganizationById(pool, id));
   if (!organization) return null;
 
   const at =
@@ -41,36 +42,37 @@ async function getOrganisationPlan(pool, organizationId, opts = {}) {
 
   try {
     const churchGrowthTrialService = require("./churchGrowthTrialService");
-    const activeTrial = await churchGrowthTrialService.findActiveGrowthTrial(pool, id, { at });
-    if (activeTrial) {
+    const trialState =
+      opts.trialState ||
+      (await churchGrowthTrialService.resolveGrowthTrialForEntitlement(pool, id, {
+        at,
+        trialRecord: opts.trialRecord,
+      }));
+    const { trialRecord, trialStatus, isActive, endedPendingRestore } = trialState;
+
+    if (isActive && trialRecord) {
       const growth = resolvePackageFromPlanCode("growth");
       resolved = growth;
       entitlementSource = "growth_trial";
       trial = {
-        id: activeTrial.id,
+        id: trialRecord.id,
         status: "active",
-        startsAt: new Date(activeTrial.starts_at).toISOString(),
-        endsAt: new Date(activeTrial.ends_at).toISOString(),
-        reason: activeTrial.grant_reason,
-        grantedByPlatformAdminId: activeTrial.granted_by_platform_admin_id,
-        previousPackageCode: activeTrial.previous_package_code,
+        startsAt: new Date(trialRecord.starts_at).toISOString(),
+        endsAt: new Date(trialRecord.ends_at).toISOString(),
+        reason: trialRecord.grant_reason,
+        grantedByPlatformAdminId: trialRecord.granted_by_platform_admin_id,
+        previousPackageCode: trialRecord.previous_package_code,
         isTrial: true,
       };
     } else {
-      // F1: Trial ended but expiry job may not have restored plan_code yet.
-      // Do not treat stale plan_code=growth from an overdue trial as paid Growth.
-      const trialRecord = await churchGrowthTrialService.findGrowthTrialRecord(pool, id);
       const storedPlan = String(organization.plan_code || "")
         .trim()
         .toLowerCase();
-      if (
-        trialRecord &&
-        trialRecord.status === "active" &&
-        storedPlan === "growth" &&
-        new Date(trialRecord.ends_at).getTime() <= at.getTime()
-      ) {
+      if (endedPendingRestore && trialRecord && storedPlan === "growth") {
         const previousCode =
-          trialRecord.previous_package_code || trialRecord.previous_plan_code || DEFAULT_PACKAGE_CODE;
+          trialRecord.previous_package_code ||
+          trialRecord.previous_plan_code ||
+          DEFAULT_PACKAGE_CODE;
         resolved = resolvePackageFromPlanCode(previousCode);
         entitlementSource = "growth_trial_ended";
         trial = {
@@ -83,24 +85,19 @@ async function getOrganisationPlan(pool, organizationId, opts = {}) {
           previousPackageCode: trialRecord.previous_package_code,
           isTrial: false,
         };
-      } else {
-        const trialStatus = await churchGrowthTrialService.getOrganisationTrialStatus(pool, id, {
-          at,
-        });
-        if (trialStatus && trialStatus.hasTrial) {
-          trial = {
-            id: trialStatus.trial && trialStatus.trial.id,
-            status: trialStatus.status,
-            startsAt: trialStatus.trial && trialStatus.trial.startsAt,
-            endsAt: trialStatus.trial && trialStatus.trial.endsAt,
-            reason: trialStatus.trial && trialStatus.trial.reason,
-            grantedByPlatformAdminId: trialStatus.trial && trialStatus.trial.grantedByPlatformAdminId,
-            previousPackageCode: trialStatus.trial && trialStatus.trial.previousPackageCode,
-            configRetainUntil: trialStatus.trial && trialStatus.trial.configRetainUntil,
-            configRetained: trialStatus.configRetained,
-            isTrial: trialStatus.status === "active",
-          };
-        }
+      } else if (trialStatus && trialStatus.hasTrial) {
+        trial = {
+          id: trialStatus.trial && trialStatus.trial.id,
+          status: trialStatus.status,
+          startsAt: trialStatus.trial && trialStatus.trial.startsAt,
+          endsAt: trialStatus.trial && trialStatus.trial.endsAt,
+          reason: trialStatus.trial && trialStatus.trial.reason,
+          grantedByPlatformAdminId: trialStatus.trial && trialStatus.trial.grantedByPlatformAdminId,
+          previousPackageCode: trialStatus.trial && trialStatus.trial.previousPackageCode,
+          configRetainUntil: trialStatus.trial && trialStatus.trial.configRetainUntil,
+          configRetained: trialStatus.configRetained,
+          isTrial: trialStatus.status === "active",
+        };
       }
     }
   } catch {

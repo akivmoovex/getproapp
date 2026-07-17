@@ -1,6 +1,7 @@
 "use strict";
 
 const organizationsRepo = require("../../db/pg/church/organizationsRepo");
+const { getOrganisationPlan } = require("./churchEntitlementService");
 const {
   getChurchPlan,
   getPlanDisplay,
@@ -15,7 +16,99 @@ const {
   normalizePlanCode,
 } = require("../../church/churchPlans");
 
-async function getOrganizationUsageSummary(pool, organizationId) {
+function usageSummaryFromPackageSnapshot(packageUsage) {
+  if (!packageUsage) {
+    return {
+      branches_count: 0,
+      active_branches_count: 0,
+      active_members_count: 0,
+      total_members_count: 0,
+    };
+  }
+  return {
+    branches_count: packageUsage.totalBranches ?? packageUsage.activeBranches ?? 0,
+    active_branches_count: packageUsage.activeBranches ?? 0,
+    active_members_count: packageUsage.activeMembers ?? 0,
+    total_members_count: packageUsage.totalMembers ?? packageUsage.activeMembers ?? 0,
+  };
+}
+
+function seatUsageFromPackageSnapshot(packageUsage) {
+  if (!packageUsage || !packageUsage.meters) return null;
+  const seatQuota = require("./churchSeatQuotaService");
+  const membersMeter = packageUsage.meters.members || {};
+  const adminsMeter = packageUsage.meters.admins || {};
+  const memberLimit = membersMeter.limit;
+  const adminLimit = adminsMeter.limit;
+  const activeMembers = packageUsage.activeMembers ?? 0;
+  const privileged = packageUsage.privilegedAccounts ?? 0;
+  return {
+    organizationId: packageUsage.organizationId,
+    packageCode: packageUsage.packageCode,
+    packageLabel: packageUsage.packageLabel,
+    activeMembers,
+    memberLimit,
+    membersDisplay: membersMeter.display,
+    memberAtLimit:
+      membersMeter.state === "blocked" ||
+      membersMeter.status === "at_limit" ||
+      membersMeter.status === "exceeded",
+    privilegedAccounts: privileged,
+    privilegedBreakdown: packageUsage.privilegedBreakdown,
+    adminLimit,
+    adminsDisplay: adminsMeter.display,
+    adminAtLimit:
+      adminsMeter.state === "blocked" ||
+      adminsMeter.status === "at_limit" ||
+      adminsMeter.status === "exceeded",
+    countedPrivilegedRoles: seatQuota.COUNTED_PRIVILEGED_ROLES,
+    activeMemberDefinition:
+      "verified members (can sign in). pending=visitor/applicant; suspended=inactive exclusion.",
+  };
+}
+
+function mergePackageWarnings(ctx, packageUsage, seatUsage) {
+  if (seatUsage && seatUsage.memberAtLimit) {
+    const seatQuota = require("./churchSeatQuotaService");
+    ctx.warnings = (ctx.warnings || []).concat([
+      {
+        level: "limit",
+        code: "package_member_limit",
+        message: seatQuota.FOUNDATION_MEMBER_LIMIT_ERROR,
+      },
+    ]);
+  }
+  if (seatUsage && seatUsage.adminAtLimit) {
+    const seatQuota = require("./churchSeatQuotaService");
+    ctx.warnings = (ctx.warnings || []).concat([
+      {
+        level: "limit",
+        code: "package_admin_limit",
+        message: seatQuota.FOUNDATION_ADMIN_LIMIT_ERROR,
+      },
+    ]);
+  }
+  if (!packageUsage) return ctx;
+  ctx.packageUsage = packageUsage;
+  ctx.storageDisplay = packageUsage.meters.storage.display;
+  ctx.quotaWarnings = packageUsage.quotaWarnings || [];
+  for (const w of packageUsage.quotaWarnings || []) {
+    ctx.warnings = (ctx.warnings || []).concat([
+      {
+        level: w.band >= 100 ? "limit" : w.band >= 90 ? "warning" : "warn",
+        code: `package_quota_${w.meterKey}_${w.band}`,
+        message: [w.message, w.existingDataNote, w.guidance].filter(Boolean).join(" "),
+        quotaWarning: w,
+      },
+    ]);
+  }
+  return ctx;
+}
+
+async function getOrganizationUsageSummary(pool, organizationId, opts = {}) {
+  if (opts.usageSnapshot) {
+    return usageSummaryFromPackageSnapshot(opts.usageSnapshot);
+  }
   const usage = await organizationsRepo.getOrganizationUsageCounts(pool, organizationId);
   return {
     branches_count: usage.branches_count,
@@ -94,67 +187,103 @@ function planContextForOrganization(org, usage) {
   };
 }
 
-async function loadPlanContextForOrganization(pool, organizationId) {
-  const org = await organizationsRepo.findOrganizationById(pool, organizationId);
-  if (!org) return null;
-  const usage = await getOrganizationUsageSummary(pool, organizationId);
+function organizationRowForPlanContext(plan, organization) {
+  if (organization) return organization;
+  return {
+    id: plan.organizationId,
+    name: plan.organizationName,
+    slug: plan.organizationSlug,
+    status: plan.organizationStatus,
+    plan_code: plan.storedPlanCode,
+    plan_status: plan.planStatus,
+    plan_notes: plan.planNotes,
+    plan_started_at: plan.planStartedAt,
+  };
+}
+
+function cachePlanContextOnRequest(req, organizationId, ctx, plan) {
+  if (!req) return;
+  req.churchPlanContext = ctx;
+  req._churchPlanContextOrgId = Number(organizationId);
+  req.churchPackagePlan = plan;
+}
+
+/**
+ * Load dashboard / gate plan context with one entitlement resolve and one usage snapshot per request.
+ * @param {import("pg").Pool} pool
+ * @param {number} organizationId
+ * @param {{ req?: object, plan?: object, usageSnapshot?: object, trialState?: object, at?: Date, reconcileStorage?: boolean, organization?: object }} [opts]
+ */
+async function loadPlanContextForOrganization(pool, organizationId, opts = {}) {
+  const orgId = Number(organizationId);
+  if (!Number.isFinite(orgId) || orgId <= 0) return null;
+
+  const req = opts.req || null;
+  if (
+    req &&
+    req.churchPlanContext &&
+    Number(req._churchPlanContextOrgId) === orgId &&
+    !opts.usageSnapshot &&
+    !opts.plan
+  ) {
+    return req.churchPlanContext;
+  }
+
+  let organization = opts.organization || null;
+  if (!organization) {
+    organization = await organizationsRepo.findOrganizationById(pool, orgId);
+  }
+
+  const churchGrowthTrialService = require("./churchGrowthTrialService");
+  const trialState =
+    opts.trialState ||
+    (await churchGrowthTrialService.resolveGrowthTrialForEntitlement(pool, orgId, {
+      at: opts.at,
+    }));
+
+  let plan = opts.plan || null;
+  if (
+    req &&
+    req.churchPackagePlan &&
+    Number(req.churchPackagePlan.organizationId) === orgId &&
+    !opts.plan
+  ) {
+    plan = req.churchPackagePlan;
+  }
+  if (!plan) {
+    plan = await getOrganisationPlan(pool, orgId, {
+      at: opts.at,
+      organization,
+      trialState,
+    });
+  }
+  if (!plan) return null;
+
+  const org = organizationRowForPlanContext(plan, organization);
+  const churchPackageUsageService = require("./churchPackageUsageService");
+  const packageUsage =
+    opts.usageSnapshot ||
+    (await churchPackageUsageService.getOrganisationUsageSnapshot(pool, orgId, {
+      reconcileStorage: opts.reconcileStorage === true,
+      at: opts.at,
+      plan,
+      organization,
+      trialState,
+    }));
+
+  const usage = usageSummaryFromPackageSnapshot(packageUsage);
   const ctx = planContextForOrganization(org, usage);
-  try {
-    const seatQuota = require("./churchSeatQuotaService");
-    const seatUsage = await seatQuota.getOrganisationSeatUsage(pool, organizationId);
-    if (seatUsage) {
-      ctx.seatUsage = seatUsage;
-      ctx.membersDisplay = seatUsage.membersDisplay;
-      ctx.adminsDisplay = seatUsage.adminsDisplay;
-      if (seatUsage.memberAtLimit) {
-        ctx.warnings = (ctx.warnings || []).concat([
-          {
-            level: "limit",
-            code: "package_member_limit",
-            message: seatQuota.FOUNDATION_MEMBER_LIMIT_ERROR,
-          },
-        ]);
-      }
-      if (seatUsage.adminAtLimit) {
-        ctx.warnings = (ctx.warnings || []).concat([
-          {
-            level: "limit",
-            code: "package_admin_limit",
-            message: seatQuota.FOUNDATION_ADMIN_LIMIT_ERROR,
-          },
-        ]);
-      }
-    }
-  } catch {
-    /* seat usage is optional for dashboard render */
+  ctx.packagePlan = plan;
+
+  const seatUsage = seatUsageFromPackageSnapshot(packageUsage);
+  if (seatUsage) {
+    ctx.seatUsage = seatUsage;
+    ctx.membersDisplay = seatUsage.membersDisplay;
+    ctx.adminsDisplay = seatUsage.adminsDisplay;
   }
-  try {
-    const churchPackageUsageService = require("./churchPackageUsageService");
-    // Cached counters only — do not reconcile storage on every dashboard hit.
-    const packageUsage = await churchPackageUsageService.getOrganisationUsageSnapshot(
-      pool,
-      organizationId,
-      { reconcileStorage: false }
-    );
-    if (packageUsage) {
-      ctx.packageUsage = packageUsage;
-      ctx.storageDisplay = packageUsage.meters.storage.display;
-      ctx.quotaWarnings = packageUsage.quotaWarnings || [];
-      // Keep compact warning list for older plan_limit_warnings consumers.
-      for (const w of packageUsage.quotaWarnings || []) {
-        ctx.warnings = (ctx.warnings || []).concat([
-          {
-            level: w.band >= 100 ? "limit" : w.band >= 90 ? "warning" : "warn",
-            code: `package_quota_${w.meterKey}_${w.band}`,
-            message: [w.message, w.existingDataNote, w.guidance].filter(Boolean).join(" "),
-            quotaWarning: w,
-          },
-        ]);
-      }
-    }
-  } catch {
-    /* package usage optional */
-  }
+  mergePackageWarnings(ctx, packageUsage, seatUsage);
+
+  cachePlanContextOnRequest(req, orgId, ctx, plan);
   return ctx;
 }
 
@@ -164,6 +293,8 @@ module.exports = {
   getPlanUsageSummary,
   planContextForOrganization,
   loadPlanContextForOrganization,
+  usageSummaryFromPackageSnapshot,
+  seatUsageFromPackageSnapshot,
   getPlanLimit,
   isFeatureEnabled,
   getPremiumFeatureNotice,

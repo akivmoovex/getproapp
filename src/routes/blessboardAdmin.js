@@ -39,7 +39,22 @@ const registerAdminChurchResetRequestsInboxRoutes = require("./admin/adminChurch
 const registerAdminChurchMemberPasswordResetRequestRoutes = require("./admin/adminChurchMemberPasswordResetRequests");
 const registerAdminChurchMinistryLeaderSupportRoutes = require("./admin/adminChurchMinistryLeaderSupport");
 const registerAdminChurchPlatformInquiriesRoutes = require("./admin/adminChurchPlatformInquiries");
+const registerAdminChurchSupportAccessRoutes = require("./admin/adminChurchSupportAccess");
 const platformInquiriesRepo = require("../db/pg/church/platformInquiriesRepo");
+const catalogue = require("../church/platformSupportAccessCatalogue");
+
+function isPlatformSupportAccessPath(path) {
+  const p = String(path || "");
+  return (
+    /\/church\/organizations\/[^/]+\/(account-managers|support-access|support-diagnostic-redacted|support-config|support-finance)(\/|$)/.test(
+      p
+    ) ||
+    /\/churches\/[^/]+\/(account-managers|support-access|support-diagnostic-redacted|support-config|support-finance)(\/|$)/.test(
+      p
+    ) ||
+    /\/church\/support-access\//.test(p)
+  );
+}
 
 function blessboardAdminPathRewrite(req, res, next) {
   // Legacy /admin/church/organizations/... → canonical /admin/churches/...
@@ -138,6 +153,17 @@ module.exports = function blessboardAdminRoutes() {
 
   router.use((req, res, next) => {
     if (req.path.startsWith("/login")) return next();
+    if (isPlatformSupportAccessPath(req.path)) {
+      const role = req.session && req.session.adminUser && req.session.adminUser.role;
+      if (
+        catalogue.canRequestSupportAccess(role) ||
+        catalogue.canApproveSupportAccess(role) ||
+        catalogue.canAssignAccountManagers(role)
+      ) {
+        return next();
+      }
+      return res.status(403).type("text").send("Forbidden");
+    }
     return requireSuperAdmin(req, res, next);
   });
 
@@ -179,6 +205,7 @@ module.exports = function blessboardAdminRoutes() {
   registerAdminChurchMemberPasswordResetRequestRoutes(router);
   registerAdminChurchMinistryLeaderSupportRoutes(router);
   registerAdminChurchPlatformInquiriesRoutes(router);
+  registerAdminChurchSupportAccessRoutes(router);
 
   return router;
 };

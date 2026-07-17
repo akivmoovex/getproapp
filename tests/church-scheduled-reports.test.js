@@ -474,10 +474,14 @@ test(
       `UPDATE public.church_scheduled_reports SET next_run_at = $2 WHERE id = $1`,
       [schedQuota.id, new Date("2026-08-10T07:00:00.000Z").toISOString()]
     );
-    const qRun = await scheduledReportService.processDueScheduledReports(pool, {
+    const schedQuotaRow = await pool.query(
+      `SELECT * FROM public.church_scheduled_reports WHERE id = $1`,
+      [schedQuota.id]
+    );
+    const qHit = await scheduledReportService.executeScheduleRun(pool, schedQuotaRow.rows[0], {
       at: new Date("2026-08-10T07:01:00.000Z"),
+      scheduledFor: new Date("2026-08-10T07:00:00.000Z"),
     });
-    const qHit = qRun.processed.find((p) => p.scheduleId === schedQuota.id);
     assert.ok(qHit);
     assert.equal(qHit.outcome, "skipped_quota");
 

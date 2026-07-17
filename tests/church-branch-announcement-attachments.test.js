@@ -154,11 +154,13 @@ test(
     const branchA = await branchesRepo.createBranch(pool, {
       organization_id: orgA.id,
       slug: "main",
+      host_slug: `baatt-a-${suffix}`.replace(/[^a-z0-9-]/g, "").slice(0, 48),
       name: `Branch Attach A ${suffix}`,
     });
     const branchB = await branchesRepo.createBranch(pool, {
       organization_id: orgB.id,
       slug: "main",
+      host_slug: `baatt-b-${suffix}`.replace(/[^a-z0-9-]/g, "").slice(0, 48),
       name: `Branch Attach B ${suffix}`,
     });
 
@@ -251,8 +253,8 @@ test(
 
     const listed = await broadcastAttachmentsRepo.listAttachmentsForAnnouncement(pool, plainId, branchA.id);
     assert.equal(listed.length, 1);
-    assert.equal(listed[0].announcement_id, plainId);
-    assert.equal(listed[0].branch_id, branchA.id);
+    assert.equal(Number(listed[0].announcement_id), Number(plainId));
+    assert.equal(Number(listed[0].branch_id), Number(branchA.id));
     assert.equal(listed[0].original_filename, "meeting notes.pdf");
     assert.equal(listed[0].mime_type, "application/pdf");
     assert.doesNotMatch(listed[0].stored_filename, /^\//);

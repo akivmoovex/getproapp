@@ -187,7 +187,8 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
         : await membersRepo.listMembersForBranch(pool, branch.id, { status: statusFilter });
       const planContext = await churchPlanService.loadPlanContextForOrganization(
         pool,
-        req.churchContext.organization.id
+        req.churchContext.organization.id,
+        { req }
       );
       return res.render(
         "church/branch-admin/members_directory",
@@ -213,7 +214,8 @@ module.exports = function registerBranchAdminMembersRoutes(router) {
       const pendingMembers = await membersRepo.listPendingMembersForBranch(pool, branch.id);
       const planContext = await churchPlanService.loadPlanContextForOrganization(
         pool,
-        req.churchContext.organization.id
+        req.churchContext.organization.id,
+        { req }
       );
       return res.render(
         "church/branch-admin/verification_queue",

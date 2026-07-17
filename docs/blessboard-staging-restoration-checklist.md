@@ -94,6 +94,8 @@ Church uploads live on application disk under `data/uploads/church/…` unless o
 
 ## Related
 
+- V5 operational readiness (identity after restore, V4/V5 backup labelling): [blessboard-v5-operational-readiness.md](./blessboard-v5-operational-readiness.md)
 - Diagnostics UI: `/admin/church/diagnostics`
 - Production checklist: [blessboard-production-checklist.md](./blessboard-production-checklist.md)
 - Stale threshold env: `BLESSBOARD_BACKUP_STALE_DAYS` (default `7`)
+- Readiness command: `npm run church:pilot:readiness`

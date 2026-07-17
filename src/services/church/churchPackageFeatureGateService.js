@@ -25,8 +25,40 @@ function organisationIdFromReq(req) {
 async function loadPlanForReq(req) {
   const organizationId = organisationIdFromReq(req);
   if (!organizationId) return null;
+  if (
+    req.churchPackagePlan &&
+    Number(req.churchPackagePlan.organizationId) === Number(organizationId)
+  ) {
+    return req.churchPackagePlan;
+  }
   const pool = getPgPool();
-  return getOrganisationPlan(pool, organizationId);
+  const plan = await getOrganisationPlan(pool, organizationId);
+  req.churchPackagePlan = plan;
+  return plan;
+}
+
+/**
+ * Request-scoped plan context (one resolve + one usage snapshot per HTTP request).
+ * @param {import("express").Request} req
+ * @param {{ reconcileStorage?: boolean, at?: Date }} [opts]
+ */
+async function loadPlanContextForReq(req, opts = {}) {
+  const organizationId = organisationIdFromReq(req);
+  if (!organizationId) return null;
+  if (
+    req.churchPlanContext &&
+    Number(req._churchPlanContextOrgId) === Number(organizationId) &&
+    !opts.force
+  ) {
+    return req.churchPlanContext;
+  }
+  const churchPlanService = require("./churchPlanService");
+  const pool = getPgPool();
+  return churchPlanService.loadPlanContextForOrganization(pool, organizationId, {
+    ...opts,
+    req,
+    plan: req.churchPackagePlan,
+  });
 }
 
 /**
@@ -89,9 +121,11 @@ async function recordFeatureDeniedAudit(req, ui, detail) {
  * Attach packageFeatureNav (+ packagePlan) for authorised portal locals builders.
  */
 async function attachPackageFeatureLocals(req, portal) {
-  // Reuse plan already loaded by requirePackageFeature / loadChurchPackagePlan.
   const plan = req.churchPackagePlan || (await loadPlanForReq(req));
   req.churchPackagePlan = plan;
+  if (plan && req.res && req.res.locals) {
+    req.res.locals.churchPackagePlan = plan;
+  }
   return {
     packagePlan: plan,
     packageFeatureNav: listNavFeatureGates(plan, portal),
@@ -102,12 +136,15 @@ async function attachPackageFeatureLocals(req, portal) {
 }
 
 /**
- * Middleware: load plan once on req.churchPackagePlan
+ * Middleware: load plan once on req.churchPackagePlan (+ res.locals).
  */
 function loadChurchPackagePlan(req, res, next) {
   loadPlanForReq(req)
     .then((plan) => {
-      req.churchPackagePlan = plan;
+      if (plan) {
+        req.churchPackagePlan = plan;
+        res.locals.churchPackagePlan = plan;
+      }
       next();
     })
     .catch(next);
@@ -125,6 +162,7 @@ function requirePackageFeature(featureId, opts = {}) {
     try {
       const plan = req.churchPackagePlan || (await loadPlanForReq(req));
       req.churchPackagePlan = plan;
+      if (res.locals) res.locals.churchPackagePlan = plan;
       const ui = resolveFeatureUi(plan, featureId);
       req.packageFeatureUi = ui;
 
@@ -234,6 +272,7 @@ async function assertScheduledBroadcastAllowed(req, publishAt) {
 module.exports = {
   PACKAGE_FEATURE_DENIED,
   loadPlanForReq,
+  loadPlanContextForReq,
   loadChurchPackagePlan,
   assertFeatureAllowed,
   requirePackageFeature,

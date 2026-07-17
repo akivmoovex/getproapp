@@ -28,6 +28,7 @@ const EXEMPT = new Map([
   ["/leader/login", "public leader login"],
   ["/leader/forgot-password", "public leader password-reset request"],
   ["/contact", "public contact form (no authenticated session)"],
+  ["/branches/:branchSlug/contact", "public branch contact form (no authenticated session)"],
   ["/churches/:churchSlug/branches/:branchSlug/open", "public church selection redirect (navigation preference only)"],
   ["/churches/preference/clear", "public clear remembered church preference"],
 ]);
@@ -134,7 +135,7 @@ test("inventory exemptions match documented public auth and contact routes only"
     assert.ok(reason && reason.length > 3, p);
     assert.match(
       p,
-      /^\/(register|login|forgot-password|contact|branch\/|hq\/|leader\/|churches\/)/
+      /^\/(register|login|forgot-password|contact|branches\/|branch\/|hq\/|leader\/|churches\/)/
     );
   }
 });

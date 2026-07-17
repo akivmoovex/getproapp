@@ -75,8 +75,8 @@
         <p class="church-branch-empty">No deliveries recorded yet.</p>
         <% } else { %>
         <p class="church-branch-panel__hint">
-          Showing page <%= deliveryPagination.page %> of <%= deliveryPagination.totalPages %>
-          (<%= deliveryPagination.total %> total).
+          Showing <%= deliveryPagination.from %>–<%= deliveryPagination.to %> of <%= deliveryPagination.total %>
+          (page <%= deliveryPagination.page %> of <%= deliveryPagination.totalPages %>).
         </p>
         <div class="church-branch-table-wrap">
           <table class="church-branch-table">

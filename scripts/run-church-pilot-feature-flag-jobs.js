@@ -8,29 +8,30 @@
  */
 
 require("dotenv").config();
-const { getPgPool, isPgConfigured } = require("../src/db/pg/pool");
-const { ensureChurchSchema } = require("../src/db/pg/ensureChurchSchema");
+
+const {
+  prepareBlessBoardJobPool,
+  closePgPool,
+} = require("../src/startup/blessBoardJobPreflight");
 const churchPilotFeatureFlagService = require("../src/services/church/churchPilotFeatureFlagService");
 
 async function main() {
-  const { shouldRunBlessBoardScheduledJob } = require("../src/startup/blessBoardJobsGate");
-  if (!shouldRunBlessBoardScheduledJob("pilot-feature-flag-jobs")) {
-    return;
-  }
-  if (!isPgConfigured()) {
-    console.error("PostgreSQL is not configured.");
-    process.exit(1);
-  }
-  const pool = getPgPool();
-  await ensureChurchSchema(pool);
-  const result = await churchPilotFeatureFlagService.processExpiredPilotFlags(pool, {
+  const pool = await prepareBlessBoardJobPool("pilot-feature-flag-jobs");
+  if (!pool) return;
+  const result = await churchPilotFeatureFlagService.processExpiredPlatformFlags(pool, {
     at: new Date(),
     limit: 100,
   });
   console.log(JSON.stringify(result, null, 2));
+  await closePgPool();
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error(err);
+  try {
+    await closePgPool();
+  } catch {
+    /* ignore */
+  }
   process.exit(1);
 });

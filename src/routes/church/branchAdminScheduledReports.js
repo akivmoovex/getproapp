@@ -16,6 +16,10 @@ const {
   GROWTH_SCHEDULED_REPORTS_MONTHLY,
 } = require("../../church/blessBoardPackageCatalogue");
 const {
+  parseAdminListPageParams,
+  buildAdminListPageUrls,
+} = require("../../church/adminListPagination");
+const {
   branchAdminLocals,
   flashFromQuery,
   SCHEDULED_REPORT_NOTICES,
@@ -56,18 +60,33 @@ module.exports = function registerBranchAdminScheduledReportsRoutes(router) {
         const org = req.churchContext.organization;
         const branch = req.churchContext.branch;
         const pool = getPgPool();
-        const [schedules, eligible, featureLocals] = await Promise.all([
-          scheduledReportService.listSchedulesForBranch(pool, org.id, branch.id),
+        const schedulePager = parseAdminListPageParams(req.query, { defaultLimit: 50, maxLimit: 100 });
+        const [schedulePage, eligible, featureLocals] = await Promise.all([
+          scheduledReportService.listSchedulesForBranch(pool, org.id, branch.id, {
+            page: schedulePager.page,
+            limit: schedulePager.limit,
+          }),
           scheduledReportService.listEligibleRecipients(pool, org.id, branch.id),
           attachPackageFeatureLocals(req, "branch"),
         ]);
+        const scheduleUrls = buildAdminListPageUrls("/branch/scheduled-reports", req.query, schedulePage);
         return res.render(
           "church/branch-admin/scheduled_reports",
           branchAdminLocals(req, {
             pageTitle: "Scheduled reports",
             navActive: "reports-scheduled",
             shellTitle: "Scheduled reports",
-            schedules,
+            schedules: schedulePage.rows,
+            schedulePagination: {
+              page: schedulePage.page,
+              limit: schedulePage.limit,
+              total: schedulePage.total,
+              totalPages: schedulePage.totalPages,
+              from: schedulePage.from,
+              to: schedulePage.to,
+              prevUrl: scheduleUrls.prevUrl,
+              nextUrl: scheduleUrls.nextUrl,
+            },
             supportedReports: scheduledReportService.listSupportedScheduledReports("branch"),
             eligible,
             frequencies: scheduledReportService.FREQUENCIES,
@@ -134,17 +153,29 @@ module.exports = function registerBranchAdminScheduledReportsRoutes(router) {
               org.id,
               branch.id
             );
+            const schedulePage = await scheduledReportService.listSchedulesForBranch(
+              getPgPool(),
+              org.id,
+              branch.id,
+              { page: 1, limit: 50 }
+            );
             return res.status(400).render(
               "church/branch-admin/scheduled_reports",
               branchAdminLocals(req, {
                 pageTitle: "Scheduled reports",
                 navActive: "reports-scheduled",
                 shellTitle: "Scheduled reports",
-                schedules: await scheduledReportService.listSchedulesForBranch(
-                  getPgPool(),
-                  org.id,
-                  branch.id
-                ),
+                schedules: schedulePage.rows,
+                schedulePagination: {
+                  page: schedulePage.page,
+                  limit: schedulePage.limit,
+                  total: schedulePage.total,
+                  totalPages: schedulePage.totalPages,
+                  from: schedulePage.from,
+                  to: schedulePage.to,
+                  prevUrl: null,
+                  nextUrl: null,
+                },
                 supportedReports: scheduledReportService.listSupportedScheduledReports("branch"),
                 eligible,
                 frequencies: scheduledReportService.FREQUENCIES,
@@ -241,19 +272,20 @@ module.exports = function registerBranchAdminScheduledReportsRoutes(router) {
         if (!schedule || schedule.status === "cancelled") {
           return res.status(404).type("text").send("Schedule not found.");
         }
-        const [recipients, runs] = await Promise.all([
+        const deliveryPager = parseAdminListPageParams(req.query, { defaultLimit: 50, maxLimit: 100 });
+        const [recipients, runs, deliveryPage] = await Promise.all([
           scheduledReportService.listRecipientsForSchedule(pool, schedule.id, org.id),
-          scheduledReportService.listRunsForSchedule(pool, schedule.id, org.id, 20),
+          scheduledReportService.listRunsForSchedule(pool, schedule.id, org.id, { limit: 20 }),
+          scheduledReportService.listDeliveriesForSchedule(pool, schedule.id, org.id, {
+            page: deliveryPager.page,
+            limit: deliveryPager.limit,
+          }),
         ]);
-        const deliveriesByRunId = await scheduledReportService.listDeliveriesForRuns(
-          pool,
-          runs.map((r) => r.id),
-          org.id
+        const deliveryUrls = buildAdminListPageUrls(
+          `/branch/scheduled-reports/${schedule.id}`,
+          req.query,
+          deliveryPage
         );
-        const runsWithDeliveries = runs.map((run) => ({
-          ...run,
-          deliveries: deliveriesByRunId.get(Number(run.id)) || [],
-        }));
         return res.render(
           "church/branch-admin/scheduled_report_detail",
           branchAdminLocals(req, {
@@ -262,7 +294,18 @@ module.exports = function registerBranchAdminScheduledReportsRoutes(router) {
             shellTitle: "Scheduled report",
             schedule,
             recipients,
-            runs: runsWithDeliveries,
+            runs,
+            deliveries: deliveryPage.rows,
+            deliveryPagination: {
+              page: deliveryPage.page,
+              limit: deliveryPage.limit,
+              total: deliveryPage.total,
+              totalPages: deliveryPage.totalPages,
+              from: deliveryPage.from,
+              to: deliveryPage.to,
+              prevUrl: deliveryUrls.prevUrl,
+              nextUrl: deliveryUrls.nextUrl,
+            },
             reportDef: scheduledReportService.getSupportedScheduledReport(schedule.report_type),
             notice: noticeMessage(flashFromQuery(req, SCHEDULED_REPORT_NOTICES)),
           })

@@ -51,8 +51,8 @@ function makeBlessBoardApp(role) {
   app.use((req, res, next) => {
     req.isBlessBoardApexHost = true;
     if (role) {
+      // Omit durable id so enforceAdminSecurityVersion skips DB lookup (role-gate unit stub).
       req.session.adminUser = {
-        id: 9101,
         username: "super",
         display_name: "Super",
         role,
@@ -314,8 +314,10 @@ test(
     const memberLogin = await request(churchApp).get("/login");
     assert.equal(memberLogin.status, 503);
 
+    // Legacy /branch/login redirects into unified /login (exempt from gate), which is blocked above.
     const branchLogin = await request(churchApp).get("/branch/login");
-    assert.equal(branchLogin.status, 503);
+    assert.equal(branchLogin.status, 302);
+    assert.match(String(branchLogin.headers.location || ""), /\/login/i);
 
     const hqLogin = await request(churchApp).get("/hq/login");
     assert.equal(hqLogin.status, 503);

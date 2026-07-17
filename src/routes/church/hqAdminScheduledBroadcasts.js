@@ -18,6 +18,10 @@ const {
   priorityLabel,
 } = require("../../church/hqBroadcastValidation");
 const { hqAdminLocals, flashFromQuery, noticeMessage } = require("./hqAdminShared");
+const {
+  parseAdminListPageParams,
+  buildAdminListPageUrls,
+} = require("../../church/adminListPagination");
 
 const featureGuard = requirePackageFeature("broadcasts_scheduled", { allowGetUpgradeShell: true });
 
@@ -107,14 +111,19 @@ module.exports = function registerHqAdminScheduledBroadcastsRoutes(router) {
         if (!broadcast) {
           return res.status(404).type("text").send("Broadcast not found.");
         }
-        const deliveryPage = Math.max(Number(req.query.page) || 1, 1);
+        const deliveryPager = parseAdminListPageParams(req.query, { defaultLimit: 50, maxLimit: 100 });
         const [targets, deliveryPageResult] = await Promise.all([
           hqBroadcastsRepo.listBroadcastTargets(pool, broadcastId, org.id),
           scheduledBroadcastService.listDeliveries(pool, broadcastId, org.id, {
-            page: deliveryPage,
-            limit: 50,
+            page: deliveryPager.page,
+            limit: deliveryPager.limit,
           }),
         ]);
+        const pageUrls = buildAdminListPageUrls(
+          `/hq/scheduled-broadcasts/${broadcastId}`,
+          req.query,
+          deliveryPageResult
+        );
         const noticeCode = flashFromQuery(req, SCHEDULED_BROADCAST_NOTICES);
         return res.render(
           "church/hq/scheduled_broadcast_detail",
@@ -126,16 +135,13 @@ module.exports = function registerHqAdminScheduledBroadcastsRoutes(router) {
             deliveries: deliveryPageResult.rows,
             deliveryPagination: {
               page: deliveryPageResult.page,
+              limit: deliveryPageResult.limit,
               total: deliveryPageResult.total,
               totalPages: deliveryPageResult.totalPages,
-              prevUrl:
-                deliveryPageResult.page > 1
-                  ? `/hq/scheduled-broadcasts/${broadcastId}?page=${deliveryPageResult.page - 1}`
-                  : null,
-              nextUrl:
-                deliveryPageResult.page < deliveryPageResult.totalPages
-                  ? `/hq/scheduled-broadcasts/${broadcastId}?page=${deliveryPageResult.page + 1}`
-                  : null,
+              from: deliveryPageResult.from,
+              to: deliveryPageResult.to,
+              prevUrl: pageUrls.prevUrl,
+              nextUrl: pageUrls.nextUrl,
             },
             broadcastStatusLabel,
             broadcastAudienceLabel,
