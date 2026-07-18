@@ -1,5 +1,5 @@
 <%#
-  Apex shell start. Locals: pageTitle, authenticated, activeNav ('home'|'login'|'account'), csrfToken
+  Apex shell start. Locals: pageTitle, authenticated, activeNav, csrfToken
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -9,7 +9,7 @@
   <title><%= pageTitle %> · BlessBoard</title>
   <meta name="description" content="BlessBoard — one digital home for your church." />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=3" />
+  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=4" />
   <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=3" />
 </head>
 <body class="bb-apex-body" data-bb-shell="apex" data-bb-product="blessboard-v5" data-bb-page="<%= activeNav %>">
@@ -40,6 +40,7 @@
           <button type="submit">Logout</button>
         </form>
         <% } else { %>
+        <a class="bb-apex-btn bb-apex-btn--ghost bb-apex-btn--header" href="/register-church" data-bb-apex-cta="header-register">Register</a>
         <a class="bb-apex-btn bb-apex-btn--primary bb-apex-btn--header" href="/login" data-bb-apex-cta="header-login">Login</a>
         <% } %>
         <button

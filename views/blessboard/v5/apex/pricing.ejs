@@ -1,0 +1,89 @@
+<%#
+  Apex Pricing — Stitch 1c50e898… / 181ec1f8… + FAQ c47840e7… / 65067eb3…
+  Plans from platformPricingContent. CTAs → /register-church only. No checkout.
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<section class="bb-apex-mkt-hero" data-bb-apex-page="pricing" aria-labelledby="bb-pricing-hero">
+  <div class="bb-apex-container bb-apex-mkt-hero__inner">
+    <p class="bb-apex-mkt-hero__eyebrow">Pricing</p>
+    <h1 class="bb-apex-mkt-hero__title" id="bb-pricing-hero">Transparent Pricing</h1>
+    <p class="bb-apex-mkt-hero__lead">Simple plans for every stage of church growth</p>
+    <p class="bb-apex-mkt-hero__note"><%= pricingOnboardingNote %></p>
+    <p class="bb-apex-mkt-banner" role="note">
+      <span class="material-symbols-outlined" aria-hidden="true">info</span>
+      <%= staffBillingNote %>
+    </p>
+  </div>
+</section>
+
+<section class="bb-apex-section" aria-labelledby="bb-pricing-plans">
+  <div class="bb-apex-container">
+    <h2 class="bb-apex-sr-only" id="bb-pricing-plans">Plans</h2>
+    <ul class="bb-apex-pricing-grid">
+      <% pricingPlans.forEach(function (plan) { %>
+      <li class="bb-apex-pricing-card<%= plan.featured ? ' is-featured' : '' %>" data-bb-plan="<%= plan.code %>">
+        <% if (plan.badge) { %><p class="bb-apex-pricing-card__badge"><%= plan.badge %></p><% } %>
+        <% if (plan.eyebrow) { %><p class="bb-apex-pricing-card__eyebrow"><%= plan.eyebrow %></p><% } %>
+        <h3 class="bb-apex-pricing-card__name"><%= plan.label %></h3>
+        <p class="bb-apex-pricing-card__price">
+          <span class="bb-apex-pricing-card__amount"><%= plan.priceAmount %></span>
+          <span class="bb-apex-pricing-card__suffix"><%= plan.priceSuffix %></span>
+        </p>
+        <p class="bb-apex-pricing-card__desc"><%= plan.description %></p>
+        <ul class="bb-apex-pricing-card__features">
+          <% (plan.features || []).forEach(function (f) { %>
+          <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span><%= f %></span></li>
+          <% }) %>
+        </ul>
+        <a
+          class="bb-apex-btn <%= plan.ctaVariant === 'primary' ? 'bb-apex-btn--primary' : 'bb-apex-btn--secondary' %>"
+          href="<%= plan.ctaHref %>"
+        ><%= plan.ctaLabel %></a>
+      </li>
+      <% }) %>
+    </ul>
+
+    <% if (partnerPlan) { %>
+    <article class="bb-apex-partner-card" data-bb-plan="<%= partnerPlan.code %>">
+      <div class="bb-apex-partner-card__copy">
+        <p class="bb-apex-pricing-card__eyebrow"><%= partnerPlan.eyebrow %></p>
+        <h3 class="bb-apex-partner-card__name"><%= partnerPlan.label %></h3>
+        <p class="bb-apex-partner-card__price"><%= partnerPlan.priceDisplay %></p>
+        <p class="bb-apex-partner-card__desc"><%= partnerPlan.description %></p>
+        <ul class="bb-apex-pricing-card__features">
+          <% (partnerPlan.features || []).forEach(function (f) { %>
+          <li><span class="material-symbols-outlined" aria-hidden="true">verified</span><span><%= f %></span></li>
+          <% }) %>
+        </ul>
+      </div>
+      <div class="bb-apex-partner-card__action">
+        <a class="bb-apex-btn bb-apex-btn--primary" href="<%= partnerPlan.ctaHref %>"><%= partnerPlan.ctaLabel %></a>
+      </div>
+    </article>
+    <% } %>
+
+    <p class="bb-apex-mkt-footnote"><%= thirdPartyCostsNote %></p>
+    <p class="bb-apex-mkt-footnote">
+      Plan selection and billing activation are not available from this page. BlessBoard onboards churches through registration review.
+    </p>
+  </div>
+</section>
+
+<section class="bb-apex-section bb-apex-section--surface" id="faq" aria-labelledby="bb-pricing-faq">
+  <div class="bb-apex-container">
+    <div class="bb-apex-section__intro bb-apex-section__intro--center">
+      <h2 class="bb-apex-section__title" id="bb-pricing-faq">Pricing details &amp; FAQ</h2>
+    </div>
+    <div class="bb-apex-faq">
+      <% faqItems.forEach(function (item) { %>
+      <details class="bb-apex-faq__item" id="faq-<%= item.id %>">
+        <summary><%= item.question %></summary>
+        <p><%= item.answer %></p>
+      </details>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/apex-shell-end') %>

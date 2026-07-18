@@ -46,6 +46,7 @@ const { createFormsRequestsAdminRouter } = require("../../blessboard/http/formsR
 const { createFormsRequestsMemberRouter } = require("../../blessboard/http/formsRequestsMemberRoutes");
 const { createHqReportsRouter } = require("../../blessboard/http/hqReportsRoutes");
 const { createTenantPublicRouter } = require("../../blessboard/http/tenantPublicRoutes");
+const { createApexMarketingRouter } = require("../../blessboard/http/apexMarketingRoutes");
 const { createPlatformAdminRouter } = require("./platformAdminRoutes");
 const { createLoadV5Session } = require("./loadV5Session");
 const {
@@ -645,6 +646,18 @@ function createV5FoundationApp(options) {
       getPool,
       isApexHost: (req) => isApexHost(req, opts),
       getTenantRoutingMode: () => getBlessBoardTenantRoutingMode(env),
+    })
+  );
+
+  // 8e. Apex marketing pages (Batch 2b — GET only; no provisioning/billing)
+  app.use(
+    createApexMarketingRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      issueCsrfToken,
+      setCsrfCookie,
+      env,
+      isProduction,
     })
   );
 

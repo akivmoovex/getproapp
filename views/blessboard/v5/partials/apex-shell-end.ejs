@@ -1,5 +1,5 @@
 <%#
-  Apex shell end — footer uses only existing routes (no dead marketing links).
+  Apex shell end — footer includes Batch 2b marketing routes only (no dead links).
 %>
   </main>
 
@@ -12,9 +12,19 @@
           <p class="bb-apex-footer__powered"><%- include('./powered-by-getpro') %></p>
         </div>
         <div class="bb-apex-footer__col">
-          <h2 class="bb-apex-footer__heading">Navigate</h2>
+          <h2 class="bb-apex-footer__heading">Product</h2>
           <ul class="bb-apex-footer__links">
             <li><a href="/">Home</a></li>
+            <li><a href="/features">Features</a></li>
+            <li><a href="/for-churches">For Churches</a></li>
+            <li><a href="/pricing">Pricing</a></li>
+            <li><a href="/directory">Directory</a></li>
+            <li><a href="/register-church">Register Your Church</a></li>
+          </ul>
+        </div>
+        <div class="bb-apex-footer__col">
+          <h2 class="bb-apex-footer__heading">Account</h2>
+          <ul class="bb-apex-footer__links">
             <% if (authenticated) { %>
             <li><a href="/account">Account</a></li>
             <% } else { %>

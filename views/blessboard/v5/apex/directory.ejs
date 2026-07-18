@@ -1,0 +1,110 @@
+<%#
+  Apex Church Directory — Stitch 2b9df962… / ab5d47e2…
+  Listings from publicChurchDirectoryRepo (active orgs only). Empty state when none.
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<section class="bb-apex-mkt-hero bb-apex-mkt-hero--compact" data-bb-apex-page="directory" aria-labelledby="bb-directory-hero">
+  <div class="bb-apex-container bb-apex-mkt-hero__inner">
+    <p class="bb-apex-mkt-hero__eyebrow">Ministry Directory</p>
+    <h1 class="bb-apex-mkt-hero__title" id="bb-directory-hero">Find a church</h1>
+    <p class="bb-apex-mkt-hero__lead">
+      Search active congregations on BlessBoard. Testing, inactive, and suspended organizations are not listed.
+    </p>
+  </div>
+</section>
+
+<section class="bb-apex-section" aria-labelledby="bb-directory-results">
+  <div class="bb-apex-container">
+    <form class="bb-apex-directory-search" method="get" action="/directory" role="search">
+      <label class="bb-apex-sr-only" for="bb-directory-q">Search churches</label>
+      <div class="bb-apex-directory-search__row">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <input
+          id="bb-directory-q"
+          name="q"
+          type="search"
+          value="<%= q || '' %>"
+          placeholder="Search by church name, city, or location"
+          maxlength="80"
+          autocomplete="off"
+        />
+        <button class="bb-apex-btn bb-apex-btn--primary" type="submit">Search</button>
+      </div>
+    </form>
+
+    <h2 class="bb-apex-sr-only" id="bb-directory-results">Results</h2>
+
+    <% if (directoryUnavailable) { %>
+    <div class="bb-apex-directory-empty" data-bb-directory-state="unavailable" role="status">
+      <span class="material-symbols-outlined" aria-hidden="true">cloud_off</span>
+      <p class="bb-apex-directory-empty__title">Directory temporarily unavailable</p>
+      <p>Please try again shortly.</p>
+    </div>
+    <% } else if (!items || !items.length) { %>
+    <div class="bb-apex-directory-empty" data-bb-directory-state="empty" role="status">
+      <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
+      <p class="bb-apex-directory-empty__title">No churches found</p>
+      <p>
+        <% if (q) { %>
+        We couldn’t find any results matching your search. Try adjusting your keywords.
+        <% } else { %>
+        No active churches are listed yet. Check back soon, or register your congregation.
+        <% } %>
+      </p>
+      <div class="bb-apex-directory-empty__actions">
+        <% if (q) { %>
+        <a class="bb-apex-btn bb-apex-btn--secondary" href="/directory">Clear search</a>
+        <% } %>
+        <a class="bb-apex-btn bb-apex-btn--primary" href="/register-church">Register Your Church</a>
+      </div>
+    </div>
+    <% } else { %>
+    <p class="bb-apex-directory-count" data-bb-directory-count="<%= total %>">
+      <%= total %> <%= total === 1 ? 'church' : 'churches' %>
+      <% if (q) { %> matching “<%= q %>”<% } %>
+    </p>
+    <ul class="bb-apex-directory-grid">
+      <% items.forEach(function (item) { %>
+      <li class="bb-apex-directory-card">
+        <p class="bb-apex-directory-card__meta">
+          <span class="material-symbols-outlined" aria-hidden="true">church</span>
+          <%= item.branch_count_label || 'Church' %>
+        </p>
+        <h3 class="bb-apex-directory-card__name"><%= item.name %></h3>
+        <% if (item.location_line) { %>
+        <p class="bb-apex-directory-card__location">
+          <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+          <%= item.location_line %>
+        </p>
+        <% } %>
+        <% if (item.short_description) { %>
+        <p class="bb-apex-directory-card__desc"><%= item.short_description %></p>
+        <% } %>
+        <% if (item.registration_label) { %>
+        <p class="bb-apex-directory-card__reg"><%= item.registration_label %></p>
+        <% } %>
+        <% if (item.visit_href) { %>
+        <a class="bb-apex-btn bb-apex-btn--secondary" href="<%= item.visit_href %>" rel="noopener"><%= item.visit_label || 'Visit Church' %></a>
+        <% } else { %>
+        <p class="bb-apex-directory-card__hint">Multi-branch organization — open a branch site from your invitation or bookmark.</p>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% if (totalPages > 1) { %>
+    <nav class="bb-apex-directory-pager" aria-label="Directory pages">
+      <% if (page > 1) { %>
+      <a href="/directory?q=<%= encodeURIComponent(q || '') %>&amp;page=<%= page - 1 %>">Previous</a>
+      <% } %>
+      <span>Page <%= page %> of <%= totalPages %></span>
+      <% if (page < totalPages) { %>
+      <a href="/directory?q=<%= encodeURIComponent(q || '') %>&amp;page=<%= page + 1 %>">Next</a>
+      <% } %>
+    </nav>
+    <% } %>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/apex-shell-end') %>

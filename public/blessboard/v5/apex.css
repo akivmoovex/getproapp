@@ -97,18 +97,22 @@ body.bb-apex-body {
 .bb-apex-nav {
   display: none;
   align-items: center;
-  gap: 1.5rem;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  min-width: 0;
 }
 
 .bb-apex-nav__link {
   color: var(--bb-color-muted, #44474e);
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 500;
   min-height: var(--bb-touch-min, 2.75rem);
   display: inline-flex;
   align-items: center;
   border-bottom: 2px solid transparent;
+  white-space: nowrap;
 }
 
 .bb-apex-nav__link:hover {
@@ -682,7 +686,7 @@ body.bb-apex-body {
   }
 
   .bb-apex-footer__grid {
-    grid-template-columns: 1.4fr 0.8fr;
+    grid-template-columns: 1.4fr 0.9fr 0.7fr;
     align-items: start;
   }
 }
@@ -728,5 +732,653 @@ body.bb-apex-body {
   .bb-apex-hero__frame {
     transition: none !important;
     transform: none !important;
+  }
+}
+
+/* —— Batch 2b marketing pages —— */
+.bb-apex-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.bb-apex-btn--ghost {
+  background: transparent;
+  color: var(--bb-color-ink, #1a1c1e);
+  border: 1px solid var(--bb-color-border, #d1dce0);
+}
+
+.bb-apex-btn--ghost:hover,
+.bb-apex-btn--ghost:focus-visible {
+  border-color: var(--bb-color-primary, #6c5ce7);
+  color: var(--bb-color-primary, #6c5ce7);
+}
+
+.bb-apex-btn--on-dark-outline {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.bb-apex-btn--on-dark-outline:hover,
+.bb-apex-btn--on-dark-outline:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.bb-apex-mkt-hero {
+  padding: 3rem 0 2.5rem;
+}
+
+.bb-apex-mkt-hero--compact {
+  padding-bottom: 1.5rem;
+}
+
+.bb-apex-mkt-hero__inner {
+  max-width: 48rem;
+}
+
+.bb-apex-mkt-hero__eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bb-color-primary, #6c5ce7);
+}
+
+.bb-apex-mkt-hero__title {
+  margin: 0 0 1rem;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+.bb-apex-mkt-hero__lead {
+  margin: 0 0 1.25rem;
+  font-size: 1.1rem;
+  color: var(--bb-color-muted, #44474e);
+  max-width: 40rem;
+}
+
+.bb-apex-mkt-hero__note {
+  margin: 0 0 1rem;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-mkt-hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.bb-apex-mkt-banner {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: var(--bb-color-primary-soft, #efeaff);
+  color: var(--bb-color-ink, #1a1c1e);
+  font-size: 0.95rem;
+}
+
+.bb-apex-mkt-banner .material-symbols-outlined {
+  color: var(--bb-color-primary, #6c5ce7);
+  flex-shrink: 0;
+}
+
+.bb-apex-mkt-split__grid {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+
+.bb-apex-mkt-split__media {
+  min-width: 0;
+  border-radius: var(--bb-radius-lg, 1rem);
+  overflow: hidden;
+  box-shadow: var(--bb-shadow-md, 0 8px 24px rgba(0, 0, 0, 0.08));
+}
+
+.bb-apex-mkt-split__media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.bb-apex-mkt-split__copy {
+  min-width: 0;
+}
+
+.bb-apex-mkt-split__lead {
+  margin: 0 0 1.25rem;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-mkt-icon {
+  display: inline-flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--bb-color-primary-soft, #efeaff);
+  color: var(--bb-color-primary, #6c5ce7);
+  margin-bottom: 0.75rem;
+}
+
+.bb-apex-mkt-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.bb-apex-mkt-checks li {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+}
+
+.bb-apex-mkt-checks .material-symbols-outlined {
+  color: var(--bb-color-primary, #6c5ce7);
+  flex-shrink: 0;
+}
+
+.bb-apex-mkt-card-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: 1fr;
+}
+
+.bb-apex-mkt-card-grid li {
+  padding: 1rem;
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #fff;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+}
+
+.bb-apex-mkt-card-grid h3 {
+  margin: 0.35rem 0 0.25rem;
+  font-size: 1rem;
+}
+
+.bb-apex-mkt-card-grid p {
+  margin: 0;
+  color: var(--bb-color-muted, #44474e);
+  font-size: 0.92rem;
+}
+
+.bb-apex-mkt-card-grid .material-symbols-outlined {
+  color: var(--bb-color-primary, #6c5ce7);
+}
+
+.bb-apex-mkt-benefits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.bb-apex-mkt-benefits li {
+  padding: 1.25rem;
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #fff;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+}
+
+.bb-apex-mkt-benefits h3 {
+  margin: 0.5rem 0 0.35rem;
+}
+
+.bb-apex-mkt-benefits p {
+  margin: 0;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-mkt-benefits .material-symbols-outlined {
+  color: var(--bb-color-primary, #6c5ce7);
+}
+
+.bb-apex-mkt-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+  counter-reset: none;
+}
+
+.bb-apex-mkt-steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem 1rem;
+  align-items: start;
+  padding: 1rem;
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #fff;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+}
+
+.bb-apex-mkt-steps__num {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bb-color-primary, #6c5ce7);
+  color: #fff;
+  font-weight: 700;
+  grid-row: span 2;
+}
+
+.bb-apex-mkt-steps h3 {
+  margin: 0;
+  grid-column: 2;
+}
+
+.bb-apex-mkt-steps p {
+  margin: 0;
+  grid-column: 2;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-mkt-footnote {
+  margin: 1.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-pricing-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.bb-apex-pricing-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-radius: var(--bb-radius-lg, 1rem);
+  background: #fff;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  min-width: 0;
+}
+
+.bb-apex-pricing-card.is-featured {
+  border-color: var(--bb-color-primary, #6c5ce7);
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.15);
+}
+
+.bb-apex-pricing-card__badge {
+  margin: 0;
+  align-self: flex-start;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: var(--bb-color-primary, #6c5ce7);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.bb-apex-pricing-card__eyebrow {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--bb-color-primary, #6c5ce7);
+}
+
+.bb-apex-pricing-card__name {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.bb-apex-pricing-card__price {
+  margin: 0;
+}
+
+.bb-apex-pricing-card__amount {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.bb-apex-pricing-card__suffix {
+  color: var(--bb-color-muted, #44474e);
+  font-size: 0.95rem;
+}
+
+.bb-apex-pricing-card__desc {
+  margin: 0;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-pricing-card__features {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+  flex: 1;
+}
+
+.bb-apex-pricing-card__features li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  font-size: 0.95rem;
+}
+
+.bb-apex-pricing-card__features .material-symbols-outlined {
+  color: var(--bb-color-primary, #6c5ce7);
+  font-size: 1.15rem;
+}
+
+.bb-apex-partner-card {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border-radius: var(--bb-radius-lg, 1rem);
+  background: linear-gradient(135deg, #1a1c1e 0%, #2c2548 100%);
+  color: #fff;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.bb-apex-partner-card__name {
+  margin: 0.25rem 0;
+  font-size: 1.5rem;
+}
+
+.bb-apex-partner-card__price {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.bb-apex-partner-card__desc {
+  margin: 0.5rem 0 0;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.bb-apex-partner-card .bb-apex-pricing-card__eyebrow {
+  color: #c4b5fd;
+}
+
+.bb-apex-partner-card .bb-apex-pricing-card__features .material-symbols-outlined {
+  color: #c4b5fd;
+}
+
+.bb-apex-faq {
+  display: grid;
+  gap: 0.65rem;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.bb-apex-faq__item {
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #fff;
+  padding: 0.85rem 1rem;
+}
+
+.bb-apex-faq__item summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+.bb-apex-faq__item summary::-webkit-details-marker {
+  display: none;
+}
+
+.bb-apex-faq__item p {
+  margin: 0.75rem 0 0;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-directory-search {
+  margin-bottom: 1.5rem;
+}
+
+.bb-apex-directory-search__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #fff;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+}
+
+.bb-apex-directory-search__row input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  border: 0;
+  font: inherit;
+  background: transparent;
+  outline: none;
+}
+
+.bb-apex-directory-search__row .material-symbols-outlined {
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-directory-count {
+  margin: 0 0 1rem;
+  font-weight: 600;
+  color: var(--bb-color-muted, #44474e);
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.bb-apex-directory-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.bb-apex-directory-card {
+  padding: 1.25rem;
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #fff;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.bb-apex-directory-card__meta,
+.bb-apex-directory-card__location,
+.bb-apex-directory-card__reg,
+.bb-apex-directory-card__hint {
+  margin: 0;
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  color: var(--bb-color-muted, #44474e);
+  font-size: 0.9rem;
+}
+
+.bb-apex-directory-card__name {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.bb-apex-directory-card__desc {
+  margin: 0;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-directory-empty {
+  text-align: center;
+  padding: 2.5rem 1.25rem;
+  border-radius: var(--bb-radius-lg, 1rem);
+  background: #fff;
+  border: 1px dashed var(--bb-color-border, #d1dce0);
+}
+
+.bb-apex-directory-empty .material-symbols-outlined {
+  font-size: 2.5rem;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-directory-empty__title {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.bb-apex-directory-empty__actions {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.bb-apex-directory-pager {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.bb-apex-register {
+  padding: 2.5rem 0 3rem;
+}
+
+.bb-apex-register__grid {
+  display: grid;
+  gap: 2rem;
+  align-items: start;
+}
+
+.bb-apex-register__aside-title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  letter-spacing: -0.03em;
+}
+
+.bb-apex-register__aside-lead,
+.bb-apex-register__aside-note,
+.bb-apex-register__card-lead {
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-register__card {
+  padding: 1.5rem;
+  border-radius: var(--bb-radius-lg, 1rem);
+  background: #fff;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  box-shadow: var(--bb-shadow-md, 0 8px 24px rgba(0, 0, 0, 0.06));
+}
+
+.bb-apex-register__card-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+
+.bb-apex-register__preview {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: var(--bb-color-page, #fbf9f6);
+}
+
+.bb-apex-register__preview-label {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.bb-apex-register__preview-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-register__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .bb-apex-mkt-split__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bb-apex-mkt-split__grid--reverse .bb-apex-mkt-split__media {
+    order: 2;
+  }
+
+  .bb-apex-mkt-card-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bb-apex-mkt-benefits {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bb-apex-pricing-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .bb-apex-directory-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bb-apex-register__grid {
+    grid-template-columns: 1fr 1.05fr;
+  }
+
+  .bb-apex-partner-card {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+}
+
+@media (min-width: 1100px) {
+  .bb-apex-directory-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 374px) {
+  .bb-apex-mkt-hero__cta .bb-apex-btn,
+  .bb-apex-register__actions .bb-apex-btn,
+  .bb-apex-directory-search__row .bb-apex-btn {
+    width: 100%;
+  }
+
+  .bb-apex-header__actions .bb-apex-btn--ghost {
+    display: none;
   }
 }

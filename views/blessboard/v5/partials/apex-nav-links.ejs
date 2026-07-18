@@ -1,7 +1,6 @@
 <%#
   Apex nav links. Locals: authenticated, activeNav, csrfToken, variant ('desktop'|'drawer')
-  Desktop center nav: Home (+ Account when signed in). Login CTA lives in header actions.
-  Drawer: Home + Login or Account + Logout.
+  Batch 2b activates marketing routes. Login stays header CTA on desktop; drawer includes Login.
 %>
 <%
   var linkClass = variant === 'drawer' ? 'bb-apex-drawer__link' : 'bb-apex-nav__link';
@@ -10,8 +9,18 @@
     if (activeNav === key) base += ' is-active';
     return ' class="' + base + '"';
   }
+  var marketing = [
+    { key: 'home', href: '/', label: 'Home' },
+    { key: 'features', href: '/features', label: 'Features' },
+    { key: 'for-churches', href: '/for-churches', label: 'For Churches' },
+    { key: 'pricing', href: '/pricing', label: 'Pricing' },
+    { key: 'directory', href: '/directory', label: 'Directory' },
+    { key: 'register-church', href: '/register-church', label: 'Register' }
+  ];
 %>
-<a href="/"<%= cls('home') %><%= activeNav === 'home' ? ' aria-current="page"' : '' %>>Home</a>
+<% marketing.forEach(function (item) { %>
+<a href="<%= item.href %>"<%= cls(item.key) %><%= activeNav === item.key ? ' aria-current="page"' : '' %>><%= item.label %></a>
+<% }) %>
 <% if (authenticated) { %>
 <a href="/account"<%= cls('account') %><%= activeNav === 'account' ? ' aria-current="page"' : '' %>>Account</a>
 <% if (variant === 'drawer') { %>

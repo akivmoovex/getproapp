@@ -1,0 +1,76 @@
+<%#
+  Apex Register Your Church — Stitch 8640e853… / 515da582…
+  Visual enquiry layout only. No POST, no provisioning, no fake “request sent” success.
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<section class="bb-apex-register" data-bb-apex-page="register-church">
+  <div class="bb-apex-container bb-apex-register__grid">
+    <aside class="bb-apex-register__aside" aria-labelledby="bb-register-aside-title">
+      <p class="bb-apex-mkt-hero__eyebrow">Join BlessBoard</p>
+      <h1 class="bb-apex-register__aside-title" id="bb-register-aside-title">Nurture Your Community.</h1>
+      <p class="bb-apex-register__aside-lead">
+        BlessBoard helps congregations publish a church website, engage verified members, and administer branch and HQ operations on GetPro.
+      </p>
+      <ul class="bb-apex-mkt-checks">
+        <li>
+          <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+          <span><strong>Unified ministry tools</strong> — public site, member portal, and admin workspaces.</span>
+        </li>
+        <li>
+          <span class="material-symbols-outlined" aria-hidden="true">favorite</span>
+          <span><strong>Stewardship first</strong> — designed for clarity, not checkout gimmicks.</span>
+        </li>
+        <li>
+          <span class="material-symbols-outlined" aria-hidden="true">diversity_3</span>
+          <span><strong>Multi-branch ready</strong> — capacity depends on your approved plan and setup.</span>
+        </li>
+      </ul>
+      <p class="bb-apex-register__aside-note">
+        Church provisioning is performed by BlessBoard platform administrators. This page does not create accounts, passwords, or churches.
+      </p>
+    </aside>
+
+    <div class="bb-apex-register__panel">
+      <div class="bb-apex-register__card" data-bb-register-mode="enquiry">
+        <h2 class="bb-apex-register__card-title">Register Your Church</h2>
+        <p class="bb-apex-register__card-lead">
+          Online self-service registration is not available yet. To request an invitation, contact the BlessBoard team with your church details.
+        </p>
+
+        <div class="bb-apex-mkt-banner" role="status">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          <span>
+            Please include: contact name, email, church name, optional branch name, and location.
+            A team member will follow up — this page does not submit or confirm a registration.
+          </span>
+        </div>
+
+        <div class="bb-apex-register__preview" aria-hidden="true">
+          <p class="bb-apex-register__preview-label">What we will ask for</p>
+          <ul class="bb-apex-register__preview-list">
+            <li>Contact person — full name and email</li>
+            <li>Church details — church name, optional branch, location</li>
+            <li>Plan interest — Free, Growth, Professional, or Partner</li>
+          </ul>
+        </div>
+
+        <div class="bb-apex-register__actions">
+          <a class="bb-apex-btn bb-apex-btn--primary" href="/pricing">Review plans</a>
+          <a class="bb-apex-btn bb-apex-btn--secondary" href="/directory">Find a church</a>
+          <% if (authenticated) { %>
+          <a class="bb-apex-btn bb-apex-btn--secondary" href="/account">Open Account</a>
+          <% } else { %>
+          <a class="bb-apex-btn bb-apex-btn--secondary" href="/login">Login</a>
+          <% } %>
+        </div>
+
+        <p class="bb-apex-mkt-footnote">
+          Need help finding an existing congregation? Use the <a href="/directory">church directory</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/apex-shell-end') %>

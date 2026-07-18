@@ -70,6 +70,7 @@
     "test:blessboard:settings": "node --test --test-concurrency=1 tests/blessboard-settings.test.js",
     "test:blessboard:public-content-schema": "node --test --test-concurrency=1 tests/blessboard-public-content-schema.test.js",
     "test:blessboard:apex-home": "node --test --test-concurrency=1 tests/blessboard-apex-home.test.js",
+    "test:blessboard:apex-marketing": "node --test --test-concurrency=1 tests/blessboard-apex-marketing.test.js",
     "test:blessboard:design-system": "node --test tests/blessboard-design-system.test.js",
     "test:blessboard:a11y-structure": "node --test tests/blessboard-v5-a11y-structure.test.js",
     "test:blessboard:public-pages": "node --test --test-concurrency=1 tests/blessboard-public-pages.test.js",
